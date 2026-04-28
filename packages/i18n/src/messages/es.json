@@ -10,6 +10,8 @@
     "memberRoleLabel": "Miembro",
     "delegatedVotingMemberLabel": "Miembro con voto delegado",
     "Treasury": "Tesorería",
+    "Signals": "Señales",
+    "Proposals": "Propuestas",
     "Agreements": "Acuerdos",
     "Spaces": "Espacios",
     "loadMore": "Cargar más",
@@ -52,6 +54,15 @@
       "fileTooLarge": "Tu imagen es demasiado grande (máx. 4 MB) y no se pudo subir. Reduce el tamaño e inténtalo de nuevo.",
       "uploadFailed": "No se pudo subir el archivo."
     }
+  },
+  "SpaceLeftNav": {
+    "navAriaLabel": "Espacio",
+    "collapseNavLabels": "Solo iconos",
+    "expandNavLabels": "Mostrar etiquetas del menú",
+    "ecosystem": "Ecosistema",
+    "rewards": "Recompensas",
+    "memory": "Memoria",
+    "spaceSettings": "Configuración del espacio"
   },
   "ModalAside": {
     "spaceSettings": "Configuración del espacio",

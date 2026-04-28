@@ -12,13 +12,13 @@ import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
-  AiLeftPanel,
   PanelProviders,
   PanelWrapLayout,
   AiSidebarTrigger,
   HumanSidebarTrigger,
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
+import ConnectedAiLeftPanelShell from '@web/components/connected-ai-left-panel-shell';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
@@ -140,7 +140,7 @@ export default async function RootLayout({
                       <PanelWrapLayout
                         left={
                           aiChatEnabled
-                            ? { content: <AiLeftPanel /> }
+                            ? { content: <ConnectedAiLeftPanelShell /> }
                             : undefined
                         }
                         right={

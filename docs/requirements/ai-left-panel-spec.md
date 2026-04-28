@@ -82,20 +82,33 @@
 
 ### Phase 0 — Discovery and flags (no user-visible change)
 
-- [ ] Inventory all **tab** entry points: `NavigationTabs`, `getActiveTabFromPath`, breadcrumbs, deep links, E2E selectors.
-- [ ] List **Treasury** sub-views and **Coherence** sections to split (Signals vs Memory vs Rewards).
-- [ ] Confirm **Ecosystem** UX: main panel vs aside; **SEO** and **scroll** behavior for full-page navigation picker.
+**Completed inventory (living reference):**
+
+| Surface | Location | Notes |
+|--------|-----------|--------|
+| Horizontal tabs | `apps/web/src/app/[lang]/dho/[id]/@tab/layout.tsx` → `NavigationTabs` | **md+** hidden; **`md:hidden`** horizontal tabs kept for mobile (`data-testid="dho-navigation-tabs-mobile"`) |
+| Active segment | `packages/epics/src/common/get-active-tab-from-path.ts` | First segment after `/[lang]/dho/[id]/` |
+| Path builders | `packages/epics/src/common/get-path-function.ts` (shared helpers), `@tab/*/constants` (duplicate paths — align over time) |
+| Breadcrumbs | `apps/web/src/app/[lang]/dho/[id]/_components/breadcrumbs.tsx` | Independent of tabs |
+| Aside deep links | `@aside/.../select-navigation-action`, `space-configuration`, etc. | Ecosystem / settings |
+| E2E | `coherence.page.ts` (tab role), `coherence.spec.ts`, `coherence-chat-panel.*` | Update for **Signals** + left nav when testing desktop |
+| Coherence flag | `getEnableCoherence()` (server) + `HYPHA_ENABLE_COHERENCE` cookie (client nav) | `SpaceLeftNav` hydrates cookie for parity with SSR |
+
+**Treasury / Coherence split (for Phase 2+):** Treasury page can host **Rewards** UI today (extract in Phase 2). Coherence page hosts **Signals** + **Space Memory** (split per [space-memory-panel.md](../plans/space-memory-panel.md)).
+
+**Ecosystem (Phase 3):** `NestedSpacesButton` → `…/select-navigation-action` aside; main-column route TBD (SEO: noindex on wizard-style routes if needed).
 
 ### Phase 1 — **Left menu mirrors the 4 existing tabs** (MVP in left panel)
 
 **Scope:** Menu + labels + icons; **hide or stub** Ecosystem, Rewards, Memory, Space settings **or** link “coming soon” **disabled** state.
 
-- [ ] Add **`SpaceLeftNav`** (or similar) component: **client**, uses `usePathname` + `getActiveTabFromPath` for active state; links to `getDhoPathCoherence`, `getDhoPathAgreements`, `getDhoPathMembers`, `getDhoPathTreasury` (same as `navigation-tabs.tsx`).
-- [ ] **Insert** this component **above** `AiLeftPanel` content in the **left** slot: implement as **`AiLeftPanelShell`** wrapper used from `layout.tsx` **or** composition inside `ai-left-panel.tsx` (header stack + `SidebarContent` for chat only).
-- [ ] **Collapsible labels:** implement **icon-only** sub-mode (reference: collapsed rail) with **Tooltips**; persist preference in `localStorage` (key e.g. `hypha.leftNav.collapsed`) **or** cookie if SSR needed later.
-- [ ] **Remove or hide** `NavigationTabs` from the DHO main column for **md+** (keep **mobile** tabs or **bottom** pattern if needed — **decision:** either keep horizontal tabs on **small screens only** or **hamburger** to left panel; document in implementation).
-- [ ] **i18n:** add **Signals** (replace Coherence in this menu), **Proposals** (string) for menu; keep **URL** `agreements` until Phase 4 if desired.
-- [ ] **QA:** Update Playwright **selectors** (tab links → left nav `data-testid` or `aria-label`); test open/close left panel, active state, and **coherence** flag off.
+- [x] Add **`SpaceLeftNav`**: `packages/epics/src/common/space-left-nav.tsx` — `getActiveTabFromPath`, links via `get-path-function.ts`.
+- [x] **`AiLeftPanelShell`** + **`ConnectedAiLeftPanelShell`** (`apps/web/src/components/connected-ai-left-panel-shell.tsx`) — **`SpaceNavIntentProvider`**, `getEnableCoherence()` passed server-side.
+- [x] **Collapsible labels:** `localStorage` key **`hypha.leftNav.labelsExpanded`** (`1` / `0`); chevron toggles icon-only mode + tooltips.
+- [x] **`NavigationTabs`:** **`md:hidden`** only (desktop uses left panel).
+- [x] **i18n:** `Common.Signals`, `Common.Proposals`, **`SpaceLeftNav`** strings (all locales).
+- [x] **Quiet AI:** `space-nav-intent-context.tsx` — manual nav sets **30s** cooldown; **`AiLeftPanel`** hides suggestion chips and ignores chip clicks during cooldown.
+- [x] **QA:** `apps/web-e2e/src/space-left-nav.spec.ts` (AI panel + nav links); `coherence.spec` navigation group uses **mobile viewport** + **HYPHA_ENABLE_COHERENCE** cookie; `coherence.page` tab regex includes **Signals**.
 
 **Exit criteria:** In space view, user can open the left panel and **navigate the four sections** from the **menu**; AI panel still works below; **no** duplicate tab row on desktop (unless mobile exception).
 

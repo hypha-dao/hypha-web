@@ -19,8 +19,8 @@ export class CoherencePage extends BasePage {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   /**
-   * The "Coherence" tab in the DHO navigation bar.
-   * Rendered as role="tab" (Radix TabsTrigger with asChild merges onto the Link).
+   * The Signals (formerly Coherence) tab in the DHO **mobile** navigation bar.
+   * Hidden on `md+` where navigation moves to the AI left panel.
    */
   readonly coherenceTab: Locator;
 
@@ -45,9 +45,9 @@ export class CoherencePage extends BasePage {
     super(page);
     this.spaceSlug = spaceSlug;
 
-    // Navigation tab — TabsTrigger with asChild merges role="tab" onto the <a> Link
+    // Mobile-only horizontal tabs (`md:hidden`). Label i18n: Signals / Coherence per locale.
     this.coherenceTab = page.getByRole('tab', {
-      name: /coherence|cohérence|coerência|coherencia|kohärenz/i,
+      name: /signals|coherence|cohérence|coerência|coherencia|kohärenz|signaux|señales|sinais|signale/i,
     });
 
     // Signal section label (SectionFilter: "{label} | {count}"; count omitted when 0)

@@ -997,6 +997,9 @@ importers:
       '@hypha-platform/authentication':
         specifier: workspace:*
         version: link:../authentication
+      '@hypha-platform/cookie':
+        specifier: workspace:*
+        version: link:../cookie
       '@hypha-platform/core':
         specifier: workspace:*
         version: link:../core

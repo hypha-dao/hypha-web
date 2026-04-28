@@ -14,6 +14,7 @@ import {
 
 import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import { useSpaceNavIntent } from './space-nav-intent-context';
 
 type ChatUIMessage = {
   id: string;
@@ -26,6 +27,7 @@ type ChatUIMessage = {
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
 
 export function AiLeftPanel() {
+  const spaceNav = useSpaceNavIntent();
   const { isAuthenticated, isLoading, login, getAccessToken } =
     useAuthentication();
   const params = useParams<{ id?: string }>();
@@ -104,6 +106,9 @@ export function AiLeftPanel() {
 
   const handleSuggestionSelect = useCallback(
     async (text: string) => {
+      if (spaceNav?.isManualCooldownActive()) {
+        return;
+      }
       try {
         const options = await buildMessageOptions();
         if (DEBUG)
@@ -116,16 +121,18 @@ export function AiLeftPanel() {
         console.error('[AiLeftPanel] suggestion sendMessage error:', err);
       }
     },
-    [sendMessage, buildMessageOptions],
+    [sendMessage, buildMessageOptions, spaceNav, spaceSlug],
   );
+
+  const suggestQuiet = spaceNav?.isManualCooldownActive() ?? false;
 
   if (isLoading) {
     return (
       <>
-        <SidebarHeader className="bg-background-2 p-0">
+        <SidebarHeader className="bg-background-2 shrink-0 p-0">
           <AiPanelHeader onResetChat={handleResetChat} />
         </SidebarHeader>
-        <SidebarContent className="flex flex-1 items-center justify-center">
+        <SidebarContent className="flex flex-1 shrink-0 items-center justify-center">
           <div className="text-sm text-muted-foreground">{t('loading')}</div>
         </SidebarContent>
       </>
@@ -135,10 +142,10 @@ export function AiLeftPanel() {
   if (!isAuthenticated) {
     return (
       <>
-        <SidebarHeader className="bg-background-2 p-0">
+        <SidebarHeader className="bg-background-2 shrink-0 p-0">
           <AiPanelHeader onResetChat={handleResetChat} />
         </SidebarHeader>
-        <SidebarContent className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
+        <SidebarContent className="flex flex-1 shrink-0 flex-col items-center justify-center gap-4 p-6">
           <div className="text-center text-sm text-muted-foreground">
             {t('signIn')}
           </div>
@@ -155,10 +162,10 @@ export function AiLeftPanel() {
 
   return (
     <>
-      <SidebarHeader className="bg-background-2 p-0">
+      <SidebarHeader className="bg-background-2 shrink-0 p-0">
         <AiPanelHeader onResetChat={handleResetChat} />
       </SidebarHeader>
-      <SidebarContent className="bg-background-2 min-h-0">
+      <SidebarContent className="bg-background-2 min-h-0 flex-1">
         {error && (
           <div
             role="alert"
@@ -170,12 +177,12 @@ export function AiLeftPanel() {
         <AiPanelMessages
           messages={messages as ChatUIMessage[]}
           suggestions={suggestions}
-          showSuggestions={true}
+          showSuggestions={!suggestQuiet}
           onSuggestionSelect={handleSuggestionSelect}
           isStreaming={isStreaming}
         />
       </SidebarContent>
-      <SidebarFooter className="bg-background-2 p-0">
+      <SidebarFooter className="bg-background-2 shrink-0 p-0">
         <AiPanelChatBar
           value={input}
           onChange={setInput}

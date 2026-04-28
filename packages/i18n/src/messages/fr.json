@@ -5,6 +5,8 @@
     "memberRoleLabel": "Membre",
     "delegatedVotingMemberLabel": "Membre avec vote délégué",
     "Treasury": "Trésorerie",
+    "Signals": "Signaux",
+    "Proposals": "Propositions",
     "Agreements": "Accords",
     "Spaces": "Espaces",
     "loadMore": "Charger plus",
@@ -52,6 +54,15 @@
       "fileTooLarge": "Votre image est trop volumineuse (max. 4 Mo) et n’a pas pu être téléversée. Réduisez-la et réessayez.",
       "uploadFailed": "Le fichier n’a pas pu être téléversé."
     }
+  },
+  "SpaceLeftNav": {
+    "navAriaLabel": "Espace",
+    "collapseNavLabels": "Icônes uniquement",
+    "expandNavLabels": "Afficher les libellés du menu",
+    "ecosystem": "Écosystème",
+    "rewards": "Récompenses",
+    "memory": "Mémoire",
+    "spaceSettings": "Paramètres de l’espace"
   },
   "ModalAside": {
     "spaceSettings": "Paramètres de l’espace",

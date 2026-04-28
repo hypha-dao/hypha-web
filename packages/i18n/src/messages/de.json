@@ -5,6 +5,8 @@
     "memberRoleLabel": "Mitglied",
     "delegatedVotingMemberLabel": "Delegiertes Stimmmitglied",
     "Treasury": "Schatzkammer",
+    "Signals": "Signale",
+    "Proposals": "Vorschläge",
     "Agreements": "Vereinbarungen",
     "Spaces": "Spaces",
     "loadMore": "Mehr laden",
@@ -52,6 +54,15 @@
       "fileTooLarge": "Ihr Bild ist zu groß (max. 4 MB) und konnte nicht hochgeladen werden. Bitte verkleinern Sie es und versuchen Sie es erneut.",
       "uploadFailed": "Die Datei konnte nicht hochgeladen werden."
     }
+  },
+  "SpaceLeftNav": {
+    "navAriaLabel": "Space",
+    "collapseNavLabels": "Nur Symbole anzeigen",
+    "expandNavLabels": "Menübeschriftungen anzeigen",
+    "ecosystem": "Ökosystem",
+    "rewards": "Belohnungen",
+    "memory": "Gedächtnis",
+    "spaceSettings": "Space-Einstellungen"
   },
   "ModalAside": {
     "spaceSettings": "Space-Einstellungen",
