@@ -140,7 +140,9 @@ export function SpaceLeftMenuPanel() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="bg-background-2 border-t border-border p-3">
-        <p className="text-xs text-muted-foreground">{t('leftMenu.footerHint')}</p>
+        <p className="text-xs text-muted-foreground">
+          {t('leftMenu.footerHint')}
+        </p>
       </SidebarFooter>
     </>
   );

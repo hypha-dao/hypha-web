@@ -78,7 +78,7 @@ export function CoherenceBlock({
               label={t('signals')}
               hasSearch={true}
               signals={signals ?? []}
-              leadImage={space?.leadImage}
+              leadImage={space?.leadImage ?? undefined}
               isLoading={isSpaceLoading || isSignalsLoading}
               firstPageSize={3}
               pageSize={3}

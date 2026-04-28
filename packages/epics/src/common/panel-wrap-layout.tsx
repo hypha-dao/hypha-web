@@ -38,7 +38,8 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
     [],
   );
   const toggleLeftMenuDensity = useCallback(
-    () => setLeftMenuDensity((prev) => (prev === 'expanded' ? 'icon' : 'expanded')),
+    () =>
+      setLeftMenuDensity((prev) => (prev === 'expanded' ? 'icon' : 'expanded')),
     [],
   );
 
