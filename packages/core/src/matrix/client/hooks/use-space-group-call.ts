@@ -555,6 +555,51 @@ export function useSpaceGroupCall(roomId: string | null) {
         return;
       }
 
+      /**
+       * Voice vs video share one room group call. If the first joiner created
+       * `m.voice`, the SDK only requests camera when `type === Video`. Upgrade
+       * room state to `m.video` when joining with video. Never downgrade to
+       * `m.voice` if the call is already video (audio join = local video off only).
+       */
+      if (kind === 'video' && gc.type !== GroupCallType.Video) {
+        const prevType = gc.type;
+        const gcSync = gc as MatrixSdk.GroupCall & {
+          sendCallStateEvent(): Promise<void>;
+        };
+        gcSync.type = GroupCallType.Video;
+        try {
+          await gcSync.sendCallStateEvent();
+          if (roomId) {
+            logSpaceGroupCallEvent({
+              name: 'hypha.group_call.room_type_sync',
+              roomId,
+              kind,
+              groupCallId: gc.groupCallId,
+              previousRoomGroupCallType: String(prevType),
+              roomGroupCallType: String(GroupCallType.Video),
+            });
+          }
+        } catch {
+          gcSync.type = prevType;
+          isJoiningRef.current = false;
+          setErrorCode('UNKNOWN');
+          setCallSessionId(null);
+          if (roomId) {
+            logSpaceGroupCallEvent({
+              name: 'hypha.group_call.error',
+              roomId,
+              kind,
+              errorCode: 'ROOM_TYPE_SYNC',
+            });
+          }
+          setCallState('error');
+          setCallKind(null);
+          setThreadContext(null);
+          joinStartedAtRef.current = null;
+          return;
+        }
+      }
+
       type GroupCallPreEnterMute = {
         initWithVideoMuted: boolean;
         initWithAudioMuted: boolean;
@@ -625,6 +670,19 @@ export function useSpaceGroupCall(roomId: string | null) {
       }
 
       clearConnectingStallTimer();
+
+      /**
+       * Voice→video: `enter()` used `initWithVideoMuted` from our audio intent earlier in
+       * this session, or upgraded from voice room state — request camera explicitly so
+       * outbound video negotiates after room `m.type` is video.
+       */
+      if (kind === 'video') {
+        try {
+          await gc.setLocalVideoMuted(false);
+        } catch {
+          /* camera permission / hardware — remain in call with video off */
+        }
+      }
 
       webRtcDiagCleanupRef.current?.();
       webRtcDiagCleanupRef.current = null;
