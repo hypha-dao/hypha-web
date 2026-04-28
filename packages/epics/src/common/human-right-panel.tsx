@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Minimize2 } from 'lucide-react';
 import {
+  ClientEvent,
   RoomStateEvent,
   type MatrixClient,
   type MatrixEvent,
@@ -84,12 +85,16 @@ import {
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
-import { computeHumanChatUnreadState } from './human-chat-panel/matrix-chat-unread';
+import {
+  computeAggregateUnreadMentionCount,
+  computeHumanChatUnreadState,
+} from './human-chat-panel/matrix-chat-unread';
 import {
   matrixMemberDisplayLabel,
   shortenMatrixIdForDisplay,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
+import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
 import {
   sanitizeMentionDisplayLabel,
@@ -202,6 +207,39 @@ type EditDraft = {
 };
 
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
+
+const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
+
+/** Reverse map for navigating from Matrix room id → DHO space slug (localStorage). */
+function readRoomIdToSpaceSlugFromStorage(): Map<string, string> {
+  const m = new Map<string, string>();
+  if (typeof window === 'undefined') return m;
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (!key?.startsWith(ROOM_STORAGE_KEY)) continue;
+      const slug = key.slice(ROOM_STORAGE_KEY.length);
+      if (!slug) continue;
+      const rid = window.localStorage.getItem(key)?.trim();
+      if (rid) m.set(rid, slug);
+    }
+  } catch {
+    // ignore
+  }
+  return m;
+}
+
+function rememberRoomToSpaceSlugSession(roomId: string, slug: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(
+      `${SESSION_ROOM_TO_SPACE_PREFIX}${roomId}`,
+      slug,
+    );
+  } catch {
+    // ignore
+  }
+}
 
 /**
  * Get a persisted room ID for a space slug from localStorage.
@@ -584,6 +622,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }>(null);
   const joinedRef = useRef<string | null>(null);
   const [unreadBump, setUnreadBump] = useState(0);
+  const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
 
   const currentUserId = client?.getUserId?.() ?? null;
@@ -1537,10 +1576,52 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return `/${lang}/notification-centre`;
   }, [pathname, params?.id, spaceSlug]);
 
-  const handleSelectMentionFromInbox = useCallback((eventId: string) => {
-    setActiveTab('chat');
-    setScrollToEventId(eventId);
-  }, []);
+  const handleSelectMentionFromInbox = useCallback(
+    (eventId: string, fromRoomId?: string) => {
+      const targetRoom = fromRoomId?.trim();
+      const current = roomId?.trim();
+      const langMatch = pathname.match(/^\/([^/]+)\//);
+      const lang = langMatch?.[1] ?? 'en';
+
+      if (
+        targetRoom &&
+        current &&
+        targetRoom !== current &&
+        typeof window !== 'undefined'
+      ) {
+        let slug =
+          window.sessionStorage
+            .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${targetRoom}`)
+            ?.trim() ?? null;
+        if (!slug) {
+          const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
+          slug = fromLs ?? null;
+        }
+        if (!slug && space?.chatRoomId?.trim() === targetRoom && spaceSlug) {
+          slug = spaceSlug;
+        }
+        if (slug) {
+          router.push(
+            `/${lang}/dho/${slug}?msg=${encodeURIComponent(eventId)}`,
+          );
+          openHumanChatPanel();
+          setActiveTab('chat');
+          return;
+        }
+      }
+
+      setActiveTab('chat');
+      setScrollToEventId(eventId);
+    },
+    [
+      roomId,
+      pathname,
+      router,
+      openHumanChatPanel,
+      space?.chatRoomId,
+      spaceSlug,
+    ],
+  );
 
   const handleConsumedScrollTarget = useCallback(() => {
     setScrollToEventId(null);
@@ -1582,6 +1663,36 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     };
   }, [client, roomId]);
 
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      mode !== 'space' ||
+      !spaceSlug?.trim() ||
+      !roomId?.trim()
+    )
+      return;
+    rememberRoomToSpaceSlugSession(roomId, spaceSlug.trim());
+  }, [mode, spaceSlug, roomId]);
+
+  useEffect(() => {
+    const pathSlug = getDhoSpaceSlugFromPathname(pathname)?.trim();
+    const rid = roomId?.trim() ?? null;
+    if (pathSlug && rid && mode === 'space' && typeof window !== 'undefined') {
+      rememberRoomToSpaceSlugSession(rid, pathSlug);
+    }
+  }, [pathname, roomId, mode]);
+
+  useEffect(() => {
+    if (!client || !currentUserId) return;
+    const bump = () => setAggregateMentionBump((n) => n + 1);
+    client.on(ClientEvent.Sync, bump);
+    client.on(ClientEvent.Room, bump);
+    return () => {
+      client.removeListener(ClientEvent.Sync, bump);
+      client.removeListener(ClientEvent.Room, bump);
+    };
+  }, [client, currentUserId]);
+
   const unreadChatState = useMemo(() => {
     if (!client || !roomId || !currentUserId) {
       return {
@@ -1595,6 +1706,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const room = client.getRoom(roomId);
     return computeHumanChatUnreadState(room ?? undefined, currentUserId);
   }, [client, roomId, currentUserId, unreadBump, mergedMessages.length]);
+
+  const aggregateMentionBadge = useMemo(() => {
+    if (!client || !currentUserId) {
+      return { count: 0, capped: false };
+    }
+    return computeAggregateUnreadMentionCount(client.getRooms(), currentUserId);
+  }, [client, currentUserId, aggregateMentionBump, unreadBump]);
+
+  const bellMentionCount = aggregateMentionBadge.count;
+  const bellMentionCapped = aggregateMentionBadge.capped;
 
   const markChatTimelineRead = useCallback(async () => {
     if (!client || !roomId || !currentUserId) return;
@@ -2009,8 +2130,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           trailingStart={
             roomId ? (
               <HumanChatPanelMentionBell
-                unreadCount={unreadChatState.unreadMentionCount}
-                countIsCapped={unreadChatState.mentionCountIsCapped}
+                unreadCount={bellMentionCount}
+                countIsCapped={bellMentionCapped}
                 mentionsTabActive={activeTab === 'mentions'}
                 onOpenMentions={() => setActiveTab('mentions')}
                 callJoinRingControlsActive={
@@ -2025,10 +2146,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         <HumanChatPanelTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          chatMentionCount={unreadChatState.unreadMentionCount}
-          chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
-          mentionTabBadgeCount={unreadChatState.unreadMentionCount}
-          mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
+          chatMentionCount={bellMentionCount}
+          chatMentionCountCapped={bellMentionCapped}
+          mentionTabBadgeCount={bellMentionCount}
+          mentionTabBadgeCapped={bellMentionCapped}
           tabRowEnd={
             callUiEnabled ? (
               <HumanChatPanelCallToolbar
@@ -2228,6 +2349,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               currentUserId={currentUserId}
               resolveMemberLabel={resolveMentionMemberLabel}
               onSelectMessage={handleSelectMentionFromInbox}
+              aggregatedMentions={mode === 'space'}
             />
           </div>
         )}
