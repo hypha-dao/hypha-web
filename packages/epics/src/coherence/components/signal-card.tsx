@@ -330,7 +330,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 height={160}
                 className="h-full w-full object-cover"
                 src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-                alt={title || ''}
+                alt=""
               />
               <div
                 className={cn(
