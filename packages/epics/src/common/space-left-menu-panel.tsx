@@ -81,67 +81,109 @@ export function SpaceLeftMenuPanel() {
 
   return (
     <>
-      <SidebarHeader className="bg-background-2 border-b border-border p-3">
-        <div className="flex items-center justify-between gap-2">
-          <p
+      <SidebarContent className="relative bg-background-2">
+        <div className="relative flex h-full">
+          <nav
+            className="z-10 flex h-full w-14 shrink-0 flex-col border-r border-border bg-background-2"
+            aria-label={t('leftMenu.title')}
+          >
+            <SidebarHeader className="border-b border-border p-2">
+              <button
+                type="button"
+                onClick={toggleMenuDensity}
+                aria-label={
+                  iconOnly
+                    ? t('leftMenu.expandMenuAriaLabel')
+                    : t('leftMenu.collapseMenuAriaLabel')
+                }
+                title={
+                  iconOnly
+                    ? t('leftMenu.expandMenuAriaLabel')
+                    : t('leftMenu.collapseMenuAriaLabel')
+                }
+                className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                {iconOnly ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </button>
+            </SidebarHeader>
+            <SidebarMenu className="px-2 py-3">
+              {items.map(({ key, href, label, icon: Icon }) => {
+                const active = activeTab === key;
+                return (
+                  <SidebarMenuItem key={`rail-${key}`}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={active}
+                      tooltip={label}
+                      className="h-11 justify-center rounded-lg px-0"
+                    >
+                      <Link href={href} aria-label={label}>
+                        <Icon className="h-4 w-4 shrink-0" />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </nav>
+
+          <div
             className={cn(
-              'text-sm font-semibold text-foreground transition-opacity',
-              iconOnly && 'sr-only',
+              'absolute inset-y-0 left-14 right-0 z-20 transition-all duration-200 ease-linear',
+              iconOnly
+                ? 'pointer-events-none -translate-x-2 opacity-0'
+                : 'pointer-events-auto translate-x-0 opacity-100',
             )}
           >
-            {t('leftMenu.title')}
-          </p>
-          <button
-            type="button"
-            onClick={toggleMenuDensity}
-            aria-label={
-              iconOnly
-                ? t('leftMenu.expandMenuAriaLabel')
-                : t('leftMenu.collapseMenuAriaLabel')
-            }
-            title={
-              iconOnly
-                ? t('leftMenu.expandMenuAriaLabel')
-                : t('leftMenu.collapseMenuAriaLabel')
-            }
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            {iconOnly ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </button>
+            <div className="flex h-full flex-col border-r border-border bg-background-2 shadow-[6px_0_24px_-16px_rgba(0,0,0,0.65)]">
+              <SidebarHeader className="border-b border-border p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-foreground">
+                    {t('leftMenu.title')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={toggleMenuDensity}
+                    aria-label={t('leftMenu.collapseMenuAriaLabel')}
+                    title={t('leftMenu.collapseMenuAriaLabel')}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                </div>
+              </SidebarHeader>
+              <SidebarMenu className="px-2 py-3">
+                {items.map(({ key, href, label, icon: Icon }) => {
+                  const active = activeTab === key;
+                  return (
+                    <SidebarMenuItem key={`overlay-${key}`}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        className="h-11 gap-3 rounded-lg px-3 text-sm"
+                      >
+                        <Link href={href} aria-label={label}>
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span>{label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+              <SidebarFooter className="mt-auto border-t border-border p-3">
+                <p className="text-xs text-muted-foreground">
+                  {t('leftMenu.footerHint')}
+                </p>
+              </SidebarFooter>
+            </div>
+          </div>
         </div>
-      </SidebarHeader>
-      <SidebarContent className="bg-background-2">
-        <SidebarMenu className="px-2 py-3">
-          {items.map(({ key, href, label, icon: Icon }) => {
-            const active = activeTab === key;
-            return (
-              <SidebarMenuItem key={key}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={active}
-                  tooltip={iconOnly ? label : undefined}
-                  className={cn(
-                    'h-11 gap-3 rounded-lg px-3 text-sm',
-                    iconOnly && 'justify-center px-0',
-                  )}
-                >
-                  <Link href={href} aria-label={label}>
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {!iconOnly ? <span>{label}</span> : null}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="bg-background-2 border-t border-border p-3">
-        <p className="text-xs text-muted-foreground">{t('leftMenu.footerHint')}</p>
-      </SidebarFooter>
     </>
   );
 }
