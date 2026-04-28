@@ -1,6 +1,12 @@
 'use client';
 
-import React, { useCallback, useLayoutEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { MessageCircle, Sparkles } from 'lucide-react';
 import {
   SidebarProvider,
@@ -25,13 +31,69 @@ import { PanelScrollInset } from './panel-scroll-inset';
 
 export function PanelProviders({ children }: { children: React.ReactNode }) {
   const [leftOpen, setLeftOpen] = useState(false);
+  const [leftOverlayVisible, setLeftOverlayVisible] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
+  const leftOverlayHideTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
-  const toggleLeft = useCallback(() => setLeftOpen((prev) => !prev), []);
   const toggleRight = useCallback(() => setRightOpen((prev) => !prev), []);
+  const openLeft = useCallback(() => {
+    setLeftOpen(true);
+    setLeftOverlayVisible(true);
+  }, []);
+  const closeLeft = useCallback(() => {
+    setLeftOpen(false);
+    setLeftOverlayVisible(false);
+  }, []);
+  const showLeftOverlay = useCallback(() => {
+    if (leftOverlayHideTimeoutRef.current) {
+      clearTimeout(leftOverlayHideTimeoutRef.current);
+      leftOverlayHideTimeoutRef.current = null;
+    }
+    setLeftOverlayVisible(true);
+  }, []);
+  const hideLeftOverlay = useCallback(() => {
+    if (leftOverlayHideTimeoutRef.current) {
+      clearTimeout(leftOverlayHideTimeoutRef.current);
+    }
+    leftOverlayHideTimeoutRef.current = setTimeout(() => {
+      setLeftOverlayVisible(false);
+      leftOverlayHideTimeoutRef.current = null;
+    }, 120);
+  }, []);
+  const toggleLeftFromTrigger = useCallback(() => {
+    setLeftOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setLeftOverlayVisible(true);
+      } else {
+        setLeftOverlayVisible(false);
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (leftOverlayHideTimeoutRef.current) {
+        clearTimeout(leftOverlayHideTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <AiPanelProvider value={{ open: leftOpen, toggle: toggleLeft }}>
+    <AiPanelProvider
+      value={{
+        open: leftOpen,
+        overlayVisible: leftOverlayVisible,
+        toggle: toggleLeftFromTrigger,
+        openAiPanel: openLeft,
+        closeAiPanel: closeLeft,
+        showAiOverlay: showLeftOverlay,
+        hideAiOverlay: hideLeftOverlay,
+      }}
+    >
       <HumanChatPanelProvider
         open={rightOpen}
         toggle={toggleRight}
@@ -48,17 +110,22 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, toggle } = useAiPanel();
+  const { open, overlayVisible, toggle, showAiOverlay, hideAiOverlay } =
+    useAiPanel();
   const t = useTranslations('AiPanel');
   const isSpace = useIsSpaceContext();
 
-  if (!isSpace || open) return null;
+  if (!isSpace) return null;
 
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-expanded={open}
+      onMouseEnter={showAiOverlay}
+      onMouseLeave={hideAiOverlay}
+      onFocus={showAiOverlay}
+      onBlur={hideAiOverlay}
+      aria-expanded={open && overlayVisible}
       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       title={t('openPanel')}
       aria-label={t('openPanel')}
@@ -149,7 +216,13 @@ export function PanelWrapLayout({
   left,
   right,
 }: PanelWrapLayoutProps) {
-  const { open: leftOpen, toggle: toggleLeft } = useAiPanel();
+  const {
+    open: leftOpen,
+    overlayVisible: leftOverlayVisible,
+    toggle: toggleLeft,
+    showAiOverlay,
+    hideAiOverlay,
+  } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
 
@@ -157,7 +230,8 @@ export function PanelWrapLayout({
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
 
-  const sidebarLeftPx = leftOpen && effectiveLeft ? '320px' : '0px';
+  const leftExpanded = Boolean(leftOpen && leftOverlayVisible);
+  const sidebarLeftPx = effectiveLeft ? (leftExpanded ? '320px' : '48px') : '0px';
   const sidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
 
   /** Radix portaled dialogs sit under `body` and do not inherit vars from this div — mirror to `:root`. */
@@ -174,10 +248,12 @@ export function PanelWrapLayout({
   if (effectiveLeft && effectiveRight) {
     content = (
       <PanelDualSidebarScrollBridge
-        leftOpen={leftOpen}
+        leftOpen={leftExpanded}
         onLeftOpenChange={(open) => {
-          if (open !== leftOpen) toggleLeft();
+          if (open !== leftExpanded) toggleLeft();
         }}
+        onLeftMouseEnter={showAiOverlay}
+        onLeftMouseLeave={hideAiOverlay}
         rightOpen={rightOpen}
         onRightOpenChange={(open) => {
           if (open !== rightOpen) toggleRight();
@@ -220,9 +296,9 @@ export function PanelWrapLayout({
     content = (
       <SidebarProvider
         defaultOpen={false}
-        open={leftOpen}
+        open={leftExpanded}
         onOpenChange={(open) => {
-          if (open !== leftOpen) toggleLeft();
+          if (open !== leftExpanded) toggleLeft();
         }}
         style={
           {
@@ -233,8 +309,10 @@ export function PanelWrapLayout({
         <Sidebar
           side="left"
           variant="sidebar"
-          collapsible="offcanvas"
+          collapsible="icon"
           className="z-[50]"
+          onMouseEnter={showAiOverlay}
+          onMouseLeave={hideAiOverlay}
         >
           {effectiveLeft.content}
           <SidebarResizeHandle />
