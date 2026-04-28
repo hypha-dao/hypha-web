@@ -545,7 +545,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const coherenceMessageCountSyncTimeoutRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
-  const coherenceMessageCountSeqRef = useRef(0);
+  const coherenceMessageCountSyncInFlightRef = useRef(false);
+  const pendingCoherenceMessageCountRef = useRef<{
+    slug: string;
+    count: number;
+  } | null>(null);
 
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
@@ -1853,24 +1857,36 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
 
     coherenceMessageCountSyncTimeoutRef.current = setTimeout(() => {
-      const nextSeq = coherenceMessageCountSeqRef.current + 1;
-      coherenceMessageCountSeqRef.current = nextSeq;
+      pendingCoherenceMessageCountRef.current = {
+        slug: coherenceSlug,
+        count: messageCount,
+      };
 
-      updateCoherenceBySlug({ slug: coherenceSlug, messages: messageCount })
-        .then(() => {
-          if (coherenceMessageCountSeqRef.current !== nextSeq) return;
-          lastPersistedCoherenceMessageCountRef.current = {
-            slug: coherenceSlug,
-            count: messageCount,
-          };
-        })
-        .catch((error) => {
-          if (coherenceMessageCountSeqRef.current !== nextSeq) return;
-          console.warn(
-            '[HumanRightPanel] Failed to persist coherence message count:',
-            error,
-          );
-        });
+      if (coherenceMessageCountSyncInFlightRef.current) return;
+
+      const flushMessageCountSync = async () => {
+        coherenceMessageCountSyncInFlightRef.current = true;
+        try {
+          while (pendingCoherenceMessageCountRef.current) {
+            const next = pendingCoherenceMessageCountRef.current;
+            pendingCoherenceMessageCountRef.current = null;
+            await updateCoherenceBySlug({
+              slug: next.slug,
+              messages: next.count,
+            });
+            lastPersistedCoherenceMessageCountRef.current = next;
+          }
+        } finally {
+          coherenceMessageCountSyncInFlightRef.current = false;
+        }
+      };
+
+      void flushMessageCountSync().catch((error) => {
+        console.warn(
+          '[HumanRightPanel] Failed to persist coherence message count:',
+          error,
+        );
+      });
     }, 500);
 
     return () => {
