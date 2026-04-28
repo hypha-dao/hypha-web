@@ -1,3 +1,5 @@
+import clsx from 'clsx';
+
 export type PreviewImgProps = {
   src: string;
   alt?: string;
@@ -13,7 +15,10 @@ export const PreviewImg = ({
       src={src}
       alt={alt}
       draggable={false}
-      className={className ?? 'pointer-events-none h-full w-full object-cover'}
+      className={clsx(
+        'pointer-events-none h-full w-full object-cover',
+        className,
+      )}
     />
   );
 };
