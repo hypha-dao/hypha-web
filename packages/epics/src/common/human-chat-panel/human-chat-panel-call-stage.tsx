@@ -55,6 +55,8 @@ type HumanChatPanelCallStageBaseProps = {
    * stage matches the member count (§ Hypha: avoid “2 members, 1 tile”).
    */
   inCallUserIds?: string[] | null;
+  /** True when remote participant map has users but feeds never attached (show stall copy). */
+  remoteMediaStall?: boolean;
 };
 
 type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
@@ -278,6 +280,7 @@ export function HumanChatPanelCallStage({
   resolveMemberLabel,
   currentUserProfileAvatarUrl = null,
   inCallUserIds = null,
+  remoteMediaStall = false,
   layout,
   onRequestFullView,
   fullViewOpen = false,
@@ -460,6 +463,7 @@ export function HumanChatPanelCallStage({
         isFullView={isFull}
         isPip={false}
         resolveMemberLabel={resolveMemberLabel}
+        remoteMediaStall={remoteMediaStall}
         t={t}
       />
     );
@@ -692,6 +696,7 @@ export function HumanChatPanelCallStage({
                             isFullView={isFull}
                             isPip={false}
                             resolveMemberLabel={resolveMemberLabel}
+                            remoteMediaStall={remoteMediaStall}
                             t={t}
                           />
                         ) : null}
@@ -864,6 +869,7 @@ export function HumanChatPanelCallStage({
                   isFullView={isFull}
                   isPip={false}
                   resolveMemberLabel={resolveMemberLabel}
+                  remoteMediaStall={remoteMediaStall}
                   t={t}
                 />
               </div>
@@ -1032,6 +1038,7 @@ function CallParticipantPlaceholderTile({
   isFullView,
   isPip,
   resolveMemberLabel,
+  remoteMediaStall = false,
   t,
 }: {
   client: MatrixClient | null;
@@ -1042,6 +1049,7 @@ function CallParticipantPlaceholderTile({
   isFullView: boolean;
   isPip: boolean;
   resolveMemberLabel: (userId: string | undefined) => string;
+  remoteMediaStall?: boolean;
   t: (key: string) => string;
 }) {
   const room: Room | null =
@@ -1059,6 +1067,10 @@ function CallParticipantPlaceholderTile({
       ? currentUserProfileAvatarUrl?.trim() || undefined
       : undefined);
 
+  const statusLine = remoteMediaStall
+    ? t('callRemoteParticipantMediaStalled')
+    : t('callConnecting');
+
   return (
     <div
       className={cn(
@@ -1066,8 +1078,8 @@ function CallParticipantPlaceholderTile({
         isPip && 'gap-1.5 p-2',
       )}
       role="status"
-      aria-busy="true"
-      aria-label={`${label} — ${t('callConnecting')}`}
+      aria-busy={!remoteMediaStall}
+      aria-label={`${label} — ${statusLine}`}
     >
       <div
         className={cn(
@@ -1100,16 +1112,18 @@ function CallParticipantPlaceholderTile({
             aria-hidden
           />
         )}
-        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/35">
-          <Loader2
-            className={cn(
-              'animate-spin text-zinc-100',
-              isPip ? 'h-3.5 w-3.5' : 'h-6 w-6',
-            )}
-            strokeWidth={2.25}
-            aria-hidden
-          />
-        </div>
+        {!remoteMediaStall ? (
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/35">
+            <Loader2
+              className={cn(
+                'animate-spin text-zinc-100',
+                isPip ? 'h-3.5 w-3.5' : 'h-6 w-6',
+              )}
+              strokeWidth={2.25}
+              aria-hidden
+            />
+          </div>
+        ) : null}
       </div>
       <p
         className={cn(
@@ -1126,11 +1140,11 @@ function CallParticipantPlaceholderTile({
       </p>
       <p
         className={cn(
-          'text-muted-foreground/90',
+          'max-w-[min(100%,18rem)] text-muted-foreground/90',
           isPip ? 'text-[9px]' : 'text-xs',
         )}
       >
-        {t('callConnecting')}
+        {statusLine}
       </p>
     </div>
   );

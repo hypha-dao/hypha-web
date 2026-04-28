@@ -645,6 +645,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
 
+  /** Distinct Matrix users in the room call besides the current user (not device count). */
+  const spaceCallOtherMemberCount = useMemo(
+    () =>
+      spaceCallInCallUserIds.filter((id) => id && id !== currentUserId).length,
+    [spaceCallInCallUserIds, currentUserId],
+  );
+
   const spaceCallShowJoinChime = useMemo(
     () => callUiEnabled && spaceCallShowJoinStrip && !inSpaceCall,
     [callUiEnabled, spaceCallShowJoinStrip, inSpaceCall],
@@ -2030,7 +2037,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 disabled={!callUiEnabled}
                 roomCallInProgressToJoin={spaceCallToolbarJoinHint}
                 onlyLocalInRoomCall={
-                  spaceCallShowJoinStrip && spaceCallRoomGroupDeviceCount === 1
+                  spaceCallShowJoinStrip && spaceCallOtherMemberCount === 0
                 }
                 onAudio={handleCallAudio}
                 onVideo={handleCallVideo}
@@ -2106,6 +2113,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   activeSpeakerKey={spaceCallActiveSpeakerKey}
                   currentUserId={currentUserId}
                   inCallUserIds={spaceCallInCallUserIds}
+                  remoteMediaStall={spaceCallRemoteMediaStall}
                   currentUserProfileAvatarUrl={currentUserAvatarUrl}
                   resolveMemberLabel={resolveMentionMemberLabel}
                   layout={
@@ -2324,6 +2332,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   activeSpeakerKey={spaceCallActiveSpeakerKey}
                   currentUserId={currentUserId}
                   inCallUserIds={spaceCallInCallUserIds}
+                  remoteMediaStall={spaceCallRemoteMediaStall}
                   currentUserProfileAvatarUrl={currentUserAvatarUrl}
                   resolveMemberLabel={resolveMentionMemberLabel}
                   layout="fullView"
