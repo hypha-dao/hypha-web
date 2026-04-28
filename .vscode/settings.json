@@ -1,5 +1,7 @@
 {
   "typescript.tsdk": "node_modules/typescript/lib",
+  "prettier.prettierPath": "node_modules/prettier",
+  "prettier.requireConfig": true,
   "explorer.fileNesting.patterns": {
     "*.ts": "${capture}.ts, ${capture}.*.ts",
     "*.tsx": "${capture}.tsx, ${capture}.*.tsx, ${capture}.*.ts"
