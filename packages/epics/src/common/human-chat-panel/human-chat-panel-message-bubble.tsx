@@ -1291,7 +1291,7 @@ function MxidMentionPill({
  * Render plaintext with Matrix MXIDs as pills showing room display names (`resolveMx`).
  * Non‑MXID `@handles` keep optional Discord-style pills (no colon in capture).
  */
-function renderTextWithMentions(
+export function renderTextWithMentions(
   text: string,
   resolveMx: (matrixUserId: string) => string,
   viewerMentionTintRow = false,

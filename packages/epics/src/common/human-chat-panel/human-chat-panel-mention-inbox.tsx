@@ -1,9 +1,11 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
 import { Bell, BellOff } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
+import { Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import {
@@ -11,7 +13,11 @@ import {
   isRedactedRoomMessageEvent,
   contentMentionsMatrixUser,
   stripMatrixReplyFallback,
+  usePersonBySub,
+  useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
+import { renderTextWithMentions } from './human-chat-panel-message-bubble';
+import { needsHyphaProfileResolutionForMatrixLabel } from './matrix-room-member-display';
 
 export type HumanChatPanelMentionTabProps = {
   client: MatrixClient | null;
@@ -25,6 +31,60 @@ function excerptFromRoomMessage(ev: MatrixEvent): string {
   const content = ev.getContent() as { body?: string } | undefined;
   const raw = typeof content?.body === 'string' ? content.body : '';
   return stripMatrixReplyFallback(raw).trim().slice(0, 280);
+}
+
+function formatPersonDisplayName(p: {
+  name?: string | null;
+  surname?: string | null;
+  nickname?: string | null;
+}): string {
+  const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
+  if (full) return full;
+  if (p.nickname?.trim()) return p.nickname.trim();
+  return '';
+}
+
+/**
+ * Sender line in @ inbox: match chat timeline — roster label first, then Hypha Person
+ * when Matrix still exposes bridged Privy technical display names.
+ */
+function MentionInboxSenderName({
+  matrixUserId,
+  syncLabel,
+}: {
+  matrixUserId: string;
+  syncLabel: string;
+}) {
+  const needs = needsHyphaProfileResolutionForMatrixLabel(syncLabel);
+  const { privyUserId: linkedSub, isLoading: loadingLink } =
+    useUserPrivyIdByMatrixId({
+      matrixUserId: needs ? matrixUserId : undefined,
+    });
+  const { person, isLoading: loadingPerson } = usePersonBySub({
+    sub: linkedSub,
+  });
+
+  const text = useMemo(() => {
+    const fromPerson = person ? formatPersonDisplayName(person) : '';
+    if (fromPerson.trim()) return fromPerson;
+    return syncLabel.trim() || matrixUserId;
+  }, [person, syncLabel, matrixUserId]);
+
+  const loading =
+    needs && (loadingLink || (Boolean(linkedSub) && loadingPerson));
+
+  if (loading) {
+    return (
+      <Skeleton
+        className="inline-block align-baseline"
+        loading
+        width={120}
+        height={14}
+      />
+    );
+  }
+
+  return <span className="truncate">{text}</span>;
 }
 
 function gatherMentionEvents(
@@ -84,7 +144,7 @@ export function HumanChatPanelMentionTab({
               const senderId = ev.getSender();
               if (!id || !senderId) return null;
               const excerpt = excerptFromRoomMessage(ev);
-              const senderLabel = resolveMemberLabel(senderId);
+              const senderSyncLabel = resolveMemberLabel(senderId);
               const ts = ev.getTs();
 
               return (
@@ -96,7 +156,10 @@ export function HumanChatPanelMentionTab({
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="min-w-0 truncate text-xs font-semibold text-foreground">
-                        {senderLabel}
+                        <MentionInboxSenderName
+                          matrixUserId={senderId}
+                          syncLabel={senderSyncLabel}
+                        />
                       </span>
                       <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
                         {format.dateTime(new Date(ts), {
@@ -107,8 +170,14 @@ export function HumanChatPanelMentionTab({
                         })}
                       </span>
                     </div>
-                    <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground">
-                      {excerpt || t('mentionInboxNoPreview')}
+                    <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground [&_a]:break-all [&_a]:font-medium [&_a]:text-primary [&_a]:underline">
+                      {excerpt
+                        ? renderTextWithMentions(
+                            excerpt,
+                            resolveMemberLabel,
+                            false,
+                          )
+                        : t('mentionInboxNoPreview')}
                     </p>
                   </button>
                 </li>
