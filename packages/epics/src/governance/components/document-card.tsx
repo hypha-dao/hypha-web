@@ -20,7 +20,6 @@ import {
 import { stripExchangeDetailsBlock } from '../utils/strip-exchange-details-block';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
-import { useScrollParallax } from '../../common/use-scroll-parallax';
 
 interface Document {
   id?: number;
@@ -33,6 +32,8 @@ interface Document {
 interface DocumentCardProps {
   isLoading: boolean;
   leadImage?: string;
+  parallaxY?: number;
+  reduceMotion?: boolean;
   creator?: Creator;
   badges?: BadgeItem[];
   interactions?: React.ReactNode;
@@ -112,16 +113,14 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   description,
   isLoading,
   leadImage,
+  parallaxY = 0,
+  reduceMotion = true,
   creator,
   badges,
   interactions,
   createdAt,
   status,
 }) => {
-  const { reduceMotion, parallaxY } = useScrollParallax({
-    rate: 0.12,
-    maxShiftPx: 18,
-  });
   const tCommon = useTranslations('Common');
   const format = useFormatter();
   const formatDateTime = (date: string | number | Date) => {
