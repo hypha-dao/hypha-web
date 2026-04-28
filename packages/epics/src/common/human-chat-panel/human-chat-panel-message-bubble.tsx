@@ -1114,18 +1114,50 @@ function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
   );
 }
 
-/** Characters often pasted immediately after a URL (not part of the href). */
-const TRAILING_URL_PUNCT_CHARS = new Set('.,;:!?)]}');
-
 /** Strip trailing punctuation — linear scan (avoid polynomial regex on user text). */
 function trimTrailingUrlPunctuation(raw: string): string {
-  let end = raw.length;
-  while (end > 0) {
-    const ch = raw[end - 1];
-    if (ch === undefined || !TRAILING_URL_PUNCT_CHARS.has(ch)) break;
-    end--;
+  let s = raw;
+  /** `. , ; : ! ?` — safe to peel from the end of a pasted URL. */
+  while (s.length > 0) {
+    const ch = s[s.length - 1];
+    if (
+      ch === '.' ||
+      ch === ',' ||
+      ch === ';' ||
+      ch === ':' ||
+      ch === '!' ||
+      ch === '?'
+    ) {
+      s = s.slice(0, -1);
+      continue;
+    }
+    break;
   }
-  return raw.slice(0, end);
+  /**
+   * `)` / `]` / `}` — strip only *extra* closers (e.g. `…Foo))` ), not the
+   * closing paren in `Function_(mathematics)` (opens > closes in prefix).
+   */
+  const stripExtraCloser = (
+    openCh: '(' | '[' | '{',
+    closeCh: ')' | ']' | '}',
+  ) => {
+    while (s.length > 0 && s[s.length - 1] === closeCh) {
+      const prefix = s.slice(0, -1);
+      let opens = 0;
+      let closes = 0;
+      for (let i = 0; i < prefix.length; i++) {
+        const c = prefix[i];
+        if (c === openCh) opens++;
+        else if (c === closeCh) closes++;
+      }
+      if (opens > closes) break;
+      s = prefix;
+    }
+  };
+  stripExtraCloser('(', ')');
+  stripExtraCloser('[', ']');
+  stripExtraCloser('{', '}');
+  return s;
 }
 
 function nextHttpSchemeIndex(text: string, from: number): number {

@@ -261,9 +261,9 @@
   "pnpm": {
     "overrides": {
       "@hono/node-server": ">=1.19.13 <2",
-      "@xmldom/xmldom": ">=0.9.9",
-      "dompurify": ">=3.4.0",
-      "hono": ">=4.12.12"
+      "@xmldom/xmldom": ">=0.9.9 <1",
+      "dompurify": ">=3.4.0 <4",
+      "hono": ">=4.12.12 <5"
     }
   }
 }

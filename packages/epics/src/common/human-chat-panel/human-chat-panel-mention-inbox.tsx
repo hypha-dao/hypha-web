@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, type KeyboardEvent } from 'react';
 import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
 import { Bell, BellOff } from 'lucide-react';
@@ -59,7 +59,10 @@ function MentionInboxSenderName({
   matrixUserId: string;
   syncLabel: string;
 }) {
-  const needs = needsHyphaProfileResolutionForMatrixLabel(syncLabel);
+  const needs =
+    needsHyphaProfileResolutionForMatrixLabel(syncLabel) ||
+    !syncLabel.trim() ||
+    syncLabel.trim() === matrixUserId;
   const { privyUserId: linkedSub, isLoading: loadingLink } =
     useUserPrivyIdByMatrixId({
       matrixUserId: needs ? matrixUserId : undefined,
@@ -89,6 +92,13 @@ function MentionInboxSenderName({
   }
 
   return <span className="truncate">{text}</span>;
+}
+
+function selectMentionRowKeyDown(e: KeyboardEvent, onSelect: () => void) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    onSelect();
+  }
 }
 
 function gatherMentionEvents(
@@ -158,10 +168,16 @@ export function HumanChatPanelMentionTab({
                   const senderSyncLabel = resolveMemberLabel(row.senderId);
                   return (
                     <li key={`${row.roomId}:${row.eventId}`}>
-                      <button
-                        type="button"
+                      <div
+                        role="button"
+                        tabIndex={0}
                         className="flex w-full flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md"
                         onClick={() => onSelectMessage(row.eventId, row.roomId)}
+                        onKeyDown={(e) =>
+                          selectMentionRowKeyDown(e, () =>
+                            onSelectMessage(row.eventId, row.roomId),
+                          )
+                        }
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="min-w-0 truncate text-[11px] font-medium text-muted-foreground">
@@ -193,7 +209,7 @@ export function HumanChatPanelMentionTab({
                               )
                             : t('mentionInboxNoPreview')}
                         </p>
-                      </button>
+                      </div>
                     </li>
                   );
                 })
@@ -207,10 +223,14 @@ export function HumanChatPanelMentionTab({
 
                   return (
                     <li key={id}>
-                      <button
-                        type="button"
+                      <div
+                        role="button"
+                        tabIndex={0}
                         className="flex w-full flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md"
                         onClick={() => onSelectMessage(id)}
+                        onKeyDown={(e) =>
+                          selectMentionRowKeyDown(e, () => onSelectMessage(id))
+                        }
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="min-w-0 truncate text-xs font-semibold text-foreground">
@@ -237,7 +257,7 @@ export function HumanChatPanelMentionTab({
                               )
                             : t('mentionInboxNoPreview')}
                         </p>
-                      </button>
+                      </div>
                     </li>
                   );
                 })}

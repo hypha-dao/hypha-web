@@ -126,6 +126,11 @@ export function useSpaceGroupCall(roomId: string | null) {
   const webRtcDiagCleanupRef = useRef<(() => void) | null>(null);
   /** Cleared in runCleanup — delayed second `placeOutgoingCalls` nudge after enter(). */
   const placeOutgoingNudgeTimerRef = useRef<number | null>(null);
+  /**
+   * Bumped when starting a join and when the stall watchdog fires — stale
+   * `await gc.enter()` must not run success paths after forced cleanup.
+   */
+  const joinEpochRef = useRef(0);
   /** Cleared on enter or teardown — abort endless "Connecting…" when enter() hangs. */
   const connectingStallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -484,6 +489,9 @@ export function useSpaceGroupCall(roomId: string | null) {
       setIdleRoomParticipantCount(0);
       setIdleInCallUserIds([]);
 
+      joinEpochRef.current += 1;
+      const joinEpoch = joinEpochRef.current;
+
       isJoiningRef.current = true;
       const newSessionId = newCallSessionId();
       setCallSessionId(newSessionId);
@@ -647,6 +655,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       clearConnectingStallTimer();
       connectingStallTimerRef.current = setTimeout(() => {
         clearConnectingStallTimer();
+        joinEpochRef.current += 1;
         if (groupCallRef.current !== gc) return;
         if (process.env.NODE_ENV === 'development') {
           console.warn('[hypha.group_call] enter() stalled — forcing cleanup', {
@@ -675,6 +684,10 @@ export function useSpaceGroupCall(roomId: string | null) {
         await gc.enter();
       } catch (e) {
         clearConnectingStallTimer();
+        if (joinEpoch !== joinEpochRef.current || groupCallRef.current !== gc) {
+          isJoiningRef.current = false;
+          return;
+        }
         isJoiningRef.current = false;
         const permissionLike = isPermissionLikeGroupCallError(e);
         if (permissionLike) {
@@ -699,6 +712,11 @@ export function useSpaceGroupCall(roomId: string | null) {
       }
 
       clearConnectingStallTimer();
+
+      if (joinEpoch !== joinEpochRef.current || groupCallRef.current !== gc) {
+        isJoiningRef.current = false;
+        return;
+      }
 
       /**
        * Voice→video: `enter()` used `initWithVideoMuted` from our audio intent earlier in

@@ -32,7 +32,9 @@ export function isHyphaDhoChatMessageUrl(href: string): boolean {
   try {
     const u = new URL(href);
     const hostOk =
-      u.hostname === 'localhost' || u.hostname.endsWith('hypha.earth');
+      u.hostname === 'localhost' ||
+      u.hostname.endsWith('hypha.earth') ||
+      (typeof window !== 'undefined' && u.origin === window.location.origin);
     if (!hostOk) return false;
     if (!/\/[^/]+\/dho\/[^/]+/.test(u.pathname)) return false;
     return u.searchParams.has('msg');

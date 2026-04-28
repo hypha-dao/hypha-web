@@ -43,9 +43,12 @@ export function matrixWebRtcFallbackIceAllowedFromEnv(): boolean {
  */
 export function matrixWebRtcIceCandidatePoolSizeFromEnv(): number {
   if (typeof process === 'undefined') return 0;
-  return parseNonNegativeInt(
-    process.env['NEXT_PUBLIC_MATRIX_WEBRTC_ICE_POOL_SIZE'],
-    0,
+  return Math.min(
+    parseNonNegativeInt(
+      process.env['NEXT_PUBLIC_MATRIX_WEBRTC_ICE_POOL_SIZE'],
+      0,
+    ),
+    255,
   );
 }
 
