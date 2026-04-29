@@ -215,18 +215,22 @@ export const CreateSignalForm = ({
     async (data: FormValues) => {
       try {
         const coherence = await createCoherence({ ...data });
-        if (isMatrixAvailable) {
-          try {
-            const { roomId } = await createRoom(coherence.title);
-            await updateCoherenceBySlug({ slug: coherence.slug!, roomId });
-          } catch (matrixError) {
-            console.warn(
-              'Signal created but Matrix room provisioning failed:',
-              matrixError,
-            );
-          }
-        } else {
+        const coherenceSlug = coherence.slug;
+        if (!isMatrixAvailable) {
           console.warn('Matrix client is unavailable — skipping room creation');
+        } else if (coherenceSlug) {
+          // Do not block successful form close/navigation on Matrix latency/failures.
+          void (async () => {
+            try {
+              const { roomId } = await createRoom(coherence.title);
+              await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
+            } catch (matrixError) {
+              console.warn(
+                'Signal created but Matrix room provisioning failed:',
+                matrixError,
+              );
+            }
+          })();
         }
         router.push(successfulUrl);
       } catch (error) {
