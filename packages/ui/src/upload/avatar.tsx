@@ -13,6 +13,8 @@ export type UploadAvatarProps = {
   defaultImage?: string;
   maxFileSize?: number;
   required?: boolean;
+  className?: string;
+  imageClassName?: string;
 };
 
 export const UploadAvatar = ({
@@ -22,6 +24,8 @@ export const UploadAvatar = ({
   defaultImage,
   maxFileSize,
   required = false,
+  className,
+  imageClassName,
 }: UploadAvatarProps) => {
   const [preview, setPreview] = React.useState<string | null>(
     defaultImage || null,
@@ -73,10 +77,11 @@ export const UploadAvatar = ({
         'group cursor-pointer relative',
         'flex justify-center items-center overflow-hidden',
         'min-w-9 w-9 h-9 rounded-xl bg-accent-5',
+        className,
       )}
     >
       <input {...getInputProps()} />
-      {preview && <PreviewImg src={preview} />}
+      {preview && <PreviewImg src={preview} className={imageClassName} />}
       <PreviewOverlay isVisible={!preview || isDragActive}>
         <div className="inline-block">
           {isDragActive ? (
