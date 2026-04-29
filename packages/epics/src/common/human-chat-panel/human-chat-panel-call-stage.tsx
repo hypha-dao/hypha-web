@@ -1327,6 +1327,7 @@ const FeedContent = ({
     isShare && !isPip ? nameFallback : isPip ? t('callYou') : resolvedName;
 
   const ref = useRef<HTMLVideoElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const stream = feed.stream;
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
@@ -1338,6 +1339,21 @@ const FeedContent = ({
     el.play().catch((err) => {
       if (process.env.NODE_ENV === 'development') {
         console.debug('[CallFeedTile] video play rejected', err);
+      }
+    });
+
+    return () => {
+      el.srcObject = null;
+    };
+  }, [stream]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.srcObject = stream;
+    el.play().catch((err) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('[CallFeedTile] audio play rejected', err);
       }
     });
 
@@ -1544,6 +1560,9 @@ const FeedContent = ({
               isPip ? 'max-w-[4.5rem]' : 'w-full max-w-[min(18rem,92%)]'
             }
           />
+          {!feed.isLocal() && !feed.isAudioMuted() ? (
+            <audio ref={audioRef} autoPlay playsInline aria-hidden />
+          ) : null}
         </div>
       )}
     </div>
