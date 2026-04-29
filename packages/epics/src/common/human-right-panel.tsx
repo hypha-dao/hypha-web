@@ -21,12 +21,6 @@ import {
   SidebarContent,
   SidebarFooter,
   useSidebar,
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from '@hypha-platform/ui';
 import {
   useMatrix,
@@ -56,6 +50,10 @@ import {
   isChatPanelVideoFile,
 } from './human-chat-panel/chat-panel-media-types';
 import { UseMembers } from '../spaces';
+import {
+  UserSpaceState,
+  useUserSpaceState,
+} from '../spaces/hooks/use-user-space-state';
 
 import {
   HumanChatPanelHeader,
@@ -210,6 +208,51 @@ type EditDraft = {
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
 
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
+const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
+const CHAT_HISTORY_MAX_ITEMS = 250;
+
+type PersistedUIMessage = Omit<UIMessage, 'timestamp'> & {
+  timestamp?: string;
+};
+
+function readPersistedChatHistory(roomId: string): UIMessage[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.sessionStorage.getItem(
+      `${CHAT_HISTORY_SESSION_PREFIX}${roomId}`,
+    );
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as PersistedUIMessage[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.slice(-CHAT_HISTORY_MAX_ITEMS).map((m) => ({
+      ...m,
+      timestamp: m.timestamp ? new Date(m.timestamp) : undefined,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function writePersistedChatHistory(
+  roomId: string,
+  messages: UIMessage[],
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const payload: PersistedUIMessage[] = messages
+      .slice(-CHAT_HISTORY_MAX_ITEMS)
+      .map((m) => ({
+        ...m,
+        timestamp: m.timestamp?.toISOString(),
+      }));
+    window.sessionStorage.setItem(
+      `${CHAT_HISTORY_SESSION_PREFIX}${roomId}`,
+      JSON.stringify(payload),
+    );
+  } catch {
+    // ignore
+  }
+}
 
 /** Reverse map for navigating from Matrix room id → DHO space slug (localStorage). */
 function readRoomIdToSpaceSlugFromStorage(): Map<string, string> {
@@ -514,6 +557,7 @@ type HumanRightPanelProps = {
 
 export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
+  const tSpaces = useTranslations('Spaces');
   const params = useParams<{ id?: string }>();
   const pathname = usePathname() ?? '';
   const router = useRouter();
@@ -549,8 +593,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   });
   const spaceMembers = spaceMembersResult?.data ?? [];
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
+  const { userState: userSpaceState, isLoading: isUserSpaceStateLoading } =
+    useUserSpaceState({
+      spaceSlug,
+      space,
+    });
   const { updateSpaceBySlug } = useSpaceMutationsWeb2Rsc(authToken);
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+
+  const hasSpaceChatAccess = userSpaceState === UserSpaceState.LOGGED_IN_SPACE;
+  const blockSpaceChatForMembership =
+    mode === 'space' && !isUserSpaceStateLoading && !hasSpaceChatAccess;
 
   const authTokenRef = useRef(authToken);
   authTokenRef.current = authToken;
@@ -611,6 +664,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     filmstrip: readCallFullViewPaneSplit('filmstrip'),
     speakerOnTop: readCallFullViewPaneSplit('speakerOnTop'),
   }));
+  const [callPopupOffset, setCallPopupOffset] = useState({ x: 0, y: 0 });
+  const callPopupDragStateRef = useRef<{
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    startOffsetX: number;
+    startOffsetY: number;
+  } | null>(null);
+  const [isDraggingCallPopup, setIsDraggingCallPopup] = useState(false);
   const callFullViewSplitContainerRef = useRef<HTMLDivElement | null>(null);
   /**
    * `HumanChatPanelCallStage` only mounts the expand control when
@@ -676,8 +738,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       mode === 'space' &&
       Boolean(roomId) &&
       isMatrixAvailable &&
+      isMatrixAuthenticated &&
+      hasSpaceChatAccess,
+    [
+      mode,
+      roomId,
+      isMatrixAvailable,
       isMatrixAuthenticated,
-    [mode, roomId, isMatrixAvailable, isMatrixAuthenticated],
+      hasSpaceChatAccess,
+    ],
   );
 
   const inSpaceCall =
@@ -832,6 +901,52 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setCallFullViewOpen(false);
     }
   }, [activeTab, canOpenCallFullView, spaceCallState, callFullViewOpen]);
+
+  const handleCallPopupDragStart = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!callFullViewOpen) return;
+      const target = e.target as HTMLElement;
+      if (target.closest('button,[data-call-popup-no-drag]')) {
+        return;
+      }
+      callPopupDragStateRef.current = {
+        pointerId: e.pointerId,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        startOffsetX: callPopupOffset.x,
+        startOffsetY: callPopupOffset.y,
+      };
+      setIsDraggingCallPopup(true);
+    },
+    [callFullViewOpen, callPopupOffset.x, callPopupOffset.y],
+  );
+
+  useEffect(() => {
+    if (!isDraggingCallPopup) return;
+    const onMove = (e: PointerEvent) => {
+      const drag = callPopupDragStateRef.current;
+      if (!drag) return;
+      if (e.pointerId !== drag.pointerId) return;
+      setCallPopupOffset({
+        x: drag.startOffsetX + (e.clientX - drag.startClientX),
+        y: drag.startOffsetY + (e.clientY - drag.startClientY),
+      });
+    };
+    const onEnd = (e: PointerEvent) => {
+      const drag = callPopupDragStateRef.current;
+      if (!drag || e.pointerId !== drag.pointerId) return;
+      callPopupDragStateRef.current = null;
+      setIsDraggingCallPopup(false);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onEnd);
+    window.addEventListener('pointercancel', onEnd);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onEnd);
+      window.removeEventListener('pointercancel', onEnd);
+    };
+  }, [isDraggingCallPopup]);
 
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
@@ -1188,6 +1303,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
   }, [spaceSlug, roomId]);
 
+  useEffect(() => {
+    if (mode !== 'space') return;
+    if (isUserSpaceStateLoading) return;
+    if (hasSpaceChatAccess) return;
+    if (roomId) {
+      matrixRef.current.unregisterRoomListener(roomId);
+    }
+    joinedRef.current = null;
+    setRoomId(null);
+    setMessages([]);
+    setReplyDraft(null);
+    setEditDraft(null);
+    setInput('');
+    setError(null);
+    setCallFullViewOpen(false);
+  }, [
+    mode,
+    roomId,
+    hasSpaceChatAccess,
+    isUserSpaceStateLoading,
+    setCallFullViewOpen,
+  ]);
+
   // Join space room when Matrix is ready (space mode)
   useEffect(() => {
     if (mode !== 'space') return;
@@ -1199,6 +1337,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return;
     if (!spaceSlug) return;
     if (isSpaceLoading) return;
+    if (isUserSpaceStateLoading) return;
+    if (!hasSpaceChatAccess) return;
 
     let cancelled = false;
     const { joinRoom, createRoom, getRoomMessages, client } = matrixRef.current;
@@ -1308,6 +1448,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isMatrixAuthenticated,
     spaceSlug,
     isSpaceLoading,
+    isUserSpaceStateLoading,
+    hasSpaceChatAccess,
     space?.chatRoomId,
   ]);
 
@@ -1552,6 +1694,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       unregisterRoomListener(roomId);
     };
   }, [roomId, isMatrixAvailable]);
+
+  useEffect(() => {
+    if (!roomId) return;
+    const cached = readPersistedChatHistory(roomId);
+    if (cached.length === 0) return;
+    setMessages((prev) => (prev.length > 0 ? prev : cached));
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!roomId) return;
+    writePersistedChatHistory(roomId, messages);
+  }, [roomId, messages]);
 
   // Keep message ids in sync when the SDK replaces provisional ~… ids with $… after send
   useEffect(() => {
@@ -2420,7 +2574,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {deleteError}
               </div>
             )}
-            {isJoining ? (
+            {mode === 'space' && isUserSpaceStateLoading ? (
+              <div className="flex flex-1 items-center justify-center">
+                <div className="text-sm text-muted-foreground">
+                  {t('loading')}
+                </div>
+              </div>
+            ) : blockSpaceChatForMembership ? (
+              <div className="mx-3 mt-3 rounded-md border border-border/60 bg-card/40 px-3 py-2 text-sm text-muted-foreground">
+                {tSpaces('accessDeniedNotMember')}
+              </div>
+            ) : isJoining ? (
               <div className="flex flex-1 items-center justify-center">
                 <div className="text-sm text-muted-foreground">
                   {t('loading')}
@@ -2490,7 +2654,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           </div>
         )}
       </SidebarContent>
-      {activeTab === 'chat' && (
+      {activeTab === 'chat' && !blockSpaceChatForMembership && (
         <SidebarFooter className="relative z-20 bg-background-2 p-0">
           <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
             <HumanChatPanelChatBar
@@ -2531,111 +2695,118 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         </SidebarFooter>
       )}
 
-      {callUiEnabled && canOpenCallFullView && (
-        <Dialog
-          open={callFullViewOpen}
-          onOpenChange={(o) => {
-            setCallFullViewOpen(o);
+      {callUiEnabled && canOpenCallFullView && callFullViewOpen && (
+        <div
+          className="fixed z-[120] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full flex-col overflow-hidden rounded-xl border border-border/50 bg-background p-0 text-foreground shadow-2xl"
+          style={{
+            left: '50%',
+            top: '50%',
+            transform: `translate(calc(-50% + ${callPopupOffset.x}px), calc(-50% + ${callPopupOffset.y}px))`,
           }}
+          role="dialog"
+          aria-modal="false"
+          aria-label={t('callFullView')}
         >
-          <DialogContent
-            className="fixed z-[100] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full !left-1/2 !top-1/2 -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border border-border/50 bg-background p-0 text-foreground shadow-2xl data-[state=open]:sm:rounded-xl data-[state=open]:duration-200 motion-reduce:data-[state=open]:duration-0 motion-reduce:data-[state=open]:zoom-in-100"
-            hideCloseButton
-            overlayClassName="fixed z-[99] !inset-0 !left-0 !right-0 !top-0 !bottom-0 border-0 bg-black/50 backdrop-blur-sm supports-[backdrop-filter]:bg-black/40 motion-reduce:backdrop-blur-none motion-reduce:animate-none"
-            onCloseAutoFocus={(e) => {
-              e.preventDefault();
-              callFullViewTriggerRef.current?.focus();
-            }}
+          <div
+            className="relative flex shrink-0 cursor-grab border-b border-border/50 bg-muted/40 px-3 py-2.5 pe-2 text-left active:cursor-grabbing"
+            onPointerDown={handleCallPopupDragStart}
           >
-            <DialogHeader className="relative flex shrink-0 border-b border-border/50 bg-muted/40 px-3 py-2.5 pe-2 text-left">
-              <DialogClose
-                className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={t('callFullViewClose')}
-                title={t('callFullViewClose')}
-              >
-                <Minimize2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-              </DialogClose>
-              <div className="min-w-0 flex-1 space-y-0.5 pe-10">
-                <DialogTitle className="text-sm font-medium tracking-tight text-foreground sm:text-left">
-                  {t('callFullView')}
-                </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground sm:text-left">
-                  {t('callFullViewDescription')}
-                </DialogDescription>
-              </div>
-              {showCallLayoutMenuInFullView && (
-                <div className="mt-1 w-full shrink-0 sm:mt-0 sm:w-auto sm:justify-self-end sm:pe-10">
-                  <HumanChatPanelCallFullViewLayoutMenu
-                    value={callFullViewLayoutMode}
-                    onValueChange={onCallFullViewLayoutChange}
-                  />
-                </div>
-              )}
-            </DialogHeader>
-            <div
-              ref={callFullViewSplitContainerRef}
-              className="flex min-h-0 min-w-0 flex-1 flex-col p-0"
-              role="presentation"
+            <button
+              type="button"
+              data-call-popup-no-drag
+              onClick={() => {
+                setCallFullViewOpen(false);
+                callFullViewTriggerRef.current?.focus();
+              }}
+              className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={t('callFullViewClose')}
+              title={t('callFullViewClose')}
             >
-              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-                <HumanChatPanelCallStage
-                  client={client}
-                  roomId={roomId}
-                  groupCall={spaceGroupCall}
-                  callKind={spaceCallKind}
-                  isLocalVideoMuted={spaceCallVideoMuted}
-                  isScreensharing={spaceCallScreensharing}
-                  callState={spaceCallState}
-                  feedVersion={spaceCallFeedVersion}
-                  activeSpeakerKey={spaceCallActiveSpeakerKey}
-                  currentUserId={currentUserId}
-                  inCallUserIds={spaceCallInCallUserIds}
-                  remoteMediaStall={spaceCallRemoteMediaStall}
-                  currentUserProfileAvatarUrl={currentUserAvatarUrl}
-                  resolveMemberLabel={resolveMentionMemberLabel}
-                  layout="fullView"
-                  fullViewOpen
-                  fullViewLayoutMode={callFullViewLayoutMode}
-                  fullViewPaneSplit={callFullViewPaneSplit}
-                  onFullViewPaneSplitChange={onCallFullViewPaneSplitChange}
-                  fullViewSplitContainerRef={callFullViewSplitContainerRef}
-                />
-              </div>
-              {spaceCallScreenshareError && spaceCallState === 'connected' && (
-                <div
-                  role="alert"
-                  className="flex shrink-0 items-start justify-center gap-2 border-t border-destructive/20 bg-destructive/10 px-3 py-1.5"
-                >
-                  <p className="min-w-0 flex-1 text-center text-xs text-destructive">
-                    {spaceCallScreenshareError === 'PERMISSION_DENIED'
-                      ? t('callErrorPermission')
-                      : t('callErrorScreenshare')}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={dismissSpaceCallScreenshareError}
-                    className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
-                  >
-                    {t('callScreenshareDismiss')}
-                  </button>
-                </div>
-              )}
-              <div className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 backdrop-blur-sm">
-                <HumanChatPanelInCallControls
-                  callState={spaceCallState}
-                  isMicrophoneMuted={spaceCallMicMuted}
-                  isLocalVideoMuted={spaceCallVideoMuted}
-                  isScreensharing={spaceCallScreensharing}
-                  onToggleMic={handleCallToggleMic}
-                  onToggleCamera={handleCallToggleCamera}
-                  onToggleScreenshare={handleCallToggleScreenshare}
-                  onLeave={handleCallLeave}
-                  variant="fullView"
-                />
-              </div>
+              <Minimize2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            </button>
+            <div className="min-w-0 flex-1 space-y-0.5 pe-10">
+              <p className="text-sm font-medium tracking-tight text-foreground sm:text-left">
+                {t('callFullView')}
+              </p>
+              <p className="text-xs text-muted-foreground sm:text-left">
+                {t('callFullViewDescription')}
+              </p>
             </div>
-          </DialogContent>
-        </Dialog>
+            {showCallLayoutMenuInFullView && (
+              <div
+                className="mt-1 w-full shrink-0 sm:mt-0 sm:w-auto sm:justify-self-end sm:pe-10"
+                data-call-popup-no-drag
+              >
+                <HumanChatPanelCallFullViewLayoutMenu
+                  value={callFullViewLayoutMode}
+                  onValueChange={onCallFullViewLayoutChange}
+                />
+              </div>
+            )}
+          </div>
+          <div
+            ref={callFullViewSplitContainerRef}
+            className="flex min-h-0 min-w-0 flex-1 flex-col p-0"
+            role="presentation"
+          >
+            <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+              <HumanChatPanelCallStage
+                client={client}
+                roomId={roomId}
+                groupCall={spaceGroupCall}
+                callKind={spaceCallKind}
+                isLocalVideoMuted={spaceCallVideoMuted}
+                isScreensharing={spaceCallScreensharing}
+                callState={spaceCallState}
+                feedVersion={spaceCallFeedVersion}
+                activeSpeakerKey={spaceCallActiveSpeakerKey}
+                currentUserId={currentUserId}
+                inCallUserIds={spaceCallInCallUserIds}
+                remoteMediaStall={spaceCallRemoteMediaStall}
+                currentUserProfileAvatarUrl={currentUserAvatarUrl}
+                resolveMemberLabel={resolveMentionMemberLabel}
+                layout="fullView"
+                fullViewOpen
+                fullViewLayoutMode={callFullViewLayoutMode}
+                fullViewPaneSplit={callFullViewPaneSplit}
+                onFullViewPaneSplitChange={onCallFullViewPaneSplitChange}
+                fullViewSplitContainerRef={callFullViewSplitContainerRef}
+              />
+            </div>
+            {spaceCallScreenshareError && spaceCallState === 'connected' && (
+              <div
+                role="alert"
+                className="flex shrink-0 items-start justify-center gap-2 border-t border-destructive/20 bg-destructive/10 px-3 py-1.5"
+              >
+                <p className="min-w-0 flex-1 text-center text-xs text-destructive">
+                  {spaceCallScreenshareError === 'PERMISSION_DENIED'
+                    ? t('callErrorPermission')
+                    : t('callErrorScreenshare')}
+                </p>
+                <button
+                  type="button"
+                  onClick={dismissSpaceCallScreenshareError}
+                  className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+                >
+                  {t('callScreenshareDismiss')}
+                </button>
+              </div>
+            )}
+            <div className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 backdrop-blur-sm">
+              <HumanChatPanelInCallControls
+                callState={spaceCallState}
+                isMicrophoneMuted={spaceCallMicMuted}
+                isLocalVideoMuted={spaceCallVideoMuted}
+                isScreensharing={spaceCallScreensharing}
+                onToggleMic={handleCallToggleMic}
+                onToggleCamera={handleCallToggleCamera}
+                onToggleScreenshare={handleCallToggleScreenshare}
+                onLeave={handleCallLeave}
+                variant="fullView"
+              />
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

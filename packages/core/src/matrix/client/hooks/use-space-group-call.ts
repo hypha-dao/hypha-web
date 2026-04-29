@@ -44,6 +44,7 @@ const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
  * side with media until reload. Nudge once after enter + optional delayed retry.
  */
 const PLACE_OUTGOING_DELAYED_MS = 600;
+const PLACE_OUTGOING_RETRY_MS = [1500, 4000, 8000] as const;
 
 function nudgeGroupCallPlaceOutgoing(gc: MatrixSdk.GroupCall): void {
   const fn = (gc as unknown as { placeOutgoingCalls?: () => void })
@@ -128,6 +129,8 @@ export function useSpaceGroupCall(roomId: string | null) {
   const groupCallListenerCleanupRef = useRef<(() => void) | null>(null);
   /** Cleared in runCleanup — delayed second `placeOutgoingCalls` nudge after enter(). */
   const placeOutgoingNudgeTimerRef = useRef<number | null>(null);
+  /** Additional pairwise call-placement retries for rejoin/refresh races. */
+  const placeOutgoingRetryTimerRefs = useRef<number[]>([]);
   /**
    * Bumped when starting a join and when the stall watchdog fires — stale
    * `await gc.enter()` must not run success paths after forced cleanup.
@@ -198,6 +201,12 @@ export function useSpaceGroupCall(roomId: string | null) {
     if (placeOutgoingNudgeTimerRef.current != null) {
       clearTimeout(placeOutgoingNudgeTimerRef.current);
       placeOutgoingNudgeTimerRef.current = null;
+    }
+    if (placeOutgoingRetryTimerRefs.current.length > 0) {
+      for (const id of placeOutgoingRetryTimerRefs.current) {
+        clearTimeout(id);
+      }
+      placeOutgoingRetryTimerRefs.current = [];
     }
     webRtcDiagCleanupRef.current?.();
     webRtcDiagCleanupRef.current = null;
@@ -708,6 +717,19 @@ export function useSpaceGroupCall(roomId: string | null) {
       const gci = gc as unknown as GroupCallPreEnterMute;
       gci.initWithVideoMuted = kind === 'audio';
       gci.initWithAudioMuted = false;
+      /**
+       * Refresh stale local member state after hard reloads. If the prior tab died
+       * mid-call, old device entries can survive briefly and cause asymmetric media.
+       */
+      try {
+        await Promise.resolve(
+          (
+            gc as MatrixSdk.GroupCall & { cleanMemberState?: () => void }
+          ).cleanMemberState?.(),
+        );
+      } catch {
+        /* best-effort pre-enter cleanup */
+      }
 
       groupCallRef.current = gc;
       activeGroupCallRoomIdRef.current = roomId;
@@ -811,6 +833,13 @@ export function useSpaceGroupCall(roomId: string | null) {
           if (groupCallRef.current !== gc) return;
           nudgeGroupCallPlaceOutgoing(gc);
         }, PLACE_OUTGOING_DELAYED_MS);
+        placeOutgoingRetryTimerRefs.current = PLACE_OUTGOING_RETRY_MS.map(
+          (delayMs) =>
+            window.setTimeout(() => {
+              if (groupCallRef.current !== gc) return;
+              nudgeGroupCallPlaceOutgoing(gc);
+            }, delayMs),
+        );
       }
 
       webRtcDiagCleanupRef.current?.();
