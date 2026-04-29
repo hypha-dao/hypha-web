@@ -1331,6 +1331,7 @@ const FeedContent = ({
   const stream = feed.stream;
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
+  const [streamBindVersion, rebindStream] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
     const el = ref.current;
@@ -1345,7 +1346,7 @@ const FeedContent = ({
     return () => {
       el.srcObject = null;
     };
-  }, [stream]);
+  }, [stream, streamBindVersion]);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -1360,18 +1361,22 @@ const FeedContent = ({
     return () => {
       el.srcObject = null;
     };
-  }, [stream]);
+  }, [stream, streamBindVersion]);
 
   useEffect(() => {
     const onFeedVisualChange = () => {
       rerenderOnFeed();
     };
     feed.on(CallFeedEvent.MuteStateChanged, onFeedVisualChange);
-    feed.on(CallFeedEvent.NewStream, onFeedVisualChange);
+    const onFeedStreamChange = () => {
+      rebindStream();
+      rerenderOnFeed();
+    };
+    feed.on(CallFeedEvent.NewStream, onFeedStreamChange);
     feed.on(CallFeedEvent.Speaking, onFeedVisualChange);
     return () => {
       feed.removeListener(CallFeedEvent.MuteStateChanged, onFeedVisualChange);
-      feed.removeListener(CallFeedEvent.NewStream, onFeedVisualChange);
+      feed.removeListener(CallFeedEvent.NewStream, onFeedStreamChange);
       feed.removeListener(CallFeedEvent.Speaking, onFeedVisualChange);
     };
   }, [feed]);

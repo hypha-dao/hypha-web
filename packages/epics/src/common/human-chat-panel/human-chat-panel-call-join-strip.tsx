@@ -44,6 +44,7 @@ export function HumanChatPanelCallJoinStrip({
     deviceCount > 0 ? t('callJoinWithAudio') : t('callStartWithAudio');
   const videoTitle =
     deviceCount > 0 ? t('callJoinWithVideo') : t('callStartWithVideo');
+  const showAudioButton = !(hasDurable && deviceCount === 0);
 
   return (
     <div
@@ -80,21 +81,23 @@ export function HumanChatPanelCallJoinStrip({
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={onJoinAudio}
-            disabled={disabled || busy}
-            className={cn(
-              'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors',
-              (disabled || busy) && 'cursor-not-allowed opacity-50',
-              !disabled && !busy && 'hover:bg-muted',
-            )}
-            title={audioTitle}
-            aria-label={audioTitle}
-          >
-            <Phone className="h-3.5 w-3.5 shrink-0" />
-            {audioLabel}
-          </button>
+          {showAudioButton ? (
+            <button
+              type="button"
+              onClick={onJoinAudio}
+              disabled={disabled || busy}
+              className={cn(
+                'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors',
+                (disabled || busy) && 'cursor-not-allowed opacity-50',
+                !disabled && !busy && 'hover:bg-muted',
+              )}
+              title={audioTitle}
+              aria-label={audioTitle}
+            >
+              <Phone className="h-3.5 w-3.5 shrink-0" />
+              {audioLabel}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onJoinVideo}
