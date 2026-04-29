@@ -225,8 +225,9 @@ export function useSpaceGroupCall(roomId: string | null) {
       const p = (async () => {
         try {
           await Promise.resolve(
-            (gc as MatrixSdk.GroupCall & { cleanMemberState?: () => void })
-              .cleanMemberState?.(),
+            (
+              gc as MatrixSdk.GroupCall & { cleanMemberState?: () => void }
+            ).cleanMemberState?.(),
           );
           await Promise.resolve((gc as MatrixSdk.GroupCall).leave());
         } catch (err) {

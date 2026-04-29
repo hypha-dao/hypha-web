@@ -151,10 +151,10 @@ async function ensureRoomCallPowerLevels(
 ): Promise<void> {
   try {
     const current =
-      (client.getRoom(roomId)?.currentState.getStateEvents(
-        MatrixSdk.EventType.RoomPowerLevels,
-        '',
-      )?.getContent() as { events?: Record<string, number> } | undefined) ??
+      (client
+        .getRoom(roomId)
+        ?.currentState.getStateEvents(MatrixSdk.EventType.RoomPowerLevels, '')
+        ?.getContent() as { events?: Record<string, number> } | undefined) ??
       ((await client.getStateEvent(
         roomId,
         MatrixSdk.EventType.RoomPowerLevels,
