@@ -26,6 +26,7 @@ import {
 
 import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import { useAiPanel } from './human-chat-panel-context';
 
 type ChatUIMessage = {
   id: string;
@@ -54,6 +55,7 @@ export function AiLeftPanel() {
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const { state: sidebarState } = useSidebar();
   const isCollapsed = sidebarState === 'collapsed';
+  const { overlayVisible, showAiOverlay, hideAiOverlay } = useAiPanel();
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
   );
@@ -229,7 +231,7 @@ export function AiLeftPanel() {
             />
           </div>
         </SidebarHeader>
-        <SidebarContent className="bg-background-2">
+        <SidebarContent className="relative bg-background-2">
           <SidebarGroup className="p-2">
             <SidebarGroupContent>
               <SidebarMenu className="items-center">
@@ -250,6 +252,29 @@ export function AiLeftPanel() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+          {overlayVisible ? (
+            <div
+              className="absolute left-[calc(100%+0.5rem)] top-2 z-[60] w-[272px] overflow-hidden rounded-xl border border-border/90 bg-background-2 shadow-2xl"
+              onMouseEnter={showAiOverlay}
+              onMouseLeave={hideAiOverlay}
+            >
+              <AiPanelHeader showCloseButton={false} />
+              <div className="p-2">
+                <SidebarMenu>
+                  {sectionNavItems.map((item) => (
+                    <SidebarMenuItem key={`overlay-${item.key}`}>
+                      <SidebarMenuButton asChild isActive={item.active}>
+                        <Link href={item.href} aria-label={item.label}>
+                          <item.icon />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </div>
+            </div>
+          ) : null}
         </SidebarContent>
       </>
     );

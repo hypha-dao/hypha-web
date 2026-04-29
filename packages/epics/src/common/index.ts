@@ -22,6 +22,7 @@ export {
   AiSidebarTrigger,
   HumanSidebarTrigger,
 } from './panel-wrap-layout';
+export { useAiPanel } from './human-chat-panel-context';
 export {
   useMainColumnScrollY,
   getMainColumnScrollY,

@@ -47,12 +47,13 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
     setLeftOverlayVisible(false);
   }, []);
   const showLeftOverlay = useCallback(() => {
+    if (leftOpen) return;
     if (leftOverlayHideTimeoutRef.current) {
       clearTimeout(leftOverlayHideTimeoutRef.current);
       leftOverlayHideTimeoutRef.current = null;
     }
     setLeftOverlayVisible(true);
-  }, []);
+  }, [leftOpen]);
   const hideLeftOverlay = useCallback(() => {
     if (leftOverlayHideTimeoutRef.current) {
       clearTimeout(leftOverlayHideTimeoutRef.current);
@@ -65,11 +66,8 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
   const toggleLeftFromTrigger = useCallback(() => {
     setLeftOpen((prev) => {
       const next = !prev;
-      if (next) {
-        setLeftOverlayVisible(true);
-      } else {
-        setLeftOverlayVisible(false);
-      }
+      // Trigger click controls chat panel visibility; hover controls overlay rail expansion.
+      setLeftOverlayVisible(false);
       return next;
     });
   }, []);
@@ -110,12 +108,11 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, overlayVisible, toggle, showAiOverlay, hideAiOverlay } =
-    useAiPanel();
+  const { open, overlayVisible, toggle, showAiOverlay, hideAiOverlay } = useAiPanel();
   const t = useTranslations('AiPanel');
   const isSpace = useIsSpaceContext();
 
-  if (!isSpace) return null;
+  if (!isSpace || open) return null;
 
   return (
     <button
@@ -230,7 +227,7 @@ export function PanelWrapLayout({
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
 
-  const leftExpanded = Boolean(leftOpen && leftOverlayVisible);
+  const leftExpanded = Boolean(leftOpen);
   const sidebarLeftPx = effectiveLeft
     ? leftExpanded
       ? '320px'
