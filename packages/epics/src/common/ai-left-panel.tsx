@@ -7,10 +7,9 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Coins, FileCheck2, Radio, UsersRound } from 'lucide-react';
+import { Coins, FileCheck2, Radio, Sparkles, UsersRound } from 'lucide-react';
 import {
   Space,
-  DEFAULT_SPACE_AVATAR_IMAGE,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
 import useSWR from 'swr';
@@ -80,7 +79,7 @@ export function AiLeftPanel() {
   const activeSpaceIcon =
     activeSpaceFromList?.logoUrl?.trim() ||
     activeSpaces[0]?.logoUrl?.trim() ||
-    DEFAULT_SPACE_AVATAR_IMAGE;
+    null;
   const activeSpaceTitle =
     activeSpaceFromList?.title?.trim() ||
     activeSpaces[0]?.title?.trim() ||
@@ -286,12 +285,18 @@ export function AiLeftPanel() {
       <>
         <SidebarHeader className="min-h-[var(--menu-top-height,65px)] items-center justify-center border-b border-border bg-background-2 p-2">
           <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={activeSpaceIcon}
-              alt={activeSpaceTitle}
-              className="h-full w-full object-cover"
-            />
+            {activeSpaceIcon ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={activeSpaceIcon}
+                  alt={activeSpaceTitle}
+                  className="h-full w-full object-cover"
+                />
+              </>
+            ) : (
+              <Sparkles className="h-4 w-4 text-muted-foreground" />
+            )}
           </div>
         </SidebarHeader>
         <SidebarContent
