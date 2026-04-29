@@ -229,7 +229,7 @@ export function PanelWrapLayout({
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
 
-  const leftExpanded = Boolean(leftOpen);
+  const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
   const sidebarLeftPx = effectiveLeft
     ? leftExpanded
       ? '320px'
