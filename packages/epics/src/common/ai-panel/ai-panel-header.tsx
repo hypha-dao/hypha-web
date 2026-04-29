@@ -46,7 +46,11 @@ function getDisplayIcon(space?: Space): string {
   return space?.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
 }
 
-export function AiPanelHeader({ showCloseButton = true }: { showCloseButton?: boolean }) {
+export function AiPanelHeader({
+  showCloseButton = true,
+}: {
+  showCloseButton?: boolean;
+}) {
   const { closeAiPanel } = useAiPanel();
   const t = useTranslations('AiPanel');
   const tNavigation = useTranslations('Navigation');
@@ -106,7 +110,8 @@ export function AiPanelHeader({ showCloseButton = true }: { showCloseButton?: bo
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const currentTitle = activeSpace?.title?.trim() || t('title');
   const currentIcon = getDisplayIcon(activeSpace);
-  const hasSpaces = groupedSpaces.ecosystem.length + groupedSpaces.others.length > 0;
+  const hasSpaces =
+    groupedSpaces.ecosystem.length + groupedSpaces.others.length > 0;
   const fallbackTitle = activeSpace?.title?.trim() || t('title');
 
   return (
@@ -148,26 +153,26 @@ export function AiPanelHeader({ showCloseButton = true }: { showCloseButton?: bo
               <DropdownMenuItem disabled>{fallbackTitle}</DropdownMenuItem>
             ) : null}
             {!isAllSpacesLoading &&
-            !allSpacesError &&
-            hasSpaces &&
-            groupedSpaces.ecosystem.map((space) => (
-              <DropdownMenuItem key={space.id} asChild>
-                <Link
-                  href={`/${lang}/dho/${space.slug}/agreements`}
-                  className="flex items-center gap-2"
-                >
-                  <span className="h-6 w-6 overflow-hidden rounded-md ring-1 ring-border/60">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getDisplayIcon(space)}
-                      alt={space.title}
-                      className="h-full w-full object-cover"
-                    />
-                  </span>
-                  <span className="truncate">{space.title}</span>
-                </Link>
-              </DropdownMenuItem>
-            ))}
+              !allSpacesError &&
+              hasSpaces &&
+              groupedSpaces.ecosystem.map((space) => (
+                <DropdownMenuItem key={space.id} asChild>
+                  <Link
+                    href={`/${lang}/dho/${space.slug}/agreements`}
+                    className="flex items-center gap-2"
+                  >
+                    <span className="h-6 w-6 overflow-hidden rounded-md ring-1 ring-border/60">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getDisplayIcon(space)}
+                        alt={space.title}
+                        className="h-full w-full object-cover"
+                      />
+                    </span>
+                    <span className="truncate">{space.title}</span>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
             {!isAllSpacesLoading &&
             !allSpacesError &&
             groupedSpaces.ecosystem.length > 0 &&
@@ -175,26 +180,26 @@ export function AiPanelHeader({ showCloseButton = true }: { showCloseButton?: bo
               <DropdownMenuSeparator />
             ) : null}
             {!isAllSpacesLoading &&
-            !allSpacesError &&
-            hasSpaces &&
-            groupedSpaces.others.map((space) => (
-              <DropdownMenuItem key={space.id} asChild>
-                <Link
-                  href={`/${lang}/dho/${space.slug}/agreements`}
-                  className="flex items-center gap-2"
-                >
-                  <span className="h-6 w-6 overflow-hidden rounded-md ring-1 ring-border/60">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getDisplayIcon(space)}
-                      alt={space.title}
-                      className="h-full w-full object-cover"
-                    />
-                  </span>
-                  <span className="truncate">{space.title}</span>
-                </Link>
-              </DropdownMenuItem>
-            ))}
+              !allSpacesError &&
+              hasSpaces &&
+              groupedSpaces.others.map((space) => (
+                <DropdownMenuItem key={space.id} asChild>
+                  <Link
+                    href={`/${lang}/dho/${space.slug}/agreements`}
+                    className="flex items-center gap-2"
+                  >
+                    <span className="h-6 w-6 overflow-hidden rounded-md ring-1 ring-border/60">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getDisplayIcon(space)}
+                        alt={space.title}
+                        className="h-full w-full object-cover"
+                      />
+                    </span>
+                    <span className="truncate">{space.title}</span>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
