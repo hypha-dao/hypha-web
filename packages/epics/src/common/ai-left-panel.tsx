@@ -7,13 +7,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import {
-  FileText,
-  Landmark,
-  PanelLeftClose,
-  RadioTower,
-  Users,
-} from 'lucide-react';
+import { FileText, Landmark, RadioTower, Users } from 'lucide-react';
 import {
   Space,
   DEFAULT_SPACE_AVATAR_IMAGE,
@@ -65,7 +59,6 @@ export function AiLeftPanel() {
     overlayVisible,
     showAiOverlay,
     hideAiOverlay,
-    closeAiPanel,
   } = useAiPanel();
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
@@ -253,43 +246,11 @@ export function AiLeftPanel() {
       return (
         <>
           <SidebarHeader className="bg-background-2 p-0">
-            <div className="flex min-h-[var(--menu-top-height,65px)] border-b border-border bg-background-2">
-              <div className="flex w-[72px] shrink-0 items-center justify-center border-r border-border px-2">
-                <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={activeSpaceIcon}
-                    alt={activeSpaceTitle}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              </div>
-              <div className="min-w-0 flex-1">
-                <AiPanelHeader showCloseButton={false} />
-              </div>
-            </div>
+            <AiPanelHeader showCloseButton={false} />
           </SidebarHeader>
           <SidebarContent className="bg-background-2">
-            <div className="flex h-full">
-              <div className="w-[72px] shrink-0 border-r border-border bg-background-2 p-2 pt-4">
-                <SidebarMenu className="items-center gap-2">
-                  {sectionNavItems.map((item) => (
-                    <SidebarMenuItem key={item.key}>
-                      <SidebarMenuButton
-                        asChild
-                        tooltip={item.label}
-                        isActive={item.active}
-                        className="h-10 w-10 justify-center rounded-xl p-0"
-                      >
-                        <Link href={item.href} aria-label={item.label}>
-                          <item.icon className="h-5 w-5" strokeWidth={2.1} />
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </div>
-              <div className="min-w-0 flex-1 p-2">
+            <SidebarGroup className="p-2 pt-4">
+              <SidebarGroupContent>
                 <SidebarMenu>
                   {sectionNavItems.map((item) => (
                     <SidebarMenuItem key={`overlay-${item.key}`}>
@@ -302,8 +263,8 @@ export function AiLeftPanel() {
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
-              </div>
-            </div>
+              </SidebarGroupContent>
+            </SidebarGroup>
           </SidebarContent>
         </>
       );
@@ -349,18 +310,8 @@ export function AiLeftPanel() {
 
   return (
     <>
-      <SidebarHeader className="border-b border-border bg-background-2 p-2">
-        <div className="flex items-center justify-end">
-          <button
-            type="button"
-            onClick={closeAiPanel}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            title={t('hidePanel')}
-            aria-label={t('closePanel')}
-          >
-            <PanelLeftClose className="h-3.5 w-3.5" />
-          </button>
-        </div>
+      <SidebarHeader className="bg-background-2 p-0">
+        <AiPanelHeader />
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
         {error && (
