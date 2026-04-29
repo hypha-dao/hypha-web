@@ -8,10 +8,7 @@ import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Coins, FileCheck2, Radio, Sparkles, UsersRound } from 'lucide-react';
-import {
-  Space,
-  useSpacesBySlugs,
-} from '@hypha-platform/core/client';
+import { Space, useSpacesBySlugs } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import {
   SidebarHeader,
