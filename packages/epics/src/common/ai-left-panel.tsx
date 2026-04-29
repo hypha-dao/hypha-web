@@ -60,6 +60,14 @@ export function AiLeftPanel() {
   const activeSpaceIcon =
     activeSpaces[0]?.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
   const activeSpaceTitle = activeSpaces[0]?.title?.trim() || t('title');
+  const isSectionActive = useCallback(
+    (section: 'coherence' | 'agreements' | 'members' | 'treasury') => {
+      if (!spaceSlug) return false;
+      const base = `/${lang}/dho/${spaceSlug}/${section}`;
+      return pathname === base || pathname.startsWith(`${base}/`);
+    },
+    [lang, pathname, spaceSlug],
+  );
 
   const sectionNavItems = useMemo(() => {
     if (!spaceSlug) return [];
@@ -69,31 +77,31 @@ export function AiLeftPanel() {
         label: tCoherence('signals'),
         icon: Radio,
         href: `/${lang}/dho/${spaceSlug}/coherence`,
-        active: pathname.includes('/coherence'),
+        active: isSectionActive('coherence'),
       },
       {
         key: 'agreements',
         label: tCommon('Agreements'),
         icon: FileCheck2,
         href: `/${lang}/dho/${spaceSlug}/agreements`,
-        active: pathname.includes('/agreements'),
+        active: isSectionActive('agreements'),
       },
       {
         key: 'members',
         label: tCommon('Members'),
         icon: UsersRound,
         href: `/${lang}/dho/${spaceSlug}/members`,
-        active: pathname.includes('/members'),
+        active: isSectionActive('members'),
       },
       {
         key: 'treasury',
         label: tCommon('Treasury'),
         icon: HandCoins,
         href: `/${lang}/dho/${spaceSlug}/treasury`,
-        active: pathname.includes('/treasury'),
+        active: isSectionActive('treasury'),
       },
     ];
-  }, [lang, pathname, spaceSlug, tCommon, tCoherence]);
+  }, [isSectionActive, lang, spaceSlug, tCommon, tCoherence]);
 
   const [input, setInput] = useState('');
 
