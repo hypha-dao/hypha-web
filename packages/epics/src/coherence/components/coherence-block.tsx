@@ -49,7 +49,7 @@ export function CoherenceBlock({
   }, [refreshSignals]);
 
   const chatBasePath = React.useMemo(
-    () => `/${lang}/dho/${spaceSlug}/coherence/chat`,
+    () => `/${lang}/dho/${spaceSlug}/signals/chat`,
     [lang, spaceSlug],
   );
 

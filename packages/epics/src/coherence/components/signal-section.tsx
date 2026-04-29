@@ -55,7 +55,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
     pageSize,
   });
 
-  const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
+  const createSignalHref = `/${lang}/dho/${id}/signals/new-signal`;
 
   return (
     <div className="flex w-full flex-col items-center justify-around gap-4">
