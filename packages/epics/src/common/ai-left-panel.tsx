@@ -246,7 +246,7 @@ export function AiLeftPanel() {
       return (
         <>
           <SidebarHeader className="bg-background-2 p-0">
-            <AiPanelHeader showCloseButton={false} />
+            <AiPanelHeader />
           </SidebarHeader>
           <SidebarContent
             className="bg-background-2"
