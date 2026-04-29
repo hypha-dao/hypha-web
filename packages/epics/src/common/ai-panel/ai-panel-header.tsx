@@ -13,14 +13,17 @@ import {
   DropdownMenuTrigger,
 } from '@hypha-platform/ui';
 import {
+  Address,
   DEFAULT_SPACE_AVATAR_IMAGE,
   Space,
+  useMe,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
 import { usePathname, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAiPanel } from '../human-chat-panel-context';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
+import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 
 function getEcosystemRootId(
   space: Space,
@@ -63,6 +66,10 @@ export function AiPanelHeader({
   const { spaces: activeSpaces } = useSpacesBySlugs(
     activeSpaceSlug ? [activeSpaceSlug] : [],
   );
+  const { person } = useMe();
+  const { web3SpaceIds } = useMemberWeb3SpaceIds({
+    personAddress: person?.address as Address | undefined,
+  });
   const {
     data: allSpaces = [],
     error: allSpacesError,
@@ -87,14 +94,21 @@ export function AiPanelHeader({
   );
 
   const groupedSpaces = useMemo(() => {
+    const memberSpaceIds = new Set(
+      (web3SpaceIds ?? []).map((id) => id.toString()),
+    );
+    const mySpaces = allSpaces.filter((space) => {
+      if (space.web3SpaceId == null) return false;
+      return memberSpaceIds.has(String(space.web3SpaceId));
+    });
     if (!activeSpace) {
-      return { ecosystem: [] as Space[], others: allSpaces };
+      return { ecosystem: [] as Space[], others: mySpaces };
     }
-    const spacesById = new Map(allSpaces.map((space) => [space.id, space]));
+    const spacesById = new Map(mySpaces.map((space) => [space.id, space]));
     const activeRootId = getEcosystemRootId(activeSpace, spacesById);
     const ecosystem: Space[] = [];
     const others: Space[] = [];
-    for (const space of allSpaces) {
+    for (const space of mySpaces) {
       if (getEcosystemRootId(space, spacesById) === activeRootId) {
         ecosystem.push(space);
       } else {
@@ -105,7 +119,7 @@ export function AiPanelHeader({
     ecosystem.sort(byTitle);
     others.sort(byTitle);
     return { ecosystem, others };
-  }, [activeSpace, allSpaces]);
+  }, [activeSpace, allSpaces, web3SpaceIds]);
 
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const currentTitle = activeSpace?.title?.trim() || t('title');
@@ -132,7 +146,7 @@ export function AiPanelHeader({
               className="inline-flex min-w-0 items-center gap-1 rounded-md px-2 py-1.5 text-left text-sm font-semibold text-foreground transition-colors hover:bg-muted"
               aria-label={tNavigation('mySpaces')}
             >
-              <span className="truncate">{currentTitle}</span>
+              <span className="max-w-[11.5rem] truncate">{currentTitle}</span>
               <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
@@ -159,7 +173,7 @@ export function AiPanelHeader({
                 <DropdownMenuItem key={space.id} asChild>
                   <Link
                     href={`/${lang}/dho/${space.slug}/agreements`}
-                    className="flex items-center gap-2"
+                    className="flex min-w-0 items-center gap-2"
                   >
                     <span className="h-6 w-6 overflow-hidden rounded-md ring-1 ring-border/60">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -169,7 +183,9 @@ export function AiPanelHeader({
                         className="h-full w-full object-cover"
                       />
                     </span>
-                    <span className="truncate">{space.title}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {space.title}
+                    </span>
                   </Link>
                 </DropdownMenuItem>
               ))}
@@ -186,7 +202,7 @@ export function AiPanelHeader({
                 <DropdownMenuItem key={space.id} asChild>
                   <Link
                     href={`/${lang}/dho/${space.slug}/agreements`}
-                    className="flex items-center gap-2"
+                    className="flex min-w-0 items-center gap-2"
                   >
                     <span className="h-6 w-6 overflow-hidden rounded-md ring-1 ring-border/60">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -196,7 +212,9 @@ export function AiPanelHeader({
                         className="h-full w-full object-cover"
                       />
                     </span>
-                    <span className="truncate">{space.title}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {space.title}
+                    </span>
                   </Link>
                 </DropdownMenuItem>
               ))}
