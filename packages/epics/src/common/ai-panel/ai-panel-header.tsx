@@ -129,7 +129,7 @@ export function AiPanelHeader({
   const fallbackTitle = activeSpace?.title?.trim() || t('title');
 
   return (
-    <div className="flex min-h-[var(--menu-top-height,65px)] min-w-0 flex-shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3">
+    <div className="flex h-[var(--menu-top-height,65px)] min-w-0 flex-shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-2">
       <div className="flex min-w-0 shrink-0 items-center gap-2">
         <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
           {/* eslint-disable-next-line @next/next/no-img-element */}

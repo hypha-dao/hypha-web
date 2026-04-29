@@ -94,12 +94,12 @@ export const MenuTop = ({
               <Link
                 href={logoHref}
                 target={hrefTarget}
-                className="inline-block max-w-[22rem] truncate text-5xl font-light leading-none tracking-tight text-foreground"
+                className="inline-block max-w-[22rem] truncate text-3xl font-medium leading-none tracking-tight text-foreground"
               >
                 {logoText}
               </Link>
             ) : (
-              <span className="inline-block max-w-[22rem] truncate text-5xl font-light leading-none tracking-tight text-foreground">
+              <span className="inline-block max-w-[22rem] truncate text-3xl font-medium leading-none tracking-tight text-foreground">
                 {logoText}
               </span>
             )

@@ -271,8 +271,8 @@ export function AiLeftPanel() {
           </SidebarHeader>
           <SidebarContent className="bg-background-2">
             <div className="flex h-full">
-              <div className="w-[72px] shrink-0 border-r border-border bg-background-2 p-2">
-                <SidebarMenu className="items-center">
+              <div className="w-[72px] shrink-0 border-r border-border bg-background-2 p-2 pt-4">
+                <SidebarMenu className="items-center gap-2">
                   {sectionNavItems.map((item) => (
                     <SidebarMenuItem key={item.key}>
                       <SidebarMenuButton
@@ -311,7 +311,7 @@ export function AiLeftPanel() {
 
     return (
       <>
-        <SidebarHeader className="items-center bg-background-2 p-2">
+        <SidebarHeader className="min-h-[var(--menu-top-height,65px)] items-center justify-center border-b border-border bg-background-2 p-2">
           <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -322,9 +322,9 @@ export function AiLeftPanel() {
           </div>
         </SidebarHeader>
         <SidebarContent className="relative overflow-visible bg-background-2">
-          <SidebarGroup className="p-2">
+          <SidebarGroup className="p-2 pt-4">
             <SidebarGroupContent>
-              <SidebarMenu className="items-center">
+              <SidebarMenu className="items-center gap-2">
                 {sectionNavItems.map((item) => (
                   <SidebarMenuItem key={item.key}>
                     <SidebarMenuButton
