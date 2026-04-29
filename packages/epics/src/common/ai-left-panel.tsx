@@ -7,7 +7,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { FileText, Landmark, RadioTower, Users } from 'lucide-react';
+import { Coins, FileCheck2, Radio, UsersRound } from 'lucide-react';
 import {
   Space,
   DEFAULT_SPACE_AVATAR_IMAGE,
@@ -100,28 +100,28 @@ export function AiLeftPanel() {
       {
         key: 'signals',
         label: tCoherence('signals'),
-        icon: RadioTower,
+        icon: Radio,
         href: `/${lang}/dho/${spaceSlug}/coherence`,
         active: isSectionActive('coherence'),
       },
       {
         key: 'agreements',
         label: tCommon('Agreements'),
-        icon: FileText,
+        icon: FileCheck2,
         href: `/${lang}/dho/${spaceSlug}/agreements`,
         active: isSectionActive('agreements'),
       },
       {
         key: 'members',
         label: tCommon('Members'),
-        icon: Users,
+        icon: UsersRound,
         href: `/${lang}/dho/${spaceSlug}/members`,
         active: isSectionActive('members'),
       },
       {
         key: 'treasury',
         label: tCommon('Treasury'),
-        icon: Landmark,
+        icon: Coins,
         href: `/${lang}/dho/${spaceSlug}/treasury`,
         active: isSectionActive('treasury'),
       },

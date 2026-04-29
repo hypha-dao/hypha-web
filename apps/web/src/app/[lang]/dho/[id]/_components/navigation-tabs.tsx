@@ -10,7 +10,7 @@ import { getDhoPathTreasury } from '../@tab/treasury/constants';
 import { cn } from '@hypha-platform/ui-utils';
 import { getActiveTabFromPath } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
-import { FileCheck2, HandCoins, Radio, UsersRound } from 'lucide-react';
+import { Coins, FileCheck2, Radio, UsersRound } from 'lucide-react';
 
 export function NavigationTabs({
   lang,
@@ -53,7 +53,7 @@ export function NavigationTabs({
     {
       title: t('Treasury'),
       name: 'treasury',
-      icon: HandCoins,
+      icon: Coins,
       href: getDhoPathTreasury(lang, id),
     },
   ];
