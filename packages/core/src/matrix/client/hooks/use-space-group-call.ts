@@ -894,11 +894,39 @@ export function useSpaceGroupCall(roomId: string | null) {
     async (muted: boolean) => {
       const gc = groupCallRef.current;
       if (!gc) return;
+      if (!muted && gc.type !== GroupCallType.Video) {
+        const prevType = gc.type;
+        const gcSync = gc as unknown as {
+          type: MatrixSdk.GroupCall['type'];
+          sendCallStateEvent(): Promise<void>;
+        };
+        gcSync.type = GroupCallType.Video;
+        try {
+          await gcSync.sendCallStateEvent();
+          if (roomId) {
+            logSpaceGroupCallEvent({
+              name: 'hypha.group_call.room_type_sync',
+              roomId,
+              kind: lastJoinKindRef.current ?? undefined,
+              groupCallId: gc.groupCallId,
+              previousRoomGroupCallType: String(prevType),
+              roomGroupCallType: String(GroupCallType.Video),
+            });
+          }
+        } catch {
+          gcSync.type = prevType;
+        }
+      }
       await gc.setLocalVideoMuted(muted);
+      if (!muted) {
+        setCallKind('video');
+        lastJoinKindRef.current = 'video';
+      }
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
+      refreshLocalPreview();
       scheduleFeedBatched();
     },
-    [scheduleFeedBatched],
+    [refreshLocalPreview, roomId, scheduleFeedBatched],
   );
 
   const setScreensharingEnabled = useCallback(

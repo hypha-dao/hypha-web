@@ -2332,7 +2332,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               deviceCount={spaceCallRoomGroupDeviceCount}
               disabled={!callUiEnabled}
               busy={spaceCallBusyJoining}
-              onJoinCall={handleCallAudio}
+              onJoinAudio={handleCallAudio}
+              onJoinVideo={handleCallVideo}
               durableMessage={callLeftMessage}
               onDismissDurable={clearCallLeftBanner}
             />
@@ -2646,7 +2647,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               <div className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 backdrop-blur-sm">
                 <HumanChatPanelInCallControls
                   callState={spaceCallState}
-                  callKind={spaceCallKind}
                   isMicrophoneMuted={spaceCallMicMuted}
                   isLocalVideoMuted={spaceCallVideoMuted}
                   isScreensharing={spaceCallScreensharing}

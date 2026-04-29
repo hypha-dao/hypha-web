@@ -2,14 +2,14 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
-import { Phone, X } from 'lucide-react';
+import { Phone, Video, X } from 'lucide-react';
 
 type HumanChatPanelCallJoinStripProps = {
   deviceCount: number;
   disabled: boolean;
   busy: boolean;
-  /** Enters the space call (voice+mic); use for the single “Join” CTA. */
-  onJoinCall: () => void;
+  onJoinAudio: () => void;
+  onJoinVideo: () => void;
   /**
    * When set, replaces the “call in progress” line (e.g. “You left the call”).
    */
@@ -24,7 +24,8 @@ export function HumanChatPanelCallJoinStrip({
   deviceCount,
   disabled,
   busy,
-  onJoinCall,
+  onJoinAudio,
+  onJoinVideo,
   durableMessage,
   onDismissDurable,
 }: HumanChatPanelCallJoinStripProps) {
@@ -68,21 +69,38 @@ export function HumanChatPanelCallJoinStrip({
           )}
 
           {!hasDurable && (
-            <button
-              type="button"
-              onClick={onJoinCall}
-              disabled={disabled || busy}
-              className={cn(
-                'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors',
-                (disabled || busy) && 'cursor-not-allowed opacity-50',
-                !disabled && !busy && 'hover:bg-muted',
-              )}
-              title={t('callJoinInProgressCtaTitle')}
-              aria-label={t('callJoinInProgressCtaTitle')}
-            >
-              <Phone className="h-3.5 w-3.5 shrink-0" />
-              {t('callJoinInProgressCta')}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={onJoinAudio}
+                disabled={disabled || busy}
+                className={cn(
+                  'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors',
+                  (disabled || busy) && 'cursor-not-allowed opacity-50',
+                  !disabled && !busy && 'hover:bg-muted',
+                )}
+                title={t('callJoinWithAudio')}
+                aria-label={t('callJoinWithAudio')}
+              >
+                <Phone className="h-3.5 w-3.5 shrink-0" />
+                {t('callJoinWithAudioShort')}
+              </button>
+              <button
+                type="button"
+                onClick={onJoinVideo}
+                disabled={disabled || busy}
+                className={cn(
+                  'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors',
+                  (disabled || busy) && 'cursor-not-allowed opacity-50',
+                  !disabled && !busy && 'hover:bg-muted',
+                )}
+                title={t('callJoinWithVideo')}
+                aria-label={t('callJoinWithVideo')}
+              >
+                <Video className="h-3.5 w-3.5 shrink-0" />
+                {t('callJoinWithVideoShort')}
+              </button>
+            </>
           )}
         </div>
       </div>

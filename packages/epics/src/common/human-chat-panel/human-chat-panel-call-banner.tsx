@@ -253,7 +253,6 @@ export function HumanChatPanelCallBanner({
         <div className="shrink-0">
           <HumanChatPanelInCallControls
             callState={callState}
-            callKind={callKind}
             isMicrophoneMuted={isMicrophoneMuted}
             isLocalVideoMuted={isLocalVideoMuted}
             isScreensharing={isScreensharing}

@@ -18,7 +18,6 @@ import {
 
 type HumanChatPanelInCallControlsProps = {
   callState: SpaceGroupCallState;
-  callKind: 'audio' | 'video' | null;
   isMicrophoneMuted: boolean;
   isLocalVideoMuted: boolean;
   isScreensharing: boolean;
@@ -36,7 +35,6 @@ type HumanChatPanelInCallControlsProps = {
  */
 export function HumanChatPanelInCallControls({
   callState,
-  callKind,
   isMicrophoneMuted,
   isLocalVideoMuted,
   isScreensharing,
@@ -116,38 +114,36 @@ export function HumanChatPanelInCallControls({
           <Mic className={icon} />
         )}
       </button>
-      {callKind === 'video' && (
-        <button
-          type="button"
-          onClick={onToggleCamera}
-          disabled={controlsDisabled}
-          className={cn(
-            isFull
-              ? isLocalVideoMuted
-                ? camOffBtn
-                : baseBtn
-              : isLocalVideoMuted
+      <button
+        type="button"
+        onClick={onToggleCamera}
+        disabled={controlsDisabled}
+        className={cn(
+          isFull
+            ? isLocalVideoMuted
               ? camOffBtn
-              : neutralBtn,
-            (isFull || isLocalVideoMuted) &&
-              'inline-flex items-center justify-center',
-            'disabled:cursor-not-allowed',
-            !isFull && controlsDisabled && 'opacity-50',
-          )}
-          title={t('callControlsCamera')}
-          aria-label={
-            isLocalVideoMuted
-              ? t('callControlsCameraOffAria')
-              : t('callControlsCameraOnAria')
-          }
-        >
-          {isLocalVideoMuted ? (
-            <VideoOff className={icon} />
-          ) : (
-            <Video className={icon} />
-          )}
-        </button>
-      )}
+              : baseBtn
+            : isLocalVideoMuted
+            ? camOffBtn
+            : neutralBtn,
+          (isFull || isLocalVideoMuted) &&
+            'inline-flex items-center justify-center',
+          'disabled:cursor-not-allowed',
+          !isFull && controlsDisabled && 'opacity-50',
+        )}
+        title={t('callControlsCamera')}
+        aria-label={
+          isLocalVideoMuted
+            ? t('callControlsCameraOffAria')
+            : t('callControlsCameraOnAria')
+        }
+      >
+        {isLocalVideoMuted ? (
+          <VideoOff className={icon} />
+        ) : (
+          <Video className={icon} />
+        )}
+      </button>
       <button
         type="button"
         onClick={onToggleScreenshare}
