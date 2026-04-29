@@ -15,7 +15,7 @@ import {
   getActiveTabFromPath,
   useMainColumnScrollY,
 } from '@hypha-platform/epics';
-import { getDhoPathCoherence } from '../@tab/coherence/constants';
+import { getDhoPathSignals } from '../@tab/signals/constants';
 
 /** Subtle scroll parallax: tab strip drifts slightly vs page for depth (see CompactSpaceBannerLead). */
 const TAB_PARALLAX_SCROLL_RATE = 0.07;
@@ -74,8 +74,8 @@ export function NavigationTabs({
       ? [
           {
             title: t('Coherence'),
-            name: 'coherence',
-            href: getDhoPathCoherence(lang, id),
+            name: 'signals',
+            href: getDhoPathSignals(lang, id),
           },
         ]
       : []),
