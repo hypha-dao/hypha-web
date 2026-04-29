@@ -903,6 +903,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       await gc.setMicrophoneMuted(muted);
       setIsMicrophoneMuted(gc.isMicrophoneMuted());
       scheduleFeedBatched();
+      window.setTimeout(scheduleFeedBatched, 350);
     },
     [scheduleFeedBatched],
   );
@@ -942,6 +943,10 @@ export function useSpaceGroupCall(roomId: string | null) {
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
       refreshLocalPreview();
       scheduleFeedBatched();
+      window.setTimeout(() => {
+        refreshLocalPreview();
+        scheduleFeedBatched();
+      }, 350);
     },
     [refreshLocalPreview, roomId, scheduleFeedBatched],
   );
