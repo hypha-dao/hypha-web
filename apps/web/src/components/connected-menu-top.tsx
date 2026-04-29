@@ -7,7 +7,7 @@ import { MenuTop } from '@hypha-platform/ui';
 import { getDhoSpaceSlugFromPathname } from '@hypha-platform/epics';
 import useSWR from 'swr';
 import { ImagePlus } from 'lucide-react';
-import { DEFAULT_SPACE_AVATAR_IMAGE, Space } from '@hypha-platform/core/client';
+import { Space } from '@hypha-platform/core/client';
 import Link from 'next/link';
 
 type ConnectedMenuTopProps = {
@@ -37,12 +37,7 @@ function getRootSpace(activeSpace?: Space, spaces: Space[] = []) {
 }
 
 function hasCustomRootLogo(logoUrl: string): boolean {
-  const value = logoUrl.trim();
-  if (!value) return false;
-  return !(
-    value === DEFAULT_SPACE_AVATAR_IMAGE ||
-    value.endsWith(DEFAULT_SPACE_AVATAR_IMAGE)
-  );
+  return logoUrl.trim().length > 0;
 }
 
 export function ConnectedMenuTop({
@@ -90,7 +85,7 @@ export function ConnectedMenuTop({
     rootSpace?.slug != null
       ? `/${lang}/dho/${rootSpace.slug}/agreements`
       : logoHref;
-  const rootLogoUrl = rootSpace?.logoUrl?.trim() || '';
+  const rootLogoUrl = rootSpace?.ecosystemLogoUrl?.trim() || '';
   const rootTitle = rootSpace?.title?.trim() || '';
   const rootHasCustomLogo = hasCustomRootLogo(rootLogoUrl);
 
@@ -99,7 +94,7 @@ export function ConnectedMenuTop({
       rootHasCustomLogo ? (
         <Link
           href={rootSpaceHref ?? '#'}
-          className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70 transition-colors hover:bg-muted/80"
+          className="inline-flex h-9 max-w-[11rem] items-center justify-start overflow-hidden rounded-md px-1 transition-colors hover:bg-muted/40"
           aria-label={rootTitle}
           title={rootTitle}
         >
@@ -107,17 +102,18 @@ export function ConnectedMenuTop({
           <img
             src={rootLogoUrl}
             alt={rootTitle}
-            className="h-full w-full object-cover"
+            className="h-full w-auto object-contain"
           />
         </Link>
       ) : (
         <Link
           href={rootConfigHref ?? '#'}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 text-muted-foreground transition-colors hover:bg-muted"
+          className="inline-flex h-9 items-center justify-center gap-1 rounded-md border border-dashed border-border bg-muted/40 px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
           aria-label="Upload ecosystem logo"
           title="Upload ecosystem logo"
         >
           <ImagePlus className="h-4 w-4" />
+          <span>Upload Ecosystem Logo</span>
         </Link>
       )
     ) : undefined;

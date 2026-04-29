@@ -91,7 +91,11 @@ export const useUpdateSpaceOrchestrator = ({
 }: UseUpdateSpaceInput) => {
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
   const files = useSpaceFileUploads(authToken, async (uploadedFiles, id) => {
-    if (!uploadedFiles.leadImage && !uploadedFiles.logoUrl) {
+    if (
+      !uploadedFiles.leadImage &&
+      !uploadedFiles.logoUrl &&
+      !uploadedFiles.ecosystemLogoUrl
+    ) {
       return;
     }
     await web2.updateSpaceById({
