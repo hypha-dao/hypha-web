@@ -108,8 +108,7 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, overlayVisible, toggle, showAiOverlay, hideAiOverlay } =
-    useAiPanel();
+  const { open, overlayVisible, toggle } = useAiPanel();
   const t = useTranslations('AiPanel');
   const isSpace = useIsSpaceContext();
 
@@ -119,10 +118,6 @@ export function AiSidebarTrigger() {
     <button
       type="button"
       onClick={toggle}
-      onMouseEnter={showAiOverlay}
-      onMouseLeave={hideAiOverlay}
-      onFocus={showAiOverlay}
-      onBlur={hideAiOverlay}
       aria-expanded={open && overlayVisible}
       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       title={t('openPanel')}
@@ -315,8 +310,6 @@ export function PanelWrapLayout({
           variant="sidebar"
           collapsible="icon"
           className="z-[50] overflow-visible"
-          onMouseEnter={showAiOverlay}
-          onMouseLeave={hideAiOverlay}
         >
           {effectiveLeft.content}
           <SidebarResizeHandle />
