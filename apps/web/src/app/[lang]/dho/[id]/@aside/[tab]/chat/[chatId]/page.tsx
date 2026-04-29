@@ -7,7 +7,7 @@ import {
   useConversation,
 } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
-import { getDhoPathSignals } from '../../../../@tab/signals/constants';
+import { getDhoPathCoherence } from '../../../../@tab/coherence/constants';
 import { usePersonById } from '@hypha-platform/core/client';
 
 export default function ChatPage() {
@@ -23,7 +23,7 @@ export default function ChatPage() {
     id: conversation?.creatorId,
   });
 
-  const closeUrl = getDhoPathSignals(lang, spaceId);
+  const closeUrl = getDhoPathCoherence(lang, spaceId);
 
   return (
     <SidePanel>

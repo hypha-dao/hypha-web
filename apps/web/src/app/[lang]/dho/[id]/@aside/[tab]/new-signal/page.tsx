@@ -1,5 +1,5 @@
 import { CreateSignalForm, ProposalOverlayShell } from '@hypha-platform/epics';
-import { getDhoPathSignals } from '../../../@tab/signals/constants';
+import { getDhoPathCoherence } from '../../../@tab/coherence/constants';
 import { Locale } from '@hypha-platform/i18n';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -16,7 +16,7 @@ export default async function NewSignalPage({ params }: PageProps) {
 
   if (!spaceFromDb) notFound();
 
-  const successfulUrl = getDhoPathSignals(lang, id);
+  const successfulUrl = getDhoPathCoherence(lang, id);
   return (
     <ProposalOverlayShell>
       <CreateSignalForm
