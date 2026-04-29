@@ -637,6 +637,8 @@ export const SpaceForm = ({
                   <UploadAvatar
                     {...field}
                     maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                    className="h-16 w-28 min-w-28 rounded-lg border border-border bg-muted/30"
+                    imageClassName="object-contain bg-white p-2"
                     defaultImage={
                       typeof values?.ecosystemLogoUrl === 'string'
                         ? values?.ecosystemLogoUrl
