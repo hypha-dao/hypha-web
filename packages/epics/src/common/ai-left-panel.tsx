@@ -248,7 +248,11 @@ export function AiLeftPanel() {
           <SidebarHeader className="bg-background-2 p-0">
             <AiPanelHeader showCloseButton={false} />
           </SidebarHeader>
-          <SidebarContent className="bg-background-2">
+          <SidebarContent
+            className="bg-background-2"
+            onMouseEnter={showAiOverlay}
+            onMouseLeave={hideAiOverlay}
+          >
             <SidebarGroup className="p-2 pt-4">
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -290,7 +294,11 @@ export function AiLeftPanel() {
             />
           </div>
         </SidebarHeader>
-        <SidebarContent className="relative overflow-visible bg-background-2">
+        <SidebarContent
+          className="relative overflow-visible bg-background-2"
+          onMouseEnter={showAiOverlay}
+          onMouseLeave={hideAiOverlay}
+        >
           <SidebarGroup className="p-2 pt-4">
             <SidebarGroupContent>
               <SidebarMenu className="items-center gap-2">
