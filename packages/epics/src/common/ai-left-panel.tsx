@@ -7,7 +7,13 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { FileCheck2, HandCoins, Radio, UsersRound } from 'lucide-react';
+import {
+  FileCheck2,
+  HandCoins,
+  PanelLeftClose,
+  Radio,
+  UsersRound,
+} from 'lucide-react';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   useSpacesBySlugs,
@@ -55,7 +61,8 @@ export function AiLeftPanel() {
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const { state: sidebarState } = useSidebar();
   const isCollapsed = sidebarState === 'collapsed';
-  const { overlayVisible, showAiOverlay, hideAiOverlay } = useAiPanel();
+  const { overlayVisible, showAiOverlay, hideAiOverlay, closeAiPanel } =
+    useAiPanel();
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
   );
@@ -282,28 +289,20 @@ export function AiLeftPanel() {
 
   return (
     <>
-      <SidebarHeader className="bg-background-2 p-0">
-        <AiPanelHeader />
+      <SidebarHeader className="border-b border-border bg-background-2 p-2">
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            onClick={closeAiPanel}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={t('hidePanel')}
+            aria-label={t('closePanel')}
+          >
+            <PanelLeftClose className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
-        {sectionNavItems.length > 0 ? (
-          <SidebarGroup className="border-b border-border/70 p-2">
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {sectionNavItems.map((item) => (
-                  <SidebarMenuItem key={item.key}>
-                    <SidebarMenuButton asChild isActive={item.active}>
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ) : null}
         {error && (
           <div
             role="alert"
