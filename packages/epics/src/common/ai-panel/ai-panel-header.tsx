@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useMemo } from 'react';
-import { ChevronDown, PanelLeftClose } from 'lucide-react';
+import { ChevronDown, PanelLeftClose, Sparkles } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,6 @@ import {
 } from '@hypha-platform/ui';
 import {
   Address,
-  DEFAULT_SPACE_AVATAR_IMAGE,
   Space,
   useMe,
   useSpacesBySlugs,
@@ -45,8 +44,8 @@ function getEcosystemRootId(
   return cursor?.id ?? space.id;
 }
 
-function getDisplayIcon(space?: Space): string {
-  return space?.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
+function getDisplayIcon(space?: Space): string | null {
+  return space?.logoUrl?.trim() || null;
 }
 
 export function AiPanelHeader({
@@ -129,21 +128,27 @@ export function AiPanelHeader({
   const fallbackTitle = activeSpace?.title?.trim() || t('title');
 
   return (
-    <div className="flex h-[var(--menu-top-height,65px)] min-w-0 flex-shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-2">
-      <div className="flex min-w-0 shrink-0 items-center gap-2">
+    <div className="relative flex h-[var(--menu-top-height,65px)] min-w-0 flex-shrink-0 items-center border-b border-border bg-background-2 px-4 py-2">
+      <div className="flex min-w-0 flex-1 items-center gap-2 pr-10">
         <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={currentIcon}
-            alt={currentTitle}
-            className="h-full w-full object-cover"
-          />
+          {currentIcon ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentIcon}
+                alt={currentTitle}
+                className="h-full w-full object-cover"
+              />
+            </>
+          ) : (
+            <Sparkles className="h-4 w-4 text-muted-foreground" />
+          )}
         </div>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex min-w-0 items-center gap-1 rounded-md px-2 py-1.5 text-left text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+              className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-md px-2 py-1.5 text-left text-sm font-semibold text-foreground transition-colors hover:bg-muted"
               aria-label={tNavigation('mySpaces')}
             >
               <span className="max-w-[11.5rem] truncate">{currentTitle}</span>
@@ -222,7 +227,7 @@ export function AiPanelHeader({
         </DropdownMenu>
       </div>
       {showCloseButton ? (
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-1">
+        <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center justify-end">
           <button
             type="button"
             onClick={closeAiPanel}
