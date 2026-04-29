@@ -238,7 +238,7 @@ export function AiLeftPanel() {
             />
           </div>
         </SidebarHeader>
-        <SidebarContent className="relative bg-background-2">
+        <SidebarContent className="relative overflow-visible bg-background-2">
           <SidebarGroup className="p-2">
             <SidebarGroupContent>
               <SidebarMenu className="items-center">
@@ -261,7 +261,7 @@ export function AiLeftPanel() {
           </SidebarGroup>
           {overlayVisible ? (
             <div
-              className="absolute left-[calc(100%+0.5rem)] top-2 z-[60] w-[272px] overflow-hidden rounded-xl border border-border/90 bg-background-2 shadow-2xl"
+              className="absolute left-full top-0 z-[70] w-[272px] overflow-hidden rounded-xl border border-border/90 bg-background-2 shadow-2xl"
               onMouseEnter={showAiOverlay}
               onMouseLeave={hideAiOverlay}
             >

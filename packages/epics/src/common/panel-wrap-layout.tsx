@@ -61,7 +61,7 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
     leftOverlayHideTimeoutRef.current = setTimeout(() => {
       setLeftOverlayVisible(false);
       leftOverlayHideTimeoutRef.current = null;
-    }, 120);
+    }, 220);
   }, []);
   const toggleLeftFromTrigger = useCallback(() => {
     setLeftOpen((prev) => {
@@ -312,7 +312,7 @@ export function PanelWrapLayout({
           side="left"
           variant="sidebar"
           collapsible="icon"
-          className="z-[50]"
+          className="z-[50] overflow-visible"
           onMouseEnter={showAiOverlay}
           onMouseLeave={hideAiOverlay}
         >
