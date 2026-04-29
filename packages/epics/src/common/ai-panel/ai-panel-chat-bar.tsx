@@ -1,9 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { AtSign, Mic, Plus, Send, Smile, Square } from 'lucide-react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+  ImageIcon,
+  Mic,
+  Paperclip,
+  Plus,
+  Send,
+  Square,
+  Video,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
@@ -100,6 +114,11 @@ export function AiPanelChatBar({
 }: AiPanelChatBarProps) {
   const t = useTranslations('AiPanel');
   const tHuman = useTranslations('HumanChatPanel');
+  const fileInputId = useId();
+  const imageInputId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const dictationPrefixRef = useRef('');
@@ -108,6 +127,7 @@ export function AiPanelChatBar({
   const valueRef = useRef(value);
   const [isDictating, setIsDictating] = useState(false);
   const [dictationError, setDictationError] = useState<string | null>(null);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
 
   valueRef.current = value;
 
@@ -314,6 +334,19 @@ export function AiPanelChatBar({
     onSend();
   }, [isDictating, onSend]);
 
+  const handleAttachFile = () => {
+    fileInputRef.current?.click();
+  };
+  const handleAttachImage = () => {
+    imageInputRef.current?.click();
+  };
+  const handleAttachVideo = () => {
+    videoInputRef.current?.click();
+  };
+
+  const iconButtonClass =
+    'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
+
   return (
     <div className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-3 pt-3">
       <div
@@ -340,6 +373,43 @@ export function AiPanelChatBar({
           )}
           style={{ minHeight: '36px', maxHeight: '160px' }}
         />
+        <input
+          ref={fileInputRef}
+          id={fileInputId}
+          type="file"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          multiple
+          onChange={(e) => {
+            e.target.value = '';
+          }}
+        />
+        <input
+          ref={imageInputRef}
+          id={imageInputId}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          multiple
+          onChange={(e) => {
+            e.target.value = '';
+          }}
+        />
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/*"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          multiple
+          onChange={(e) => {
+            e.target.value = '';
+          }}
+        />
 
         <div className="flex min-w-0 flex-col gap-1 px-2 pb-2.5 pt-0">
           {dictationError && (
@@ -349,41 +419,58 @@ export function AiPanelChatBar({
           )}
           <div className="flex min-w-0 items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-0.5">
-              <button
-                type="button"
-                disabled
-                className="flex h-7 w-7 shrink-0 cursor-not-allowed items-center justify-center rounded-md text-muted-foreground opacity-50"
-                aria-label={tHuman('composerAttachMenu')}
-                title={tHuman('composerAttachMenu')}
+              <DropdownMenu
+                modal={false}
+                open={attachMenuOpen}
+                onOpenChange={setAttachMenuOpen}
               >
-                <Plus className="h-4 w-4" strokeWidth={2} />
-              </button>
-              <button
-                type="button"
-                disabled
-                className="flex h-7 w-7 shrink-0 cursor-not-allowed items-center justify-center rounded-md text-muted-foreground opacity-50"
-                aria-label={tHuman('emoji')}
-                title={tHuman('emoji')}
-              >
-                <Smile className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                disabled
-                className="flex h-7 w-7 shrink-0 cursor-not-allowed items-center justify-center rounded-md text-muted-foreground opacity-50"
-                aria-label={tHuman('mention')}
-                title={tHuman('mention')}
-              >
-                <AtSign className="h-4 w-4" aria-hidden />
-              </button>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={iconButtonClass}
+                    aria-label={tHuman('composerAttachMenu')}
+                    title={tHuman('composerAttachMenu')}
+                    aria-expanded={attachMenuOpen}
+                  >
+                    <Plus className="h-4 w-4" strokeWidth={2} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-[200px]">
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() => handleAttachImage());
+                    }}
+                  >
+                    <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{tHuman('composerAttachImage')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() => handleAttachVideo());
+                    }}
+                  >
+                    <Video className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{tHuman('composerAttachVideo')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() => handleAttachFile());
+                    }}
+                  >
+                    <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{tHuman('composerAttachFile')}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <button
                 type="button"
                 onClick={startDictation}
                 disabled={isStreaming}
                 className={cn(
-                  isDictating
-                    ? recordingStopButtonClass
-                    : 'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out',
+                  isDictating ? recordingStopButtonClass : iconButtonClass,
                   !isDictating &&
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',
                   isDictating
