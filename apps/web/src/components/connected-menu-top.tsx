@@ -108,12 +108,15 @@ export function ConnectedMenuTop({
       ) : (
         <Link
           href={rootConfigHref ?? '#'}
-          className="inline-flex h-9 items-center justify-center gap-1 rounded-md border border-dashed border-border bg-muted/40 px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+          className="group relative inline-flex h-10 max-w-[13.5rem] items-center justify-center gap-2 overflow-hidden rounded-xl border border-dashed border-accent-7/60 bg-linear-to-r from-accent-2/50 via-background-2 to-accent-2/40 px-3.5 text-sm font-semibold text-accent-11 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset,0_8px_20px_-16px_var(--accent-9)] transition-all duration-200 hover:border-accent-8 hover:from-accent-3/60 hover:to-accent-3/50 hover:text-accent-12"
           aria-label="Upload ecosystem logo"
           title="Upload ecosystem logo"
         >
-          <ImagePlus className="h-4 w-4" />
-          <span>Upload Ecosystem Logo</span>
+          <span className="absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 bg-linear-to-r from-transparent via-accent-4/20 to-transparent" />
+          <span className="relative flex h-6 w-6 items-center justify-center rounded-md bg-accent-4/60 text-accent-11 ring-1 ring-accent-7/50">
+            <ImagePlus className="h-4 w-4" />
+          </span>
+          <span className="relative truncate">Upload Ecosystem Logo</span>
         </Link>
       )
     ) : undefined;
