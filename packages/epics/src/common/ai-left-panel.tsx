@@ -254,8 +254,16 @@ export function AiLeftPanel() {
                 <SidebarMenu>
                   {sectionNavItems.map((item) => (
                     <SidebarMenuItem key={`overlay-${item.key}`}>
-                      <SidebarMenuButton asChild isActive={item.active}>
-                        <Link href={item.href} aria-label={item.label}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={item.active}
+                        className="data-[active=true]:bg-accent-9/20 data-[active=true]:text-foreground"
+                      >
+                        <Link
+                          href={item.href}
+                          aria-label={item.label}
+                          aria-current={item.active ? 'page' : undefined}
+                        >
                           <item.icon className="h-5 w-5" strokeWidth={2.1} />
                           <span>{item.label}</span>
                         </Link>
@@ -292,9 +300,13 @@ export function AiLeftPanel() {
                       asChild
                       tooltip={item.label}
                       isActive={item.active}
-                      className="h-10 w-10 justify-center rounded-xl p-0"
+                      className="h-10 w-10 justify-center rounded-xl p-0 data-[active=true]:bg-accent-9/20 data-[active=true]:text-foreground"
                     >
-                      <Link href={item.href} aria-label={item.label}>
+                      <Link
+                        href={item.href}
+                        aria-label={item.label}
+                        aria-current={item.active ? 'page' : undefined}
+                      >
                         <item.icon className="h-5 w-5" strokeWidth={2.1} />
                       </Link>
                     </SidebarMenuButton>
