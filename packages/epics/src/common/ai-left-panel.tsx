@@ -29,7 +29,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from '@hypha-platform/ui';
 
 import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
@@ -61,10 +60,13 @@ export function AiLeftPanel() {
   const tCommon = useTranslations('Common');
   const tCoherence = useTranslations('CoherenceTab');
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
-  const { state: sidebarState } = useSidebar();
-  const isCollapsed = sidebarState === 'collapsed';
-  const { overlayVisible, showAiOverlay, hideAiOverlay, closeAiPanel } =
-    useAiPanel();
+  const {
+    open: isAiOpen,
+    overlayVisible,
+    showAiOverlay,
+    hideAiOverlay,
+    closeAiPanel,
+  } = useAiPanel();
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
   );
@@ -246,7 +248,67 @@ export function AiLeftPanel() {
     );
   }
 
-  if (isCollapsed) {
+  if (!isAiOpen) {
+    if (overlayVisible) {
+      return (
+        <>
+          <SidebarHeader className="bg-background-2 p-0">
+            <div className="flex min-h-[var(--menu-top-height,65px)] border-b border-border bg-background-2">
+              <div className="flex w-[72px] shrink-0 items-center justify-center border-r border-border px-2">
+                <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={activeSpaceIcon}
+                    alt={activeSpaceTitle}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
+                <AiPanelHeader showCloseButton={false} />
+              </div>
+            </div>
+          </SidebarHeader>
+          <SidebarContent className="bg-background-2">
+            <div className="flex h-full">
+              <div className="w-[72px] shrink-0 border-r border-border bg-background-2 p-2">
+                <SidebarMenu className="items-center">
+                  {sectionNavItems.map((item) => (
+                    <SidebarMenuItem key={item.key}>
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={item.label}
+                        isActive={item.active}
+                        className="h-10 w-10 justify-center rounded-xl p-0"
+                      >
+                        <Link href={item.href} aria-label={item.label}>
+                          <item.icon className="h-5 w-5" strokeWidth={2.1} />
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </div>
+              <div className="min-w-0 flex-1 p-2">
+                <SidebarMenu>
+                  {sectionNavItems.map((item) => (
+                    <SidebarMenuItem key={`overlay-${item.key}`}>
+                      <SidebarMenuButton asChild isActive={item.active}>
+                        <Link href={item.href} aria-label={item.label}>
+                          <item.icon className="h-5 w-5" strokeWidth={2.1} />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </div>
+            </div>
+          </SidebarContent>
+        </>
+      );
+    }
+
     return (
       <>
         <SidebarHeader className="items-center bg-background-2 p-2">
@@ -280,29 +342,6 @@ export function AiLeftPanel() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-          {overlayVisible ? (
-            <div
-              className="absolute left-full top-0 z-[70] w-[272px] overflow-hidden rounded-xl border border-border/90 bg-background-2 shadow-2xl"
-              onMouseEnter={showAiOverlay}
-              onMouseLeave={hideAiOverlay}
-            >
-              <AiPanelHeader showCloseButton={false} />
-              <div className="p-2">
-                <SidebarMenu>
-                  {sectionNavItems.map((item) => (
-                    <SidebarMenuItem key={`overlay-${item.key}`}>
-                      <SidebarMenuButton asChild isActive={item.active}>
-                        <Link href={item.href} aria-label={item.label}>
-                          <item.icon className="h-5 w-5" strokeWidth={2.1} />
-                          <span>{item.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </div>
-            </div>
-          ) : null}
         </SidebarContent>
       </>
     );
