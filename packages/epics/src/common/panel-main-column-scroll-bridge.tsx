@@ -51,6 +51,7 @@ export function PanelDualSidebarScrollBridge({
       style={
         {
           '--sidebar-width': '320px',
+          '--sidebar-width-icon': '72px',
         } as React.CSSProperties
       }
     >
