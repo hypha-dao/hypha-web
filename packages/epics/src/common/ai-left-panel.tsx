@@ -205,6 +205,17 @@ export function AiLeftPanel() {
     },
     [sendMessage, buildMessageOptions],
   );
+  const handleHeaderIconMouseEnter = useCallback(() => {
+    if (!overlayVisible) {
+      showAiOverlay();
+    }
+  }, [overlayVisible, showAiOverlay]);
+
+  const handleExpandedRegionMouseEnter = useCallback(() => {
+    if (overlayVisible) {
+      showAiOverlay();
+    }
+  }, [overlayVisible, showAiOverlay]);
 
   if (isLoading) {
     return (
@@ -244,12 +255,16 @@ export function AiLeftPanel() {
     if (overlayVisible) {
       return (
         <>
-          <SidebarHeader className="bg-background-2 p-0">
+          <SidebarHeader
+            className="bg-background-2 p-0"
+            onMouseEnter={handleExpandedRegionMouseEnter}
+            onMouseLeave={hideAiOverlay}
+          >
             <AiPanelHeader />
           </SidebarHeader>
           <SidebarContent
             className="bg-background-2"
-            onMouseEnter={showAiOverlay}
+            onMouseEnter={handleExpandedRegionMouseEnter}
             onMouseLeave={hideAiOverlay}
           >
             <SidebarGroup className="p-2 pt-4">
@@ -284,7 +299,10 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="min-h-[var(--menu-top-height,65px)] items-center justify-center border-b border-border bg-background-2 p-2">
-          <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
+          <div
+            className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70"
+            onMouseEnter={handleHeaderIconMouseEnter}
+          >
             {activeSpaceIcon ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
