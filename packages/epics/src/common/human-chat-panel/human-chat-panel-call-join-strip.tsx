@@ -32,6 +32,18 @@ export function HumanChatPanelCallJoinStrip({
   const t = useTranslations('HumanChatPanel');
   const statusLine = t('callJoinStripLine', { count: deviceCount });
   const hasDurable = Boolean(durableMessage);
+  const audioLabel =
+    deviceCount > 0
+      ? t('callJoinWithAudioShort')
+      : t('callStartWithAudioShort');
+  const videoLabel =
+    deviceCount > 0
+      ? t('callJoinWithVideoShort')
+      : t('callStartWithVideoShort');
+  const audioTitle =
+    deviceCount > 0 ? t('callJoinWithAudio') : t('callStartWithAudio');
+  const videoTitle =
+    deviceCount > 0 ? t('callJoinWithVideo') : t('callStartWithVideo');
 
   return (
     <div
@@ -68,40 +80,36 @@ export function HumanChatPanelCallJoinStrip({
             </button>
           )}
 
-          {!hasDurable && (
-            <>
-              <button
-                type="button"
-                onClick={onJoinAudio}
-                disabled={disabled || busy}
-                className={cn(
-                  'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors',
-                  (disabled || busy) && 'cursor-not-allowed opacity-50',
-                  !disabled && !busy && 'hover:bg-muted',
-                )}
-                title={t('callJoinWithAudio')}
-                aria-label={t('callJoinWithAudio')}
-              >
-                <Phone className="h-3.5 w-3.5 shrink-0" />
-                {t('callJoinWithAudioShort')}
-              </button>
-              <button
-                type="button"
-                onClick={onJoinVideo}
-                disabled={disabled || busy}
-                className={cn(
-                  'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors',
-                  (disabled || busy) && 'cursor-not-allowed opacity-50',
-                  !disabled && !busy && 'hover:bg-muted',
-                )}
-                title={t('callJoinWithVideo')}
-                aria-label={t('callJoinWithVideo')}
-              >
-                <Video className="h-3.5 w-3.5 shrink-0" />
-                {t('callJoinWithVideoShort')}
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            onClick={onJoinAudio}
+            disabled={disabled || busy}
+            className={cn(
+              'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors',
+              (disabled || busy) && 'cursor-not-allowed opacity-50',
+              !disabled && !busy && 'hover:bg-muted',
+            )}
+            title={audioTitle}
+            aria-label={audioTitle}
+          >
+            <Phone className="h-3.5 w-3.5 shrink-0" />
+            {audioLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onJoinVideo}
+            disabled={disabled || busy}
+            className={cn(
+              'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors',
+              (disabled || busy) && 'cursor-not-allowed opacity-50',
+              !disabled && !busy && 'hover:bg-muted',
+            )}
+            title={videoTitle}
+            aria-label={videoTitle}
+          >
+            <Video className="h-3.5 w-3.5 shrink-0" />
+            {videoLabel}
+          </button>
         </div>
       </div>
     </div>

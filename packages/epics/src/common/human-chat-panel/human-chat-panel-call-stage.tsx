@@ -1330,7 +1330,10 @@ const FeedContent = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stream = feed.stream;
 
-  const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
+  const [feedRenderVersion, rerenderOnFeed] = useReducer(
+    (n: number) => n + 1,
+    0,
+  );
 
   useEffect(() => {
     const el = ref.current;
@@ -1345,7 +1348,7 @@ const FeedContent = ({
     return () => {
       el.srcObject = null;
     };
-  }, [stream]);
+  }, [feedRenderVersion, stream]);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -1360,7 +1363,7 @@ const FeedContent = ({
     return () => {
       el.srcObject = null;
     };
-  }, [stream]);
+  }, [feedRenderVersion, stream]);
 
   useEffect(() => {
     const onFeedVisualChange = () => {
@@ -1444,7 +1447,7 @@ const FeedContent = ({
             )}
             autoPlay
             playsInline
-            muted={feed.isLocal()}
+            muted
             aria-label={ariaLabel}
           />
           {feed.isAudioMuted() && !(isFullView && !isPip) && (
@@ -1560,11 +1563,11 @@ const FeedContent = ({
               isPip ? 'max-w-[4.5rem]' : 'w-full max-w-[min(18rem,92%)]'
             }
           />
-          {!feed.isLocal() && !feed.isAudioMuted() ? (
-            <audio ref={audioRef} autoPlay playsInline aria-hidden />
-          ) : null}
         </div>
       )}
+      {!feed.isLocal() && !feed.isAudioMuted() ? (
+        <audio ref={audioRef} autoPlay playsInline aria-hidden />
+      ) : null}
     </div>
   );
 };
