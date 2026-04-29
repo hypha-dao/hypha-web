@@ -939,11 +939,15 @@ export function useSpaceGroupCall(roomId: string | null) {
       if (!muted) {
         setCallKind('video');
         lastJoinKindRef.current = 'video';
+        nudgeGroupCallPlaceOutgoing(gc);
       }
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
       refreshLocalPreview();
       scheduleFeedBatched();
       window.setTimeout(() => {
+        if (groupCallRef.current === gc && !gc.isLocalVideoMuted()) {
+          nudgeGroupCallPlaceOutgoing(gc);
+        }
         refreshLocalPreview();
         scheduleFeedBatched();
       }, 350);
