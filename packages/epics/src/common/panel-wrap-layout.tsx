@@ -108,7 +108,8 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, overlayVisible, toggle, showAiOverlay, hideAiOverlay } = useAiPanel();
+  const { open, overlayVisible, toggle, showAiOverlay, hideAiOverlay } =
+    useAiPanel();
   const t = useTranslations('AiPanel');
   const isSpace = useIsSpaceContext();
 
