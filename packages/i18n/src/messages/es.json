@@ -42,6 +42,7 @@
     "publish": "Publicar",
     "invalidTransactions": "Transacciones inválidas",
     "Coherence": "Señales",
+    "Signals": "Señales",
     "uploadLeadImage": {
       "cropTitle": "Subir una imagen",
       "cropDescription": "Ajusta el encuadre y guarda. Arrastra para reposicionar y usa el zoom para el área del banner (JPEG, PNG o WebP — máx. 4 MB).",

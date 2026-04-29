@@ -49,7 +49,7 @@ export function NavigationTabs({
   const pathname = usePathname();
   const activeTab = React.useMemo(() => {
     const tab = getActiveTabFromPath(pathname);
-    return tab === 'coherence' ? 'signals' : tab;
+    return tab === 'signals' ? 'coherence' : tab;
   }, [pathname]);
 
   const mainScrollY = useMainColumnScrollY();
@@ -76,8 +76,8 @@ export function NavigationTabs({
     ...(coherenceEnabled
       ? [
           {
-            title: t('Coherence'),
-            name: 'signals',
+            title: t('Signals'),
+            name: 'coherence',
             href: getDhoPathSignals(lang, id),
           },
         ]

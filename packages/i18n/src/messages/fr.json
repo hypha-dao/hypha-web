@@ -42,6 +42,7 @@
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
     "Coherence": "Signaux",
+    "Signals": "Signaux",
     "uploadLeadImage": {
       "cropTitle": "Téléverser une image",
       "cropDescription": "Ajustez le cadrage, puis enregistrez. Faites glisser pour repositionner et zoomez pour remplir la zone de bannière (JPEG, PNG ou WebP — max. 4 Mo).",

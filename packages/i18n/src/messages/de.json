@@ -42,6 +42,7 @@
     "publish": "Veröffentlichen",
     "invalidTransactions": "Ungültige Transaktionen",
     "Coherence": "Signale",
+    "Signals": "Signale",
     "uploadLeadImage": {
       "cropTitle": "Ein Bild hochladen",
       "cropDescription": "Passen Sie den Ausschnitt an und speichern Sie. Ziehen Sie zum Verschieben und zoomen Sie, um den Bannerbereich auszufüllen (JPEG, PNG oder WebP — max. 4 MB).",
