@@ -74,7 +74,11 @@ export default function AsideCreateSpacePage() {
           closeUrl={closeUrl}
           backUrl={closeUrl}
           backLabel={tCommon('back')}
-          onSubmit={(values) => createSpace(values)}
+          onSubmit={(values) => {
+            const { ecosystemLogoUrl: _ecosystemLogoUrl, ...createValues } =
+              values;
+            return createSpace(createValues);
+          }}
           isLoading={isLoadingJwt}
           label="create"
           slugIncorrectMessage={tSpaces('slugAlreadyExistsLong')}
