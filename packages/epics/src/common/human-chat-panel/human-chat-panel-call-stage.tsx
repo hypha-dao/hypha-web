@@ -1367,7 +1367,11 @@ const FeedContent = ({
     const onFeedVisualChange = () => {
       rerenderOnFeed();
     };
-    feed.on(CallFeedEvent.MuteStateChanged, onFeedVisualChange);
+    const onFeedMediaChange = () => {
+      rebindStream();
+      rerenderOnFeed();
+    };
+    feed.on(CallFeedEvent.MuteStateChanged, onFeedMediaChange);
     const onFeedStreamChange = () => {
       rebindStream();
       rerenderOnFeed();
@@ -1375,7 +1379,7 @@ const FeedContent = ({
     feed.on(CallFeedEvent.NewStream, onFeedStreamChange);
     feed.on(CallFeedEvent.Speaking, onFeedVisualChange);
     return () => {
-      feed.removeListener(CallFeedEvent.MuteStateChanged, onFeedVisualChange);
+      feed.removeListener(CallFeedEvent.MuteStateChanged, onFeedMediaChange);
       feed.removeListener(CallFeedEvent.NewStream, onFeedStreamChange);
       feed.removeListener(CallFeedEvent.Speaking, onFeedVisualChange);
     };
