@@ -148,7 +148,7 @@ export function AiPanelHeader({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-md px-2 py-1.5 text-left text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+              className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-md px-1.5 py-1 text-left text-sm font-semibold text-foreground transition-colors hover:bg-muted/60"
               aria-label={tNavigation('mySpaces')}
             >
               <span className="max-w-[11.5rem] truncate">{currentTitle}</span>
@@ -157,7 +157,7 @@ export function AiPanelHeader({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
-            className="w-[min(22rem,calc(100vw-1.5rem))] border border-border/90 p-1"
+            className="w-[min(20rem,calc(100vw-1.5rem))] max-h-[62vh] overflow-y-auto border border-border/90 p-1 narrow-scrollbar"
           >
             <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
               {tNavigation('mySpaces')}
@@ -175,12 +175,12 @@ export function AiPanelHeader({
               !allSpacesError &&
               hasSpaces &&
               groupedSpaces.ecosystem.map((space) => (
-                <DropdownMenuItem key={space.id} asChild>
+                <DropdownMenuItem key={space.id} asChild className="py-1.5">
                   <Link
                     href={`/${lang}/dho/${space.slug}/agreements`}
                     className="flex min-w-0 items-center gap-2"
                   >
-                    <span className="h-6 w-6 overflow-hidden rounded-md ring-1 ring-border/60">
+                    <span className="h-5 w-5 overflow-hidden rounded-md ring-1 ring-border/60">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={getDisplayIcon(space) ?? undefined}
@@ -204,12 +204,12 @@ export function AiPanelHeader({
               !allSpacesError &&
               hasSpaces &&
               groupedSpaces.others.map((space) => (
-                <DropdownMenuItem key={space.id} asChild>
+                <DropdownMenuItem key={space.id} asChild className="py-1.5">
                   <Link
                     href={`/${lang}/dho/${space.slug}/agreements`}
                     className="flex min-w-0 items-center gap-2"
                   >
-                    <span className="h-6 w-6 overflow-hidden rounded-md ring-1 ring-border/60">
+                    <span className="h-5 w-5 overflow-hidden rounded-md ring-1 ring-border/60">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={getDisplayIcon(space) ?? undefined}
