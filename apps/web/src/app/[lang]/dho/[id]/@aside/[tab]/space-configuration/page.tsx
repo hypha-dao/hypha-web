@@ -45,9 +45,9 @@ export default function SpaceConfiguration() {
   const pathname = usePathname();
   const closeUrl = pathname.replace(/\/space-configuration$/, '');
 
-  const normalizeEcosystemLogoUrl = (
-    value: string | File | null | undefined,
-  ): string | undefined => (typeof value === 'string' ? value : undefined);
+  const normalizeNullableEcosystemLogoUrl = (
+    value: string | null | undefined,
+  ): string | undefined => value ?? undefined;
 
   const submitForm = React.useCallback(
     async (
@@ -89,7 +89,7 @@ export default function SpaceConfiguration() {
                   description: description as string | undefined,
                   address: address as string | undefined,
                   web3SpaceId: web3SpaceId as number | undefined,
-                  ecosystemLogoUrl: normalizeEcosystemLogoUrl(
+                  ecosystemLogoUrl: normalizeNullableEcosystemLogoUrl(
                     updates.ecosystemLogoUrl,
                   ),
                 },
@@ -119,7 +119,7 @@ export default function SpaceConfiguration() {
                   description: description as string | undefined,
                   address: address as string | undefined,
                   web3SpaceId: web3SpaceId as number | undefined,
-                  ecosystemLogoUrl: normalizeEcosystemLogoUrl(
+                  ecosystemLogoUrl: normalizeNullableEcosystemLogoUrl(
                     updates.ecosystemLogoUrl,
                   ),
                 },
@@ -129,12 +129,7 @@ export default function SpaceConfiguration() {
           setNewSpaceSlug(normalizedUpdatedSpace.slug || '');
           await updateSpace({
             id: space.id,
-            data: {
-              ...normalizedUpdatedSpace,
-              ecosystemLogoUrl: normalizeEcosystemLogoUrl(
-                normalizedUpdatedSpace.ecosystemLogoUrl,
-              ),
-            },
+            data: normalizedUpdatedSpace,
           });
         }
       } catch (e) {

@@ -142,7 +142,15 @@ export const useUpdateSpaceOrchestrator = ({
     'updateSpaceMutation',
     async (
       _,
-      { arg }: { arg: { id: number; data: z.infer<typeof schemaUpdateSpace> } },
+      {
+        arg,
+      }: {
+        arg: {
+          id: number;
+          data: z.infer<typeof schemaUpdateSpace> &
+            Partial<z.infer<typeof schemaCreateSpaceFiles>>;
+        };
+      },
     ) => {
       try {
         console.debug('updateSpaceMutation called with arg:', arg);
