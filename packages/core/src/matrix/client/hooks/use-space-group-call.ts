@@ -1127,7 +1127,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       }
     };
 
-    const sync = async () => {
+    const sync = () => {
       if (groupCallRef.current) {
         return;
       }
@@ -1140,18 +1140,6 @@ export function useSpaceGroupCall(roomId: string | null) {
       }
       const p = readParticipantsFromGroupCall(current, myId);
       if (p.count === 0) {
-        try {
-          await Promise.resolve(
-            (
-              current as MatrixSdk.GroupCall & {
-                terminate?: (emitStateEvent?: boolean) => void;
-              }
-            ).terminate?.(false),
-          );
-          watchParticipantsOn(null);
-        } catch {
-          /* stale idle group call cleanup is best-effort */
-        }
         setIdleRoomParticipantCount(0);
         setIdleInCallUserIds([]);
         return;
@@ -1164,13 +1152,13 @@ export function useSpaceGroupCall(roomId: string | null) {
       if (incoming.room?.roomId !== roomId) return;
       /* `GroupCallEventHandler` may emit this before `getGroupCallForRoom` is populated in edge races. */
       watchParticipantsOn(incoming);
-      void sync();
+      sync();
     };
 
     const onEnded = (ended: MatrixSdk.GroupCall) => {
       if (ended.room?.roomId !== roomId) return;
       unwatchParticipants();
-      void sync();
+      sync();
     };
 
     /**
@@ -1183,7 +1171,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       if (idleRoomDebounce != null) clearTimeout(idleRoomDebounce);
       idleRoomDebounce = setTimeout(() => {
         idleRoomDebounce = null;
-        void sync();
+        sync();
       }, 150);
     };
 
@@ -1202,7 +1190,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       GroupCallEventHandlerEvent.Ended,
       onEnded as (ended: MatrixSdk.GroupCall) => void,
     );
-    void sync();
+    sync();
 
     const unsub = () => {
       if (idleRoomDebounce != null) clearTimeout(idleRoomDebounce);

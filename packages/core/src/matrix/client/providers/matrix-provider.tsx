@@ -142,6 +142,7 @@ export const MATRIX_UPLOAD_TIMEOUT_MS = 120_000;
 const MATRIX_UPLOAD_STAGGER_MS = 400;
 
 const MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS = 4;
+const MATRIX_GROUP_CALL_EVENT_TYPE = 'org.matrix.msc3401.call';
 const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
 const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
 
@@ -162,6 +163,7 @@ async function ensureRoomCallPowerLevels(
       )) as { events?: Record<string, number> });
     const events = { ...(current.events ?? {}) };
     if (
+      events[MATRIX_GROUP_CALL_EVENT_TYPE] === 0 &&
       events[MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE] === 0 &&
       events[MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE] === 0
     ) {
@@ -174,6 +176,7 @@ async function ensureRoomCallPowerLevels(
         ...current,
         events: {
           ...events,
+          [MATRIX_GROUP_CALL_EVENT_TYPE]: 0,
           [MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE]: 0,
           [MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE]: 0,
         },
@@ -534,6 +537,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             state_key: '',
             content: {
               events: {
+                [MATRIX_GROUP_CALL_EVENT_TYPE]: 0,
                 [MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE]: 0,
                 [MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE]: 0,
               },
