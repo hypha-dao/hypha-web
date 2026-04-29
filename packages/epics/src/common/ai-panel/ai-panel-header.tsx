@@ -183,7 +183,7 @@ export function AiPanelHeader({
                     <span className="h-6 w-6 overflow-hidden rounded-md ring-1 ring-border/60">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={getDisplayIcon(space)}
+                        src={getDisplayIcon(space) ?? undefined}
                         alt={space.title}
                         className="h-full w-full object-cover"
                       />
@@ -212,7 +212,7 @@ export function AiPanelHeader({
                     <span className="h-6 w-6 overflow-hidden rounded-md ring-1 ring-border/60">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={getDisplayIcon(space)}
+                        src={getDisplayIcon(space) ?? undefined}
                         alt={space.title}
                         className="h-full w-full object-cover"
                       />
