@@ -46,7 +46,7 @@ function getDisplayIcon(space?: Space): string {
   return space?.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
 }
 
-export function AiPanelHeader() {
+export function AiPanelHeader({ showCloseButton = true }: { showCloseButton?: boolean }) {
   const { closeAiPanel } = useAiPanel();
   const t = useTranslations('AiPanel');
   const tNavigation = useTranslations('Navigation');
@@ -198,17 +198,19 @@ export function AiPanelHeader() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="flex min-w-0 flex-wrap items-center justify-end gap-1">
-        <button
-          type="button"
-          onClick={closeAiPanel}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          title={t('hidePanel')}
-          aria-label={t('closePanel')}
-        >
-          <PanelLeftClose className="h-3.5 w-3.5" />
-        </button>
-      </div>
+      {showCloseButton ? (
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={closeAiPanel}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={t('hidePanel')}
+            aria-label={t('closePanel')}
+          >
+            <PanelLeftClose className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
