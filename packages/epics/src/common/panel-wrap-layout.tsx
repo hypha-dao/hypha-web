@@ -174,6 +174,7 @@ const SIDEBAR_WIDTH_MIRROR_KEYS = [
   '--sidebar-right-width',
   '--main-column-scrollbar-width',
 ] as const;
+const LEFT_SIDEBAR_ICON_WIDTH = '72px';
 
 function mirrorMainColumnLayoutVarsToDocument(
   sidebarLeftPx: string,
@@ -232,7 +233,7 @@ export function PanelWrapLayout({
   const sidebarLeftPx = effectiveLeft
     ? leftExpanded
       ? '320px'
-      : '48px'
+      : LEFT_SIDEBAR_ICON_WIDTH
     : '0px';
   const sidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
 
@@ -305,6 +306,7 @@ export function PanelWrapLayout({
         style={
           {
             '--sidebar-width': '320px',
+            '--sidebar-width-icon': LEFT_SIDEBAR_ICON_WIDTH,
           } as React.CSSProperties
         }
       >
