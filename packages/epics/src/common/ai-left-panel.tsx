@@ -272,7 +272,7 @@ export function AiLeftPanel() {
                       <SidebarMenuButton
                         asChild
                         isActive={item.active}
-                        className="rounded-md transition-colors hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted data-[active=true]:text-foreground"
+                        className="rounded-md transition-colors hover:bg-accent-2/70 hover:text-foreground data-[active=true]:bg-accent-3/70 data-[active=true]:text-foreground"
                       >
                         <Link
                           href={item.href}
@@ -328,7 +328,7 @@ export function AiLeftPanel() {
                       asChild
                       tooltip={item.label}
                       isActive={item.active}
-                      className="h-10 w-10 justify-center rounded-xl p-0 transition-colors hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted data-[active=true]:text-foreground"
+                      className="h-10 w-10 justify-center rounded-xl p-0 transition-colors hover:bg-accent-2/70 hover:text-foreground data-[active=true]:bg-accent-3/70 data-[active=true]:text-foreground"
                     >
                       <Link
                         href={item.href}

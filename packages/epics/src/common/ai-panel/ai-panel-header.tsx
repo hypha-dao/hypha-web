@@ -129,7 +129,7 @@ export function AiPanelHeader({
 
   return (
     <div className="relative flex h-[var(--menu-top-height,65px)] min-w-0 flex-shrink-0 items-center border-b border-border bg-background-2 px-4 py-2">
-      <div className="flex min-w-0 flex-1 items-center justify-center gap-2 pl-2 pr-10">
+      <div className="flex min-w-0 flex-1 items-center gap-2 pr-10">
         <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
           {currentIcon ? (
             <>
@@ -148,10 +148,10 @@ export function AiPanelHeader({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-9 min-w-0 max-w-full items-center gap-1.5 rounded-xl border border-border/80 bg-background px-2.5 text-left text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-muted/50"
+              className="inline-flex h-9 min-w-0 max-w-full items-center gap-2 rounded-xl border border-border/70 bg-background-3/90 px-3 text-left text-sm font-semibold text-foreground shadow-[0_1px_10px_-8px_rgba(0,0,0,0.6)] transition-colors hover:bg-background-4"
               aria-label={tNavigation('mySpaces')}
             >
-              <span className="max-w-[8.25rem] truncate">{currentTitle}</span>
+              <span className="max-w-[9.5rem] truncate">{currentTitle}</span>
               <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
