@@ -1,3 +1,5 @@
+'use client';
+
 import { type BadgeItem } from '@hypha-platform/ui';
 import { type Creator } from '../../people/components/person-label';
 import { DocumentCard } from './document-card';

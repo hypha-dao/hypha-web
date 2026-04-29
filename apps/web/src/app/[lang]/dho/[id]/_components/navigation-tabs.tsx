@@ -47,7 +47,10 @@ export function NavigationTabs({
 }) {
   const t = useTranslations('Common');
   const pathname = usePathname();
-  const activeTab = getActiveTabFromPath(pathname);
+  const activeTab = React.useMemo(() => {
+    const tab = getActiveTabFromPath(pathname);
+    return tab === 'coherence' ? 'signals' : tab;
+  }, [pathname]);
 
   const mainScrollY = useMainColumnScrollY();
   const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
