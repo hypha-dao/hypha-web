@@ -158,6 +158,7 @@ export const SpaceForm = ({
 
   const parentSpaceId = form.watch('parentId');
   const slug = form.watch('slug');
+  const isRootConfiguration = label === 'configure' && parentSpaceId === null;
 
   const {
     exists: slugExists,
@@ -464,6 +465,11 @@ export const SpaceForm = ({
                   name="logoUrl"
                   render={({ field }) => (
                     <FormItem>
+                      {isRootConfiguration ? (
+                        <FormLabel className="text-foreground gap-1">
+                          Ecosystem Logo <RequirementMark />
+                        </FormLabel>
+                      ) : null}
                       <FormControl>
                         <UploadAvatar
                           {...field}
@@ -472,10 +478,10 @@ export const SpaceForm = ({
                             typeof values?.logoUrl === 'string'
                               ? values?.logoUrl
                               : typeof defaultValues?.logoUrl === 'string'
-                              ? defaultValues?.logoUrl
-                              : undefined
+                                ? defaultValues?.logoUrl
+                                : undefined
                           }
-                          required={true}
+                          required={isRootConfiguration}
                         />
                       </FormControl>
                       <FormMessage />
@@ -557,8 +563,8 @@ export const SpaceForm = ({
                     typeof values?.leadImage === 'string'
                       ? values?.leadImage
                       : typeof defaultValues?.leadImage === 'string'
-                      ? defaultValues?.leadImage
-                      : undefined
+                        ? defaultValues?.leadImage
+                        : undefined
                   }
                   uploadText={
                     <>

@@ -14,6 +14,7 @@ type MenuTopProps = {
   trailingAction?: React.ReactNode;
   logoHref?: string;
   logoText?: string;
+  logoNode?: React.ReactNode;
   hrefTarget?: string;
   openMenuLabel?: string;
   closeMenuLabel?: string;
@@ -25,6 +26,7 @@ export const MenuTop = ({
   trailingAction,
   logoHref,
   logoText,
+  logoNode,
   hrefTarget,
   openMenuLabel = 'Open menu',
   closeMenuLabel = 'Close menu',
@@ -89,7 +91,9 @@ export const MenuTop = ({
       >
         <div className="flex items-center gap-2">
           {leadingAction}
-          {logoText ? (
+          {logoNode ? (
+            logoNode
+          ) : logoText ? (
             logoHref ? (
               <Link
                 href={logoHref}
