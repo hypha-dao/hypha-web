@@ -216,8 +216,15 @@ export const CreateSignalForm = ({
       try {
         const coherence = await createCoherence({ ...data });
         if (isMatrixAvailable) {
-          const { roomId } = await createRoom(coherence.title);
-          await updateCoherenceBySlug({ slug: coherence.slug!, roomId });
+          try {
+            const { roomId } = await createRoom(coherence.title);
+            await updateCoherenceBySlug({ slug: coherence.slug!, roomId });
+          } catch (matrixError) {
+            console.warn(
+              'Signal created but Matrix room provisioning failed:',
+              matrixError,
+            );
+          }
         } else {
           console.warn('Matrix client is unavailable — skipping room creation');
         }
