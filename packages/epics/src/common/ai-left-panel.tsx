@@ -8,16 +8,18 @@ import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
-  FileCheck2,
-  HandCoins,
+  FileText,
+  Landmark,
   PanelLeftClose,
-  Radio,
-  UsersRound,
+  RadioTower,
+  Users,
 } from 'lucide-react';
 import {
+  Space,
   DEFAULT_SPACE_AVATAR_IMAGE,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
+import useSWR from 'swr';
 import {
   SidebarHeader,
   SidebarContent,
@@ -66,9 +68,28 @@ export function AiLeftPanel() {
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
   );
+  const { data: allSpaces = [] } = useSWR<Space[]>(
+    '/api/v1/spaces?parentOnly=false',
+    async (url: string) => {
+      const response = await fetch(url, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) return [];
+      return (await response.json()) as Space[];
+    },
+  );
+  const activeSpaceFromList = useMemo(
+    () => allSpaces.find((space) => space.slug === spaceSlug),
+    [allSpaces, spaceSlug],
+  );
   const activeSpaceIcon =
-    activeSpaces[0]?.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
-  const activeSpaceTitle = activeSpaces[0]?.title?.trim() || t('title');
+    activeSpaceFromList?.logoUrl?.trim() ||
+    activeSpaces[0]?.logoUrl?.trim() ||
+    DEFAULT_SPACE_AVATAR_IMAGE;
+  const activeSpaceTitle =
+    activeSpaceFromList?.title?.trim() ||
+    activeSpaces[0]?.title?.trim() ||
+    t('title');
   const isSectionActive = useCallback(
     (section: 'coherence' | 'agreements' | 'members' | 'treasury') => {
       if (!spaceSlug) return false;
@@ -84,28 +105,28 @@ export function AiLeftPanel() {
       {
         key: 'signals',
         label: tCoherence('signals'),
-        icon: Radio,
+        icon: RadioTower,
         href: `/${lang}/dho/${spaceSlug}/coherence`,
         active: isSectionActive('coherence'),
       },
       {
         key: 'agreements',
         label: tCommon('Agreements'),
-        icon: FileCheck2,
+        icon: FileText,
         href: `/${lang}/dho/${spaceSlug}/agreements`,
         active: isSectionActive('agreements'),
       },
       {
         key: 'members',
         label: tCommon('Members'),
-        icon: UsersRound,
+        icon: Users,
         href: `/${lang}/dho/${spaceSlug}/members`,
         active: isSectionActive('members'),
       },
       {
         key: 'treasury',
         label: tCommon('Treasury'),
-        icon: HandCoins,
+        icon: Landmark,
         href: `/${lang}/dho/${spaceSlug}/treasury`,
         active: isSectionActive('treasury'),
       },
@@ -248,10 +269,10 @@ export function AiLeftPanel() {
                       asChild
                       tooltip={item.label}
                       isActive={item.active}
-                      className="justify-center px-0"
+                      className="h-10 w-10 justify-center rounded-xl p-0"
                     >
                       <Link href={item.href} aria-label={item.label}>
-                        <item.icon />
+                        <item.icon className="h-5 w-5" strokeWidth={2.1} />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -272,7 +293,7 @@ export function AiLeftPanel() {
                     <SidebarMenuItem key={`overlay-${item.key}`}>
                       <SidebarMenuButton asChild isActive={item.active}>
                         <Link href={item.href} aria-label={item.label}>
-                          <item.icon />
+                          <item.icon className="h-5 w-5" strokeWidth={2.1} />
                           <span>{item.label}</span>
                         </Link>
                       </SidebarMenuButton>
