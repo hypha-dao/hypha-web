@@ -24,6 +24,7 @@ export function NavigationTabs({
 }) {
   const t = useTranslations('Common');
   const tCoherence = useTranslations('CoherenceTab');
+  const tModalAside = useTranslations('ModalAside');
   const pathname = usePathname();
   const activeTab = getActiveTabFromPath(pathname);
   const menuItems = [
@@ -58,7 +59,10 @@ export function NavigationTabs({
   ];
 
   return (
-    <nav className="mt-6 w-full md:mt-7" aria-label="Space navigation">
+    <nav
+      className="mt-6 w-full md:mt-7"
+      aria-label={tModalAside('spaceNavigation')}
+    >
       <div className="mb-4 w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <div className="flex min-w-max items-center gap-2 md:min-w-0 md:gap-3">
           {menuItems.map(({ name, href, title, icon: Icon }) => (

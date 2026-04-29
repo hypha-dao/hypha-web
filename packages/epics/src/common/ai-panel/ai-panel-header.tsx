@@ -59,13 +59,19 @@ export function AiPanelHeader() {
   const { spaces: activeSpaces } = useSpacesBySlugs(
     activeSpaceSlug ? [activeSpaceSlug] : [],
   );
-  const { data: allSpaces = [] } = useSWR<Space[]>(
+  const {
+    data: allSpaces = [],
+    error: allSpacesError,
+    isLoading: isAllSpacesLoading,
+  } = useSWR<Space[]>(
     '/api/v1/spaces?parentOnly=false',
     async (url: string) => {
       const response = await fetch(url, {
         headers: { Accept: 'application/json' },
       });
-      if (!response.ok) return [];
+      if (!response.ok) {
+        throw new Error(`Failed to load spaces: ${response.status}`);
+      }
       return (await response.json()) as Space[];
     },
   );
@@ -100,6 +106,8 @@ export function AiPanelHeader() {
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const currentTitle = activeSpace?.title?.trim() || t('title');
   const currentIcon = getDisplayIcon(activeSpace);
+  const hasSpaces = groupedSpaces.ecosystem.length + groupedSpaces.others.length > 0;
+  const fallbackTitle = activeSpace?.title?.trim() || t('title');
 
   return (
     <div className="flex min-h-[var(--menu-top-height,65px)] min-w-0 flex-shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3">
@@ -130,7 +138,19 @@ export function AiPanelHeader() {
             <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
               {tNavigation('mySpaces')}
             </DropdownMenuLabel>
-            {groupedSpaces.ecosystem.map((space) => (
+            {isAllSpacesLoading ? (
+              <DropdownMenuItem disabled>{t('loading')}</DropdownMenuItem>
+            ) : null}
+            {!isAllSpacesLoading && allSpacesError ? (
+              <DropdownMenuItem disabled>{t('streamError')}</DropdownMenuItem>
+            ) : null}
+            {!isAllSpacesLoading && !allSpacesError && !hasSpaces ? (
+              <DropdownMenuItem disabled>{fallbackTitle}</DropdownMenuItem>
+            ) : null}
+            {!isAllSpacesLoading &&
+            !allSpacesError &&
+            hasSpaces &&
+            groupedSpaces.ecosystem.map((space) => (
               <DropdownMenuItem key={space.id} asChild>
                 <Link
                   href={`/${lang}/dho/${space.slug}/agreements`}
@@ -148,11 +168,16 @@ export function AiPanelHeader() {
                 </Link>
               </DropdownMenuItem>
             ))}
-            {groupedSpaces.ecosystem.length > 0 &&
+            {!isAllSpacesLoading &&
+            !allSpacesError &&
+            groupedSpaces.ecosystem.length > 0 &&
             groupedSpaces.others.length > 0 ? (
               <DropdownMenuSeparator />
             ) : null}
-            {groupedSpaces.others.map((space) => (
+            {!isAllSpacesLoading &&
+            !allSpacesError &&
+            hasSpaces &&
+            groupedSpaces.others.map((space) => (
               <DropdownMenuItem key={space.id} asChild>
                 <Link
                   href={`/${lang}/dho/${space.slug}/agreements`}
