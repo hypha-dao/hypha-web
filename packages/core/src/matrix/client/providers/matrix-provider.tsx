@@ -142,6 +142,48 @@ export const MATRIX_UPLOAD_TIMEOUT_MS = 120_000;
 const MATRIX_UPLOAD_STAGGER_MS = 400;
 
 const MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS = 4;
+const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
+const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
+
+async function ensureRoomCallPowerLevels(
+  client: MatrixSdk.MatrixClient,
+  roomId: string,
+): Promise<void> {
+  try {
+    const current =
+      (client.getRoom(roomId)?.currentState.getStateEvents(
+        MatrixSdk.EventType.RoomPowerLevels,
+        '',
+      )?.getContent() as { events?: Record<string, number> } | undefined) ??
+      ((await client.getStateEvent(
+        roomId,
+        MatrixSdk.EventType.RoomPowerLevels,
+        '',
+      )) as { events?: Record<string, number> });
+    const events = { ...(current.events ?? {}) };
+    if (
+      events[MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE] === 0 &&
+      events[MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE] === 0
+    ) {
+      return;
+    }
+    await client.sendStateEvent(
+      roomId,
+      MatrixSdk.EventType.RoomPowerLevels,
+      {
+        ...current,
+        events: {
+          ...events,
+          [MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE]: 0,
+          [MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE]: 0,
+        },
+      },
+      '',
+    );
+  } catch (error) {
+    console.warn('Cannot ensure Matrix call power levels:', error);
+  }
+}
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -486,7 +528,20 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         preset: RoomPreset.PublicChat,
         name: title,
         topic: title,
+        initial_state: [
+          {
+            type: MatrixSdk.EventType.RoomPowerLevels,
+            state_key: '',
+            content: {
+              events: {
+                [MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE]: 0,
+                [MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE]: 0,
+              },
+            },
+          },
+        ],
       });
+      await ensureRoomCallPowerLevels(client, roomId);
       return { roomId };
     },
     [client],
@@ -1217,6 +1272,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       try {
         const joined = await client.joinRoom(roomIdOrAlias);
         const resolvedId = joined.roomId;
+        void ensureRoomCallPowerLevels(client, resolvedId);
         // `joinRoom` resolves before the lazy room store always exposes `getRoom`
         // (race with sync / canonical id). Wait briefly for `getRoom` parity with listeners.
         for (let i = 0; i < 40; i++) {
