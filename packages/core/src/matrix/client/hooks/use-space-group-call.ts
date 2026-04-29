@@ -554,6 +554,22 @@ export function useSpaceGroupCall(roomId: string | null) {
 
       const type = kind === 'video' ? GroupCallType.Video : GroupCallType.Voice;
       let gc = client.getGroupCallForRoom(roomId);
+      if (gc) {
+        const myId = client.getUserId() ?? null;
+        const activeOthers = readParticipantsFromGroupCall(gc, myId).count;
+        if (activeOthers === 0) {
+          try {
+            await Promise.resolve(
+              (
+                gc as MatrixSdk.GroupCall & { terminate?: () => void }
+              ).terminate?.(),
+            );
+          } catch {
+            /* stale local group call cleanup is best-effort */
+          }
+          gc = client.getGroupCallForRoom(roomId);
+        }
+      }
 
       if (!gc) {
         setCallState('connecting');
@@ -837,6 +853,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       roomId,
       refreshLocalPreview,
       runCleanup,
+      readParticipantsFromGroupCall,
       setActiveKeyFromGroupCall,
       updateParticipantCount,
       logDevMediaSnapshot,

@@ -1330,10 +1330,7 @@ const FeedContent = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stream = feed.stream;
 
-  const [feedRenderVersion, rerenderOnFeed] = useReducer(
-    (n: number) => n + 1,
-    0,
-  );
+  const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
     const el = ref.current;
@@ -1348,7 +1345,7 @@ const FeedContent = ({
     return () => {
       el.srcObject = null;
     };
-  }, [feedRenderVersion, stream]);
+  }, [stream]);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -1363,7 +1360,7 @@ const FeedContent = ({
     return () => {
       el.srcObject = null;
     };
-  }, [feedRenderVersion, stream]);
+  }, [stream]);
 
   useEffect(() => {
     const onFeedVisualChange = () => {
