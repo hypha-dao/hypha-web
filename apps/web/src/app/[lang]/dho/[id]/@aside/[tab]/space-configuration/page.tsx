@@ -45,6 +45,10 @@ export default function SpaceConfiguration() {
   const pathname = usePathname();
   const closeUrl = pathname.replace(/\/space-configuration$/, '');
 
+  const normalizeEcosystemLogoUrl = (
+    value: string | File | null | undefined,
+  ): string | undefined => (typeof value === 'string' ? value : undefined);
+
   const submitForm = React.useCallback(
     async (
       updatedSpace: SchemaCreateSpaceForm,
@@ -85,6 +89,9 @@ export default function SpaceConfiguration() {
                   description: description as string | undefined,
                   address: address as string | undefined,
                   web3SpaceId: web3SpaceId as number | undefined,
+                  ecosystemLogoUrl: normalizeEcosystemLogoUrl(
+                    updates.ecosystemLogoUrl,
+                  ),
                 },
               });
             }
@@ -112,12 +119,23 @@ export default function SpaceConfiguration() {
                   description: description as string | undefined,
                   address: address as string | undefined,
                   web3SpaceId: web3SpaceId as number | undefined,
+                  ecosystemLogoUrl: normalizeEcosystemLogoUrl(
+                    updates.ecosystemLogoUrl,
+                  ),
                 },
               });
             }
           }
           setNewSpaceSlug(normalizedUpdatedSpace.slug || '');
-          await updateSpace({ id: space.id, data: normalizedUpdatedSpace });
+          await updateSpace({
+            id: space.id,
+            data: {
+              ...normalizedUpdatedSpace,
+              ecosystemLogoUrl: normalizeEcosystemLogoUrl(
+                normalizedUpdatedSpace.ecosystemLogoUrl,
+              ),
+            },
+          });
         }
       } catch (e) {
         console.warn(e);
@@ -164,6 +182,7 @@ export default function SpaceConfiguration() {
             description: space?.description || '',
             slug: space?.slug || '',
             logoUrl: space?.logoUrl || '',
+            ecosystemLogoUrl: space?.ecosystemLogoUrl || '',
             leadImage: space?.leadImage || '',
             categories: space?.categories || [],
             links: space?.links || [],
