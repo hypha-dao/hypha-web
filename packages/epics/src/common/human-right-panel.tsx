@@ -611,7 +611,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     filmstrip: readCallFullViewPaneSplit('filmstrip'),
     speakerOnTop: readCallFullViewPaneSplit('speakerOnTop'),
   }));
-  const [callLeftMessage, setCallLeftMessage] = useState<string | null>(null);
   const callFullViewSplitContainerRef = useRef<HTMLDivElement | null>(null);
   /**
    * `HumanChatPanelCallStage` only mounts the expand control when
@@ -687,10 +686,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'initializing';
 
-  useEffect(() => {
-    if (inSpaceCall) setCallLeftMessage(null);
-  }, [inSpaceCall]);
-
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
 
   /** Distinct Matrix users in the room call besides the current user (not device count). */
@@ -728,17 +723,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'connecting';
 
-  const clearCallLeftBanner = useCallback(() => {
-    setCallLeftMessage(null);
-  }, []);
-
   const handleCallAudio = useCallback(() => {
-    setCallLeftMessage(null);
     void enterSpaceCallAudio();
   }, [enterSpaceCallAudio]);
 
   const handleCallVideo = useCallback(() => {
-    setCallLeftMessage(null);
     void enterSpaceCallVideo();
   }, [enterSpaceCallVideo]);
 
@@ -751,10 +740,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const handleCallLeave = useCallback(() => {
-    const k = spaceCallKind;
     void leaveSpaceCall();
-    setCallLeftMessage(k === 'video' ? t('callLeftVideo') : t('callLeftAudio'));
-  }, [leaveSpaceCall, spaceCallKind, t]);
+  }, [leaveSpaceCall]);
 
   /** End ghost sessions: when connected and no other participants for 5 minutes, leave locally. */
   useEffect(() => {
@@ -765,11 +752,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const SOLO_IDLE_LEAVE_MS = 5 * 60 * 1000;
     const id = window.setTimeout(() => {
       void leaveSpaceCall();
-      setCallLeftMessage(
-        spaceCallKind === 'video'
-          ? t('callLeftVideoIdle')
-          : t('callLeftAudioIdle'),
-      );
     }, SOLO_IDLE_LEAVE_MS);
 
     return () => window.clearTimeout(id);
@@ -779,8 +761,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallOthersInRoom,
     spaceCallRoomGroupDeviceCount,
     leaveSpaceCall,
-    spaceCallKind,
-    t,
   ]);
 
   const handleCallToggleMic = useCallback(() => {
@@ -2325,19 +2305,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {callUiEnabled &&
-          !inSpaceCall &&
-          (spaceCallShowJoinStrip || callLeftMessage) && (
-            <HumanChatPanelCallJoinStrip
-              deviceCount={spaceCallRoomGroupDeviceCount}
-              disabled={!callUiEnabled}
-              busy={spaceCallBusyJoining}
-              onJoinAudio={handleCallAudio}
-              onJoinVideo={handleCallVideo}
-              durableMessage={callLeftMessage}
-              onDismissDurable={clearCallLeftBanner}
-            />
-          )}
+        {callUiEnabled && !inSpaceCall && spaceCallShowJoinStrip && (
+          <HumanChatPanelCallJoinStrip
+            deviceCount={spaceCallRoomGroupDeviceCount}
+            disabled={!callUiEnabled}
+            busy={spaceCallBusyJoining}
+            onJoinAudio={handleCallAudio}
+            onJoinVideo={handleCallVideo}
+          />
+        )}
         {callUiEnabled &&
           (inSpaceCall ||
             spaceCallState === 'error' ||

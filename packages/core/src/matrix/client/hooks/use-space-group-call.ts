@@ -125,6 +125,7 @@ export function useSpaceGroupCall(roomId: string | null) {
   const activeGroupCallRoomIdRef = useRef<string | null>(null);
   const loggedStatsForGroupCallIdRef = useRef<string | null>(null);
   const webRtcDiagCleanupRef = useRef<(() => void) | null>(null);
+  const groupCallListenerCleanupRef = useRef<(() => void) | null>(null);
   /** Cleared in runCleanup — delayed second `placeOutgoingCalls` nudge after enter(). */
   const placeOutgoingNudgeTimerRef = useRef<number | null>(null);
   /**
@@ -200,6 +201,8 @@ export function useSpaceGroupCall(roomId: string | null) {
     }
     webRtcDiagCleanupRef.current?.();
     webRtcDiagCleanupRef.current = null;
+    groupCallListenerCleanupRef.current?.();
+    groupCallListenerCleanupRef.current = null;
     remoteMediaGapSinceRef.current = null;
     remoteMediaStallLoggedRef.current = false;
     remoteMediaStallBannerDismissedRef.current = false;
@@ -210,18 +213,6 @@ export function useSpaceGroupCall(roomId: string | null) {
     }
     const gc = groupCallRef.current;
     if (gc) {
-      try {
-        gc.removeAllListeners(GroupCallEvent.Error);
-        gc.removeAllListeners(GroupCallEvent.GroupCallStateChanged);
-        gc.removeAllListeners(GroupCallEvent.LocalScreenshareStateChanged);
-        gc.removeAllListeners(GroupCallEvent.ParticipantsChanged);
-        gc.removeAllListeners(GroupCallEvent.UserMediaFeedsChanged);
-        gc.removeAllListeners(GroupCallEvent.ScreenshareFeedsChanged);
-        gc.removeAllListeners(GroupCallEvent.LocalMuteStateChanged);
-        gc.removeAllListeners(GroupCallEvent.ActiveSpeakerChanged);
-      } catch {
-        // ignore
-      }
       const p = (async () => {
         try {
           await Promise.resolve((gc as MatrixSdk.GroupCall).leave());
@@ -414,6 +405,9 @@ export function useSpaceGroupCall(roomId: string | null) {
 
   const attachGroupCallListeners = useCallback(
     (gc: MatrixSdk.GroupCall) => {
+      groupCallListenerCleanupRef.current?.();
+      groupCallListenerCleanupRef.current = null;
+
       const onError = (err: unknown) => {
         const isPerm = isPermissionLikeGroupCallError(err);
         const code: SpaceGroupCallErrorCode = isPerm
@@ -447,15 +441,20 @@ export function useSpaceGroupCall(roomId: string | null) {
         }
       };
       gc.on(GroupCallEvent.GroupCallStateChanged, onState);
-      gc.on(GroupCallEvent.LocalScreenshareStateChanged, (sharing: boolean) => {
+      const onLocalScreenshareStateChanged = (sharing: boolean) => {
         setIsScreensharing(sharing);
-      });
-      gc.on(GroupCallEvent.ParticipantsChanged, () => {
+      };
+      gc.on(
+        GroupCallEvent.LocalScreenshareStateChanged,
+        onLocalScreenshareStateChanged,
+      );
+      const onParticipantsChanged = () => {
         updateParticipantCount();
         evalRemoteMediaStall();
         /** Pairwise VoIP: roster changes can arrive after the internal nudge — retry outbound setup. */
         nudgeGroupCallPlaceOutgoing(gc);
-      });
+      };
+      gc.on(GroupCallEvent.ParticipantsChanged, onParticipantsChanged);
       const onFeedsMaybeParticipants = () => {
         scheduleFeedBatched();
         updateParticipantCount();
@@ -472,13 +471,40 @@ export function useSpaceGroupCall(roomId: string | null) {
       };
       gc.on(GroupCallEvent.ActiveSpeakerChanged, onActiveSpeaker);
       onActiveSpeaker(gc.activeSpeaker);
-      gc.on(
-        GroupCallEvent.LocalMuteStateChanged,
-        (audioMuted: boolean, videoMuted: boolean) => {
-          setIsMicrophoneMuted(audioMuted);
-          setIsLocalVideoMuted(videoMuted);
-        },
-      );
+      const onLocalMuteStateChanged = (
+        audioMuted: boolean,
+        videoMuted: boolean,
+      ) => {
+        setIsMicrophoneMuted(audioMuted);
+        setIsLocalVideoMuted(videoMuted);
+      };
+      gc.on(GroupCallEvent.LocalMuteStateChanged, onLocalMuteStateChanged);
+
+      groupCallListenerCleanupRef.current = () => {
+        gc.removeListener(GroupCallEvent.Error, onError);
+        gc.removeListener(GroupCallEvent.GroupCallStateChanged, onState);
+        gc.removeListener(
+          GroupCallEvent.LocalScreenshareStateChanged,
+          onLocalScreenshareStateChanged,
+        );
+        gc.removeListener(
+          GroupCallEvent.ParticipantsChanged,
+          onParticipantsChanged,
+        );
+        gc.removeListener(
+          GroupCallEvent.UserMediaFeedsChanged,
+          onFeedsMaybeParticipants,
+        );
+        gc.removeListener(
+          GroupCallEvent.ScreenshareFeedsChanged,
+          onFeedsMaybeParticipants,
+        );
+        gc.removeListener(GroupCallEvent.ActiveSpeakerChanged, onActiveSpeaker);
+        gc.removeListener(
+          GroupCallEvent.LocalMuteStateChanged,
+          onLocalMuteStateChanged,
+        );
+      };
     },
     [
       roomId,
