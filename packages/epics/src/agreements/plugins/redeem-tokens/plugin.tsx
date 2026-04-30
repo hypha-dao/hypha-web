@@ -227,12 +227,6 @@ export const RedeemTokensPlugin = ({
               },
             );
             if (!res.ok) {
-              if (
-                (res.status === 401 || res.status === 403) &&
-                isAuthenticated
-              ) {
-                throw new Error(`Vault fetch unauthorized (${res.status})`);
-              }
               return { owner, vaults: [] };
             }
             const payload = (await res.json()) as { vaults?: Vault[] };

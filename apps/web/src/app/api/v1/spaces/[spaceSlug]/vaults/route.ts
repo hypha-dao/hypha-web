@@ -43,13 +43,15 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
-    const { hasAccess, response } = await checkSpaceAccess(
-      request,
-      space.web3SpaceId as number,
-    );
+    if (!redeemableOnly) {
+      const { hasAccess, response } = await checkSpaceAccess(
+        request,
+        space.web3SpaceId as number,
+      );
 
-    if (!hasAccess && response) {
-      return response;
+      if (!hasAccess && response) {
+        return response;
+      }
     }
 
     const spaceId = BigInt(space.web3SpaceId as number);
