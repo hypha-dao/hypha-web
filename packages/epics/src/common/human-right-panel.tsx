@@ -674,6 +674,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   } | null>(null);
   const [isDraggingCallPopup, setIsDraggingCallPopup] = useState(false);
   const callFullViewSplitContainerRef = useRef<HTMLDivElement | null>(null);
+  const callFullViewDialogRef = useRef<HTMLDivElement | null>(null);
   /**
    * `HumanChatPanelCallStage` only mounts the expand control when
    * `layout === "panel" && !fullViewOpen`, so this ref is set on the open
@@ -902,6 +903,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
   }, [activeTab, canOpenCallFullView, spaceCallState, callFullViewOpen]);
 
+  useEffect(() => {
+    if (!callFullViewOpen) return;
+    const rafId = window.requestAnimationFrame(() => {
+      callFullViewDialogRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [callFullViewOpen]);
+
   const handleCallPopupDragStart = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (!callFullViewOpen) return;
@@ -927,9 +936,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const drag = callPopupDragStateRef.current;
       if (!drag) return;
       if (e.pointerId !== drag.pointerId) return;
+      const rawOffsetX = drag.startOffsetX + (e.clientX - drag.startClientX);
+      const rawOffsetY = drag.startOffsetY + (e.clientY - drag.startClientY);
+      const dialogRect = callFullViewDialogRef.current?.getBoundingClientRect();
+      const popupWidth = dialogRect?.width ?? Math.min(window.innerWidth * 0.96, 1280);
+      const popupHeight =
+        dialogRect?.height ?? Math.min(window.innerHeight * 0.9, 900);
+      const baseLeft = window.innerWidth / 2 - popupWidth / 2;
+      const baseTop = window.innerHeight / 2 - popupHeight / 2;
+      const rawLeft = baseLeft + rawOffsetX;
+      const rawTop = baseTop + rawOffsetY;
+      const maxLeft = Math.max(0, window.innerWidth - popupWidth);
+      const maxTop = Math.max(0, window.innerHeight - popupHeight);
+      const clampedLeft = Math.min(Math.max(rawLeft, 0), maxLeft);
+      const clampedTop = Math.min(Math.max(rawTop, 0), maxTop);
       setCallPopupOffset({
-        x: drag.startOffsetX + (e.clientX - drag.startClientX),
-        y: drag.startOffsetY + (e.clientY - drag.startClientY),
+        x: clampedLeft - baseLeft,
+        y: clampedTop - baseTop,
       });
     };
     const onEnd = (e: PointerEvent) => {
@@ -2532,6 +2555,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   onRequestFullView={
                     canOpenCallFullView
                       ? () => {
+                          if (document.activeElement instanceof HTMLButtonElement) {
+                            callFullViewTriggerRef.current = document.activeElement;
+                          }
                           setCallFullViewOpen(true);
                         }
                       : undefined
@@ -2696,6 +2722,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
       {callUiEnabled && canOpenCallFullView && callFullViewOpen && (
         <div
+          ref={callFullViewDialogRef}
+          tabIndex={-1}
           className="fixed z-[120] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full flex-col overflow-hidden rounded-xl border border-border/50 bg-background p-0 text-foreground shadow-2xl"
           style={{
             left: '50%',

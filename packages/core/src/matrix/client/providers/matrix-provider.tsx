@@ -184,7 +184,29 @@ async function ensureRoomCallPowerLevels(
       '',
     );
   } catch (error) {
+    const e = error as
+      | {
+          errcode?: string;
+          name?: string;
+          message?: string;
+          data?: { errcode?: string };
+          httpStatus?: number;
+        }
+      | undefined;
+    const isPermissionDenied =
+      e?.errcode === 'M_FORBIDDEN' ||
+      e?.data?.errcode === 'M_FORBIDDEN' ||
+      e?.httpStatus === 403 ||
+      e?.name === 'ForbiddenError';
+    if (isPermissionDenied) {
+      console.warn(
+        'Cannot ensure Matrix call power levels due to permissions:',
+        error,
+      );
+      return;
+    }
     console.warn('Cannot ensure Matrix call power levels:', error);
+    throw error;
   }
 }
 

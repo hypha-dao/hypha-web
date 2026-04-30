@@ -88,8 +88,9 @@ export function HumanChatPanelCallJoinStrip({
               disabled={disabled || busy || !onJoinAudio}
               className={cn(
                 'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors',
-                (disabled || busy) && 'cursor-not-allowed opacity-50',
-                !disabled && !busy && 'hover:bg-muted',
+                (disabled || busy || !onJoinAudio) &&
+                  'cursor-not-allowed opacity-50',
+                !disabled && !busy && Boolean(onJoinAudio) && 'hover:bg-muted',
               )}
               title={audioTitle}
               aria-label={audioTitle}
