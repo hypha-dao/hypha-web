@@ -187,9 +187,11 @@ export function AiLeftPanel() {
     const bySlug = new Map(allSpaces.map((space) => [space.slug, space]));
     return recentSpaceSlugs
       .map((slug) => bySlug.get(slug))
-      .filter((space): space is Space => Boolean(space))
+      .filter(
+        (space): space is Space => Boolean(space) && space.slug !== spaceSlug,
+      )
       .slice(0, MAX_RECENT_SPACES);
-  }, [allSpaces, recentSpaceSlugs]);
+  }, [allSpaces, recentSpaceSlugs, spaceSlug]);
 
   const suggestions = useMemo(
     () => [
