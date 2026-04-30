@@ -99,6 +99,8 @@ type AiPanelChatBarProps = {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
+  draftAttachments?: File[];
+  onDraftAttachmentsChange?: (files: File[]) => void;
   onStop?: () => void;
   isStreaming?: boolean;
   placeholder?: string;
@@ -108,6 +110,8 @@ export function AiPanelChatBar({
   value,
   onChange,
   onSend,
+  draftAttachments = [],
+  onDraftAttachmentsChange,
   onStop,
   isStreaming = false,
   placeholder,
@@ -142,7 +146,10 @@ export function AiPanelChatBar({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (value.trim().length > 0 && !isStreaming) {
+      if (
+        (value.trim().length > 0 || draftAttachments.length > 0) &&
+        !isStreaming
+      ) {
         if (isDictating) {
           dictationInterruptForSendRef.current = true;
           const r = speechRecognitionRef.current;
@@ -302,8 +309,16 @@ export function AiPanelChatBar({
     };
   }, []);
 
-  const canSend = value.trim().length > 0 && !isStreaming;
   const canStop = isStreaming && typeof onStop === 'function';
+  const pushDrafts = useCallback(
+    (files: FileList | null) => {
+      if (!files || files.length === 0 || !onDraftAttachmentsChange) return;
+      onDraftAttachmentsChange([...draftAttachments, ...Array.from(files)]);
+    },
+    [draftAttachments, onDraftAttachmentsChange],
+  );
+  const canSendWithAttachments =
+    (value.trim().length > 0 || draftAttachments.length > 0) && !isStreaming;
   const recordingStopButtonClass =
     'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-red-600 transition-all duration-200 ease-out ' +
     'border border-red-500/25 bg-gradient-to-b from-red-500/[0.14] via-red-500/[0.08] to-red-950/[0.06] ' +
@@ -384,6 +399,7 @@ export function AiPanelChatBar({
           aria-hidden="true"
           multiple
           onChange={(e) => {
+            pushDrafts(e.target.files);
             e.target.value = '';
           }}
         />
@@ -397,6 +413,7 @@ export function AiPanelChatBar({
           aria-hidden="true"
           multiple
           onChange={(e) => {
+            pushDrafts(e.target.files);
             e.target.value = '';
           }}
         />
@@ -409,6 +426,7 @@ export function AiPanelChatBar({
           aria-hidden="true"
           multiple
           onChange={(e) => {
+            pushDrafts(e.target.files);
             e.target.value = '';
           }}
         />
@@ -501,11 +519,11 @@ export function AiPanelChatBar({
             <button
               type="button"
               onClick={isStreaming ? () => onStop?.() : sendMessage}
-              disabled={isStreaming ? !canStop : !canSend}
+              disabled={isStreaming ? !canStop : !canSendWithAttachments}
               className={cn(
                 'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',
-                canSend || canStop
+                canSendWithAttachments || canStop
                   ? 'text-primary hover:bg-primary/12 hover:text-primary active:bg-primary/18'
                   : 'cursor-not-allowed text-muted-foreground/50',
               )}
