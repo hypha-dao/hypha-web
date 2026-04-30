@@ -1,8 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useMemo } from 'react';
-import { usePathname } from 'next/navigation';
+import { useEffect, useMemo } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { MenuTop } from '@hypha-platform/ui';
 import {
@@ -42,6 +42,7 @@ export function ConnectedMenuTop({
   aiChatEnabled,
 }: ConnectedMenuTopProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const tNavigation = useTranslations('Navigation');
   const { resolvedTheme } = useTheme();
   const lang = useMemo(() => {
@@ -58,6 +59,7 @@ export function ConnectedMenuTop({
     async (url: string) => {
       const response = await fetch(url, {
         headers: { Accept: 'application/json' },
+        cache: 'no-store',
       });
       if (!response.ok) {
         console.warn('[ConnectedMenuTop] spaces fetch failed', {
@@ -80,6 +82,11 @@ export function ConnectedMenuTop({
     rootSpace?.slug != null
       ? `/${lang}/dho/${rootSpace.slug}/agreements/space-configuration`
       : logoHref;
+  useEffect(() => {
+    if (!rootConfigHref || rootConfigHref === '#') return;
+    if (pathname.endsWith('/space-configuration')) return;
+    router.prefetch(rootConfigHref);
+  }, [pathname, rootConfigHref, router]);
   const rootLogoLight = rootSpace?.ecosystemLogoUrlLight?.trim() || '';
   const rootLogoDark = rootSpace?.ecosystemLogoUrlDark?.trim() || '';
   const rootLogoLegacy = rootSpace?.ecosystemLogoUrl?.trim() || '';
@@ -103,6 +110,7 @@ export function ConnectedMenuTop({
       rootHasCustomLogo && rootLogoUrl ? (
         <Link
           href={rootConfigHref ?? '#'}
+          prefetch={true}
           className="group relative inline-flex h-9 max-w-[11rem] items-center justify-start overflow-hidden rounded-md px-1 transition-colors hover:bg-muted/40"
           aria-label={tNavigation('ecosystemLogo')}
           title={tNavigation('ecosystemLogo')}
@@ -120,6 +128,7 @@ export function ConnectedMenuTop({
       ) : (
         <Link
           href={rootConfigHref ?? '#'}
+          prefetch={true}
           className="group relative inline-flex h-10 max-w-[13.5rem] items-center justify-center overflow-hidden rounded-xl border border-dashed border-accent-7/60 bg-linear-to-r from-accent-2/50 via-background-2 to-accent-2/40 px-3.5 text-sm font-semibold text-accent-11 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset,0_8px_20px_-16px_var(--accent-9)] transition-all duration-200 hover:border-accent-8 hover:from-accent-3/60 hover:to-accent-3/50 hover:text-accent-12"
           aria-label={tNavigation('ecosystemLogo')}
           title={tNavigation('ecosystemLogo')}
