@@ -24,6 +24,7 @@ import {
 import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { useAiPanel } from './human-chat-panel-context';
+import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 
 type ChatUIMessage = {
   id: string;
@@ -125,6 +126,7 @@ export function AiLeftPanel() {
   }, [isSectionActive, lang, spaceSlug, tCommon, tCoherence]);
 
   const [input, setInput] = useState('');
+  const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
 
   const suggestions = useMemo(
     () => [
@@ -166,21 +168,32 @@ export function AiLeftPanel() {
   }, [getAccessToken, spaceSlug]);
 
   const handleSend = useCallback(async () => {
-    if (!input.trim() || isStreaming) return;
+    if ((!input.trim() && draftAttachments.length === 0) || isStreaming) return;
     const text = input;
+    const attachments = [...draftAttachments];
     setInput('');
+    setDraftAttachments([]);
     try {
       const options = await buildMessageOptions();
-      if (DEBUG) console.log('[AiLeftPanel] sendMessage', { text, spaceSlug });
+      const fileParts =
+        attachments.length > 0 ? await convertFilesToParts(attachments) : [];
+      const textParts = text.trim() ? [{ type: 'text' as const, text }] : [];
+      if (DEBUG)
+        console.log('[AiLeftPanel] sendMessage', {
+          text,
+          attachmentCount: fileParts.length,
+          spaceSlug,
+        });
       await sendMessage(
-        { role: 'user', parts: [{ type: 'text', text }] },
+        { role: 'user', parts: [...textParts, ...fileParts] },
         options,
       );
     } catch (err) {
       console.error('[AiLeftPanel] sendMessage error:', err);
       setInput(text);
+      setDraftAttachments(attachments);
     }
-  }, [input, isStreaming, sendMessage, buildMessageOptions]);
+  }, [input, draftAttachments, isStreaming, sendMessage, buildMessageOptions]);
 
   const handleStop = useCallback(() => {
     void stop();
@@ -272,7 +285,7 @@ export function AiLeftPanel() {
                       <SidebarMenuButton
                         asChild
                         isActive={item.active}
-                        className="rounded-md transition-colors hover:bg-accent-2/70 hover:text-foreground data-[active=true]:bg-accent-3/70 data-[active=true]:text-foreground"
+                        className="h-10 rounded-lg border border-transparent px-3 text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground"
                       >
                         <Link
                           href={item.href}
@@ -328,7 +341,7 @@ export function AiLeftPanel() {
                       asChild
                       tooltip={item.label}
                       isActive={item.active}
-                      className="h-10 w-10 justify-center rounded-xl p-0 transition-colors hover:bg-accent-2/70 hover:text-foreground data-[active=true]:bg-accent-3/70 data-[active=true]:text-foreground"
+                      className="h-10 w-10 justify-center rounded-lg border border-transparent p-0 text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground"
                     >
                       <Link
                         href={item.href}
@@ -375,6 +388,8 @@ export function AiLeftPanel() {
           value={input}
           onChange={setInput}
           onSend={handleSend}
+          draftAttachments={draftAttachments}
+          onDraftAttachmentsChange={setDraftAttachments}
           onStop={handleStop}
           isStreaming={isStreaming}
         />
