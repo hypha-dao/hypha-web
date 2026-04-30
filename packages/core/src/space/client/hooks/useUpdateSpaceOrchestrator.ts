@@ -147,7 +147,7 @@ export const useUpdateSpaceOrchestrator = ({
       }: {
         arg: {
           id: number;
-          data: z.infer<typeof schemaUpdateSpace> & {
+          data: Omit<z.infer<typeof schemaUpdateSpace>, 'ecosystemLogoUrl'> & {
             logoUrl?: string | File | null;
             leadImage?: string | File | null;
             ecosystemLogoUrl?: string | File | null;
