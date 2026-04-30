@@ -38,12 +38,14 @@ const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
 const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
 const MAX_RECENT_SPACES = 5;
 const MENU_BUTTON_EXPANDED_CLASS =
-  'h-10 rounded-lg border border-transparent text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground';
+  'group relative h-10 rounded-xl border border-transparent text-sm font-medium text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition-all duration-150 ease-out before:pointer-events-none before:absolute before:left-0 before:top-1.5 before:h-7 before:w-0.5 before:rounded-full before:bg-accent-9 before:opacity-0 hover:-translate-y-px hover:bg-accent-3/25 hover:text-foreground data-[active=true]:bg-linear-to-r data-[active=true]:from-accent-9/22 data-[active=true]:to-accent-9/8 data-[active=true]:text-foreground data-[active=true]:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_8px_18px_-14px_var(--accent-9)] data-[active=true]:before:opacity-100';
 const MENU_BUTTON_COLLAPSED_CLASS =
-  'h-10 w-10 justify-center rounded-lg border border-transparent p-0 text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground';
+  'group relative h-10 w-10 justify-center rounded-xl border border-transparent p-0 text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition-all duration-150 ease-out before:pointer-events-none before:absolute before:left-0 before:top-1.5 before:h-7 before:w-0.5 before:rounded-full before:bg-accent-9 before:opacity-0 hover:-translate-y-px hover:bg-accent-3/25 hover:text-foreground data-[active=true]:bg-linear-to-r data-[active=true]:from-accent-9/22 data-[active=true]:to-accent-9/8 data-[active=true]:text-foreground data-[active=true]:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_8px_18px_-14px_var(--accent-9)] data-[active=true]:before:opacity-100';
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
 const RECENT_SPACE_AVATAR_CLASS =
-  'flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
+  'flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60 transition-all duration-150 ease-out';
+const MENU_ICON_PLATE_BASE_CLASS =
+  'flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-150 ease-out';
 
 export function AiLeftPanel() {
   const { isAuthenticated, isLoading, login, getAccessToken } =
@@ -353,7 +355,18 @@ export function AiLeftPanel() {
                           className="flex min-w-0 items-center"
                         >
                           <span className={ICON_COLUMN_CLASS}>
-                            <item.icon className="h-5 w-5" strokeWidth={2.1} />
+                            <span
+                              className={`${MENU_ICON_PLATE_BASE_CLASS} ${
+                                item.active
+                                  ? 'bg-accent-9/20 text-foreground'
+                                  : 'text-muted-foreground/90 group-hover:bg-accent-9/12 group-hover:text-foreground'
+                              }`}
+                            >
+                              <item.icon
+                                className="h-5 w-5"
+                                strokeWidth={2.1}
+                              />
+                            </span>
                           </span>
                           <span className="min-w-0 truncate">{item.label}</span>
                         </Link>
@@ -384,7 +397,13 @@ export function AiLeftPanel() {
                               className="flex min-w-0 items-center"
                             >
                               <span className={ICON_COLUMN_CLASS}>
-                                <span className={RECENT_SPACE_AVATAR_CLASS}>
+                                <span
+                                  className={`${RECENT_SPACE_AVATAR_CLASS} ${
+                                    isRecentActive
+                                      ? 'ring-accent-9/70 shadow-[0_0_0_2px_color-mix(in_srgb,var(--accent-9)_30%,transparent)]'
+                                      : 'group-hover:ring-accent-9/45'
+                                  }`}
+                                >
                                   {space.logoUrl ? (
                                     <>
                                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -461,7 +480,15 @@ export function AiLeftPanel() {
                         aria-current={item.active ? 'page' : undefined}
                         className={ICON_COLUMN_CLASS}
                       >
-                        <item.icon className="h-5 w-5" strokeWidth={2.1} />
+                        <span
+                          className={`${MENU_ICON_PLATE_BASE_CLASS} ${
+                            item.active
+                              ? 'bg-accent-9/20 text-foreground'
+                              : 'text-muted-foreground/90 group-hover:bg-accent-9/12 group-hover:text-foreground'
+                          }`}
+                        >
+                          <item.icon className="h-5 w-5" strokeWidth={2.1} />
+                        </span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -490,7 +517,13 @@ export function AiLeftPanel() {
                             aria-current={isRecentActive ? 'page' : undefined}
                             className={ICON_COLUMN_CLASS}
                           >
-                            <span className={RECENT_SPACE_AVATAR_CLASS}>
+                            <span
+                              className={`${RECENT_SPACE_AVATAR_CLASS} ${
+                                isRecentActive
+                                  ? 'ring-accent-9/70 shadow-[0_0_0_2px_color-mix(in_srgb,var(--accent-9)_30%,transparent)]'
+                                  : 'group-hover:ring-accent-9/45'
+                              }`}
+                            >
                               {space.logoUrl ? (
                                 <>
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
