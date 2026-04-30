@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import useSWR from 'swr';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ChevronsUpDown, PanelLeftClose, Sparkles } from 'lucide-react';
 import {
   DropdownMenu,
@@ -37,6 +37,7 @@ export function AiPanelHeader({
   const { closeAiPanel } = useAiPanel();
   const t = useTranslations('AiPanel');
   const tNavigation = useTranslations('Navigation');
+  const tSpaces = useTranslations('Spaces');
   const pathname = usePathname();
   const params = useParams<{ lang?: string }>();
   const activeSpaceSlug = useMemo(
@@ -106,6 +107,22 @@ export function AiPanelHeader({
   const currentIcon = getDisplayIcon(activeSpace);
   const hasSpaces =
     groupedSpaces.ecosystem.length + groupedSpaces.others.length > 0;
+  const [spaceSearch, setSpaceSearch] = useState('');
+  const normalizedSearch = spaceSearch.trim().toLowerCase();
+  const filteredGroupedSpaces = useMemo(() => {
+    if (!normalizedSearch) return groupedSpaces;
+    const matches = (space: Space) =>
+      space.title.toLowerCase().includes(normalizedSearch) ||
+      space.slug.toLowerCase().includes(normalizedSearch);
+    return {
+      ecosystem: groupedSpaces.ecosystem.filter(matches),
+      others: groupedSpaces.others.filter(matches),
+    };
+  }, [groupedSpaces, normalizedSearch]);
+  const hasFilteredSpaces =
+    filteredGroupedSpaces.ecosystem.length +
+      filteredGroupedSpaces.others.length >
+    0;
   const fallbackTitle = activeSpace?.title?.trim() || t('title');
 
   return (
@@ -146,19 +163,33 @@ export function AiPanelHeader({
             <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
               {tNavigation('mySpaces')}
             </DropdownMenuLabel>
+            {!isAllSpacesLoading && !allSpacesError && hasSpaces ? (
+              <div className="mb-1 px-1">
+                <input
+                  type="text"
+                  value={spaceSearch}
+                  onChange={(event) => setSpaceSearch(event.target.value)}
+                  placeholder={tSpaces('search')}
+                  className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
+                  aria-label={tSpaces('search')}
+                />
+              </div>
+            ) : null}
             {isAllSpacesLoading ? (
               <DropdownMenuItem disabled>{t('loading')}</DropdownMenuItem>
             ) : null}
             {!isAllSpacesLoading && allSpacesError ? (
               <DropdownMenuItem disabled>{t('streamError')}</DropdownMenuItem>
             ) : null}
-            {!isAllSpacesLoading && !allSpacesError && !hasSpaces ? (
+            {!isAllSpacesLoading &&
+            !allSpacesError &&
+            (!hasSpaces || !hasFilteredSpaces) ? (
               <DropdownMenuItem disabled>{fallbackTitle}</DropdownMenuItem>
             ) : null}
             {!isAllSpacesLoading &&
               !allSpacesError &&
-              hasSpaces &&
-              groupedSpaces.ecosystem.map((space) => (
+              hasFilteredSpaces &&
+              filteredGroupedSpaces.ecosystem.map((space) => (
                 <DropdownMenuItem
                   key={space.id}
                   asChild
@@ -192,14 +223,14 @@ export function AiPanelHeader({
               ))}
             {!isAllSpacesLoading &&
             !allSpacesError &&
-            groupedSpaces.ecosystem.length > 0 &&
-            groupedSpaces.others.length > 0 ? (
+            filteredGroupedSpaces.ecosystem.length > 0 &&
+            filteredGroupedSpaces.others.length > 0 ? (
               <DropdownMenuSeparator />
             ) : null}
             {!isAllSpacesLoading &&
               !allSpacesError &&
-              hasSpaces &&
-              groupedSpaces.others.map((space) => (
+              hasFilteredSpaces &&
+              filteredGroupedSpaces.others.map((space) => (
                 <DropdownMenuItem
                   key={space.id}
                   asChild
