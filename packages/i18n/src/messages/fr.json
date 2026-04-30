@@ -745,6 +745,8 @@
     "nameYourSpace": "Nommez votre espace...",
     "createdBy": "Créé par",
     "uploadSpaceBanner": "Téléverser",
+    "uploadEcosystemLogo": "Téléverser le logo de l'écosystème",
+    "ecosystemLogoDescription": "Ce logo de l'écosystème sera affiché dans la bannière supérieure de votre écosystème et sur chaque espace qui en fait partie, afin d'assurer une image de marque cohérente.",
     "spaceBanner": "bannière de l'espace",
     "purpose": "Objectif",
     "purposePlaceholder": "Saisissez l'objectif de votre espace ici...",
