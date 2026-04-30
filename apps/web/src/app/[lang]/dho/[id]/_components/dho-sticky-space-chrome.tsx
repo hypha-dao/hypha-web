@@ -22,7 +22,7 @@ export type DhoStickySpaceChromeProps = {
 };
 
 function useMenuTopOffsetPx(): number {
-  const [px, setPx] = React.useState(64);
+  const [px, setPx] = React.useState(70);
 
   React.useLayoutEffect(() => {
     const read = () => {
@@ -30,7 +30,7 @@ function useMenuTopOffsetPx(): number {
         '--menu-top-height',
       );
       const n = parseFloat(raw);
-      setPx(Number.isFinite(n) && n > 0 ? n : 64);
+      setPx(Number.isFinite(n) && n > 0 ? n : 70);
     };
     read();
     const ro = new ResizeObserver(read);
@@ -157,7 +157,7 @@ export function DhoStickySpaceChrome({
             ? 'pointer-events-auto translate-y-0 opacity-100'
             : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
         )}
-        style={{ top: 'var(--menu-top-height, 4rem)' }}
+        style={{ top: 'var(--menu-top-height, 70px)' }}
         aria-hidden={!stuck}
       >
         <div className="mx-auto flex min-h-11 max-w-container-2xl items-center gap-3 px-4 py-2.5 sm:px-6 md:min-h-[52px] md:py-3 md:px-8">

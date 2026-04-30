@@ -40,7 +40,7 @@ export type LoadingBackdropInnerProps =
  * `PanelWrapLayout`.
  */
 const MAIN_COLUMN_EDGE_CLASSES =
-  'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] top-[var(--menu-top-height,65px)]';
+  'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] top-[var(--menu-top-height,70px)]';
 
 /** Legacy card — docked side panel & inline overlays (unchanged layout). */
 function ProgressCard({
@@ -137,10 +137,10 @@ export function LoadingBackdropInner({
     fullHeightVariant === 'responsive-modal-shell'
       ? 'responsive-modal-shell'
       : fullHeightVariant === 'docked-panel'
-      ? 'docked-panel'
-      : asideLayout === 'modal-shell'
-      ? 'responsive-modal-shell'
-      : 'docked-panel';
+        ? 'docked-panel'
+        : asideLayout === 'modal-shell'
+          ? 'responsive-modal-shell'
+          : 'docked-panel';
 
   const useModalPortal =
     fullHeight &&

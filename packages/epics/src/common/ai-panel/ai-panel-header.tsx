@@ -138,7 +138,7 @@ export function AiPanelHeader({
   const laneRightInsetPx = showCloseButton ? laneInsetPx : headerInsetPx;
 
   return (
-    <div className="relative flex h-[var(--menu-top-height,65px)] min-w-0 flex-shrink-0 items-center border-b border-border bg-background-2 px-4 py-2">
+    <div className="relative flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center border-b border-border bg-background-2 px-4 py-2">
       <div className="absolute left-4 top-1/2 flex -translate-y-1/2 items-center">
         <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
           {currentIcon ? (
