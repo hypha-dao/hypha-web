@@ -203,7 +203,7 @@ export const RedeemTokensPlugin = ({
             return { owner, vaults: currentSpaceVaults };
           }
           const res = await fetch(
-            `/api/v1/spaces/${slug}/vaults?allowPublicRead=true&redeemableOnly=true`,
+            `/api/v1/spaces/${slug}/vaults?redeemableOnly=true`,
             {
               headers,
             },

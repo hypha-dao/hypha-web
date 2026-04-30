@@ -146,7 +146,10 @@ const CreateRedeemTokensFormInner = ({
     const proposalWeb3SpaceId = web3SpaceId;
 
     if (proposalWeb3SpaceId == null) {
-      console.error('Proposal Web3 space ID is missing');
+      form.setError('root', {
+        message:
+          'This space is not configured on-chain yet, so redeem proposals cannot be created.',
+      });
       return;
     }
 
@@ -253,7 +256,9 @@ const CreateRedeemTokensFormInner = ({
             : plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit" disabled={web3SpaceId == null}>
+              Publish
+            </Button>
           </div>
         </form>
       </Form>
