@@ -338,7 +338,7 @@ export function AiLeftPanel() {
           >
             <SidebarGroup className="p-2 pt-4">
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="gap-2">
                   {sectionNavItems.map((item) => (
                     <SidebarMenuItem key={`overlay-${item.key}`}>
                       <SidebarMenuButton
@@ -366,7 +366,7 @@ export function AiLeftPanel() {
             {recentSpaces.length > 0 ? (
               <SidebarGroup className="mt-auto p-2 pb-4">
                 <SidebarGroupContent>
-                  <SidebarMenu>
+                  <SidebarMenu className="gap-2">
                     {recentSpaces.map((space) => {
                       const isRecentActive = space.slug === spaceSlug;
                       const href = `/${lang}/dho/${space.slug}/agreements`;
