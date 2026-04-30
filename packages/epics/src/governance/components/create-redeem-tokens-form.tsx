@@ -144,15 +144,16 @@ const CreateRedeemTokensFormInner = ({
     });
 
     const proposalWeb3SpaceId = web3SpaceId;
-    const redemptionVaultWeb3SpaceId =
-      typeof data.redemptionVaultWeb3SpaceId === 'number'
-        ? data.redemptionVaultWeb3SpaceId
-        : web3SpaceId;
 
     if (proposalWeb3SpaceId == null) {
       console.error('Proposal Web3 space ID is missing');
       return;
     }
+
+    const redemptionVaultWeb3SpaceId =
+      typeof data.redemptionVaultWeb3SpaceId === 'number'
+        ? data.redemptionVaultWeb3SpaceId
+        : proposalWeb3SpaceId;
 
     const [redemption] = data.redemptions;
     if (!redemption) {
