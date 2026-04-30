@@ -40,7 +40,7 @@ const MAX_RECENT_SPACES = 5;
 const MENU_BUTTON_EXPANDED_CLASS =
   'h-10 rounded-lg border border-transparent text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground';
 const MENU_BUTTON_COLLAPSED_CLASS =
-  'h-10 w-full justify-start rounded-lg border border-transparent p-0 text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground';
+  'group relative h-10 w-full justify-start rounded-lg border border-transparent p-0 text-muted-foreground transition-colors before:pointer-events-none before:absolute before:left-0 before:top-1/2 before:h-7 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-accent-9 before:opacity-0 before:transition-opacity hover:bg-muted/60 hover:text-foreground data-[active=true]:text-foreground data-[active=true]:before:opacity-100';
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
 const COLLAPSED_ICON_COLUMN_CLASS = `${ICON_COLUMN_CLASS} ml-2`;
 const RECENT_SPACE_AVATAR_CLASS =
