@@ -126,7 +126,10 @@ export async function GET(
     }
 
     if (spaceTokens.length === 0) {
-      return NextResponse.json({ vaults: [] });
+      return NextResponse.json({
+        web3SpaceId: Number(space.web3SpaceId),
+        vaults: [],
+      });
     }
 
     const vaultExistsCalls = spaceTokens.map((spaceToken) => ({
@@ -149,7 +152,10 @@ export async function GET(
     );
 
     if (vaultSpaceTokens.length === 0) {
-      return NextResponse.json({ vaults: [] });
+      return NextResponse.json({
+        web3SpaceId: Number(space.web3SpaceId),
+        vaults: [],
+      });
     }
 
     const backingTokensCalls = vaultSpaceTokens.map((spaceToken) => ({
@@ -484,7 +490,10 @@ export async function GET(
       };
     });
 
-    return NextResponse.json({ vaults });
+    return NextResponse.json({
+      web3SpaceId: Number(space.web3SpaceId),
+      vaults,
+    });
   } catch (error) {
     console.error('Failed to fetch vaults:', error);
     return NextResponse.json(

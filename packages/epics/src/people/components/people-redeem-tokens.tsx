@@ -36,6 +36,7 @@ interface Token {
   space?: {
     title: string;
     slug: string;
+    web3SpaceId?: number;
   };
 }
 
@@ -51,6 +52,7 @@ type SpaceSummary = {
 };
 
 type SpaceVaultsResponse = {
+  web3SpaceId?: number;
   vaults?: Array<{
     spaceToken: string;
     tokenSymbol?: string;
@@ -353,6 +355,10 @@ export const ProfileRedeemTokens = ({
           space: {
             title: space.title,
             slug: space.slug,
+            web3SpaceId:
+              typeof space.web3SpaceId === 'number'
+                ? space.web3SpaceId
+                : undefined,
           },
         });
       }
@@ -420,6 +426,12 @@ export const ProfileRedeemTokens = ({
           }
 
           const vaultsPayload = (await vaultsRes.json()) as SpaceVaultsResponse;
+          const resolvedWeb3SpaceId =
+            typeof vaultsPayload.web3SpaceId === 'number'
+              ? vaultsPayload.web3SpaceId
+              : typeof space.web3SpaceId === 'number'
+              ? space.web3SpaceId
+              : undefined;
           const activeVaultTokens = (vaultsPayload.vaults ?? []).filter(
             (vault) => {
               if (vault.redemptionEnabled !== true) return false;
@@ -470,6 +482,7 @@ export const ProfileRedeemTokens = ({
               space: {
                 title: space.title,
                 slug: space.slug,
+                web3SpaceId: resolvedWeb3SpaceId,
               },
             }));
         }),
