@@ -36,6 +36,10 @@ export async function GET(
   const { spaceSlug } = await params;
   const redeemableOnly =
     request.nextUrl.searchParams.get('redeemableOnly') === 'true';
+  const emptyRedeemableResponse = {
+    web3SpaceId: 0,
+    vaults: [],
+  };
 
   try {
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
@@ -123,6 +127,12 @@ export async function GET(
         );
       }
       console.error('Error fetching space tokens:', err);
+      if (redeemableOnly) {
+        return NextResponse.json({
+          ...emptyRedeemableResponse,
+          web3SpaceId: Number(space.web3SpaceId),
+        });
+      }
       return NextResponse.json(
         { error: 'Failed to fetch vault data.' },
         { status: 500 },
@@ -534,6 +544,9 @@ export async function GET(
     });
   } catch (error) {
     console.error('Failed to fetch vaults:', error);
+    if (redeemableOnly) {
+      return NextResponse.json(emptyRedeemableResponse);
+    }
     return NextResponse.json(
       { error: 'Failed to fetch vaults.' },
       { status: 500 },

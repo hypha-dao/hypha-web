@@ -160,7 +160,7 @@ export const RedeemTokensPlugin = ({
   const { vaults: currentSpaceVaults, isLoading: isCurrentSpaceVaultsLoading } =
     useVaults({ spaceSlug, redeemableOnly: true });
   const { assets: treasuryAssets, isLoading: isTreasuryAssetsLoading } =
-    useAssets({});
+    useAssets({ bestEffort: true });
   const { tokens: spaceTokensForTypes } = useTokens({ spaceSlug });
 
   const candidateSpaces = React.useMemo(() => {
@@ -361,16 +361,32 @@ export const RedeemTokensPlugin = ({
     name: 'redemptions',
   });
   const selectedRedemption = redemptions?.[0];
+  const selectedVaultWeb3SpaceId = useWatch({
+    control,
+    name: 'redemptionVaultWeb3SpaceId',
+  });
 
-  const selectedTokenVaultEntry = React.useMemo(
-    () =>
-      vaultsWithOwners.find(
-        (entry) =>
-          entry.vault.spaceToken.toLowerCase() ===
-          (selectedRedemption?.token ?? '').toLowerCase(),
-      ),
-    [vaultsWithOwners, selectedRedemption?.token],
-  );
+  const selectedTokenVaultEntry = React.useMemo(() => {
+    const selectedTokenAddress = (
+      selectedRedemption?.token ?? ''
+    ).toLowerCase();
+    if (!selectedTokenAddress) return undefined;
+    const tokenMatches = vaultsWithOwners.filter(
+      (entry) => entry.vault.spaceToken.toLowerCase() === selectedTokenAddress,
+    );
+    if (tokenMatches.length <= 1) {
+      return tokenMatches[0];
+    }
+    if (typeof selectedVaultWeb3SpaceId === 'number') {
+      const ownerMatch = tokenMatches.find(
+        (entry) => entry.owner.web3SpaceId === selectedVaultWeb3SpaceId,
+      );
+      if (ownerMatch) {
+        return ownerMatch;
+      }
+    }
+    return tokenMatches[0];
+  }, [selectedRedemption?.token, selectedVaultWeb3SpaceId, vaultsWithOwners]);
 
   const selectedTokenVault = selectedTokenVaultEntry?.vault;
 
