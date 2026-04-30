@@ -340,7 +340,7 @@ export const RedeemTokensPlugin = ({
   React.useEffect(() => {
     if (selectedTokenVaultEntry?.owner?.web3SpaceId) {
       setValue(
-        'redemptionWeb3SpaceId',
+        'redemptionVaultWeb3SpaceId',
         selectedTokenVaultEntry.owner.web3SpaceId,
         {
           shouldValidate: false,
@@ -350,7 +350,7 @@ export const RedeemTokensPlugin = ({
       return;
     }
     if (typeof web3SpaceId === 'number') {
-      setValue('redemptionWeb3SpaceId', web3SpaceId, {
+      setValue('redemptionVaultWeb3SpaceId', web3SpaceId, {
         shouldValidate: false,
         shouldDirty: false,
       });

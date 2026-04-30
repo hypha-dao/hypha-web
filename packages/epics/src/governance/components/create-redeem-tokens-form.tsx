@@ -88,7 +88,7 @@ const CreateRedeemTokensFormInner = ({
           percentage: '100.00',
         },
       ],
-      redemptionWeb3SpaceId: web3SpaceId ?? undefined,
+      redemptionVaultWeb3SpaceId: web3SpaceId ?? undefined,
     },
   });
 
@@ -126,9 +126,10 @@ const CreateRedeemTokensFormInner = ({
     console.log('redeem-tokens data', {
       ...data,
       spaceId: spaceId as number,
-      web3SpaceId:
-        typeof data.redemptionWeb3SpaceId === 'number'
-          ? data.redemptionWeb3SpaceId
+      web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
+      redemptionVaultWeb3SpaceId:
+        typeof data.redemptionVaultWeb3SpaceId === 'number'
+          ? data.redemptionVaultWeb3SpaceId
           : typeof web3SpaceId === 'number'
           ? web3SpaceId
           : undefined,
@@ -142,13 +143,14 @@ const CreateRedeemTokensFormInner = ({
       })),
     });
 
-    const redemptionWeb3SpaceId =
-      typeof data.redemptionWeb3SpaceId === 'number'
-        ? data.redemptionWeb3SpaceId
+    const proposalWeb3SpaceId = web3SpaceId;
+    const redemptionVaultWeb3SpaceId =
+      typeof data.redemptionVaultWeb3SpaceId === 'number'
+        ? data.redemptionVaultWeb3SpaceId
         : web3SpaceId;
 
-    if (redemptionWeb3SpaceId == null) {
-      console.error('Web3 space ID is missing');
+    if (proposalWeb3SpaceId == null) {
+      console.error('Proposal Web3 space ID is missing');
       return;
     }
 
@@ -162,10 +164,11 @@ const CreateRedeemTokensFormInner = ({
       await createRedeemTokens({
         ...data,
         spaceId: spaceId as number,
-        web3SpaceId: redemptionWeb3SpaceId,
+        web3SpaceId: proposalWeb3SpaceId,
         redemption: {
           amount: redemption.amount ?? '0',
           token: redemption.token ?? '',
+          vaultWeb3SpaceId: redemptionVaultWeb3SpaceId,
         },
         conversions: data.conversions.map(({ asset, percentage }) => ({
           asset: asset ?? '',
