@@ -45,23 +45,30 @@ export const fileRouter: FileRouter = {
       maxFileSize: '4MB',
       maxFileCount: 1,
     },
+    blob: {
+      maxFileSize: '4MB',
+      maxFileCount: 1,
+    },
   })
-    .middleware(async ({ req }) => {
+    .middleware(async ({ req, files }) => {
       const isValidAuthToken = await getAuthenticatedUser(req);
 
       if (!isValidAuthToken) {
         throw new UploadThingError('Unauthorized');
       }
 
+      for (const file of files) {
+        if (
+          typeof file.type !== 'string' ||
+          !ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type)
+        ) {
+          throw new UploadThingError('Unsupported image type');
+        }
+      }
+
       return { isAuthenticated: true };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      if (
-        typeof file.type === 'string' &&
-        !ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type)
-      ) {
-        throw new UploadThingError('Unsupported image type');
-      }
       console.debug('ourFileRouter.onUploadComplete', { metadata, file });
       return;
     }),
