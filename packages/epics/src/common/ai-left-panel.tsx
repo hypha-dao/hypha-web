@@ -35,22 +35,6 @@ type ChatUIMessage = {
 };
 
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
-const isTruthyFlag = (value: string | undefined | null) => {
-  if (!value) return false;
-  return ['true', '1', 'yes', 'y', 'on'].includes(value.trim().toLowerCase());
-};
-
-const getClientCoherenceEnabled = () => {
-  if (typeof document !== 'undefined') {
-    const cookieValue = document.cookie
-      .split('; ')
-      .find((entry) => entry.startsWith('HYPHA_ENABLE_COHERENCE='))
-      ?.split('=')[1];
-    if (cookieValue != null) return isTruthyFlag(cookieValue);
-  }
-  if (isTruthyFlag(process.env.NEXT_PUBLIC_ENABLE_COHERENCE)) return true;
-  return process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
-};
 
 export function AiLeftPanel() {
   const { isAuthenticated, isLoading, login, getAccessToken } =
@@ -66,7 +50,6 @@ export function AiLeftPanel() {
   const t = useTranslations('AiPanel');
   const tCommon = useTranslations('Common');
   const tCoherence = useTranslations('CoherenceTab');
-  const coherenceEnabled = useMemo(() => getClientCoherenceEnabled(), []);
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const {
     open: isAiOpen,
@@ -117,17 +100,13 @@ export function AiLeftPanel() {
   const sectionNavItems = useMemo(() => {
     if (!spaceSlug) return [];
     return [
-      ...(coherenceEnabled
-        ? [
-            {
-              key: 'signals',
-              label: tCoherence('signals'),
-              icon: Radio,
-              href: `/${lang}/dho/${spaceSlug}/coherence`,
-              active: isSectionActive('coherence'),
-            },
-          ]
-        : []),
+      {
+        key: 'signals',
+        label: tCoherence('signals'),
+        icon: Radio,
+        href: `/${lang}/dho/${spaceSlug}/coherence`,
+        active: isSectionActive('coherence'),
+      },
       {
         key: 'agreements',
         label: tCommon('Agreements'),
@@ -150,7 +129,7 @@ export function AiLeftPanel() {
         active: isSectionActive('treasury'),
       },
     ];
-  }, [coherenceEnabled, isSectionActive, lang, spaceSlug, tCommon, tCoherence]);
+  }, [isSectionActive, lang, spaceSlug, tCommon, tCoherence]);
 
   const [input, setInput] = useState('');
   const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
@@ -312,15 +291,18 @@ export function AiLeftPanel() {
                       <SidebarMenuButton
                         asChild
                         isActive={item.active}
-                        className="h-10 rounded-lg border border-transparent px-3 text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground"
+                        className="h-10 rounded-lg border border-transparent text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground"
                       >
                         <Link
                           href={item.href}
                           aria-label={item.label}
                           aria-current={item.active ? 'page' : undefined}
+                          className="flex min-w-0 items-center"
                         >
-                          <item.icon className="h-5 w-5" strokeWidth={2.1} />
-                          <span>{item.label}</span>
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center">
+                            <item.icon className="h-5 w-5" strokeWidth={2.1} />
+                          </span>
+                          <span className="min-w-0 truncate">{item.label}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
