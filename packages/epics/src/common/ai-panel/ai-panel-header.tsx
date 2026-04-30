@@ -129,36 +129,23 @@ export function AiPanelHeader({
     !isAllSpacesLoading &&
     !allSpacesError &&
     hasSpaces;
-  const headerInsetPx = 16;
-  const controlSizePx = 28;
-  const controlCenterOffsetPx = headerInsetPx + controlSizePx / 2;
-  const controlHalfSizePx = controlSizePx / 2;
-  const controlGapPx = 10;
-  const laneInsetPx = controlCenterOffsetPx + controlHalfSizePx + controlGapPx;
-  const laneRightInsetPx = showCloseButton ? laneInsetPx : headerInsetPx;
-
   return (
-    <div className="relative flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center border-b border-border bg-background-2 px-4 py-2">
-      <div className="absolute left-4 top-1/2 flex -translate-y-1/2 items-center">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
-          {currentIcon ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={currentIcon}
-                alt={currentTitle}
-                className="h-full w-full object-cover"
-              />
-            </>
-          ) : (
-            <Sparkles className="h-4 w-4 text-muted-foreground" />
-          )}
-        </div>
+    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[1.75rem_minmax(0,1fr)_1.75rem] items-center gap-2 border-b border-border bg-background-2 px-4 py-2">
+      <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
+        {currentIcon ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={currentIcon}
+              alt={currentTitle}
+              className="h-full w-full object-cover"
+            />
+          </>
+        ) : (
+          <Sparkles className="h-4 w-4 text-muted-foreground" />
+        )}
       </div>
-      <div
-        className="absolute top-1/2 flex -translate-y-1/2 justify-center"
-        style={{ left: `${laneInsetPx}px`, right: `${laneRightInsetPx}px` }}
-      >
+      <div className="flex min-w-0 items-center justify-center">
         {canOpenSpaceMenu ? (
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
@@ -271,8 +258,8 @@ export function AiPanelHeader({
           </div>
         )}
       </div>
-      {showCloseButton ? (
-        <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center justify-end">
+      <div className="flex h-7 w-7 items-center justify-end">
+        {showCloseButton ? (
           <button
             type="button"
             onClick={closeAiPanel}
@@ -282,8 +269,8 @@ export function AiPanelHeader({
           >
             <PanelLeftClose className="h-3.5 w-3.5" />
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 }
