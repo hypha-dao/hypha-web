@@ -147,8 +147,11 @@ export const useUpdateSpaceOrchestrator = ({
       }: {
         arg: {
           id: number;
-          data: z.infer<typeof schemaUpdateSpace> &
-            Partial<z.infer<typeof schemaCreateSpaceFiles>>;
+          data: z.infer<typeof schemaUpdateSpace> & {
+            logoUrl?: string | File | null;
+            leadImage?: string | File | null;
+            ecosystemLogoUrl?: string | File | null;
+          };
         };
       },
     ) => {
@@ -157,10 +160,13 @@ export const useUpdateSpaceOrchestrator = ({
         const { id, data } = arg;
         invariant(Number.isFinite(id) && id > 0, 'valid id is required');
 
-        const filesInput = schemaCreateSpaceFiles.parse(data);
+        const filesInput = schemaCreateSpaceFiles.partial().parse(data);
         if (Object.values(filesInput).some((file) => file)) {
           startTask('UPLOAD_FILES');
-          await files.upload(filesInput, id);
+          await files.upload(
+            filesInput as z.infer<typeof schemaCreateSpaceFiles>,
+            id,
+          );
           completeTask('UPLOAD_FILES');
         } else {
           startTask('UPLOAD_FILES');
@@ -168,7 +174,16 @@ export const useUpdateSpaceOrchestrator = ({
         }
 
         startTask('UPDATE_WEB2_SPACE');
-        const updateInput = schemaUpdateSpace.parse(data);
+        const updateInput = schemaUpdateSpace.parse({
+          ...data,
+          logoUrl: typeof data.logoUrl === 'string' ? data.logoUrl : undefined,
+          leadImage:
+            typeof data.leadImage === 'string' ? data.leadImage : undefined,
+          ecosystemLogoUrl:
+            typeof data.ecosystemLogoUrl === 'string'
+              ? data.ecosystemLogoUrl
+              : undefined,
+        });
         const result = await web2.updateSpaceById({
           ...updateInput,
           id,
