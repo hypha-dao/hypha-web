@@ -42,6 +42,8 @@ const MENU_BUTTON_EXPANDED_CLASS =
 const MENU_BUTTON_COLLAPSED_CLASS =
   'h-10 w-10 justify-center rounded-lg border border-transparent p-0 text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground';
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
+const RECENT_SPACE_AVATAR_CLASS =
+  'flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 
 export function AiLeftPanel() {
   const { isAuthenticated, isLoading, login, getAccessToken } =
@@ -382,14 +384,14 @@ export function AiLeftPanel() {
                               className="flex min-w-0 items-center"
                             >
                               <span className={ICON_COLUMN_CLASS}>
-                                <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60">
+                                <span className={RECENT_SPACE_AVATAR_CLASS}>
                                   {space.logoUrl ? (
                                     <>
                                       {/* eslint-disable-next-line @next/next/no-img-element */}
                                       <img
                                         src={space.logoUrl}
                                         alt={space.title}
-                                        className="h-full w-full object-cover"
+                                        className="h-full w-full object-cover object-center"
                                       />
                                     </>
                                   ) : (
@@ -457,6 +459,7 @@ export function AiLeftPanel() {
                         href={item.href}
                         aria-label={item.label}
                         aria-current={item.active ? 'page' : undefined}
+                        className={ICON_COLUMN_CLASS}
                       >
                         <item.icon className="h-5 w-5" strokeWidth={2.1} />
                       </Link>
@@ -485,15 +488,16 @@ export function AiLeftPanel() {
                             href={href}
                             aria-label={space.title}
                             aria-current={isRecentActive ? 'page' : undefined}
+                            className={ICON_COLUMN_CLASS}
                           >
-                            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60">
+                            <span className={RECENT_SPACE_AVATAR_CLASS}>
                               {space.logoUrl ? (
                                 <>
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={space.logoUrl}
                                     alt={space.title}
-                                    className="h-full w-full object-cover"
+                                    className="h-full w-full object-cover object-center"
                                   />
                                 </>
                               ) : (
