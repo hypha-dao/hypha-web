@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { Bot, Copy } from 'lucide-react';
+import { Copy, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
@@ -151,7 +151,7 @@ export function AiPanelMessageBubble({
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
       {!isUser && (
         <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary">
-          <Bot className="h-3.5 w-3.5 text-primary-foreground" />
+          <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
         </div>
       )}
       <div
