@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { useTranslations } from 'next-intl';
+import { mutate } from 'swr';
 
 export default function SpaceConfiguration() {
   const tSpaces = useTranslations('Spaces');
@@ -153,6 +154,10 @@ export default function SpaceConfiguration() {
             id: space.id,
             data: normalizedUpdatedSpace,
           });
+          await Promise.all([
+            mutate('/api/v1/spaces?parentOnly=false'),
+            mutate(`/api/v1/spaces?slugs=${normalizedUpdatedSpace.slug}`),
+          ]);
         }
       } catch (e) {
         console.warn(e);
