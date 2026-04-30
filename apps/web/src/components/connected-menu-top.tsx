@@ -96,7 +96,9 @@ export function ConnectedMenuTop({
   const rootHasCustomLogo = hasCustomRootLogo(rootLogoUrl ?? '');
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
 
-  const logoNode = suppressDefaultLogo ? (
+  const canRenderSpaceLogoNode =
+    suppressDefaultLogo && (rootSpace || !isLoadingSpaces);
+  const logoNode = canRenderSpaceLogoNode ? (
     rootSpace ? (
       rootHasCustomLogo && rootLogoUrl ? (
         <Link
@@ -131,8 +133,6 @@ export function ConnectedMenuTop({
           </span>
         </Link>
       )
-    ) : isLoadingSpaces ? (
-      <span className="inline-flex h-9 w-24 animate-pulse rounded-md bg-muted/60" />
     ) : undefined
   ) : undefined;
 
