@@ -939,7 +939,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const rawOffsetX = drag.startOffsetX + (e.clientX - drag.startClientX);
       const rawOffsetY = drag.startOffsetY + (e.clientY - drag.startClientY);
       const dialogRect = callFullViewDialogRef.current?.getBoundingClientRect();
-      const popupWidth = dialogRect?.width ?? Math.min(window.innerWidth * 0.96, 1280);
+      const popupWidth =
+        dialogRect?.width ?? Math.min(window.innerWidth * 0.96, 1280);
       const popupHeight =
         dialogRect?.height ?? Math.min(window.innerHeight * 0.9, 900);
       const baseLeft = window.innerWidth / 2 - popupWidth / 2;
@@ -2555,8 +2556,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   onRequestFullView={
                     canOpenCallFullView
                       ? () => {
-                          if (document.activeElement instanceof HTMLButtonElement) {
-                            callFullViewTriggerRef.current = document.activeElement;
+                          if (
+                            document.activeElement instanceof HTMLButtonElement
+                          ) {
+                            callFullViewTriggerRef.current =
+                              document.activeElement;
                           }
                           setCallFullViewOpen(true);
                         }
