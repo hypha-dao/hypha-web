@@ -354,7 +354,7 @@ export function AiLeftPanel() {
                           className="flex min-w-0 items-center"
                         >
                           <span className={ICON_COLUMN_CLASS}>
-                            <item.icon className="h-5 w-5" strokeWidth={2.1} />
+                            <item.icon className="h-4 w-4" />
                           </span>
                           <span className="min-w-0 truncate">{item.label}</span>
                         </Link>
@@ -468,7 +468,7 @@ export function AiLeftPanel() {
                         aria-current={item.active ? 'page' : undefined}
                         className={COLLAPSED_ICON_COLUMN_CLASS}
                       >
-                        <item.icon className="h-5 w-5" strokeWidth={2.1} />
+                        <item.icon className="h-4 w-4" />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
