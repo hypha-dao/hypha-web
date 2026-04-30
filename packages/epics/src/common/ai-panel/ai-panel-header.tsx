@@ -110,7 +110,7 @@ export function AiPanelHeader({
 
   return (
     <div className="relative flex h-[var(--menu-top-height,65px)] min-w-0 flex-shrink-0 items-center border-b border-border bg-background-2 px-4 py-2">
-      <div className="absolute left-1/2 top-1/2 flex w-[calc(100%-5.5rem)] max-w-[16.75rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-2">
+      <div className="absolute left-4 top-1/2 flex -translate-y-1/2 items-center">
         <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
           {currentIcon ? (
             <>
@@ -125,6 +125,9 @@ export function AiPanelHeader({
             <Sparkles className="h-4 w-4 text-muted-foreground" />
           )}
         </div>
+      </div>
+      <div className="absolute left-1/2 top-1/2 flex w-[calc(100%-5.5rem)] max-w-[16.75rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-2">
+        <span aria-hidden className="invisible h-7 w-7 shrink-0" />
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <button
