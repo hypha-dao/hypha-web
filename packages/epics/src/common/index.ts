@@ -12,6 +12,7 @@ export * from './proposal-overlay-shell';
 export * from './web-links';
 export * from './get-active-tab-from-path';
 export * from './get-dho-space-slug-from-pathname';
+export * from './get-root-space';
 export * from './get-path-function';
 export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';

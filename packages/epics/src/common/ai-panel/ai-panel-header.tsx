@@ -22,27 +22,8 @@ import { usePathname, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAiPanel } from '../human-chat-panel-context';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
+import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
-
-function getEcosystemRootId(
-  space: Space,
-  spacesById: Map<number, Space>,
-): number {
-  let cursor: Space | undefined = space;
-  const seen = new Set<number>();
-  while (cursor?.parentId != null) {
-    if (seen.has(cursor.id)) {
-      break;
-    }
-    seen.add(cursor.id);
-    const parent = spacesById.get(cursor.parentId);
-    if (!parent) {
-      break;
-    }
-    cursor = parent;
-  }
-  return cursor?.id ?? space.id;
-}
 
 function getDisplayIcon(space?: Space): string | null {
   return space?.logoUrl?.trim() || null;
@@ -103,12 +84,12 @@ export function AiPanelHeader({
     if (!activeSpace) {
       return { ecosystem: [] as Space[], others: mySpaces };
     }
-    const spacesById = new Map(allSpaces.map((space) => [space.id, space]));
-    const activeRootId = getEcosystemRootId(activeSpace, spacesById);
+    const activeRootId =
+      getRootSpace(activeSpace, allSpaces)?.id ?? activeSpace.id;
     const ecosystem: Space[] = [];
     const others: Space[] = [];
     for (const space of mySpaces) {
-      if (getEcosystemRootId(space, spacesById) === activeRootId) {
+      if ((getRootSpace(space, allSpaces)?.id ?? space.id) === activeRootId) {
         ecosystem.push(space);
       } else {
         others.push(space);
