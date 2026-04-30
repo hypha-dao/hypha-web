@@ -169,21 +169,23 @@ export function AiPanelHeader({
             align="center"
             className="w-[min(16rem,calc(100vw-1.5rem))] max-h-[24.5rem] overflow-y-auto rounded-2xl border border-border/60 bg-background-3/95 p-1.5 shadow-xl narrow-scrollbar"
           >
-            <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
-              {tNavigation('mySpaces')}
-            </DropdownMenuLabel>
-            {!isAllSpacesLoading && !allSpacesError && hasSpaces ? (
-              <div className="mb-1 px-1">
-                <input
-                  type="text"
-                  value={spaceSearch}
-                  onChange={(event) => setSpaceSearch(event.target.value)}
-                  placeholder={tSpaces('search')}
-                  className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
-                  aria-label={tSpaces('search')}
-                />
-              </div>
-            ) : null}
+            <div className="sticky top-0 z-10 -mx-1.5 mb-1 border-b border-border/70 bg-background-3/95 px-1.5 pb-1 supports-[backdrop-filter]:bg-background-3/90 supports-[backdrop-filter]:backdrop-blur-sm">
+              <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
+                {tNavigation('mySpaces')}
+              </DropdownMenuLabel>
+              {!isAllSpacesLoading && !allSpacesError && hasSpaces ? (
+                <div className="px-1">
+                  <input
+                    type="text"
+                    value={spaceSearch}
+                    onChange={(event) => setSpaceSearch(event.target.value)}
+                    placeholder={tSpaces('search')}
+                    className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
+                    aria-label={tSpaces('search')}
+                  />
+                </div>
+              ) : null}
+            </div>
             {isAllSpacesLoading ? (
               <DropdownMenuItem disabled>{t('loading')}</DropdownMenuItem>
             ) : null}

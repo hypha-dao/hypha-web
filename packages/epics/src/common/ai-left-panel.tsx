@@ -44,7 +44,7 @@ const MENU_BUTTON_COLLAPSED_CLASS =
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
 const COLLAPSED_ICON_COLUMN_CLASS = `${ICON_COLUMN_CLASS} ml-2`;
 const RECENT_SPACE_AVATAR_CLASS =
-  'flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
+  'flex h-6 w-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 
 export function AiLeftPanel() {
   const { isAuthenticated, isLoading, login, getAccessToken } =
@@ -398,7 +398,7 @@ export function AiLeftPanel() {
                                       <img
                                         src={space.logoUrl}
                                         alt={space.title}
-                                        className="h-full w-full object-cover object-center"
+                                        className="block h-full w-full rounded-full object-cover object-center"
                                       />
                                     </>
                                   ) : (
@@ -510,7 +510,7 @@ export function AiLeftPanel() {
                                   <img
                                     src={space.logoUrl}
                                     alt={space.title}
-                                    className="h-full w-full object-cover object-center"
+                                    className="block h-full w-full rounded-full object-cover object-center"
                                   />
                                 </>
                               ) : (
