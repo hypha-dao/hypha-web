@@ -137,10 +137,10 @@ export function LoadingBackdropInner({
     fullHeightVariant === 'responsive-modal-shell'
       ? 'responsive-modal-shell'
       : fullHeightVariant === 'docked-panel'
-        ? 'docked-panel'
-        : asideLayout === 'modal-shell'
-          ? 'responsive-modal-shell'
-          : 'docked-panel';
+      ? 'docked-panel'
+      : asideLayout === 'modal-shell'
+      ? 'responsive-modal-shell'
+      : 'docked-panel';
 
   const useModalPortal =
     fullHeight &&
