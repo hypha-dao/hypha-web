@@ -126,9 +126,11 @@ export function AiPanelHeader({
   const fallbackTitle = activeSpace?.title?.trim() || t('title');
   const headerInsetPx = 16;
   const controlSizePx = 28;
+  const controlCenterOffsetPx = headerInsetPx + controlSizePx / 2;
+  const controlHalfSizePx = controlSizePx / 2;
   const controlGapPx = 10;
-  const laneInsetPx = headerInsetPx + controlSizePx + controlGapPx;
-  const dropdownRightInsetPx = showCloseButton ? laneInsetPx : headerInsetPx;
+  const laneInsetPx = controlCenterOffsetPx + controlHalfSizePx + controlGapPx;
+  const laneRightInsetPx = showCloseButton ? laneInsetPx : headerInsetPx;
 
   return (
     <div className="relative flex h-[var(--menu-top-height,65px)] min-w-0 flex-shrink-0 items-center border-b border-border bg-background-2 px-4 py-2">
@@ -150,13 +152,13 @@ export function AiPanelHeader({
       </div>
       <div
         className="absolute top-1/2 flex -translate-y-1/2 justify-center"
-        style={{ left: `${laneInsetPx}px`, right: `${dropdownRightInsetPx}px` }}
+        style={{ left: `${laneInsetPx}px`, right: `${laneRightInsetPx}px` }}
       >
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-8 w-full min-w-0 items-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-left text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
+              className="inline-flex h-8 w-full min-w-0 max-w-[15rem] items-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-left text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
               aria-label={tNavigation('mySpaces')}
             >
               <span className="max-w-[9rem] truncate">{currentTitle}</span>
