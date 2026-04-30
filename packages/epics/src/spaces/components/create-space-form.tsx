@@ -474,8 +474,8 @@ export const SpaceForm = ({
                             typeof values?.logoUrl === 'string'
                               ? values?.logoUrl
                               : typeof defaultValues?.logoUrl === 'string'
-                              ? defaultValues?.logoUrl
-                              : undefined
+                                ? defaultValues?.logoUrl
+                                : undefined
                           }
                         />
                       </FormControl>
@@ -558,8 +558,8 @@ export const SpaceForm = ({
                     typeof values?.leadImage === 'string'
                       ? values?.leadImage
                       : typeof defaultValues?.leadImage === 'string'
-                      ? defaultValues?.leadImage
-                      : undefined
+                        ? defaultValues?.leadImage
+                        : undefined
                   }
                   uploadText={
                     <>
@@ -631,27 +631,25 @@ export const SpaceForm = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-foreground">
-                  Upload Ecosystem Logo
+                  {tSpaces('uploadEcosystemLogo')}
                 </FormLabel>
                 <FormControl>
                   <UploadAvatar
                     {...field}
                     maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                    className="h-16 w-28 min-w-28 rounded-lg border border-border bg-muted/30"
-                    imageClassName="object-contain bg-white p-2"
+                    className="h-20 w-40 min-w-40 rounded-lg border border-border bg-muted/30"
+                    imageClassName="object-contain bg-white p-1.5"
                     defaultImage={
                       typeof values?.ecosystemLogoUrl === 'string'
                         ? values?.ecosystemLogoUrl
                         : typeof defaultValues?.ecosystemLogoUrl === 'string'
-                        ? defaultValues?.ecosystemLogoUrl
-                        : undefined
+                          ? defaultValues?.ecosystemLogoUrl
+                          : undefined
                     }
                   />
                 </FormControl>
                 <p className="text-1 text-neutral-11">
-                  This ecosystem logo will be displayed in the top banner of
-                  your ecosystem and will be shown on every space that belongs
-                  to it, ensuring consistent branding throughout.
+                  {tSpaces('ecosystemLogoDescription')}
                 </p>
                 <FormMessage />
               </FormItem>
