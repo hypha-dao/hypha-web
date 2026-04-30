@@ -12,7 +12,9 @@ export function isPermissionLikeGroupCallError(e: unknown): boolean {
     if (
       name === 'NotAllowedError' ||
       name === 'PermissionDismissedError' /* experimental */ ||
-      name === 'SecurityError'
+      name === 'SecurityError' ||
+      name === 'NotReadableError' ||
+      name === 'OverconstrainedError'
     ) {
       return true;
     }

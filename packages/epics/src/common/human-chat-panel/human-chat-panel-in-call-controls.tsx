@@ -55,7 +55,9 @@ export function HumanChatPanelInCallControls({
   const baseBtn = isFull
     ? 'h-10 min-w-10 sm:h-11 sm:min-w-11 inline-flex items-center justify-center rounded-full border border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
-  const neutralBtn = isFull ? baseBtn : 'bg-background text-foreground';
+  const neutralBtn = isFull
+    ? baseBtn
+    : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const leaveIcon = isFull ? fullViewIcon : 'h-4 w-4';
   /**
    * End call — classic “hang up” red (explicit red-600/700, not `destructive` token

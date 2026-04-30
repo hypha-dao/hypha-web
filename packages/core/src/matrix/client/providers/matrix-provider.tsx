@@ -1276,7 +1276,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       try {
         const joined = await client.joinRoom(roomIdOrAlias);
         const resolvedId = joined.roomId;
-        void ensureRoomCallPowerLevels(client, resolvedId);
+        await ensureRoomCallPowerLevels(client, resolvedId);
         // `joinRoom` resolves before the lazy room store always exposes `getRoom`
         // (race with sync / canonical id). Wait briefly for `getRoom` parity with listeners.
         for (let i = 0; i < 40; i++) {

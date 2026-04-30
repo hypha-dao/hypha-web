@@ -8,7 +8,7 @@ type HumanChatPanelCallJoinStripProps = {
   deviceCount: number;
   disabled: boolean;
   busy: boolean;
-  onJoinAudio: () => void;
+  onJoinAudio?: () => void;
   onJoinVideo: () => void;
   /**
    * When set, replaces the “call in progress” line (e.g. “You left the call”).
@@ -44,7 +44,7 @@ export function HumanChatPanelCallJoinStrip({
     deviceCount > 0 ? t('callJoinWithAudio') : t('callStartWithAudio');
   const videoTitle =
     deviceCount > 0 ? t('callJoinWithVideo') : t('callStartWithVideo');
-  const showAudioButton = !(hasDurable && deviceCount === 0);
+  const showAudioButton = deviceCount > 0 || Boolean(onJoinAudio);
 
   return (
     <div
@@ -85,7 +85,7 @@ export function HumanChatPanelCallJoinStrip({
             <button
               type="button"
               onClick={onJoinAudio}
-              disabled={disabled || busy}
+              disabled={disabled || busy || !onJoinAudio}
               className={cn(
                 'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors',
                 (disabled || busy) && 'cursor-not-allowed opacity-50',

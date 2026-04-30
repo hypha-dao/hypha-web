@@ -1798,7 +1798,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
       if (
         targetRoom &&
-        current &&
         targetRoom !== current &&
         typeof window !== 'undefined'
       ) {
