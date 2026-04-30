@@ -647,7 +647,7 @@ export const SpaceForm = ({
                         'image/webp': [],
                         'image/svg+xml': [],
                       }}
-                      className="h-20 w-40 min-w-40 rounded-lg border border-border bg-muted/30"
+                      className="mx-auto h-20 w-40 min-w-40 rounded-lg border border-border bg-muted/30"
                       imageClassName="object-contain bg-white p-1.5"
                       defaultImage={
                         typeof values?.ecosystemLogoUrlLight === 'string'
@@ -689,7 +689,7 @@ export const SpaceForm = ({
                         'image/webp': [],
                         'image/svg+xml': [],
                       }}
-                      className="h-20 w-40 min-w-40 rounded-lg border border-border bg-muted/30"
+                      className="mx-auto h-20 w-40 min-w-40 rounded-lg border border-border bg-muted/30"
                       imageClassName="object-contain bg-white p-1.5"
                       defaultImage={
                         typeof values?.ecosystemLogoUrlDark === 'string'
