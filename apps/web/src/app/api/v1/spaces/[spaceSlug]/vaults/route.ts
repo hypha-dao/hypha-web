@@ -34,6 +34,8 @@ export async function GET(
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
+  const allowPublicRead =
+    request.nextUrl.searchParams.get('allowPublicRead') === 'true';
 
   try {
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
@@ -41,13 +43,15 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
-    const { hasAccess, response } = await checkSpaceAccess(
-      request,
-      space.web3SpaceId as number,
-    );
+    if (!allowPublicRead) {
+      const { hasAccess, response } = await checkSpaceAccess(
+        request,
+        space.web3SpaceId as number,
+      );
 
-    if (!hasAccess && response) {
-      return response;
+      if (!hasAccess && response) {
+        return response;
+      }
     }
 
     const spaceId = BigInt(space.web3SpaceId as number);

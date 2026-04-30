@@ -182,53 +182,55 @@ export const RedeemTokensPlugin = ({
     [candidateSpaces],
   );
 
-  const { data: vaultsBySpace = [], isLoading: isCrossSpaceVaultsLoading } =
-    useSWR<Array<{ owner: VaultOwnerSpace; vaults: Vault[] }>>(
-      candidateSpaceSlugs.length > 0
-        ? ['redeem-vaults-by-space', ...candidateSpaceSlugs]
-        : null,
-      async ([, ...slugs]) => {
-        const token = await getAccessToken();
-        const headers: HeadersInit = { 'Content-Type': 'application/json' };
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
+  const { data: vaultsBySpace = [] } = useSWR<
+    Array<{ owner: VaultOwnerSpace; vaults: Vault[] }>
+  >(
+    candidateSpaceSlugs.length > 0
+      ? ['redeem-vaults-by-space', ...candidateSpaceSlugs]
+      : null,
+    async ([, ...slugs]) => {
+      const token = await getAccessToken();
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
 
-        const responses = await Promise.allSettled(
-          slugs.map(async (slug) => {
-            const owner = candidateSpaces.find((space) => space.slug === slug);
-            if (!owner) return null;
-            if (slug === spaceSlug) {
-              return { owner, vaults: currentSpaceVaults };
-            }
-            const res = await fetch(`/api/v1/spaces/${slug}/vaults`, {
+      const responses = await Promise.allSettled(
+        slugs.map(async (slug) => {
+          const owner = candidateSpaces.find((space) => space.slug === slug);
+          if (!owner) return null;
+          if (slug === spaceSlug) {
+            return { owner, vaults: currentSpaceVaults };
+          }
+          const res = await fetch(
+            `/api/v1/spaces/${slug}/vaults?allowPublicRead=true`,
+            {
               headers,
-            });
-            if (!res.ok) {
-              return { owner, vaults: [] };
-            }
-            const payload = (await res.json()) as { vaults?: Vault[] };
-            return { owner, vaults: payload.vaults ?? [] };
-          }),
-        );
-
-        return responses
-          .map((result) =>
-            result.status === 'fulfilled' ? result.value : null,
-          )
-          .filter(
-            (
-              entry,
-            ): entry is {
-              owner: VaultOwnerSpace;
-              vaults: Vault[];
-            } => entry !== null,
+            },
           );
-      },
-      {
-        revalidateOnFocus: false,
-      },
-    );
+          if (!res.ok) {
+            return { owner, vaults: [] };
+          }
+          const payload = (await res.json()) as { vaults?: Vault[] };
+          return { owner, vaults: payload.vaults ?? [] };
+        }),
+      );
+
+      return responses
+        .map((result) => (result.status === 'fulfilled' ? result.value : null))
+        .filter(
+          (
+            entry,
+          ): entry is {
+            owner: VaultOwnerSpace;
+            vaults: Vault[];
+          } => entry !== null,
+        );
+    },
+    {
+      revalidateOnFocus: false,
+    },
+  );
 
   const vaultsWithOwners = React.useMemo((): VaultWithOwner[] => {
     const entries: VaultWithOwner[] = [];
@@ -712,11 +714,7 @@ export const RedeemTokensPlugin = ({
   return (
     <div className="flex flex-col gap-4">
       <Skeleton
-        loading={
-          isCurrentSpaceVaultsLoading ||
-          isCrossSpaceVaultsLoading ||
-          isTreasuryAssetsLoading
-        }
+        loading={isCurrentSpaceVaultsLoading || isTreasuryAssetsLoading}
         width={'100%'}
         height={90}
       >
@@ -744,7 +742,7 @@ export const RedeemTokensPlugin = ({
         </div>
       ) : null}
       <Skeleton
-        loading={isCurrentSpaceVaultsLoading || isCrossSpaceVaultsLoading}
+        loading={isCurrentSpaceVaultsLoading}
         width={'100%'}
         height={90}
       >
