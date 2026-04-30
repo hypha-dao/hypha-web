@@ -143,13 +143,12 @@ export function AiPanelHeader({
           )}
         </div>
       </div>
-      <div className="absolute left-1/2 top-1/2 flex w-[calc(100%-5.5rem)] max-w-[16.75rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-2">
-        <span aria-hidden className="invisible h-7 w-7 shrink-0" />
+      <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center px-[3.25rem]">
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-8 min-w-0 max-w-full items-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-left text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
+              className="inline-flex h-8 w-full min-w-0 max-w-[16.75rem] items-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-left text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
               aria-label={tNavigation('mySpaces')}
             >
               <span className="max-w-[9rem] truncate">{currentTitle}</span>
