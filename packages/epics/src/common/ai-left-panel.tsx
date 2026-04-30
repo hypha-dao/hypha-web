@@ -19,12 +19,14 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  Button,
 } from '@hypha-platform/ui';
 
 import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { useAiPanel } from './human-chat-panel-context';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
+import { Empty } from './empty';
 
 type ChatUIMessage = {
   id: string;
@@ -60,6 +62,7 @@ export function AiLeftPanel() {
   const t = useTranslations('AiPanel');
   const tCommon = useTranslations('Common');
   const tCoherence = useTranslations('CoherenceTab');
+  const tSpaces = useTranslations('Spaces');
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const {
     open: isAiOpen,
@@ -287,40 +290,6 @@ export function AiLeftPanel() {
     }
   }, [overlayVisible, showAiOverlay]);
 
-  if (isLoading) {
-    return (
-      <>
-        <SidebarHeader className="bg-background-2 p-0">
-          <AiPanelHeader />
-        </SidebarHeader>
-        <SidebarContent className="flex flex-1 items-center justify-center">
-          <div className="text-sm text-muted-foreground">{t('loading')}</div>
-        </SidebarContent>
-      </>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <>
-        <SidebarHeader className="bg-background-2 p-0">
-          <AiPanelHeader />
-        </SidebarHeader>
-        <SidebarContent className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
-          <div className="text-center text-sm text-muted-foreground">
-            {t('signIn')}
-          </div>
-          <button
-            onClick={login}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-          >
-            {t('signInButton')}
-          </button>
-        </SidebarContent>
-      </>
-    );
-  }
-
   if (!isAiOpen) {
     if (overlayVisible) {
       return (
@@ -528,6 +497,42 @@ export function AiLeftPanel() {
               </SidebarGroupContent>
             </SidebarGroup>
           ) : null}
+        </SidebarContent>
+      </>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <>
+        <SidebarHeader className="bg-background-2 p-0">
+          <AiPanelHeader />
+        </SidebarHeader>
+        <SidebarContent className="flex flex-1 items-center justify-center">
+          <div className="text-sm text-muted-foreground">{t('loading')}</div>
+        </SidebarContent>
+      </>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <>
+        <SidebarHeader className="bg-background-2 p-0">
+          <AiPanelHeader />
+        </SidebarHeader>
+        <SidebarContent className="flex flex-1 items-center justify-center px-6">
+          <Empty>
+            <div className="flex flex-col gap-7">
+              <p>{tSpaces('accessDeniedNotLoggedIn')}</p>
+              <div className="flex gap-4 items-center justify-center">
+                <Button variant="outline" onClick={login}>
+                  {tSpaces('signIn')}
+                </Button>
+                <Button onClick={login}>{tSpaces('getStarted')}</Button>
+              </div>
+            </div>
+          </Empty>
         </SidebarContent>
       </>
     );
