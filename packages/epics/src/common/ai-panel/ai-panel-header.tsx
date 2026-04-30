@@ -124,6 +124,11 @@ export function AiPanelHeader({
       filteredGroupedSpaces.others.length >
     0;
   const fallbackTitle = activeSpace?.title?.trim() || t('title');
+  const canOpenSpaceMenu =
+    Boolean(person?.address) &&
+    !isAllSpacesLoading &&
+    !allSpacesError &&
+    hasSpaces;
   const headerInsetPx = 16;
   const controlSizePx = 28;
   const controlCenterOffsetPx = headerInsetPx + controlSizePx / 2;
@@ -154,26 +159,26 @@ export function AiPanelHeader({
         className="absolute top-1/2 flex -translate-y-1/2 justify-center"
         style={{ left: `${laneInsetPx}px`, right: `${laneRightInsetPx}px` }}
       >
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex h-8 w-full min-w-0 max-w-[15rem] items-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-left text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
-              aria-label={tNavigation('mySpaces')}
+        {canOpenSpaceMenu ? (
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex h-8 w-full min-w-0 max-w-[15rem] items-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-left text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
+                aria-label={tNavigation('mySpaces')}
+              >
+                <span className="max-w-[9rem] truncate">{currentTitle}</span>
+                <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="center"
+              className="w-[min(16rem,calc(100vw-1.5rem))] max-h-[24.5rem] overflow-y-auto rounded-2xl border border-border/60 bg-background-3/95 p-1.5 shadow-xl narrow-scrollbar"
             >
-              <span className="max-w-[9rem] truncate">{currentTitle}</span>
-              <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="center"
-            className="w-[min(16rem,calc(100vw-1.5rem))] max-h-[24.5rem] overflow-y-auto rounded-2xl border border-border/60 bg-background-3/95 p-1.5 shadow-xl narrow-scrollbar"
-          >
-            <div className="sticky top-0 z-10 -mx-1.5 mb-1 border-b border-border/70 bg-background-3/95 px-1.5 pb-1 supports-[backdrop-filter]:bg-background-3/90 supports-[backdrop-filter]:backdrop-blur-sm">
-              <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
-                {tNavigation('mySpaces')}
-              </DropdownMenuLabel>
-              {!isAllSpacesLoading && !allSpacesError && hasSpaces ? (
+              <div className="sticky top-0 z-10 -mx-1.5 mb-1 border-b border-border/70 bg-background-3/95 px-1.5 pb-1 supports-[backdrop-filter]:bg-background-3/90 supports-[backdrop-filter]:backdrop-blur-sm">
+                <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
+                  {tNavigation('mySpaces')}
+                </DropdownMenuLabel>
                 <div className="px-1">
                   <input
                     type="text"
@@ -184,97 +189,87 @@ export function AiPanelHeader({
                     aria-label={tSpaces('search')}
                   />
                 </div>
+              </div>
+              {!hasFilteredSpaces ? (
+                <DropdownMenuItem disabled>{fallbackTitle}</DropdownMenuItem>
               ) : null}
-            </div>
-            {isAllSpacesLoading ? (
-              <DropdownMenuItem disabled>{t('loading')}</DropdownMenuItem>
-            ) : null}
-            {!isAllSpacesLoading && allSpacesError ? (
-              <DropdownMenuItem disabled>{t('streamError')}</DropdownMenuItem>
-            ) : null}
-            {!isAllSpacesLoading &&
-            !allSpacesError &&
-            (!hasSpaces || !hasFilteredSpaces) ? (
-              <DropdownMenuItem disabled>{fallbackTitle}</DropdownMenuItem>
-            ) : null}
-            {!isAllSpacesLoading &&
-              !allSpacesError &&
-              hasFilteredSpaces &&
-              filteredGroupedSpaces.ecosystem.map((space) => (
-                <DropdownMenuItem
-                  key={space.id}
-                  asChild
-                  className="rounded-lg py-1.5 hover:bg-background-4/70"
-                >
-                  <Link
-                    href={`/${lang}/dho/${space.slug}/agreements`}
-                    className="flex min-w-0 items-center gap-2"
+              {hasFilteredSpaces &&
+                filteredGroupedSpaces.ecosystem.map((space) => (
+                  <DropdownMenuItem
+                    key={space.id}
+                    asChild
+                    className="rounded-lg py-1.5 hover:bg-background-4/70"
                   >
-                    <span className="h-5 w-5 overflow-hidden rounded-md ring-1 ring-border/60">
-                      {getDisplayIcon(space) ? (
-                        <>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={getDisplayIcon(space) ?? undefined}
-                            alt={space.title}
-                            className="h-full w-full object-cover"
-                          />
-                        </>
-                      ) : (
-                        <span className="flex h-full w-full items-center justify-center bg-muted">
-                          <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-                        </span>
-                      )}
-                    </span>
-                    <span className="min-w-0 max-w-[11.25rem] flex-1 truncate">
-                      {space.title}
-                    </span>
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            {!isAllSpacesLoading &&
-            !allSpacesError &&
-            filteredGroupedSpaces.ecosystem.length > 0 &&
-            filteredGroupedSpaces.others.length > 0 ? (
-              <DropdownMenuSeparator />
-            ) : null}
-            {!isAllSpacesLoading &&
-              !allSpacesError &&
-              hasFilteredSpaces &&
-              filteredGroupedSpaces.others.map((space) => (
-                <DropdownMenuItem
-                  key={space.id}
-                  asChild
-                  className="rounded-lg py-1.5 hover:bg-background-4/70"
-                >
-                  <Link
-                    href={`/${lang}/dho/${space.slug}/agreements`}
-                    className="flex min-w-0 items-center gap-2"
+                    <Link
+                      href={`/${lang}/dho/${space.slug}/agreements`}
+                      className="flex min-w-0 items-center gap-2"
+                    >
+                      <span className="h-5 w-5 overflow-hidden rounded-md ring-1 ring-border/60">
+                        {getDisplayIcon(space) ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getDisplayIcon(space) ?? undefined}
+                              alt={space.title}
+                              className="h-full w-full object-cover"
+                            />
+                          </>
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center bg-muted">
+                            <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                          </span>
+                        )}
+                      </span>
+                      <span className="min-w-0 max-w-[11.25rem] flex-1 truncate">
+                        {space.title}
+                      </span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              {filteredGroupedSpaces.ecosystem.length > 0 &&
+              filteredGroupedSpaces.others.length > 0 ? (
+                <DropdownMenuSeparator />
+              ) : null}
+              {hasFilteredSpaces &&
+                filteredGroupedSpaces.others.map((space) => (
+                  <DropdownMenuItem
+                    key={space.id}
+                    asChild
+                    className="rounded-lg py-1.5 hover:bg-background-4/70"
                   >
-                    <span className="h-5 w-5 overflow-hidden rounded-md ring-1 ring-border/60">
-                      {getDisplayIcon(space) ? (
-                        <>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={getDisplayIcon(space) ?? undefined}
-                            alt={space.title}
-                            className="h-full w-full object-cover"
-                          />
-                        </>
-                      ) : (
-                        <span className="flex h-full w-full items-center justify-center bg-muted">
-                          <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-                        </span>
-                      )}
-                    </span>
-                    <span className="min-w-0 max-w-[11.25rem] flex-1 truncate">
-                      {space.title}
-                    </span>
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                    <Link
+                      href={`/${lang}/dho/${space.slug}/agreements`}
+                      className="flex min-w-0 items-center gap-2"
+                    >
+                      <span className="h-5 w-5 overflow-hidden rounded-md ring-1 ring-border/60">
+                        {getDisplayIcon(space) ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getDisplayIcon(space) ?? undefined}
+                              alt={space.title}
+                              className="h-full w-full object-cover"
+                            />
+                          </>
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center bg-muted">
+                            <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                          </span>
+                        )}
+                      </span>
+                      <span className="min-w-0 max-w-[11.25rem] flex-1 truncate">
+                        {space.title}
+                      </span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="inline-flex h-8 w-full min-w-0 max-w-[15rem] items-center rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground/90">
+            <span className="max-w-[9rem] truncate">{fallbackTitle}</span>
+          </div>
+        )}
       </div>
       {showCloseButton ? (
         <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center justify-end">
