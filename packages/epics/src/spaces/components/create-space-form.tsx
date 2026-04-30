@@ -474,8 +474,8 @@ export const SpaceForm = ({
                             typeof values?.logoUrl === 'string'
                               ? values?.logoUrl
                               : typeof defaultValues?.logoUrl === 'string'
-                                ? defaultValues?.logoUrl
-                                : undefined
+                              ? defaultValues?.logoUrl
+                              : undefined
                           }
                         />
                       </FormControl>
@@ -558,8 +558,8 @@ export const SpaceForm = ({
                     typeof values?.leadImage === 'string'
                       ? values?.leadImage
                       : typeof defaultValues?.leadImage === 'string'
-                        ? defaultValues?.leadImage
-                        : undefined
+                      ? defaultValues?.leadImage
+                      : undefined
                   }
                   uploadText={
                     <>
@@ -643,8 +643,8 @@ export const SpaceForm = ({
                       typeof values?.ecosystemLogoUrl === 'string'
                         ? values?.ecosystemLogoUrl
                         : typeof defaultValues?.ecosystemLogoUrl === 'string'
-                          ? defaultValues?.ecosystemLogoUrl
-                          : undefined
+                        ? defaultValues?.ecosystemLogoUrl
+                        : undefined
                     }
                   />
                 </FormControl>

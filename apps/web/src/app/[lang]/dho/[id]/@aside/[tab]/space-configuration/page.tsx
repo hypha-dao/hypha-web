@@ -48,6 +48,9 @@ export default function SpaceConfiguration() {
   const normalizeNullableEcosystemLogoUrl = (
     value: string | null | undefined,
   ): string | undefined => value ?? undefined;
+  const normalizeNullableFileUrl = (
+    value: string | null | undefined,
+  ): string | undefined => value ?? undefined;
 
   const submitForm = React.useCallback(
     async (
@@ -89,6 +92,8 @@ export default function SpaceConfiguration() {
                   description: description as string | undefined,
                   address: address as string | undefined,
                   web3SpaceId: web3SpaceId as number | undefined,
+                  logoUrl: normalizeNullableFileUrl(updates.logoUrl),
+                  leadImage: normalizeNullableFileUrl(updates.leadImage),
                   ecosystemLogoUrl: normalizeNullableEcosystemLogoUrl(
                     updates.ecosystemLogoUrl,
                   ),
@@ -119,6 +124,8 @@ export default function SpaceConfiguration() {
                   description: description as string | undefined,
                   address: address as string | undefined,
                   web3SpaceId: web3SpaceId as number | undefined,
+                  logoUrl: normalizeNullableFileUrl(updates.logoUrl),
+                  leadImage: normalizeNullableFileUrl(updates.leadImage),
                   ecosystemLogoUrl: normalizeNullableEcosystemLogoUrl(
                     updates.ecosystemLogoUrl,
                   ),
