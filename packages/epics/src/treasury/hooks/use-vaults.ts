@@ -121,7 +121,7 @@ export const useVaults = ({
 
   return {
     vaults,
-    isLoading,
+    isLoading: isAuthLoading || isLoading,
     mutate,
   };
 };
