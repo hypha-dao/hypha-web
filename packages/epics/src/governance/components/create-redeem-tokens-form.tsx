@@ -130,8 +130,8 @@ const CreateRedeemTokensFormInner = ({
         typeof data.redemptionWeb3SpaceId === 'number'
           ? data.redemptionWeb3SpaceId
           : typeof web3SpaceId === 'number'
-            ? web3SpaceId
-            : undefined,
+          ? web3SpaceId
+          : undefined,
       redemptions: data.redemptions.map(({ amount, token }) => ({
         amount: amount ?? '0',
         token: token ?? '',
