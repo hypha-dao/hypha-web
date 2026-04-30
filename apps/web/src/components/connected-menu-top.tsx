@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { MenuTop } from '@hypha-platform/ui';
 import { getDhoSpaceSlugFromPathname } from '@hypha-platform/epics';
 import useSWR from 'swr';
-import { ImageUp } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { Space } from '@hypha-platform/core/client';
 import Link from 'next/link';
 
@@ -114,7 +114,7 @@ export function ConnectedMenuTop({
         >
           <span className="absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 bg-linear-to-r from-transparent via-accent-4/20 to-transparent" />
           <span className="relative flex h-6 w-6 items-center justify-center rounded-md bg-accent-4/60 text-accent-11 ring-1 ring-accent-7/50">
-            <ImageUp className="h-4 w-4" />
+            <Sparkles className="h-4 w-4" />
           </span>
           <span className="relative truncate">Ecosystem Logo</span>
         </Link>
