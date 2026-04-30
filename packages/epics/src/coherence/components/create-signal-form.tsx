@@ -46,6 +46,8 @@ import { ButtonBack } from '../../common/button-back';
 import { CardButtonColorVariant } from '../../common/card-button';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
+const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
+  'coherence.signalProvisioningNotice';
 
 interface CreateSignalFormProps {
   spaceId: number;
@@ -211,6 +213,18 @@ export const CreateSignalForm = ({
     });
   }, [form, person?.id, spaceId]);
 
+  const setSignalProvisioningNotice = React.useCallback(
+    (message: string, details?: string) => {
+      if (typeof window === 'undefined') return;
+      const lines = details ? [message, details] : [message];
+      sessionStorage.setItem(
+        SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
+        JSON.stringify(lines),
+      );
+    },
+    [],
+  );
+
   const handleCreate = React.useCallback(
     async (data: FormValues) => {
       try {
@@ -225,12 +239,27 @@ export const CreateSignalForm = ({
               const { roomId } = await createRoom(coherence.title);
               await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
             } catch (matrixError) {
+              const matrixErrorMessage =
+                matrixError instanceof Error
+                  ? matrixError.message
+                  : String(matrixError);
+              setSignalProvisioningNotice(
+                'Signal created but chat room provisioning failed.',
+                matrixErrorMessage,
+              );
               console.warn(
                 'Signal created but Matrix room provisioning failed:',
                 matrixError,
               );
             }
           })();
+        } else {
+          setSignalProvisioningNotice(
+            'Signal created but chat room could not be linked. Please retry.',
+          );
+          console.warn(
+            'Signal created but coherence slug is missing — room linking skipped.',
+          );
         }
         router.push(successfulUrl);
       } catch (error) {
@@ -242,6 +271,7 @@ export const CreateSignalForm = ({
       createRoom,
       updateCoherenceBySlug,
       isMatrixAvailable,
+      setSignalProvisioningNotice,
       router,
       successfulUrl,
     ],
@@ -366,9 +396,9 @@ export const CreateSignalForm = ({
                       </FormLabel>
                       <FormControl>
                         <span className="grid w-full grid-cols-2 gap-2">
-                          {typeOptions.map((option, index) => (
+                          {typeOptions.map((option) => (
                             <CoherenceTypeButton
-                              key={`type-option-${index}`}
+                              key={`type-option-${option.type}`}
                               icon={option.icon}
                               title={option.title}
                               description={option.description}
@@ -405,9 +435,9 @@ export const CreateSignalForm = ({
                       </FormLabel>
                       <FormControl>
                         <span className="flex w-full flex-row gap-2">
-                          {priorityOptions.map((option, index) => (
+                          {priorityOptions.map((option) => (
                             <CoherencePriorityButton
-                              key={`priority-option-${index}`}
+                              key={`priority-option-${option.priority}`}
                               className="w-full"
                               icon={option.icon}
                               title={option.title}

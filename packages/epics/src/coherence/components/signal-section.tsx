@@ -3,7 +3,12 @@
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
 import { useSignalsSection } from '../hooks';
-import { Button, SectionFilter, SectionLoadMore } from '@hypha-platform/ui';
+import {
+  Button,
+  ErrorAlert,
+  SectionFilter,
+  SectionLoadMore,
+} from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import { SignalGridContainer } from './signal-grid.container';
 import { Coherence, DirectionType } from '@hypha-platform/core/client';
@@ -13,6 +18,9 @@ import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
+
+const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
+  'coherence.signalProvisioningNotice';
 
 type SignalSectionProps = {
   basePath: string;
@@ -54,6 +62,29 @@ export const SignalSection: FC<SignalSectionProps> = ({
     firstPageSize,
     pageSize,
   });
+  const [provisioningNoticeLines, setProvisioningNoticeLines] = React.useState<
+    string[]
+  >([]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const rawNotice = sessionStorage.getItem(
+      SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
+    );
+    if (!rawNotice) return;
+    sessionStorage.removeItem(SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY);
+    try {
+      const parsed = JSON.parse(rawNotice);
+      if (!Array.isArray(parsed)) return;
+      const lines = parsed.filter(
+        (line): line is string =>
+          typeof line === 'string' && line.trim().length > 0,
+      );
+      if (lines.length > 0) setProvisioningNoticeLines(lines);
+    } catch (error) {
+      console.warn('Failed to parse signal provisioning notice:', error);
+    }
+  }, []);
 
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
 
@@ -122,6 +153,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </Text>
         </SectionLoadMore>
       )}
+      {provisioningNoticeLines.length > 0 ? (
+        <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
+      ) : null}
     </div>
   );
 };
