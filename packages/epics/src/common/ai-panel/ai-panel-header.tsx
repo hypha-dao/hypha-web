@@ -103,7 +103,7 @@ export function AiPanelHeader({
     if (!activeSpace) {
       return { ecosystem: [] as Space[], others: mySpaces };
     }
-    const spacesById = new Map(mySpaces.map((space) => [space.id, space]));
+    const spacesById = new Map(allSpaces.map((space) => [space.id, space]));
     const activeRootId = getEcosystemRootId(activeSpace, spacesById);
     const ecosystem: Space[] = [];
     const others: Space[] = [];
