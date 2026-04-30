@@ -74,6 +74,14 @@ export async function Breadcrumbs({
             <BreadcrumbItem>
               {crumb === 'ellipsis' ? (
                 <BreadcrumbEllipsis className="size-4" />
+              ) : index === visibleCrumbs.length - 1 ? (
+                <span
+                  aria-current="page"
+                  className="inline-block max-w-[9rem] truncate align-bottom sm:max-w-[12rem]"
+                  title={crumb.title}
+                >
+                  {crumb.title}
+                </span>
               ) : (
                 <BreadcrumbLink asChild>
                   <Link

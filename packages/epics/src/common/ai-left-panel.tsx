@@ -35,6 +35,22 @@ type ChatUIMessage = {
 };
 
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
+const isTruthyFlag = (value: string | undefined | null) => {
+  if (!value) return false;
+  return ['true', '1', 'yes', 'y', 'on'].includes(value.trim().toLowerCase());
+};
+
+const getClientCoherenceEnabled = () => {
+  if (typeof document !== 'undefined') {
+    const cookieValue = document.cookie
+      .split('; ')
+      .find((entry) => entry.startsWith('HYPHA_ENABLE_COHERENCE='))
+      ?.split('=')[1];
+    if (cookieValue != null) return isTruthyFlag(cookieValue);
+  }
+  if (isTruthyFlag(process.env.NEXT_PUBLIC_ENABLE_COHERENCE)) return true;
+  return process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
+};
 
 export function AiLeftPanel() {
   const { isAuthenticated, isLoading, login, getAccessToken } =
@@ -50,6 +66,7 @@ export function AiLeftPanel() {
   const t = useTranslations('AiPanel');
   const tCommon = useTranslations('Common');
   const tCoherence = useTranslations('CoherenceTab');
+  const coherenceEnabled = useMemo(() => getClientCoherenceEnabled(), []);
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const {
     open: isAiOpen,
@@ -61,12 +78,18 @@ export function AiLeftPanel() {
     spaceSlug ? [spaceSlug] : [],
   );
   const { data: allSpaces = [] } = useSWR<Space[]>(
-    '/api/v1/spaces?parentOnly=false',
+    spaceSlug ? '/api/v1/spaces?parentOnly=false' : null,
     async (url: string) => {
       const response = await fetch(url, {
         headers: { Accept: 'application/json' },
       });
-      if (!response.ok) return [];
+      if (!response.ok) {
+        console.warn('[AiLeftPanel] spaces fetch failed', {
+          status: response.status,
+          url,
+        });
+        return [];
+      }
       return (await response.json()) as Space[];
     },
   );
@@ -94,13 +117,17 @@ export function AiLeftPanel() {
   const sectionNavItems = useMemo(() => {
     if (!spaceSlug) return [];
     return [
-      {
-        key: 'signals',
-        label: tCoherence('signals'),
-        icon: Radio,
-        href: `/${lang}/dho/${spaceSlug}/coherence`,
-        active: isSectionActive('coherence'),
-      },
+      ...(coherenceEnabled
+        ? [
+            {
+              key: 'signals',
+              label: tCoherence('signals'),
+              icon: Radio,
+              href: `/${lang}/dho/${spaceSlug}/coherence`,
+              active: isSectionActive('coherence'),
+            },
+          ]
+        : []),
       {
         key: 'agreements',
         label: tCommon('Agreements'),
@@ -123,7 +150,7 @@ export function AiLeftPanel() {
         active: isSectionActive('treasury'),
       },
     ];
-  }, [isSectionActive, lang, spaceSlug, tCommon, tCoherence]);
+  }, [coherenceEnabled, isSectionActive, lang, spaceSlug, tCommon, tCoherence]);
 
   const [input, setInput] = useState('');
   const [draftAttachments, setDraftAttachments] = useState<File[]>([]);

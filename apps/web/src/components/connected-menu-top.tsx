@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { MenuTop } from '@hypha-platform/ui';
 import { getDhoSpaceSlugFromPathname } from '@hypha-platform/epics';
 import useSWR from 'swr';
@@ -51,7 +52,7 @@ export function ConnectedMenuTop({
   aiChatEnabled,
 }: ConnectedMenuTopProps) {
   const pathname = usePathname();
-  const isSpaceRoute = /^\/[^/]+\/dho\/[^/]+/.test(pathname);
+  const tNavigation = useTranslations('Navigation');
   const lang = useMemo(() => {
     const match = pathname.match(/^\/([^/]+)\//);
     return match?.[1] ?? 'en';
@@ -60,13 +61,20 @@ export function ConnectedMenuTop({
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
   );
+  const isSpaceRoute = Boolean(activeSpaceSlug);
   const { data: allSpaces = [] } = useSWR<Space[]>(
     isSpaceRoute ? '/api/v1/spaces?parentOnly=false' : null,
     async (url: string) => {
       const response = await fetch(url, {
         headers: { Accept: 'application/json' },
       });
-      if (!response.ok) return [];
+      if (!response.ok) {
+        console.warn('[ConnectedMenuTop] spaces fetch failed', {
+          status: response.status,
+          url,
+        });
+        return [];
+      }
       return (await response.json()) as Space[];
     },
   );
@@ -101,7 +109,7 @@ export function ConnectedMenuTop({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={rootLogoUrl}
-            alt={rootTitle}
+            alt={rootTitle || tNavigation('ecosystemLogo')}
             className="h-full w-auto object-contain"
           />
         </Link>
@@ -109,14 +117,16 @@ export function ConnectedMenuTop({
         <Link
           href={rootConfigHref ?? '#'}
           className="group relative inline-flex h-10 max-w-[13.5rem] items-center justify-center gap-2 overflow-hidden rounded-xl border border-dashed border-accent-7/60 bg-linear-to-r from-accent-2/50 via-background-2 to-accent-2/40 px-3.5 text-sm font-semibold text-accent-11 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset,0_8px_20px_-16px_var(--accent-9)] transition-all duration-200 hover:border-accent-8 hover:from-accent-3/60 hover:to-accent-3/50 hover:text-accent-12"
-          aria-label="Upload ecosystem logo"
-          title="Upload ecosystem logo"
+          aria-label={tNavigation('ecosystemLogo')}
+          title={tNavigation('ecosystemLogo')}
         >
           <span className="absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 bg-linear-to-r from-transparent via-accent-4/20 to-transparent" />
           <span className="relative flex h-6 w-6 items-center justify-center rounded-md bg-accent-4/60 text-accent-11 ring-1 ring-accent-7/50">
             <Sparkles className="h-4 w-4" />
           </span>
-          <span className="relative truncate">Ecosystem Logo</span>
+          <span className="relative truncate">
+            {tNavigation('ecosystemLogo')}
+          </span>
         </Link>
       )
     ) : undefined;
