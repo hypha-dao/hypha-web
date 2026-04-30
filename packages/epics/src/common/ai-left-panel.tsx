@@ -39,12 +39,9 @@ type ChatUIMessage = {
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
 const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
 const MAX_RECENT_SPACES = 5;
-const MENU_BUTTON_EXPANDED_CLASS =
-  'h-10 rounded-lg border border-transparent text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground';
-const MENU_BUTTON_COLLAPSED_CLASS =
-  'group relative h-10 w-full justify-start rounded-lg border border-transparent p-0 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground data-[active=true]:text-foreground group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!rounded-lg group-data-[collapsible=icon]:!p-0';
+const MENU_BUTTON_CLASS =
+  'h-10 w-full rounded-lg border border-transparent p-0 text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!rounded-lg group-data-[collapsible=icon]:!p-0';
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
-const COLLAPSED_ICON_COLUMN_CLASS = `${ICON_COLUMN_CLASS} mx-auto`;
 const RECENT_SPACE_AVATAR_CLASS =
   'flex h-6 w-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 
@@ -203,6 +200,104 @@ export function AiLeftPanel() {
     [t],
   );
 
+  const renderSectionNavItem = useCallback(
+    (
+      item: (typeof sectionNavItems)[number],
+      mode: 'expanded' | 'collapsed',
+      keyPrefix: string,
+    ) => {
+      const showLabel = mode === 'expanded';
+      const iconClassName = `h-4 w-4${
+        !showLabel && item.active ? ' text-accent-9' : ''
+      }`;
+
+      return (
+        <SidebarMenuItem key={`${keyPrefix}-${item.key}`}>
+          <SidebarMenuButton
+            asChild
+            tooltip={!showLabel ? item.label : undefined}
+            isActive={item.active}
+            className={MENU_BUTTON_CLASS}
+          >
+            <Link
+              href={item.href}
+              aria-label={item.label}
+              aria-current={item.active ? 'page' : undefined}
+              className={`flex w-full min-w-0 items-center ${
+                showLabel ? '' : 'justify-center'
+              }`}
+            >
+              <span className={ICON_COLUMN_CLASS}>
+                <item.icon className={iconClassName} />
+              </span>
+              {showLabel ? (
+                <span className="min-w-0 truncate">{item.label}</span>
+              ) : null}
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      );
+    },
+    [],
+  );
+
+  const renderRecentSpaceItem = useCallback(
+    (space: Space, mode: 'expanded' | 'collapsed', keyPrefix: string) => {
+      const showLabel = mode === 'expanded';
+      const isRecentActive = space.slug === spaceSlug;
+      const href = `/${lang}/dho/${space.slug}/agreements`;
+
+      return (
+        <SidebarMenuItem key={`${keyPrefix}-${space.slug}`}>
+          <SidebarMenuButton
+            asChild
+            tooltip={!showLabel ? space.title : undefined}
+            isActive={isRecentActive}
+            className={MENU_BUTTON_CLASS}
+          >
+            <Link
+              href={href}
+              aria-label={space.title}
+              aria-current={isRecentActive ? 'page' : undefined}
+              className={`flex w-full min-w-0 items-center ${
+                showLabel ? '' : 'justify-center'
+              }`}
+            >
+              <span className={ICON_COLUMN_CLASS}>
+                <span
+                  className={`${RECENT_SPACE_AVATAR_CLASS} ${
+                    isRecentActive
+                      ? 'ring-accent-9/45'
+                      : 'group-hover:ring-border/80'
+                  }`}
+                >
+                  {space.logoUrl ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={space.logoUrl}
+                        alt={space.title}
+                        className="block h-full w-full rounded-full object-cover object-center"
+                      />
+                    </>
+                  ) : (
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {space.title.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </span>
+              </span>
+              {showLabel ? (
+                <span className="min-w-0 truncate">{space.title}</span>
+              ) : null}
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      );
+    },
+    [lang, spaceSlug],
+  );
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -311,27 +406,9 @@ export function AiLeftPanel() {
             <SidebarGroup className="p-2 pt-4">
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
-                  {sectionNavItems.map((item) => (
-                    <SidebarMenuItem key={`overlay-${item.key}`}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={item.active}
-                        className={MENU_BUTTON_EXPANDED_CLASS}
-                      >
-                        <Link
-                          href={item.href}
-                          aria-label={item.label}
-                          aria-current={item.active ? 'page' : undefined}
-                          className="flex min-w-0 items-center"
-                        >
-                          <span className={ICON_COLUMN_CLASS}>
-                            <item.icon className="h-4 w-4" />
-                          </span>
-                          <span className="min-w-0 truncate">{item.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {sectionNavItems.map((item) =>
+                    renderSectionNavItem(item, 'expanded', 'overlay'),
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -339,54 +416,13 @@ export function AiLeftPanel() {
               <SidebarGroup className="mt-auto p-2 pb-4">
                 <SidebarGroupContent>
                   <SidebarMenu className="gap-2">
-                    {recentSpaces.map((space) => {
-                      const isRecentActive = space.slug === spaceSlug;
-                      const href = `/${lang}/dho/${space.slug}/agreements`;
-                      return (
-                        <SidebarMenuItem key={`recent-overlay-${space.slug}`}>
-                          <SidebarMenuButton
-                            asChild
-                            isActive={isRecentActive}
-                            className={MENU_BUTTON_EXPANDED_CLASS}
-                          >
-                            <Link
-                              href={href}
-                              aria-label={space.title}
-                              aria-current={isRecentActive ? 'page' : undefined}
-                              className="flex min-w-0 items-center"
-                            >
-                              <span className={ICON_COLUMN_CLASS}>
-                                <span
-                                  className={`${RECENT_SPACE_AVATAR_CLASS} ${
-                                    isRecentActive
-                                      ? 'ring-accent-9/45'
-                                      : 'group-hover:ring-border/80'
-                                  }`}
-                                >
-                                  {space.logoUrl ? (
-                                    <>
-                                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img
-                                        src={space.logoUrl}
-                                        alt={space.title}
-                                        className="block h-full w-full rounded-full object-cover object-center"
-                                      />
-                                    </>
-                                  ) : (
-                                    <span className="text-xs font-semibold text-muted-foreground">
-                                      {space.title.slice(0, 1).toUpperCase()}
-                                    </span>
-                                  )}
-                                </span>
-                              </span>
-                              <span className="min-w-0 truncate">
-                                {space.title}
-                              </span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      );
-                    })}
+                    {recentSpaces.map((space) =>
+                      renderRecentSpaceItem(
+                        space,
+                        'expanded',
+                        'recent-overlay',
+                      ),
+                    )}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
@@ -425,29 +461,9 @@ export function AiLeftPanel() {
           <SidebarGroup className="p-2 pt-4">
             <SidebarGroupContent>
               <SidebarMenu className="gap-2">
-                {sectionNavItems.map((item) => (
-                  <SidebarMenuItem key={item.key}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={item.label}
-                      isActive={item.active}
-                      className={MENU_BUTTON_COLLAPSED_CLASS}
-                    >
-                      <Link
-                        href={item.href}
-                        aria-label={item.label}
-                        aria-current={item.active ? 'page' : undefined}
-                        className={COLLAPSED_ICON_COLUMN_CLASS}
-                      >
-                        <item.icon
-                          className={`h-4 w-4 ${
-                            item.active ? 'text-accent-9' : ''
-                          }`}
-                        />
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {sectionNavItems.map((item) =>
+                  renderSectionNavItem(item, 'collapsed', 'collapsed'),
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -455,50 +471,13 @@ export function AiLeftPanel() {
             <SidebarGroup className="mt-auto p-2 pb-4">
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
-                  {recentSpaces.map((space) => {
-                    const isRecentActive = space.slug === spaceSlug;
-                    const href = `/${lang}/dho/${space.slug}/agreements`;
-                    return (
-                      <SidebarMenuItem key={`recent-collapsed-${space.slug}`}>
-                        <SidebarMenuButton
-                          asChild
-                          tooltip={space.title}
-                          isActive={isRecentActive}
-                          className={MENU_BUTTON_COLLAPSED_CLASS}
-                        >
-                          <Link
-                            href={href}
-                            aria-label={space.title}
-                            aria-current={isRecentActive ? 'page' : undefined}
-                            className={COLLAPSED_ICON_COLUMN_CLASS}
-                          >
-                            <span
-                              className={`${RECENT_SPACE_AVATAR_CLASS} ${
-                                isRecentActive
-                                  ? 'ring-accent-9/45'
-                                  : 'group-hover:ring-border/80'
-                              }`}
-                            >
-                              {space.logoUrl ? (
-                                <>
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={space.logoUrl}
-                                    alt={space.title}
-                                    className="block h-full w-full rounded-full object-cover object-center"
-                                  />
-                                </>
-                              ) : (
-                                <span className="text-xs font-semibold text-muted-foreground">
-                                  {space.title.slice(0, 1).toUpperCase()}
-                                </span>
-                              )}
-                            </span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
+                  {recentSpaces.map((space) =>
+                    renderRecentSpaceItem(
+                      space,
+                      'collapsed',
+                      'recent-collapsed',
+                    ),
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
