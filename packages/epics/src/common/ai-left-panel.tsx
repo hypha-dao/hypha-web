@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -35,6 +35,13 @@ type ChatUIMessage = {
 };
 
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
+const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
+const MAX_RECENT_SPACES = 5;
+const MENU_BUTTON_EXPANDED_CLASS =
+  'h-10 rounded-lg border border-transparent text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground';
+const MENU_BUTTON_COLLAPSED_CLASS =
+  'h-10 w-10 justify-center rounded-lg border border-transparent p-0 text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground';
+const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
 
 export function AiLeftPanel() {
   const { isAuthenticated, isLoading, login, getAccessToken } =
@@ -133,6 +140,50 @@ export function AiLeftPanel() {
 
   const [input, setInput] = useState('');
   const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
+  const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(RECENT_SPACE_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed
+          .filter((slug): slug is string => typeof slug === 'string')
+          .slice(0, MAX_RECENT_SPACES);
+        setRecentSpaceSlugs(cleaned);
+      }
+    } catch (error) {
+      console.warn('[AiLeftPanel] failed to parse recent spaces', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!spaceSlug) return;
+    setRecentSpaceSlugs((prev) => {
+      const next = [
+        spaceSlug,
+        ...prev.filter((slug) => slug !== spaceSlug),
+      ].slice(0, MAX_RECENT_SPACES);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(
+          RECENT_SPACE_STORAGE_KEY,
+          JSON.stringify(next),
+        );
+      }
+      return next;
+    });
+  }, [spaceSlug]);
+
+  const recentSpaces = useMemo(() => {
+    if (recentSpaceSlugs.length === 0 || allSpaces.length === 0) return [];
+    const bySlug = new Map(allSpaces.map((space) => [space.slug, space]));
+    return recentSpaceSlugs
+      .map((slug) => bySlug.get(slug))
+      .filter((space): space is Space => Boolean(space))
+      .slice(0, MAX_RECENT_SPACES);
+  }, [allSpaces, recentSpaceSlugs]);
 
   const suggestions = useMemo(
     () => [
@@ -291,7 +342,7 @@ export function AiLeftPanel() {
                       <SidebarMenuButton
                         asChild
                         isActive={item.active}
-                        className="h-10 rounded-lg border border-transparent text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground"
+                        className={MENU_BUTTON_EXPANDED_CLASS}
                       >
                         <Link
                           href={item.href}
@@ -299,7 +350,7 @@ export function AiLeftPanel() {
                           aria-current={item.active ? 'page' : undefined}
                           className="flex min-w-0 items-center"
                         >
-                          <span className="flex h-10 w-10 shrink-0 items-center justify-center">
+                          <span className={ICON_COLUMN_CLASS}>
                             <item.icon className="h-5 w-5" strokeWidth={2.1} />
                           </span>
                           <span className="min-w-0 truncate">{item.label}</span>
@@ -310,6 +361,56 @@ export function AiLeftPanel() {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+            {recentSpaces.length > 0 ? (
+              <SidebarGroup className="mt-auto p-2 pb-4">
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {recentSpaces.map((space) => {
+                      const isRecentActive = space.slug === spaceSlug;
+                      const href = `/${lang}/dho/${space.slug}/agreements`;
+                      return (
+                        <SidebarMenuItem key={`recent-overlay-${space.slug}`}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={isRecentActive}
+                            className={MENU_BUTTON_EXPANDED_CLASS}
+                          >
+                            <Link
+                              href={href}
+                              aria-label={space.title}
+                              aria-current={isRecentActive ? 'page' : undefined}
+                              className="flex min-w-0 items-center"
+                            >
+                              <span className={ICON_COLUMN_CLASS}>
+                                <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60">
+                                  {space.logoUrl ? (
+                                    <>
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={space.logoUrl}
+                                        alt={space.title}
+                                        className="h-full w-full object-cover"
+                                      />
+                                    </>
+                                  ) : (
+                                    <span className="text-xs font-semibold text-muted-foreground">
+                                      {space.title.slice(0, 1).toUpperCase()}
+                                    </span>
+                                  )}
+                                </span>
+                              </span>
+                              <span className="min-w-0 truncate">
+                                {space.title}
+                              </span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ) : null}
           </SidebarContent>
         </>
       );
@@ -350,7 +451,7 @@ export function AiLeftPanel() {
                       asChild
                       tooltip={item.label}
                       isActive={item.active}
-                      className="h-10 w-10 justify-center rounded-lg border border-transparent p-0 text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground"
+                      className={MENU_BUTTON_COLLAPSED_CLASS}
                     >
                       <Link
                         href={item.href}
@@ -365,6 +466,51 @@ export function AiLeftPanel() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+          {recentSpaces.length > 0 ? (
+            <SidebarGroup className="mt-auto p-2 pb-4">
+              <SidebarGroupContent>
+                <SidebarMenu className="items-center gap-2">
+                  {recentSpaces.map((space) => {
+                    const isRecentActive = space.slug === spaceSlug;
+                    const href = `/${lang}/dho/${space.slug}/agreements`;
+                    return (
+                      <SidebarMenuItem key={`recent-collapsed-${space.slug}`}>
+                        <SidebarMenuButton
+                          asChild
+                          tooltip={space.title}
+                          isActive={isRecentActive}
+                          className={MENU_BUTTON_COLLAPSED_CLASS}
+                        >
+                          <Link
+                            href={href}
+                            aria-label={space.title}
+                            aria-current={isRecentActive ? 'page' : undefined}
+                          >
+                            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60">
+                              {space.logoUrl ? (
+                                <>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={space.logoUrl}
+                                    alt={space.title}
+                                    className="h-full w-full object-cover"
+                                  />
+                                </>
+                              ) : (
+                                <span className="text-xs font-semibold text-muted-foreground">
+                                  {space.title.slice(0, 1).toUpperCase()}
+                                </span>
+                              )}
+                            </span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ) : null}
         </SidebarContent>
       </>
     );
