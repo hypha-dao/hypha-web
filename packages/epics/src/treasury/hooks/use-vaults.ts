@@ -54,7 +54,12 @@ type UseVaultsReturn = {
 export const useVaults = ({
   spaceSlug,
   refreshInterval = 10000,
-}: { spaceSlug?: string; refreshInterval?: number } = {}): UseVaultsReturn => {
+  redeemableOnly = false,
+}: {
+  spaceSlug?: string;
+  refreshInterval?: number;
+  redeemableOnly?: boolean;
+} = {}): UseVaultsReturn => {
   const { id } = useParams<{ id: string }>();
   const { getAccessToken } = useAuthentication();
   const resolvedSpaceSlug =
@@ -62,8 +67,12 @@ export const useVaults = ({
 
   const endpoint = React.useMemo(
     () =>
-      resolvedSpaceSlug ? `/api/v1/spaces/${resolvedSpaceSlug}/vaults` : null,
-    [resolvedSpaceSlug],
+      resolvedSpaceSlug
+        ? `/api/v1/spaces/${resolvedSpaceSlug}/vaults${
+            redeemableOnly ? '?redeemableOnly=true' : ''
+          }`
+        : null,
+    [redeemableOnly, resolvedSpaceSlug],
   );
 
   const { data, isLoading, mutate } = useSWR<UseVaultsData>(

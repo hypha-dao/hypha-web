@@ -36,6 +36,8 @@ export async function GET(
   const { spaceSlug } = await params;
   const allowPublicRead =
     request.nextUrl.searchParams.get('allowPublicRead') === 'true';
+  const redeemableOnly =
+    request.nextUrl.searchParams.get('redeemableOnly') === 'true';
 
   try {
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
@@ -162,19 +164,6 @@ export async function GET(
       });
     }
 
-    const backingTokensCalls = vaultSpaceTokens.map((spaceToken) => ({
-      address: vaultAddress,
-      abi: tokenBackingVaultImplementationAbi,
-      functionName: 'getBackingTokens' as const,
-      args: [spaceId, spaceToken],
-    }));
-
-    const backingTokensResults = await web3Client.multicall({
-      allowFailure: true,
-      blockTag: 'safe',
-      contracts: backingTokensCalls,
-    });
-
     const vaultConfigCalls = vaultSpaceTokens.map((spaceToken) => ({
       address: vaultAddress,
       abi: tokenBackingVaultImplementationAbi,
@@ -188,7 +177,52 @@ export async function GET(
       contracts: vaultConfigCalls,
     });
 
-    const redemptionPriceCalls = vaultSpaceTokens.map((spaceToken) => ({
+    const filteredVaultSpaceTokens = redeemableOnly
+      ? vaultSpaceTokens.filter((_, index) => {
+          const configResult = vaultConfigResults[index];
+          if (configResult?.status !== 'success') return false;
+          const config = configResult.result as {
+            redeemEnabled?: boolean;
+            redemptionStartDate?: bigint;
+          };
+          if (!config.redeemEnabled) return false;
+          const redemptionStartDateSeconds = Number(
+            config.redemptionStartDate ?? 0n,
+          );
+          return (
+            redemptionStartDateSeconds === 0 ||
+            redemptionStartDateSeconds * 1000 <= Date.now()
+          );
+        })
+      : vaultSpaceTokens;
+
+    const filteredVaultConfigResults = redeemableOnly
+      ? vaultConfigResults.filter((_, index) =>
+          filteredVaultSpaceTokens.includes(vaultSpaceTokens[index]!),
+        )
+      : vaultConfigResults;
+
+    if (filteredVaultSpaceTokens.length === 0) {
+      return NextResponse.json({
+        web3SpaceId: Number(space.web3SpaceId),
+        vaults: [],
+      });
+    }
+
+    const backingTokensCalls = filteredVaultSpaceTokens.map((spaceToken) => ({
+      address: vaultAddress,
+      abi: tokenBackingVaultImplementationAbi,
+      functionName: 'getBackingTokens' as const,
+      args: [spaceId, spaceToken],
+    }));
+
+    const backingTokensResults = await web3Client.multicall({
+      allowFailure: true,
+      blockTag: 'safe',
+      contracts: backingTokensCalls,
+    });
+
+    const redemptionPriceCalls = filteredVaultSpaceTokens.map((spaceToken) => ({
       address: vaultAddress,
       abi: tokenBackingVaultImplementationAbi,
       functionName: 'getRedemptionPrice' as const,
@@ -201,7 +235,7 @@ export async function GET(
       contracts: redemptionPriceCalls,
     });
 
-    const maxRedemptionCalls = vaultSpaceTokens.map((spaceToken) => ({
+    const maxRedemptionCalls = filteredVaultSpaceTokens.map((spaceToken) => ({
       address: vaultAddress,
       abi: tokenBackingVaultImplementationAbi,
       functionName: 'getMaxRedemptionPercentage' as const,
@@ -214,7 +248,7 @@ export async function GET(
       contracts: maxRedemptionCalls,
     });
 
-    const vaultSpaceTokenTotalSupplyCalls = vaultSpaceTokens.map(
+    const vaultSpaceTokenTotalSupplyCalls = filteredVaultSpaceTokens.map(
       (spaceToken) => ({
         address: spaceToken,
         abi: erc20Abi,
@@ -236,14 +270,14 @@ export async function GET(
       args: [bigint, `0x${string}`, `0x${string}`];
     }[] = [];
 
-    for (let i = 0; i < vaultSpaceTokens.length; i++) {
+    for (let i = 0; i < filteredVaultSpaceTokens.length; i++) {
       const backingResult = backingTokensResults[i];
       const backingTokens =
         backingResult?.status === 'success'
           ? (backingResult.result as `0x${string}`[])
           : [];
       for (const backingToken of backingTokens) {
-        const spaceToken = vaultSpaceTokens[i];
+        const spaceToken = filteredVaultSpaceTokens[i];
         if (spaceToken) {
           backingBalanceCalls.push({
             address: vaultAddress,
@@ -265,7 +299,9 @@ export async function GET(
         : [];
 
     const allTokenAddresses = new Set<string>();
-    vaultSpaceTokens.forEach((t) => allTokenAddresses.add(t.toLowerCase()));
+    filteredVaultSpaceTokens.forEach((t) =>
+      allTokenAddresses.add(t.toLowerCase()),
+    );
     backingBalanceCalls.forEach((c) =>
       allTokenAddresses.add(c.args[2].toLowerCase()),
     );
@@ -343,7 +379,7 @@ export async function GET(
     // callIdx follows the exact insertion order used when building
     // backingBalanceCalls (vaultSpaceTokens -> backingTokens).
     let callIdx = 0;
-    const vaults = vaultSpaceTokens.map((spaceToken, vaultIdx) => {
+    const vaults = filteredVaultSpaceTokens.map((spaceToken, vaultIdx) => {
       const spaceTokenMeta = tokenMetaMap.get(spaceToken.toLowerCase());
       const tokenName = spaceTokenMeta?.name ?? 'Unknown';
       const tokenSymbol = spaceTokenMeta?.symbol ?? '???';
@@ -407,7 +443,7 @@ export async function GET(
         });
       }
 
-      const vaultConfig = vaultConfigResults[vaultIdx];
+      const vaultConfig = filteredVaultConfigResults[vaultIdx];
       const vaultConfigResult =
         vaultConfig?.status === 'success' ? vaultConfig.result : undefined;
       const redemptionEnabled = Boolean(

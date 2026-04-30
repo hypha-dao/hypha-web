@@ -151,7 +151,7 @@ export const RedeemTokensPlugin = ({
   const { getAccessToken } = useAuthentication();
   const setSubmitGuard = useRedeemSubmitGuardSetter();
   const { vaults: currentSpaceVaults, isLoading: isCurrentSpaceVaultsLoading } =
-    useVaults({ spaceSlug });
+    useVaults({ spaceSlug, redeemableOnly: true });
   const { assets: treasuryAssets, isLoading: isTreasuryAssetsLoading } =
     useAssets({});
   const { tokens: spaceTokensForTypes } = useTokens({ spaceSlug });
@@ -203,7 +203,7 @@ export const RedeemTokensPlugin = ({
             return { owner, vaults: currentSpaceVaults };
           }
           const res = await fetch(
-            `/api/v1/spaces/${slug}/vaults?allowPublicRead=true`,
+            `/api/v1/spaces/${slug}/vaults?allowPublicRead=true&redeemableOnly=true`,
             {
               headers,
             },
