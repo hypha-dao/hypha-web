@@ -16,7 +16,6 @@ import {
   useJwt,
   useMe,
   useRedeemTokensMutation,
-  useSpacesBySlugs,
 } from '@hypha-platform/core/client';
 import {
   TokenPercentageFieldArray,
@@ -78,12 +77,14 @@ interface Token {
   space?: {
     title: string;
     slug: string;
+    web3SpaceId?: number;
   };
 }
 
 interface PeopleRedeemFormType {
   tokens: Token[];
   updateAssets: () => Promise<void>;
+  isLoadingTokens?: boolean;
 }
 
 type TouchedConversion = {
@@ -113,6 +114,7 @@ type FormValues = z.infer<typeof personRedeem>;
 export const PeopleRedeemForm = ({
   tokens,
   updateAssets,
+  isLoadingTokens = false,
 }: PeopleRedeemFormType) => {
   const t = useTranslations('ProfileActions.redeemTokens');
   const PERCENT_SCALE = 100;
@@ -579,13 +581,6 @@ export const PeopleRedeemForm = ({
       shouldValidate: true,
     });
   }, [conversionAssets, form]);
-  const tokenSlugs = React.useMemo(() => {
-    return tokens
-      .filter((token) => token.space?.slug)
-      .map((token) => token.space?.slug!);
-  }, [tokens]);
-  const { spaces, error: spacesLoadError } = useSpacesBySlugs(tokenSlugs);
-
   useScrollToErrors(form, formRef);
 
   const closePanelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -619,8 +614,8 @@ export const PeopleRedeemForm = ({
         });
         return;
       }
-      const space = spaces?.find((space) => space.slug === spaceSlug);
-      if (!space?.web3SpaceId) {
+      const redemptionSpaceWeb3Id = selectedToken?.space?.web3SpaceId;
+      if (typeof redemptionSpaceWeb3Id !== 'number') {
         form.setError('root', {
           message: t('form.errors.spaceNotConfigured'),
         });
@@ -640,7 +635,7 @@ export const PeopleRedeemForm = ({
       }
       const redeemInput = {
         redemption: {
-          web3SpaceId: space.web3SpaceId,
+          web3SpaceId: redemptionSpaceWeb3Id,
           token: redemption.token,
           amount: redemption.amount,
         },
@@ -708,6 +703,8 @@ export const PeopleRedeemForm = ({
             allowAddOrRemove={false}
             showSelectedTokenBalanceHint
             selectedTokenPriceHint={selectedTokenPriceHint}
+            isLoadingTokens={isLoadingTokens}
+            loadingTokensLabel="Loading tokens..."
           />
           {isRequestedAmountExceedsBalance && (
             <div className="text-2 text-red-11 mt-1">
@@ -717,11 +714,6 @@ export const PeopleRedeemForm = ({
               })}
             </div>
           )}
-          {spacesLoadError ? (
-            <div className="text-2 text-red-11">
-              {t('form.errors.loadSpaces')}
-            </div>
-          ) : null}
           {selectedRedemption?.token &&
             (isCollateralsLoading ? (
               <div className="flex items-center gap-2 text-sm text-neutral-10 py-2">

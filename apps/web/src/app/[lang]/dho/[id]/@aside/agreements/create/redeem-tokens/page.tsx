@@ -42,6 +42,7 @@ export default async function CreateRedeemTokensPage({ params }: PageProps) {
           <Plugin
             name="redeem-tokens"
             spaceSlug={spaceSlug}
+            web3SpaceId={web3SpaceId}
             spaces={spaces}
             members={members}
           />
