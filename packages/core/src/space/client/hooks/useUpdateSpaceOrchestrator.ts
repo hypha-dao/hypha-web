@@ -151,6 +151,8 @@ export const useUpdateSpaceOrchestrator = ({
           id: number;
           data: Omit<
             z.infer<typeof schemaUpdateSpace>,
+            | 'logoUrl'
+            | 'leadImage'
             | 'ecosystemLogoUrl'
             | 'ecosystemLogoUrlLight'
             | 'ecosystemLogoUrlDark'
@@ -196,32 +198,32 @@ export const useUpdateSpaceOrchestrator = ({
             typeof data.logoUrl === 'string'
               ? data.logoUrl
               : data.logoUrl === null
-                ? null
-                : undefined,
+              ? null
+              : undefined,
           leadImage:
             typeof data.leadImage === 'string'
               ? data.leadImage
               : data.leadImage === null
-                ? null
-                : undefined,
+              ? null
+              : undefined,
           ecosystemLogoUrl:
             typeof data.ecosystemLogoUrl === 'string'
               ? data.ecosystemLogoUrl
               : data.ecosystemLogoUrl === null
-                ? null
-                : undefined,
+              ? null
+              : undefined,
           ecosystemLogoUrlLight:
             typeof data.ecosystemLogoUrlLight === 'string'
               ? data.ecosystemLogoUrlLight
               : data.ecosystemLogoUrlLight === null
-                ? null
-                : undefined,
+              ? null
+              : undefined,
           ecosystemLogoUrlDark:
             typeof data.ecosystemLogoUrlDark === 'string'
               ? data.ecosystemLogoUrlDark
               : data.ecosystemLogoUrlDark === null
-                ? null
-                : undefined,
+              ? null
+              : undefined,
         });
         const result = await web2.updateSpaceById({
           ...updateInput,

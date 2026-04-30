@@ -476,8 +476,8 @@ export const SpaceForm = ({
                             typeof values?.logoUrl === 'string'
                               ? values?.logoUrl
                               : typeof defaultValues?.logoUrl === 'string'
-                                ? defaultValues?.logoUrl
-                                : undefined
+                              ? defaultValues?.logoUrl
+                              : undefined
                           }
                         />
                       </FormControl>
@@ -560,8 +560,8 @@ export const SpaceForm = ({
                     typeof values?.leadImage === 'string'
                       ? values?.leadImage
                       : typeof defaultValues?.leadImage === 'string'
-                        ? defaultValues?.leadImage
-                        : undefined
+                      ? defaultValues?.leadImage
+                      : undefined
                   }
                   uploadText={
                     <>
@@ -653,14 +653,13 @@ export const SpaceForm = ({
                         typeof values?.ecosystemLogoUrlLight === 'string'
                           ? values?.ecosystemLogoUrlLight
                           : typeof defaultValues?.ecosystemLogoUrlLight ===
-                              'string'
-                            ? defaultValues?.ecosystemLogoUrlLight
-                            : typeof values?.ecosystemLogoUrl === 'string'
-                              ? values?.ecosystemLogoUrl
-                              : typeof defaultValues?.ecosystemLogoUrl ===
-                                  'string'
-                                ? defaultValues?.ecosystemLogoUrl
-                                : undefined
+                            'string'
+                          ? defaultValues?.ecosystemLogoUrlLight
+                          : typeof values?.ecosystemLogoUrl === 'string'
+                          ? values?.ecosystemLogoUrl
+                          : typeof defaultValues?.ecosystemLogoUrl === 'string'
+                          ? defaultValues?.ecosystemLogoUrl
+                          : undefined
                       }
                     />
                   </FormControl>
@@ -696,14 +695,13 @@ export const SpaceForm = ({
                         typeof values?.ecosystemLogoUrlDark === 'string'
                           ? values?.ecosystemLogoUrlDark
                           : typeof defaultValues?.ecosystemLogoUrlDark ===
-                              'string'
-                            ? defaultValues?.ecosystemLogoUrlDark
-                            : typeof values?.ecosystemLogoUrl === 'string'
-                              ? values?.ecosystemLogoUrl
-                              : typeof defaultValues?.ecosystemLogoUrl ===
-                                  'string'
-                                ? defaultValues?.ecosystemLogoUrl
-                                : undefined
+                            'string'
+                          ? defaultValues?.ecosystemLogoUrlDark
+                          : typeof values?.ecosystemLogoUrl === 'string'
+                          ? values?.ecosystemLogoUrl
+                          : typeof defaultValues?.ecosystemLogoUrl === 'string'
+                          ? defaultValues?.ecosystemLogoUrl
+                          : undefined
                       }
                     />
                   </FormControl>
