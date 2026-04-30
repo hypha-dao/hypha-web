@@ -42,6 +42,9 @@ const MAX_RECENT_SPACES = 5;
 const MENU_BUTTON_CLASS =
   'h-10 w-full rounded-lg border border-transparent p-0 text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!rounded-lg group-data-[collapsible=icon]:!p-0';
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
+const MENU_ROW_LINK_BASE_CLASS = 'flex w-full min-w-0 items-center';
+const MENU_ROW_LINK_EXPANDED_CLASS = 'pl-1';
+const MENU_ROW_LINK_COLLAPSED_CLASS = 'justify-center';
 const RECENT_SPACE_AVATAR_CLASS =
   'flex h-6 w-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 
@@ -222,8 +225,10 @@ export function AiLeftPanel() {
               href={item.href}
               aria-label={item.label}
               aria-current={item.active ? 'page' : undefined}
-              className={`flex w-full min-w-0 items-center ${
-                showLabel ? '' : 'justify-center'
+              className={`${MENU_ROW_LINK_BASE_CLASS} ${
+                showLabel
+                  ? MENU_ROW_LINK_EXPANDED_CLASS
+                  : MENU_ROW_LINK_COLLAPSED_CLASS
               }`}
             >
               <span className={ICON_COLUMN_CLASS}>
@@ -258,8 +263,10 @@ export function AiLeftPanel() {
               href={href}
               aria-label={space.title}
               aria-current={isRecentActive ? 'page' : undefined}
-              className={`flex w-full min-w-0 items-center ${
-                showLabel ? '' : 'justify-center'
+              className={`${MENU_ROW_LINK_BASE_CLASS} ${
+                showLabel
+                  ? MENU_ROW_LINK_EXPANDED_CLASS
+                  : MENU_ROW_LINK_COLLAPSED_CLASS
               }`}
             >
               <span className={ICON_COLUMN_CLASS}>
