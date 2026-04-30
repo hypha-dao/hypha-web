@@ -129,6 +129,40 @@ export function AiPanelHeader({
     !isAllSpacesLoading &&
     !allSpacesError &&
     hasSpaces;
+
+  const renderSpaceOption = (space: Space) => (
+    <DropdownMenuItem
+      key={space.id}
+      asChild
+      className="rounded-lg py-1.5 hover:bg-background-4/70"
+    >
+      <Link
+        href={`/${lang}/dho/${space.slug}/agreements`}
+        className="flex min-w-0 items-center gap-2"
+      >
+        <span className="h-5 w-5 overflow-hidden rounded-md ring-1 ring-border/60">
+          {getDisplayIcon(space) ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getDisplayIcon(space) ?? undefined}
+                alt={space.title}
+                className="h-full w-full object-cover"
+              />
+            </>
+          ) : (
+            <span className="flex h-full w-full items-center justify-center bg-muted">
+              <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+            </span>
+          )}
+        </span>
+        <span className="min-w-0 max-w-[11.25rem] flex-1 truncate">
+          {space.title}
+        </span>
+      </Link>
+    </DropdownMenuItem>
+  );
+
   return (
     <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[1.75rem_minmax(0,1fr)_1.75rem] items-center gap-2 border-b border-border bg-background-2 px-4 py-2">
       <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
@@ -160,96 +194,36 @@ export function AiPanelHeader({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="center"
-              className="w-[min(16rem,calc(100vw-1.5rem))] max-h-[24.5rem] overflow-y-auto rounded-2xl border border-border/60 bg-background-3/95 p-1.5 shadow-xl narrow-scrollbar"
+              className="w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-3/95 p-0 shadow-xl"
             >
-              <div className="sticky top-0 z-10 -mx-1.5 mb-1 border-b border-border/70 bg-background-3/95 px-1.5 pb-1 supports-[backdrop-filter]:bg-background-3/90 supports-[backdrop-filter]:backdrop-blur-sm">
-                <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
-                  {tNavigation('mySpaces')}
-                </DropdownMenuLabel>
-                <div className="px-1">
-                  <input
-                    type="text"
-                    value={spaceSearch}
-                    onChange={(event) => setSpaceSearch(event.target.value)}
-                    placeholder={tSpaces('search')}
-                    className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
-                    aria-label={tSpaces('search')}
-                  />
+              <div className="max-h-[24.5rem] overflow-y-auto p-1.5 narrow-scrollbar">
+                <div className="sticky top-0 z-20 mb-1 rounded-t-xl border-b border-border/70 bg-background-3/95 px-1 pb-1.5 supports-[backdrop-filter]:bg-background-3/90 supports-[backdrop-filter]:backdrop-blur-sm">
+                  <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
+                    {tNavigation('mySpaces')}
+                  </DropdownMenuLabel>
+                  <div className="px-1">
+                    <input
+                      type="text"
+                      value={spaceSearch}
+                      onChange={(event) => setSpaceSearch(event.target.value)}
+                      placeholder={tSpaces('search')}
+                      className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
+                      aria-label={tSpaces('search')}
+                    />
+                  </div>
                 </div>
+                {!hasFilteredSpaces ? (
+                  <DropdownMenuItem disabled>{fallbackTitle}</DropdownMenuItem>
+                ) : null}
+                {hasFilteredSpaces &&
+                  filteredGroupedSpaces.ecosystem.map(renderSpaceOption)}
+                {filteredGroupedSpaces.ecosystem.length > 0 &&
+                filteredGroupedSpaces.others.length > 0 ? (
+                  <DropdownMenuSeparator />
+                ) : null}
+                {hasFilteredSpaces &&
+                  filteredGroupedSpaces.others.map(renderSpaceOption)}
               </div>
-              {!hasFilteredSpaces ? (
-                <DropdownMenuItem disabled>{fallbackTitle}</DropdownMenuItem>
-              ) : null}
-              {hasFilteredSpaces &&
-                filteredGroupedSpaces.ecosystem.map((space) => (
-                  <DropdownMenuItem
-                    key={space.id}
-                    asChild
-                    className="rounded-lg py-1.5 hover:bg-background-4/70"
-                  >
-                    <Link
-                      href={`/${lang}/dho/${space.slug}/agreements`}
-                      className="flex min-w-0 items-center gap-2"
-                    >
-                      <span className="h-5 w-5 overflow-hidden rounded-md ring-1 ring-border/60">
-                        {getDisplayIcon(space) ? (
-                          <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={getDisplayIcon(space) ?? undefined}
-                              alt={space.title}
-                              className="h-full w-full object-cover"
-                            />
-                          </>
-                        ) : (
-                          <span className="flex h-full w-full items-center justify-center bg-muted">
-                            <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-                          </span>
-                        )}
-                      </span>
-                      <span className="min-w-0 max-w-[11.25rem] flex-1 truncate">
-                        {space.title}
-                      </span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              {filteredGroupedSpaces.ecosystem.length > 0 &&
-              filteredGroupedSpaces.others.length > 0 ? (
-                <DropdownMenuSeparator />
-              ) : null}
-              {hasFilteredSpaces &&
-                filteredGroupedSpaces.others.map((space) => (
-                  <DropdownMenuItem
-                    key={space.id}
-                    asChild
-                    className="rounded-lg py-1.5 hover:bg-background-4/70"
-                  >
-                    <Link
-                      href={`/${lang}/dho/${space.slug}/agreements`}
-                      className="flex min-w-0 items-center gap-2"
-                    >
-                      <span className="h-5 w-5 overflow-hidden rounded-md ring-1 ring-border/60">
-                        {getDisplayIcon(space) ? (
-                          <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={getDisplayIcon(space) ?? undefined}
-                              alt={space.title}
-                              className="h-full w-full object-cover"
-                            />
-                          </>
-                        ) : (
-                          <span className="flex h-full w-full items-center justify-center bg-muted">
-                            <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-                          </span>
-                        )}
-                      </span>
-                      <span className="min-w-0 max-w-[11.25rem] flex-1 truncate">
-                        {space.title}
-                      </span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
