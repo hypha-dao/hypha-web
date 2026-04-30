@@ -11,19 +11,12 @@ import { Separator } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
-  getSpaceDecayingTokens,
-  getSpaceOwnershipTokens,
-  getSpaceRegularTokens,
   publicClient,
   TokenType,
   useJwt,
   validTokenTypes,
 } from '@hypha-platform/core/client';
 import useSWR from 'swr';
-import {
-  tokenBackingVaultImplementationAbi,
-  tokenBackingVaultImplementationAddress,
-} from '@hypha-platform/core/generated';
 import { erc20Abi } from 'viem';
 
 interface Token {
@@ -73,8 +66,6 @@ type RedeemDiscoveryDiagnostics = {
   vaultFetch: VaultFetchDiagnostic[];
   checkedVaultTokenCount: number;
   balanceReadFailureCount: number;
-  restrictedFallbackSpaces: string[];
-  restrictedFallbackFailureCount: number;
 };
 
 export const ProfileRedeemTokens = ({
@@ -84,8 +75,6 @@ export const ProfileRedeemTokens = ({
   const tRedeem = useTranslations('ProfileActions.redeemTokens');
   const tActions = useTranslations('ProfileActions');
   const tModalAside = useTranslations('ModalAside');
-  const chainId = 8453 as keyof typeof tokenBackingVaultImplementationAddress;
-  const vaultAddress = tokenBackingVaultImplementationAddress[chainId];
   const { assets: userAssets, manualUpdate } = useUserAssets({
     personSlug,
     refreshInterval: 10000,
@@ -220,153 +209,6 @@ export const ProfileRedeemTokens = ({
     [tokenBalancesBySpaceAndAddress],
   );
 
-  const resolveRestrictedSpaceTokens = React.useCallback(
-    async (
-      space: SpaceSummary,
-      memberAddress: `0x${string}`,
-    ): Promise<Token[]> => {
-      const web3SpaceId = Number(space.web3SpaceId ?? 0);
-      if (!vaultAddress || !Number.isFinite(web3SpaceId) || web3SpaceId <= 0) {
-        return [];
-      }
-      const spaceId = BigInt(web3SpaceId);
-      const [regularResult, ownershipResult, decayingResult] =
-        await publicClient.multicall({
-          allowFailure: true,
-          contracts: [
-            getSpaceRegularTokens({ spaceId }),
-            getSpaceOwnershipTokens({ spaceId }),
-            getSpaceDecayingTokens({ spaceId }),
-          ],
-        });
-      const regularTokens =
-        regularResult.status === 'success' ? regularResult.result : [];
-      const ownershipTokens =
-        ownershipResult.status === 'success' ? ownershipResult.result : [];
-      const decayingTokens =
-        decayingResult.status === 'success' ? decayingResult.result : [];
-      const allSpaceTokens = [
-        ...regularTokens,
-        ...ownershipTokens,
-        ...decayingTokens,
-      ] as `0x${string}`[];
-      const uniqueSpaceTokens = Array.from(
-        new Set(allSpaceTokens.map((token) => token.toLowerCase())),
-      ) as `0x${string}`[];
-      if (uniqueSpaceTokens.length === 0) {
-        return [];
-      }
-
-      const vaultExistsResults = await publicClient.multicall({
-        allowFailure: true,
-        contracts: uniqueSpaceTokens.map((spaceToken) => ({
-          address: vaultAddress,
-          abi: tokenBackingVaultImplementationAbi,
-          functionName: 'vaultExists' as const,
-          args: [spaceId, spaceToken],
-        })),
-      });
-      const vaultSpaceTokens = uniqueSpaceTokens.filter(
-        (_, index) =>
-          vaultExistsResults[index]?.status === 'success' &&
-          vaultExistsResults[index]?.result === true,
-      );
-      if (vaultSpaceTokens.length === 0) {
-        return [];
-      }
-
-      const [vaultConfigResults, redemptionPriceResults, balanceResults] =
-        await Promise.all([
-          publicClient.multicall({
-            allowFailure: true,
-            contracts: vaultSpaceTokens.map((spaceToken) => ({
-              address: vaultAddress,
-              abi: tokenBackingVaultImplementationAbi,
-              functionName: 'getVaultConfig' as const,
-              args: [spaceId, spaceToken],
-            })),
-          }),
-          publicClient.multicall({
-            allowFailure: true,
-            contracts: vaultSpaceTokens.map((spaceToken) => ({
-              address: vaultAddress,
-              abi: tokenBackingVaultImplementationAbi,
-              functionName: 'getRedemptionPrice' as const,
-              args: [spaceId, spaceToken],
-            })),
-          }),
-          publicClient.multicall({
-            allowFailure: true,
-            contracts: vaultSpaceTokens.map((spaceToken) => ({
-              address: spaceToken,
-              abi: erc20Abi,
-              functionName: 'balanceOf' as const,
-              args: [memberAddress],
-            })),
-          }),
-        ]);
-
-      const fallbackTokens: Token[] = [];
-      for (const [index, spaceToken] of vaultSpaceTokens.entries()) {
-        const configResult = vaultConfigResults[index];
-        const config =
-          configResult?.status === 'success'
-            ? (configResult.result as {
-                redeemEnabled?: boolean;
-                redemptionStartDate?: bigint;
-              })
-            : undefined;
-        if (!config?.redeemEnabled) {
-          continue;
-        }
-        const redemptionStartDateSeconds = Number(
-          config.redemptionStartDate ?? 0n,
-        );
-        if (
-          redemptionStartDateSeconds > 0 &&
-          redemptionStartDateSeconds * 1000 > Date.now()
-        ) {
-          continue;
-        }
-        const balanceResult = balanceResults[index];
-        const hasBalance =
-          balanceResult?.status === 'success' && balanceResult.result > 0n;
-        if (!hasBalance) {
-          continue;
-        }
-        const priceResult = redemptionPriceResults[index];
-        const rawRedemptionPrice =
-          priceResult?.status === 'success' &&
-          Array.isArray(priceResult.result) &&
-          typeof priceResult.result[0] === 'bigint'
-            ? priceResult.result[0]
-            : 0n;
-        const redemptionPrice =
-          rawRedemptionPrice > 0n
-            ? Number(rawRedemptionPrice) / 1_000_000
-            : undefined;
-        const meta = tokenMetadataByAddress.get(spaceToken.toLowerCase());
-        fallbackTokens.push({
-          icon: meta?.icon || '/placeholder/token-icon.svg',
-          symbol: meta?.symbol || 'UNKNOWN',
-          address: spaceToken,
-          tokenPrice: redemptionPrice,
-          value: getTokenAvailableBalance(spaceToken, space.slug),
-          space: {
-            title: space.title,
-            slug: space.slug,
-            web3SpaceId:
-              typeof space.web3SpaceId === 'number'
-                ? space.web3SpaceId
-                : undefined,
-          },
-        });
-      }
-      return fallbackTokens;
-    },
-    [getTokenAvailableBalance, tokenMetadataByAddress, vaultAddress],
-  );
-
   const { data: redeemableData } = useSWR<{
     tokens: Token[];
     diagnostics: RedeemDiscoveryDiagnostics;
@@ -385,8 +227,6 @@ export const ProfileRedeemTokens = ({
         vaultFetch: [],
         checkedVaultTokenCount: 0,
         balanceReadFailureCount: 0,
-        restrictedFallbackSpaces: [],
-        restrictedFallbackFailureCount: 0,
       };
       const now = Date.now();
       const memberAddress = personData?.address as `0x${string}` | undefined;
@@ -400,24 +240,14 @@ export const ProfileRedeemTokens = ({
             Authorization: `Bearer ${jwt}`,
             'Content-Type': 'application/json',
           };
-          const vaultsRes = await fetch(`/api/v1/spaces/${space.slug}/vaults`, {
-            headers,
-          });
+          const vaultsRes = await fetch(
+            `/api/v1/spaces/${space.slug}/vaults?redeemableOnly=true`,
+            {
+              headers,
+            },
+          );
 
           if (!vaultsRes.ok) {
-            const isRestrictedSpace = vaultsRes.status === 403;
-            if (isRestrictedSpace) {
-              try {
-                const fallbackTokens = await resolveRestrictedSpaceTokens(
-                  space,
-                  memberAddress,
-                );
-                diagnostics.restrictedFallbackSpaces.push(space.slug);
-                return fallbackTokens;
-              } catch {
-                diagnostics.restrictedFallbackFailureCount += 1;
-              }
-            }
             diagnostics.vaultFetch.push({
               spaceSlug: space.slug,
               status: vaultsRes.status,
@@ -579,24 +409,9 @@ export const ProfileRedeemTokens = ({
       diagnostics &&
       diagnostics.checkedVaultTokenCount === 0 &&
       hasSpaces &&
-      !hasVaultAccessIssues &&
-      diagnostics.restrictedFallbackSpaces.length === 0
+      !hasVaultAccessIssues
     ) {
       reasons.push(tRedeem('diagnostics.reasons.noVaultTokens'));
-    }
-    if (diagnostics && diagnostics.restrictedFallbackSpaces.length > 0) {
-      reasons.push(
-        tRedeem('diagnostics.reasons.restrictedFallback', {
-          spaces: diagnostics.restrictedFallbackSpaces.join(', '),
-        }),
-      );
-    }
-    if (diagnostics && diagnostics.restrictedFallbackFailureCount > 0) {
-      reasons.push(
-        tRedeem('diagnostics.reasons.restrictedFallbackFailed', {
-          count: diagnostics.restrictedFallbackFailureCount,
-        }),
-      );
     }
     return reasons;
   }, [
