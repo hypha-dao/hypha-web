@@ -75,8 +75,12 @@ export const CreateSubspaceForm = ({
         backLabel={t('backToSettings')}
         onSubmit={(values) => {
           // Subspace creation does not use root-only ecosystem branding fields.
-          const { ecosystemLogoUrl: _ecosystemLogoUrl, ...createValues } =
-            values;
+          const {
+            ecosystemLogoUrl: _ecosystemLogoUrl,
+            ecosystemLogoUrlLight: _ecosystemLogoUrlLight,
+            ecosystemLogoUrlDark: _ecosystemLogoUrlDark,
+            ...createValues
+          } = values;
           return createSpace(createValues);
         }}
         initialParentSpaceId={parentSpaceId as number}

@@ -75,8 +75,12 @@ export default function AsideCreateSpacePage() {
           backUrl={closeUrl}
           backLabel={tCommon('back')}
           onSubmit={(values) => {
-            const { ecosystemLogoUrl: _ecosystemLogoUrl, ...createValues } =
-              values;
+            const {
+              ecosystemLogoUrl: _ecosystemLogoUrl,
+              ecosystemLogoUrlLight: _ecosystemLogoUrlLight,
+              ecosystemLogoUrlDark: _ecosystemLogoUrlDark,
+              ...createValues
+            } = values;
             return createSpace(createValues);
           }}
           isLoading={isLoadingJwt}

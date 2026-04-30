@@ -48,6 +48,9 @@ export default function SpaceConfiguration() {
   const normalizeNullableEcosystemLogoUrl = (
     value: string | null | undefined,
   ): string | undefined => value ?? undefined;
+  const normalizeNullableThemeLogoUrl = (
+    value: string | null | undefined,
+  ): string | undefined => value ?? undefined;
   const normalizeNullableFileUrl = (
     value: string | null | undefined,
   ): string | undefined => value ?? undefined;
@@ -97,6 +100,12 @@ export default function SpaceConfiguration() {
                   ecosystemLogoUrl: normalizeNullableEcosystemLogoUrl(
                     updates.ecosystemLogoUrl,
                   ),
+                  ecosystemLogoUrlLight: normalizeNullableThemeLogoUrl(
+                    updates.ecosystemLogoUrlLight,
+                  ),
+                  ecosystemLogoUrlDark: normalizeNullableThemeLogoUrl(
+                    updates.ecosystemLogoUrlDark,
+                  ),
                 },
               });
             }
@@ -128,6 +137,12 @@ export default function SpaceConfiguration() {
                   leadImage: normalizeNullableFileUrl(updates.leadImage),
                   ecosystemLogoUrl: normalizeNullableEcosystemLogoUrl(
                     updates.ecosystemLogoUrl,
+                  ),
+                  ecosystemLogoUrlLight: normalizeNullableThemeLogoUrl(
+                    updates.ecosystemLogoUrlLight,
+                  ),
+                  ecosystemLogoUrlDark: normalizeNullableThemeLogoUrl(
+                    updates.ecosystemLogoUrlDark,
                   ),
                 },
               });
@@ -185,6 +200,8 @@ export default function SpaceConfiguration() {
             slug: space?.slug || '',
             logoUrl: space?.logoUrl || '',
             ecosystemLogoUrl: space?.ecosystemLogoUrl ?? undefined,
+            ecosystemLogoUrlLight: space?.ecosystemLogoUrlLight ?? undefined,
+            ecosystemLogoUrlDark: space?.ecosystemLogoUrlDark ?? undefined,
             leadImage: space?.leadImage || '',
             categories: space?.categories || [],
             links: space?.links || [],

@@ -1,6 +1,7 @@
 import {
   ALLOWED_IMAGE_FILE_SIZE,
   DEFAULT_IMAGE_ACCEPT,
+  ECOSYSTEM_LOGO_IMAGE_ACCEPT,
 } from '../assets/constant';
 import { z } from 'zod';
 import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
@@ -56,6 +57,8 @@ const createSpaceWeb2Props = {
     .max(300, 'Description must contain at most 300 characters'),
   slug: spaceSlugSchema.optional(),
   ecosystemLogoUrl: z.string().url().optional(),
+  ecosystemLogoUrlLight: z.string().url().optional(),
+  ecosystemLogoUrlDark: z.string().url().optional(),
   web3SpaceId: z.number().optional(),
   parentId: z.number().nullable(),
   categories: z.array(z.enum(CATEGORIES)).default([]),
@@ -126,8 +129,38 @@ export const createSpaceFiles = {
           'File size must be less than 4MB',
         )
         .refine(
-          (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
-          'File must be an image (JPEG, PNG, GIF, WEBP)',
+          (file) => ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type),
+          'File must be an image (JPEG, PNG, GIF, WEBP, or SVG)',
+        ),
+    ])
+    .optional(),
+  ecosystemLogoUrlLight: z
+    .union([
+      z.string().url('A light ecosystem logo must be a valid URL'),
+      z
+        .instanceof(File)
+        .refine(
+          (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+          'File size must be less than 4MB',
+        )
+        .refine(
+          (file) => ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type),
+          'File must be an image (JPEG, PNG, GIF, WEBP, or SVG)',
+        ),
+    ])
+    .optional(),
+  ecosystemLogoUrlDark: z
+    .union([
+      z.string().url('A dark ecosystem logo must be a valid URL'),
+      z
+        .instanceof(File)
+        .refine(
+          (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+          'File size must be less than 4MB',
+        )
+        .refine(
+          (file) => ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type),
+          'File must be an image (JPEG, PNG, GIF, WEBP, or SVG)',
         ),
     ])
     .optional(),
@@ -136,6 +169,31 @@ export const createSpaceFiles = {
 export const schemaCreateSpaceFiles = z.object(createSpaceFiles);
 export const updateSpaceProps = {
   ...createSpaceWeb2Props,
+  logoUrl: z
+    .string()
+    .url('A space icon must be a valid URL')
+    .nullable()
+    .optional(),
+  leadImage: z
+    .string()
+    .url('A space banner must be a valid URL')
+    .nullable()
+    .optional(),
+  ecosystemLogoUrl: z
+    .string()
+    .url('An ecosystem logo must be a valid URL')
+    .nullable()
+    .optional(),
+  ecosystemLogoUrlLight: z
+    .string()
+    .url('A light ecosystem logo must be a valid URL')
+    .nullable()
+    .optional(),
+  ecosystemLogoUrlDark: z
+    .string()
+    .url('A dark ecosystem logo must be a valid URL')
+    .nullable()
+    .optional(),
   title: createSpaceWeb2Props.title.optional(),
   description: createSpaceWeb2Props.description.optional(),
   categories: createSpaceWeb2Props.categories.optional(),

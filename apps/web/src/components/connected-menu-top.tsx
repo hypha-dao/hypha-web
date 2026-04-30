@@ -8,10 +8,13 @@ import { MenuTop } from '@hypha-platform/ui';
 import {
   getDhoSpaceSlugFromPathname,
   getRootSpace,
+  isSafeImageUrl,
 } from '@hypha-platform/epics';
 import useSWR from 'swr';
 import { Space } from '@hypha-platform/core/client';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
+import { Pencil } from 'lucide-react';
 
 type ConnectedMenuTopProps = {
   children?: ReactNode;
@@ -40,6 +43,7 @@ export function ConnectedMenuTop({
 }: ConnectedMenuTopProps) {
   const pathname = usePathname();
   const tNavigation = useTranslations('Navigation');
+  const { resolvedTheme } = useTheme();
   const lang = useMemo(() => {
     const match = pathname.match(/^\/([^/]+)\//);
     return match?.[1] ?? 'en';
@@ -49,7 +53,7 @@ export function ConnectedMenuTop({
     [pathname],
   );
   const isSpaceRoute = Boolean(activeSpaceSlug);
-  const { data: allSpaces = [] } = useSWR<Space[]>(
+  const { data: allSpaces = [], isLoading: isLoadingSpaces } = useSWR<Space[]>(
     isSpaceRoute ? '/api/v1/spaces?parentOnly=false' : null,
     async (url: string) => {
       const response = await fetch(url, {
@@ -76,22 +80,30 @@ export function ConnectedMenuTop({
     rootSpace?.slug != null
       ? `/${lang}/dho/${rootSpace.slug}/agreements/space-configuration`
       : logoHref;
-  const rootSpaceHref =
-    rootSpace?.slug != null
-      ? `/${lang}/dho/${rootSpace.slug}/agreements`
-      : logoHref;
-  const rootLogoUrl = rootSpace?.ecosystemLogoUrl?.trim() || '';
+  const rootLogoLight = rootSpace?.ecosystemLogoUrlLight?.trim() || '';
+  const rootLogoDark = rootSpace?.ecosystemLogoUrlDark?.trim() || '';
+  const rootLogoLegacy = rootSpace?.ecosystemLogoUrl?.trim() || '';
+  const preferredThemeLogo =
+    resolvedTheme === 'dark' ? rootLogoDark : rootLogoLight;
+  const fallbackThemeLogo =
+    resolvedTheme === 'dark' ? rootLogoLight : rootLogoDark;
+  const rootLogoUrl = [
+    preferredThemeLogo,
+    fallbackThemeLogo,
+    rootLogoLegacy,
+  ].find((candidate) => candidate && isSafeImageUrl(candidate));
   const rootTitle = rootSpace?.title?.trim() || '';
-  const rootHasCustomLogo = hasCustomRootLogo(rootLogoUrl);
+  const rootHasCustomLogo = hasCustomRootLogo(rootLogoUrl ?? '');
+  const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
 
-  const logoNode =
-    aiChatEnabled && isSpaceRoute && rootSpace ? (
-      rootHasCustomLogo ? (
+  const logoNode = suppressDefaultLogo ? (
+    rootSpace ? (
+      rootHasCustomLogo && rootLogoUrl ? (
         <Link
-          href={rootSpaceHref ?? '#'}
-          className="inline-flex h-9 max-w-[11rem] items-center justify-start overflow-hidden rounded-md px-1 transition-colors hover:bg-muted/40"
-          aria-label={rootTitle}
-          title={rootTitle}
+          href={rootConfigHref ?? '#'}
+          className="group relative inline-flex h-9 max-w-[11rem] items-center justify-start overflow-hidden rounded-md px-1 transition-colors hover:bg-muted/40"
+          aria-label={tNavigation('ecosystemLogo')}
+          title={tNavigation('ecosystemLogo')}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -99,6 +111,9 @@ export function ConnectedMenuTop({
             alt={rootTitle || tNavigation('ecosystemLogo')}
             className="h-full w-auto object-contain"
           />
+          <span className="pointer-events-none absolute bottom-0.5 right-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+            <Pencil className="h-2.5 w-2.5" />
+          </span>
         </Link>
       ) : (
         <Link
@@ -111,13 +126,19 @@ export function ConnectedMenuTop({
           <span className="relative truncate">
             {tNavigation('ecosystemLogo')}
           </span>
+          <span className="pointer-events-none absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+            <Pencil className="h-2.5 w-2.5" />
+          </span>
         </Link>
       )
-    ) : undefined;
+    ) : isLoadingSpaces ? (
+      <span className="inline-flex h-9 w-24 animate-pulse rounded-md bg-muted/60" />
+    ) : undefined
+  ) : undefined;
 
   return (
     <MenuTop
-      logoHref={logoHref}
+      logoHref={suppressDefaultLogo ? undefined : logoHref}
       logoNode={logoNode}
       hrefTarget={hrefTarget}
       openMenuLabel={openMenuLabel}

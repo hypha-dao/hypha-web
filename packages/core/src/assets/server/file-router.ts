@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server';
 
 import { getDb } from '@hypha-platform/core/server';
 import { verifyAuth } from '@hypha-platform/core/server';
+import { ECOSYSTEM_LOGO_IMAGE_ACCEPT } from '../constant';
 
 const f = createUploadthing();
 
@@ -55,6 +56,12 @@ export const fileRouter: FileRouter = {
       return { isAuthenticated: true };
     })
     .onUploadComplete(async ({ metadata, file }) => {
+      if (
+        typeof file.type === 'string' &&
+        !ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type)
+      ) {
+        throw new UploadThingError('Unsupported image type');
+      }
       console.debug('ourFileRouter.onUploadComplete', { metadata, file });
       return;
     }),

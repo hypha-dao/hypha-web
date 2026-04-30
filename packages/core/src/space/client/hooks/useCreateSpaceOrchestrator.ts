@@ -165,14 +165,24 @@ export const useCreateSpaceOrchestrator = ({
         logoUrl?: string;
         leadImage?: string;
         ecosystemLogoUrl?: string;
+        ecosystemLogoUrlLight?: string;
+        ecosystemLogoUrlDark?: string;
       } = {};
 
       try {
         const logoUrl = (arg as any).logoUrl;
         const leadImage = (arg as any).leadImage;
         const ecosystemLogoUrl = (arg as any).ecosystemLogoUrl;
+        const ecosystemLogoUrlLight = (arg as any).ecosystemLogoUrlLight;
+        const ecosystemLogoUrlDark = (arg as any).ecosystemLogoUrlDark;
 
-        if (logoUrl || leadImage || ecosystemLogoUrl) {
+        if (
+          logoUrl ||
+          leadImage ||
+          ecosystemLogoUrl ||
+          ecosystemLogoUrlLight ||
+          ecosystemLogoUrlDark
+        ) {
           startTask('UPLOAD_FILES');
 
           const uploadPromises: Promise<void>[] = [];
@@ -211,6 +221,36 @@ export const useCreateSpaceOrchestrator = ({
             );
           } else if (typeof ecosystemLogoUrl === 'string' && ecosystemLogoUrl) {
             uploadedFileUrls.ecosystemLogoUrl = ecosystemLogoUrl;
+          }
+
+          if (ecosystemLogoUrlLight instanceof File) {
+            uploadPromises.push(
+              uploadImage([ecosystemLogoUrlLight]).then((result) => {
+                if (result?.[0]?.ufsUrl) {
+                  uploadedFileUrls.ecosystemLogoUrlLight = result[0].ufsUrl;
+                }
+              }),
+            );
+          } else if (
+            typeof ecosystemLogoUrlLight === 'string' &&
+            ecosystemLogoUrlLight
+          ) {
+            uploadedFileUrls.ecosystemLogoUrlLight = ecosystemLogoUrlLight;
+          }
+
+          if (ecosystemLogoUrlDark instanceof File) {
+            uploadPromises.push(
+              uploadImage([ecosystemLogoUrlDark]).then((result) => {
+                if (result?.[0]?.ufsUrl) {
+                  uploadedFileUrls.ecosystemLogoUrlDark = result[0].ufsUrl;
+                }
+              }),
+            );
+          } else if (
+            typeof ecosystemLogoUrlDark === 'string' &&
+            ecosystemLogoUrlDark
+          ) {
+            uploadedFileUrls.ecosystemLogoUrlDark = ecosystemLogoUrlDark;
           }
 
           await Promise.all(uploadPromises);
@@ -276,6 +316,8 @@ export const useCreateSpaceOrchestrator = ({
           logoUrl: uploadedFileUrls.logoUrl,
           leadImage: uploadedFileUrls.leadImage,
           ecosystemLogoUrl: uploadedFileUrls.ecosystemLogoUrl,
+          ecosystemLogoUrlLight: uploadedFileUrls.ecosystemLogoUrlLight,
+          ecosystemLogoUrlDark: uploadedFileUrls.ecosystemLogoUrlDark,
         };
         const createdSpace = await web2.createSpace(createSpaceInput);
         web2SpaceId = createdSpace?.id;
