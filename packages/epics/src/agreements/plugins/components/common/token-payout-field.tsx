@@ -46,6 +46,8 @@ interface TokenPayoutFieldProps {
   /** When true, use treasury balance copy (space redeem) instead of wallet balance. */
   useTreasuryBalanceLine?: boolean;
   selectedTokenPriceHint?: string;
+  isLoadingTokens?: boolean;
+  loadingTokensLabel?: string;
 }
 
 function TokenPayoutFieldInner({
@@ -56,6 +58,8 @@ function TokenPayoutFieldInner({
   showSelectedTokenBalanceHint = false,
   useTreasuryBalanceLine = false,
   selectedTokenPriceHint,
+  isLoadingTokens = false,
+  loadingTokensLabel,
 }: TokenPayoutFieldProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const selectedToken = value.token
@@ -179,7 +183,12 @@ function TokenPayoutFieldInner({
                 ))
               ) : (
                 <span className="text-2 text-neutral-11">
-                  {tAgreementFlow('plugins.tokenPayoutField.noTokensFound')}
+                  {isLoadingTokens
+                    ? loadingTokensLabel ??
+                      tAgreementFlow(
+                        'plugins.exchangeStakesAndTokens.loadingTokens',
+                      )
+                    : tAgreementFlow('plugins.tokenPayoutField.noTokensFound')}
                 </span>
               )}
             </DropdownMenuContent>

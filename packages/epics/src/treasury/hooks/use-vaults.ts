@@ -61,7 +61,11 @@ export const useVaults = ({
   redeemableOnly?: boolean;
 } = {}): UseVaultsReturn => {
   const { id } = useParams<{ id: string }>();
-  const { getAccessToken } = useAuthentication();
+  const {
+    getAccessToken,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuthentication();
   const resolvedSpaceSlug =
     typeof spaceSlug === 'string' ? spaceSlug : id ?? undefined;
 
@@ -76,9 +80,12 @@ export const useVaults = ({
   );
 
   const { data, isLoading, mutate } = useSWR<UseVaultsData>(
-    endpoint ? [endpoint] : null,
+    endpoint && !isAuthLoading ? [endpoint] : null,
     async ([url]) => {
       const token = await getAccessToken();
+      if (!token && isAuthenticated) {
+        throw new Error('Authentication token not available yet');
+      }
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (token) {
         headers.Authorization = `Bearer ${token}`;
@@ -103,7 +110,11 @@ export const useVaults = ({
         })),
       };
     },
-    { refreshInterval },
+    {
+      refreshInterval,
+      shouldRetryOnError: true,
+      errorRetryInterval: 1500,
+    },
   );
 
   const vaults = data?.vaults ?? [];

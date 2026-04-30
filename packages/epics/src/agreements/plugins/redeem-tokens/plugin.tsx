@@ -147,8 +147,15 @@ export const RedeemTokensPlugin = ({
   const tProposal = useTranslations(
     'AgreementFlow.plugins.redeemTokensProposal',
   );
+  const tExchangeStakesAndTokens = useTranslations(
+    'AgreementFlow.plugins.exchangeStakesAndTokens',
+  );
   const { control, setValue, getValues } = useFormContext();
-  const { getAccessToken } = useAuthentication();
+  const {
+    getAccessToken,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuthentication();
   const setSubmitGuard = useRedeemSubmitGuardSetter();
   const { vaults: currentSpaceVaults, isLoading: isCurrentSpaceVaultsLoading } =
     useVaults({ spaceSlug, redeemableOnly: true });
@@ -177,63 +184,92 @@ export const RedeemTokensPlugin = ({
     return Array.from(bySlug.values());
   }, [spaceSlug, spaces, web3SpaceId]);
 
-  const candidateSpaceSlugs = React.useMemo(
-    () => candidateSpaces.map((space) => space.slug),
-    [candidateSpaces],
+  const currentSpaceOwner = React.useMemo(
+    () => candidateSpaces.find((space) => space.slug === spaceSlug),
+    [candidateSpaces, spaceSlug],
   );
 
-  const { data: vaultsBySpace = [] } = useSWR<
-    Array<{ owner: VaultOwnerSpace; vaults: Vault[] }>
-  >(
-    candidateSpaceSlugs.length > 0
-      ? ['redeem-vaults-by-space', ...candidateSpaceSlugs]
-      : null,
-    async ([, ...slugs]) => {
-      const token = await getAccessToken();
-      const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
+  const otherCandidateSpaces = React.useMemo(
+    () => candidateSpaces.filter((space) => space.slug !== spaceSlug),
+    [candidateSpaces, spaceSlug],
+  );
 
-      const responses = await Promise.allSettled(
-        slugs.map(async (slug) => {
-          const owner = candidateSpaces.find((space) => space.slug === slug);
-          if (!owner) return null;
-          if (slug === spaceSlug) {
-            return { owner, vaults: currentSpaceVaults };
-          }
-          const res = await fetch(
-            `/api/v1/spaces/${slug}/vaults?redeemableOnly=true`,
-            {
-              headers,
-            },
-          );
-          if (!res.ok) {
-            return { owner, vaults: [] };
-          }
-          const payload = (await res.json()) as { vaults?: Vault[] };
-          return { owner, vaults: payload.vaults ?? [] };
-        }),
-      );
+  const otherCandidateSpaceSlugs = React.useMemo(
+    () => otherCandidateSpaces.map((space) => space.slug),
+    [otherCandidateSpaces],
+  );
 
-      return responses
-        .map((result) => (result.status === 'fulfilled' ? result.value : null))
-        .filter(
-          (
-            entry,
-          ): entry is {
-            owner: VaultOwnerSpace;
-            vaults: Vault[];
-          } => entry !== null,
+  const { data: vaultsBySpace = [], isLoading: isCrossSpaceVaultsLoading } =
+    useSWR<Array<{ owner: VaultOwnerSpace; vaults: Vault[] }>>(
+      otherCandidateSpaceSlugs.length > 0 && !isAuthLoading
+        ? ['redeem-vaults-by-space', ...otherCandidateSpaceSlugs]
+        : null,
+      async ([, ...slugs]) => {
+        const token = await getAccessToken();
+        if (!token && isAuthenticated) {
+          throw new Error('Authentication token not available yet');
+        }
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const responses = await Promise.allSettled(
+          slugs.map(async (slug) => {
+            const owner = otherCandidateSpaces.find(
+              (space) => space.slug === slug,
+            );
+            if (!owner) return null;
+            const res = await fetch(
+              `/api/v1/spaces/${slug}/vaults?redeemableOnly=true`,
+              {
+                headers,
+              },
+            );
+            if (!res.ok) {
+              if (
+                (res.status === 401 || res.status === 403) &&
+                isAuthenticated
+              ) {
+                throw new Error(`Vault fetch unauthorized (${res.status})`);
+              }
+              return { owner, vaults: [] };
+            }
+            const payload = (await res.json()) as { vaults?: Vault[] };
+            return { owner, vaults: payload.vaults ?? [] };
+          }),
         );
-    },
-    {
-      revalidateOnFocus: false,
-    },
-  );
+
+        return responses
+          .map((result) =>
+            result.status === 'fulfilled' ? result.value : null,
+          )
+          .filter(
+            (
+              entry,
+            ): entry is {
+              owner: VaultOwnerSpace;
+              vaults: Vault[];
+            } => entry !== null,
+          );
+      },
+      {
+        revalidateOnFocus: false,
+        shouldRetryOnError: true,
+        errorRetryInterval: 1500,
+      },
+    );
 
   const vaultsWithOwners = React.useMemo((): VaultWithOwner[] => {
     const entries: VaultWithOwner[] = [];
+    if (currentSpaceOwner) {
+      for (const vault of currentSpaceVaults) {
+        entries.push({
+          owner: currentSpaceOwner,
+          vault,
+        });
+      }
+    }
     for (const group of vaultsBySpace) {
       for (const vault of group.vaults) {
         entries.push({
@@ -243,7 +279,7 @@ export const RedeemTokensPlugin = ({
       }
     }
     return entries;
-  }, [vaultsBySpace]);
+  }, [currentSpaceOwner, currentSpaceVaults, vaultsBySpace]);
 
   const treasuryBalanceByTokenAddress = React.useMemo(() => {
     const map = new Map<string, number>();
@@ -320,6 +356,11 @@ export const RedeemTokensPlugin = ({
     treasuryBalanceByTokenAddress,
     vaultsWithOwners,
   ]);
+
+  const isLoadingRedeemableTokens =
+    isCurrentSpaceVaultsLoading ||
+    isCrossSpaceVaultsLoading ||
+    isTreasuryAssetsLoading;
 
   const redemptions = useWatch({
     control,
@@ -725,6 +766,8 @@ export const RedeemTokensPlugin = ({
           allowAddOrRemove={false}
           showTreasuryBalanceHint
           selectedTokenPriceHint={selectedTokenPriceHint}
+          isLoadingTokens={isLoadingRedeemableTokens}
+          loadingTokensLabel={tExchangeStakesAndTokens('loadingTokens')}
         />
       </Skeleton>
       {isRequestedAmountExceedsTreasury && selectedRedemption?.token ? (
