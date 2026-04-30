@@ -105,9 +105,7 @@ function eventComesFromInteractiveChild(target: EventTarget | null): boolean {
   return (
     target instanceof Element &&
     Boolean(
-      target.closest(
-        'a,button,[role="link"],[role="button"],[tabindex="0"]',
-      ),
+      target.closest('a,button,[role="link"],[role="button"],[tabindex="0"]'),
     )
   );
 }
