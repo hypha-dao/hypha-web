@@ -184,7 +184,7 @@ export default function SpaceConfiguration() {
             description: space?.description || '',
             slug: space?.slug || '',
             logoUrl: space?.logoUrl || '',
-            ecosystemLogoUrl: space?.ecosystemLogoUrl || '',
+            ecosystemLogoUrl: space?.ecosystemLogoUrl ?? undefined,
             leadImage: space?.leadImage || '',
             categories: space?.categories || [],
             links: space?.links || [],

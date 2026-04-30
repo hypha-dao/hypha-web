@@ -303,6 +303,7 @@ export function AiPanelChatBar({
   }, []);
 
   const canSend = value.trim().length > 0 && !isStreaming;
+  const canStop = isStreaming && typeof onStop === 'function';
   const recordingStopButtonClass =
     'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-red-600 transition-all duration-200 ease-out ' +
     'border border-red-500/25 bg-gradient-to-b from-red-500/[0.14] via-red-500/[0.08] to-red-950/[0.06] ' +
@@ -358,6 +359,7 @@ export function AiPanelChatBar({
         <textarea
           ref={textareaRef}
           value={value}
+          readOnly={isDictating}
           onChange={(e) => {
             onChange(e.target.value);
             autoResize();
@@ -498,12 +500,12 @@ export function AiPanelChatBar({
             </div>
             <button
               type="button"
-              onClick={isStreaming ? onStop : sendMessage}
-              disabled={!canSend && !isStreaming}
+              onClick={isStreaming ? () => onStop?.() : sendMessage}
+              disabled={isStreaming ? !canStop : !canSend}
               className={cn(
                 'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',
-                canSend || isStreaming
+                canSend || canStop
                   ? 'text-primary hover:bg-primary/12 hover:text-primary active:bg-primary/18'
                   : 'cursor-not-allowed text-muted-foreground/50',
               )}

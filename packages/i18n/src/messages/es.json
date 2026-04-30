@@ -749,7 +749,8 @@
     "viewProfile": "Ver perfil",
     "delete": "Borrar",
     "signIn": "Iniciar sesión",
-    "getStarted": "Empezar"
+    "getStarted": "Empezar",
+    "ecosystemLogo": "Logo del ecosistema"
   },
   "NotificationCentre": {
     "title": "Centro de notificaciones",

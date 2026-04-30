@@ -90,7 +90,8 @@
     "viewProfile": "Voir le profil",
     "delete": "Supprimer",
     "signIn": "Se connecter",
-    "getStarted": "Commencer"
+    "getStarted": "Commencer",
+    "ecosystemLogo": "Logo de l'écosystème"
   },
   "NotificationCentre": {
     "title": "Centre de notifications",
