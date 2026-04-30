@@ -13,6 +13,7 @@ export type UploadAvatarProps = {
   defaultImage?: string;
   maxFileSize?: number;
   required?: boolean;
+  accept?: Record<string, string[]>;
   className?: string;
   imageClassName?: string;
 };
@@ -24,6 +25,7 @@ export const UploadAvatar = ({
   defaultImage,
   maxFileSize,
   required = false,
+  accept,
   className,
   imageClassName,
 }: UploadAvatarProps) => {
@@ -62,7 +64,7 @@ export const UploadAvatar = ({
     onDrop,
     maxFiles: 1,
     maxSize: maxFileSize,
-    accept: {
+    accept: accept ?? {
       'image/png': [],
       'image/jpg': [],
       'image/jpeg': [],
