@@ -1405,6 +1405,8 @@
     "nameYourSpace": "Dê um nome ao seu espaço...",
     "createdBy": "Criado por",
     "uploadSpaceBanner": "Carregar",
+    "uploadEcosystemLogo": "Carregar logo do ecossistema",
+    "ecosystemLogoDescription": "Este logo do ecossistema será exibido no banner superior do seu ecossistema e em cada espaço que faz parte dele, garantindo uma marca consistente.",
     "spaceBanner": "bandeira espacial",
     "purpose": "Propósito",
     "purposePlaceholder": "Digite aqui a finalidade do seu espaço...",

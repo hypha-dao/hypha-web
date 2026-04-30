@@ -746,6 +746,8 @@
     "nameYourSpace": "Name your space...",
     "createdBy": "Created by",
     "uploadSpaceBanner": "Upload",
+    "uploadEcosystemLogo": "Upload ecosystem logo",
+    "ecosystemLogoDescription": "This ecosystem logo appears in your ecosystem top banner and on each space within it, helping maintain consistent branding.",
     "spaceBanner": "space banner",
     "purpose": "Purpose",
     "purposePlaceholder": "Type your space purpose here...",

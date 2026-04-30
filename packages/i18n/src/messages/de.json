@@ -746,6 +746,8 @@
     "nameYourSpace": "Benennen Sie Ihren Space...",
     "createdBy": "Erstellt von",
     "uploadSpaceBanner": "Hochladen",
+    "uploadEcosystemLogo": "Ökosystem-Logo hochladen",
+    "ecosystemLogoDescription": "Dieses Ökosystem-Logo wird im oberen Banner Ihres Ökosystems und in jedem zugehörigen Space angezeigt, um eine konsistente Markenführung sicherzustellen.",
     "spaceBanner": "Space-Banner",
     "purpose": "Zweck",
     "purposePlaceholder": "Geben Sie hier den Zweck Ihres Spaces ein...",
