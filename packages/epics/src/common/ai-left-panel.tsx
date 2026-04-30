@@ -40,8 +40,9 @@ const MAX_RECENT_SPACES = 5;
 const MENU_BUTTON_EXPANDED_CLASS =
   'h-10 rounded-lg border border-transparent text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground';
 const MENU_BUTTON_COLLAPSED_CLASS =
-  'h-10 w-10 justify-center rounded-lg border border-transparent p-0 text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground';
+  'h-10 w-full justify-start rounded-lg border border-transparent p-0 text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground';
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
+const COLLAPSED_ICON_COLUMN_CLASS = `${ICON_COLUMN_CLASS} ml-2`;
 const RECENT_SPACE_AVATAR_CLASS =
   'flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 
@@ -452,7 +453,7 @@ export function AiLeftPanel() {
         >
           <SidebarGroup className="p-2 pt-4">
             <SidebarGroupContent>
-              <SidebarMenu className="items-center gap-2">
+              <SidebarMenu className="gap-2">
                 {sectionNavItems.map((item) => (
                   <SidebarMenuItem key={item.key}>
                     <SidebarMenuButton
@@ -465,7 +466,7 @@ export function AiLeftPanel() {
                         href={item.href}
                         aria-label={item.label}
                         aria-current={item.active ? 'page' : undefined}
-                        className={ICON_COLUMN_CLASS}
+                        className={COLLAPSED_ICON_COLUMN_CLASS}
                       >
                         <item.icon className="h-5 w-5" strokeWidth={2.1} />
                       </Link>
@@ -478,7 +479,7 @@ export function AiLeftPanel() {
           {recentSpaces.length > 0 ? (
             <SidebarGroup className="mt-auto p-2 pb-4">
               <SidebarGroupContent>
-                <SidebarMenu className="items-center gap-2">
+                <SidebarMenu className="gap-2">
                   {recentSpaces.map((space) => {
                     const isRecentActive = space.slug === spaceSlug;
                     const href = `/${lang}/dho/${space.slug}/agreements`;
@@ -494,7 +495,7 @@ export function AiLeftPanel() {
                             href={href}
                             aria-label={space.title}
                             aria-current={isRecentActive ? 'page' : undefined}
-                            className={ICON_COLUMN_CLASS}
+                            className={COLLAPSED_ICON_COLUMN_CLASS}
                           >
                             <span
                               className={`${RECENT_SPACE_AVATAR_CLASS} ${
