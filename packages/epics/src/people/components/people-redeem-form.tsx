@@ -84,6 +84,7 @@ interface Token {
 interface PeopleRedeemFormType {
   tokens: Token[];
   updateAssets: () => Promise<void>;
+  isLoadingTokens?: boolean;
 }
 
 type TouchedConversion = {
@@ -113,6 +114,7 @@ type FormValues = z.infer<typeof personRedeem>;
 export const PeopleRedeemForm = ({
   tokens,
   updateAssets,
+  isLoadingTokens = false,
 }: PeopleRedeemFormType) => {
   const t = useTranslations('ProfileActions.redeemTokens');
   const PERCENT_SCALE = 100;
@@ -701,6 +703,8 @@ export const PeopleRedeemForm = ({
             allowAddOrRemove={false}
             showSelectedTokenBalanceHint
             selectedTokenPriceHint={selectedTokenPriceHint}
+            isLoadingTokens={isLoadingTokens}
+            loadingTokensLabel="Loading tokens..."
           />
           {isRequestedAmountExceedsBalance && (
             <div className="text-2 text-red-11 mt-1">

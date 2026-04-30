@@ -360,73 +360,8 @@ export const ProfileRedeemTokens = ({
     tokenMetadataByAddress,
     tokenTypeByAddress,
   ]);
-  const diagnostics = redeemableData?.diagnostics;
-  const vaultFetchDiagnostics = diagnostics?.vaultFetch ?? [];
-  const hasVaultAccessIssues = vaultFetchDiagnostics.length > 0;
-  const hasMemberAddress = Boolean(personData?.address);
-  const hasSpaces = uniqueSpaces.length > 0;
-  const hasTokens = tokens.length > 0;
-  const isCoreLoading =
-    personLoading || spacesLoading || (hasSpaces && !redeemableData);
-  const emptyStateReasons = React.useMemo(() => {
-    const reasons: string[] = [];
-    if (!jwt) {
-      reasons.push(tRedeem('diagnostics.reasons.missingJwt'));
-    }
-    if (personError) {
-      reasons.push(tRedeem('diagnostics.reasons.profileLoadFailed'));
-    }
-    if (!personLoading && !hasMemberAddress) {
-      reasons.push(tRedeem('diagnostics.reasons.noWalletAddress'));
-    }
-    if (spacesError) {
-      reasons.push(tRedeem('diagnostics.reasons.spacesLoadFailed'));
-    }
-    if (
-      !spacesLoading &&
-      jwt &&
-      (spaces?.length ?? 0) === 0 &&
-      inferredSpacesFromAssets.length > 0
-    ) {
-      reasons.push(tRedeem('diagnostics.reasons.spacesFallback'));
-    }
-    if (!spacesLoading && jwt && !hasSpaces) {
-      reasons.push(tRedeem('diagnostics.reasons.noSpaces'));
-    }
-    if (
-      diagnostics &&
-      diagnostics.checkedVaultTokenCount > 0 &&
-      diagnostics.balanceReadFailureCount > 0
-    ) {
-      reasons.push(
-        tRedeem('diagnostics.reasons.balanceReadFailed', {
-          failed: diagnostics.balanceReadFailureCount,
-          total: diagnostics.checkedVaultTokenCount,
-        }),
-      );
-    }
-    if (
-      diagnostics &&
-      diagnostics.checkedVaultTokenCount === 0 &&
-      hasSpaces &&
-      !hasVaultAccessIssues
-    ) {
-      reasons.push(tRedeem('diagnostics.reasons.noVaultTokens'));
-    }
-    return reasons;
-  }, [
-    diagnostics,
-    hasMemberAddress,
-    hasSpaces,
-    hasVaultAccessIssues,
-    jwt,
-    personError,
-    personLoading,
-    spaces,
-    spacesError,
-    spacesLoading,
-    inferredSpacesFromAssets.length,
-  ]);
+  const isCoreLoading = personLoading || spacesLoading;
+  const isTokensLoading = Boolean(jwt) && !redeemableData;
 
   return (
     <ProposalOverlayShell>
@@ -438,22 +373,6 @@ export const ProfileRedeemTokens = ({
           backLabel={tActions('backToActions')}
         />
         <span className="text-2 text-neutral-11">{tRedeem('content')}</span>
-        {hasVaultAccessIssues && (
-          <div className="text-2 text-red-11">
-            {tRedeem('diagnostics.vaultAccess', {
-              details: vaultFetchDiagnostics
-                .map((entry) => `${entry.spaceSlug} (${entry.status})`)
-                .join(', '),
-            })}
-          </div>
-        )}
-        {!isCoreLoading && !hasTokens && emptyStateReasons.length > 0 && (
-          <div className="text-2 text-yellow-11">
-            {tRedeem('diagnostics.tokenDiscovery', {
-              reasons: emptyStateReasons.join('; '),
-            })}
-          </div>
-        )}
         <Separator />
         {isCoreLoading ? (
           <div className="flex items-center gap-2 text-sm text-neutral-10 py-8">
@@ -461,7 +380,11 @@ export const ProfileRedeemTokens = ({
             {tRedeem('loading')}
           </div>
         ) : (
-          <PeopleRedeemForm tokens={tokens} updateAssets={manualUpdate} />
+          <PeopleRedeemForm
+            tokens={tokens}
+            updateAssets={manualUpdate}
+            isLoadingTokens={isTokensLoading}
+          />
         )}
       </div>
     </ProposalOverlayShell>
