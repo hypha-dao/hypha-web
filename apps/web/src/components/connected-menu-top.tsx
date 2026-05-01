@@ -139,10 +139,11 @@ export function ConnectedMenuTop({
       )
     ) : undefined
   ) : undefined;
+  const useReplacementLogoNode = Boolean(logoNode);
 
   return (
     <MenuTop
-      logoHref={suppressDefaultLogo ? undefined : logoHref}
+      logoHref={useReplacementLogoNode ? undefined : logoHref}
       logoNode={logoNode}
       hrefTarget={hrefTarget}
       openMenuLabel={openMenuLabel}
