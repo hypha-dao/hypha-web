@@ -604,6 +604,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [inSpaceCall]);
 
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
+  const showAuthedUi = !isAuthLoading && isAuthenticated;
   const showAuthPrompt = !isAuthLoading && !isAuthenticated;
 
   const spaceCallShowJoinChime = useMemo(
@@ -1840,7 +1841,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
           notificationSettingsHref={notificationCentreHref}
           trailingStart={
-            showAuthPrompt ? null : roomId ? (
+            showAuthedUi && roomId ? (
               <HumanChatPanelMentionBell
                 unreadCount={unreadChatState.unreadMentionCount}
                 countIsCapped={unreadChatState.mentionCountIsCapped}
@@ -1855,7 +1856,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {!showAuthPrompt && (
+        {showAuthedUi && (
           <HumanChatPanelTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -1881,7 +1882,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             }
           />
         )}
-        {!showAuthPrompt &&
+        {showAuthedUi &&
           callUiEnabled &&
           !inSpaceCall &&
           (spaceCallShowJoinStrip || callLeftMessage) && (
@@ -1894,7 +1895,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onDismissDurable={clearCallLeftBanner}
             />
           )}
-        {!showAuthPrompt &&
+        {showAuthedUi &&
           callUiEnabled &&
           (inSpaceCall ||
             spaceCallState === 'error' ||
@@ -2093,7 +2094,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           </>
         )}
       </SidebarContent>
-      {!showAuthPrompt && activeTab === 'chat' && (
+      {showAuthedUi && activeTab === 'chat' && (
         <SidebarFooter className="relative z-20 bg-background-2 p-0">
           <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
             <HumanChatPanelChatBar
