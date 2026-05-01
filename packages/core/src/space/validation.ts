@@ -50,13 +50,25 @@ const SVG_FALLBACK_MIME_TYPES = new Set([
   'binary/octet-stream',
 ]);
 
+const isAcceptedSvgFallbackFile = (file: File) => {
+  const isSvgByName = /\.svg$/i.test(file.name);
+  return isSvgByName && SVG_FALLBACK_MIME_TYPES.has(file.type);
+};
+
+const isAcceptedSpaceLogoFile = (file: File) => {
+  if (ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type)) {
+    return true;
+  }
+
+  return isAcceptedSvgFallbackFile(file);
+};
+
 const isAcceptedEcosystemLogoFile = (file: File) => {
   if (ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type)) {
     return true;
   }
 
-  const isSvgByName = /\.svg$/i.test(file.name);
-  return isSvgByName && SVG_FALLBACK_MIME_TYPES.has(file.type);
+  return isAcceptedSvgFallbackFile(file);
 };
 
 const createSpaceWeb2Props = {
@@ -116,8 +128,8 @@ export const createSpaceFiles = {
         'File size must be less than 4MB',
       )
       .refine(
-        (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
-        'File must be an image (JPEG, PNG, GIF, WEBP)',
+        (file) => isAcceptedSpaceLogoFile(file),
+        'File must be an image (JPEG, PNG, GIF, WEBP, or SVG)',
       ),
   ]),
   leadImage: z.union([

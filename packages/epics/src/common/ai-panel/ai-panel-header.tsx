@@ -24,9 +24,10 @@ import { useAiPanel } from '../human-chat-panel-context';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
+import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
 function getDisplayIcon(space?: Space): string | null {
-  return space?.logoUrl?.trim() || null;
+  return resolveSpaceDisplayLogoUrl(space);
 }
 
 export function AiPanelHeader({
@@ -189,7 +190,7 @@ export function AiPanelHeader({
 
       <div className="pointer-events-none absolute inset-0 flex min-w-0 items-center justify-center px-4">
         <div className="w-full min-w-0 px-10">
-          <div className="pointer-events-auto mx-auto w-full min-w-0 max-w-[13.5rem]">
+          <div className="pointer-events-auto relative mx-auto w-full min-w-0 max-w-[13.5rem]">
             {canOpenSpaceMenu ? (
               <DropdownMenu
                 modal={false}
@@ -208,6 +209,9 @@ export function AiPanelHeader({
                     <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
+                {spaceMenuOpen ? (
+                  <div className="pointer-events-none absolute inset-x-0 top-full z-40 -mt-1.5 h-2 rounded-b-xl bg-background-2" />
+                ) : null}
                 <DropdownMenuContent
                   side="bottom"
                   align="center"

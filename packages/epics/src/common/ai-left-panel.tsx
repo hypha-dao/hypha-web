@@ -27,6 +27,7 @@ import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname'
 import { useAiPanel } from './human-chat-panel-context';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { Empty } from './empty';
+import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
 
 type ChatUIMessage = {
   id: string;
@@ -94,8 +95,8 @@ export function AiLeftPanel() {
     [allSpaces, spaceSlug],
   );
   const activeSpaceIcon =
-    activeSpaceFromList?.logoUrl?.trim() ||
-    activeSpaces[0]?.logoUrl?.trim() ||
+    resolveSpaceDisplayLogoUrl(activeSpaceFromList) ??
+    resolveSpaceDisplayLogoUrl(activeSpaces[0]) ??
     null;
   const activeSpaceTitle =
     activeSpaceFromList?.title?.trim() ||
@@ -251,6 +252,7 @@ export function AiLeftPanel() {
       const showLabel = mode === 'expanded';
       const isRecentActive = space.slug === spaceSlug;
       const href = `/${lang}/dho/${space.slug}/agreements`;
+      const recentSpaceIcon = resolveSpaceDisplayLogoUrl(space);
 
       return (
         <SidebarMenuItem key={`${keyPrefix}-${space.slug}`}>
@@ -278,11 +280,11 @@ export function AiLeftPanel() {
                       : 'group-hover:ring-border/80'
                   }`}
                 >
-                  {space.logoUrl ? (
+                  {recentSpaceIcon ? (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={space.logoUrl}
+                        src={recentSpaceIcon}
                         alt={space.title}
                         className="block h-full w-full rounded-full object-cover object-center"
                       />

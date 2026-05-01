@@ -471,6 +471,14 @@ export const SpaceForm = ({
                         <UploadAvatar
                           {...field}
                           maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                          accept={{
+                            'image/gif': [],
+                            'image/png': [],
+                            'image/jpg': [],
+                            'image/jpeg': [],
+                            'image/webp': [],
+                            'image/svg+xml': [],
+                          }}
                           defaultImage={
                             typeof values?.logoUrl === 'string'
                               ? values?.logoUrl
