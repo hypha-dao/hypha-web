@@ -196,6 +196,7 @@ export function AiPanelHeader({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="center"
+              sideOffset={0}
               className="w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-3/95 p-0 shadow-xl"
             >
               <div className="max-h-[24.5rem] overflow-y-auto p-1.5 narrow-scrollbar">
