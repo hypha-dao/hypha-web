@@ -1,5 +1,5 @@
 import React from 'react';
-import { useDropzone } from 'react-dropzone';
+import { FileRejection, useDropzone } from 'react-dropzone';
 import { LuImagePlus, LuImageUp } from 'react-icons/lu';
 import clsx from 'clsx';
 import { PreviewOverlay } from './preview-overlay';
@@ -29,6 +29,25 @@ export const UploadAvatar = ({
   className,
   imageClassName,
 }: UploadAvatarProps) => {
+  const isSvgAllowed = Boolean(accept?.['image/svg+xml']);
+  const dropzoneAccept = React.useMemo(() => {
+    const baseAccept = accept ?? {
+      'image/png': [],
+      'image/jpg': [],
+      'image/jpeg': [],
+      'image/webp': [],
+    };
+
+    if (!isSvgAllowed) {
+      return baseAccept;
+    }
+
+    return {
+      ...baseAccept,
+      'application/octet-stream': ['.svg'],
+      'binary/octet-stream': ['.svg'],
+    };
+  }, [accept, isSvgAllowed]);
   const [preview, setPreview] = React.useState<string | null>(
     defaultImage || null,
   );
@@ -37,39 +56,56 @@ export const UploadAvatar = ({
     setPreview(defaultImage || null);
   }, [defaultImage, setPreview]);
 
+  const normalizeSvgMime = React.useCallback((file: File): File => {
+    const isSvgByName = /\.svg$/i.test(file.name);
+    const isFallbackMime =
+      file.type === '' ||
+      file.type === 'application/octet-stream' ||
+      file.type === 'binary/octet-stream';
+
+    if (isSvgByName && isFallbackMime) {
+      return new File([file], file.name, {
+        type: 'image/svg+xml',
+        lastModified: file.lastModified,
+      });
+    }
+
+    return file;
+  }, []);
+
   const onDrop = React.useCallback(
-    (acceptedFiles: File[]) => {
+    (acceptedFiles: File[], fileRejections: FileRejection[]) => {
       if (!acceptedFiles.length) {
+        if (fileRejections.length > 0) {
+          // Keep current preview/value when rejected files are dropped.
+          return;
+        }
         setPreview(defaultImage || null);
         onChange(null);
         return;
       }
+      const normalizedFile = normalizeSvgMime(acceptedFiles[0] as File);
       const reader = new FileReader();
       try {
         reader.onload = () => {
           setPreview(reader.result as string);
-          onChange(acceptedFiles[0] ?? null);
+          onChange(normalizedFile);
         };
-        reader.readAsDataURL(acceptedFiles[0] ?? new Blob());
+        reader.readAsDataURL(normalizedFile);
       } catch (error) {
         console.error('Error reading file:', error);
         setPreview(defaultImage || null);
         onChange(null);
       }
     },
-    [onChange, defaultImage],
+    [onChange, defaultImage, normalizeSvgMime],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     maxFiles: 1,
     maxSize: maxFileSize,
-    accept: accept ?? {
-      'image/png': [],
-      'image/jpg': [],
-      'image/jpeg': [],
-      'image/webp': [],
-    },
+    accept: dropzoneAccept,
   });
 
   return (
