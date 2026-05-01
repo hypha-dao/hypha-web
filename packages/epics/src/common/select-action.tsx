@@ -105,13 +105,14 @@ export const SelectAction = ({
               const card = (
                 <Card
                   className={clsx(
-                    'group flex cursor-pointer items-start gap-4 border-border/80 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color] duration-200 ease-out md:p-6',
+                    'group flex items-start gap-4 rounded-2xl border border-border/80 bg-background-2 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,background-color] duration-200 ease-out md:p-6',
+                    !action.disabled && 'cursor-pointer',
                     !action.disabled &&
-                      'hover:border-accent-9 hover:shadow-md hover:ring-accent-10/45',
+                      'hover:border-accent-9 hover:bg-background-3/70 hover:shadow-md hover:ring-accent-10/45',
                     !action.disabled &&
                       'focus-within:border-accent-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2',
                     {
-                      'pointer-events-none cursor-not-allowed opacity-55 saturate-50':
+                      'pointer-events-none cursor-not-allowed border-border/70 bg-background-2 opacity-90':
                         action.disabled,
                     },
                   )}
