@@ -34,12 +34,13 @@ export const MembersList: FC<MembersListProps> = ({
     refreshInterval,
   });
   return (
-    <div className="member-list w-full">
+    <div className="member-list grid w-full grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
       {persons?.data?.map((member) => (
         <Link
           href={`${basePath}/${member.slug}`}
           key={member.slug}
           scroll={false}
+          className="block"
         >
           <MemberCard
             spaceId={spaceId}
@@ -54,6 +55,7 @@ export const MembersList: FC<MembersListProps> = ({
           href={`/${lang}/dho/${space.slug}/agreements`}
           key={space.slug}
           scroll={false}
+          className="block"
         >
           <SpaceMemberCard
             hostSpaceId={spaceId}
@@ -64,12 +66,12 @@ export const MembersList: FC<MembersListProps> = ({
       ))}
 
       {isLoading && (
-        <div>
+        <>
           <MemberCard isLoading={isLoading} />
           <MemberCard isLoading={isLoading} />
           <MemberCard isLoading={isLoading} />
           <MemberCard isLoading={isLoading} />
-        </div>
+        </>
       )}
     </div>
   );
