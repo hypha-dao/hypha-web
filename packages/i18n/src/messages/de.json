@@ -938,6 +938,8 @@
       "errors": {
         "titleRequired": "Bitte fügen Sie einen Titel für Ihren Vorschlag hinzu",
         "descriptionRequired": "Bitte fügen Sie Inhalt zu Ihrem Vorschlag hinzu",
+        "titleMaxLength": "Der Titel darf höchstens 50 Zeichen einschließlich Leerzeichen umfassen",
+        "descriptionMaxLength": "Die Beschreibung darf höchstens 4000 Zeichen einschließlich Leerzeichen umfassen",
         "slugFormat": "Der Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",
         "uploadValidFile": "Bitte laden Sie eine gültige Datei hoch",
         "fileTooLarge": "Ihre Datei ist zu groß und überschreitet das 4MB-Limit. Bitte laden Sie eine kleinere Datei hoch.",

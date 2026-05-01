@@ -939,6 +939,8 @@
       "errors": {
         "titleRequired": "Please add a title for your proposal",
         "descriptionRequired": "Please add content to your proposal",
+        "titleMaxLength": "Title cannot exceed 50 characters (including spaces)",
+        "descriptionMaxLength": "Description cannot exceed 4000 characters (including spaces)",
         "slugFormat": "Slug must contain only lowercase letters, numbers, and hyphens",
         "uploadValidFile": "Please upload a valid file",
         "fileTooLarge": "Your file is too large and exceeds the 4MB limit. Please upload a smaller file.",
