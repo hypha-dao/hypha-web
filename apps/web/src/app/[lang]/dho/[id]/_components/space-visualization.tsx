@@ -141,8 +141,8 @@ export function SpaceVisualization({
   useEffect(() => {
     if (!svgRef.current || !focusRef.current) return;
 
-    const getSelectedSpaceFillColor = () =>
-      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
+    const getSelectedSpaceFillColor = () => '#171b24';
+    const getNodeBaseFillColor = () => '#0d121a';
 
     const svg = d3.select(svgRef.current);
     const orbits = svg.selectAll<SVGCircleElement, SpaceHierarchyNode>(
@@ -167,6 +167,8 @@ export function SpaceVisualization({
       const circle = d3.select(this).select('circle');
       if (d === focusRef.current) {
         circle.attr('fill', getSelectedSpaceFillColor());
+      } else {
+        circle.attr('fill', getNodeBaseFillColor());
       }
       circle
         .attr('stroke', getSelectedSpaceFillColor())
@@ -177,8 +179,23 @@ export function SpaceVisualization({
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const getSelectedSpaceFillColor = () =>
-      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
+    const getSelectedSpaceFillColor = () => '#171b24';
+    const getNodeBaseFillColor = () => '#0d121a';
+    const getOrbitStrokeColor = (
+      d: SpaceHierarchyNode,
+      focused: SpaceHierarchyNode,
+    ) => {
+      if (d === focused && d.depth > 0) {
+        return 'rgba(244,114,182,0.56)';
+      }
+      return 'rgba(148,163,184,0.3)';
+    };
+    const getOrbitStrokeOpacity = (
+      d: SpaceHierarchyNode,
+      focused: SpaceHierarchyNode,
+    ) => (d === focused && d.depth > 0 ? 0.6 : 0.32);
+    const getFlowStrokeColor = () => 'rgba(244,114,182,0.3)';
+    const getPulseStrokeColor = () => 'rgba(244,114,182,0.5)';
 
     const getStrokeWidth = (depth: number): number => {
       return (
@@ -383,10 +400,6 @@ export function SpaceVisualization({
     svg.selectAll('*').remove();
 
     const g = svg.append('g');
-    const getSignalColor = (spaceId: number): string => {
-      const hue = (spaceId * 47) % 360;
-      return `hsl(${hue} 84% ${themeRef.current === 'dark' ? '64%' : '48%'})`;
-    };
 
     const orbits = g
       .selectAll<SVGCircleElement, SpaceHierarchyNode>('circle.orbit')
@@ -394,12 +407,12 @@ export function SpaceVisualization({
       .join('circle')
       .attr('class', 'orbit')
       .style('fill', 'transparent')
-      .attr('stroke', (d: SpaceHierarchyNode) => getSignalColor(d.data.id))
+      .attr('stroke', (d: SpaceHierarchyNode) => getOrbitStrokeColor(d, focus))
       .attr('stroke-width', (d: SpaceHierarchyNode) =>
         d === focus ? 1.45 : 1.1,
       )
       .attr('stroke-opacity', (d: SpaceHierarchyNode) =>
-        d === focus ? 0.72 : 0.38,
+        getOrbitStrokeOpacity(d, focus),
       )
       .attr('stroke-dasharray', (d: SpaceHierarchyNode) =>
         d.depth === 0 ? 'none' : '11 13',
@@ -473,7 +486,7 @@ export function SpaceVisualization({
         .attr('y', '-80%')
         .attr('width', '260%')
         .attr('height', '260%');
-      glowFilter.append('feGaussianBlur').attr('stdDeviation', 6.5);
+      glowFilter.append('feGaussianBlur').attr('stdDeviation', 4.2);
 
       logoGroup
         .append('image')
@@ -482,12 +495,15 @@ export function SpaceVisualization({
         .attr('preserveAspectRatio', 'xMidYMid slice')
         .attr('clip-path', `url(#${glowClipId})`)
         .attr('filter', `url(#${glowFilterId})`)
-        .style('opacity', d === focus ? 0.52 : 0.22)
+        .style('opacity', d === focus ? 0.22 : 0.08)
         .style('mix-blend-mode', 'screen');
 
       logoGroup
         .append('circle')
-        .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+        .attr(
+          'fill',
+          d === focus ? getSelectedSpaceFillColor() : getNodeBaseFillColor(),
+        )
         .attr('stroke', getSelectedSpaceFillColor())
         .attr('stroke-width', getStrokeWidth(d.depth));
 
@@ -495,7 +511,7 @@ export function SpaceVisualization({
         .append('circle')
         .attr('class', 'focus-pulse-ring')
         .attr('fill', 'none')
-        .attr('stroke', getSignalColor(d.data.id))
+        .attr('stroke', getPulseStrokeColor())
         .attr('stroke-width', 1.4)
         .style('opacity', 0);
 
@@ -519,7 +535,8 @@ export function SpaceVisualization({
               SIGNAL_FLOW_BASE_DURATION_MS + d.depth * 2200 + (index % 7) * 350,
             )
             .ease(d3.easeLinear)
-            .attr('stroke-dashoffset', -48)
+            .attr('stroke', getFlowStrokeColor())
+            .attr('stroke-dashoffset', -24)
             .on('end', () => {
               orbit.attr('stroke-dashoffset', 0);
               animate();
@@ -542,12 +559,12 @@ export function SpaceVisualization({
       const animate = () => {
         selectedRing.interrupt('focus-pulse');
         selectedRing
-          .attr('r', baseRadius * 1.16)
-          .style('opacity', 0.52)
+          .attr('r', baseRadius * 1.08)
+          .style('opacity', 0.32)
           .transition('focus-pulse')
           .duration(FOCUS_PULSE_DURATION_MS)
           .ease(d3.easeCubicOut)
-          .attr('r', baseRadius * 1.56)
+          .attr('r', baseRadius * 1.28)
           .style('opacity', 0)
           .on('end', animate);
       };
@@ -677,7 +694,10 @@ export function SpaceVisualization({
     logos.each(function (d: SpaceHierarchyNode) {
       d3.select(this)
         .select('circle')
-        .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+        .attr(
+          'fill',
+          d === focus ? getSelectedSpaceFillColor() : getNodeBaseFillColor(),
+        )
         .attr('stroke', getSelectedSpaceFillColor())
         .attr('stroke-width', getStrokeWidth(d.depth));
     });
@@ -722,8 +742,11 @@ export function SpaceVisualization({
       orbits
         .transition()
         .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
+        .attr('stroke', (d: SpaceHierarchyNode) =>
+          getOrbitStrokeColor(d, focus),
+        )
         .attr('stroke-opacity', (d: SpaceHierarchyNode) =>
-          d === focus ? 0.72 : 0.38,
+          getOrbitStrokeOpacity(d, focus),
         )
         .attr('stroke-width', (d: SpaceHierarchyNode) =>
           d === focus ? 1.45 : 1.1,
@@ -735,7 +758,10 @@ export function SpaceVisualization({
           .select('circle')
           .transition()
           .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-          .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+          .attr(
+            'fill',
+            d === focus ? getSelectedSpaceFillColor() : getNodeBaseFillColor(),
+          )
           .attr('stroke', getSelectedSpaceFillColor())
           .attr('stroke-width', getStrokeWidth(d.depth));
       });
@@ -773,12 +799,17 @@ export function SpaceVisualization({
           d3.select(this)
             .select('circle')
             .attr('r', r)
-            .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+            .attr(
+              'fill',
+              d === focus
+                ? getSelectedSpaceFillColor()
+                : getNodeBaseFillColor(),
+            )
             .attr('stroke', getSelectedSpaceFillColor())
             .attr('stroke-width', getStrokeWidth(d.depth));
 
           defs.select(`#${clipId} circle`).attr('r', r);
-          defs.select(`#${glowClipId} circle`).attr('r', r * 1.35);
+          defs.select(`#${glowClipId} circle`).attr('r', r * 1.15);
 
           d3.select(this)
             .select('image')
@@ -789,11 +820,11 @@ export function SpaceVisualization({
 
           d3.select(this)
             .select<SVGImageElement>('image.logo-glow')
-            .attr('x', -(r * 1.35))
-            .attr('y', -(r * 1.35))
-            .attr('width', r * 2.7)
-            .attr('height', r * 2.7)
-            .style('opacity', d === focus ? 0.56 : 0.24);
+            .attr('x', -(r * 1.15))
+            .attr('y', -(r * 1.15))
+            .attr('width', r * 2.3)
+            .attr('height', r * 2.3)
+            .style('opacity', d === focus ? 0.24 : 0.09);
 
           d3.select(this)
             .select<SVGCircleElement>('circle.focus-pulse-ring')
@@ -824,7 +855,10 @@ export function SpaceVisualization({
     : '#';
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div
+      ref={containerRef}
+      className="relative w-full overflow-hidden rounded-xl bg-[#06090f]"
+    >
       <svg
         ref={svgRef}
         className="h-auto w-full"
