@@ -34,10 +34,12 @@ export function AiPanelHeader({
   showCloseButton = true,
   onCloseButtonClick,
   leftSlot,
+  rightSlot,
 }: {
   showCloseButton?: boolean;
   onCloseButtonClick?: () => void;
   leftSlot?: ReactNode;
+  rightSlot?: ReactNode;
 }) {
   const { closeAiPanel } = useAiPanel();
   const t = useTranslations('AiPanel');
@@ -290,7 +292,9 @@ export function AiPanelHeader({
       </div>
 
       <div className="flex h-7 w-7 shrink-0 items-center justify-end">
-        {showCloseButton ? (
+        {rightSlot ? (
+          rightSlot
+        ) : showCloseButton ? (
           <button
             type="button"
             onClick={onCloseButtonClick ?? closeAiPanel}
