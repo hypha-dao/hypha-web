@@ -4,7 +4,6 @@ import {
   TransactionsSection,
   VaultsSection,
   SpaceTabAccessWrapper,
-  SpacePendingRewardsSection,
 } from '@hypha-platform/epics';
 import { getDhoPathTreasury } from './constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
@@ -32,9 +31,6 @@ export default async function TreasuryPage(props: PageProps) {
     >
       <div className="flex flex-col gap-6 py-4">
         <TabScreenTitle title={tCommon('Treasury')} />
-        <SpacePendingRewardsSection
-          web3SpaceId={spaceFromDb?.web3SpaceId as number}
-        />
         <VaultsSection />
         <AssetsSection
           basePath={basePath}
