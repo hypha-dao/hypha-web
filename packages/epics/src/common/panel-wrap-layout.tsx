@@ -224,13 +224,81 @@ export function PanelWrapLayout({
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
 
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
-  const sidebarLeftPx = effectiveLeft
+  const fallbackSidebarLeftPx = effectiveLeft
     ? leftExpanded
       ? '320px'
       : LEFT_SIDEBAR_ICON_WIDTH
     : '0px';
-  const sidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
+  const fallbackSidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
+  const [sidebarLeftPx, setSidebarLeftPx] = useState(fallbackSidebarLeftPx);
+  const [sidebarRightPx, setSidebarRightPx] = useState(fallbackSidebarRightPx);
+
+  useLayoutEffect(() => {
+    const root = wrapperRef.current;
+    if (!root) return;
+
+    const readSidebarWidths = () => {
+      const gaps = root.querySelectorAll<HTMLElement>('[data-sidebar-gap]');
+      let nextLeft = 0;
+      let nextRight = 0;
+
+      gaps.forEach((gap) => {
+        const host = gap.closest<HTMLElement>('[data-side]');
+        const side = host?.getAttribute('data-side');
+        const width = Math.round(gap.getBoundingClientRect().width);
+        if (!Number.isFinite(width) || width <= 0) return;
+        if (side === 'right') {
+          nextRight = Math.max(nextRight, width);
+          return;
+        }
+        nextLeft = Math.max(nextLeft, width);
+      });
+
+      const resolvedLeft =
+        effectiveLeft && nextLeft > 0 ? `${nextLeft}px` : fallbackSidebarLeftPx;
+      const resolvedRight =
+        effectiveRight && nextRight > 0
+          ? `${nextRight}px`
+          : fallbackSidebarRightPx;
+
+      setSidebarLeftPx((prev) => (prev === resolvedLeft ? prev : resolvedLeft));
+      setSidebarRightPx((prev) =>
+        prev === resolvedRight ? prev : resolvedRight,
+      );
+    };
+
+    const resizeObserver = new ResizeObserver(readSidebarWidths);
+    const observeGaps = () => {
+      resizeObserver.disconnect();
+      const gaps = root.querySelectorAll<HTMLElement>('[data-sidebar-gap]');
+      gaps.forEach((gap) => resizeObserver.observe(gap));
+      readSidebarWidths();
+    };
+
+    const mutationObserver = new MutationObserver(observeGaps);
+    mutationObserver.observe(root, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-state', 'data-collapsible', 'style'],
+    });
+
+    window.addEventListener('resize', readSidebarWidths);
+    observeGaps();
+
+    return () => {
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+      window.removeEventListener('resize', readSidebarWidths);
+    };
+  }, [
+    effectiveLeft,
+    effectiveRight,
+    fallbackSidebarLeftPx,
+    fallbackSidebarRightPx,
+  ]);
 
   /** Radix portaled dialogs sit under `body` and do not inherit vars from this div — mirror to `:root`. */
   useLayoutEffect(() => {
@@ -323,10 +391,13 @@ export function PanelWrapLayout({
 
   return (
     <div
+      ref={wrapperRef}
       style={
         {
           '--sidebar-right-width': sidebarRightPx,
           '--sidebar-left-width': sidebarLeftPx,
+          '--panel-left-inset': sidebarLeftPx,
+          '--panel-right-inset': `calc(${sidebarRightPx} + ${MAIN_COLUMN_SCROLLBAR_WIDTH_CSS})`,
           transitionProperty: '--sidebar-left-width, --sidebar-right-width',
           transitionDuration: '200ms',
           transitionTimingFunction: 'linear',
