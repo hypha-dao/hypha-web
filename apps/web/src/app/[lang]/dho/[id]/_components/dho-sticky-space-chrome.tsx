@@ -14,7 +14,6 @@ export type DhoStickySpaceChromeProps = {
   breadcrumbsRow: React.ReactNode;
   banner: React.ReactNode;
   actionsSlot: React.ReactNode;
-  nestedSpacesSlot: React.ReactNode;
   title: string;
   logoUrl: string;
   logoAlt: string;
@@ -61,7 +60,6 @@ export function DhoStickySpaceChrome({
   breadcrumbsRow,
   banner,
   actionsSlot,
-  nestedSpacesSlot,
   title,
   logoUrl,
   logoAlt,
@@ -75,9 +73,6 @@ export function DhoStickySpaceChrome({
     React.useState<HTMLDivElement | null>(null);
   const [stickyActionsEl, setStickyActionsEl] =
     React.useState<HTMLDivElement | null>(null);
-  const [flowNestedEl, setFlowNestedEl] = React.useState<HTMLDivElement | null>(
-    null,
-  );
 
   const [stuck, setStuck] = React.useState(false);
   const stuckRef = React.useRef(false);
@@ -144,7 +139,6 @@ export function DhoStickySpaceChrome({
   const logoSrc = logoUrl || defaultLogoSrc;
 
   const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
-  const nestedPortalTarget = nestedSpacesSlot ? flowNestedEl : null;
 
   return (
     <>
@@ -194,15 +188,6 @@ export function DhoStickySpaceChrome({
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:flex-nowrap md:gap-x-4">
-          <div className="flex min-w-0 flex-1 items-center">
-            {breadcrumbsRow}
-          </div>
-          {nestedSpacesSlot ? (
-            <div ref={setFlowNestedEl} className="shrink-0" />
-          ) : null}
-        </div>
-
         <div className="relative">
           {banner}
           <div
@@ -211,6 +196,8 @@ export function DhoStickySpaceChrome({
             aria-hidden
           />
         </div>
+
+        <div className="flex min-w-0 items-center">{breadcrumbsRow}</div>
 
         <div
           ref={setFlowActionsEl}
@@ -225,9 +212,6 @@ export function DhoStickySpaceChrome({
 
       {actionsPortalTarget
         ? createPortal(actionsSlot, actionsPortalTarget)
-        : null}
-      {nestedSpacesSlot && nestedPortalTarget
-        ? createPortal(nestedSpacesSlot, nestedPortalTarget)
         : null}
     </>
   );
