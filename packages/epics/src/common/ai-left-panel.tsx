@@ -12,6 +12,7 @@ import {
   FileCheck2,
   Orbit,
   Radio,
+  SlidersHorizontal,
   Sparkles,
   UsersRound,
 } from 'lucide-react';
@@ -165,6 +166,23 @@ export function AiLeftPanel() {
       },
     ];
   }, [isSectionActive, lang, spaceSlug, tCommon, tCoherence]);
+  const isSpaceSettingsActive = useMemo(
+    () =>
+      Boolean(spaceSlug) &&
+      pathname.includes(`/dho/${spaceSlug}/`) &&
+      pathname.includes('/space-configuration'),
+    [pathname, spaceSlug],
+  );
+  const spaceSettingsItem = useMemo(() => {
+    if (!spaceSlug) return null;
+    return {
+      key: 'space-settings',
+      label: 'Space Settings',
+      icon: SlidersHorizontal,
+      href: `/${lang}/dho/${spaceSlug}/agreements/space-configuration`,
+      active: isSpaceSettingsActive,
+    };
+  }, [isSpaceSettingsActive, lang, spaceSlug]);
 
   const [input, setInput] = useState('');
   const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
@@ -442,8 +460,26 @@ export function AiLeftPanel() {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+            {spaceSettingsItem ? (
+              <SidebarGroup className="mt-auto p-2 pb-0">
+                <SidebarGroupContent>
+                  <div className="mb-2 h-px bg-border/60" aria-hidden />
+                  <SidebarMenu className="gap-2">
+                    {renderSectionNavItem(
+                      spaceSettingsItem,
+                      'expanded',
+                      'settings-overlay',
+                    )}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ) : null}
             {recentSpaces.length > 0 ? (
-              <SidebarGroup className="mt-auto p-2 pb-4">
+              <SidebarGroup
+                className={`${
+                  spaceSettingsItem ? 'p-2 pb-4 pt-2' : 'mt-auto p-2 pb-4'
+                }`}
+              >
                 <SidebarGroupContent>
                   <SidebarMenu className="gap-2">
                     {recentSpaces.map((space) =>
@@ -497,8 +533,26 @@ export function AiLeftPanel() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+          {spaceSettingsItem ? (
+            <SidebarGroup className="mt-auto p-2 pb-0">
+              <SidebarGroupContent>
+                <div className="mb-2 h-px bg-border/60" aria-hidden />
+                <SidebarMenu className="gap-2">
+                  {renderSectionNavItem(
+                    spaceSettingsItem,
+                    'collapsed',
+                    'settings-collapsed',
+                  )}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ) : null}
           {recentSpaces.length > 0 ? (
-            <SidebarGroup className="mt-auto p-2 pb-4">
+            <SidebarGroup
+              className={`${
+                spaceSettingsItem ? 'p-2 pb-4 pt-2' : 'mt-auto p-2 pb-4'
+              }`}
+            >
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
                   {recentSpaces.map((space) =>
