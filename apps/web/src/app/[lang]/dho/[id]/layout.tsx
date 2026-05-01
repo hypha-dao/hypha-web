@@ -23,7 +23,6 @@ import {
 } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
-import { Breadcrumbs } from './_components/breadcrumbs';
 import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
@@ -135,9 +134,6 @@ export default async function DhoLayout({
           >
             {/* gap-4 (16px) matches mt-4 above SalesBanner; slight pt above breadcrumbs vs MenuTop */}
             <DhoStickySpaceChrome
-              breadcrumbsRow={
-                <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
-              }
               banner={
                 <CompactSpaceBanner
                   showSpaceStats
