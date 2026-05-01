@@ -17,6 +17,7 @@
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@hypha-platform/authentication": "workspace:*",
+    "@hypha-platform/cookie": "workspace:*",
     "@hypha-platform/core": "workspace:*",
     "@hypha-platform/i18n": "workspace:*",
     "@hypha-platform/notifications": "workspace:*",

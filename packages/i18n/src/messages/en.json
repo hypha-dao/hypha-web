@@ -5,6 +5,8 @@
     "memberRoleLabel": "Member",
     "delegatedVotingMemberLabel": "Delegated voting member",
     "Treasury": "Treasury",
+    "Signals": "Signals",
+    "Proposals": "Proposals",
     "Agreements": "Agreements",
     "Spaces": "Spaces",
     "loadMore": "Load more",
@@ -52,6 +54,15 @@
       "fileTooLarge": "Your image is too large (max 4 MB) and could not be uploaded. Resize it and try again.",
       "uploadFailed": "File could not be uploaded."
     }
+  },
+  "SpaceLeftNav": {
+    "navAriaLabel": "Space",
+    "collapseNavLabels": "Show icons only",
+    "expandNavLabels": "Show menu labels",
+    "ecosystem": "Ecosystem",
+    "rewards": "Rewards",
+    "memory": "Memory",
+    "spaceSettings": "Space settings"
   },
   "ModalAside": {
     "spaceSettings": "Space Settings",

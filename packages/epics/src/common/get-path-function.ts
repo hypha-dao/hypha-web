@@ -33,3 +33,20 @@ export const getProposalUrl = (
 export const getDhoPathOverview = (lang: Locale, id: string) => {
   return `/${lang}/dho/${id}/overview`;
 };
+
+/** Space settings aside — relative to agreements base path (parallel route). */
+export const getDhoPathSpaceConfiguration = (lang: Locale, id: string) => {
+  return `/${lang}/dho/${id}/agreements/space-configuration`;
+};
+
+export const getDhoPathCoherence = (lang: Locale, id: string) => {
+  return `/${lang}/dho/${id}/coherence`;
+};
+
+export const getDhoPathMembers = (lang: Locale, id: string) => {
+  return `/${lang}/dho/${id}/members`;
+};
+
+export const getDhoPathTreasury = (lang: Locale, id: string) => {
+  return `/${lang}/dho/${id}/treasury`;
+};

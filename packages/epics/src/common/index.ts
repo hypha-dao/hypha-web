@@ -15,7 +15,13 @@ export * from './get-dho-space-slug-from-pathname';
 export * from './get-path-function';
 export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';
+export { AiLeftPanelShell } from './ai-left-panel-shell';
 export { AiLeftPanelLayout } from './ai-left-panel-layout';
+export { SpaceLeftNav } from './space-left-nav';
+export {
+  SpaceNavIntentProvider,
+  useSpaceNavIntent,
+} from './space-nav-intent-context';
 export {
   PanelProviders,
   PanelWrapLayout,

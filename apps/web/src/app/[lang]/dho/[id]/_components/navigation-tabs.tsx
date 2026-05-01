@@ -73,14 +73,14 @@ export function NavigationTabs({
     ...(coherenceEnabled
       ? [
           {
-            title: t('Coherence'),
+            title: t('Signals'),
             name: 'coherence',
             href: getDhoPathCoherence(lang, id),
           },
         ]
       : []),
     {
-      title: t('Agreements'),
+      title: t('Proposals'),
       name: 'agreements',
       href: getDhoPathAgreements(lang, id),
     },
@@ -97,7 +97,11 @@ export function NavigationTabs({
   ];
 
   return (
-    <Tabs value={activeTab} className="mt-6 w-full md:mt-7">
+    <Tabs
+      value={activeTab}
+      className="mt-6 w-full md:mt-7 md:hidden"
+      data-testid="dho-navigation-tabs-mobile"
+    >
       {/*
         Radix ScrollArea's viewport forces overflow-y: hidden, which clips vertical parallax.
         Native overflow-x-auto keeps horizontal swipe/scroll; vertical padding absorbs translate.

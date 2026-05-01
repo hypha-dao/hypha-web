@@ -29,6 +29,19 @@ test.describe('Coherence Screen', () => {
   // Navigation
   // ---------------------------------------------------------------------------
   test.describe('Navigation', () => {
+    // Horizontal tabs are `md:hidden`; use a mobile viewport so the tab strip is in the DOM.
+    test.beforeEach(async ({ context, page }) => {
+      await context.addCookies([
+        {
+          name: 'HYPHA_ENABLE_COHERENCE',
+          value: 'true',
+          domain: '127.0.0.1',
+          path: '/',
+        },
+      ]);
+      await page.setViewportSize({ width: 390, height: 844 });
+    });
+
     test('coherence tab appears in DHO navigation bar', async ({ page }) => {
       const coherencePage = new CoherencePage(page, SPACE_SLUG);
       await coherencePage.openDhoPage();
