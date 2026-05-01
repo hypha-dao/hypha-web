@@ -492,10 +492,7 @@ export function AiLeftPanel() {
             onMouseEnter={handleExpandedRegionMouseEnter}
             onMouseLeave={handleOverlayMouseLeave}
           >
-            <AiPanelHeader
-              onCloseButtonClick={handleOverlayClose}
-              leftSlot={triggerButton}
-            />
+            <AiPanelHeader showCloseButton={false} rightSlot={triggerButton} />
           </SidebarHeader>
           <SidebarContent
             className="bg-background-2"
@@ -552,7 +549,7 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="min-h-[var(--menu-top-height,70px)] border-b border-border bg-background-2 p-2">
-          <div className="flex w-full items-center justify-center">
+          <div className="ml-auto flex w-fit items-center justify-center">
             {triggerButton}
           </div>
         </SidebarHeader>
