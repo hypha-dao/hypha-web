@@ -115,9 +115,9 @@ export function EcosystemNavigationMainPanel({
         label: t('tabs.nestedSpaces'),
         content: (
           <div className="flex min-h-0 flex-col gap-4">
-            <div className="w-full overflow-hidden rounded-lg border border-border/50 bg-background-3/80 p-2 sm:p-3">
+            <div className="w-full overflow-visible px-1 py-1 sm:px-3 sm:py-2">
               {hierarchyData ? (
-                <div className="mx-auto aspect-square w-full max-w-[30rem]">
+                <div className="mx-auto aspect-square w-full max-w-[56rem] sm:w-3/4">
                   <SpaceVisualization
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
