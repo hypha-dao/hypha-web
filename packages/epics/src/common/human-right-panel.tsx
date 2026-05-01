@@ -1888,22 +1888,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
       };
 
+      const scheduleRetry = () => {
+        if (!pendingCoherenceMessageCountRef.current) return;
+        if (coherenceMessageCountSyncTimeoutRef.current) {
+          clearTimeout(coherenceMessageCountSyncTimeoutRef.current);
+        }
+        coherenceMessageCountSyncTimeoutRef.current = setTimeout(() => {
+          if (coherenceMessageCountSyncInFlightRef.current) return;
+          void flushMessageCountSync().catch((retryError) => {
+            console.warn(
+              '[HumanRightPanel] Retry failed to persist coherence message count:',
+              retryError,
+            );
+            scheduleRetry();
+          });
+        }, 1000);
+      };
+
       void flushMessageCountSync().catch((error) => {
         console.warn(
           '[HumanRightPanel] Failed to persist coherence message count:',
           error,
         );
-        if (pendingCoherenceMessageCountRef.current) {
-          coherenceMessageCountSyncTimeoutRef.current = setTimeout(() => {
-            if (coherenceMessageCountSyncInFlightRef.current) return;
-            void flushMessageCountSync().catch((retryError) => {
-              console.warn(
-                '[HumanRightPanel] Retry failed to persist coherence message count:',
-                retryError,
-              );
-            });
-          }, 1000);
-        }
+        scheduleRetry();
       });
     }, 500);
 
