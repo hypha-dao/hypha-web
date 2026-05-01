@@ -192,7 +192,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       'accent',
     [coherenceType?.colorVariant],
   );
-  const TypeIcon = coherenceType?.icon as LucideReactIcon | undefined;
+  const TypeIcon = coherenceType?.icon;
+  const hasRenderableTypeIcon = typeof TypeIcon === 'function';
 
   const priorityColorVariant = React.useMemo<SignalColorVariant>(
     () =>
@@ -356,7 +357,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 )}
                 aria-hidden
               />
-              {TypeIcon ? (
+              {hasRenderableTypeIcon ? (
                 <div
                   className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center"
                   aria-hidden
@@ -368,12 +369,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                         HERO_TYPE_ICON_HALO_CLASS_MAP[typeColorVariant],
                       )}
                     />
-                    <TypeIcon
-                      className={cn(
+                    {React.createElement(TypeIcon as LucideReactIcon, {
+                      className: cn(
                         'relative h-12 w-12 stroke-[1.35] mix-blend-screen',
                         HERO_TYPE_ICON_CLASS_MAP[typeColorVariant],
-                      )}
-                    />
+                      ),
+                    })}
                   </div>
                 </div>
               ) : null}
