@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { formatUnits } from 'viem';
-import { ArrowRightIcon, Loader2, X } from 'lucide-react';
+import { ArrowRightIcon, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Cross1Icon } from '@radix-ui/react-icons';
 
 import { Button } from '@hypha-platform/ui';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
@@ -260,14 +261,18 @@ export const SpaceEscrowDepositBanner = ({
   return (
     <div className="rounded-[8px] p-5 border-1 bg-accent-surface border-accent-6 bg-center flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between relative">
       {onDismiss ? (
-        <button
-          type="button"
+        <Button
           onClick={onDismiss}
+          variant="ghost"
           aria-label="Dismiss banner"
-          className="absolute top-2 right-2 p-1 rounded-md text-neutral-11 hover:bg-accent-3 hover:text-foreground transition-colors"
+          className="group absolute right-2 top-2 h-fit w-fit shrink-0 rounded-full p-2 text-foreground"
         >
-          <X width={16} height={16} />
-        </button>
+          <Cross1Icon
+            width={16}
+            height={16}
+            className="transition-colors group-hover:text-white dark:group-hover:text-foreground"
+          />
+        </Button>
       ) : null}
       <div className="flex items-start gap-3 md:gap-5 w-full md:w-auto">
         <ArrowRightIcon

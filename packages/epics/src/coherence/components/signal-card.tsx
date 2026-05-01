@@ -33,9 +33,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DynamicIcon,
   Image,
-  LucideReactIcon,
   Skeleton,
 } from '@hypha-platform/ui';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
@@ -107,22 +105,6 @@ const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
     neutral:
       'bg-gradient-to-t from-neutral-10/24 via-neutral-9/12 to-transparent',
   };
-
-const HERO_TYPE_ICON_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'text-white/76',
-  error: 'text-white/78',
-  warn: 'text-white/78',
-  success: 'text-white/76',
-  neutral: 'text-white/72',
-};
-
-const HERO_TYPE_ICON_GLOW_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'text-accent-3/60',
-  error: 'text-error-3/64',
-  warn: 'text-warning-3/64',
-  success: 'text-success-3/60',
-  neutral: 'text-neutral-3/56',
-};
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isLoading,
@@ -362,27 +344,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 )}
                 aria-hidden
               />
-              {coherenceType?.icon ? (
-                <div
-                  className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center"
-                  aria-hidden
-                >
-                  <DynamicIcon
-                    name={coherenceType.icon as LucideReactIcon}
-                    className={cn(
-                      'absolute h-14 w-14 stroke-[1.6] opacity-55 blur-[2px] mix-blend-soft-light',
-                      HERO_TYPE_ICON_GLOW_CLASS_MAP[typeColorVariant],
-                    )}
-                  />
-                  <DynamicIcon
-                    name={coherenceType.icon as LucideReactIcon}
-                    className={cn(
-                      'h-11 w-11 stroke-[1.85] opacity-85 drop-shadow-[0_2px_8px_rgba(0,0,0,0.38)]',
-                      HERO_TYPE_ICON_CLASS_MAP[typeColorVariant],
-                    )}
-                  />
-                </div>
-              ) : null}
               <div
                 className={cn(
                   'pointer-events-none absolute inset-x-0 bottom-0 h-20',
