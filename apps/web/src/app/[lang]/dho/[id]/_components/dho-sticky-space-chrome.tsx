@@ -10,6 +10,8 @@ import {
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+const STICKY_APPEAR_OFFSET_PX = 54;
+
 export type DhoStickySpaceChromeProps = {
   breadcrumbsRow: React.ReactNode;
   banner: React.ReactNode;
@@ -111,8 +113,9 @@ export function DhoStickySpaceChrome({
       }
       const bannerBottom = sentinel.getBoundingClientRect().bottom;
       let next = stuckRef.current;
-      if (!next && bannerBottom <= menuTopPx) next = true;
-      if (next && bannerBottom >= menuTopPx + HYST) next = false;
+      const appearAt = menuTopPx + STICKY_APPEAR_OFFSET_PX;
+      if (!next && bannerBottom <= appearAt) next = true;
+      if (next && bannerBottom >= appearAt + HYST) next = false;
       if (next !== stuckRef.current) {
         stuckRef.current = next;
         setStuck(next);
@@ -150,14 +153,21 @@ export function DhoStickySpaceChrome({
            */
           'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] hidden md:block',
           'right-[var(--panel-right-inset,calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,0px)))]',
-          'bg-background supports-[backdrop-filter]:bg-background/85 supports-[backdrop-filter]:backdrop-blur-md',
-          'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/80',
-          'transition-[opacity,transform] duration-200 ease-linear motion-reduce:transition-none',
+          'overflow-hidden border-b border-border/75',
+          'supports-[backdrop-filter]:backdrop-blur-md',
+          'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10',
+          'transition-[opacity,transform,box-shadow] duration-250 ease-linear motion-reduce:transition-none',
           stuck
             ? 'pointer-events-auto translate-y-0 opacity-100'
             : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
         )}
-        style={{ top: 'var(--menu-top-height, 70px)' }}
+        style={{
+          top: 'var(--menu-top-height, 70px)',
+          backgroundImage:
+            'linear-gradient(to right, rgba(0,0,0,0.46), rgba(0,0,0,0.34), rgba(0,0,0,0.4)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 18%, transparent), transparent 55%)',
+          boxShadow:
+            '0 10px 28px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)',
+        }}
         aria-hidden={!stuck}
       >
         <div className="mx-auto flex min-h-11 max-w-container-2xl items-center gap-3 px-4 py-2.5 sm:px-6 md:min-h-[52px] md:py-3 md:px-8">
