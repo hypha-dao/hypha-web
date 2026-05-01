@@ -98,6 +98,9 @@ export const MenuTop = ({
               <Link
                 href={logoHref}
                 target={hrefTarget}
+                rel={
+                  hrefTarget === '_blank' ? 'noopener noreferrer' : undefined
+                }
                 className="inline-block max-w-[22rem] truncate text-3xl font-medium leading-none tracking-tight text-foreground"
               >
                 {logoText}
