@@ -204,7 +204,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     };
     return [typeBadge, priorityBadge];
   }, [
-    coherenceType,
     priorityMeta,
     t,
     typeLabel,
