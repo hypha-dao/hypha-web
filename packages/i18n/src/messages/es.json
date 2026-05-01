@@ -41,7 +41,8 @@
     "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
     "publish": "Publicar",
     "invalidTransactions": "Transacciones inválidas",
-    "Coherence": "Coherencia",
+    "Coherence": "Señales",
+    "Signals": "Señales",
     "uploadLeadImage": {
       "cropTitle": "Subir una imagen",
       "cropDescription": "Ajusta el encuadre y guarda. Arrastra para reposicionar y usa el zoom para el área del banner (JPEG, PNG o WebP — máx. 4 MB).",
@@ -749,8 +750,7 @@
     "viewProfile": "Ver perfil",
     "delete": "Borrar",
     "signIn": "Iniciar sesión",
-    "getStarted": "Empezar",
-    "ecosystemLogo": "Logo del ecosistema"
+    "getStarted": "Empezar"
   },
   "NotificationCentre": {
     "title": "Centro de notificaciones",
@@ -1405,12 +1405,6 @@
     "nameYourSpace": "Ponle nombre a tu espacio...",
     "createdBy": "Creado por",
     "uploadSpaceBanner": "Subir",
-    "uploadEcosystemLogo": "Subir logo del ecosistema",
-    "ecosystemLogoDescription": "Este logo del ecosistema se mostrará en el banner superior de tu ecosistema y en cada espacio que forma parte de él, para mantener una marca coherente.",
-    "uploadEcosystemLogoLight": "Subir logo del ecosistema (modo claro)",
-    "uploadEcosystemLogoDark": "Subir logo del ecosistema (modo oscuro)",
-    "ecosystemLogoLightDescription": "Se usa en el tema claro. PNG, WEBP, JPG o SVG.",
-    "ecosystemLogoDarkDescription": "Se usa en el tema oscuro. PNG, WEBP, JPG o SVG.",
     "spaceBanner": "bandera espacial",
     "purpose": "Objetivo",
     "purposePlaceholder": "Escriba el propósito de su espacio aquí...",
@@ -1995,7 +1989,9 @@
     "mostRecent": "Más recientes",
     "searchConversation": "Buscar conversación",
     "hideArchived": "Ocultar archivados",
-    "mentions": "{count, plural, one {# mención} other {# menciones}}",
+    "messageCount": "{count, plural, one {# mensaje} other {# mensajes}}",
+    "priorityVisualAlt": "Nivel de prioridad",
+    "typeSignalBannerAlt": "Señal {type}, prioridad {priority}",
     "unarchiveConversation": "Desarchivar conversación",
     "unarchiveConfirm": "¿Realmente desea desarchivar esta conversación?",
     "yesUnarchive": "Sí, desarchivar",
@@ -2069,6 +2065,11 @@
       "low": "Informativo, sin prisa"
     },
     "keepWindowOpenWhileCreating": "Mantén esta ventana abierta hasta que terminemos.",
+    "provisioning": {
+      "chatUnavailable": "Señal creada, pero el chat no está disponible en este momento.",
+      "roomProvisionFailed": "Señal creada, pero falló el aprovisionamiento de la sala de chat.",
+      "roomLinkFailedRetry": "Señal creada, pero no se pudo vincular la sala de chat. Inténtalo de nuevo."
+    },
     "tagLabels": {
       "Strategy": "Estrategia",
       "Culture": "Cultura",

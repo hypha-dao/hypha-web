@@ -3,7 +3,12 @@
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
 import { useSignalsSection } from '../hooks';
-import { Button, SectionFilter, SectionLoadMore } from '@hypha-platform/ui';
+import {
+  Button,
+  ErrorAlert,
+  SectionFilter,
+  SectionLoadMore,
+} from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import { SignalGridContainer } from './signal-grid.container';
 import { Coherence, DirectionType } from '@hypha-platform/core/client';
@@ -14,9 +19,15 @@ import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 
+const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
+  'coherence.signalProvisioningNotice';
+const SIGNAL_PROVISIONING_NOTICE_EVENT = 'coherence:signalProvisioningNotice';
+const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
+
 type SignalSectionProps = {
   basePath: string;
   signals: Coherence[];
+  leadImage?: string;
   label?: string;
   hasSearch?: boolean;
   isLoading: boolean;
@@ -30,6 +41,7 @@ type SignalSectionProps = {
 export const SignalSection: FC<SignalSectionProps> = ({
   basePath,
   signals,
+  leadImage,
   label,
   hasSearch = false,
   isLoading,
@@ -52,11 +64,55 @@ export const SignalSection: FC<SignalSectionProps> = ({
     firstPageSize,
     pageSize,
   });
+  const [provisioningNoticeLines, setProvisioningNoticeLines] = React.useState<
+    string[]
+  >([]);
+
+  const readProvisioningNotice = React.useCallback(() => {
+    const rawNotice = sessionStorage.getItem(
+      SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
+    );
+    if (!rawNotice) return;
+    sessionStorage.removeItem(SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY);
+    try {
+      const parsed = JSON.parse(rawNotice);
+      if (!Array.isArray(parsed)) return;
+      const lines = parsed.filter(
+        (line): line is string =>
+          typeof line === 'string' && line.trim().length > 0,
+      );
+      if (lines.length > 0) setProvisioningNoticeLines(lines);
+    } catch (error) {
+      console.warn('Failed to parse signal provisioning notice:', error);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    readProvisioningNotice();
+    window.addEventListener(
+      SIGNAL_PROVISIONING_NOTICE_EVENT,
+      readProvisioningNotice,
+    );
+    return () =>
+      window.removeEventListener(
+        SIGNAL_PROVISIONING_NOTICE_EVENT,
+        readProvisioningNotice,
+      );
+  }, [readProvisioningNotice]);
+
+  React.useEffect(() => {
+    if (provisioningNoticeLines.length === 0) return;
+    const timeoutId = window.setTimeout(() => {
+      setProvisioningNoticeLines([]);
+    }, SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [provisioningNoticeLines]);
 
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
 
   return (
-    <div className="flex w-full flex-col gap-5">
+    <div className="flex w-full flex-col items-center justify-around gap-4">
       <SectionFilter
         count={pagination?.total || 0}
         label={label || ''}
@@ -89,6 +145,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
             <SignalGridContainer
               key={`signal-container-${index}`}
               basePath={basePath}
+              leadImage={leadImage}
               pagination={{
                 page: index + 1,
                 firstPageSize,
@@ -119,6 +176,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </Text>
         </SectionLoadMore>
       )}
+      {provisioningNoticeLines.length > 0 ? (
+        <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
+      ) : null}
     </div>
   );
 };

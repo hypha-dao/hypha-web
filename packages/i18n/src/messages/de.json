@@ -41,7 +41,8 @@
     "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden.",
     "publish": "Veröffentlichen",
     "invalidTransactions": "Ungültige Transaktionen",
-    "Coherence": "Kohärenz",
+    "Coherence": "Signale",
+    "Signals": "Signale",
     "uploadLeadImage": {
       "cropTitle": "Ein Bild hochladen",
       "cropDescription": "Passen Sie den Ausschnitt an und speichern Sie. Ziehen Sie zum Verschieben und zoomen Sie, um den Bannerbereich auszufüllen (JPEG, PNG oder WebP — max. 4 MB).",
@@ -90,8 +91,7 @@
     "viewProfile": "Profil anzeigen",
     "delete": "Löschen",
     "signIn": "Anmelden",
-    "getStarted": "Loslegen",
-    "ecosystemLogo": "Ecosystem-Logo"
+    "getStarted": "Loslegen"
   },
   "NotificationCentre": {
     "title": "Benachrichtigungszentrale",
@@ -746,12 +746,6 @@
     "nameYourSpace": "Benennen Sie Ihren Space...",
     "createdBy": "Erstellt von",
     "uploadSpaceBanner": "Hochladen",
-    "uploadEcosystemLogo": "Ökosystem-Logo hochladen",
-    "ecosystemLogoDescription": "Dieses Ökosystem-Logo wird im oberen Banner Ihres Ökosystems und in jedem zugehörigen Space angezeigt, um eine konsistente Markenführung sicherzustellen.",
-    "uploadEcosystemLogoLight": "Ökosystem-Logo hochladen (heller Modus)",
-    "uploadEcosystemLogoDark": "Ökosystem-Logo hochladen (dunkler Modus)",
-    "ecosystemLogoLightDescription": "Wird im hellen Theme verwendet. PNG, WEBP, JPG oder SVG.",
-    "ecosystemLogoDarkDescription": "Wird im dunklen Theme verwendet. PNG, WEBP, JPG oder SVG.",
     "spaceBanner": "Space-Banner",
     "purpose": "Zweck",
     "purposePlaceholder": "Geben Sie hier den Zweck Ihres Spaces ein...",
@@ -1996,7 +1990,9 @@
     "mostRecent": "Neueste",
     "searchConversation": "Gespräch suchen",
     "hideArchived": "Archivierte ausblenden",
-    "mentions": "{count, plural, one {# Erwähnung} other {# Erwähnungen}}",
+    "messageCount": "{count, plural, one {# Nachricht} other {# Nachrichten}}",
+    "priorityVisualAlt": "Prioritätsstufe: {priority}",
+    "typeSignalBannerAlt": "{type}-Signal, Priorität {priority}",
     "unarchiveConversation": "Gespräch wiederherstellen",
     "unarchiveConfirm": "Möchten Sie dieses Gespräch wirklich wiederherstellen?",
     "yesUnarchive": "Ja, wiederherstellen",
@@ -2070,6 +2066,11 @@
       "low": "Informativ, keine Eile"
     },
     "keepWindowOpenWhileCreating": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind.",
+    "provisioning": {
+      "chatUnavailable": "Signal erstellt, aber der Chat ist derzeit nicht verfügbar.",
+      "roomProvisionFailed": "Signal erstellt, aber die Bereitstellung des Chatraums ist fehlgeschlagen.",
+      "roomLinkFailedRetry": "Signal erstellt, aber der Chatraum konnte nicht verknüpft werden. Bitte versuchen Sie es erneut."
+    },
     "tagLabels": {
       "Strategy": "Strategie",
       "Culture": "Kultur",
