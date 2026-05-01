@@ -33,11 +33,14 @@ function useMenuTopOffsetPx(): number {
       setPx(Number.isFinite(n) && n > 0 ? n : 70);
     };
     read();
-    const ro = new ResizeObserver(read);
-    ro.observe(document.documentElement);
+    const mo = new MutationObserver(read);
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
     window.addEventListener('resize', read);
     return () => {
-      ro.disconnect();
+      mo.disconnect();
       window.removeEventListener('resize', read);
     };
   }, []);
@@ -149,7 +152,7 @@ export function DhoStickySpaceChrome({
         className={cn(
           /* Leave room for main-column scrollbar (narrow-scrollbar ~8–12px) so it is not painted under this bar */
           'pointer-events-none fixed left-[var(--sidebar-left-width,0px)] z-[25] hidden md:block',
-          'right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))]',
+          'right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,0px))]',
           'bg-background supports-[backdrop-filter]:bg-background/85 supports-[backdrop-filter]:backdrop-blur-md',
           'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/80',
           'transition-[opacity,transform] duration-200 ease-linear motion-reduce:transition-none',
