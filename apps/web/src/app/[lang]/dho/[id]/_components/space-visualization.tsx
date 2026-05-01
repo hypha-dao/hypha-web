@@ -42,6 +42,7 @@ const VISUALIZATION_CONFIG = {
   LOGO_STROKE_WIDTH: 20,
   STROKE_WIDTH_SCALE: 0.7,
 } as const;
+const HOVER_PANEL_HIDE_DELAY_MS = 320;
 
 export function SpaceVisualization({
   data,
@@ -80,7 +81,7 @@ export function SpaceVisualization({
     clearTooltipHideTimeout();
     tooltipHideTimeoutRef.current = window.setTimeout(() => {
       setTooltip((prev) => ({ ...prev, visible: false }));
-    }, 120);
+    }, HOVER_PANEL_HIDE_DELAY_MS);
   };
 
   useEffect(() => {
@@ -702,6 +703,10 @@ export function SpaceVisualization({
   const canVisitSpace =
     Boolean(tooltip.spaceSlug) && tooltip.spaceId !== currentSpaceId;
   const canAddSpace = Boolean(tooltip.spaceSlug);
+  const isHoveredSelectedSpace =
+    tooltip.spaceId != null && tooltip.spaceId === focusRef.current?.data.id;
+  const showHoverActions =
+    enableHoverActions && Boolean(lang) && isHoveredSelectedSpace;
   const visitSpacePath = tooltip.spaceSlug
     ? `/${lang}/dho/${tooltip.spaceSlug}/agreements`
     : '#';
@@ -720,27 +725,37 @@ export function SpaceVisualization({
       {tooltip.visible && (
         <div
           ref={tooltipRef}
-          onMouseEnter={clearTooltipHideTimeout}
-          onMouseLeave={scheduleTooltipHide}
-          className="absolute z-50 rounded-lg border border-border/70 bg-popover px-2.5 py-2 shadow-lg"
+          onMouseEnter={showHoverActions ? clearTooltipHideTimeout : undefined}
+          onMouseLeave={showHoverActions ? scheduleTooltipHide : undefined}
+          className={`absolute z-50 overflow-hidden border border-border/60 bg-background-2 shadow-xl ${
+            showHoverActions
+              ? 'w-52 rounded-xl p-0'
+              : 'pointer-events-none rounded-lg px-2 py-1'
+          }`}
           style={{
-            left: `${tooltip.x + 10}px`,
-            top: `${tooltip.y + 10}px`,
+            left: `${tooltip.x + 6}px`,
+            top: `${tooltip.y}px`,
             transform: 'translate(0, -50%)',
           }}
         >
-          <div className="rounded-md border border-border/60 bg-background-3/80 px-2.5 py-1 text-xs font-semibold text-foreground">
+          <div
+            className={`bg-background-3 text-foreground ${
+              showHoverActions
+                ? 'border-b border-border/70 px-3 py-2 text-sm font-semibold'
+                : 'rounded-md border border-border/60 px-2.5 py-1 text-xs font-semibold'
+            }`}
+          >
             {tooltip.text}
           </div>
-          {enableHoverActions && lang ? (
-            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+          {showHoverActions ? (
+            <div className="grid gap-1 p-1.5">
               <Link
                 href={canVisitSpace ? visitSpacePath : '#'}
                 aria-disabled={!canVisitSpace}
-                className={`inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
+                className={`inline-flex min-h-9 items-center rounded-md border px-2.5 text-sm font-medium transition-colors ${
                   canVisitSpace
-                    ? 'border-border/70 bg-background-2 text-foreground hover:border-accent-9/45 hover:text-accent-11'
-                    : 'pointer-events-none cursor-not-allowed border-border/50 bg-background-2 text-muted-foreground'
+                    ? 'border-border/70 bg-background-2 text-foreground hover:border-border hover:bg-background-3 hover:text-accent-11'
+                    : 'pointer-events-none cursor-not-allowed border-border/50 bg-background-2 text-muted-foreground/80'
                 }`}
               >
                 {actionLabels?.visitSpace ?? 'Visit Space'}
@@ -748,10 +763,10 @@ export function SpaceVisualization({
               <Link
                 href={canAddSpace ? addSpacePath : '#'}
                 aria-disabled={!canAddSpace}
-                className={`inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
+                className={`inline-flex min-h-9 items-center rounded-md border px-2.5 text-sm font-medium transition-colors ${
                   canAddSpace
-                    ? 'border-border/70 bg-background-2 text-foreground hover:border-accent-9/45 hover:text-accent-11'
-                    : 'pointer-events-none cursor-not-allowed border-border/50 bg-background-2 text-muted-foreground'
+                    ? 'border-border/70 bg-background-2 text-foreground hover:border-border hover:bg-background-3 hover:text-accent-11'
+                    : 'pointer-events-none cursor-not-allowed border-border/50 bg-background-2 text-muted-foreground/80'
                 }`}
               >
                 {actionLabels?.addSpace ?? 'Add Space'}

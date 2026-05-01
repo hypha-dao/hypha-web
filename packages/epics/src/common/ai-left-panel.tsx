@@ -130,18 +130,18 @@ export function AiLeftPanel() {
     if (!spaceSlug) return [];
     return [
       {
-        key: 'signals',
-        label: tCoherence('signals'),
-        icon: Radio,
-        href: `/${lang}/dho/${spaceSlug}/coherence`,
-        active: isSectionActive('coherence'),
-      },
-      {
         key: 'ecosystem-navigation',
         label: 'Ecosystem Navigation',
         icon: Orbit,
         href: `/${lang}/dho/${spaceSlug}/ecosystem-navigation`,
         active: isSectionActive('ecosystem-navigation'),
+      },
+      {
+        key: 'signals',
+        label: tCoherence('signals'),
+        icon: Radio,
+        href: `/${lang}/dho/${spaceSlug}/coherence`,
+        active: isSectionActive('coherence'),
       },
       {
         key: 'agreements',
