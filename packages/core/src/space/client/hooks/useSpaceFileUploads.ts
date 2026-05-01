@@ -7,6 +7,15 @@ import { z } from 'zod';
 
 type Files = z.infer<typeof schemaCreateSpaceFiles>;
 
+const getUploadResultUrl = (result: unknown): string | undefined => {
+  if (!Array.isArray(result) || result.length === 0) return undefined;
+  const first = result[0] as { ufsUrl?: unknown; url?: unknown } | undefined;
+  if (!first) return undefined;
+  if (typeof first.ufsUrl === 'string' && first.ufsUrl) return first.ufsUrl;
+  if (typeof first.url === 'string' && first.url) return first.url;
+  return undefined;
+};
+
 export type UseSpaceFileUploadsReturn = {
   isLoading: boolean;
   files: { [K in keyof Files]?: string } | null;
@@ -41,8 +50,9 @@ export const useSpaceFileUploads = (
           try {
             if (file instanceof File) {
               const result = await upload([file]);
-              if (result?.[0]?.ufsUrl) {
-                uploadedFiles[key as keyof Files] = result[0].ufsUrl;
+              const uploadedUrl = getUploadResultUrl(result);
+              if (uploadedUrl) {
+                uploadedFiles[key as keyof Files] = uploadedUrl;
               }
             }
           } catch (uploadError) {

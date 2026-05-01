@@ -15,8 +15,30 @@ export const useImageUpload = ({ authorizationToken }: FileUploadProps) => {
     headers,
   });
 
+  const normalizeSvgMime = (file: File): File => {
+    const isSvgByName = /\.svg$/i.test(file.name);
+    const isFallbackMime =
+      file.type === '' ||
+      file.type === 'application/octet-stream' ||
+      file.type === 'binary/octet-stream';
+
+    if (isSvgByName && isFallbackMime) {
+      return new File([file], file.name, {
+        type: 'image/svg+xml',
+        lastModified: file.lastModified,
+      });
+    }
+
+    return file;
+  };
+
+  const upload: typeof startUpload = (files, input) => {
+    const normalizedFiles = (files ?? []).map(normalizeSvgMime);
+    return startUpload(normalizedFiles, input);
+  };
+
   return {
-    upload: startUpload,
+    upload,
     isUploading,
   };
 };

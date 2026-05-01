@@ -105,6 +105,15 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
+const getUploadResultUrl = (result: unknown): string | undefined => {
+  if (!Array.isArray(result) || result.length === 0) return undefined;
+  const first = result[0] as { ufsUrl?: unknown; url?: unknown } | undefined;
+  if (!first) return undefined;
+  if (typeof first.ufsUrl === 'string' && first.ufsUrl) return first.ufsUrl;
+  if (typeof first.url === 'string' && first.url) return first.url;
+  return undefined;
+};
+
 export const useCreateSpaceOrchestrator = ({
   authToken,
   config,
@@ -207,8 +216,9 @@ export const useCreateSpaceOrchestrator = ({
           if (logoUrl instanceof File) {
             uploadPromises.push(
               uploadImage([logoUrl]).then((result) => {
-                if (result?.[0]?.ufsUrl) {
-                  uploadedFileUrls.logoUrl = result[0].ufsUrl;
+                const uploadedUrl = getUploadResultUrl(result);
+                if (uploadedUrl) {
+                  uploadedFileUrls.logoUrl = uploadedUrl;
                 }
               }),
             );
@@ -219,8 +229,9 @@ export const useCreateSpaceOrchestrator = ({
           if (leadImage instanceof File) {
             uploadPromises.push(
               uploadImage([leadImage]).then((result) => {
-                if (result?.[0]?.ufsUrl) {
-                  uploadedFileUrls.leadImage = result[0].ufsUrl;
+                const uploadedUrl = getUploadResultUrl(result);
+                if (uploadedUrl) {
+                  uploadedFileUrls.leadImage = uploadedUrl;
                 }
               }),
             );
@@ -231,8 +242,9 @@ export const useCreateSpaceOrchestrator = ({
           if (ecosystemLogoUrlLight instanceof File) {
             uploadPromises.push(
               uploadImage([ecosystemLogoUrlLight]).then((result) => {
-                if (result?.[0]?.ufsUrl) {
-                  uploadedFileUrls.ecosystemLogoUrlLight = result[0].ufsUrl;
+                const uploadedUrl = getUploadResultUrl(result);
+                if (uploadedUrl) {
+                  uploadedFileUrls.ecosystemLogoUrlLight = uploadedUrl;
                 }
               }),
             );
@@ -246,8 +258,9 @@ export const useCreateSpaceOrchestrator = ({
           if (ecosystemLogoUrlDark instanceof File) {
             uploadPromises.push(
               uploadImage([ecosystemLogoUrlDark]).then((result) => {
-                if (result?.[0]?.ufsUrl) {
-                  uploadedFileUrls.ecosystemLogoUrlDark = result[0].ufsUrl;
+                const uploadedUrl = getUploadResultUrl(result);
+                if (uploadedUrl) {
+                  uploadedFileUrls.ecosystemLogoUrlDark = uploadedUrl;
                 }
               }),
             );
