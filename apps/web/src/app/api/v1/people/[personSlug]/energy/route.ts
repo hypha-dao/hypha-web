@@ -115,7 +115,7 @@ export async function GET(
           creditInStablecoin: creditInStablecoin.toString(),
           sourceOwnerships: sourceIds.map((sourceId, index) => ({
             sourceId,
-            ownershipBps: sourceOwnershipBps[index].toString(),
+            ownershipBps: (sourceOwnershipBps[index] ?? 0n).toString(),
           })),
         };
       }),

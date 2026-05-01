@@ -83,18 +83,19 @@ export async function GET(
             args: [latestCommunityId],
           });
 
-          mapping = await upsertEnergyCommunityActivation(
-            {
-              spaceId: space.id,
-              chainId: 8453,
-              communityProxyAddress: communityRecord[0],
-              energyTokenAddress: communityRecord[1],
-              adminAddress: communityRecord[2],
-              factoryCommunityId: Number(latestCommunityId),
-              activatedAt: new Date(Number(communityRecord[3]) * 1000),
-            },
-            { db: appDb },
-          );
+          mapping =
+            (await upsertEnergyCommunityActivation(
+              {
+                spaceId: space.id,
+                chainId: 8453,
+                communityProxyAddress: communityRecord[0],
+                energyTokenAddress: communityRecord[1],
+                adminAddress: communityRecord[2],
+                factoryCommunityId: Number(latestCommunityId),
+                activatedAt: new Date(Number(communityRecord[3]) * 1000),
+              },
+              { db: appDb },
+            )) ?? null;
         }
       }
     }
@@ -156,25 +157,23 @@ export async function GET(
       }),
     ]);
 
-    const sourceCalls = sourceIds.map((sourceId) => ({
-      address: communityProxy,
-      abi: energyPpaV2Abi,
-      functionName: 'getSource',
-      args: [sourceId],
-    })) as const;
-
-    const sourceResults =
-      sourceCalls.length > 0
-        ? await web3Client.multicall({ contracts: sourceCalls })
-        : [];
+    const sourceResults = await Promise.all(
+      sourceIds.map((sourceId) =>
+        web3Client.readContract({
+          address: communityProxy,
+          abi: energyPpaV2Abi,
+          functionName: 'getSource',
+          args: [sourceId],
+        }),
+      ),
+    );
 
     const sources = sourceResults
-      .map((result, index) => {
-        if (result.status !== 'success') {
+      .map((value, index) => {
+        const sourceId = sourceIds[index];
+        if (!sourceId) {
           return null;
         }
-        const sourceId = sourceIds[index];
-        const value = result.result;
         return {
           sourceId,
           sourceLabel: decodeSourceId(sourceId),

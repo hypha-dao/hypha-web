@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { DefaultValues, useForm } from 'react-hook-form';
 import { z, ZodType } from 'zod';
 import { useConfig } from 'wagmi';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -27,8 +27,16 @@ const fullSchema = schemaCreateAgreementForm.extend(createAgreementFiles);
 
 export type EnergyProposalBaseFields = z.infer<typeof fullSchema>;
 
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
 interface CreateEnergyProposalFormProps<T extends EnergyProposalBaseFields> {
-  schema: ZodType<T>;
+  schema: ZodType<T, z.ZodTypeDef, any>;
   label: string;
   stickyHeaderTitle: string;
   resubmitTemplateSegment: string;
@@ -37,7 +45,7 @@ interface CreateEnergyProposalFormProps<T extends EnergyProposalBaseFields> {
   successfulUrl: string;
   backUrl?: string;
   plugin: React.ReactNode;
-  mapPayload: (values: T) => Record<string, unknown>;
+  mapPayload: (values: T) => JsonValue;
 }
 
 export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
@@ -69,7 +77,7 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
   const resolver = useLocalizedProposalResolver(schema, tAgreementFlow);
   const formRef = React.useRef<HTMLFormElement>(null);
 
-  const form = useForm<T>({
+  const form = useForm<T, unknown, T>({
     resolver: resolver as any,
     defaultValues: {
       title: '',
@@ -79,7 +87,7 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
       label,
-    } as T,
+    } as DefaultValues<T>,
   });
 
   useScrollToErrors(form, formRef);

@@ -173,6 +173,5 @@ export function getEnergyPpaFactoryAddress(): `0x${string}` | undefined {
     return chainScoped as `0x${string}`;
   }
 
-  const chainId = getGovernanceChainId();
   return energyPpaV2FactoryAddress[chainId];
 }
