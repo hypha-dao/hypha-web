@@ -7,7 +7,6 @@ import { TabScreenTitle } from '../_components/tab-screen-title';
 import {
   getEnableCoherence,
   getEnableHumanChat,
-  getEnableSpaceMemory,
 } from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
 import { getTranslations } from 'next-intl/server';
@@ -31,7 +30,6 @@ export default async function CoherencePage(props: PageProps) {
   }
 
   const humanChatEnabled = await getEnableHumanChat();
-  const spaceMemoryEnabled = await getEnableSpaceMemory();
   const searchParams = await props.searchParams;
 
   const { lang, id } = params;
@@ -50,7 +48,6 @@ export default async function CoherencePage(props: PageProps) {
         spaceSlug={id}
         order={order}
         humanChatEnabled={humanChatEnabled}
-        spaceMemoryEnabled={spaceMemoryEnabled}
       />
     </div>
   );
