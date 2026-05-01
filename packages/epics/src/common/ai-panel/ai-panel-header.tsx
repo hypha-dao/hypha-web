@@ -172,8 +172,8 @@ export function AiPanelHeader({
   );
 
   return (
-    <div className="relative flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center border-b border-border bg-background-2 px-4 py-2">
-      <div className="z-10 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
+    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[1.75rem_minmax(0,1fr)_1.75rem] items-center gap-3 border-b border-border bg-background-2 px-4 py-2">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
         {currentIcon ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -188,84 +188,80 @@ export function AiPanelHeader({
         )}
       </div>
 
-      <div className="pointer-events-none absolute inset-0 flex min-w-0 items-center justify-center px-4">
-        <div className="w-full min-w-0 px-10">
-          <div className="pointer-events-auto relative mx-auto w-full min-w-0 max-w-[13.5rem]">
-            {canOpenSpaceMenu ? (
-              <DropdownMenu
-                modal={false}
-                open={spaceMenuOpen}
-                onOpenChange={setSpaceMenuOpen}
-              >
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
-                    aria-label={tNavigation('mySpaces')}
-                  >
-                    <span className="max-w-[9rem] truncate text-center">
-                      {currentTitle}
-                    </span>
-                    <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  </button>
-                </DropdownMenuTrigger>
-                {spaceMenuOpen ? (
-                  <div className="pointer-events-none absolute inset-x-0 top-full z-40 -mt-1.5 h-2 rounded-b-xl bg-background-2" />
-                ) : null}
-                <DropdownMenuContent
-                  side="bottom"
-                  align="center"
-                  sideOffset={-10}
-                  className="z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
+      <div className="min-w-0 px-3">
+        <div className="relative mx-auto w-full min-w-0 max-w-[13.5rem]">
+          {canOpenSpaceMenu ? (
+            <DropdownMenu
+              modal={false}
+              open={spaceMenuOpen}
+              onOpenChange={setSpaceMenuOpen}
+            >
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
+                  aria-label={tNavigation('mySpaces')}
                 >
-                  <div className="max-h-[24.5rem] overflow-y-auto p-1.5 narrow-scrollbar">
-                    <div className="sticky top-0 z-20 mb-1 rounded-t-xl border-b border-border/70 bg-background-3 px-1 pb-1.5">
-                      <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
-                        {tNavigation('mySpaces')}
-                      </DropdownMenuLabel>
-                      <div className="px-1">
-                        <input
-                          type="text"
-                          value={spaceSearch}
-                          onChange={(event) =>
-                            setSpaceSearch(event.target.value)
-                          }
-                          placeholder={tSpaces('search')}
-                          className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
-                          aria-label={tSpaces('search')}
-                        />
-                      </div>
+                  <span className="max-w-[9rem] truncate text-center">
+                    {currentTitle}
+                  </span>
+                  <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              {spaceMenuOpen ? (
+                <div className="pointer-events-none absolute inset-x-0 top-full z-40 -mt-1.5 h-2 rounded-b-xl bg-background-2" />
+              ) : null}
+              <DropdownMenuContent
+                side="bottom"
+                align="center"
+                sideOffset={-10}
+                className="z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
+              >
+                <div className="max-h-[24.5rem] overflow-y-auto p-1.5 narrow-scrollbar">
+                  <div className="sticky top-0 z-20 mb-1 rounded-t-xl border-b border-border/70 bg-background-3 px-1 pb-1.5">
+                    <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
+                      {tNavigation('mySpaces')}
+                    </DropdownMenuLabel>
+                    <div className="px-1">
+                      <input
+                        type="text"
+                        value={spaceSearch}
+                        onChange={(event) => setSpaceSearch(event.target.value)}
+                        placeholder={tSpaces('search')}
+                        className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
+                        aria-label={tSpaces('search')}
+                      />
                     </div>
-                    {!hasFilteredSpaces ? (
-                      <DropdownMenuItem disabled>
-                        {normalizedSearch
-                          ? tSpaces('noSpacesFound')
-                          : fallbackTitle}
-                      </DropdownMenuItem>
-                    ) : null}
-                    {hasFilteredSpaces &&
-                      filteredGroupedSpaces.ecosystem.map(renderSpaceOption)}
-                    {filteredGroupedSpaces.ecosystem.length > 0 &&
-                    filteredGroupedSpaces.others.length > 0 ? (
-                      <DropdownMenuSeparator />
-                    ) : null}
-                    {hasFilteredSpaces &&
-                      filteredGroupedSpaces.others.map(renderSpaceOption)}
                   </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <div className="inline-flex h-8 w-full min-w-0 items-center justify-center rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground/90">
-                <span className="max-w-[9rem] truncate text-center">
-                  {fallbackTitle}
-                </span>
-              </div>
-            )}
-          </div>
+                  {!hasFilteredSpaces ? (
+                    <DropdownMenuItem disabled>
+                      {normalizedSearch
+                        ? tSpaces('noSpacesFound')
+                        : fallbackTitle}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {hasFilteredSpaces &&
+                    filteredGroupedSpaces.ecosystem.map(renderSpaceOption)}
+                  {filteredGroupedSpaces.ecosystem.length > 0 &&
+                  filteredGroupedSpaces.others.length > 0 ? (
+                    <DropdownMenuSeparator />
+                  ) : null}
+                  {hasFilteredSpaces &&
+                    filteredGroupedSpaces.others.map(renderSpaceOption)}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="inline-flex h-8 w-full min-w-0 items-center justify-center rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground/90">
+              <span className="max-w-[9rem] truncate text-center">
+                {fallbackTitle}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="z-10 ml-auto flex h-7 w-7 shrink-0 items-center justify-end">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-end">
         {showCloseButton ? (
           <button
             type="button"
