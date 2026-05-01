@@ -164,7 +164,7 @@ export function AiPanelHeader({
   );
 
   return (
-    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[1.75rem_minmax(0,1fr)_1.75rem] items-center gap-2 border-b border-border bg-background-2 px-4 py-2">
+    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[1.75rem_minmax(0,1fr)_1.75rem] items-center gap-3 border-b border-border bg-background-2 px-4 py-2">
       <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
         {currentIcon ? (
           <>
@@ -179,13 +179,13 @@ export function AiPanelHeader({
           <Sparkles className="h-4 w-4 text-muted-foreground" />
         )}
       </div>
-      <div className="flex min-w-0 items-center justify-center">
+      <div className="flex min-w-0 items-center justify-center px-0.5">
         {canOpenSpaceMenu ? (
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="inline-flex h-8 w-full min-w-0 max-w-[15rem] items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
+                className="inline-flex h-8 w-full min-w-0 max-w-[14.5rem] items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
                 aria-label={tNavigation('mySpaces')}
               >
                 <span className="max-w-[9rem] truncate text-center">
@@ -230,7 +230,7 @@ export function AiPanelHeader({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <div className="inline-flex h-8 w-full min-w-0 max-w-[15rem] items-center justify-center rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground/90">
+          <div className="inline-flex h-8 w-full min-w-0 max-w-[14.5rem] items-center justify-center rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground/90">
             <span className="max-w-[9rem] truncate text-center">
               {fallbackTitle}
             </span>
