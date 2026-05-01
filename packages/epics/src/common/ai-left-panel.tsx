@@ -8,6 +8,7 @@ import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
+  HardDrive,
   Coins,
   FileCheck2,
   Orbit,
@@ -117,7 +118,8 @@ export function AiLeftPanel() {
         | 'ecosystem-navigation'
         | 'agreements'
         | 'members'
-        | 'treasury',
+        | 'treasury'
+        | 'memory',
     ) => {
       if (!spaceSlug) return false;
       if (
@@ -170,6 +172,13 @@ export function AiLeftPanel() {
         icon: Coins,
         href: `/${lang}/dho/${spaceSlug}/treasury`,
         active: isSectionActive('treasury'),
+      },
+      {
+        key: 'memory',
+        label: 'Memory',
+        icon: HardDrive,
+        href: `/${lang}/dho/${spaceSlug}/memory`,
+        active: isSectionActive('memory'),
       },
     ];
   }, [isSectionActive, lang, spaceSlug, tCommon, tCoherence]);

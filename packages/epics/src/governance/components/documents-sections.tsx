@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { DocumentSection } from './document-section';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
 import { Document, Order } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 
 type DocumentsSectionsProps = {
   lang: string;
@@ -19,6 +21,7 @@ export function DocumentsSections({
   order,
 }: DocumentsSectionsProps) {
   const t = useTranslations('AgreementsTab');
+  const [activeTab, setActiveTab] = useState('on-voting');
   const { documents, isLoading } = useSpaceDocumentsWithStatuses({
     spaceId: web3SpaceId,
     spaceSlug,
@@ -28,37 +31,59 @@ export function DocumentsSections({
   const basePath = `/${lang}/dho/${spaceSlug}/agreements`;
 
   return (
-    <div className="flex flex-col gap-6 py-4">
-      <DocumentSection
-        basePath={`${basePath}/proposal`}
-        web3SpaceId={web3SpaceId}
-        documents={documents.onVoting}
-        label={t('onVoting')}
-        hasSearch={true}
-        isLoading={isLoading}
-        firstPageSize={9}
-        pageSize={15}
-      />
-      <DocumentSection
-        basePath={`${basePath}/proposal`}
-        web3SpaceId={web3SpaceId}
-        documents={documents.accepted}
-        label={t('accepted')}
-        hasSearch={true}
-        isLoading={isLoading}
-        firstPageSize={3}
-        pageSize={15}
-      />
-      <DocumentSection
-        basePath={`${basePath}/proposal`}
-        web3SpaceId={web3SpaceId}
-        documents={documents.rejected}
-        label={t('rejected')}
-        hasSearch={true}
-        isLoading={isLoading}
-        firstPageSize={3}
-        pageSize={15}
-      />
-    </div>
+    <Tabs
+      value={activeTab}
+      onValueChange={setActiveTab}
+      className="flex flex-col gap-4 py-4"
+    >
+      <TabsList triggerVariant="switch" className="w-fit">
+        <TabsTrigger value="on-voting" variant="switch">
+          {t('onVoting')}
+        </TabsTrigger>
+        <TabsTrigger value="accepted" variant="switch">
+          {t('accepted')}
+        </TabsTrigger>
+        <TabsTrigger value="rejected" variant="switch">
+          {t('rejected')}
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="on-voting">
+        <DocumentSection
+          basePath={`${basePath}/proposal`}
+          web3SpaceId={web3SpaceId}
+          documents={documents.onVoting}
+          label={t('onVoting')}
+          hasSearch={true}
+          isLoading={isLoading}
+          firstPageSize={9}
+          pageSize={15}
+        />
+      </TabsContent>
+      <TabsContent value="accepted">
+        <DocumentSection
+          basePath={`${basePath}/proposal`}
+          web3SpaceId={web3SpaceId}
+          documents={documents.accepted}
+          label={t('accepted')}
+          hasSearch={true}
+          isLoading={isLoading}
+          firstPageSize={3}
+          pageSize={15}
+        />
+      </TabsContent>
+      <TabsContent value="rejected">
+        <DocumentSection
+          basePath={`${basePath}/proposal`}
+          web3SpaceId={web3SpaceId}
+          documents={documents.rejected}
+          label={t('rejected')}
+          hasSearch={true}
+          isLoading={isLoading}
+          firstPageSize={3}
+          pageSize={15}
+        />
+      </TabsContent>
+    </Tabs>
   );
 }
