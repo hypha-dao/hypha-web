@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
   HardDrive,
+  HandCoins,
   Coins,
   FileCheck2,
   Orbit,
@@ -119,6 +120,7 @@ export function AiLeftPanel() {
         | 'agreements'
         | 'members'
         | 'treasury'
+        | 'rewards'
         | 'memory',
     ) => {
       if (!spaceSlug) return false;
@@ -172,6 +174,13 @@ export function AiLeftPanel() {
         icon: Coins,
         href: `/${lang}/dho/${spaceSlug}/treasury`,
         active: isSectionActive('treasury'),
+      },
+      {
+        key: 'rewards',
+        label: 'Rewards',
+        icon: HandCoins,
+        href: `/${lang}/dho/${spaceSlug}/rewards`,
+        active: isSectionActive('rewards'),
       },
       {
         key: 'memory',
