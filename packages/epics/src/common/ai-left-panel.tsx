@@ -557,9 +557,7 @@ export function AiLeftPanel() {
 
     return (
       <>
-        <SidebarHeader className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[1.75rem_minmax(0,1fr)_1.75rem] items-center gap-3 border-b border-border bg-background-2 px-4 py-2">
-          <div className="h-7 w-7 shrink-0" aria-hidden />
-          <div className="min-w-0 px-4" aria-hidden />
+        <SidebarHeader className="flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-end border-b border-border bg-background-2 px-4 py-2">
           <div className="flex h-7 w-7 shrink-0 items-center justify-end">
             {triggerButton}
           </div>
