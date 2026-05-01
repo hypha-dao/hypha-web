@@ -10,6 +10,7 @@ import { useSpaceMutationsWeb3Rpc } from './useSpaceMutations.web3.rpc';
 import useSWRMutation from 'swr/mutation';
 import {
   schemaCreateSpace,
+  schemaCreateSpaceFiles,
   schemaCreateSpaceWeb2,
   schemaCreateSpaceWeb3,
 } from '../../validation';
@@ -156,7 +157,15 @@ export const useCreateSpaceOrchestrator = ({
 
   const { trigger: createSpace } = useSWRMutation(
     'createSpaceOrchestration',
-    async (_, { arg }: { arg: z.infer<typeof schemaCreateSpace> }) => {
+    async (
+      _,
+      {
+        arg,
+      }: {
+        arg: z.infer<typeof schemaCreateSpace> &
+          z.infer<typeof schemaCreateSpaceFiles>;
+      },
+    ) => {
       const web3SpaceId = (arg as any).web3SpaceId;
       let web3SpaceIdResult: number | undefined = undefined;
       let web3Executor: string | undefined = undefined;
