@@ -188,7 +188,7 @@ export function AiPanelHeader({
         )}
       </div>
 
-      <div className="min-w-0 px-3">
+      <div className="min-w-0 px-4">
         <div className="relative mx-auto w-full min-w-0 max-w-[13.5rem]">
           {canOpenSpaceMenu ? (
             <DropdownMenu
