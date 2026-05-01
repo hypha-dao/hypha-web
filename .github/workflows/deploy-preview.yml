@@ -141,12 +141,18 @@ jobs:
 
       - name: Post Schema Diff Comment to PR
         if: needs.detect-changes.outputs.has_migrations == 'true'
+        id: schema_diff
         continue-on-error: true
         uses: neondatabase/schema-diff-action@v1
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
           compare_branch: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
+
+      - name: Report schema diff failure
+        if: always() && needs.detect-changes.outputs.has_migrations == 'true' && steps.schema_diff.outcome == 'failure'
+        run: |
+          echo "⚠️ Schema diff comment failed. Please inspect Neon action logs for this run." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build Project Artifacts
         env:
