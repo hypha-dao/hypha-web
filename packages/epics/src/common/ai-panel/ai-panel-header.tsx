@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronsUpDown, Menu, Sparkles } from 'lucide-react';
+import { ChevronsUpDown, PanelLeftClose, Sparkles } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -288,7 +288,7 @@ export function AiPanelHeader({
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >
-            <Menu className="h-3.5 w-3.5" />
+            <PanelLeftClose className="h-3.5 w-3.5" />
           </button>
         ) : null}
       </div>

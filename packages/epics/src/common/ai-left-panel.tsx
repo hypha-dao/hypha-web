@@ -514,9 +514,9 @@ export function AiLeftPanel() {
 
     return (
       <>
-        <SidebarHeader className="min-h-[var(--menu-top-height,70px)] items-center justify-center border-b border-border bg-background-2 p-2">
+        <SidebarHeader className="min-h-[var(--menu-top-height,70px)] border-b border-border bg-background-2 p-2">
           <div
-            className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70"
+            className="ml-auto flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70"
             onMouseEnter={handleHeaderIconMouseEnter}
             aria-hidden
           >
