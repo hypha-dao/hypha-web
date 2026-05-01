@@ -5,7 +5,6 @@ import { Person } from '@hypha-platform/core/client';
 export interface Space {
   id: number;
   logoUrl?: string | null;
-  ecosystemLogoUrl?: string | null;
   ecosystemLogoUrlLight?: string | null;
   ecosystemLogoUrlDark?: string | null;
   leadImage?: string | null;
@@ -38,7 +37,6 @@ export interface CreateSpaceInput {
   title: string;
   description: string;
   logoUrl?: string;
-  ecosystemLogoUrl?: string;
   ecosystemLogoUrlLight?: string;
   ecosystemLogoUrlDark?: string;
   leadImage?: string;
@@ -53,7 +51,6 @@ export interface UpdateSpaceInput {
   title?: string;
   description?: string;
   logoUrl?: string | null;
-  ecosystemLogoUrl?: string | null;
   ecosystemLogoUrlLight?: string | null;
   ecosystemLogoUrlDark?: string | null;
   leadImage?: string | null;

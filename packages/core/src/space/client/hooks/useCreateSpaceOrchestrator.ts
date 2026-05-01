@@ -164,7 +164,6 @@ export const useCreateSpaceOrchestrator = ({
       const uploadedFileUrls: {
         logoUrl?: string;
         leadImage?: string;
-        ecosystemLogoUrl?: string;
         ecosystemLogoUrlLight?: string;
         ecosystemLogoUrlDark?: string;
       } = {};
@@ -172,14 +171,12 @@ export const useCreateSpaceOrchestrator = ({
       try {
         const logoUrl = (arg as any).logoUrl;
         const leadImage = (arg as any).leadImage;
-        const ecosystemLogoUrl = (arg as any).ecosystemLogoUrl;
         const ecosystemLogoUrlLight = (arg as any).ecosystemLogoUrlLight;
         const ecosystemLogoUrlDark = (arg as any).ecosystemLogoUrlDark;
 
         if (
           logoUrl ||
           leadImage ||
-          ecosystemLogoUrl ||
           ecosystemLogoUrlLight ||
           ecosystemLogoUrlDark
         ) {
@@ -209,18 +206,6 @@ export const useCreateSpaceOrchestrator = ({
             );
           } else if (typeof leadImage === 'string' && leadImage) {
             uploadedFileUrls.leadImage = leadImage;
-          }
-
-          if (ecosystemLogoUrl instanceof File) {
-            uploadPromises.push(
-              uploadImage([ecosystemLogoUrl]).then((result) => {
-                if (result?.[0]?.ufsUrl) {
-                  uploadedFileUrls.ecosystemLogoUrl = result[0].ufsUrl;
-                }
-              }),
-            );
-          } else if (typeof ecosystemLogoUrl === 'string' && ecosystemLogoUrl) {
-            uploadedFileUrls.ecosystemLogoUrl = ecosystemLogoUrl;
           }
 
           if (ecosystemLogoUrlLight instanceof File) {
@@ -315,7 +300,6 @@ export const useCreateSpaceOrchestrator = ({
           ...inputCreateSpaceWeb2,
           logoUrl: uploadedFileUrls.logoUrl,
           leadImage: uploadedFileUrls.leadImage,
-          ecosystemLogoUrl: uploadedFileUrls.ecosystemLogoUrl,
           ecosystemLogoUrlLight: uploadedFileUrls.ecosystemLogoUrlLight,
           ecosystemLogoUrlDark: uploadedFileUrls.ecosystemLogoUrlDark,
         };

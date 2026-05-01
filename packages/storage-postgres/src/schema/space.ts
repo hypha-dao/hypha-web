@@ -23,7 +23,6 @@ export const spaces = pgTable(
   {
     id: serial('id').primaryKey(),
     logoUrl: text('logo_url'),
-    ecosystemLogoUrl: text('ecosystem_logo_url'),
     ecosystemLogoUrlLight: text('ecosystem_logo_url_light'),
     ecosystemLogoUrlDark: text('ecosystem_logo_url_dark'),
     leadImage: text('lead_image'),

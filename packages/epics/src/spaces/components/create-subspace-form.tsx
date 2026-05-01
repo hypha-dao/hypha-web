@@ -76,7 +76,6 @@ export const CreateSubspaceForm = ({
         onSubmit={(values) => {
           // Subspace creation does not use root-only ecosystem branding fields.
           const {
-            ecosystemLogoUrl: _ecosystemLogoUrl,
             ecosystemLogoUrlLight: _ecosystemLogoUrlLight,
             ecosystemLogoUrlDark: _ecosystemLogoUrlDark,
             ...createValues
