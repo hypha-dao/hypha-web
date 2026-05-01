@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronsUpDown, PanelLeftClose, Sparkles } from 'lucide-react';
+import { ChevronsUpDown, Menu, Sparkles } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -173,20 +173,7 @@ export function AiPanelHeader({
 
   return (
     <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[1.75rem_minmax(0,1fr)_1.75rem] items-center gap-3 border-b border-border bg-background-2 px-4 py-2">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
-        {currentIcon ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={currentIcon}
-              alt={currentTitle}
-              className="h-full w-full object-cover"
-            />
-          </>
-        ) : (
-          <Sparkles className="h-4 w-4 text-muted-foreground" />
-        )}
-      </div>
+      <div className="h-7 w-7 shrink-0" aria-hidden />
 
       <div className="min-w-0 px-4">
         <div className="relative mx-auto w-full min-w-0 max-w-[13.5rem]">
@@ -199,10 +186,26 @@ export function AiPanelHeader({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
+                  className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
                   aria-label={tNavigation('mySpaces')}
                 >
-                  <span className="max-w-[9rem] truncate text-center">
+                  <span className="h-5 w-5 shrink-0 overflow-hidden rounded-md ring-1 ring-border/60">
+                    {currentIcon ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={currentIcon}
+                          alt={currentTitle}
+                          className="h-full w-full object-cover"
+                        />
+                      </>
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center bg-muted">
+                        <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                      </span>
+                    )}
+                  </span>
+                  <span className="max-w-[8.5rem] truncate text-center">
                     {currentTitle}
                   </span>
                   <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -251,8 +254,24 @@ export function AiPanelHeader({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="inline-flex h-8 w-full min-w-0 items-center justify-center rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground/90">
-              <span className="max-w-[9rem] truncate text-center">
+            <div className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground/90">
+              <span className="h-5 w-5 shrink-0 overflow-hidden rounded-md ring-1 ring-border/60">
+                {currentIcon ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={currentIcon}
+                      alt={fallbackTitle}
+                      className="h-full w-full object-cover"
+                    />
+                  </>
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center bg-muted">
+                    <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                  </span>
+                )}
+              </span>
+              <span className="max-w-[8.5rem] truncate text-center">
                 {fallbackTitle}
               </span>
             </div>
@@ -269,7 +288,7 @@ export function AiPanelHeader({
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >
-            <PanelLeftClose className="h-3.5 w-3.5" />
+            <Menu className="h-3.5 w-3.5" />
           </button>
         ) : null}
       </div>

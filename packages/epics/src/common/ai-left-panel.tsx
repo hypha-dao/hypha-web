@@ -13,6 +13,7 @@ import {
   Coins,
   FileCheck2,
   Orbit,
+  Menu,
   Radio,
   SlidersHorizontal,
   Sparkles,
@@ -100,18 +101,6 @@ export function AiLeftPanel() {
       return (await response.json()) as Space[];
     },
   );
-  const activeSpaceFromList = useMemo(
-    () => allSpaces.find((space) => space.slug === spaceSlug),
-    [allSpaces, spaceSlug],
-  );
-  const activeSpaceIcon =
-    resolveSpaceDisplayLogoUrl(activeSpaceFromList) ??
-    resolveSpaceDisplayLogoUrl(activeSpaces[0]) ??
-    null;
-  const activeSpaceTitle =
-    activeSpaceFromList?.title?.trim() ||
-    activeSpaces[0]?.title?.trim() ||
-    t('title');
   const isSectionActive = useCallback(
     (
       section:
@@ -529,19 +518,9 @@ export function AiLeftPanel() {
           <div
             className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70"
             onMouseEnter={handleHeaderIconMouseEnter}
+            aria-hidden
           >
-            {activeSpaceIcon ? (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={activeSpaceIcon}
-                  alt={activeSpaceTitle}
-                  className="h-full w-full object-cover"
-                />
-              </>
-            ) : (
-              <Sparkles className="h-4 w-4 text-muted-foreground" />
-            )}
+            <Menu className="h-4 w-4 text-muted-foreground" />
           </div>
         </SidebarHeader>
         <SidebarContent
