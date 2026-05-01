@@ -34,7 +34,7 @@ export const useIsDelegate = ({
   });
 
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
-    spaceId: Number(spaceId),
+    spaceId,
   });
 
   const spaceMembers = spaceDetails?.members ?? [];

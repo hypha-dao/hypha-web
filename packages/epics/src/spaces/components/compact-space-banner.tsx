@@ -1,3 +1,5 @@
+'use client';
+
 import * as React from 'react';
 import { LinkIcon } from '../../common/link-icon';
 import { LinkLabel } from '../../common/link-label';
@@ -36,10 +38,10 @@ export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
   '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
 );
 
-/** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
+/** Purpose / description — fixed to four lines of text height; scroll inside this frame when longer. */
 const DESCRIPTION_SCROLL_BOX = cn(
   'w-full max-w-full min-h-0 max-h-[4lh] overflow-y-auto overscroll-y-contain touch-pan-y',
-  'text-2 leading-[1.5] sm:max-h-[min(45vh,280px)] sm:max-w-[50%]',
+  'text-2 leading-[1.5] sm:max-w-[50%]',
   '[scrollbar-gutter:stable]',
   '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
@@ -57,6 +59,17 @@ type CompactSpaceBannerCommon = {
   /** Localized accessible name for the description region (screen readers). */
   descriptionLabel: string;
   footerTrailing?: React.ReactNode;
+  /**
+   * When set, a host is reserved in the **footer** for portaled DHO join/create actions
+   * (`DhoStickySpaceChrome`). The banner is a client module so the ref is applied; server-only
+   * RSCs cannot receive refs from `cloneElement`—they must be client.
+   */
+  actionsPortalHostRef?: React.Ref<HTMLDivElement | null> | null;
+  /**
+   * Placed on the hairline between the hero (image area) and the metadata/actions strip so
+   * sticky chrome can engage when that line reaches the app header (`--menu-top-height`).
+   */
+  delimiterSentinelRef?: React.Ref<HTMLDivElement | null> | null;
   className?: string;
 };
 
@@ -97,6 +110,8 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     defaultLeadImageSrc,
     descriptionLabel,
     footerTrailing,
+    actionsPortalHostRef,
+    delimiterSentinelRef,
     className,
   } = props;
   const showSpaceStats = isSpaceWithStats(props);
@@ -128,7 +143,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-xl border border-[#30363d]',
+        'relative overflow-hidden rounded-lg border border-[#30363d]',
         'shadow-[0_24px_48px_-12px_rgba(5,33,22,0.55)]',
         /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
         'px-8 pt-8 pb-0',
@@ -285,11 +300,16 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
         ) : null}
 
         {/* Hairline + metadata: one flex item so gap-5 does not double-space above the strip */}
-        {footerLeading || showSpaceStats || footerTrailing ? (
+        {footerLeading ||
+        showSpaceStats ||
+        footerTrailing ||
+        actionsPortalHostRef ? (
           <div className="flex flex-col">
             <div
+              ref={delimiterSentinelRef ?? undefined}
               className="h-px w-full shrink-0 bg-white/12"
               role="presentation"
+              aria-hidden
             />
             <div className="flex flex-col gap-3 gap-x-5 py-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
@@ -328,9 +348,23 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
                 ) : null}
               </div>
 
-              {footerTrailing ? (
-                <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
+              {footerTrailing || actionsPortalHostRef ? (
+                <div
+                  className={cn(
+                    'flex min-w-0 flex-1 flex-col items-stretch justify-end gap-2',
+                    'sm:max-w-[min(100%,50rem)] sm:flex-initial sm:flex-row sm:flex-nowrap',
+                    'sm:items-center sm:justify-end sm:gap-2.5',
+                    '[&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center',
+                  )}
+                >
                   {footerTrailing}
+                  {actionsPortalHostRef ? (
+                    <div
+                      ref={actionsPortalHostRef}
+                      className="flex min-w-0 w-full shrink-0 flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-2.5"
+                      data-dho-banner-actions-host=""
+                    />
+                  ) : null}
                 </div>
               ) : null}
             </div>

@@ -11,6 +11,7 @@ type SignalGridContainerProps = {
     order?: Order<Coherence>;
   };
   signals: Coherence[];
+  isLoading?: boolean;
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
 };
@@ -19,6 +20,7 @@ export const SignalGridContainer = ({
   basePath,
   pagination,
   signals,
+  isLoading = false,
   refresh,
   onSignalClick,
 }: SignalGridContainerProps) => {
@@ -32,7 +34,7 @@ export const SignalGridContainer = ({
 
   return (
     <SignalGrid
-      isLoading={false}
+      isLoading={isLoading}
       basePath={basePath}
       signals={paginatedSignals.map((signal) => ({
         ...signal,

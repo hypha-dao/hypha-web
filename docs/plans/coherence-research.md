@@ -292,7 +292,7 @@ CreateSignalForm
   page.tsx        → returns null (placeholder for future aside content)
 ```
 
-### 5.2 Navigation Tabs Update (`_components/navigation-tabs.tsx`)
+### 5.2 DHO workspace nav (replaces former horizontal tabs)
 
 ```diff
 + import { getDhoPathCoherence } from '../@tab/coherence/constants';
@@ -513,7 +513,7 @@ The following already exist on the current branch and do **not** need to be crea
 | core | `src/coherence/server.ts` | **Delete** (replaced by server/ directory) |
 | core | `src/client.ts` | Add `export * from './coherence'` |
 | epics | `src/index.ts` | Add `export * from './coherence'` |
-| web | `_components/navigation-tabs.tsx` | Import + add Coherence tab |
+| web | `DhoSpaceWorkspace` + `getDhoPathCoherence` | Add Coherence item when flag on |
 | web | `[id]/layout.tsx` | Remove getFormatter, use formatDate |
 | i18n | `src/messages/en.json` | Add CoherenceTab namespace + Common.Coherence key |
 | i18n | `src/messages/de.json` | Add CoherenceTab namespace + Common.Coherence key |

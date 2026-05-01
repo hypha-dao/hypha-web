@@ -50,9 +50,14 @@ function useMenuTopOffsetPx(): number {
  * `CompactSpaceBanner` so it reads as tier-2 chrome. Actions / nested-space move via portal so the
  * same React trees (hooks) transition between positions — pixel-identical Button UI.
  *
- * Note: `createPortal` remounts its subtree when the container DOM node changes (e.g. when
- * `actionsPortalTarget` swaps between in-flow and sticky targets). Stateful descendants reset;
- * lift state above the portaled subtree if that becomes a problem.
+ * **In-flow (not stuck):** portaled actions can sit in the banner footer host.
+ * **Stuck (md+):** when the **hairline** between hero and metadata (`delimiterSentinelRef`
+ * on `CompactSpaceBanner`) reaches the bottom of `MenuTop` (`--menu-top-height`), the
+ * secondary bar becomes visible; its inner width uses the same
+ * max-width + `px-4` as DHO `Container size="lg"` so it aligns with the banner edges.
+ *
+ * Note: `createPortal` remounts when `actionsPortalTarget` changes; stateful portaled
+ * children reset across host swaps.
  */
 export function DhoStickySpaceChrome({
   breadcrumbsRow,
@@ -65,8 +70,8 @@ export function DhoStickySpaceChrome({
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
   const menuTopPx = useMenuTopOffsetPx();
-  /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
-  const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
+  /** Top edge of hairline between hero and footer strip — aligns with user-visible “delimiter” */
+  const bannerDelimiterSentinelRef = React.useRef<HTMLDivElement>(null);
 
   const [flowActionsEl, setFlowActionsEl] =
     React.useState<HTMLDivElement | null>(null);
@@ -80,10 +85,38 @@ export function DhoStickySpaceChrome({
   const stuckRef = React.useRef(false);
 
   const [flowMinH, setFlowMinH] = React.useState(44);
+  const [inBannerActionsHost, setInBannerActionsHost] =
+    React.useState<HTMLDivElement | null>(null);
+  const setInBannerHostRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      setInBannerActionsHost(node);
+    },
+    [],
+  );
+
+  const bannerWithActionsHost = React.useMemo(() => {
+    if (!React.isValidElement(banner)) return banner;
+    return React.cloneElement(
+      banner as React.ReactElement<{
+        actionsPortalHostRef?: React.Ref<HTMLDivElement> | null;
+        delimiterSentinelRef?: React.Ref<HTMLDivElement | null>;
+      }>,
+      {
+        actionsPortalHostRef: setInBannerHostRef,
+        delimiterSentinelRef: bannerDelimiterSentinelRef,
+      },
+    );
+  }, [banner, setInBannerHostRef]);
+
+  const actionsMeasureEl = React.useMemo(() => {
+    if (stuck) return stickyActionsEl;
+    if (inBannerActionsHost) return inBannerActionsHost;
+    return flowActionsEl;
+  }, [stuck, stickyActionsEl, inBannerActionsHost, flowActionsEl]);
 
   React.useLayoutEffect(() => {
-    const el = flowActionsEl;
-    if (!el || stuck) return;
+    const el = actionsMeasureEl;
+    if (!el) return;
     const measure = () => {
       const h = Math.ceil(el.getBoundingClientRect().height);
       if (h > 0) setFlowMinH(h);
@@ -92,14 +125,15 @@ export function DhoStickySpaceChrome({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [stuck, flowActionsEl]);
+  }, [stuck, actionsMeasureEl]);
 
   React.useEffect(() => {
-    const sentinel = bannerBottomSentinelRef.current;
+    const sentinel = bannerDelimiterSentinelRef.current;
     if (!sentinel) return;
 
     const mq = window.matchMedia('(min-width: 768px)');
-    const HYST = 12;
+    /** Hysteresis (px) so the bar does not flicker at the threshold. */
+    const HYST = 8;
     let raf = 0;
 
     const tick = () => {
@@ -111,10 +145,11 @@ export function DhoStickySpaceChrome({
         }
         return;
       }
-      const bannerBottom = sentinel.getBoundingClientRect().bottom;
+      /* Top of delimiter hairline: engage when it meets the bottom edge of MenuTop (same Y as menu header bottom). */
+      const delimiterTop = sentinel.getBoundingClientRect().top;
       let next = stuckRef.current;
-      if (!next && bannerBottom <= menuTopPx) next = true;
-      if (next && bannerBottom >= menuTopPx + HYST) next = false;
+      if (!next && delimiterTop <= menuTopPx) next = true;
+      if (next && delimiterTop > menuTopPx + HYST) next = false;
       if (next !== stuckRef.current) {
         stuckRef.current = next;
         setStuck(next);
@@ -140,7 +175,9 @@ export function DhoStickySpaceChrome({
 
   const logoSrc = logoUrl || defaultLogoSrc;
 
-  const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
+  const actionsPortalTarget = stuck
+    ? stickyActionsEl
+    : inBannerActionsHost ?? flowActionsEl;
   const nestedPortalTarget = nestedSpacesSlot ? flowNestedEl : null;
 
   return (
@@ -154,13 +191,20 @@ export function DhoStickySpaceChrome({
           'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/80',
           'transition-[opacity,transform] duration-200 ease-linear motion-reduce:transition-none',
           stuck
-            ? 'pointer-events-auto translate-y-0 opacity-100'
-            : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
+            ? 'pointer-events-auto visible translate-y-0 opacity-100'
+            : 'invisible -translate-y-1 opacity-0 motion-reduce:translate-y-0',
         )}
         style={{ top: 'var(--menu-top-height, 4rem)' }}
         aria-hidden={!stuck}
       >
-        <div className="mx-auto flex min-h-11 max-w-container-2xl items-center gap-3 px-4 py-2.5 sm:px-6 md:min-h-[52px] md:py-3 md:px-8">
+        <div
+          className={cn(
+            /* Match DHO `Container size="lg" className="... px-4!"` so the bar lines up with the space banner */
+            'mx-auto flex w-full min-w-0 min-h-11 items-center gap-3 px-4 py-2.5',
+            'max-w-container-sm md:max-w-container-md lg:max-w-container-xl xl:max-w-container-2xl',
+            'md:min-h-[52px] md:py-3',
+          )}
+        >
           <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
             <Avatar className={STICKY_SPACE_CHROME_AVATAR_CLASSNAME}>
               <AvatarImage
@@ -197,20 +241,15 @@ export function DhoStickySpaceChrome({
           ) : null}
         </div>
 
-        <div className="relative">
-          {banner}
-          <div
-            ref={bannerBottomSentinelRef}
-            className="pointer-events-none absolute bottom-0 left-0 h-px w-full opacity-0"
-            aria-hidden
-          />
-        </div>
+        <div className="relative">{bannerWithActionsHost}</div>
 
         <div
           ref={setFlowActionsEl}
           className={cn(
-            /* Same min-height as HumanChatPanelTabs so bottom borders align with chat panel */
-            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
+            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center',
+            /* Only reserve the actions row when portaling under the card (not into banner, not stuck). */
+            !inBannerActionsHost &&
+              'md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
             stuck && 'pointer-events-none invisible opacity-0',
           )}
           style={stuck ? { minHeight: flowMinH } : undefined}

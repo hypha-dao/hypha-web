@@ -7,7 +7,7 @@ import { BasePage } from './base.page';
  * URL pattern: /en/dho/:spaceSlug/coherence
  *
  * This page object covers:
- * - Navigation tab in DHO layout
+ * - Coherence link in DHO workspace nav (left rail or mobile sheet)
  * - Coherence page main content (signal section)
  * - Search input
  * - "New Signal" button
@@ -19,10 +19,9 @@ export class CoherencePage extends BasePage {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   /**
-   * The "Coherence" tab in the DHO navigation bar.
-   * Rendered as role="tab" (Radix TabsTrigger with asChild merges onto the Link).
+   * The Signals tab (URL segment `coherence`) in the DHO workspace nav.
    */
-  readonly coherenceTab: Locator;
+  readonly coherenceNavLink: Locator;
 
   // ── Page content ───────────────────────────────────────────────────────────
   /** Main "Signals" section heading / label */
@@ -45,10 +44,7 @@ export class CoherencePage extends BasePage {
     super(page);
     this.spaceSlug = spaceSlug;
 
-    // Navigation tab — TabsTrigger with asChild merges role="tab" onto the <a> Link
-    this.coherenceTab = page.getByRole('tab', {
-      name: /coherence|cohérence|coerência|coherencia|kohärenz/i,
-    });
+    this.coherenceNavLink = page.getByTestId('dho-workspace-nav-coherence');
 
     // Signal section label (SectionFilter: "{label} | {count}"; count omitted when 0)
     this.signalsSectionHeading = page.getByText(
@@ -78,7 +74,7 @@ export class CoherencePage extends BasePage {
 
   /**
    * Navigate to the DHO agreements tab — a reliable starting point
-   * from which we can click the Coherence navigation tab.
+   * from which we can click the Coherence nav link.
    */
   async openDhoPage() {
     await this.page.goto(`/en/dho/${this.spaceSlug}/agreements`);

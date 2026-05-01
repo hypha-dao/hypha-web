@@ -4,7 +4,6 @@ import { FC } from 'react';
 import { AssetCard } from './asset-card';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
-import Link from 'next/link';
 import type { AssetItem } from '../../hooks/use-user-assets';
 
 export type { AssetItem };
@@ -24,7 +23,7 @@ export const AssetsList: FC<AssetsListProps> = ({
   const { lang } = useParams<{ lang: Locale }>();
   return (
     <div className="w-full">
-      <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+      <div className="mt-2 grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {assets.map((asset, index) => (
           // <Link
           //   key={`${asset.slug}_${index}`}
@@ -42,7 +41,7 @@ export const AssetsList: FC<AssetsListProps> = ({
       </div>
 
       {isLoading && (
-        <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+        <div className="mt-2 grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <AssetCard isLoading />
           <AssetCard isLoading />
           <AssetCard isLoading />

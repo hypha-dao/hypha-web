@@ -53,15 +53,15 @@ export const InnerSpaceCard: React.FC<InnerSpaceCardProps> = ({
   const format = useFormatter();
   return (
     <Card className={cn('h-full w-full', className)}>
-      <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
+      <CardHeader className="h-[150px] overflow-hidden rounded-tl-lg rounded-tr-lg p-0">
         <Skeleton
           width="100%"
           height="100%"
           loading={isLoading}
-          className="rounded-tl-xl rounded-tr-xl object-cover"
+          className="rounded-tl-lg rounded-tr-lg object-cover"
         >
           <Image
-            className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
+            className="h-full w-full rounded-tl-lg rounded-tr-lg object-cover"
             src={leadImageUrl as string}
             alt={title as string}
             width={1200}

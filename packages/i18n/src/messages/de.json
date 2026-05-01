@@ -3,8 +3,10 @@
     "Assignments": "Zuweisungen",
     "Members": "Mitglieder",
     "memberRoleLabel": "Mitglied",
+    "delegateBadge": "Delegierter",
     "delegatedVotingMemberLabel": "Delegiertes Stimmmitglied",
     "Treasury": "Schatzkammer",
+    "Rewards": "Belohnungen",
     "Agreements": "Vereinbarungen",
     "Spaces": "Spaces",
     "loadMore": "Mehr laden",
@@ -23,7 +25,9 @@
     "copyWalletAddress": "Wallet-Adresse kopieren",
     "walletAddressCopied": "Kopiert!",
     "otherMembers": "+ {count} weitere Mitglieder",
+    "Ecosystem": "Ökosystem",
     "exploreSpaces": "Spaces erkunden",
+    "searchActions": "Aktionen durchsuchen",
     "findCategory": "Kategorie suchen",
     "noSpacesYet": "Noch keine Spaces erstellt oder beigetreten. Erkunden Sie unser Netzwerk und treten Sie einem Space bei oder erstellen Sie Ihren eigenen",
     "close": "Schließen",
@@ -42,6 +46,9 @@
     "publish": "Veröffentlichen",
     "invalidTransactions": "Ungültige Transaktionen",
     "Coherence": "Kohärenz",
+    "Signals": "Signale",
+    "Artifact": "Artefakt",
+    "Wiki": "Memory",
     "uploadLeadImage": {
       "cropTitle": "Ein Bild hochladen",
       "cropDescription": "Passen Sie den Ausschnitt an und speichern Sie. Ziehen Sie zum Verschieben und zoomen Sie, um den Bannerbereich auszufüllen (JPEG, PNG oder WebP — max. 4 MB).",
@@ -136,7 +143,8 @@
     "Dashboard": "DHO Übersicht",
     "actionButtons": {
       "spaceSettings": "Space-Einstellungen",
-      "create": "Erstellen"
+      "create": "Erstellen",
+      "createProposal": "Vorschlag erstellen"
     },
     "nestedSpacesButton": {
       "label": "Space-Navigation",
@@ -144,9 +152,21 @@
       "noAccess": "Sie haben keinen Zugriff, um die Space-Navigation anzuzeigen."
     }
   },
+  "DhoWorkspaceNav": {
+    "spaceNavAriaLabel": "Space-Bereiche",
+    "openSpaceMenu": "Space-Menü",
+    "spaceMenuTitle": "Space",
+    "closeMenu": "Schließen",
+    "spaceMapLoading": "Space-Karte wird geladen",
+    "expandNavLabels": "Bereichsnamen anzeigen",
+    "collapseNavLabels": "Bereichsnamen ausblenden",
+    "openSpaceSettings": "Space-Einstellungen"
+  },
   "SpaceSettingsAction": {
     "title": "Space-Einstellungen",
     "content": "Greifen Sie auf die Einstellungen Ihres Spaces zu und verwalten Sie sie, einschließlich Erscheinungsbild, Struktur, Methoden, Mitgliedschaft und Schatzkammer.",
+    "searchSettings": "Einstellungen durchsuchen…",
+    "noSettingsMatch": "Keine Einstellungen entsprechen Ihrer Suche.",
     "groups": {
       "overview": "Überblick",
       "agreements": "Vereinbarungen",
@@ -291,8 +311,10 @@
     }
   },
   "SelectNavigationAction": {
-    "title": "Space-Navigation",
-    "content": "Navigieren Sie durch all Ihre Spaces in einer einzigen interaktiven Karte, um zu sehen, wie sie miteinander verbunden sind. Besuchen Sie verschachtelte Spaces, erkunden Sie Space-zu-Space-Mitgliedschaften und verfolgen Sie Wertflüsse in Ihrem direkten Ökosystem.",
+    "title": "Ökosystem",
+    "mapRegionAriaLabel": "Karte der Space-Beziehungen",
+    "dataPanelAriaLabel": "Verschachtelte Spaces, Suche und Aktionen",
+    "content": "",
     "tabs": {
       "nestedSpaces": "Verschachtelte Spaces",
       "spaceToSpace": "Space-zu-Space",
@@ -312,18 +334,22 @@
       "noAccessAddSpace": "Sie haben keinen Zugriff, um Spaces zu dieser Organisation hinzuzufügen.",
       "visitSpace": "Space besuchen",
       "searchSpaces": "Spaces durchsuchen",
-      "noSpacesFound": "Keine Spaces gefunden"
+      "noSpacesFound": "Keine Spaces gefunden",
+      "panelListHeading": "Spaces"
     }
   },
   "AgreementsTab": {
     "onVoting": "In Abstimmung",
     "accepted": "Akzeptiert",
     "rejected": "Abgelehnt",
+    "refused": "Verweigert",
     "searchDocuments": "Dokumente suchen",
     "listIsEmpty": "Liste ist leer"
   },
   "MembersTab": {
     "searchMembers": "Mitglieder suchen",
+    "nestedSpaceTypeLabel": "Space",
+    "spaceDelegateLabel": "Delegierte*r",
     "delegateVoting": "Stimmrecht delegieren",
     "listIsEmpty": "Liste ist leer",
     "loading": "Wird geladen...",
@@ -353,7 +379,8 @@
       "success": "Delegierung erfolgreich abgeschlossen!",
       "errors": {
         "selectMember": "Bitte wählen Sie ein Mitglied aus",
-        "selectSpace": "Bitte wählen Sie einen Space aus"
+        "selectSpace": "Bitte wählen Sie einen Space aus",
+        "undelegateFailed": "Die Delegierung konnte nicht aufgehoben werden. Bitte erneut versuchen."
       }
     }
   },
@@ -366,6 +393,7 @@
     "listIsEmpty": "Liste ist leer",
     "loadMoreAssets": "Mehr Assets laden",
     "transactions": "Transaktionen",
+    "tabVaults": "Vaults",
     "searchTransactions": "Transaktionen suchen",
     "noTransactionsFound": "Keine Transaktionen gefunden",
     "loadMoreTransactions": "Mehr Transaktionen laden",
@@ -387,8 +415,12 @@
       "joinSpaceToUpdateBackingVault": "Treten Sie dem Space bei, um den Sicherungsvault zu aktualisieren"
     },
     "assetCard": {
+      "tokenIconAlt": "{name}-Token",
+      "collateralType": "Sicherheit",
+      "referencePrice": "Preis",
+      "issuanceLabel": "Ausgabe",
       "fromSpace": "von {spaceTitle}",
-      "totalIssuance": "Gesamtausgabe: {value}",
+      "totalIssuance": "{value}",
       "createdOn": "Erstellt am {date}",
       "mutualCredit": {
         "debtBadge": "Schuldet {amount} {symbol}",
@@ -833,7 +865,8 @@
     "exchangeDepositProposalConfirming": "Bestätigung läuft...",
     "exchangeDepositProposalTitle": "{amount} {symbol} einzahlen – Escrow abschließen (#{escrowId})",
     "exchangeDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um den Tausch mit {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um die Investition in {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um die Investition in {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}.",
+    "dismissBanner": "Banner schließen"
   },
   "AgreementFlow": {
     "labels": {
@@ -1975,11 +2008,14 @@
     "callPaneResizeSpeakerShare": "Sprecher*in und Bildschirmfreigabe skalieren"
   },
   "CoherenceTab": {
+    "wiki": "Memory",
+    "artifact": "Artefakt",
     "signals": "Signale",
-    "signInToSee": "Bitte melden Sie sich an, um Signale, Space Memory und Gespräche zu sehen",
+    "signInToSee": "Bitte melden Sie sich an, um Signale, Artefakte und Gespräche zu sehen",
     "searchSignals": "Signale suchen...",
     "newSignal": "Neues Signal",
     "backToCoherence": "Zurück zur Kohärenz",
+    "backToSignals": "Zurück zu Signalen",
     "all": "Alle",
     "listIsEmpty": "Liste ist leer",
     "loadMore": "Mehr laden",

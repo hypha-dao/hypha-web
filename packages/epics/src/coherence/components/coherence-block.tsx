@@ -2,6 +2,7 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Empty } from '../../common/empty';
+import { DhoTabPage } from '../../common';
 import {
   Coherence,
   useFindCoherences,
@@ -12,7 +13,6 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
 import { SignalSection } from './signal-section';
-import { SpaceMemorySection } from './space-memory-section';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 
 type CoherenceBlockProps = {
@@ -20,7 +20,6 @@ type CoherenceBlockProps = {
   spaceSlug: string;
   order?: CoherenceOrder;
   humanChatEnabled?: boolean;
-  spaceMemoryEnabled?: boolean;
 };
 
 export function CoherenceBlock({
@@ -28,7 +27,6 @@ export function CoherenceBlock({
   spaceSlug,
   order,
   humanChatEnabled = false,
-  spaceMemoryEnabled = false,
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const [hideArchived, setHideArchived] = React.useState(true);
@@ -69,31 +67,24 @@ export function CoherenceBlock({
   const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
 
   return (
-    <div className="flex flex-col gap-6 py-4">
+    <DhoTabPage>
       {isAuthenticated ? (
-        <div className="rounded-2xl border border-border/60 bg-card/35 shadow-sm backdrop-blur-[2px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/40 dark:supports-[backdrop-filter]:bg-card/30">
-          <div className="flex flex-col gap-10 px-4 pb-8 pt-6 md:px-8 md:pb-10 md:pt-8">
-            <SignalSection
-              basePath={chatBasePath}
-              label={t('signals')}
-              hasSearch={true}
-              signals={signals ?? []}
-              isLoading={isSpaceLoading || isSignalsLoading}
-              firstPageSize={3}
-              pageSize={3}
-              refresh={refresh}
-              onSignalClick={onSignalClick}
-            />
-            {spaceMemoryEnabled ? (
-              <SpaceMemorySection spaceSlug={spaceSlug} />
-            ) : null}
-          </div>
-        </div>
+        <SignalSection
+          basePath={chatBasePath}
+          label={t('signals')}
+          hasSearch={true}
+          signals={signals ?? []}
+          isLoading={isSpaceLoading || isSignalsLoading}
+          firstPageSize={6}
+          pageSize={50}
+          refresh={refresh}
+          onSignalClick={onSignalClick}
+        />
       ) : (
         <Empty>
           <p>{t('signInToSee')}</p>
         </Empty>
       )}
-    </div>
+    </DhoTabPage>
   );
 }

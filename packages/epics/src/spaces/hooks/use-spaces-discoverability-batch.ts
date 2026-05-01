@@ -30,6 +30,13 @@ export function useSpacesDiscoverabilityBatch({
     async ([_, ids]) => {
       const results = await Promise.all(
         ids.map(async (spaceId) => {
+          if (
+            typeof spaceId !== 'number' ||
+            !Number.isFinite(spaceId) ||
+            spaceId <= 0
+          ) {
+            return { spaceId, discoverability: undefined };
+          }
           try {
             const visibility = await publicClient.readContract(
               getSpaceVisibility({ spaceId: BigInt(spaceId) }),

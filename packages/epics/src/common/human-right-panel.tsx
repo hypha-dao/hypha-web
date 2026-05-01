@@ -224,7 +224,11 @@ function toUIMessage(
   resolveMemberAvatar?: (userId: string | undefined) => string | undefined,
   roomIdForAvatars?: string | null,
   clientForAvatars?: MatrixClient | null,
+  /** Roster-merged label (Mention tab / space members) — takes precedence over Matrix displaynames. */
+  resolveMessageMemberLabel?: (userId: string | undefined) => string,
 ): UIMessage {
+  const nameFor = (id: string | undefined) =>
+    (resolveMessageMemberLabel ?? resolveMemberLabel)(id);
   const resolveAvatarForUser = (userId: string | undefined) => {
     if (!userId) return undefined;
     return (
@@ -258,7 +262,7 @@ function toUIMessage(
 
   let replyTo: UIMessage['replyTo'];
   if (msg.inReplyToEventId) {
-    const authorLabel = resolveMemberLabel(msg.inReplyToSender);
+    const authorLabel = nameFor(msg.inReplyToSender);
     const excerpt =
       msg.inReplyToBodyPreview != null && msg.inReplyToBodyPreview !== ''
         ? msg.inReplyToBodyPreview
@@ -332,7 +336,7 @@ function toUIMessage(
     mediaSlots,
     formattedContentHtml:
       isMedia && !captionForMedia ? undefined : msg.formattedContentHtml,
-    senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
+    senderName: isCurrentUser ? undefined : nameFor(msg.sender),
     senderMatrixId: msg.sender,
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : memberAvatar,
     timestamp: msg.timestamp,
@@ -829,8 +833,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const resolveMentionMemberLabel = useCallback(
-    (userId: string) =>
-      mentionLabelByUserId.get(userId) ?? resolveMemberLabel(userId),
+    (userId: string | undefined) => {
+      if (userId == null || userId === '') {
+        return resolveMemberLabel(userId);
+      }
+      return mentionLabelByUserId.get(userId) ?? resolveMemberLabel(userId);
+    },
     [mentionLabelByUserId, resolveMemberLabel],
   );
 
@@ -869,6 +877,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
+  const resolveMentionMemberLabelRef = useRef(resolveMentionMemberLabel);
+  resolveMentionMemberLabelRef.current = resolveMentionMemberLabel;
 
   useEffect(() => {
     if (!roomId || !client) return;
@@ -876,11 +886,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       prev.map((m) => {
         const newSenderName =
           m.role === 'member' && m.senderMatrixId
-            ? resolveMemberLabelRef.current(m.senderMatrixId)
+            ? resolveMentionMemberLabelRef.current(m.senderMatrixId)
             : m.senderName;
         const newAuthorLabel =
           m.replyTo?.sourceUserId != null
-            ? resolveMemberLabelRef.current(m.replyTo.sourceUserId)
+            ? resolveMentionMemberLabelRef.current(m.replyTo.sourceUserId)
             : m.replyTo?.authorLabel;
 
         const nextReply =
@@ -929,7 +939,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         };
       }),
     );
-  }, [roomId, client, currentUserId, me?.name, me?.surname, t]);
+  }, [
+    roomId,
+    client,
+    currentUserId,
+    me?.name,
+    me?.surname,
+    t,
+    resolveMentionMemberLabel,
+  ]);
 
   // Backfill avatar on self-authored messages after useMe() resolves
   useEffect(() => {
@@ -1065,6 +1083,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 undefined,
                 targetRoomId,
                 matrixRef.current.client ?? null,
+                resolveMentionMemberLabelRef.current,
               ),
             ),
           );
@@ -1208,6 +1227,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 undefined,
                 targetRoomId,
                 matrixRef.current.client ?? null,
+                resolveMentionMemberLabelRef.current,
               ),
             ),
           );
@@ -1271,6 +1291,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             undefined,
             roomId,
             matrixRef.current.client ?? null,
+            resolveMentionMemberLabelRef.current,
           );
           const idx = prev.findIndex((m) => m.id === next.id);
           if (idx === -1) {
@@ -1366,7 +1387,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (pathname.includes('/dho/')) {
       const dhoId = spaceSlug ?? params?.id ?? parts[2];
       if (!dhoId) return `/${lang}/notification-centre`;
-      const activeTab = getActiveTabFromPath(pathname);
+      const activeTab = getActiveTabFromPath(pathname) ?? 'agreements';
       return `/${lang}/dho/${dhoId}/${activeTab}/notification-centre`;
     }
     if (parts[1] === 'profile' && parts.length >= 3) {

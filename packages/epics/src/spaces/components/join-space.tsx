@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, ErrorAlert } from '@hypha-platform/ui';
+import { Badge, Button, ErrorAlert } from '@hypha-platform/ui';
 import { useJoinSpace } from '../hooks/use-join-space';
 import { PersonIcon } from '@radix-ui/react-icons';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -200,23 +200,38 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
 
   const { isAuthenticated } = useAuthentication();
 
+  const showMemberBadge = (isMember || justJoined) && !showLoader;
+
   return (
     <div className="flex flex-col gap-2">
-      <Button
-        disabled={isButtonDisabled || !isAuthenticated}
-        onClick={handleJoinSpace}
-        className="min-w-[120px]"
-        colorVariant={isMember || justJoined ? 'neutral' : 'accent'}
-        variant={isMember || justJoined ? 'outline' : 'default'}
-        title={!isAuthenticated ? t('signIn') : buttonTitle}
-      >
-        {showLoader ? (
-          <Loader2 className="animate-spin" width={16} height={16} />
-        ) : (
-          <PersonIcon width={16} height={16} />
-        )}
-        <span className="hidden sm:block ml-2">{buttonTitle}</span>
-      </Button>
+      {showMemberBadge ? (
+        <Badge
+          variant="outline"
+          colorVariant="neutral"
+          role="status"
+          aria-label={t('alreadyMember')}
+          className="inline-flex h-10 w-fit max-w-full shrink-0 items-center gap-1.5 px-3 py-0 text-[11px] font-medium uppercase tracking-wide"
+        >
+          <PersonIcon width={14} height={14} className="shrink-0 opacity-90" />
+          <span className="truncate">{t('alreadyMember')}</span>
+        </Badge>
+      ) : (
+        <Button
+          disabled={isButtonDisabled || !isAuthenticated}
+          onClick={handleJoinSpace}
+          className="min-w-[120px]"
+          colorVariant="accent"
+          variant="default"
+          title={!isAuthenticated ? t('signIn') : buttonTitle}
+        >
+          {showLoader ? (
+            <Loader2 className="animate-spin" width={16} height={16} />
+          ) : (
+            <PersonIcon width={16} height={16} />
+          )}
+          <span className="hidden sm:block ml-2">{buttonTitle}</span>
+        </Button>
+      )}
 
       {isInviteOnly && isInviteError && (
         <ErrorAlert
