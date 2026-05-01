@@ -15,7 +15,11 @@
         "DEFAULT_DB_URL",
         "PRIVATE_KEY",
         "DEFAULT_DB_AUTHENTICATED_URL",
-        "DEFAULT_DB_ANONYMOUS_URL"
+        "DEFAULT_DB_ANONYMOUS_URL",
+        "NEXT_PUBLIC_ENABLE_AI_CHAT",
+        "NEXT_PUBLIC_ENABLE_HUMAN_CHAT",
+        "NEXT_PUBLIC_ENABLE_COHERENCE",
+        "NEXT_PUBLIC_ENABLE_SPACE_MEMORY"
       ],
       "outputs": [".next/**", "!.next/cache/**"]
     },

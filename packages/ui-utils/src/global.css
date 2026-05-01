@@ -36,13 +36,11 @@
 
 /*
  * `PanelWrapLayout` mirrors `--sidebar-*-width` onto `document.documentElement` for portaled
- * UI (proposal scrim, sticky chrome). Without a transition here, those layers snap while the
- * sidebar gap animates over 200ms on the inner wrapper — match {@link PanelWrapLayout} timing.
+ * UI (dialogs, proposal scrim, sticky chrome). Do **not** add `transition` on those vars here:
+ * during panel resize the flex gap updates immediately while JS mirrors measured px; animating
+ * `--sidebar-*-width` on `html` lags the scrim behind the main column and exposes content at the
+ * edges (resize with modal open).
  */
-html {
-  transition: --sidebar-left-width 200ms linear,
-    --sidebar-right-width 200ms linear;
-}
 
 /*
  * DHO space actions row (Join / Settings / Create) + Human Chat tab strip share this height so
@@ -312,22 +310,23 @@ html {
 @layer base {
   :root {
     --foreground: var(--black);
-    --card: var(--white);
+    /* Slightly off-white cards vs --page-background (neutral-3) for clearer layering */
+    --card: var(--neutral-2);
     --card-foreground: oklch(0.25 0.02 264);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.25 0.02 264);
     --primary: oklch(0.15 0.01 264);
     --primary-foreground: oklch(0.98 0 0);
-    --secondary: oklch(0.96 0.005 264);
+    --secondary: oklch(0.94 0.012 155);
     --secondary-foreground: oklch(0.15 0.01 264);
-    --muted: oklch(0.96 0.005 264);
-    --muted-foreground: oklch(0.46 0.005 264);
-    --accent: oklch(0.96 0.005 264);
+    --muted: oklch(0.94 0.01 264);
+    --muted-foreground: oklch(0.42 0.012 264);
+    --accent: oklch(0.94 0.012 155);
     --accent-foreground: oklch(0.15 0.01 264);
     --destructive: oklch(0.5153 0.211061 28.636 / 83%);
     --destructive-foreground: oklch(0.98 0 0);
-    --border: var(--neutral-6);
-    --input: var(--neutral-6);
+    --border: var(--neutral-7);
+    --input: var(--neutral-7);
     --ring: oklch(0.15 0.01 264);
     --radius: 2.5px;
     --action-light: oklch(0.6 0.17 249);
@@ -366,6 +365,36 @@ html {
     @apply bg-page-background text-foreground text-base;
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
+
+  /**
+   * Light theme (`next-themes` class on html): subtle brand-tinted canvas so the
+   * workspace feels less flat than pure white, without heavy texture.
+   */
+  html.light body {
+    background-color: var(--page-background);
+    background-image: radial-gradient(
+        ellipse 130% 70% at 50% -35%,
+        oklch(0.72 0.11 155 / 0.09),
+        transparent 58%
+      ),
+      radial-gradient(
+        ellipse 90% 55% at 100% 0%,
+        oklch(0.62 0.12 255 / 0.06),
+        transparent 52%
+      ),
+      radial-gradient(
+        ellipse 70% 50% at 0% 100%,
+        oklch(0.88 0.04 155 / 0.35),
+        transparent 45%
+      );
+    background-attachment: fixed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html.light body {
+      background-attachment: scroll;
+    }
+  }
 }
 
 :root {
@@ -377,6 +406,12 @@ html {
   --sidebar-accent-foreground: oklch(0.15 0.01 264);
   --sidebar-border: oklch(0.93 0.005 250);
   --sidebar-ring: oklch(0.59 0.19 252);
+}
+
+html.light {
+  --sidebar: oklch(0.978 0.006 155);
+  --sidebar-accent: oklch(0.94 0.014 155);
+  --sidebar-border: oklch(0.9 0.01 250);
 }
 
 .dark {

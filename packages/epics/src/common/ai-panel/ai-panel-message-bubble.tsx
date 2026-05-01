@@ -34,6 +34,21 @@ type AiPanelMessageBubbleProps = {
   isStreaming?: boolean;
 };
 
+/**
+ * Models often emit markdown-ish lists on one line: `Intro: * a * b * c`.
+ * Break those into real line breaks so each bullet reads as its own row.
+ */
+function normalizeAssistantListText(raw: string): string {
+  let s = raw;
+  // "...colon * first item" → newline before first bullet
+  s = s.replace(/:\s*\*\s+/g, ':\n• ');
+  // Remaining inline bullets: space + asterisk + space before next segment
+  s = s.replace(/\s+\*\s+(?=\S)/g, '\n• ');
+  // Hyphen list only right after a colon (avoid splitting "word - word" in prose)
+  s = s.replace(/:\s*-\s+/g, ':\n– ');
+  return s;
+}
+
 export function AiPanelMessageBubble({
   message,
   isStreaming,
@@ -64,6 +79,15 @@ export function AiPanelMessageBubble({
       (p): p is ToolPart =>
         typeof p.type === 'string' && p.type.startsWith('tool-'),
     ) ?? [];
+  /** Tool success summaries (e.g. "Found X — N members") duplicate the assistant text; keep loading + errors only. */
+  const toolPartsForUi = toolParts.filter(
+    (p) => p.state !== 'output-available',
+  );
+
+  const assistantDisplayText =
+    !isUser && textContent && textContent !== '(no text)'
+      ? normalizeAssistantListText(textContent)
+      : textContent;
 
   const handleCopy = useCallback(async () => {
     if (!textContent) return;
@@ -76,76 +100,6 @@ export function AiPanelMessageBubble({
       // clipboard API not available
     }
   }, [textContent]);
-
-  const renderToolOutput = useCallback(
-    (output: unknown) => {
-      if (!output || typeof output !== 'object') {
-        return (
-          <span className="text-muted-foreground">{t('toolCompleted')}</span>
-        );
-      }
-
-      const value = output as {
-        found?: boolean;
-        slug?: string;
-        space?: {
-          title?: string;
-          memberCount?: number;
-          documentCount?: number;
-        };
-        spaceFound?: boolean;
-        tokens?: unknown[];
-      };
-
-      // get_space_by_slug tool output
-      if ('found' in value) {
-        if (value.found && value.space) {
-          return (
-            <span>
-              {t('toolFoundSpace', {
-                title: value.space.title ?? value.slug ?? 'space',
-                slug: value.slug ?? 'unknown',
-                memberCount: value.space.memberCount ?? 0,
-                documentCount: value.space.documentCount ?? 0,
-              })}
-            </span>
-          );
-        }
-        return (
-          <span className="text-muted-foreground">
-            {t('toolNoSpace', { slug: value.slug ?? 'unknown' })}
-          </span>
-        );
-      }
-
-      // get_tokens tool output
-      if ('spaceFound' in value) {
-        if (!value.spaceFound) {
-          return (
-            <span className="text-muted-foreground">
-              {t('toolNoSpace', { slug: value.slug ?? 'unknown' })}
-            </span>
-          );
-        }
-        const tokenCount = Array.isArray(value.tokens)
-          ? value.tokens.length
-          : 0;
-        return (
-          <span className="text-muted-foreground">
-            {t('toolTokens', {
-              count: tokenCount,
-              slug: value.slug ?? 'unknown',
-            })}
-          </span>
-        );
-      }
-
-      return (
-        <span className="text-muted-foreground">{t('toolCompleted')}</span>
-      );
-    },
-    [t],
-  );
 
   return (
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
@@ -165,8 +119,15 @@ export function AiPanelMessageBubble({
               : 'rounded-tl-sm border border-border bg-muted text-foreground',
           )}
         >
-          {textContent && textContent !== '(no text)' && (
-            <span>{textContent}</span>
+          {assistantDisplayText && assistantDisplayText !== '(no text)' && (
+            <div
+              className={cn(
+                !isUser &&
+                  'whitespace-pre-wrap break-words [overflow-wrap:anywhere]',
+              )}
+            >
+              {assistantDisplayText}
+            </div>
           )}
           {fileParts.length > 0 && (
             <div className="flex flex-wrap gap-2">
@@ -192,9 +153,9 @@ export function AiPanelMessageBubble({
               )}
             </div>
           )}
-          {toolParts.length > 0 && (
+          {toolPartsForUi.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              {toolParts.map((part) => (
+              {toolPartsForUi.map((part) => (
                 <div
                   key={part.toolCallId}
                   className="rounded-lg border border-border bg-muted/50 px-2 py-1.5 text-xs"
@@ -211,8 +172,6 @@ export function AiPanelMessageBubble({
                         : t('toolLookingUp')}
                     </span>
                   )}
-                  {part.state === 'output-available' &&
-                    renderToolOutput(part.output)}
                   {part.state === 'output-error' && (
                     <span className="text-destructive">
                       {t('toolError', {

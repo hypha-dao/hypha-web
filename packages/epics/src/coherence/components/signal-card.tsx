@@ -19,10 +19,9 @@ import {
   AlertDialogTitle,
   BadgeItem,
   BadgesList,
+  Badge,
   Button,
   Card,
-  CardContent,
-  CardTitle,
   ConfirmDialog,
   Dialog,
   DialogContent,
@@ -32,6 +31,7 @@ import {
   DialogTitle,
   LucideReactIcon,
   Skeleton,
+  DynamicIcon,
 } from '@hypha-platform/ui';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -50,6 +50,43 @@ type SignalCardProps = {
   onOpenConversation?: () => void;
   className?: string;
 };
+
+function typeHeroGradient(colorVariant: string | undefined): string {
+  switch (colorVariant) {
+    case 'success':
+      return 'from-emerald-500/38 via-muted/55 to-background';
+    case 'error':
+      return 'from-rose-500/34 via-muted/55 to-background';
+    case 'warn':
+      return 'from-amber-500/32 via-muted/55 to-background';
+    case 'tension':
+      return 'from-orange-500/30 via-muted/55 to-background';
+    case 'insight':
+      return 'from-violet-500/30 via-muted/55 to-background';
+    case 'accent':
+    default:
+      return 'from-accent-5/35 via-muted/60 to-background';
+  }
+}
+
+/** Map coherence type tokens to supported `Badge` color variants. */
+function typeToBadgeColor(
+  cv: string | undefined,
+): NonNullable<BadgeProps['colorVariant']> {
+  switch (cv) {
+    case 'success':
+    case 'error':
+    case 'warn':
+    case 'neutral':
+    case 'accent':
+      return cv;
+    case 'tension':
+    case 'insight':
+      return 'accent';
+    default:
+      return 'accent';
+  }
+}
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isLoading,
@@ -110,28 +147,22 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   );
 
   const metaBadges: BadgeItem[] = React.useMemo(() => {
-    const typeBadge: BadgeItem = {
-      label: typeLabel,
-      icon: coherenceType?.icon as LucideReactIcon,
-      variant: 'outline',
-      colorVariant: (coherenceType?.colorVariant ??
-        'accent') as BadgeProps['colorVariant'],
-    };
-    if (!priorityMeta) return [typeBadge];
+    if (!priorityMeta) return [];
     const priorityLabel = t(
       `priorities.${priorityMeta.priority}` as
         | 'priorities.high'
         | 'priorities.medium'
         | 'priorities.low',
     );
-    const priorityBadge: BadgeItem = {
-      label: priorityLabel,
-      icon: priorityMeta.icon as LucideReactIcon,
-      variant: 'outline',
-      colorVariant: priorityMeta.colorVariant as BadgeProps['colorVariant'],
-    };
-    return [typeBadge, priorityBadge];
-  }, [coherenceType, priorityMeta, t, typeLabel]);
+    return [
+      {
+        label: priorityLabel,
+        icon: priorityMeta.icon as LucideReactIcon,
+        variant: 'outline',
+        colorVariant: priorityMeta.colorVariant as BadgeProps['colorVariant'],
+      },
+    ];
+  }, [priorityMeta, t]);
 
   const tagList: BadgeItem[] = tags.map((tag) => {
     const displayLabel = (COHERENCE_TAGS as readonly string[]).includes(tag)
@@ -164,6 +195,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       ),
     [description],
   );
+
+  const typeIconName = (coherenceType?.icon as LucideReactIcon) ?? 'CircleDot';
+  const heroGradient = typeHeroGradient(coherenceType?.colorVariant);
 
   React.useLayoutEffect(() => {
     const el = descriptionClampRef.current;
@@ -208,118 +242,204 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     }
   }, [slug, deleteCoherenceBySlug, refresh, tSignalCard]);
 
+  const timeLine =
+    createdAt && !isLoading
+      ? formatDistanceToNow(new Date(createdAt), {
+          addSuffix: true,
+          locale: dateFnsLocale,
+        })
+      : '';
+
+  const heroVisual = (
+    <div className="relative isolate overflow-hidden">
+      <div
+        className={cn(
+          'relative h-[5.25rem] w-full overflow-hidden bg-muted/50',
+          'after:pointer-events-none after:absolute after:inset-0 after:bg-gradient-to-b after:from-transparent after:via-background/55 after:to-background',
+        )}
+      >
+        {isLoading ? (
+          <Skeleton
+            className="h-full w-full rounded-none"
+            loading
+            height="100%"
+          />
+        ) : (
+          <div
+            className={cn(
+              'absolute inset-0 bg-gradient-to-br motion-reduce:scale-100',
+              heroGradient,
+            )}
+            aria-hidden
+          />
+        )}
+      </div>
+      <div className="relative z-10 -mt-10 px-3">
+        <div
+          className={cn(
+            'flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-card shadow-md ring-4 ring-card',
+            'motion-safe:transition-transform motion-safe:duration-200',
+          )}
+        >
+          {isLoading ? (
+            <Skeleton
+              className="h-9 w-9 rounded-full"
+              loading
+              width="36px"
+              height="36px"
+            />
+          ) : (
+            <DynamicIcon
+              name={typeIconName}
+              size={28}
+              className="text-[var(--space-accent,var(--color-accent-11))] opacity-95"
+              aria-hidden
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <Card
       className={cn(
-        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 bg-card pt-0 shadow-sm',
-        'transition-[border-color,box-shadow] duration-200 ease-out',
-        'hover:border-accent-8/75 hover:shadow-md',
-        'focus-within:border-accent-8/75 focus-within:shadow-md',
+        'group flex h-full min-h-0 w-full flex-col overflow-hidden p-0',
+        'border-border/80 transition-shadow duration-150 hover:border-border hover:shadow-sm',
+        'motion-reduce:transition-none',
         className,
       )}
     >
-      <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
-        <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
-          {isCreator && slug ? (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                colorVariant="neutral"
-                size="sm"
-                className="absolute right-3 top-3 z-10 h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
-                disabled={isLoading}
-                aria-label={tSignalCard('deleteMenu')}
-                title={tSignalCard('deleteMenu')}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteOpen(true);
-                }}
-              >
-                <Trash2 className="h-4 w-4" aria-hidden />
-              </Button>
-              <AlertDialog
-                open={deleteOpen}
-                onOpenChange={(open) => {
-                  setDeleteOpen(open);
-                  if (!open) setDeleteError(null);
-                }}
-              >
-                <AlertDialogContent
-                  overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
-                  className="border-l-[3px] border-l-[var(--space-accent)]"
-                  style={spaceAccentPortalStyle}
-                  data-space-accent-scope=""
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {tSignalCard('deleteSignal')}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {tSignalCard('deleteConfirm')}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  {deleteError ? (
-                    <p
-                      role="alert"
-                      className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                    >
-                      {deleteError}
-                    </p>
-                  ) : null}
-                  <AlertDialogFooter>
-                    <AlertDialogCancel asChild>
-                      <Button variant="outline" colorVariant="neutral">
-                        {t('noLeave')}
-                      </Button>
-                    </AlertDialogCancel>
-                    <Button
-                      type="button"
-                      colorVariant="accent"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        const deleted = await handleDelete();
-                        if (deleted) setDeleteOpen(false);
-                      }}
-                    >
-                      {tSignalCard('deleteConfirmAction')}
-                    </Button>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </>
-          ) : null}
-          <div className={cn('min-w-0', isCreator && slug && 'pr-10')}>
-            <Skeleton
-              className="min-w-0"
-              width="100%"
-              height="22px"
-              loading={isLoading}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        {isCreator && slug ? (
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              size="sm"
+              className="absolute right-2 top-2 z-20 h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
+              disabled={isLoading}
+              aria-label={tSignalCard('deleteMenu')}
+              title={tSignalCard('deleteMenu')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteOpen(true);
+              }}
             >
-              <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
+              <Trash2 className="h-4 w-4" aria-hidden />
+            </Button>
+            <AlertDialog
+              open={deleteOpen}
+              onOpenChange={(open) => {
+                setDeleteOpen(open);
+                if (!open) setDeleteError(null);
+              }}
+            >
+              <AlertDialogContent
+                overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
+                className="border-l-[3px] border-l-[var(--space-accent)]"
+                style={spaceAccentPortalStyle}
+                data-space-accent-scope=""
+                onClick={(e) => e.stopPropagation()}
+              >
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {tSignalCard('deleteSignal')}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {tSignalCard('deleteConfirm')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                {deleteError ? (
+                  <p
+                    role="alert"
+                    className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {deleteError}
+                  </p>
+                ) : null}
+                <AlertDialogFooter>
+                  <AlertDialogCancel asChild>
+                    <Button variant="outline" colorVariant="neutral">
+                      {t('noLeave')}
+                    </Button>
+                  </AlertDialogCancel>
+                  <Button
+                    type="button"
+                    colorVariant="accent"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const deleted = await handleDelete();
+                      if (deleted) setDeleteOpen(false);
+                    }}
+                  >
+                    {tSignalCard('deleteConfirmAction')}
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        ) : null}
+
+        <div className="min-w-0 space-y-2 px-3 pb-3 pt-1">
+          {heroVisual}
+
+          <div className="flex min-w-0 items-start justify-between gap-1.5 pt-0.5">
+            {isLoading ? (
+              <Skeleton
+                className="my-0.5"
+                width="7rem"
+                height="1.1rem"
+                loading
+              />
+            ) : (
+              <p
+                className="text-4 line-clamp-2 min-w-0 flex-1 font-medium leading-tight"
+                title={title || undefined}
+              >
                 {title}
-              </CardTitle>
-            </Skeleton>
+              </p>
+            )}
+            {isLoading ? (
+              <Skeleton className="my-0.5 h-5 w-20 shrink-0" loading />
+            ) : (
+              <Badge
+                className="h-fit max-w-[42%] shrink-0 border text-[10px] font-medium uppercase"
+                variant="outline"
+                colorVariant={typeToBadgeColor(coherenceType?.colorVariant)}
+              >
+                {typeLabel}
+              </Badge>
+            )}
           </div>
 
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2 text-1 text-muted-foreground">
-            {metaBadges.length > 0 ? (
+          {isLoading ? (
+            <Skeleton className="mt-0.5" width="6rem" height="0.7rem" loading />
+          ) : (
+            <p className="mt-0.5 line-clamp-1 text-1 text-muted-foreground">
+              {timeLine ? (
+                <span
+                  className="inline-flex items-center gap-1"
+                  title={timeLine}
+                >
+                  <ClockIcon
+                    className="h-3 w-3 shrink-0 opacity-80"
+                    aria-hidden
+                  />
+                  {timeLine}
+                </span>
+              ) : (
+                '\u00a0'
+              )}
+            </p>
+          )}
+
+          {metaBadges.length > 0 ? (
+            <div className="flex min-h-5 w-full max-w-full flex-wrap content-center gap-1.5">
               <BadgesList isLoading={isLoading} badges={metaBadges} />
-            ) : null}
-            <span className="inline-flex min-w-0 items-center gap-1">
-              <ClockIcon
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                aria-hidden
-              />
-              {createdAt
-                ? formatDistanceToNow(new Date(createdAt), {
-                    addSuffix: true,
-                    locale: dateFnsLocale,
-                  })
-                : ''}
-            </span>
-          </div>
+            </div>
+          ) : null}
 
           <Skeleton
             className="min-w-full"
@@ -330,7 +450,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <div className="flex flex-col gap-1">
               <p
                 ref={descriptionClampRef}
-                className="text-1 leading-snug text-neutral-11 line-clamp-2"
+                className="line-clamp-2 min-h-8 text-1 leading-snug text-muted-foreground"
               >
                 {plainDescription}
               </p>
@@ -349,7 +469,13 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </div>
           </Skeleton>
 
-          <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          {/* Non-modal: focus is managed by Radix, but the scrim is below the app header
+           * and offcanvas side panels; users can use top nav + side triggers while open. */}
+          <Dialog
+            open={detailsOpen}
+            onOpenChange={setDetailsOpen}
+            modal={false}
+          >
             <DialogContent
               className={cn(
                 'flex max-h-[min(560px,85dvh)] flex-col gap-0 overflow-hidden border-border/70 bg-card/95 p-0 shadow-2xl backdrop-blur-sm sm:max-w-lg',
@@ -398,17 +524,15 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <BadgesList isLoading={isLoading} badges={tagList ?? []} />
           ) : null}
 
-          <div className="flex flex-row gap-1">
+          <div className="flex min-h-5 items-center gap-1 text-1 text-muted-foreground">
             <Skeleton loading={isLoading} height="16px" width="80px">
-              <Users size={12} />
-              <div className="text-neutral-11 text-1">
-                {t('mentions', { count: messages })}
-              </div>
+              <Users className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
+              <span>{t('mentions', { count: messages })}</span>
             </Skeleton>
           </div>
         </div>
 
-        <div className="mt-auto flex min-h-[4.25rem] shrink-0 flex-col justify-center border-t border-border px-4 py-3">
+        <div className="mt-auto border-t border-border/60 p-2.5">
           {archived ? (
             <div
               onClick={(e) => {
@@ -452,7 +576,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </Button>
           )}
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 };

@@ -38,6 +38,9 @@ type ProposalOverlayShellProps = {
  * so close remains on in-app routes.
  *
  * Plain scrim: we still render the scrim `div` ourselves (aligned with MenuTop).
+ * On **`md+` the dialog host is `pointer-events-none`** so centered panels stay usable while
+ * {@link MenuTop} remains reachable; the scrim must also use **`pointer-events-none`**, otherwise
+ * hits pass through the host and are swallowed by the scrim (`z-40`), blocking the main column.
  *
  * **Portals:** `DialogPrimitive.Portal` renders under `document.body`. `--sidebar-*` and
  * `--main-column-scrollbar-width` are mirrored onto `document.documentElement` by
@@ -115,6 +118,7 @@ export function ProposalOverlayShell({
           <div
             className={cn(
               'fixed bottom-0 z-40 hidden bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35 md:block',
+              'md:pointer-events-none',
               'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))]',
               'top-[var(--menu-top-height,65px)]',
             )}

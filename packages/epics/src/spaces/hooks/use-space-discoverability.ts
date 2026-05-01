@@ -5,20 +5,39 @@ import useSWR from 'swr';
 import { publicClient, getSpaceVisibility } from '@hypha-platform/core/client';
 import { TransparencyLevel } from '../components/transparency-level';
 
+function isValidOnChainSpaceId(
+  id: number | bigint | null | undefined,
+): id is number | bigint {
+  if (id === null || id === undefined) return false;
+  if (typeof id === 'bigint') return id > 0n;
+  if (typeof id === 'number') {
+    return Number.isFinite(id) && id > 0;
+  }
+  return false;
+}
+
 export function useSpaceDiscoverability({
   spaceId,
 }: {
   spaceId?: number | bigint;
 }) {
+  const swrKey = isValidOnChainSpaceId(spaceId)
+    ? [spaceId, 'getSpaceVisibility' as const]
+    : null;
+
+  type SpaceVisibilityKey = readonly [number | bigint, 'getSpaceVisibility'];
+
   const {
     data: visibility,
     isLoading,
     error,
   } = useSWR(
-    spaceId ? [spaceId, 'getSpaceVisibility'] : null,
-    async ([spaceId]) => {
+    swrKey as SpaceVisibilityKey | null,
+    async ([onChainSpaceId]: SpaceVisibilityKey) => {
       const spaceIdBigInt =
-        typeof spaceId === 'number' ? BigInt(spaceId) : spaceId;
+        typeof onChainSpaceId === 'number'
+          ? BigInt(onChainSpaceId)
+          : onChainSpaceId;
       return publicClient.readContract(
         getSpaceVisibility({ spaceId: spaceIdBigInt }),
       );

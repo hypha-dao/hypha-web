@@ -23,14 +23,12 @@ export default async function MembershipPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
-      <div className="flex flex-col gap-6 py-4">
-        <MembersSection
-          basePath={`${basePath}/person`}
-          useMembers={useMembers}
-          spaceSlug={id}
-          refreshInterval={2000}
-        />
-      </div>
+      <MembersSection
+        basePath={`${basePath}/person`}
+        useMembers={useMembers}
+        spaceSlug={id}
+        refreshInterval={2000}
+      />
     </SpaceTabAccessWrapper>
   );
 }

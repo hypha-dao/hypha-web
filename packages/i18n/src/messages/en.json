@@ -3,8 +3,10 @@
     "Assignments": "Assignments",
     "Members": "Members",
     "memberRoleLabel": "Member",
+    "delegateBadge": "Delegate",
     "delegatedVotingMemberLabel": "Delegated voting member",
     "Treasury": "Treasury",
+    "Rewards": "Rewards",
     "Agreements": "Agreements",
     "Spaces": "Spaces",
     "loadMore": "Load more",
@@ -23,7 +25,9 @@
     "copyWalletAddress": "Copy wallet address",
     "walletAddressCopied": "Copied!",
     "otherMembers": "+ other {count} members",
+    "Ecosystem": "Ecosystem",
     "exploreSpaces": "Explore Spaces",
+    "searchActions": "Search actions",
     "findCategory": "Find a Category",
     "noSpacesYet": "No spaces created or joined yet. Explore our network and join a Space, or create your own.",
     "close": "Close",
@@ -42,6 +46,9 @@
     "publish": "Publish",
     "invalidTransactions": "Invalid transactions",
     "Coherence": "Coherence",
+    "Signals": "Signals",
+    "Artifact": "Artifact",
+    "Wiki": "Memory",
     "uploadLeadImage": {
       "cropTitle": "Upload an image",
       "cropDescription": "Adjust how your image is framed, then save. Drag to reposition and use zoom to fit the banner area (JPEG, PNG, or WebP — max 4 MB).",
@@ -136,7 +143,8 @@
     "Dashboard": "DHO Dashboard",
     "actionButtons": {
       "spaceSettings": "Space Settings",
-      "create": "Create"
+      "create": "Create",
+      "createProposal": "Create a proposal"
     },
     "nestedSpacesButton": {
       "label": "Space Navigation",
@@ -144,9 +152,21 @@
       "noAccess": "You do not have access to view space navigation."
     }
   },
+  "DhoWorkspaceNav": {
+    "spaceNavAriaLabel": "Space sections",
+    "openSpaceMenu": "Space menu",
+    "spaceMenuTitle": "Space",
+    "closeMenu": "Close",
+    "spaceMapLoading": "Loading space map",
+    "expandNavLabels": "Show section names",
+    "collapseNavLabels": "Hide section names",
+    "openSpaceSettings": "Space settings"
+  },
   "SpaceSettingsAction": {
     "title": "Space Settings",
     "content": "Access and manage the settings for your space, including its appearance, structure, methods, membership, and treasury.",
+    "searchSettings": "Search settings…",
+    "noSettingsMatch": "No settings match your search.",
     "groups": {
       "overview": "Overview",
       "agreements": "Agreements",
@@ -291,8 +311,10 @@
     }
   },
   "SelectNavigationAction": {
-    "title": "Space Navigation",
-    "content": "Navigate all your spaces in a single interactive map to see how they connect to each other. Easily visit nested spaces, explore space-to-space memberships, and follow value flows across your direct ecosystem.",
+    "title": "Ecosystem",
+    "mapRegionAriaLabel": "Space relationship map",
+    "dataPanelAriaLabel": "Nested spaces, search, and actions",
+    "content": "",
     "tabs": {
       "nestedSpaces": "Nested Spaces",
       "spaceToSpace": "Space-to-Space",
@@ -312,18 +334,22 @@
       "noAccessAddSpace": "You do not have access to add spaces to this organization.",
       "visitSpace": "Visit Space",
       "searchSpaces": "Search spaces",
-      "noSpacesFound": "No spaces found"
+      "noSpacesFound": "No spaces found",
+      "panelListHeading": "Spaces"
     }
   },
   "AgreementsTab": {
     "onVoting": "On Voting",
     "accepted": "Accepted",
     "rejected": "Rejected",
+    "refused": "Refused",
     "searchDocuments": "Search documents",
     "listIsEmpty": "List is empty"
   },
   "MembersTab": {
     "searchMembers": "Search members",
+    "nestedSpaceTypeLabel": "Space",
+    "spaceDelegateLabel": "Delegate",
     "delegateVoting": "Delegate Voting",
     "listIsEmpty": "List is empty",
     "loading": "Loading...",
@@ -353,7 +379,8 @@
       "success": "Delegation completed successfully!",
       "errors": {
         "selectMember": "Please select a member",
-        "selectSpace": "Please select a space"
+        "selectSpace": "Please select a space",
+        "undelegateFailed": "Could not remove delegation. Please try again."
       }
     }
   },
@@ -366,6 +393,7 @@
     "listIsEmpty": "List is empty",
     "loadMoreAssets": "Load more assets",
     "transactions": "Transactions",
+    "tabVaults": "Vaults",
     "searchTransactions": "Search transactions",
     "noTransactionsFound": "No transactions found",
     "loadMoreTransactions": "Load more transactions",
@@ -387,8 +415,12 @@
       "joinSpaceToUpdateBackingVault": "Join the space to update backing vault"
     },
     "assetCard": {
+      "tokenIconAlt": "{name} token",
+      "collateralType": "Collateral",
+      "referencePrice": "Price",
+      "issuanceLabel": "Issuance",
       "fromSpace": "from {spaceTitle}",
-      "totalIssuance": "Total Issuance: {value}",
+      "totalIssuance": "{value}",
       "createdOn": "Created on {date}",
       "mutualCredit": {
         "debtBadge": "Owes {amount} {symbol}",
@@ -833,7 +865,8 @@
     "exchangeDepositProposalConfirming": "Confirming...",
     "exchangeDepositProposalTitle": "Deposit {amount} {symbol} – Settle escrow (#{escrowId})",
     "exchangeDepositProposalDescription": "Approve and deposit {payAmount} {paySymbol} into escrow (#{escrowId}) to complete the exchange with {otherParty}. In return, {activeSpace} will receive {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Approve and deposit {payAmount} {paySymbol} into escrow (#{escrowId}) to complete the investment into {otherParty}. In return, {activeSpace} will receive {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Approve and deposit {payAmount} {paySymbol} into escrow (#{escrowId}) to complete the investment into {otherParty}. In return, {activeSpace} will receive {receiveAmount} {receiveSymbol}.",
+    "dismissBanner": "Dismiss banner"
   },
   "AgreementFlow": {
     "labels": {
@@ -2006,11 +2039,14 @@
     "callPaneResizeSpeakerShare": "Resize speaker and screen share"
   },
   "CoherenceTab": {
+    "wiki": "Memory",
+    "artifact": "Artifact",
     "signals": "Signals",
-    "signInToSee": "Please, sign in to see signals, space memory, and conversations",
+    "signInToSee": "Please sign in to see signals, artifacts, and conversations",
     "searchSignals": "Search signals...",
     "newSignal": "New Signal",
     "backToCoherence": "Back to Coherence",
+    "backToSignals": "Back to Signals",
     "all": "All",
     "listIsEmpty": "List is empty",
     "loadMore": "Load more",

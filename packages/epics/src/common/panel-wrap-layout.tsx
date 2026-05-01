@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { MessageCircle, Sparkles } from 'lucide-react';
 import {
   SidebarProvider,
@@ -132,6 +132,104 @@ function clearMainColumnLayoutMirrorFromDocument(): void {
   }
 }
 
+type SidebarChromeWidths = { left: string; right: string };
+
+const ZERO_SIDEBAR: SidebarChromeWidths = { left: '0px', right: '0px' };
+
+/**
+ * The flex layout reserves width via `[data-sidebar-gap]`; fixed sidebars and portaled
+ * UI use `--sidebar-*-width` on `:root` and the wrapper. Those were previously hardcoded
+ * to 320px while the gap could change via `SidebarResizeHandle` (280–600px), so the
+ * main column, sticky DHO chrome, and dialogs could drift from the true column bounds.
+ * Measure the actual gaps and mirror pixel widths to CSS variables.
+ */
+function useMeasuredSidebarGaps(
+  shouldMeasure: boolean,
+  measureKey: string,
+): {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  sidebarWidths: SidebarChromeWidths;
+} {
+  const [widths, setWidths] = useState<SidebarChromeWidths>(ZERO_SIDEBAR);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  const measureGaps = useCallback(() => {
+    const root = containerRef.current;
+    if (typeof document === 'undefined' || !root) return;
+
+    if (!shouldMeasure) {
+      setWidths(ZERO_SIDEBAR);
+      clearMainColumnLayoutMirrorFromDocument();
+      return;
+    }
+
+    const gaps = root.querySelectorAll('[data-sidebar-gap]');
+    let left = 0;
+    let right = 0;
+    for (const gap of gaps) {
+      const el = gap as HTMLElement;
+      const side = el.closest('[data-side]')?.getAttribute('data-side');
+      const w = el.offsetWidth;
+      if (side === 'left') {
+        left = w;
+      } else if (side === 'right') {
+        right = w;
+      }
+    }
+
+    const next: SidebarChromeWidths = {
+      left: `${Math.round(left)}px`,
+      right: `${Math.round(right)}px`,
+    };
+    setWidths((prev) =>
+      prev.left === next.left && prev.right === next.right ? prev : next,
+    );
+    mirrorMainColumnLayoutVarsToDocument(next.left, next.right);
+  }, [shouldMeasure]);
+
+  const scheduleMeasure = useCallback(() => {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+    }
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      measureGaps();
+    });
+  }, [measureGaps]);
+
+  useLayoutEffect(() => {
+    if (!shouldMeasure) {
+      setWidths(ZERO_SIDEBAR);
+      clearMainColumnLayoutMirrorFromDocument();
+      return;
+    }
+    const root = containerRef.current;
+    if (!root) {
+      return;
+    }
+
+    measureGaps();
+    const ro = new ResizeObserver(() => {
+      scheduleMeasure();
+    });
+    for (const gap of root.querySelectorAll('[data-sidebar-gap]')) {
+      ro.observe(gap as Element);
+    }
+
+    return () => {
+      ro.disconnect();
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      clearMainColumnLayoutMirrorFromDocument();
+    };
+  }, [measureGaps, scheduleMeasure, shouldMeasure, measureKey]);
+
+  return { containerRef, sidebarWidths: widths };
+}
+
 // ─── Main Layout ─────────────────────────────────────────────────────────────
 // Reads panel open/close state from PanelProviders contexts. Creates
 // SidebarProvider wrappers for each side to drive sidebar animations.
@@ -157,16 +255,21 @@ export function PanelWrapLayout({
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
 
-  const sidebarLeftPx = leftOpen && effectiveLeft ? '320px' : '0px';
-  const sidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
+  const shouldMeasureSidebars = Boolean(
+    (effectiveLeft && leftOpen) || (effectiveRight && rightOpen),
+  );
+  const gapMeasureKey = [
+    shouldMeasureSidebars ? 'M' : '-',
+    leftOpen ? 'lo' : '-',
+    rightOpen ? 'ro' : '-',
+    effectiveLeft ? 'L' : '-',
+    effectiveRight ? 'R' : '-',
+  ].join('-');
 
-  /** Radix portaled dialogs sit under `body` and do not inherit vars from this div — mirror to `:root`. */
-  useLayoutEffect(() => {
-    mirrorMainColumnLayoutVarsToDocument(sidebarLeftPx, sidebarRightPx);
-    return () => {
-      clearMainColumnLayoutMirrorFromDocument();
-    };
-  }, [sidebarLeftPx, sidebarRightPx]);
+  const { containerRef, sidebarWidths } = useMeasuredSidebarGaps(
+    shouldMeasureSidebars,
+    gapMeasureKey,
+  );
 
   // Core content that goes inside the scrollable SidebarInset (when panels wrap layout)
   let content = <>{children}</>;
@@ -248,13 +351,11 @@ export function PanelWrapLayout({
 
   return (
     <div
+      ref={containerRef}
       style={
         {
-          '--sidebar-right-width': sidebarRightPx,
-          '--sidebar-left-width': sidebarLeftPx,
-          transitionProperty: '--sidebar-left-width, --sidebar-right-width',
-          transitionDuration: '200ms',
-          transitionTimingFunction: 'linear',
+          '--sidebar-right-width': sidebarWidths.right,
+          '--sidebar-left-width': sidebarWidths.left,
         } as React.CSSProperties
       }
     >

@@ -1,23 +1,30 @@
 'use client';
 
-import { Text } from '@radix-ui/themes';
 import { Card, StatusBadge, Skeleton, Button, Badge } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
 import { PersonAvatar } from './person-avatar';
 import { useEvents } from '@hypha-platform/core/client';
 import React from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
   useSpaceBySlug,
   useUndelegateWeb3Rpc,
 } from '@hypha-platform/core/client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSpaceMember } from '../../spaces';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useIsDelegate } from '@hypha-platform/core/client';
-import { useEffect } from 'react';
 import { mutate as mutateCache, type Key } from 'swr';
 import { useFormatter, useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
+import { Calendar } from 'lucide-react';
+
+const JOIN_DATE_FORMAT = {
+  year: 'numeric' as const,
+  month: 'short' as const,
+  day: 'numeric' as const,
+};
 
 export type MemberCardProps = {
   spaceId?: number;
@@ -28,8 +35,9 @@ export type MemberCardProps = {
   avatarUrl?: string;
   status?: string;
   isLoading?: boolean;
-  minimize?: boolean;
   address?: string;
+  profileHref?: string;
+  className?: string;
 };
 
 export const MemberCard: React.FC<MemberCardProps> = ({
@@ -41,10 +49,12 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   avatarUrl,
   status,
   isLoading,
-  minimize,
   address,
+  profileHref,
+  className,
 }) => {
   const tCommon = useTranslations('Common');
+  const tMembers = useTranslations('MembersTab');
   const format = useFormatter();
   const { id: spaceSlug } = useParams();
   const { space } = useSpaceBySlug(spaceSlug as string);
@@ -60,11 +70,11 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   const { isAuthenticated, user } = useAuthentication();
 
   const isDisabled = isUndelegating || !isAuthenticated || !isMember;
-  const tooltipMessage = !isAuthenticated
-    ? 'Please sign in to use this feature.'
+  const actionTooltip = !isAuthenticated
+    ? tCommon('signIn')
     : !isMember
-    ? 'Please join this space to use this feature.'
-    : '';
+    ? tCommon('joinSpaceToUse')
+    : undefined;
 
   const { events, isLoadingEvents } = useEvents({
     type: 'joinSpace',
@@ -73,140 +83,231 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   });
 
   const joinEvent = React.useMemo(() => {
-    if (!address || isLoadingEvents || !events) {
-      return undefined;
-    }
-    if (events.length === 0) {
-      return undefined;
-    }
-    const normalizedAddress = address.toLowerCase();
-    const event = events.find(
-      (el) =>
-        el.parameters?.['memberAddress']?.toLowerCase?.() === normalizedAddress,
+    if (!address || isLoadingEvents || !events?.length) return undefined;
+    const n = address.toLowerCase();
+    return events.find(
+      (el) => el.parameters?.['memberAddress']?.toLowerCase?.() === n,
     );
-    return event;
   }, [address, events, isLoadingEvents]);
 
   const delegateCacheKey = React.useMemo<Key | null>(() => {
-    const viewerAddress = user?.wallet?.address as `0x${string}` | undefined;
-    if (!viewerAddress || !space?.web3SpaceId) return null;
-    return [viewerAddress, BigInt(space.web3SpaceId), 'delegate'];
+    const v = user?.wallet?.address as `0x${string}` | undefined;
+    if (!v || !space?.web3SpaceId) return null;
+    return [v, BigInt(space.web3SpaceId), 'delegate'];
   }, [space?.web3SpaceId, user?.wallet?.address]);
 
   useEffect(() => {
     setLocalIsDelegate(isDelegate);
   }, [isDelegate]);
 
-  return (
-    <Card className="w-full h-full p-5 mb-2 flex gap-3 flex-col">
-      <div className="flex items-center">
+  const onUndelegate = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    void (async () => {
+      try {
+        await undelegate({ spaceId: space?.web3SpaceId as number });
+        setLocalIsDelegate(false);
+        if (delegateCacheKey) await mutateCache(delegateCacheKey);
+      } catch (err) {
+        console.error('Undelegate failed:', err);
+        setLocalIsDelegate(true);
+        window.alert(tMembers('delegateSection.errors.undelegateFailed'));
+      }
+    })();
+  };
+
+  const fullName = [name, surname].filter(Boolean).join(' ').trim() || '—';
+  const atNick = nickname ? `@${nickname}` : '';
+  const joinLine =
+    joinEvent &&
+    tCommon('joinedSpaceOn', {
+      date: format.dateTime(new Date(joinEvent.createdAt), JOIN_DATE_FORMAT),
+    });
+
+  const metaForTitle = [joinLine, location?.trim()].filter(Boolean).join(' · ');
+
+  const heroVisual = (
+    <div className="relative isolate overflow-hidden">
+      <div
+        className={cn(
+          'relative h-[5.25rem] w-full overflow-hidden bg-muted/50',
+          'after:pointer-events-none after:absolute after:inset-0 after:bg-gradient-to-b after:from-transparent after:via-background/55 after:to-background',
+        )}
+      >
+        {isLoading ? (
+          <Skeleton
+            className="h-full w-full rounded-none"
+            loading
+            height="100%"
+          />
+        ) : avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-[2px] motion-reduce:scale-100 motion-reduce:blur-none"
+          />
+        ) : (
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-accent-5/35 via-muted/60 to-background"
+            aria-hidden
+          />
+        )}
+      </div>
+      <div className="relative z-10 -mt-10 px-3">
         <PersonAvatar
           avatarSrc={avatarUrl}
           userName={nickname}
-          size={minimize ? 'sm' : 'lg'}
+          size="lg"
           isLoading={isLoading}
-          shape="rounded"
-          className="mr-3"
+          shape="circle"
+          className="shrink-0 shadow-md ring-4 ring-card"
         />
-
-        <div className="flex justify-between items-center w-full">
-          <div className="flex flex-col">
-            <Badge className="w-fit" variant="outline" colorVariant="accent">
-              {tCommon('memberRoleLabel')}
-            </Badge>
-            {!minimize ? (
-              <div className="flex gap-x-1">
-                <StatusBadge isLoading={isLoading} status={status} />
-              </div>
-            ) : null}
-
-            <Skeleton
-              height="26px"
-              width="160px"
-              loading={isLoading}
-              className="my-1"
-            >
-              <Text className="text-4">
-                {name} {surname}
-              </Text>
-            </Skeleton>
-
-            <Skeleton height="16px" width="80px" loading={isLoading}>
-              <Text className="text-1 text-gray-500">@{nickname}</Text>
-            </Skeleton>
-          </div>
-
-          <div className="flex justify-between flex-col gap-6 items-end">
-            {localIsDelegate ? (
-              <Skeleton width="96px" height="32px" loading={isLoading}>
-                <Button
-                  disabled={isDisabled}
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    try {
-                      await undelegate({
-                        spaceId: space?.web3SpaceId as number,
-                      });
-                      setLocalIsDelegate(false);
-                      if (delegateCacheKey) {
-                        await mutateCache(delegateCacheKey);
-                      }
-                    } catch (error) {
-                      console.error('Undelegate failed:', error);
-                    }
-                  }}
-                  title={tooltipMessage}
-                >
-                  {isUndelegating ? 'Undelegating...' : 'Undelegate'}
-                </Button>
-              </Skeleton>
-            ) : (
-              <div className="w-[130px] h-[40px]" />
-            )}
-            <Skeleton
-              width="96px"
-              height="16px"
-              loading={isLoading}
-              className={localIsDelegate ? 'mt-2' : ''}
-            >
-              <div className="flex items-center text-gray-500">
-                <SewingPinFilledIcon className="mr-1" />
-                <Text className="text-1">{location}</Text>
-              </div>
-            </Skeleton>
-            {joinEvent && (
-              <Skeleton
-                width="96px"
-                height="16px"
-                loading={isLoading}
-                className={localIsDelegate ? 'mt-2' : ''}
-              >
-                <div className="flex items-center text-gray-500">
-                  <Text className="text-1">
-                    {tCommon('joinedSpaceOn', {
-                      date: format.dateTime(new Date(joinEvent.createdAt), {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      }),
-                    })}
-                  </Text>
-                </div>
-              </Skeleton>
-            )}
-          </div>
-        </div>
       </div>
-      {localIsDelegate && (
-        <div>
-          <span className="text-1 text-neutral-11 font-medium">
-            {tCommon('delegatedVotingMemberLabel')}
-          </span>
-        </div>
+    </div>
+  );
+
+  const mainBlock = (
+    <div className="min-w-0 space-y-2 px-3 pb-3 pt-1">
+      {heroVisual}
+      <div className="flex min-w-0 items-start justify-between gap-1.5 pt-0.5">
+        {isLoading ? (
+          <Skeleton className="my-0.5" width="7rem" height="1.1rem" loading />
+        ) : (
+          <p
+            className="text-4 line-clamp-1 font-medium leading-tight"
+            title={fullName}
+          >
+            {fullName}
+          </p>
+        )}
+        <Badge
+          className="h-fit max-w-[40%] shrink-0 border text-[10px] font-medium uppercase"
+          variant="outline"
+          colorVariant="neutral"
+        >
+          {tCommon('memberRoleLabel')}
+        </Badge>
+      </div>
+      {isLoading ? (
+        <Skeleton className="mt-0.5" width="5rem" height="0.7rem" loading />
+      ) : (
+        <p
+          className="mt-0.5 line-clamp-1 text-1 text-muted-foreground"
+          title={atNick || undefined}
+        >
+          {atNick || '\u00a0'}
+        </p>
+      )}
+      <div className="min-h-5 w-full" aria-hidden />
+      <div className="flex min-h-5 w-full max-w-full flex-wrap content-center gap-1.5">
+        <StatusBadge isLoading={isLoading} status={status} />
+      </div>
+      {isLoading ? (
+        <Skeleton className="mt-0.5" width="100%" height="0.75rem" loading />
+      ) : (
+        <p
+          className="line-clamp-2 min-h-8 text-1 text-muted-foreground"
+          title={metaForTitle || undefined}
+        >
+          {joinLine || location?.trim() ? (
+            <span>
+              {joinLine ? (
+                <span className="inline" title={joinLine}>
+                  <Calendar
+                    className="mr-0.5 inline h-3 w-3 -translate-y-0.5 opacity-80"
+                    aria-hidden
+                  />
+                  {joinLine}
+                </span>
+              ) : null}
+              {joinLine && location?.trim() ? ' · ' : null}
+              {location?.trim() ? (
+                <span className="inline" title={location}>
+                  <SewingPinFilledIcon
+                    className="mr-0.5 inline h-3 w-3 -translate-y-0.5 opacity-80"
+                    aria-hidden
+                  />
+                  {location}
+                </span>
+              ) : null}
+            </span>
+          ) : null}
+        </p>
+      )}
+    </div>
+  );
+
+  const delegateFooter = localIsDelegate ? (
+    <div className="space-y-2 border-t border-border/60 p-2.5">
+      <p className="text-1 text-muted-foreground">
+        {tCommon('delegatedVotingMemberLabel')}
+      </p>
+      <Button
+        type="button"
+        className="w-full"
+        size="sm"
+        variant="outline"
+        colorVariant="accent"
+        disabled={isDisabled}
+        onClick={onUndelegate}
+        title={actionTooltip}
+      >
+        {isUndelegating
+          ? tMembers('delegateSection.undelegating')
+          : tMembers('delegateSection.undelegate')}
+      </Button>
+    </div>
+  ) : null;
+
+  if (isLoading) {
+    return (
+      <Card
+        className={cn('h-full min-h-36 w-full min-w-0 p-0', className)}
+        data-testid="member-card-skeleton"
+      >
+        {mainBlock}
+      </Card>
+    );
+  }
+
+  const useSplit = Boolean(profileHref && localIsDelegate);
+  const singleLink = profileHref && !localIsDelegate;
+
+  return (
+    <Card
+      className={cn(
+        'flex h-full min-h-36 w-full min-w-0 flex-col overflow-hidden p-0',
+        'border-border/80 transition-shadow duration-150 hover:border-border hover:shadow-sm',
+        'motion-reduce:transition-none',
+        className,
+      )}
+      data-testid="member-card-grid"
+    >
+      {useSplit && profileHref ? (
+        <>
+          <Link
+            href={profileHref}
+            scroll={false}
+            className="block w-full no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {mainBlock}
+          </Link>
+          {delegateFooter}
+        </>
+      ) : singleLink && profileHref ? (
+        <Link
+          href={profileHref}
+          scroll={false}
+          className="block w-full no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {mainBlock}
+        </Link>
+      ) : (
+        <>
+          {mainBlock}
+          {delegateFooter}
+        </>
       )}
     </Card>
   );

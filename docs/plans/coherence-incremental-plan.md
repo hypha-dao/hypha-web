@@ -316,7 +316,7 @@ Step 16: navigation tab + layout.tsx cleanup
 
 **Commit:** `feat(web/coherence): add coherence to navigation tabs`  
 **Files:**
-- `apps/web/src/app/[lang]/dho/[id]/_components/navigation-tabs.tsx` (modify: import getDhoPathCoherence, add tab)
+- DHO space tab navigation: `DhoSpaceWorkspace` + in-flow `SpaceNavigationView` (replaces historical `navigation-tabs` / aside-only flows)
 - `apps/web/src/app/[lang]/dho/[id]/layout.tsx` (modify: remove getFormatter, use formatDate)
 
 **Verification:** Dev server runs. Coherence tab appears in DHO navigation. Clicking navigates to coherence page.

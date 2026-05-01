@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
@@ -22,6 +22,8 @@ type Props = {
   data: SpaceNode;
   currentSpaceId?: number;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
+  /** Extra classes on the outer container (e.g. full-bleed map in Ecosystem layout). */
+  className?: string;
 };
 
 const VISUALIZATION_CONFIG = {
@@ -36,14 +38,23 @@ const VISUALIZATION_CONFIG = {
   STROKE_WIDTH_SCALE: 0.7,
 } as const;
 
+const ACCENT = {
+  light: { stroke: 'rgb(99 102 241 / 0.5)', fill: 'rgb(99 102 241 / 0.1)' },
+  dark: { stroke: 'rgb(180 170 255 / 0.45)', fill: 'rgb(120 100 200 / 0.08)' },
+} as const;
+
 export function SpaceVisualization({
   data,
   currentSpaceId,
   onVisibleSpacesChange,
+  className,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [canvasSize, setCanvasSize] = useState<number>(
+    VISUALIZATION_CONFIG.WIDTH,
+  );
   const previousVisibleSpacesRef = useRef<string>('');
   const onVisibleSpacesChangeRef = useRef(onVisibleSpacesChange);
   const focusRef = useRef<d3.HierarchyNode<SpaceNode> | null>(null);
@@ -56,6 +67,16 @@ export function SpaceVisualization({
     text: string;
   }>({ visible: false, x: 0, y: 0, text: '' });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const reactId = useId().replace(/:/g, '');
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(true);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const apply = () => setPrefersReducedMotion(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
 
   useEffect(() => {
     themeRef.current = resolvedTheme;
@@ -68,6 +89,28 @@ export function SpaceVisualization({
   useEffect(() => {
     previousVisibleSpacesRef.current = '';
   }, [data, currentSpaceId]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => {
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      if (w <= 0) return;
+      // In flex layouts `clientHeight` can be 0 on the first pass; use width so the
+      // first paint matches the square map region, then correct when height arrives.
+      const hEff = h > 0 ? h : w;
+      const inner = Math.min(w, hEff);
+      const s = Math.round(Math.max(280, Math.min(1200, inner)));
+      setCanvasSize(s);
+    };
+    measure();
+    const ro = new ResizeObserver(() => {
+      measure();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!tooltip.visible || !tooltipRef.current || !containerRef.current)
@@ -114,16 +157,34 @@ export function SpaceVisualization({
 
     const getSelectedSpaceFillColor = () =>
       themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
+    const isDark = themeRef.current === 'dark';
+    const orbitLineMuted = isDark
+      ? 'rgb(175 180 200 / 0.36)'
+      : 'rgb(100 100 120 / 0.28)';
+    const orbitLineActive = isDark
+      ? 'rgb(200 200 255 / 0.55)'
+      : 'rgb(80 80 150 / 0.4)';
+    const focusFill = isDark
+      ? 'rgb(99 102 241 / 0.12)'
+      : 'rgb(99 102 241 / 0.07)';
+    const parentFill = isDark ? 'rgb(255 255 255 / 0.04)' : 'rgb(0 0 0 / 0.03)';
 
     const svg = d3.select(svgRef.current);
+    const f = focusRef.current;
+    const fParent = f?.parent;
     const orbits = svg.selectAll<SVGCircleElement, SpaceHierarchyNode>(
       'circle.orbit',
     );
 
     orbits.each(function (d: SpaceHierarchyNode) {
-      if (d === focusRef.current) {
-        d3.select(this).style('fill', getSelectedSpaceFillColor());
-      }
+      const isFocus = d === f;
+      d3.select(this)
+        .attr('stroke', isFocus ? orbitLineActive : orbitLineMuted)
+        .attr('stroke-width', isFocus ? 1.7 : 1.15);
+      d3.select(this).style(
+        'fill',
+        d === f ? focusFill : d === fParent ? parentFill : 'transparent',
+      );
     });
 
     const getStrokeWidth = (depth: number): number => {
@@ -135,8 +196,8 @@ export function SpaceVisualization({
 
     const logos = svg.selectAll<SVGGElement, SpaceHierarchyNode>('g.logo');
     logos.each(function (d: SpaceHierarchyNode) {
-      const circle = d3.select(this).select('circle');
-      if (d === focusRef.current) {
+      const circle = d3.select(this).select('circle.logo-face');
+      if (d === f) {
         circle.attr('fill', getSelectedSpaceFillColor());
       }
       circle
@@ -150,6 +211,14 @@ export function SpaceVisualization({
 
     const getSelectedSpaceFillColor = () =>
       themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
+    const isDark = themeRef.current === 'dark';
+    const accent = isDark ? ACCENT.dark : ACCENT.light;
+    const orbitLineMuted = isDark
+      ? 'rgb(175 180 200 / 0.36)'
+      : 'rgb(100 100 120 / 0.28)';
+    const orbitLineActive = isDark
+      ? 'rgb(200 200 255 / 0.55)'
+      : 'rgb(80 80 150 / 0.4)';
 
     const getStrokeWidth = (depth: number): number => {
       return (
@@ -158,7 +227,15 @@ export function SpaceVisualization({
       );
     };
 
-    const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
+    const width = canvasSize;
+    const height = canvasSize;
+    const maxR = (Math.sqrt(2) / 2) * Math.min(width, height);
+    const idPrefix = `sv-${reactId}`;
+
+    const getOrbitStroke = (d: SpaceHierarchyNode) =>
+      d === focus ? orbitLineActive : orbitLineMuted;
+    const getOrbitStrokeW = (d: SpaceHierarchyNode) =>
+      d === focus ? 1.7 : 1.15;
 
     const root = d3.hierarchy<SpaceNode>(data) as SpaceHierarchyNode;
 
@@ -353,18 +430,242 @@ export function SpaceVisualization({
 
     svg.selectAll('*').remove();
 
-    const g = svg.append('g');
+    const defs = svg.append('defs').attr('class', 'map-filters');
+
+    const bgGrad = defs
+      .append('radialGradient')
+      .attr('id', `${idPrefix}-field`)
+      .attr('cx', '50%')
+      .attr('cy', '50%')
+      .attr('r', '58%');
+    if (isDark) {
+      bgGrad
+        .append('stop')
+        .attr('offset', '0%')
+        .attr('stop-color', 'rgb(32 32 50)');
+      bgGrad
+        .append('stop')
+        .attr('offset', '55%')
+        .attr('stop-color', 'rgb(16 16 30)');
+      bgGrad
+        .append('stop')
+        .attr('offset', '100%')
+        .attr('stop-color', 'rgb(5 5 10)');
+    } else {
+      bgGrad
+        .append('stop')
+        .attr('offset', '0%')
+        .attr('stop-color', 'rgb(255 255 255)');
+      bgGrad
+        .append('stop')
+        .attr('offset', '45%')
+        .attr('stop-color', 'rgb(240 240 255)');
+      bgGrad
+        .append('stop')
+        .attr('offset', '100%')
+        .attr('stop-color', 'rgb(220 220 240)');
+    }
+
+    const fLogo = defs
+      .append('filter')
+      .attr('id', `${idPrefix}-logoCard`)
+      .attr('x', '-80%')
+      .attr('y', '-80%')
+      .attr('width', '260%')
+      .attr('height', '260%');
+    fLogo
+      .append('feDropShadow')
+      .attr('in', 'SourceGraphic')
+      .attr('dx', 0)
+      .attr('dy', 3.5)
+      .attr('stdDeviation', 5.5)
+      .attr('flood-color', isDark ? 'rgb(0 0 0 / 0.55)' : 'rgb(0 0 0 / 0.2)')
+      .attr('flood-opacity', 1)
+      .attr('result', 'sDrop');
+    fLogo
+      .append('feDropShadow')
+      .attr('in', 'SourceGraphic')
+      .attr('dx', 0)
+      .attr('dy', 0)
+      .attr('stdDeviation', 9)
+      .attr(
+        'flood-color',
+        isDark ? 'rgb(140 130 255 / 0.4)' : 'rgb(99 102 241 / 0.2)',
+      )
+      .attr('flood-opacity', 0.9)
+      .attr('result', 'sGlow');
+    fLogo
+      .append('feMerge')
+      .selectAll('feMergeNode')
+      .data(['sDrop', 'sGlow', 'SourceGraphic'])
+      .enter()
+      .append('feMergeNode')
+      .attr('in', (n) => n);
+
+    const vGrad = defs
+      .append('radialGradient')
+      .attr('id', `${idPrefix}-vignette`)
+      .attr('cx', '50%')
+      .attr('cy', '50%')
+      .attr('r', '65%');
+    vGrad
+      .append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', isDark ? 'rgb(0 0 0 / 0)' : 'rgb(0 0 0 / 0)');
+    vGrad
+      .append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', isDark ? 'rgb(0 0 0 / 0.2)' : 'rgb(0 0 0 / 0.06)');
+
+    const focusTintA = isDark
+      ? 'rgb(99 102 241 / 0.12)'
+      : 'rgb(99 102 241 / 0.07)';
+    const orbitParentTint = isDark
+      ? 'rgb(255 255 255 / 0.04)'
+      : 'rgb(0 0 0 / 0.03)';
+
+    const orbitFillForNode = (d: SpaceHierarchyNode, f: SpaceHierarchyNode) => {
+      if (d === f) return focusTintA;
+      if (d === f.parent) return orbitParentTint;
+      return 'transparent';
+    };
+
+    const ringGrad = defs
+      .append('linearGradient')
+      .attr('id', `${idPrefix}-ring`)
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '100%')
+      .attr('y2', '100%');
+    ringGrad
+      .append('stop')
+      .attr('offset', '0%')
+      .attr(
+        'stop-color',
+        isDark ? 'rgb(200 200 255 / 0.55)' : 'rgb(99 102 241 / 0.5)',
+      );
+    ringGrad
+      .append('stop')
+      .attr('offset', '100%')
+      .attr(
+        'stop-color',
+        isDark ? 'rgb(99 102 241 / 0.2)' : 'rgb(200 200 255 / 0.25)',
+      );
+
+    const bgLayer = svg
+      .append('g')
+      .attr('class', 'map-bg')
+      .style('pointer-events', 'none');
+    bgLayer
+      .append('rect')
+      .attr('x', -width / 2)
+      .attr('y', -height / 2)
+      .attr('width', width)
+      .attr('height', height)
+      .attr('fill', `url(#${idPrefix}-field)`);
+    /* Very subtle specular + vignette so the field reads "premium" not flat */
+    bgLayer
+      .append('circle')
+      .attr('cx', 0)
+      .attr('cy', -height * 0.04)
+      .attr('r', maxR * 0.5)
+      .attr(
+        'fill',
+        isDark ? 'rgb(200 200 255 / 0.04)' : 'rgb(255 255 255 / 0.4)',
+      );
+    bgLayer
+      .append('rect')
+      .attr('x', -width / 2)
+      .attr('y', -height / 2)
+      .attr('width', width)
+      .attr('height', height)
+      .attr('fill', `url(#${idPrefix}-vignette)`)
+      .style('pointer-events', 'none');
+
+    const ringRadii = [0.18, 0.34, 0.5, 0.66, 0.85].map((t) => maxR * t);
+    bgLayer
+      .selectAll('circle.map-ring')
+      .data(ringRadii)
+      .join('circle')
+      .attr('class', 'map-ring')
+      .attr('cx', 0)
+      .attr('cy', 0)
+      .attr('r', (r) => r)
+      .attr('fill', 'none')
+      .attr('stroke', isDark ? 'rgb(200 200 255 / 0.07)' : 'rgb(0 0 0 / 0.055)')
+      .attr('stroke-width', 0.75)
+      .attr('vector-effect', 'non-scaling-stroke');
+
+    if (!prefersReducedMotion) {
+      const pulseR = [0.22, 0.5, 0.78] as const;
+      bgLayer
+        .selectAll('circle.pulse')
+        .data(pulseR)
+        .join('circle')
+        .attr('class', 'pulse')
+        .attr('cx', 0)
+        .attr('cy', 0)
+        .attr('r', (d) => maxR * d)
+        .attr('fill', 'none')
+        .attr('stroke', accent.stroke)
+        .attr('stroke-width', 0.5)
+        .attr('vector-effect', 'non-scaling-stroke')
+        .attr('opacity', 0.35)
+        .each(function (_d, i) {
+          const el = this;
+          d3.select(el)
+            .append('animate')
+            .attr('attributeName', 'opacity')
+            .attr('values', '0.1;0.4;0.1')
+            .attr('keyTimes', '0;0.5;1')
+            .attr('dur', i === 0 ? '4.5s' : i === 1 ? '5.8s' : '6.6s')
+            .attr('repeatCount', 'indefinite');
+        });
+    } else {
+      const guideCount = 6;
+      for (let i = 0; i < guideCount; i += 1) {
+        const angle = (i * 2 * Math.PI) / guideCount;
+        const x1 = 0.1 * maxR * Math.cos(angle);
+        const y1 = 0.1 * maxR * Math.sin(angle);
+        const x2 = maxR * 0.94 * Math.cos(angle);
+        const y2 = maxR * 0.94 * Math.sin(angle);
+        bgLayer
+          .append('line')
+          .attr('x1', x1)
+          .attr('y1', y1)
+          .attr('x2', x2)
+          .attr('y2', y2)
+          .attr(
+            'stroke',
+            isDark ? 'rgb(200 200 255 / 0.04)' : 'rgb(0 0 0 / 0.035)',
+          )
+          .attr('stroke-width', 0.35);
+      }
+    }
+
+    const g = svg.append('g').attr('class', 'map-graph');
+    const focusRingG = g
+      .append('g')
+      .attr('class', 'map-focus-orbit-halo')
+      .style('pointer-events', 'none');
+    const focusOrbitRing = focusRingG
+      .append('circle')
+      .attr('class', 'map-focus-orbit-ring')
+      .attr('fill', 'none')
+      .attr('stroke', `url(#${idPrefix}-ring)`)
+      .attr('stroke-width', 1.1)
+      .attr('vector-effect', 'non-scaling-stroke')
+      .attr('opacity', 0.85);
 
     const orbits = g
       .selectAll<SVGCircleElement, SpaceHierarchyNode>('circle.orbit')
       .data(root.descendants() as SpaceHierarchyNode[])
       .join('circle')
       .attr('class', 'orbit')
-      .style('fill', (d: SpaceHierarchyNode) =>
-        d === focus ? getSelectedSpaceFillColor() : 'transparent',
-      )
-      .attr('stroke', '#8F8F8F')
-      .attr('stroke-width', 1.2)
+      .style('fill', (d: SpaceHierarchyNode) => orbitFillForNode(d, focus))
+      .attr('stroke', getOrbitStroke)
+      .attr('stroke-width', getOrbitStrokeW)
+      .attr('vector-effect', 'non-scaling-stroke')
       .style('pointer-events', 'all')
       .on('click', (event, d) => {
         if (focus !== d) {
@@ -372,8 +673,6 @@ export function SpaceVisualization({
           zoom(d);
         }
       });
-
-    const defs = svg.append('defs');
 
     const logos = g
       .selectAll<SVGGElement, SpaceHierarchyNode>('g.logo')
@@ -414,14 +713,16 @@ export function SpaceVisualization({
 
     logos.each(function (d: SpaceHierarchyNode) {
       const logoGroup = d3.select(this);
-      const clipId = `clip-${d.data.id}`;
+      const clipId = `clip-${idPrefix}-${d.data.id}`;
 
       const clipPath = defs.append('clipPath').attr('id', clipId);
 
       clipPath.append('circle').attr('r', 1);
 
       logoGroup
+        .attr('filter', `url(#${idPrefix}-logoCard)`)
         .append('circle')
+        .attr('class', 'logo-face')
         .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
         .attr('stroke', getSelectedSpaceFillColor())
         .attr('stroke-width', getStrokeWidth(d.depth));
@@ -556,14 +857,13 @@ export function SpaceVisualization({
 
     logos.each(function (d: SpaceHierarchyNode) {
       d3.select(this)
-        .select('circle')
+        .select('circle.logo-face')
         .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
         .attr('stroke', getSelectedSpaceFillColor())
         .attr('stroke-width', getStrokeWidth(d.depth));
     });
 
     zoomTo(view);
-    previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
 
     function zoom(target: SpaceHierarchyNode) {
@@ -600,13 +900,11 @@ export function SpaceVisualization({
       orbits
         .transition()
         .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-        .style('fill', (d: SpaceHierarchyNode) =>
-          d === focus ? getSelectedSpaceFillColor() : 'transparent',
-        );
+        .style('fill', (d: SpaceHierarchyNode) => orbitFillForNode(d, focus));
 
       logos.each(function (d: SpaceHierarchyNode) {
         d3.select(this)
-          .select('circle')
+          .select('circle.logo-face')
           .transition()
           .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
           .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
@@ -630,9 +928,14 @@ export function SpaceVisualization({
             `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
         )
         .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
-        .style('fill', (d: SpaceHierarchyNode) =>
-          d === focus ? getSelectedSpaceFillColor() : 'transparent',
-        );
+        .style('fill', (d: SpaceHierarchyNode) => orbitFillForNode(d, focus));
+
+      const fOrbitR = focus.r! * k;
+      const px = (focus.x! - v[0]) * k;
+      const py = (focus.y! - v[1]) * k;
+      focusOrbitRing
+        .attr('transform', `translate(${px},${py})`)
+        .attr('r', fOrbitR + 2.5);
 
       logos
         .attr(
@@ -642,10 +945,10 @@ export function SpaceVisualization({
         )
         .each(function (d: SpaceHierarchyNode) {
           const r = d.r! * k * VISUALIZATION_CONFIG.LOGO_RATIO;
-          const clipId = `clip-${d.data.id}`;
+          const clipId = `clip-${idPrefix}-${d.data.id}`;
 
           d3.select(this)
-            .select('circle')
+            .select('circle.logo-face')
             .attr('r', r)
             .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
             .attr('stroke', getSelectedSpaceFillColor())
@@ -661,13 +964,23 @@ export function SpaceVisualization({
             .attr('height', r * 2);
         });
     }
-  }, [data, currentSpaceId, resolvedTheme]);
+  }, [
+    data,
+    currentSpaceId,
+    resolvedTheme,
+    canvasSize,
+    prefersReducedMotion,
+    reactId,
+  ]);
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div
+      ref={containerRef}
+      className={`relative min-h-0 w-full max-w-full flex-1 ${className ?? ''}`}
+    >
       <svg
         ref={svgRef}
-        className="w-full h-auto"
+        className="block h-full w-full min-h-0 max-h-full max-w-full"
         role="img"
         aria-label="Space hierarchy visualization"
       />

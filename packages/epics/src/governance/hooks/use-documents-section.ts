@@ -63,7 +63,7 @@ export const useDocumentsSection = ({
 
   React.useEffect(() => {
     setPages(1);
-  }, [activeFilter, searchTerm]);
+  }, [activeFilter, searchTerm, documents]);
 
   const loadMore = React.useCallback(() => {
     if (!pagination?.hasNextPage) return;

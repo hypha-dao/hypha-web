@@ -3,23 +3,27 @@
 import {
   Skeleton,
   Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
+  Badge,
+  type BadgeItem,
+  BadgesList,
 } from '@hypha-platform/ui';
-import { Image } from '@hypha-platform/ui';
-import { PersonLabel } from '../../people/components/person-label';
+import { PersonAvatar } from '../../people/components/person-avatar';
 import { type Creator } from '../../people/components/person-label';
-import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
 import { stripMarkdown } from '@hypha-platform/ui-utils';
 import {
   DocumentStatus,
   stripHyphaInvestmentFormMarker,
   useEvents,
+  useIsDelegate,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { stripExchangeDetailsBlock } from '../utils/strip-exchange-details-block';
 import React from 'react';
+import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
+import { cn } from '@hypha-platform/ui-utils';
+import { Calendar } from 'lucide-react';
 
 interface Document {
   id?: number;
@@ -31,6 +35,8 @@ interface Document {
 
 interface DocumentCardProps {
   isLoading: boolean;
+  /** Client route to proposal detail (card body links here; vote UI stays outside the link). */
+  detailHref?: string;
   leadImage?: string;
   creator?: Creator;
   badges?: BadgeItem[];
@@ -77,13 +83,7 @@ function stripMdxComments(text: string): string {
 
 function stripDescription(description: string): string {
   if (!description) return '';
-  // Strip investment marker before markdown — markdown can mangle `__` delimiters.
   const withoutInvestmentMarker = stripHyphaInvestmentFormMarker(description);
-  // Exchange proposals embed a block of structured details between
-  // `<!-- exchange-details:start -->` / `<!-- exchange-details:end -->`. The
-  // content between those markers is plain markdown (wallet addresses, leg
-  // tables) so `stripHtmlComments` alone leaves it on the card preview. Drop
-  // the whole block so the card only shows the user-written description.
   const withoutExchangeDetails = stripExchangeDetailsBlock(
     withoutInvestmentMarker,
     { replaceWith: '\n' },
@@ -110,6 +110,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   title,
   description,
   isLoading,
+  detailHref,
   leadImage,
   creator,
   badges,
@@ -117,6 +118,12 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   createdAt,
   status,
 }) => {
+  const { id: spaceSlug } = useParams();
+  const { space: currentSpace } = useSpaceBySlug(spaceSlug as string);
+  const { isDelegate } = useIsDelegate({
+    spaceId: currentSpace?.web3SpaceId as number,
+    userAddress: creator?.address as `0x${string}`,
+  });
   const tCommon = useTranslations('Common');
   const format = useFormatter();
   const formatDateTime = (date: string | number | Date) => {
@@ -151,84 +158,213 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
     referenceId: documentId,
   });
   const event = !isLoadingEvents && events instanceof Array ? events[0] : null;
-  return (
-    <Card className="h-full w-full space-y-5">
-      <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
-        <Skeleton
-          loading={isLoading}
-          className="min-w-full"
-          height="150px"
-          width="250px"
-        >
-          <Image
-            className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={leadImage || '/placeholder/document-lead-image.webp'}
-            alt={title || ''}
-            width={250}
-            height={150}
+
+  const list = badges ?? [];
+  const typeBadge = list.length > 1 ? list[0] : undefined;
+  const statusBadge = list.length > 1 ? list[1] : list[0];
+
+  const creatorDisplay =
+    [creator?.name, creator?.surname].filter(Boolean).join(' ').trim() ||
+    '\u00a0';
+
+  const heroSrc = creator?.avatarUrl?.trim() || leadImage;
+
+  const dateLine = (() => {
+    if (isLoading || isLoadingEvents) return '';
+    if (type === 'executeProposal' && event) {
+      return tCommon('acceptedOn', {
+        date: formatDateTime(event.createdAt),
+      });
+    }
+    if (type === 'rejectProposal' && event) {
+      return tCommon('rejectedOn', {
+        date: formatDateTime(event.createdAt),
+      });
+    }
+    if (!type && createdAt) {
+      return tCommon('createdOn', {
+        date: formatDateTime(createdAt),
+      });
+    }
+    return '';
+  })();
+
+  const descriptionPlain = stripMarkdown(stripDescription(description ?? ''), {
+    orderedListMarkers: false,
+    unorderedListMarkers: false,
+  });
+
+  const heroVisual = (
+    <div className="relative isolate overflow-hidden">
+      <div
+        className={cn(
+          'relative h-[5.25rem] w-full overflow-hidden bg-muted/50',
+          'after:pointer-events-none after:absolute after:inset-0 after:bg-gradient-to-b after:from-transparent after:via-background/55 after:to-background',
+        )}
+      >
+        {isLoading ? (
+          <Skeleton
+            className="h-full w-full rounded-none"
+            loading
+            height="100%"
           />
-        </Skeleton>
-      </CardHeader>
-      <CardContent className="relative space-y-4">
-        <div className="flex flex-col items-start space-y-2">
-          <BadgesList isLoading={isLoading} badges={badges ?? []} />
-          <Skeleton
-            className="min-w-full"
-            width="120px"
-            height="18px"
-            loading={isLoading}
+        ) : heroSrc ? (
+          <img
+            src={heroSrc}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-[2px] motion-reduce:scale-100 motion-reduce:blur-none"
+          />
+        ) : (
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-accent-5/35 via-muted/60 to-background"
+            aria-hidden
+          />
+        )}
+      </div>
+      <div className="relative z-10 -mt-10 px-3">
+        <PersonAvatar
+          avatarSrc={creator?.avatarUrl}
+          userName={`${creator?.name ?? ''} ${creator?.surname ?? ''}`.trim()}
+          size="lg"
+          isLoading={isLoading}
+          shape="circle"
+          className="shrink-0 shadow-md ring-4 ring-card"
+        />
+      </div>
+    </div>
+  );
+
+  const mainInner = (
+    <div className="min-w-0 space-y-2 px-3 pb-3 pt-1">
+      {heroVisual}
+      <div className="flex min-w-0 items-start justify-between gap-1.5 pt-0.5">
+        {isLoading ? (
+          <Skeleton className="my-0.5" width="7rem" height="1.1rem" loading />
+        ) : (
+          <p
+            className="text-4 line-clamp-2 min-w-0 flex-1 font-medium leading-tight"
+            title={title || undefined}
           >
-            <CardTitle>{title}</CardTitle>
-          </Skeleton>
-          <PersonLabel isLoading={isLoading} creator={creator} />
-        </div>
-        <div className="flex flex-grow text-1 text-neutral-11">
-          <Skeleton
-            className="min-w-full"
-            width="200px"
-            height="48px"
-            loading={isLoading}
+            {title || '—'}
+          </p>
+        )}
+        {typeBadge ? (
+          <Badge
+            className="h-fit max-w-[40%] shrink-0 text-[10px] font-medium uppercase"
+            variant={typeBadge.variant}
+            colorVariant={typeBadge.colorVariant}
+            isLoading={isLoading}
           >
-            <div className="line-clamp-3 w-full">
-              {stripMarkdown(stripDescription(description ?? ''), {
-                orderedListMarkers: false,
-                unorderedListMarkers: false,
-              })}
-            </div>
-          </Skeleton>
-        </div>
-        <div className="flex flex-grow text-1 text-neutral-11">
-          <Skeleton
-            className="min-w-full"
-            width="200px"
-            height="48px"
-            loading={isLoading || isLoadingEvents}
+            {typeBadge.label}
+          </Badge>
+        ) : statusBadge && !isLoading ? (
+          <Badge
+            className="h-fit max-w-[40%] shrink-0 text-[10px] font-medium uppercase"
+            variant={statusBadge.variant}
+            colorVariant={statusBadge.colorVariant}
           >
-            {type === 'executeProposal' && event && (
-              <>
-                {tCommon('acceptedOn', {
-                  date: formatDateTime(event.createdAt),
-                })}
-              </>
-            )}
-            {type === 'rejectProposal' && event && (
-              <>
-                {tCommon('rejectedOn', {
-                  date: formatDateTime(event.createdAt),
-                })}
-              </>
-            )}
-            {!type && createdAt && (
-              <>
-                {tCommon('createdOn', {
-                  date: formatDateTime(createdAt),
-                })}
-              </>
-            )}
-          </Skeleton>
+            {statusBadge.label}
+          </Badge>
+        ) : isLoading ? (
+          <Skeleton className="my-0.5 h-5 w-16 shrink-0" loading />
+        ) : null}
+      </div>
+      {isLoading ? (
+        <Skeleton className="mt-0.5" width="5rem" height="0.7rem" loading />
+      ) : (
+        <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-2">
+          <p
+            className="line-clamp-1 min-w-0 flex-1 text-1 text-muted-foreground"
+            title={creatorDisplay.trim() || undefined}
+          >
+            {creatorDisplay}
+          </p>
+          {isDelegate ? (
+            <Badge colorVariant="accent" variant="outline" size={1}>
+              {tCommon('delegateBadge')}
+            </Badge>
+          ) : null}
         </div>
+      )}
+      {statusBadge && typeBadge ? (
+        <div className="flex min-h-5 w-full max-w-full flex-wrap content-center gap-1.5">
+          <BadgesList isLoading={isLoading} badges={[statusBadge]} />
+        </div>
+      ) : null}
+      {isLoading ? (
+        <Skeleton className="mt-0.5" width="100%" height="0.75rem" loading />
+      ) : (
+        <p
+          className="line-clamp-2 min-h-8 text-1 text-muted-foreground"
+          title={descriptionPlain || undefined}
+        >
+          {descriptionPlain || null}
+        </p>
+      )}
+      {isLoading ? (
+        <Skeleton className="mt-0.5" width="100%" height="0.75rem" loading />
+      ) : dateLine ? (
+        <p
+          className="line-clamp-2 text-1 text-muted-foreground"
+          title={dateLine}
+        >
+          <Calendar
+            className="mr-0.5 inline h-3 w-3 -translate-y-0.5 opacity-80"
+            aria-hidden
+          />
+          {dateLine}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  const mainBlock =
+    detailHref && !isLoading ? (
+      <Link
+        href={detailHref}
+        scroll={false}
+        className="block w-full no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {mainInner}
+      </Link>
+    ) : (
+      mainInner
+    );
+
+  const interactionFooter =
+    interactions != null ? (
+      <div
+        className="space-y-2 border-t border-border/60 p-2.5"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         {interactions}
-      </CardContent>
+      </div>
+    ) : null;
+
+  if (isLoading) {
+    return (
+      <Card
+        className="h-full min-h-36 w-full min-w-0 p-0"
+        data-testid="document-card-skeleton"
+      >
+        {mainBlock}
+      </Card>
+    );
+  }
+
+  return (
+    <Card
+      className={cn(
+        'flex h-full min-h-36 w-full min-w-0 flex-col overflow-hidden p-0',
+        'border-border/80 transition-shadow duration-150 hover:border-border hover:shadow-sm',
+        'motion-reduce:transition-none',
+      )}
+      data-testid="document-card-grid"
+    >
+      {mainBlock}
+      {interactionFooter}
     </Card>
   );
 };
