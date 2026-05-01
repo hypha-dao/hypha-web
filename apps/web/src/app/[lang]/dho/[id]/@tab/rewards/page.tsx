@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import {
-  Button,
   SpacePendingRewardsSection,
   SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
+import { Button } from '@hypha-platform/ui';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { getTranslations } from 'next-intl/server';
