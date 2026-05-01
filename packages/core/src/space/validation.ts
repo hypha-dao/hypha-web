@@ -44,6 +44,21 @@ const matrixRoomIdSchema = z
   .trim()
   .regex(/^![^:]+:.+$/, 'Invalid Matrix room id format');
 
+const SVG_FALLBACK_MIME_TYPES = new Set([
+  '',
+  'application/octet-stream',
+  'binary/octet-stream',
+]);
+
+const isAcceptedEcosystemLogoFile = (file: File) => {
+  if (ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type)) {
+    return true;
+  }
+
+  const isSvgByName = /\.svg$/i.test(file.name);
+  return isSvgByName && SVG_FALLBACK_MIME_TYPES.has(file.type);
+};
+
 const createSpaceWeb2Props = {
   title: z
     .string()
@@ -128,7 +143,7 @@ export const createSpaceFiles = {
           'File size must be less than 4MB',
         )
         .refine(
-          (file) => ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type),
+          (file) => isAcceptedEcosystemLogoFile(file),
           'File must be an image (JPEG, PNG, GIF, WEBP, or SVG)',
         ),
     ])
@@ -143,7 +158,7 @@ export const createSpaceFiles = {
           'File size must be less than 4MB',
         )
         .refine(
-          (file) => ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type),
+          (file) => isAcceptedEcosystemLogoFile(file),
           'File must be an image (JPEG, PNG, GIF, WEBP, or SVG)',
         ),
     ])
