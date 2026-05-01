@@ -640,6 +640,7 @@ export const SpaceForm = ({
                       {...field}
                       maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                       accept={{
+                        'image/gif': [],
                         'image/png': [],
                         'image/jpg': [],
                         'image/jpeg': [],
@@ -678,6 +679,7 @@ export const SpaceForm = ({
                       {...field}
                       maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                       accept={{
+                        'image/gif': [],
                         'image/png': [],
                         'image/jpg': [],
                         'image/jpeg': [],
