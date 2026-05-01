@@ -163,8 +163,9 @@ export function DhoStickySpaceChrome({
         )}
         style={{
           top: 'var(--menu-top-height, 70px)',
+          backgroundColor: 'rgba(7,10,16,0.92)',
           backgroundImage:
-            'linear-gradient(to right, rgba(0,0,0,0.46), rgba(0,0,0,0.34), rgba(0,0,0,0.4)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 18%, transparent), transparent 55%)',
+            'linear-gradient(to right, rgba(0,0,0,0.58), rgba(0,0,0,0.42), rgba(0,0,0,0.5)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 14%, transparent), transparent 55%)',
           boxShadow:
             '0 10px 28px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)',
         }}
