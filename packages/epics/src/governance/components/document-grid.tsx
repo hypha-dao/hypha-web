@@ -1,7 +1,6 @@
 import { type BadgeItem } from '@hypha-platform/ui';
 import { type Creator } from '../../people/components/person-label';
 import { DocumentCard } from './document-card';
-import Link from 'next/link';
 
 interface Document {
   title?: string;
@@ -26,15 +25,16 @@ export const DocumentGrid = ({
   documents,
 }: DocumentGridProps) => {
   return (
-    <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2">
+    <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {documents.map((document) => (
-        <Link
-          href={`${basePath}/${document.slug}`}
+        <DocumentCard
           key={document.slug}
-          scroll={false}
-        >
-          <DocumentCard {...document} isLoading={isLoading} />
-        </Link>
+          {...document}
+          isLoading={isLoading}
+          detailHref={
+            document.slug ? `${basePath}/${document.slug}` : undefined
+          }
+        />
       ))}
     </div>
   );

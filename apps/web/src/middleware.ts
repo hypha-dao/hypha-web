@@ -89,6 +89,28 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
 }
 
 export function middleware(request: NextRequest) {
+  const { pathname, search, origin } = request.nextUrl;
+
+  /** Legacy soft-nav URL: /[lang]/dho/[id]/[tab]/select-navigation-action → /spaces in-flow. */
+  const legacyNav = pathname.match(
+    /^\/([^/]+)\/dho\/([^/]+)\/[^/]+\/select-navigation-action\/?$/,
+  );
+  if (legacyNav) {
+    const [, lang, dhoId] = legacyNav;
+    const to = new URL(`/${lang}/dho/${dhoId}/spaces${search}`, origin);
+    const res = NextResponse.redirect(to);
+    res.headers.set('x-hypha-legacy-redirect', 'dho-spaces');
+    if (process.env.NODE_ENV === 'development') {
+      console.info(
+        '[middleware] redirect legacy dho path to /spaces',
+        request.nextUrl.pathname,
+        '→',
+        to.pathname,
+      );
+    }
+    return res;
+  }
+
   const response = i18nMiddleware(request);
 
   if (response.status === 301 || response.status === 302) {

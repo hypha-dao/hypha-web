@@ -5,6 +5,7 @@
     "memberRoleLabel": "Membre",
     "delegatedVotingMemberLabel": "Membre avec vote délégué",
     "Treasury": "Trésorerie",
+    "Rewards": "Récompenses",
     "Agreements": "Accords",
     "Spaces": "Espaces",
     "loadMore": "Charger plus",
@@ -23,6 +24,7 @@
     "copyWalletAddress": "Copier l’adresse du portefeuille",
     "walletAddressCopied": "Copié !",
     "otherMembers": "+ {count} autres membres",
+    "Ecosystem": "Écosystème",
     "exploreSpaces": "Explorer les espaces",
     "findCategory": "Trouver une catégorie",
     "noSpacesYet": "Aucun espace créé ou rejoint pour le moment. Explorez notre réseau et rejoignez un espace, ou créez le vôtre.",
@@ -42,6 +44,9 @@
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
     "Coherence": "Cohérence",
+    "Signals": "Signaux",
+    "Artifact": "Artefact",
+    "Wiki": "Mémoire",
     "uploadLeadImage": {
       "cropTitle": "Téléverser une image",
       "cropDescription": "Ajustez le cadrage, puis enregistrez. Faites glisser pour repositionner et zoomez pour remplir la zone de bannière (JPEG, PNG ou WebP — max. 4 Mo).",
@@ -136,7 +141,8 @@
     "Dashboard": "Tableau de bord DHO",
     "actionButtons": {
       "spaceSettings": "Paramètres de l'espace",
-      "create": "Créer"
+      "create": "Créer",
+      "createProposal": "Créer une proposition"
     },
     "nestedSpacesButton": {
       "label": "Navigation des espaces",
@@ -144,9 +150,21 @@
       "noAccess": "Vous n'avez pas accès à la navigation des espaces."
     }
   },
+  "DhoWorkspaceNav": {
+    "spaceNavAriaLabel": "Sections de l’espace",
+    "openSpaceMenu": "Menu de l’espace",
+    "spaceMenuTitle": "Espace",
+    "closeMenu": "Fermer",
+    "spaceMapLoading": "Chargement de la carte des espaces",
+    "expandNavLabels": "Afficher les noms des sections",
+    "collapseNavLabels": "Masquer les noms des sections",
+    "openSpaceSettings": "Paramètres de l'espace"
+  },
   "SpaceSettingsAction": {
     "title": "Paramètres de l'espace",
     "content": "Accédez aux paramètres de votre espace et gérez-les, y compris son apparence, sa structure, ses méthodes, l'adhésion et la trésorerie.",
+    "searchSettings": "Rechercher dans les paramètres…",
+    "noSettingsMatch": "Aucun paramètre ne correspond à votre recherche.",
     "groups": {
       "overview": "Aperçu",
       "agreements": "Accords",
@@ -291,8 +309,10 @@
     }
   },
   "SelectNavigationAction": {
-    "title": "Navigation des espaces",
-    "content": "Naviguez dans tous vos espaces sur une seule carte interactive pour voir comment ils sont connectés les uns aux autres. Visitez facilement les espaces imbriqués, explorez les adhésions espace-à-espace et suivez les flux de valeur dans votre écosystème direct.",
+    "title": "Écosystème",
+    "mapRegionAriaLabel": "Carte des relations entre espaces",
+    "dataPanelAriaLabel": "Espaces imbriqués, recherche et actions",
+    "content": "",
     "tabs": {
       "nestedSpaces": "Espaces imbriqués",
       "spaceToSpace": "Espace-à-espace",
@@ -312,18 +332,22 @@
       "noAccessAddSpace": "Vous n'avez pas accès pour ajouter des espaces à cette organisation.",
       "visitSpace": "Visiter l'espace",
       "searchSpaces": "Rechercher des espaces",
-      "noSpacesFound": "Aucun espace trouvé"
+      "noSpacesFound": "Aucun espace trouvé",
+      "panelListHeading": "Espaces"
     }
   },
   "AgreementsTab": {
     "onVoting": "En vote",
     "accepted": "Acceptés",
     "rejected": "Rejetés",
+    "refused": "Refusés",
     "searchDocuments": "Rechercher des documents",
     "listIsEmpty": "La liste est vide"
   },
   "MembersTab": {
     "searchMembers": "Rechercher des membres",
+    "nestedSpaceTypeLabel": "Espace",
+    "spaceDelegateLabel": "Délégué",
     "delegateVoting": "Déléguer le vote",
     "listIsEmpty": "La liste est vide",
     "loading": "Chargement...",
@@ -353,7 +377,8 @@
       "success": "Délégation effectuée avec succès !",
       "errors": {
         "selectMember": "Veuillez sélectionner un membre",
-        "selectSpace": "Veuillez sélectionner un espace"
+        "selectSpace": "Veuillez sélectionner un espace",
+        "undelegateFailed": "Impossible de retirer la délégation. Veuillez réessayer."
       }
     }
   },
@@ -366,6 +391,7 @@
     "listIsEmpty": "La liste est vide",
     "loadMoreAssets": "Charger plus d'actifs",
     "transactions": "Transactions",
+    "tabVaults": "Coffres",
     "searchTransactions": "Rechercher des transactions",
     "noTransactionsFound": "Aucune transaction trouvée",
     "loadMoreTransactions": "Charger plus de transactions",
@@ -387,8 +413,12 @@
       "joinSpaceToUpdateBackingVault": "Rejoignez l’espace pour mettre à jour le coffre de garantie"
     },
     "assetCard": {
+      "tokenIconAlt": "Jeton {name}",
+      "collateralType": "Garantie",
+      "referencePrice": "Prix",
+      "issuanceLabel": "Émission",
       "fromSpace": "de {spaceTitle}",
-      "totalIssuance": "Émission totale : {value}",
+      "totalIssuance": "{value}",
       "createdOn": "Créé le {date}",
       "mutualCredit": {
         "debtBadge": "Doit {amount} {symbol}",
@@ -833,7 +863,8 @@
     "exchangeDepositProposalConfirming": "Confirmation...",
     "exchangeDepositProposalTitle": "Déposer {amount} {symbol} – Régler l'escrow (#{escrowId})",
     "exchangeDepositProposalDescription": "Approuvez et déposez {payAmount} {paySymbol} dans l'escrow (#{escrowId}) pour finaliser l'échange avec {otherParty}. En retour, {activeSpace} recevra {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Approuvez et déposez {payAmount} {paySymbol} dans l'escrow (#{escrowId}) pour finaliser l'investissement dans {otherParty}. En retour, {activeSpace} recevra {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Approuvez et déposez {payAmount} {paySymbol} dans l'escrow (#{escrowId}) pour finaliser l'investissement dans {otherParty}. En retour, {activeSpace} recevra {receiveAmount} {receiveSymbol}.",
+    "dismissBanner": "Fermer la bannière"
   },
   "AgreementFlow": {
     "labels": {
@@ -1974,11 +2005,14 @@
     "callPaneResizeSpeakerShare": "Redimensionner l’orateur et le partage d’écran"
   },
   "CoherenceTab": {
+    "wiki": "Mémoire",
+    "artifact": "Artefact",
     "signals": "Signaux",
-    "signInToSee": "Veuillez vous connecter pour voir les signaux, la mémoire de l'espace et les conversations",
+    "signInToSee": "Veuillez vous connecter pour voir les signaux, les artefacts et les conversations",
     "searchSignals": "Rechercher des signaux...",
     "newSignal": "Nouveau signal",
     "backToCoherence": "Retour à Cohérence",
+    "backToSignals": "Retour aux signaux",
     "all": "Tous",
     "listIsEmpty": "La liste est vide",
     "loadMore": "Charger plus",

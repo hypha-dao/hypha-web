@@ -1366,7 +1366,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (pathname.includes('/dho/')) {
       const dhoId = spaceSlug ?? params?.id ?? parts[2];
       if (!dhoId) return `/${lang}/notification-centre`;
-      const activeTab = getActiveTabFromPath(pathname);
+      const activeTab = getActiveTabFromPath(pathname) ?? 'agreements';
       return `/${lang}/dho/${dhoId}/${activeTab}/notification-centre`;
     }
     if (parts[1] === 'profile' && parts.length >= 3) {

@@ -120,15 +120,7 @@ export default async function DhoLayout({
       <div className="flex w-full min-w-0">
         {/* `px-4!` = 16px: tighter than default Container `px-5` (20px) for DHO hero/tabs vs app chrome */}
         <Container size="lg" className="min-w-0 flex-1 px-4!">
-          {/* React 19+: link rel="preload" is hoisted to document head */}
-          {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
-            <link
-              rel="preload"
-              as="image"
-              href={heroBannerImageHref}
-              fetchPriority="high"
-            />
-          ) : null}
+          {/* Hero image: CompactSpaceBannerLead uses next/image priority — avoid duplicate link preload (Chrome warns) */}
           <SpaceAccentFromImages
             bannerSrc={heroBannerImageHref}
             logoSrc={accentLogoHref}
@@ -160,32 +152,6 @@ export default async function DhoLayout({
                   descriptionLabel={tCommon('spaceBannerDescriptionAria', {
                     title: spaceFromDb.title,
                   })}
-                  footerTrailing={
-                    <>
-                      {web3SpaceId !== undefined && (
-                        <SubscriptionBadge
-                          web3SpaceId={web3SpaceId}
-                          onHeroBackground
-                          className="rounded-lg"
-                        />
-                      )}
-                      <SpaceModeLabel
-                        web3SpaceId={web3SpaceId}
-                        isSandbox={spaceFromDb.flags.includes('sandbox')}
-                        isDemo={spaceFromDb.flags.includes('demo')}
-                        isArchived={compactBannerSpaceArchived}
-                        configPath={`${getDhoPathAgreements(
-                          lang,
-                          daoSlug,
-                        )}/space-configuration`}
-                        className={
-                          compactBannerSpaceArchived
-                            ? '[&_.border-error-8]:rounded-lg [&_.border-error-8]:border-error-8! [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-error-8]:hover:border-error-9! [&_.border-error-8]:hover:bg-white/10'
-                            : '[&_.border-accent-8]:rounded-lg [&_.border-accent-8]:border-accent-8! [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-accent-9! [&_.border-accent-8]:hover:bg-white/10'
-                        }
-                      />
-                    </>
-                  }
                 />
               }
               actionsSlot={
@@ -196,6 +162,28 @@ export default async function DhoLayout({
                       spaceId={spaceFromDb.id}
                     />
                   )}
+                  {web3SpaceId !== undefined && (
+                    <SubscriptionBadge
+                      web3SpaceId={web3SpaceId}
+                      onHeroBackground
+                      className="rounded-lg"
+                    />
+                  )}
+                  <SpaceModeLabel
+                    web3SpaceId={web3SpaceId}
+                    isSandbox={spaceFromDb.flags.includes('sandbox')}
+                    isDemo={spaceFromDb.flags.includes('demo')}
+                    isArchived={compactBannerSpaceArchived}
+                    configPath={`${getDhoPathAgreements(
+                      lang,
+                      daoSlug,
+                    )}/space-configuration`}
+                    className={
+                      compactBannerSpaceArchived
+                        ? '[&_.border-error-8]:rounded-lg [&_.border-error-8]:border-error-8! [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-error-8]:hover:border-error-9! [&_.border-error-8]:hover:bg-white/10'
+                        : '[&_.border-accent-8]:rounded-lg [&_.border-accent-8]:border-accent-8! [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-accent-9! [&_.border-accent-8]:hover:bg-white/10'
+                    }
+                  />
                   <ActionButtons web3SpaceId={web3SpaceId} />
                 </>
               }

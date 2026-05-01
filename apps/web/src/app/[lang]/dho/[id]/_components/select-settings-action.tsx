@@ -267,6 +267,10 @@ export const SelectSettingsAction = ({
       title={t('title')}
       content={t('content')}
       showTitle={false}
+      actionLayout="grid"
+      showSearch
+      searchPlaceholder={t('searchSettings')}
+      searchEmptyMessage={t('noSettingsMatch')}
       actions={SETTINGS_ACTIONS.map((action) => {
         const href = computeHref(action);
         return {

@@ -91,6 +91,7 @@ export const SelectCreateAction = ({
       title={t('title')}
       content={t('content')}
       showTitle={false}
+      actionLayout="grid"
       actions={CREATE_ACTIONS.map((action) => ({
         ...action,
         ...(action.href && {

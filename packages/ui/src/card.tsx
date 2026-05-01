@@ -9,8 +9,12 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'rounded-xl border bg-card text-card-foreground shadow-sm transition-all',
+      /* Match `Button` (`rounded-lg`) for consistent card vs. control corners */
+      'rounded-lg border bg-card text-card-foreground shadow-sm transition-all',
       'hover:shadow-md',
+      /* Light: slightly deeper elevation + hairline highlight (html.light = next-themes) */
+      '[html.light_&]:shadow-[0_1px_0_oklch(0_0_0_/0.05),0_14px_44px_-20px_oklch(0.28_0.025_264_/0.14)]',
+      '[html.light_&]:hover:shadow-[0_1px_0_oklch(0_0_0_/0.06),0_20px_50px_-22px_oklch(0.28_0.025_264_/0.18)]',
       className,
     )}
     {...props}

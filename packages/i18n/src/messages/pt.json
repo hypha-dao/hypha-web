@@ -10,6 +10,7 @@
     "memberRoleLabel": "Membro",
     "delegatedVotingMemberLabel": "Membro com voto delegado",
     "Treasury": "Tesouraria",
+    "Rewards": "Recompensas",
     "Agreements": "Acordos",
     "Spaces": "Espaços",
     "loadMore": "Carregar mais",
@@ -23,6 +24,7 @@
     "copyWalletAddress": "Copiar endereço da carteira",
     "walletAddressCopied": "Copiado!",
     "otherMembers": "+ outros membros {count}",
+    "Ecosystem": "Ecossistema",
     "exploreSpaces": "Explorar espaços",
     "findCategory": "Encontre uma categoria",
     "noSpacesYet": "Nenhum espaço criado ou associado ainda. Explore nossa rede e participe de um Espaço ou crie o seu próprio.",
@@ -42,6 +44,9 @@
     "publish": "Publicar",
     "invalidTransactions": "Transações inválidas",
     "Coherence": "Coerência",
+    "Signals": "Sinais",
+    "Artifact": "Artefato",
+    "Wiki": "Memória",
     "uploadLeadImage": {
       "cropTitle": "Carregar uma imagem",
       "cropDescription": "Ajuste o enquadramento e salve. Arraste para reposicionar e use o zoom para a área do banner (JPEG, PNG ou WebP — máx. 4 MB).",
@@ -795,7 +800,8 @@
     "Dashboard": "Painel DHO",
     "actionButtons": {
       "spaceSettings": "Configurações de espaço",
-      "create": "Criar"
+      "create": "Criar",
+      "createProposal": "Criar proposta"
     },
     "nestedSpacesButton": {
       "label": "Navegação Espacial",
@@ -803,9 +809,21 @@
       "noAccess": "Você não tem acesso para visualizar a navegação espacial."
     }
   },
+  "DhoWorkspaceNav": {
+    "spaceNavAriaLabel": "Seções do espaço",
+    "openSpaceMenu": "Menu do espaço",
+    "spaceMenuTitle": "Espaço",
+    "closeMenu": "Fechar",
+    "spaceMapLoading": "Carregando mapa de espaços",
+    "expandNavLabels": "Mostrar nomes das seções",
+    "collapseNavLabels": "Ocultar nomes das seções",
+    "openSpaceSettings": "Definições do espaço"
+  },
   "SpaceSettingsAction": {
     "title": "Configurações de espaço",
     "content": "Acesse e gerencie as configurações do seu espaço, incluindo aparência, estrutura, métodos, associação e tesouraria.",
+    "searchSettings": "Pesquisar nas definições…",
+    "noSettingsMatch": "Nenhuma definição corresponde à sua pesquisa.",
     "groups": {
       "overview": "Visão geral",
       "agreements": "Acordos",
@@ -950,8 +968,10 @@
     }
   },
   "SelectNavigationAction": {
-    "title": "Navegação Espacial",
-    "content": "Navegue por todos os seus espaços em um único mapa interativo para ver como eles se conectam. Visite facilmente espaços aninhados, explore associações de espaço para espaço e siga os fluxos de valor em todo o seu ecossistema direto.",
+    "title": "Ecossistema",
+    "mapRegionAriaLabel": "Mapa de relações entre espaços",
+    "dataPanelAriaLabel": "Espaços aninhados, pesquisa e ações",
+    "content": "",
     "tabs": {
       "nestedSpaces": "Espaços aninhados",
       "spaceToSpace": "Espaço-a-Espaço",
@@ -971,18 +991,22 @@
       "noAccessAddSpace": "Você não tem acesso para adicionar espaços a esta organização.",
       "visitSpace": "Visite o Espaço",
       "searchSpaces": "Espaços de pesquisa",
-      "noSpacesFound": "Nenhum espaço encontrado"
+      "noSpacesFound": "Nenhum espaço encontrado",
+      "panelListHeading": "Espaços"
     }
   },
   "AgreementsTab": {
     "onVoting": "Na votação",
     "accepted": "Aceito",
     "rejected": "Rejeitado",
+    "refused": "Recusado",
     "searchDocuments": "Pesquisar documentos",
     "listIsEmpty": "A lista está vazia"
   },
   "MembersTab": {
     "searchMembers": "Pesquisar membros",
+    "nestedSpaceTypeLabel": "Espaço",
+    "spaceDelegateLabel": "Delegado",
     "delegateVoting": "Votação de delegado",
     "listIsEmpty": "A lista está vazia",
     "loading": "Carregando...",
@@ -1012,7 +1036,8 @@
       "success": "Delegação concluída com sucesso!",
       "errors": {
         "selectMember": "Selecione um membro",
-        "selectSpace": "Selecione um espaço"
+        "selectSpace": "Selecione um espaço",
+        "undelegateFailed": "Não foi possível remover a delegação. Tente novamente."
       }
     }
   },
@@ -1025,6 +1050,7 @@
     "listIsEmpty": "A lista está vazia",
     "loadMoreAssets": "Carregar mais ativos",
     "transactions": "Transações",
+    "tabVaults": "Cofres",
     "searchTransactions": "Transações de pesquisa",
     "noTransactionsFound": "Nenhuma transação encontrada",
     "loadMoreTransactions": "Carregar mais transações",
@@ -1046,8 +1072,12 @@
       "joinSpaceToUpdateBackingVault": "Entre no espaço para atualizar o cofre de lastro"
     },
     "assetCard": {
+      "tokenIconAlt": "Token {name}",
+      "collateralType": "Colateral",
+      "referencePrice": "Preço",
+      "issuanceLabel": "Emissão",
       "fromSpace": "de {spaceTitle}",
-      "totalIssuance": "Emissão total: {value}",
+      "totalIssuance": "{value}",
       "createdOn": "Criado em {date}",
       "mutualCredit": {
         "debtBadge": "Deve {amount} {symbol}",
@@ -1492,7 +1522,8 @@
     "exchangeDepositProposalConfirming": "Confirmando...",
     "exchangeDepositProposalTitle": "Depositar {amount} {symbol} – Liquidar escrow (#{escrowId})",
     "exchangeDepositProposalDescription": "Aprove e deposite {payAmount} {paySymbol} no escrow (#{escrowId}) para concluir a troca com {otherParty}. Em troca, {activeSpace} receberá {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Aprove e deposite {payAmount} {paySymbol} no escrow (#{escrowId}) para concluir o investimento em {otherParty}. Em troca, {activeSpace} receberá {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Aprove e deposite {payAmount} {paySymbol} no escrow (#{escrowId}) para concluir o investimento em {otherParty}. Em troca, {activeSpace} receberá {receiveAmount} {receiveSymbol}.",
+    "dismissBanner": "Fechar aviso"
   },
   "ProposalDetails": {
     "investment": {
@@ -1974,11 +2005,14 @@
     "callPaneResizeSpeakerShare": "Redimensionar orador e partilha de ecrã"
   },
   "CoherenceTab": {
+    "wiki": "Memória",
+    "artifact": "Artefato",
     "signals": "Sinais",
-    "signInToSee": "Por favor, faça login para ver sinais, a memória do espaço e conversas",
+    "signInToSee": "Por favor, faça login para ver sinais, artefatos e conversas",
     "searchSignals": "Pesquisar sinais...",
     "newSignal": "Novo sinal",
     "backToCoherence": "Voltar à Coerência",
+    "backToSignals": "Voltar aos sinais",
     "all": "Todos",
     "listIsEmpty": "A lista está vazia",
     "loadMore": "Carregar mais",

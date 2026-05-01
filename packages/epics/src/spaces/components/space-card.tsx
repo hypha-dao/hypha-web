@@ -90,13 +90,13 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
       )}
       <CardHeader
         style={customCardHeaderStyles}
-        className="p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"
+        className="flex-shrink-0 overflow-hidden rounded-tl-lg rounded-tr-lg p-0"
       >
-        <Skeleton loading={isLoading} className="w-full h-full">
+        <Skeleton loading={isLoading} className="h-full w-full">
           <Image
             width={454}
             height={150}
-            className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
+            className="h-full w-full rounded-tl-lg rounded-tr-lg object-cover"
             src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
             alt={title}
           />

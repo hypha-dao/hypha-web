@@ -62,7 +62,7 @@ const SingleVaultSection: FC<{
             <p>{tTreasury('vaultsSection.noCollateralInVault')}</p>
           </Empty>
         ) : (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <div className="mt-2 grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {vault.collaterals.map((collateral, index) => (
               <VaultCollateralCard
                 key={`${collateral.address}-${index}`}
@@ -86,7 +86,7 @@ const SingleVaultSection: FC<{
           </div>
         )}
         {isLoading && vault.collaterals.length === 0 && (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <div className="mt-2 grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <VaultCollateralCard isLoading />
           </div>
         )}

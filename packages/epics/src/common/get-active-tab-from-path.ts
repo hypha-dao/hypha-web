@@ -1,10 +1,26 @@
 // path: /[lang]/dho/[id]/{activeTab}/what/ever?path=afterActiveTab
-export function getActiveTabFromPath(pathname: string) {
+const KNOWN_DHO_TABS = new Set([
+  'agreements',
+  'artifact',
+  'members',
+  'treasury',
+  'rewards',
+  'coherence',
+  'wiki',
+  'spaces',
+  'ecosystem',
+  'overview',
+]);
+
+// path: /[lang]/dho/[id]/{activeTab}/what/ever?path=afterActiveTab
+export function getActiveTabFromPath(pathname: string): string | null {
   // Match the pattern /[lang]/dho/[id]/{activeTab}/ to extract activeTab
   const match = pathname.match(/\/[^/]+\/dho\/[^/]+\/([^/]+)/);
-
-  // Return the matched tab name or default to 'agreements'
-  return match?.[1] || 'agreements';
+  const segment = match?.[1];
+  if (!segment) return null;
+  if (KNOWN_DHO_TABS.has(segment)) return segment;
+  // Unknown segment: do not pretend the user is on Agreements
+  return null;
 }
 
 /**
@@ -15,5 +31,5 @@ export function getEffectiveDhoTab(
   pathname: string,
   _options?: { coherenceEnabled: boolean },
 ): string {
-  return getActiveTabFromPath(pathname);
+  return getActiveTabFromPath(pathname) ?? 'agreements';
 }
