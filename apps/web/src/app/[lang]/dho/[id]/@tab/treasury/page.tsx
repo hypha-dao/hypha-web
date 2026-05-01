@@ -9,6 +9,8 @@ import {
 import { getDhoPathTreasury } from './constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { getTranslations } from 'next-intl/server';
+import { TabScreenTitle } from '../_components/tab-screen-title';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -16,6 +18,7 @@ type PageProps = {
 
 export default async function TreasuryPage(props: PageProps) {
   const params = await props.params;
+  const tCommon = await getTranslations('Common');
 
   const { lang, id } = params;
 
@@ -28,6 +31,7 @@ export default async function TreasuryPage(props: PageProps) {
       spaceSlug={id}
     >
       <div className="flex flex-col gap-6 py-4">
+        <TabScreenTitle title={tCommon('Treasury')} />
         <SpacePendingRewardsSection
           web3SpaceId={spaceFromDb?.web3SpaceId as number}
         />

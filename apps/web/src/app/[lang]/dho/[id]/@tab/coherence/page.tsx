@@ -3,12 +3,14 @@ import {
   CoherenceBlock,
   CoherenceOrder,
 } from '@hypha-platform/epics';
+import { TabScreenTitle } from '../_components/tab-screen-title';
 import {
   getEnableCoherence,
   getEnableHumanChat,
   getEnableSpaceMemory,
 } from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { getDhoPathAgreements } from '../agreements/constants';
 
@@ -22,6 +24,7 @@ type PageProps = {
 
 export default async function CoherencePage(props: PageProps) {
   const params = await props.params;
+  const tCoherence = await getTranslations('CoherenceTab');
   const coherenceEnabled = await getEnableCoherence();
   if (!coherenceEnabled) {
     redirect(getDhoPathAgreements(params.lang, params.id));
@@ -40,12 +43,15 @@ export default async function CoherencePage(props: PageProps) {
       : 'mostrecent';
 
   return (
-    <CoherenceBlock
-      lang={lang}
-      spaceSlug={id}
-      order={order}
-      humanChatEnabled={humanChatEnabled}
-      spaceMemoryEnabled={spaceMemoryEnabled}
-    />
+    <div className="flex flex-col gap-6 py-4">
+      <TabScreenTitle title={tCoherence('signals')} />
+      <CoherenceBlock
+        lang={lang}
+        spaceSlug={id}
+        order={order}
+        humanChatEnabled={humanChatEnabled}
+        spaceMemoryEnabled={spaceMemoryEnabled}
+      />
+    </div>
   );
 }
