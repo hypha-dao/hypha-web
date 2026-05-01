@@ -120,6 +120,13 @@ export function AiLeftPanel() {
         | 'treasury',
     ) => {
       if (!spaceSlug) return false;
+      if (
+        section === 'agreements' &&
+        pathname.includes(`/dho/${spaceSlug}/`) &&
+        pathname.includes('/space-configuration')
+      ) {
+        return false;
+      }
       const base = `/${lang}/dho/${spaceSlug}/${section}`;
       return pathname === base || pathname.startsWith(`${base}/`);
     },
