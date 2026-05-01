@@ -60,6 +60,8 @@ export function PanelDualSidebarScrollBridge({
         variant="sidebar"
         collapsible="icon"
         className="z-[50] overflow-visible"
+        onMouseEnter={onLeftMouseEnter}
+        onMouseLeave={onLeftMouseLeave}
       >
         {leftContent}
         <SidebarResizeHandle />
