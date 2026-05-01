@@ -2065,6 +2065,11 @@
       "low": "Informatif, pas urgent"
     },
     "keepWindowOpenWhileCreating": "Gardez cette fenêtre ouverte jusqu’à la fin.",
+    "provisioning": {
+      "chatUnavailable": "Signal créé, mais le chat est actuellement indisponible.",
+      "roomProvisionFailed": "Signal créé, mais l’approvisionnement de la salle de chat a échoué.",
+      "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer."
+    },
     "tagLabels": {
       "Strategy": "Stratégie",
       "Culture": "Culture",

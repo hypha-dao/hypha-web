@@ -48,6 +48,7 @@ import { CardButtonColorVariant } from '../../common/card-button';
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
   'coherence.signalProvisioningNotice';
+const SIGNAL_PROVISIONING_NOTICE_EVENT = 'coherence:signalProvisioningNotice';
 
 interface CreateSignalFormProps {
   spaceId: number;
@@ -221,6 +222,7 @@ export const CreateSignalForm = ({
         SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
         JSON.stringify(lines),
       );
+      window.dispatchEvent(new Event(SIGNAL_PROVISIONING_NOTICE_EVENT));
     },
     [],
   );
@@ -231,9 +233,7 @@ export const CreateSignalForm = ({
         const coherence = await createCoherence({ ...data });
         const coherenceSlug = coherence.slug;
         if (!isMatrixAvailable) {
-          setSignalProvisioningNotice(
-            'Signal created but chat is currently unavailable.',
-          );
+          setSignalProvisioningNotice(t('provisioning.chatUnavailable'));
           console.warn('Matrix client is unavailable — skipping room creation');
         } else if (coherenceSlug) {
           // Do not block successful form close/navigation on Matrix latency/failures.
@@ -247,7 +247,7 @@ export const CreateSignalForm = ({
                   ? matrixError.message
                   : String(matrixError);
               setSignalProvisioningNotice(
-                'Signal created but chat room provisioning failed.',
+                t('provisioning.roomProvisionFailed'),
                 matrixErrorMessage,
               );
               console.warn(
@@ -257,9 +257,7 @@ export const CreateSignalForm = ({
             }
           })();
         } else {
-          setSignalProvisioningNotice(
-            'Signal created but chat room could not be linked. Please retry.',
-          );
+          setSignalProvisioningNotice(t('provisioning.roomLinkFailedRetry'));
           console.warn(
             'Signal created but coherence slug is missing — room linking skipped.',
           );
@@ -275,6 +273,7 @@ export const CreateSignalForm = ({
       updateCoherenceBySlug,
       isMatrixAvailable,
       setSignalProvisioningNotice,
+      t,
       router,
       successfulUrl,
     ],

@@ -2102,6 +2102,11 @@
       "low": "Informational, no rush"
     },
     "keepWindowOpenWhileCreating": "Keep this window open until we're finished.",
+    "provisioning": {
+      "chatUnavailable": "Signal created but chat is currently unavailable.",
+      "roomProvisionFailed": "Signal created but chat room provisioning failed.",
+      "roomLinkFailedRetry": "Signal created but chat room could not be linked. Please retry."
+    },
     "tagLabels": {
       "Strategy": "Strategy",
       "Culture": "Culture",

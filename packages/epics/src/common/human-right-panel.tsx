@@ -1845,6 +1845,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (mode !== 'coherence') return;
     if (!isMatrixAvailable || !coherenceSlug || !roomId) return;
+    let cancelled = false;
 
     const messageCount = messages.length;
     const previous = lastPersistedCoherenceMessageCountRef.current;
@@ -1857,6 +1858,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
 
     coherenceMessageCountSyncTimeoutRef.current = setTimeout(() => {
+      if (cancelled) return;
       pendingCoherenceMessageCountRef.current = {
         slug: coherenceSlug,
         count: messageCount,
@@ -1865,9 +1867,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (coherenceMessageCountSyncInFlightRef.current) return;
 
       const flushMessageCountSync = async () => {
+        if (cancelled) return;
         coherenceMessageCountSyncInFlightRef.current = true;
         try {
           while (pendingCoherenceMessageCountRef.current) {
+            if (cancelled) return;
             const next = pendingCoherenceMessageCountRef.current;
             pendingCoherenceMessageCountRef.current = null;
             try {
@@ -1889,13 +1893,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       };
 
       const scheduleRetry = () => {
+        if (cancelled) return;
         if (!pendingCoherenceMessageCountRef.current) return;
         if (coherenceMessageCountSyncTimeoutRef.current) {
           clearTimeout(coherenceMessageCountSyncTimeoutRef.current);
         }
         coherenceMessageCountSyncTimeoutRef.current = setTimeout(() => {
+          if (cancelled) return;
           if (coherenceMessageCountSyncInFlightRef.current) return;
           void flushMessageCountSync().catch((retryError) => {
+            if (cancelled) return;
             console.warn(
               '[HumanRightPanel] Retry failed to persist coherence message count:',
               retryError,
@@ -1906,6 +1913,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       };
 
       void flushMessageCountSync().catch((error) => {
+        if (cancelled) return;
         console.warn(
           '[HumanRightPanel] Failed to persist coherence message count:',
           error,
@@ -1915,6 +1923,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }, 500);
 
     return () => {
+      cancelled = true;
       if (coherenceMessageCountSyncTimeoutRef.current) {
         clearTimeout(coherenceMessageCountSyncTimeoutRef.current);
         coherenceMessageCountSyncTimeoutRef.current = null;

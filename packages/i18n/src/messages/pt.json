@@ -2065,6 +2065,11 @@
       "low": "Informativo, sem pressa"
     },
     "keepWindowOpenWhileCreating": "Mantenha esta janela aberta até terminarmos.",
+    "provisioning": {
+      "chatUnavailable": "Sinal criado, mas o chat está indisponível no momento.",
+      "roomProvisionFailed": "Sinal criado, mas a criação da sala de chat falhou.",
+      "roomLinkFailedRetry": "Sinal criado, mas não foi possível vincular a sala de chat. Tente novamente."
+    },
     "tagLabels": {
       "Strategy": "Estratégia",
       "Culture": "Cultura",

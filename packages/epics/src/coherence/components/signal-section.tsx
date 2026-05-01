@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 
 const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
   'coherence.signalProvisioningNotice';
+const SIGNAL_PROVISIONING_NOTICE_EVENT = 'coherence:signalProvisioningNotice';
 const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
 
 type SignalSectionProps = {
@@ -67,8 +68,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
     string[]
   >([]);
 
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
+  const readProvisioningNotice = React.useCallback(() => {
     const rawNotice = sessionStorage.getItem(
       SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
     );
@@ -86,6 +86,20 @@ export const SignalSection: FC<SignalSectionProps> = ({
       console.warn('Failed to parse signal provisioning notice:', error);
     }
   }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    readProvisioningNotice();
+    window.addEventListener(
+      SIGNAL_PROVISIONING_NOTICE_EVENT,
+      readProvisioningNotice,
+    );
+    return () =>
+      window.removeEventListener(
+        SIGNAL_PROVISIONING_NOTICE_EVENT,
+        readProvisioningNotice,
+      );
+  }, [readProvisioningNotice]);
 
   React.useEffect(() => {
     if (provisioningNoticeLines.length === 0) return;
