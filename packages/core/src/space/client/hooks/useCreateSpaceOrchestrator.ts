@@ -109,6 +109,18 @@ export const useCreateSpaceOrchestrator = ({
   authToken,
   config,
 }: UseCreateSpaceOrchestratorInput) => {
+  type CreateSpaceOrchestratorArg = Omit<
+    z.infer<typeof schemaCreateSpace>,
+    'ecosystemLogoUrlLight' | 'ecosystemLogoUrlDark'
+  > & {
+    ecosystemLogoUrlLight?: z.infer<
+      typeof schemaCreateSpaceFiles
+    >['ecosystemLogoUrlLight'];
+    ecosystemLogoUrlDark?: z.infer<
+      typeof schemaCreateSpaceFiles
+    >['ecosystemLogoUrlDark'];
+  };
+
   const { createEvent } = useCreateEvent({ authToken });
   const { person } = useMe();
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
@@ -162,8 +174,7 @@ export const useCreateSpaceOrchestrator = ({
       {
         arg,
       }: {
-        arg: z.infer<typeof schemaCreateSpace> &
-          z.infer<typeof schemaCreateSpaceFiles>;
+        arg: CreateSpaceOrchestratorArg;
       },
     ) => {
       const web3SpaceId = (arg as any).web3SpaceId;
