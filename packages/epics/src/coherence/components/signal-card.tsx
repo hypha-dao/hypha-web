@@ -43,7 +43,7 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { Trash2, Users } from 'lucide-react';
+import { icons, Trash2, Users } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -107,19 +107,11 @@ const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
       'bg-gradient-to-t from-neutral-10/24 via-neutral-9/12 to-transparent',
   };
 
-const HERO_TYPE_ICON_HALO_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'from-accent-10/42 via-accent-9/22 to-transparent',
-  error: 'from-error-10/44 via-error-9/24 to-transparent',
-  warn: 'from-warning-10/44 via-warning-9/24 to-transparent',
-  success: 'from-success-10/42 via-success-9/22 to-transparent',
-  neutral: 'from-neutral-10/36 via-neutral-9/20 to-transparent',
-};
-
 const HERO_TYPE_ICON_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'text-accent-1/92',
-  error: 'text-error-1/92',
-  warn: 'text-warning-1/92',
-  success: 'text-success-1/92',
+  accent: 'text-white/90',
+  error: 'text-white/90',
+  warn: 'text-white/90',
+  success: 'text-white/90',
   neutral: 'text-white/88',
 };
 
@@ -192,7 +184,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       'accent',
     [coherenceType?.colorVariant],
   );
-  const TypeIcon = coherenceType?.icon;
+  const TypeIcon = React.useMemo<LucideReactIcon | undefined>(() => {
+    const iconName = coherenceType?.icon;
+    if (!iconName) return undefined;
+    const resolvedIcon = icons[iconName as keyof typeof icons];
+    return typeof resolvedIcon === 'function'
+      ? (resolvedIcon as LucideReactIcon)
+      : undefined;
+  }, [coherenceType?.icon]);
 
   const priorityColorVariant = React.useMemo<SignalColorVariant>(
     () =>
@@ -368,20 +367,13 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center"
                   aria-hidden
                 >
-                  <div className="relative flex h-32 w-32 items-center justify-center">
-                    <div
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black/24 shadow-[0_6px_24px_rgba(0,0,0,0.38)] backdrop-blur-[1px]">
+                    <TypeIcon
                       className={cn(
-                        'absolute inset-0 rounded-full bg-gradient-to-br blur-2xl',
-                        HERO_TYPE_ICON_HALO_CLASS_MAP[typeColorVariant],
+                        'h-9 w-9 stroke-[1.9] drop-shadow-[0_1px_5px_rgba(0,0,0,0.45)]',
+                        HERO_TYPE_ICON_CLASS_MAP[typeColorVariant],
                       )}
                     />
-                    <div className="absolute inset-4 rounded-full bg-black/16 blur-xl" />
-                    {React.createElement(TypeIcon as LucideReactIcon, {
-                      className: cn(
-                        'relative h-14 w-14 stroke-[1.7] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]',
-                        HERO_TYPE_ICON_CLASS_MAP[typeColorVariant],
-                      ),
-                    })}
                   </div>
                 </div>
               ) : null}
