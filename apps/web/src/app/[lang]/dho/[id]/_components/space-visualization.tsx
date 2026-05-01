@@ -43,6 +43,8 @@ const VISUALIZATION_CONFIG = {
   STROKE_WIDTH_SCALE: 0.7,
 } as const;
 const HOVER_PANEL_HIDE_DELAY_MS = 320;
+const SIGNAL_FLOW_BASE_DURATION_MS = 18000;
+const FOCUS_PULSE_DURATION_MS = 1850;
 
 export function SpaceVisualization({
   data,
@@ -149,7 +151,7 @@ export function SpaceVisualization({
 
     orbits.each(function (d: SpaceHierarchyNode) {
       if (d === focusRef.current) {
-        d3.select(this).style('fill', getSelectedSpaceFillColor());
+        d3.select(this).style('fill', 'transparent');
       }
     });
 
@@ -381,17 +383,28 @@ export function SpaceVisualization({
     svg.selectAll('*').remove();
 
     const g = svg.append('g');
+    const getSignalColor = (spaceId: number): string => {
+      const hue = (spaceId * 47) % 360;
+      return `hsl(${hue} 84% ${themeRef.current === 'dark' ? '64%' : '48%'})`;
+    };
 
     const orbits = g
       .selectAll<SVGCircleElement, SpaceHierarchyNode>('circle.orbit')
       .data(root.descendants() as SpaceHierarchyNode[])
       .join('circle')
       .attr('class', 'orbit')
-      .style('fill', (d: SpaceHierarchyNode) =>
-        d === focus ? getSelectedSpaceFillColor() : 'transparent',
+      .style('fill', 'transparent')
+      .attr('stroke', (d: SpaceHierarchyNode) => getSignalColor(d.data.id))
+      .attr('stroke-width', (d: SpaceHierarchyNode) =>
+        d === focus ? 1.45 : 1.1,
       )
-      .attr('stroke', '#8F8F8F')
-      .attr('stroke-width', 1.2)
+      .attr('stroke-opacity', (d: SpaceHierarchyNode) =>
+        d === focus ? 0.72 : 0.38,
+      )
+      .attr('stroke-dasharray', (d: SpaceHierarchyNode) =>
+        d.depth === 0 ? 'none' : '11 13',
+      )
+      .attr('stroke-dashoffset', 0)
       .style('pointer-events', 'all')
       .on('click', (event, d) => {
         if (focus !== d) {
@@ -446,10 +459,31 @@ export function SpaceVisualization({
     logos.each(function (d: SpaceHierarchyNode) {
       const logoGroup = d3.select(this);
       const clipId = `clip-${d.data.id}`;
+      const glowClipId = `clip-glow-${d.data.id}`;
+      const glowFilterId = `glow-filter-${d.data.id}`;
 
       const clipPath = defs.append('clipPath').attr('id', clipId);
-
       clipPath.append('circle').attr('r', 1);
+      const glowClipPath = defs.append('clipPath').attr('id', glowClipId);
+      glowClipPath.append('circle').attr('r', 1);
+      const glowFilter = defs
+        .append('filter')
+        .attr('id', glowFilterId)
+        .attr('x', '-80%')
+        .attr('y', '-80%')
+        .attr('width', '260%')
+        .attr('height', '260%');
+      glowFilter.append('feGaussianBlur').attr('stdDeviation', 6.5);
+
+      logoGroup
+        .append('image')
+        .attr('class', 'logo-glow')
+        .attr('href', d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
+        .attr('preserveAspectRatio', 'xMidYMid slice')
+        .attr('clip-path', `url(#${glowClipId})`)
+        .attr('filter', `url(#${glowFilterId})`)
+        .style('opacity', d === focus ? 0.52 : 0.22)
+        .style('mix-blend-mode', 'screen');
 
       logoGroup
         .append('circle')
@@ -458,12 +492,67 @@ export function SpaceVisualization({
         .attr('stroke-width', getStrokeWidth(d.depth));
 
       logoGroup
+        .append('circle')
+        .attr('class', 'focus-pulse-ring')
+        .attr('fill', 'none')
+        .attr('stroke', getSignalColor(d.data.id))
+        .attr('stroke-width', 1.4)
+        .style('opacity', 0);
+
+      logoGroup
         .append('image')
         .attr('href', d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
         .attr('preserveAspectRatio', 'xMidYMid slice')
         .attr('alt', `${d.data.name} logo`)
         .attr('clip-path', `url(#${clipId})`);
     });
+
+    const runOrbitSignalFlow = () => {
+      orbits.each(function (d: SpaceHierarchyNode, index: number) {
+        if (d.depth === 0) return;
+        const orbit = d3.select(this);
+        const animate = () => {
+          orbit.interrupt('signal-flow');
+          orbit
+            .transition('signal-flow')
+            .duration(
+              SIGNAL_FLOW_BASE_DURATION_MS + d.depth * 2200 + (index % 7) * 350,
+            )
+            .ease(d3.easeLinear)
+            .attr('stroke-dashoffset', -48)
+            .on('end', () => {
+              orbit.attr('stroke-dashoffset', 0);
+              animate();
+            });
+        };
+        animate();
+      });
+    };
+
+    const runFocusPulse = () => {
+      const rings = logos.selectAll<SVGCircleElement, SpaceHierarchyNode>(
+        'circle.focus-pulse-ring',
+      );
+      rings.interrupt('focus-pulse').style('opacity', 0);
+      const selectedRing = logos
+        .filter((d: SpaceHierarchyNode) => d === focus)
+        .select<SVGCircleElement>('circle.focus-pulse-ring');
+      const baseRadius = Number.parseFloat(selectedRing.attr('data-base-r'));
+      if (!Number.isFinite(baseRadius) || baseRadius <= 0) return;
+      const animate = () => {
+        selectedRing.interrupt('focus-pulse');
+        selectedRing
+          .attr('r', baseRadius * 1.16)
+          .style('opacity', 0.52)
+          .transition('focus-pulse')
+          .duration(FOCUS_PULSE_DURATION_MS)
+          .ease(d3.easeCubicOut)
+          .attr('r', baseRadius * 1.56)
+          .style('opacity', 0)
+          .on('end', animate);
+      };
+      animate();
+    };
 
     svg.on('click', () => {
       if (focus.parent) zoom(focus.parent);
@@ -593,7 +682,9 @@ export function SpaceVisualization({
         .attr('stroke-width', getStrokeWidth(d.depth));
     });
 
+    runOrbitSignalFlow();
     zoomTo(view);
+    runFocusPulse();
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
 
@@ -631,9 +722,13 @@ export function SpaceVisualization({
       orbits
         .transition()
         .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-        .style('fill', (d: SpaceHierarchyNode) =>
-          d === focus ? getSelectedSpaceFillColor() : 'transparent',
-        );
+        .attr('stroke-opacity', (d: SpaceHierarchyNode) =>
+          d === focus ? 0.72 : 0.38,
+        )
+        .attr('stroke-width', (d: SpaceHierarchyNode) =>
+          d === focus ? 1.45 : 1.1,
+        )
+        .style('fill', 'transparent');
 
       logos.each(function (d: SpaceHierarchyNode) {
         d3.select(this)
@@ -647,6 +742,7 @@ export function SpaceVisualization({
 
       transition.on('end', () => {
         notifyVisibleSpaces(focus);
+        runFocusPulse();
       });
     }
 
@@ -661,9 +757,7 @@ export function SpaceVisualization({
             `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
         )
         .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
-        .style('fill', (d: SpaceHierarchyNode) =>
-          d === focus ? getSelectedSpaceFillColor() : 'transparent',
-        );
+        .style('fill', 'transparent');
 
       logos
         .attr(
@@ -674,6 +768,7 @@ export function SpaceVisualization({
         .each(function (d: SpaceHierarchyNode) {
           const r = d.r! * k * VISUALIZATION_CONFIG.LOGO_RATIO;
           const clipId = `clip-${d.data.id}`;
+          const glowClipId = `clip-glow-${d.data.id}`;
 
           d3.select(this)
             .select('circle')
@@ -683,6 +778,7 @@ export function SpaceVisualization({
             .attr('stroke-width', getStrokeWidth(d.depth));
 
           defs.select(`#${clipId} circle`).attr('r', r);
+          defs.select(`#${glowClipId} circle`).attr('r', r * 1.35);
 
           d3.select(this)
             .select('image')
@@ -690,6 +786,19 @@ export function SpaceVisualization({
             .attr('y', -r)
             .attr('width', r * 2)
             .attr('height', r * 2);
+
+          d3.select(this)
+            .select<SVGImageElement>('image.logo-glow')
+            .attr('x', -(r * 1.35))
+            .attr('y', -(r * 1.35))
+            .attr('width', r * 2.7)
+            .attr('height', r * 2.7)
+            .style('opacity', d === focus ? 0.56 : 0.24);
+
+          d3.select(this)
+            .select<SVGCircleElement>('circle.focus-pulse-ring')
+            .attr('r', r * 1.16)
+            .attr('data-base-r', `${r}`);
         });
     }
   }, [data, currentSpaceId, resolvedTheme]);

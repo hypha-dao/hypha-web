@@ -27,7 +27,7 @@ export function EcosystemNavigationShell({
   return (
     <div
       className={[
-        'relative overflow-hidden rounded-xl border border-border/60 bg-background-2 p-4 md:p-5',
+        'relative overflow-visible rounded-none border-0 bg-transparent p-0',
         className ?? '',
       ].join(' ')}
     >
