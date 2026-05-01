@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuthentication } from '@hypha-platform/authentication';
+import { Button } from '@hypha-platform/ui';
 import { Empty } from '../../common/empty';
 import {
   Coherence,
@@ -31,8 +32,9 @@ export function CoherenceBlock({
   spaceMemoryEnabled = false,
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
+  const tSpaces = useTranslations('Spaces');
   const [hideArchived, setHideArchived] = React.useState(true);
-  const { isAuthenticated } = useAuthentication();
+  const { isAuthenticated, login } = useAuthentication();
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
   const {
     coherences: signals,
@@ -90,7 +92,15 @@ export function CoherenceBlock({
         </div>
       ) : (
         <Empty>
-          <p>{t('signInToSee')}</p>
+          <div className="flex flex-col gap-7">
+            <p>{tSpaces('accessDeniedNotLoggedIn')}</p>
+            <div className="flex items-center justify-center gap-4">
+              <Button variant="outline" onClick={login}>
+                {tSpaces('signIn')}
+              </Button>
+              <Button onClick={login}>{tSpaces('getStarted')}</Button>
+            </div>
+          </div>
         </Empty>
       )}
     </div>
