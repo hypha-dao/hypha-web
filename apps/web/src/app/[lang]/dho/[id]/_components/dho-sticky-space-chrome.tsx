@@ -9,6 +9,7 @@ import {
 } from '@hypha-platform/epics';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { useTheme } from 'next-themes';
 
 const STICKY_APPEAR_OFFSET_PX = 54;
 
@@ -68,6 +69,7 @@ export function DhoStickySpaceChrome({
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
   const menuTopPx = useMenuTopOffsetPx();
+  const { resolvedTheme } = useTheme();
   /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
   const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
 
@@ -142,6 +144,7 @@ export function DhoStickySpaceChrome({
   const logoSrc = logoUrl || defaultLogoSrc;
 
   const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
+  const isDark = resolvedTheme === 'dark';
 
   return (
     <>
@@ -163,11 +166,15 @@ export function DhoStickySpaceChrome({
         )}
         style={{
           top: 'var(--menu-top-height, 70px)',
-          backgroundColor: 'rgba(7,10,16,0.92)',
-          backgroundImage:
-            'linear-gradient(to right, rgba(0,0,0,0.58), rgba(0,0,0,0.42), rgba(0,0,0,0.5)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 14%, transparent), transparent 55%)',
-          boxShadow:
-            '0 10px 28px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)',
+          backgroundColor: isDark
+            ? 'rgba(7,10,16,0.92)'
+            : 'rgba(248,250,252,0.94)',
+          backgroundImage: isDark
+            ? 'linear-gradient(to right, rgba(0,0,0,0.58), rgba(0,0,0,0.42), rgba(0,0,0,0.5)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 14%, transparent), transparent 55%)'
+            : 'linear-gradient(to right, rgba(255,255,255,0.78), rgba(255,255,255,0.64), rgba(255,255,255,0.74)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 11%, transparent), transparent 58%)',
+          boxShadow: isDark
+            ? '0 10px 28px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)'
+            : '0 10px 24px -20px rgba(15,23,42,0.26), inset 0 1px 0 rgba(255,255,255,0.78)',
         }}
         aria-hidden={!stuck}
       >
