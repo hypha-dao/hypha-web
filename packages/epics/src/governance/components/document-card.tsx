@@ -166,7 +166,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
         >
           <div className="relative h-[150px] overflow-hidden">
             <div
-              className="absolute inset-x-0 top-[-10%] h-[120%] will-change-transform"
+              className="absolute inset-x-0 top-[-12%] h-[124%] will-change-transform"
               style={
                 reduceMotion
                   ? undefined
