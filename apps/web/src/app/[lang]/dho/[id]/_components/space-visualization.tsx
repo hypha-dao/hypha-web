@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
@@ -51,6 +51,7 @@ export function SpaceVisualization({
   enableHoverActions = false,
   actionLabels,
 }: Props) {
+  const idPrefix = useId().replace(/:/g, '');
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -185,6 +186,8 @@ export function SpaceVisualization({
     };
 
     const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
+    const maxR = (Math.sqrt(2) / 2) * Math.min(width, height);
+    const isDark = themeRef.current === 'dark';
 
     const root = d3.hierarchy<SpaceNode>(data) as SpaceHierarchyNode;
 
@@ -379,7 +382,99 @@ export function SpaceVisualization({
 
     svg.selectAll('*').remove();
 
-    const g = svg.append('g');
+    const defs = svg.append('defs').attr('class', 'map-filters');
+
+    const bgGrad = defs
+      .append('radialGradient')
+      .attr('id', `${idPrefix}-field`)
+      .attr('cx', '50%')
+      .attr('cy', '50%')
+      .attr('r', '58%');
+    if (isDark) {
+      bgGrad
+        .append('stop')
+        .attr('offset', '0%')
+        .attr('stop-color', 'rgb(32 32 50)');
+      bgGrad
+        .append('stop')
+        .attr('offset', '55%')
+        .attr('stop-color', 'rgb(16 16 30)');
+      bgGrad
+        .append('stop')
+        .attr('offset', '100%')
+        .attr('stop-color', 'rgb(5 5 10)');
+    } else {
+      bgGrad
+        .append('stop')
+        .attr('offset', '0%')
+        .attr('stop-color', 'rgb(255 255 255)');
+      bgGrad
+        .append('stop')
+        .attr('offset', '45%')
+        .attr('stop-color', 'rgb(240 240 255)');
+      bgGrad
+        .append('stop')
+        .attr('offset', '100%')
+        .attr('stop-color', 'rgb(220 220 240)');
+    }
+
+    const vGrad = defs
+      .append('radialGradient')
+      .attr('id', `${idPrefix}-vignette`)
+      .attr('cx', '50%')
+      .attr('cy', '50%')
+      .attr('r', '65%');
+    vGrad
+      .append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', 'rgb(0 0 0 / 0)');
+    vGrad
+      .append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', isDark ? 'rgb(0 0 0 / 0.2)' : 'rgb(0 0 0 / 0.06)');
+
+    const bgLayer = svg
+      .append('g')
+      .attr('class', 'map-bg')
+      .style('pointer-events', 'none');
+    bgLayer
+      .append('rect')
+      .attr('x', -width / 2)
+      .attr('y', -height / 2)
+      .attr('width', width)
+      .attr('height', height)
+      .attr('fill', `url(#${idPrefix}-field)`);
+    bgLayer
+      .append('circle')
+      .attr('cx', 0)
+      .attr('cy', -height * 0.04)
+      .attr('r', maxR * 0.5)
+      .attr(
+        'fill',
+        isDark ? 'rgb(200 200 255 / 0.04)' : 'rgb(255 255 255 / 0.4)',
+      );
+    bgLayer
+      .append('rect')
+      .attr('x', -width / 2)
+      .attr('y', -height / 2)
+      .attr('width', width)
+      .attr('height', height)
+      .attr('fill', `url(#${idPrefix}-vignette)`);
+
+    const ringRadii = [0.18, 0.34, 0.5, 0.66, 0.85].map((t) => maxR * t);
+    bgLayer
+      .selectAll('circle.map-ring')
+      .data(ringRadii)
+      .join('circle')
+      .attr('class', 'map-ring')
+      .attr('cx', 0)
+      .attr('cy', 0)
+      .attr('r', (r) => r)
+      .attr('fill', 'none')
+      .attr('stroke', isDark ? 'rgb(200 200 255 / 0.07)' : 'rgb(0 0 0 / 0.055)')
+      .attr('stroke-width', 0.75);
+
+    const g = svg.append('g').attr('class', 'map-graph');
 
     const orbits = g
       .selectAll<SVGCircleElement, SpaceHierarchyNode>('circle.orbit')
@@ -398,8 +493,6 @@ export function SpaceVisualization({
           zoom(d);
         }
       });
-
-    const defs = svg.append('defs');
 
     const logos = g
       .selectAll<SVGGElement, SpaceHierarchyNode>('g.logo')
