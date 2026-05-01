@@ -209,8 +209,9 @@ export function AiLeftPanel() {
       keyPrefix: string,
     ) => {
       const showLabel = mode === 'expanded';
-      const iconClassName = `h-4 w-4${
-        !showLabel && item.active ? ' text-accent-9' : ''
+      const iconClassName = `h-4 w-4${item.active ? ' text-accent-9' : ''}`;
+      const labelClassName = `min-w-0 truncate${
+        showLabel && item.active ? ' text-accent-9' : ''
       }`;
 
       return (
@@ -235,7 +236,7 @@ export function AiLeftPanel() {
                 <item.icon className={iconClassName} />
               </span>
               {showLabel ? (
-                <span className="min-w-0 truncate">{item.label}</span>
+                <span className={labelClassName}>{item.label}</span>
               ) : null}
             </Link>
           </SidebarMenuButton>
