@@ -140,7 +140,7 @@ export function HumanSidebarTrigger() {
       type="button"
       onClick={toggle}
       aria-expanded={open}
-      className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/70 bg-background-3 text-muted-foreground transition-colors hover:border-border hover:text-foreground dark:bg-black"
+      className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={t('openPanel')}
       aria-label={t('openPanel')}
     >
@@ -391,6 +391,7 @@ export function PanelWrapLayout({
 
   return (
     <div
+      className="min-w-0 overflow-x-clip"
       ref={wrapperRef}
       style={
         {
