@@ -32,8 +32,10 @@ function getDisplayIcon(space?: Space): string | null {
 
 export function AiPanelHeader({
   showCloseButton = true,
+  onCloseButtonClick,
 }: {
   showCloseButton?: boolean;
+  onCloseButtonClick?: () => void;
 }) {
   const { closeAiPanel } = useAiPanel();
   const t = useTranslations('AiPanel');
@@ -283,7 +285,7 @@ export function AiPanelHeader({
         {showCloseButton ? (
           <button
             type="button"
-            onClick={closeAiPanel}
+            onClick={onCloseButtonClick ?? closeAiPanel}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}

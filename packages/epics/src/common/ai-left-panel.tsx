@@ -79,6 +79,7 @@ export function AiLeftPanel() {
   const {
     open: isAiOpen,
     overlayVisible,
+    closeAiPanel,
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
@@ -201,6 +202,7 @@ export function AiLeftPanel() {
   const [input, setInput] = useState('');
   const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
   const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>([]);
+  const [isHoverOpenLocked, setIsHoverOpenLocked] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -438,16 +440,33 @@ export function AiLeftPanel() {
     [sendMessage, buildMessageOptions],
   );
   const handleHeaderIconMouseEnter = useCallback(() => {
+    if (isHoverOpenLocked) return;
     if (!overlayVisible) {
       showAiOverlay();
     }
-  }, [overlayVisible, showAiOverlay]);
+  }, [isHoverOpenLocked, overlayVisible, showAiOverlay]);
 
   const handleExpandedRegionMouseEnter = useCallback(() => {
+    if (isHoverOpenLocked) return;
     if (overlayVisible) {
       showAiOverlay();
     }
-  }, [overlayVisible, showAiOverlay]);
+  }, [isHoverOpenLocked, overlayVisible, showAiOverlay]);
+
+  const handleCollapsedRegionMouseEnter = useCallback(() => {
+    if (isHoverOpenLocked) return;
+    showAiOverlay();
+  }, [isHoverOpenLocked, showAiOverlay]);
+
+  const handleOverlayMouseLeave = useCallback(() => {
+    setIsHoverOpenLocked(false);
+    hideAiOverlay();
+  }, [hideAiOverlay]);
+
+  const handleOverlayClose = useCallback(() => {
+    setIsHoverOpenLocked(true);
+    closeAiPanel();
+  }, [closeAiPanel]);
 
   if (!isAiOpen) {
     if (overlayVisible) {
@@ -456,14 +475,14 @@ export function AiLeftPanel() {
           <SidebarHeader
             className="bg-background-2 p-0"
             onMouseEnter={handleExpandedRegionMouseEnter}
-            onMouseLeave={hideAiOverlay}
+            onMouseLeave={handleOverlayMouseLeave}
           >
-            <AiPanelHeader />
+            <AiPanelHeader onCloseButtonClick={handleOverlayClose} />
           </SidebarHeader>
           <SidebarContent
             className="bg-background-2"
             onMouseEnter={handleExpandedRegionMouseEnter}
-            onMouseLeave={hideAiOverlay}
+            onMouseLeave={handleOverlayMouseLeave}
           >
             <SidebarGroup className="p-2 pt-4">
               <SidebarGroupContent>
@@ -525,8 +544,8 @@ export function AiLeftPanel() {
         </SidebarHeader>
         <SidebarContent
           className="relative overflow-visible bg-background-2"
-          onMouseEnter={showAiOverlay}
-          onMouseLeave={hideAiOverlay}
+          onMouseEnter={handleCollapsedRegionMouseEnter}
+          onMouseLeave={handleOverlayMouseLeave}
         >
           <SidebarGroup className="p-2 pt-4">
             <SidebarGroupContent>
