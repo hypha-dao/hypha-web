@@ -46,9 +46,6 @@ export default function SpaceConfiguration() {
   const pathname = usePathname();
   const closeUrl = pathname.replace(/\/space-configuration$/, '');
 
-  const normalizeNullableEcosystemLogoUrl = (
-    value: string | null | undefined,
-  ): string | undefined => value ?? undefined;
   const normalizeNullableThemeLogoUrl = (
     value: string | null | undefined,
   ): string | undefined => value ?? undefined;
@@ -98,9 +95,6 @@ export default function SpaceConfiguration() {
                   web3SpaceId: web3SpaceId as number | undefined,
                   logoUrl: normalizeNullableFileUrl(updates.logoUrl),
                   leadImage: normalizeNullableFileUrl(updates.leadImage),
-                  ecosystemLogoUrl: normalizeNullableEcosystemLogoUrl(
-                    updates.ecosystemLogoUrl,
-                  ),
                   ecosystemLogoUrlLight: normalizeNullableThemeLogoUrl(
                     updates.ecosystemLogoUrlLight,
                   ),
@@ -136,9 +130,6 @@ export default function SpaceConfiguration() {
                   web3SpaceId: web3SpaceId as number | undefined,
                   logoUrl: normalizeNullableFileUrl(updates.logoUrl),
                   leadImage: normalizeNullableFileUrl(updates.leadImage),
-                  ecosystemLogoUrl: normalizeNullableEcosystemLogoUrl(
-                    updates.ecosystemLogoUrl,
-                  ),
                   ecosystemLogoUrlLight: normalizeNullableThemeLogoUrl(
                     updates.ecosystemLogoUrlLight,
                   ),
@@ -204,7 +195,6 @@ export default function SpaceConfiguration() {
             description: space?.description || '',
             slug: space?.slug || '',
             logoUrl: space?.logoUrl || '',
-            ecosystemLogoUrl: space?.ecosystemLogoUrl ?? undefined,
             ecosystemLogoUrlLight: space?.ecosystemLogoUrlLight ?? undefined,
             ecosystemLogoUrlDark: space?.ecosystemLogoUrlDark ?? undefined,
             leadImage: space?.leadImage || '',

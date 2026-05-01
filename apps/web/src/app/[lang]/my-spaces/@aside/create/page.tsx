@@ -76,7 +76,6 @@ export default function AsideCreateSpacePage() {
           backLabel={tCommon('back')}
           onSubmit={(values) => {
             const {
-              ecosystemLogoUrl: _ecosystemLogoUrl,
               ecosystemLogoUrlLight: _ecosystemLogoUrlLight,
               ecosystemLogoUrlDark: _ecosystemLogoUrlDark,
               ...createValues

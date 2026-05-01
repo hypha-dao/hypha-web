@@ -88,7 +88,6 @@ const DEFAULT_VALUES = {
   title: '',
   description: '',
   logoUrl: '',
-  ecosystemLogoUrl: undefined,
   ecosystemLogoUrlLight: undefined,
   ecosystemLogoUrlDark: undefined,
   slug: '',
@@ -655,10 +654,6 @@ export const SpaceForm = ({
                           : typeof defaultValues?.ecosystemLogoUrlLight ===
                             'string'
                           ? defaultValues?.ecosystemLogoUrlLight
-                          : typeof values?.ecosystemLogoUrl === 'string'
-                          ? values?.ecosystemLogoUrl
-                          : typeof defaultValues?.ecosystemLogoUrl === 'string'
-                          ? defaultValues?.ecosystemLogoUrl
                           : undefined
                       }
                     />
@@ -697,10 +692,6 @@ export const SpaceForm = ({
                           : typeof defaultValues?.ecosystemLogoUrlDark ===
                             'string'
                           ? defaultValues?.ecosystemLogoUrlDark
-                          : typeof values?.ecosystemLogoUrl === 'string'
-                          ? values?.ecosystemLogoUrl
-                          : typeof defaultValues?.ecosystemLogoUrl === 'string'
-                          ? defaultValues?.ecosystemLogoUrl
                           : undefined
                       }
                     />

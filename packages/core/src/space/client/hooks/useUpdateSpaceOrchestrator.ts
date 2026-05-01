@@ -94,7 +94,6 @@ export const useUpdateSpaceOrchestrator = ({
     if (
       !uploadedFiles.leadImage &&
       !uploadedFiles.logoUrl &&
-      !uploadedFiles.ecosystemLogoUrl &&
       !uploadedFiles.ecosystemLogoUrlLight &&
       !uploadedFiles.ecosystemLogoUrlDark
     ) {
@@ -153,13 +152,11 @@ export const useUpdateSpaceOrchestrator = ({
             z.infer<typeof schemaUpdateSpace>,
             | 'logoUrl'
             | 'leadImage'
-            | 'ecosystemLogoUrl'
             | 'ecosystemLogoUrlLight'
             | 'ecosystemLogoUrlDark'
           > & {
             logoUrl?: string | File | null;
             leadImage?: string | File | null;
-            ecosystemLogoUrl?: string | File | null;
             ecosystemLogoUrlLight?: string | File | null;
             ecosystemLogoUrlDark?: string | File | null;
           };
@@ -175,7 +172,6 @@ export const useUpdateSpaceOrchestrator = ({
           ...data,
           logoUrl: data.logoUrl ?? undefined,
           leadImage: data.leadImage ?? undefined,
-          ecosystemLogoUrl: data.ecosystemLogoUrl ?? undefined,
           ecosystemLogoUrlLight: data.ecosystemLogoUrlLight ?? undefined,
           ecosystemLogoUrlDark: data.ecosystemLogoUrlDark ?? undefined,
         });
@@ -204,12 +200,6 @@ export const useUpdateSpaceOrchestrator = ({
             typeof data.leadImage === 'string'
               ? data.leadImage
               : data.leadImage === null
-              ? null
-              : undefined,
-          ecosystemLogoUrl:
-            typeof data.ecosystemLogoUrl === 'string'
-              ? data.ecosystemLogoUrl
-              : data.ecosystemLogoUrl === null
               ? null
               : undefined,
           ecosystemLogoUrlLight:

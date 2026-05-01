@@ -56,7 +56,6 @@ const createSpaceWeb2Props = {
     .min(1, 'Please add the purpose of your space')
     .max(300, 'Description must contain at most 300 characters'),
   slug: spaceSlugSchema.optional(),
-  ecosystemLogoUrl: z.string().url().optional(),
   ecosystemLogoUrlLight: z.string().url().optional(),
   ecosystemLogoUrlDark: z.string().url().optional(),
   web3SpaceId: z.number().optional(),
@@ -119,21 +118,6 @@ export const createSpaceFiles = {
         'File must be an image (JPEG, PNG, GIF, WEBP)',
       ),
   ]),
-  ecosystemLogoUrl: z
-    .union([
-      z.string().url('An ecosystem logo must be a valid URL'),
-      z
-        .instanceof(File)
-        .refine(
-          (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          'File size must be less than 4MB',
-        )
-        .refine(
-          (file) => ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type),
-          'File must be an image (JPEG, PNG, GIF, WEBP, or SVG)',
-        ),
-    ])
-    .optional(),
   ecosystemLogoUrlLight: z
     .union([
       z.string().url('A light ecosystem logo must be a valid URL'),
@@ -177,11 +161,6 @@ export const updateSpaceProps = {
   leadImage: z
     .string()
     .url('A space banner must be a valid URL')
-    .nullable()
-    .optional(),
-  ecosystemLogoUrl: z
-    .string()
-    .url('An ecosystem logo must be a valid URL')
     .nullable()
     .optional(),
   ecosystemLogoUrlLight: z

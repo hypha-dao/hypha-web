@@ -89,16 +89,13 @@ export function ConnectedMenuTop({
   }, [pathname, rootConfigHref, router]);
   const rootLogoLight = rootSpace?.ecosystemLogoUrlLight?.trim() || '';
   const rootLogoDark = rootSpace?.ecosystemLogoUrlDark?.trim() || '';
-  const rootLogoLegacy = rootSpace?.ecosystemLogoUrl?.trim() || '';
   const preferredThemeLogo =
     resolvedTheme === 'dark' ? rootLogoDark : rootLogoLight;
   const fallbackThemeLogo =
     resolvedTheme === 'dark' ? rootLogoLight : rootLogoDark;
-  const rootLogoUrl = [
-    preferredThemeLogo,
-    fallbackThemeLogo,
-    rootLogoLegacy,
-  ].find((candidate) => candidate && isSafeImageUrl(candidate));
+  const rootLogoUrl = [preferredThemeLogo, fallbackThemeLogo].find(
+    (candidate) => candidate && isSafeImageUrl(candidate),
+  );
   const rootTitle = rootSpace?.title?.trim() || '';
   const rootHasCustomLogo = hasCustomRootLogo(rootLogoUrl ?? '');
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
