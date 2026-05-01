@@ -193,7 +193,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     [coherenceType?.colorVariant],
   );
   const TypeIcon = coherenceType?.icon;
-  const hasRenderableTypeIcon = typeof TypeIcon === 'function';
 
   const priorityColorVariant = React.useMemo<SignalColorVariant>(
     () =>
@@ -364,7 +363,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 )}
                 aria-hidden
               />
-              {hasRenderableTypeIcon ? (
+              {TypeIcon ? (
                 <div
                   className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center"
                   aria-hidden
