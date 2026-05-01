@@ -231,6 +231,9 @@ export const CreateSignalForm = ({
         const coherence = await createCoherence({ ...data });
         const coherenceSlug = coherence.slug;
         if (!isMatrixAvailable) {
+          setSignalProvisioningNotice(
+            'Signal created but chat is currently unavailable.',
+          );
           console.warn('Matrix client is unavailable — skipping room creation');
         } else if (coherenceSlug) {
           // Do not block successful form close/navigation on Matrix latency/failures.
