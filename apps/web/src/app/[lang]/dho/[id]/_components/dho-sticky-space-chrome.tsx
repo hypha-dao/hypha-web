@@ -11,10 +11,10 @@ import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
 
-const STICKY_APPEAR_OFFSET_PX = 54;
+const STICKY_APPEAR_OFFSET_PX = 0;
+const STICKY_HYSTERESIS_PX = 16;
 
 export type DhoStickySpaceChromeProps = {
-  breadcrumbsRow: React.ReactNode;
   banner: React.ReactNode;
   actionsSlot: React.ReactNode;
   title: string;
@@ -60,7 +60,6 @@ function useMenuTopOffsetPx(): number {
  * lift state above the portaled subtree if that becomes a problem.
  */
 export function DhoStickySpaceChrome({
-  breadcrumbsRow,
   banner,
   actionsSlot,
   title,
@@ -81,27 +80,11 @@ export function DhoStickySpaceChrome({
   const [stuck, setStuck] = React.useState(false);
   const stuckRef = React.useRef(false);
 
-  const [flowMinH, setFlowMinH] = React.useState(44);
-
-  React.useLayoutEffect(() => {
-    const el = flowActionsEl;
-    if (!el || stuck) return;
-    const measure = () => {
-      const h = Math.ceil(el.getBoundingClientRect().height);
-      if (h > 0) setFlowMinH(h);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [stuck, flowActionsEl]);
-
   React.useEffect(() => {
     const sentinel = bannerBottomSentinelRef.current;
     if (!sentinel) return;
 
     const mq = window.matchMedia('(min-width: 768px)');
-    const HYST = 12;
     let raf = 0;
 
     const tick = () => {
@@ -116,8 +99,8 @@ export function DhoStickySpaceChrome({
       const bannerBottom = sentinel.getBoundingClientRect().bottom;
       let next = stuckRef.current;
       const appearAt = menuTopPx + STICKY_APPEAR_OFFSET_PX;
-      if (!next && bannerBottom <= appearAt) next = true;
-      if (next && bannerBottom >= appearAt + HYST) next = false;
+      if (!next && bannerBottom <= appearAt - 1) next = true;
+      if (next && bannerBottom >= appearAt + STICKY_HYSTERESIS_PX) next = false;
       if (next !== stuckRef.current) {
         stuckRef.current = next;
         setStuck(next);
@@ -215,8 +198,6 @@ export function DhoStickySpaceChrome({
           />
         </div>
 
-        <div className="flex min-w-0 items-center">{breadcrumbsRow}</div>
-
         <div
           ref={setFlowActionsEl}
           className={cn(
@@ -224,7 +205,11 @@ export function DhoStickySpaceChrome({
             'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
             stuck && 'pointer-events-none invisible opacity-0',
           )}
-          style={stuck ? { minHeight: flowMinH } : undefined}
+          style={
+            stuck
+              ? { minHeight: 'var(--secondary-chrome-actions-row-height,52px)' }
+              : undefined
+          }
         />
       </div>
 
