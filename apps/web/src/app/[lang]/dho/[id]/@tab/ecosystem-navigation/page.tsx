@@ -3,6 +3,7 @@ import { SpaceTabAccessWrapper } from '@hypha-platform/epics';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { notFound } from 'next/navigation';
+import { TabScreenTitle } from '../_components/tab-screen-title';
 import { EcosystemNavigationMainPanel } from '../../_components/ecosystem-navigation-main-panel';
 
 type PageProps = {
@@ -22,7 +23,10 @@ export default async function EcosystemNavigationPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
-      <EcosystemNavigationMainPanel daoSlug={id} lang={lang} />
+      <div className="flex flex-col gap-6 py-4">
+        <TabScreenTitle title="Ecosystem" />
+        <EcosystemNavigationMainPanel daoSlug={id} lang={lang} />
+      </div>
     </SpaceTabAccessWrapper>
   );
 }
