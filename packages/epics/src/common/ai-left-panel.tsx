@@ -131,7 +131,7 @@ export function AiLeftPanel() {
     return [
       {
         key: 'ecosystem-navigation',
-        label: 'Ecosystem Navigation',
+        label: 'Ecosystem',
         icon: Orbit,
         href: `/${lang}/dho/${spaceSlug}/ecosystem-navigation`,
         active: isSectionActive('ecosystem-navigation'),
@@ -463,7 +463,6 @@ export function AiLeftPanel() {
             {spaceSettingsItem ? (
               <SidebarGroup className="mt-auto p-2 pb-0">
                 <SidebarGroupContent>
-                  <div className="mb-2 h-px bg-border/60" aria-hidden />
                   <SidebarMenu className="gap-2">
                     {renderSectionNavItem(
                       spaceSettingsItem,
@@ -471,6 +470,7 @@ export function AiLeftPanel() {
                       'settings-overlay',
                     )}
                   </SidebarMenu>
+                  <div className="mt-2 h-px bg-border/60" aria-hidden />
                 </SidebarGroupContent>
               </SidebarGroup>
             ) : null}
@@ -536,7 +536,6 @@ export function AiLeftPanel() {
           {spaceSettingsItem ? (
             <SidebarGroup className="mt-auto p-2 pb-0">
               <SidebarGroupContent>
-                <div className="mb-2 h-px bg-border/60" aria-hidden />
                 <SidebarMenu className="gap-2">
                   {renderSectionNavItem(
                     spaceSettingsItem,
@@ -544,6 +543,7 @@ export function AiLeftPanel() {
                     'settings-collapsed',
                   )}
                 </SidebarMenu>
+                <div className="mt-2 h-px bg-border/60" aria-hidden />
               </SidebarGroupContent>
             </SidebarGroup>
           ) : null}

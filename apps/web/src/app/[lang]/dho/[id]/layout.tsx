@@ -15,7 +15,6 @@ import { Container } from '@hypha-platform/ui';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import { ActionButtons } from './_components/action-buttons';
-import { NestedSpacesButton } from './_components/nested-spaces-button';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
@@ -198,14 +197,6 @@ export default async function DhoLayout({
                   )}
                   <ActionButtons web3SpaceId={web3SpaceId} />
                 </>
-              }
-              nestedSpacesSlot={
-                web3SpaceId !== undefined ? (
-                  <NestedSpacesButton
-                    web3SpaceId={web3SpaceId}
-                    spaceSlug={daoSlug}
-                  />
-                ) : null
               }
               title={spaceFromDb.title}
               logoUrl={accentLogoHref}
