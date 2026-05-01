@@ -1,16 +1,39 @@
 'use client';
 
+import * as React from 'react';
 import { Locale } from '@hypha-platform/i18n';
+import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
+// import { getDhoPathOverview } from '../@tab/overview/constants'; // Overview tab removed
 import { cn } from '@hypha-platform/ui-utils';
-import { getActiveTabFromPath } from '@hypha-platform/epics';
+import {
+  getActiveTabFromPath,
+  useMainColumnScrollY,
+} from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
-import { Coins, FileCheck2, Radio, UsersRound } from 'lucide-react';
+
+/** Subtle scroll parallax: tab strip drifts slightly vs page for depth (see CompactSpaceBannerLead). */
+const TAB_PARALLAX_SCROLL_RATE = 0.07;
+const TAB_PARALLAX_MAX_SHIFT_PX = 18;
+
+function clampTabParallaxScrollY(scrollY: number): number {
+  return Math.min(
+    TAB_PARALLAX_MAX_SHIFT_PX,
+    Math.max(-TAB_PARALLAX_MAX_SHIFT_PX, scrollY * TAB_PARALLAX_SCROLL_RATE),
+  );
+}
+
+function isReducedMotionPreferred(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+  );
+}
 
 export function NavigationTabs({
   lang,
@@ -23,17 +46,38 @@ export function NavigationTabs({
   coherenceEnabled?: boolean;
 }) {
   const t = useTranslations('Common');
-  const tCoherence = useTranslations('CoherenceTab');
-  const tModalAside = useTranslations('ModalAside');
   const pathname = usePathname();
-  const activeTab = getActiveTabFromPath(pathname);
-  const menuItems = [
+  const activeTab = React.useMemo(
+    () => getActiveTabFromPath(pathname),
+    [pathname],
+  );
+
+  const mainScrollY = useMainColumnScrollY();
+  const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
+
+  React.useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!mq) return;
+
+    const sync = () => {
+      setPreferReducedMotion(mq.matches);
+    };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  const tabParallaxY =
+    preferReducedMotion || isReducedMotionPreferred()
+      ? 0
+      : clampTabParallaxScrollY(mainScrollY);
+
+  const tabs = [
     ...(coherenceEnabled
       ? [
           {
-            title: tCoherence('signals'),
+            title: t('Signals'),
             name: 'coherence',
-            icon: Radio,
             href: getDhoPathCoherence(lang, id),
           },
         ]
@@ -41,48 +85,49 @@ export function NavigationTabs({
     {
       title: t('Agreements'),
       name: 'agreements',
-      icon: FileCheck2,
       href: getDhoPathAgreements(lang, id),
     },
     {
       title: t('Members'),
       name: 'members',
-      icon: UsersRound,
-      href: getDhoPathMembers(lang, id),
+      href: getDhoPathMembers(lang as Locale, id as string),
     },
     {
       title: t('Treasury'),
       name: 'treasury',
-      icon: Coins,
-      href: getDhoPathTreasury(lang, id),
+      href: getDhoPathTreasury(lang as Locale, id as string),
     },
   ];
 
   return (
-    <nav
-      className="mt-6 w-full md:mt-7"
-      aria-label={tModalAside('spaceNavigation')}
-    >
-      <div className="mb-4 w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex min-w-max items-center gap-2 md:min-w-0 md:gap-3">
-          {menuItems.map(({ name, href, title, icon: Icon }) => (
-            <Link
-              key={name}
-              href={href}
-              aria-current={activeTab === name ? 'page' : undefined}
-              className={cn(
-                'inline-flex h-10 min-w-0 items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors',
-                activeTab === name
-                  ? 'border-accent-9/40 bg-accent-9/18 text-foreground'
-                  : 'border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/80 hover:text-foreground',
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" aria-hidden />
-              <span className="whitespace-nowrap">{title}</span>
-            </Link>
+    <Tabs value={activeTab} className="mt-6 w-full md:mt-7">
+      {/*
+        Radix ScrollArea's viewport forces overflow-y: hidden, which clips vertical parallax.
+        Native overflow-x-auto keeps horizontal swipe/scroll; vertical padding absorbs translate.
+      */}
+      <div
+        className={cn(
+          'mb-4 w-full overflow-x-auto overflow-y-visible overscroll-x-contain py-[18px]',
+          'touch-pan-x touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+        )}
+      >
+        <TabsList
+          className="flex h-10 min-w-max will-change-transform md:min-w-0 md:w-full"
+          style={
+            preferReducedMotion
+              ? undefined
+              : { transform: `translate3d(0, ${tabParallaxY}px, 0)` }
+          }
+        >
+          {tabs.map(({ name, href, title }) => (
+            <TabsTrigger asChild key={name} value={name} variant="ghost">
+              <Link href={href} className="w-full" passHref>
+                {title}
+              </Link>
+            </TabsTrigger>
           ))}
-        </div>
+        </TabsList>
       </div>
-    </nav>
+    </Tabs>
   );
 }

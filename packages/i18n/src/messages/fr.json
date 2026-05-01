@@ -41,7 +41,8 @@
     "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
-    "Coherence": "Cohérence",
+    "Coherence": "Signaux",
+    "Signals": "Signaux",
     "uploadLeadImage": {
       "cropTitle": "Téléverser une image",
       "cropDescription": "Ajustez le cadrage, puis enregistrez. Faites glisser pour repositionner et zoomez pour remplir la zone de bannière (JPEG, PNG ou WebP — max. 4 Mo).",
@@ -90,8 +91,7 @@
     "viewProfile": "Voir le profil",
     "delete": "Supprimer",
     "signIn": "Se connecter",
-    "getStarted": "Commencer",
-    "ecosystemLogo": "Logo de l'écosystème"
+    "getStarted": "Commencer"
   },
   "NotificationCentre": {
     "title": "Centre de notifications",
@@ -746,12 +746,6 @@
     "nameYourSpace": "Nommez votre espace...",
     "createdBy": "Créé par",
     "uploadSpaceBanner": "Téléverser",
-    "uploadEcosystemLogo": "Téléverser le logo de l'écosystème",
-    "ecosystemLogoDescription": "Ce logo de l'écosystème sera affiché dans la bannière supérieure de votre écosystème et sur chaque espace qui en fait partie, afin d'assurer une image de marque cohérente.",
-    "uploadEcosystemLogoLight": "Téléverser le logo de l'écosystème (mode clair)",
-    "uploadEcosystemLogoDark": "Téléverser le logo de l'écosystème (mode sombre)",
-    "ecosystemLogoLightDescription": "Utilisé en thème clair. PNG, WEBP, JPG ou SVG.",
-    "ecosystemLogoDarkDescription": "Utilisé en thème sombre. PNG, WEBP, JPG ou SVG.",
     "spaceBanner": "bannière de l'espace",
     "purpose": "Objectif",
     "purposePlaceholder": "Saisissez l'objectif de votre espace ici...",
@@ -1985,7 +1979,7 @@
     "signInToSee": "Veuillez vous connecter pour voir les signaux, la mémoire de l'espace et les conversations",
     "searchSignals": "Rechercher des signaux...",
     "newSignal": "Nouveau signal",
-    "backToCoherence": "Retour à Cohérence",
+    "backToCoherence": "Retour aux Signaux",
     "all": "Tous",
     "listIsEmpty": "La liste est vide",
     "loadMore": "Charger plus",
@@ -1995,7 +1989,9 @@
     "mostRecent": "Plus récents",
     "searchConversation": "Rechercher une conversation",
     "hideArchived": "Masquer les archivés",
-    "mentions": "{count, plural, one {# mention} other {# mentions}}",
+    "messageCount": "{count, plural, one {# message} other {# messages}}",
+    "priorityVisualAlt": "Niveau de priorité",
+    "typeSignalBannerAlt": "Signal {type}, priorité {priority}",
     "unarchiveConversation": "Désarchiver la conversation",
     "unarchiveConfirm": "Voulez-vous vraiment désarchiver cette conversation ?",
     "yesUnarchive": "Oui, désarchiver",
@@ -2019,7 +2015,7 @@
     "archiveConversation": "Archiver la conversation",
     "archiveConfirm": "Voulez-vous vraiment archiver cette conversation ?",
     "yesArchive": "Oui, archiver",
-    "errorCoherenceTab": "Oups, quelque chose s'est mal passé. Impossible de charger l'onglet cohérence.",
+    "errorCoherenceTab": "Oups, quelque chose s'est mal passé. Impossible de charger l'onglet signaux.",
     "spaceMemory": "Mémoire de l'espace",
     "searchSpaceMemory": "Rechercher dans la mémoire de l'espace...",
     "spaceMemoryLoading": "Chargement des fichiers…",
@@ -2069,6 +2065,11 @@
       "low": "Informatif, pas urgent"
     },
     "keepWindowOpenWhileCreating": "Gardez cette fenêtre ouverte jusqu’à la fin.",
+    "provisioning": {
+      "chatUnavailable": "Signal créé, mais le chat est actuellement indisponible.",
+      "roomProvisionFailed": "Signal créé, mais l’approvisionnement de la salle de chat a échoué.",
+      "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer."
+    },
     "tagLabels": {
       "Strategy": "Stratégie",
       "Culture": "Culture",

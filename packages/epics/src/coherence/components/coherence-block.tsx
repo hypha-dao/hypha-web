@@ -73,23 +73,22 @@ export function CoherenceBlock({
   return (
     <div className="flex flex-col gap-6 py-4">
       {isAuthenticated ? (
-        <div className="rounded-2xl border border-border/60 bg-card/35 shadow-sm backdrop-blur-[2px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/40 dark:supports-[backdrop-filter]:bg-card/30">
-          <div className="flex flex-col gap-10 px-4 pb-8 pt-6 md:px-8 md:pb-10 md:pt-8">
-            <SignalSection
-              basePath={chatBasePath}
-              label={t('signals')}
-              hasSearch={true}
-              signals={signals ?? []}
-              isLoading={isSpaceLoading || isSignalsLoading}
-              firstPageSize={3}
-              pageSize={3}
-              refresh={refresh}
-              onSignalClick={onSignalClick}
-            />
-            {spaceMemoryEnabled ? (
-              <SpaceMemorySection spaceSlug={spaceSlug} />
-            ) : null}
-          </div>
+        <div className="flex flex-col gap-6">
+          <SignalSection
+            basePath={chatBasePath}
+            label={t('signals')}
+            hasSearch={true}
+            signals={signals ?? []}
+            leadImage={space?.leadImage ?? undefined}
+            isLoading={isSpaceLoading || isSignalsLoading}
+            firstPageSize={3}
+            pageSize={3}
+            refresh={refresh}
+            onSignalClick={onSignalClick}
+          />
+          {spaceMemoryEnabled ? (
+            <SpaceMemorySection spaceSlug={spaceSlug} />
+          ) : null}
         </div>
       ) : (
         <Empty>
