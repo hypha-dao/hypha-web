@@ -197,10 +197,10 @@ export function AiPanelHeader({
             <DropdownMenuContent
               align="center"
               sideOffset={0}
-              className="w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-3/95 p-0 shadow-xl"
+              className="w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-3 p-0 shadow-xl"
             >
               <div className="max-h-[24.5rem] overflow-y-auto p-1.5 narrow-scrollbar">
-                <div className="sticky top-0 z-20 mb-1 rounded-t-xl border-b border-border/70 bg-background-3/95 px-1 pb-1.5 supports-[backdrop-filter]:bg-background-3/90 supports-[backdrop-filter]:backdrop-blur-sm">
+                <div className="sticky top-0 z-20 mb-1 rounded-t-xl border-b border-border/70 bg-background-3 px-1 pb-1.5">
                   <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
                     {tNavigation('mySpaces')}
                   </DropdownMenuLabel>
