@@ -115,20 +115,22 @@ export function EcosystemNavigationMainPanel({
         label: t('tabs.nestedSpaces'),
         content: (
           <div className="flex min-h-0 flex-col gap-4">
-            <div className="h-[min(52vh,36rem)] min-h-[20rem] w-full overflow-hidden rounded-lg border border-border/50 bg-background-3/80 p-2 sm:p-3">
+            <div className="w-full overflow-hidden rounded-lg border border-border/50 bg-background-3/80 p-2 sm:p-3">
               {hierarchyData ? (
-                <SpaceVisualization
-                  data={hierarchyData}
-                  currentSpaceId={currentSpace?.id}
-                  lang={lang}
-                  actionLabels={{
-                    addSpace: t('visibleSpaces.addSpace'),
-                    visitSpace: t('visibleSpaces.visitSpace'),
-                  }}
-                  enableHoverActions
-                />
+                <div className="mx-auto aspect-square w-full max-w-[30rem]">
+                  <SpaceVisualization
+                    data={hierarchyData}
+                    currentSpaceId={currentSpace?.id}
+                    lang={lang}
+                    actionLabels={{
+                      addSpace: t('visibleSpaces.addSpace'),
+                      visitSpace: t('visibleSpaces.visitSpace'),
+                    }}
+                    enableHoverActions
+                  />
+                </div>
               ) : (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                <div className="flex min-h-[16rem] items-center justify-center text-sm text-muted-foreground">
                   {t('comingSoon.spaceToSpaceVisualization')}
                 </div>
               )}

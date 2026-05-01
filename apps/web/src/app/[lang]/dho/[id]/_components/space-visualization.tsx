@@ -713,7 +713,7 @@ export function SpaceVisualization({
     <div ref={containerRef} className="relative w-full">
       <svg
         ref={svgRef}
-        className="h-full w-full"
+        className="h-auto w-full"
         role="img"
         aria-label="Space hierarchy visualization"
       />
