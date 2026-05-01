@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 
 const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
   'coherence.signalProvisioningNotice';
+const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
 
 type SignalSectionProps = {
   basePath: string;
@@ -85,6 +86,14 @@ export const SignalSection: FC<SignalSectionProps> = ({
       console.warn('Failed to parse signal provisioning notice:', error);
     }
   }, []);
+
+  React.useEffect(() => {
+    if (provisioningNoticeLines.length === 0) return;
+    const timeoutId = window.setTimeout(() => {
+      setProvisioningNoticeLines([]);
+    }, SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [provisioningNoticeLines]);
 
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
 
