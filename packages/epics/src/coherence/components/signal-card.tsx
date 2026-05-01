@@ -203,13 +203,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       colorVariant: priorityColorVariant,
     };
     return [typeBadge, priorityBadge];
-  }, [
-    priorityMeta,
-    t,
-    typeLabel,
-    typeColorVariant,
-    priorityColorVariant,
-  ]);
+  }, [priorityMeta, t, typeLabel, typeColorVariant, priorityColorVariant]);
 
   const tagList: BadgeItem[] = tags.map((tag) => {
     const displayLabel = (COHERENCE_TAGS as readonly string[]).includes(tag)

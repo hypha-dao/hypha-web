@@ -474,7 +474,7 @@ export const ProposalDetail = ({
     rate: 0.1,
     maxShiftPx: 18,
   });
-  const clampedHeroParallaxY = React.useMemo(
+  const clampedHeroParallaxY = useMemo(
     () =>
       Math.max(
         -HERO_PARALLAX_MAX_SHIFT_PX,
