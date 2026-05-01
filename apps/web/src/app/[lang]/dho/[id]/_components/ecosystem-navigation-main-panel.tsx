@@ -117,7 +117,7 @@ export function EcosystemNavigationMainPanel({
           <div className="flex min-h-0 flex-col gap-4">
             <div className="w-full overflow-visible px-1 py-1 sm:px-3 sm:py-2">
               {hierarchyData ? (
-                <div className="mx-auto aspect-square w-full max-w-[56rem] sm:w-3/4">
+                <div className="mx-auto aspect-square w-full">
                   <SpaceVisualization
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
