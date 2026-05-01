@@ -97,9 +97,9 @@ export function LanguageSelect({
                   <Check className="size-3.5" strokeWidth={2.5} />
                 ) : null}
               </span>
-              <span className="min-w-0 flex-1 truncate text-left font-medium">
+              <span className="min-w-0 flex-1 truncate text-left text-2 font-normal">
                 {locale.label}
-                <span className="ml-1.5 font-mono text-xs font-semibold tabular-nums text-muted-foreground">
+                <span className="ml-1.5 text-2 font-normal text-muted-foreground">
                   {locale.shortLabel}
                 </span>
               </span>
