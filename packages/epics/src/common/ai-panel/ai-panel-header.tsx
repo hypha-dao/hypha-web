@@ -185,10 +185,12 @@ export function AiPanelHeader({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="inline-flex h-8 w-full min-w-0 max-w-[15rem] items-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-left text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
+                className="inline-flex h-8 w-full min-w-0 max-w-[15rem] items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
                 aria-label={tNavigation('mySpaces')}
               >
-                <span className="max-w-[9rem] truncate">{currentTitle}</span>
+                <span className="max-w-[9rem] truncate text-center">
+                  {currentTitle}
+                </span>
                 <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
@@ -227,8 +229,10 @@ export function AiPanelHeader({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <div className="inline-flex h-8 w-full min-w-0 max-w-[15rem] items-center rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground/90">
-            <span className="max-w-[9rem] truncate">{fallbackTitle}</span>
+          <div className="inline-flex h-8 w-full min-w-0 max-w-[15rem] items-center justify-center rounded-xl border border-border/55 bg-background-3/80 px-3 text-sm font-semibold text-foreground/90">
+            <span className="max-w-[9rem] truncate text-center">
+              {fallbackTitle}
+            </span>
           </div>
         )}
       </div>
