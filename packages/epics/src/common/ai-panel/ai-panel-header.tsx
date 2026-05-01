@@ -187,8 +187,8 @@ export function AiPanelHeader({
         )}
       </div>
 
-      <div className="absolute left-14 right-14 flex min-w-0 items-center justify-center">
-        <div className="w-full min-w-0 max-w-[14rem]">
+      <div className="absolute left-16 right-16 flex min-w-0 items-center justify-center">
+        <div className="w-full min-w-0 max-w-[13.5rem]">
           {canOpenSpaceMenu ? (
             <DropdownMenu
               modal={false}
@@ -208,9 +208,10 @@ export function AiPanelHeader({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
+                side="bottom"
                 align="center"
-                sideOffset={-2}
-                className="z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-3 p-0 shadow-xl"
+                sideOffset={-10}
+                className="z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
               >
                 <div className="max-h-[24.5rem] overflow-y-auto p-1.5 narrow-scrollbar">
                   <div className="sticky top-0 z-20 mb-1 rounded-t-xl border-b border-border/70 bg-background-3 px-1 pb-1.5">
