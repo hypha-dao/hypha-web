@@ -62,6 +62,9 @@ import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 import { normalizeVotingDurationForResubmitSelect } from '../../agreements/plugins/change-voting-method/voting-duration-resubmit';
+import { useScrollParallax } from '../../common/use-scroll-parallax';
+
+const HERO_PARALLAX_MAX_SHIFT_PX = 17;
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -467,6 +470,18 @@ export const ProposalDetail = ({
   membersForWhitelist,
   spacesForWhitelist,
 }: ProposalDetailProps) => {
+  const { reduceMotion, parallaxY } = useScrollParallax({
+    rate: 0.1,
+    maxShiftPx: 18,
+  });
+  const clampedHeroParallaxY = useMemo(
+    () =>
+      Math.max(
+        -HERO_PARALLAX_MAX_SHIFT_PX,
+        Math.min(HERO_PARALLAX_MAX_SHIFT_PX, parallaxY),
+      ),
+    [parallaxY],
+  );
   const tProposalDetails = useTranslations('ProposalDetails');
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -1133,13 +1148,24 @@ export const ProposalDetail = ({
         loading={isLoading}
         className="rounded-lg"
       >
-        <Image
-          height={150}
-          width={554}
-          className="w-full object-cover rounded-lg max-h-[150px]"
-          src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-          alt={title ?? ''}
-        />
+        <div className="relative h-[150px] overflow-hidden rounded-lg">
+          <div
+            className="absolute inset-x-0 top-[-12%] h-[124%] will-change-transform"
+            style={
+              reduceMotion
+                ? undefined
+                : { transform: `translate3d(0, ${clampedHeroParallaxY}px, 0)` }
+            }
+          >
+            <Image
+              height={150}
+              width={554}
+              className="h-full w-full rounded-lg object-cover"
+              src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
+              alt={title ?? ''}
+            />
+          </div>
+        </div>
       </Skeleton>
       <ExpireProposalBanner
         isDisplay={displayExpireProposalBanner}

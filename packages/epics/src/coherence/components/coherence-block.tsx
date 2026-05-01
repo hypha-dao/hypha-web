@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuthentication } from '@hypha-platform/authentication';
+import { Button } from '@hypha-platform/ui';
 import { Empty } from '../../common/empty';
 import {
   Coherence,
@@ -31,8 +32,9 @@ export function CoherenceBlock({
   spaceMemoryEnabled = false,
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
+  const tSpaces = useTranslations('Spaces');
   const [hideArchived, setHideArchived] = React.useState(true);
-  const { isAuthenticated } = useAuthentication();
+  const { isAuthenticated, login } = useAuthentication();
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
   const {
     coherences: signals,
@@ -71,27 +73,34 @@ export function CoherenceBlock({
   return (
     <div className="flex flex-col gap-6 py-4">
       {isAuthenticated ? (
-        <div className="rounded-2xl border border-border/60 bg-card/35 shadow-sm backdrop-blur-[2px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/40 dark:supports-[backdrop-filter]:bg-card/30">
-          <div className="flex flex-col gap-10 px-4 pb-8 pt-6 md:px-8 md:pb-10 md:pt-8">
-            <SignalSection
-              basePath={chatBasePath}
-              label={t('signals')}
-              hasSearch={true}
-              signals={signals ?? []}
-              isLoading={isSpaceLoading || isSignalsLoading}
-              firstPageSize={3}
-              pageSize={3}
-              refresh={refresh}
-              onSignalClick={onSignalClick}
-            />
-            {spaceMemoryEnabled ? (
-              <SpaceMemorySection spaceSlug={spaceSlug} />
-            ) : null}
-          </div>
+        <div className="flex flex-col gap-6">
+          <SignalSection
+            basePath={chatBasePath}
+            label={t('signals')}
+            hasSearch={true}
+            signals={signals ?? []}
+            leadImage={space?.leadImage ?? undefined}
+            isLoading={isSpaceLoading || isSignalsLoading}
+            firstPageSize={3}
+            pageSize={3}
+            refresh={refresh}
+            onSignalClick={onSignalClick}
+          />
+          {spaceMemoryEnabled ? (
+            <SpaceMemorySection spaceSlug={spaceSlug} />
+          ) : null}
         </div>
       ) : (
         <Empty>
-          <p>{t('signInToSee')}</p>
+          <div className="flex flex-col gap-7">
+            <p>{tSpaces('accessDeniedNotLoggedIn')}</p>
+            <div className="flex items-center justify-center gap-4">
+              <Button variant="outline" onClick={login}>
+                {tSpaces('signIn')}
+              </Button>
+              <Button onClick={login}>{tSpaces('getStarted')}</Button>
+            </div>
+          </div>
         </Empty>
       )}
     </div>

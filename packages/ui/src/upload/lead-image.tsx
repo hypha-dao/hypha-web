@@ -49,6 +49,93 @@ export type UploadLeadImageProps = {
   };
 };
 
+const PARALLAX_SCROLL_CSS_VAR = '--upload-lead-scroll-y';
+
+type ParallaxTarget = Window | HTMLElement;
+
+type ParallaxSubscription = {
+  count: number;
+  rafId: number;
+  onScroll: () => void;
+  detach: () => void;
+};
+
+const parallaxSubscriptions = new Map<ParallaxTarget, ParallaxSubscription>();
+
+function findScrollableAncestor(start: HTMLElement): HTMLElement | null {
+  let node: HTMLElement | null = start.parentElement;
+  while (node) {
+    const style = window.getComputedStyle(node);
+    const canScrollY = /(auto|scroll|overlay)/.test(style.overflowY);
+    if (canScrollY && node.scrollHeight > node.clientHeight) return node;
+    node = node.parentElement;
+  }
+  return null;
+}
+
+function getTargetScrollY(target: ParallaxTarget): number {
+  return target instanceof Window ? target.scrollY : target.scrollTop;
+}
+
+function setTargetScrollCssVar(target: ParallaxTarget): void {
+  const scrollY = getTargetScrollY(target);
+  if (target instanceof Window) {
+    document.documentElement.style.setProperty(
+      PARALLAX_SCROLL_CSS_VAR,
+      `${scrollY}px`,
+    );
+    return;
+  }
+  target.style.setProperty(PARALLAX_SCROLL_CSS_VAR, `${scrollY}px`);
+}
+
+function ensureParallaxSubscription(target: ParallaxTarget): () => void {
+  const existing = parallaxSubscriptions.get(target);
+  if (existing) {
+    existing.count += 1;
+    return () => {
+      existing.count -= 1;
+      if (existing.count > 0) return;
+      if (existing.rafId) window.cancelAnimationFrame(existing.rafId);
+      existing.detach();
+      parallaxSubscriptions.delete(target);
+    };
+  }
+
+  let rafId = 0;
+  const onScroll = () => {
+    if (rafId) return;
+    rafId = window.requestAnimationFrame(() => {
+      rafId = 0;
+      setTargetScrollCssVar(target);
+      const subscription = parallaxSubscriptions.get(target);
+      if (subscription) subscription.rafId = 0;
+    });
+    const subscription = parallaxSubscriptions.get(target);
+    if (subscription) subscription.rafId = rafId;
+  };
+  const detach = () => target.removeEventListener('scroll', onScroll);
+
+  setTargetScrollCssVar(target);
+  target.addEventListener('scroll', onScroll, { passive: true });
+  parallaxSubscriptions.set(target, {
+    count: 1,
+    rafId,
+    onScroll,
+    detach,
+  });
+
+  return () => {
+    const subscription = parallaxSubscriptions.get(target);
+    if (!subscription) return;
+    subscription.count -= 1;
+    if (subscription.count > 0) return;
+    if (subscription.rafId) window.cancelAnimationFrame(subscription.rafId);
+    subscription.detach();
+    parallaxSubscriptions.delete(target);
+  };
+}
+
 function dataURLtoFile(dataUrl: string, filename: string) {
   if (!dataUrl) throw new Error('dataUrl is undefined');
   const arr = dataUrl.split(',');
@@ -130,6 +217,30 @@ export const UploadLeadImage = ({
     height: number;
   } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
+  const [reduceMotion, setReduceMotion] = React.useState(false);
+
+  React.useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!mq) return;
+    const sync = () => setReduceMotion(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  React.useEffect(() => {
+    if (reduceMotion) {
+      rootRef.current?.style.removeProperty(PARALLAX_SCROLL_CSS_VAR);
+      return;
+    }
+
+    const rootEl = rootRef.current;
+    if (!rootEl) return;
+
+    const scrollTarget = findScrollableAncestor(rootEl) ?? window;
+    return ensureParallaxSubscription(scrollTarget);
+  }, [reduceMotion]);
 
   const onDrop = React.useCallback(
     (acceptedFiles: File[]) => {
@@ -214,12 +325,23 @@ export const UploadLeadImage = ({
   /** Prefer in-component preview (upload/crop); fall through to parent default URL immediately so we never flash an empty dashed box while defaultImage hydrates. */
   const displaySrc = preview ?? defaultImage ?? null;
   const showEmptyPlaceholder = !displaySrc && !imageSrc;
+  const { ref: dropzoneRef, ...rootProps } = getRootProps();
 
   return (
     <>
       <AspectRatio
         ratio={762 / 270}
-        {...getRootProps()}
+        {...rootProps}
+        ref={(node) => {
+          rootRef.current = node;
+          if (typeof dropzoneRef === 'function') {
+            dropzoneRef(node);
+            return;
+          }
+          if (dropzoneRef && 'current' in dropzoneRef) {
+            dropzoneRef.current = node;
+          }
+        }}
         className={clsx(
           'group cursor-pointer relative',
           'flex justify-center items-center overflow-hidden',
@@ -229,7 +351,22 @@ export const UploadLeadImage = ({
       >
         <input {...getInputProps()} />
         {displaySrc && typeof displaySrc === 'string' && (
-          <PreviewImg src={displaySrc} />
+          <div
+            className="pointer-events-none absolute inset-x-0 top-[-10%] h-[120%] will-change-transform"
+            style={
+              reduceMotion
+                ? undefined
+                : {
+                    transform: `translate3d(0, clamp(-20px, calc(var(${PARALLAX_SCROLL_CSS_VAR}, 0px) * 0.08), 20px), 0)`,
+                  }
+            }
+            aria-hidden
+          >
+            <PreviewImg
+              src={displaySrc}
+              className="pointer-events-none h-full w-full object-cover"
+            />
+          </div>
         )}
         <PreviewOverlay isVisible={!displaySrc || isDragActive}>
           {isDragActive ? (

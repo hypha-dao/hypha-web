@@ -41,7 +41,8 @@
     "errorLoadTreasuryTab": "Ops, algo deu errado. Não foi possível carregar a aba de tesouraria.",
     "publish": "Publicar",
     "invalidTransactions": "Transações inválidas",
-    "Coherence": "Coerência",
+    "Coherence": "Sinais",
+    "Signals": "Sinais",
     "uploadLeadImage": {
       "cropTitle": "Carregar uma imagem",
       "cropDescription": "Ajuste o enquadramento e salve. Arraste para reposicionar e use o zoom para a área do banner (JPEG, PNG ou WebP — máx. 4 MB).",
@@ -1988,7 +1989,9 @@
     "mostRecent": "Mais recentes",
     "searchConversation": "Pesquisar conversa",
     "hideArchived": "Ocultar arquivados",
-    "mentions": "{count, plural, one {# menção} other {# menções}}",
+    "messageCount": "{count, plural, one {# mensagem} other {# mensagens}}",
+    "priorityVisualAlt": "Nível de prioridade",
+    "typeSignalBannerAlt": "Sinal {type}, prioridade {priority}",
     "unarchiveConversation": "Desarquivar conversa",
     "unarchiveConfirm": "Deseja realmente desarquivar esta conversa?",
     "yesUnarchive": "Sim, desarquivar",
@@ -2062,6 +2065,11 @@
       "low": "Informativo, sem pressa"
     },
     "keepWindowOpenWhileCreating": "Mantenha esta janela aberta até terminarmos.",
+    "provisioning": {
+      "chatUnavailable": "Sinal criado, mas o chat está indisponível no momento.",
+      "roomProvisionFailed": "Sinal criado, mas a criação da sala de chat falhou.",
+      "roomLinkFailedRetry": "Sinal criado, mas não foi possível vincular a sala de chat. Tente novamente."
+    },
     "tagLabels": {
       "Strategy": "Estratégia",
       "Culture": "Cultura",

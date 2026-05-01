@@ -538,6 +538,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const joinedRef = useRef<string | null>(null);
   const [unreadBump, setUnreadBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
+  const lastPersistedCoherenceMessageCountRef = useRef<{
+    slug: string | null;
+    count: number;
+  } | null>(null);
+  const coherenceMessageCountSyncTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const coherenceMessageCountSyncInFlightRef = useRef(false);
+  const pendingCoherenceMessageCountRef = useRef<{
+    slug: string;
+    count: number;
+  } | null>(null);
 
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
@@ -1819,8 +1831,112 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     return () => {
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+      if (coherenceMessageCountSyncTimeoutRef.current) {
+        clearTimeout(coherenceMessageCountSyncTimeoutRef.current);
+        coherenceMessageCountSyncTimeoutRef.current = null;
+      }
     };
   }, []);
+
+  /**
+   * Persist signal message counts from the active Matrix room in coherence mode.
+   * Debounced + change-only to avoid write storms while keeping card counters accurate.
+   */
+  useEffect(() => {
+    if (mode !== 'coherence') return;
+    if (!isMatrixAvailable || !coherenceSlug || !roomId) return;
+    let cancelled = false;
+
+    const messageCount = messages.length;
+    const previous = lastPersistedCoherenceMessageCountRef.current;
+    if (previous?.slug === coherenceSlug && previous.count === messageCount) {
+      return;
+    }
+
+    if (coherenceMessageCountSyncTimeoutRef.current) {
+      clearTimeout(coherenceMessageCountSyncTimeoutRef.current);
+    }
+
+    coherenceMessageCountSyncTimeoutRef.current = setTimeout(() => {
+      if (cancelled) return;
+      pendingCoherenceMessageCountRef.current = {
+        slug: coherenceSlug,
+        count: messageCount,
+      };
+
+      if (coherenceMessageCountSyncInFlightRef.current) return;
+
+      const flushMessageCountSync = async () => {
+        if (cancelled) return;
+        coherenceMessageCountSyncInFlightRef.current = true;
+        try {
+          while (pendingCoherenceMessageCountRef.current) {
+            if (cancelled) return;
+            const next = pendingCoherenceMessageCountRef.current;
+            pendingCoherenceMessageCountRef.current = null;
+            try {
+              await updateCoherenceBySlug({
+                slug: next.slug,
+                messages: next.count,
+              });
+              lastPersistedCoherenceMessageCountRef.current = next;
+            } catch (error) {
+              if (!pendingCoherenceMessageCountRef.current) {
+                pendingCoherenceMessageCountRef.current = next;
+              }
+              throw error;
+            }
+          }
+        } finally {
+          coherenceMessageCountSyncInFlightRef.current = false;
+        }
+      };
+
+      const scheduleRetry = () => {
+        if (cancelled) return;
+        if (!pendingCoherenceMessageCountRef.current) return;
+        if (coherenceMessageCountSyncTimeoutRef.current) {
+          clearTimeout(coherenceMessageCountSyncTimeoutRef.current);
+        }
+        coherenceMessageCountSyncTimeoutRef.current = setTimeout(() => {
+          if (cancelled) return;
+          if (coherenceMessageCountSyncInFlightRef.current) return;
+          void flushMessageCountSync().catch((retryError) => {
+            if (cancelled) return;
+            console.warn(
+              '[HumanRightPanel] Retry failed to persist coherence message count:',
+              retryError,
+            );
+            scheduleRetry();
+          });
+        }, 1000);
+      };
+
+      void flushMessageCountSync().catch((error) => {
+        if (cancelled) return;
+        console.warn(
+          '[HumanRightPanel] Failed to persist coherence message count:',
+          error,
+        );
+        scheduleRetry();
+      });
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      if (coherenceMessageCountSyncTimeoutRef.current) {
+        clearTimeout(coherenceMessageCountSyncTimeoutRef.current);
+        coherenceMessageCountSyncTimeoutRef.current = null;
+      }
+    };
+  }, [
+    mode,
+    isMatrixAvailable,
+    coherenceSlug,
+    roomId,
+    messages.length,
+    updateCoherenceBySlug,
+  ]);
 
   return (
     <>

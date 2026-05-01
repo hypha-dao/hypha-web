@@ -41,7 +41,8 @@
     "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab.",
     "publish": "Publish",
     "invalidTransactions": "Invalid transactions",
-    "Coherence": "Coherence",
+    "Coherence": "Signals",
+    "Signals": "Signals",
     "uploadLeadImage": {
       "cropTitle": "Upload an image",
       "cropDescription": "Adjust how your image is framed, then save. Drag to reposition and use zoom to fit the banner area (JPEG, PNG, or WebP — max 4 MB).",
@@ -2010,7 +2011,7 @@
     "signInToSee": "Please, sign in to see signals, space memory, and conversations",
     "searchSignals": "Search signals...",
     "newSignal": "New Signal",
-    "backToCoherence": "Back to Coherence",
+    "backToCoherence": "Back to Signals",
     "all": "All",
     "listIsEmpty": "List is empty",
     "loadMore": "Load more",
@@ -2020,7 +2021,9 @@
     "mostRecent": "Most Recent",
     "searchConversation": "Search conversation",
     "hideArchived": "Hide archived",
-    "mentions": "{count, plural, one {# mention} other {# mentions}}",
+    "messageCount": "{count, plural, one {# message} other {# messages}}",
+    "priorityVisualAlt": "Priority level",
+    "typeSignalBannerAlt": "{type} signal, {priority} priority",
     "unarchiveConversation": "Unarchive Conversation",
     "unarchiveConfirm": "Do you really want to unarchive this conversation?",
     "yesUnarchive": "Yes, unarchive",
@@ -2044,7 +2047,7 @@
     "archiveConversation": "Archive Conversation",
     "archiveConfirm": "Do you really want to archive this conversation?",
     "yesArchive": "Yes, archive",
-    "errorCoherenceTab": "Oops, something went wrong. Couldn't load coherence tab.",
+    "errorCoherenceTab": "Oops, something went wrong. Couldn't load signals tab.",
     "spaceMemory": "Space memory",
     "searchSpaceMemory": "Search space memory...",
     "spaceMemoryLoading": "Loading assets…",
@@ -2099,6 +2102,11 @@
       "low": "Informational, no rush"
     },
     "keepWindowOpenWhileCreating": "Keep this window open until we're finished.",
+    "provisioning": {
+      "chatUnavailable": "Signal created but chat is currently unavailable.",
+      "roomProvisionFailed": "Signal created but chat room provisioning failed.",
+      "roomLinkFailedRetry": "Signal created but chat room could not be linked. Please retry."
+    },
     "tagLabels": {
       "Strategy": "Strategy",
       "Culture": "Culture",

@@ -32,6 +32,8 @@ interface Document {
 interface DocumentCardProps {
   isLoading: boolean;
   leadImage?: string;
+  parallaxY?: number;
+  reduceMotion?: boolean;
   creator?: Creator;
   badges?: BadgeItem[];
   interactions?: React.ReactNode;
@@ -111,6 +113,8 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   description,
   isLoading,
   leadImage,
+  parallaxY = 0,
+  reduceMotion = true,
   creator,
   badges,
   interactions,
@@ -160,13 +164,24 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
           height="150px"
           width="250px"
         >
-          <Image
-            className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={leadImage || '/placeholder/document-lead-image.webp'}
-            alt={title || ''}
-            width={250}
-            height={150}
-          />
+          <div className="relative h-[150px] overflow-hidden">
+            <div
+              className="absolute inset-x-0 top-[-12%] h-[124%] will-change-transform"
+              style={
+                reduceMotion
+                  ? undefined
+                  : { transform: `translate3d(0, ${parallaxY}px, 0)` }
+              }
+            >
+              <Image
+                className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
+                src={leadImage || '/placeholder/document-lead-image.webp'}
+                alt={title || ''}
+                width={250}
+                height={150}
+              />
+            </div>
+          </div>
         </Skeleton>
       </CardHeader>
       <CardContent className="relative space-y-4">

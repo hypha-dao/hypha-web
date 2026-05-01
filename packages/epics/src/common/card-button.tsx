@@ -3,7 +3,8 @@ import { cn } from '@hypha-platform/ui-utils';
 import { cva, VariantProps } from 'class-variance-authority';
 
 const cardButtonVariants = cva(
-  'flex p-6 cursor-pointer space-x-4 items-center',
+  /** Match {@link VotingMethodSelector}: `border-2`, compact padding. */
+  'flex cursor-pointer items-center space-x-4 border-2 p-5',
   {
     variants: {
       selected: {
@@ -67,12 +68,11 @@ const cardButtonVariants = cva(
         selected: false,
         className: 'hover:border-neutral-5',
       },
-      // Subtle — outline + ring when selected (aligned with SelectAction / proposal picker)
+      // Subtle — selected matches voting-method cards (border emphasis only)
       {
         colorVariant: 'subtle',
         selected: true,
-        className:
-          'border-accent-9 bg-muted/45 shadow-md ring-2 ring-accent-10/45',
+        className: 'border-accent-9 bg-muted/40',
       },
       {
         colorVariant: 'subtle',
