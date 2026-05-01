@@ -55,7 +55,12 @@ export function EcosystemNavigationShell({
               value={tab.value}
               className={tab.value === activeTab ? visualizationClassName : ''}
             >
-              {tab.content}
+              <div className="flex min-h-0 flex-col gap-3">
+                <h2 className="text-6 font-semibold tracking-tight text-foreground">
+                  {tab.label}
+                </h2>
+                {tab.content}
+              </div>
             </TabsContent>
           ))}
         </Tabs>
