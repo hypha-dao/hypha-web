@@ -653,7 +653,6 @@ export const SpaceForm = ({
                         'image/jpg': [],
                         'image/jpeg': [],
                         'image/webp': [],
-                        'image/svg+xml': [],
                       }}
                       className="mx-auto h-20 w-40 min-w-40 rounded-lg border border-border bg-muted/30"
                       imageClassName="object-contain bg-white p-1.5"
@@ -692,7 +691,6 @@ export const SpaceForm = ({
                         'image/jpg': [],
                         'image/jpeg': [],
                         'image/webp': [],
-                        'image/svg+xml': [],
                       }}
                       className="mx-auto h-20 w-40 min-w-40 rounded-lg border border-border bg-muted/30"
                       imageClassName="object-contain bg-white p-1.5"
