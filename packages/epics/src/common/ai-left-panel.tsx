@@ -516,11 +516,11 @@ export function AiLeftPanel() {
       <>
         <SidebarHeader className="min-h-[var(--menu-top-height,70px)] border-b border-border bg-background-2 p-2">
           <div
-            className="ml-auto flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70"
+            className="relative ml-auto flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70"
             onMouseEnter={handleHeaderIconMouseEnter}
             aria-hidden
           >
-            <Menu className="h-4 w-4 text-muted-foreground" />
+            <Menu className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
           </div>
         </SidebarHeader>
         <SidebarContent
