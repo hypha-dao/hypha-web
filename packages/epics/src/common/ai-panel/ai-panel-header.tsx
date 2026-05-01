@@ -208,17 +208,14 @@ export function AiPanelHeader({
                   <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
-              {spaceMenuOpen ? (
-                <div className="pointer-events-none absolute inset-x-0 top-full z-40 -mt-1.5 h-2 rounded-b-xl bg-background-2" />
-              ) : null}
               <DropdownMenuContent
                 side="bottom"
                 align="center"
-                sideOffset={-10}
-                className="z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
+                sideOffset={4}
+                className="relative isolate z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
               >
-                <div className="max-h-[24.5rem] overflow-y-auto p-1.5 narrow-scrollbar">
-                  <div className="sticky top-0 z-20 mb-1 rounded-t-xl border-b border-border/70 bg-background-3 px-1 pb-1.5">
+                <div className="flex max-h-[24.5rem] min-h-0 flex-col">
+                  <div className="shrink-0 border-b border-border/70 bg-background-3 px-2 pb-1.5 pt-1">
                     <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
                       {tNavigation('mySpaces')}
                     </DropdownMenuLabel>
@@ -233,21 +230,23 @@ export function AiPanelHeader({
                       />
                     </div>
                   </div>
-                  {!hasFilteredSpaces ? (
-                    <DropdownMenuItem disabled>
-                      {normalizedSearch
-                        ? tSpaces('noSpacesFound')
-                        : fallbackTitle}
-                    </DropdownMenuItem>
-                  ) : null}
-                  {hasFilteredSpaces &&
-                    filteredGroupedSpaces.ecosystem.map(renderSpaceOption)}
-                  {filteredGroupedSpaces.ecosystem.length > 0 &&
-                  filteredGroupedSpaces.others.length > 0 ? (
-                    <DropdownMenuSeparator />
-                  ) : null}
-                  {hasFilteredSpaces &&
-                    filteredGroupedSpaces.others.map(renderSpaceOption)}
+                  <div className="min-h-0 overflow-y-auto p-1.5 narrow-scrollbar">
+                    {!hasFilteredSpaces ? (
+                      <DropdownMenuItem disabled>
+                        {normalizedSearch
+                          ? tSpaces('noSpacesFound')
+                          : fallbackTitle}
+                      </DropdownMenuItem>
+                    ) : null}
+                    {hasFilteredSpaces &&
+                      filteredGroupedSpaces.ecosystem.map(renderSpaceOption)}
+                    {filteredGroupedSpaces.ecosystem.length > 0 &&
+                    filteredGroupedSpaces.others.length > 0 ? (
+                      <DropdownMenuSeparator />
+                    ) : null}
+                    {hasFilteredSpaces &&
+                      filteredGroupedSpaces.others.map(renderSpaceOption)}
+                  </div>
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
