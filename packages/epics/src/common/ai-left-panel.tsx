@@ -57,6 +57,8 @@ const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
 const MENU_ROW_LINK_BASE_CLASS = 'flex w-full min-w-0 items-center';
 const MENU_ROW_LINK_EXPANDED_CLASS = 'pl-1.5';
 const MENU_ROW_LINK_COLLAPSED_CLASS = 'justify-center';
+const MENU_TRIGGER_CANVAS_CLASS =
+  'relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70';
 const RECENT_SPACE_AVATAR_CLASS =
   'flex h-6 w-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 
@@ -468,6 +470,19 @@ export function AiLeftPanel() {
     closeAiPanel();
   }, [closeAiPanel]);
 
+  const triggerButton = (
+    <button
+      type="button"
+      onClick={overlayVisible ? handleOverlayClose : showAiOverlay}
+      onMouseEnter={handleHeaderIconMouseEnter}
+      className={MENU_TRIGGER_CANVAS_CLASS}
+      aria-label={overlayVisible ? t('closePanel') : t('openPanel')}
+      title={overlayVisible ? t('hidePanel') : t('openPanel')}
+    >
+      <Menu className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
+    </button>
+  );
+
   if (!isAiOpen) {
     if (overlayVisible) {
       return (
@@ -477,7 +492,10 @@ export function AiLeftPanel() {
             onMouseEnter={handleExpandedRegionMouseEnter}
             onMouseLeave={handleOverlayMouseLeave}
           >
-            <AiPanelHeader onCloseButtonClick={handleOverlayClose} />
+            <AiPanelHeader
+              onCloseButtonClick={handleOverlayClose}
+              leftSlot={triggerButton}
+            />
           </SidebarHeader>
           <SidebarContent
             className="bg-background-2"
@@ -534,12 +552,8 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="min-h-[var(--menu-top-height,70px)] border-b border-border bg-background-2 p-2">
-          <div
-            className="relative ml-auto flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70"
-            onMouseEnter={handleHeaderIconMouseEnter}
-            aria-hidden
-          >
-            <Menu className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
+          <div className="flex w-full items-center justify-center">
+            {triggerButton}
           </div>
         </SidebarHeader>
         <SidebarContent
