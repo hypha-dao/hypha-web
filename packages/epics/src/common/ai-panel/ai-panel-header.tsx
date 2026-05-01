@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import useSWR from 'swr';
-import { useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { ChevronsUpDown, PanelLeftClose, Sparkles } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,9 +33,11 @@ function getDisplayIcon(space?: Space): string | null {
 export function AiPanelHeader({
   showCloseButton = true,
   onCloseButtonClick,
+  leftSlot,
 }: {
   showCloseButton?: boolean;
   onCloseButtonClick?: () => void;
+  leftSlot?: ReactNode;
 }) {
   const { closeAiPanel } = useAiPanel();
   const t = useTranslations('AiPanel');
@@ -175,7 +177,13 @@ export function AiPanelHeader({
 
   return (
     <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[1.75rem_minmax(0,1fr)_1.75rem] items-center gap-3 border-b border-border bg-background-2 px-4 py-2">
-      <div className="h-7 w-7 shrink-0" aria-hidden />
+      {leftSlot ? (
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center">
+          {leftSlot}
+        </div>
+      ) : (
+        <div className="h-7 w-7 shrink-0" aria-hidden />
+      )}
 
       <div className="min-w-0 px-4">
         <div className="relative mx-auto w-full min-w-0 max-w-[13.5rem]">
