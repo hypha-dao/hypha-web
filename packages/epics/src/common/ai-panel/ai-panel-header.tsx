@@ -148,7 +148,7 @@ export function AiPanelHeader({
         href={`/${lang}/dho/${space.slug}/agreements`}
         className="flex min-w-0 items-center gap-2"
       >
-        <span className="h-5 w-5 overflow-hidden rounded-md ring-1 ring-border/60">
+        <span className="h-5 w-5 overflow-hidden rounded-full ring-1 ring-border/60">
           {getDisplayIcon(space) ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -189,7 +189,7 @@ export function AiPanelHeader({
                   className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
                   aria-label={tNavigation('mySpaces')}
                 >
-                  <span className="h-5 w-5 shrink-0 overflow-hidden rounded-md ring-1 ring-border/60">
+                  <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
                     {currentIcon ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -255,7 +255,7 @@ export function AiPanelHeader({
             </DropdownMenu>
           ) : (
             <div className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground/90">
-              <span className="h-5 w-5 shrink-0 overflow-hidden rounded-md ring-1 ring-border/60">
+              <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
                 {currentIcon ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
