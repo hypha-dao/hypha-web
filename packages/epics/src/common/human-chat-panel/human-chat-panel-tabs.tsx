@@ -136,7 +136,9 @@ export function HumanChatPanelTabs({
                       })
                   : tab.key === 'mentions' && mentionBadgeLabel != null
                   ? mentionBadgeLabel === '99+'
-                    ? t('tabWithUnreadMentionsCapped', { tabLabel: tab.label })
+                    ? t('tabWithUnreadMentionsCapped', {
+                        tabLabel: tab.label,
+                      })
                     : t('tabMentionsWithMentionCount', {
                         tabLabel: tab.label,
                         count: mentionTabBadgeCount,
