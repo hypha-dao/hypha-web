@@ -108,19 +108,19 @@ const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
   };
 
 const HERO_TYPE_ICON_HALO_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'from-accent-9/30 via-accent-8/14 to-transparent',
-  error: 'from-error-9/34 via-error-8/16 to-transparent',
-  warn: 'from-warning-9/34 via-warning-8/16 to-transparent',
-  success: 'from-success-9/30 via-success-8/14 to-transparent',
-  neutral: 'from-neutral-9/26 via-neutral-8/12 to-transparent',
+  accent: 'from-accent-10/42 via-accent-9/22 to-transparent',
+  error: 'from-error-10/44 via-error-9/24 to-transparent',
+  warn: 'from-warning-10/44 via-warning-9/24 to-transparent',
+  success: 'from-success-10/42 via-success-9/22 to-transparent',
+  neutral: 'from-neutral-10/36 via-neutral-9/20 to-transparent',
 };
 
 const HERO_TYPE_ICON_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'text-accent-3/70',
-  error: 'text-error-3/72',
-  warn: 'text-warning-3/72',
-  success: 'text-success-3/70',
-  neutral: 'text-neutral-2/70',
+  accent: 'text-accent-1/92',
+  error: 'text-error-1/92',
+  warn: 'text-warning-1/92',
+  success: 'text-success-1/92',
+  neutral: 'text-white/88',
 };
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
@@ -357,27 +357,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 )}
                 aria-hidden
               />
-              {hasRenderableTypeIcon ? (
-                <div
-                  className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center"
-                  aria-hidden
-                >
-                  <div className="relative flex h-28 w-28 items-center justify-center">
-                    <div
-                      className={cn(
-                        'absolute inset-0 rounded-full bg-gradient-to-br blur-2xl',
-                        HERO_TYPE_ICON_HALO_CLASS_MAP[typeColorVariant],
-                      )}
-                    />
-                    {React.createElement(TypeIcon as LucideReactIcon, {
-                      className: cn(
-                        'relative h-12 w-12 stroke-[1.35] mix-blend-screen',
-                        HERO_TYPE_ICON_CLASS_MAP[typeColorVariant],
-                      ),
-                    })}
-                  </div>
-                </div>
-              ) : null}
               <div
                 className={cn(
                   'absolute inset-0 pointer-events-none',
@@ -385,6 +364,28 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 )}
                 aria-hidden
               />
+              {hasRenderableTypeIcon ? (
+                <div
+                  className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center"
+                  aria-hidden
+                >
+                  <div className="relative flex h-32 w-32 items-center justify-center">
+                    <div
+                      className={cn(
+                        'absolute inset-0 rounded-full bg-gradient-to-br blur-2xl',
+                        HERO_TYPE_ICON_HALO_CLASS_MAP[typeColorVariant],
+                      )}
+                    />
+                    <div className="absolute inset-4 rounded-full bg-black/16 blur-xl" />
+                    {React.createElement(TypeIcon as LucideReactIcon, {
+                      className: cn(
+                        'relative h-14 w-14 stroke-[1.7] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]',
+                        HERO_TYPE_ICON_CLASS_MAP[typeColorVariant],
+                      ),
+                    })}
+                  </div>
+                </div>
+              ) : null}
               <div
                 className={cn(
                   'pointer-events-none absolute inset-x-0 bottom-0 h-20',
