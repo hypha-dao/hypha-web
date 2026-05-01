@@ -10,3 +10,5 @@ export * from './use-fund-wallet';
 export * from './use-token-supply';
 export * from './use-vaults';
 export * from './use-escrow-id-from-tx';
+export * from './use-space-energy';
+export * from './use-user-energy';

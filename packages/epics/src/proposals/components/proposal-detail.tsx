@@ -45,6 +45,7 @@ import {
   ProposalUpdateToken,
   ProposalAcceptInvestmentData,
   ProposalExchangeStakesAndTokensData,
+  ProposalEnergyProposalData,
 } from '../../governance';
 import { parseExchangeDetailsFromDescription } from '../../governance/utils/exchange-details-parser';
 import { stripExchangeDetailsBlock } from '../../governance/utils/strip-exchange-details-block';
@@ -62,6 +63,7 @@ import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 import { normalizeVotingDurationForResubmitSelect } from '../../agreements/plugins/change-voting-method/voting-duration-resubmit';
+import { parseEnergyProposalMarker } from '../../governance/utils/energy-proposal-markers';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -1101,6 +1103,28 @@ export const ProposalDetail = ({
       ? stripExchangeDetailsBlock(content ?? '')
       : content;
 
+  const energyMarkerData = useMemo(() => {
+    if (
+      label !== 'Energy Sharing' &&
+      label !== 'Register Energy Source' &&
+      label !== 'Add Energy Member'
+    ) {
+      return null;
+    }
+    const parsed = parseEnergyProposalMarker(content);
+    if (
+      !parsed ||
+      typeof parsed.payload !== 'object' ||
+      parsed.payload === null
+    ) {
+      return null;
+    }
+    return {
+      proposalType: parsed.proposalType,
+      payload: parsed.payload as Record<string, unknown>,
+    };
+  }, [label, content]);
+
   const escrowAddr = getEscrowImplementationAddress();
 
   return (
@@ -1393,6 +1417,12 @@ export const ProposalDetail = ({
         <ProposalSpaceTokenPurchaseData
           dbTokens={dbTokens}
           {...proposalDetails.spaceTokenPurchaseData}
+        />
+      ) : null}
+      {energyMarkerData ? (
+        <ProposalEnergyProposalData
+          proposalType={energyMarkerData.proposalType}
+          payload={energyMarkerData.payload}
         />
       ) : null}
       <FormVoting

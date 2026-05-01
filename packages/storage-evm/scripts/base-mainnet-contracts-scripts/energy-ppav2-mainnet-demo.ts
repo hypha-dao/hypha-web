@@ -415,8 +415,8 @@ function planInterval(): IntervalPlan {
     const bat2Share = bat2Used > 0n ? (demand * bat2Used) / totalDemand : 0n;
 
     let hhSolar = solarShare;
-    let hhBat1 = bat1Share;
-    let hhBat2 = bat2Share;
+    const hhBat1 = bat1Share;
+    const hhBat2 = bat2Share;
     let hhImport = 0n;
 
     const allocated = hhSolar + hhBat1 + hhBat2;

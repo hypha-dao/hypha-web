@@ -34,6 +34,9 @@ export function getCreateRouteSegmentForProposalLabel(
     'Space Transparency': 'space-settings-transparency',
     Investment: 'accept-investment',
     Exchange: 'exchange-stakes-and-tokens',
+    'Energy Sharing': 'energy-sharing',
+    'Register Energy Source': 'register-energy-source',
+    'Add Energy Member': 'add-energy-member',
   };
 
   return labelToRoute[label] ?? '';

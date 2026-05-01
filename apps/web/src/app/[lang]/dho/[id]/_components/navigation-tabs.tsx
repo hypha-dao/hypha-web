@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
+import { getDhoPathEnergy } from '../@tab/energy/constants';
 // import { getDhoPathOverview } from '../@tab/overview/constants'; // Overview tab removed
 import { cn } from '@hypha-platform/ui-utils';
 import {
@@ -93,6 +94,11 @@ export function NavigationTabs({
       title: t('Treasury'),
       name: 'treasury',
       href: getDhoPathTreasury(lang as Locale, id as string),
+    },
+    {
+      title: 'Energy',
+      name: 'energy',
+      href: getDhoPathEnergy(lang as Locale, id as string),
     },
   ];
 

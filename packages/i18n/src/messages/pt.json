@@ -584,7 +584,10 @@
       "contribution": "Contribuição",
       "expenses": "Despesas",
       "funding": "Financiamento",
-      "investment": "Investimento"
+      "investment": "Investimento",
+      "energySharing": "Energy Sharing",
+      "registerEnergySource": "Register Energy Source",
+      "addEnergyMember": "Add Energy Member"
     },
     "documentBadges": {
       "invite": "Convite",

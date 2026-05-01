@@ -18,3 +18,4 @@ export * from './coherence/server';
 export * from './coherence/types';
 export * from './matrix/server';
 export * from './matrix/types';
+export * from './energy/server';

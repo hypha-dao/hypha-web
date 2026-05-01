@@ -4,6 +4,7 @@ import { SelectAction, useActionGating } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import {
+  Bolt,
   FileText,
   Package,
   PiggyBank,
@@ -28,6 +29,33 @@ export const SelectCreateAction = ({
   const t = useTranslations('SelectCreateAction');
 
   const CREATE_ACTIONS = [
+    {
+      defaultDurationDays: 5,
+      title: 'Energy Sharing Proposal',
+      description:
+        'Define or update how this community shares and settles energy balances.',
+      href: 'agreements/create/energy-sharing',
+      icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      disabled: isPaymentExpired,
+    },
+    {
+      defaultDurationDays: 5,
+      title: 'Register Energy Source',
+      description:
+        'Propose onboarding a new source (solar, battery, etc.) into the energy mix.',
+      href: 'agreements/create/register-energy-source',
+      icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      disabled: isPaymentExpired,
+    },
+    {
+      defaultDurationDays: 5,
+      title: 'Add Energy Member',
+      description:
+        'Propose adding a member with device mapping for energy accounting.',
+      href: 'agreements/create/add-energy-member',
+      icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      disabled: isPaymentExpired,
+    },
     {
       defaultDurationDays: 3,
       title: t('actions.makeCollectiveAgreement.title'),

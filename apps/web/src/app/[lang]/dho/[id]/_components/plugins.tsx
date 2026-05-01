@@ -19,6 +19,9 @@ import {
   UpdateIssuedTokenPlugin,
   AcceptInvestmentPlugin,
   ExchangeStakesAndTokensPlugin,
+  EnergySharingPlugin,
+  RegisterEnergySourcePlugin,
+  AddEnergyMemberPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 import { Person, Space } from '@hypha-platform/core/client';
@@ -42,6 +45,9 @@ export const PLUGINS = {
   'update-issued-token': UpdateIssuedTokenPlugin,
   'accept-investment': AcceptInvestmentPlugin,
   'exchange-stakes-and-tokens': ExchangeStakesAndTokensPlugin,
+  'energy-sharing': EnergySharingPlugin,
+  'register-energy-source': RegisterEnergySourcePlugin,
+  'add-energy-member': AddEnergyMemberPlugin,
 };
 
 type PluginProps = {

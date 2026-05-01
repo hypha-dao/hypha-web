@@ -15,3 +15,6 @@ export * from './space-transparency-settings/plugin';
 export * from './redeem-tokens/plugin';
 export * from './accept-investment/plugin';
 export * from './exchange-stakes-and-tokens/plugin';
+export * from './energy-sharing/plugin';
+export * from './register-energy-source/plugin';
+export * from './add-energy-member/plugin';

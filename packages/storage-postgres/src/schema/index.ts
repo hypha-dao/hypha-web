@@ -13,6 +13,10 @@ import { transfers } from './transfers';
 import { coherences } from './coherence';
 import { matrixUserLinks } from './matrix-user-link';
 import { tokenUpdates, tokenUpdateRelations } from './token-updates';
+import {
+  energyCommunities,
+  energyCommunitiesRelations,
+} from './energy-community';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -29,6 +33,7 @@ export * from './transfers';
 export * from './coherence';
 export * from './matrix-user-link';
 export * from './token-updates';
+export * from './energy-community';
 
 export const schema = {
   documents,
@@ -48,4 +53,6 @@ export const schema = {
   matrixUserLinks,
   tokenUpdates,
   tokenUpdateRelations,
+  energyCommunities,
+  energyCommunitiesRelations,
 };

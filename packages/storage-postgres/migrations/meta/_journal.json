@@ -337,6 +337,13 @@
       "when": 1775200100000,
       "tag": "0047_canonical_matrix_privy_id",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1775300000000,
+      "tag": "0048_energy_communities",
+      "breakpoints": true
     }
   ]
 }

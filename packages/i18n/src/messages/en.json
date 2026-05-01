@@ -855,7 +855,10 @@
       "expenses": "Expenses",
       "funding": "Funding",
       "investment": "Investment",
-      "exchange": "Exchange"
+      "exchange": "Exchange",
+      "energySharing": "Energy Sharing",
+      "registerEnergySource": "Register Energy Source",
+      "addEnergyMember": "Add Energy Member"
     },
     "documentBadges": {
       "invite": "Invite",
