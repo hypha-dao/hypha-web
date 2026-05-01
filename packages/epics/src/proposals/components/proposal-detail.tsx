@@ -64,6 +64,8 @@ import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-d
 import { normalizeVotingDurationForResubmitSelect } from '../../agreements/plugins/change-voting-method/voting-duration-resubmit';
 import { useScrollParallax } from '../../common/use-scroll-parallax';
 
+const HERO_PARALLAX_MAX_SHIFT_PX = 17;
+
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
 type ProposalTransferRow = {
@@ -472,6 +474,14 @@ export const ProposalDetail = ({
     rate: 0.1,
     maxShiftPx: 18,
   });
+  const clampedHeroParallaxY = React.useMemo(
+    () =>
+      Math.max(
+        -HERO_PARALLAX_MAX_SHIFT_PX,
+        Math.min(HERO_PARALLAX_MAX_SHIFT_PX, parallaxY),
+      ),
+    [parallaxY],
+  );
   const tProposalDetails = useTranslations('ProposalDetails');
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
@@ -1144,7 +1154,7 @@ export const ProposalDetail = ({
             style={
               reduceMotion
                 ? undefined
-                : { transform: `translate3d(0, ${parallaxY}px, 0)` }
+                : { transform: `translate3d(0, ${clampedHeroParallaxY}px, 0)` }
             }
           >
             <Image
