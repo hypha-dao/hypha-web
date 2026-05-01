@@ -33,6 +33,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DynamicIcon,
   Image,
   LucideReactIcon,
   Skeleton,
@@ -43,7 +44,7 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { icons, Trash2, Users } from 'lucide-react';
+import { Trash2, Users } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -184,15 +185,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       'accent',
     [coherenceType?.colorVariant],
   );
-  const TypeIcon = React.useMemo<LucideReactIcon | undefined>(() => {
-    const iconName = coherenceType?.icon;
-    if (!iconName) return undefined;
-    const resolvedIcon = icons[iconName as keyof typeof icons];
-    return typeof resolvedIcon === 'function'
-      ? (resolvedIcon as LucideReactIcon)
-      : undefined;
-  }, [coherenceType?.icon]);
-
   const priorityColorVariant = React.useMemo<SignalColorVariant>(
     () =>
       BADGE_COLOR_VARIANT_MAP[priorityMeta?.colorVariant ?? 'neutral'] ??
@@ -362,13 +354,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 )}
                 aria-hidden
               />
-              {TypeIcon ? (
+              {coherenceType?.icon ? (
                 <div
                   className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center"
                   aria-hidden
                 >
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black/24 shadow-[0_6px_24px_rgba(0,0,0,0.38)] backdrop-blur-[1px]">
-                    <TypeIcon
+                    <DynamicIcon
+                      name={coherenceType.icon as LucideReactIcon}
                       className={cn(
                         'h-9 w-9 stroke-[1.9] drop-shadow-[0_1px_5px_rgba(0,0,0,0.45)]',
                         HERO_TYPE_ICON_CLASS_MAP[typeColorVariant],
