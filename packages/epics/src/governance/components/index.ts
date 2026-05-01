@@ -1,5 +1,6 @@
 export * from './create-agreement-form';
 export * from './create-energy-proposal-form';
+export * from './create-enable-energy-community-form';
 export * from './create-energy-sharing-form';
 export * from './create-register-energy-source-form';
 export * from './create-add-energy-member-form';

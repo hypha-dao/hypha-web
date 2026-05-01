@@ -856,6 +856,7 @@
       "funding": "Funding",
       "investment": "Investment",
       "exchange": "Exchange",
+      "enableEnergyCommunity": "Enable Energy Community",
       "energySharing": "Energy Sharing",
       "registerEnergySource": "Register Energy Source",
       "addEnergyMember": "Add Energy Member"

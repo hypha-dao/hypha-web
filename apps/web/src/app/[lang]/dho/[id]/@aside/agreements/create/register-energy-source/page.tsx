@@ -5,9 +5,12 @@ import {
 import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
-import { findSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  findEnergyCommunityBySpaceId,
+  findSpaceBySlug,
+} from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -21,12 +24,20 @@ export default async function CreateRegisterEnergySourceProposalPage({
   if (!spaceFromDb) notFound();
 
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
+  const backUrl = `${successfulUrl}${PATH_SELECT_CREATE_ACTION}`;
+  const energyMapping = await findEnergyCommunityBySpaceId(spaceFromDb.id, {
+    db,
+  });
+
+  if (!energyMapping) {
+    redirect(backUrl);
+  }
 
   return (
     <ProposalOverlayShell>
       <CreateRegisterEnergySourceForm
         successfulUrl={successfulUrl}
-        backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
+        backUrl={backUrl}
         spaceId={spaceFromDb.id}
         web3SpaceId={spaceFromDb.web3SpaceId}
       />

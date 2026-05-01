@@ -1105,6 +1105,7 @@ export const ProposalDetail = ({
 
   const energyMarkerData = useMemo(() => {
     if (
+      label !== 'Enable Energy Community' &&
       label !== 'Energy Sharing' &&
       label !== 'Register Energy Source' &&
       label !== 'Add Energy Member'

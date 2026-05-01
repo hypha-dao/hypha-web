@@ -1,14 +1,14 @@
 import {
-  CreateAddEnergyMemberForm,
+  CreateEnableEnergyCommunityForm,
   ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
-import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
 import {
   findEnergyCommunityBySpaceId,
   findSpaceBySlug,
 } from '@hypha-platform/core/server';
+import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
+import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
 import { db } from '@hypha-platform/storage-postgres';
 import { notFound, redirect } from 'next/navigation';
 
@@ -16,7 +16,7 @@ type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
 };
 
-export default async function CreateAddEnergyMemberProposalPage({
+export default async function CreateEnableEnergyCommunityProposalPage({
   params,
 }: PageProps) {
   const { lang, id } = await params;
@@ -29,13 +29,13 @@ export default async function CreateAddEnergyMemberProposalPage({
     db,
   });
 
-  if (!energyMapping) {
+  if (energyMapping) {
     redirect(backUrl);
   }
 
   return (
     <ProposalOverlayShell>
-      <CreateAddEnergyMemberForm
+      <CreateEnableEnergyCommunityForm
         successfulUrl={successfulUrl}
         backUrl={backUrl}
         spaceId={spaceFromDb.id}

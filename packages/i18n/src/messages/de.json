@@ -855,6 +855,7 @@
       "expenses": "Ausgaben",
       "funding": "Finanzierung",
       "investment": "Investition",
+      "enableEnergyCommunity": "Enable Energy Community",
       "energySharing": "Energy Sharing",
       "registerEnergySource": "Register Energy Source",
       "addEnergyMember": "Add Energy Member"

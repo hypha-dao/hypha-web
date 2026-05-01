@@ -15,6 +15,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import {
   getActiveTabFromPath,
   useMainColumnScrollY,
+  useSpaceEnergy,
 } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
 
@@ -49,6 +50,7 @@ export function NavigationTabs({
   const t = useTranslations('Common');
   const pathname = usePathname();
   const activeTab = getActiveTabFromPath(pathname);
+  const { data: spaceEnergy } = useSpaceEnergy();
 
   const mainScrollY = useMainColumnScrollY();
   const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
@@ -95,11 +97,15 @@ export function NavigationTabs({
       name: 'treasury',
       href: getDhoPathTreasury(lang as Locale, id as string),
     },
-    {
-      title: 'Energy',
-      name: 'energy',
-      href: getDhoPathEnergy(lang as Locale, id as string),
-    },
+    ...(spaceEnergy?.enabled
+      ? [
+          {
+            title: 'Energy',
+            name: 'energy',
+            href: getDhoPathEnergy(lang as Locale, id as string),
+          },
+        ]
+      : []),
   ];
 
   return (
