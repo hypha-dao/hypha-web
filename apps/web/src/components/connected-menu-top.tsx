@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useMemo } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { MenuTop } from '@hypha-platform/ui';
 import {
@@ -45,10 +45,8 @@ export function ConnectedMenuTop({
   const router = useRouter();
   const tNavigation = useTranslations('Navigation');
   const { resolvedTheme } = useTheme();
-  const lang = useMemo(() => {
-    const match = pathname.match(/^\/([^/]+)\//);
-    return match?.[1] ?? 'en';
-  }, [pathname]);
+  const params = useParams<{ lang?: string }>();
+  const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const activeSpaceSlug = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
