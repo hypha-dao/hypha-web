@@ -11,6 +11,12 @@ const ECOSYSTEM_LOGO_IMAGE_ACCEPT = [
   'image/svg+xml',
 ];
 
+const SVG_FALLBACK_MIME_TYPES = new Set([
+  '',
+  'application/octet-stream',
+  'binary/octet-stream',
+]);
+
 export interface uploadRouterParams {
   /**
    * @summary Part of the middleware that checks if the request is allowed
@@ -87,9 +93,15 @@ export function newUploadRouter({
         }
 
         for (const file of files) {
+          const fileType = typeof file.type === 'string' ? file.type : '';
+          const isSvgByName =
+            typeof file.name === 'string' && /\.svg$/i.test(file.name);
+          const isAcceptedSvgFallbackMime =
+            isSvgByName && SVG_FALLBACK_MIME_TYPES.has(fileType);
+
           if (
-            typeof file.type !== 'string' ||
-            !ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(file.type)
+            (!fileType || !ECOSYSTEM_LOGO_IMAGE_ACCEPT.includes(fileType)) &&
+            !isAcceptedSvgFallbackMime
           ) {
             throw new UploadThingError({
               code: 'BAD_REQUEST',
