@@ -10,14 +10,6 @@ import { EnableEnergyCommunityPlugin } from '../../agreements/plugins/enable-ene
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
 const optionalAddressField = z
   .string()
   .trim()
@@ -37,31 +29,100 @@ const optionalUintField = z
   .optional()
   .refine((value) => !value || /^\d+$/.test(value), 'Must be an integer');
 
-const requiredJsonArrayField = z
+const sourceTypeField = z
   .string()
   .trim()
-  .min(1, 'Sources JSON is required')
-  .refine((value) => {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) && parsed.length > 0;
-    } catch {
-      return false;
-    }
-  }, 'Must be a valid non-empty JSON array');
+  .min(1, 'Source type is required')
+  .refine(
+    (value) => ['SOLAR', 'BATTERY'].includes(value.toUpperCase()),
+    'Source type must be SOLAR or BATTERY',
+  );
 
-const optionalJsonArrayField = z
-  .string()
-  .trim()
-  .optional()
-  .refine((value) => {
-    if (!value) return true;
-    try {
-      return Array.isArray(JSON.parse(value));
-    } catch {
-      return false;
+const BYTES32_RE = /^0x[a-fA-F0-9]{64}$/;
+
+const sourceSchema = z
+  .object({
+    sourceId: z.string().trim().min(1, 'Source ID is required'),
+    sourceType: sourceTypeField,
+    tokenName: z.string().trim().min(1, 'Token name is required'),
+    tokenSymbol: z.string().trim().min(1, 'Token symbol is required'),
+    basePricePerKwh: z
+      .string()
+      .trim()
+      .min(1, 'Base price is required')
+      .refine((value) => /^\d+$/.test(value), 'Must be an integer'),
+    holdersCsv: z
+      .string()
+      .trim()
+      .min(1, 'At least one holder address is required'),
+    holderAmountsCsv: z
+      .string()
+      .trim()
+      .min(1, 'At least one holder amount is required'),
+  })
+  .superRefine((value, ctx) => {
+    const holders = value.holdersCsv
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+    const amounts = value.holderAmountsCsv
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (holders.length !== amounts.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['holderAmountsCsv'],
+        message: 'Holder amounts count must match holder addresses count',
+      });
     }
-  }, 'Must be a valid JSON array');
+
+    if (holders.some((holder) => !ADDRESS_RE.test(holder))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['holdersCsv'],
+        message: 'Every holder address must be a valid 0x address',
+      });
+    }
+
+    if (amounts.some((amount) => !/^\d+$/.test(amount))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['holderAmountsCsv'],
+        message: 'Every holder amount must be an integer',
+      });
+    }
+  });
+
+const memberSchema = z
+  .object({
+    memberAddress: z
+      .string()
+      .trim()
+      .regex(ADDRESS_RE, 'Invalid member address'),
+    metadataHash: z
+      .string()
+      .trim()
+      .regex(BYTES32_RE, 'Metadata hash must be a bytes32 hex value'),
+    deviceIdsCsv: z
+      .string()
+      .trim()
+      .min(1, 'At least one device ID is required'),
+  })
+  .superRefine((value, ctx) => {
+    const deviceIds = value.deviceIdsCsv
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (deviceIds.some((id) => !/^\d+$/.test(id))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['deviceIdsCsv'],
+        message: 'Device IDs must be comma-separated integers',
+      });
+    }
+  });
 
 const schemaCreateEnableEnergyCommunityForm = schemaCreateAgreementForm
   .extend(createAgreementFiles)
@@ -89,18 +150,18 @@ const schemaCreateEnableEnergyCommunityForm = schemaCreateAgreementForm
         .string()
         .trim()
         .min(1, 'Energy token symbol is required'),
-      sourcesJson: requiredJsonArrayField,
-      membersJson: optionalJsonArrayField,
+      sources: z.array(sourceSchema).min(1, 'At least one source is required'),
+      members: z.array(memberSchema).optional(),
     }),
   });
 
 type FormValues = z.infer<typeof schemaCreateEnableEnergyCommunityForm>;
 
-const parseJsonArray = (value: string | undefined): JsonValue[] => {
-  if (!value) return [];
-  const parsed = JSON.parse(value) as unknown;
-  return Array.isArray(parsed) ? (parsed as JsonValue[]) : [];
-};
+const parseCsv = (value: string): string[] =>
+  value
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
 
 const parseOptionalNumber = (value: string | undefined): number => {
   if (!value) return 0;
@@ -149,8 +210,22 @@ export const CreateEnableEnergyCommunityForm = ({
             values.energyCommunityActivation.exportDeviceId?.trim() || '0',
           energyTokenName: values.energyCommunityActivation.energyTokenName,
           energyTokenSymbol: values.energyCommunityActivation.energyTokenSymbol,
-          sources: parseJsonArray(values.energyCommunityActivation.sourcesJson),
-          members: parseJsonArray(values.energyCommunityActivation.membersJson),
+          sources: values.energyCommunityActivation.sources.map((source) => ({
+            sourceId: source.sourceId,
+            sourceType: source.sourceType.toUpperCase(),
+            tokenName: source.tokenName,
+            tokenSymbol: source.tokenSymbol,
+            basePricePerKwh: source.basePricePerKwh,
+            holders: parseCsv(source.holdersCsv),
+            holderAmounts: parseCsv(source.holderAmountsCsv),
+          })),
+          members: (values.energyCommunityActivation.members ?? []).map(
+            (member) => ({
+              memberAddress: member.memberAddress,
+              deviceIds: parseCsv(member.deviceIdsCsv).map((id) => Number(id)),
+              metadataHash: member.metadataHash,
+            }),
+          ),
         },
       })}
     />
