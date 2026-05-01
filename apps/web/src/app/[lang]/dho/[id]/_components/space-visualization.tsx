@@ -5,6 +5,7 @@ import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
 import type { VisibleSpace } from './types';
+import Link from 'next/link';
 
 type SpaceNode = {
   id: number;
@@ -22,6 +23,12 @@ type Props = {
   data: SpaceNode;
   currentSpaceId?: number;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
+  lang?: string;
+  enableHoverActions?: boolean;
+  actionLabels?: {
+    addSpace: string;
+    visitSpace: string;
+  };
 };
 
 const VISUALIZATION_CONFIG = {
@@ -40,6 +47,9 @@ export function SpaceVisualization({
   data,
   currentSpaceId,
   onVisibleSpacesChange,
+  lang,
+  enableHoverActions = false,
+  actionLabels,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -54,8 +64,24 @@ export function SpaceVisualization({
     x: number;
     y: number;
     text: string;
+    spaceId?: number;
+    spaceSlug?: string;
   }>({ visible: false, x: 0, y: 0, text: '' });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const tooltipHideTimeoutRef = useRef<number | null>(null);
+
+  const clearTooltipHideTimeout = () => {
+    if (tooltipHideTimeoutRef.current == null) return;
+    window.clearTimeout(tooltipHideTimeoutRef.current);
+    tooltipHideTimeoutRef.current = null;
+  };
+
+  const scheduleTooltipHide = () => {
+    clearTooltipHideTimeout();
+    tooltipHideTimeoutRef.current = window.setTimeout(() => {
+      setTooltip((prev) => ({ ...prev, visible: false }));
+    }, 120);
+  };
 
   useEffect(() => {
     themeRef.current = resolvedTheme;
@@ -383,6 +409,7 @@ export function SpaceVisualization({
       .style('pointer-events', 'all')
       .style('cursor', 'pointer')
       .on('mouseenter', function (event, d: SpaceHierarchyNode) {
+        clearTooltipHideTimeout();
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
         setTooltip((prev) => ({
@@ -391,9 +418,12 @@ export function SpaceVisualization({
           x: event.clientX - rect.left,
           y: event.clientY - rect.top,
           text: d.data.name,
+          spaceId: d.data.id,
+          spaceSlug: d.data.slug,
         }));
       })
       .on('mousemove', function (event) {
+        clearTooltipHideTimeout();
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
         setTooltip((prev) => ({
@@ -403,7 +433,7 @@ export function SpaceVisualization({
         }));
       })
       .on('mouseleave', function () {
-        setTooltip((prev) => ({ ...prev, visible: false }));
+        scheduleTooltipHide();
       })
       .on('click', (event, d) => {
         if (focus !== d) {
@@ -663,25 +693,71 @@ export function SpaceVisualization({
     }
   }, [data, currentSpaceId, resolvedTheme]);
 
+  useEffect(() => {
+    return () => {
+      clearTooltipHideTimeout();
+    };
+  }, []);
+
+  const canVisitSpace =
+    Boolean(tooltip.spaceSlug) && tooltip.spaceId !== currentSpaceId;
+  const canAddSpace = Boolean(tooltip.spaceSlug);
+  const visitSpacePath = tooltip.spaceSlug
+    ? `/${lang}/dho/${tooltip.spaceSlug}/agreements`
+    : '#';
+  const addSpacePath = tooltip.spaceSlug
+    ? `/${lang}/dho/${tooltip.spaceSlug}/space/create`
+    : '#';
+
   return (
     <div ref={containerRef} className="relative w-full">
       <svg
         ref={svgRef}
-        className="w-full h-auto"
+        className="h-full w-full"
         role="img"
         aria-label="Space hierarchy visualization"
       />
       {tooltip.visible && (
         <div
           ref={tooltipRef}
-          className="absolute z-50 px-3 py-2 text-sm font-medium text-card-foreground bg-popover border-2 border-border rounded-lg shadow-lg pointer-events-none whitespace-nowrap"
+          onMouseEnter={clearTooltipHideTimeout}
+          onMouseLeave={scheduleTooltipHide}
+          className="absolute z-50 rounded-lg border border-border/70 bg-popover px-2.5 py-2 shadow-lg"
           style={{
             left: `${tooltip.x + 10}px`,
             top: `${tooltip.y + 10}px`,
             transform: 'translate(0, -50%)',
           }}
         >
-          {tooltip.text}
+          <div className="rounded-md border border-border/60 bg-background-3/80 px-2.5 py-1 text-xs font-semibold text-foreground">
+            {tooltip.text}
+          </div>
+          {enableHoverActions && lang ? (
+            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+              <Link
+                href={canVisitSpace ? visitSpacePath : '#'}
+                aria-disabled={!canVisitSpace}
+                className={`inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
+                  canVisitSpace
+                    ? 'border-border/70 bg-background-2 text-foreground hover:border-accent-9/45 hover:text-accent-11'
+                    : 'pointer-events-none cursor-not-allowed border-border/50 bg-background-2 text-muted-foreground'
+                }`}
+              >
+                {actionLabels?.visitSpace ?? 'Visit Space'}
+              </Link>
+              <Link
+                href={canAddSpace ? addSpacePath : '#'}
+                aria-disabled={!canAddSpace}
+                className={`inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
+                  canAddSpace
+                    ? 'border-border/70 bg-background-2 text-foreground hover:border-accent-9/45 hover:text-accent-11'
+                    : 'pointer-events-none cursor-not-allowed border-border/50 bg-background-2 text-muted-foreground'
+                }`}
+              >
+                {actionLabels?.addSpace ?? 'Add Space'}
+              </Link>
+            </div>
+          ) : null}
         </div>
       )}
     </div>

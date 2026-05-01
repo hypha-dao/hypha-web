@@ -7,7 +7,14 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Coins, FileCheck2, Radio, Sparkles, UsersRound } from 'lucide-react';
+import {
+  Coins,
+  FileCheck2,
+  Orbit,
+  Radio,
+  Sparkles,
+  UsersRound,
+} from 'lucide-react';
 import { Space, useSpacesBySlugs } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import {
@@ -103,7 +110,14 @@ export function AiLeftPanel() {
     activeSpaces[0]?.title?.trim() ||
     t('title');
   const isSectionActive = useCallback(
-    (section: 'coherence' | 'agreements' | 'members' | 'treasury') => {
+    (
+      section:
+        | 'coherence'
+        | 'ecosystem-navigation'
+        | 'agreements'
+        | 'members'
+        | 'treasury',
+    ) => {
       if (!spaceSlug) return false;
       const base = `/${lang}/dho/${spaceSlug}/${section}`;
       return pathname === base || pathname.startsWith(`${base}/`);
@@ -120,6 +134,13 @@ export function AiLeftPanel() {
         icon: Radio,
         href: `/${lang}/dho/${spaceSlug}/coherence`,
         active: isSectionActive('coherence'),
+      },
+      {
+        key: 'ecosystem-navigation',
+        label: 'Ecosystem Navigation',
+        icon: Orbit,
+        href: `/${lang}/dho/${spaceSlug}/ecosystem-navigation`,
+        active: isSectionActive('ecosystem-navigation'),
       },
       {
         key: 'agreements',
