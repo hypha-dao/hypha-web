@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import useSWR from 'swr';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronsUpDown, PanelLeftClose, Sparkles } from 'lucide-react';
 import {
   DropdownMenu,
@@ -108,6 +108,7 @@ export function AiPanelHeader({
   const hasSpaces =
     groupedSpaces.ecosystem.length + groupedSpaces.others.length > 0;
   const [spaceSearch, setSpaceSearch] = useState('');
+  const [spaceMenuOpen, setSpaceMenuOpen] = useState(false);
   const normalizedSearch = spaceSearch.trim().toLowerCase();
   const filteredGroupedSpaces = useMemo(() => {
     if (!normalizedSearch) return groupedSpaces;
@@ -129,6 +130,12 @@ export function AiPanelHeader({
     !isAllSpacesLoading &&
     !allSpacesError &&
     hasSpaces;
+
+  useEffect(() => {
+    if (!spaceMenuOpen && spaceSearch) {
+      setSpaceSearch('');
+    }
+  }, [spaceMenuOpen, spaceSearch]);
 
   const renderSpaceOption = (space: Space) => (
     <DropdownMenuItem
@@ -183,7 +190,11 @@ export function AiPanelHeader({
       <div className="absolute left-14 right-14 flex min-w-0 items-center justify-center">
         <div className="w-full min-w-0 max-w-[14rem]">
           {canOpenSpaceMenu ? (
-            <DropdownMenu modal={false}>
+            <DropdownMenu
+              modal={false}
+              open={spaceMenuOpen}
+              onOpenChange={setSpaceMenuOpen}
+            >
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
@@ -219,7 +230,9 @@ export function AiPanelHeader({
                   </div>
                   {!hasFilteredSpaces ? (
                     <DropdownMenuItem disabled>
-                      {fallbackTitle}
+                      {normalizedSearch
+                        ? tSpaces('noSpacesFound')
+                        : fallbackTitle}
                     </DropdownMenuItem>
                   ) : null}
                   {hasFilteredSpaces &&
