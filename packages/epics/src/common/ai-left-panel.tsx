@@ -58,7 +58,7 @@ const MENU_ROW_LINK_BASE_CLASS = 'flex w-full min-w-0 items-center';
 const MENU_ROW_LINK_EXPANDED_CLASS = 'pl-1.5';
 const MENU_ROW_LINK_COLLAPSED_CLASS = 'justify-center';
 const MENU_TRIGGER_CANVAS_CLASS =
-  'relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70';
+  'relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 ring-1 ring-border/70';
 const RECENT_SPACE_AVATAR_CLASS =
   'flex h-6 w-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 
@@ -470,14 +470,23 @@ export function AiLeftPanel() {
     closeAiPanel();
   }, [closeAiPanel]);
 
+  const handleTriggerClick = useCallback(() => {
+    if (isAiOpen || overlayVisible) {
+      handleOverlayClose();
+      return;
+    }
+    showAiOverlay();
+  }, [handleOverlayClose, isAiOpen, overlayVisible, showAiOverlay]);
+  const shouldCloseFromTrigger = isAiOpen || overlayVisible;
+
   const triggerButton = (
     <button
       type="button"
-      onClick={overlayVisible ? handleOverlayClose : showAiOverlay}
-      onMouseEnter={handleHeaderIconMouseEnter}
+      onClick={handleTriggerClick}
+      onMouseEnter={!isAiOpen ? handleHeaderIconMouseEnter : undefined}
       className={MENU_TRIGGER_CANVAS_CLASS}
-      aria-label={overlayVisible ? t('closePanel') : t('openPanel')}
-      title={overlayVisible ? t('hidePanel') : t('openPanel')}
+      aria-label={shouldCloseFromTrigger ? t('closePanel') : t('openPanel')}
+      title={shouldCloseFromTrigger ? t('hidePanel') : t('openPanel')}
     >
       <Menu className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
     </button>
@@ -548,8 +557,10 @@ export function AiLeftPanel() {
 
     return (
       <>
-        <SidebarHeader className="min-h-[var(--menu-top-height,70px)] border-b border-border bg-background-2 p-2">
-          <div className="ml-auto flex w-fit items-center justify-center">
+        <SidebarHeader className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[1.75rem_minmax(0,1fr)_1.75rem] items-center gap-3 border-b border-border bg-background-2 px-4 py-2">
+          <div className="h-7 w-7 shrink-0" aria-hidden />
+          <div className="min-w-0 px-4" aria-hidden />
+          <div className="flex h-7 w-7 shrink-0 items-center justify-end">
             {triggerButton}
           </div>
         </SidebarHeader>
@@ -609,7 +620,7 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="bg-background-2 p-0">
-          <AiPanelHeader />
+          <AiPanelHeader showCloseButton={false} rightSlot={triggerButton} />
         </SidebarHeader>
         <SidebarContent className="flex flex-1 items-center justify-center">
           <div className="text-sm text-muted-foreground">{t('loading')}</div>
@@ -622,7 +633,7 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="bg-background-2 p-0">
-          <AiPanelHeader />
+          <AiPanelHeader showCloseButton={false} rightSlot={triggerButton} />
         </SidebarHeader>
         <SidebarContent className="flex flex-1 items-center justify-center px-6">
           <Empty>
@@ -644,7 +655,7 @@ export function AiLeftPanel() {
   return (
     <>
       <SidebarHeader className="bg-background-2 p-0">
-        <AiPanelHeader />
+        <AiPanelHeader showCloseButton={false} rightSlot={triggerButton} />
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
         {error && (
