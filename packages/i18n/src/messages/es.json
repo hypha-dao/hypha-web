@@ -808,6 +808,8 @@
   "SpaceSettingsAction": {
     "title": "Configuración de espacio",
     "content": "Acceda y administre la configuración de su espacio, incluida su apariencia, estructura, métodos, membresía y tesorería.",
+    "searchMenus": "Buscar menús",
+    "noMenusFound": "No se encontraron menús",
     "groups": {
       "overview": "Descripción general",
       "agreements": "Acuerdos",

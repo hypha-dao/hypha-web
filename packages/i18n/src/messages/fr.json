@@ -149,6 +149,8 @@
   "SpaceSettingsAction": {
     "title": "Paramètres de l'espace",
     "content": "Accédez aux paramètres de votre espace et gérez-les, y compris son apparence, sa structure, ses méthodes, l'adhésion et la trésorerie.",
+    "searchMenus": "Rechercher des menus",
+    "noMenusFound": "Aucun menu trouvé",
     "groups": {
       "overview": "Aperçu",
       "agreements": "Accords",

@@ -258,6 +258,8 @@ export const SelectSettingsAction = ({
       title={t('title')}
       content={t('content')}
       showTitle={false}
+      searchPlaceholder={t('searchMenus')}
+      noResultsLabel={t('noMenusFound')}
       actions={SETTINGS_ACTIONS.map((action) => {
         const href = computeHref(action);
         return {

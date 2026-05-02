@@ -149,6 +149,8 @@
   "SpaceSettingsAction": {
     "title": "Space Settings",
     "content": "Access and manage the settings for your space, including its appearance, structure, methods, membership, and treasury.",
+    "searchMenus": "Search menus",
+    "noMenusFound": "No menus found",
     "groups": {
       "overview": "Overview",
       "agreements": "Agreements",
