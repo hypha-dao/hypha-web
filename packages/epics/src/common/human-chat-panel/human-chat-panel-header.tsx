@@ -81,8 +81,8 @@ export function HumanChatPanelHeader({
         <span className="font-semibold text-sm text-foreground truncate min-w-0">
           {displayTitle}
         </span>
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary">
-          <MessageCircle className="h-3.5 w-3.5 text-primary-foreground" />
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 ring-1 ring-border/70">
+          <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
         </div>
       </div>
     </div>
