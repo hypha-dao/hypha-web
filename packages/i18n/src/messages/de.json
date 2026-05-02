@@ -2040,6 +2040,13 @@
     "spaceMemoryMatrixVideoPlayHint": "Tippen für Vorschau",
     "spaceMemoryOpenAsset": "{name} öffnen",
     "untitledDocument": "Unbenanntes Dokument",
+    "spaceMemoryGeneral": "Allgemein",
+    "spaceMemoryProposals": "Vorschläge",
+    "spaceMemoryConversations": "Gespräche",
+    "spaceMemoryAiChat": "AI-Chat",
+    "newMemory": "Neue Erinnerung",
+    "spaceMemoryEmptyTab": "In dieser Ansicht wurden keine Einträge gefunden.",
+    "spaceMemoryAiChatEmpty": "AI-Chat-Erinnerungen sind noch nicht verfügbar.",
     "documentStates": {
       "discussion": "Diskussion",
       "proposal": "Vorschlag",

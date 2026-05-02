@@ -2076,6 +2076,13 @@
     "spaceMemoryMatrixVideoPlayHint": "Tap to play preview",
     "spaceMemoryOpenAsset": "Open {name}",
     "untitledDocument": "Untitled document",
+    "spaceMemoryGeneral": "General",
+    "spaceMemoryProposals": "Proposals",
+    "spaceMemoryConversations": "Conversations",
+    "spaceMemoryAiChat": "AI Chat",
+    "newMemory": "New memory",
+    "spaceMemoryEmptyTab": "No items found in this view.",
+    "spaceMemoryAiChatEmpty": "AI chat memories are not available yet.",
     "documentStates": {
       "discussion": "Discussion",
       "proposal": "Proposal",

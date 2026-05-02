@@ -2039,6 +2039,13 @@
     "spaceMemoryMatrixVideoPlayHint": "Appuyez pour lire l’aperçu",
     "spaceMemoryOpenAsset": "Ouvrir {name}",
     "untitledDocument": "Document sans titre",
+    "spaceMemoryGeneral": "Général",
+    "spaceMemoryProposals": "Propositions",
+    "spaceMemoryConversations": "Conversations",
+    "spaceMemoryAiChat": "Chat IA",
+    "newMemory": "Nouvelle mémoire",
+    "spaceMemoryEmptyTab": "Aucun élément trouvé dans cette vue.",
+    "spaceMemoryAiChatEmpty": "Les mémoires du chat IA ne sont pas encore disponibles.",
     "documentStates": {
       "discussion": "Discussion",
       "proposal": "Proposition",
