@@ -14,7 +14,6 @@ import {
   FileCheck2,
   Orbit,
   Menu,
-  PanelLeftClose,
   Radio,
   SlidersHorizontal,
   Sparkles,
@@ -60,8 +59,6 @@ const MENU_ROW_LINK_EXPANDED_CLASS = 'pl-1.5';
 const MENU_ROW_LINK_COLLAPSED_CLASS = 'justify-center';
 const MENU_TRIGGER_CANVAS_CLASS =
   'relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 ring-1 ring-border/70';
-const PANEL_CLOSE_BUTTON_CLASS =
-  'flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
 const RECENT_SPACE_AVATAR_CLASS =
   'flex h-6 w-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 
@@ -482,24 +479,16 @@ export function AiLeftPanel() {
   }, [handleOverlayClose, isAiOpen, overlayVisible, showAiOverlay]);
   const shouldCloseFromTrigger = isAiOpen || overlayVisible;
 
-  const triggerButton = shouldCloseFromTrigger ? (
+  const triggerButton = (
     <button
       type="button"
       onClick={handleTriggerClick}
-      className={PANEL_CLOSE_BUTTON_CLASS}
-      aria-label={t('closePanel')}
-      title={t('hidePanel')}
-    >
-      <PanelLeftClose className="h-3.5 w-3.5" />
-    </button>
-  ) : (
-    <button
-      type="button"
-      onClick={handleTriggerClick}
-      onMouseEnter={handleHeaderIconMouseEnter}
+      onMouseEnter={
+        !shouldCloseFromTrigger ? handleHeaderIconMouseEnter : undefined
+      }
       className={MENU_TRIGGER_CANVAS_CLASS}
-      aria-label={t('openPanel')}
-      title={t('openPanel')}
+      aria-label={shouldCloseFromTrigger ? t('closePanel') : t('openPanel')}
+      title={shouldCloseFromTrigger ? t('hidePanel') : t('openPanel')}
     >
       <Menu className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
     </button>
