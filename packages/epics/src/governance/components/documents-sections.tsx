@@ -6,6 +6,8 @@ import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with
 import { Document, Order } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import Link from 'next/link';
+import { Button } from '@hypha-platform/ui';
 
 type DocumentsSectionsProps = {
   lang: string;
@@ -29,6 +31,12 @@ export function DocumentsSections({
   });
 
   const basePath = `/${lang}/dho/${spaceSlug}/agreements`;
+  const createProposalPath = `${basePath}/select-create-action`;
+  const createProposalButton = (
+    <Button asChild className="h-9 whitespace-nowrap">
+      <Link href={createProposalPath}>New Proposal</Link>
+    </Button>
+  );
 
   return (
     <Tabs
@@ -54,6 +62,7 @@ export function DocumentsSections({
           web3SpaceId={web3SpaceId}
           documents={documents.onVoting}
           label={t('onVoting')}
+          headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
           firstPageSize={9}
@@ -66,6 +75,7 @@ export function DocumentsSections({
           web3SpaceId={web3SpaceId}
           documents={documents.accepted}
           label={t('accepted')}
+          headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
           firstPageSize={3}
@@ -78,6 +88,7 @@ export function DocumentsSections({
           web3SpaceId={web3SpaceId}
           documents={documents.rejected}
           label={t('rejected')}
+          headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
           firstPageSize={3}
