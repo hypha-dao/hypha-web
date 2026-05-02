@@ -99,14 +99,14 @@ export function ConnectedMenuTop({
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
 
   const canRenderSpaceLogoNode =
-    suppressDefaultLogo && (rootSpace || !isLoadingSpaces);
+    suppressDefaultLogo && (Boolean(rootSpace) || isLoadingSpaces);
   const logoNode = canRenderSpaceLogoNode ? (
     rootSpace ? (
       rootHasCustomLogo && rootLogoUrl ? (
         <Link
           href={rootConfigHref ?? '#'}
           prefetch={true}
-          className="group relative inline-flex h-8 max-w-[11rem] items-center justify-start overflow-hidden rounded-md px-1 transition-colors hover:bg-muted/40"
+          className="group relative -ml-0.5 inline-flex h-9 max-w-[12rem] items-center justify-start overflow-hidden rounded-md px-0.5 transition-colors hover:bg-muted/40"
           aria-label={tNavigation('ecosystemLogo')}
           title={tNavigation('ecosystemLogo')}
         >
@@ -114,7 +114,7 @@ export function ConnectedMenuTop({
           <img
             src={rootLogoUrl}
             alt={rootTitle || tNavigation('ecosystemLogo')}
-            className="max-h-7 w-auto object-contain"
+            className="max-h-8 w-auto object-contain"
           />
           <span className="pointer-events-none absolute bottom-0.5 right-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
             <Pencil className="h-2.5 w-2.5" />
@@ -124,7 +124,7 @@ export function ConnectedMenuTop({
         <Link
           href={rootConfigHref ?? '#'}
           prefetch={true}
-          className="group relative inline-flex h-8 max-w-[13.5rem] items-center justify-center overflow-hidden rounded-xl border border-dashed border-accent-7/60 bg-linear-to-r from-accent-2/50 via-background-2 to-accent-2/40 px-3.5 text-sm font-semibold text-accent-11 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset,0_8px_20px_-16px_var(--accent-9)] transition-all duration-200 hover:border-accent-8 hover:from-accent-3/60 hover:to-accent-3/50 hover:text-accent-12"
+          className="group relative -ml-0.5 inline-flex h-9 max-w-[13.5rem] items-center justify-center overflow-hidden rounded-xl border border-dashed border-accent-7/60 bg-linear-to-r from-accent-2/50 via-background-2 to-accent-2/40 px-3.5 text-sm font-semibold text-accent-11 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset,0_8px_20px_-16px_var(--accent-9)] transition-all duration-200 hover:border-accent-8 hover:from-accent-3/60 hover:to-accent-3/50 hover:text-accent-12"
           aria-label={tNavigation('ecosystemLogo')}
           title={tNavigation('ecosystemLogo')}
         >
@@ -137,7 +137,13 @@ export function ConnectedMenuTop({
           </span>
         </Link>
       )
-    ) : undefined
+    ) : (
+      <span
+        className="-ml-0.5 inline-flex h-9 w-[12rem]"
+        aria-hidden
+        title={tNavigation('ecosystemLogo')}
+      />
+    )
   ) : undefined;
   const useReplacementLogoNode = Boolean(logoNode);
 
