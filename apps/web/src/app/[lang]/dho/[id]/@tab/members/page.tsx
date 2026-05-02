@@ -35,7 +35,6 @@ export default async function MembershipPage(props: PageProps) {
           useMembers={useMembers}
           spaceSlug={id}
           refreshInterval={2000}
-          label=""
         />
       </div>
     </SpaceTabAccessWrapper>

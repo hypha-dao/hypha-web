@@ -400,54 +400,45 @@ export function SpaceVisualization({
       .attr('class', 'logo')
       .style('pointer-events', 'all')
       .style('cursor', 'pointer')
-      .on(
-        'mouseenter',
-        enableHoverActions
-          ? function (event, d: SpaceHierarchyNode) {
-              clearTooltipHideTimeout();
-              if (!containerRef.current) return;
-              const rect = containerRef.current.getBoundingClientRect();
-              setTooltip((prev) => ({
-                ...prev,
-                visible: true,
-                x: event.clientX - rect.left,
-                y: event.clientY - rect.top,
-                text: d.data.name,
-                spaceId: d.data.id,
-                spaceSlug: d.data.slug,
-              }));
-            }
-          : null,
-      )
-      .on(
-        'mousemove',
-        enableHoverActions
-          ? function (event) {
-              clearTooltipHideTimeout();
-              if (!containerRef.current) return;
-              const rect = containerRef.current.getBoundingClientRect();
-              setTooltip((prev) => ({
-                ...prev,
-                x: event.clientX - rect.left,
-                y: event.clientY - rect.top,
-              }));
-            }
-          : null,
-      )
-      .on(
-        'mouseleave',
-        enableHoverActions
-          ? function () {
-              scheduleTooltipHide();
-            }
-          : null,
-      )
       .on('click', (event, d) => {
         if (focus !== d) {
           event.stopPropagation();
           zoom(d);
         }
       });
+
+    if (enableHoverActions) {
+      logos
+        .on('mouseenter', function (event: MouseEvent, d: SpaceHierarchyNode) {
+          clearTooltipHideTimeout();
+          if (!containerRef.current) return;
+          const rect = containerRef.current.getBoundingClientRect();
+          setTooltip((prev) => ({
+            ...prev,
+            visible: true,
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+            text: d.data.name,
+            spaceId: d.data.id,
+            spaceSlug: d.data.slug,
+          }));
+        })
+        .on('mousemove', function (event: MouseEvent) {
+          clearTooltipHideTimeout();
+          if (!containerRef.current) return;
+          const rect = containerRef.current.getBoundingClientRect();
+          setTooltip((prev) => ({
+            ...prev,
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+          }));
+        })
+        .on('mouseleave', function () {
+          scheduleTooltipHide();
+        });
+    } else {
+      logos.on('mouseenter', null).on('mousemove', null).on('mouseleave', null);
+    }
 
     logos.each(function (d: SpaceHierarchyNode) {
       const logoGroup = d3.select(this);
