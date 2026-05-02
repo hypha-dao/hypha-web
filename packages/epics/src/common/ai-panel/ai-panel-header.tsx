@@ -180,108 +180,36 @@ export function AiPanelHeader({
   );
 
   return (
-    <div className="relative h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 border-b border-border bg-background-2 px-4 py-2">
+    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2rem_minmax(0,1fr)_2rem_2rem] items-center gap-3 border-b border-border bg-background-2 px-4 py-2">
       {leftSlot ? (
-        <div className="absolute left-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center">
           {leftSlot}
         </div>
-      ) : null}
+      ) : (
+        <div className="h-8 w-8 shrink-0" aria-hidden />
+      )}
 
-      <div className="flex h-full min-w-0 items-center justify-center px-14">
-        <div className="grid w-full min-w-0 max-w-[18.5rem] grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-3">
-          <div className="h-8 w-8 shrink-0" aria-hidden />
-
-          <div className="relative min-w-0">
-            <div className="relative mx-auto w-full min-w-0 max-w-[13.5rem]">
-              {canOpenSpaceMenu ? (
-                <DropdownMenu
-                  modal={false}
-                  open={spaceMenuOpen}
-                  onOpenChange={setSpaceMenuOpen}
+      <div className="min-w-0 px-5">
+        <div className="mx-auto flex w-full min-w-0 max-w-[13.5rem] justify-center">
+          {canOpenSpaceMenu ? (
+            <DropdownMenu
+              modal={false}
+              open={spaceMenuOpen}
+              onOpenChange={setSpaceMenuOpen}
+            >
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
+                  aria-label={tNavigation('mySpaces')}
                 >
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
-                      aria-label={tNavigation('mySpaces')}
-                    >
-                      <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
-                        {currentIcon ? (
-                          <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={currentIcon}
-                              alt={currentTitle}
-                              className="h-full w-full object-cover"
-                            />
-                          </>
-                        ) : (
-                          <span className="flex h-full w-full items-center justify-center bg-muted">
-                            <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-                          </span>
-                        )}
-                      </span>
-                      <span className="max-w-[8.5rem] truncate text-center">
-                        {currentTitle}
-                      </span>
-                      <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    side="bottom"
-                    align="center"
-                    sideOffset={4}
-                    className="relative isolate z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
-                  >
-                    <div className="flex max-h-[24.5rem] min-h-0 flex-col">
-                      <div className="shrink-0 border-b border-border/70 bg-background-3 px-2 pb-1.5 pt-1">
-                        <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
-                          {tNavigation('mySpaces')}
-                        </DropdownMenuLabel>
-                        <div className="px-1">
-                          <input
-                            type="text"
-                            value={spaceSearch}
-                            onChange={(event) =>
-                              setSpaceSearch(event.target.value)
-                            }
-                            placeholder={tSpaces('search')}
-                            className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
-                            aria-label={tSpaces('search')}
-                          />
-                        </div>
-                      </div>
-                      <div className="min-h-0 overflow-y-auto p-1.5 narrow-scrollbar">
-                        {!hasFilteredSpaces ? (
-                          <DropdownMenuItem disabled>
-                            {normalizedSearch
-                              ? tSpaces('noSpacesFound')
-                              : fallbackTitle}
-                          </DropdownMenuItem>
-                        ) : null}
-                        {hasFilteredSpaces &&
-                          filteredGroupedSpaces.ecosystem.map(
-                            renderSpaceOption,
-                          )}
-                        {filteredGroupedSpaces.ecosystem.length > 0 &&
-                        filteredGroupedSpaces.others.length > 0 ? (
-                          <DropdownMenuSeparator />
-                        ) : null}
-                        {hasFilteredSpaces &&
-                          filteredGroupedSpaces.others.map(renderSpaceOption)}
-                      </div>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <div className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground/90">
                   <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
                     {currentIcon ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={currentIcon}
-                          alt={fallbackTitle}
+                          alt={currentTitle}
                           className="h-full w-full object-cover"
                         />
                       </>
@@ -292,20 +220,84 @@ export function AiPanelHeader({
                     )}
                   </span>
                   <span className="max-w-[8.5rem] truncate text-center">
-                    {fallbackTitle}
+                    {currentTitle}
                   </span>
+                  <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="bottom"
+                align="center"
+                sideOffset={4}
+                className="relative isolate z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
+              >
+                <div className="flex max-h-[24.5rem] min-h-0 flex-col">
+                  <div className="shrink-0 border-b border-border/70 bg-background-3 px-2 pb-1.5 pt-1">
+                    <DropdownMenuLabel className="px-2 py-1.5 text-1 text-muted-foreground">
+                      {tNavigation('mySpaces')}
+                    </DropdownMenuLabel>
+                    <div className="px-1">
+                      <input
+                        type="text"
+                        value={spaceSearch}
+                        onChange={(event) => setSpaceSearch(event.target.value)}
+                        placeholder={tSpaces('search')}
+                        className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
+                        aria-label={tSpaces('search')}
+                      />
+                    </div>
+                  </div>
+                  <div className="min-h-0 overflow-y-auto p-1.5 narrow-scrollbar">
+                    {!hasFilteredSpaces ? (
+                      <DropdownMenuItem disabled>
+                        {normalizedSearch
+                          ? tSpaces('noSpacesFound')
+                          : fallbackTitle}
+                      </DropdownMenuItem>
+                    ) : null}
+                    {hasFilteredSpaces &&
+                      filteredGroupedSpaces.ecosystem.map(renderSpaceOption)}
+                    {filteredGroupedSpaces.ecosystem.length > 0 &&
+                    filteredGroupedSpaces.others.length > 0 ? (
+                      <DropdownMenuSeparator />
+                    ) : null}
+                    {hasFilteredSpaces &&
+                      filteredGroupedSpaces.others.map(renderSpaceOption)}
+                  </div>
                 </div>
-              )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground/90">
+              <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
+                {currentIcon ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={currentIcon}
+                      alt={fallbackTitle}
+                      className="h-full w-full object-cover"
+                    />
+                  </>
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center bg-muted">
+                    <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                  </span>
+                )}
+              </span>
+              <span className="max-w-[8.5rem] truncate text-center">
+                {fallbackTitle}
+              </span>
             </div>
-          </div>
-
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center">
-            {centerRightSlot ? centerRightSlot : <span aria-hidden />}
-          </div>
+          )}
         </div>
       </div>
 
-      <div className="absolute right-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-end">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+        {centerRightSlot ? centerRightSlot : <span aria-hidden />}
+      </div>
+
+      <div className="flex h-8 w-8 shrink-0 items-center justify-end">
         {rightSlot ? (
           rightSlot
         ) : showCloseButton ? (
