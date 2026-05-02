@@ -1,14 +1,9 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 import { Text } from '@radix-ui/themes';
 import { useSignalsSection } from '../hooks';
-import {
-  Button,
-  ErrorAlert,
-  SectionFilter,
-  SectionLoadMore,
-} from '@hypha-platform/ui';
+import { Button, ErrorAlert, Input, SectionLoadMore } from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import { SignalGridContainer } from './signal-grid.container';
 import { Coherence, DirectionType } from '@hypha-platform/core/client';
@@ -18,6 +13,8 @@ import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { SearchIcon } from 'lucide-react';
+import { ScreenToolbar } from '../../common/screen-toolbar';
 
 const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
   'coherence.signalProvisioningNotice';
@@ -28,8 +25,7 @@ type SignalSectionProps = {
   basePath: string;
   signals: Coherence[];
   leadImage?: string;
-  label?: string;
-  hasSearch?: boolean;
+  toolbarLeft?: ReactNode;
   isLoading: boolean;
   firstPageSize?: number;
   pageSize?: number;
@@ -42,8 +38,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   basePath,
   signals,
   leadImage,
-  label,
-  hasSearch = false,
+  toolbarLeft,
   isLoading,
   firstPageSize = 3,
   pageSize = 3,
@@ -112,16 +107,18 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
 
   return (
-    <div className="flex w-full flex-col items-center justify-around gap-4">
-      <SectionFilter
-        count={pagination?.total || 0}
-        label={label || ''}
-        hasSearch={hasSearch}
-        searchPlaceholder={t('searchSignals')}
-        onChangeSearch={onUpdateSearch}
-        inlineLabel={true}
-      >
-        <div className="flex flex-row gap-2">
+    <div className="flex w-full flex-col gap-4">
+      <ScreenToolbar
+        left={toolbarLeft}
+        center={
+          <Input
+            type="search"
+            placeholder={t('searchSignals')}
+            onChange={(event) => onUpdateSearch(event.target.value)}
+            leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          />
+        }
+        right={
           <Link href={createSignalHref}>
             <Button
               variant="default"
@@ -132,8 +129,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
               {t('newSignal')}
             </Button>
           </Link>
-        </div>
-      </SectionFilter>
+        }
+      />
 
       {pagination?.totalPages === 0 ? (
         <Empty>
