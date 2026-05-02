@@ -27,6 +27,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
@@ -51,7 +52,7 @@ type ChatUIMessage = {
 
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
 const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
-const MAX_RECENT_SPACES = 5;
+const MAX_RECENT_SPACES = 4;
 const MENU_BUTTON_CLASS =
   'h-10 w-full rounded-lg border border-transparent p-0 text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!rounded-lg group-data-[collapsible=icon]:!p-0';
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
@@ -367,6 +368,28 @@ export function AiLeftPanel() {
     [lang, spaceSlug],
   );
 
+  const renderRecentSpacesSection = useCallback(
+    (mode: 'expanded' | 'collapsed', keyPrefix: string) => {
+      return (
+        <SidebarGroup
+          className={`${
+            spaceSettingsItem ? 'p-2 pb-4 pt-2' : 'mt-auto p-2 pb-4'
+          }`}
+        >
+          <SidebarGroupLabel>{tSpaces('mySpacesLabel')}</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-2">
+              {recentSpaces.map((space) =>
+                renderRecentSpaceItem(space, mode, `${keyPrefix}-recent`),
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      );
+    },
+    [recentSpaces, renderRecentSpaceItem, spaceSettingsItem, tSpaces],
+  );
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -560,25 +583,9 @@ export function AiLeftPanel() {
                 </SidebarGroupContent>
               </SidebarGroup>
             ) : null}
-            {recentSpaces.length > 0 ? (
-              <SidebarGroup
-                className={`${
-                  spaceSettingsItem ? 'p-2 pb-4 pt-2' : 'mt-auto p-2 pb-4'
-                }`}
-              >
-                <SidebarGroupContent>
-                  <SidebarMenu className="gap-2">
-                    {recentSpaces.map((space) =>
-                      renderRecentSpaceItem(
-                        space,
-                        'expanded',
-                        'recent-overlay',
-                      ),
-                    )}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            ) : null}
+            {recentSpaces.length > 0
+              ? renderRecentSpacesSection('expanded', 'recent-overlay')
+              : null}
           </SidebarContent>
         </>
       );
@@ -619,25 +626,9 @@ export function AiLeftPanel() {
               </SidebarGroupContent>
             </SidebarGroup>
           ) : null}
-          {recentSpaces.length > 0 ? (
-            <SidebarGroup
-              className={`${
-                spaceSettingsItem ? 'p-2 pb-4 pt-2' : 'mt-auto p-2 pb-4'
-              }`}
-            >
-              <SidebarGroupContent>
-                <SidebarMenu className="gap-2">
-                  {recentSpaces.map((space) =>
-                    renderRecentSpaceItem(
-                      space,
-                      'collapsed',
-                      'recent-collapsed',
-                    ),
-                  )}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ) : null}
+          {recentSpaces.length > 0
+            ? renderRecentSpacesSection('collapsed', 'recent-collapsed')
+            : null}
         </SidebarContent>
       </>
     );
