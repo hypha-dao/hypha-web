@@ -62,7 +62,6 @@ export const MembersSection: FC<MemberSectionProps> = ({
     <div className="flex flex-col w-full justify-center items-center gap-4">
       <span className="w-full flex gap-4">
         <SectionFilter
-          count={pagination?.total || 0}
           label={label ?? tCommon('Members')}
           hasSearch
           searchPlaceholder={tMembers('searchMembers')}
