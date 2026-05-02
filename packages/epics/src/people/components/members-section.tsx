@@ -2,13 +2,13 @@
 
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
-import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
+import { SectionLoadMore } from '@hypha-platform/ui/server';
 
 import { MembersList } from './members-list';
 import { useMembersSection } from '../hooks/use-members-section';
 import { ExitSpace, UseMembers, useSpaceMember } from '../../spaces';
 import { Empty } from '../../common';
-import { Button } from '@hypha-platform/ui';
+import { Button, Input } from '@hypha-platform/ui';
 import {
   useSpaceBySlug,
   useMe,
@@ -17,13 +17,14 @@ import {
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { SearchIcon } from 'lucide-react';
+import { ScreenToolbar } from '../../common/screen-toolbar';
 
 type MemberSectionProps = {
   basePath: string;
   useMembers: UseMembers;
   spaceSlug?: string;
   refreshInterval?: number;
-  label?: string;
 };
 
 export const MembersSection: FC<MemberSectionProps> = ({
@@ -31,7 +32,6 @@ export const MembersSection: FC<MemberSectionProps> = ({
   useMembers,
   spaceSlug,
   refreshInterval,
-  label,
 }) => {
   const tCommon = useTranslations('Common');
   const tMembers = useTranslations('MembersTab');
@@ -60,28 +60,33 @@ export const MembersSection: FC<MemberSectionProps> = ({
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <span className="w-full flex gap-4">
-        <SectionFilter
-          label={label ?? tCommon('Members')}
-          hasSearch
-          searchPlaceholder={tMembers('searchMembers')}
-          onChangeSearch={onUpdateSearch}
-        >
-          <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
-        </SectionFilter>
-        {!isDelegate && (
-          <Link
-            title={tooltipMessage || ''}
-            className={isDisabled ? 'cursor-not-allowed' : ''}
-            href={`${basePath}/${person?.slug}`}
-            scroll={false}
-          >
-            <Button disabled={isDisabled || isMemberLoading}>
-              {tMembers('delegateVoting')}
-            </Button>
-          </Link>
-        )}
-      </span>
+      <ScreenToolbar
+        center={
+          <Input
+            type="search"
+            placeholder={tMembers('searchMembers')}
+            onChange={(event) => onUpdateSearch(event.target.value)}
+            leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          />
+        }
+        right={
+          <div className="flex items-center gap-2">
+            <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
+            {!isDelegate ? (
+              <Link
+                title={tooltipMessage || ''}
+                className={isDisabled ? 'cursor-not-allowed' : ''}
+                href={`${basePath}/${person?.slug}`}
+                scroll={false}
+              >
+                <Button disabled={isDisabled || isMemberLoading}>
+                  {tMembers('delegateVoting')}
+                </Button>
+              </Link>
+            ) : null}
+          </div>
+        }
+      />
       {pagination?.total === 0 ? (
         <Empty>
           <p>{tMembers('listIsEmpty')}</p>

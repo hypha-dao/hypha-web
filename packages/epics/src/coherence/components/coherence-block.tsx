@@ -146,6 +146,31 @@ export function CoherenceBlock({
 
   const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
 
+  const priorityTabs = (
+    <PriorityFilterTabs
+      queryKey="priority"
+      defaultValue="all"
+      items={[
+        { value: 'all', label: t('all'), count: priorityCounts.all },
+        {
+          value: 'high',
+          label: t('priorities.high'),
+          count: priorityCounts.high,
+        },
+        {
+          value: 'medium',
+          label: t('priorities.medium'),
+          count: priorityCounts.medium,
+        },
+        {
+          value: 'low',
+          label: t('priorities.low'),
+          count: priorityCounts.low,
+        },
+      ]}
+    />
+  );
+
   return (
     <div className="flex flex-col gap-4 py-2">
       <div className="flex flex-col gap-3">
@@ -157,34 +182,12 @@ export function CoherenceBlock({
             </span>
           ) : null}
         </h1>
-        <PriorityFilterTabs
-          queryKey="priority"
-          defaultValue="all"
-          items={[
-            { value: 'all', label: t('all'), count: priorityCounts.all },
-            {
-              value: 'high',
-              label: t('priorities.high'),
-              count: priorityCounts.high,
-            },
-            {
-              value: 'medium',
-              label: t('priorities.medium'),
-              count: priorityCounts.medium,
-            },
-            {
-              value: 'low',
-              label: t('priorities.low'),
-              count: priorityCounts.low,
-            },
-          ]}
-        />
       </div>
       {isAuthenticated ? (
         <div className="flex flex-col gap-4">
           <SignalSection
+            toolbarLeft={priorityTabs}
             basePath={chatBasePath}
-            hasSearch={true}
             signals={filteredSignals}
             leadImage={space?.leadImage ?? undefined}
             isLoading={isSpaceLoading || isSignalsLoading}
