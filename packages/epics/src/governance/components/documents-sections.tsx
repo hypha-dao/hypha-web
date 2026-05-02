@@ -34,7 +34,7 @@ export function DocumentsSections({
     <Tabs
       value={activeTab}
       onValueChange={setActiveTab}
-      className="flex flex-col gap-4 py-4"
+      className="flex flex-col gap-4 py-0"
     >
       <TabsList triggerVariant="switch" className="w-fit">
         <TabsTrigger value="on-voting" variant="switch">

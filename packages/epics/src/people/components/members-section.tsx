@@ -23,6 +23,7 @@ type MemberSectionProps = {
   useMembers: UseMembers;
   spaceSlug?: string;
   refreshInterval?: number;
+  label?: string;
 };
 
 export const MembersSection: FC<MemberSectionProps> = ({
@@ -30,6 +31,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
   useMembers,
   spaceSlug,
   refreshInterval,
+  label,
 }) => {
   const tCommon = useTranslations('Common');
   const tMembers = useTranslations('MembersTab');
@@ -61,7 +63,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
       <span className="w-full flex gap-4">
         <SectionFilter
           count={pagination?.total || 0}
-          label={tCommon('Members')}
+          label={label ?? tCommon('Members')}
           hasSearch
           searchPlaceholder={tMembers('searchMembers')}
           onChangeSearch={onUpdateSearch}

@@ -25,7 +25,7 @@ export default async function RewardsPage(props: PageProps) {
       spaceId={spaceFromDb?.web3SpaceId as number}
       spaceSlug={id}
     >
-      <div className="flex flex-col gap-6 py-4">
+      <div className="flex flex-col gap-4 py-4">
         <TabScreenTitle title="Rewards" />
         <div className="flex w-full justify-end">
           <Link href={`/${lang}/dho/${id}/agreements/create/buy-hypha-tokens`}>

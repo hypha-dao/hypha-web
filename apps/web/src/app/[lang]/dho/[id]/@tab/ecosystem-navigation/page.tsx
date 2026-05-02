@@ -23,7 +23,7 @@ export default async function EcosystemNavigationPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
-      <div className="flex flex-col gap-6 py-4">
+      <div className="flex flex-col gap-4 py-4">
         <TabScreenTitle title="Ecosystem" />
         <EcosystemNavigationMainPanel daoSlug={id} lang={lang} />
       </div>
