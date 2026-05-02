@@ -19,6 +19,7 @@ type CoherenceBlockProps = {
   lang: Locale;
   spaceSlug: string;
   order?: CoherenceOrder;
+  priorityFilter?: 'all' | 'high' | 'medium' | 'low';
   humanChatEnabled?: boolean;
 };
 
@@ -26,6 +27,7 @@ export function CoherenceBlock({
   lang,
   spaceSlug,
   order,
+  priorityFilter = 'all',
   humanChatEnabled = false,
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
@@ -42,6 +44,13 @@ export function CoherenceBlock({
     includeArchived: !hideArchived,
     orderBy: order,
   });
+  const filteredSignals = React.useMemo(
+    () =>
+      (signals ?? []).filter((signal) =>
+        priorityFilter === 'all' ? true : signal.priority === priorityFilter,
+      ),
+    [priorityFilter, signals],
+  );
 
   const refresh = React.useCallback(async () => {
     await refreshSignals();
@@ -68,14 +77,13 @@ export function CoherenceBlock({
   const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
 
   return (
-    <div className="flex flex-col gap-6 py-4">
+    <div className="flex flex-col gap-4 py-2">
       {isAuthenticated ? (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           <SignalSection
             basePath={chatBasePath}
-            label={t('signals')}
             hasSearch={true}
-            signals={signals ?? []}
+            signals={filteredSignals}
             leadImage={space?.leadImage ?? undefined}
             isLoading={isSpaceLoading || isSignalsLoading}
             firstPageSize={3}

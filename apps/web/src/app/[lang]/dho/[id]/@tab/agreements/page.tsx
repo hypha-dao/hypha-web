@@ -31,8 +31,11 @@ export default async function AgreementsPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
-      <div className="flex flex-col gap-6 py-4">
-        <TabScreenTitle title={tCommon('Agreements')} />
+      <div className="flex flex-col gap-4 py-4">
+        <TabScreenTitle
+          title={tCommon('Agreements')}
+          count={spaceFromDb?.documentCount ?? null}
+        />
         <DocumentsSections
           lang={lang}
           spaceSlug={id}

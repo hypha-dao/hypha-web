@@ -26,13 +26,17 @@ export default async function MembershipPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
-      <div className="flex flex-col gap-6 py-4">
-        <TabScreenTitle title={tCommon('Members')} />
+      <div className="flex flex-col gap-4 py-4">
+        <TabScreenTitle
+          title={tCommon('Members')}
+          count={spaceFromDb?.memberCount ?? null}
+        />
         <MembersSection
           basePath={`${basePath}/person`}
           useMembers={useMembers}
           spaceSlug={id}
           refreshInterval={2000}
+          label=""
         />
       </div>
     </SpaceTabAccessWrapper>

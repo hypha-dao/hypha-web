@@ -161,7 +161,7 @@ export function EcosystemNavigationMainPanel({
   );
 
   return (
-    <section className="w-full py-4">
+    <section className="w-full py-0">
       {isLoading ? (
         <div className="flex min-h-[20rem] items-center justify-center rounded-xl border border-border/60 bg-background-2 text-sm text-muted-foreground">
           {t('title')}
