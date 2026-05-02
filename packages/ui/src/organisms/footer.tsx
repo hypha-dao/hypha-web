@@ -1,3 +1,6 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
 import { Container } from '../container';
 import { Button } from '../button';
 import { Link } from '@radix-ui/themes';
@@ -25,7 +28,62 @@ type FooterProps = {
   privacyPolicyLabel?: string;
 };
 
-export const Footer = ({
+function SpaceContextFooter({
+  licensingPolicyLabel,
+  termsAndConditionsLabel,
+  privacyPolicyLabel,
+}: FooterProps) {
+  return (
+    <div className="border-t border-border/60 bg-background-2">
+      <Container className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+          <span className="shrink-0">Powered by</span>
+          <Logo width={92} />
+        </div>
+        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <Link
+            rel="noopener noreferrer"
+            target="_blank"
+            style={customLinkStyles}
+            href={
+              process.env.NEXT_PUBLIC_LICENCE_URL ||
+              'https://assets.hypha.earth/files/Hypha_Licensing_Policy.pdf'
+            }
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {licensingPolicyLabel}
+          </Link>
+          <Link
+            rel="noopener noreferrer"
+            target="_blank"
+            style={customLinkStyles}
+            href={
+              process.env.NEXT_PUBLIC_TERMS_URL ||
+              'https://assets.hypha.earth/files/Hypha_Terms_And_Conditions.pdf'
+            }
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {termsAndConditionsLabel}
+          </Link>
+          <Link
+            rel="noopener noreferrer"
+            target="_blank"
+            style={customLinkStyles}
+            href={
+              process.env.NEXT_PUBLIC_PRIVACY_URL ||
+              'https://assets.hypha.earth/files/Hypha_Privacy_Policy.pdf'
+            }
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {privacyPolicyLabel}
+          </Link>
+        </nav>
+      </Container>
+    </div>
+  );
+}
+
+function LegacyFooter({
   networkLabel = 'NETWORK',
   legalLabel = 'LEGAL',
   hyphaServicesLabel = 'Hypha Services',
@@ -33,7 +91,7 @@ export const Footer = ({
   licensingPolicyLabel = 'Licensing policy',
   termsAndConditionsLabel = 'Terms & Conditions',
   privacyPolicyLabel = 'Privacy Policy',
-}: FooterProps) => {
+}: FooterProps) {
   return (
     <div className="bg-background-2">
       <Container>
@@ -169,4 +227,15 @@ export const Footer = ({
       </Container>
     </div>
   );
+}
+
+export const Footer = (props: FooterProps) => {
+  const pathname = usePathname();
+  const isSpaceContext = pathname.includes('/dho/');
+
+  if (isSpaceContext) {
+    return <SpaceContextFooter {...props} />;
+  }
+
+  return <LegacyFooter {...props} />;
 };
