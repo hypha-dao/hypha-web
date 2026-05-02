@@ -1,7 +1,6 @@
 import { Locale } from '@hypha-platform/i18n';
 import { MembersSection, SpaceTabAccessWrapper } from '@hypha-platform/epics';
-import { findSpaceBySlug } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
+import { getSpaceBySlug } from '@hypha-platform/core/server';
 import { getTranslations } from 'next-intl/server';
 
 import { useMembers } from '@web/hooks/use-members';
@@ -19,7 +18,7 @@ export default async function MembershipPage(props: PageProps) {
 
   const { lang, id } = params;
 
-  const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
+  const spaceFromDb = await getSpaceBySlug({ slug: id });
   const web3SpaceId = spaceFromDb?.web3SpaceId;
 
   const basePath = getDhoPathMembers(lang as Locale, id as string);
