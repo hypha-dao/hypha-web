@@ -13,7 +13,6 @@ import '../../_shared/space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
-import { ActionButtons } from './_components/action-buttons';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
@@ -189,7 +188,6 @@ export default async function DhoLayout({
                       spaceId={spaceFromDb.id}
                     />
                   )}
-                  <ActionButtons web3SpaceId={web3SpaceId} />
                 </>
               }
               title={spaceFromDb.title}
