@@ -110,7 +110,7 @@ export const MenuTop = ({
                 {logoText}
               </span>
             )
-          ) : !!logoHref ? (
+          ) : logoHref ? (
             <Logo width={110} href={logoHref} target={hrefTarget} />
           ) : null}
         </div>

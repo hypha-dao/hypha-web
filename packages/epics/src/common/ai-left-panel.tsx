@@ -519,7 +519,7 @@ export function AiLeftPanel() {
           >
             <AiPanelHeader
               showCloseButton={false}
-              leftSlot={closeButton}
+              centerRightSlot={closeButton}
               rightSlot={triggerButton}
             />
           </SidebarHeader>
@@ -640,7 +640,7 @@ export function AiLeftPanel() {
         <SidebarHeader className="bg-background-2 p-0">
           <AiPanelHeader
             showCloseButton={false}
-            leftSlot={closeButton}
+            centerRightSlot={closeButton}
             rightSlot={triggerButton}
           />
         </SidebarHeader>
@@ -657,7 +657,7 @@ export function AiLeftPanel() {
         <SidebarHeader className="bg-background-2 p-0">
           <AiPanelHeader
             showCloseButton={false}
-            leftSlot={closeButton}
+            centerRightSlot={closeButton}
             rightSlot={triggerButton}
           />
         </SidebarHeader>
@@ -683,7 +683,7 @@ export function AiLeftPanel() {
       <SidebarHeader className="bg-background-2 p-0">
         <AiPanelHeader
           showCloseButton={false}
-          leftSlot={closeButton}
+          centerRightSlot={closeButton}
           rightSlot={triggerButton}
         />
       </SidebarHeader>

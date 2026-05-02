@@ -133,7 +133,7 @@ export function HumanSidebarTrigger() {
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
 
-  if (!isSpace) return null;
+  if (!isSpace || open) return null;
 
   return (
     <button
