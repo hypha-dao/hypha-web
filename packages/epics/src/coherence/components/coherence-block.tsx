@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthentication } from '@hypha-platform/authentication';
-import { Button } from '@hypha-platform/ui';
+import { Button, Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { Empty } from '../../common/empty';
 import {
   Coherence,
@@ -10,6 +10,7 @@ import {
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
 import { SignalSection } from './signal-section';
@@ -22,6 +23,66 @@ type CoherenceBlockProps = {
   priorityFilter?: 'all' | 'high' | 'medium' | 'low';
   humanChatEnabled?: boolean;
 };
+
+type PriorityFilterTabItem = {
+  value: string;
+  label: string;
+  count?: number | null;
+};
+
+function PriorityFilterTabs({
+  items,
+  defaultValue,
+  queryKey,
+}: {
+  items: PriorityFilterTabItem[];
+  defaultValue: string;
+  queryKey: string;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentValue = React.useMemo(() => {
+    const raw = searchParams.get(queryKey);
+    if (!raw) return defaultValue;
+    return items.some((item) => item.value === raw) ? raw : defaultValue;
+  }, [defaultValue, items, queryKey, searchParams]);
+
+  const handleValueChange = React.useCallback(
+    (nextValue: string) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      if (nextValue === defaultValue) {
+        nextParams.delete(queryKey);
+      } else {
+        nextParams.set(queryKey, nextValue);
+      }
+      const query = nextParams.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    },
+    [defaultValue, pathname, queryKey, router, searchParams],
+  );
+
+  return (
+    <Tabs value={currentValue} onValueChange={handleValueChange}>
+      <TabsList triggerVariant="switch" className="w-fit">
+        {items.map((item) => (
+          <TabsTrigger key={item.value} value={item.value} variant="switch">
+            <span className="inline-flex items-center gap-1">
+              <span>{item.label}</span>
+              {typeof item.count === 'number' && Number.isFinite(item.count) ? (
+                <span className="text-xs text-muted-foreground">
+                  ({Intl.NumberFormat().format(item.count)})
+                </span>
+              ) : null}
+            </span>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
+  );
+}
 
 export function CoherenceBlock({
   lang,
@@ -51,6 +112,15 @@ export function CoherenceBlock({
       ),
     [priorityFilter, signals],
   );
+  const priorityCounts = React.useMemo(() => {
+    const items = signals ?? [];
+    return {
+      all: items.length,
+      high: items.filter((signal) => signal.priority === 'high').length,
+      medium: items.filter((signal) => signal.priority === 'medium').length,
+      low: items.filter((signal) => signal.priority === 'low').length,
+    };
+  }, [signals]);
 
   const refresh = React.useCallback(async () => {
     await refreshSignals();
@@ -78,6 +148,38 @@ export function CoherenceBlock({
 
   return (
     <div className="flex flex-col gap-4 py-2">
+      <div className="flex flex-col gap-3">
+        <h1 className="text-7 font-semibold tracking-tight text-foreground">
+          {t('signals')}
+          {typeof signals?.length === 'number' ? (
+            <span className="ml-2 text-5 font-medium text-muted-foreground">
+              | {Intl.NumberFormat().format(signals.length)}
+            </span>
+          ) : null}
+        </h1>
+        <PriorityFilterTabs
+          queryKey="priority"
+          defaultValue="all"
+          items={[
+            { value: 'all', label: t('all'), count: priorityCounts.all },
+            {
+              value: 'high',
+              label: t('priorities.high'),
+              count: priorityCounts.high,
+            },
+            {
+              value: 'medium',
+              label: t('priorities.medium'),
+              count: priorityCounts.medium,
+            },
+            {
+              value: 'low',
+              label: t('priorities.low'),
+              count: priorityCounts.low,
+            },
+          ]}
+        />
+      </div>
       {isAuthenticated ? (
         <div className="flex flex-col gap-4">
           <SignalSection

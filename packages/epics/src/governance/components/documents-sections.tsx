@@ -33,7 +33,7 @@ export function DocumentsSections({
   const basePath = `/${lang}/dho/${spaceSlug}/agreements`;
   const createProposalPath = `${basePath}/select-create-action`;
   const createProposalButton = (
-    <Button asChild className="h-9 whitespace-nowrap">
+    <Button asChild>
       <Link href={createProposalPath}>New Proposal</Link>
     </Button>
   );
@@ -61,7 +61,6 @@ export function DocumentsSections({
           basePath={`${basePath}/proposal`}
           web3SpaceId={web3SpaceId}
           documents={documents.onVoting}
-          label={t('onVoting')}
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
@@ -74,7 +73,6 @@ export function DocumentsSections({
           basePath={`${basePath}/proposal`}
           web3SpaceId={web3SpaceId}
           documents={documents.accepted}
-          label={t('accepted')}
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
@@ -87,7 +85,6 @@ export function DocumentsSections({
           basePath={`${basePath}/proposal`}
           web3SpaceId={web3SpaceId}
           documents={documents.rejected}
-          label={t('rejected')}
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
