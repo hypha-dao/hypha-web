@@ -5,7 +5,7 @@ import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { getTranslations } from 'next-intl/server';
 import { TabScreenTitle } from '../_components/tab-screen-title';
-import { TreasuryTabs } from '../_components/treasury-tabs';
+import { TreasuryTabs } from '../../_components/treasury-tabs';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
