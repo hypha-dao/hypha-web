@@ -14,6 +14,7 @@ import {
   FileCheck2,
   Orbit,
   Menu,
+  PanelLeftClose,
   Radio,
   SlidersHorizontal,
   Sparkles,
@@ -58,7 +59,9 @@ const MENU_ROW_LINK_BASE_CLASS = 'flex w-full min-w-0 items-center';
 const MENU_ROW_LINK_EXPANDED_CLASS = 'pl-1.5';
 const MENU_ROW_LINK_COLLAPSED_CLASS = 'justify-center';
 const MENU_TRIGGER_CANVAS_CLASS =
-  'relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 ring-1 ring-border/70';
+  'relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 ring-1 ring-border/70';
+const MENU_CLOSE_BUTTON_CLASS =
+  'flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
 const RECENT_SPACE_AVATAR_CLASS =
   'flex h-6 w-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 
@@ -493,6 +496,17 @@ export function AiLeftPanel() {
       <Menu className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
     </button>
   );
+  const closeButton = shouldCloseFromTrigger ? (
+    <button
+      type="button"
+      onClick={handleOverlayClose}
+      className={MENU_CLOSE_BUTTON_CLASS}
+      title={t('hidePanel')}
+      aria-label={t('closePanel')}
+    >
+      <PanelLeftClose className="h-4 w-4" />
+    </button>
+  ) : undefined;
 
   if (!isAiOpen) {
     if (overlayVisible) {
@@ -503,7 +517,11 @@ export function AiLeftPanel() {
             onMouseEnter={handleExpandedRegionMouseEnter}
             onMouseLeave={handleOverlayMouseLeave}
           >
-            <AiPanelHeader showCloseButton={false} rightSlot={triggerButton} />
+            <AiPanelHeader
+              showCloseButton={false}
+              leftSlot={closeButton}
+              rightSlot={triggerButton}
+            />
           </SidebarHeader>
           <SidebarContent
             className="bg-background-2"
@@ -560,7 +578,7 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-end border-b border-border bg-background-2 px-4 py-2">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-end">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-end">
             {triggerButton}
           </div>
         </SidebarHeader>
@@ -620,7 +638,11 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="bg-background-2 p-0">
-          <AiPanelHeader showCloseButton={false} rightSlot={triggerButton} />
+          <AiPanelHeader
+            showCloseButton={false}
+            leftSlot={closeButton}
+            rightSlot={triggerButton}
+          />
         </SidebarHeader>
         <SidebarContent className="flex flex-1 items-center justify-center">
           <div className="text-sm text-muted-foreground">{t('loading')}</div>
@@ -633,7 +655,11 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="bg-background-2 p-0">
-          <AiPanelHeader showCloseButton={false} rightSlot={triggerButton} />
+          <AiPanelHeader
+            showCloseButton={false}
+            leftSlot={closeButton}
+            rightSlot={triggerButton}
+          />
         </SidebarHeader>
         <SidebarContent className="flex flex-1 items-center justify-center px-6">
           <Empty>
@@ -655,7 +681,11 @@ export function AiLeftPanel() {
   return (
     <>
       <SidebarHeader className="bg-background-2 p-0">
-        <AiPanelHeader showCloseButton={false} rightSlot={triggerButton} />
+        <AiPanelHeader
+          showCloseButton={false}
+          leftSlot={closeButton}
+          rightSlot={triggerButton}
+        />
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
         {error && (
