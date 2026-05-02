@@ -15,7 +15,7 @@ import { Button } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { SpaceVisualization } from './space-visualization';
 
@@ -94,6 +94,13 @@ export function EcosystemNavigationMainPanel({
     [filteredSpaces],
   );
   const isLoading = isLoadingSpace || isLoadingSpaces || isFilteringSpaces;
+  const currentSpaceTitle = currentSpace?.title ?? daoSlug;
+  const [selectedSpaceTitle, setSelectedSpaceTitle] =
+    useState(currentSpaceTitle);
+
+  useEffect(() => {
+    setSelectedSpaceTitle(currentSpaceTitle);
+  }, [currentSpaceTitle]);
 
   const hierarchyData: HierarchyNode | null = useMemo(() => {
     if (!currentSpace || !filteredSpaces) return null;
@@ -125,6 +132,11 @@ export function EcosystemNavigationMainPanel({
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
                     enableHoverActions={false}
+                    onVisibleSpacesChange={(visibleSpaces) => {
+                      setSelectedSpaceTitle(
+                        visibleSpaces[0]?.name ?? currentSpaceTitle,
+                      );
+                    }}
                   />
                 </div>
               ) : (
@@ -158,7 +170,6 @@ export function EcosystemNavigationMainPanel({
     [currentSpace?.id, hierarchyData, lang, t],
   );
   const currentSpaceSlug = currentSpace?.slug ?? daoSlug;
-  const currentSpaceTitle = currentSpace?.title ?? daoSlug;
   const visitSpaceHref = getDhoPathAgreements(lang, currentSpaceSlug);
   const addSpaceHref = `/${lang}/dho/${currentSpaceSlug}/space/create`;
 
@@ -178,21 +189,24 @@ export function EcosystemNavigationMainPanel({
           }
           visualizationClassName="min-h-0"
           afterTabsContent={
-            <div className="flex flex-col items-center gap-3 pt-2">
-              <div className="text-4 font-semibold tracking-tight text-foreground">
-                {currentSpaceTitle}
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <Link href={visitSpaceHref}>
-                  <Button variant="outline" colorVariant="neutral">
-                    {t('visibleSpaces.visitSpace')}
-                  </Button>
-                </Link>
-                <Link href={addSpaceHref}>
-                  <Button variant="default" colorVariant="accent">
-                    {t('visibleSpaces.addSpace')}
-                  </Button>
-                </Link>
+            <div className="w-full max-w-5xl pt-2">
+              <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+                <div aria-hidden />
+                <div className="text-center text-4 font-semibold tracking-tight text-foreground">
+                  {selectedSpaceTitle}
+                </div>
+                <div className="flex items-center justify-self-end gap-2">
+                  <Link href={visitSpaceHref}>
+                    <Button variant="outline" colorVariant="neutral">
+                      {t('visibleSpaces.visitSpace')}
+                    </Button>
+                  </Link>
+                  <Link href={addSpaceHref}>
+                    <Button variant="default" colorVariant="accent">
+                      {t('visibleSpaces.addSpace')}
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           }
