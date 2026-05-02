@@ -4,9 +4,8 @@ import {
   SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
 import { DirectionType } from '@hypha-platform/core/client';
-import { findSpaceBySlug } from '@hypha-platform/core/server';
+import { getSpaceBySlug } from '@hypha-platform/core/server';
 import { notFound } from 'next/navigation';
-import { db } from '@hypha-platform/storage-postgres';
 import { getTranslations } from 'next-intl/server';
 import { TabScreenTitle } from '../_components/tab-screen-title';
 
@@ -21,7 +20,7 @@ export default async function AgreementsPage(props: PageProps) {
   const { lang, id } = params;
 
   // TODO: implement authorization
-  const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
+  const spaceFromDb = await getSpaceBySlug({ slug: id });
 
   if (!spaceFromDb) {
     return notFound();

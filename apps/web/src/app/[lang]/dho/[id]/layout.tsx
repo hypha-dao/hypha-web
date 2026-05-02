@@ -186,6 +186,7 @@ export default async function DhoLayout({
                     <JoinSpace
                       web3SpaceId={web3SpaceId}
                       spaceId={spaceFromDb.id}
+                      hideWhenMember
                     />
                   )}
                 </>
