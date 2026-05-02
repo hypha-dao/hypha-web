@@ -76,6 +76,7 @@ export function DhoStickySpaceChrome({
     React.useState<HTMLDivElement | null>(null);
   const [stickyActionsEl, setStickyActionsEl] =
     React.useState<HTMLDivElement | null>(null);
+  const [hasActionsContent, setHasActionsContent] = React.useState(false);
 
   const [stuck, setStuck] = React.useState(false);
   const stuckRef = React.useRef(false);
@@ -128,6 +129,38 @@ export function DhoStickySpaceChrome({
 
   const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
   const isDark = resolvedTheme === 'dark';
+
+  React.useEffect(() => {
+    const hasRenderableContent = (el: HTMLDivElement | null) => {
+      if (!el) return false;
+      return Array.from(el.childNodes).some((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) return true;
+        if (node.nodeType === Node.TEXT_NODE) {
+          return Boolean(node.textContent?.trim());
+        }
+        return false;
+      });
+    };
+
+    const updateHasActionsContent = () => {
+      const next =
+        hasRenderableContent(flowActionsEl) ||
+        hasRenderableContent(stickyActionsEl);
+      setHasActionsContent((prev) => (prev === next ? prev : next));
+    };
+
+    updateHasActionsContent();
+
+    const observer = new MutationObserver(updateHasActionsContent);
+    if (flowActionsEl) {
+      observer.observe(flowActionsEl, { childList: true, subtree: true });
+    }
+    if (stickyActionsEl) {
+      observer.observe(stickyActionsEl, { childList: true, subtree: true });
+    }
+
+    return () => observer.disconnect();
+  }, [flowActionsEl, stickyActionsEl]);
 
   return (
     <>
@@ -188,7 +221,9 @@ export function DhoStickySpaceChrome({
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div
+        className={cn('flex flex-col', hasActionsContent ? 'gap-4' : 'gap-0')}
+      >
         <div className="relative">
           {banner}
           <div
@@ -202,7 +237,9 @@ export function DhoStickySpaceChrome({
           ref={setFlowActionsEl}
           className={cn(
             /* Same min-height as HumanChatPanelTabs so bottom borders align with chat panel */
-            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
+            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center',
+            hasActionsContent &&
+              'md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
             stuck && 'pointer-events-none invisible opacity-0',
           )}
           style={
