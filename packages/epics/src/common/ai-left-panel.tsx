@@ -15,6 +15,7 @@ import {
   Menu,
   PanelLeftClose,
   Radio,
+  Wallet,
   SlidersHorizontal,
   Sparkles,
   UsersRound,
@@ -140,7 +141,8 @@ export function AiLeftPanel() {
         | 'members'
         | 'treasury'
         | 'rewards'
-        | 'memory',
+        | 'memory'
+        | 'wallet',
     ) => {
       if (!spaceSlug) return false;
       if (
@@ -207,6 +209,13 @@ export function AiLeftPanel() {
         icon: MemoryIcon,
         href: `/${lang}/dho/${spaceSlug}/memory`,
         active: isSectionActive('memory'),
+      },
+      {
+        key: 'wallet',
+        label: 'My Wallet',
+        icon: Wallet,
+        href: `/${lang}/dho/${spaceSlug}/wallet`,
+        active: isSectionActive('wallet'),
       },
     ];
   }, [isSectionActive, lang, spaceSlug, tCommon, tCoherence]);
