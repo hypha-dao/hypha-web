@@ -178,13 +178,13 @@ export function AiPanelHeader({
   );
 
   return (
-    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[1.75rem_minmax(0,1fr)_1.75rem] items-center gap-3 border-b border-border bg-background-2 px-4 py-2">
+    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-3 border-b border-border bg-background-2 px-4 py-2">
       {leftSlot ? (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center">
           {leftSlot}
         </div>
       ) : (
-        <div className="h-7 w-7 shrink-0" aria-hidden />
+        <div className="h-8 w-8 shrink-0" aria-hidden />
       )}
 
       <div className="min-w-0 px-5">
@@ -291,18 +291,18 @@ export function AiPanelHeader({
         </div>
       </div>
 
-      <div className="flex h-7 w-7 shrink-0 items-center justify-end">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-end">
         {rightSlot ? (
           rightSlot
         ) : showCloseButton ? (
           <button
             type="button"
             onClick={onCloseButtonClick ?? closeAiPanel}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >
-            <PanelLeftClose className="h-3.5 w-3.5" />
+            <PanelLeftClose className="h-4 w-4" />
           </button>
         ) : null}
       </div>

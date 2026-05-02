@@ -129,18 +129,19 @@ export function AiSidebarTrigger() {
 }
 
 export function HumanSidebarTrigger() {
-  const { open, toggle } = useHumanChatPanel();
+  const { open, toggle, openHumanChatPanel } = useHumanChatPanel();
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
 
-  if (!isSpace || open) return null;
+  if (!isSpace) return null;
 
   return (
     <button
       type="button"
       onClick={toggle}
+      onMouseEnter={!open ? openHumanChatPanel : undefined}
       aria-expanded={open}
-      className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={t('openPanel')}
       aria-label={t('openPanel')}
     >
