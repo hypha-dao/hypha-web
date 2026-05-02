@@ -15,6 +15,7 @@ type EcosystemNavigationShellProps = {
   tabs: EcosystemNavigationTab[];
   className?: string;
   visualizationClassName?: string;
+  afterTabsContent?: ReactNode;
 };
 
 export function EcosystemNavigationShell({
@@ -23,6 +24,7 @@ export function EcosystemNavigationShell({
   tabs,
   className,
   visualizationClassName,
+  afterTabsContent,
 }: EcosystemNavigationShellProps) {
   return (
     <div
@@ -48,6 +50,10 @@ export function EcosystemNavigationShell({
               </TabsTrigger>
             ))}
           </TabsList>
+
+          {afterTabsContent ? (
+            <div className="flex justify-center">{afterTabsContent}</div>
+          ) : null}
 
           {tabs.map((tab) => (
             <TabsContent

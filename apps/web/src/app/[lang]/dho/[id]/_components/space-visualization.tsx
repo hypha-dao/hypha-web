@@ -5,7 +5,6 @@ import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
 import type { VisibleSpace } from './types';
-import Link from 'next/link';
 
 type SpaceNode = {
   id: number;
@@ -23,12 +22,7 @@ type Props = {
   data: SpaceNode;
   currentSpaceId?: number;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
-  lang?: string;
   enableHoverActions?: boolean;
-  actionLabels?: {
-    addSpace: string;
-    visitSpace: string;
-  };
 };
 
 const VISUALIZATION_CONFIG = {
@@ -47,9 +41,7 @@ export function SpaceVisualization({
   data,
   currentSpaceId,
   onVisibleSpacesChange,
-  lang,
   enableHoverActions = false,
-  actionLabels,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -408,33 +400,48 @@ export function SpaceVisualization({
       .attr('class', 'logo')
       .style('pointer-events', 'all')
       .style('cursor', 'pointer')
-      .on('mouseenter', function (event, d: SpaceHierarchyNode) {
-        clearTooltipHideTimeout();
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        setTooltip((prev) => ({
-          ...prev,
-          visible: true,
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top,
-          text: d.data.name,
-          spaceId: d.data.id,
-          spaceSlug: d.data.slug,
-        }));
-      })
-      .on('mousemove', function (event) {
-        clearTooltipHideTimeout();
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        setTooltip((prev) => ({
-          ...prev,
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top,
-        }));
-      })
-      .on('mouseleave', function () {
-        scheduleTooltipHide();
-      })
+      .on(
+        'mouseenter',
+        enableHoverActions
+          ? function (event, d: SpaceHierarchyNode) {
+              clearTooltipHideTimeout();
+              if (!containerRef.current) return;
+              const rect = containerRef.current.getBoundingClientRect();
+              setTooltip((prev) => ({
+                ...prev,
+                visible: true,
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top,
+                text: d.data.name,
+                spaceId: d.data.id,
+                spaceSlug: d.data.slug,
+              }));
+            }
+          : null,
+      )
+      .on(
+        'mousemove',
+        enableHoverActions
+          ? function (event) {
+              clearTooltipHideTimeout();
+              if (!containerRef.current) return;
+              const rect = containerRef.current.getBoundingClientRect();
+              setTooltip((prev) => ({
+                ...prev,
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top,
+              }));
+            }
+          : null,
+      )
+      .on(
+        'mouseleave',
+        enableHoverActions
+          ? function () {
+              scheduleTooltipHide();
+            }
+          : null,
+      )
       .on('click', (event, d) => {
         if (focus !== d) {
           event.stopPropagation();
@@ -699,20 +706,6 @@ export function SpaceVisualization({
     };
   }, []);
 
-  const canVisitSpace =
-    Boolean(tooltip.spaceSlug) && tooltip.spaceId !== currentSpaceId;
-  const canAddSpace = Boolean(tooltip.spaceSlug);
-  const isHoveredSelectedSpace =
-    tooltip.spaceId != null && tooltip.spaceId === focusRef.current?.data.id;
-  const showHoverActions =
-    enableHoverActions && Boolean(lang) && isHoveredSelectedSpace;
-  const visitSpacePath = tooltip.spaceSlug
-    ? `/${lang}/dho/${tooltip.spaceSlug}/agreements`
-    : '#';
-  const addSpacePath = tooltip.spaceSlug
-    ? `/${lang}/dho/${tooltip.spaceSlug}/space/create`
-    : '#';
-
   return (
     <div ref={containerRef} className="relative w-full">
       <svg
@@ -721,14 +714,12 @@ export function SpaceVisualization({
         role="img"
         aria-label="Space hierarchy visualization"
       />
-      {tooltip.visible && (
+      {enableHoverActions && tooltip.visible && (
         <div
           ref={tooltipRef}
-          onMouseEnter={showHoverActions ? clearTooltipHideTimeout : undefined}
-          onMouseLeave={showHoverActions ? scheduleTooltipHide : undefined}
-          className={`absolute z-50 rounded-lg border border-border/70 bg-popover shadow-lg ${
-            showHoverActions ? 'px-2.5 py-2' : 'pointer-events-none px-2 py-1.5'
-          }`}
+          onMouseEnter={clearTooltipHideTimeout}
+          onMouseLeave={scheduleTooltipHide}
+          className="absolute z-50 rounded-lg border border-border/70 bg-popover px-2 py-1.5 shadow-lg"
           style={{
             left: `${tooltip.x + 10}px`,
             top: `${tooltip.y + 10}px`,
@@ -738,32 +729,6 @@ export function SpaceVisualization({
           <div className="rounded-md border border-border/60 bg-background-3/80 px-2.5 py-1 text-xs font-semibold text-foreground">
             {tooltip.text}
           </div>
-          {showHoverActions ? (
-            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-              <Link
-                href={canVisitSpace ? visitSpacePath : '#'}
-                aria-disabled={!canVisitSpace}
-                className={`inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
-                  canVisitSpace
-                    ? 'border-border/70 bg-background-2 text-foreground hover:border-accent-9/45 hover:text-accent-11'
-                    : 'pointer-events-none cursor-not-allowed border-border/50 bg-background-2 text-muted-foreground'
-                }`}
-              >
-                {actionLabels?.visitSpace ?? 'Visit Space'}
-              </Link>
-              <Link
-                href={canAddSpace ? addSpacePath : '#'}
-                aria-disabled={!canAddSpace}
-                className={`inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
-                  canAddSpace
-                    ? 'border-border/70 bg-background-2 text-foreground hover:border-accent-9/45 hover:text-accent-11'
-                    : 'pointer-events-none cursor-not-allowed border-border/50 bg-background-2 text-muted-foreground'
-                }`}
-              >
-                {actionLabels?.addSpace ?? 'Add Space'}
-              </Link>
-            </div>
-          ) : null}
         </div>
       )}
     </div>
