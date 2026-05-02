@@ -190,7 +190,7 @@ export function AiLeftPanel() {
     () =>
       Boolean(spaceSlug) &&
       pathname.includes(`/dho/${spaceSlug}/`) &&
-      pathname.includes('/space-configuration'),
+      pathname.includes('/select-settings-action'),
     [pathname, spaceSlug],
   );
   const spaceSettingsItem = useMemo(() => {
@@ -199,7 +199,7 @@ export function AiLeftPanel() {
       key: 'space-settings',
       label: 'Space Settings',
       icon: SlidersHorizontal,
-      href: `/${lang}/dho/${spaceSlug}/agreements/space-configuration`,
+      href: `/${lang}/dho/${spaceSlug}/agreements/select-settings-action`,
       active: isSpaceSettingsActive,
     };
   }, [isSpaceSettingsActive, lang, spaceSlug]);
