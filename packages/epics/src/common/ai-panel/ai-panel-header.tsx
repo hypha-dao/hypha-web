@@ -190,7 +190,7 @@ export function AiPanelHeader({
       )}
 
       <div className="min-w-0 px-5">
-        <div className="mx-auto flex w-full min-w-0 max-w-[13.5rem] justify-center">
+        <div className="mx-auto flex w-full min-w-0 max-w-[16rem] justify-center">
           {canOpenSpaceMenu ? (
             <DropdownMenu
               modal={false}
@@ -219,7 +219,7 @@ export function AiPanelHeader({
                       </span>
                     )}
                   </span>
-                  <span className="max-w-[8.5rem] truncate text-center">
+                  <span className="max-w-[11rem] truncate text-center">
                     {currentTitle}
                   </span>
                   <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -285,7 +285,7 @@ export function AiPanelHeader({
                   </span>
                 )}
               </span>
-              <span className="max-w-[8.5rem] truncate text-center">
+              <span className="max-w-[11rem] truncate text-center">
                 {fallbackTitle}
               </span>
             </div>

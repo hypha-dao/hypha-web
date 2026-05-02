@@ -108,7 +108,7 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, overlayVisible, toggle, openAiPanel } = useAiPanel();
+  const { open, overlayVisible, toggle } = useAiPanel();
   const t = useTranslations('AiPanel');
   const isSpace = useIsSpaceContext();
 
@@ -118,9 +118,8 @@ export function AiSidebarTrigger() {
     <button
       type="button"
       onClick={toggle}
-      onMouseEnter={!open ? openAiPanel : undefined}
       aria-expanded={open && overlayVisible}
-      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-accent-9 text-accent-contrast shadow-sm transition-colors hover:bg-accent-10"
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={t('openPanel')}
       aria-label={t('openPanel')}
     >
