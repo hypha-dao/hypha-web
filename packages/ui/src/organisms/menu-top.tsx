@@ -69,7 +69,7 @@ export const MenuTop = ({
     <header
       ref={headerRef}
       className={clsx(
-        'relative flex h-[65px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
+        'relative flex h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
         'bg-background-2 px-4 py-3 z-30',
         /*
          * Span the flex gap between SidebarInset and fixed side rails (human/AI panels).
