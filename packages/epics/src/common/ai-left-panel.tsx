@@ -8,7 +8,6 @@ import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
-  HardDrive,
   HandCoins,
   Coins,
   FileCheck2,
@@ -49,6 +48,30 @@ type ChatUIMessage = {
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
 };
+
+type MemoryIconProps = {
+  className?: string;
+};
+
+function MemoryIcon({ className }: MemoryIconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.75"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M3.5 3.25v9.5" />
+      <path d="M6.5 3.25v9.5" />
+      <path d="M9.5 3.25v9.5" />
+      <path d="M12.25 3.25l2.75 9.5" />
+    </svg>
+  );
+}
 
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
 const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
@@ -181,7 +204,7 @@ export function AiLeftPanel() {
       {
         key: 'memory',
         label: 'Memory',
-        icon: HardDrive,
+        icon: MemoryIcon,
         href: `/${lang}/dho/${spaceSlug}/memory`,
         active: isSectionActive('memory'),
       },
