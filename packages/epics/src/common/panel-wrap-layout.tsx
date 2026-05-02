@@ -120,7 +120,7 @@ export function AiSidebarTrigger() {
       onClick={toggle}
       onMouseEnter={!open ? openAiPanel : undefined}
       aria-expanded={open && overlayVisible}
-      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-accent-9 text-accent-contrast shadow-sm transition-colors hover:bg-accent-10"
       title={t('openPanel')}
       aria-label={t('openPanel')}
     >
