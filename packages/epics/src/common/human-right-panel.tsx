@@ -1835,7 +1835,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   return (
     <>
-      <SidebarHeader className="bg-background-2 p-0">
+      <SidebarHeader className="bg-background-2 gap-0 p-0">
         <HumanChatPanelHeader
           title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
           onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
