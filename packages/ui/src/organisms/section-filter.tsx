@@ -44,7 +44,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
             <Input
               className="w-full"
               placeholder={searchPlaceholder}
-              leftIcon={<SearchIcon size="16px" />}
+              leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
               onChange={(e) => onChangeSearch?.(e.target.value)}
             />
           ) : null}
@@ -74,7 +74,9 @@ export const SectionFilter: FC<SectionFilterProps> = ({
                 <Input
                   className="w-full"
                   placeholder={searchPlaceholder}
-                  leftIcon={<SearchIcon size="16px" />}
+                  leftIcon={
+                    <SearchIcon className="text-accent-9" size="16px" />
+                  }
                   onChange={(e) => onChangeSearch?.(e.target.value)}
                 />
               ) : null}
