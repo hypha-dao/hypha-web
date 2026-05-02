@@ -38,7 +38,7 @@ export function HumanChatPanelHeader({
   const displayDescription = description;
 
   return (
-    <div className="flex min-h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border bg-background-2 px-4 py-3">
+    <div className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border bg-background-2 px-4 py-3">
       <div className="flex shrink-0 items-center gap-1">
         {onBack ? (
           <button
