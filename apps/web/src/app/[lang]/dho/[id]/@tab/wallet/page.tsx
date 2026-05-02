@@ -1,7 +1,7 @@
 import { Locale } from '@hypha-platform/i18n';
 import { SpaceTabAccessWrapper } from '@hypha-platform/epics';
 import { TabScreenTitle } from '../_components/tab-screen-title';
-import { WalletTabs } from '../_components/wallet-tabs';
+import { WalletTabs } from '../../_components/wallet-tabs';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
