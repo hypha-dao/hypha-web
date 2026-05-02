@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import {
   Space,
   isSpaceArchived,
@@ -10,10 +11,12 @@ import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
 } from '@hypha-platform/epics';
+import { Button } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { SpaceVisualization } from './space-visualization';
 
 type EcosystemNavigationMainPanelProps = {
@@ -121,12 +124,7 @@ export function EcosystemNavigationMainPanel({
                   <SpaceVisualization
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
-                    lang={lang}
-                    actionLabels={{
-                      addSpace: t('visibleSpaces.addSpace'),
-                      visitSpace: t('visibleSpaces.visitSpace'),
-                    }}
-                    enableHoverActions
+                    enableHoverActions={false}
                   />
                 </div>
               ) : (
@@ -159,6 +157,10 @@ export function EcosystemNavigationMainPanel({
     ],
     [currentSpace?.id, hierarchyData, lang, t],
   );
+  const currentSpaceSlug = currentSpace?.slug ?? daoSlug;
+  const currentSpaceTitle = currentSpace?.title ?? daoSlug;
+  const visitSpaceHref = getDhoPathAgreements(lang, currentSpaceSlug);
+  const addSpaceHref = `/${lang}/dho/${currentSpaceSlug}/space/create`;
 
   return (
     <section className="w-full py-0">
@@ -175,6 +177,25 @@ export function EcosystemNavigationMainPanel({
             resolvedTheme === 'dark' ? 'bg-background-2' : 'bg-neutral-2/85'
           }
           visualizationClassName="min-h-0"
+          afterTabsContent={
+            <div className="flex flex-col items-center gap-3 pt-2">
+              <div className="text-4 font-semibold tracking-tight text-foreground">
+                {currentSpaceTitle}
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Link href={visitSpaceHref}>
+                  <Button variant="outline" colorVariant="neutral">
+                    {t('visibleSpaces.visitSpace')}
+                  </Button>
+                </Link>
+                <Link href={addSpaceHref}>
+                  <Button variant="default" colorVariant="accent">
+                    {t('visibleSpaces.addSpace')}
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          }
         />
       )}
     </section>
