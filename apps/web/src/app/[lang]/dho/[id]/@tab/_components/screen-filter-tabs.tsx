@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 type ScreenFilterTabItem = {
   value: string;
   label: string;
+  count?: number | null;
 };
 
 type ScreenFilterTabsProps = {
@@ -47,7 +48,14 @@ export function ScreenFilterTabs({
       <TabsList triggerVariant="switch" className="w-fit">
         {items.map((item) => (
           <TabsTrigger key={item.value} value={item.value} variant="switch">
-            {item.label}
+            <span className="inline-flex items-center gap-1">
+              <span>{item.label}</span>
+              {typeof item.count === 'number' && Number.isFinite(item.count) ? (
+                <span className="text-xs text-muted-foreground">
+                  ({Intl.NumberFormat().format(item.count)})
+                </span>
+              ) : null}
+            </span>
           </TabsTrigger>
         ))}
       </TabsList>
