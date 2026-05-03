@@ -10,12 +10,7 @@ import {
   UserAssetsSection,
   UserTransactionsSection,
 } from '@hypha-platform/epics';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@hypha-platform/ui/server';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 
 type MyWalletTabsProps = {
   lang: Locale;
@@ -66,7 +61,7 @@ export function MyWalletTabs({ lang }: MyWalletTabsProps) {
         </TabsList>
       </div>
 
-      <TabsContent value="wallet" className="mt-0" forceMount>
+      <TabsContent value="wallet" className="mt-0">
         <UserAssetsSection
           personSlug={person.slug}
           basePath={basePath}
@@ -74,11 +69,11 @@ export function MyWalletTabs({ lang }: MyWalletTabsProps) {
         />
       </TabsContent>
 
-      <TabsContent value="transactions" className="mt-0" forceMount>
+      <TabsContent value="transactions" className="mt-0">
         <UserTransactionsSection personSlug={person.slug} />
       </TabsContent>
 
-      <TabsContent value="rewards" className="mt-0" forceMount>
+      <TabsContent value="rewards" className="mt-0">
         <PendingRewardsSection person={person} isMyProfile />
       </TabsContent>
     </Tabs>
