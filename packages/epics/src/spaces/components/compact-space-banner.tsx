@@ -58,7 +58,6 @@ type CompactSpaceBannerCommon = {
   descriptionLabel: string;
   footerTrailing?: React.ReactNode;
   className?: string;
-  collapseProgress?: number;
 };
 
 export type CompactSpaceBannerWithStatsProps = CompactSpaceBannerCommon & {
@@ -99,13 +98,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     descriptionLabel,
     footerTrailing,
     className,
-    collapseProgress = 0,
   } = props;
-  const clampedCollapseProgress = Math.min(1, Math.max(0, collapseProgress));
-  const detailsOpacity = Math.max(0, 1 - clampedCollapseProgress * 1.35);
-  const footerOpacity = Math.max(0, 1 - clampedCollapseProgress * 1.55);
-  const headerScale = 1 - clampedCollapseProgress * 0.05;
-  const headerTranslateY = -clampedCollapseProgress * 8;
   const showSpaceStats = isSpaceWithStats(props);
   const footerLeading = !showSpaceStats
     ? (props as CompactSpaceBannerProfileProps).footerLeading
@@ -232,19 +225,8 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
 
       <div className="relative z-10 flex flex-col gap-5">
         {/* Row 1: avatar + title/links — avatar size matches PR #2165 */}
-        <div
-          className="flex items-start gap-6 transition-transform duration-200 ease-out"
-          style={{
-            transform: `translate3d(0, ${headerTranslateY}px, 0) scale(${headerScale})`,
-            transformOrigin: 'top left',
-          }}
-        >
-          <Avatar
-            className={cn(
-              COMPACT_SPACE_BANNER_AVATAR_CLASSNAME,
-              'transition-transform duration-200 ease-out',
-            )}
-          >
+        <div className="flex items-start gap-6">
+          <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
             <AvatarImage
               src={safeLogoSrc}
               alt={logoAlt}
@@ -262,16 +244,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               {title}
             </h1>
             {safeLinks.length > 0 ? (
-              <div
-                className="flex flex-wrap gap-x-5 gap-y-2 transition-[opacity,transform] duration-200 ease-out"
-                style={{
-                  opacity: detailsOpacity,
-                  transform: `translate3d(0, ${
-                    clampedCollapseProgress * -6
-                  }px, 0)`,
-                  pointerEvents: detailsOpacity < 0.08 ? 'none' : undefined,
-                }}
-              >
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
                 {safeLinks.map((link, index) => (
                   <a
                     key={`${link}_${index}`}
@@ -302,14 +275,8 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
             tabIndex={0}
             className={cn(
               DESCRIPTION_SCROLL_BOX,
-              'outline-none transition-[opacity,transform,max-height] duration-200 ease-out focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+              'outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             )}
-            style={{
-              opacity: detailsOpacity,
-              transform: `translate3d(0, ${clampedCollapseProgress * -8}px, 0)`,
-              maxHeight: `${Math.max(0, 4 - clampedCollapseProgress * 3)}lh`,
-              pointerEvents: detailsOpacity < 0.08 ? 'none' : undefined,
-            }}
           >
             <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
               {description}
@@ -319,18 +286,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
 
         {/* Hairline + metadata: one flex item so gap-5 does not double-space above the strip */}
         {footerLeading || showSpaceStats || footerTrailing ? (
-          <div
-            className="flex flex-col transition-[opacity,transform,max-height] duration-200 ease-out"
-            style={{
-              opacity: footerOpacity,
-              transform: `translate3d(0, ${
-                clampedCollapseProgress * -10
-              }px, 0)`,
-              maxHeight: footerOpacity > 0 ? '14rem' : '0rem',
-              overflow: 'hidden',
-              pointerEvents: footerOpacity < 0.08 ? 'none' : undefined,
-            }}
-          >
+          <div className="flex flex-col">
             <div
               className="h-px w-full shrink-0 bg-white/12"
               role="presentation"

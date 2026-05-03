@@ -1,23 +1,22 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import {
   STICKY_SPACE_CHROME_AVATAR_CLASSNAME,
   STICKY_SPACE_CHROME_TITLE_CLASSNAME,
-  useMainColumnScrollY,
+  subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
 
 const STICKY_APPEAR_OFFSET_PX = 0;
-const STICKY_COLLAPSE_DISTANCE_PX = 120;
-const STICKY_HYSTERESIS_PX = 0.14;
+const STICKY_HYSTERESIS_PX = 16;
 
 export type DhoStickySpaceChromeProps = {
-  renderBanner: (collapseProgress: number) => React.ReactNode;
-  renderActions?: (variant: 'flow' | 'sticky') => React.ReactNode;
-  renderTabs?: (variant: 'flow' | 'sticky') => React.ReactNode;
+  banner: React.ReactNode;
+  actionsSlot: React.ReactNode;
   title: string;
   logoUrl: string;
   logoAlt: string;
@@ -61,20 +60,24 @@ function useMenuTopOffsetPx(): number {
  * lift state above the portaled subtree if that becomes a problem.
  */
 export function DhoStickySpaceChrome({
-  renderBanner,
-  renderActions,
-  renderTabs,
+  banner,
+  actionsSlot,
   title,
   logoUrl,
   logoAlt,
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
   const menuTopPx = useMenuTopOffsetPx();
-  const mainScrollY = useMainColumnScrollY();
   const { resolvedTheme } = useTheme();
   /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
   const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
-  const [collapseProgress, setCollapseProgress] = React.useState(0);
+
+  const [flowActionsEl, setFlowActionsEl] =
+    React.useState<HTMLDivElement | null>(null);
+  const [stickyActionsEl, setStickyActionsEl] =
+    React.useState<HTMLDivElement | null>(null);
+  const [hasActionsContent, setHasActionsContent] = React.useState(false);
+
   const [stuck, setStuck] = React.useState(false);
   const stuckRef = React.useRef(false);
 
@@ -88,30 +91,17 @@ export function DhoStickySpaceChrome({
     const tick = () => {
       raf = 0;
       if (!mq.matches) {
-        setCollapseProgress(0);
         if (stuckRef.current) {
           stuckRef.current = false;
           setStuck(false);
         }
         return;
       }
-
       const bannerBottom = sentinel.getBoundingClientRect().bottom;
-      const appearAt = menuTopPx + STICKY_APPEAR_OFFSET_PX;
-      const nextProgress = Math.min(
-        1,
-        Math.max(
-          0,
-          1 - (bannerBottom - appearAt) / STICKY_COLLAPSE_DISTANCE_PX,
-        ),
-      );
-      setCollapseProgress((prev) =>
-        Math.abs(prev - nextProgress) < 0.01 ? prev : nextProgress,
-      );
-
       let next = stuckRef.current;
-      if (!next && nextProgress >= 1 - STICKY_HYSTERESIS_PX) next = true;
-      if (next && nextProgress <= 1 - STICKY_HYSTERESIS_PX * 2) next = false;
+      const appearAt = menuTopPx + STICKY_APPEAR_OFFSET_PX;
+      if (!next && bannerBottom <= appearAt - 1) next = true;
+      if (next && bannerBottom >= appearAt + STICKY_HYSTERESIS_PX) next = false;
       if (next !== stuckRef.current) {
         stuckRef.current = next;
         setStuck(next);
@@ -125,23 +115,52 @@ export function DhoStickySpaceChrome({
 
     tick();
     mq.addEventListener('change', onScroll);
+    const unsubscribeScroll = subscribeMainColumnScroll(onScroll);
     window.addEventListener('resize', onScroll);
     return () => {
       mq.removeEventListener('change', onScroll);
+      unsubscribeScroll();
       window.removeEventListener('resize', onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [mainScrollY, menuTopPx]);
+  }, [menuTopPx]);
 
   const logoSrc = logoUrl || defaultLogoSrc;
+
+  const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
   const isDark = resolvedTheme === 'dark';
-  const stickyOpacity = collapseProgress;
-  const stickyTranslateY = (1 - collapseProgress) * -10;
-  const stickyShadowOpacity = 0.18 + collapseProgress * 0.14;
-  const compactChromeInteractive = stuck;
-  const hasActions = Boolean(renderActions);
-  const hasTabs = Boolean(renderTabs);
-  const flowAuxOpacity = Math.max(0, 1 - collapseProgress * 1.45);
+
+  React.useEffect(() => {
+    const hasRenderableContent = (el: HTMLDivElement | null) => {
+      if (!el) return false;
+      return Array.from(el.childNodes).some((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) return true;
+        if (node.nodeType === Node.TEXT_NODE) {
+          return Boolean(node.textContent?.trim());
+        }
+        return false;
+      });
+    };
+
+    const updateHasActionsContent = () => {
+      const next =
+        hasRenderableContent(flowActionsEl) ||
+        hasRenderableContent(stickyActionsEl);
+      setHasActionsContent((prev) => (prev === next ? prev : next));
+    };
+
+    updateHasActionsContent();
+
+    const observer = new MutationObserver(updateHasActionsContent);
+    if (flowActionsEl) {
+      observer.observe(flowActionsEl, { childList: true, subtree: true });
+    }
+    if (stickyActionsEl) {
+      observer.observe(stickyActionsEl, { childList: true, subtree: true });
+    }
+
+    return () => observer.disconnect();
+  }, [flowActionsEl, stickyActionsEl]);
 
   return (
     <>
@@ -156,15 +175,13 @@ export function DhoStickySpaceChrome({
           'overflow-hidden border-b border-border/75',
           'supports-[backdrop-filter]:backdrop-blur-md',
           'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10',
-          'transition-[opacity,transform,box-shadow] duration-200 ease-out motion-reduce:transition-none',
-          compactChromeInteractive
-            ? 'pointer-events-auto'
-            : 'pointer-events-none',
+          'transition-[opacity,transform,box-shadow] duration-250 ease-linear motion-reduce:transition-none',
+          stuck
+            ? 'pointer-events-auto translate-y-0 opacity-100'
+            : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
         )}
         style={{
           top: 'var(--menu-top-height, 70px)',
-          opacity: stickyOpacity,
-          transform: `translate3d(0, ${stickyTranslateY}px, 0)`,
           backgroundColor: isDark
             ? 'rgba(7,10,16,0.92)'
             : 'rgba(248,250,252,0.94)',
@@ -172,15 +189,13 @@ export function DhoStickySpaceChrome({
             ? 'linear-gradient(to right, rgba(0,0,0,0.58), rgba(0,0,0,0.42), rgba(0,0,0,0.5)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 14%, transparent), transparent 55%)'
             : 'linear-gradient(to right, rgba(255,255,255,0.78), rgba(255,255,255,0.64), rgba(255,255,255,0.74)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 11%, transparent), transparent 58%)',
           boxShadow: isDark
-            ? `0 10px 28px -18px rgba(0,0,0,${
-                0.34 + collapseProgress * 0.26
-              }), inset 0 1px 0 rgba(255,255,255,0.06)`
-            : `0 10px 24px -20px rgba(15,23,42,${stickyShadowOpacity}), inset 0 1px 0 rgba(255,255,255,0.78)`,
+            ? '0 10px 28px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)'
+            : '0 10px 24px -20px rgba(15,23,42,0.26), inset 0 1px 0 rgba(255,255,255,0.78)',
         }}
-        aria-hidden={!compactChromeInteractive}
+        aria-hidden={!stuck}
       >
-        <div className="mx-auto flex max-w-container-2xl flex-col px-4 sm:px-6 md:px-8">
-          <div className="flex min-h-11 items-center gap-3 py-2.5 sm:gap-4 md:min-h-[52px] md:py-3">
+        <div className="mx-auto flex min-h-11 max-w-container-2xl items-center gap-3 px-4 py-2.5 sm:px-6 md:min-h-[52px] md:py-3 md:px-8">
+          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
             <Avatar className={STICKY_SPACE_CHROME_AVATAR_CLASSNAME}>
               <AvatarImage
                 src={logoSrc}
@@ -198,23 +213,19 @@ export function DhoStickySpaceChrome({
             >
               {title}
             </p>
-            {hasActions ? (
-              <div className="flex shrink-0 flex-nowrap items-center gap-2">
-                {renderActions?.('sticky')}
-              </div>
-            ) : null}
           </div>
-          {hasTabs ? (
-            <div className="border-t border-border/65 py-1.5">
-              {renderTabs?.('sticky')}
-            </div>
-          ) : null}
+          <div
+            ref={setStickyActionsEl}
+            className="flex shrink-0 flex-nowrap items-center gap-2"
+          />
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div
+        className={cn('flex flex-col', hasActionsContent ? 'gap-4' : 'gap-0')}
+      >
         <div className="relative">
-          {renderBanner(collapseProgress)}
+          {banner}
           <div
             ref={bannerBottomSentinelRef}
             className="pointer-events-none absolute bottom-0 left-0 h-px w-full opacity-0"
@@ -222,29 +233,26 @@ export function DhoStickySpaceChrome({
           />
         </div>
 
-        {hasActions ? (
-          <div
-            className="flex justify-end gap-2 px-0 transition-opacity duration-200 ease-out md:min-h-[var(--secondary-chrome-actions-row-height,52px)] md:flex-nowrap md:items-center"
-            style={{
-              opacity: flowAuxOpacity,
-              pointerEvents: flowAuxOpacity < 0.08 ? 'none' : undefined,
-            }}
-          >
-            {renderActions?.('flow')}
-          </div>
-        ) : null}
-        {hasTabs ? (
-          <div
-            className="transition-opacity duration-200 ease-out"
-            style={{
-              opacity: flowAuxOpacity,
-              pointerEvents: flowAuxOpacity < 0.08 ? 'none' : undefined,
-            }}
-          >
-            {renderTabs?.('flow')}
-          </div>
-        ) : null}
+        <div
+          ref={setFlowActionsEl}
+          className={cn(
+            /* Same min-height as HumanChatPanelTabs so bottom borders align with chat panel */
+            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center',
+            hasActionsContent &&
+              'md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
+            stuck && 'pointer-events-none invisible opacity-0',
+          )}
+          style={
+            stuck
+              ? { minHeight: 'var(--secondary-chrome-actions-row-height,52px)' }
+              : undefined
+          }
+        />
       </div>
+
+      {actionsPortalTarget
+        ? createPortal(actionsSlot, actionsPortalTarget)
+        : null}
     </>
   );
 }
