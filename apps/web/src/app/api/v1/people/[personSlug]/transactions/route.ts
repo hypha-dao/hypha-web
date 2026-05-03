@@ -19,6 +19,10 @@ import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
 import { findAllTransfers } from '@hypha-platform/core/server';
 
+const isValidErc20Address = (value: unknown): value is `0x${string}` => {
+  return typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/.test(value);
+};
+
 /**
  * A route to get ERC20 transfers for a user.
  *
@@ -107,15 +111,14 @@ export async function GET(
 
     const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
-        const tokenMeta = await getTokenMeta(
-          transfer.token as `0x${string}`,
-          dbTokens,
-        );
+        // Alchemy sometimes returns transfers without a resolved contract address.
+        // Calling `getTokenMeta('')` would throw and fail the entire request.
+        if (!isValidErc20Address(transfer.token)) return null;
+
+        const tokenMeta = await getTokenMeta(transfer.token, dbTokens);
         const name = tokenMeta.name || 'Unnamed';
         const symbol = tokenMeta.symbol || 'UNKNOWN';
-        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
-          return null;
-        }
+        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) return null;
 
         const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
