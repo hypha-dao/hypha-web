@@ -64,6 +64,9 @@ export function AiPanelMessageBubble({
       (p): p is ToolPart =>
         typeof p.type === 'string' && p.type.startsWith('tool-'),
     ) ?? [];
+  const visibleToolParts = toolParts.filter(
+    (part) => part.state !== 'output-available' || !textContent.trim(),
+  );
 
   const handleCopy = useCallback(async () => {
     if (!textContent) return;
@@ -150,7 +153,7 @@ export function AiPanelMessageBubble({
   return (
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
       {!isUser && (
-        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary">
+        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary">
           <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
         </div>
       )}
@@ -192,9 +195,9 @@ export function AiPanelMessageBubble({
               )}
             </div>
           )}
-          {toolParts.length > 0 && (
+          {visibleToolParts.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              {toolParts.map((part) => (
+              {visibleToolParts.map((part) => (
                 <div
                   key={part.toolCallId}
                   className="rounded-lg border border-border bg-muted/50 px-2 py-1.5 text-xs"

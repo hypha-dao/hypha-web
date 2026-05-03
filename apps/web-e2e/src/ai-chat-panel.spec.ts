@@ -9,7 +9,7 @@ const EXPECTED_SUGGESTIONS = [
 ];
 
 const EXPECTED_WELCOME_MESSAGE =
-  "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.";
+  "I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.";
 
 test.describe('AI Chat Panel', () => {
   let chatPanel: AiChatPanelPage;

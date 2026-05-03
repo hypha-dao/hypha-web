@@ -116,6 +116,8 @@ export function AiLeftPanel() {
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
   );
+  const activeSpaceName =
+    activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
   const { data: allSpaces = [] } = useSWR<Space[]>(
     spaceSlug ? '/api/v1/spaces?parentOnly=false' : null,
     async (url: string) => {
@@ -728,6 +730,7 @@ export function AiLeftPanel() {
           suggestions={suggestions}
           showSuggestions={true}
           onSuggestionSelect={handleSuggestionSelect}
+          activeSpaceName={activeSpaceName}
           isStreaming={isStreaming}
         />
       </SidebarContent>
