@@ -46,6 +46,8 @@ export const SectionFilter: FC<SectionFilterProps> = ({
               placeholder={searchPlaceholder}
               leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
               onChange={(e) => onChangeSearch?.(e.target.value)}
+              // Prevent parent keyboard handlers (e.g. Radix Tabs) from hijacking typing.
+              onKeyDown={(e) => e.stopPropagation()}
             />
           ) : null}
           {children && (
@@ -78,6 +80,8 @@ export const SectionFilter: FC<SectionFilterProps> = ({
                     <SearchIcon className="text-accent-9" size="16px" />
                   }
                   onChange={(e) => onChangeSearch?.(e.target.value)}
+                  // Prevent parent keyboard handlers (e.g. Radix Tabs) from hijacking typing.
+                  onKeyDown={(e) => e.stopPropagation()}
                 />
               ) : null}
             </div>
