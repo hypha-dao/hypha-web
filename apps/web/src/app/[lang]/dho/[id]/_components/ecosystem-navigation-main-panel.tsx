@@ -248,7 +248,7 @@ export function EcosystemNavigationMainPanel({
             <div className="w-full">
               <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                 <div className="hidden xl:block" aria-hidden />
-                <div className="min-w-0 text-center text-4 font-semibold tracking-tight text-foreground xl:justify-self-center">
+                <div className="min-w-0 text-center text-4 font-semibold tracking-tight text-foreground justify-self-center">
                   {selectedSpaceTitle}
                 </div>
                 <div className="flex items-center justify-self-end gap-2">
