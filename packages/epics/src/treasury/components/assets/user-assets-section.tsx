@@ -52,10 +52,10 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
             onChange={(e) => setHideSmallBalances(e.target.checked)}
             className="h-4 w-4"
           />
-          <span>{tTreasury('hideSmallBalances')}</span>
+          <span>{tTreasury('hideSmall')}</span>
         </label>
       </SectionFilter>
-      <div className="flex gap-2 justify-end">
+      <div className="flex flex-col gap-2 justify-end sm:flex-row sm:items-center sm:justify-end w-full sm:w-auto">
         <Link
           className={!isMyProfile ? 'cursor-not-allowed' : ''}
           href={isMyProfile ? `${basePath}/actions/buy-space-tokens` : {}}
