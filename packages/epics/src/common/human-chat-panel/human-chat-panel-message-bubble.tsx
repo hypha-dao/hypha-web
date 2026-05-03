@@ -1373,9 +1373,10 @@ export function HumanChatPanelMessageBubble({
     replyTo.sourceUserId === currentUserId
       ? currentUserAvatarUrl ?? replyTo.authorAvatarUrl
       : replyPerson?.avatarUrl ?? replyTo?.authorAvatarUrl;
-  const timestamp = message.timestamp
-    ? formatTimestamp(message.timestamp, t)
-    : undefined;
+  const timestamp =
+    message.timestamp && !Number.isNaN(message.timestamp.getTime())
+      ? formatTimestamp(message.timestamp, t)
+      : undefined;
   const reactions = message.reactions ?? [];
   const isSendPendingRow = Boolean(message.sendPending);
   const canReply = Boolean(onReply) && !isSendPendingRow;
