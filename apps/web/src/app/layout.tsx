@@ -173,16 +173,16 @@ export default async function RootLayout({
                               baseRedirectPath="/my-spaces"
                               navItems={[
                                 {
-                                  label: tNav('network'),
-                                  href: `/${locale}/network`,
-                                },
-                                {
                                   label: tNav('mySpaces'),
                                   href: `/${locale}/my-spaces`,
                                 },
                                 {
                                   label: tNav('myWallet'),
                                   href: `/${locale}/my-wallet`,
+                                },
+                                {
+                                  label: tNav('network'),
+                                  href: `/${locale}/network`,
                                 },
                               ]}
                               trailingBeforeProfile={
