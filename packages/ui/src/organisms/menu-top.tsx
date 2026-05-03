@@ -72,15 +72,13 @@ export const MenuTop = ({
         'relative flex h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
         'bg-background-2 px-4 py-3 z-30',
         /*
-         * Span the flex gap between SidebarInset and fixed side rails (human/AI panels).
-         * Mirror vars come from PanelWrapLayout on `:root`; without this the rule stops at the
-         * inset edge and misses the junction with `Sidebar` border-r / border-l.
-         * Also extend past the main column scrollbar gutter (`--main-column-scrollbar-width`) so
-         * the rule meets the side panel border — same inset logic as sticky DHO chrome.
+         * Span the flex gap between SidebarInset and the fixed left rail so the underline meets
+         * the sidebar seam cleanly. The right panel draws its own matching border, which avoids
+         * a doubled or awkward underline where the main top menu and right panel meet.
          */
         'after:pointer-events-none after:absolute after:bottom-0 after:h-px after:bg-border',
         'after:left-[calc(-1_*_var(--sidebar-left-width,0px))]',
-        'after:right-[calc((-1_*_var(--sidebar-right-width,0px))_-_var(--main-column-scrollbar-width,0px))]',
+        'after:right-0',
       )}
     >
       <div
