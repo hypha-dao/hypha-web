@@ -45,10 +45,11 @@ export function EcosystemNavigationShell({
           onValueChange={onTabChange}
           className="flex min-h-0 flex-col gap-4"
         >
+          {beforeTabsContent ? (
+            <div className="w-full">{beforeTabsContent}</div>
+          ) : null}
+
           <div className="flex w-full flex-wrap items-center gap-4">
-            {beforeTabsContent ? (
-              <div className="shrink-0">{beforeTabsContent}</div>
-            ) : null}
             <TabsList triggerVariant="switch" className="w-fit shrink-0">
               {tabs.map((tab) => (
                 <TabsTrigger key={tab.value} variant="switch" value={tab.value}>
