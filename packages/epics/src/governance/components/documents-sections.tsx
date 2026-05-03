@@ -74,7 +74,7 @@ export function DocumentsSections({
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="on-voting">
+      <TabsContent value="on-voting" className="mt-0">
         <DocumentSection
           basePath={`${basePath}/proposal`}
           web3SpaceId={web3SpaceId}
@@ -86,7 +86,7 @@ export function DocumentsSections({
           pageSize={15}
         />
       </TabsContent>
-      <TabsContent value="accepted">
+      <TabsContent value="accepted" className="mt-0">
         <DocumentSection
           basePath={`${basePath}/proposal`}
           web3SpaceId={web3SpaceId}
@@ -98,7 +98,7 @@ export function DocumentsSections({
           pageSize={15}
         />
       </TabsContent>
-      <TabsContent value="rejected">
+      <TabsContent value="rejected" className="mt-0">
         <DocumentSection
           basePath={`${basePath}/proposal`}
           web3SpaceId={web3SpaceId}
