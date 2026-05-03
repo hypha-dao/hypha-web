@@ -86,6 +86,7 @@ export function HumanChatPanelMentionTab({
               const excerpt = excerptFromRoomMessage(ev);
               const senderLabel = resolveMemberLabel(senderId);
               const ts = ev.getTs();
+              const tsDate = Number.isFinite(ts) ? new Date(ts) : null;
 
               return (
                 <li key={id}>
@@ -99,12 +100,14 @@ export function HumanChatPanelMentionTab({
                         {senderLabel}
                       </span>
                       <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                        {format.dateTime(new Date(ts), {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                        {tsDate
+                          ? format.dateTime(tsDate, {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              month: 'short',
+                              day: 'numeric',
+                            })
+                          : ''}
                       </span>
                     </div>
                     <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground">
