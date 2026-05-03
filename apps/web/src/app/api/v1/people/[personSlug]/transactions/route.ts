@@ -124,16 +124,23 @@ export async function GET(
 
     const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
-        // Alchemy sometimes returns transfers without a resolved contract address.
-        // Calling `getTokenMeta('')` would throw and fail the entire request.
         const symbol = transfer.symbol || 'UNKNOWN';
-        const tokenIcon = isValidErc20Address(transfer.token)
-          ? (await getTokenMeta(transfer.token, dbTokens)).icon
-          : getIconForSymbol(symbol);
 
-        const name = isValidErc20Address(transfer.token)
-          ? (await getTokenMeta(transfer.token, dbTokens)).name || 'Unnamed'
-          : 'Unnamed';
+        let tokenIcon = getIconForSymbol(symbol);
+        let name = 'Unnamed';
+
+        if (isValidErc20Address(transfer.token)) {
+          try {
+            const tokenMeta = await getTokenMeta(transfer.token, dbTokens);
+            tokenIcon = tokenMeta.icon ?? tokenIcon;
+            name = tokenMeta.name || name;
+          } catch (e) {
+            // Token metadata calls can fail for some contracts.
+            // Don't fail the entire /transactions request because of one token.
+            tokenIcon = getIconForSymbol(symbol);
+            name = 'Unnamed';
+          }
+        }
 
         if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) return null;
 
@@ -154,7 +161,7 @@ export async function GET(
         }
 
         const memo =
-          memoMap.get(transfer.transaction_hash.toLowerCase()) || null;
+          memoMap.get(transfer.transaction_hash?.toLowerCase() || '') || null;
 
         return {
           ...transfer,
