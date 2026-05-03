@@ -76,7 +76,8 @@ function MemoryIcon({ className }: MemoryIconProps) {
 
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
 const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
-const MAX_RECENT_SPACES = 4;
+const MAX_VISIBLE_RECENT_SPACES = 4;
+const MAX_RECENT_SPACE_HISTORY = MAX_VISIBLE_RECENT_SPACES + 1;
 const MENU_BUTTON_CLASS =
   'h-10 w-full rounded-lg border border-transparent p-0 text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!rounded-lg group-data-[collapsible=icon]:!p-0';
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
@@ -251,7 +252,7 @@ export function AiLeftPanel() {
       if (Array.isArray(parsed)) {
         const cleaned = parsed
           .filter((slug): slug is string => typeof slug === 'string')
-          .slice(0, MAX_RECENT_SPACES);
+          .slice(0, MAX_RECENT_SPACE_HISTORY);
         setRecentSpaceSlugs(cleaned);
       }
     } catch (error) {
@@ -265,7 +266,7 @@ export function AiLeftPanel() {
       const next = [
         spaceSlug,
         ...prev.filter((slug) => slug !== spaceSlug),
-      ].slice(0, MAX_RECENT_SPACES);
+      ].slice(0, MAX_RECENT_SPACE_HISTORY);
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(
           RECENT_SPACE_STORAGE_KEY,
@@ -283,7 +284,7 @@ export function AiLeftPanel() {
       .map((slug) => bySlug.get(slug))
       .filter((space): space is Space => space != null)
       .filter((space) => space.slug !== spaceSlug)
-      .slice(0, MAX_RECENT_SPACES);
+      .slice(0, MAX_VISIBLE_RECENT_SPACES);
   }, [allSpaces, recentSpaceSlugs, spaceSlug]);
 
   const suggestions = useMemo(
@@ -408,7 +409,9 @@ export function AiLeftPanel() {
             spaceSettingsItem ? 'p-2 pb-4 pt-2' : 'mt-auto p-2 pb-4'
           }`}
         >
-          <SidebarGroupLabel>{tSpaces('mySpacesLabel')}</SidebarGroupLabel>
+          <SidebarGroupLabel>
+            {tSpaces('recentlyVisitedSpacesLabel')}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
               {recentSpaces.map((space) =>
