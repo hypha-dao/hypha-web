@@ -15,6 +15,7 @@ type EcosystemNavigationShellProps = {
   tabs: EcosystemNavigationTab[];
   className?: string;
   visualizationClassName?: string;
+  beforeTabsContent?: ReactNode;
   afterTabsContent?: ReactNode;
 };
 
@@ -24,6 +25,7 @@ export function EcosystemNavigationShell({
   tabs,
   className,
   visualizationClassName,
+  beforeTabsContent,
   afterTabsContent,
 }: EcosystemNavigationShellProps) {
   return (
@@ -43,17 +45,22 @@ export function EcosystemNavigationShell({
           onValueChange={onTabChange}
           className="flex min-h-0 flex-col gap-4"
         >
-          <TabsList triggerVariant="switch" className="w-fit">
-            {tabs.map((tab) => (
-              <TabsTrigger key={tab.value} variant="switch" value={tab.value}>
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="flex w-full flex-wrap items-center gap-4">
+            {beforeTabsContent ? (
+              <div className="shrink-0">{beforeTabsContent}</div>
+            ) : null}
+            <TabsList triggerVariant="switch" className="w-fit shrink-0">
+              {tabs.map((tab) => (
+                <TabsTrigger key={tab.value} variant="switch" value={tab.value}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-          {afterTabsContent ? (
-            <div className="flex justify-center">{afterTabsContent}</div>
-          ) : null}
+            {afterTabsContent ? (
+              <div className="min-w-0 flex-1">{afterTabsContent}</div>
+            ) : null}
+          </div>
 
           {tabs.map((tab) => (
             <TabsContent

@@ -20,7 +20,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { SpaceVisualization } from './space-visualization';
 import type { VisibleSpace } from './types';
-import { TabScreenTitle } from '../@tab/_components/tab-screen-title';
 
 type EcosystemNavigationMainPanelProps = {
   daoSlug: string;
@@ -224,7 +223,6 @@ export function EcosystemNavigationMainPanel({
 
   return (
     <section className="flex w-full flex-col gap-4 py-4">
-      <TabScreenTitle title="Ecosystem" count={ecosystemSpaceCount} />
       {isLoading ? (
         <div className="flex min-h-[20rem] items-center justify-center rounded-xl border border-border/60 bg-background-2 text-sm text-muted-foreground">
           {t('title')}
@@ -234,15 +232,23 @@ export function EcosystemNavigationMainPanel({
           activeTab={activeTab}
           onTabChange={setActiveTab}
           tabs={tabs}
+          beforeTabsContent={
+            <h1 className="text-7 font-semibold tracking-tight text-foreground">
+              Ecosystem
+              <span className="ml-2 text-5 font-medium text-muted-foreground">
+                | {Intl.NumberFormat().format(ecosystemSpaceCount)}
+              </span>
+            </h1>
+          }
           className={
             resolvedTheme === 'dark' ? 'bg-background-2' : 'bg-neutral-2/85'
           }
           visualizationClassName="min-h-0"
           afterTabsContent={
-            <div className="w-full max-w-5xl pt-2">
-              <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-                <div aria-hidden />
-                <div className="text-center text-4 font-semibold tracking-tight text-foreground">
+            <div className="w-full">
+              <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+                <div className="hidden xl:block" aria-hidden />
+                <div className="min-w-0 text-center text-4 font-semibold tracking-tight text-foreground xl:justify-self-center">
                   {selectedSpaceTitle}
                 </div>
                 <div className="flex items-center justify-self-end gap-2">
