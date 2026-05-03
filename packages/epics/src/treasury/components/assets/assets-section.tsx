@@ -74,7 +74,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
         leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-      <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto lg:flex-nowrap">
+      <div className="flex w-full flex-col gap-2 items-end justify-end sm:flex-row sm:items-center sm:w-auto">
         <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground">
           <Input
             type="checkbox"
