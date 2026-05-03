@@ -180,7 +180,7 @@ export function AiPanelHeader({
   );
 
   return (
-    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2rem_minmax(0,1fr)_2rem_2rem] items-center gap-3 border-b border-border bg-background-2 ps-4 pe-5 py-2">
+    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-3 border-b border-border bg-background-2 ps-4 pe-5 py-2">
       {leftSlot ? (
         <div className="flex h-8 w-8 shrink-0 items-center justify-center">
           {leftSlot}
@@ -291,10 +291,6 @@ export function AiPanelHeader({
             </div>
           )}
         </div>
-      </div>
-
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center">
-        {centerRightSlot ? centerRightSlot : <span aria-hidden />}
       </div>
 
       <div className="flex h-8 w-8 shrink-0 items-center justify-end">
