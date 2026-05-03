@@ -77,6 +77,7 @@
   "Navigation": {
     "network": "Network",
     "mySpaces": "My Spaces",
+    "myWallet": "My Wallet",
     "openMenu": "Open menu",
     "openProfileMenu": "Open profile menu",
     "closeMenu": "Close menu",
@@ -327,6 +328,8 @@
     "listIsEmpty": "List is empty"
   },
   "MembersTab": {
+    "member": "Member",
+    "space": "Space",
     "searchMembers": "Search members",
     "delegateVoting": "Delegate Voting",
     "listIsEmpty": "List is empty",
@@ -1769,7 +1772,7 @@
       "agreements": "What agreements exist in this space?",
       "structure": "Describe the structure of this space"
     },
-    "welcome": "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
+    "welcome": "Hello! I'm your {spaceName} AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
     "placeholder": "Ask Hypha AI anything...",
     "sendButton": "Send",
     "stopButton": "Stop",

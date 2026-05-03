@@ -736,6 +736,7 @@
   "Navigation": {
     "network": "Rede",
     "mySpaces": "Meus espaços",
+    "myWallet": "Minha carteira",
     "openMenu": "Abrir menu",
     "openProfileMenu": "Abrir menu do perfil",
     "closeMenu": "Fechar menu",
@@ -986,6 +987,8 @@
     "listIsEmpty": "A lista está vazia"
   },
   "MembersTab": {
+    "member": "Membro",
+    "space": "Espaco",
     "searchMembers": "Pesquisar membros",
     "delegateVoting": "Votação de delegado",
     "listIsEmpty": "A lista está vazia",
@@ -1737,7 +1740,7 @@
       "agreements": "Quais acordos existem neste espaço?",
       "structure": "Descreva a estrutura deste espaço"
     },
-    "welcome": "Olá! Sou seu assistente Hypha AI. Posso buscar detalhes do espaço como número de membros, acordos e estrutura. Pergunte-me qualquer coisa sobre o espaço que você está visualizando.",
+    "welcome": "Olá! Sou seu assistente AI de {spaceName}. Posso buscar detalhes do espaço como número de membros, acordos e estrutura. Pergunte-me qualquer coisa sobre o espaço que você está visualizando.",
     "placeholder": "Pergunte ao Hypha AI...",
     "sendButton": "Enviar",
     "stopButton": "Parar",
