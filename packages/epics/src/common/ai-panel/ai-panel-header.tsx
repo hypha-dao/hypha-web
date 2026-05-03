@@ -190,7 +190,7 @@ export function AiPanelHeader({
       )}
 
       <div className="min-w-0 px-5">
-        <div className="mx-auto flex w-full min-w-0 max-w-[18rem] justify-center transition-[max-width] duration-200 ease-out">
+        <div className="mx-auto flex w-full min-w-0 max-w-[22rem] justify-center transition-[max-width] duration-200 ease-out">
           {canOpenSpaceMenu ? (
             <DropdownMenu
               modal={false}
@@ -219,7 +219,7 @@ export function AiPanelHeader({
                       </span>
                     )}
                   </span>
-                  <span className="max-w-[12rem] truncate text-center transition-[max-width] duration-200 ease-out">
+                  <span className="max-w-[16rem] truncate text-center transition-[max-width] duration-200 ease-out">
                     {currentTitle}
                   </span>
                   <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -285,7 +285,7 @@ export function AiPanelHeader({
                   </span>
                 )}
               </span>
-              <span className="max-w-[12rem] truncate text-center transition-[max-width] duration-200 ease-out">
+              <span className="max-w-[16rem] truncate text-center transition-[max-width] duration-200 ease-out">
                 {fallbackTitle}
               </span>
             </div>
