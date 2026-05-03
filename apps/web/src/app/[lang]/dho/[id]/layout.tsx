@@ -93,6 +93,7 @@ export default async function DhoLayout({
     typeof spaceFromDb.web3SpaceId === 'number'
       ? spaceFromDb.web3SpaceId
       : undefined;
+  const spaceFlags = spaceFromDb.flags ?? [];
 
   const { members: spaceMembers, agreements: spaceAgreements } =
     await getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId);
@@ -106,7 +107,7 @@ export default async function DhoLayout({
     rawLogo && isSafeImageUrl(rawLogo) ? rawLogo : DEFAULT_SPACE_AVATAR_IMAGE;
 
   const compactBannerSpaceArchived =
-    spaceFromDb.flags.includes('archived') ||
+    spaceFlags.includes('archived') ||
     (spaceMembers !== null && spaceMembers === 0);
 
   return (
@@ -167,8 +168,8 @@ export default async function DhoLayout({
                       )}
                       <SpaceModeLabel
                         web3SpaceId={web3SpaceId}
-                        isSandbox={spaceFromDb.flags.includes('sandbox')}
-                        isDemo={spaceFromDb.flags.includes('demo')}
+                        isSandbox={spaceFlags.includes('sandbox')}
+                        isDemo={spaceFlags.includes('demo')}
                         isArchived={compactBannerSpaceArchived}
                         configPath={`${getDhoPathAgreements(
                           lang,
