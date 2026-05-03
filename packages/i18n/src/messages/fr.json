@@ -371,7 +371,7 @@
   },
   "TreasuryTab": {
     "balance": "Solde",
-    "wallet": "Wallet",
+    "wallet": "Portefeuille",
     "searchTokens": "Rechercher des tokens",
     "hideSmall": "Masquer petits",
     "hideSmallBalances": "Masquer les petits soldes",
