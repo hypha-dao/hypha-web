@@ -39,11 +39,13 @@ export function NavigationTabs({
   lang,
   id,
   coherenceEnabled = false,
+  variant = 'page',
 }: {
   lang: Locale;
   id: string;
   /** When true, show the Coherence tab (from `getEnableCoherence()` on the server). */
   coherenceEnabled?: boolean;
+  variant?: 'page' | 'sticky';
 }) {
   const t = useTranslations('Common');
   const pathname = usePathname();
@@ -68,7 +70,7 @@ export function NavigationTabs({
   }, []);
 
   const tabParallaxY =
-    preferReducedMotion || isReducedMotionPreferred()
+    variant === 'sticky' || preferReducedMotion || isReducedMotionPreferred()
       ? 0
       : clampTabParallaxScrollY(mainScrollY);
 
@@ -100,28 +102,35 @@ export function NavigationTabs({
   ];
 
   return (
-    <Tabs value={activeTab} className="mt-6 w-full md:mt-7">
+    <Tabs
+      value={activeTab}
+      className={cn('w-full', variant === 'page' ? 'mt-6 md:mt-7' : '')}
+    >
       {/*
         Radix ScrollArea's viewport forces overflow-y: hidden, which clips vertical parallax.
         Native overflow-x-auto keeps horizontal swipe/scroll; vertical padding absorbs translate.
       */}
       <div
         className={cn(
-          'mb-4 w-full overflow-x-auto overflow-y-visible overscroll-x-contain py-[18px]',
+          'w-full overflow-x-auto overflow-y-visible overscroll-x-contain',
           'touch-pan-x touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+          variant === 'page' ? 'mb-4 py-[18px]' : 'py-1',
         )}
       >
         <TabsList
-          className="flex h-10 min-w-max will-change-transform md:min-w-0 md:w-full"
+          className={cn(
+            'flex min-w-max will-change-transform md:min-w-0 md:w-full',
+            variant === 'page' ? 'h-10' : 'h-9',
+          )}
           style={
-            preferReducedMotion
+            variant === 'sticky' || preferReducedMotion
               ? undefined
               : { transform: `translate3d(0, ${tabParallaxY}px, 0)` }
           }
         >
           {tabs.map(({ name, href, title }) => (
             <TabsTrigger asChild key={name} value={name} variant="ghost">
-              <Link href={href} className="w-full" passHref>
+              <Link href={href} scroll={false} className="w-full" passHref>
                 {title}
               </Link>
             </TabsTrigger>

@@ -24,6 +24,8 @@ import { db } from '@hypha-platform/storage-postgres';
 import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
+import { getEnableCoherence } from '@hypha-platform/feature-flags';
+import { NavigationTabs } from './_components/navigation-tabs';
 
 async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
   /** null when enrichment failed — do not treat as “zero members” */
@@ -80,6 +82,7 @@ export default async function DhoLayout({
 }) {
   const { id: daoSlug, lang } = await params;
   const tCommon = await getTranslations('Common');
+  const coherenceEnabled = await getEnableCoherence();
 
   const spaceFromDb = await findSpaceBySlug({ slug: daoSlug }, { db });
   if (!spaceFromDb) {
@@ -131,7 +134,7 @@ export default async function DhoLayout({
           >
             {/* gap-4 (16px) matches mt-4 above SalesBanner; slight pt above breadcrumbs vs MenuTop */}
             <DhoStickySpaceChrome
-              banner={
+              renderBanner={(collapseProgress) => (
                 <CompactSpaceBanner
                   showSpaceStats
                   title={spaceFromDb.title}
@@ -152,6 +155,7 @@ export default async function DhoLayout({
                   descriptionLabel={tCommon('spaceBannerDescriptionAria', {
                     title: spaceFromDb.title,
                   })}
+                  collapseProgress={collapseProgress}
                   footerTrailing={
                     <>
                       {web3SpaceId !== undefined && (
@@ -179,18 +183,24 @@ export default async function DhoLayout({
                     </>
                   }
                 />
+              )}
+              renderActions={() =>
+                web3SpaceId !== undefined ? (
+                  <JoinSpace
+                    web3SpaceId={web3SpaceId}
+                    spaceId={spaceFromDb.id}
+                    hideWhenMember
+                  />
+                ) : null
               }
-              actionsSlot={
-                <>
-                  {web3SpaceId !== undefined && (
-                    <JoinSpace
-                      web3SpaceId={web3SpaceId}
-                      spaceId={spaceFromDb.id}
-                      hideWhenMember
-                    />
-                  )}
-                </>
-              }
+              renderTabs={(variant) => (
+                <NavigationTabs
+                  lang={lang}
+                  id={daoSlug}
+                  coherenceEnabled={coherenceEnabled}
+                  variant={variant === 'sticky' ? 'sticky' : 'page'}
+                />
+              )}
               title={spaceFromDb.title}
               logoUrl={accentLogoHref}
               logoAlt={spaceFromDb.title}
