@@ -623,7 +623,7 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-end border-b border-border bg-background-2 px-4 py-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-end">
+          <div className="-translate-y-px flex h-8 w-8 shrink-0 items-center justify-end">
             {triggerButton}
           </div>
         </SidebarHeader>
