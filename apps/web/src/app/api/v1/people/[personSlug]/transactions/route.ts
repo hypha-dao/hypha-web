@@ -23,6 +23,19 @@ const isValidErc20Address = (value: unknown): value is `0x${string}` => {
   return typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/.test(value);
 };
 
+const getIconForSymbol = (symbol: string) => {
+  switch (symbol.toUpperCase()) {
+    case 'HYPHA':
+      return '/placeholder/hypha-token-icon.svg';
+    case 'HVOICE':
+      return '/placeholder/voice-token-icon.svg';
+    case 'HCREDITS':
+      return '/placeholder/credits-token-icon.svg';
+    default:
+      return '/placeholder/neutral-token-icon.svg';
+  }
+};
+
 /**
  * A route to get ERC20 transfers for a user.
  *
@@ -113,18 +126,21 @@ export async function GET(
       transfers.map(async (transfer) => {
         // Alchemy sometimes returns transfers without a resolved contract address.
         // Calling `getTokenMeta('')` would throw and fail the entire request.
-        if (!isValidErc20Address(transfer.token)) return null;
+        const symbol = transfer.symbol || 'UNKNOWN';
+        const tokenIcon = isValidErc20Address(transfer.token)
+          ? (await getTokenMeta(transfer.token, dbTokens)).icon
+          : getIconForSymbol(symbol);
 
-        const tokenMeta = await getTokenMeta(transfer.token, dbTokens);
-        const name = tokenMeta.name || 'Unnamed';
-        const symbol = tokenMeta.symbol || 'UNKNOWN';
+        const name = isValidErc20Address(transfer.token)
+          ? (await getTokenMeta(transfer.token, dbTokens)).name || 'Unnamed'
+          : 'Unnamed';
+
         if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) return null;
 
         const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
         let person = null;
         let space = null;
-        const tokenIcon = tokenMeta.icon;
 
         person = await findPersonByWeb3Address(
           { address: counterpartyAddress },
