@@ -647,7 +647,7 @@ export const SpaceForm = ({
                     <UploadLeadImage
                       {...field}
                       maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                      aspectRatio={2}
+                      aspectRatio={12 / 3}
                       enableImageResizer
                       cropDialogLabels={{
                         title: tCommon('uploadLeadImage.cropTitle'),
@@ -667,8 +667,8 @@ export const SpaceForm = ({
                         'image/jpeg': [],
                         'image/webp': [],
                       }}
-                      className="w-40 min-w-40 rounded-lg border border-border bg-muted/30"
-                      imageClassName="object-contain bg-white p-1.5"
+                      className="w-full max-w-[14rem] rounded-md border border-border bg-muted/30"
+                      imageClassName="object-contain bg-white p-2"
                       defaultImage={
                         typeof values?.ecosystemLogoUrlLight === 'string'
                           ? values?.ecosystemLogoUrlLight
@@ -698,7 +698,7 @@ export const SpaceForm = ({
                     <UploadLeadImage
                       {...field}
                       maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                      aspectRatio={2}
+                      aspectRatio={12 / 3}
                       enableImageResizer
                       cropDialogLabels={{
                         title: tCommon('uploadLeadImage.cropTitle'),
@@ -718,8 +718,8 @@ export const SpaceForm = ({
                         'image/jpeg': [],
                         'image/webp': [],
                       }}
-                      className="w-40 min-w-40 rounded-lg border border-border bg-muted/30"
-                      imageClassName="object-contain bg-white p-1.5"
+                      className="w-full max-w-[14rem] rounded-md border border-border bg-muted/30"
+                      imageClassName="object-contain bg-white p-2"
                       defaultImage={
                         typeof values?.ecosystemLogoUrlDark === 'string'
                           ? values?.ecosystemLogoUrlDark
