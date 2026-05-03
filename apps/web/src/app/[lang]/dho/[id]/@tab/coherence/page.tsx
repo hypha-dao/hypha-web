@@ -2,6 +2,7 @@ import {
   COHERENCE_ORDERS,
   CoherenceBlock,
   CoherenceOrder,
+  SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
 import {
   getEnableCoherence,
@@ -44,14 +45,16 @@ export default async function CoherencePage(props: PageProps) {
       : 'all';
 
   return (
-    <div className="flex flex-col gap-4 py-4">
-      <CoherenceBlock
-        lang={lang}
-        spaceSlug={id}
-        order={order}
-        priorityFilter={priorityFilter}
-        humanChatEnabled={humanChatEnabled}
-      />
-    </div>
+    <SpaceTabAccessWrapper spaceSlug={id}>
+      <div className="flex flex-col gap-4 py-4">
+        <CoherenceBlock
+          lang={lang}
+          spaceSlug={id}
+          order={order}
+          priorityFilter={priorityFilter}
+          humanChatEnabled={humanChatEnabled}
+        />
+      </div>
+    </SpaceTabAccessWrapper>
   );
 }
