@@ -124,65 +124,76 @@ export async function GET(
 
     const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
-        const symbol = transfer.symbol || 'UNKNOWN';
+        try {
+          const symbol = transfer.symbol || 'UNKNOWN';
 
-        let tokenIcon = getIconForSymbol(symbol);
-        let name = 'Unnamed';
+          let tokenIcon = getIconForSymbol(symbol);
+          let name = 'Unnamed';
 
-        if (isValidErc20Address(transfer.token)) {
-          try {
-            const tokenMeta = await getTokenMeta(transfer.token, dbTokens);
-            tokenIcon = tokenMeta.icon ?? tokenIcon;
-            name = tokenMeta.name || name;
-          } catch (e) {
-            // Token metadata calls can fail for some contracts.
-            // Don't fail the entire /transactions request because of one token.
-            tokenIcon = getIconForSymbol(symbol);
-            name = 'Unnamed';
+          if (isValidErc20Address(transfer.token)) {
+            try {
+              const tokenMeta = await getTokenMeta(transfer.token, dbTokens);
+              tokenIcon = tokenMeta.icon ?? tokenIcon;
+              name = tokenMeta.name || name;
+            } catch (e) {
+              // Token metadata calls can fail for some contracts.
+              // Don't fail the entire /transactions request because of one token.
+              tokenIcon = getIconForSymbol(symbol);
+              name = 'Unnamed';
+            }
           }
-        }
 
-        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) return null;
+          if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) return null;
 
-        const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
-        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        let person = null;
-        let space = null;
+          const from = transfer.from || '';
+          const to = transfer.to || '';
+          if (!from || !to) return null;
 
-        person = await findPersonByWeb3Address(
-          { address: counterpartyAddress },
-          { db: getDb({ authToken }) },
-        );
-        if (!person) {
-          space = await findSpaceByAddress(
+          const isIncoming = to.toUpperCase() === address.toUpperCase();
+          const counterpartyAddress = isIncoming ? from : to;
+          if (!counterpartyAddress) return null;
+
+          let person = null;
+          let space = null;
+
+          person = await findPersonByWeb3Address(
             { address: counterpartyAddress },
             { db: getDb({ authToken }) },
           );
+          if (!person) {
+            space = await findSpaceByAddress(
+              { address: counterpartyAddress },
+              { db: getDb({ authToken }) },
+            );
+          }
+
+          const memo =
+            memoMap.get(transfer.transaction_hash?.toLowerCase() || '') || null;
+
+          return {
+            ...transfer,
+            memo,
+            person: person
+              ? {
+                  name: person.name,
+                  surname: person.surname,
+                  avatarUrl: person.avatarUrl,
+                }
+              : undefined,
+            space: space
+              ? {
+                  title: space.title,
+                  avatarUrl: space.logoUrl,
+                }
+              : undefined,
+            tokenIcon,
+            direction: isIncoming ? 'incoming' : 'outgoing',
+            counterparty: isIncoming ? 'from' : 'to',
+          };
+        } catch (e) {
+          console.error('Failed to enrich one transfer:', e);
+          return null;
         }
-
-        const memo =
-          memoMap.get(transfer.transaction_hash?.toLowerCase() || '') || null;
-
-        return {
-          ...transfer,
-          memo,
-          person: person
-            ? {
-                name: person.name,
-                surname: person.surname,
-                avatarUrl: person.avatarUrl,
-              }
-            : undefined,
-          space: space
-            ? {
-                title: space.title,
-                avatarUrl: space.logoUrl,
-              }
-            : undefined,
-          tokenIcon,
-          direction: isIncoming ? 'incoming' : 'outgoing',
-          counterparty: isIncoming ? 'from' : 'to',
-        };
       }),
     );
 
