@@ -105,6 +105,8 @@ export function AiLeftPanel() {
   const t = useTranslations('AiPanel');
   const tCommon = useTranslations('Common');
   const tCoherence = useTranslations('CoherenceTab');
+  const tSelectNavigation = useTranslations('SelectNavigationAction');
+  const tTreasury = useTranslations('TreasuryTab');
   const tSpaces = useTranslations('Spaces');
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const {
@@ -166,7 +168,7 @@ export function AiLeftPanel() {
     return [
       {
         key: 'ecosystem-navigation',
-        label: 'Ecosystem',
+        label: tSelectNavigation('ecosystem'),
         icon: Orbit,
         href: `/${lang}/dho/${spaceSlug}/ecosystem-navigation`,
         active: isSectionActive('ecosystem-navigation'),
@@ -201,20 +203,28 @@ export function AiLeftPanel() {
       },
       {
         key: 'rewards',
-        label: 'Rewards',
+        label: tTreasury('rewardsSection.title'),
         icon: HandCoins,
         href: `/${lang}/dho/${spaceSlug}/rewards`,
         active: isSectionActive('rewards'),
       },
       {
         key: 'memory',
-        label: 'Memory',
+        label: tCoherence('spaceMemory'),
         icon: MemoryIcon,
         href: `/${lang}/dho/${spaceSlug}/memory`,
         active: isSectionActive('memory'),
       },
     ];
-  }, [isSectionActive, lang, spaceSlug, tCommon, tCoherence]);
+  }, [
+    isSectionActive,
+    lang,
+    spaceSlug,
+    tCommon,
+    tCoherence,
+    tSelectNavigation,
+    tTreasury,
+  ]);
   const isSpaceSettingsActive = useMemo(
     () =>
       Boolean(spaceSlug) &&
