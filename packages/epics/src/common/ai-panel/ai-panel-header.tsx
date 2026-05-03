@@ -189,7 +189,7 @@ export function AiPanelHeader({
         <div className="h-8 w-8 shrink-0" aria-hidden />
       )}
 
-      <div className="min-w-0 px-5">
+      <div className="min-w-0 px-3">
         <div className="mx-auto flex w-full min-w-0 max-w-[22rem] justify-center transition-[max-width] duration-200 ease-out">
           {canOpenSpaceMenu ? (
             <DropdownMenu
