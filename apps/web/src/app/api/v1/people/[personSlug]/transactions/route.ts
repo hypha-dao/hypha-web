@@ -81,46 +81,63 @@ export async function GET(
         { status: 400 },
       );
     }
-    const transfers = await getTransfersByAddress({
-      address,
-      contractAddresses: token,
-      fromDate,
-      toDate,
-      fromBlock,
-      toBlock,
-      limit,
-    });
+    let transfers = [];
+    try {
+      transfers = await getTransfersByAddress({
+        address,
+        contractAddresses: token,
+        fromDate,
+        toDate,
+        fromBlock,
+        toBlock,
+        limit,
+      });
+    } catch (e) {
+      console.error('Failed to fetch transfers via Alchemy:', e);
+      transfers = [];
+    }
 
-    const dbTransfers = await findAllTransfers(
-      { db: getDb({ authToken }) },
-      {},
-    );
+    let dbTransfers = [];
+    try {
+      dbTransfers = await findAllTransfers({ db: getDb({ authToken }) }, {});
+    } catch (e) {
+      console.error('Failed to fetch DB transfers:', e);
+      dbTransfers = [];
+    }
 
     const memoMap = new Map(
-      dbTransfers.map((dbTransfer) => [
-        dbTransfer.transactionHash.toLowerCase(),
-        dbTransfer.memo,
-      ]),
+      dbTransfers
+        .map((dbTransfer) => [
+          dbTransfer.transactionHash?.toLowerCase() || '',
+          dbTransfer.memo,
+        ])
+        .filter(([hash]) => Boolean(hash)),
     );
 
-    const rawDbTokens = await findAllTokens(
-      { db: getDb({ authToken }) },
-      { search: undefined },
-    );
-    const dbTokens = rawDbTokens.map((token) => ({
-      agreementId: token.agreementId ?? undefined,
-      spaceId: token.spaceId ?? undefined,
-      name: token.name,
-      symbol: token.symbol,
-      maxSupply: token.maxSupply,
-      type: validTokenTypes.includes(token.type as TokenType)
-        ? (token.type as TokenType)
-        : 'utility',
-      iconUrl: token.iconUrl ?? undefined,
-      transferable: token.transferable,
-      isVotingToken: token.isVotingToken,
-      address: token.address ?? undefined,
-    }));
+    let dbTokens = [];
+    try {
+      const rawDbTokens = await findAllTokens(
+        { db: getDb({ authToken }) },
+        { search: undefined },
+      );
+      dbTokens = rawDbTokens.map((token) => ({
+        agreementId: token.agreementId ?? undefined,
+        spaceId: token.spaceId ?? undefined,
+        name: token.name,
+        symbol: token.symbol,
+        maxSupply: token.maxSupply,
+        type: validTokenTypes.includes(token.type as TokenType)
+          ? (token.type as TokenType)
+          : 'utility',
+        iconUrl: token.iconUrl ?? undefined,
+        transferable: token.transferable,
+        isVotingToken: token.isVotingToken,
+        address: token.address ?? undefined,
+      }));
+    } catch (e) {
+      console.error('Failed to fetch DB tokens:', e);
+      dbTokens = [];
+    }
 
     const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
@@ -214,9 +231,7 @@ export async function GET(
     }
 
     console.error('Error while fetching user transactions:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch transactions.' },
-      { status: 500 },
-    );
+    // Never crash the entire endpoint; UI expects an array.
+    return NextResponse.json([], { status: 200 });
   }
 }
