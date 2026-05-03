@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useMe } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
+import { useTranslations } from 'next-intl';
 import {
   PendingRewardsSection,
   UserAssetsSection,
@@ -19,15 +20,21 @@ export function MyWalletTabs({ lang }: MyWalletTabsProps) {
   const [activeTab, setActiveTab] = React.useState('wallet');
   const { isAuthenticated } = useAuthentication();
   const { person, isLoading } = useMe();
+  const tTreasury = useTranslations('TreasuryTab');
+  const tMyWallet = useTranslations('MyWallet');
 
   if (isLoading) {
-    return <div className="py-4 text-sm text-muted-foreground">Loading...</div>;
+    return (
+      <div className="py-4 text-sm text-muted-foreground">
+        {tMyWallet('loading')}
+      </div>
+    );
   }
 
   if (!isAuthenticated || !person?.slug) {
     return (
       <div className="py-4 text-sm text-muted-foreground">
-        Sign in to view your wallet.
+        {tMyWallet('signInToViewWallet')}
       </div>
     );
   }
@@ -43,13 +50,13 @@ export function MyWalletTabs({ lang }: MyWalletTabsProps) {
       <div className="flex w-full justify-start">
         <TabsList triggerVariant="switch" className="w-fit">
           <TabsTrigger value="wallet" variant="switch">
-            Wallet
+            {tTreasury('wallet')}
           </TabsTrigger>
           <TabsTrigger value="transactions" variant="switch">
-            Transactions
+            {tTreasury('transactions')}
           </TabsTrigger>
           <TabsTrigger value="rewards" variant="switch">
-            Rewards
+            {tTreasury('rewardsSection.title')}
           </TabsTrigger>
         </TabsList>
       </div>

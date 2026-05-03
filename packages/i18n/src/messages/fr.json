@@ -95,6 +95,10 @@
     "getStarted": "Commencer",
     "ecosystemLogo": "Logo de l’écosystème"
   },
+  "MyWallet": {
+    "loading": "Chargement...",
+    "signInToViewWallet": "Connectez-vous pour afficher votre portefeuille."
+  },
   "NotificationCentre": {
     "title": "Centre de notifications",
     "loading": {

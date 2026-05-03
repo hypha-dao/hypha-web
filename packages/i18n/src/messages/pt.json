@@ -754,6 +754,10 @@
     "getStarted": "Comece",
     "ecosystemLogo": "Logo do ecossistema"
   },
+  "MyWallet": {
+    "loading": "Carregando...",
+    "signInToViewWallet": "Faça login para ver sua carteira."
+  },
   "NotificationCentre": {
     "title": "Central de Notificações",
     "loading": {

@@ -754,6 +754,10 @@
     "getStarted": "Empezar",
     "ecosystemLogo": "Logo del ecosistema"
   },
+  "MyWallet": {
+    "loading": "Cargando...",
+    "signInToViewWallet": "Inicia sesión para ver tu billetera."
+  },
   "NotificationCentre": {
     "title": "Centro de notificaciones",
     "loading": {

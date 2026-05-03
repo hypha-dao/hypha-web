@@ -95,6 +95,10 @@
     "getStarted": "Loslegen",
     "ecosystemLogo": "Ökosystem-Logo"
   },
+  "MyWallet": {
+    "loading": "Wird geladen...",
+    "signInToViewWallet": "Melden Sie sich an, um Ihr Wallet anzuzeigen."
+  },
   "NotificationCentre": {
     "title": "Benachrichtigungszentrale",
     "loading": {

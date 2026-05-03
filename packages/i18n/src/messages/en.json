@@ -95,6 +95,10 @@
     "getStarted": "Get started",
     "ecosystemLogo": "Ecosystem Logo"
   },
+  "MyWallet": {
+    "loading": "Loading...",
+    "signInToViewWallet": "Sign in to view your wallet."
+  },
   "NotificationCentre": {
     "title": "Notification Centre",
     "loading": {
