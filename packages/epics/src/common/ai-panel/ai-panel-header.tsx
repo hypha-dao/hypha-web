@@ -180,7 +180,7 @@ export function AiPanelHeader({
   );
 
   return (
-    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2rem_minmax(0,1fr)_2rem_2rem] items-center gap-3 border-b border-border bg-background-2 px-4 py-2">
+    <div className="grid h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 grid-cols-[2rem_minmax(0,1fr)_2rem_2rem] items-center gap-3 border-b border-border bg-background-2 ps-4 pe-5 py-2">
       {leftSlot ? (
         <div className="flex h-8 w-8 shrink-0 items-center justify-center">
           {leftSlot}
@@ -190,7 +190,7 @@ export function AiPanelHeader({
       )}
 
       <div className="min-w-0 px-5">
-        <div className="mx-auto flex w-full min-w-0 max-w-[16rem] justify-center">
+        <div className="mx-auto flex w-full min-w-0 max-w-[18rem] justify-center transition-[max-width] duration-200 ease-out">
           {canOpenSpaceMenu ? (
             <DropdownMenu
               modal={false}
@@ -200,7 +200,7 @@ export function AiPanelHeader({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-colors hover:border-border/65 hover:bg-background-4/85"
+                  className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 rounded-xl border border-border/55 bg-background-3/80 px-3.5 text-sm font-semibold text-foreground shadow-[0_1px_8px_-8px_rgba(0,0,0,0.6)] transition-[background-color,border-color,box-shadow,gap,padding] duration-200 ease-out hover:border-border/65 hover:bg-background-4/85"
                   aria-label={tNavigation('mySpaces')}
                 >
                   <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
@@ -219,7 +219,7 @@ export function AiPanelHeader({
                       </span>
                     )}
                   </span>
-                  <span className="max-w-[11rem] truncate text-center">
+                  <span className="max-w-[12rem] truncate text-center transition-[max-width] duration-200 ease-out">
                     {currentTitle}
                   </span>
                   <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -268,7 +268,7 @@ export function AiPanelHeader({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/55 bg-background-3/80 px-2.5 text-sm font-semibold text-foreground/90">
+            <div className="inline-flex h-8 w-full min-w-0 items-center justify-center gap-2 rounded-xl border border-border/55 bg-background-3/80 px-3.5 text-sm font-semibold text-foreground/90 transition-[background-color,border-color,box-shadow,gap,padding] duration-200 ease-out">
               <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-border/60">
                 {currentIcon ? (
                   <>
@@ -285,7 +285,7 @@ export function AiPanelHeader({
                   </span>
                 )}
               </span>
-              <span className="max-w-[11rem] truncate text-center">
+              <span className="max-w-[12rem] truncate text-center transition-[max-width] duration-200 ease-out">
                 {fallbackTitle}
               </span>
             </div>
