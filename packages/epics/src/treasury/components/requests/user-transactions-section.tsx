@@ -34,7 +34,7 @@ export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
   const personAddress = person?.address as `0x${string}` | undefined;
 
   return (
-    <div className="flex flex-col w-full justify-center items-center gap-4">
+    <div className="flex flex-col w-full items-center justify-center gap-3">
       <SectionFilter
         label={tTreasury('transactions')}
         hasSearch

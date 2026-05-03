@@ -76,7 +76,7 @@ export const TransactionsList: FC<TransactionsListProps> = ({
       : undefined;
 
   return (
-    <div className="w-full mt-2">
+    <div className="w-full mt-1">
       {transfers.map((transfer, index) => {
         const counterpartyAddress =
           transfer.counterparty === 'from' ? transfer.from : transfer.to;
@@ -139,7 +139,7 @@ export const TransactionsList: FC<TransactionsListProps> = ({
         );
       })}
       {isLoading && (
-        <div className="w-full grid grid-cols-1 gap-2 mt-2">
+        <div className="w-full grid grid-cols-1 gap-2 mt-1">
           <TransferCard isLoading={isLoading} />
           <TransferCard isLoading={isLoading} />
           <TransferCard isLoading={isLoading} />

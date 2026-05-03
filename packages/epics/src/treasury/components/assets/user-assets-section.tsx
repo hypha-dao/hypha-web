@@ -37,7 +37,7 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
   } = useUserAssetsSection({ personSlug });
 
   const renderFilterAndButtons = () => (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
+    <div className="flex flex-col gap-2 w-full md:flex-row md:items-center md:justify-between">
       <SectionFilter
         count={totalBalance || 0}
         label={tTreasury('balance')}
@@ -78,7 +78,7 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
   );
 
   return (
-    <div className="flex flex-col w-full justify-center items-center gap-4">
+    <div className="flex flex-col w-full items-center justify-center gap-3">
       <div className="w-full">{renderFilterAndButtons()}</div>
       {filteredAssets.length === 0 && !isLoading ? (
         <Empty>

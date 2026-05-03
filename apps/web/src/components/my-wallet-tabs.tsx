@@ -45,7 +45,7 @@ export function MyWalletTabs({ lang }: MyWalletTabsProps) {
     <Tabs
       value={activeTab}
       onValueChange={setActiveTab}
-      className="flex w-full flex-col gap-4"
+      className="flex w-full flex-col gap-3"
     >
       <div className="flex w-full justify-start">
         <TabsList triggerVariant="switch" className="w-fit">

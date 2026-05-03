@@ -103,8 +103,8 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   }, [claim, waitForClaimReceipt, updatePendingRewards, updateUserAssets]);
 
   return (
-    <div className="flex flex-col w-full justify-center items-center gap-3">
-      <div className="w-full flex justify-between">
+    <div className="flex flex-col w-full items-center justify-center gap-2">
+      <div className="flex w-full items-center justify-between gap-3">
         <SectionFilter
           label={tProfile('rewards')}
           count={`${formatCurrencyValue(parsedRewardValue)} HYPHA`}
@@ -126,7 +126,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
       </div>
       <div className="w-full">
         {isLoading ? (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <div className="w-full grid grid-cols-1 gap-2 mt-1 sm:grid-cols-3">
             <AssetCard isLoading />
           </div>
         ) : !isAuthenticated ? (
@@ -134,7 +134,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
             <p>{tProfile('noRewardsFoundForUser')}</p>
           </Empty>
         ) : (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <div className="w-full grid grid-cols-1 gap-2 mt-1 sm:grid-cols-3">
             <AssetCard
               {...(hyphaTokenAsset ?? {
                 ...HYPHA_REWARDS_FALLBACK,
