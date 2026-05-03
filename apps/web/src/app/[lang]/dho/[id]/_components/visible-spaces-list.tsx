@@ -217,6 +217,10 @@ export function VisibleSpacesList({
           placeholder={t('visibleSpaces.searchSpaces')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            // Prevent parent keyboard handlers (e.g. Tabs) from hijacking typing.
+            e.stopPropagation();
+          }}
           className="flex-1"
         />
       </div>
