@@ -180,6 +180,10 @@ export default async function RootLayout({
                                   label: tNav('mySpaces'),
                                   href: `/${locale}/my-spaces`,
                                 },
+                                {
+                                  label: tNav('myWallet'),
+                                  href: `/${locale}/my-wallet`,
+                                },
                               ]}
                               trailingBeforeProfile={
                                 isLanguageSelectVisible ? (
