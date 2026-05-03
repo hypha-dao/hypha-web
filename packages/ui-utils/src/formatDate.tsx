@@ -1,40 +1,45 @@
 export const formatDate = (
   dateInput: string | number | Date,
   withTime?: boolean,
+  timeZone?: string,
 ): string => {
-  const months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-
   const date = new Date(dateInput);
 
   if (isNaN(date.getTime())) {
     throw new Error('Invalid date input');
   }
 
-  const year = date.getFullYear();
-  const monthIndex = date.getMonth();
-  const day = date.getDate();
+  const targetTimeZone =
+    timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const dateParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: targetTimeZone,
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).formatToParts(date);
 
-  let formattedDate = `${months[monthIndex]} ${day}, ${year}`;
+  const getPart = (type: 'year' | 'month' | 'day') =>
+    dateParts.find((part) => part.type === type)?.value ?? '';
+
+  let formattedDate = `${getPart('month')} ${getPart('day')}, ${getPart(
+    'year',
+  )}`;
 
   if (withTime) {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const seconds = date.getSeconds().toString().padStart(2, '0');
+    const timeParts = new Intl.DateTimeFormat('en-US', {
+      timeZone: targetTimeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).formatToParts(date);
 
-    formattedDate += ` ${hours}:${minutes}:${seconds}`;
+    const getTimePart = (type: 'hour' | 'minute' | 'second') =>
+      timeParts.find((part) => part.type === type)?.value ?? '00';
+
+    formattedDate += ` ${getTimePart('hour')}:${getTimePart(
+      'minute',
+    )}:${getTimePart('second')}`;
   }
 
   return formattedDate;

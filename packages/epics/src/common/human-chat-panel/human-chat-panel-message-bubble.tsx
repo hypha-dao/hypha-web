@@ -2,7 +2,7 @@
 
 import { Fragment, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useTimeZone, useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
 import {
   Smile,
@@ -820,18 +820,38 @@ function getEmojiOnlyJumboLayout(
  */
 function formatTimestamp(
   date: Date,
+  timeZone: string,
   t: (key: string, values?: Record<string, string>) => string,
 ): string {
-  const now = new Date();
+  const getDateParts = (value: Date) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    }).formatToParts(value);
+
+    const getPart = (type: 'year' | 'month' | 'day') =>
+      Number(parts.find((part) => part.type === type)?.value ?? '0');
+
+    return {
+      year: getPart('year'),
+      month: getPart('month'),
+      day: getPart('day'),
+    };
+  };
+
+  const nowParts = getDateParts(new Date());
+  const messageParts = getDateParts(date);
   const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
+    nowParts.year,
+    nowParts.month - 1,
+    nowParts.day,
   );
   const startOfMessageDay = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
+    messageParts.year,
+    messageParts.month - 1,
+    messageParts.day,
   );
   const dayDiff = Math.round(
     (startOfToday.getTime() - startOfMessageDay.getTime()) /
@@ -839,6 +859,7 @@ function formatTimestamp(
   );
 
   const timeStr = date.toLocaleTimeString(undefined, {
+    timeZone,
     hour: 'numeric',
     minute: '2-digit',
   });
@@ -851,9 +872,10 @@ function formatTimestamp(
   }
 
   const dateStr = date.toLocaleDateString(undefined, {
+    timeZone,
     month: 'short',
     day: 'numeric',
-    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    year: messageParts.year !== nowParts.year ? 'numeric' : undefined,
   });
   return t('timestampDate', { date: dateStr, time: timeStr });
 }
@@ -1243,6 +1265,7 @@ export function HumanChatPanelMessageBubble({
   unreadBoundary = false,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
+  const timeZone = useTimeZone();
   const format = useFormatter();
   const { client } = useMatrix();
   const bodyResolveMx = useMemo(
@@ -1375,7 +1398,7 @@ export function HumanChatPanelMessageBubble({
       : replyPerson?.avatarUrl ?? replyTo?.authorAvatarUrl;
   const timestamp =
     message.timestamp && !Number.isNaN(message.timestamp.getTime())
-      ? formatTimestamp(message.timestamp, t)
+      ? formatTimestamp(message.timestamp, timeZone, t)
       : undefined;
   const reactions = message.reactions ?? [];
   const isSendPendingRow = Boolean(message.sendPending);

@@ -1,12 +1,17 @@
 import { getRequestConfig } from 'next-intl/server';
 import { hasLocale } from 'next-intl';
+import { cookies } from 'next/headers';
 import { routing } from './routing';
+
+const TIME_ZONE_COOKIE = 'hypha-timezone';
 
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;
   const locale = hasLocale(routing.locales, requested)
     ? requested
     : routing.defaultLocale;
+  const cookieStore = await cookies();
+  const timeZone = cookieStore.get(TIME_ZONE_COOKIE)?.value ?? 'UTC';
 
   const defaultMessages = (await import('./messages/en.json')).default;
   let localeMessages: Record<string, unknown> = {};
@@ -23,6 +28,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
   return {
     locale,
     messages: deepMerge(defaultMessages, localeMessages),
+    timeZone,
   };
 });
 

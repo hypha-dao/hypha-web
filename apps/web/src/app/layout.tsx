@@ -6,7 +6,12 @@ import clsx from 'clsx';
 import type { Metadata } from 'next';
 
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import {
+  getLocale,
+  getMessages,
+  getTranslations,
+  getTimeZone,
+} from 'next-intl/server';
 
 import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
@@ -35,6 +40,7 @@ import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
 import { ConnectedLanguageSelect } from '@web/components/connected-language-select';
+import { TimeZoneSync } from '@web/components/time-zone-sync';
 import { getShowLanguageSelect } from '@hypha-platform/feature-flags';
 import ScrollUp from '@web/components/scroll-up';
 import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
@@ -103,6 +109,7 @@ export default async function RootLayout({
   const isLanguageSelectVisible = await getShowLanguageSelect();
   const locale = await getLocale();
   const messages = await getMessages();
+  const timeZone = await getTimeZone();
   const tNav = await getTranslations('Navigation');
   const tFooter = await getTranslations('Footer');
   const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
@@ -129,7 +136,12 @@ export default async function RootLayout({
         >
           <ThemeStorageNormalize />
           <EvmProvider>
-            <NextIntlClientProvider locale={locale} messages={messages}>
+            <NextIntlClientProvider
+              locale={locale}
+              messages={messages}
+              timeZone={timeZone}
+            >
+              <TimeZoneSync />
               <TooltipProvider>
                 <NotificationSubscriber
                   appId={notificationAppId}

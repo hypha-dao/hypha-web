@@ -23,7 +23,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
-import { getTranslations } from 'next-intl/server';
+import { getTimeZone, getTranslations } from 'next-intl/server';
 
 async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
   /** null when enrichment failed — do not treat as “zero members” */
@@ -80,6 +80,7 @@ export default async function DhoLayout({
 }) {
   const { id: daoSlug, lang } = await params;
   const tCommon = await getTranslations('Common');
+  const timeZone = await getTimeZone();
 
   const spaceFromDb = await findSpaceBySlug({ slug: daoSlug }, { db });
   if (!spaceFromDb) {
@@ -146,7 +147,7 @@ export default async function DhoLayout({
                   memberCount={spaceMembers}
                   agreementCount={spaceAgreements}
                   createdOnText={tCommon('createdOn', {
-                    date: formatDate(spaceFromDb.createdAt, true),
+                    date: formatDate(spaceFromDb.createdAt, true, timeZone),
                   })}
                   membersLabel={tCommon('Members')}
                   agreementsLabel={tCommon('Agreements')}

@@ -10,7 +10,7 @@ import { useSpaceMember } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useIsDelegate } from '@hypha-platform/core/client';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useTranslations, useTimeZone } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
 interface SubscriptionBadgeProps extends Omit<BadgeProps, 'isLoading'> {
@@ -33,6 +33,7 @@ export function SubscriptionBadge({
   const tCommon = useTranslations('Common');
   const tSpaces = useTranslations('Spaces');
   const format = useFormatter();
+  const timeZone = useTimeZone();
   const pathname = usePathname();
   const { payments, isLoading } = useSpacePayments({
     spaceId: BigInt(web3SpaceId),
@@ -70,6 +71,7 @@ export function SubscriptionBadge({
       month: 'short',
       day: 'numeric',
       year: 'numeric',
+      timeZone,
     });
   };
 

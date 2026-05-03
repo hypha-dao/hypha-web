@@ -10,6 +10,7 @@ import React from 'react';
 import { Button, MarkdownSuspense, Skeleton } from '@hypha-platform/ui';
 import { formatDate } from '@hypha-platform/ui-utils';
 import { PinIcon } from 'lucide-react';
+import { useTimeZone } from 'next-intl';
 
 type ChatMessageProps = {
   message: Message;
@@ -33,6 +34,7 @@ export const ChatMessage = ({
     }
     return `${person.name} ${person.surname}`;
   }, [isLoadingPerson, person]);
+  const timeZone = useTimeZone();
   const togglePinned = React.useCallback(() => {
     togglePinnedMessage(message.id);
   }, [message.id, togglePinnedMessage]);
@@ -56,7 +58,7 @@ export const ChatMessage = ({
           {message.pinned && <PinIcon size={12} />}
           <Skeleton height="12px" width="40px" loading={isLoading}>
             <div className="text-1 text-neutral-9 font-regular text-ellipsis overflow-hidden">
-              {formatDate(message.timestamp, true)}
+              {formatDate(message.timestamp, true, timeZone)}
             </div>
           </Skeleton>
         </div>

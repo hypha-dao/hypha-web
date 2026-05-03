@@ -6,7 +6,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { ExternalLink, FileIcon, Image as ImageIcon, Play } from 'lucide-react';
 import { formatDate } from '@hypha-platform/ui-utils';
 import React, { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTimeZone, useTranslations } from 'next-intl';
 
 /** Matches Human Chat image slot: `rounded-lg border border-border bg-muted/30` + object-contain preview */
 const THUMB_SHELL =
@@ -69,8 +69,9 @@ export function SpaceMemoryTimelineItem({
   openLabel,
 }: SpaceMemoryTimelineItemProps) {
   const t = useTranslations('CoherenceTab');
+  const timeZone = useTimeZone();
   const { client, isMatrixAvailable } = useMatrix();
-  const uploaded = formatDate(new Date(item.uploadedAt), true);
+  const uploaded = formatDate(new Date(item.uploadedAt), true, timeZone);
   const [imageFailed, setImageFailed] = React.useState(false);
   /** After a scaled thumbnail fails, retry full media (Synapse sometimes fails thumbnailing only). */
   const [matrixImagePhase, setMatrixImagePhase] = React.useState<
