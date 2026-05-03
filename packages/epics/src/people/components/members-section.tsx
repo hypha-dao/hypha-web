@@ -38,12 +38,20 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const [entityFilter, setEntityFilter] = useState<'member' | 'space'>(
     'member',
   );
-  const { pages, isLoading, loadMore, pagination, onUpdateSearch, searchTerm } =
-    useMembersSection({
-      useMembers,
-      spaceSlug,
-      refreshInterval,
-    });
+  const {
+    pages,
+    isLoading,
+    loadMore,
+    pagination,
+    personCount,
+    spaceCount,
+    onUpdateSearch,
+    searchTerm,
+  } = useMembersSection({
+    useMembers,
+    spaceSlug,
+    refreshInterval,
+  });
   const { space } = useSpaceBySlug(spaceSlug as string);
   const { isMember, isMemberLoading } = useSpaceMember({
     spaceId: space?.web3SpaceId as number,
@@ -71,10 +79,20 @@ export const MembersSection: FC<MemberSectionProps> = ({
         >
           <TabsList triggerVariant="switch" className="w-fit">
             <TabsTrigger value="member" variant="switch">
-              {tMembers('member')}
+              <span className="inline-flex items-center gap-1">
+                <span>{tMembers('member')}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({Intl.NumberFormat().format(personCount)})
+                </span>
+              </span>
             </TabsTrigger>
             <TabsTrigger value="space" variant="switch">
-              {tMembers('space')}
+              <span className="inline-flex items-center gap-1">
+                <span>{tMembers('space')}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({Intl.NumberFormat().format(spaceCount)})
+                </span>
+              </span>
             </TabsTrigger>
           </TabsList>
         </Tabs>

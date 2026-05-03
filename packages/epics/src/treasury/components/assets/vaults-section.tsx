@@ -116,7 +116,13 @@ export const VaultsSection: FC = () => {
     : tTreasury('vaultsSection.joinSpaceToUpdateBackingVault');
 
   if (vaults.length === 0 && !isLoading) {
-    return null;
+    return (
+      <div className="flex w-full flex-col items-center justify-center">
+        <Empty>
+          <p>{tTreasury('listIsEmpty')}</p>
+        </Empty>
+      </div>
+    );
   }
 
   // Treasury page stacks Rewards / Vaults / Balance with only `gap-6` between

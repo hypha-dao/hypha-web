@@ -35,6 +35,7 @@ import {
 } from '@hypha-platform/ui';
 
 import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
+import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { useAiPanel } from './human-chat-panel-context';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
@@ -339,7 +340,11 @@ export function AiLeftPanel() {
     (space: Space, mode: 'expanded' | 'collapsed', keyPrefix: string) => {
       const showLabel = mode === 'expanded';
       const isRecentActive = space.slug === spaceSlug;
-      const href = `/${lang}/dho/${space.slug}/agreements`;
+      const href = getDhoSpaceContextPath({
+        pathname,
+        lang,
+        spaceSlug: space.slug,
+      });
       const recentSpaceIcon = resolveSpaceDisplayLogoUrl(space);
 
       return (
@@ -392,7 +397,7 @@ export function AiLeftPanel() {
         </SidebarMenuItem>
       );
     },
-    [lang, spaceSlug],
+    [lang, pathname, spaceSlug],
   );
 
   const renderRecentSpacesSection = useCallback(

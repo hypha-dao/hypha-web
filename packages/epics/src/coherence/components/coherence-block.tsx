@@ -172,7 +172,7 @@ export function CoherenceBlock({
   );
 
   return (
-    <div className="flex flex-col gap-4 py-2">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3">
         <h1 className="text-7 font-semibold tracking-tight text-foreground">
           {t('signals')}

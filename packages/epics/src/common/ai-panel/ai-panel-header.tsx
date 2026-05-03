@@ -21,6 +21,7 @@ import {
 import { usePathname, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAiPanel } from '../human-chat-panel-context';
+import { getDhoSpaceContextPath } from '../get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
 import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
@@ -153,7 +154,11 @@ export function AiPanelHeader({
       className="rounded-lg py-1.5 hover:bg-background-4/70"
     >
       <Link
-        href={`/${lang}/dho/${space.slug}/agreements`}
+        href={getDhoSpaceContextPath({
+          pathname,
+          lang,
+          spaceSlug: space.slug,
+        })}
         className="flex min-w-0 items-center gap-2"
       >
         <span className="h-5 w-5 overflow-hidden rounded-full ring-1 ring-border/60">

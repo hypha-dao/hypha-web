@@ -1,14 +1,8 @@
-import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
-import {
-  SpacePendingRewardsSection,
-  SpaceTabAccessWrapper,
-} from '@hypha-platform/epics';
-import { Button } from '@hypha-platform/ui';
+import { SpaceTabAccessWrapper } from '@hypha-platform/epics';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { getTranslations } from 'next-intl/server';
-import { TabScreenTitle } from '../_components/tab-screen-title';
+import { RewardsMainPanel } from '../../_components/rewards-main-panel';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -17,7 +11,6 @@ type PageProps = {
 export default async function RewardsPage(props: PageProps) {
   const params = await props.params;
   const { lang, id } = params;
-  const tProfile = await getTranslations('Profile');
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
   return (
@@ -25,19 +18,11 @@ export default async function RewardsPage(props: PageProps) {
       spaceId={spaceFromDb?.web3SpaceId as number}
       spaceSlug={id}
     >
-      <div className="flex flex-col gap-4 py-4">
-        <TabScreenTitle title="Rewards" />
-        <SpacePendingRewardsSection
-          web3SpaceId={spaceFromDb?.web3SpaceId as number}
-          toolbarActions={
-            <Link
-              href={`/${lang}/dho/${id}/agreements/create/buy-hypha-tokens`}
-            >
-              <Button>{tProfile('buyHypha')}</Button>
-            </Link>
-          }
-        />
-      </div>
+      <RewardsMainPanel
+        lang={lang}
+        spaceSlug={id}
+        web3SpaceId={spaceFromDb?.web3SpaceId as number}
+      />
     </SpaceTabAccessWrapper>
   );
 }

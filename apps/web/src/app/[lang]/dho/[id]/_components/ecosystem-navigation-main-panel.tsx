@@ -10,15 +10,17 @@ import {
 import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
+  getDhoSpaceContextPath,
 } from '@hypha-platform/epics';
 import { Button } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getDhoPathAgreements } from '../@tab/agreements/constants';
+import { usePathname } from 'next/navigation';
 import { SpaceVisualization } from './space-visualization';
 import type { VisibleSpace } from './types';
+import { TabScreenTitle } from '../@tab/_components/tab-screen-title';
 
 type EcosystemNavigationMainPanelProps = {
   daoSlug: string;
@@ -77,6 +79,7 @@ export function EcosystemNavigationMainPanel({
   lang,
 }: EcosystemNavigationMainPanelProps) {
   const t = useTranslations('SelectNavigationAction');
+  const pathname = usePathname();
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
   const { space: currentSpace, isLoading: isLoadingSpace } =
@@ -98,6 +101,15 @@ export function EcosystemNavigationMainPanel({
   const currentSpaceTitle = currentSpace?.title ?? daoSlug;
   const currentSpaceSlug = currentSpace?.slug ?? daoSlug;
   const [selectedSpace, setSelectedSpace] = useState<VisibleSpace | null>(null);
+  const ecosystemSpaceCount = useMemo(() => {
+    if (!currentSpace) return 0;
+    const spacesWithCurrent = nonArchivedSpaces.some(
+      (s) => s.id === currentSpace.id,
+    )
+      ? nonArchivedSpaces
+      : [...nonArchivedSpaces, currentSpace];
+    return spacesWithCurrent.length;
+  }, [currentSpace, nonArchivedSpaces]);
 
   useEffect(() => {
     setSelectedSpace({
@@ -203,11 +215,16 @@ export function EcosystemNavigationMainPanel({
   );
   const selectedSpaceTitle = selectedSpace?.name ?? currentSpaceTitle;
   const selectedSpaceSlug = selectedSpace?.slug ?? currentSpaceSlug;
-  const visitSpaceHref = getDhoPathAgreements(lang, selectedSpaceSlug);
+  const visitSpaceHref = getDhoSpaceContextPath({
+    pathname,
+    lang,
+    spaceSlug: selectedSpaceSlug,
+  });
   const addSpaceHref = `/${lang}/dho/${selectedSpaceSlug}/space/create`;
 
   return (
-    <section className="w-full py-0">
+    <section className="flex w-full flex-col gap-4 py-4">
+      <TabScreenTitle title="Ecosystem" count={ecosystemSpaceCount} />
       {isLoading ? (
         <div className="flex min-h-[20rem] items-center justify-center rounded-xl border border-border/60 bg-background-2 text-sm text-muted-foreground">
           {t('title')}

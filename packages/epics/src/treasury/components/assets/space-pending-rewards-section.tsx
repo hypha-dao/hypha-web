@@ -32,11 +32,12 @@ const HYPHA_REWARDS_FALLBACK = {
 type SpacePendingRewardsSectionProps = {
   web3SpaceId: number;
   toolbarActions?: ReactNode;
+  onVisibleRewardCountChange?: (count: number) => void;
 };
 
 export const SpacePendingRewardsSection: FC<
   SpacePendingRewardsSectionProps
-> = ({ web3SpaceId, toolbarActions }) => {
+> = ({ web3SpaceId, toolbarActions, onVisibleRewardCountChange }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const { id: spaceSlug } = useParams<{ id: string }>();
   const { mutate } = useSWRConfig();
@@ -136,6 +137,11 @@ export const SpacePendingRewardsSection: FC<
     hasClaimed || !hasRewards || isClaiming || pendingRewards === undefined;
 
   const canClaim = isAuthenticated && isMember;
+  const visibleRewardCount = isAuthenticated && executor ? 1 : 0;
+
+  useEffect(() => {
+    onVisibleRewardCountChange?.(visibleRewardCount);
+  }, [onVisibleRewardCountChange, visibleRewardCount]);
 
   const onHandleClaim = useCallback(async () => {
     if (!canClaim || !executor) return;

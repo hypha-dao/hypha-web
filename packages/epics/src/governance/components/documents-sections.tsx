@@ -29,6 +29,9 @@ export function DocumentsSections({
     spaceSlug,
     order,
   });
+  const onVotingCount = documents.onVoting.length;
+  const acceptedCount = documents.accepted.length;
+  const rejectedCount = documents.rejected.length;
 
   const basePath = `/${lang}/dho/${spaceSlug}/agreements`;
   const createProposalPath = `${basePath}/select-create-action`;
@@ -46,13 +49,28 @@ export function DocumentsSections({
     >
       <TabsList triggerVariant="switch" className="w-fit">
         <TabsTrigger value="on-voting" variant="switch">
-          {t('onVoting')}
+          <span className="inline-flex items-center gap-1">
+            <span>{t('onVoting')}</span>
+            <span className="text-xs text-muted-foreground">
+              ({Intl.NumberFormat().format(onVotingCount)})
+            </span>
+          </span>
         </TabsTrigger>
         <TabsTrigger value="accepted" variant="switch">
-          {t('accepted')}
+          <span className="inline-flex items-center gap-1">
+            <span>{t('accepted')}</span>
+            <span className="text-xs text-muted-foreground">
+              ({Intl.NumberFormat().format(acceptedCount)})
+            </span>
+          </span>
         </TabsTrigger>
         <TabsTrigger value="rejected" variant="switch">
-          {t('rejected')}
+          <span className="inline-flex items-center gap-1">
+            <span>{t('rejected')}</span>
+            <span className="text-xs text-muted-foreground">
+              ({Intl.NumberFormat().format(rejectedCount)})
+            </span>
+          </span>
         </TabsTrigger>
       </TabsList>
 
