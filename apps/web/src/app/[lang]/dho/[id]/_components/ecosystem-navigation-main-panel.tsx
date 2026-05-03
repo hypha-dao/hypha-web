@@ -234,7 +234,7 @@ export function EcosystemNavigationMainPanel({
           tabs={tabs}
           beforeTabsContent={
             <h1 className="text-7 font-semibold tracking-tight text-foreground">
-              Ecosystem
+              {t('ecosystem')}
               <span className="ml-2 text-5 font-medium text-muted-foreground">
                 | {Intl.NumberFormat().format(ecosystemSpaceCount)}
               </span>

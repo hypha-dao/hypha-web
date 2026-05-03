@@ -144,7 +144,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       aria-label={t('spaceMemory')}
     >
       <h1 className="text-7 font-semibold tracking-tight text-foreground">
-        Memory
+        {t('spaceMemory')}
         {typeof totalCount === 'number' ? (
           <span className="ml-2 text-5 font-medium text-muted-foreground">
             | {Intl.NumberFormat().format(totalCount)}

@@ -298,6 +298,7 @@
   "SelectNavigationAction": {
     "title": "Space Navigation",
     "content": "Navigate all your spaces in a single interactive map to see how they connect to each other. Easily visit nested spaces, explore space-to-space memberships, and follow value flows across your direct ecosystem.",
+    "ecosystem": "Ecosystem",
     "tabs": {
       "nestedSpaces": "Nested Spaces",
       "spaceToSpace": "Space-to-Space",

@@ -19,11 +19,15 @@ export function RewardsMainPanel({
   web3SpaceId,
 }: RewardsMainPanelProps) {
   const tProfile = useTranslations('Profile');
+  const tTreasury = useTranslations('TreasuryTab');
   const [rewardCount, setRewardCount] = useState(0);
 
   return (
     <div className="flex flex-col gap-4 py-4">
-      <TabScreenTitle title="Rewards" count={rewardCount} />
+      <TabScreenTitle
+        title={tTreasury('rewardsSection.title')}
+        count={rewardCount}
+      />
       <SpacePendingRewardsSection
         web3SpaceId={web3SpaceId}
         onVisibleRewardCountChange={setRewardCount}
