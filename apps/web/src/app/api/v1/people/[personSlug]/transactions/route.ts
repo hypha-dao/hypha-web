@@ -9,6 +9,8 @@ import {
   validTokenTypes,
   TokenType,
 } from '@hypha-platform/core/client';
+import type { DbToken } from '@hypha-platform/core/client';
+import type { Transfer } from '@hypha-platform/core/server';
 import {
   findPersonByWeb3Address,
   findSpaceByAddress,
@@ -81,7 +83,7 @@ export async function GET(
         { status: 400 },
       );
     }
-    let transfers = [];
+    let transfers: Transfer[] = [];
     try {
       transfers = await getTransfersByAddress({
         address,
@@ -97,24 +99,33 @@ export async function GET(
       transfers = [];
     }
 
-    let dbTransfers = [];
+    let dbTransfers: Array<{
+      transactionHash: string;
+      memo: string | null;
+    }> = [];
     try {
-      dbTransfers = await findAllTransfers({ db: getDb({ authToken }) }, {});
+      const raw = await findAllTransfers({ db: getDb({ authToken }) }, {});
+      dbTransfers = raw.map((t) => ({
+        transactionHash: t.transactionHash,
+        memo: t.memo ?? null,
+      }));
     } catch (e) {
       console.error('Failed to fetch DB transfers:', e);
       dbTransfers = [];
     }
 
-    const memoMap = new Map(
-      dbTransfers
-        .map((dbTransfer) => [
-          dbTransfer.transactionHash?.toLowerCase() || '',
-          dbTransfer.memo,
-        ])
-        .filter(([hash]) => Boolean(hash)),
-    );
+    const memoEntries = dbTransfers
+      .map((dbTransfer) => {
+        const hash = dbTransfer.transactionHash?.toLowerCase() ?? '';
+        return [hash, dbTransfer.memo ?? null] as const;
+      })
+      .filter((entry) => entry[0] !== '') as Array<
+      readonly [string, string | null]
+    >;
 
-    let dbTokens = [];
+    const memoMap: Map<string, string | null> = new Map(memoEntries);
+
+    let dbTokens: DbToken[] = [];
     try {
       const rawDbTokens = await findAllTokens(
         { db: getDb({ authToken }) },
