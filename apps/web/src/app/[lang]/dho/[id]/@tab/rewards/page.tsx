@@ -27,13 +27,15 @@ export default async function RewardsPage(props: PageProps) {
     >
       <div className="flex flex-col gap-4 py-4">
         <TabScreenTitle title="Rewards" />
-        <div className="flex w-full justify-end">
-          <Link href={`/${lang}/dho/${id}/agreements/create/buy-hypha-tokens`}>
-            <Button>{tProfile('buyHypha')}</Button>
-          </Link>
-        </div>
         <SpacePendingRewardsSection
           web3SpaceId={spaceFromDb?.web3SpaceId as number}
+          toolbarActions={
+            <Link
+              href={`/${lang}/dho/${id}/agreements/create/buy-hypha-tokens`}
+            >
+              <Button>{tProfile('buyHypha')}</Button>
+            </Link>
+          }
         />
       </div>
     </SpaceTabAccessWrapper>

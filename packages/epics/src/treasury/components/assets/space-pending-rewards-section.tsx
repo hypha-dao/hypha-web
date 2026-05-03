@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
 import { SectionFilter } from '@hypha-platform/ui/server';
 import {
   usePendingRewards,
@@ -31,11 +31,12 @@ const HYPHA_REWARDS_FALLBACK = {
 
 type SpacePendingRewardsSectionProps = {
   web3SpaceId: number;
+  toolbarActions?: ReactNode;
 };
 
 export const SpacePendingRewardsSection: FC<
   SpacePendingRewardsSectionProps
-> = ({ web3SpaceId }) => {
+> = ({ web3SpaceId, toolbarActions }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const { id: spaceSlug } = useParams<{ id: string }>();
   const { mutate } = useSWRConfig();
@@ -163,22 +164,25 @@ export const SpacePendingRewardsSection: FC<
           label={tTreasury('rewardsSection.title')}
           count={`${formatCurrencyValue(parsedRewardValue)} HYPHA`}
         />
-        <Button
-          title={
-            !isAuthenticated
-              ? tTreasury('rewardsSection.signInToClaimRewards')
-              : !isMember
-              ? tTreasury('rewardsSection.onlySpaceMembersCanClaimRewards')
-              : !hasRewards
-              ? tTreasury('rewardsSection.noRewardsToClaim')
-              : ''
-          }
-          disabled={!canClaim || disableClaimButton}
-          onClick={onHandleClaim}
-        >
-          {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
-          {tTreasury('rewardsSection.claim')}
-        </Button>
+        <div className="flex items-center gap-2">
+          {toolbarActions}
+          <Button
+            title={
+              !isAuthenticated
+                ? tTreasury('rewardsSection.signInToClaimRewards')
+                : !isMember
+                ? tTreasury('rewardsSection.onlySpaceMembersCanClaimRewards')
+                : !hasRewards
+                ? tTreasury('rewardsSection.noRewardsToClaim')
+                : ''
+            }
+            disabled={!canClaim || disableClaimButton}
+            onClick={onHandleClaim}
+          >
+            {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
+            {tTreasury('rewardsSection.claim')}
+          </Button>
+        </div>
       </div>
       <div className="w-full">
         {isLoading || !executor ? (

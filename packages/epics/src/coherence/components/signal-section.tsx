@@ -14,7 +14,6 @@ import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
-import { ScreenToolbar } from '../../common/screen-toolbar';
 
 const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
   'coherence.signalProvisioningNotice';
@@ -108,29 +107,27 @@ export const SignalSection: FC<SignalSectionProps> = ({
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <ScreenToolbar
-        left={toolbarLeft}
-        center={
-          <Input
-            type="search"
-            placeholder={t('searchSignals')}
-            onChange={(event) => onUpdateSearch(event.target.value)}
-            leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-          />
-        }
-        right={
-          <Link href={createSignalHref}>
-            <Button
-              variant="default"
-              colorVariant="accent"
-              disabled={isLoading}
-            >
-              <PlusIcon />
-              {t('newSignal')}
-            </Button>
-          </Link>
-        }
-      />
+      {toolbarLeft ? <div>{toolbarLeft}</div> : null}
+      <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+        <Input
+          type="search"
+          placeholder={t('searchSignals')}
+          onChange={(event) => onUpdateSearch(event.target.value)}
+          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          className="w-full"
+        />
+        <Link href={createSignalHref} className="w-full lg:w-auto">
+          <Button
+            variant="default"
+            colorVariant="accent"
+            disabled={isLoading}
+            className="w-full lg:w-auto"
+          >
+            <PlusIcon />
+            {t('newSignal')}
+          </Button>
+        </Link>
+      </div>
 
       {pagination?.totalPages === 0 ? (
         <Empty>

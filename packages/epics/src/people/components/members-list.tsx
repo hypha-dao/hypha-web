@@ -14,6 +14,7 @@ type MembersListProps = {
   spaceSlug?: string;
   searchTerm?: string;
   refreshInterval?: number;
+  entityFilter?: 'member' | 'space';
 };
 
 export const MembersList: FC<MembersListProps> = ({
@@ -25,6 +26,7 @@ export const MembersList: FC<MembersListProps> = ({
   spaceSlug,
   searchTerm,
   refreshInterval,
+  entityFilter = 'member',
 }) => {
   const { lang } = useParams<{ lang: Locale }>();
   const { persons, spaces, isLoading } = useMembers({
@@ -35,35 +37,37 @@ export const MembersList: FC<MembersListProps> = ({
   });
   return (
     <div className="member-list grid w-full grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-      {persons?.data?.map((member) => (
-        <Link
-          href={`${basePath}/${member.slug}`}
-          key={member.slug}
-          scroll={false}
-          className="block"
-        >
-          <MemberCard
-            spaceId={spaceId}
-            minimize={minimize}
-            {...member}
-            isLoading={isLoading}
-          />
-        </Link>
-      ))}
-      {spaces.data.map((space) => (
-        <Link
-          href={`/${lang}/dho/${space.slug}/agreements`}
-          key={space.slug}
-          scroll={false}
-          className="block"
-        >
-          <SpaceMemberCard
-            hostSpaceId={spaceId}
-            space={space}
-            isLoading={isLoading}
-          />
-        </Link>
-      ))}
+      {entityFilter !== 'space' &&
+        persons?.data?.map((member) => (
+          <Link
+            href={`${basePath}/${member.slug}`}
+            key={member.slug}
+            scroll={false}
+            className="block"
+          >
+            <MemberCard
+              spaceId={spaceId}
+              minimize={minimize}
+              {...member}
+              isLoading={isLoading}
+            />
+          </Link>
+        ))}
+      {entityFilter !== 'member' &&
+        spaces.data.map((space) => (
+          <Link
+            href={`/${lang}/dho/${space.slug}/agreements`}
+            key={space.slug}
+            scroll={false}
+            className="block"
+          >
+            <SpaceMemberCard
+              hostSpaceId={spaceId}
+              space={space}
+              isLoading={isLoading}
+            />
+          </Link>
+        ))}
 
       {isLoading && (
         <>

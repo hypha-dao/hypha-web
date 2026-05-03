@@ -3,7 +3,7 @@ import { FC } from 'react';
 import { AssetsList } from './assets-list';
 import { Text } from '@radix-ui/themes';
 import { useAssetsSection } from '../../hooks/use-assets-section';
-import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
+import { SectionLoadMore } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { CopyIcon, RadiobuttonIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
@@ -18,6 +18,7 @@ import {
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
+import { SearchIcon } from 'lucide-react';
 
 type AssetSectionProps = {
   basePath: string;
@@ -63,14 +64,15 @@ export const AssetsSection: FC<AssetSectionProps> = ({
     : '';
 
   const renderFilterAndButtons = () => (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
-      <SectionFilter
-        count={totalBalance || 0}
-        label={tTreasury('balance')}
-        hasSearch
-        searchPlaceholder={tTreasury('searchTokens')}
-        onChangeSearch={setSearchTerm}
-      >
+    <div className="flex w-full flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="text-4 text-nowrap text-foreground">{totalBalance}</div>
+      <div className="flex w-full flex-col gap-3 xl:w-auto xl:flex-row xl:items-center xl:justify-end">
+        <Input
+          className="w-full xl:w-[22rem]"
+          placeholder={tTreasury('searchTokens')}
+          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
         <label className="flex items-center gap-1">
           <Input
             type="checkbox"
@@ -80,8 +82,6 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           />
           <span>{tTreasury('hideSmallBalances')}</span>
         </label>
-      </SectionFilter>
-      <div className="flex gap-2 justify-end">
         <Link
           href={`${basePath}/create/issue-new-token?hideBack=true`}
           scroll={false}

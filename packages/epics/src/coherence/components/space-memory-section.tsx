@@ -2,7 +2,7 @@
 
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
-import { Button, SectionLoadMore, Separator } from '@hypha-platform/ui';
+import { Button, SectionLoadMore } from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import React from 'react';
 import { useTranslations } from 'next-intl';
@@ -140,21 +140,25 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
 
   return (
     <section
-      className="flex w-full flex-col gap-5 border-t border-border/50 pt-10"
+      className="flex w-full flex-col gap-4 py-2"
       aria-label={t('spaceMemory')}
     >
+      <h1 className="text-7 font-semibold tracking-tight text-foreground">
+        Memory
+        {typeof totalCount === 'number' ? (
+          <span className="ml-2 text-5 font-medium text-muted-foreground">
+            | {Intl.NumberFormat().format(totalCount)}
+          </span>
+        ) : null}
+      </h1>
       <MemoryFilters
-        totalCount={totalCount}
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         newMemoryHref={newMemoryHref}
-        onRefresh={() => void refresh()}
-        isRefreshing={isLoading}
         counts={counts}
       />
-      <Separator className="bg-border/70" />
 
       {error ? (
         <div className="flex flex-col items-center gap-2 w-full px-4">

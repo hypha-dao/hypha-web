@@ -1,6 +1,6 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { Text } from '@radix-ui/themes';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
 
@@ -18,7 +18,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
-import { ScreenToolbar } from '../../common/screen-toolbar';
+import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 
 type MemberSectionProps = {
   basePath: string;
@@ -35,13 +35,15 @@ export const MembersSection: FC<MemberSectionProps> = ({
 }) => {
   const tCommon = useTranslations('Common');
   const tMembers = useTranslations('MembersTab');
+  const [entityFilter, setEntityFilter] = useState<'member' | 'space'>(
+    'member',
+  );
   const { pages, isLoading, loadMore, pagination, onUpdateSearch, searchTerm } =
     useMembersSection({
       useMembers,
       spaceSlug,
       refreshInterval,
     });
-  console.debug('MembersSection', { searchTerm });
   const { space } = useSpaceBySlug(spaceSlug as string);
   const { isMember, isMemberLoading } = useSpaceMember({
     spaceId: space?.web3SpaceId as number,
@@ -60,33 +62,47 @@ export const MembersSection: FC<MemberSectionProps> = ({
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <ScreenToolbar
-        center={
-          <Input
-            type="search"
-            placeholder={tMembers('searchMembers')}
-            onChange={(event) => onUpdateSearch(event.target.value)}
-            leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-          />
-        }
-        right={
-          <div className="flex items-center gap-2">
-            <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
-            {!isDelegate ? (
-              <Link
-                title={tooltipMessage || ''}
-                className={isDisabled ? 'cursor-not-allowed' : ''}
-                href={`${basePath}/${person?.slug}`}
-                scroll={false}
-              >
-                <Button disabled={isDisabled || isMemberLoading}>
-                  {tMembers('delegateVoting')}
-                </Button>
-              </Link>
-            ) : null}
-          </div>
-        }
-      />
+      <div className="w-full">
+        <Tabs
+          value={entityFilter}
+          onValueChange={(value) =>
+            setEntityFilter(value as 'member' | 'space')
+          }
+        >
+          <TabsList triggerVariant="switch" className="w-fit">
+            <TabsTrigger value="member" variant="switch">
+              {tMembers('member')}
+            </TabsTrigger>
+            <TabsTrigger value="space" variant="switch">
+              {tMembers('space')}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+      <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+        <Input
+          type="search"
+          placeholder={tMembers('searchMembers')}
+          onChange={(event) => onUpdateSearch(event.target.value)}
+          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          className="w-full"
+        />
+        <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
+          <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
+          {!isDelegate ? (
+            <Link
+              title={tooltipMessage || ''}
+              className={isDisabled ? 'cursor-not-allowed' : ''}
+              href={`${basePath}/${person?.slug}`}
+              scroll={false}
+            >
+              <Button disabled={isDisabled || isMemberLoading}>
+                {tMembers('delegateVoting')}
+              </Button>
+            </Link>
+          ) : null}
+        </div>
+      </div>
       {pagination?.total === 0 ? (
         <Empty>
           <p>{tMembers('listIsEmpty')}</p>
@@ -102,6 +118,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
             spaceSlug={spaceSlug}
             searchTerm={searchTerm}
             refreshInterval={refreshInterval}
+            entityFilter={entityFilter}
           />
         ))
       )}
