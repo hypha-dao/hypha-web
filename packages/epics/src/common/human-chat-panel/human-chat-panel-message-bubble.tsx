@@ -1265,7 +1265,8 @@ export function HumanChatPanelMessageBubble({
   unreadBoundary = false,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
-  const timeZone = useTimeZone();
+  const timeZone =
+    useTimeZone() ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const format = useFormatter();
   const { client } = useMatrix();
   const bodyResolveMx = useMemo(
