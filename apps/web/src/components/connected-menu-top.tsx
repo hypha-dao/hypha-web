@@ -52,15 +52,36 @@ export function ConnectedMenuTop({
     [pathname],
   );
   const isSpaceRoute = Boolean(activeSpaceSlug);
-  const { data: allSpaces = [], isLoading: isLoadingSpaces } = useSWR<Space[]>(
-    isSpaceRoute ? '/api/v1/spaces?parentOnly=false' : null,
+  const { data: activeSpace, isLoading: isLoadingActiveSpace } =
+    useSWR<Space | null>(
+      activeSpaceSlug ? `/api/v1/spaces/${activeSpaceSlug}` : null,
+      async (url: string) => {
+        const response = await fetch(url, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        });
+        if (!response.ok) {
+          console.warn('[ConnectedMenuTop] spaces fetch failed', {
+            status: response.status,
+            url,
+          });
+          return null;
+        }
+        return (await response.json()) as Space;
+      },
+    );
+  const {
+    data: organisationSpaces = [],
+    isLoading: isLoadingOrganisationSpaces,
+  } = useSWR<Space[]>(
+    activeSpaceSlug ? `/api/v1/spaces/${activeSpaceSlug}/organisation` : null,
     async (url: string) => {
       const response = await fetch(url, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
       });
       if (!response.ok) {
-        console.warn('[ConnectedMenuTop] spaces fetch failed', {
+        console.warn('[ConnectedMenuTop] organisation spaces fetch failed', {
           status: response.status,
           url,
         });
@@ -71,11 +92,14 @@ export function ConnectedMenuTop({
   );
   const rootSpace = useMemo(() => {
     if (!activeSpaceSlug) return null;
-    const activeSpace = allSpaces.find(
-      (space) => space.slug === activeSpaceSlug,
+    const activeSpaceFromOrg =
+      organisationSpaces.find((space) => space.slug === activeSpaceSlug) ??
+      null;
+    return getRootSpace(
+      activeSpace ?? activeSpaceFromOrg ?? undefined,
+      organisationSpaces,
     );
-    return getRootSpace(activeSpace, allSpaces);
-  }, [activeSpaceSlug, allSpaces]);
+  }, [activeSpace, activeSpaceSlug, organisationSpaces]);
   const rootConfigHref =
     rootSpace?.slug != null
       ? `/${lang}/dho/${rootSpace.slug}/agreements/space-configuration`
@@ -99,7 +123,8 @@ export function ConnectedMenuTop({
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
 
   const canRenderSpaceLogoNode =
-    suppressDefaultLogo && (Boolean(rootSpace) || isLoadingSpaces);
+    suppressDefaultLogo &&
+    (Boolean(rootSpace) || isLoadingActiveSpace || isLoadingOrganisationSpaces);
   const logoNode = canRenderSpaceLogoNode ? (
     rootSpace ? (
       rootHasCustomLogo && rootLogoUrl ? (
