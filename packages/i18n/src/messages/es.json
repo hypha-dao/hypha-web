@@ -1025,7 +1025,9 @@
   },
   "TreasuryTab": {
     "balance": "Balance",
+    "wallet": "Wallet",
     "searchTokens": "Buscar tokens",
+    "hideSmall": "Ocultar pequeños",
     "hideSmallBalances": "Ocultar saldos pequeños",
     "newToken": "Nuevo token",
     "depositFunds": "Depositar fondos",

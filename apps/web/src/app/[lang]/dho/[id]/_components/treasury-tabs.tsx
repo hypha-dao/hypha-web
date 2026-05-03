@@ -29,10 +29,10 @@ export function TreasuryTabs({
       onValueChange={setActiveTab}
       className="flex w-full flex-col gap-4"
     >
-      <div className="flex w-full justify-end">
+      <div className="flex w-full justify-start">
         <TabsList triggerVariant="switch" className="w-fit">
           <TabsTrigger value="balance" variant="switch">
-            {tTreasury('balance')}
+            {tTreasury('wallet')}
           </TabsTrigger>
           <TabsTrigger value="transactions" variant="switch">
             {tTreasury('transactions')}

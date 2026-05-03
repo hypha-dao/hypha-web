@@ -64,23 +64,25 @@ export const AssetsSection: FC<AssetSectionProps> = ({
     : '';
 
   const renderFilterAndButtons = () => (
-    <div className="flex w-full flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-      <div className="text-4 text-nowrap text-foreground">{totalBalance}</div>
-      <div className="flex w-full flex-col gap-3 xl:w-auto xl:flex-row xl:items-center xl:justify-end">
-        <Input
-          className="w-full xl:w-[22rem]"
-          placeholder={tTreasury('searchTokens')}
-          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <label className="flex items-center gap-1">
+    <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+      <div className="shrink-0 whitespace-nowrap text-4 text-foreground">
+        {tTreasury('balance')} | {totalBalance}
+      </div>
+      <Input
+        className="w-full lg:min-w-0 lg:flex-1"
+        placeholder={tTreasury('searchTokens')}
+        leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+      <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto lg:flex-nowrap">
+        <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-foreground">
           <Input
             type="checkbox"
             checked={hideSmallBalances}
             onChange={(e) => setHideSmallBalances(e.target.checked)}
             className="h-4 w-4"
           />
-          <span>{tTreasury('hideSmallBalances')}</span>
+          <span>{tTreasury('hideSmall')}</span>
         </label>
         <Link
           href={`${basePath}/create/issue-new-token?hideBack=true`}
