@@ -15,9 +15,10 @@ import { Button } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { SpaceVisualization } from './space-visualization';
+import type { VisibleSpace } from './types';
 
 type EcosystemNavigationMainPanelProps = {
   daoSlug: string;
@@ -95,12 +96,25 @@ export function EcosystemNavigationMainPanel({
   );
   const isLoading = isLoadingSpace || isLoadingSpaces || isFilteringSpaces;
   const currentSpaceTitle = currentSpace?.title ?? daoSlug;
-  const [selectedSpaceTitle, setSelectedSpaceTitle] =
-    useState(currentSpaceTitle);
+  const currentSpaceSlug = currentSpace?.slug ?? daoSlug;
+  const [selectedSpace, setSelectedSpace] = useState<VisibleSpace | null>(null);
 
   useEffect(() => {
-    setSelectedSpaceTitle(currentSpaceTitle);
-  }, [currentSpaceTitle]);
+    setSelectedSpace({
+      id: currentSpace?.id ?? -1,
+      name: currentSpaceTitle,
+      slug: currentSpaceSlug,
+      logoUrl: currentSpace?.logoUrl,
+      parentId: currentSpace?.parentId ?? null,
+      root: true,
+    });
+  }, [
+    currentSpace?.id,
+    currentSpace?.logoUrl,
+    currentSpace?.parentId,
+    currentSpaceSlug,
+    currentSpaceTitle,
+  ]);
 
   const hierarchyData: HierarchyNode | null = useMemo(() => {
     if (!currentSpace || !filteredSpaces) return null;
@@ -118,6 +132,28 @@ export function EcosystemNavigationMainPanel({
     return buildHierarchy(rootSpace, spacesWithCurrent, accessibleSpaceIds);
   }, [currentSpace, filteredSpaces, nonArchivedSpaces]);
 
+  const handleVisibleSpacesChange = useCallback(
+    (visibleSpaces: VisibleSpace[]) => {
+      setSelectedSpace((previous) => {
+        const nextSelection = visibleSpaces[0];
+        if (!nextSelection?.slug) {
+          return previous;
+        }
+
+        if (
+          previous?.id === nextSelection.id &&
+          previous.slug === nextSelection.slug &&
+          previous.name === nextSelection.name
+        ) {
+          return previous;
+        }
+
+        return nextSelection;
+      });
+    },
+    [],
+  );
+
   const tabs = useMemo(
     () => [
       {
@@ -132,11 +168,7 @@ export function EcosystemNavigationMainPanel({
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
                     enableHoverActions={false}
-                    onVisibleSpacesChange={(visibleSpaces) => {
-                      setSelectedSpaceTitle(
-                        visibleSpaces[0]?.name ?? currentSpaceTitle,
-                      );
-                    }}
+                    onVisibleSpacesChange={handleVisibleSpacesChange}
                   />
                 </div>
               ) : (
@@ -167,11 +199,12 @@ export function EcosystemNavigationMainPanel({
         ),
       },
     ],
-    [currentSpace?.id, hierarchyData, lang, t],
+    [currentSpace?.id, handleVisibleSpacesChange, hierarchyData, t],
   );
-  const currentSpaceSlug = currentSpace?.slug ?? daoSlug;
-  const visitSpaceHref = getDhoPathAgreements(lang, currentSpaceSlug);
-  const addSpaceHref = `/${lang}/dho/${currentSpaceSlug}/space/create`;
+  const selectedSpaceTitle = selectedSpace?.name ?? currentSpaceTitle;
+  const selectedSpaceSlug = selectedSpace?.slug ?? currentSpaceSlug;
+  const visitSpaceHref = getDhoPathAgreements(lang, selectedSpaceSlug);
+  const addSpaceHref = `/${lang}/dho/${selectedSpaceSlug}/space/create`;
 
   return (
     <section className="w-full py-0">
