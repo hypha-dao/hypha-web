@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Locale } from '@hypha-platform/i18n';
 import { Space, DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
 import {
@@ -111,19 +111,6 @@ export function VisibleSpacesList({
   const t = useTranslations('SelectNavigationAction');
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    const activeElement = document.activeElement;
-    if (activeElement === searchInputRef.current) {
-      return;
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      searchInputRef.current?.focus();
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [searchQuery]);
   const buildNestedPath = (space: VisibleSpace): string => {
     if (space.root) {
       return t('visibleSpaces.nestedRoot');
@@ -227,18 +214,13 @@ export function VisibleSpacesList({
 
       <div className="flex gap-2">
         <Input
-          ref={searchInputRef}
           placeholder={t('visibleSpaces.searchSpaces')}
           value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-          }}
-          onKeyDownCapture={(e) => {
-            // Prevent parent keyboard handlers (e.g. Tabs / dialogs) from hijacking typing.
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            // Prevent parent keyboard handlers (e.g. Tabs) from hijacking typing.
             e.stopPropagation();
           }}
-          onKeyDown={(e) => e.stopPropagation()}
-          autoComplete="off"
           className="flex-1"
         />
       </div>
