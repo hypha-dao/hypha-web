@@ -1504,6 +1504,7 @@
     "ecosystemLogoLightDescription": "Envie um logo em modo claro para o seu ecossistema (PNG, JPG, GIF ou WEBP).",
     "ecosystemLogoDarkDescription": "Envie um logo em modo escuro para o seu ecossistema (PNG, JPG, GIF ou WEBP).",
     "search": "Procurar...",
+    "noSpacesFound": "Nenhum espaço encontrado",
     "addYourUrl": "Adicione seu URL",
     "exchangeDepositProposalTitleBanner": "Complete o lado deste espaço na troca",
     "exchangeDepositProposalBody": "Uma proposta de troca lista este espaço como contraparte (escrow #{escrowId}). Crie uma proposta para depositar <send></send> e receber <receive></receive> da outra parte.",

@@ -845,6 +845,7 @@
     "ecosystemLogoLightDescription": "Upload a light-mode logo for your ecosystem (PNG, JPG, GIF, or WEBP).",
     "ecosystemLogoDarkDescription": "Upload a dark-mode logo for your ecosystem (PNG, JPG, GIF, or WEBP).",
     "search": "Search...",
+    "noSpacesFound": "No spaces found",
     "addYourUrl": "Add your URL",
     "exchangeDepositProposalTitleBanner": "Complete this space's side of an exchange",
     "exchangeDepositProposalBody": "An exchange proposal lists this space as counterparty (escrow #{escrowId}). Create a proposal to deposit <send></send> and receive <receive></receive> from the other party.",

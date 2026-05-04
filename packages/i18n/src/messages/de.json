@@ -845,6 +845,7 @@
     "ecosystemLogoLightDescription": "Laden Sie ein helles Logo für Ihr Ökosystem hoch (PNG, JPG, GIF oder WEBP).",
     "ecosystemLogoDarkDescription": "Laden Sie ein dunkles Logo für Ihr Ökosystem hoch (PNG, JPG, GIF oder WEBP).",
     "search": "Suchen...",
+    "noSpacesFound": "Keine Spaces gefunden",
     "addYourUrl": "Füge deine URL hinzu",
     "exchangeDepositProposalTitleBanner": "Die Seite dieses Spaces im Tausch abschließen",
     "exchangeDepositProposalBody": "Ein Tauschvorschlag nennt diesen Space als Gegenpartei (Escrow #{escrowId}). Erstelle einen Vorschlag, um <send></send> einzuzahlen und <receive></receive> von der anderen Partei zu erhalten.",

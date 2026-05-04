@@ -845,6 +845,7 @@
     "ecosystemLogoLightDescription": "Téléversez un logo clair pour votre écosystème (PNG, JPG, GIF ou WEBP).",
     "ecosystemLogoDarkDescription": "Téléversez un logo sombre pour votre écosystème (PNG, JPG, GIF ou WEBP).",
     "search": "Rechercher...",
+    "noSpacesFound": "Aucun espace trouvé",
     "addYourUrl": "Ajoutez votre URL",
     "exchangeDepositProposalTitleBanner": "Finaliser la part de cet espace dans l'échange",
     "exchangeDepositProposalBody": "Une proposition d'échange désigne cet espace comme contrepartie (escrow #{escrowId}). Créez une proposition pour déposer <send></send> et recevoir <receive></receive> de l'autre partie.",

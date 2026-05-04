@@ -1504,6 +1504,7 @@
     "ecosystemLogoLightDescription": "Sube un logo en modo claro para tu ecosistema (PNG, JPG, GIF o WEBP).",
     "ecosystemLogoDarkDescription": "Sube un logo en modo oscuro para tu ecosistema (PNG, JPG, GIF o WEBP).",
     "search": "Buscar...",
+    "noSpacesFound": "No se encontraron espacios",
     "addYourUrl": "Añade tu URL",
     "exchangeDepositProposalTitleBanner": "Completa la parte de este espacio en el intercambio",
     "exchangeDepositProposalBody": "Una propuesta de intercambio incluye a este espacio como contraparte (escrow #{escrowId}). Crea una propuesta para depositar <send></send> y recibir <receive></receive> de la otra parte.",

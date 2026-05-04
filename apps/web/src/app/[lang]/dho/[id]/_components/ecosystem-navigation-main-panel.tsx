@@ -246,23 +246,20 @@ export function EcosystemNavigationMainPanel({
           visualizationClassName="min-h-0"
           afterTabsContent={
             <div className="w-full">
-              <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-                <div aria-hidden />
-                <div className="min-w-0 justify-self-center text-center text-4 font-semibold tracking-tight text-foreground">
+              <div className="relative flex w-full items-center justify-end gap-2">
+                <div className="pointer-events-none absolute left-1/2 min-w-0 -translate-x-1/2 text-center text-4 font-semibold tracking-tight text-foreground">
                   {selectedSpaceTitle}
                 </div>
-                <div className="flex items-center justify-self-end gap-2">
-                  <Link href={visitSpaceHref}>
-                    <Button variant="outline" colorVariant="neutral">
-                      {t('visibleSpaces.visitSpace')}
-                    </Button>
-                  </Link>
-                  <Link href={addSpaceHref}>
-                    <Button variant="default" colorVariant="accent">
-                      {t('visibleSpaces.addSpace')}
-                    </Button>
-                  </Link>
-                </div>
+                <Link href={visitSpaceHref}>
+                  <Button variant="outline" colorVariant="neutral">
+                    {t('visibleSpaces.visitSpace')}
+                  </Button>
+                </Link>
+                <Link href={addSpaceHref}>
+                  <Button variant="default" colorVariant="accent">
+                    {t('visibleSpaces.addSpace')}
+                  </Button>
+                </Link>
               </div>
             </div>
           }
