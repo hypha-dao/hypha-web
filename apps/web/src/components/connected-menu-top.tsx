@@ -139,6 +139,7 @@ export function ConnectedMenuTop({
           <img
             src={rootLogoUrl}
             alt={rootTitle || tNavigation('ecosystemLogo')}
+            loading="eager"
             className="max-h-8 w-auto object-contain"
           />
           <span className="pointer-events-none absolute bottom-0.5 right-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
