@@ -131,6 +131,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </Link>
         </Button>
       </div>
+      {provisioningNoticeLines.length > 0 ? (
+        <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
+      ) : null}
 
       {pagination?.totalPages === 0 ? (
         <Empty>
@@ -173,9 +176,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </Text>
         </SectionLoadMore>
       )}
-      {provisioningNoticeLines.length > 0 ? (
-        <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
-      ) : null}
     </div>
   );
 };
