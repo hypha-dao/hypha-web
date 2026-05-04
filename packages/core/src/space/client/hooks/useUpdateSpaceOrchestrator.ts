@@ -91,7 +91,12 @@ export const useUpdateSpaceOrchestrator = ({
 }: UseUpdateSpaceInput) => {
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
   const files = useSpaceFileUploads(authToken, async (uploadedFiles, id) => {
-    if (!uploadedFiles.leadImage && !uploadedFiles.logoUrl) {
+    if (
+      !uploadedFiles.leadImage &&
+      !uploadedFiles.logoUrl &&
+      !uploadedFiles.ecosystemLogoUrlLight &&
+      !uploadedFiles.ecosystemLogoUrlDark
+    ) {
       return;
     }
     await web2.updateSpaceById({
@@ -138,17 +143,44 @@ export const useUpdateSpaceOrchestrator = ({
     'updateSpaceMutation',
     async (
       _,
-      { arg }: { arg: { id: number; data: z.infer<typeof schemaUpdateSpace> } },
+      {
+        arg,
+      }: {
+        arg: {
+          id: number;
+          data: Omit<
+            z.infer<typeof schemaUpdateSpace>,
+            | 'logoUrl'
+            | 'leadImage'
+            | 'ecosystemLogoUrlLight'
+            | 'ecosystemLogoUrlDark'
+          > & {
+            logoUrl?: string | File | null;
+            leadImage?: string | File | null;
+            ecosystemLogoUrlLight?: string | File | null;
+            ecosystemLogoUrlDark?: string | File | null;
+          };
+        };
+      },
     ) => {
       try {
         console.debug('updateSpaceMutation called with arg:', arg);
         const { id, data } = arg;
         invariant(Number.isFinite(id) && id > 0, 'valid id is required');
 
-        const filesInput = schemaCreateSpaceFiles.parse(data);
-        if (Object.values(filesInput).some((file) => file)) {
+        const filesInput = schemaCreateSpaceFiles.partial().parse({
+          ...data,
+          logoUrl: data.logoUrl ?? undefined,
+          leadImage: data.leadImage ?? undefined,
+          ecosystemLogoUrlLight: data.ecosystemLogoUrlLight ?? undefined,
+          ecosystemLogoUrlDark: data.ecosystemLogoUrlDark ?? undefined,
+        });
+        if (Object.values(filesInput).some((file) => file instanceof File)) {
           startTask('UPLOAD_FILES');
-          await files.upload(filesInput, id);
+          await files.upload(
+            filesInput as z.infer<typeof schemaCreateSpaceFiles>,
+            id,
+          );
           completeTask('UPLOAD_FILES');
         } else {
           startTask('UPLOAD_FILES');
@@ -156,7 +188,33 @@ export const useUpdateSpaceOrchestrator = ({
         }
 
         startTask('UPDATE_WEB2_SPACE');
-        const updateInput = schemaUpdateSpace.parse(data);
+        const updateInput = schemaUpdateSpace.parse({
+          ...data,
+          logoUrl:
+            typeof data.logoUrl === 'string'
+              ? data.logoUrl
+              : data.logoUrl === null
+              ? null
+              : undefined,
+          leadImage:
+            typeof data.leadImage === 'string'
+              ? data.leadImage
+              : data.leadImage === null
+              ? null
+              : undefined,
+          ecosystemLogoUrlLight:
+            typeof data.ecosystemLogoUrlLight === 'string'
+              ? data.ecosystemLogoUrlLight
+              : data.ecosystemLogoUrlLight === null
+              ? null
+              : undefined,
+          ecosystemLogoUrlDark:
+            typeof data.ecosystemLogoUrlDark === 'string'
+              ? data.ecosystemLogoUrlDark
+              : data.ecosystemLogoUrlDark === null
+              ? null
+              : undefined,
+        });
         const result = await web2.updateSpaceById({
           ...updateInput,
           id,
