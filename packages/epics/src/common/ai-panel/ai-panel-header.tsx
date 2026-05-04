@@ -39,13 +39,11 @@ export function AiPanelHeader({
   showCloseButton = true,
   onCloseButtonClick,
   leftSlot,
-  centerRightSlot,
   rightSlot,
 }: {
   showCloseButton?: boolean;
   onCloseButtonClick?: () => void;
   leftSlot?: ReactNode;
-  centerRightSlot?: ReactNode;
   rightSlot?: ReactNode;
 }) {
   const { closeAiPanel } = useAiPanel();
