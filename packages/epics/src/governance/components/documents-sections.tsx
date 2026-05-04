@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { DocumentSection } from './document-section';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
 import { Document, Order } from '@hypha-platform/core/client';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Button } from '@hypha-platform/ui';
@@ -23,6 +23,7 @@ export function DocumentsSections({
   order,
 }: DocumentsSectionsProps) {
   const t = useTranslations('AgreementsTab');
+  const format = useFormatter();
   const [activeTab, setActiveTab] = useState('on-voting');
   const { documents, isLoading } = useSpaceDocumentsWithStatuses({
     spaceId: web3SpaceId,
@@ -52,7 +53,7 @@ export function DocumentsSections({
           <span className="inline-flex items-center gap-1">
             <span>{t('onVoting')}</span>
             <span className="text-xs text-muted-foreground">
-              ({Intl.NumberFormat().format(onVotingCount)})
+              ({format.number(onVotingCount)})
             </span>
           </span>
         </TabsTrigger>
@@ -60,7 +61,7 @@ export function DocumentsSections({
           <span className="inline-flex items-center gap-1">
             <span>{t('accepted')}</span>
             <span className="text-xs text-muted-foreground">
-              ({Intl.NumberFormat().format(acceptedCount)})
+              ({format.number(acceptedCount)})
             </span>
           </span>
         </TabsTrigger>
@@ -68,7 +69,7 @@ export function DocumentsSections({
           <span className="inline-flex items-center gap-1">
             <span>{t('rejected')}</span>
             <span className="text-xs text-muted-foreground">
-              ({Intl.NumberFormat().format(rejectedCount)})
+              ({format.number(rejectedCount)})
             </span>
           </span>
         </TabsTrigger>
