@@ -1439,7 +1439,7 @@ export function HumanChatPanelMessageBubble({
           'border-l-[3px] border-l-accent-9 bg-muted/75 dark:border-l-accent-10 dark:bg-muted/55',
         unreadBoundary &&
           !highlightMentionForViewer &&
-          'border-l-[3px] border-l-accent-8 bg-accent-1 dark:border-l-accent-9 dark:bg-accent-2/45',
+          'border-l-[3px] border-l-border bg-muted/75 dark:border-l-border dark:bg-muted/55',
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
