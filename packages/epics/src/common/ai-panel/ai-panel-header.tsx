@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import useSWR from 'swr';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronsUpDown, PanelLeftClose, Sparkles } from 'lucide-react';
 import {
   DropdownMenu,
@@ -119,6 +119,7 @@ export function AiPanelHeader({
     groupedSpaces.ecosystem.length + groupedSpaces.others.length > 0;
   const [spaceSearch, setSpaceSearch] = useState('');
   const [spaceMenuOpen, setSpaceMenuOpen] = useState(false);
+  const spaceSearchInputRef = useRef<HTMLInputElement>(null);
   const normalizedSearch = spaceSearch.trim().toLowerCase();
   const filteredGroupedSpaces = useMemo(() => {
     if (!normalizedSearch) return groupedSpaces;
@@ -234,6 +235,12 @@ export function AiPanelHeader({
                 side="bottom"
                 align="center"
                 sideOffset={4}
+                onOpenAutoFocus={(event) => {
+                  event.preventDefault();
+                  requestAnimationFrame(() => {
+                    spaceSearchInputRef.current?.focus();
+                  });
+                }}
                 className="relative isolate z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
               >
                 <div className="flex max-h-[24.5rem] min-h-0 flex-col">
@@ -243,9 +250,13 @@ export function AiPanelHeader({
                     </DropdownMenuLabel>
                     <div className="px-1">
                       <input
+                        ref={spaceSearchInputRef}
                         type="text"
                         value={spaceSearch}
                         onChange={(event) => setSpaceSearch(event.target.value)}
+                        onKeyDown={(event) => {
+                          event.stopPropagation();
+                        }}
                         placeholder={tSpaces('search')}
                         className="h-8 w-full rounded-lg border border-border/60 bg-background-2 px-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-border/85"
                         aria-label={tSpaces('search')}
