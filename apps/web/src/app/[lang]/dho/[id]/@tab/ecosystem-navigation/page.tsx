@@ -19,9 +19,12 @@ export default async function EcosystemNavigationPage(props: PageProps) {
   }
 
   const web3SpaceId = spaceFromDb.web3SpaceId;
+  if (typeof web3SpaceId !== 'number') {
+    return notFound();
+  }
 
   return (
-    <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
+    <SpaceTabAccessWrapper spaceId={web3SpaceId} spaceSlug={id}>
       <EcosystemNavigationMainPanel daoSlug={id} lang={lang} />
     </SpaceTabAccessWrapper>
   );
