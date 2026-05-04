@@ -64,6 +64,7 @@ export function MemoryFilters({
           value={searchTerm}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={t('searchSpaceMemory')}
+          aria-label={t('searchSpaceMemory')}
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
           className="w-full"
         />
