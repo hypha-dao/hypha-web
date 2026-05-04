@@ -1722,6 +1722,7 @@
   },
   "AiPanel": {
     "title": "Hypha AI",
+    "backToMenu": "Zurück zum Menü",
     "suggestions": {
       "aboutSpace": "Erzähl mir etwas über diesen Space",
       "memberCount": "Wie viele Mitglieder hat dieser Space?",
@@ -1738,6 +1739,16 @@
     "loading": "Laden...",
     "openPanel": "Hypha AI öffnen",
     "hidePanel": "AI-Panel ausblenden",
+    "leftMenu": {
+      "title": "Space-Menü",
+      "signals": "Signale",
+      "proposals": "Vorschläge",
+      "members": "Mitglieder",
+      "treasury": "Treasury",
+      "collapseMenuAriaLabel": "Nur Menüsymbole anzeigen",
+      "expandMenuAriaLabel": "Menübeschriftungen anzeigen",
+      "footerHint": "Nutzen Sie Hypha AI für Fragen zu diesem Space."
+    },
     "resetChat": "Chat zurücksetzen",
     "closePanel": "Panel schließen",
     "copyButton": "Kopieren",

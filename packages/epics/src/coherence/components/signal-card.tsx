@@ -5,6 +5,7 @@ import {
   COHERENCE_PRIORITY_OPTIONS,
   COHERENCE_TAGS,
   COHERENCE_TYPE_OPTIONS,
+  DEFAULT_SPACE_LEAD_IMAGE,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMe,
@@ -18,10 +19,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   BadgeItem,
+  Badge,
   BadgesList,
   Button,
   Card,
   CardContent,
+  CardHeader,
   CardTitle,
   ConfirmDialog,
   Dialog,
@@ -30,6 +33,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Image,
   LucideReactIcon,
   Skeleton,
 } from '@hypha-platform/ui';
@@ -49,6 +53,36 @@ type SignalCardProps = {
   refresh: () => Promise<void>;
   onOpenConversation?: () => void;
   className?: string;
+  leadImage?: string;
+};
+
+const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
+  accent: 'accent',
+  error: 'error',
+  warn: 'warn',
+  warning: 'warn',
+  success: 'success',
+  neutral: 'neutral',
+  tension: 'warn',
+  insight: 'accent',
+};
+
+type SignalColorVariant = NonNullable<BadgeProps['colorVariant']>;
+
+const HERO_TINT_CLASS_MAP: Record<SignalColorVariant, string> = {
+  accent: 'bg-accent-9/23',
+  error: 'bg-error-9/23',
+  warn: 'bg-warning-9/23',
+  success: 'bg-success-9/23',
+  neutral: 'bg-neutral-9/23',
+};
+
+const HERO_PRIORITY_GRADIENT_CLASS_MAP: Record<SignalColorVariant, string> = {
+  accent: 'to-accent-9/27',
+  error: 'to-error-9/27',
+  warn: 'to-warning-9/27',
+  success: 'to-success-9/27',
+  neutral: 'to-neutral-9/27',
 };
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
@@ -67,6 +101,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   refresh,
   onOpenConversation,
   className,
+  leadImage,
 }) => {
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
@@ -109,13 +144,26 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     [priority],
   );
 
+  const typeColorVariant = React.useMemo<SignalColorVariant>(
+    () =>
+      BADGE_COLOR_VARIANT_MAP[coherenceType?.colorVariant ?? 'accent'] ??
+      'accent',
+    [coherenceType?.colorVariant],
+  );
+
+  const priorityColorVariant = React.useMemo<SignalColorVariant>(
+    () =>
+      BADGE_COLOR_VARIANT_MAP[priorityMeta?.colorVariant ?? 'neutral'] ??
+      'neutral',
+    [priorityMeta?.colorVariant],
+  );
+
   const metaBadges: BadgeItem[] = React.useMemo(() => {
     const typeBadge: BadgeItem = {
       label: typeLabel,
       icon: coherenceType?.icon as LucideReactIcon,
-      variant: 'outline',
-      colorVariant: (coherenceType?.colorVariant ??
-        'accent') as BadgeProps['colorVariant'],
+      variant: 'soft',
+      colorVariant: typeColorVariant,
     };
     if (!priorityMeta) return [typeBadge];
     const priorityLabel = t(
@@ -127,11 +175,18 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     const priorityBadge: BadgeItem = {
       label: priorityLabel,
       icon: priorityMeta.icon as LucideReactIcon,
-      variant: 'outline',
-      colorVariant: priorityMeta.colorVariant as BadgeProps['colorVariant'],
+      variant: 'soft',
+      colorVariant: priorityColorVariant,
     };
     return [typeBadge, priorityBadge];
-  }, [coherenceType, priorityMeta, t, typeLabel]);
+  }, [
+    coherenceType,
+    priorityMeta,
+    t,
+    typeLabel,
+    typeColorVariant,
+    priorityColorVariant,
+  ]);
 
   const tagList: BadgeItem[] = tags.map((tag) => {
     const displayLabel = (COHERENCE_TAGS as readonly string[]).includes(tag)
@@ -218,79 +273,113 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         className,
       )}
     >
+      <CardHeader className="relative h-48 shrink-0 overflow-hidden p-0">
+        <Skeleton
+          className="h-full min-w-full"
+          width="100%"
+          height="192px"
+          loading={isLoading}
+        >
+          <Image
+            width={640}
+            height={192}
+            className="h-full w-full object-cover"
+            src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
+            alt={title || ''}
+          />
+          <div
+            className={cn(
+              'absolute inset-0 pointer-events-none',
+              HERO_TINT_CLASS_MAP[typeColorVariant],
+            )}
+            aria-hidden
+          />
+          <div
+            className={cn(
+              'absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-transparent',
+              HERO_PRIORITY_GRADIENT_CLASS_MAP[priorityColorVariant],
+            )}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/22 to-transparent"
+            aria-hidden
+          />
+        </Skeleton>
+        {isCreator && slug ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              size="sm"
+              className="absolute right-3 top-3 z-10 h-10 w-10 shrink-0 rounded-none border border-white/15 bg-black/45 p-0 text-neutral-1 shadow-sm backdrop-blur-[1px] hover:bg-black/55 hover:text-white focus-visible:ring-2 focus-visible:ring-white/70"
+              disabled={isLoading}
+              aria-label={tSignalCard('deleteMenu')}
+              title={tSignalCard('deleteMenu')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteOpen(true);
+              }}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden />
+            </Button>
+            <AlertDialog
+              open={deleteOpen}
+              onOpenChange={(open) => {
+                setDeleteOpen(open);
+                if (!open) setDeleteError(null);
+              }}
+            >
+              <AlertDialogContent
+                overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
+                className="border-l-[3px] border-l-[var(--space-accent)]"
+                style={spaceAccentPortalStyle}
+                data-space-accent-scope=""
+                onClick={(e) => e.stopPropagation()}
+              >
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {tSignalCard('deleteSignal')}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {tSignalCard('deleteConfirm')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                {deleteError ? (
+                  <p
+                    role="alert"
+                    className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {deleteError}
+                  </p>
+                ) : null}
+                <AlertDialogFooter>
+                  <AlertDialogCancel asChild>
+                    <Button variant="outline" colorVariant="neutral">
+                      {t('noLeave')}
+                    </Button>
+                  </AlertDialogCancel>
+                  <Button
+                    type="button"
+                    colorVariant="accent"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const deleted = await handleDelete();
+                      if (deleted) setDeleteOpen(false);
+                    }}
+                  >
+                    {tSignalCard('deleteConfirmAction')}
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        ) : null}
+      </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
         <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
-          {isCreator && slug ? (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                colorVariant="neutral"
-                size="sm"
-                className="absolute right-3 top-3 z-10 h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
-                disabled={isLoading}
-                aria-label={tSignalCard('deleteMenu')}
-                title={tSignalCard('deleteMenu')}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteOpen(true);
-                }}
-              >
-                <Trash2 className="h-4 w-4" aria-hidden />
-              </Button>
-              <AlertDialog
-                open={deleteOpen}
-                onOpenChange={(open) => {
-                  setDeleteOpen(open);
-                  if (!open) setDeleteError(null);
-                }}
-              >
-                <AlertDialogContent
-                  overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
-                  className="border-l-[3px] border-l-[var(--space-accent)]"
-                  style={spaceAccentPortalStyle}
-                  data-space-accent-scope=""
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {tSignalCard('deleteSignal')}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {tSignalCard('deleteConfirm')}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  {deleteError ? (
-                    <p
-                      role="alert"
-                      className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                    >
-                      {deleteError}
-                    </p>
-                  ) : null}
-                  <AlertDialogFooter>
-                    <AlertDialogCancel asChild>
-                      <Button variant="outline" colorVariant="neutral">
-                        {t('noLeave')}
-                      </Button>
-                    </AlertDialogCancel>
-                    <Button
-                      type="button"
-                      colorVariant="accent"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        const deleted = await handleDelete();
-                        if (deleted) setDeleteOpen(false);
-                      }}
-                    >
-                      {tSignalCard('deleteConfirmAction')}
-                    </Button>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </>
-          ) : null}
-          <div className={cn('min-w-0', isCreator && slug && 'pr-10')}>
+          <div className="min-w-0">
             <Skeleton
               className="min-w-0"
               width="100%"
@@ -303,22 +392,33 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </Skeleton>
           </div>
 
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2 text-1 text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
             {metaBadges.length > 0 ? (
               <BadgesList isLoading={isLoading} badges={metaBadges} />
             ) : null}
-            <span className="inline-flex min-w-0 items-center gap-1">
-              <ClockIcon
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                aria-hidden
-              />
-              {createdAt
-                ? formatDistanceToNow(new Date(createdAt), {
-                    addSuffix: true,
-                    locale: dateFnsLocale,
-                  })
-                : ''}
-            </span>
+            <div className="ml-auto flex min-w-0 items-center gap-3">
+              <span className="inline-flex min-w-0 items-center gap-1">
+                <ClockIcon
+                  className="h-3.5 w-3.5 shrink-0 opacity-70"
+                  aria-hidden
+                />
+                {createdAt
+                  ? formatDistanceToNow(new Date(createdAt), {
+                      addSuffix: true,
+                      locale: dateFnsLocale,
+                    })
+                  : ''}
+              </span>
+              <Badge
+                isLoading={isLoading}
+                variant="outline"
+                colorVariant="neutral"
+                className="gap-1.5"
+              >
+                <Users size={12} aria-hidden />
+                <span>{t('mentions', { count: messages })}</span>
+              </Badge>
+            </div>
           </div>
 
           <Skeleton
@@ -397,15 +497,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           {tagList?.length > 0 ? (
             <BadgesList isLoading={isLoading} badges={tagList ?? []} />
           ) : null}
-
-          <div className="flex flex-row gap-1">
-            <Skeleton loading={isLoading} height="16px" width="80px">
-              <Users size={12} />
-              <div className="text-neutral-11 text-1">
-                {t('mentions', { count: messages })}
-              </div>
-            </Skeleton>
-          </div>
         </div>
 
         <div className="mt-auto flex min-h-[4.25rem] shrink-0 flex-col justify-center border-t border-border px-4 py-3">
