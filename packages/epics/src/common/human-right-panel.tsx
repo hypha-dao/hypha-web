@@ -874,10 +874,34 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!roomId || !client) return;
     setMessages((prev) =>
       prev.map((m) => {
-        const newSenderName =
-          m.role === 'member' && m.senderMatrixId
-            ? resolveMemberLabelRef.current(m.senderMatrixId)
-            : m.senderName;
+        const sid = m.senderMatrixId?.trim();
+        const isSelfRow = Boolean(
+          currentUserIdRef.current && sid && sid === currentUserIdRef.current,
+        );
+
+        /**
+         * On cold load, `client.getUserId()` can be null when we first map
+         * Matrix events to UI — own messages are misclassified as `member` and
+         * get a technical Matrix/Privy display label. Re-sync when Matrix id arrives.
+         */
+        let nextRole = m.role;
+        let newSenderName = m.senderName;
+        let nextMemberAvatar = m.avatarUrl;
+        if (isSelfRow) {
+          nextRole = 'user';
+          newSenderName = undefined;
+          nextMemberAvatar = currentUserAvatarUrlRef.current ?? m.avatarUrl;
+        } else if (m.role === 'member' && sid) {
+          newSenderName = resolveMemberLabelRef.current(sid);
+          nextMemberAvatar =
+            matrixMemberAvatarSquare(
+              matrixClientRef.current,
+              roomIdRef.current,
+              sid,
+              96,
+            ) ?? m.avatarUrl;
+        }
+
         const newAuthorLabel =
           m.replyTo?.sourceUserId != null
             ? resolveMemberLabelRef.current(m.replyTo.sourceUserId)
@@ -902,17 +926,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               }
             : m.replyTo;
 
-        const nextMemberAvatar =
-          m.role === 'member' && m.senderMatrixId
-            ? matrixMemberAvatarSquare(
-                matrixClientRef.current,
-                roomIdRef.current,
-                m.senderMatrixId,
-                96,
-              ) ?? m.avatarUrl
-            : m.avatarUrl;
-
         if (
+          nextRole === m.role &&
           newSenderName === m.senderName &&
           nextReply?.authorLabel === m.replyTo?.authorLabel &&
           nextReply?.authorAvatarUrl === m.replyTo?.authorAvatarUrl &&
@@ -923,13 +938,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         return {
           ...m,
+          role: nextRole,
           senderName: newSenderName,
           avatarUrl: nextMemberAvatar,
           replyTo: nextReply,
         };
       }),
     );
-  }, [roomId, client, currentUserId, me?.name, me?.surname, t]);
+  }, [
+    roomId,
+    client,
+    currentUserId,
+    currentUserAvatarUrl,
+    me?.name,
+    me?.surname,
+    t,
+  ]);
 
   // Backfill avatar on self-authored messages after useMe() resolves
   useEffect(() => {
