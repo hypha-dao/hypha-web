@@ -314,6 +314,7 @@ export function AiPanelChatBar({
   }, []);
 
   const canStop = isStreaming && typeof onStop === 'function';
+  const canAttachDrafts = typeof onDraftAttachmentsChange === 'function';
   const pushDrafts = useCallback(
     (files: FileList | null) => {
       if (!files || files.length === 0 || !onDraftAttachmentsChange) return;
@@ -366,6 +367,12 @@ export function AiPanelChatBar({
 
   const iconButtonClass =
     'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
+
+  useEffect(() => {
+    if (!canAttachDrafts && attachMenuOpen) {
+      setAttachMenuOpen(false);
+    }
+  }, [attachMenuOpen, canAttachDrafts]);
 
   return (
     <div className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-3 pt-3">
@@ -443,52 +450,71 @@ export function AiPanelChatBar({
           )}
           <div className="flex min-w-0 items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-0.5">
-              <DropdownMenu
-                modal={false}
-                open={attachMenuOpen}
-                onOpenChange={setAttachMenuOpen}
-              >
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className={iconButtonClass}
-                    aria-label={tHuman('composerAttachMenu')}
-                    title={tHuman('composerAttachMenu')}
-                    aria-expanded={attachMenuOpen}
-                  >
-                    <Plus className="h-4 w-4" strokeWidth={2} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="min-w-[200px]">
-                  <DropdownMenuItem
-                    className="cursor-pointer gap-2"
-                    onSelect={() => {
-                      requestAnimationFrame(() => handleAttachImage());
-                    }}
-                  >
-                    <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />
-                    <span>{tHuman('composerAttachImage')}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer gap-2"
-                    onSelect={() => {
-                      requestAnimationFrame(() => handleAttachVideo());
-                    }}
-                  >
-                    <Video className="h-4 w-4 shrink-0" aria-hidden />
-                    <span>{tHuman('composerAttachVideo')}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer gap-2"
-                    onSelect={() => {
-                      requestAnimationFrame(() => handleAttachFile());
-                    }}
-                  >
-                    <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
-                    <span>{tHuman('composerAttachFile')}</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {canAttachDrafts ? (
+                <DropdownMenu
+                  modal={false}
+                  open={attachMenuOpen}
+                  onOpenChange={(open) => {
+                    if (!canAttachDrafts) return;
+                    setAttachMenuOpen(open);
+                  }}
+                >
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={iconButtonClass}
+                      aria-label={tHuman('composerAttachMenu')}
+                      title={tHuman('composerAttachMenu')}
+                      aria-expanded={attachMenuOpen}
+                    >
+                      <Plus className="h-4 w-4" strokeWidth={2} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[200px]">
+                    <DropdownMenuItem
+                      className="cursor-pointer gap-2"
+                      onSelect={() => {
+                        if (!canAttachDrafts) return;
+                        requestAnimationFrame(() => handleAttachImage());
+                      }}
+                    >
+                      <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />
+                      <span>{tHuman('composerAttachImage')}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer gap-2"
+                      onSelect={() => {
+                        if (!canAttachDrafts) return;
+                        requestAnimationFrame(() => handleAttachVideo());
+                      }}
+                    >
+                      <Video className="h-4 w-4 shrink-0" aria-hidden />
+                      <span>{tHuman('composerAttachVideo')}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer gap-2"
+                      onSelect={() => {
+                        if (!canAttachDrafts) return;
+                        requestAnimationFrame(() => handleAttachFile());
+                      }}
+                    >
+                      <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
+                      <span>{tHuman('composerAttachFile')}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <button
+                  type="button"
+                  className={cn(iconButtonClass, 'cursor-not-allowed opacity-50')}
+                  aria-label={tHuman('composerAttachMenu')}
+                  title={tHuman('composerAttachMenu')}
+                  aria-disabled="true"
+                  disabled
+                >
+                  <Plus className="h-4 w-4" strokeWidth={2} />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={startDictation}
