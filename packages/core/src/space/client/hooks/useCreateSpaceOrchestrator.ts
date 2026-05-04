@@ -131,15 +131,12 @@ export const useCreateSpaceOrchestrator = ({
 }: UseCreateSpaceOrchestratorInput) => {
   type CreateSpaceOrchestratorArg = Omit<
     z.infer<typeof schemaCreateSpace>,
-    'ecosystemLogoUrlLight' | 'ecosystemLogoUrlDark'
-  > & {
-    ecosystemLogoUrlLight?: z.infer<
-      typeof schemaCreateSpaceFiles
-    >['ecosystemLogoUrlLight'];
-    ecosystemLogoUrlDark?: z.infer<
-      typeof schemaCreateSpaceFiles
-    >['ecosystemLogoUrlDark'];
-  };
+    'logoUrl' | 'leadImage' | 'ecosystemLogoUrlLight' | 'ecosystemLogoUrlDark'
+  > &
+    Pick<
+      z.infer<typeof schemaCreateSpaceFiles>,
+      'logoUrl' | 'leadImage' | 'ecosystemLogoUrlLight' | 'ecosystemLogoUrlDark'
+    >;
 
   const { createEvent } = useCreateEvent({ authToken });
   const { person } = useMe();
@@ -197,7 +194,6 @@ export const useCreateSpaceOrchestrator = ({
         arg: CreateSpaceOrchestratorArg;
       },
     ) => {
-      const web3SpaceId = (arg as any).web3SpaceId;
       let web3SpaceIdResult: number | undefined = undefined;
       let web3Executor: string | undefined = undefined;
       let web2SpaceId: number | undefined = undefined;
@@ -209,10 +205,13 @@ export const useCreateSpaceOrchestrator = ({
       } = {};
 
       try {
-        const logoUrl = (arg as any).logoUrl;
-        const leadImage = (arg as any).leadImage;
-        const ecosystemLogoUrlLight = (arg as any).ecosystemLogoUrlLight;
-        const ecosystemLogoUrlDark = (arg as any).ecosystemLogoUrlDark;
+        const {
+          logoUrl,
+          leadImage,
+          ecosystemLogoUrlLight,
+          ecosystemLogoUrlDark,
+          flags = [],
+        } = arg;
 
         if (
           logoUrl ||
@@ -289,7 +288,6 @@ export const useCreateSpaceOrchestrator = ({
 
         startTask('CREATE_WEB3_SPACE');
 
-        const flags = (arg as any).flags ?? [];
         const isSandbox = flags.includes('sandbox');
         const isDemo = flags.includes('demo');
         const isLive = !isDemo && !isSandbox;
