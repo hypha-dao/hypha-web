@@ -6,6 +6,9 @@ import useSWR from 'swr';
 
 import { getMatrixUserIdsByPrivySubsAction } from '../../server/actions';
 
+/** Stable fallback — `data ?? {}` was a new object each render and broke referential equality downstream. */
+const EMPTY_SUB_TO_MATRIX: Record<string, string> = {};
+
 export interface UseMatrixUserIdsByPrivySubsInput {
   /** Privy `sub` values from Hypha `Person.sub` (omit empty). */
   privySubs?: string[];
@@ -47,10 +50,12 @@ export const useMatrixUserIdsByPrivySubs = ({
       }
       return map;
     },
+    /** Avoid flashing Privy/Matrix technical locals when JWT refreshes or focus revalidation races. */
+    { keepPreviousData: true },
   );
 
   return {
-    subToMatrixUserId: data ?? {},
+    subToMatrixUserId: data ?? EMPTY_SUB_TO_MATRIX,
     isLoading: isLoadingJwt || isLoading,
     error,
   };

@@ -68,7 +68,7 @@ export class AiChatPanelPage extends BasePage {
   }
 
   async open() {
-    await this.page.goto('/en/dho/hypha');
+    await this.gotoApp('/en/dho/hypha');
     await this.waitForPageLoad();
   }
 

@@ -62,6 +62,8 @@ import {
   useDraftVoiceDuration,
 } from './human-chat-panel-voice-audio-row';
 import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
+import { formatComposerMentionToken } from './human-chat-display-mention';
+import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -180,6 +182,19 @@ type HumanChatPanelChatBarProps = {
    * Falls back to `mentionCandidates.length > 0` when omitted.
    */
   mentionPickerEnabled?: boolean;
+  /**
+   * When the user picks a mention, Hypha-resolved names can differ from `mentionCandidates[].displayLabel`
+   * (Matrix fallback is often a shortened MXID). Merge the chosen display string so send + timeline pills match.
+   */
+  onMergeMentionDisplayLabel?: (userId: string, displayLabel: string) => void;
+  /**
+   * When multiple members sanitize to the same mention key, append a disambiguator so wire send resolves
+   * to the correct MXID (must match {@link HumanRightPanel}'s `mentionSanitizedLabelToUserId`).
+   */
+  getMentionComposerLabel?: (
+    member: ChatMentionCandidate,
+    resolvedComposerLabel?: string,
+  ) => string;
 };
 
 /** Blinking REC dot (“on-air”) for active voice recording / dictation controls. */
@@ -460,6 +475,8 @@ export function HumanChatPanelChatBar({
   onDraftAttachmentsChange,
   mentionCandidates = [],
   mentionPickerEnabled,
+  onMergeMentionDisplayLabel,
+  getMentionComposerLabel,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
 
@@ -519,6 +536,17 @@ export function HumanChatPanelChatBar({
   );
   const [atActive, setAtActive] = useState(0);
   const atTokenRef = useRef<ReturnType<typeof getActiveAtToken>>(null);
+
+  const activeAtPick =
+    atOpen && atSuggestions.length > 0
+      ? atSuggestions[
+          Math.max(0, Math.min(atActive, atSuggestions.length - 1))
+        ] ?? null
+      : null;
+  const {
+    resolvedLabel: keyboardResolvedPickLabel,
+    pickDisabled: keyboardPickDisabled,
+  } = useResolvedMentionCandidateLabel(activeAtPick);
 
   const [selectionBar, setSelectionBar] = useState<{
     top: number;
@@ -741,11 +769,21 @@ export function HumanChatPanelChatBar({
   );
 
   const applyAtChoice = useCallback(
-    (member: ChatMentionCandidate) => {
+    (
+      member: ChatMentionCandidate,
+      /** Same string as the picker row / Hypha Person resolution — overrides Matrix fallback label */
+      resolvedComposerLabel?: string,
+    ) => {
       const el = textareaRef.current;
       const tok = atTokenRef.current;
       if (!el || !tok) return;
-      const insertion = `${member.userId} `;
+      const labelForMerge =
+        resolvedComposerLabel?.trim() || member.displayLabel;
+      const labelForToken =
+        getMentionComposerLabel?.(member, resolvedComposerLabel) ??
+        labelForMerge;
+      const insertion = formatComposerMentionToken(labelForToken);
+      onMergeMentionDisplayLabel?.(member.userId, labelForMerge);
       const start = tok.start;
       const end = el.selectionStart ?? value.length;
       const { next, caret } = insertAtCaret(value, start, end, insertion);
@@ -759,7 +797,13 @@ export function HumanChatPanelChatBar({
         autoResize();
       });
     },
-    [value, onChange, autoResize],
+    [
+      value,
+      onChange,
+      autoResize,
+      onMergeMentionDisplayLabel,
+      getMentionComposerLabel,
+    ],
   );
 
   const openMentionPicker = useCallback(() => {
@@ -1318,12 +1362,19 @@ export function HumanChatPanelChatBar({
         }
         if (e.key === 'Enter' || e.key === 'Tab') {
           e.preventDefault();
+          if (keyboardPickDisabled) return;
           const safeIndex = Math.max(
             0,
             Math.min(atActive, atSuggestions.length - 1),
           );
           const pick = atSuggestions[safeIndex];
-          if (pick) applyAtChoice(pick);
+          if (pick)
+            applyAtChoice(
+              pick,
+              keyboardResolvedPickLabel.trim()
+                ? keyboardResolvedPickLabel
+                : undefined,
+            );
           return;
         }
         if (e.key === 'Escape') {
@@ -1380,6 +1431,8 @@ export function HumanChatPanelChatBar({
       atSuggestions,
       atActive,
       applyAtChoice,
+      keyboardResolvedPickLabel,
+      keyboardPickDisabled,
       colonOpen,
       colonSuggestions,
       colonActive,
@@ -1817,7 +1870,7 @@ export function HumanChatPanelChatBar({
                 matrixFallbackAvatarUrl={m.avatarUrl}
                 privySub={m.privySub}
                 isActive={idx === atActive}
-                onPick={() => applyAtChoice(m)}
+                onPickResolved={(resolved) => applyAtChoice(m, resolved)}
               />
             ))}
           </div>

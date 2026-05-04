@@ -11,7 +11,6 @@ import {
 } from '@hypha-platform/epics';
 import '../../_shared/space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
-import { Container } from '@hypha-platform/ui';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import { ActionButtons } from './_components/action-buttons';
@@ -113,13 +112,12 @@ export default async function DhoLayout({
   return (
     <SpaceAccentPortalBridge>
       {/*
-        Full-width row: `Container` already applies max-width + horizontal padding.
-        Dropping the extra `mx-auto max-w-container-2xl` wrapper avoided double
-        max-width + centering that made the main column look pushed with a void on the left.
+        Main column must span the full width next to side panels: `Container` max-width + `mx-auto`
+        centers content and leaves empty gutters — very visible when the Human chat panel narrows
+        the column (reads as a dead strip beside the hero / secondary chrome). Use padding only.
       */}
       <div className="flex w-full min-w-0">
-        {/* `px-4!` = 16px: tighter than default Container `px-5` (20px) for DHO hero/tabs vs app chrome */}
-        <Container size="lg" className="min-w-0 flex-1 px-4!">
+        <div className="min-w-0 flex-1 px-4 sm:px-5">
           {/* React 19+: link rel="preload" is hoisted to document head */}
           {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
             <link
@@ -224,7 +222,7 @@ export default async function DhoLayout({
             {tab}
             {children}
           </SpaceAccentFromImages>
-        </Container>
+        </div>
         {aside}
       </div>
     </SpaceAccentPortalBridge>
