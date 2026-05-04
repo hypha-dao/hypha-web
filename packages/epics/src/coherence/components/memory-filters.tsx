@@ -18,6 +18,7 @@ type MemoryFiltersProps = {
   onSearchChange: (value: string) => void;
   newMemoryHref: string;
   counts: Record<MemoryFilterValue, number>;
+  showAiChatTab?: boolean;
 };
 
 export function MemoryFilters({
@@ -27,6 +28,7 @@ export function MemoryFilters({
   onSearchChange,
   newMemoryHref,
   counts,
+  showAiChatTab = true,
 }: MemoryFiltersProps) {
   const t = useTranslations('CoherenceTab');
 
@@ -34,7 +36,9 @@ export function MemoryFilters({
     { value: 'general', label: t('spaceMemoryGeneral') },
     { value: 'proposals', label: t('spaceMemoryProposals') },
     { value: 'conversations', label: t('spaceMemoryConversations') },
-    { value: 'ai-chat', label: t('spaceMemoryAiChat') },
+    ...(showAiChatTab
+      ? ([{ value: 'ai-chat', label: t('spaceMemoryAiChat') }] as const)
+      : []),
   ];
 
   return (
