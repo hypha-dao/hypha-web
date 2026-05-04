@@ -231,7 +231,7 @@ function LegacyFooter({
 
 export const Footer = (props: FooterProps) => {
   const pathname = usePathname();
-  const isSpaceContext = pathname.includes('/dho/');
+  const isSpaceContext = /(^|\/)dho(?:\/|$)/.test(pathname);
 
   if (isSpaceContext) {
     return <SpaceContextFooter {...props} />;
