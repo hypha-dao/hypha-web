@@ -2048,7 +2048,7 @@
     "searchConversation": "Gespräch suchen",
     "hideArchived": "Archivierte ausblenden",
     "messageCount": "{count, plural, one {# Nachricht} other {# Nachrichten}}",
-    "priorityVisualAlt": "Prioritätsstufe: {priority}",
+    "priorityVisualAlt": "Prioritätsstufe {priority}",
     "typeSignalBannerAlt": "{type}-Signal, Priorität {priority}",
     "unarchiveConversation": "Gespräch wiederherstellen",
     "unarchiveConfirm": "Möchten Sie dieses Gespräch wirklich wiederherstellen?",
