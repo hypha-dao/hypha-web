@@ -166,6 +166,20 @@ export function EcosystemNavigationMainPanel({
   );
   const selectedSpaceTitle =
     selectedSpace?.name ?? currentSpaceTitle ?? t('title');
+  const selectedSpaceSlug = selectedSpace?.slug ?? currentSpaceSlug;
+  const canRenderSpaceActions = Boolean(currentSpace && selectedSpaceSlug);
+  const visitSpaceHref =
+    canRenderSpaceActions && selectedSpaceSlug
+      ? getDhoSpaceContextPath({
+          pathname,
+          lang,
+          spaceSlug: selectedSpaceSlug,
+        })
+      : null;
+  const addSpaceHref =
+    canRenderSpaceActions && selectedSpaceSlug
+      ? `/${lang}/dho/${selectedSpaceSlug}/space/create`
+      : null;
 
   const tabs = useMemo(
     () => [
@@ -180,6 +194,20 @@ export function EcosystemNavigationMainPanel({
             >
               {selectedSpaceTitle}
             </div>
+            {canRenderSpaceActions && visitSpaceHref && addSpaceHref ? (
+              <div className="flex w-full items-center justify-end gap-2 px-3 sm:px-5">
+                <Link href={visitSpaceHref}>
+                  <Button variant="outline" colorVariant="neutral">
+                    {t('visibleSpaces.visitSpace')}
+                  </Button>
+                </Link>
+                <Link href={addSpaceHref}>
+                  <Button variant="default" colorVariant="accent">
+                    {t('visibleSpaces.addSpace')}
+                  </Button>
+                </Link>
+              </div>
+            ) : null}
             <div className="w-full overflow-visible px-3 py-2 sm:px-5 sm:py-4">
               {hierarchyData ? (
                 <div className="mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))]">
@@ -219,27 +247,16 @@ export function EcosystemNavigationMainPanel({
       },
     ],
     [
+      addSpaceHref,
+      canRenderSpaceActions,
       currentSpace?.id,
       handleVisibleSpacesChange,
       hierarchyData,
       selectedSpaceTitle,
       t,
+      visitSpaceHref,
     ],
   );
-  const selectedSpaceSlug = selectedSpace?.slug ?? currentSpaceSlug;
-  const canRenderSpaceActions = Boolean(currentSpace && selectedSpaceSlug);
-  const visitSpaceHref =
-    canRenderSpaceActions && selectedSpaceSlug
-      ? getDhoSpaceContextPath({
-          pathname,
-          lang,
-          spaceSlug: selectedSpaceSlug,
-        })
-      : null;
-  const addSpaceHref =
-    canRenderSpaceActions && selectedSpaceSlug
-      ? `/${lang}/dho/${selectedSpaceSlug}/space/create`
-      : null;
 
   return (
     <section className="flex w-full flex-col gap-4 py-4">
@@ -264,24 +281,6 @@ export function EcosystemNavigationMainPanel({
             resolvedTheme === 'dark' ? 'bg-background-2' : 'bg-neutral-2/85'
           }
           visualizationClassName="min-h-0"
-          afterTabsContent={
-            <div className="w-full">
-              {canRenderSpaceActions && visitSpaceHref && addSpaceHref ? (
-                <div className="flex items-center justify-end gap-2">
-                  <Link href={visitSpaceHref}>
-                    <Button variant="outline" colorVariant="neutral">
-                      {t('visibleSpaces.visitSpace')}
-                    </Button>
-                  </Link>
-                  <Link href={addSpaceHref}>
-                    <Button variant="default" colorVariant="accent">
-                      {t('visibleSpaces.addSpace')}
-                    </Button>
-                  </Link>
-                </div>
-              ) : null}
-            </div>
-          }
         />
       )}
     </section>
