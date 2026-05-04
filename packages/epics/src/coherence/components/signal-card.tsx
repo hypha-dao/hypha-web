@@ -139,6 +139,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   );
 
   const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const { reduceMotion, parallaxY } = useScrollParallax({
@@ -261,8 +262,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   }, [slug, refresh, updateCoherenceBySlug]);
 
   const handleDelete = React.useCallback(async (): Promise<boolean> => {
-    if (!slug) return false;
+    if (!slug || isDeleting) return false;
     setDeleteError(null);
+    setIsDeleting(true);
     try {
       await deleteCoherenceBySlug({ slug });
       try {
@@ -275,8 +277,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       console.warn('Could not delete signal:', error);
       setDeleteError(tSignalCard('deleteFailed'));
       return false;
+    } finally {
+      setIsDeleting(false);
     }
-  }, [slug, deleteCoherenceBySlug, refresh, tSignalCard]);
+  }, [slug, isDeleting, deleteCoherenceBySlug, refresh, tSignalCard]);
 
   const stopCardActivationKey = React.useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
@@ -551,6 +555,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         <AlertDialog
           open={deleteOpen}
           onOpenChange={(open) => {
+            if (isDeleting) return;
             setDeleteOpen(open);
             if (!open) setDeleteError(null);
           }}
@@ -581,6 +586,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 <Button
                   variant="outline"
                   colorVariant="neutral"
+                  disabled={isDeleting}
                   onKeyDown={stopCardActivationKey}
                 >
                   {t('noLeave')}
@@ -589,6 +595,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               <Button
                 type="button"
                 colorVariant="accent"
+                disabled={isDeleting}
                 onClick={async (e) => {
                   e.stopPropagation();
                   const deleted = await handleDelete();
