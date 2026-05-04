@@ -266,10 +266,8 @@ export const useCreateSpaceOrchestrator = ({
           if (ecosystemLogoUrlDark instanceof File) {
             uploadPromises.push(
               uploadImage([ecosystemLogoUrlDark]).then((result) => {
-                uploadedFileUrls.ecosystemLogoUrlDark = getRequiredUploadResultUrl(
-                  result,
-                  'ecosystemLogoUrlDark',
-                );
+                uploadedFileUrls.ecosystemLogoUrlDark =
+                  getRequiredUploadResultUrl(result, 'ecosystemLogoUrlDark');
               }),
             );
           } else if (
