@@ -1,9 +1,11 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
 import { Bell, BellOff } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
+import { Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import {
@@ -11,20 +13,82 @@ import {
   isRedactedRoomMessageEvent,
   contentMentionsMatrixUser,
   stripMatrixReplyFallback,
+  usePersonBySub,
+  useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
+import { renderTextWithMentions } from './human-chat-panel-message-bubble';
+import { needsHyphaProfileResolutionForMatrixLabel } from './matrix-room-member-display';
+import { gatherAggregatedMentionPreviews } from './matrix-chat-unread';
 
 export type HumanChatPanelMentionTabProps = {
   client: MatrixClient | null;
   roomId: string | null;
   currentUserId: string | null;
   resolveMemberLabel: (matrixUserId: string) => string;
-  onSelectMessage: (eventId: string) => void;
+  /** `roomId` omitted = current space chat room. */
+  onSelectMessage: (eventId: string, fromRoomId?: string) => void;
+  /** When true, list @-mentions from all joined Matrix rooms with room labels. */
+  aggregatedMentions?: boolean;
 };
 
 function excerptFromRoomMessage(ev: MatrixEvent): string {
   const content = ev.getContent() as { body?: string } | undefined;
   const raw = typeof content?.body === 'string' ? content.body : '';
   return stripMatrixReplyFallback(raw).trim().slice(0, 280);
+}
+
+function formatPersonDisplayName(p: {
+  name?: string | null;
+  surname?: string | null;
+  nickname?: string | null;
+}): string {
+  const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
+  if (full) return full;
+  if (p.nickname?.trim()) return p.nickname.trim();
+  return '';
+}
+
+/**
+ * Sender line in @ inbox: match chat timeline — roster label first, then Hypha Person
+ * when Matrix still exposes bridged Privy technical display names.
+ */
+function MentionInboxSenderName({
+  matrixUserId,
+  syncLabel,
+}: {
+  matrixUserId: string;
+  syncLabel: string;
+}) {
+  const needs = needsHyphaProfileResolutionForMatrixLabel(syncLabel);
+  const { privyUserId: linkedSub, isLoading: loadingLink } =
+    useUserPrivyIdByMatrixId({
+      matrixUserId: needs ? matrixUserId : undefined,
+    });
+  const { person, isLoading: loadingPerson } = usePersonBySub({
+    sub: linkedSub,
+  });
+
+  const text = useMemo(() => {
+    const fromPerson = person ? formatPersonDisplayName(person) : '';
+    if (fromPerson.trim()) return fromPerson;
+    return syncLabel.trim() || matrixUserId;
+  }, [person, syncLabel, matrixUserId]);
+
+  const loading =
+    needs && (loadingLink || (Boolean(linkedSub) && loadingPerson));
+
+  if (loading) {
+    return (
+      <Skeleton
+        className="inline-block align-baseline"
+        loading
+        width={120}
+        height={14}
+      />
+    );
+  }
+
+  return <span className="truncate">{text}</span>;
 }
 
 function gatherMentionEvents(
@@ -61,59 +125,122 @@ export function HumanChatPanelMentionTab({
   currentUserId,
   resolveMemberLabel,
   onSelectMessage,
+  aggregatedMentions = false,
 }: HumanChatPanelMentionTabProps) {
   const t = useTranslations('HumanChatPanel');
   const format = useFormatter();
 
-  const rows =
-    client && roomId && currentUserId
+  const aggregatedRows =
+    aggregatedMentions && client && currentUserId
+      ? gatherAggregatedMentionPreviews(client, currentUserId, 80)
+      : [];
+
+  const singleRoomRows =
+    !aggregatedMentions && client && roomId && currentUserId
       ? gatherMentionEvents(client, roomId, currentUserId, 80)
       : [];
+
+  const rows = aggregatedMentions ? aggregatedRows : singleRoomRows;
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-3">
-        {rows.length === 0 ? (
+        {(aggregatedMentions
+          ? aggregatedRows.length
+          : singleRoomRows.length) === 0 ? (
           <p className="px-1 py-8 text-center text-sm text-muted-foreground">
             {t('mentionInboxEmpty')}
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {rows.map((ev) => {
-              const id = ev.getId();
-              const senderId = ev.getSender();
-              if (!id || !senderId) return null;
-              const excerpt = excerptFromRoomMessage(ev);
-              const senderLabel = resolveMemberLabel(senderId);
-              const ts = ev.getTs();
+            {aggregatedMentions
+              ? aggregatedRows.map((row) => {
+                  const senderSyncLabel = resolveMemberLabel(row.senderId);
+                  return (
+                    <li key={`${row.roomId}:${row.eventId}`}>
+                      <button
+                        type="button"
+                        className="flex w-full flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md"
+                        onClick={() => onSelectMessage(row.eventId, row.roomId)}
+                      >
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="min-w-0 truncate text-[11px] font-medium text-muted-foreground">
+                            {row.roomDisplayName}
+                          </span>
+                          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                            {format.dateTime(new Date(row.timestamp), {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="min-w-0 truncate text-xs font-semibold text-foreground">
+                            <MentionInboxSenderName
+                              matrixUserId={row.senderId}
+                              syncLabel={senderSyncLabel}
+                            />
+                          </span>
+                        </div>
+                        <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground [&_a]:break-all [&_a]:font-medium [&_a]:text-primary [&_a]:underline">
+                          {row.excerpt
+                            ? renderTextWithMentions(
+                                row.excerpt,
+                                resolveMemberLabel,
+                                false,
+                              )
+                            : t('mentionInboxNoPreview')}
+                        </p>
+                      </button>
+                    </li>
+                  );
+                })
+              : singleRoomRows.map((ev) => {
+                  const id = ev.getId();
+                  const senderId = ev.getSender();
+                  if (!id || !senderId) return null;
+                  const excerpt = excerptFromRoomMessage(ev);
+                  const senderSyncLabel = resolveMemberLabel(senderId);
+                  const ts = ev.getTs();
 
-              return (
-                <li key={id}>
-                  <button
-                    type="button"
-                    className="flex w-full flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md"
-                    onClick={() => onSelectMessage(id)}
-                  >
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="min-w-0 truncate text-xs font-semibold text-foreground">
-                        {senderLabel}
-                      </span>
-                      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                        {format.dateTime(new Date(ts), {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
-                    </div>
-                    <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground">
-                      {excerpt || t('mentionInboxNoPreview')}
-                    </p>
-                  </button>
-                </li>
-              );
-            })}
+                  return (
+                    <li key={id}>
+                      <button
+                        type="button"
+                        className="flex w-full flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md"
+                        onClick={() => onSelectMessage(id)}
+                      >
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="min-w-0 truncate text-xs font-semibold text-foreground">
+                            <MentionInboxSenderName
+                              matrixUserId={senderId}
+                              syncLabel={senderSyncLabel}
+                            />
+                          </span>
+                          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                            {format.dateTime(new Date(ts), {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                        </div>
+                        <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground [&_a]:break-all [&_a]:font-medium [&_a]:text-primary [&_a]:underline">
+                          {excerpt
+                            ? renderTextWithMentions(
+                                excerpt,
+                                resolveMemberLabel,
+                                false,
+                              )
+                            : t('mentionInboxNoPreview')}
+                        </p>
+                      </button>
+                    </li>
+                  );
+                })}
           </ul>
         )}
       </div>

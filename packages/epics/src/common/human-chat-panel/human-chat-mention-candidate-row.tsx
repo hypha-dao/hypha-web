@@ -1,24 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
-import {
-  useUserPrivyIdByMatrixId,
-  usePersonBySub,
-} from '@hypha-platform/core/client';
-
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../spaces/components/compact-space-banner';
 import { cn } from '@hypha-platform/ui-utils';
 
-function formatHyphaPersonName(p: {
-  name?: string | null;
-  surname?: string | null;
-  nickname?: string | null;
-}): string {
-  const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
-  if (full) return full;
-  return p.nickname?.trim() ?? '';
-}
+import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
 
 export type MentionCandidateRowProps = {
   matrixUserId: string;
@@ -27,7 +13,13 @@ export type MentionCandidateRowProps = {
   /** When set (space roster row), fetch Person directly — skips Matrix→Privy link query. */
   privySub?: string;
   isActive: boolean;
-  onPick: () => void;
+  /** Legacy: no resolved Hypha name. Prefer {@link onPickResolved}. */
+  onPick?: () => void;
+  /**
+   * Called with the same display string shown in the row (Hypha Person name when resolved).
+   * Use this for the composer token so it matches the dropdown.
+   */
+  onPickResolved?: (resolvedDisplayForComposer: string) => void;
 };
 
 /**
@@ -41,25 +33,28 @@ export function HumanChatMentionCandidateRow({
   privySub,
   isActive,
   onPick,
+  onPickResolved,
 }: MentionCandidateRowProps) {
-  const { privyUserId: linkedSub, isLoading: loadingLink } =
-    useUserPrivyIdByMatrixId({
-      matrixUserId: privySub ? undefined : matrixUserId,
-    });
-  const resolvedSub = privySub ?? linkedSub;
-  const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: resolvedSub,
+  const {
+    resolvedLabel: resolvedName,
+    busy,
+    avatarUrl,
+    pickDisabled,
+  } = useResolvedMentionCandidateLabel({
+    userId: matrixUserId,
+    displayLabel: matrixFallbackLabel,
+    privySub,
   });
 
-  const resolvedName = useMemo(() => {
-    const fromPerson = person ? formatHyphaPersonName(person) : '';
-    return fromPerson || matrixFallbackLabel;
-  }, [person, matrixFallbackLabel]);
+  const avatarSrc = avatarUrl?.trim() || matrixFallbackAvatarUrl || undefined;
 
-  const avatarSrc =
-    person?.avatarUrl?.trim() || matrixFallbackAvatarUrl || undefined;
-  const busy =
-    (!privySub && loadingLink) || (Boolean(resolvedSub) && loadingPerson);
+  const handleClick = () => {
+    if (onPickResolved) {
+      onPickResolved(resolvedName);
+    } else {
+      onPick?.();
+    }
+  };
 
   return (
     <button
@@ -67,15 +62,15 @@ export function HumanChatMentionCandidateRow({
       role="option"
       aria-selected={isActive}
       aria-busy={busy || undefined}
-      title={matrixUserId}
-      disabled={!privySub && loadingLink}
+      title={resolvedName}
+      disabled={pickDisabled}
       className={cn(
         'flex w-full min-w-0 items-center gap-2.5 rounded-sm px-2 py-1.5 text-left text-sm',
         busy && 'opacity-70',
         isActive ? 'bg-muted text-foreground' : 'hover:bg-muted/80',
       )}
       onMouseDown={(ev) => ev.preventDefault()}
-      onClick={onPick}
+      onClick={handleClick}
     >
       <PersonAvatar
         avatarSrc={avatarSrc}
@@ -84,13 +79,8 @@ export function HumanChatMentionCandidateRow({
         className={cn('shrink-0', APP_CHROME_SUBTLE_SQUARE_RADIUS)}
         isLoading={busy}
       />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate font-medium leading-snug">
-          {resolvedName}
-        </span>
-        <span className="block truncate font-mono text-[11px] text-muted-foreground">
-          {matrixUserId}
-        </span>
+      <span className="min-w-0 flex-1 truncate font-medium leading-snug">
+        {resolvedName}
       </span>
     </button>
   );

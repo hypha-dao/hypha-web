@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
+import { gotoApp } from './utils/nav-url';
 
 /**
  * Default runtime: off. The enabled describe block sets `HYPHA_ENABLE_HUMAN_CHAT=true`.
@@ -62,7 +63,7 @@ test.describe('Human Chat Panel — kill switch (disabled)', () => {
   test('should not render Human Chat trigger button on space page', async ({
     page,
   }) => {
-    await page.goto('/en/dho/hypha/agreements');
+    await gotoApp(page, '/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
 
     const chatButton = page.getByRole('button', {
@@ -72,7 +73,7 @@ test.describe('Human Chat Panel — kill switch (disabled)', () => {
   });
 
   test('should render page content normally', async ({ page }) => {
-    await page.goto('/en/dho/hypha/agreements');
+    await gotoApp(page, '/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
 
     await expect(page.getByText('Agreements')).toBeVisible();

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Minimize2 } from 'lucide-react';
 import {
+  ClientEvent,
   RoomStateEvent,
   type MatrixClient,
   type MatrixEvent,
@@ -84,13 +85,21 @@ import {
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
-import { computeHumanChatUnreadState } from './human-chat-panel/matrix-chat-unread';
+import {
+  computeAggregateUnreadMentionCount,
+  computeHumanChatUnreadState,
+} from './human-chat-panel/matrix-chat-unread';
 import {
   matrixMemberDisplayLabel,
   shortenMatrixIdForDisplay,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
+import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
+import {
+  sanitizeMentionDisplayLabel,
+  wireComposerPlainForMatrixSend,
+} from './human-chat-panel/human-chat-display-mention';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -105,6 +114,39 @@ function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
       URL.revokeObjectURL(a.previewUrl);
     }
   }
+}
+
+/** Sanitized labels shared by multiple members need a disambiguated composer token + map key. */
+function computeDuplicateSanitizedDisplayKeys(
+  mentionLabelByUserId: ReadonlyMap<string, string>,
+): Set<string> {
+  const counts = new Map<string, number>();
+  for (const label of mentionLabelByUserId.values()) {
+    const k = sanitizeMentionDisplayLabel(label);
+    if (!k) continue;
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  const dup = new Set<string>();
+  for (const [k, n] of counts) {
+    if (n > 1) dup.add(k);
+  }
+  return dup;
+}
+
+function disambiguatedMentionTokenKey(
+  userId: string,
+  displayLabel: string,
+  duplicateKeys: ReadonlySet<string>,
+): string {
+  let key = sanitizeMentionDisplayLabel(displayLabel);
+  if (!key) return '';
+  if (!duplicateKeys.has(key)) return key;
+  const stem = shortenMatrixIdForDisplay(userId).replace(/^@/, '').trim();
+  const short =
+    stem.length <= 26 ? stem : `${stem.slice(0, 12)}…${stem.slice(-8)}`;
+  key = sanitizeMentionDisplayLabel(`${displayLabel} (${short})`);
+  if (!key) return sanitizeMentionDisplayLabel(userId);
+  return key;
 }
 
 type UIMessage = {
@@ -165,6 +207,39 @@ type EditDraft = {
 };
 
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
+
+const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
+
+/** Reverse map for navigating from Matrix room id → DHO space slug (localStorage). */
+function readRoomIdToSpaceSlugFromStorage(): Map<string, string> {
+  const m = new Map<string, string>();
+  if (typeof window === 'undefined') return m;
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (!key?.startsWith(ROOM_STORAGE_KEY)) continue;
+      const slug = key.slice(ROOM_STORAGE_KEY.length);
+      if (!slug) continue;
+      const rid = window.localStorage.getItem(key)?.trim();
+      if (rid) m.set(rid, slug);
+    }
+  } catch {
+    // ignore
+  }
+  return m;
+}
+
+function rememberRoomToSpaceSlugSession(roomId: string, slug: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(
+      `${SESSION_ROOM_TO_SPACE_PREFIX}${roomId}`,
+      slug,
+    );
+  } catch {
+    // ignore
+  }
+}
 
 /**
  * Get a persisted room ID for a space slug from localStorage.
@@ -487,6 +562,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   currentUserAvatarUrlRef.current = currentUserAvatarUrl;
 
   const [input, setInput] = useState('');
+  /** Hypha-resolved names from the mention picker (may differ from Matrix fallback displayLabel). */
+  const [mentionDisplayOverride, setMentionDisplayOverride] = useState<
+    Record<string, string>
+  >({});
+
   const [draftAttachments, setDraftAttachments] = useState<
     ChatDraftAttachment[]
   >([]);
@@ -499,6 +579,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMentionDisplayOverride({});
+  }, [roomId]);
+
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState<string | null>(null);
@@ -537,6 +622,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }>(null);
   const joinedRef = useRef<string | null>(null);
   const [unreadBump, setUnreadBump] = useState(0);
+  const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
 
   const currentUserId = client?.getUserId?.() ?? null;
@@ -573,6 +659,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     tabBackgroundWhileInCall: spaceCallTabBackground,
     retryFromError: retrySpaceCall,
     dismissCallError: dismissSpaceCallError,
+    remoteMediaStall: spaceCallRemoteMediaStall,
+    dismissRemoteMediaStallBanner: dismissSpaceCallRemoteMediaStall,
   } = useSpaceGroupCall(mode === 'space' ? roomId : null);
 
   const callUiEnabled = useMemo(
@@ -595,6 +683,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [inSpaceCall]);
 
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
+
+  /** Distinct Matrix users in the room call besides the current user (not device count). */
+  const spaceCallOtherMemberCount = useMemo(
+    () =>
+      spaceCallInCallUserIds.filter((id) => id && id !== currentUserId).length,
+    [spaceCallInCallUserIds, currentUserId],
+  );
 
   const spaceCallShowJoinChime = useMemo(
     () => callUiEnabled && spaceCallShowJoinStrip && !inSpaceCall,
@@ -651,6 +746,33 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     void leaveSpaceCall();
     setCallLeftMessage(k === 'video' ? t('callLeftVideo') : t('callLeftAudio'));
   }, [leaveSpaceCall, spaceCallKind, t]);
+
+  /** End ghost sessions: when connected and no other participants for 5 minutes, leave locally. */
+  useEffect(() => {
+    if (!callUiEnabled || spaceCallState !== 'connected') return;
+    if (spaceCallOthersInRoom > 0 || spaceCallRoomGroupDeviceCount === 0)
+      return;
+
+    const SOLO_IDLE_LEAVE_MS = 5 * 60 * 1000;
+    const id = window.setTimeout(() => {
+      void leaveSpaceCall();
+      setCallLeftMessage(
+        spaceCallKind === 'video'
+          ? t('callLeftVideoIdle')
+          : t('callLeftAudioIdle'),
+      );
+    }, SOLO_IDLE_LEAVE_MS);
+
+    return () => window.clearTimeout(id);
+  }, [
+    callUiEnabled,
+    spaceCallState,
+    spaceCallOthersInRoom,
+    spaceCallRoomGroupDeviceCount,
+    leaveSpaceCall,
+    spaceCallKind,
+    t,
+  ]);
 
   const handleCallToggleMic = useCallback(() => {
     void setSpaceCallMicMuted(!spaceCallMicMuted);
@@ -817,21 +939,73 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     mentionMembershipEpoch,
   ]);
 
+  const mergeMentionDisplayLabel = useCallback(
+    (userId: string, displayLabel: string) => {
+      const trimmedLabel = displayLabel.trim();
+      if (!trimmedLabel) return;
+      setMentionDisplayOverride((prev) => {
+        if (prev[userId] === trimmedLabel) return prev;
+        return { ...prev, [userId]: trimmedLabel };
+      });
+    },
+    [],
+  );
+
   const mentionLabelByUserId = useMemo(
     () =>
       new Map(
-        mentionCandidates.map((candidate) => [
-          candidate.userId,
-          candidate.displayLabel,
-        ]),
+        mentionCandidates.map((candidate) => {
+          const o = mentionDisplayOverride[candidate.userId];
+          return [
+            candidate.userId,
+            o?.trim() ? o : candidate.displayLabel,
+          ] as const;
+        }),
       ),
-    [mentionCandidates],
+    [mentionCandidates, mentionDisplayOverride],
+  );
+
+  const duplicateSanitizedDisplayKeys = useMemo(
+    () => computeDuplicateSanitizedDisplayKeys(mentionLabelByUserId),
+    [mentionLabelByUserId],
+  );
+
+  /** Sanitized display label → MXID for converting composer `@Name` tokens before Matrix send. */
+  const mentionSanitizedLabelToUserId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const [userId, label] of mentionLabelByUserId) {
+      const key = disambiguatedMentionTokenKey(
+        userId,
+        label,
+        duplicateSanitizedDisplayKeys,
+      );
+      if (!key) continue;
+      m.set(key, userId);
+    }
+    return m;
+  }, [mentionLabelByUserId, duplicateSanitizedDisplayKeys]);
+
+  const getMentionComposerLabel = useCallback(
+    (member: ChatMentionCandidate, resolvedComposerLabel?: string) => {
+      const label = resolvedComposerLabel?.trim() || member.displayLabel;
+      return (
+        disambiguatedMentionTokenKey(
+          member.userId,
+          label,
+          duplicateSanitizedDisplayKeys,
+        ) || label
+      );
+    },
+    [duplicateSanitizedDisplayKeys],
   );
 
   const resolveMentionMemberLabel = useCallback(
-    (userId: string) =>
-      mentionLabelByUserId.get(userId) ?? resolveMemberLabel(userId),
-    [mentionLabelByUserId, resolveMemberLabel],
+    (userId: string | undefined) => {
+      const id = userId?.trim();
+      if (!id) return t('unknownMember');
+      return mentionLabelByUserId.get(id) ?? resolveMemberLabel(id);
+    },
+    [mentionLabelByUserId, resolveMemberLabel, t],
   );
 
   /** Same roster merge as pills — timeline sender/reply headers use this first. */
@@ -874,10 +1048,34 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!roomId || !client) return;
     setMessages((prev) =>
       prev.map((m) => {
-        const newSenderName =
-          m.role === 'member' && m.senderMatrixId
-            ? resolveMemberLabelRef.current(m.senderMatrixId)
-            : m.senderName;
+        const sid = m.senderMatrixId?.trim();
+        const isSelfRow = Boolean(
+          currentUserIdRef.current && sid && sid === currentUserIdRef.current,
+        );
+
+        /**
+         * On cold load, `client.getUserId()` can be null when we first map
+         * Matrix events to UI — own messages are misclassified as `member` and
+         * get a technical Matrix/Privy display label. Re-sync when Matrix id arrives.
+         */
+        let nextRole = m.role;
+        let newSenderName = m.senderName;
+        let nextMemberAvatar = m.avatarUrl;
+        if (isSelfRow) {
+          nextRole = 'user';
+          newSenderName = undefined;
+          nextMemberAvatar = currentUserAvatarUrlRef.current ?? m.avatarUrl;
+        } else if (m.role === 'member' && sid) {
+          newSenderName = resolveMemberLabelRef.current(sid);
+          nextMemberAvatar =
+            matrixMemberAvatarSquare(
+              matrixClientRef.current,
+              roomIdRef.current,
+              sid,
+              96,
+            ) ?? m.avatarUrl;
+        }
+
         const newAuthorLabel =
           m.replyTo?.sourceUserId != null
             ? resolveMemberLabelRef.current(m.replyTo.sourceUserId)
@@ -902,17 +1100,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               }
             : m.replyTo;
 
-        const nextMemberAvatar =
-          m.role === 'member' && m.senderMatrixId
-            ? matrixMemberAvatarSquare(
-                matrixClientRef.current,
-                roomIdRef.current,
-                m.senderMatrixId,
-                96,
-              ) ?? m.avatarUrl
-            : m.avatarUrl;
-
         if (
+          nextRole === m.role &&
           newSenderName === m.senderName &&
           nextReply?.authorLabel === m.replyTo?.authorLabel &&
           nextReply?.authorAvatarUrl === m.replyTo?.authorAvatarUrl &&
@@ -923,13 +1112,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         return {
           ...m,
+          role: nextRole,
           senderName: newSenderName,
           avatarUrl: nextMemberAvatar,
           replyTo: nextReply,
         };
       }),
     );
-  }, [roomId, client, currentUserId, me?.name, me?.surname, t]);
+  }, [
+    roomId,
+    client,
+    currentUserId,
+    currentUserAvatarUrl,
+    me?.name,
+    me?.surname,
+    t,
+  ]);
 
   // Backfill avatar on self-authored messages after useMe() resolves
   useEffect(() => {
@@ -1378,10 +1576,52 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return `/${lang}/notification-centre`;
   }, [pathname, params?.id, spaceSlug]);
 
-  const handleSelectMentionFromInbox = useCallback((eventId: string) => {
-    setActiveTab('chat');
-    setScrollToEventId(eventId);
-  }, []);
+  const handleSelectMentionFromInbox = useCallback(
+    (eventId: string, fromRoomId?: string) => {
+      const targetRoom = fromRoomId?.trim();
+      const current = roomId?.trim();
+      const langMatch = pathname.match(/^\/([^/]+)\//);
+      const lang = langMatch?.[1] ?? 'en';
+
+      if (
+        targetRoom &&
+        current &&
+        targetRoom !== current &&
+        typeof window !== 'undefined'
+      ) {
+        let slug =
+          window.sessionStorage
+            .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${targetRoom}`)
+            ?.trim() ?? null;
+        if (!slug) {
+          const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
+          slug = fromLs ?? null;
+        }
+        if (!slug && space?.chatRoomId?.trim() === targetRoom && spaceSlug) {
+          slug = spaceSlug;
+        }
+        if (slug) {
+          router.push(
+            `/${lang}/dho/${slug}?msg=${encodeURIComponent(eventId)}`,
+          );
+          openHumanChatPanel();
+          setActiveTab('chat');
+          return;
+        }
+      }
+
+      setActiveTab('chat');
+      setScrollToEventId(eventId);
+    },
+    [
+      roomId,
+      pathname,
+      router,
+      openHumanChatPanel,
+      space?.chatRoomId,
+      spaceSlug,
+    ],
+  );
 
   const handleConsumedScrollTarget = useCallback(() => {
     setScrollToEventId(null);
@@ -1423,6 +1663,36 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     };
   }, [client, roomId]);
 
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      mode !== 'space' ||
+      !spaceSlug?.trim() ||
+      !roomId?.trim()
+    )
+      return;
+    rememberRoomToSpaceSlugSession(roomId, spaceSlug.trim());
+  }, [mode, spaceSlug, roomId]);
+
+  useEffect(() => {
+    const pathSlug = getDhoSpaceSlugFromPathname(pathname)?.trim();
+    const rid = roomId?.trim() ?? null;
+    if (pathSlug && rid && mode === 'space' && typeof window !== 'undefined') {
+      rememberRoomToSpaceSlugSession(rid, pathSlug);
+    }
+  }, [pathname, roomId, mode]);
+
+  useEffect(() => {
+    if (!client || !currentUserId) return;
+    const bump = () => setAggregateMentionBump((n) => n + 1);
+    client.on(ClientEvent.Sync, bump);
+    client.on(ClientEvent.Room, bump);
+    return () => {
+      client.removeListener(ClientEvent.Sync, bump);
+      client.removeListener(ClientEvent.Room, bump);
+    };
+  }, [client, currentUserId]);
+
   const unreadChatState = useMemo(() => {
     if (!client || !roomId || !currentUserId) {
       return {
@@ -1436,6 +1706,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const room = client.getRoom(roomId);
     return computeHumanChatUnreadState(room ?? undefined, currentUserId);
   }, [client, roomId, currentUserId, unreadBump, mergedMessages.length]);
+
+  const aggregateMentionBadge = useMemo(() => {
+    if (!client || !currentUserId) {
+      return { count: 0, capped: false };
+    }
+    return computeAggregateUnreadMentionCount(client.getRooms(), currentUserId);
+  }, [client, currentUserId, aggregateMentionBump, unreadBump]);
+
+  const bellMentionCount = aggregateMentionBadge.count;
+  const bellMentionCapped = aggregateMentionBadge.capped;
 
   const markChatTimelineRead = useCallback(async () => {
     if (!client || !roomId || !currentUserId) return;
@@ -1476,7 +1756,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (mode !== 'space') return;
     const qpChat = searchParams?.get('chat')?.trim();
     const qpMsg = searchParams?.get('msg')?.trim();
-    if (!qpChat || !qpMsg || !roomId || qpChat !== roomId) return;
+    if (!qpMsg || !roomId) return;
+    /** Short link: `?msg=` only (same space room). Legacy: `?chat=` + `msg`. */
+    const sameRoom = (!qpChat && roomId) || (qpChat && qpChat === roomId);
+    if (!sameRoom) return;
 
     openHumanChatPanel();
     setActiveTab('chat');
@@ -1673,6 +1956,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setDraftAttachments([]);
     const pendingId =
       savedAttachments.length > 0 ? `hypha-send-pending-${Date.now()}` : null;
+    const { wirePlain, mentionUserIds } = wireComposerPlainForMatrixSend(
+      text,
+      mentionSanitizedLabelToUserId,
+    );
     if (pendingId) {
       setSendingPending({
         id: pendingId,
@@ -1706,7 +1993,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           await matrixRef.current.editRoomMessage({
             roomId,
             targetEventId: editTargetEventId,
-            message: text,
+            message: wirePlain,
+            mentionUserIds,
             existingMediaSlots: slots,
             ...(newFiles.length > 0 ? { newAttachments: newFiles } : {}),
             ...(newFiles.length > 0 ? { signal } : {}),
@@ -1718,13 +2006,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           await matrixRef.current.editRoomMessage({
             roomId,
             targetEventId: editTargetEventId,
-            message: text,
+            message: wirePlain,
+            mentionUserIds,
           });
         }
       } else {
         await matrixRef.current.sendMessage({
           roomId,
-          message: text,
+          message: wirePlain,
+          mentionUserIds,
           signal,
           ...(replyToEventId ? { replyToEventId } : {}),
           ...(savedAttachments.length > 0
@@ -1814,7 +2104,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setEditDraft(savedEditDraft);
       setDraftAttachments(savedAttachments);
     }
-  }, [input, roomId, replyDraft, editDraft, draftAttachments, t]);
+  }, [
+    input,
+    roomId,
+    replyDraft,
+    editDraft,
+    draftAttachments,
+    mentionSanitizedLabelToUserId,
+    t,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -1832,8 +2130,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           trailingStart={
             roomId ? (
               <HumanChatPanelMentionBell
-                unreadCount={unreadChatState.unreadMentionCount}
-                countIsCapped={unreadChatState.mentionCountIsCapped}
+                unreadCount={bellMentionCount}
+                countIsCapped={bellMentionCapped}
                 mentionsTabActive={activeTab === 'mentions'}
                 onOpenMentions={() => setActiveTab('mentions')}
                 callJoinRingControlsActive={
@@ -1848,10 +2146,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         <HumanChatPanelTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          chatMentionCount={unreadChatState.unreadMentionCount}
-          chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
-          mentionTabBadgeCount={unreadChatState.unreadMentionCount}
-          mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
+          chatMentionCount={bellMentionCount}
+          chatMentionCountCapped={bellMentionCapped}
+          mentionTabBadgeCount={bellMentionCount}
+          mentionTabBadgeCapped={bellMentionCapped}
           tabRowEnd={
             callUiEnabled ? (
               <HumanChatPanelCallToolbar
@@ -1860,7 +2158,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 disabled={!callUiEnabled}
                 roomCallInProgressToJoin={spaceCallToolbarJoinHint}
                 onlyLocalInRoomCall={
-                  spaceCallShowJoinStrip && spaceCallRoomGroupDeviceCount === 1
+                  spaceCallShowJoinStrip && spaceCallOtherMemberCount === 0
                 }
                 onAudio={handleCallAudio}
                 onVideo={handleCallVideo}
@@ -1895,6 +2193,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               isLocalVideoMuted={spaceCallVideoMuted}
               participantCount={spaceCallRoomGroupDeviceCount}
               othersInRoomCallCount={spaceCallOthersInRoom}
+              remoteMediaStall={spaceCallRemoteMediaStall}
+              onDismissRemoteMediaStall={dismissSpaceCallRemoteMediaStall}
               onLeave={handleCallLeave}
               onToggleMic={handleCallToggleMic}
               onToggleCamera={handleCallToggleCamera}
@@ -1934,8 +2234,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   activeSpeakerKey={spaceCallActiveSpeakerKey}
                   currentUserId={currentUserId}
                   inCallUserIds={spaceCallInCallUserIds}
+                  remoteMediaStall={spaceCallRemoteMediaStall}
                   currentUserProfileAvatarUrl={currentUserAvatarUrl}
-                  resolveMemberLabel={resolveMemberLabel}
+                  resolveMemberLabel={resolveMentionMemberLabel}
                   layout={
                     callFullViewOpen && canOpenCallFullView ? 'hidden' : 'panel'
                   }
@@ -2048,6 +2349,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               currentUserId={currentUserId}
               resolveMemberLabel={resolveMentionMemberLabel}
               onSelectMessage={handleSelectMentionFromInbox}
+              aggregatedMentions={mode === 'space'}
             />
           </div>
         )}
@@ -2061,6 +2363,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onSend={handleSend}
               mentionCandidates={mentionCandidates}
               mentionPickerEnabled={mentionPickerEnabled}
+              getMentionComposerLabel={getMentionComposerLabel}
+              onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
               draftAttachments={draftAttachments}
               onDraftAttachmentsChange={setDraftAttachments}
               replyPreview={
@@ -2150,8 +2454,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   activeSpeakerKey={spaceCallActiveSpeakerKey}
                   currentUserId={currentUserId}
                   inCallUserIds={spaceCallInCallUserIds}
+                  remoteMediaStall={spaceCallRemoteMediaStall}
                   currentUserProfileAvatarUrl={currentUserAvatarUrl}
-                  resolveMemberLabel={resolveMemberLabel}
+                  resolveMemberLabel={resolveMentionMemberLabel}
                   layout="fullView"
                   fullViewOpen
                   fullViewLayoutMode={callFullViewLayoutMode}
