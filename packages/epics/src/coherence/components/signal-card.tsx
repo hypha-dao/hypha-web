@@ -371,6 +371,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             aria-label={tSignalCard('deleteMenu')}
             title={tSignalCard('deleteMenu')}
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               setDeleteOpen(true);
             }}
@@ -441,6 +442,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   type="button"
                   className="w-fit text-left text-1 font-medium text-accent-11 underline-offset-4 hover:underline"
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     setDetailsOpen(true);
                   }}
