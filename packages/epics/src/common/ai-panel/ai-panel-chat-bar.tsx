@@ -144,6 +144,13 @@ export function AiPanelChatBar({
   }, []);
 
   useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    if (!value.trim()) {
+      // Always collapse to single-line composer when cleared/reopened.
+      el.style.height = '36px';
+      return;
+    }
     autoResize();
   }, [value, autoResize]);
 
