@@ -164,6 +164,7 @@ export function EcosystemNavigationMainPanel({
     },
     [],
   );
+  const selectedSpaceTitle = selectedSpace?.name ?? currentSpaceTitle;
 
   const tabs = useMemo(
     () => [
@@ -172,6 +173,12 @@ export function EcosystemNavigationMainPanel({
         label: t('tabs.nestedSpaces'),
         content: (
           <div className="flex min-h-0 flex-col gap-4">
+            <div
+              className="mx-auto w-full max-w-[min(100%,36rem)] truncate px-2 text-center text-4 font-semibold tracking-tight text-foreground"
+              title={selectedSpaceTitle}
+            >
+              {selectedSpaceTitle}
+            </div>
             <div className="w-full overflow-visible px-3 py-2 sm:px-5 sm:py-4">
               {hierarchyData ? (
                 <div className="mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))]">
@@ -210,9 +217,14 @@ export function EcosystemNavigationMainPanel({
         ),
       },
     ],
-    [currentSpace?.id, handleVisibleSpacesChange, hierarchyData, t],
+    [
+      currentSpace?.id,
+      handleVisibleSpacesChange,
+      hierarchyData,
+      selectedSpaceTitle,
+      t,
+    ],
   );
-  const selectedSpaceTitle = selectedSpace?.name ?? currentSpaceTitle;
   const selectedSpaceSlug = selectedSpace?.slug ?? currentSpaceSlug;
   const visitSpaceHref = getDhoSpaceContextPath({
     pathname,
@@ -246,25 +258,17 @@ export function EcosystemNavigationMainPanel({
           visualizationClassName="min-h-0"
           afterTabsContent={
             <div className="w-full">
-              <div className="flex w-full flex-col gap-2">
-                <div
-                  className="mx-auto w-full max-w-[min(100%,36rem)] truncate px-2 text-center text-4 font-semibold tracking-tight text-foreground"
-                  title={selectedSpaceTitle}
-                >
-                  {selectedSpaceTitle}
-                </div>
-                <div className="flex items-center justify-end gap-2">
-                  <Link href={visitSpaceHref}>
-                    <Button variant="outline" colorVariant="neutral">
-                      {t('visibleSpaces.visitSpace')}
-                    </Button>
-                  </Link>
-                  <Link href={addSpaceHref}>
-                    <Button variant="default" colorVariant="accent">
-                      {t('visibleSpaces.addSpace')}
-                    </Button>
-                  </Link>
-                </div>
+              <div className="flex items-center justify-end gap-2">
+                <Link href={visitSpaceHref}>
+                  <Button variant="outline" colorVariant="neutral">
+                    {t('visibleSpaces.visitSpace')}
+                  </Button>
+                </Link>
+                <Link href={addSpaceHref}>
+                  <Button variant="default" colorVariant="accent">
+                    {t('visibleSpaces.addSpace')}
+                  </Button>
+                </Link>
               </div>
             </div>
           }
