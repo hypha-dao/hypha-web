@@ -29,6 +29,7 @@ export default async function MembershipPage(props: PageProps) {
         <TabScreenTitle
           title={tCommon('Members')}
           count={spaceFromDb?.memberCount ?? null}
+          lang={lang}
         />
         <MembersSection
           basePath={`${basePath}/person`}

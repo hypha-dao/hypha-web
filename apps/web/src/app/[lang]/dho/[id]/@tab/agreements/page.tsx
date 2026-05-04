@@ -37,6 +37,7 @@ export default async function AgreementsPage(props: PageProps) {
         <TabScreenTitle
           title={tCommon('Agreements')}
           count={spaceFromDb?.documentCount ?? null}
+          lang={lang}
         />
         <DocumentsSections
           lang={lang}
