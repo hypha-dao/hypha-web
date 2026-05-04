@@ -11,10 +11,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
   const locale = hasLocale(routing.locales, requested)
     ? requested
     : routing.defaultLocale;
-  const cookieStore = await cookies();
-  const timeZone = sanitizeTimeZone(
-    cookieStore.get(TIME_ZONE_COOKIE)?.value ?? FALLBACK_TIME_ZONE,
-  );
+  const timeZone = await getSafeRequestTimeZone();
 
   const defaultMessages = (await import('./messages/en.json')).default;
   let localeMessages: Record<string, unknown> = {};
@@ -64,6 +61,17 @@ function sanitizeTimeZone(value: string): string {
   try {
     new Intl.DateTimeFormat('en-US', { timeZone: value }).format(new Date());
     return value;
+  } catch {
+    return FALLBACK_TIME_ZONE;
+  }
+}
+
+async function getSafeRequestTimeZone(): Promise<string> {
+  try {
+    const cookieStore = await cookies();
+    return sanitizeTimeZone(
+      cookieStore.get(TIME_ZONE_COOKIE)?.value ?? FALLBACK_TIME_ZONE,
+    );
   } catch {
     return FALLBACK_TIME_ZONE;
   }
