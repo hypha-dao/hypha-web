@@ -86,6 +86,11 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.min(100, Math.round(((done + pending * 0.5) / total) * 100));
 };
 
+const toNullableString = (
+  value: string | File | null | undefined,
+): string | null | undefined =>
+  typeof value === 'string' ? value : value === null ? null : undefined;
+
 export const useUpdateSpaceOrchestrator = ({
   authToken,
 }: UseUpdateSpaceInput) => {
@@ -196,30 +201,10 @@ export const useUpdateSpaceOrchestrator = ({
         startTask('UPDATE_WEB2_SPACE');
         const updateInput = schemaUpdateSpace.parse({
           ...data,
-          logoUrl:
-            typeof data.logoUrl === 'string'
-              ? data.logoUrl
-              : data.logoUrl === null
-              ? null
-              : undefined,
-          leadImage:
-            typeof data.leadImage === 'string'
-              ? data.leadImage
-              : data.leadImage === null
-              ? null
-              : undefined,
-          ecosystemLogoUrlLight:
-            typeof data.ecosystemLogoUrlLight === 'string'
-              ? data.ecosystemLogoUrlLight
-              : data.ecosystemLogoUrlLight === null
-              ? null
-              : undefined,
-          ecosystemLogoUrlDark:
-            typeof data.ecosystemLogoUrlDark === 'string'
-              ? data.ecosystemLogoUrlDark
-              : data.ecosystemLogoUrlDark === null
-              ? null
-              : undefined,
+          logoUrl: toNullableString(data.logoUrl),
+          leadImage: toNullableString(data.leadImage),
+          ecosystemLogoUrlLight: toNullableString(data.ecosystemLogoUrlLight),
+          ecosystemLogoUrlDark: toNullableString(data.ecosystemLogoUrlDark),
         });
         const result = await web2.updateSpaceById({
           ...updateInput,
