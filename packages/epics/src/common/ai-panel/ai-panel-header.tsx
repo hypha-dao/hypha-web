@@ -148,6 +148,14 @@ export function AiPanelHeader({
     }
   }, [spaceMenuOpen, spaceSearch]);
 
+  useEffect(() => {
+    if (!spaceMenuOpen) return;
+
+    requestAnimationFrame(() => {
+      spaceSearchInputRef.current?.focus();
+    });
+  }, [spaceMenuOpen]);
+
   const renderSpaceOption = (space: Space) => (
     <DropdownMenuItem
       key={space.id}
@@ -235,12 +243,6 @@ export function AiPanelHeader({
                 side="bottom"
                 align="center"
                 sideOffset={4}
-                onOpenAutoFocus={(event) => {
-                  event.preventDefault();
-                  requestAnimationFrame(() => {
-                    spaceSearchInputRef.current?.focus();
-                  });
-                }}
                 className="relative isolate z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
               >
                 <div className="flex max-h-[24.5rem] min-h-0 flex-col">
