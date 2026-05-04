@@ -717,6 +717,38 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   roomIdRef.current = roomId;
   const matrixClientRef = useRef(client);
   matrixClientRef.current = client;
+  const resetChatStateOnAuthDrop = useCallback(() => {
+    const activeRoomId = roomIdRef.current;
+    if (activeRoomId) {
+      matrixRef.current.unregisterRoomListener(activeRoomId);
+    }
+    joinedRef.current = null;
+    setRoomId(null);
+    setMessages([]);
+    setInput('');
+    disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+    setDraftAttachments([]);
+    setReplyDraft(null);
+    setEditDraft(null);
+    setError(null);
+    setReactionError(null);
+    setComposerError(null);
+    setDeleteError(null);
+    setSendingPending(null);
+    setCallFullViewOpen(false);
+  }, [setCallFullViewOpen]);
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (isAuthenticated) return;
+    resetChatStateOnAuthDrop();
+  }, [isAuthLoading, isAuthenticated, resetChatStateOnAuthDrop]);
+
+  useEffect(() => {
+    if (!isMatrixAvailable) return;
+    if (isMatrixAuthenticated) return;
+    resetChatStateOnAuthDrop();
+  }, [isMatrixAvailable, isMatrixAuthenticated, resetChatStateOnAuthDrop]);
 
   const {
     callState: spaceCallState,
