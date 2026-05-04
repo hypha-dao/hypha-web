@@ -93,6 +93,7 @@ export function CoherenceBlock({
   humanChatEnabled = false,
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
+  const format = useFormatter();
   const tSpaces = useTranslations('Spaces');
   const [hideArchived, setHideArchived] = React.useState(true);
   const { isAuthenticated, login } = useAuthentication();
@@ -179,7 +180,7 @@ export function CoherenceBlock({
           {t('signals')}
           {typeof signals?.length === 'number' ? (
             <span className="ml-2 text-5 font-medium text-muted-foreground">
-              | {Intl.NumberFormat().format(signals.length)}
+              | {format.number(signals.length)}
             </span>
           ) : null}
         </h1>
