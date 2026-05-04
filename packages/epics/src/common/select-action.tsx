@@ -103,6 +103,7 @@ export const SelectAction = ({
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder={searchPlaceholder}
+          aria-label={searchPlaceholder}
           leftIcon={<Search className="text-accent-9" size="16px" />}
         />
       ) : null}
