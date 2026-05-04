@@ -54,22 +54,38 @@ type UseVaultsReturn = {
 export const useVaults = ({
   spaceSlug,
   refreshInterval = 10000,
-}: { spaceSlug?: string; refreshInterval?: number } = {}): UseVaultsReturn => {
+  redeemableOnly = false,
+}: {
+  spaceSlug?: string;
+  refreshInterval?: number;
+  redeemableOnly?: boolean;
+} = {}): UseVaultsReturn => {
   const { id } = useParams<{ id: string }>();
-  const { getAccessToken } = useAuthentication();
+  const {
+    getAccessToken,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuthentication();
   const resolvedSpaceSlug =
     typeof spaceSlug === 'string' ? spaceSlug : id ?? undefined;
 
   const endpoint = React.useMemo(
     () =>
-      resolvedSpaceSlug ? `/api/v1/spaces/${resolvedSpaceSlug}/vaults` : null,
-    [resolvedSpaceSlug],
+      resolvedSpaceSlug
+        ? `/api/v1/spaces/${resolvedSpaceSlug}/vaults${
+            redeemableOnly ? '?redeemableOnly=true' : ''
+          }`
+        : null,
+    [redeemableOnly, resolvedSpaceSlug],
   );
 
   const { data, isLoading, mutate } = useSWR<UseVaultsData>(
-    endpoint ? [endpoint] : null,
+    endpoint && !isAuthLoading ? [endpoint] : null,
     async ([url]) => {
       const token = await getAccessToken();
+      if (!token && isAuthenticated) {
+        throw new Error('Authentication token not available yet');
+      }
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (token) {
         headers.Authorization = `Bearer ${token}`;
@@ -94,14 +110,18 @@ export const useVaults = ({
         })),
       };
     },
-    { refreshInterval },
+    {
+      refreshInterval,
+      shouldRetryOnError: true,
+      errorRetryInterval: 1500,
+    },
   );
 
   const vaults = data?.vaults ?? [];
 
   return {
     vaults,
-    isLoading,
+    isLoading: isAuthLoading || isLoading,
     mutate,
   };
 };

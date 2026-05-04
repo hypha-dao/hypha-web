@@ -39,6 +39,8 @@ interface TokenPayoutFieldArrayProps {
   showSelectedTokenBalanceHint?: boolean;
   showTreasuryBalanceHint?: boolean;
   selectedTokenPriceHint?: string;
+  isLoadingTokens?: boolean;
+  loadingTokensLabel?: string;
 }
 
 function TokenPayoutFieldArrayInner({
@@ -50,6 +52,8 @@ function TokenPayoutFieldArrayInner({
   showSelectedTokenBalanceHint = false,
   showTreasuryBalanceHint = false,
   selectedTokenPriceHint,
+  isLoadingTokens = false,
+  loadingTokensLabel,
 }: TokenPayoutFieldArrayProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const resolvedLabel =
@@ -94,6 +98,8 @@ function TokenPayoutFieldArrayInner({
                   }
                   useTreasuryBalanceLine={showTreasuryBalanceHint}
                   selectedTokenPriceHint={selectedTokenPriceHint}
+                  isLoadingTokens={isLoadingTokens}
+                  loadingTokensLabel={loadingTokensLabel}
                 />
               </FormControl>
               {/*

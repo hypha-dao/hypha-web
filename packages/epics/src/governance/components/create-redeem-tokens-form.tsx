@@ -88,6 +88,7 @@ const CreateRedeemTokensFormInner = ({
           percentage: '100.00',
         },
       ],
+      redemptionVaultWeb3SpaceId: web3SpaceId ?? undefined,
     },
   });
 
@@ -126,6 +127,12 @@ const CreateRedeemTokensFormInner = ({
       ...data,
       spaceId: spaceId as number,
       web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
+      redemptionVaultWeb3SpaceId:
+        typeof data.redemptionVaultWeb3SpaceId === 'number'
+          ? data.redemptionVaultWeb3SpaceId
+          : typeof web3SpaceId === 'number'
+          ? web3SpaceId
+          : undefined,
       redemptions: data.redemptions.map(({ amount, token }) => ({
         amount: amount ?? '0',
         token: token ?? '',
@@ -136,10 +143,20 @@ const CreateRedeemTokensFormInner = ({
       })),
     });
 
-    if (web3SpaceId == null) {
-      console.error('Web3 space ID is missing');
+    const proposalWeb3SpaceId = web3SpaceId;
+
+    if (proposalWeb3SpaceId == null) {
+      form.setError('root', {
+        message:
+          'This space is not configured on-chain yet, so redeem proposals cannot be created.',
+      });
       return;
     }
+
+    const redemptionVaultWeb3SpaceId =
+      typeof data.redemptionVaultWeb3SpaceId === 'number'
+        ? data.redemptionVaultWeb3SpaceId
+        : proposalWeb3SpaceId;
 
     const [redemption] = data.redemptions;
     if (!redemption) {
@@ -151,10 +168,11 @@ const CreateRedeemTokensFormInner = ({
       await createRedeemTokens({
         ...data,
         spaceId: spaceId as number,
-        web3SpaceId: web3SpaceId as number,
+        web3SpaceId: proposalWeb3SpaceId,
         redemption: {
           amount: redemption.amount ?? '0',
           token: redemption.token ?? '',
+          vaultWeb3SpaceId: redemptionVaultWeb3SpaceId,
         },
         conversions: data.conversions.map(({ asset, percentage }) => ({
           asset: asset ?? '',
@@ -238,7 +256,9 @@ const CreateRedeemTokensFormInner = ({
             : plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit" disabled={web3SpaceId == null}>
+              Publish
+            </Button>
           </div>
         </form>
       </Form>

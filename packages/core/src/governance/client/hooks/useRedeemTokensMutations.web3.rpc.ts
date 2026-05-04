@@ -22,8 +22,9 @@ import {
 import { getDuration } from '@hypha-platform/ui-utils';
 
 export interface CreateRedeemTokensInput {
+  proposalWeb3SpaceId: number;
   redemption: {
-    web3SpaceId: number;
+    vaultWeb3SpaceId?: number;
     amount: string;
     token: string;
   };
@@ -49,13 +50,16 @@ export async function prepareRedeemProposalParams(
   duration: bigint;
   transactions: RedeemProposalTransaction[];
 }> {
-  const spaceId = BigInt(arg.redemption.web3SpaceId);
+  const proposalSpaceId = BigInt(arg.proposalWeb3SpaceId);
+  const vaultSpaceId = BigInt(
+    arg.redemption.vaultWeb3SpaceId ?? arg.proposalWeb3SpaceId,
+  );
   const spaceToken = arg.redemption.token as `0x${string}`;
   const vaultAddress = tokenBackingVaultImplementationAddress[chain];
 
   const duration = await publicClient.readContract(
     getSpaceMinProposalDuration({
-      spaceId,
+      spaceId: proposalSpaceId,
     }),
   );
 
@@ -81,7 +85,7 @@ export async function prepareRedeemProposalParams(
     address: vaultAddress,
     abi: tokenBackingVaultImplementationAbi,
     functionName: 'vaultExists',
-    args: [spaceId, spaceToken],
+    args: [vaultSpaceId, spaceToken],
   });
   if (!vaultExists) {
     throw new Error(
@@ -93,7 +97,7 @@ export async function prepareRedeemProposalParams(
     address: vaultAddress,
     abi: tokenBackingVaultImplementationAbi,
     functionName: 'getBackingTokens',
-    args: [spaceId, spaceToken],
+    args: [vaultSpaceId, spaceToken],
   });
   const configuredBackingSet = new Set(
     configuredBackingTokens.map((token) => token.toLowerCase()),
@@ -113,7 +117,7 @@ export async function prepareRedeemProposalParams(
   const redeemCallData = encodeFunctionData({
     abi: tokenBackingVaultImplementationAbi,
     functionName: 'redeem',
-    args: [spaceId, spaceToken, amount, backingTokens, proportions],
+    args: [vaultSpaceId, spaceToken, amount, backingTokens, proportions],
   });
 
   const transactions: RedeemProposalTransaction[] = [];
@@ -122,18 +126,18 @@ export async function prepareRedeemProposalParams(
     address: vaultAddress,
     abi: tokenBackingVaultImplementationAbi,
     functionName: 'getVaultConfig',
-    args: [spaceId, spaceToken],
+    args: [vaultSpaceId, spaceToken],
   });
   if (vaultConfig.whitelistEnabled) {
     const spaceDetails = await publicClient.readContract(
-      getSpaceDetails({ spaceId }),
+      getSpaceDetails({ spaceId: proposalSpaceId }),
     );
     const executor = spaceDetails[9] as `0x${string}`;
     const isExecutorWhitelisted = await publicClient.readContract({
       address: vaultAddress,
       abi: tokenBackingVaultImplementationAbi,
       functionName: 'isWhitelisted',
-      args: [spaceId, spaceToken, executor],
+      args: [vaultSpaceId, spaceToken, executor],
     });
 
     if (!isExecutorWhitelisted) {
@@ -144,7 +148,7 @@ export async function prepareRedeemProposalParams(
         data: encodeFunctionData({
           abi: tokenBackingVaultImplementationAbi,
           functionName: 'addToWhitelist',
-          args: [spaceId, spaceToken, [executor]],
+          args: [vaultSpaceId, spaceToken, [executor]],
         }),
       });
     }
@@ -168,7 +172,7 @@ export async function prepareRedeemProposalParams(
   });
 
   return {
-    spaceId,
+    spaceId: proposalSpaceId,
     duration: duration && duration > 0 ? duration : getDuration(7),
     transactions,
   };

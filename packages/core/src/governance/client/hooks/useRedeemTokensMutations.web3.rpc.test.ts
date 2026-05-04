@@ -55,8 +55,8 @@ describe('prepareRedeemProposalParams', () => {
       .mockResolvedValueOnce(false); // isWhitelisted
 
     const result = await prepareRedeemProposalParams({
+      proposalWeb3SpaceId: 123,
       redemption: {
-        web3SpaceId: 123,
         amount: '10',
         token: '0x00000000000000000000000000000000000000c1',
       },
@@ -117,8 +117,8 @@ describe('prepareRedeemProposalParams', () => {
 
     const spaceToken = '0x00000000000000000000000000000000000000c1' as const;
     const result = await prepareRedeemProposalParams({
+      proposalWeb3SpaceId: 123,
       redemption: {
-        web3SpaceId: 123,
         amount: '10',
         token: spaceToken,
       },
@@ -135,5 +135,51 @@ describe('prepareRedeemProposalParams', () => {
     expect(result.transactions[1]?.target).toBe(
       tokenBackingVaultImplementationAddress[8453],
     );
+  });
+
+  test('creates proposal in current space while redeeming from vault owner space', async () => {
+    const { publicClient } = await import('@hypha-platform/core/client');
+    const { prepareRedeemProposalParams } = await import(
+      './useRedeemTokensMutations.web3.rpc'
+    );
+    const readContractMock = vi.mocked(publicClient.readContract);
+    readContractMock
+      .mockResolvedValueOnce(3600n) // getSpaceMinProposalDuration (proposal space)
+      .mockResolvedValueOnce(true) // vaultExists (vault space)
+      .mockResolvedValueOnce([
+        '0x00000000000000000000000000000000000000b1',
+      ] as `0x${string}`[]) // getBackingTokens
+      .mockResolvedValueOnce({
+        redeemEnabled: true,
+        membersOnly: false,
+        whitelistEnabled: false,
+        minimumBackingBps: 0n,
+        redemptionStartDate: 0n,
+      }); // getVaultConfig
+
+    const result = await prepareRedeemProposalParams({
+      proposalWeb3SpaceId: 111,
+      redemption: {
+        vaultWeb3SpaceId: 222,
+        amount: '10',
+        token: '0x00000000000000000000000000000000000000c1',
+      },
+      conversions: [
+        {
+          asset: '0x00000000000000000000000000000000000000b1',
+          percentage: '100.00',
+        },
+      ],
+    });
+
+    expect(result.spaceId).toBe(111n);
+    const redeemTx = result.transactions[1];
+    expect(redeemTx?.target).toBe(tokenBackingVaultImplementationAddress[8453]);
+    const redeemDecoded = decodeFunctionData({
+      abi: tokenBackingVaultImplementationAbi,
+      data: redeemTx!.data,
+    });
+    expect(redeemDecoded.functionName).toBe('redeem');
+    expect(redeemDecoded.args[0]).toBe(222n);
   });
 });

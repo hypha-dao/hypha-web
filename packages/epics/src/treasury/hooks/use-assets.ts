@@ -62,16 +62,18 @@ type UseAssetsReturn = {
 export const useAssets = ({
   filter,
   refreshInterval = 10000,
+  bestEffort = false,
 }: {
   filter?: { type: string };
   refreshInterval?: number;
+  bestEffort?: boolean;
 }): UseAssetsReturn => {
   const { id } = useParams<{ id: string }>();
   const { getAccessToken } = useAuthentication();
 
   const endpoint = React.useMemo(() => {
-    return `/api/v1/spaces/${id}/assets`;
-  }, [id]);
+    return `/api/v1/spaces/${id}/assets${bestEffort ? '?bestEffort=true' : ''}`;
+  }, [bestEffort, id]);
 
   const { data, isLoading } = useSWR(
     [endpoint],
@@ -87,6 +89,9 @@ export const useAssets = ({
 
       const res = await fetch(endpoint, { headers });
       if (!res.ok) {
+        if (bestEffort) {
+          return { assets: [], isLoading: false, balance: 0 };
+        }
         throw new Error(`Failed to fetch assets: ${res.statusText}`);
       }
       return await res.json();

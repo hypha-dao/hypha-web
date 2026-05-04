@@ -3,6 +3,7 @@
 import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import useSWR from 'swr';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { TokenPayoutFieldArray } from '../components/common/token-payout-field-array';
 import { TokenPercentageFieldArray } from '../components/common/token-percentage-field-array';
 import type { TokenPercentageAsset } from '../components/common/token-percentage-field';
@@ -122,9 +123,21 @@ function isRedemptionActive(vault: Vault, now: number): boolean {
   return Number.isNaN(startDate.getTime()) || startDate.getTime() <= now;
 }
 
+type VaultOwnerSpace = {
+  slug: string;
+  title: string;
+  web3SpaceId: number;
+};
+
+type VaultWithOwner = {
+  owner: VaultOwnerSpace;
+  vault: Vault;
+};
+
 export const RedeemTokensPlugin = ({
   spaceSlug,
   spaces,
+  web3SpaceId,
 }: {
   spaceSlug: string;
   members: Person[];
@@ -134,12 +147,133 @@ export const RedeemTokensPlugin = ({
   const tProposal = useTranslations(
     'AgreementFlow.plugins.redeemTokensProposal',
   );
+  const tExchangeStakesAndTokens = useTranslations(
+    'AgreementFlow.plugins.exchangeStakesAndTokens',
+  );
   const { control, setValue, getValues } = useFormContext();
+  const {
+    getAccessToken,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuthentication();
   const setSubmitGuard = useRedeemSubmitGuardSetter();
-  const { vaults, isLoading: isVaultsLoading } = useVaults();
+  const { vaults: currentSpaceVaults, isLoading: isCurrentSpaceVaultsLoading } =
+    useVaults({ spaceSlug, redeemableOnly: true });
   const { assets: treasuryAssets, isLoading: isTreasuryAssetsLoading } =
-    useAssets({});
+    useAssets({ bestEffort: true });
   const { tokens: spaceTokensForTypes } = useTokens({ spaceSlug });
+
+  const candidateSpaces = React.useMemo(() => {
+    const bySlug = new Map<string, VaultOwnerSpace>();
+    if (spaceSlug && typeof web3SpaceId === 'number') {
+      bySlug.set(spaceSlug, {
+        slug: spaceSlug,
+        title: spaces?.find((s) => s.slug === spaceSlug)?.title ?? spaceSlug,
+        web3SpaceId,
+      });
+    }
+    for (const space of spaces ?? []) {
+      if (!space.slug || typeof space.web3SpaceId !== 'number') continue;
+      if (bySlug.has(space.slug)) continue;
+      bySlug.set(space.slug, {
+        slug: space.slug,
+        title: space.title ?? space.slug,
+        web3SpaceId: space.web3SpaceId,
+      });
+    }
+    return Array.from(bySlug.values());
+  }, [spaceSlug, spaces, web3SpaceId]);
+
+  const currentSpaceOwner = React.useMemo(
+    () => candidateSpaces.find((space) => space.slug === spaceSlug),
+    [candidateSpaces, spaceSlug],
+  );
+
+  const otherCandidateSpaces = React.useMemo(
+    () => candidateSpaces.filter((space) => space.slug !== spaceSlug),
+    [candidateSpaces, spaceSlug],
+  );
+
+  const otherCandidateSpaceSlugs = React.useMemo(
+    () => otherCandidateSpaces.map((space) => space.slug),
+    [otherCandidateSpaces],
+  );
+
+  const { data: vaultsBySpace = [], isLoading: isCrossSpaceVaultsLoading } =
+    useSWR<Array<{ owner: VaultOwnerSpace; vaults: Vault[] }>>(
+      otherCandidateSpaceSlugs.length > 0 && !isAuthLoading
+        ? ['redeem-vaults-by-space', ...otherCandidateSpaceSlugs]
+        : null,
+      async ([, ...slugs]) => {
+        const token = await getAccessToken();
+        if (!token && isAuthenticated) {
+          throw new Error('Authentication token not available yet');
+        }
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const responses = await Promise.allSettled(
+          slugs.map(async (slug) => {
+            const owner = otherCandidateSpaces.find(
+              (space) => space.slug === slug,
+            );
+            if (!owner) return null;
+            const res = await fetch(
+              `/api/v1/spaces/${slug}/vaults?redeemableOnly=true`,
+              {
+                headers,
+              },
+            );
+            if (!res.ok) {
+              return { owner, vaults: [] };
+            }
+            const payload = (await res.json()) as { vaults?: Vault[] };
+            return { owner, vaults: payload.vaults ?? [] };
+          }),
+        );
+
+        return responses
+          .map((result) =>
+            result.status === 'fulfilled' ? result.value : null,
+          )
+          .filter(
+            (
+              entry,
+            ): entry is {
+              owner: VaultOwnerSpace;
+              vaults: Vault[];
+            } => entry !== null,
+          );
+      },
+      {
+        revalidateOnFocus: false,
+        shouldRetryOnError: true,
+        errorRetryInterval: 1500,
+      },
+    );
+
+  const vaultsWithOwners = React.useMemo((): VaultWithOwner[] => {
+    const entries: VaultWithOwner[] = [];
+    if (currentSpaceOwner) {
+      for (const vault of currentSpaceVaults) {
+        entries.push({
+          owner: currentSpaceOwner,
+          vault,
+        });
+      }
+    }
+    for (const group of vaultsBySpace) {
+      for (const vault of group.vaults) {
+        entries.push({
+          owner: group.owner,
+          vault,
+        });
+      }
+    }
+    return entries;
+  }, [currentSpaceOwner, currentSpaceVaults, vaultsBySpace]);
 
   const treasuryBalanceByTokenAddress = React.useMemo(() => {
     const map = new Map<string, number>();
@@ -181,55 +315,100 @@ export const RedeemTokensPlugin = ({
   const redeemableTokens = React.useMemo(() => {
     if (isTreasuryAssetsLoading) return [];
     const now = Date.now();
-    return vaults
-      .filter((vault) => isRedemptionActive(vault, now))
-      .filter((vault) => {
+    return vaultsWithOwners
+      .filter((entry) => isRedemptionActive(entry.vault, now))
+      .filter((entry) => {
         const balance =
-          treasuryBalanceByTokenAddress.get(vault.spaceToken.toLowerCase()) ??
-          0;
+          treasuryBalanceByTokenAddress.get(
+            entry.vault.spaceToken.toLowerCase(),
+          ) ?? 0;
         return balance > 0;
       })
-      .map((vault) => {
+      .map((entry) => {
         const bal =
-          treasuryBalanceByTokenAddress.get(vault.spaceToken.toLowerCase()) ??
-          0;
+          treasuryBalanceByTokenAddress.get(
+            entry.vault.spaceToken.toLowerCase(),
+          ) ?? 0;
         return {
-          icon: vault.tokenIcon || '/placeholder/token-icon.svg',
-          symbol: vault.tokenSymbol || 'UNKNOWN',
-          address: vault.spaceToken as `0x${string}`,
+          icon: entry.vault.tokenIcon || '/placeholder/token-icon.svg',
+          symbol: entry.vault.tokenSymbol || 'UNKNOWN',
+          address: entry.vault.spaceToken as `0x${string}`,
           value: bal,
           type:
-            tokenTypeByAddress.get(vault.spaceToken.toLowerCase()) ?? undefined,
+            tokenTypeByAddress.get(entry.vault.spaceToken.toLowerCase()) ??
+            undefined,
+          vaultWeb3SpaceId: entry.owner.web3SpaceId,
           space: {
-            title: spaceTitle,
-            slug: spaceSlug,
+            title: entry.owner.title,
+            slug: entry.owner.slug,
           },
         };
       });
   }, [
     isTreasuryAssetsLoading,
-    spaceSlug,
-    spaceTitle,
     tokenTypeByAddress,
     treasuryBalanceByTokenAddress,
-    vaults,
+    vaultsWithOwners,
   ]);
+
+  const isLoadingRedeemableTokens =
+    isCurrentSpaceVaultsLoading ||
+    isCrossSpaceVaultsLoading ||
+    isTreasuryAssetsLoading;
 
   const redemptions = useWatch({
     control,
     name: 'redemptions',
   });
   const selectedRedemption = redemptions?.[0];
+  const selectedVaultWeb3SpaceId = useWatch({
+    control,
+    name: 'redemptionVaultWeb3SpaceId',
+  });
 
-  const selectedTokenVault = React.useMemo(
-    () =>
-      vaults.find(
-        (vault) =>
-          vault.spaceToken.toLowerCase() ===
-          (selectedRedemption?.token ?? '').toLowerCase(),
-      ),
-    [vaults, selectedRedemption?.token],
-  );
+  const selectedTokenVaultEntry = React.useMemo(() => {
+    const selectedTokenAddress = (
+      selectedRedemption?.token ?? ''
+    ).toLowerCase();
+    if (!selectedTokenAddress) return undefined;
+    const tokenMatches = vaultsWithOwners.filter(
+      (entry) => entry.vault.spaceToken.toLowerCase() === selectedTokenAddress,
+    );
+    if (tokenMatches.length <= 1) {
+      return tokenMatches[0];
+    }
+    if (typeof selectedVaultWeb3SpaceId === 'number') {
+      const ownerMatch = tokenMatches.find(
+        (entry) => entry.owner.web3SpaceId === selectedVaultWeb3SpaceId,
+      );
+      if (ownerMatch) {
+        return ownerMatch;
+      }
+    }
+    return tokenMatches[0];
+  }, [selectedRedemption?.token, selectedVaultWeb3SpaceId, vaultsWithOwners]);
+
+  const selectedTokenVault = selectedTokenVaultEntry?.vault;
+
+  React.useEffect(() => {
+    if (selectedTokenVaultEntry?.owner?.web3SpaceId) {
+      setValue(
+        'redemptionVaultWeb3SpaceId',
+        selectedTokenVaultEntry.owner.web3SpaceId,
+        {
+          shouldValidate: false,
+          shouldDirty: false,
+        },
+      );
+      return;
+    }
+    if (typeof web3SpaceId === 'number') {
+      setValue('redemptionVaultWeb3SpaceId', web3SpaceId, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    }
+  }, [selectedTokenVaultEntry?.owner?.web3SpaceId, setValue, web3SpaceId]);
 
   const conversionCollateralsBase =
     React.useMemo((): TokenPercentageAsset[] => {
@@ -252,8 +431,8 @@ export const RedeemTokensPlugin = ({
           availableInRedemptionToken,
           redemptionTokenSymbol: selectedTokenVault?.tokenSymbol,
           space: collateral.space ?? {
-            title: spaceTitle,
-            slug: spaceSlug,
+            title: selectedTokenVaultEntry?.owner.title ?? spaceTitle,
+            slug: selectedTokenVaultEntry?.owner.slug ?? spaceSlug,
           },
         };
       });
@@ -261,6 +440,8 @@ export const RedeemTokensPlugin = ({
       selectedTokenVault?.collaterals,
       selectedTokenVault?.redemptionPrice,
       selectedTokenVault?.tokenSymbol,
+      selectedTokenVaultEntry?.owner.slug,
+      selectedTokenVaultEntry?.owner.title,
       spaceSlug,
       spaceTitle,
       treasuryTypeByTokenAddress,
@@ -584,7 +765,7 @@ export const RedeemTokensPlugin = ({
   return (
     <div className="flex flex-col gap-4">
       <Skeleton
-        loading={isVaultsLoading || isTreasuryAssetsLoading}
+        loading={isCurrentSpaceVaultsLoading || isTreasuryAssetsLoading}
         width={'100%'}
         height={90}
       >
@@ -595,6 +776,8 @@ export const RedeemTokensPlugin = ({
           allowAddOrRemove={false}
           showTreasuryBalanceHint
           selectedTokenPriceHint={selectedTokenPriceHint}
+          isLoadingTokens={isLoadingRedeemableTokens}
+          loadingTokensLabel={tExchangeStakesAndTokens('loadingTokens')}
         />
       </Skeleton>
       {isRequestedAmountExceedsTreasury && selectedRedemption?.token ? (
@@ -611,7 +794,11 @@ export const RedeemTokensPlugin = ({
           })}
         </div>
       ) : null}
-      <Skeleton loading={isVaultsLoading} width={'100%'} height={90}>
+      <Skeleton
+        loading={isCurrentSpaceVaultsLoading}
+        width={'100%'}
+        height={90}
+      >
         {selectedRedemption?.token ? (
           <TokenPercentageFieldArray
             assets={conversionAssetsWithDetails}

@@ -19,7 +19,11 @@ import { useAgreementFileUploads } from './useAgreementFileUploads';
 
 type CreateRedeemTokensArg = z.infer<typeof schemaCreateAgreement> & {
   web3SpaceId: number;
-  redemption: { amount: string; token: string };
+  redemption: {
+    amount: string;
+    token: string;
+    vaultWeb3SpaceId?: number;
+  };
   conversions: { asset: string; percentage: string }[];
 };
 
@@ -180,8 +184,9 @@ export const useCreateRedeemTokensOrchestrator = ({
         if (config) {
           startTask('CREATE_WEB3_AGREEMENT');
           await web3.createRedeemTokens({
+            proposalWeb3SpaceId: web3SpaceId,
             redemption: {
-              web3SpaceId,
+              vaultWeb3SpaceId: arg.redemption.vaultWeb3SpaceId,
               amount: arg.redemption.amount,
               token: arg.redemption.token,
             },

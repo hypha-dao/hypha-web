@@ -37,5 +37,6 @@ export const schemaRedeemTokens = z.object({
       }),
     )
     .length(1, { message: 'Only one redemption is required' }),
+  redemptionVaultWeb3SpaceId: z.number().int().positive().optional(),
   conversions: conversionsField,
 });

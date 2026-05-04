@@ -30,6 +30,7 @@ export async function GET(
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
+  const bestEffort = request.nextUrl.searchParams.get('bestEffort') === 'true';
 
   try {
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
@@ -115,6 +116,12 @@ export async function GET(
       }
 
       console.error('Error while calling readContract:', err);
+      if (bestEffort) {
+        return NextResponse.json({
+          assets: [],
+          balance: 0,
+        });
+      }
       return NextResponse.json(
         { error: 'Failed to fetch contract data.' },
         { status: 500 },
@@ -123,6 +130,12 @@ export async function GET(
 
     const spaceAddress = spaceDetails[9] as `0x${string}`;
     if (!spaceAddress || !/^0x[a-fA-F0-9]{40}$/.test(spaceAddress)) {
+      if (bestEffort) {
+        return NextResponse.json({
+          assets: [],
+          balance: 0,
+        });
+      }
       return NextResponse.json(
         { error: 'Invalid or missing executor address' },
         { status: 400 },
@@ -266,6 +279,12 @@ export async function GET(
     });
   } catch (error) {
     console.error('Failed to fetch assets:', error);
+    if (bestEffort) {
+      return NextResponse.json({
+        assets: [],
+        balance: 0,
+      });
+    }
     return NextResponse.json(
       { error: 'Failed to fetch assets.' },
       { status: 500 },
