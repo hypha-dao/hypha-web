@@ -54,6 +54,9 @@ export function AiPanelMessageBubble({
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
+  const normalizedTextContent = textContent.trim();
+  const hasVisibleText =
+    normalizedTextContent.length > 0 && normalizedTextContent !== '(no text)';
   const fileParts =
     message.parts?.filter(
       (p): p is { type: 'file'; mediaType?: string; url: string } =>
@@ -65,7 +68,7 @@ export function AiPanelMessageBubble({
         typeof p.type === 'string' && p.type.startsWith('tool-'),
     ) ?? [];
   const visibleToolParts = toolParts.filter(
-    (part) => part.state !== 'output-available' || !textContent.trim(),
+    (part) => part.state !== 'output-available' || !hasVisibleText,
   );
 
   const handleCopy = useCallback(async () => {
@@ -168,7 +171,7 @@ export function AiPanelMessageBubble({
               : 'rounded-tl-sm border border-border bg-muted text-foreground',
           )}
         >
-          {textContent && textContent !== '(no text)' && (
+          {hasVisibleText && (
             <span>{textContent}</span>
           )}
           {fileParts.length > 0 && (
@@ -240,7 +243,7 @@ export function AiPanelMessageBubble({
             <button
               type="button"
               onClick={handleCopy}
-              disabled={!textContent}
+              disabled={!hasVisibleText}
               className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
               aria-label={copied ? t('copiedButton') : t('copyButton')}
               title={copied ? t('copiedButton') : t('copyButton')}
