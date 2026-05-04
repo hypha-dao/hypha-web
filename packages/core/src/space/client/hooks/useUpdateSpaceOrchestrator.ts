@@ -163,6 +163,7 @@ export const useUpdateSpaceOrchestrator = ({
         };
       },
     ) => {
+      let activeTask: TaskName | null = null;
       try {
         console.debug('updateSpaceMutation called with arg:', arg);
         const { id, data } = arg;
@@ -176,17 +177,22 @@ export const useUpdateSpaceOrchestrator = ({
           ecosystemLogoUrlDark: data.ecosystemLogoUrlDark ?? undefined,
         });
         if (Object.values(filesInput).some((file) => file instanceof File)) {
+          activeTask = 'UPLOAD_FILES';
           startTask('UPLOAD_FILES');
           await files.upload(
             filesInput as z.infer<typeof schemaCreateSpaceFiles>,
             id,
           );
           completeTask('UPLOAD_FILES');
+          activeTask = null;
         } else {
+          activeTask = 'UPLOAD_FILES';
           startTask('UPLOAD_FILES');
           completeTask('UPLOAD_FILES');
+          activeTask = null;
         }
 
+        activeTask = 'UPDATE_WEB2_SPACE';
         startTask('UPDATE_WEB2_SPACE');
         const updateInput = schemaUpdateSpace.parse({
           ...data,
@@ -222,17 +228,13 @@ export const useUpdateSpaceOrchestrator = ({
 
         console.debug('updateSpaceById result:', result);
         completeTask('UPDATE_WEB2_SPACE');
+        activeTask = null;
 
         return result;
       } catch (error) {
         console.error('updateSpaceMutation error:', error);
-        if (error instanceof Error) {
-          if (taskState.UPLOAD_FILES?.status === TaskStatus.IS_PENDING) {
-            errorTask('UPLOAD_FILES', error.message);
-          }
-          if (taskState.UPDATE_WEB2_SPACE?.status === TaskStatus.IS_PENDING) {
-            errorTask('UPDATE_WEB2_SPACE', error.message);
-          }
+        if (error instanceof Error && activeTask) {
+          errorTask(activeTask, error.message);
         }
         throw error;
       }
