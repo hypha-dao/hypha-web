@@ -126,7 +126,7 @@ jobs:
           echo "BRANCH_DB_URL=${{ steps.create-branch.outputs.db_url_with_pooler }}" >> $GITHUB_ENV
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@51.8.0
 
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ env.VERCEL_TOKEN }}
@@ -158,7 +158,28 @@ jobs:
         id: deploy
         env:
           BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
-        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env BRANCH_DB_URL=${{ env.BRANCH_DB_URL }}) >> $GITHUB_OUTPUT
+          VERCEL_TOKEN: ${{ env.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          delay=8
+          log=$(mktemp)
+          trap 'rm -f "$log"' EXIT
+          for attempt in 1 2 3 4; do
+            if vercel deploy --prebuilt --yes --archive=tgz \
+              --token="$VERCEL_TOKEN" \
+              --env "BRANCH_DB_URL=${BRANCH_DB_URL:-}" >"$log" 2>&1; then
+              preview_url=$(grep -oE 'https://[^[:space:]]+' "$log" | tail -n1)
+              echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::warning::vercel deploy attempt $attempt failed; retrying after transient upload errors…"
+            cat "$log" || true
+            if [ "$attempt" -lt 4 ]; then
+              sleep "$delay"
+              delay=$((delay * 2))
+            fi
+          done
+          exit 1
 
       - name: Alias preview to deterministic PR domain
         id: alias
