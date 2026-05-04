@@ -11,7 +11,7 @@ import {
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
 import { SignalSection } from './signal-section';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
@@ -39,6 +39,7 @@ function PriorityFilterTabs({
   defaultValue: string;
   queryKey: string;
 }) {
+  const format = useFormatter();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -73,7 +74,7 @@ function PriorityFilterTabs({
               <span>{item.label}</span>
               {typeof item.count === 'number' && Number.isFinite(item.count) ? (
                 <span className="text-xs text-muted-foreground">
-                  ({Intl.NumberFormat().format(item.count)})
+                  ({format.number(item.count)})
                 </span>
               ) : null}
             </span>
