@@ -5,6 +5,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import {
   FileText,
+  Gift,
   Package,
   PiggyBank,
   Rocket,
@@ -26,6 +27,7 @@ export const SelectCreateAction = ({
 }: SelectCreateActionProps) => {
   const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
   const t = useTranslations('SelectCreateAction');
+  const tSettings = useTranslations('SpaceSettingsAction');
 
   const CREATE_ACTIONS = [
     {
@@ -42,6 +44,14 @@ export const SelectCreateAction = ({
       description: t('actions.proposeContribution.description'),
       href: 'agreements/create/propose-contribution',
       icon: <Rocket className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      disabled: isPaymentExpired,
+    },
+    {
+      defaultDurationDays: 4,
+      title: tSettings('actions.redeemTokens.title'),
+      description: tSettings('actions.redeemTokens.description'),
+      href: 'agreements/create/redeem-tokens',
+      icon: <Gift className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {

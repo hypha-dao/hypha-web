@@ -41,7 +41,8 @@
     "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
     "publish": "Publicar",
     "invalidTransactions": "Transacciones inválidas",
-    "Coherence": "Coherencia",
+    "Coherence": "Señales",
+    "Signals": "Señales",
     "uploadLeadImage": {
       "cropTitle": "Subir una imagen",
       "cropDescription": "Ajusta el encuadre y guarda. Arrastra para reposicionar y usa el zoom para el área del banner (JPEG, PNG o WebP — máx. 4 MB).",
@@ -735,6 +736,7 @@
   "Navigation": {
     "network": "Red",
     "mySpaces": "Mis espacios",
+    "myWallet": "Mi billetera",
     "openMenu": "Abrir menú",
     "openProfileMenu": "Abrir menú de perfil",
     "closeMenu": "Cerrar menú",
@@ -749,7 +751,12 @@
     "viewProfile": "Ver perfil",
     "delete": "Borrar",
     "signIn": "Iniciar sesión",
-    "getStarted": "Empezar"
+    "getStarted": "Empezar",
+    "ecosystemLogo": "Logo del ecosistema"
+  },
+  "MyWallet": {
+    "loading": "Cargando...",
+    "signInToViewWallet": "Inicia sesión para ver tu billetera."
   },
   "NotificationCentre": {
     "title": "Centro de notificaciones",
@@ -806,6 +813,8 @@
   "SpaceSettingsAction": {
     "title": "Configuración de espacio",
     "content": "Acceda y administre la configuración de su espacio, incluida su apariencia, estructura, métodos, membresía y tesorería.",
+    "searchMenus": "Buscar menús",
+    "noMenusFound": "No se encontraron menús",
     "groups": {
       "overview": "Descripción general",
       "agreements": "Acuerdos",
@@ -952,6 +961,7 @@
   "SelectNavigationAction": {
     "title": "Navegación espacial",
     "content": "Navega por todos tus espacios en un único mapa interactivo para ver cómo se conectan entre sí. Visite fácilmente espacios anidados, explore membresías de espacio a espacio y siga los flujos de valor en su ecosistema directo.",
+    "ecosystem": "Ecosistema",
     "tabs": {
       "nestedSpaces": "Espacios anidados",
       "spaceToSpace": "Espacio-espacio",
@@ -982,6 +992,8 @@
     "listIsEmpty": "La lista está vacía"
   },
   "MembersTab": {
+    "member": "Miembro",
+    "space": "Espacio",
     "searchMembers": "Buscar miembros",
     "delegateVoting": "Votación de delegados",
     "listIsEmpty": "La lista está vacía",
@@ -1018,13 +1030,16 @@
   },
   "TreasuryTab": {
     "balance": "Balance",
+    "wallet": "Billetera",
     "searchTokens": "Buscar tokens",
+    "hideSmall": "Ocultar pequeños",
     "hideSmallBalances": "Ocultar saldos pequeños",
     "newToken": "Nuevo token",
     "depositFunds": "Depositar fondos",
     "listIsEmpty": "La lista está vacía",
     "loadMoreAssets": "Cargar más activos",
     "transactions": "Transacciones",
+    "vaults": "Bóvedas",
     "searchTransactions": "Buscar transacciones",
     "noTransactionsFound": "No se encontraron transacciones",
     "loadMoreTransactions": "Cargar más transacciones",
@@ -1475,6 +1490,7 @@
     "inOnePlace": "en un solo lugar",
     "spacesYouMightLike": "Espacios que te pueden gustar",
     "mySpacesLabel": "Mis espacios",
+    "recentlyVisitedSpacesLabel": "Visitados recientemente",
     "hideArchivedSpaces": "Ocultar espacios archivados",
     "creating": "Creando espacio...",
     "expiredToday": "hoy",
@@ -1483,6 +1499,10 @@
     "linkedTo": "Vinculado a",
     "rootSpace": "Espacio raíz",
     "rootSpaceDescription": "Marcar este espacio como Espacio Raíz lo hará independiente. Ya no estará vinculado a la organización actual y todos sus espacios vinculados se trasladarán con ella.",
+    "uploadEcosystemLogoLight": "Subir logo del ecosistema (claro)",
+    "uploadEcosystemLogoDark": "Subir logo del ecosistema (oscuro)",
+    "ecosystemLogoLightDescription": "Sube un logo en modo claro para tu ecosistema (PNG, JPG, GIF o WEBP).",
+    "ecosystemLogoDarkDescription": "Sube un logo en modo oscuro para tu ecosistema (PNG, JPG, GIF o WEBP).",
     "search": "Buscar...",
     "addYourUrl": "Añade tu URL",
     "exchangeDepositProposalTitleBanner": "Completa la parte de este espacio en el intercambio",
@@ -1727,7 +1747,7 @@
       "agreements": "¿Qué acuerdos existen en este espacio?",
       "structure": "Describe la estructura de este espacio"
     },
-    "welcome": "¡Hola! Soy tu asistente Hypha AI. Puedo buscar detalles del espacio como número de miembros, acuerdos y estructura. Pregúntame lo que quieras sobre el espacio que estás viendo.",
+    "welcome": "¡Hola! Soy tu asistente AI de {spaceName}. Puedo buscar detalles del espacio como número de miembros, acuerdos y estructura. Pregúntame lo que quieras sobre el espacio que estás viendo.",
     "placeholder": "Pregunta a Hypha AI...",
     "sendButton": "Enviar",
     "stopButton": "Detener",
@@ -1988,7 +2008,9 @@
     "mostRecent": "Más recientes",
     "searchConversation": "Buscar conversación",
     "hideArchived": "Ocultar archivados",
-    "mentions": "{count, plural, one {# mención} other {# menciones}}",
+    "messageCount": "{count, plural, one {# mensaje} other {# mensajes}}",
+    "priorityVisualAlt": "Nivel de prioridad",
+    "typeSignalBannerAlt": "Señal {type}, prioridad {priority}",
     "unarchiveConversation": "Desarchivar conversación",
     "unarchiveConfirm": "¿Realmente desea desarchivar esta conversación?",
     "yesUnarchive": "Sí, desarchivar",
@@ -2030,6 +2052,13 @@
     "spaceMemoryMatrixVideoPlayHint": "Toca para ver la vista previa",
     "spaceMemoryOpenAsset": "Abrir {name}",
     "untitledDocument": "Documento sin título",
+    "spaceMemoryGeneral": "General",
+    "spaceMemoryProposals": "Propuestas",
+    "spaceMemoryConversations": "Conversaciones",
+    "spaceMemoryAiChat": "Chat con IA",
+    "newMemory": "Nueva memoria",
+    "spaceMemoryEmptyTab": "No se encontraron elementos en esta vista.",
+    "spaceMemoryAiChatEmpty": "Las memorias del chat con IA aún no están disponibles.",
     "documentStates": {
       "discussion": "Discusión",
       "proposal": "Propuesta",
@@ -2062,6 +2091,11 @@
       "low": "Informativo, sin prisa"
     },
     "keepWindowOpenWhileCreating": "Mantén esta ventana abierta hasta que terminemos.",
+    "provisioning": {
+      "chatUnavailable": "Señal creada, pero el chat no está disponible en este momento.",
+      "roomProvisionFailed": "Señal creada, pero falló el aprovisionamiento de la sala de chat.",
+      "roomLinkFailedRetry": "Señal creada, pero no se pudo vincular la sala de chat. Inténtalo de nuevo."
+    },
     "tagLabels": {
       "Strategy": "Estrategia",
       "Culture": "Cultura",

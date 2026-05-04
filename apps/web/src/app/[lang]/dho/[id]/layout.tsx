@@ -11,11 +11,8 @@ import {
 } from '@hypha-platform/epics';
 import '../../_shared/space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
-import { Container } from '@hypha-platform/ui';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
-import { ActionButtons } from './_components/action-buttons';
-import { NestedSpacesButton } from './_components/nested-spaces-button';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
@@ -24,7 +21,6 @@ import {
 } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
-import { Breadcrumbs } from './_components/breadcrumbs';
 import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
@@ -94,6 +90,7 @@ export default async function DhoLayout({
     typeof spaceFromDb.web3SpaceId === 'number'
       ? spaceFromDb.web3SpaceId
       : undefined;
+  const spaceFlags = spaceFromDb.flags ?? [];
 
   const { members: spaceMembers, agreements: spaceAgreements } =
     await getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId);
@@ -107,19 +104,18 @@ export default async function DhoLayout({
     rawLogo && isSafeImageUrl(rawLogo) ? rawLogo : DEFAULT_SPACE_AVATAR_IMAGE;
 
   const compactBannerSpaceArchived =
-    spaceFromDb.flags.includes('archived') ||
+    spaceFlags.includes('archived') ||
     (spaceMembers !== null && spaceMembers === 0);
 
   return (
     <SpaceAccentPortalBridge>
       {/*
-        Full-width row: `Container` already applies max-width + horizontal padding.
-        Dropping the extra `mx-auto max-w-container-2xl` wrapper avoided double
-        max-width + centering that made the main column look pushed with a void on the left.
+        Main column must span the full width next to side panels: `Container` max-width + `mx-auto`
+        centers content and leaves empty gutters — very visible when the Human chat panel narrows
+        the column (reads as a dead strip beside the hero / secondary chrome). Use padding only.
       */}
       <div className="flex w-full min-w-0">
-        {/* `px-4!` = 16px: tighter than default Container `px-5` (20px) for DHO hero/tabs vs app chrome */}
-        <Container size="lg" className="min-w-0 flex-1 px-4!">
+        <div className="min-w-0 flex-1 px-4 sm:px-5">
           {/* React 19+: link rel="preload" is hoisted to document head */}
           {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
             <link
@@ -136,9 +132,6 @@ export default async function DhoLayout({
           >
             {/* gap-4 (16px) matches mt-4 above SalesBanner; slight pt above breadcrumbs vs MenuTop */}
             <DhoStickySpaceChrome
-              breadcrumbsRow={
-                <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
-              }
               banner={
                 <CompactSpaceBanner
                   showSpaceStats
@@ -171,8 +164,8 @@ export default async function DhoLayout({
                       )}
                       <SpaceModeLabel
                         web3SpaceId={web3SpaceId}
-                        isSandbox={spaceFromDb.flags.includes('sandbox')}
-                        isDemo={spaceFromDb.flags.includes('demo')}
+                        isSandbox={spaceFlags.includes('sandbox')}
+                        isDemo={spaceFlags.includes('demo')}
                         isArchived={compactBannerSpaceArchived}
                         configPath={`${getDhoPathAgreements(
                           lang,
@@ -194,18 +187,10 @@ export default async function DhoLayout({
                     <JoinSpace
                       web3SpaceId={web3SpaceId}
                       spaceId={spaceFromDb.id}
+                      hideWhenMember
                     />
                   )}
-                  <ActionButtons web3SpaceId={web3SpaceId} />
                 </>
-              }
-              nestedSpacesSlot={
-                web3SpaceId !== undefined ? (
-                  <NestedSpacesButton
-                    web3SpaceId={web3SpaceId}
-                    spaceSlug={daoSlug}
-                  />
-                ) : null
               }
               title={spaceFromDb.title}
               logoUrl={accentLogoHref}
@@ -224,7 +209,7 @@ export default async function DhoLayout({
             {tab}
             {children}
           </SpaceAccentFromImages>
-        </Container>
+        </div>
         {aside}
       </div>
     </SpaceAccentPortalBridge>

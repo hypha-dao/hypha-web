@@ -41,7 +41,8 @@
     "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
-    "Coherence": "Cohérence",
+    "Coherence": "Signaux",
+    "Signals": "Signaux",
     "uploadLeadImage": {
       "cropTitle": "Téléverser une image",
       "cropDescription": "Ajustez le cadrage, puis enregistrez. Faites glisser pour repositionner et zoomez pour remplir la zone de bannière (JPEG, PNG ou WebP — max. 4 Mo).",
@@ -76,6 +77,7 @@
   "Navigation": {
     "network": "Réseau",
     "mySpaces": "Mes espaces",
+    "myWallet": "Mon portefeuille",
     "openMenu": "Ouvrir le menu",
     "openProfileMenu": "Ouvrir le menu du profil",
     "closeMenu": "Fermer le menu",
@@ -90,7 +92,12 @@
     "viewProfile": "Voir le profil",
     "delete": "Supprimer",
     "signIn": "Se connecter",
-    "getStarted": "Commencer"
+    "getStarted": "Commencer",
+    "ecosystemLogo": "Logo de l’écosystème"
+  },
+  "MyWallet": {
+    "loading": "Chargement...",
+    "signInToViewWallet": "Connectez-vous pour afficher votre portefeuille."
   },
   "NotificationCentre": {
     "title": "Centre de notifications",
@@ -147,6 +154,8 @@
   "SpaceSettingsAction": {
     "title": "Paramètres de l'espace",
     "content": "Accédez aux paramètres de votre espace et gérez-les, y compris son apparence, sa structure, ses méthodes, l'adhésion et la trésorerie.",
+    "searchMenus": "Rechercher des menus",
+    "noMenusFound": "Aucun menu trouvé",
     "groups": {
       "overview": "Aperçu",
       "agreements": "Accords",
@@ -293,6 +302,7 @@
   "SelectNavigationAction": {
     "title": "Navigation des espaces",
     "content": "Naviguez dans tous vos espaces sur une seule carte interactive pour voir comment ils sont connectés les uns aux autres. Visitez facilement les espaces imbriqués, explorez les adhésions espace-à-espace et suivez les flux de valeur dans votre écosystème direct.",
+    "ecosystem": "Écosystème",
     "tabs": {
       "nestedSpaces": "Espaces imbriqués",
       "spaceToSpace": "Espace-à-espace",
@@ -323,6 +333,8 @@
     "listIsEmpty": "La liste est vide"
   },
   "MembersTab": {
+    "member": "Membre",
+    "space": "Espace",
     "searchMembers": "Rechercher des membres",
     "delegateVoting": "Déléguer le vote",
     "listIsEmpty": "La liste est vide",
@@ -359,13 +371,16 @@
   },
   "TreasuryTab": {
     "balance": "Solde",
+    "wallet": "Portefeuille",
     "searchTokens": "Rechercher des tokens",
+    "hideSmall": "Masquer petits",
     "hideSmallBalances": "Masquer les petits soldes",
     "newToken": "Nouveau token",
     "depositFunds": "Déposer des fonds",
     "listIsEmpty": "La liste est vide",
     "loadMoreAssets": "Charger plus d'actifs",
     "transactions": "Transactions",
+    "vaults": "Coffres",
     "searchTransactions": "Rechercher des transactions",
     "noTransactionsFound": "Aucune transaction trouvée",
     "loadMoreTransactions": "Charger plus de transactions",
@@ -816,6 +831,7 @@
     "inOnePlace": "au même endroit",
     "spacesYouMightLike": "Espaces qui pourraient vous plaire",
     "mySpacesLabel": "Mes espaces",
+    "recentlyVisitedSpacesLabel": "Récemment visités",
     "hideArchivedSpaces": "Masquer les espaces archivés",
     "creating": "Création de l'espace...",
     "expiredToday": "aujourd'hui",
@@ -824,6 +840,10 @@
     "linkedTo": "Lié à",
     "rootSpace": "Espace racine",
     "rootSpaceDescription": "Marquer cet espace comme Espace racine le rendra indépendant. Il ne sera plus lié à l’organisation actuelle, et tous ses espaces liés seront déplacés avec lui.",
+    "uploadEcosystemLogoLight": "Téléverser le logo de l’écosystème (clair)",
+    "uploadEcosystemLogoDark": "Téléverser le logo de l’écosystème (sombre)",
+    "ecosystemLogoLightDescription": "Téléversez un logo clair pour votre écosystème (PNG, JPG, GIF ou WEBP).",
+    "ecosystemLogoDarkDescription": "Téléversez un logo sombre pour votre écosystème (PNG, JPG, GIF ou WEBP).",
     "search": "Rechercher...",
     "addYourUrl": "Ajoutez votre URL",
     "exchangeDepositProposalTitleBanner": "Finaliser la part de cet espace dans l'échange",
@@ -1727,7 +1747,7 @@
       "agreements": "Quels accords existent dans cet espace ?",
       "structure": "Décris la structure de cet espace"
     },
-    "welcome": "Bonjour ! Je suis votre assistant Hypha AI. Je peux rechercher les détails de l'espace comme le nombre de membres, les accords et la structure. Posez-moi n'importe quelle question sur l'espace que vous consultez.",
+    "welcome": "Bonjour ! Je suis votre assistant AI pour {spaceName}. Je peux rechercher les détails de l'espace comme le nombre de membres, les accords et la structure. Posez-moi n'importe quelle question sur l'espace que vous consultez.",
     "placeholder": "Demandez à Hypha AI...",
     "sendButton": "Envoyer",
     "stopButton": "Arrêter",
@@ -1978,7 +1998,7 @@
     "signInToSee": "Veuillez vous connecter pour voir les signaux, la mémoire de l'espace et les conversations",
     "searchSignals": "Rechercher des signaux...",
     "newSignal": "Nouveau signal",
-    "backToCoherence": "Retour à Cohérence",
+    "backToCoherence": "Retour aux Signaux",
     "all": "Tous",
     "listIsEmpty": "La liste est vide",
     "loadMore": "Charger plus",
@@ -1988,7 +2008,9 @@
     "mostRecent": "Plus récents",
     "searchConversation": "Rechercher une conversation",
     "hideArchived": "Masquer les archivés",
-    "mentions": "{count, plural, one {# mention} other {# mentions}}",
+    "messageCount": "{count, plural, one {# message} other {# messages}}",
+    "priorityVisualAlt": "Niveau de priorité",
+    "typeSignalBannerAlt": "Signal {type}, priorité {priority}",
     "unarchiveConversation": "Désarchiver la conversation",
     "unarchiveConfirm": "Voulez-vous vraiment désarchiver cette conversation ?",
     "yesUnarchive": "Oui, désarchiver",
@@ -2012,7 +2034,7 @@
     "archiveConversation": "Archiver la conversation",
     "archiveConfirm": "Voulez-vous vraiment archiver cette conversation ?",
     "yesArchive": "Oui, archiver",
-    "errorCoherenceTab": "Oups, quelque chose s'est mal passé. Impossible de charger l'onglet cohérence.",
+    "errorCoherenceTab": "Oups, quelque chose s'est mal passé. Impossible de charger l'onglet signaux.",
     "spaceMemory": "Mémoire de l'espace",
     "searchSpaceMemory": "Rechercher dans la mémoire de l'espace...",
     "spaceMemoryLoading": "Chargement des fichiers…",
@@ -2030,6 +2052,13 @@
     "spaceMemoryMatrixVideoPlayHint": "Appuyez pour lire l’aperçu",
     "spaceMemoryOpenAsset": "Ouvrir {name}",
     "untitledDocument": "Document sans titre",
+    "spaceMemoryGeneral": "Général",
+    "spaceMemoryProposals": "Propositions",
+    "spaceMemoryConversations": "Conversations",
+    "spaceMemoryAiChat": "Chat IA",
+    "newMemory": "Nouvelle mémoire",
+    "spaceMemoryEmptyTab": "Aucun élément trouvé dans cette vue.",
+    "spaceMemoryAiChatEmpty": "Les mémoires du chat IA ne sont pas encore disponibles.",
     "documentStates": {
       "discussion": "Discussion",
       "proposal": "Proposition",
@@ -2062,6 +2091,11 @@
       "low": "Informatif, pas urgent"
     },
     "keepWindowOpenWhileCreating": "Gardez cette fenêtre ouverte jusqu’à la fin.",
+    "provisioning": {
+      "chatUnavailable": "Signal créé, mais le chat est actuellement indisponible.",
+      "roomProvisionFailed": "Signal créé, mais l’approvisionnement de la salle de chat a échoué.",
+      "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer."
+    },
     "tagLabels": {
       "Strategy": "Stratégie",
       "Culture": "Culture",

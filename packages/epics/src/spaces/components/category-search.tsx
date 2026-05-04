@@ -68,7 +68,7 @@ export function CategorySearch({ suggestions }: CategorySearchProps) {
 
   return (
     <div className="flex flex-row flex-grow gap-1 border-1 bg-background rounded-lg p-1 items-start">
-      <SearchIcon className="m-2 align-middle" size={16} />
+      <SearchIcon className="m-2 align-middle text-accent-9" size={16} />
       {currentCategories.map((category) => (
         <DisposableLabel
           key={category}

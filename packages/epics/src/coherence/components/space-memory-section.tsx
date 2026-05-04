@@ -2,12 +2,7 @@
 
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
-import {
-  Button,
-  SectionFilter,
-  SectionLoadMore,
-  Separator,
-} from '@hypha-platform/ui';
+import { Button, SectionLoadMore } from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import React from 'react';
 import { useTranslations } from 'next-intl';
@@ -15,12 +10,16 @@ import {
   DocumentState,
   EventType,
   RoomEvent,
+  filterSpaceMemoryItems,
   useMatrix,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import type { MatrixEvent, Room } from 'matrix-js-sdk';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
+import { MemoryFilterValue, MemoryFilters } from './memory-filters';
+import { useParams } from 'next/navigation';
+import { Locale } from '@hypha-platform/i18n';
 
 const MATRIX_SPACE_MEMORY_REFRESH_DEBOUNCE_MS = 1_800;
 
@@ -47,6 +46,9 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     hasMore,
     loadMore,
   } = useSpaceMemoryOrg(spaceSlug);
+  const { lang, id } = useParams<{ lang: Locale; id: string }>();
+  const [activeFilter, setActiveFilter] =
+    React.useState<MemoryFilterValue>('general');
 
   const refreshTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -98,30 +100,65 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         | 'documentStates.agreement',
     );
 
+  const counts = React.useMemo(
+    () =>
+      ({
+        general: items.length,
+        proposals: items.filter(
+          (row) =>
+            row.source === 'proposal_upload' &&
+            row.context.documentState === DocumentState.PROPOSAL,
+        ).length,
+        conversations: items.filter((row) => row.source === 'matrix_chat')
+          .length,
+        'ai-chat': 0,
+      } satisfies Record<MemoryFilterValue, number>),
+    [items],
+  );
+
+  const filteredItems = React.useMemo(() => {
+    const byFilter = items.filter((row) => {
+      if (activeFilter === 'general') {
+        return true;
+      }
+      if (activeFilter === 'proposals') {
+        return (
+          row.source === 'proposal_upload' &&
+          row.context.documentState === DocumentState.PROPOSAL
+        );
+      }
+      if (activeFilter === 'conversations') {
+        return row.source === 'matrix_chat';
+      }
+      return false;
+    });
+
+    return filterSpaceMemoryItems(byFilter, searchTerm);
+  }, [activeFilter, items, searchTerm]);
+
+  const newMemoryHref = `/${lang}/dho/${id}/memory/new-memory`;
+
   return (
     <section
-      className="flex w-full flex-col gap-5 border-t border-border/50 pt-10"
+      className="flex w-full flex-col gap-4 py-2"
       aria-label={t('spaceMemory')}
     >
-      <SectionFilter
-        count={totalCount}
-        label={t('spaceMemory')}
-        hasSearch={true}
-        searchPlaceholder={t('searchSpaceMemory')}
-        onChangeSearch={setSearchTerm}
-        inlineLabel={true}
-      >
-        <Button
-          type="button"
-          variant="ghost"
-          colorVariant="accent"
-          disabled={isLoading}
-          onClick={() => void refresh()}
-        >
-          {t('spaceMemoryRefresh')}
-        </Button>
-      </SectionFilter>
-      <Separator className="bg-border/70" />
+      <h1 className="text-7 font-semibold tracking-tight text-foreground">
+        {t('spaceMemory')}
+        {typeof totalCount === 'number' ? (
+          <span className="ml-2 text-5 font-medium text-muted-foreground">
+            | {Intl.NumberFormat().format(totalCount)}
+          </span>
+        ) : null}
+      </h1>
+      <MemoryFilters
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        newMemoryHref={newMemoryHref}
+        counts={counts}
+      />
 
       {error ? (
         <div className="flex flex-col items-center gap-2 w-full px-4">
@@ -139,12 +176,16 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         </div>
       ) : isLoading ? (
         <Text className="text-muted-foreground">{t('spaceMemoryLoading')}</Text>
-      ) : items.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <Empty>
           <p>
             {searchTerm.trim()
               ? t('spaceMemoryEmptySearch')
-              : t('spaceMemoryEmpty')}
+              : activeFilter === 'ai-chat'
+              ? t('spaceMemoryAiChatEmpty')
+              : activeFilter === 'general'
+              ? t('spaceMemoryEmpty')
+              : t('spaceMemoryEmptyTab')}
           </p>
         </Empty>
       ) : (
@@ -153,7 +194,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
             className="m-0 flex w-full list-none flex-wrap justify-start gap-x-6 gap-y-10 p-0"
             aria-label={t('spaceMemoryTimelineLabel')}
           >
-            {items.map((row) => (
+            {filteredItems.map((row) => (
               <SpaceMemoryTimelineItem
                 key={row.id}
                 item={row}

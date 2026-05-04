@@ -14,7 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
-import { getDhoPathAgreements } from '@hypha-platform/epics';
+import { getDhoSpaceContextPath } from '@hypha-platform/epics';
 import {
   useSpaceDiscoverability,
   useUserSpaceState,
@@ -22,6 +22,7 @@ import {
 } from '@hypha-platform/epics';
 import type { VisibleSpace } from './types';
 import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 
 type VisibleSpacesListProps = {
   visibleSpaces: VisibleSpace[];
@@ -108,6 +109,7 @@ export function VisibleSpacesList({
   entrySpaceId,
 }: VisibleSpacesListProps) {
   const t = useTranslations('SelectNavigationAction');
+  const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
   const buildNestedPath = (space: VisibleSpace): string => {
     if (space.root) {
@@ -153,7 +155,11 @@ export function VisibleSpacesList({
   const rootNestedPath = buildNestedPath(rootSpace);
   const rootCreateSpacePath = getCreateSpacePath(rootSpace.id, rootSpace.slug);
   const rootVisitSpacePath = rootSpace.slug
-    ? getDhoPathAgreements(lang, rootSpace.slug)
+    ? getDhoSpaceContextPath({
+        pathname,
+        lang,
+        spaceSlug: rootSpace.slug,
+      })
     : '#';
 
   return (
@@ -211,6 +217,10 @@ export function VisibleSpacesList({
           placeholder={t('visibleSpaces.searchSpaces')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            // Prevent parent keyboard handlers (e.g. Tabs) from hijacking typing.
+            e.stopPropagation();
+          }}
           className="flex-1"
         />
       </div>
@@ -220,7 +230,11 @@ export function VisibleSpacesList({
           const nestedPath = buildNestedPath(space);
           const createSpacePath = getCreateSpacePath(space.id, space.slug);
           const visitSpacePath = space.slug
-            ? getDhoPathAgreements(lang, space.slug)
+            ? getDhoSpaceContextPath({
+                pathname,
+                lang,
+                spaceSlug: space.slug,
+              })
             : '#';
 
           return (

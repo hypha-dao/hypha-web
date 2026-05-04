@@ -37,16 +37,9 @@ export const CoherencePriorityButton = ({
       colorVariant={colorVariant}
       onClick={onClick}
     >
-      <div className="w-full flex flex-col gap-1 items-center">
-        <div
-          className={cn(
-            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-[border-color,box-shadow,ring-color] duration-200',
-            selected
-              ? 'border-accent-9 bg-muted/40 ring-2 ring-accent-10/45'
-              : 'border-transparent',
-          )}
-        >
-          <DynamicIcon name={icon} size={16} className={textClass} />
+      <div className="flex w-full flex-col items-center gap-1">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+          <DynamicIcon name={icon} size={20} className={textClass} />
         </div>
         <span className={cn('text-2 font-medium', textClass)}>{title}</span>
         <span
