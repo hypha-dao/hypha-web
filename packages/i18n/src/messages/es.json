@@ -1781,7 +1781,7 @@
       "agreements": "¿Qué acuerdos existen en este espacio?",
       "structure": "Describe la estructura de este espacio"
     },
-    "welcome": "¡Hola! Soy tu asistente AI de {spaceName}. Puedo buscar detalles del espacio como número de miembros, acuerdos y estructura. Pregúntame lo que quieras sobre el espacio que estás viendo.",
+    "welcome": "¡Hola! Soy tu asistente de Hypha AI para {spaceName}. Puedo buscar detalles del espacio como número de miembros, acuerdos y estructura. Pregúntame lo que quieras sobre el espacio que estás viendo.",
     "placeholder": "Pregunta a Hypha AI...",
     "sendButton": "Enviar",
     "stopButton": "Detener",
@@ -1790,7 +1790,7 @@
     "signInButton": "Iniciar sesión",
     "loading": "Cargando...",
     "openPanel": "Abrir Hypha AI",
-    "hidePanel": "Ocultar panel AI",
+    "hidePanel": "Ocultar panel de Hypha AI",
     "resetChat": "Reiniciar chat",
     "closePanel": "Cerrar panel",
     "copyButton": "Copiar",
