@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { routing } from './routing';
 
 const TIME_ZONE_COOKIE = 'hypha-timezone';
+const FALLBACK_TIME_ZONE = 'UTC';
 
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;
@@ -11,7 +12,9 @@ export default getRequestConfig(async ({ requestLocale }) => {
     ? requested
     : routing.defaultLocale;
   const cookieStore = await cookies();
-  const timeZone = cookieStore.get(TIME_ZONE_COOKIE)?.value ?? 'UTC';
+  const timeZone = sanitizeTimeZone(
+    cookieStore.get(TIME_ZONE_COOKIE)?.value ?? FALLBACK_TIME_ZONE,
+  );
 
   const defaultMessages = (await import('./messages/en.json')).default;
   let localeMessages: Record<string, unknown> = {};
@@ -53,4 +56,15 @@ function deepMerge(
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function sanitizeTimeZone(value: string): string {
+  if (!value) return FALLBACK_TIME_ZONE;
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value }).format(new Date());
+    return value;
+  } catch {
+    return FALLBACK_TIME_ZONE;
+  }
 }
