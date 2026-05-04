@@ -25,8 +25,8 @@ type JoinSpaceProps = {
   hideWhenMember?: boolean;
 };
 
-function isBaseError(error: any): error is BaseError {
-  return (error as BaseError).details !== undefined;
+function isBaseError(error: unknown): error is BaseError {
+  return error instanceof BaseError;
 }
 
 export const JoinSpace = ({
