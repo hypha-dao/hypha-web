@@ -553,19 +553,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         preset: RoomPreset.PublicChat,
         name: title,
         topic: title,
-        initial_state: [
-          {
-            type: MatrixSdk.EventType.RoomPowerLevels,
-            state_key: '',
-            content: {
-              events: {
-                [MATRIX_GROUP_CALL_EVENT_TYPE]: 0,
-                [MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE]: 0,
-                [MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE]: 0,
-              },
-            },
-          },
-        ],
       });
       await ensureRoomCallPowerLevels(client, roomId);
       return { roomId };
