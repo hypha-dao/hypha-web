@@ -45,6 +45,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
             <Input
               className="w-full"
               placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
               leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
               onChange={(e) => onChangeSearch?.(e.target.value)}
               // Prevent parent keyboard handlers (e.g. Radix Tabs) from hijacking typing.
@@ -77,6 +78,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
                 <Input
                   className="w-full"
                   placeholder={searchPlaceholder}
+                  aria-label={searchPlaceholder}
                   leftIcon={
                     <SearchIcon className="text-accent-9" size="16px" />
                   }
