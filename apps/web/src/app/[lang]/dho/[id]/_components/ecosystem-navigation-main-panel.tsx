@@ -172,11 +172,6 @@ export function EcosystemNavigationMainPanel({
         label: t('tabs.nestedSpaces'),
         content: (
           <div className="flex min-h-0 flex-col gap-4">
-            <div className="w-full px-3 text-center sm:px-5">
-              <h2 className="text-4 font-semibold tracking-tight text-foreground">
-                {selectedSpaceTitle}
-              </h2>
-            </div>
             <div className="w-full overflow-visible px-3 py-2 sm:px-5 sm:py-4">
               {hierarchyData ? (
                 <div className="mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))]">
@@ -251,17 +246,23 @@ export function EcosystemNavigationMainPanel({
           visualizationClassName="min-h-0"
           afterTabsContent={
             <div className="w-full">
-              <div className="flex items-center justify-end gap-2">
-                <Link href={visitSpaceHref}>
-                  <Button variant="outline" colorVariant="neutral">
-                    {t('visibleSpaces.visitSpace')}
-                  </Button>
-                </Link>
-                <Link href={addSpaceHref}>
-                  <Button variant="default" colorVariant="accent">
-                    {t('visibleSpaces.addSpace')}
-                  </Button>
-                </Link>
+              <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+                <div className="hidden xl:block" aria-hidden />
+                <div className="min-w-0 text-center text-4 font-semibold tracking-tight text-foreground justify-self-center">
+                  {selectedSpaceTitle}
+                </div>
+                <div className="flex items-center justify-self-end gap-2">
+                  <Link href={visitSpaceHref}>
+                    <Button variant="outline" colorVariant="neutral">
+                      {t('visibleSpaces.visitSpace')}
+                    </Button>
+                  </Link>
+                  <Link href={addSpaceHref}>
+                    <Button variant="default" colorVariant="accent">
+                      {t('visibleSpaces.addSpace')}
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           }
