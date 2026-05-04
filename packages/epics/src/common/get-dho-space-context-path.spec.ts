@@ -30,4 +30,31 @@ describe('getDhoSpaceContextPath', () => {
       }),
     ).toBe('/en/dho/next-space/agreements');
   });
+
+  it('preserves null and undefined pathnames', () => {
+    expect(
+      getDhoSpaceContextPath({
+        pathname: null,
+        lang: 'en',
+        spaceSlug: 'next-space',
+      }),
+    ).toBeNull();
+    expect(
+      getDhoSpaceContextPath({
+        pathname: undefined,
+        lang: 'en',
+        spaceSlug: 'next-space',
+      }),
+    ).toBeUndefined();
+  });
+
+  it('returns non-DHO paths unchanged', () => {
+    expect(
+      getDhoSpaceContextPath({
+        pathname: '/en/other/path',
+        lang: 'en',
+        spaceSlug: 'next-space',
+      }),
+    ).toBe('/en/other/path');
+  });
 });
