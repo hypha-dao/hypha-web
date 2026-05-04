@@ -112,6 +112,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         <Input
           type="search"
           placeholder={t('searchSignals')}
+          aria-label={t('searchSignals')}
           onChange={(event) => onUpdateSearch(event.target.value)}
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
           className="w-full"
