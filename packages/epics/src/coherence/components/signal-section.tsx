@@ -14,10 +14,11 @@ import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
+import {
+  SIGNAL_PROVISIONING_NOTICE_EVENT,
+  SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
+} from '../constants';
 
-const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
-  'coherence.signalProvisioningNotice';
-const SIGNAL_PROVISIONING_NOTICE_EVENT = 'coherence:signalProvisioningNotice';
 const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
 
 type SignalSectionProps = {

@@ -44,11 +44,12 @@ import { CoherencePriorityButton } from './coherence-priority-button';
 import { ButtonClose } from '../../common/button-close';
 import { ButtonBack } from '../../common/button-back';
 import { CardButtonColorVariant } from '../../common/card-button';
+import {
+  SIGNAL_PROVISIONING_NOTICE_EVENT,
+  SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
+} from '../constants';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
-const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
-  'coherence.signalProvisioningNotice';
-const SIGNAL_PROVISIONING_NOTICE_EVENT = 'coherence:signalProvisioningNotice';
 
 interface CreateSignalFormProps {
   spaceId: number;
