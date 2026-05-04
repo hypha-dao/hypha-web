@@ -15,7 +15,7 @@ import {
 import { Button } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useTheme } from 'next-themes';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { SpaceVisualization } from './space-visualization';
@@ -79,6 +79,7 @@ export function EcosystemNavigationMainPanel({
   lang,
 }: EcosystemNavigationMainPanelProps) {
   const t = useTranslations('SelectNavigationAction');
+  const format = useFormatter();
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
@@ -257,7 +258,7 @@ export function EcosystemNavigationMainPanel({
             <h1 className="text-7 font-semibold tracking-tight text-foreground">
               {t('ecosystem')}
               <span className="ml-2 text-5 font-medium text-muted-foreground">
-                | {Intl.NumberFormat().format(ecosystemSpaceCount)}
+                | {format.number(ecosystemSpaceCount)}
               </span>
             </h1>
           }
