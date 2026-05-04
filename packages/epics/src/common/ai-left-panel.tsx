@@ -285,8 +285,11 @@ export function AiLeftPanel() {
   }, [spaceSlug]);
 
   const recentSpaces = useMemo(() => {
-    if (recentSpaceSlugs.length === 0 || recentSpacesData.length === 0) return [];
-    const bySlug = new Map(recentSpacesData.map((space) => [space.slug, space]));
+    if (recentSpaceSlugs.length === 0 || recentSpacesData.length === 0)
+      return [];
+    const bySlug = new Map(
+      recentSpacesData.map((space) => [space.slug, space]),
+    );
     return recentSpaceSlugs
       .map((slug) => bySlug.get(slug))
       .filter((space): space is Space => space != null)

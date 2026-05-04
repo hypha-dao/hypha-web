@@ -194,7 +194,7 @@ export function VisibleSpacesList({
           <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
             <AddSpaceButton
               space={rootSpace}
-                    allSpaces={safeAllSpaces}
+              allSpaces={safeAllSpaces}
               lang={lang}
             />
             <Link href={rootVisitSpacePath} className="flex-1 md:flex-none">

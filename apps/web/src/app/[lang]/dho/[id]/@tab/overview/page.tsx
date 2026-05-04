@@ -41,7 +41,7 @@ export default async function OrganisationPage(props: PageProps) {
     >
       <SubspaceSectionWrapper
         lang={lang}
-          spaces={safeSpaces}
+        spaces={safeSpaces}
         currentSpaceId={spaceFromDb.id}
         currentSpaceWeb3Id={spaceFromDb.web3SpaceId as number}
         currentSpaceSlug={id}

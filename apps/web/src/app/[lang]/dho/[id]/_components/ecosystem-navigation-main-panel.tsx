@@ -125,10 +125,7 @@ export function EcosystemNavigationMainPanel({
       parentId: currentSpace.parentId ?? null,
       root: true,
     });
-  }, [
-    currentSpace,
-    currentSpaceSlug,
-  ]);
+  }, [currentSpace, currentSpaceSlug]);
 
   const hierarchyData: HierarchyNode | null = useMemo(() => {
     if (!currentSpace || !filteredSpaces) return null;
@@ -167,7 +164,8 @@ export function EcosystemNavigationMainPanel({
     },
     [],
   );
-  const selectedSpaceTitle = selectedSpace?.name ?? currentSpaceTitle ?? t('title');
+  const selectedSpaceTitle =
+    selectedSpace?.name ?? currentSpaceTitle ?? t('title');
 
   const tabs = useMemo(
     () => [
