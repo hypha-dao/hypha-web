@@ -2048,7 +2048,7 @@
     "searchConversation": "Search conversation",
     "hideArchived": "Hide archived",
     "messageCount": "{count, plural, one {# message} other {# messages}}",
-    "priorityVisualAlt": "Priority level",
+    "priorityVisualAlt": "Priority level {priority}",
     "typeSignalBannerAlt": "{type} signal, {priority} priority",
     "unarchiveConversation": "Unarchive Conversation",
     "unarchiveConfirm": "Do you really want to unarchive this conversation?",
