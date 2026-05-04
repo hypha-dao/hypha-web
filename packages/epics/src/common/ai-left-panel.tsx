@@ -236,12 +236,12 @@ export function AiLeftPanel() {
     if (!spaceSlug) return null;
     return {
       key: 'space-settings',
-      label: 'Space Settings',
+      label: tCommon('spaceSettings'),
       icon: SlidersHorizontal,
       href: `/${lang}/dho/${spaceSlug}/agreements/select-settings-action`,
       active: isSpaceSettingsActive,
     };
-  }, [isSpaceSettingsActive, lang, spaceSlug]);
+  }, [isSpaceSettingsActive, lang, spaceSlug, tCommon]);
 
   const [input, setInput] = useState('');
   const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
