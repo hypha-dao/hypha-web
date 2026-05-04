@@ -205,7 +205,7 @@ export const JoinSpace = ({
 
   const { isAuthenticated } = useAuthentication();
 
-  if (hideWhenMember && (isMember || justJoined)) {
+  if (hideWhenMember && (isMemberLoading || isMember || justJoined)) {
     return null;
   }
 
