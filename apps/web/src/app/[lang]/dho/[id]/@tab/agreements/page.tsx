@@ -27,9 +27,12 @@ export default async function AgreementsPage(props: PageProps) {
   }
 
   const web3SpaceId = spaceFromDb.web3SpaceId;
+  if (web3SpaceId == null) {
+    return notFound();
+  }
 
   return (
-    <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
+    <SpaceTabAccessWrapper spaceId={web3SpaceId} spaceSlug={id}>
       <div className="flex flex-col gap-4 py-4">
         <TabScreenTitle
           title={tCommon('Agreements')}
@@ -38,7 +41,7 @@ export default async function AgreementsPage(props: PageProps) {
         <DocumentsSections
           lang={lang}
           spaceSlug={id}
-          web3SpaceId={web3SpaceId as number}
+          web3SpaceId={web3SpaceId}
           order={[
             {
               name: 'createdAt',
