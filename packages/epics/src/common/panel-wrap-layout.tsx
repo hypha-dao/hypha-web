@@ -118,7 +118,7 @@ export function AiSidebarTrigger() {
     <button
       type="button"
       onClick={toggle}
-      aria-expanded={open && overlayVisible}
+      aria-expanded={overlayVisible}
       className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={t('openPanel')}
       aria-label={t('openPanel')}
