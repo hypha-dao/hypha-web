@@ -5,6 +5,8 @@ import clsx from 'clsx';
 import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { Input } from '@hypha-platform/ui';
+import { Search } from 'lucide-react';
 
 export type ActionProps = {
   title: string;
@@ -30,6 +32,8 @@ type SelectActionProps = {
   children?: React.ReactNode;
   /** Set false when the modal sticky header already shows the same title. */
   showTitle?: boolean;
+  searchPlaceholder?: string;
+  noResultsLabel?: string;
 };
 
 type GroupedActions = {
@@ -43,19 +47,32 @@ export const SelectAction = ({
   actions,
   children,
   showTitle = true,
+  searchPlaceholder,
+  noResultsLabel,
 }: SelectActionProps) => {
   const tCommon = useTranslations('Common');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const normalizedSearch = searchTerm.trim().toLowerCase();
   const groupedActions = React.useMemo(
     () =>
-      actions?.reduce<GroupedActions>((groups, action) => {
-        const group = action.group || '';
-        if (!groups[group]) {
-          groups[group] = [];
-        }
-        groups[group].push(action);
-        return groups;
-      }, {}),
-    [actions],
+      actions
+        ?.filter((action) => {
+          if (!normalizedSearch) return true;
+          const haystack = [action.group, action.title, action.description]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+          return haystack.includes(normalizedSearch);
+        })
+        .reduce<GroupedActions>((groups, action) => {
+          const group = action.group || '';
+          if (!groups[group]) {
+            groups[group] = [];
+          }
+          groups[group].push(action);
+          return groups;
+        }, {}),
+    [actions, normalizedSearch],
   );
 
   return (
@@ -80,86 +97,108 @@ export const SelectAction = ({
         </p>
       </Skeleton>
       {children}
+      {searchPlaceholder ? (
+        <Input
+          type="search"
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder={searchPlaceholder}
+          leftIcon={<Search className="text-accent-9" size="16px" />}
+        />
+      ) : null}
       <Separator />
       <div className="flex flex-col gap-6">
-        {Object.entries(groupedActions || {}).map(([group, groupActions]) => (
-          <div key={group} className="flex flex-col gap-3">
-            {group && (
-              <h3 className="text-3 font-medium text-neutral-11">{group}</h3>
-            )}
-            {groupActions.map((action) => {
-              const isLink = !action.onAction && !!action.href;
+        {Object.entries(groupedActions || {}).length > 0 ? (
+          Object.entries(groupedActions || {}).map(([group, groupActions]) => (
+            <div key={group} className="flex flex-col gap-3">
+              {group && (
+                <h3 className="text-3 font-medium text-neutral-11">{group}</h3>
+              )}
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {groupActions.map((action) => {
+                  const isLink = !action.onAction && !!action.href;
 
-              const handleClick = (e: React.MouseEvent) => {
-                if (action.disabled) {
-                  e.preventDefault();
-                  return;
-                }
+                  const handleClick = (e: React.MouseEvent) => {
+                    if (action.disabled) {
+                      e.preventDefault();
+                      return;
+                    }
 
-                if (action.onAction) {
-                  e.preventDefault();
-                  action.onAction();
-                }
-              };
-              const comingSoon = action.disabled && action.comingSoon === true;
-              const card = (
-                <Card
-                  className={clsx(
-                    'group flex cursor-pointer items-start gap-4 border-border/80 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color] duration-200 ease-out md:p-6',
-                    !action.disabled &&
-                      'hover:border-accent-9 hover:shadow-md hover:ring-accent-10/45',
-                    !action.disabled &&
-                      'focus-within:border-accent-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2',
-                    {
-                      'pointer-events-none cursor-not-allowed opacity-55 saturate-50':
-                        action.disabled,
-                    },
-                  )}
-                  aria-disabled={action.disabled}
-                  onClick={handleClick}
-                >
-                  <div
-                    className={clsx(
-                      'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,color] duration-200 [&_svg]:shrink-0',
-                      !action.disabled &&
-                        /* Outline-style hover: ring + border — no solid fill */
-                        'group-hover:border-accent-9 group-hover:text-foreground group-hover:ring-accent-10/50 group-focus-within:text-foreground',
-                    )}
-                    aria-hidden
-                  >
-                    {action.icon}
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className="flex flex-wrap items-center gap-2 text-2 font-semibold leading-snug text-foreground">
-                      {action.title}
-                      {comingSoon ? (
-                        <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                          {tCommon('comingSoonBadge')}
+                    if (action.onAction) {
+                      e.preventDefault();
+                      action.onAction();
+                    }
+                  };
+                  const comingSoon =
+                    action.disabled && action.comingSoon === true;
+                  const card = (
+                    <Card
+                      className={clsx(
+                        'group flex h-full items-start gap-4 rounded-2xl border border-border/80 bg-background-2 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,background-color] duration-200 ease-out md:p-6',
+                        !action.disabled && 'cursor-pointer',
+                        !action.disabled &&
+                          'hover:border-accent-9 hover:bg-background-3/70 hover:shadow-md hover:ring-accent-10/45',
+                        !action.disabled &&
+                          'focus-within:border-accent-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2',
+                        {
+                          'pointer-events-none cursor-not-allowed border-border/70 bg-background-2 opacity-90':
+                            action.disabled,
+                        },
+                      )}
+                      aria-disabled={action.disabled}
+                      onClick={handleClick}
+                    >
+                      <div
+                        className={clsx(
+                          'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,color] duration-200 [&_svg]:shrink-0',
+                          !action.disabled &&
+                            /* Outline-style hover: ring + border — no solid fill */
+                            'group-hover:border-accent-9 group-hover:text-foreground group-hover:ring-accent-10/50 group-focus-within:text-foreground',
+                        )}
+                        aria-hidden
+                      >
+                        {action.icon}
+                      </div>
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <span className="flex flex-wrap items-center gap-2 text-2 font-semibold leading-snug text-foreground">
+                          {action.title}
+                          {comingSoon ? (
+                            <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                              {tCommon('comingSoonBadge')}
+                            </span>
+                          ) : null}
                         </span>
-                      ) : null}
-                    </span>
-                    <span className="text-1 leading-relaxed text-muted-foreground">
-                      <TextWithLinks text={action.description} />
-                    </span>
-                  </div>
-                </Card>
-              );
-              return isLink ? (
-                <Link
-                  href={action.href!}
-                  target={action.target}
-                  onClick={handleClick}
-                  key={action.title}
-                  aria-disabled={action.disabled}
-                >
-                  {card}
-                </Link>
-              ) : (
-                <div key={action.title}>{card}</div>
-              );
-            })}
+                        <span className="text-1 leading-relaxed text-muted-foreground">
+                          <TextWithLinks text={action.description} />
+                        </span>
+                      </div>
+                    </Card>
+                  );
+                  return isLink ? (
+                    <Link
+                      href={action.href!}
+                      target={action.target}
+                      onClick={handleClick}
+                      key={action.title}
+                      aria-disabled={action.disabled}
+                      className="block h-full"
+                    >
+                      {card}
+                    </Link>
+                  ) : (
+                    <div key={action.title} className="h-full">
+                      {card}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-border/80 bg-background-2 p-5 text-sm text-muted-foreground">
+            {noResultsLabel || 'No menus found'}
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

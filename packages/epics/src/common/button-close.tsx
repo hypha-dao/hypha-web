@@ -50,7 +50,11 @@ export const ButtonClose = ({
       className={className}
       title={title}
     >
-      <Link href={closeUrl} scroll={false}>
+      <Link
+        href={closeUrl}
+        scroll={false}
+        className="inline-flex items-center gap-1 whitespace-nowrap"
+      >
         {narrow ? null : title}
         <RxCross1 />
       </Link>

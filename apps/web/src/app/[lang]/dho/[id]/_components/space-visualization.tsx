@@ -22,6 +22,7 @@ type Props = {
   data: SpaceNode;
   currentSpaceId?: number;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
+  enableHoverActions?: boolean;
 };
 
 const VISUALIZATION_CONFIG = {
@@ -40,6 +41,7 @@ export function SpaceVisualization({
   data,
   currentSpaceId,
   onVisibleSpacesChange,
+  enableHoverActions = false,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -54,8 +56,24 @@ export function SpaceVisualization({
     x: number;
     y: number;
     text: string;
+    spaceId?: number;
+    spaceSlug?: string;
   }>({ visible: false, x: 0, y: 0, text: '' });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const tooltipHideTimeoutRef = useRef<number | null>(null);
+
+  const clearTooltipHideTimeout = () => {
+    if (tooltipHideTimeoutRef.current == null) return;
+    window.clearTimeout(tooltipHideTimeoutRef.current);
+    tooltipHideTimeoutRef.current = null;
+  };
+
+  const scheduleTooltipHide = () => {
+    clearTooltipHideTimeout();
+    tooltipHideTimeoutRef.current = window.setTimeout(() => {
+      setTooltip((prev) => ({ ...prev, visible: false }));
+    }, 120);
+  };
 
   useEffect(() => {
     themeRef.current = resolvedTheme;
@@ -382,35 +400,45 @@ export function SpaceVisualization({
       .attr('class', 'logo')
       .style('pointer-events', 'all')
       .style('cursor', 'pointer')
-      .on('mouseenter', function (event, d: SpaceHierarchyNode) {
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        setTooltip((prev) => ({
-          ...prev,
-          visible: true,
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top,
-          text: d.data.name,
-        }));
-      })
-      .on('mousemove', function (event) {
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        setTooltip((prev) => ({
-          ...prev,
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top,
-        }));
-      })
-      .on('mouseleave', function () {
-        setTooltip((prev) => ({ ...prev, visible: false }));
-      })
       .on('click', (event, d) => {
         if (focus !== d) {
           event.stopPropagation();
           zoom(d);
         }
       });
+
+    if (enableHoverActions) {
+      logos
+        .on('mouseenter', function (event: MouseEvent, d: SpaceHierarchyNode) {
+          clearTooltipHideTimeout();
+          if (!containerRef.current) return;
+          const rect = containerRef.current.getBoundingClientRect();
+          setTooltip((prev) => ({
+            ...prev,
+            visible: true,
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+            text: d.data.name,
+            spaceId: d.data.id,
+            spaceSlug: d.data.slug,
+          }));
+        })
+        .on('mousemove', function (event: MouseEvent) {
+          clearTooltipHideTimeout();
+          if (!containerRef.current) return;
+          const rect = containerRef.current.getBoundingClientRect();
+          setTooltip((prev) => ({
+            ...prev,
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+          }));
+        })
+        .on('mouseleave', function () {
+          scheduleTooltipHide();
+        });
+    } else {
+      logos.on('mouseenter', null).on('mousemove', null).on('mouseleave', null);
+    }
 
     logos.each(function (d: SpaceHierarchyNode) {
       const logoGroup = d3.select(this);
@@ -663,25 +691,35 @@ export function SpaceVisualization({
     }
   }, [data, currentSpaceId, resolvedTheme]);
 
+  useEffect(() => {
+    return () => {
+      clearTooltipHideTimeout();
+    };
+  }, []);
+
   return (
     <div ref={containerRef} className="relative w-full">
       <svg
         ref={svgRef}
-        className="w-full h-auto"
+        className="h-auto w-full"
         role="img"
         aria-label="Space hierarchy visualization"
       />
-      {tooltip.visible && (
+      {enableHoverActions && tooltip.visible && (
         <div
           ref={tooltipRef}
-          className="absolute z-50 px-3 py-2 text-sm font-medium text-card-foreground bg-popover border-2 border-border rounded-lg shadow-lg pointer-events-none whitespace-nowrap"
+          onMouseEnter={clearTooltipHideTimeout}
+          onMouseLeave={scheduleTooltipHide}
+          className="absolute z-50 rounded-lg border border-border/70 bg-popover px-2 py-1.5 shadow-lg"
           style={{
             left: `${tooltip.x + 10}px`,
             top: `${tooltip.y + 10}px`,
             transform: 'translate(0, -50%)',
           }}
         >
-          {tooltip.text}
+          <div className="rounded-md border border-border/60 bg-background-3/80 px-2.5 py-1 text-xs font-semibold text-foreground">
+            {tooltip.text}
+          </div>
         </div>
       )}
     </div>

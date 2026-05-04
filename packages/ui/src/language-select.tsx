@@ -27,11 +27,11 @@ type LanguageSelectProps = {
 /** Toolbar trigger: matches profile avatar button (rounded-md, neutral border, h-10, no ring hover blur). */
 const languageTriggerClassName = cn(
   'box-border flex h-10 min-h-10 shrink-0 cursor-pointer items-center gap-1.5 px-3',
-  'isolate overflow-hidden rounded-md border border-neutral-9 bg-neutral-1 text-neutral-12 outline-none',
+  'isolate overflow-hidden rounded-md bg-neutral-1 text-neutral-12 outline-none',
   'text-xs font-semibold shadow-sm transition-colors duration-150',
-  'hover:border-neutral-11 hover:text-foreground',
+  'hover:text-foreground',
   'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-  'data-[state=open]:border-neutral-11 data-[state=open]:shadow-md',
+  'data-[state=open]:shadow-md',
 );
 
 export function LanguageSelect({
@@ -97,9 +97,9 @@ export function LanguageSelect({
                   <Check className="size-3.5" strokeWidth={2.5} />
                 ) : null}
               </span>
-              <span className="min-w-0 flex-1 truncate text-left font-medium">
+              <span className="min-w-0 flex-1 truncate text-left text-2 font-normal">
                 {locale.label}
-                <span className="ml-1.5 font-mono text-xs font-semibold tabular-nums text-muted-foreground">
+                <span className="ml-1.5 text-2 font-normal text-muted-foreground">
                   {locale.shortLabel}
                 </span>
               </span>

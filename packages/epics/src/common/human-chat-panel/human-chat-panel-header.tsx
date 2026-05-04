@@ -38,37 +38,37 @@ export function HumanChatPanelHeader({
   const displayDescription = description;
 
   return (
-    <div className="flex min-h-[var(--menu-top-height,65px)] min-w-0 items-center gap-2 border-b border-border bg-background-2 px-4 py-3">
+    <div className="flex h-[var(--menu-top-height,70px)] min-w-0 items-center gap-2 border-b border-border bg-background-2 px-4 py-3">
       <div className="flex shrink-0 items-center gap-1">
         {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label={t('backToSpaceChat')}
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="h-4 w-4" />
           </button>
         ) : (
           <button
             type="button"
             onClick={toggleSidebar}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
           >
-            <PanelRightClose className="h-3.5 w-3.5" />
+            <PanelRightClose className="h-4 w-4" />
           </button>
         )}
         {trailingStart}
         {notificationSettingsHref ? (
           <Link
             href={notificationSettingsHref}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label={t('mentionInboxNotificationSettings')}
             title={t('mentionInboxNotificationSettings')}
           >
-            <Settings className="h-3.5 w-3.5" aria-hidden />
+            <Settings className="h-4 w-4" aria-hidden />
           </Link>
         ) : null}
       </div>
@@ -81,8 +81,8 @@ export function HumanChatPanelHeader({
         <span className="font-semibold text-sm text-foreground truncate min-w-0">
           {displayTitle}
         </span>
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary">
-          <MessageCircle className="h-3.5 w-3.5 text-primary-foreground" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 ring-1 ring-border/70">
+          <MessageCircle className="h-4 w-4 text-muted-foreground" />
         </div>
       </div>
     </div>

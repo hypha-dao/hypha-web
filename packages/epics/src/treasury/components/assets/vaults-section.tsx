@@ -1,14 +1,13 @@
 'use client';
 
 import { FC } from 'react';
-import { SectionFilter } from '@hypha-platform/ui/server';
 import { useVaults, type Vault } from '../../hooks/use-vaults';
 import { VaultCollateralCard } from './vault-collateral-card';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { Empty } from '../../../common';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
-import { Button, Separator } from '@hypha-platform/ui';
+import { Button } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
@@ -44,8 +43,13 @@ const SingleVaultSection: FC<{
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
-      <div className="w-full flex items-center justify-between gap-2">
-        <SectionFilter label={translatedTitle} count={totalLabel} />
+      <div className="w-full flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="truncate text-4 font-semibold tracking-tight text-foreground">
+            {translatedTitle}
+          </h3>
+          <p className="mt-1 text-2 text-muted-foreground">{totalLabel}</p>
+        </div>
         {canUpdateVault ? (
           <Link href={perVaultUpdateHref} scroll={false}>
             <Button>{tTreasury('vaultsSection.updateBackingVault')}</Button>
@@ -112,7 +116,13 @@ export const VaultsSection: FC = () => {
     : tTreasury('vaultsSection.joinSpaceToUpdateBackingVault');
 
   if (vaults.length === 0 && !isLoading) {
-    return null;
+    return (
+      <div className="flex w-full flex-col items-center justify-center">
+        <Empty>
+          <p>{tTreasury('listIsEmpty')}</p>
+        </Empty>
+      </div>
+    );
   }
 
   // Treasury page stacks Rewards / Vaults / Balance with only `gap-6` between
@@ -121,43 +131,36 @@ export const VaultsSection: FC = () => {
   // a divider above and below this section (only when it renders) so the
   // separations show up exclusively when there's a vault to break apart.
   return (
-    <>
-      <Separator />
-      <div className="flex flex-col w-full justify-center items-center gap-6">
-        <div className="w-full">
-          <h3 className="text-4">{tTreasury('vaultsSection.title')}</h3>
-        </div>
-        {vaults.map((vault, index) => (
-          <SingleVaultSection
-            key={`${vault.spaceToken}-${index}`}
-            vault={vault}
-            isLoading={isLoading}
-            lang={lang}
-            canUpdateVault={canUpdateVault}
-            updateVaultHref={updateVaultHref}
-            updateDisabledTitle={updateDisabledTitle}
-          />
-        ))}
-        {isLoading && vaults.length === 0 && (
-          <SingleVaultSection
-            vault={{
-              spaceToken: '',
-              tokenName: '',
-              tokenSymbol: '',
-              tokenIcon: '',
-              totalUsd: 0,
-              backingPercent: 0,
-              collaterals: [],
-            }}
-            isLoading
-            lang={lang}
-            canUpdateVault={canUpdateVault}
-            updateVaultHref={updateVaultHref}
-            updateDisabledTitle={updateDisabledTitle}
-          />
-        )}
-      </div>
-      <Separator />
-    </>
+    <div className="flex flex-col w-full justify-center items-center gap-6">
+      {vaults.map((vault, index) => (
+        <SingleVaultSection
+          key={`${vault.spaceToken}-${index}`}
+          vault={vault}
+          isLoading={isLoading}
+          lang={lang}
+          canUpdateVault={canUpdateVault}
+          updateVaultHref={updateVaultHref}
+          updateDisabledTitle={updateDisabledTitle}
+        />
+      ))}
+      {isLoading && vaults.length === 0 && (
+        <SingleVaultSection
+          vault={{
+            spaceToken: '',
+            tokenName: '',
+            tokenSymbol: '',
+            tokenIcon: '',
+            totalUsd: 0,
+            backingPercent: 0,
+            collaterals: [],
+          }}
+          isLoading
+          lang={lang}
+          canUpdateVault={canUpdateVault}
+          updateVaultHref={updateVaultHref}
+          updateDisabledTitle={updateDisabledTitle}
+        />
+      )}
+    </div>
   );
 };

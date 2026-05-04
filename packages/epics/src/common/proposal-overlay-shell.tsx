@@ -116,7 +116,7 @@ export function ProposalOverlayShell({
             className={cn(
               'fixed bottom-0 z-40 hidden bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35 md:block',
               'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))]',
-              'top-[var(--menu-top-height,65px)]',
+              'top-[var(--menu-top-height,70px)]',
             )}
             aria-hidden
           />
@@ -125,10 +125,10 @@ export function ProposalOverlayShell({
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
             className={cn(
-              'fixed z-[41] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-[var(--sidebar-left-width,0px)] max-md:top-[var(--menu-top-height,65px)] max-md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
+              'fixed z-[41] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-[var(--sidebar-left-width,0px)] max-md:top-[var(--menu-top-height,70px)] max-md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
               /* Host is click-through on desktop so MenuTop (z-30) stays usable; modal surface re-enables hits */
               'pointer-events-auto md:pointer-events-none',
-              'md:left-[var(--sidebar-left-width,0px)] md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] md:bottom-0 md:top-[var(--menu-top-height,65px)] md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-5',
+              'md:left-[var(--sidebar-left-width,0px)] md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] md:bottom-0 md:top-[var(--menu-top-height,70px)] md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-5',
             )}
           >
             <DialogPrimitive.Title className="sr-only">
@@ -143,8 +143,8 @@ export function ProposalOverlayShell({
             <div
               className={cn(
                 'pointer-events-auto relative flex w-full min-h-0 flex-col outline-none md:mx-auto',
-                'md:z-10 md:flex-initial md:max-h-[min(640px,calc(100dvh_-_var(--menu-top-height,65px)_-_2.5rem))] md:max-w-[min(768px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_var(--main-column-scrollbar-width,10px)_-_2.5rem))]',
-                'max-md:max-h-[calc(100dvh_-_var(--menu-top-height,65px))]',
+                'md:z-10 md:flex-initial md:max-h-[min(640px,calc(100dvh_-_var(--menu-top-height,70px)_-_2.5rem))] md:max-w-[min(768px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_var(--main-column-scrollbar-width,10px)_-_2.5rem))]',
+                'max-md:max-h-[calc(100dvh_-_var(--menu-top-height,70px))]',
                 'overflow-hidden rounded-2xl md:border md:border-border/90 md:bg-background-2 md:shadow-2xl md:ring-1 md:ring-white/5 dark:md:ring-white/10',
                 'max-md:rounded-none max-md:border-0 max-md:bg-background-2 max-md:shadow-none max-md:ring-0',
                 className,

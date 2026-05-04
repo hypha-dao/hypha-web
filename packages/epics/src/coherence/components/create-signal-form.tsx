@@ -46,6 +46,9 @@ import { ButtonBack } from '../../common/button-back';
 import { CardButtonColorVariant } from '../../common/card-button';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
+const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
+  'coherence.signalProvisioningNotice';
+const SIGNAL_PROVISIONING_NOTICE_EVENT = 'coherence:signalProvisioningNotice';
 
 interface CreateSignalFormProps {
   spaceId: number;
@@ -211,15 +214,53 @@ export const CreateSignalForm = ({
     });
   }, [form, person?.id, spaceId]);
 
+  const setSignalProvisioningNotice = React.useCallback(
+    (message: string, details?: string) => {
+      if (typeof window === 'undefined') return;
+      const lines = details ? [message, details] : [message];
+      sessionStorage.setItem(
+        SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
+        JSON.stringify(lines),
+      );
+      window.dispatchEvent(new Event(SIGNAL_PROVISIONING_NOTICE_EVENT));
+    },
+    [],
+  );
+
   const handleCreate = React.useCallback(
     async (data: FormValues) => {
       try {
         const coherence = await createCoherence({ ...data });
-        if (isMatrixAvailable) {
-          const { roomId } = await createRoom(coherence.title);
-          await updateCoherenceBySlug({ slug: coherence.slug!, roomId });
-        } else {
+        const coherenceSlug = coherence.slug;
+        if (!isMatrixAvailable) {
+          setSignalProvisioningNotice(t('provisioning.chatUnavailable'));
           console.warn('Matrix client is unavailable — skipping room creation');
+        } else if (coherenceSlug) {
+          // Do not block successful form close/navigation on Matrix latency/failures.
+          void (async () => {
+            try {
+              const { roomId } = await createRoom(coherence.title);
+              await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
+            } catch (matrixError) {
+              const matrixErrorMessage =
+                matrixError instanceof Error
+                  ? matrixError.message
+                  : String(matrixError);
+              setSignalProvisioningNotice(
+                t('provisioning.roomProvisionFailed'),
+                matrixErrorMessage,
+              );
+              console.warn(
+                'Signal created but Matrix room provisioning failed:',
+                matrixError,
+              );
+            }
+          })();
+        } else {
+          setSignalProvisioningNotice(t('provisioning.roomLinkFailedRetry'));
+          console.warn(
+            'Signal created but coherence slug is missing — room linking skipped.',
+          );
         }
         router.push(successfulUrl);
       } catch (error) {
@@ -231,6 +272,8 @@ export const CreateSignalForm = ({
       createRoom,
       updateCoherenceBySlug,
       isMatrixAvailable,
+      setSignalProvisioningNotice,
+      t,
       router,
       successfulUrl,
     ],
@@ -267,12 +310,12 @@ export const CreateSignalForm = ({
           onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
           className="flex flex-col gap-0"
         >
-          <div className="sticky top-0 z-30 -mx-4 bg-background-2 supports-[backdrop-filter]:bg-background-2/95 supports-[backdrop-filter]:backdrop-blur-sm lg:-mx-7">
-            {/* Token-burning style: modal title row + delimiter */}
-            <div className="flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-4 pb-4 pt-2 lg:px-7">
-              <span className="text-lg font-semibold leading-none text-foreground">
+          <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
+            {/* Match {@link CreateAgreementBaseFields} proposal modal toolbar */}
+            <div className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7">
+              <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
                 {t('signals')}
-              </span>
+              </h2>
               <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
                 {backUrl ? (
                   <ButtonBack
@@ -342,40 +385,42 @@ export const CreateSignalForm = ({
             <Separator className="bg-border" />
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-5 px-0 pt-5">
+          <div className="flex min-h-0 flex-1 flex-col gap-6 px-0 pt-5">
             <FormField
               control={form.control}
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex w-full flex-col gap-3">
-                    <FormLabel className="text-foreground">
-                      {t('type')} <RequirementMark />
-                    </FormLabel>
-                    <FormControl>
-                      <span className="grid w-full grid-cols-2 gap-2">
-                        {typeOptions.map((option, index) => (
-                          <CoherenceTypeButton
-                            key={`type-option-${index}`}
-                            icon={option.icon}
-                            title={option.title}
-                            description={option.description}
-                            colorVariant={option.colorVariant}
-                            selected={field.value === option.type}
-                            onClick={() => {
-                              form.setValue(
-                                'type',
-                                option.type as CoherenceType,
-                                {
-                                  shouldDirty: true,
-                                },
-                              );
-                            }}
-                          />
-                        ))}
-                      </span>
-                    </FormControl>
-                  </div>
+                  <section className="rounded-xl border border-border/70 bg-muted/20 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/12 lg:p-6">
+                    <div className="flex w-full flex-col gap-3">
+                      <FormLabel className="text-foreground">
+                        {t('type')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <span className="grid w-full grid-cols-2 gap-2">
+                          {typeOptions.map((option) => (
+                            <CoherenceTypeButton
+                              key={`type-option-${option.type}`}
+                              icon={option.icon}
+                              title={option.title}
+                              description={option.description}
+                              colorVariant={option.colorVariant}
+                              selected={field.value === option.type}
+                              onClick={() => {
+                                form.setValue(
+                                  'type',
+                                  option.type as CoherenceType,
+                                  {
+                                    shouldDirty: true,
+                                  },
+                                );
+                              }}
+                            />
+                          ))}
+                        </span>
+                      </FormControl>
+                    </div>
+                  </section>
                   <FormMessage />
                 </FormItem>
               )}
@@ -385,31 +430,33 @@ export const CreateSignalForm = ({
               name="priority"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex w-full flex-col gap-3">
-                    <FormLabel className="text-foreground">
-                      {t('priority')} <RequirementMark />
-                    </FormLabel>
-                    <FormControl>
-                      <span className="flex w-full flex-row gap-2">
-                        {priorityOptions.map((option, index) => (
-                          <CoherencePriorityButton
-                            key={`priority-option-${index}`}
-                            className="w-full"
-                            icon={option.icon}
-                            title={option.title}
-                            description={option.description}
-                            colorVariant={option.colorVariant}
-                            selected={field.value === option.priority}
-                            onClick={() => {
-                              form.setValue('priority', option.priority, {
-                                shouldDirty: true,
-                              });
-                            }}
-                          />
-                        ))}
-                      </span>
-                    </FormControl>
-                  </div>
+                  <section className="rounded-xl border border-border/70 bg-muted/20 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/12 lg:p-6">
+                    <div className="flex w-full flex-col gap-3">
+                      <FormLabel className="text-foreground">
+                        {t('priority')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <span className="flex w-full flex-row gap-2">
+                          {priorityOptions.map((option) => (
+                            <CoherencePriorityButton
+                              key={`priority-option-${option.priority}`}
+                              className="w-full"
+                              icon={option.icon}
+                              title={option.title}
+                              description={option.description}
+                              colorVariant={option.colorVariant}
+                              selected={field.value === option.priority}
+                              onClick={() => {
+                                form.setValue('priority', option.priority, {
+                                  shouldDirty: true,
+                                });
+                              }}
+                            />
+                          ))}
+                        </span>
+                      </FormControl>
+                    </div>
+                  </section>
                   <FormMessage />
                 </FormItem>
               )}
@@ -419,16 +466,20 @@ export const CreateSignalForm = ({
               name="tags"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground">{t('tags')}</FormLabel>
-                  <FormControl>
-                    <MultiSelect
-                      placeholder={t('selectOneOrMore')}
-                      options={tagOptions}
-                      value={field.value}
-                      allowToggleAll={false}
-                      onValueChange={field.onChange}
-                    />
-                  </FormControl>
+                  <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+                    <FormLabel className="text-foreground">
+                      {t('tags')}
+                    </FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        placeholder={t('selectOneOrMore')}
+                        options={tagOptions}
+                        value={field.value}
+                        allowToggleAll={false}
+                        onValueChange={field.onChange}
+                      />
+                    </FormControl>
+                  </section>
                   <FormMessage />
                 </FormItem>
               )}
@@ -440,20 +491,24 @@ export const CreateSignalForm = ({
                 const descriptionValue = field.value || '';
                 return (
                   <FormItem>
-                    <FormLabel className="text-foreground gap-1">
-                      {t('description')} <RequirementMark />
-                    </FormLabel>
-                    <FormControl>
-                      <RichTextEditor
-                        editorRef={null}
-                        markdown={descriptionValue}
-                        translation={translateEditor}
-                        placeholder={t('descriptionPlaceholder')}
-                        onChange={(markdown) => field.onChange(markdown)}
-                      />
-                    </FormControl>
-                    <FormDescription />
-                    <FormMessage />
+                    <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+                      <FormLabel className="gap-1 text-foreground">
+                        {t('description')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
+                          <RichTextEditor
+                            editorRef={null}
+                            markdown={descriptionValue}
+                            translation={translateEditor}
+                            placeholder={t('descriptionPlaceholder')}
+                            onChange={(markdown) => field.onChange(markdown)}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormDescription />
+                      <FormMessage />
+                    </section>
                   </FormItem>
                 );
               }}

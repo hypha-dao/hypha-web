@@ -16,7 +16,7 @@ export const SidePanel = ({ children, className }: SidePanelProps) => {
           className,
         )}
         style={{
-          top: 'var(--menu-top-height, 65px)',
+          top: 'var(--menu-top-height, 70px)',
           right: 'var(--sidebar-right-width, 0px)',
         }}
       >

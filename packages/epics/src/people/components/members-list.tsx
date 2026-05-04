@@ -2,7 +2,8 @@ import { FC } from 'react';
 import { MemberCard } from './member-card';
 import Link from 'next/link';
 import { type UseMembers, SpaceMemberCard } from '@hypha-platform/epics';
-import { useParams } from 'next/navigation';
+import { getDhoSpaceContextPath } from '@hypha-platform/epics';
+import { useParams, usePathname } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 
 type MembersListProps = {
@@ -14,6 +15,7 @@ type MembersListProps = {
   spaceSlug?: string;
   searchTerm?: string;
   refreshInterval?: number;
+  entityFilter?: 'member' | 'space';
 };
 
 export const MembersList: FC<MembersListProps> = ({
@@ -25,8 +27,10 @@ export const MembersList: FC<MembersListProps> = ({
   spaceSlug,
   searchTerm,
   refreshInterval,
+  entityFilter = 'member',
 }) => {
   const { lang } = useParams<{ lang: Locale }>();
+  const pathname = usePathname();
   const { persons, spaces, isLoading } = useMembers({
     page,
     spaceSlug,
@@ -34,42 +38,50 @@ export const MembersList: FC<MembersListProps> = ({
     refreshInterval,
   });
   return (
-    <div className="member-list w-full">
-      {persons?.data?.map((member) => (
-        <Link
-          href={`${basePath}/${member.slug}`}
-          key={member.slug}
-          scroll={false}
-        >
-          <MemberCard
-            spaceId={spaceId}
-            minimize={minimize}
-            {...member}
-            isLoading={isLoading}
-          />
-        </Link>
-      ))}
-      {spaces.data.map((space) => (
-        <Link
-          href={`/${lang}/dho/${space.slug}/agreements`}
-          key={space.slug}
-          scroll={false}
-        >
-          <SpaceMemberCard
-            hostSpaceId={spaceId}
-            space={space}
-            isLoading={isLoading}
-          />
-        </Link>
-      ))}
+    <div className="member-list grid w-full grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+      {entityFilter !== 'space' &&
+        persons?.data?.map((member) => (
+          <Link
+            href={`${basePath}/${member.slug}`}
+            key={member.slug}
+            scroll={false}
+            className="block"
+          >
+            <MemberCard
+              spaceId={spaceId}
+              minimize={minimize}
+              {...member}
+              isLoading={isLoading}
+            />
+          </Link>
+        ))}
+      {entityFilter !== 'member' &&
+        spaces.data.map((space) => (
+          <Link
+            href={getDhoSpaceContextPath({
+              pathname,
+              lang,
+              spaceSlug: space.slug,
+            })}
+            key={space.slug}
+            scroll={false}
+            className="block"
+          >
+            <SpaceMemberCard
+              hostSpaceId={spaceId}
+              space={space}
+              isLoading={isLoading}
+            />
+          </Link>
+        ))}
 
       {isLoading && (
-        <div>
+        <>
           <MemberCard isLoading={isLoading} />
           <MemberCard isLoading={isLoading} />
           <MemberCard isLoading={isLoading} />
           <MemberCard isLoading={isLoading} />
-        </div>
+        </>
       )}
     </div>
   );

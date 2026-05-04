@@ -22,13 +22,18 @@ import { useAuthentication } from '@hypha-platform/authentication';
 type JoinSpaceProps = {
   spaceId: number;
   web3SpaceId: number;
+  hideWhenMember?: boolean;
 };
 
 function isBaseError(error: any): error is BaseError {
   return (error as BaseError).details !== undefined;
 }
 
-export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
+export const JoinSpace = ({
+  spaceId,
+  web3SpaceId,
+  hideWhenMember = false,
+}: JoinSpaceProps) => {
   const t = useTranslations('Spaces');
   const { lang } = useParams();
   const config = useConfig();
@@ -199,6 +204,10 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
     showLoader;
 
   const { isAuthenticated } = useAuthentication();
+
+  if (hideWhenMember && (isMember || justJoined)) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-2">

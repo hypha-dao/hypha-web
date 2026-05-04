@@ -24,7 +24,7 @@ import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { fileRouter } from '@hypha-platform/core/server';
-import { MenuTop, TooltipProvider } from '@hypha-platform/ui';
+import { TooltipProvider } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
 import {
   getEnableAiChat,
@@ -39,6 +39,7 @@ import { getShowLanguageSelect } from '@hypha-platform/feature-flags';
 import ScrollUp from '@web/components/scroll-up';
 import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
 import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
+import { ConnectedMenuTop } from '@web/components/connected-menu-top';
 import '@web/utils/initialize-proxy';
 
 const lato = Lato({
@@ -151,7 +152,8 @@ export default async function RootLayout({
                       >
                         {/* Fixed menu bar — clamped to center column by SidebarInset */}
                         <div className="sticky top-0 z-30 shrink-0">
-                          <MenuTop
+                          <ConnectedMenuTop
+                            aiChatEnabled={aiChatEnabled}
                             logoHref={ROOT_URL}
                             openMenuLabel={tNav('openMenu')}
                             closeMenuLabel={tNav('closeMenu')}
@@ -171,12 +173,12 @@ export default async function RootLayout({
                               baseRedirectPath="/my-spaces"
                               navItems={[
                                 {
-                                  label: tNav('network'),
-                                  href: `/${locale}/network`,
-                                },
-                                {
                                   label: tNav('mySpaces'),
                                   href: `/${locale}/my-spaces`,
+                                },
+                                {
+                                  label: tNav('network'),
+                                  href: `/${locale}/network`,
                                 },
                               ]}
                               trailingBeforeProfile={
@@ -185,7 +187,7 @@ export default async function RootLayout({
                                 ) : undefined
                               }
                             />
-                          </MenuTop>
+                          </ConnectedMenuTop>
                         </div>
                         {/* Scrollable content area */}
                         <NextSSRPlugin

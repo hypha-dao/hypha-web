@@ -2,11 +2,11 @@ import {
   COHERENCE_ORDERS,
   CoherenceBlock,
   CoherenceOrder,
+  SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
 import {
   getEnableCoherence,
   getEnableHumanChat,
-  getEnableSpaceMemory,
 } from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
 import { redirect } from 'next/navigation';
@@ -16,6 +16,7 @@ type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
   searchParams?: Promise<{
     order?: string;
+    priority?: string;
     type?: string;
   }>;
 };
@@ -28,7 +29,6 @@ export default async function CoherencePage(props: PageProps) {
   }
 
   const humanChatEnabled = await getEnableHumanChat();
-  const spaceMemoryEnabled = await getEnableSpaceMemory();
   const searchParams = await props.searchParams;
 
   const { lang, id } = params;
@@ -38,14 +38,23 @@ export default async function CoherencePage(props: PageProps) {
     orderRaw && COHERENCE_ORDERS.includes(orderRaw as CoherenceOrder)
       ? (orderRaw as CoherenceOrder)
       : 'mostrecent';
+  const priorityRaw = searchParams?.priority;
+  const priorityFilter =
+    priorityRaw === 'high' || priorityRaw === 'medium' || priorityRaw === 'low'
+      ? priorityRaw
+      : 'all';
 
   return (
-    <CoherenceBlock
-      lang={lang}
-      spaceSlug={id}
-      order={order}
-      humanChatEnabled={humanChatEnabled}
-      spaceMemoryEnabled={spaceMemoryEnabled}
-    />
+    <SpaceTabAccessWrapper spaceSlug={id}>
+      <div className="flex flex-col gap-4 py-4">
+        <CoherenceBlock
+          lang={lang}
+          spaceSlug={id}
+          order={order}
+          priorityFilter={priorityFilter}
+          humanChatEnabled={humanChatEnabled}
+        />
+      </div>
+    </SpaceTabAccessWrapper>
   );
 }

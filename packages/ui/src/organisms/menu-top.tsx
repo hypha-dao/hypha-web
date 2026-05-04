@@ -6,12 +6,15 @@ import { Menu } from 'lucide-react';
 import { RxCross1 } from 'react-icons/rx';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
+import Link from 'next/link';
 
 type MenuTopProps = {
   children?: React.ReactNode;
   leadingAction?: React.ReactNode;
   trailingAction?: React.ReactNode;
   logoHref?: string;
+  logoText?: string;
+  logoNode?: React.ReactNode;
   hrefTarget?: string;
   openMenuLabel?: string;
   closeMenuLabel?: string;
@@ -22,6 +25,8 @@ export const MenuTop = ({
   leadingAction,
   trailingAction,
   logoHref,
+  logoText,
+  logoNode,
   hrefTarget,
   openMenuLabel = 'Open menu',
   closeMenuLabel = 'Close menu',
@@ -64,18 +69,16 @@ export const MenuTop = ({
     <header
       ref={headerRef}
       className={clsx(
-        'relative flex min-h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
-        'bg-background-2 px-4 py-[1.125rem] z-30',
+        'relative flex h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
+        'bg-background-2 px-4 py-3 z-30',
         /*
-         * Span the flex gap between SidebarInset and fixed side rails (human/AI panels).
-         * Mirror vars come from PanelWrapLayout on `:root`; without this the rule stops at the
-         * inset edge and misses the junction with `Sidebar` border-r / border-l.
-         * Also extend past the main column scrollbar gutter (`--main-column-scrollbar-width`) so
-         * the rule meets the side panel border — same inset logic as sticky DHO chrome.
+         * Span the flex gap between SidebarInset and the fixed left rail so the underline meets
+         * the sidebar seam cleanly. The right panel draws its own matching border, which avoids
+         * a doubled or awkward underline where the main top menu and right panel meet.
          */
         'after:pointer-events-none after:absolute after:bottom-0 after:h-px after:bg-border',
         'after:left-[calc(-1_*_var(--sidebar-left-width,0px))]',
-        'after:right-[calc((-1_*_var(--sidebar-right-width,0px))_-_var(--main-column-scrollbar-width,0px))]',
+        'after:right-0',
       )}
     >
       <div
@@ -86,9 +89,28 @@ export const MenuTop = ({
       >
         <div className="flex items-center gap-2">
           {leadingAction}
-          {!!logoHref && (
+          {logoNode ? (
+            logoNode
+          ) : logoText ? (
+            logoHref ? (
+              <Link
+                href={logoHref}
+                target={hrefTarget}
+                rel={
+                  hrefTarget === '_blank' ? 'noopener noreferrer' : undefined
+                }
+                className="inline-block max-w-[22rem] truncate text-3xl font-medium leading-none tracking-tight text-foreground"
+              >
+                {logoText}
+              </Link>
+            ) : (
+              <span className="inline-block max-w-[22rem] truncate text-3xl font-medium leading-none tracking-tight text-foreground">
+                {logoText}
+              </span>
+            )
+          ) : logoHref ? (
             <Logo width={110} href={logoHref} target={hrefTarget} />
-          )}
+          ) : null}
         </div>
 
         {/* Desktop Nav + Trailing action (right-aligned group) */}
