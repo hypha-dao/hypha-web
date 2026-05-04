@@ -91,6 +91,10 @@ import {
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
+import {
+  sanitizeMentionDisplayLabel,
+  wireComposerPlainForMatrixSend,
+} from './human-chat-panel/human-chat-display-mention';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -827,6 +831,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       ),
     [mentionCandidates],
   );
+
+  /** Sanitized display label → MXID for converting composer `@Name` tokens before Matrix send. */
+  const mentionSanitizedLabelToUserId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const [userId, label] of mentionLabelByUserId) {
+      const key = sanitizeMentionDisplayLabel(label);
+      if (!key || m.has(key)) continue;
+      m.set(key, userId);
+    }
+    return m;
+  }, [mentionLabelByUserId]);
 
   const resolveMentionMemberLabel = useCallback(
     (userId: string) =>
@@ -1673,11 +1688,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setDraftAttachments([]);
     const pendingId =
       savedAttachments.length > 0 ? `hypha-send-pending-${Date.now()}` : null;
+    const { wirePlain, mentionUserIds } = wireComposerPlainForMatrixSend(
+      text,
+      mentionSanitizedLabelToUserId,
+    );
     if (pendingId) {
       setSendingPending({
         id: pendingId,
         attachmentCount: savedAttachments.length,
-        captionPreview: text,
+        captionPreview: wirePlain,
         uploadedCount: 0,
       });
     }
@@ -1706,7 +1725,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           await matrixRef.current.editRoomMessage({
             roomId,
             targetEventId: editTargetEventId,
-            message: text,
+            message: wirePlain,
+            mentionUserIds,
             existingMediaSlots: slots,
             ...(newFiles.length > 0 ? { newAttachments: newFiles } : {}),
             ...(newFiles.length > 0 ? { signal } : {}),
@@ -1718,13 +1738,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           await matrixRef.current.editRoomMessage({
             roomId,
             targetEventId: editTargetEventId,
-            message: text,
+            message: wirePlain,
+            mentionUserIds,
           });
         }
       } else {
         await matrixRef.current.sendMessage({
           roomId,
-          message: text,
+          message: wirePlain,
+          mentionUserIds,
           signal,
           ...(replyToEventId ? { replyToEventId } : {}),
           ...(savedAttachments.length > 0
@@ -1814,7 +1836,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setEditDraft(savedEditDraft);
       setDraftAttachments(savedAttachments);
     }
-  }, [input, roomId, replyDraft, editDraft, draftAttachments, t]);
+  }, [
+    input,
+    roomId,
+    replyDraft,
+    editDraft,
+    draftAttachments,
+    mentionSanitizedLabelToUserId,
+    t,
+  ]);
 
   useEffect(() => {
     return () => {
