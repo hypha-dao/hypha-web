@@ -114,6 +114,17 @@ const getUploadResultUrl = (result: unknown): string | undefined => {
   return undefined;
 };
 
+const getRequiredUploadResultUrl = (
+  result: unknown,
+  fieldName: string,
+): string => {
+  const uploadedUrl = getUploadResultUrl(result);
+  if (!uploadedUrl) {
+    throw new Error(`Upload failed: no URL returned for ${fieldName}`);
+  }
+  return uploadedUrl;
+};
+
 export const useCreateSpaceOrchestrator = ({
   authToken,
   config,
@@ -216,10 +227,10 @@ export const useCreateSpaceOrchestrator = ({
           if (logoUrl instanceof File) {
             uploadPromises.push(
               uploadImage([logoUrl]).then((result) => {
-                const uploadedUrl = getUploadResultUrl(result);
-                if (uploadedUrl) {
-                  uploadedFileUrls.logoUrl = uploadedUrl;
-                }
+                uploadedFileUrls.logoUrl = getRequiredUploadResultUrl(
+                  result,
+                  'logoUrl',
+                );
               }),
             );
           } else if (typeof logoUrl === 'string' && logoUrl) {
@@ -229,10 +240,10 @@ export const useCreateSpaceOrchestrator = ({
           if (leadImage instanceof File) {
             uploadPromises.push(
               uploadImage([leadImage]).then((result) => {
-                const uploadedUrl = getUploadResultUrl(result);
-                if (uploadedUrl) {
-                  uploadedFileUrls.leadImage = uploadedUrl;
-                }
+                uploadedFileUrls.leadImage = getRequiredUploadResultUrl(
+                  result,
+                  'leadImage',
+                );
               }),
             );
           } else if (typeof leadImage === 'string' && leadImage) {
@@ -242,10 +253,8 @@ export const useCreateSpaceOrchestrator = ({
           if (ecosystemLogoUrlLight instanceof File) {
             uploadPromises.push(
               uploadImage([ecosystemLogoUrlLight]).then((result) => {
-                const uploadedUrl = getUploadResultUrl(result);
-                if (uploadedUrl) {
-                  uploadedFileUrls.ecosystemLogoUrlLight = uploadedUrl;
-                }
+                uploadedFileUrls.ecosystemLogoUrlLight =
+                  getRequiredUploadResultUrl(result, 'ecosystemLogoUrlLight');
               }),
             );
           } else if (
@@ -258,10 +267,10 @@ export const useCreateSpaceOrchestrator = ({
           if (ecosystemLogoUrlDark instanceof File) {
             uploadPromises.push(
               uploadImage([ecosystemLogoUrlDark]).then((result) => {
-                const uploadedUrl = getUploadResultUrl(result);
-                if (uploadedUrl) {
-                  uploadedFileUrls.ecosystemLogoUrlDark = uploadedUrl;
-                }
+                uploadedFileUrls.ecosystemLogoUrlDark = getRequiredUploadResultUrl(
+                  result,
+                  'ecosystemLogoUrlDark',
+                );
               }),
             );
           } else if (
