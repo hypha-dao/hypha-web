@@ -29,9 +29,9 @@ export interface FooterProps {
 }
 
 function SpaceContextFooter({
-  licensingPolicyLabel,
-  termsAndConditionsLabel,
-  privacyPolicyLabel,
+  licensingPolicyLabel = 'Licensing policy',
+  termsAndConditionsLabel = 'Terms & Conditions',
+  privacyPolicyLabel = 'Privacy Policy',
 }: FooterProps) {
   return (
     <div className="border-t border-border/60 bg-background-2">
