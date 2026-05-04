@@ -329,6 +329,7 @@
     "onVoting": "En vote",
     "accepted": "Acceptés",
     "rejected": "Rejetés",
+    "newProposal": "Nouvelle proposition",
     "searchDocuments": "Rechercher des documents",
     "listIsEmpty": "La liste est vide"
   },

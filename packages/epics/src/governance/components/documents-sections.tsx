@@ -37,7 +37,7 @@ export function DocumentsSections({
   const createProposalPath = `${basePath}/select-create-action`;
   const createProposalButton = (
     <Button asChild>
-      <Link href={createProposalPath}>New Proposal</Link>
+      <Link href={createProposalPath}>{t('newProposal')}</Link>
     </Button>
   );
 
