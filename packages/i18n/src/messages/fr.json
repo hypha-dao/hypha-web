@@ -877,7 +877,7 @@
       "expenses": "Dépenses",
       "funding": "Financement",
       "investment": "Investissement",
-      "exchange": "Exchange"
+      "exchange": "Échange"
     },
     "documentBadges": {
       "invite": "Invitation",
@@ -1482,7 +1482,7 @@
         "sourcePlaceholder": "Sélectionner la source",
         "sourceMint": "Frapper de nouveaux tokens",
         "sourceTreasury": "Utiliser les tokens disponibles en trésorerie",
-        "escrowNotice": "This proposal uses escrow for the investment. Once it is approved, the investor ({investor}) deposits their side into escrow from their profile or space page, and {activeSpace}'s deposit is made when the proposal is approved and executed."
+        "escrowNotice": "Cette proposition utilise un séquestre pour l’investissement. Une fois approuvée, l’investisseur ({investor}) dépose sa part sur le séquestre depuis son profil ou la page de l’espace, et le dépôt de {activeSpace} est effectué lorsque la proposition est approuvée et exécutée."
       },
       "acceptInvestmentForm": {
         "notMemberRevert": "La chaîne a rejeté la transaction : le portefeuille connecté n’est pas membre ou délégué de cet espace. Utilisez un portefeuille du bon espace ou connectez-vous en tant que délégué.",
@@ -1515,31 +1515,31 @@
       },
       "exchangeStakesAndTokens": {
         "avatarAlt": "Avatar",
-        "buyer": "Buyer (Wallet Address)",
-        "buyerFallback": "buyer",
-        "buyerWillSend": "Buyer will send",
-        "copyWalletAddress": "Copy wallet address",
+        "buyer": "Acheteur (adresse du portefeuille)",
+        "buyerFallback": "acheteur",
+        "buyerWillSend": "L’acheteur enverra",
+        "copyWalletAddress": "Copier l’adresse du portefeuille",
         "errors": {
-          "buyerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
-          "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
-          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address.",
-          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
-          "safeErc20TransferFailed": "The token contract rejected the transfer to escrow (often balance, allowance, or non-transferable rules). Check that your smart wallet holds enough tokens and that the token allows transfers to the escrow.",
-          "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
-          "sellerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
-          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
-          "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
-          "tokenWhitelistBlocked": "This token's on-chain rules block sending it to escrow (e.g. transfer/receive whitelist). Choose another token or update the token's whitelist settings."
+          "buyerAmountTooSmall": "Le montant est trop faible pour les décimales de ce token. Essayez une valeur plus élevée.",
+          "escrowTokenInvalid": "Une ligne de token utilise l’adresse du contrat de séquestre. Utilisez le contrat ERC-20 du token pour les tokens du vendeur et de l’acheteur.",
+          "insufficientSellerBalance": "Le portefeuille connecté ne possède pas assez de tokens vendeur. Approvisionnez le smart wallet correspondant à l’adresse du vendeur.",
+          "memberSellerWalletMismatch": "Le financement de l’échange utilise votre portefeuille connecté. Connectez le même portefeuille que l’adresse du vendeur, ou choisissez le membre vendeur dont l’adresse correspond à votre portefeuille.",
+          "safeErc20TransferFailed": "Le contrat du token a rejeté le transfert vers le séquestre (souvent à cause du solde, d’une allowance ou de règles de non-transférabilité). Vérifiez que votre smart wallet dispose de suffisamment de tokens et que le token autorise les transferts vers le séquestre.",
+          "sellerAmountExceedsBalance": "Le montant saisi est supérieur au solde disponible du vendeur.",
+          "sellerAmountTooSmall": "Le montant est trop faible pour les décimales de ce token. Essayez une valeur plus élevée.",
+          "sellerBalanceCheckFailed": "Impossible de vérifier le solde du vendeur. Vérifiez votre connexion et réessayez.",
+          "sellerTreasuryUnavailable": "Impossible de charger la trésorerie de l’espace. Attendez les données on-chain puis réessayez.",
+          "tokenWhitelistBlocked": "Les règles on-chain de ce token bloquent l’envoi vers le séquestre (par ex. liste blanche transfert/réception). Choisissez un autre token ou mettez à jour la configuration de liste blanche du token."
         },
-        "escrowAccountAddress": "Escrow account address",
-        "escrowNotice": "This proposal uses escrow for the exchange. Once it is approved, each member deposits their side into escrow from their profile; if {activeSpace} is one of the parties, its deposit is made when the proposal is approved and executed.",
-        "loadingTokens": "Loading tokens...",
-        "personAvatarAlt": "{name} avatar",
-        "seller": "Seller (Wallet Address)",
-        "sellerFallback": "seller",
-        "sellerWillSend": "Seller sends",
-        "spaceFallback": "space",
-        "spaceLogoAlt": "{name} logo",
+        "escrowAccountAddress": "Adresse du compte séquestre",
+        "escrowNotice": "Cette proposition utilise un séquestre pour l’échange. Une fois approuvée, chaque membre dépose sa part sur le séquestre depuis son profil ; si {activeSpace} fait partie des parties, son dépôt est effectué lorsque la proposition est approuvée et exécutée.",
+        "loadingTokens": "Chargement des tokens...",
+        "personAvatarAlt": "Avatar de {name}",
+        "seller": "Vendeur (adresse du portefeuille)",
+        "sellerFallback": "vendeur",
+        "sellerWillSend": "Le vendeur envoie",
+        "spaceFallback": "espace",
+        "spaceLogoAlt": "Logo de {name}",
         "tokenAlt": "Token"
       }
     },
@@ -1585,7 +1585,7 @@
       "decaySettings": "Paramètres de décroissance",
       "fromWhitelist": "À partir de la liste blanche",
       "toWhitelist": "Vers la liste blanche",
-      "mutualCredit": "Mutual Credit"
+      "mutualCredit": "Crédit mutuel"
     },
     "labels": {
       "unknown": "Inconnu",
