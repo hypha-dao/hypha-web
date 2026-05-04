@@ -142,10 +142,15 @@ export default function SpaceConfiguration() {
             id: space.id,
             data: normalizedUpdatedSpace,
           });
-          await Promise.all([
-            mutate('/api/v1/spaces?parentOnly=false'),
-            mutate(`/api/v1/spaces?slugs=${normalizedUpdatedSpace.slug}`),
-          ]);
+          const mutateRequests = [mutate('/api/v1/spaces?parentOnly=false')];
+          if (normalizedUpdatedSpace.slug) {
+            mutateRequests.push(
+              mutate(
+                `/api/v1/spaces?slugs=${normalizedUpdatedSpace.slug}&parentOnly=false`,
+              ),
+            );
+          }
+          await Promise.all(mutateRequests);
         }
       } catch (e) {
         console.warn(e);
