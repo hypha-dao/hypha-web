@@ -29,7 +29,10 @@ export function SpaceCardWithDiscoverability({
   const shouldShowExitButton = showExitButton && isMember === true;
 
   return (
-    <Link className="flex flex-col flex-1" href={getHref(space.slug as string)}>
+    <Link
+      className="flex flex-col flex-1 h-full min-w-0"
+      href={getHref(space.slug as string)}
+    >
       <SpaceCard
         description={space.description as string}
         icon={space.logoUrl ?? DEFAULT_SPACE_AVATAR_IMAGE}

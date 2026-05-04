@@ -82,7 +82,7 @@ export default async function Index(props: PageProps) {
                   className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
                 >
                   <Link
-                    className="flex flex-col flex-1"
+                    className="flex flex-col flex-1 h-full"
                     href={getDhoPathAgreements(lang, space.slug as string)}
                   >
                     <SpaceCard

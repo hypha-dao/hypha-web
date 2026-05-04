@@ -21,11 +21,11 @@ export const SpaceCardContainer = ({
   return (
     <div
       data-testid="member-spaces-container"
-      className="grid grid-cols-1 sm:grid-cols-3 gap-2"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 auto-rows-fr"
     >
       {spaces.map((space) =>
         space.slug ? (
-          <div key={space.id}>
+          <div key={space.id} className="h-full min-w-0">
             <SpaceCardWithDiscoverability
               space={space}
               getHref={getHref}
