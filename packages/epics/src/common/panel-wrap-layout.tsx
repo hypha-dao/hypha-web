@@ -24,14 +24,38 @@ import { PanelScrollInset } from './panel-scroll-inset';
 // MenuTop) to access panel state via useAiPanel() and useHumanChatPanel().
 
 export function PanelProviders({ children }: { children: React.ReactNode }) {
-  const [leftOpen, setLeftOpen] = useState(false);
+  const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(false);
+  const [leftContentMode, setLeftContentMode] = useState<'menu' | 'ai'>('menu');
+  const [leftMenuDensity, setLeftMenuDensity] = useState<'expanded' | 'icon'>(
+    'expanded',
+  );
 
   const toggleLeft = useCallback(() => setLeftOpen((prev) => !prev), []);
   const toggleRight = useCallback(() => setRightOpen((prev) => !prev), []);
+  const toggleLeftContentMode = useCallback(
+    () => setLeftContentMode((prev) => (prev === 'menu' ? 'ai' : 'menu')),
+    [],
+  );
+  const toggleLeftMenuDensity = useCallback(
+    () =>
+      setLeftMenuDensity((prev) => (prev === 'expanded' ? 'icon' : 'expanded')),
+    [],
+  );
 
   return (
-    <AiPanelProvider value={{ open: leftOpen, toggle: toggleLeft }}>
+    <AiPanelProvider
+      value={{
+        open: leftOpen,
+        setOpen: setLeftOpen,
+        toggle: toggleLeft,
+        contentMode: leftContentMode,
+        setContentMode: setLeftContentMode,
+        toggleContentMode: toggleLeftContentMode,
+        menuDensity: leftMenuDensity,
+        toggleMenuDensity: toggleLeftMenuDensity,
+      }}
+    >
       <HumanChatPanelProvider
         open={rightOpen}
         toggle={toggleRight}
@@ -48,17 +72,21 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, toggle } = useAiPanel();
+  const { open, setOpen, contentMode, toggleContentMode } = useAiPanel();
   const t = useTranslations('AiPanel');
   const isSpace = useIsSpaceContext();
 
-  if (!isSpace || open) return null;
+  if (!isSpace) return null;
 
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={() => {
+        toggleContentMode();
+        if (!open) setOpen(true);
+      }}
       aria-expanded={open}
+      aria-pressed={contentMode === 'ai'}
       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       title={t('openPanel')}
       aria-label={t('openPanel')}

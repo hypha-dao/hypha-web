@@ -12,7 +12,7 @@ import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
-  AiLeftPanel,
+  SpaceLeftPanel,
   PanelProviders,
   PanelWrapLayout,
   AiSidebarTrigger,
@@ -140,7 +140,7 @@ export default async function RootLayout({
                       <PanelWrapLayout
                         left={
                           aiChatEnabled
-                            ? { content: <AiLeftPanel /> }
+                            ? { content: <SpaceLeftPanel /> }
                             : undefined
                         }
                         right={

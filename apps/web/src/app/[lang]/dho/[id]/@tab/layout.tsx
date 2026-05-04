@@ -1,7 +1,10 @@
 import { Locale } from '@hypha-platform/i18n';
 import { ReactNode } from 'react';
 import { NavigationTabs } from '../_components/navigation-tabs';
-import { getEnableCoherence } from '@hypha-platform/feature-flags';
+import {
+  getEnableAiChat,
+  getEnableCoherence,
+} from '@hypha-platform/feature-flags';
 
 export default async function TabLayout({
   children,
@@ -12,13 +15,16 @@ export default async function TabLayout({
 }) {
   const { id: daoSlug, lang } = await params;
   const coherenceEnabled = await getEnableCoherence();
+  const aiChatEnabled = await getEnableAiChat();
   return (
     <>
-      <NavigationTabs
-        id={daoSlug}
-        lang={lang}
-        coherenceEnabled={coherenceEnabled}
-      />
+      {!aiChatEnabled ? (
+        <NavigationTabs
+          id={daoSlug}
+          lang={lang}
+          coherenceEnabled={coherenceEnabled}
+        />
+      ) : null}
       {children}
     </>
   );

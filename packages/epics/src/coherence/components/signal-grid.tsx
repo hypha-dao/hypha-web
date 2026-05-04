@@ -6,6 +6,7 @@ import { Coherence } from '@hypha-platform/core/client';
 type SignalGridProps = {
   isLoading: boolean;
   basePath: string;
+  leadImage?: string;
   signals: Coherence[];
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
@@ -14,6 +15,7 @@ type SignalGridProps = {
 export function SignalGrid({
   isLoading,
   basePath,
+  leadImage,
   signals,
   refresh,
   onSignalClick,
@@ -25,6 +27,7 @@ export function SignalGrid({
           <SignalCard
             key={signal.id}
             {...signal}
+            leadImage={leadImage}
             className="h-full w-full min-h-0"
             isLoading={isLoading}
             refresh={refresh}
@@ -48,6 +51,7 @@ export function SignalGrid({
           >
             <SignalCard
               {...signal}
+              leadImage={leadImage}
               className="h-full w-full min-h-0"
               isLoading={isLoading}
               refresh={refresh}
@@ -62,6 +66,7 @@ export function SignalGrid({
           >
             <SignalCard
               {...signal}
+              leadImage={leadImage}
               className="h-full w-full min-h-0"
               isLoading={isLoading}
               refresh={refresh}

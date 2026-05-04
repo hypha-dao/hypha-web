@@ -9,14 +9,26 @@ import { createContext, useCallback, useContext, useState } from 'react';
  */
 export type PanelContextValue = {
   open: boolean;
+  setOpen: (value: boolean) => void;
   toggle: () => void;
+  contentMode: 'menu' | 'ai';
+  setContentMode: (mode: 'menu' | 'ai') => void;
+  toggleContentMode: () => void;
+  menuDensity: 'expanded' | 'icon';
+  toggleMenuDensity: () => void;
 };
 
 // ─── AI Panel Context ────────────────────────────────────────────────────────
 
 const AiPanelContext = createContext<PanelContextValue>({
   open: false,
+  setOpen: () => {},
   toggle: () => {},
+  contentMode: 'menu',
+  setContentMode: () => {},
+  toggleContentMode: () => {},
+  menuDensity: 'expanded',
+  toggleMenuDensity: () => {},
 });
 
 export const AiPanelProvider = AiPanelContext.Provider;

@@ -3,6 +3,7 @@ import { SignalGrid } from './signal-grid';
 
 type SignalGridContainerProps = {
   basePath: string;
+  leadImage?: string;
   pagination: {
     page: number;
     firstPageSize: number;
@@ -17,6 +18,7 @@ type SignalGridContainerProps = {
 
 export const SignalGridContainer = ({
   basePath,
+  leadImage,
   pagination,
   signals,
   refresh,
@@ -34,6 +36,7 @@ export const SignalGridContainer = ({
     <SignalGrid
       isLoading={false}
       basePath={basePath}
+      leadImage={leadImage}
       signals={paginatedSignals.map((signal) => ({
         ...signal,
       }))}

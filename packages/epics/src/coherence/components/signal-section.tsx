@@ -17,6 +17,7 @@ import { useTranslations } from 'next-intl';
 type SignalSectionProps = {
   basePath: string;
   signals: Coherence[];
+  leadImage?: string;
   label?: string;
   hasSearch?: boolean;
   isLoading: boolean;
@@ -30,6 +31,7 @@ type SignalSectionProps = {
 export const SignalSection: FC<SignalSectionProps> = ({
   basePath,
   signals,
+  leadImage,
   label,
   hasSearch = false,
   isLoading,
@@ -89,6 +91,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
             <SignalGridContainer
               key={`signal-container-${index}`}
               basePath={basePath}
+              leadImage={leadImage}
               pagination={{
                 page: index + 1,
                 firstPageSize,
