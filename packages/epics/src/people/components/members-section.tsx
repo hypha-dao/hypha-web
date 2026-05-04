@@ -102,6 +102,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
         <Input
           type="search"
           placeholder={tMembers('searchMembers')}
+          aria-label={tMembers('searchMembers')}
           onChange={(event) => onUpdateSearch(event.target.value)}
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
           className="w-full"
