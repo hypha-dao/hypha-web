@@ -164,6 +164,9 @@ export default async function RootLayout({
                               ) : undefined
                             }
                           >
+                            {isLanguageSelectVisible && (
+                              <ConnectedLanguageSelect />
+                            )}
                             <ConnectedButtonProfile
                               useAuthentication={useAuthentication}
                               useMe={useMe}
