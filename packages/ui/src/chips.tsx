@@ -141,7 +141,7 @@ export const MultiSelect = React.forwardRef<
 >(
   (
     {
-      options,
+      options = [],
       onValueChange,
       variant,
       defaultValue = [],
