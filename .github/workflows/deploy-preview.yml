@@ -158,7 +158,34 @@ jobs:
         id: deploy
         env:
           BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
-        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env BRANCH_DB_URL=${{ env.BRANCH_DB_URL }}) >> $GITHUB_OUTPUT
+          VERCEL_TOKEN: ${{ env.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          # `vercel deploy` prints progress to stdout; a single-line `echo key=$(...)` into
+          # GITHUB_OUTPUT breaks when the capture is multiline, leaving preview_url empty and
+          # breaking `vercel alias`. Parse the deployment URL explicitly.
+          export CI=1 FORCE_COLOR=0 NO_COLOR=1
+          deploy_output="$(
+            vercel deploy --prebuilt --yes \
+              --token="${VERCEL_TOKEN}" \
+              --env "BRANCH_DB_URL=${BRANCH_DB_URL:-}" \
+              2>&1
+          )" || {
+            printf '%s\n' "${deploy_output}"
+            exit 1
+          }
+          preview_url="$(
+            set +o pipefail
+            printf '%s\n' "${deploy_output}" \
+              | grep -Eo 'https://[a-zA-Z0-9][a-zA-Z0-9.-]*\.vercel\.app' \
+              | tail -n 1
+          )"
+          if [ -z "${preview_url}" ]; then
+            echo '::error::Could not parse a *.vercel.app URL from vercel deploy output.'
+            printf '%s\n' "${deploy_output}"
+            exit 1
+          fi
+          echo "preview_url=${preview_url}" >> "${GITHUB_OUTPUT}"
 
       - name: Alias preview to deterministic PR domain
         id: alias
@@ -169,7 +196,7 @@ jobs:
         run: |
           set -euo pipefail
           PREVIEW_ALIAS_DOMAIN="pr-${PREVIEW_ALIAS_SUFFIX}.preview-app.hypha.earth"
-          npx --yes vercel@52 alias set "${PREVIEW_URL}" "${PREVIEW_ALIAS_DOMAIN}" --token="${VERCEL_TOKEN}"
+          vercel alias set "${PREVIEW_URL}" "${PREVIEW_ALIAS_DOMAIN}" --token="${VERCEL_TOKEN}"
           echo "preview_custom_url=https://${PREVIEW_ALIAS_DOMAIN}" >> "$GITHUB_OUTPUT"
 
       - name: Comment custom preview URL on PR
