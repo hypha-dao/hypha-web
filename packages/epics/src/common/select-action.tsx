@@ -197,7 +197,7 @@ export const SelectAction = ({
           ))
         ) : (
           <div className="rounded-2xl border border-border/80 bg-background-2 p-5 text-sm text-muted-foreground">
-            {noResultsLabel || 'No menus found'}
+            {noResultsLabel || tCommon('noMenusFound')}
           </div>
         )}
       </div>
