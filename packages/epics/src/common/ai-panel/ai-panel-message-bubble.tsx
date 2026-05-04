@@ -171,9 +171,7 @@ export function AiPanelMessageBubble({
               : 'rounded-tl-sm border border-border bg-muted text-foreground',
           )}
         >
-          {hasVisibleText && (
-            <span>{textContent}</span>
-          )}
+          {hasVisibleText && <span>{textContent}</span>}
           {fileParts.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {fileParts.map((part, i) =>

@@ -506,7 +506,10 @@ export function AiPanelChatBar({
               ) : (
                 <button
                   type="button"
-                  className={cn(iconButtonClass, 'cursor-not-allowed opacity-50')}
+                  className={cn(
+                    iconButtonClass,
+                    'cursor-not-allowed opacity-50',
+                  )}
                   aria-label={tHuman('composerAttachMenu')}
                   title={tHuman('composerAttachMenu')}
                   aria-disabled="true"
