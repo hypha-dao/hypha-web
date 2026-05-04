@@ -21,7 +21,6 @@ import {
   UsersRound,
 } from 'lucide-react';
 import { Space, useSpacesBySlugs } from '@hypha-platform/core/client';
-import useSWR from 'swr';
 import {
   SidebarHeader,
   SidebarContent,
@@ -124,22 +123,19 @@ export function AiLeftPanel() {
   );
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
-  const { data: allSpaces = [] } = useSWR<Space[]>(
-    spaceSlug ? '/api/v1/spaces?parentOnly=false' : null,
-    async (url: string) => {
-      const response = await fetch(url, {
-        headers: { Accept: 'application/json' },
-      });
-      if (!response.ok) {
-        console.warn('[AiLeftPanel] spaces fetch failed', {
-          status: response.status,
-          url,
-        });
-        return [];
-      }
-      return (await response.json()) as Space[];
-    },
+  const [input, setInput] = useState('');
+  const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
+  const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>([]);
+  const [isHoverOpenLocked, setIsHoverOpenLocked] = useState(false);
+  const recentSpaceLookupSlugs = useMemo(
+    () =>
+      recentSpaceSlugs
+        .filter((slug): slug is string => typeof slug === 'string' && !!slug)
+        .slice(0, MAX_RECENT_SPACE_HISTORY),
+    [recentSpaceSlugs],
   );
+  const { spaces: recentSpacesData, error: recentSpacesError } =
+    useSpacesBySlugs(recentSpaceLookupSlugs);
   const isSectionActive = useCallback(
     (
       section:
@@ -246,10 +242,13 @@ export function AiLeftPanel() {
     };
   }, [isSpaceSettingsActive, lang, spaceSlug, tModalAside]);
 
-  const [input, setInput] = useState('');
-  const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
-  const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>([]);
-  const [isHoverOpenLocked, setIsHoverOpenLocked] = useState(false);
+  useEffect(() => {
+    if (!recentSpacesError) return;
+    console.warn('[AiLeftPanel] spaces fetch failed', {
+      slugs: recentSpaceLookupSlugs,
+      error: recentSpacesError,
+    });
+  }, [recentSpacesError, recentSpaceLookupSlugs]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -286,14 +285,14 @@ export function AiLeftPanel() {
   }, [spaceSlug]);
 
   const recentSpaces = useMemo(() => {
-    if (recentSpaceSlugs.length === 0 || allSpaces.length === 0) return [];
-    const bySlug = new Map(allSpaces.map((space) => [space.slug, space]));
+    if (recentSpaceSlugs.length === 0 || recentSpacesData.length === 0) return [];
+    const bySlug = new Map(recentSpacesData.map((space) => [space.slug, space]));
     return recentSpaceSlugs
       .map((slug) => bySlug.get(slug))
       .filter((space): space is Space => space != null)
       .filter((space) => space.slug !== spaceSlug)
       .slice(0, MAX_VISIBLE_RECENT_SPACES);
-  }, [allSpaces, recentSpaceSlugs, spaceSlug]);
+  }, [recentSpaceSlugs, recentSpacesData, spaceSlug]);
 
   const suggestions = useMemo(
     () => [
