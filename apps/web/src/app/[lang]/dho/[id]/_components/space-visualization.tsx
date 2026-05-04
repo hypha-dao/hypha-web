@@ -689,7 +689,7 @@ export function SpaceVisualization({
             .attr('height', r * 2);
         });
     }
-  }, [data, currentSpaceId, resolvedTheme]);
+  }, [data, currentSpaceId, resolvedTheme, enableHoverActions]);
 
   useEffect(() => {
     return () => {
