@@ -104,6 +104,7 @@ export function AiLeftPanel() {
   const spaceSlug = spaceSlugFromPath ?? params?.id;
   const t = useTranslations('AiPanel');
   const tCommon = useTranslations('Common');
+  const tModalAside = useTranslations('ModalAside');
   const tCoherence = useTranslations('CoherenceTab');
   const tSelectNavigation = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
@@ -236,12 +237,12 @@ export function AiLeftPanel() {
     if (!spaceSlug) return null;
     return {
       key: 'space-settings',
-      label: tCommon('spaceSettings'),
+      label: tModalAside('spaceSettings'),
       icon: SlidersHorizontal,
       href: `/${lang}/dho/${spaceSlug}/agreements/select-settings-action`,
       active: isSpaceSettingsActive,
     };
-  }, [isSpaceSettingsActive, lang, spaceSlug, tCommon]);
+  }, [isSpaceSettingsActive, lang, spaceSlug, tModalAside]);
 
   const [input, setInput] = useState('');
   const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
