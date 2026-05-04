@@ -20,6 +20,7 @@ import {
 } from '@hypha-platform/core/client';
 import { usePathname, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useAiPanel } from '../human-chat-panel-context';
 import { getDhoSpaceContextPath } from '../get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
@@ -27,8 +28,11 @@ import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
-function getDisplayIcon(space?: Space): string | null {
-  return resolveSpaceDisplayLogoUrl(space);
+function getDisplayIcon(
+  space: Space | undefined,
+  preferredVariant: 'light' | 'dark',
+): string | null {
+  return resolveSpaceDisplayLogoUrl(space, preferredVariant);
 }
 
 export function AiPanelHeader({
@@ -48,6 +52,7 @@ export function AiPanelHeader({
   const t = useTranslations('AiPanel');
   const tNavigation = useTranslations('Navigation');
   const tSpaces = useTranslations('Spaces');
+  const { resolvedTheme } = useTheme();
   const pathname = usePathname();
   const params = useParams<{ lang?: string }>();
   const activeSpaceSlug = useMemo(
@@ -113,8 +118,9 @@ export function AiPanelHeader({
   }, [activeSpace, allSpaces, web3SpaceIds]);
 
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
+  const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const currentTitle = activeSpace?.title?.trim() || t('title');
-  const currentIcon = getDisplayIcon(activeSpace);
+  const currentIcon = getDisplayIcon(activeSpace, logoVariant);
   const hasSpaces =
     groupedSpaces.ecosystem.length + groupedSpaces.others.length > 0;
   const [spaceSearch, setSpaceSearch] = useState('');
@@ -171,11 +177,11 @@ export function AiPanelHeader({
         className="flex min-w-0 items-center gap-2"
       >
         <span className="h-5 w-5 overflow-hidden rounded-full ring-1 ring-border/60">
-          {getDisplayIcon(space) ? (
+          {getDisplayIcon(space, logoVariant) ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={getDisplayIcon(space) ?? undefined}
+                src={getDisplayIcon(space, logoVariant) ?? undefined}
                 alt={space.title}
                 className="h-full w-full object-cover"
               />

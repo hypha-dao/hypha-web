@@ -6,6 +6,7 @@ import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
   HandCoins,
@@ -109,6 +110,7 @@ export function AiLeftPanel() {
   const tSelectNavigation = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
   const tSpaces = useTranslations('Spaces');
+  const { resolvedTheme } = useTheme();
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const {
     open: isAiOpen,
@@ -356,7 +358,10 @@ export function AiLeftPanel() {
         lang,
         spaceSlug: space.slug,
       });
-      const recentSpaceIcon = resolveSpaceDisplayLogoUrl(space);
+      const recentSpaceIcon = resolveSpaceDisplayLogoUrl(
+        space,
+        resolvedTheme === 'dark' ? 'dark' : 'light',
+      );
 
       return (
         <SidebarMenuItem key={`${keyPrefix}-${space.slug}`}>
@@ -408,7 +413,7 @@ export function AiLeftPanel() {
         </SidebarMenuItem>
       );
     },
-    [lang, pathname, spaceSlug],
+    [lang, pathname, resolvedTheme, spaceSlug],
   );
 
   const renderRecentSpacesSection = useCallback(
