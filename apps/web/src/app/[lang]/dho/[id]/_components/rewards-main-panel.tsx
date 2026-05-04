@@ -32,11 +32,13 @@ export function RewardsMainPanel({
         web3SpaceId={web3SpaceId}
         onVisibleRewardCountChange={setRewardCount}
         toolbarActions={
-          <Link
-            href={`/${lang}/dho/${spaceSlug}/agreements/create/buy-hypha-tokens`}
-          >
-            <Button>{tProfile('buyHypha')}</Button>
-          </Link>
+          <Button asChild>
+            <Link
+              href={`/${lang}/dho/${spaceSlug}/agreements/create/buy-hypha-tokens`}
+            >
+              {tProfile('buyHypha')}
+            </Link>
+          </Button>
         }
       />
     </div>
