@@ -43,6 +43,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
           ) : null}
           {hasSearch ? (
             <Input
+              type="search"
               className="w-full"
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder}
@@ -76,6 +77,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
             <div className="flex flex-row w-full">
               {hasSearch ? (
                 <Input
+                  type="search"
                   className="w-full"
                   placeholder={searchPlaceholder}
                   aria-label={searchPlaceholder}
