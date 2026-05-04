@@ -18,7 +18,7 @@ const customLabelStyles: React.CSSProperties = {
   marginBottom: '12px',
 };
 
-type FooterProps = {
+export interface FooterProps {
   networkLabel?: string;
   legalLabel?: string;
   hyphaServicesLabel?: string;
@@ -26,7 +26,7 @@ type FooterProps = {
   licensingPolicyLabel?: string;
   termsAndConditionsLabel?: string;
   privacyPolicyLabel?: string;
-};
+}
 
 function SpaceContextFooter({
   licensingPolicyLabel,
