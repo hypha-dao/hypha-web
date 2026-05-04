@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Locale } from '@hypha-platform/i18n';
 import { Space, DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
 import {
@@ -112,11 +112,18 @@ export function VisibleSpacesList({
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const keepSearchFocus = useCallback(() => {
-    window.requestAnimationFrame(() => {
+  useEffect(() => {
+    const activeElement = document.activeElement;
+    if (activeElement === searchInputRef.current) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
       searchInputRef.current?.focus();
     });
-  }, []);
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [searchQuery]);
   const buildNestedPath = (space: VisibleSpace): string => {
     if (space.root) {
       return t('visibleSpaces.nestedRoot');
@@ -225,7 +232,6 @@ export function VisibleSpacesList({
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
-            keepSearchFocus();
           }}
           onKeyDownCapture={(e) => {
             // Prevent parent keyboard handlers (e.g. Tabs / dialogs) from hijacking typing.
