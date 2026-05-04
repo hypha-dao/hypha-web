@@ -245,9 +245,10 @@ export const CreateSignalForm = ({
         } else if (coherenceSlug) {
           // Do not block successful form close/navigation on Matrix latency/failures.
           void (async () => {
+            let roomId: string;
             try {
-              const { roomId } = await createRoom(coherence.title);
-              await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
+              const roomCreationResult = await createRoom(coherence.title);
+              roomId = roomCreationResult.roomId;
             } catch (matrixError) {
               const matrixErrorMessage =
                 matrixError instanceof Error
@@ -260,6 +261,24 @@ export const CreateSignalForm = ({
               console.warn(
                 'Signal created but Matrix room provisioning failed:',
                 matrixError,
+              );
+              return;
+            }
+
+            try {
+              await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
+            } catch (linkError) {
+              const linkErrorMessage =
+                linkError instanceof Error
+                  ? linkError.message
+                  : String(linkError);
+              setSignalProvisioningNotice(
+                t('provisioning.roomLinkFailedRetry'),
+                linkErrorMessage,
+              );
+              console.warn(
+                'Signal created and room provisioned but room linking failed:',
+                linkError,
               );
             }
           })();
