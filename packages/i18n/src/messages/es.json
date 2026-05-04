@@ -552,7 +552,8 @@
         "source": "Origen",
         "sourcePlaceholder": "Seleccionar origen",
         "sourceMint": "Acuñar nuevos tokens",
-        "sourceTreasury": "Usar tokens disponibles en la tesorería"
+        "sourceTreasury": "Usar tokens disponibles en la tesorería",
+        "escrowNotice": "This proposal uses escrow for the investment. Once it is approved, the investor ({investor}) deposits their side into escrow from their profile or space page, and {activeSpace}'s deposit is made when the proposal is approved and executed."
       },
       "acceptInvestmentForm": {
         "notMemberRevert": "La cadena rechazó la transacción: la cartera conectada no es miembro ni delegado de este espacio. Usa una cartera del espacio o conéctate como delegado.",
@@ -565,6 +566,35 @@
         "percentageMin": "El porcentaje debe ser al menos 0",
         "percentageMax": "El porcentaje debe ser como máximo 100.",
         "typePercentage": "Escribe un porcentaje"
+      },
+      "exchangeStakesAndTokens": {
+        "avatarAlt": "Avatar",
+        "buyer": "Buyer (Wallet Address)",
+        "buyerFallback": "buyer",
+        "buyerWillSend": "Buyer will send",
+        "copyWalletAddress": "Copy wallet address",
+        "errors": {
+          "buyerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
+          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address.",
+          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
+          "safeErc20TransferFailed": "The token contract rejected the transfer to escrow (often balance, allowance, or non-transferable rules). Check that your smart wallet holds enough tokens and that the token allows transfers to the escrow.",
+          "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
+          "sellerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
+          "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
+          "tokenWhitelistBlocked": "This token's on-chain rules block sending it to escrow (e.g. transfer/receive whitelist). Choose another token or update the token's whitelist settings."
+        },
+        "escrowAccountAddress": "Escrow account address",
+        "escrowNotice": "This proposal uses escrow for the exchange. Once it is approved, each member deposits their side into escrow from their profile; if {activeSpace} is one of the parties, its deposit is made when the proposal is approved and executed.",
+        "loadingTokens": "Loading tokens...",
+        "personAvatarAlt": "{name} avatar",
+        "seller": "Seller (Wallet Address)",
+        "sellerFallback": "seller",
+        "sellerWillSend": "Seller sends",
+        "spaceFallback": "space",
+        "spaceLogoAlt": "{name} logo",
+        "tokenAlt": "Token"
       }
     },
     "labels": {
@@ -585,7 +615,8 @@
       "contribution": "Contribución",
       "expenses": "Gastos",
       "funding": "Fondos",
-      "investment": "Inversión"
+      "investment": "Inversión",
+      "exchange": "Exchange"
     },
     "documentBadges": {
       "invite": "Invitación",
@@ -1552,7 +1583,8 @@
       "transparencySettings": "Configuración de transparencia",
       "decaySettings": "Configuración de decadencia",
       "fromWhitelist": "De la lista blanca",
-      "toWhitelist": "A la lista blanca"
+      "toWhitelist": "A la lista blanca",
+      "mutualCredit": "Mutual Credit"
     },
     "labels": {
       "unknown": "Desconocido",
@@ -2111,7 +2143,12 @@
       "Capacity": "Capacidad",
       "Network": "Red",
       "Reputation": "Reputación"
-    }
+    },
+    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
+    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
+    "spaceMemoryCallTranscriptExcerpt": "Transcript",
+    "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
+    "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)"
   },
   "SignalCard": {
     "noConversationRoom": "Aún no hay sala de conversación",

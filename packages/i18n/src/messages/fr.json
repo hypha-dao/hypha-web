@@ -875,7 +875,8 @@
       "contribution": "Contribution",
       "expenses": "Dépenses",
       "funding": "Financement",
-      "investment": "Investissement"
+      "investment": "Investissement",
+      "exchange": "Exchange"
     },
     "documentBadges": {
       "invite": "Invitation",
@@ -1479,7 +1480,8 @@
         "source": "Source",
         "sourcePlaceholder": "Sélectionner la source",
         "sourceMint": "Frapper de nouveaux tokens",
-        "sourceTreasury": "Utiliser les tokens disponibles en trésorerie"
+        "sourceTreasury": "Utiliser les tokens disponibles en trésorerie",
+        "escrowNotice": "This proposal uses escrow for the investment. Once it is approved, the investor ({investor}) deposits their side into escrow from their profile or space page, and {activeSpace}'s deposit is made when the proposal is approved and executed."
       },
       "acceptInvestmentForm": {
         "notMemberRevert": "La chaîne a rejeté la transaction : le portefeuille connecté n’est pas membre ou délégué de cet espace. Utilisez un portefeuille du bon espace ou connectez-vous en tant que délégué.",
@@ -1509,6 +1511,35 @@
         "percentageMin": "Le pourcentage doit être au moins de 0",
         "percentageMax": "Le pourcentage doit être au maximum de 100",
         "typePercentage": "Saisir un pourcentage"
+      },
+      "exchangeStakesAndTokens": {
+        "avatarAlt": "Avatar",
+        "buyer": "Buyer (Wallet Address)",
+        "buyerFallback": "buyer",
+        "buyerWillSend": "Buyer will send",
+        "copyWalletAddress": "Copy wallet address",
+        "errors": {
+          "buyerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
+          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address.",
+          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
+          "safeErc20TransferFailed": "The token contract rejected the transfer to escrow (often balance, allowance, or non-transferable rules). Check that your smart wallet holds enough tokens and that the token allows transfers to the escrow.",
+          "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
+          "sellerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
+          "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
+          "tokenWhitelistBlocked": "This token's on-chain rules block sending it to escrow (e.g. transfer/receive whitelist). Choose another token or update the token's whitelist settings."
+        },
+        "escrowAccountAddress": "Escrow account address",
+        "escrowNotice": "This proposal uses escrow for the exchange. Once it is approved, each member deposits their side into escrow from their profile; if {activeSpace} is one of the parties, its deposit is made when the proposal is approved and executed.",
+        "loadingTokens": "Loading tokens...",
+        "personAvatarAlt": "{name} avatar",
+        "seller": "Seller (Wallet Address)",
+        "sellerFallback": "seller",
+        "sellerWillSend": "Seller sends",
+        "spaceFallback": "space",
+        "spaceLogoAlt": "{name} logo",
+        "tokenAlt": "Token"
       }
     },
     "createActionForms": {
@@ -1552,7 +1583,8 @@
       "transparencySettings": "Paramètres de transparence",
       "decaySettings": "Paramètres de décroissance",
       "fromWhitelist": "À partir de la liste blanche",
-      "toWhitelist": "Vers la liste blanche"
+      "toWhitelist": "Vers la liste blanche",
+      "mutualCredit": "Mutual Credit"
     },
     "labels": {
       "unknown": "Inconnu",
