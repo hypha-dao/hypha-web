@@ -88,6 +88,7 @@ const DEFAULT_VALUES = {
   title: '',
   description: '',
   logoUrl: '',
+  ecosystemLogoUrl: undefined,
   slug: '',
   leadImage: '',
   categories: [] as Category[],
@@ -158,6 +159,7 @@ export const SpaceForm = ({
 
   const parentSpaceId = form.watch('parentId');
   const slug = form.watch('slug');
+  const isRootConfiguration = label === 'configure' && parentSpaceId === null;
 
   const {
     exists: slugExists,
@@ -475,7 +477,6 @@ export const SpaceForm = ({
                               ? defaultValues?.logoUrl
                               : undefined
                           }
-                          required={true}
                         />
                       </FormControl>
                       <FormMessage />
@@ -623,6 +624,38 @@ export const SpaceForm = ({
             )}
           />
         )}
+        {isRootConfiguration ? (
+          <FormField
+            control={form.control}
+            name="ecosystemLogoUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground">
+                  Upload Ecosystem Logo
+                </FormLabel>
+                <FormControl>
+                  <UploadAvatar
+                    {...field}
+                    maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                    defaultImage={
+                      typeof values?.ecosystemLogoUrl === 'string'
+                        ? values?.ecosystemLogoUrl
+                        : typeof defaultValues?.ecosystemLogoUrl === 'string'
+                        ? defaultValues?.ecosystemLogoUrl
+                        : undefined
+                    }
+                  />
+                </FormControl>
+                <p className="text-1 text-neutral-11">
+                  This ecosystem logo will be displayed in the top banner of
+                  your ecosystem and will be shown on every space that belongs
+                  to it, ensuring consistent branding throughout.
+                </p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        ) : null}
         <FormField
           control={form.control}
           name="categories"

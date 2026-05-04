@@ -1,41 +1,50 @@
 import { findParentSpaceById } from '@hypha-platform/core/server';
-import { SpaceBreadcrumb, SpaceBreadcrumbItem } from '@hypha-platform/epics';
 import { db } from '@hypha-platform/storage-postgres';
 import { Locale } from '@hypha-platform/i18n';
-import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
+import {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from '@hypha-platform/ui';
+import { ChevronRightIcon } from 'lucide-react';
 import { Fragment } from 'react';
 
-async function RecursiveBreadcrumbItem({
-  spaceId,
-  lang,
-  depth = 0,
-  maxDepth = 2,
-}: {
-  spaceId: number;
-  lang: Locale;
-  depth?: number;
-  maxDepth?: number;
-}) {
-  console.debug('RecursiveBreadcrumbItem', { spaceId, depth, maxDepth });
-  const space = await findParentSpaceById({ id: spaceId }, { db });
-  if (!space || depth > maxDepth) return null;
+type SpaceCrumb = {
+  id: number;
+  slug: string;
+  title: string;
+  parentId: number | null;
+};
 
-  return (
-    <Fragment key={space.id}>
-      {space.parentId && (
-        <RecursiveBreadcrumbItem
-          spaceId={space.parentId}
-          lang={lang}
-          depth={depth + 1}
-          maxDepth={maxDepth}
-        />
-      )}
-      <SpaceBreadcrumbItem
-        lang={lang}
-        breadcrumb={{ slug: space.slug, title: space.title }}
-      />
-    </Fragment>
-  );
+async function getSpaceChain(spaceId: number): Promise<SpaceCrumb[]> {
+  const chain: SpaceCrumb[] = [];
+  const seen = new Set<number>();
+  let cursorId: number | null = spaceId;
+  while (cursorId != null && !seen.has(cursorId)) {
+    seen.add(cursorId);
+    const space = await findParentSpaceById({ id: cursorId }, { db });
+    if (!space) break;
+    chain.push({
+      id: space.id,
+      slug: space.slug,
+      title: space.title,
+      parentId: space.parentId ?? null,
+    });
+    cursorId = space.parentId ?? null;
+  }
+
+  // We gathered from leaf->root; UI needs root->leaf.
+  return chain.reverse();
+}
+
+function getVisibleCrumbs(chain: SpaceCrumb[]): Array<SpaceCrumb | 'ellipsis'> {
+  // Keep full path up to 6 levels; collapse the middle for deeper trees.
+  if (chain.length <= 6) return chain;
+  return [...chain.slice(0, 2), 'ellipsis', ...chain.slice(-3)];
 }
 
 export async function Breadcrumbs({
@@ -45,14 +54,41 @@ export async function Breadcrumbs({
   spaceId: number;
   lang: Locale;
 }) {
-  const tNavigation = await getTranslations('Navigation');
+  const chain = await getSpaceChain(spaceId);
+  const visibleCrumbs = getVisibleCrumbs(chain);
 
   return (
-    <SpaceBreadcrumb
-      rootHref={`/${lang}/my-spaces`}
-      rootLabel={tNavigation('mySpaces')}
-    >
-      <RecursiveBreadcrumbItem spaceId={spaceId} lang={lang} />
-    </SpaceBreadcrumb>
+    <Breadcrumb>
+      <BreadcrumbList>
+        {visibleCrumbs.map((crumb, index) => (
+          <Fragment
+            key={
+              crumb === 'ellipsis' ? `ellipsis-${index}` : `crumb-${crumb.id}`
+            }
+          >
+            {index > 0 ? (
+              <BreadcrumbSeparator>
+                <ChevronRightIcon width={16} height={16} />
+              </BreadcrumbSeparator>
+            ) : null}
+            <BreadcrumbItem>
+              {crumb === 'ellipsis' ? (
+                <BreadcrumbEllipsis className="size-4" />
+              ) : (
+                <BreadcrumbLink asChild>
+                  <Link
+                    href={`/${lang}/dho/${crumb.slug}/agreements`}
+                    className="inline-block max-w-[9rem] truncate align-bottom sm:max-w-[12rem]"
+                    title={crumb.title}
+                  >
+                    {crumb.title}
+                  </Link>
+                </BreadcrumbLink>
+              )}
+            </BreadcrumbItem>
+          </Fragment>
+        ))}
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 }

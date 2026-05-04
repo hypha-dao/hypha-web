@@ -6,12 +6,15 @@ import { Menu } from 'lucide-react';
 import { RxCross1 } from 'react-icons/rx';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
+import Link from 'next/link';
 
 type MenuTopProps = {
   children?: React.ReactNode;
   leadingAction?: React.ReactNode;
   trailingAction?: React.ReactNode;
   logoHref?: string;
+  logoText?: string;
+  logoNode?: React.ReactNode;
   hrefTarget?: string;
   openMenuLabel?: string;
   closeMenuLabel?: string;
@@ -22,6 +25,8 @@ export const MenuTop = ({
   leadingAction,
   trailingAction,
   logoHref,
+  logoText,
+  logoNode,
   hrefTarget,
   openMenuLabel = 'Open menu',
   closeMenuLabel = 'Close menu',
@@ -86,9 +91,25 @@ export const MenuTop = ({
       >
         <div className="flex items-center gap-2">
           {leadingAction}
-          {!!logoHref && (
+          {logoNode ? (
+            logoNode
+          ) : logoText ? (
+            logoHref ? (
+              <Link
+                href={logoHref}
+                target={hrefTarget}
+                className="inline-block max-w-[22rem] truncate text-3xl font-medium leading-none tracking-tight text-foreground"
+              >
+                {logoText}
+              </Link>
+            ) : (
+              <span className="inline-block max-w-[22rem] truncate text-3xl font-medium leading-none tracking-tight text-foreground">
+                {logoText}
+              </span>
+            )
+          ) : !!logoHref ? (
             <Logo width={110} href={logoHref} target={hrefTarget} />
-          )}
+          ) : null}
         </div>
 
         {/* Desktop Nav + Trailing action (right-aligned group) */}
