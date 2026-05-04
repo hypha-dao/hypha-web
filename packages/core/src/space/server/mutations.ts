@@ -3,8 +3,9 @@
 import slugify from 'slugify';
 import { CreateSpaceInput, UpdateSpaceInput } from '../types';
 import { eq } from 'drizzle-orm';
-import { DatabaseInstance } from '@hypha-platform/core/server';
+import { DatabaseInstance, DbConfig } from '@hypha-platform/core/server';
 import { spaces } from '@hypha-platform/storage-postgres';
+import { findAllDescendantSpaces } from './queries';
 
 export const createSpace = async (
   { title, slug: maybeSlug, ...rest }: CreateSpaceInput,
@@ -32,6 +33,34 @@ export const updateSpaceBySlug = async (
   { slug, ...rest }: { slug: string } & UpdateSpaceInput,
   { db }: { db: DatabaseInstance },
 ) => {
+  const [currentSpace] = await db
+    .select()
+    .from(spaces)
+    .where(eq(spaces.slug, slug))
+    .limit(1);
+
+  if (!currentSpace) {
+    throw new Error('Failed to update space: not found');
+  }
+
+  if (rest.parentId !== undefined && rest.parentId !== null) {
+    const descendants = await findAllDescendantSpaces(
+      { spaceId: currentSpace.id },
+      { db },
+    );
+    const descendantIds = descendants.map((d) => d.id);
+
+    if (descendantIds.includes(rest.parentId)) {
+      throw new Error(
+        'Cannot set parent: the selected space is a descendant of this space, which would create a circular dependency.',
+      );
+    }
+
+    if (rest.parentId === currentSpace.id) {
+      throw new Error('Cannot set parent: a space cannot be its own parent.');
+    }
+  }
+
   const [updatedSpace] = await db
     .update(spaces)
     .set(rest)
@@ -47,8 +76,9 @@ export const updateSpaceBySlug = async (
 
 export const updateSpaceById = async (
   { id, ...rest }: { id: number } & UpdateSpaceInput,
-  { db }: { db: DatabaseInstance },
+  config: DbConfig,
 ) => {
+  const { db } = config;
   return await db.transaction(async (tx) => {
     const [originalSpace] = await tx
       .select()
@@ -59,6 +89,24 @@ export const updateSpaceById = async (
 
     if (!originalSpace) {
       throw new Error('Failed to update space: not found');
+    }
+
+    if (rest.parentId !== undefined && rest.parentId !== null) {
+      const descendants = await findAllDescendantSpaces(
+        { spaceId: id },
+        config,
+      );
+      const descendantIds = descendants.map((d) => d.id);
+
+      if (descendantIds.includes(rest.parentId)) {
+        throw new Error(
+          'Cannot set parent: the selected space is a descendant of this space, which would create a circular dependency.',
+        );
+      }
+
+      if (rest.parentId === id) {
+        throw new Error('Cannot set parent: a space cannot be its own parent.');
+      }
     }
 
     const [updatedSpace] = await tx
