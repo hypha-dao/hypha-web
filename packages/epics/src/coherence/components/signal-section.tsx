@@ -117,17 +117,18 @@ export const SignalSection: FC<SignalSectionProps> = ({
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
           className="w-full"
         />
-        <Link href={createSignalHref} className="w-full lg:w-auto">
-          <Button
-            variant="default"
-            colorVariant="accent"
-            disabled={isLoading}
-            className="w-full lg:w-auto"
-          >
+        <Button
+          asChild
+          variant="default"
+          colorVariant="accent"
+          disabled={isLoading}
+          className="w-full lg:w-auto"
+        >
+          <Link href={createSignalHref} className="w-full lg:w-auto">
             <PlusIcon />
             {t('newSignal')}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       {pagination?.totalPages === 0 ? (
