@@ -92,6 +92,26 @@ export function newUploadRouter({
           });
         }
 
+        const slotFiles = (req as FastifyRequest & { files?: unknown }).files;
+        let uploadedFilesCount = files.length;
+        if (
+          slotFiles &&
+          typeof slotFiles === 'object' &&
+          !Array.isArray(slotFiles)
+        ) {
+          uploadedFilesCount = ['image', 'blob'].reduce((count, slotName) => {
+            const slotValue = (slotFiles as Record<string, unknown>)[slotName];
+            return count + (Array.isArray(slotValue) ? slotValue.length : 0);
+          }, 0);
+        }
+
+        if (uploadedFilesCount !== 1) {
+          throw new UploadThingError({
+            code: 'BAD_REQUEST',
+            message: 'Exactly one file must be uploaded',
+          });
+        }
+
         for (const file of files) {
           const fileType = typeof file.type === 'string' ? file.type : '';
           const isSvgByName =
