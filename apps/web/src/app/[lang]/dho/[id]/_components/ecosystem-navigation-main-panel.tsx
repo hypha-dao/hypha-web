@@ -98,8 +98,8 @@ export function EcosystemNavigationMainPanel({
     [filteredSpaces],
   );
   const isLoading = isLoadingSpace || isLoadingSpaces || isFilteringSpaces;
-  const currentSpaceTitle = currentSpace?.title ?? daoSlug;
-  const currentSpaceSlug = currentSpace?.slug ?? daoSlug;
+  const currentSpaceTitle = currentSpace?.title ?? '';
+  const currentSpaceSlug = currentSpace?.slug;
   const [selectedSpace, setSelectedSpace] = useState<VisibleSpace | null>(null);
   const ecosystemSpaceCount = useMemo(() => {
     if (!currentSpace) return 0;
@@ -112,20 +112,21 @@ export function EcosystemNavigationMainPanel({
   }, [currentSpace, nonArchivedSpaces]);
 
   useEffect(() => {
+    if (!currentSpace || !currentSpaceSlug) {
+      setSelectedSpace(null);
+      return;
+    }
     setSelectedSpace({
-      id: currentSpace?.id ?? -1,
-      name: currentSpaceTitle,
+      id: currentSpace.id,
+      name: currentSpace.title,
       slug: currentSpaceSlug,
-      logoUrl: currentSpace?.logoUrl,
-      parentId: currentSpace?.parentId ?? null,
+      logoUrl: currentSpace.logoUrl,
+      parentId: currentSpace.parentId ?? null,
       root: true,
     });
   }, [
-    currentSpace?.id,
-    currentSpace?.logoUrl,
-    currentSpace?.parentId,
+    currentSpace,
     currentSpaceSlug,
-    currentSpaceTitle,
   ]);
 
   const hierarchyData: HierarchyNode | null = useMemo(() => {
@@ -165,7 +166,7 @@ export function EcosystemNavigationMainPanel({
     },
     [],
   );
-  const selectedSpaceTitle = selectedSpace?.name ?? currentSpaceTitle;
+  const selectedSpaceTitle = selectedSpace?.name ?? currentSpaceTitle ?? t('title');
 
   const tabs = useMemo(
     () => [
@@ -227,12 +228,19 @@ export function EcosystemNavigationMainPanel({
     ],
   );
   const selectedSpaceSlug = selectedSpace?.slug ?? currentSpaceSlug;
-  const visitSpaceHref = getDhoSpaceContextPath({
-    pathname,
-    lang,
-    spaceSlug: selectedSpaceSlug,
-  });
-  const addSpaceHref = `/${lang}/dho/${selectedSpaceSlug}/space/create`;
+  const canRenderSpaceActions = Boolean(currentSpace && selectedSpaceSlug);
+  const visitSpaceHref =
+    canRenderSpaceActions && selectedSpaceSlug
+      ? getDhoSpaceContextPath({
+          pathname,
+          lang,
+          spaceSlug: selectedSpaceSlug,
+        })
+      : null;
+  const addSpaceHref =
+    canRenderSpaceActions && selectedSpaceSlug
+      ? `/${lang}/dho/${selectedSpaceSlug}/space/create`
+      : null;
 
   return (
     <section className="flex w-full flex-col gap-4 py-4">
@@ -259,18 +267,20 @@ export function EcosystemNavigationMainPanel({
           visualizationClassName="min-h-0"
           afterTabsContent={
             <div className="w-full">
-              <div className="flex items-center justify-end gap-2">
-                <Link href={visitSpaceHref}>
-                  <Button variant="outline" colorVariant="neutral">
-                    {t('visibleSpaces.visitSpace')}
-                  </Button>
-                </Link>
-                <Link href={addSpaceHref}>
-                  <Button variant="default" colorVariant="accent">
-                    {t('visibleSpaces.addSpace')}
-                  </Button>
-                </Link>
-              </div>
+              {canRenderSpaceActions && visitSpaceHref && addSpaceHref ? (
+                <div className="flex items-center justify-end gap-2">
+                  <Link href={visitSpaceHref}>
+                    <Button variant="outline" colorVariant="neutral">
+                      {t('visibleSpaces.visitSpace')}
+                    </Button>
+                  </Link>
+                  <Link href={addSpaceHref}>
+                    <Button variant="default" colorVariant="accent">
+                      {t('visibleSpaces.addSpace')}
+                    </Button>
+                  </Link>
+                </div>
+              ) : null}
             </div>
           }
         />
