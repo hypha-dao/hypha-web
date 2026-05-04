@@ -31,13 +31,14 @@ export const SectionFilter: FC<SectionFilterProps> = ({
   children,
 }) => {
   const hasLabel = label.trim().length > 0;
+  const hasCount = count !== undefined && count !== null;
   return (
     <div className="flex justify-between items-center w-full gap-4">
       {inlineLabel ? (
         <>
           {hasLabel ? (
             <Text className="text-4 capitalize text-nowrap">
-              {label} {count ? <>| {count}</> : null}
+              {label} {hasCount ? <>| {count}</> : null}
             </Text>
           ) : null}
           {hasSearch ? (
@@ -62,7 +63,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
             <div className="flex flex-row w-full">
               {hasLabel ? (
                 <Text className="text-4 capitalize text-nowrap">
-                  {label} {count ? <>| {count}</> : null}
+                  {label} {hasCount ? <>| {count}</> : null}
                 </Text>
               ) : null}
               {children && (
