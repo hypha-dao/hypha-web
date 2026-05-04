@@ -10,7 +10,7 @@ import {
   useVaults,
 } from '@hypha-platform/epics';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@hypha-platform/ui';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { TabScreenTitle } from '../@tab/_components/tab-screen-title';
 
 type TreasuryTabsProps = {
@@ -26,6 +26,7 @@ export function TreasuryTabs({
 }: TreasuryTabsProps) {
   const tCommon = useTranslations('Common');
   const tTreasury = useTranslations('TreasuryTab');
+  const format = useFormatter();
   const [activeTab, setActiveTab] = useState('balance');
   const { assets } = useAssets({});
   const { transfers } = useTransfers({ spaceSlug });
@@ -48,7 +49,7 @@ export function TreasuryTabs({
               <span className="inline-flex items-center gap-1">
                 <span>{tTreasury('wallet')}</span>
                 <span className="text-xs text-muted-foreground">
-                  ({Intl.NumberFormat().format(walletCount)})
+                  ({format.number(walletCount)})
                 </span>
               </span>
             </TabsTrigger>
@@ -56,7 +57,7 @@ export function TreasuryTabs({
               <span className="inline-flex items-center gap-1">
                 <span>{tTreasury('transactions')}</span>
                 <span className="text-xs text-muted-foreground">
-                  ({Intl.NumberFormat().format(transactionCount)})
+                  ({format.number(transactionCount)})
                 </span>
               </span>
             </TabsTrigger>
@@ -64,7 +65,7 @@ export function TreasuryTabs({
               <span className="inline-flex items-center gap-1">
                 <span>{tTreasury('vaults')}</span>
                 <span className="text-xs text-muted-foreground">
-                  ({Intl.NumberFormat().format(vaultCount)})
+                  ({format.number(vaultCount)})
                 </span>
               </span>
             </TabsTrigger>
