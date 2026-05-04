@@ -553,7 +553,7 @@
         "sourcePlaceholder": "Seleccionar origen",
         "sourceMint": "Acuñar nuevos tokens",
         "sourceTreasury": "Usar tokens disponibles en la tesorería",
-        "escrowNotice": "This proposal uses escrow for the investment. Once it is approved, the investor ({investor}) deposits their side into escrow from their profile or space page, and {activeSpace}'s deposit is made when the proposal is approved and executed."
+        "escrowNotice": "Esta propuesta usa depósito en garantía para la inversión. Una vez aprobada, el inversor ({investor}) deposita su parte en garantía desde su perfil o la página del espacio, y el depósito de {activeSpace} se realiza cuando la propuesta se aprueba y ejecuta."
       },
       "acceptInvestmentForm": {
         "notMemberRevert": "La cadena rechazó la transacción: la cartera conectada no es miembro ni delegado de este espacio. Usa una cartera del espacio o conéctate como delegado.",
@@ -569,30 +569,30 @@
       },
       "exchangeStakesAndTokens": {
         "avatarAlt": "Avatar",
-        "buyer": "Buyer (Wallet Address)",
-        "buyerFallback": "buyer",
-        "buyerWillSend": "Buyer will send",
-        "copyWalletAddress": "Copy wallet address",
+        "buyer": "Comprador (dirección de billetera)",
+        "buyerFallback": "comprador",
+        "buyerWillSend": "El comprador enviará",
+        "copyWalletAddress": "Copiar dirección de billetera",
         "errors": {
-          "buyerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
-          "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
-          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address.",
-          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
-          "safeErc20TransferFailed": "The token contract rejected the transfer to escrow (often balance, allowance, or non-transferable rules). Check that your smart wallet holds enough tokens and that the token allows transfers to the escrow.",
-          "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
-          "sellerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
-          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
-          "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
-          "tokenWhitelistBlocked": "This token's on-chain rules block sending it to escrow (e.g. transfer/receive whitelist). Choose another token or update the token's whitelist settings."
+          "buyerAmountTooSmall": "El monto es demasiado pequeño para los decimales de este token. Prueba un valor mayor.",
+          "escrowTokenInvalid": "Una fila de token usa la dirección del contrato de escrow. Usa el contrato ERC-20 del token para los tokens del vendedor y del comprador.",
+          "insufficientSellerBalance": "La billetera conectada no tiene suficientes tokens del vendedor. Fondea la smart wallet que coincide con la dirección del vendedor.",
+          "memberSellerWalletMismatch": "La financiación del intercambio usa tu billetera conectada. Conecta la misma billetera que la dirección del vendedor, o elige al miembro vendedor cuya dirección coincida con tu billetera.",
+          "safeErc20TransferFailed": "El contrato del token rechazó la transferencia al escrow (normalmente por saldo, allowance o reglas de no transferibilidad). Verifica que tu smart wallet tenga suficientes tokens y que el token permita transferencias al escrow.",
+          "sellerAmountExceedsBalance": "El monto ingresado es mayor que el saldo disponible del vendedor.",
+          "sellerAmountTooSmall": "El monto es demasiado pequeño para los decimales de este token. Prueba un valor mayor.",
+          "sellerBalanceCheckFailed": "No se pudo verificar el saldo del vendedor. Revisa tu conexión e inténtalo de nuevo.",
+          "sellerTreasuryUnavailable": "No se pudo cargar la tesorería del espacio. Espera los datos de la cadena e inténtalo de nuevo.",
+          "tokenWhitelistBlocked": "Las reglas on-chain de este token bloquean el envío al escrow (por ejemplo, listas blancas de transferencia/recepción). Elige otro token o actualiza la configuración de listas blancas del token."
         },
-        "escrowAccountAddress": "Escrow account address",
-        "escrowNotice": "This proposal uses escrow for the exchange. Once it is approved, each member deposits their side into escrow from their profile; if {activeSpace} is one of the parties, its deposit is made when the proposal is approved and executed.",
-        "loadingTokens": "Loading tokens...",
-        "personAvatarAlt": "{name} avatar",
-        "seller": "Seller (Wallet Address)",
-        "sellerFallback": "seller",
-        "sellerWillSend": "Seller sends",
-        "spaceFallback": "space",
+        "escrowAccountAddress": "Dirección de la cuenta de depósito en garantía",
+        "escrowNotice": "Esta propuesta usa depósito en garantía para el intercambio. Una vez aprobada, cada miembro deposita su parte en garantía desde su perfil; si {activeSpace} es una de las partes, su depósito se realiza cuando la propuesta se aprueba y ejecuta.",
+        "loadingTokens": "Cargando tokens...",
+        "personAvatarAlt": "Avatar de {name}",
+        "seller": "Vendedor (dirección de billetera)",
+        "sellerFallback": "vendedor",
+        "sellerWillSend": "El vendedor envía",
+        "spaceFallback": "espacio",
         "spaceLogoAlt": "{name} logo",
         "tokenAlt": "Token"
       }
@@ -616,7 +616,7 @@
       "expenses": "Gastos",
       "funding": "Fondos",
       "investment": "Inversión",
-      "exchange": "Exchange"
+      "exchange": "Intercambio"
     },
     "documentBadges": {
       "invite": "Invitación",
@@ -1585,7 +1585,7 @@
       "decaySettings": "Configuración de decadencia",
       "fromWhitelist": "De la lista blanca",
       "toWhitelist": "A la lista blanca",
-      "mutualCredit": "Mutual Credit"
+      "mutualCredit": "Crédito mutuo"
     },
     "labels": {
       "unknown": "Desconocido",
@@ -2148,8 +2148,8 @@
     "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
     "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
     "spaceMemoryCallTranscriptExcerpt": "Transcript",
-    "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
-    "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)"
+    "spaceMemoryContextCallRecording": "Grabación de llamada (memoria organizacional)",
+    "spaceMemoryContextCallTranscript": "Transcripción de llamada (memoria organizacional)"
   },
   "SignalCard": {
     "noConversationRoom": "Aún no hay sala de conversación",
