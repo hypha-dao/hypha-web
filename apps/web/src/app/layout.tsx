@@ -109,15 +109,7 @@ export default async function RootLayout({
   const isLanguageSelectVisible = await getShowLanguageSelect();
   const locale = await getLocale();
   const messages = await getMessages();
-  let timeZone = 'UTC';
-  try {
-    timeZone = await getTimeZone();
-  } catch (error) {
-    console.warn(
-      '[i18n] Failed to resolve timeZone, falling back to UTC',
-      error,
-    );
-  }
+  const timeZone = await getTimeZone();
   const tNav = await getTranslations('Navigation');
   const tFooter = await getTranslations('Footer');
   const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
