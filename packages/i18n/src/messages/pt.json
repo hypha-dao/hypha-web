@@ -2049,7 +2049,7 @@
     "hideArchived": "Ocultar arquivados",
     "messageCount": "{count, plural, one {# mensagem} other {# mensagens}}",
     "priorityVisualAlt": "Nível de prioridade",
-    "typeSignalBannerAlt": "Sinal {type}, prioridade {priority}",
+    "typeSignalBannerAlt": "Sinal de {type}, prioridade {priority}",
     "unarchiveConversation": "Desarquivar conversa",
     "unarchiveConfirm": "Deseja realmente desarquivar esta conversa?",
     "yesUnarchive": "Sim, desarquivar",
