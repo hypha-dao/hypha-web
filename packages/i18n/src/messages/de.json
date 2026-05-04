@@ -1781,7 +1781,7 @@
       "agreements": "Welche Vereinbarungen gibt es in diesem Space?",
       "structure": "Beschreibe die Struktur dieses Spaces"
     },
-    "welcome": "Hallo! Ich bin dein AI-Assistent fuer {spaceName}. Ich kann Space-Details wie Mitgliederzahlen, Vereinbarungen und Strukturen nachschlagen. Frag mich alles ueber den Space, den du gerade ansiehst.",
+    "welcome": "Hallo! Ich bin dein AI-Assistent für {spaceName}. Ich kann Space-Details wie Mitgliederzahlen, Vereinbarungen und Strukturen nachschlagen. Frag mich alles über den Space, den du gerade ansiehst.",
     "placeholder": "Frag Hypha AI etwas...",
     "sendButton": "Senden",
     "stopButton": "Stoppen",
