@@ -215,8 +215,13 @@ export const CreateSignalForm = ({
   }, [form, person?.id, spaceId]);
 
   const setSignalProvisioningNotice = React.useCallback(
-    (message: string, details?: string) => {
+    (message?: string | null, details?: string) => {
       if (typeof window === 'undefined') return;
+      if (!message?.trim()) {
+        sessionStorage.removeItem(SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY);
+        window.dispatchEvent(new Event(SIGNAL_PROVISIONING_NOTICE_EVENT));
+        return;
+      }
       const lines = details ? [message, details] : [message];
       sessionStorage.setItem(
         SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
@@ -231,6 +236,7 @@ export const CreateSignalForm = ({
     async (data: FormValues) => {
       try {
         const coherence = await createCoherence({ ...data });
+        setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
         if (!isMatrixAvailable) {
           setSignalProvisioningNotice(t('provisioning.chatUnavailable'));
