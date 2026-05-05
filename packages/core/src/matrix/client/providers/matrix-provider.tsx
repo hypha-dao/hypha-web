@@ -1249,9 +1249,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const maxBatches = Math.max(1, options?.maxBatches ?? 40);
       const loadPromise = (async () => {
         for (let i = 0; i < maxBatches; i++) {
-          let batch: MatrixSdk.MatrixEvent[] | null = null;
+          const beforeCount = room.getLiveTimeline().getEvents().length;
           try {
-            batch = await client.scrollback(room, pageSize);
+            await client.scrollback(room, pageSize);
           } catch (error) {
             console.warn(
               '[MatrixProvider] Failed while loading room history:',
@@ -1259,7 +1259,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             );
             break;
           }
-          if (!batch || batch.length === 0) {
+          const afterCount = room.getLiveTimeline().getEvents().length;
+          if (afterCount <= beforeCount) {
             break;
           }
         }
