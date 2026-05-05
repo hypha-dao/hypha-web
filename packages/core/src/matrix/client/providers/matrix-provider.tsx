@@ -405,6 +405,10 @@ interface MatrixContextType {
   redactRoomEvent: (params: RedactRoomEventInput) => Promise<void>;
   toggleReaction: (params: ToggleReactionInput) => Promise<void>;
   getRoomMessages: (roomId: string) => Message[] | null;
+  loadRoomHistory: (
+    roomId: string,
+    options?: { pageSize?: number; maxBatches?: number },
+  ) => Promise<void>;
   getPinnedMessageIds: (roomId: string) => string[];
   togglePinnedMessage: (roomId: string, messageId: string) => Promise<void>;
   getRoomMembers: (roomId: string) => Promise<ChatMember[]>;
@@ -442,6 +446,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   >(null);
   const registeredRoomListenersRef = React.useRef<RoomMessageListenerRecord[]>(
     [],
+  );
+  const roomHistoryLoadRef = React.useRef<Map<string, Promise<void>>>(
+    new Map(),
   );
   const [registeredRoomListeners, setRegisteredRoomListeners] = React.useState<
     RoomMessageListenerRecord[]
@@ -1219,6 +1226,55 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client, getPinnedMessageIds],
   );
 
+  const loadRoomHistory = React.useCallback(
+    async (
+      roomId: string,
+      options?: { pageSize?: number; maxBatches?: number },
+    ): Promise<void> => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+
+      const existingLoad = roomHistoryLoadRef.current.get(roomId);
+      if (existingLoad) {
+        await existingLoad;
+        return;
+      }
+
+      const pageSize = Math.max(10, options?.pageSize ?? 50);
+      const maxBatches = Math.max(1, options?.maxBatches ?? 40);
+      const loadPromise = (async () => {
+        for (let i = 0; i < maxBatches; i++) {
+          let batch: MatrixSdk.MatrixEvent[] | null = null;
+          try {
+            batch = await client.scrollback(room, pageSize);
+          } catch (error) {
+            console.warn(
+              '[MatrixProvider] Failed while loading room history:',
+              error,
+            );
+            break;
+          }
+          if (!batch || batch.length === 0) {
+            break;
+          }
+        }
+      })();
+
+      roomHistoryLoadRef.current.set(roomId, loadPromise);
+      try {
+        await loadPromise;
+      } finally {
+        roomHistoryLoadRef.current.delete(roomId);
+      }
+    },
+    [client],
+  );
+
   const togglePinnedMessage = React.useCallback(
     async (roomId: string, messageId: string) => {
       if (!client) {
@@ -1573,6 +1629,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     redactRoomEvent,
     toggleReaction,
     getRoomMessages,
+    loadRoomHistory,
     getPinnedMessageIds,
     togglePinnedMessage,
     getRoomMembers,
@@ -1607,6 +1664,7 @@ const noopMatrixContext: MatrixContextType = {
     throw new Error('Matrix unavailable');
   },
   getRoomMessages: () => null,
+  loadRoomHistory: async () => {},
   joinRoom: async (): Promise<string> => {
     throw new Error('Matrix unavailable');
   },
