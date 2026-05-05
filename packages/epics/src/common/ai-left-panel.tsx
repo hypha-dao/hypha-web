@@ -91,7 +91,11 @@ const MENU_CLOSE_BUTTON_CLASS =
 const RECENT_SPACE_AVATAR_CLASS =
   'flex h-6 w-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
 
-export function AiLeftPanel() {
+type AiLeftPanelProps = {
+  enableSpaceMemory?: boolean;
+};
+
+export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const { isAuthenticated, isLoading, login, getAccessToken } =
     useAuthentication();
   const params = useParams<{ id?: string; lang?: string }>();
@@ -207,15 +211,20 @@ export function AiLeftPanel() {
         href: `/${lang}/dho/${spaceSlug}/rewards`,
         active: isSectionActive('rewards'),
       },
-      {
-        key: 'memory',
-        label: tCoherence('spaceMemory'),
-        icon: MemoryIcon,
-        href: `/${lang}/dho/${spaceSlug}/memory`,
-        active: isSectionActive('memory'),
-      },
+      ...(enableSpaceMemory
+        ? [
+            {
+              key: 'memory',
+              label: tCoherence('spaceMemory'),
+              icon: MemoryIcon,
+              href: `/${lang}/dho/${spaceSlug}/memory`,
+              active: isSectionActive('memory'),
+            },
+          ]
+        : []),
     ];
   }, [
+    enableSpaceMemory,
     isSectionActive,
     lang,
     spaceSlug,
