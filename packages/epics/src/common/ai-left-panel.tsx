@@ -90,7 +90,6 @@ const MENU_CLOSE_BUTTON_CLASS =
   'flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
 const RECENT_SPACE_AVATAR_CLASS =
   'flex h-6 w-6 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full bg-muted ring-1 ring-border/60';
-const SHOW_AI_TRIGGER_BUTTON = false;
 
 export function AiLeftPanel() {
   const { isAuthenticated, isLoading, login, getAccessToken } =
@@ -565,7 +564,7 @@ export function AiLeftPanel() {
   }, [isHoverOpenLocked]);
   const canHoverOpenFromTrigger = !shouldCloseFromTrigger && !isHoverOpenLocked;
 
-  const triggerButton = SHOW_AI_TRIGGER_BUTTON ? (
+  const triggerButton = (
     <button
       type="button"
       onClick={handleTriggerClick}
@@ -581,7 +580,7 @@ export function AiLeftPanel() {
     >
       <Menu className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
     </button>
-  ) : null;
+  );
   const closeButton = shouldCloseFromTrigger ? (
     <button
       type="button"
@@ -648,11 +647,9 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="flex h-[var(--menu-top-height,70px)] min-w-0 flex-shrink-0 items-center justify-end border-b border-border bg-background-2 px-4 py-2">
-          {triggerButton ? (
-            <div className="-translate-y-px flex h-8 w-8 shrink-0 items-center justify-end">
-              {triggerButton}
-            </div>
-          ) : null}
+          <div className="-translate-y-px flex h-8 w-8 shrink-0 items-center justify-end">
+            {triggerButton}
+          </div>
         </SidebarHeader>
         <SidebarContent
           className="relative overflow-visible bg-background-2"
