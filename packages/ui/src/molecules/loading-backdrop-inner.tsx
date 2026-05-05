@@ -40,7 +40,7 @@ export type LoadingBackdropInnerProps =
  * `PanelWrapLayout`.
  */
 const MAIN_COLUMN_EDGE_CLASSES =
-  'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] top-[var(--menu-top-height,65px)]';
+  'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] top-[var(--menu-top-height,var(--menu-top-height-fallback))]';
 
 /** Legacy card — docked side panel & inline overlays (unchanged layout). */
 function ProgressCard({

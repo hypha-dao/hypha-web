@@ -86,12 +86,22 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.min(100, Math.round(((done + pending * 0.5) / total) * 100));
 };
 
+const toNullableString = (
+  value: string | File | null | undefined,
+): string | null | undefined =>
+  typeof value === 'string' ? value : value === null ? null : undefined;
+
 export const useUpdateSpaceOrchestrator = ({
   authToken,
 }: UseUpdateSpaceInput) => {
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
   const files = useSpaceFileUploads(authToken, async (uploadedFiles, id) => {
-    if (!uploadedFiles.leadImage && !uploadedFiles.logoUrl) {
+    if (
+      !uploadedFiles.leadImage &&
+      !uploadedFiles.logoUrl &&
+      !uploadedFiles.ecosystemLogoUrlLight &&
+      !uploadedFiles.ecosystemLogoUrlDark
+    ) {
       return;
     }
     await web2.updateSpaceById({
@@ -138,25 +148,64 @@ export const useUpdateSpaceOrchestrator = ({
     'updateSpaceMutation',
     async (
       _,
-      { arg }: { arg: { id: number; data: z.infer<typeof schemaUpdateSpace> } },
+      {
+        arg,
+      }: {
+        arg: {
+          id: number;
+          data: Omit<
+            z.infer<typeof schemaUpdateSpace>,
+            | 'logoUrl'
+            | 'leadImage'
+            | 'ecosystemLogoUrlLight'
+            | 'ecosystemLogoUrlDark'
+          > & {
+            logoUrl?: string | File | null;
+            leadImage?: string | File | null;
+            ecosystemLogoUrlLight?: string | File | null;
+            ecosystemLogoUrlDark?: string | File | null;
+          };
+        };
+      },
     ) => {
+      let activeTask: TaskName | null = null;
       try {
         console.debug('updateSpaceMutation called with arg:', arg);
         const { id, data } = arg;
         invariant(Number.isFinite(id) && id > 0, 'valid id is required');
 
-        const filesInput = schemaCreateSpaceFiles.parse(data);
-        if (Object.values(filesInput).some((file) => file)) {
+        const filesInput = schemaCreateSpaceFiles.partial().parse({
+          ...data,
+          logoUrl: data.logoUrl ?? undefined,
+          leadImage: data.leadImage ?? undefined,
+          ecosystemLogoUrlLight: data.ecosystemLogoUrlLight ?? undefined,
+          ecosystemLogoUrlDark: data.ecosystemLogoUrlDark ?? undefined,
+        });
+        if (Object.values(filesInput).some((file) => file instanceof File)) {
+          activeTask = 'UPLOAD_FILES';
           startTask('UPLOAD_FILES');
-          await files.upload(filesInput, id);
+          await files.upload(
+            filesInput as z.infer<typeof schemaCreateSpaceFiles>,
+            id,
+          );
           completeTask('UPLOAD_FILES');
+          activeTask = null;
         } else {
+          activeTask = 'UPLOAD_FILES';
           startTask('UPLOAD_FILES');
           completeTask('UPLOAD_FILES');
+          activeTask = null;
         }
 
+        activeTask = 'UPDATE_WEB2_SPACE';
         startTask('UPDATE_WEB2_SPACE');
-        const updateInput = schemaUpdateSpace.parse(data);
+        const updateInput = schemaUpdateSpace.parse({
+          ...data,
+          logoUrl: toNullableString(data.logoUrl),
+          leadImage: toNullableString(data.leadImage),
+          ecosystemLogoUrlLight: toNullableString(data.ecosystemLogoUrlLight),
+          ecosystemLogoUrlDark: toNullableString(data.ecosystemLogoUrlDark),
+        });
         const result = await web2.updateSpaceById({
           ...updateInput,
           id,
@@ -164,17 +213,13 @@ export const useUpdateSpaceOrchestrator = ({
 
         console.debug('updateSpaceById result:', result);
         completeTask('UPDATE_WEB2_SPACE');
+        activeTask = null;
 
         return result;
       } catch (error) {
         console.error('updateSpaceMutation error:', error);
-        if (error instanceof Error) {
-          if (taskState.UPLOAD_FILES?.status === TaskStatus.IS_PENDING) {
-            errorTask('UPLOAD_FILES', error.message);
-          }
-          if (taskState.UPDATE_WEB2_SPACE?.status === TaskStatus.IS_PENDING) {
-            errorTask('UPDATE_WEB2_SPACE', error.message);
-          }
+        if (error instanceof Error && activeTask) {
+          errorTask(activeTask, error.message);
         }
         throw error;
       }

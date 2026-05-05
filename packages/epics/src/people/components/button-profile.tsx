@@ -190,11 +190,11 @@ export const ButtonProfile = ({
                   className={cn(
                     /* Match LanguageSelect trigger: h-10 toolbar row, square hit target */
                     'box-border flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center',
-                    'isolate overflow-hidden rounded-md border border-neutral-9 bg-neutral-1 p-0 text-neutral-12 outline-none',
+                    'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
                     'shadow-sm transition-colors duration-150',
-                    'hover:border-neutral-11 hover:text-foreground',
+                    'hover:text-foreground',
                     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                    'data-[state=open]:border-neutral-11 data-[state=open]:shadow-md',
+                    'data-[state=open]:shadow-md',
                   )}
                   aria-label={t('openProfileMenu')}
                   aria-haspopup="menu"

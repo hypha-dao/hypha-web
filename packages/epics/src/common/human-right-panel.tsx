@@ -21,7 +21,15 @@ import {
   SidebarContent,
   SidebarFooter,
   useSidebar,
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@hypha-platform/ui';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   useMatrix,
   useCoherenceMutationsWeb2Rsc,
@@ -99,6 +107,7 @@ import {
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
 } from './human-chat-panel/human-chat-display-mention';
+import { Empty } from './empty';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -610,6 +619,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const updateSpaceBySlugRef = useRef(updateSpaceBySlug);
   updateSpaceBySlugRef.current = updateSpaceBySlug;
   const { open: sidebarOpen } = useSidebar();
+  const {
+    isAuthenticated,
+    isLoading: isAuthLoading,
+    login,
+  } = useAuthentication();
 
   const currentUserAvatarUrl = me?.avatarUrl;
   const currentUserAvatarUrlRef = useRef(currentUserAvatarUrl);
@@ -703,6 +717,38 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   roomIdRef.current = roomId;
   const matrixClientRef = useRef(client);
   matrixClientRef.current = client;
+  const resetChatStateOnAuthDrop = useCallback(() => {
+    const activeRoomId = roomIdRef.current;
+    if (activeRoomId) {
+      matrixRef.current.unregisterRoomListener(activeRoomId);
+    }
+    joinedRef.current = null;
+    setRoomId(null);
+    setMessages([]);
+    setInput('');
+    disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+    setDraftAttachments([]);
+    setReplyDraft(null);
+    setEditDraft(null);
+    setError(null);
+    setReactionError(null);
+    setComposerError(null);
+    setDeleteError(null);
+    setSendingPending(null);
+    setCallFullViewOpen(false);
+  }, [setCallFullViewOpen]);
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (isAuthenticated) return;
+    resetChatStateOnAuthDrop();
+  }, [isAuthLoading, isAuthenticated, resetChatStateOnAuthDrop]);
+
+  useEffect(() => {
+    if (!isMatrixAvailable) return;
+    if (isMatrixAuthenticated) return;
+    resetChatStateOnAuthDrop();
+  }, [isMatrixAvailable, isMatrixAuthenticated, resetChatStateOnAuthDrop]);
 
   const {
     callState: spaceCallState,
@@ -757,6 +803,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'initializing';
 
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
+  const showAuthedUi = !isAuthLoading && isAuthenticated;
+  const showAuthPrompt = !isAuthLoading && !isAuthenticated;
 
   /** Distinct Matrix users in the room call besides the current user (not device count). */
   const spaceCallOtherMemberCount = useMemo(
@@ -1365,7 +1413,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!hasSpaceChatAccess) return;
 
     let cancelled = false;
-    const { joinRoom, createRoom, getRoomMessages, client } = matrixRef.current;
+    const { joinRoom, createRoom, getRoomMessages, loadRoomHistory, client } =
+      matrixRef.current;
 
     const initRoom = async () => {
       setIsJoining(true);
@@ -1435,6 +1484,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         joinedRef.current = spaceSlug;
         setRoomId(targetRoomId);
 
+        await loadRoomHistory(targetRoomId);
+        if (cancelled) return;
         const existing = getRoomMessages(targetRoomId);
         if (existing && !cancelled) {
           setMessages(
@@ -1580,6 +1631,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         if (cancelled) return;
         setRoomId(targetRoomId);
+        await matrixRef.current.loadRoomHistory(targetRoomId);
+        if (cancelled) return;
         const existing = matrixRef.current.getRoomMessages(targetRoomId);
         if (existing) {
           setMessages(
@@ -2438,13 +2491,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   return (
     <>
-      <SidebarHeader className="bg-background-2 p-0">
+      <SidebarHeader className="bg-background-2 gap-0 p-0">
         <HumanChatPanelHeader
-          title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
+          title={mode === 'coherence' ? coherenceTitle ?? undefined : ''}
           onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
           notificationSettingsHref={notificationCentreHref}
           trailingStart={
-            roomId ? (
+            showAuthedUi && roomId ? (
               <HumanChatPanelMentionBell
                 unreadCount={bellMentionCount}
                 countIsCapped={bellMentionCapped}
@@ -2520,167 +2573,176 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       </SidebarHeader>
       {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
       <SidebarContent className="flex min-h-0 flex-col overflow-hidden bg-background-2">
-        {activeTab === 'chat' && (
-          <div
-            className="flex min-h-0 flex-1 flex-col"
-            role="tabpanel"
-            id="chat-tabpanel-chat"
-          >
-            {callUiEnabled && (
+        {isAuthLoading ? (
+          <div className="flex flex-1 items-center justify-center">
+            <div className="text-sm text-muted-foreground">{t('loading')}</div>
+          </div>
+        ) : showAuthPrompt ? (
+          <div className="flex flex-1 items-center justify-center px-6">
+            <Empty>
+              <div className="flex flex-col gap-7">
+                <p>{tSpaces('accessDeniedNotLoggedIn')}</p>
+                <div className="flex items-center justify-center gap-4">
+                  <Button variant="outline" onClick={login}>
+                    {tSpaces('signIn')}
+                  </Button>
+                  <Button onClick={login}>{tSpaces('getStarted')}</Button>
+                </div>
+              </div>
+            </Empty>
+          </div>
+        ) : (
+          <>
+            {activeTab === 'chat' && (
               <div
-                className={
-                  inSpaceCall
-                    ? /* cap height so min-heights on tiles (share grid) cannot overlap the message list */
-                      'flex min-h-0 min-w-0 max-h-[min(52dvh,520px)] shrink-0 flex-col overflow-hidden'
-                    : 'shrink-0'
-                }
+                className="flex min-h-0 flex-1 flex-col"
+                role="tabpanel"
+                id="chat-tabpanel-chat"
               >
-                <HumanChatPanelCallStage
+                {callUiEnabled && (
+                  <div
+                    className={
+                      inSpaceCall
+                        ? /* cap height so min-heights on tiles (share grid) cannot overlap the message list */
+                          'flex min-h-0 min-w-0 max-h-[min(52dvh,520px)] shrink-0 flex-col overflow-hidden'
+                        : 'shrink-0'
+                    }
+                  >
+                    <HumanChatPanelCallStage
+                      client={client}
+                      roomId={roomId}
+                      groupCall={spaceGroupCall}
+                      callKind={spaceCallKind}
+                      isLocalVideoMuted={spaceCallVideoMuted}
+                      isScreensharing={spaceCallScreensharing}
+                      callState={spaceCallState}
+                      feedVersion={spaceCallFeedVersion}
+                      activeSpeakerKey={spaceCallActiveSpeakerKey}
+                      currentUserId={currentUserId}
+                      inCallUserIds={spaceCallInCallUserIds}
+                      currentUserProfileAvatarUrl={currentUserAvatarUrl}
+                      resolveMemberLabel={resolveMemberLabel}
+                      layout={
+                        callFullViewOpen && canOpenCallFullView
+                          ? 'hidden'
+                          : 'panel'
+                      }
+                      onRequestFullView={
+                        canOpenCallFullView
+                          ? () => {
+                              setCallFullViewOpen(true);
+                            }
+                          : undefined
+                      }
+                      fullViewOpen={callFullViewOpen}
+                      fullViewTriggerRef={callFullViewTriggerRef}
+                    />
+                  </div>
+                )}
+                {error && (
+                  <div
+                    role="alert"
+                    className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {error}
+                  </div>
+                )}
+                {composerError && (
+                  <div
+                    role="alert"
+                    className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {composerError}
+                  </div>
+                )}
+                {reactionError && (
+                  <div
+                    role="alert"
+                    className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {reactionError}
+                  </div>
+                )}
+                {deleteError && (
+                  <div
+                    role="alert"
+                    className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {deleteError}
+                  </div>
+                )}
+                {isJoining ? (
+                  <div className="flex flex-1 items-center justify-center">
+                    <div className="text-sm text-muted-foreground">
+                      {t('loading')}
+                    </div>
+                  </div>
+                ) : (
+                  <HumanChatPanelMessages
+                    messages={mergedMessages}
+                    roomId={roomId}
+                    currentUserId={currentUserId}
+                    currentUserAvatarUrl={currentUserAvatarUrl}
+                    onReply={handleReplyToMessage}
+                    onEditMessage={handleEditMessage}
+                    onDeleteMessage={handleDeleteMessage}
+                    onToggleReaction={handleToggleReaction}
+                    resolveReactionReactorLabel={(userId) =>
+                      resolveMemberLabel(userId)
+                    }
+                    resolveMatrixMemberLabel={resolveMentionMemberLabel}
+                    resolveSenderDisplayLabel={resolveSenderDisplayLabel}
+                    onCancelSendPending={cancelSendInFlight}
+                    firstUnreadMessageId={unreadChatState.firstUnreadMessageId}
+                    unreadNotificationCount={
+                      unreadChatState.unreadNotificationCount
+                    }
+                    unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
+                    onReachedTimelineBottom={handleReachedTimelineBottom}
+                    onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
+                    scrollTargetEventId={scrollToEventId}
+                    onConsumedScrollTarget={handleConsumedScrollTarget}
+                  />
+                )}
+              </div>
+            )}
+            {activeTab === 'members' && (
+              <div
+                className="flex min-h-0 flex-1 flex-col overflow-hidden"
+                role="tabpanel"
+                id="chat-tabpanel-members"
+              >
+                <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto">
+                  <HumanChatPanelMembers
+                    useMembers={useMembers}
+                    spaceSlug={spaceSlug}
+                    roomId={roomId}
+                    inCallMatrixUserIds={spaceCallInCallUserIds}
+                    inOurCallSession={
+                      inSpaceCall && spaceCallState === 'connected'
+                    }
+                    currentUserMatrixId={currentUserId}
+                  />
+                </div>
+              </div>
+            )}
+            {activeTab === 'mentions' && (
+              <div
+                className="flex min-h-0 flex-1 flex-col overflow-hidden"
+                role="tabpanel"
+                id="chat-tabpanel-mentions"
+              >
+                <HumanChatPanelMentionTab
                   client={client}
                   roomId={roomId}
-                  groupCall={spaceGroupCall}
-                  callKind={spaceCallKind}
-                  isLocalVideoMuted={spaceCallVideoMuted}
-                  isScreensharing={spaceCallScreensharing}
-                  callState={spaceCallState}
-                  feedVersion={spaceCallFeedVersion}
-                  activeSpeakerKey={spaceCallActiveSpeakerKey}
                   currentUserId={currentUserId}
-                  inCallUserIds={spaceCallInCallUserIds}
-                  remoteMediaStall={spaceCallRemoteMediaStall}
-                  currentUserProfileAvatarUrl={currentUserAvatarUrl}
                   resolveMemberLabel={resolveMentionMemberLabel}
-                  layout={
-                    callFullViewOpen && canOpenCallFullView ? 'hidden' : 'panel'
-                  }
-                  onRequestFullView={
-                    canOpenCallFullView
-                      ? () => {
-                          if (
-                            document.activeElement instanceof HTMLButtonElement
-                          ) {
-                            callFullViewTriggerRef.current =
-                              document.activeElement;
-                          }
-                          setCallFullViewOpen(true);
-                        }
-                      : undefined
-                  }
-                  fullViewOpen={callFullViewOpen}
-                  fullViewTriggerRef={callFullViewTriggerRef}
+                  onSelectMessage={handleSelectMentionFromInbox}
+                  aggregatedMentions={mode === 'space'}
                 />
               </div>
             )}
-            {error && (
-              <div
-                role="alert"
-                className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              >
-                {error}
-              </div>
-            )}
-            {composerError && (
-              <div
-                role="alert"
-                className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              >
-                {composerError}
-              </div>
-            )}
-            {reactionError && (
-              <div
-                role="alert"
-                className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              >
-                {reactionError}
-              </div>
-            )}
-            {deleteError && (
-              <div
-                role="alert"
-                className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              >
-                {deleteError}
-              </div>
-            )}
-            {mode === 'space' && isUserSpaceStateLoading ? (
-              <div className="flex flex-1 items-center justify-center">
-                <div className="text-sm text-muted-foreground">
-                  {t('loading')}
-                </div>
-              </div>
-            ) : blockSpaceChatForMembership ? (
-              <div className="mx-3 mt-3 rounded-md border border-border/60 bg-card/40 px-3 py-2 text-sm text-muted-foreground">
-                {tSpaces('accessDeniedNotMember')}
-              </div>
-            ) : isJoining ? (
-              <div className="flex flex-1 items-center justify-center">
-                <div className="text-sm text-muted-foreground">
-                  {t('loading')}
-                </div>
-              </div>
-            ) : (
-              <HumanChatPanelMessages
-                messages={mergedMessages}
-                roomId={roomId}
-                currentUserId={currentUserId}
-                currentUserAvatarUrl={currentUserAvatarUrl}
-                onReply={handleReplyToMessage}
-                onEditMessage={handleEditMessage}
-                onDeleteMessage={handleDeleteMessage}
-                onToggleReaction={handleToggleReaction}
-                resolveReactionReactorLabel={(userId) =>
-                  resolveMemberLabel(userId)
-                }
-                resolveMatrixMemberLabel={resolveMentionMemberLabel}
-                resolveSenderDisplayLabel={resolveSenderDisplayLabel}
-                onCancelSendPending={cancelSendInFlight}
-                firstUnreadMessageId={unreadChatState.firstUnreadMessageId}
-                unreadNotificationCount={
-                  unreadChatState.unreadNotificationCount
-                }
-                unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
-                onReachedTimelineBottom={handleReachedTimelineBottom}
-                onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
-                scrollTargetEventId={scrollToEventId}
-                onConsumedScrollTarget={handleConsumedScrollTarget}
-              />
-            )}
-          </div>
-        )}
-        {activeTab === 'members' && (
-          <div
-            className="flex min-h-0 flex-1 flex-col overflow-hidden"
-            role="tabpanel"
-            id="chat-tabpanel-members"
-          >
-            <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto">
-              <HumanChatPanelMembers
-                useMembers={useMembers}
-                spaceSlug={spaceSlug}
-                roomId={roomId}
-                inCallMatrixUserIds={spaceCallInCallUserIds}
-                inOurCallSession={inSpaceCall && spaceCallState === 'connected'}
-                currentUserMatrixId={currentUserId}
-              />
-            </div>
-          </div>
-        )}
-        {activeTab === 'mentions' && (
-          <div
-            className="flex min-h-0 flex-1 flex-col overflow-hidden"
-            role="tabpanel"
-            id="chat-tabpanel-mentions"
-          >
-            <HumanChatPanelMentionTab
-              client={client}
-              roomId={roomId}
-              currentUserId={currentUserId}
-              resolveMemberLabel={resolveMentionMemberLabel}
-              onSelectMessage={handleSelectMentionFromInbox}
-              aggregatedMentions={mode === 'space'}
-            />
-          </div>
+          </>
         )}
       </SidebarContent>
       {activeTab === 'chat' && !blockSpaceChatForMembership && (

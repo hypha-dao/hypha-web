@@ -6,6 +6,11 @@ export const DEFAULT_IMAGE_ACCEPT = [
   'image/webp',
 ];
 
+export const ECOSYSTEM_LOGO_IMAGE_ACCEPT = [
+  ...DEFAULT_IMAGE_ACCEPT,
+  'image/svg+xml',
+];
+
 export const DEFAULT_DOCUMENT_ACCEPT = ['application/pdf'];
 
 export const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;

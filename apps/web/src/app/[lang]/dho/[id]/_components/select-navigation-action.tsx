@@ -35,9 +35,10 @@ type HierarchyNode = {
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
+  const spaces = Array.isArray(allSpaces) ? allSpaces : [];
 
   while (current.parentId) {
-    const parent = allSpaces.find((s) => s.id === current.parentId);
+    const parent = spaces.find((s) => s.id === current.parentId);
     if (!parent) break;
     current = parent;
   }

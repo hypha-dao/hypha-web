@@ -1,6 +1,12 @@
 'use client';
 
-import React, { useCallback, useLayoutEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { MessageCircle, Sparkles } from 'lucide-react';
 import {
   SidebarProvider,
@@ -25,13 +31,67 @@ import { PanelScrollInset } from './panel-scroll-inset';
 
 export function PanelProviders({ children }: { children: React.ReactNode }) {
   const [leftOpen, setLeftOpen] = useState(false);
+  const [leftOverlayVisible, setLeftOverlayVisible] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
+  const leftOverlayHideTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
-  const toggleLeft = useCallback(() => setLeftOpen((prev) => !prev), []);
   const toggleRight = useCallback(() => setRightOpen((prev) => !prev), []);
+  const openLeft = useCallback(() => {
+    setLeftOpen(true);
+    setLeftOverlayVisible(true);
+  }, []);
+  const closeLeft = useCallback(() => {
+    setLeftOpen(false);
+    setLeftOverlayVisible(false);
+  }, []);
+  const showLeftOverlay = useCallback(() => {
+    if (leftOpen) return;
+    if (leftOverlayHideTimeoutRef.current) {
+      clearTimeout(leftOverlayHideTimeoutRef.current);
+      leftOverlayHideTimeoutRef.current = null;
+    }
+    setLeftOverlayVisible(true);
+  }, [leftOpen]);
+  const hideLeftOverlay = useCallback(() => {
+    if (leftOverlayHideTimeoutRef.current) {
+      clearTimeout(leftOverlayHideTimeoutRef.current);
+    }
+    leftOverlayHideTimeoutRef.current = setTimeout(() => {
+      setLeftOverlayVisible(false);
+      leftOverlayHideTimeoutRef.current = null;
+    }, 220);
+  }, []);
+  const toggleLeftFromTrigger = useCallback(() => {
+    setLeftOpen((prev) => {
+      const next = !prev;
+      // Trigger click controls chat panel visibility; hover controls overlay rail expansion.
+      setLeftOverlayVisible(false);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (leftOverlayHideTimeoutRef.current) {
+        clearTimeout(leftOverlayHideTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <AiPanelProvider value={{ open: leftOpen, toggle: toggleLeft }}>
+    <AiPanelProvider
+      value={{
+        open: leftOpen,
+        overlayVisible: leftOverlayVisible,
+        toggle: toggleLeftFromTrigger,
+        openAiPanel: openLeft,
+        closeAiPanel: closeLeft,
+        showAiOverlay: showLeftOverlay,
+        hideAiOverlay: hideLeftOverlay,
+      }}
+    >
       <HumanChatPanelProvider
         open={rightOpen}
         toggle={toggleRight}
@@ -48,7 +108,7 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, toggle } = useAiPanel();
+  const { open, overlayVisible, toggle } = useAiPanel();
   const t = useTranslations('AiPanel');
   const isSpace = useIsSpaceContext();
 
@@ -58,8 +118,8 @@ export function AiSidebarTrigger() {
     <button
       type="button"
       onClick={toggle}
-      aria-expanded={open}
-      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      aria-expanded={overlayVisible}
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={t('openPanel')}
       aria-label={t('openPanel')}
     >
@@ -69,7 +129,7 @@ export function AiSidebarTrigger() {
 }
 
 export function HumanSidebarTrigger() {
-  const { open, toggle } = useHumanChatPanel();
+  const { open, toggle, openHumanChatPanel } = useHumanChatPanel();
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
 
@@ -79,8 +139,9 @@ export function HumanSidebarTrigger() {
     <button
       type="button"
       onClick={toggle}
+      onMouseEnter={!open ? openHumanChatPanel : undefined}
       aria-expanded={open}
-      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={t('openPanel')}
       aria-label={t('openPanel')}
     >
@@ -109,6 +170,7 @@ const SIDEBAR_WIDTH_MIRROR_KEYS = [
   '--sidebar-right-width',
   '--main-column-scrollbar-width',
 ] as const;
+const LEFT_SIDEBAR_ICON_WIDTH = '72px';
 
 function mirrorMainColumnLayoutVarsToDocument(
   sidebarLeftPx: string,
@@ -149,7 +211,14 @@ export function PanelWrapLayout({
   left,
   right,
 }: PanelWrapLayoutProps) {
-  const { open: leftOpen, toggle: toggleLeft } = useAiPanel();
+  const {
+    open: leftOpen,
+    overlayVisible: leftOverlayVisible,
+    openAiPanel,
+    closeAiPanel,
+    showAiOverlay,
+    hideAiOverlay,
+  } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
 
@@ -157,8 +226,81 @@ export function PanelWrapLayout({
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
 
-  const sidebarLeftPx = leftOpen && effectiveLeft ? '320px' : '0px';
-  const sidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
+  const fallbackSidebarLeftPx = effectiveLeft
+    ? leftExpanded
+      ? '320px'
+      : LEFT_SIDEBAR_ICON_WIDTH
+    : '0px';
+  const fallbackSidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
+  const [sidebarLeftPx, setSidebarLeftPx] = useState(fallbackSidebarLeftPx);
+  const [sidebarRightPx, setSidebarRightPx] = useState(fallbackSidebarRightPx);
+
+  useLayoutEffect(() => {
+    const root = wrapperRef.current;
+    if (!root) return;
+
+    const readSidebarWidths = () => {
+      const gaps = root.querySelectorAll<HTMLElement>('[data-sidebar-gap]');
+      let nextLeft = 0;
+      let nextRight = 0;
+
+      gaps.forEach((gap) => {
+        const host = gap.closest<HTMLElement>('[data-side]');
+        const side = host?.getAttribute('data-side');
+        const width = Math.round(gap.getBoundingClientRect().width);
+        if (!Number.isFinite(width) || width <= 0) return;
+        if (side === 'right') {
+          nextRight = Math.max(nextRight, width);
+          return;
+        }
+        nextLeft = Math.max(nextLeft, width);
+      });
+
+      const resolvedLeft =
+        effectiveLeft && nextLeft > 0 ? `${nextLeft}px` : fallbackSidebarLeftPx;
+      const resolvedRight =
+        effectiveRight && nextRight > 0
+          ? `${nextRight}px`
+          : fallbackSidebarRightPx;
+
+      setSidebarLeftPx((prev) => (prev === resolvedLeft ? prev : resolvedLeft));
+      setSidebarRightPx((prev) =>
+        prev === resolvedRight ? prev : resolvedRight,
+      );
+    };
+
+    const resizeObserver = new ResizeObserver(readSidebarWidths);
+    const observeGaps = () => {
+      resizeObserver.disconnect();
+      const gaps = root.querySelectorAll<HTMLElement>('[data-sidebar-gap]');
+      gaps.forEach((gap) => resizeObserver.observe(gap));
+      readSidebarWidths();
+    };
+
+    const mutationObserver = new MutationObserver(observeGaps);
+    mutationObserver.observe(root, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-state', 'data-collapsible', 'style'],
+    });
+
+    window.addEventListener('resize', readSidebarWidths);
+    observeGaps();
+
+    return () => {
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+      window.removeEventListener('resize', readSidebarWidths);
+    };
+  }, [
+    effectiveLeft,
+    effectiveRight,
+    fallbackSidebarLeftPx,
+    fallbackSidebarRightPx,
+  ]);
 
   /** Radix portaled dialogs sit under `body` and do not inherit vars from this div — mirror to `:root`. */
   useLayoutEffect(() => {
@@ -174,10 +316,17 @@ export function PanelWrapLayout({
   if (effectiveLeft && effectiveRight) {
     content = (
       <PanelDualSidebarScrollBridge
-        leftOpen={leftOpen}
+        leftOpen={leftExpanded}
         onLeftOpenChange={(open) => {
-          if (open !== leftOpen) toggleLeft();
+          if (open === leftExpanded) return;
+          if (open) {
+            openAiPanel();
+            return;
+          }
+          closeAiPanel();
         }}
+        onLeftMouseEnter={showAiOverlay}
+        onLeftMouseLeave={hideAiOverlay}
         rightOpen={rightOpen}
         onRightOpenChange={(open) => {
           if (open !== rightOpen) toggleRight();
@@ -220,21 +369,27 @@ export function PanelWrapLayout({
     content = (
       <SidebarProvider
         defaultOpen={false}
-        open={leftOpen}
+        open={leftExpanded}
         onOpenChange={(open) => {
-          if (open !== leftOpen) toggleLeft();
+          if (open === leftExpanded) return;
+          if (open) {
+            openAiPanel();
+            return;
+          }
+          closeAiPanel();
         }}
         style={
           {
             '--sidebar-width': '320px',
+            '--sidebar-width-icon': LEFT_SIDEBAR_ICON_WIDTH,
           } as React.CSSProperties
         }
       >
         <Sidebar
           side="left"
           variant="sidebar"
-          collapsible="offcanvas"
-          className="z-[50]"
+          collapsible="icon"
+          className="z-[50] overflow-visible"
         >
           {effectiveLeft.content}
           <SidebarResizeHandle />
@@ -248,13 +403,14 @@ export function PanelWrapLayout({
 
   return (
     <div
+      className="min-w-0 overflow-x-clip"
+      ref={wrapperRef}
       style={
         {
           '--sidebar-right-width': sidebarRightPx,
           '--sidebar-left-width': sidebarLeftPx,
-          transitionProperty: '--sidebar-left-width, --sidebar-right-width',
-          transitionDuration: '200ms',
-          transitionTimingFunction: 'linear',
+          '--panel-left-inset': sidebarLeftPx,
+          '--panel-right-inset': `calc(${sidebarRightPx} + ${MAIN_COLUMN_SCROLLBAR_WIDTH_CSS})`,
         } as React.CSSProperties
       }
     >

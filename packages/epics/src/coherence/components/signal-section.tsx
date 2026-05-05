@@ -1,9 +1,9 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 import { Text } from '@radix-ui/themes';
 import { useSignalsSection } from '../hooks';
-import { Button, SectionFilter, SectionLoadMore } from '@hypha-platform/ui';
+import { Button, ErrorAlert, Input, SectionLoadMore } from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import { SignalGridContainer } from './signal-grid.container';
 import { Coherence, DirectionType } from '@hypha-platform/core/client';
@@ -13,12 +13,19 @@ import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { SearchIcon } from 'lucide-react';
+import {
+  SIGNAL_PROVISIONING_NOTICE_EVENT,
+  SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
+} from '../constants';
+
+const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
 
 type SignalSectionProps = {
   basePath: string;
   signals: Coherence[];
-  label?: string;
-  hasSearch?: boolean;
+  leadImage?: string;
+  toolbarLeft?: ReactNode;
   isLoading: boolean;
   firstPageSize?: number;
   pageSize?: number;
@@ -30,8 +37,8 @@ type SignalSectionProps = {
 export const SignalSection: FC<SignalSectionProps> = ({
   basePath,
   signals,
-  label,
-  hasSearch = false,
+  leadImage,
+  toolbarLeft,
   isLoading,
   firstPageSize = 3,
   pageSize = 3,
@@ -52,32 +59,81 @@ export const SignalSection: FC<SignalSectionProps> = ({
     firstPageSize,
     pageSize,
   });
+  const [provisioningNoticeLines, setProvisioningNoticeLines] = React.useState<
+    string[]
+  >([]);
+
+  const readProvisioningNotice = React.useCallback(() => {
+    const rawNotice = sessionStorage.getItem(
+      SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
+    );
+    if (!rawNotice) return;
+    sessionStorage.removeItem(SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY);
+    try {
+      const parsed = JSON.parse(rawNotice);
+      if (!Array.isArray(parsed)) return;
+      const lines = parsed.filter(
+        (line): line is string =>
+          typeof line === 'string' && line.trim().length > 0,
+      );
+      if (lines.length > 0) setProvisioningNoticeLines(lines);
+    } catch (error) {
+      console.warn('Failed to parse signal provisioning notice:', error);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    readProvisioningNotice();
+    window.addEventListener(
+      SIGNAL_PROVISIONING_NOTICE_EVENT,
+      readProvisioningNotice,
+    );
+    return () =>
+      window.removeEventListener(
+        SIGNAL_PROVISIONING_NOTICE_EVENT,
+        readProvisioningNotice,
+      );
+  }, [readProvisioningNotice]);
+
+  React.useEffect(() => {
+    if (provisioningNoticeLines.length === 0) return;
+    const timeoutId = window.setTimeout(() => {
+      setProvisioningNoticeLines([]);
+    }, SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [provisioningNoticeLines]);
 
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
 
   return (
-    <div className="flex w-full flex-col gap-5">
-      <SectionFilter
-        count={pagination?.total || 0}
-        label={label || ''}
-        hasSearch={hasSearch}
-        searchPlaceholder={t('searchSignals')}
-        onChangeSearch={onUpdateSearch}
-        inlineLabel={true}
-      >
-        <div className="flex flex-row gap-2">
-          <Link href={createSignalHref}>
-            <Button
-              variant="default"
-              colorVariant="accent"
-              disabled={isLoading}
-            >
-              <PlusIcon />
-              {t('newSignal')}
-            </Button>
+    <div className="flex w-full flex-col gap-4">
+      {toolbarLeft ? <div>{toolbarLeft}</div> : null}
+      <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+        <Input
+          type="search"
+          placeholder={t('searchSignals')}
+          aria-label={t('searchSignals')}
+          onChange={(event) => onUpdateSearch(event.target.value)}
+          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          className="w-full"
+        />
+        <Button
+          asChild
+          variant="default"
+          colorVariant="accent"
+          disabled={isLoading}
+          className="w-full lg:w-auto"
+        >
+          <Link href={createSignalHref} className="w-full lg:w-auto">
+            <PlusIcon />
+            {t('newSignal')}
           </Link>
-        </div>
-      </SectionFilter>
+        </Button>
+      </div>
+      {provisioningNoticeLines.length > 0 ? (
+        <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
+      ) : null}
 
       {pagination?.totalPages === 0 ? (
         <Empty>
@@ -89,6 +145,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
             <SignalGridContainer
               key={`signal-container-${index}`}
               basePath={basePath}
+              leadImage={leadImage}
               pagination={{
                 page: index + 1,
                 firstPageSize,

@@ -47,7 +47,10 @@ export function NavigationTabs({
 }) {
   const t = useTranslations('Common');
   const pathname = usePathname();
-  const activeTab = getActiveTabFromPath(pathname);
+  const activeTab = React.useMemo(
+    () => getActiveTabFromPath(pathname),
+    [pathname],
+  );
 
   const mainScrollY = useMainColumnScrollY();
   const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
@@ -73,7 +76,7 @@ export function NavigationTabs({
     ...(coherenceEnabled
       ? [
           {
-            title: t('Coherence'),
+            title: t('Signals'),
             name: 'coherence',
             href: getDhoPathCoherence(lang, id),
           },

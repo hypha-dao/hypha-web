@@ -30,19 +30,27 @@ export const SectionFilter: FC<SectionFilterProps> = ({
   onChangeSearch,
   children,
 }) => {
+  const hasLabel = label.trim().length > 0;
+  const hasCount = count !== undefined && count !== null;
   return (
     <div className="flex justify-between items-center w-full gap-4">
       {inlineLabel ? (
         <>
-          <Text className="text-4 capitalize text-nowrap">
-            {label} {count ? <>| {count}</> : null}
-          </Text>
+          {hasLabel ? (
+            <Text className="text-4 capitalize text-nowrap">
+              {label} {hasCount ? <>| {count}</> : null}
+            </Text>
+          ) : null}
           {hasSearch ? (
             <Input
+              type="search"
               className="w-full"
               placeholder={searchPlaceholder}
-              leftIcon={<SearchIcon size="16px" />}
+              aria-label={searchPlaceholder}
+              leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
               onChange={(e) => onChangeSearch?.(e.target.value)}
+              // Prevent parent keyboard handlers (e.g. Radix Tabs) from hijacking typing.
+              onKeyDown={(e) => e.stopPropagation()}
             />
           ) : null}
           {children && (
@@ -55,9 +63,11 @@ export const SectionFilter: FC<SectionFilterProps> = ({
         <>
           <div className="w-full flex flex-col gap-4">
             <div className="flex flex-row w-full">
-              <Text className="text-4 capitalize text-nowrap">
-                {label} {count ? <>| {count}</> : null}
-              </Text>
+              {hasLabel ? (
+                <Text className="text-4 capitalize text-nowrap">
+                  {label} {hasCount ? <>| {count}</> : null}
+                </Text>
+              ) : null}
               {children && (
                 <div className={cn('flex items-center text-nowrap', className)}>
                   {children}
@@ -67,10 +77,16 @@ export const SectionFilter: FC<SectionFilterProps> = ({
             <div className="flex flex-row w-full">
               {hasSearch ? (
                 <Input
+                  type="search"
                   className="w-full"
                   placeholder={searchPlaceholder}
-                  leftIcon={<SearchIcon size="16px" />}
+                  aria-label={searchPlaceholder}
+                  leftIcon={
+                    <SearchIcon className="text-accent-9" size="16px" />
+                  }
                   onChange={(e) => onChangeSearch?.(e.target.value)}
+                  // Prevent parent keyboard handlers (e.g. Radix Tabs) from hijacking typing.
+                  onKeyDown={(e) => e.stopPropagation()}
                 />
               ) : null}
             </div>

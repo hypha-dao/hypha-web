@@ -57,6 +57,8 @@ export const useMembersSection = ({
     isLoading,
     loadMore,
     pagination,
+    personCount: persons?.pagination?.total || 0,
+    spaceCount: spaces?.pagination?.total || 0,
     pages,
     setPages,
     activeFilter,

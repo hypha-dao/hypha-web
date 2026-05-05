@@ -37,8 +37,12 @@ export type UploadLeadImageProps = {
   /** Remote URL string, cleared with `null`, or omit while value is a File. */
   defaultImage?: string | null;
   maxFileSize?: number;
+  accept?: Record<string, string[]>;
+  aspectRatio?: number;
   uploadText?: React.ReactNode;
   enableImageResizer?: boolean;
+  className?: string;
+  imageClassName?: string;
   /** Overrides for crop dialog copy (defaults to English). */
   cropDialogLabels?: UploadLeadImageCropLabels;
   /** Dropzone errors and helper (defaults to English). */
@@ -66,8 +70,12 @@ export const UploadLeadImage = ({
   onChange,
   defaultImage,
   maxFileSize = 4 * 1024 * 1024,
+  accept,
+  aspectRatio = 762 / 270,
   uploadText,
   enableImageResizer = false,
+  className,
+  imageClassName,
   cropDialogLabels,
   messages: messagesProp,
 }: UploadLeadImageProps) => {
@@ -203,7 +211,7 @@ export const UploadLeadImage = ({
     onDropRejected,
     maxFiles: 1,
     maxSize: maxFileSize,
-    accept: {
+    accept: accept ?? {
       'image/png': [],
       'image/jpg': [],
       'image/jpeg': [],
@@ -218,18 +226,19 @@ export const UploadLeadImage = ({
   return (
     <>
       <AspectRatio
-        ratio={762 / 270}
+        ratio={aspectRatio}
         {...getRootProps()}
         className={clsx(
           'group cursor-pointer relative',
           'flex justify-center items-center overflow-hidden',
           'rounded-xl bg-accent-2',
           showEmptyPlaceholder && 'border border-neutral-11 border-dashed',
+          className,
         )}
       >
         <input {...getInputProps()} />
         {displaySrc && typeof displaySrc === 'string' && (
-          <PreviewImg src={displaySrc} />
+          <PreviewImg src={displaySrc} className={imageClassName} />
         )}
         <PreviewOverlay isVisible={!displaySrc || isDragActive}>
           {isDragActive ? (
@@ -279,7 +288,7 @@ export const UploadLeadImage = ({
                 image={imageSrc}
                 crop={cropBox}
                 zoom={zoom}
-                aspect={762 / 270}
+                aspect={aspectRatio}
                 onCropChange={setCropBox}
                 onZoomChange={setZoom}
                 onCropComplete={onCropComplete}

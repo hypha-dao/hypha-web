@@ -1,9 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { DocumentSection } from './document-section';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
 import { Document, Order } from '@hypha-platform/core/client';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import Link from 'next/link';
+import { Button } from '@hypha-platform/ui';
 
 type DocumentsSectionsProps = {
   lang: string;
@@ -19,46 +23,94 @@ export function DocumentsSections({
   order,
 }: DocumentsSectionsProps) {
   const t = useTranslations('AgreementsTab');
+  const format = useFormatter();
+  const [activeTab, setActiveTab] = useState('on-voting');
   const { documents, isLoading } = useSpaceDocumentsWithStatuses({
     spaceId: web3SpaceId,
     spaceSlug,
     order,
   });
+  const onVotingCount = documents.onVoting.length;
+  const acceptedCount = documents.accepted.length;
+  const rejectedCount = documents.rejected.length;
 
   const basePath = `/${lang}/dho/${spaceSlug}/agreements`;
+  const createProposalPath = `${basePath}/select-create-action`;
+  const createProposalButton = (
+    <Button asChild>
+      <Link href={createProposalPath}>{t('newProposal')}</Link>
+    </Button>
+  );
 
   return (
-    <div className="flex flex-col gap-6 py-4">
-      <DocumentSection
-        basePath={`${basePath}/proposal`}
-        web3SpaceId={web3SpaceId}
-        documents={documents.onVoting}
-        label={t('onVoting')}
-        hasSearch={true}
-        isLoading={isLoading}
-        firstPageSize={9}
-        pageSize={15}
-      />
-      <DocumentSection
-        basePath={`${basePath}/proposal`}
-        web3SpaceId={web3SpaceId}
-        documents={documents.accepted}
-        label={t('accepted')}
-        hasSearch={true}
-        isLoading={isLoading}
-        firstPageSize={3}
-        pageSize={15}
-      />
-      <DocumentSection
-        basePath={`${basePath}/proposal`}
-        web3SpaceId={web3SpaceId}
-        documents={documents.rejected}
-        label={t('rejected')}
-        hasSearch={true}
-        isLoading={isLoading}
-        firstPageSize={3}
-        pageSize={15}
-      />
-    </div>
+    <Tabs
+      value={activeTab}
+      onValueChange={setActiveTab}
+      className="flex flex-col gap-4 py-0"
+    >
+      <TabsList triggerVariant="switch" className="w-fit">
+        <TabsTrigger value="on-voting" variant="switch">
+          <span className="inline-flex items-center gap-1">
+            <span>{t('onVoting')}</span>
+            <span className="text-xs text-muted-foreground">
+              ({format.number(onVotingCount)})
+            </span>
+          </span>
+        </TabsTrigger>
+        <TabsTrigger value="accepted" variant="switch">
+          <span className="inline-flex items-center gap-1">
+            <span>{t('accepted')}</span>
+            <span className="text-xs text-muted-foreground">
+              ({format.number(acceptedCount)})
+            </span>
+          </span>
+        </TabsTrigger>
+        <TabsTrigger value="rejected" variant="switch">
+          <span className="inline-flex items-center gap-1">
+            <span>{t('rejected')}</span>
+            <span className="text-xs text-muted-foreground">
+              ({format.number(rejectedCount)})
+            </span>
+          </span>
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="on-voting" className="mt-0">
+        <DocumentSection
+          basePath={`${basePath}/proposal`}
+          web3SpaceId={web3SpaceId}
+          documents={documents.onVoting}
+          headSectionButton={createProposalButton}
+          hasSearch={true}
+          isLoading={isLoading}
+          firstPageSize={9}
+          pageSize={15}
+        />
+      </TabsContent>
+      <TabsContent value="accepted" className="mt-0">
+        <DocumentSection
+          basePath={`${basePath}/proposal`}
+          web3SpaceId={web3SpaceId}
+          documents={documents.accepted}
+          headSectionButton={createProposalButton}
+          hasSearch={true}
+          isLoading={isLoading}
+          firstPageSize={3}
+          pageSize={15}
+        />
+      </TabsContent>
+      <TabsContent value="rejected" className="mt-0">
+        <DocumentSection
+          basePath={`${basePath}/proposal`}
+          web3SpaceId={web3SpaceId}
+          documents={documents.rejected}
+          headSectionButton={createProposalButton}
+          hasSearch={true}
+          isLoading={isLoading}
+          firstPageSize={3}
+          pageSize={15}
+        />
+      </TabsContent>
+    </Tabs>
   );
 }

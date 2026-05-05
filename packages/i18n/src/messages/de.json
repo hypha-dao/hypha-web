@@ -41,7 +41,8 @@
     "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden.",
     "publish": "Veröffentlichen",
     "invalidTransactions": "Ungültige Transaktionen",
-    "Coherence": "Kohärenz",
+    "Coherence": "Signale",
+    "Signals": "Signale",
     "uploadLeadImage": {
       "cropTitle": "Ein Bild hochladen",
       "cropDescription": "Passen Sie den Ausschnitt an und speichern Sie. Ziehen Sie zum Verschieben und zoomen Sie, um den Bannerbereich auszufüllen (JPEG, PNG oder WebP — max. 4 MB).",
@@ -76,6 +77,7 @@
   "Navigation": {
     "network": "Netzwerk",
     "mySpaces": "Meine Spaces",
+    "myWallet": "Mein Wallet",
     "openMenu": "Menü öffnen",
     "openProfileMenu": "Profilmenü öffnen",
     "closeMenu": "Menü schließen",
@@ -90,7 +92,12 @@
     "viewProfile": "Profil anzeigen",
     "delete": "Löschen",
     "signIn": "Anmelden",
-    "getStarted": "Loslegen"
+    "getStarted": "Loslegen",
+    "ecosystemLogo": "Ökosystem-Logo"
+  },
+  "MyWallet": {
+    "loading": "Wird geladen...",
+    "signInToViewWallet": "Melden Sie sich an, um Ihr Wallet anzuzeigen."
   },
   "NotificationCentre": {
     "title": "Benachrichtigungszentrale",
@@ -147,6 +154,8 @@
   "SpaceSettingsAction": {
     "title": "Space-Einstellungen",
     "content": "Greifen Sie auf die Einstellungen Ihres Spaces zu und verwalten Sie sie, einschließlich Erscheinungsbild, Struktur, Methoden, Mitgliedschaft und Schatzkammer.",
+    "searchMenus": "Menüs durchsuchen",
+    "noMenusFound": "Keine Menüs gefunden",
     "groups": {
       "overview": "Überblick",
       "agreements": "Vereinbarungen",
@@ -293,6 +302,7 @@
   "SelectNavigationAction": {
     "title": "Space-Navigation",
     "content": "Navigieren Sie durch all Ihre Spaces in einer einzigen interaktiven Karte, um zu sehen, wie sie miteinander verbunden sind. Besuchen Sie verschachtelte Spaces, erkunden Sie Space-zu-Space-Mitgliedschaften und verfolgen Sie Wertflüsse in Ihrem direkten Ökosystem.",
+    "ecosystem": "Ökosystem",
     "tabs": {
       "nestedSpaces": "Verschachtelte Spaces",
       "spaceToSpace": "Space-zu-Space",
@@ -319,10 +329,13 @@
     "onVoting": "In Abstimmung",
     "accepted": "Akzeptiert",
     "rejected": "Abgelehnt",
+    "newProposal": "Neuer Vorschlag",
     "searchDocuments": "Dokumente suchen",
     "listIsEmpty": "Liste ist leer"
   },
   "MembersTab": {
+    "member": "Mitglied",
+    "space": "Space",
     "searchMembers": "Mitglieder suchen",
     "delegateVoting": "Stimmrecht delegieren",
     "listIsEmpty": "Liste ist leer",
@@ -359,13 +372,16 @@
   },
   "TreasuryTab": {
     "balance": "Kontostand",
+    "wallet": "Wallet",
     "searchTokens": "Tokens suchen",
+    "hideSmall": "Kleine ausblenden",
     "hideSmallBalances": "Kleine Guthaben ausblenden",
     "newToken": "Neuer Token",
     "depositFunds": "Mittel einzahlen",
     "listIsEmpty": "Liste ist leer",
     "loadMoreAssets": "Mehr Assets laden",
     "transactions": "Transaktionen",
+    "vaults": "Tresore",
     "searchTransactions": "Transaktionen suchen",
     "noTransactionsFound": "Keine Transaktionen gefunden",
     "loadMoreTransactions": "Mehr Transaktionen laden",
@@ -816,6 +832,7 @@
     "inOnePlace": "an einem Ort",
     "spacesYouMightLike": "Spaces, die Ihnen gefallen könnten",
     "mySpacesLabel": "Meine Spaces",
+    "recentlyVisitedSpacesLabel": "Zuletzt besucht",
     "hideArchivedSpaces": "Archivierte Spaces ausblenden",
     "creating": "Space wird erstellt...",
     "expiredToday": "heute",
@@ -824,7 +841,12 @@
     "linkedTo": "Verknüpft mit",
     "rootSpace": "Root-Space",
     "rootSpaceDescription": "Wenn Sie diesen Space als Root-Space markieren, wird er unabhängig. Er ist dann nicht mehr mit der aktuellen Organisation verknüpft, und alle mit ihm verknüpften Spaces werden mitverschoben.",
+    "uploadEcosystemLogoLight": "Ökosystem-Logo hochladen (hell)",
+    "uploadEcosystemLogoDark": "Ökosystem-Logo hochladen (dunkel)",
+    "ecosystemLogoLightDescription": "Laden Sie ein helles Logo für Ihr Ökosystem hoch (PNG, JPG, GIF oder WEBP).",
+    "ecosystemLogoDarkDescription": "Laden Sie ein dunkles Logo für Ihr Ökosystem hoch (PNG, JPG, GIF oder WEBP).",
     "search": "Suchen...",
+    "noSpacesFound": "Keine Spaces gefunden",
     "addYourUrl": "Füge deine URL hinzu",
     "exchangeDepositProposalTitleBanner": "Die Seite dieses Spaces im Tausch abschließen",
     "exchangeDepositProposalBody": "Ein Tauschvorschlag nennt diesen Space als Gegenpartei (Escrow #{escrowId}). Erstelle einen Vorschlag, um <send></send> einzuzahlen und <receive></receive> von der anderen Partei zu erhalten.",
@@ -854,7 +876,8 @@
       "contribution": "Beitrag",
       "expenses": "Ausgaben",
       "funding": "Finanzierung",
-      "investment": "Investition"
+      "investment": "Investition",
+      "exchange": "Exchange"
     },
     "documentBadges": {
       "invite": "Einladung",
@@ -1489,6 +1512,35 @@
         "percentageMin": "Der Prozentsatz muss mindestens 0 sein",
         "percentageMax": "Der Prozentsatz darf höchstens 100 sein",
         "typePercentage": "Prozentsatz eingeben"
+      },
+      "exchangeStakesAndTokens": {
+        "avatarAlt": "Avatar",
+        "buyer": "Buyer (Wallet Address)",
+        "buyerFallback": "buyer",
+        "buyerWillSend": "Buyer will send",
+        "copyWalletAddress": "Copy wallet address",
+        "errors": {
+          "buyerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
+          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address.",
+          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
+          "safeErc20TransferFailed": "The token contract rejected the transfer to escrow (often balance, allowance, or non-transferable rules). Check that your smart wallet holds enough tokens and that the token allows transfers to the escrow.",
+          "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
+          "sellerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
+          "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
+          "tokenWhitelistBlocked": "This token's on-chain rules block sending it to escrow (e.g. transfer/receive whitelist). Choose another token or update the token's whitelist settings."
+        },
+        "escrowAccountAddress": "Escrow account address",
+        "escrowNotice": "This proposal uses escrow for the exchange. Once it is approved, each member deposits their side into escrow from their profile; if {activeSpace} is one of the parties, its deposit is made when the proposal is approved and executed.",
+        "loadingTokens": "Loading tokens...",
+        "personAvatarAlt": "{name} avatar",
+        "seller": "Seller (Wallet Address)",
+        "sellerFallback": "seller",
+        "sellerWillSend": "Seller sends",
+        "spaceFallback": "space",
+        "spaceLogoAlt": "{name} logo",
+        "tokenAlt": "Token"
       }
     },
     "createActionForms": {
@@ -1532,7 +1584,8 @@
       "transparencySettings": "Transparenzeinstellungen",
       "decaySettings": "Decay-Einstellungen",
       "fromWhitelist": "Von der Whitelist",
-      "toWhitelist": "Zur Whitelist"
+      "toWhitelist": "Zur Whitelist",
+      "mutualCredit": "Mutual Credit"
     },
     "labels": {
       "unknown": "Unbekannt",
@@ -1728,7 +1781,7 @@
       "agreements": "Welche Vereinbarungen gibt es in diesem Space?",
       "structure": "Beschreibe die Struktur dieses Spaces"
     },
-    "welcome": "Hallo! Ich bin dein Hypha AI-Assistent. Ich kann Space-Details wie Mitgliederzahlen, Vereinbarungen und Strukturen nachschlagen. Frag mich alles über den Space, den du gerade ansiehst.",
+    "welcome": "Hallo! Ich bin dein AI-Assistent für {spaceName}. Ich kann Space-Details wie Mitgliederzahlen, Vereinbarungen und Strukturen nachschlagen. Frag mich alles über den Space, den du gerade ansiehst.",
     "placeholder": "Frag Hypha AI etwas...",
     "sendButton": "Senden",
     "stopButton": "Stoppen",
@@ -1994,7 +2047,9 @@
     "mostRecent": "Neueste",
     "searchConversation": "Gespräch suchen",
     "hideArchived": "Archivierte ausblenden",
-    "mentions": "{count, plural, one {# Erwähnung} other {# Erwähnungen}}",
+    "messageCount": "{count, plural, one {# Nachricht} other {# Nachrichten}}",
+    "priorityVisualAlt": "Prioritätsstufe {priority}",
+    "typeSignalBannerAlt": "{type}-Signal, Priorität {priority}",
     "unarchiveConversation": "Gespräch wiederherstellen",
     "unarchiveConfirm": "Möchten Sie dieses Gespräch wirklich wiederherstellen?",
     "yesUnarchive": "Ja, wiederherstellen",
@@ -2036,6 +2091,13 @@
     "spaceMemoryMatrixVideoPlayHint": "Tippen für Vorschau",
     "spaceMemoryOpenAsset": "{name} öffnen",
     "untitledDocument": "Unbenanntes Dokument",
+    "spaceMemoryGeneral": "Allgemein",
+    "spaceMemoryProposals": "Vorschläge",
+    "spaceMemoryConversations": "Gespräche",
+    "spaceMemoryAiChat": "AI-Chat",
+    "newMemory": "Neue Erinnerung",
+    "spaceMemoryEmptyTab": "In dieser Ansicht wurden keine Einträge gefunden.",
+    "spaceMemoryAiChatEmpty": "AI-Chat-Erinnerungen sind noch nicht verfügbar.",
     "documentStates": {
       "discussion": "Diskussion",
       "proposal": "Vorschlag",
@@ -2068,6 +2130,11 @@
       "low": "Informativ, keine Eile"
     },
     "keepWindowOpenWhileCreating": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind.",
+    "provisioning": {
+      "chatUnavailable": "Signal erstellt, aber der Chat ist derzeit nicht verfügbar.",
+      "roomProvisionFailed": "Signal erstellt, aber die Bereitstellung des Chatraums ist fehlgeschlagen.",
+      "roomLinkFailedRetry": "Signal erstellt, aber der Chatraum konnte nicht verknüpft werden. Bitte versuchen Sie es erneut."
+    },
     "tagLabels": {
       "Strategy": "Strategie",
       "Culture": "Kultur",
@@ -2077,7 +2144,12 @@
       "Capacity": "Kapazität",
       "Network": "Netzwerk",
       "Reputation": "Reputation"
-    }
+    },
+    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
+    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
+    "spaceMemoryCallTranscriptExcerpt": "Transcript",
+    "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
+    "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)"
   },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",

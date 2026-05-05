@@ -14,7 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
-import { getDhoPathAgreements } from '@hypha-platform/epics';
+import { getDhoSpaceContextPath } from '@hypha-platform/epics';
 import {
   useSpaceDiscoverability,
   useUserSpaceState,
@@ -22,10 +22,11 @@ import {
 } from '@hypha-platform/epics';
 import type { VisibleSpace } from './types';
 import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 
 type VisibleSpacesListProps = {
   visibleSpaces: VisibleSpace[];
-  allSpaces: Space[];
+  allSpaces?: Space[];
   lang: Locale;
   entrySpaceId?: number;
 };
@@ -38,7 +39,8 @@ type AddSpaceButtonProps = {
 
 function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   const t = useTranslations('SelectNavigationAction');
-  const fullSpace = allSpaces.find((s) => s.id === space.id);
+  const safeAllSpaces = Array.isArray(allSpaces) ? allSpaces : [];
+  const fullSpace = safeAllSpaces.find((s) => s.id === space.id);
   const web3SpaceId = fullSpace?.web3SpaceId;
   const spaceSlug = fullSpace?.slug || space.slug;
   const hasSpaceInfo = !!web3SpaceId && !!spaceSlug;
@@ -108,6 +110,8 @@ export function VisibleSpacesList({
   entrySpaceId,
 }: VisibleSpacesListProps) {
   const t = useTranslations('SelectNavigationAction');
+  const pathname = usePathname();
+  const safeAllSpaces = Array.isArray(allSpaces) ? allSpaces : [];
   const [searchQuery, setSearchQuery] = useState('');
   const buildNestedPath = (space: VisibleSpace): string => {
     if (space.root) {
@@ -115,7 +119,7 @@ export function VisibleSpacesList({
     }
 
     if (space.parentId) {
-      const parent = allSpaces.find((s) => s.id === space.parentId);
+      const parent = safeAllSpaces.find((s) => s.id === space.parentId);
       if (parent) {
         return t('visibleSpaces.nestedIn', { parent: parent.title });
       }
@@ -153,7 +157,11 @@ export function VisibleSpacesList({
   const rootNestedPath = buildNestedPath(rootSpace);
   const rootCreateSpacePath = getCreateSpacePath(rootSpace.id, rootSpace.slug);
   const rootVisitSpacePath = rootSpace.slug
-    ? getDhoPathAgreements(lang, rootSpace.slug)
+    ? getDhoSpaceContextPath({
+        pathname,
+        lang,
+        spaceSlug: rootSpace.slug,
+      }) ?? `/${lang}/dho/${rootSpace.slug}/agreements`
     : '#';
 
   return (
@@ -186,7 +194,7 @@ export function VisibleSpacesList({
           <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
             <AddSpaceButton
               space={rootSpace}
-              allSpaces={allSpaces}
+              allSpaces={safeAllSpaces}
               lang={lang}
             />
             <Link href={rootVisitSpacePath} className="flex-1 md:flex-none">
@@ -211,6 +219,10 @@ export function VisibleSpacesList({
           placeholder={t('visibleSpaces.searchSpaces')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            // Prevent parent keyboard handlers (e.g. Tabs) from hijacking typing.
+            e.stopPropagation();
+          }}
           className="flex-1"
         />
       </div>
@@ -220,7 +232,11 @@ export function VisibleSpacesList({
           const nestedPath = buildNestedPath(space);
           const createSpacePath = getCreateSpacePath(space.id, space.slug);
           const visitSpacePath = space.slug
-            ? getDhoPathAgreements(lang, space.slug)
+            ? getDhoSpaceContextPath({
+                pathname,
+                lang,
+                spaceSlug: space.slug,
+              }) ?? `/${lang}/dho/${space.slug}/agreements`
             : '#';
 
           return (
@@ -252,7 +268,7 @@ export function VisibleSpacesList({
                 <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
                   <AddSpaceButton
                     space={space}
-                    allSpaces={allSpaces}
+                    allSpaces={safeAllSpaces}
                     lang={lang}
                   />
                   <Link href={visitSpacePath} className="flex-1 md:flex-none">

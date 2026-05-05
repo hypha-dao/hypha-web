@@ -2,12 +2,14 @@
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
 import { useDocumentsSection } from '../hooks/use-documents-section';
-import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
+import { SectionLoadMore } from '@hypha-platform/ui/server';
 import { Document } from '@hypha-platform/core/client';
 import { DocumentGridContainer } from './document-grid.container';
 import { DirectionType } from '@hypha-platform/core/client';
 import { Empty } from '../../common';
 import { useTranslations } from 'next-intl';
+import { Input } from '@hypha-platform/ui';
+import { SearchIcon } from 'lucide-react';
 
 type DocumentSectionProps = {
   basePath: string;
@@ -49,15 +51,24 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
 
   return (
     <div className="flex flex-col justify-around items-center gap-4">
-      <SectionFilter
-        count={pagination?.total || 0}
-        label={label || ''}
-        hasSearch={hasSearch}
-        searchPlaceholder={tAgreements('searchDocuments')}
-        onChangeSearch={onUpdateSearch}
-      >
-        {headSectionButton}
-      </SectionFilter>
+      <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+        {hasSearch ? (
+          <Input
+            type="search"
+            placeholder={tAgreements('searchDocuments')}
+            onChange={(event) => onUpdateSearch(event.target.value)}
+            leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+            className="w-full"
+          />
+        ) : (
+          <div className="w-full" />
+        )}
+        {headSectionButton ? (
+          <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
+            {headSectionButton}
+          </div>
+        ) : null}
+      </div>
 
       {pagination?.totalPages === 0 ? (
         <Empty>

@@ -175,15 +175,6 @@ export const SelectSettingsAction = ({
     },
     {
       group: t('groups.treasury'),
-      title: t('actions.redeemTokens.title'),
-      description: t('actions.redeemTokens.description'),
-      href: 'create/redeem-tokens',
-      baseTab: 'agreements',
-      disabled: isPaymentExpired,
-      icon: <Gift className="size-[22px] shrink-0" strokeWidth={1.75} />,
-    },
-    {
-      group: t('groups.treasury'),
       title: t('actions.spaceTokenPurchase.title'),
       description: t('actions.spaceTokenPurchase.description'),
       href: 'create/space-token-purchase',
@@ -267,6 +258,8 @@ export const SelectSettingsAction = ({
       title={t('title')}
       content={t('content')}
       showTitle={false}
+      searchPlaceholder={t('searchMenus')}
+      noResultsLabel={t('noMenusFound')}
       actions={SETTINGS_ACTIONS.map((action) => {
         const href = computeHref(action);
         return {

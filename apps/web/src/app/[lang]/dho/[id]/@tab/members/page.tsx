@@ -1,11 +1,12 @@
 import { Locale } from '@hypha-platform/i18n';
 import { MembersSection, SpaceTabAccessWrapper } from '@hypha-platform/epics';
-import { findSpaceBySlug } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
+import { getSpaceBySlug } from '@hypha-platform/core/server';
+import { getTranslations } from 'next-intl/server';
 
 import { useMembers } from '@web/hooks/use-members';
 
 import { getDhoPathMembers } from './constants';
+import { TabScreenTitle } from '../_components/tab-screen-title';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -13,17 +14,23 @@ type PageProps = {
 
 export default async function MembershipPage(props: PageProps) {
   const params = await props.params;
+  const tCommon = await getTranslations('Common');
 
   const { lang, id } = params;
 
-  const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
+  const spaceFromDb = await getSpaceBySlug({ slug: id });
   const web3SpaceId = spaceFromDb?.web3SpaceId;
 
   const basePath = getDhoPathMembers(lang as Locale, id as string);
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
-      <div className="flex flex-col gap-6 py-4">
+      <div className="flex flex-col gap-4 py-4">
+        <TabScreenTitle
+          title={tCommon('Members')}
+          count={spaceFromDb?.memberCount ?? null}
+          lang={lang}
+        />
         <MembersSection
           basePath={`${basePath}/person`}
           useMembers={useMembers}

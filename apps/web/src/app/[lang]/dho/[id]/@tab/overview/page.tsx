@@ -26,10 +26,11 @@ export default async function OrganisationPage(props: PageProps) {
   const spaces: Space[] = await getAllOrganizationSpacesForNodeById({
     id: spaceFromDb.id,
   });
+  const safeSpaces = Array.isArray(spaces) ? spaces : [];
 
-  for (const space of spaces) {
+  for (const space of safeSpaces) {
     if (space.parentId) {
-      space.parent = spaces.find((s) => s.id === space.parentId);
+      space.parent = safeSpaces.find((s) => s.id === space.parentId);
     }
   }
 
@@ -40,7 +41,7 @@ export default async function OrganisationPage(props: PageProps) {
     >
       <SubspaceSectionWrapper
         lang={lang}
-        spaces={spaces}
+        spaces={safeSpaces}
         currentSpaceId={spaceFromDb.id}
         currentSpaceWeb3Id={spaceFromDb.web3SpaceId as number}
         currentSpaceSlug={id}

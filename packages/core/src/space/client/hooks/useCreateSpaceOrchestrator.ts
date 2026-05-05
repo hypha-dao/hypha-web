@@ -10,6 +10,7 @@ import { useSpaceMutationsWeb3Rpc } from './useSpaceMutations.web3.rpc';
 import useSWRMutation from 'swr/mutation';
 import {
   schemaCreateSpace,
+  schemaCreateSpaceFiles,
   schemaCreateSpaceWeb2,
   schemaCreateSpaceWeb3,
 } from '../../validation';
@@ -104,10 +105,39 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
+const getUploadResultUrl = (result: unknown): string | undefined => {
+  if (!Array.isArray(result) || result.length === 0) return undefined;
+  const first = result[0] as { ufsUrl?: unknown; url?: unknown } | undefined;
+  if (!first) return undefined;
+  if (typeof first.ufsUrl === 'string' && first.ufsUrl) return first.ufsUrl;
+  if (typeof first.url === 'string' && first.url) return first.url;
+  return undefined;
+};
+
+const getRequiredUploadResultUrl = (
+  result: unknown,
+  fieldName: string,
+): string => {
+  const uploadedUrl = getUploadResultUrl(result);
+  if (!uploadedUrl) {
+    throw new Error(`Upload failed: no URL returned for ${fieldName}`);
+  }
+  return uploadedUrl;
+};
+
 export const useCreateSpaceOrchestrator = ({
   authToken,
   config,
 }: UseCreateSpaceOrchestratorInput) => {
+  type CreateSpaceOrchestratorArg = Omit<
+    z.infer<typeof schemaCreateSpace>,
+    'logoUrl' | 'leadImage' | 'ecosystemLogoUrlLight' | 'ecosystemLogoUrlDark'
+  > &
+    Pick<
+      z.infer<typeof schemaCreateSpaceFiles>,
+      'logoUrl' | 'leadImage' | 'ecosystemLogoUrlLight' | 'ecosystemLogoUrlDark'
+    >;
+
   const { createEvent } = useCreateEvent({ authToken });
   const { person } = useMe();
   const web2 = useSpaceMutationsWeb2Rsc(authToken);
@@ -156,21 +186,39 @@ export const useCreateSpaceOrchestrator = ({
 
   const { trigger: createSpace } = useSWRMutation(
     'createSpaceOrchestration',
-    async (_, { arg }: { arg: z.infer<typeof schemaCreateSpace> }) => {
-      const web3SpaceId = (arg as any).web3SpaceId;
+    async (
+      _,
+      {
+        arg,
+      }: {
+        arg: CreateSpaceOrchestratorArg;
+      },
+    ) => {
       let web3SpaceIdResult: number | undefined = undefined;
       let web3Executor: string | undefined = undefined;
       let web2SpaceId: number | undefined = undefined;
       const uploadedFileUrls: {
         logoUrl?: string;
         leadImage?: string;
+        ecosystemLogoUrlLight?: string;
+        ecosystemLogoUrlDark?: string;
       } = {};
 
       try {
-        const logoUrl = (arg as any).logoUrl;
-        const leadImage = (arg as any).leadImage;
+        const {
+          logoUrl,
+          leadImage,
+          ecosystemLogoUrlLight,
+          ecosystemLogoUrlDark,
+          flags = [],
+        } = arg;
 
-        if (logoUrl || leadImage) {
+        if (
+          logoUrl ||
+          leadImage ||
+          ecosystemLogoUrlLight ||
+          ecosystemLogoUrlDark
+        ) {
           startTask('UPLOAD_FILES');
 
           const uploadPromises: Promise<void>[] = [];
@@ -178,9 +226,10 @@ export const useCreateSpaceOrchestrator = ({
           if (logoUrl instanceof File) {
             uploadPromises.push(
               uploadImage([logoUrl]).then((result) => {
-                if (result?.[0]?.ufsUrl) {
-                  uploadedFileUrls.logoUrl = result[0].ufsUrl;
-                }
+                uploadedFileUrls.logoUrl = getRequiredUploadResultUrl(
+                  result,
+                  'logoUrl',
+                );
               }),
             );
           } else if (typeof logoUrl === 'string' && logoUrl) {
@@ -190,13 +239,42 @@ export const useCreateSpaceOrchestrator = ({
           if (leadImage instanceof File) {
             uploadPromises.push(
               uploadImage([leadImage]).then((result) => {
-                if (result?.[0]?.ufsUrl) {
-                  uploadedFileUrls.leadImage = result[0].ufsUrl;
-                }
+                uploadedFileUrls.leadImage = getRequiredUploadResultUrl(
+                  result,
+                  'leadImage',
+                );
               }),
             );
           } else if (typeof leadImage === 'string' && leadImage) {
             uploadedFileUrls.leadImage = leadImage;
+          }
+
+          if (ecosystemLogoUrlLight instanceof File) {
+            uploadPromises.push(
+              uploadImage([ecosystemLogoUrlLight]).then((result) => {
+                uploadedFileUrls.ecosystemLogoUrlLight =
+                  getRequiredUploadResultUrl(result, 'ecosystemLogoUrlLight');
+              }),
+            );
+          } else if (
+            typeof ecosystemLogoUrlLight === 'string' &&
+            ecosystemLogoUrlLight
+          ) {
+            uploadedFileUrls.ecosystemLogoUrlLight = ecosystemLogoUrlLight;
+          }
+
+          if (ecosystemLogoUrlDark instanceof File) {
+            uploadPromises.push(
+              uploadImage([ecosystemLogoUrlDark]).then((result) => {
+                uploadedFileUrls.ecosystemLogoUrlDark =
+                  getRequiredUploadResultUrl(result, 'ecosystemLogoUrlDark');
+              }),
+            );
+          } else if (
+            typeof ecosystemLogoUrlDark === 'string' &&
+            ecosystemLogoUrlDark
+          ) {
+            uploadedFileUrls.ecosystemLogoUrlDark = ecosystemLogoUrlDark;
           }
 
           await Promise.all(uploadPromises);
@@ -208,7 +286,6 @@ export const useCreateSpaceOrchestrator = ({
 
         startTask('CREATE_WEB3_SPACE');
 
-        const flags = (arg as any).flags ?? [];
         const isSandbox = flags.includes('sandbox');
         const isDemo = flags.includes('demo');
         const isLive = !isDemo && !isSandbox;
@@ -261,6 +338,8 @@ export const useCreateSpaceOrchestrator = ({
           ...inputCreateSpaceWeb2,
           logoUrl: uploadedFileUrls.logoUrl,
           leadImage: uploadedFileUrls.leadImage,
+          ecosystemLogoUrlLight: uploadedFileUrls.ecosystemLogoUrlLight,
+          ecosystemLogoUrlDark: uploadedFileUrls.ecosystemLogoUrlDark,
         };
         const createdSpace = await web2.createSpace(createSpaceInput);
         web2SpaceId = createdSpace?.id;
