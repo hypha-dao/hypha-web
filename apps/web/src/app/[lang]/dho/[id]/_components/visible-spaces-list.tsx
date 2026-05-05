@@ -161,7 +161,7 @@ export function VisibleSpacesList({
         pathname,
         lang,
         spaceSlug: rootSpace.slug,
-      })
+      }) ?? `/${lang}/dho/${rootSpace.slug}/agreements`
     : '#';
 
   return (
@@ -236,7 +236,7 @@ export function VisibleSpacesList({
                 pathname,
                 lang,
                 spaceSlug: space.slug,
-              })
+              }) ?? `/${lang}/dho/${space.slug}/agreements`
             : '#';
 
           return (

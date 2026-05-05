@@ -360,6 +360,7 @@ export function AiLeftPanel() {
         lang,
         spaceSlug: space.slug,
       });
+      const safeHref = href ?? `/${lang}/dho/${space.slug}/agreements`;
       const recentSpaceIcon = resolveSpaceDisplayLogoUrl(
         space,
         resolvedTheme === 'dark' ? 'dark' : 'light',
@@ -374,7 +375,7 @@ export function AiLeftPanel() {
             className={MENU_BUTTON_CLASS}
           >
             <Link
-              href={href}
+              href={safeHref}
               aria-label={space.title}
               aria-current={isRecentActive ? 'page' : undefined}
               className={`${MENU_ROW_LINK_BASE_CLASS} ${

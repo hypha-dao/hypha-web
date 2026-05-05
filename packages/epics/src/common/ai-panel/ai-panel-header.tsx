@@ -167,11 +167,13 @@ export function AiPanelHeader({
       className="rounded-lg py-1.5 hover:bg-background-4/70"
     >
       <Link
-        href={getDhoSpaceContextPath({
-          pathname,
-          lang,
-          spaceSlug: space.slug,
-        })}
+        href={
+          getDhoSpaceContextPath({
+            pathname,
+            lang,
+            spaceSlug: space.slug,
+          }) ?? `/${lang}/dho/${space.slug}/agreements`
+        }
         className="flex min-w-0 items-center gap-2"
       >
         <span className="h-5 w-5 overflow-hidden rounded-full ring-1 ring-border/60">

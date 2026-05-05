@@ -56,24 +56,23 @@ export const MembersList: FC<MembersListProps> = ({
           </Link>
         ))}
       {entityFilter !== 'member' &&
-        spaces.data.map((space) => (
-          <Link
-            href={getDhoSpaceContextPath({
+        spaces.data.map((space) => {
+          const href =
+            getDhoSpaceContextPath({
               pathname,
               lang,
               spaceSlug: space.slug,
-            })}
-            key={space.slug}
-            scroll={false}
-            className="block"
-          >
-            <SpaceMemberCard
-              hostSpaceId={spaceId}
-              space={space}
-              isLoading={isLoading}
-            />
-          </Link>
-        ))}
+            }) ?? `/${lang}/dho/${space.slug}/agreements`;
+          return (
+            <Link href={href} key={space.slug} scroll={false} className="block">
+              <SpaceMemberCard
+                hostSpaceId={spaceId}
+                space={space}
+                isLoading={isLoading}
+              />
+            </Link>
+          );
+        })}
 
       {isLoading && (
         <>
