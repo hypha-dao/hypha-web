@@ -995,7 +995,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (isSpaceLoading) return;
 
     let cancelled = false;
-    const { joinRoom, createRoom, getRoomMessages, client } = matrixRef.current;
+    const { joinRoom, createRoom, getRoomMessages, loadRoomHistory, client } =
+      matrixRef.current;
 
     const initRoom = async () => {
       setIsJoining(true);
@@ -1064,6 +1065,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         joinedRef.current = spaceSlug;
         setRoomId(targetRoomId);
 
+        await loadRoomHistory(targetRoomId);
+        if (cancelled) return;
         const existing = getRoomMessages(targetRoomId);
         if (existing && !cancelled) {
           setMessages(
@@ -1207,6 +1210,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         if (cancelled) return;
         setRoomId(targetRoomId);
+        await matrixRef.current.loadRoomHistory(targetRoomId);
+        if (cancelled) return;
         const existing = matrixRef.current.getRoomMessages(targetRoomId);
         if (existing) {
           setMessages(

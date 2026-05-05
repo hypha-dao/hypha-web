@@ -82,7 +82,10 @@ export function HumanChatPanelInCallControls({
 
   return (
     <div
-      className="flex w-full items-center justify-center gap-1.5 sm:gap-2"
+      className={cn(
+        'flex items-center gap-1.5 sm:gap-2',
+        isFull ? 'w-full justify-center' : 'w-auto justify-start',
+      )}
       role="group"
       aria-label={t('callToolbarLabel')}
     >

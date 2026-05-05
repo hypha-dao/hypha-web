@@ -118,17 +118,16 @@ export const useCreateSpaceOrchestrator = ({
   authToken,
   config,
 }: UseCreateSpaceOrchestratorInput) => {
-  type CreateSpaceOrchestratorArg = Omit<
-    z.infer<typeof schemaCreateSpace>,
-    'ecosystemLogoUrlLight' | 'ecosystemLogoUrlDark'
-  > & {
-    ecosystemLogoUrlLight?: z.infer<
-      typeof schemaCreateSpaceFiles
-    >['ecosystemLogoUrlLight'];
-    ecosystemLogoUrlDark?: z.infer<
-      typeof schemaCreateSpaceFiles
-    >['ecosystemLogoUrlDark'];
-  };
+  type CreateSpaceOrchestratorArg = z.infer<typeof schemaCreateSpace> &
+    Partial<
+      Pick<
+        z.infer<typeof schemaCreateSpaceFiles>,
+        | 'logoUrl'
+        | 'leadImage'
+        | 'ecosystemLogoUrlLight'
+        | 'ecosystemLogoUrlDark'
+      >
+    >;
 
   const { createEvent } = useCreateEvent({ authToken });
   const { person } = useMe();
@@ -186,7 +185,7 @@ export const useCreateSpaceOrchestrator = ({
         arg: CreateSpaceOrchestratorArg;
       },
     ) => {
-      const web3SpaceId = (arg as any).web3SpaceId;
+      const web3SpaceId = arg.web3SpaceId;
       let web3SpaceIdResult: number | undefined = undefined;
       let web3Executor: string | undefined = undefined;
       let web2SpaceId: number | undefined = undefined;
@@ -198,10 +197,12 @@ export const useCreateSpaceOrchestrator = ({
       } = {};
 
       try {
-        const logoUrl = (arg as any).logoUrl;
-        const leadImage = (arg as any).leadImage;
-        const ecosystemLogoUrlLight = (arg as any).ecosystemLogoUrlLight;
-        const ecosystemLogoUrlDark = (arg as any).ecosystemLogoUrlDark;
+        const {
+          logoUrl,
+          leadImage,
+          ecosystemLogoUrlLight,
+          ecosystemLogoUrlDark,
+        } = arg;
 
         if (
           logoUrl ||
@@ -217,9 +218,10 @@ export const useCreateSpaceOrchestrator = ({
             uploadPromises.push(
               uploadImage([logoUrl]).then((result) => {
                 const uploadedUrl = getUploadResultUrl(result);
-                if (uploadedUrl) {
-                  uploadedFileUrls.logoUrl = uploadedUrl;
+                if (!uploadedUrl) {
+                  throw new Error('Upload failed: no URL returned for logoUrl');
                 }
+                uploadedFileUrls.logoUrl = uploadedUrl;
               }),
             );
           } else if (typeof logoUrl === 'string' && logoUrl) {
@@ -230,9 +232,12 @@ export const useCreateSpaceOrchestrator = ({
             uploadPromises.push(
               uploadImage([leadImage]).then((result) => {
                 const uploadedUrl = getUploadResultUrl(result);
-                if (uploadedUrl) {
-                  uploadedFileUrls.leadImage = uploadedUrl;
+                if (!uploadedUrl) {
+                  throw new Error(
+                    'Upload failed: no URL returned for leadImage',
+                  );
                 }
+                uploadedFileUrls.leadImage = uploadedUrl;
               }),
             );
           } else if (typeof leadImage === 'string' && leadImage) {
@@ -243,9 +248,12 @@ export const useCreateSpaceOrchestrator = ({
             uploadPromises.push(
               uploadImage([ecosystemLogoUrlLight]).then((result) => {
                 const uploadedUrl = getUploadResultUrl(result);
-                if (uploadedUrl) {
-                  uploadedFileUrls.ecosystemLogoUrlLight = uploadedUrl;
+                if (!uploadedUrl) {
+                  throw new Error(
+                    'Upload failed: no URL returned for ecosystemLogoUrlLight',
+                  );
                 }
+                uploadedFileUrls.ecosystemLogoUrlLight = uploadedUrl;
               }),
             );
           } else if (
@@ -259,9 +267,12 @@ export const useCreateSpaceOrchestrator = ({
             uploadPromises.push(
               uploadImage([ecosystemLogoUrlDark]).then((result) => {
                 const uploadedUrl = getUploadResultUrl(result);
-                if (uploadedUrl) {
-                  uploadedFileUrls.ecosystemLogoUrlDark = uploadedUrl;
+                if (!uploadedUrl) {
+                  throw new Error(
+                    'Upload failed: no URL returned for ecosystemLogoUrlDark',
+                  );
                 }
+                uploadedFileUrls.ecosystemLogoUrlDark = uploadedUrl;
               }),
             );
           } else if (
@@ -280,7 +291,7 @@ export const useCreateSpaceOrchestrator = ({
 
         startTask('CREATE_WEB3_SPACE');
 
-        const flags = (arg as any).flags ?? [];
+        const flags = arg.flags ?? [];
         const isSandbox = flags.includes('sandbox');
         const isDemo = flags.includes('demo');
         const isLive = !isDemo && !isSandbox;

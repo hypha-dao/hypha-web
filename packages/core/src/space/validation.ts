@@ -64,7 +64,11 @@ const isAcceptedSpaceLogoFile = (file: File) => {
 };
 
 const isAcceptedEcosystemLogoFile = (file: File) => {
-  if (DEFAULT_IMAGE_ACCEPT.includes(file.type)) {
+  const ecosystemLogoAccept =
+    ECOSYSTEM_LOGO_IMAGE_ACCEPT.length > 0
+      ? ECOSYSTEM_LOGO_IMAGE_ACCEPT
+      : DEFAULT_IMAGE_ACCEPT;
+  if (ecosystemLogoAccept.includes(file.type)) {
     return true;
   }
   return false;
