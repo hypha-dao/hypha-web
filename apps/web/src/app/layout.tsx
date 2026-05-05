@@ -28,6 +28,7 @@ import { TooltipProvider } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
 import {
   getEnableAiChat,
+  getEnableSpaceMemory,
   getEnableHumanChat,
 } from '@hypha-platform/feature-flags';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
@@ -109,6 +110,7 @@ export default async function RootLayout({
   const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
   const aiChatEnabled = await getEnableAiChat();
+  const spaceMemoryEnabled = await getEnableSpaceMemory();
   const humanChatEnabled = await getEnableHumanChat();
 
   return (
@@ -141,7 +143,13 @@ export default async function RootLayout({
                       <PanelWrapLayout
                         left={
                           aiChatEnabled
-                            ? { content: <AiLeftPanel /> }
+                            ? {
+                                content: (
+                                  <AiLeftPanel
+                                    enableSpaceMemory={spaceMemoryEnabled}
+                                  />
+                                ),
+                              }
                             : undefined
                         }
                         right={

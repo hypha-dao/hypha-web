@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { MessageCircle, Sparkles } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -108,24 +108,7 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, overlayVisible, toggle } = useAiPanel();
-  const t = useTranslations('AiPanel');
-  const isSpace = useIsSpaceContext();
-
-  if (!isSpace || open) return null;
-
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-expanded={overlayVisible}
-      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
-      title={t('openPanel')}
-      aria-label={t('openPanel')}
-    >
-      <Sparkles className="h-4 w-4" />
-    </button>
-  );
+  return null;
 }
 
 export function HumanSidebarTrigger() {
