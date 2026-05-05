@@ -666,6 +666,7 @@ export const SpaceForm = ({
                         'image/jpg': [],
                         'image/jpeg': [],
                         'image/webp': [],
+                        'image/svg+xml': [],
                       }}
                       className="w-full max-w-[14rem] rounded-md border border-border bg-muted/30"
                       imageClassName="object-contain bg-white p-2"
@@ -717,6 +718,7 @@ export const SpaceForm = ({
                         'image/jpg': [],
                         'image/jpeg': [],
                         'image/webp': [],
+                        'image/svg+xml': [],
                       }}
                       className="w-full max-w-[14rem] rounded-md border border-border bg-muted/30"
                       imageClassName="object-contain bg-white p-2"

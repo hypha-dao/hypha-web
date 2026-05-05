@@ -17,12 +17,28 @@ type GetDhoSpaceContextPathParams = {
   spaceSlug: string;
 };
 
+export function getDhoSpaceContextPath(
+  params: Omit<GetDhoSpaceContextPathParams, 'pathname'> & { pathname: string },
+): string;
+export function getDhoSpaceContextPath(
+  params: Omit<GetDhoSpaceContextPathParams, 'pathname'> & {
+    pathname: null | undefined;
+  },
+): null | undefined;
 export function getDhoSpaceContextPath({
   pathname,
   lang,
   spaceSlug,
 }: GetDhoSpaceContextPathParams) {
-  const match = pathname?.match(/^\/[^/]+\/dho\/[^/]+(?:\/([^/]+))?/);
+  if (pathname == null) {
+    return pathname;
+  }
+
+  const match = pathname.match(/^\/[^/]+\/dho\/[^/]+(?:\/([^/]+))?/);
+  if (!match) {
+    return pathname;
+  }
+
   const nextSegment = match?.[1];
   const activeTab =
     nextSegment && VALID_DHO_TABS.has(nextSegment) ? nextSegment : 'agreements';

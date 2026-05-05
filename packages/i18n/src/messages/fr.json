@@ -329,6 +329,7 @@
     "onVoting": "En vote",
     "accepted": "Acceptés",
     "rejected": "Rejetés",
+    "newProposal": "Nouvelle proposition",
     "searchDocuments": "Rechercher des documents",
     "listIsEmpty": "La liste est vide"
   },
@@ -845,6 +846,7 @@
     "ecosystemLogoLightDescription": "Téléversez un logo clair pour votre écosystème (PNG, JPG, GIF ou WEBP).",
     "ecosystemLogoDarkDescription": "Téléversez un logo sombre pour votre écosystème (PNG, JPG, GIF ou WEBP).",
     "search": "Rechercher...",
+    "noSpacesFound": "Aucun espace trouvé",
     "addYourUrl": "Ajoutez votre URL",
     "exchangeDepositProposalTitleBanner": "Finaliser la part de cet espace dans l'échange",
     "exchangeDepositProposalBody": "Une proposition d'échange désigne cet espace comme contrepartie (escrow #{escrowId}). Créez une proposition pour déposer <send></send> et recevoir <receive></receive> de l'autre partie.",
@@ -874,7 +876,8 @@
       "contribution": "Contribution",
       "expenses": "Dépenses",
       "funding": "Financement",
-      "investment": "Investissement"
+      "investment": "Investissement",
+      "exchange": "Échange"
     },
     "documentBadges": {
       "invite": "Invitation",
@@ -1478,7 +1481,8 @@
         "source": "Source",
         "sourcePlaceholder": "Sélectionner la source",
         "sourceMint": "Frapper de nouveaux tokens",
-        "sourceTreasury": "Utiliser les tokens disponibles en trésorerie"
+        "sourceTreasury": "Utiliser les tokens disponibles en trésorerie",
+        "escrowNotice": "Cette proposition utilise un séquestre pour l’investissement. Une fois approuvée, l’investisseur ({investor}) dépose sa part sur le séquestre depuis son profil ou la page de l’espace, et le dépôt de {activeSpace} est effectué lorsque la proposition est approuvée et exécutée."
       },
       "acceptInvestmentForm": {
         "notMemberRevert": "La chaîne a rejeté la transaction : le portefeuille connecté n’est pas membre ou délégué de cet espace. Utilisez un portefeuille du bon espace ou connectez-vous en tant que délégué.",
@@ -1508,6 +1512,35 @@
         "percentageMin": "Le pourcentage doit être au moins de 0",
         "percentageMax": "Le pourcentage doit être au maximum de 100",
         "typePercentage": "Saisir un pourcentage"
+      },
+      "exchangeStakesAndTokens": {
+        "avatarAlt": "Avatar",
+        "buyer": "Acheteur (adresse du portefeuille)",
+        "buyerFallback": "acheteur",
+        "buyerWillSend": "L’acheteur enverra",
+        "copyWalletAddress": "Copier l’adresse du portefeuille",
+        "errors": {
+          "buyerAmountTooSmall": "Le montant est trop faible pour les décimales de ce token. Essayez une valeur plus élevée.",
+          "escrowTokenInvalid": "Une ligne de token utilise l’adresse du contrat de séquestre. Utilisez le contrat ERC-20 du token pour les tokens du vendeur et de l’acheteur.",
+          "insufficientSellerBalance": "Le portefeuille connecté ne possède pas assez de tokens vendeur. Approvisionnez le smart wallet correspondant à l’adresse du vendeur.",
+          "memberSellerWalletMismatch": "Le financement de l’échange utilise votre portefeuille connecté. Connectez le même portefeuille que l’adresse du vendeur, ou choisissez le membre vendeur dont l’adresse correspond à votre portefeuille.",
+          "safeErc20TransferFailed": "Le contrat du token a rejeté le transfert vers le séquestre (souvent à cause du solde, d’une allowance ou de règles de non-transférabilité). Vérifiez que votre smart wallet dispose de suffisamment de tokens et que le token autorise les transferts vers le séquestre.",
+          "sellerAmountExceedsBalance": "Le montant saisi est supérieur au solde disponible du vendeur.",
+          "sellerAmountTooSmall": "Le montant est trop faible pour les décimales de ce token. Essayez une valeur plus élevée.",
+          "sellerBalanceCheckFailed": "Impossible de vérifier le solde du vendeur. Vérifiez votre connexion et réessayez.",
+          "sellerTreasuryUnavailable": "Impossible de charger la trésorerie de l’espace. Attendez les données on-chain puis réessayez.",
+          "tokenWhitelistBlocked": "Les règles on-chain de ce token bloquent l’envoi vers le séquestre (par ex. liste blanche transfert/réception). Choisissez un autre token ou mettez à jour la configuration de liste blanche du token."
+        },
+        "escrowAccountAddress": "Adresse du compte séquestre",
+        "escrowNotice": "Cette proposition utilise un séquestre pour l’échange. Une fois approuvée, chaque membre dépose sa part sur le séquestre depuis son profil ; si {activeSpace} fait partie des parties, son dépôt est effectué lorsque la proposition est approuvée et exécutée.",
+        "loadingTokens": "Chargement des tokens...",
+        "personAvatarAlt": "Avatar de {name}",
+        "seller": "Vendeur (adresse du portefeuille)",
+        "sellerFallback": "vendeur",
+        "sellerWillSend": "Le vendeur envoie",
+        "spaceFallback": "espace",
+        "spaceLogoAlt": "Logo de {name}",
+        "tokenAlt": "Token"
       }
     },
     "createActionForms": {
@@ -1551,7 +1584,8 @@
       "transparencySettings": "Paramètres de transparence",
       "decaySettings": "Paramètres de décroissance",
       "fromWhitelist": "À partir de la liste blanche",
-      "toWhitelist": "Vers la liste blanche"
+      "toWhitelist": "Vers la liste blanche",
+      "mutualCredit": "Crédit mutuel"
     },
     "labels": {
       "unknown": "Inconnu",
@@ -1942,6 +1976,8 @@
     "callSearchComingSoon": "Rechercher dans le chat — bientôt",
     "callActiveInSpace": "Appel d’espace (tout le monde dans cet espace peut rejoindre)",
     "callConnecting": "Connexion…",
+    "callRemoteParticipantMediaStalled": "En attente de l’audio/vidéo — vérifiez le réseau ou quittez puis rejoignez.",
+    "callRemoteMediaStallHint": "D’autres sont listés dans l’appel mais leur audio/vidéo n’arrive pas — souvent réseau ou navigateur. Quittez puis rejoignez, ou changez de réseau.",
     "callDisconnecting": "Sortie de l’appel…",
     "callLeave": "Quitter",
     "callMute": "Couper le micro",
@@ -1960,6 +1996,7 @@
     "callErrorPermission": "Accès refusé à la caméra ou au micro. Vérifiez les paramètres du navigateur.",
     "callErrorPermissionGuidance": "Mettez à jour les autorisations caméra/micro de ce site dans les paramètres du navigateur, puis réessayez ici.",
     "callErrorGeneric": "Impossible de démarrer l’appel. Réessayez.",
+    "callErrorConnectStall": "L’appel n’a pas pu se connecter. Cela vient souvent d’une configuration TURN Matrix manquante ou d’un réseau restrictif.",
     "callErrorNotReady": "Le serveur d’appel n’est pas prêt. Patientez, puis réessayez.",
     "callErrorNoClient": "Vous n’êtes pas connecté au chat. Vérifiez votre connexion, puis réessayez.",
     "callErrorNoRoom": "Cette conversation n’est pas disponible. Retournez à l’espace, puis réessayez.",
@@ -1988,6 +2025,8 @@
     "callParticipantMicOff": "Micro coupé",
     "callLeftAudio": "Vous avez quitté l'appel vocal.",
     "callLeftVideo": "Vous avez quitté l'appel vidéo.",
+    "callLeftAudioIdle": "Vous avez quitté l'appel vocal — personne d'autre ne s'est joint après un moment.",
+    "callLeftVideoIdle": "Vous avez quitté l'appel vidéo — personne d'autre ne s'est joint après un moment.",
     "callLeftBannerDismiss": "Fermer",
     "callPaneResizeSharePeople": "Redimensionner partage d’écran et personnes",
     "callPaneResizeShareStrip": "Redimensionner partage d’écran et film",
@@ -2009,7 +2048,7 @@
     "searchConversation": "Rechercher une conversation",
     "hideArchived": "Masquer les archivés",
     "messageCount": "{count, plural, one {# message} other {# messages}}",
-    "priorityVisualAlt": "Niveau de priorité",
+    "priorityVisualAlt": "Niveau de priorité {priority}",
     "typeSignalBannerAlt": "Signal {type}, priorité {priority}",
     "unarchiveConversation": "Désarchiver la conversation",
     "unarchiveConfirm": "Voulez-vous vraiment désarchiver cette conversation ?",
@@ -2047,6 +2086,11 @@
     "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace",
     "spaceMemoryContext": "Depuis «{title}» · {state}",
     "spaceMemoryContextMatrix": "Depuis le chat Matrix",
+    "spaceMemoryContextCallTranscript": "Transcription d'appel (mémoire organisationnelle)",
+    "spaceMemoryContextCallRecording": "Enregistrement d'appel (mémoire organisationnelle)",
+    "spaceMemoryCallTranscriptExcerpt": "Transcription",
+    "spaceMemoryCallRecordingNoUrl": "L’enregistrement sera disponible lorsqu’une URL média sera ingérée pour cette session.",
+    "spaceMemoryCallArtifactNote": "Les souvenirs d’appel apparaissent lorsque l’enregistrement ou la transcription se termine pour cet espace (voir le pipeline d’équipe).",
     "spaceMemoryMatrixPreviewNeedsChat": "L’aperçu nécessite Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Ouvrez Human Chat pour connecter Matrix, puis actualisez la mémoire d’espace pour ouvrir ce fichier.",
     "spaceMemoryMatrixVideoPlayHint": "Appuyez pour lire l’aperçu",

@@ -23,6 +23,10 @@ import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { useTranslations } from 'next-intl';
 import { mutate } from 'swr';
 
+const normalizeNullableUrl = (
+  value: string | null | undefined,
+): string | undefined => value ?? undefined;
+
 export default function SpaceConfiguration() {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -45,13 +49,6 @@ export default function SpaceConfiguration() {
 
   const pathname = usePathname();
   const closeUrl = pathname.replace(/\/space-configuration$/, '');
-
-  const normalizeNullableThemeLogoUrl = (
-    value: string | null | undefined,
-  ): string | undefined => value ?? undefined;
-  const normalizeNullableFileUrl = (
-    value: string | null | undefined,
-  ): string | undefined => value ?? undefined;
 
   const submitForm = React.useCallback(
     async (
@@ -93,12 +90,12 @@ export default function SpaceConfiguration() {
                   description: description as string | undefined,
                   address: address as string | undefined,
                   web3SpaceId: web3SpaceId as number | undefined,
-                  logoUrl: normalizeNullableFileUrl(updates.logoUrl),
-                  leadImage: normalizeNullableFileUrl(updates.leadImage),
-                  ecosystemLogoUrlLight: normalizeNullableThemeLogoUrl(
+                  logoUrl: normalizeNullableUrl(updates.logoUrl),
+                  leadImage: normalizeNullableUrl(updates.leadImage),
+                  ecosystemLogoUrlLight: normalizeNullableUrl(
                     updates.ecosystemLogoUrlLight,
                   ),
-                  ecosystemLogoUrlDark: normalizeNullableThemeLogoUrl(
+                  ecosystemLogoUrlDark: normalizeNullableUrl(
                     updates.ecosystemLogoUrlDark,
                   ),
                 },
@@ -128,12 +125,12 @@ export default function SpaceConfiguration() {
                   description: description as string | undefined,
                   address: address as string | undefined,
                   web3SpaceId: web3SpaceId as number | undefined,
-                  logoUrl: normalizeNullableFileUrl(updates.logoUrl),
-                  leadImage: normalizeNullableFileUrl(updates.leadImage),
-                  ecosystemLogoUrlLight: normalizeNullableThemeLogoUrl(
+                  logoUrl: normalizeNullableUrl(updates.logoUrl),
+                  leadImage: normalizeNullableUrl(updates.leadImage),
+                  ecosystemLogoUrlLight: normalizeNullableUrl(
                     updates.ecosystemLogoUrlLight,
                   ),
-                  ecosystemLogoUrlDark: normalizeNullableThemeLogoUrl(
+                  ecosystemLogoUrlDark: normalizeNullableUrl(
                     updates.ecosystemLogoUrlDark,
                   ),
                 },
@@ -145,10 +142,15 @@ export default function SpaceConfiguration() {
             id: space.id,
             data: normalizedUpdatedSpace,
           });
-          await Promise.all([
-            mutate('/api/v1/spaces?parentOnly=false'),
-            mutate(`/api/v1/spaces?slugs=${normalizedUpdatedSpace.slug}`),
-          ]);
+          const mutateRequests = [mutate('/api/v1/spaces?parentOnly=false')];
+          if (normalizedUpdatedSpace.slug) {
+            mutateRequests.push(
+              mutate(
+                `/api/v1/spaces?slugs=${normalizedUpdatedSpace.slug}&parentOnly=false`,
+              ),
+            );
+          }
+          await Promise.all(mutateRequests);
         }
       } catch (e) {
         console.warn(e);

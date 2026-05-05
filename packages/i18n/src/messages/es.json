@@ -552,7 +552,8 @@
         "source": "Origen",
         "sourcePlaceholder": "Seleccionar origen",
         "sourceMint": "Acuñar nuevos tokens",
-        "sourceTreasury": "Usar tokens disponibles en la tesorería"
+        "sourceTreasury": "Usar tokens disponibles en la tesorería",
+        "escrowNotice": "Esta propuesta usa depósito en garantía para la inversión. Una vez aprobada, el inversor ({investor}) deposita su parte en garantía desde su perfil o la página del espacio, y el depósito de {activeSpace} se realiza cuando la propuesta se aprueba y ejecuta."
       },
       "acceptInvestmentForm": {
         "notMemberRevert": "La cadena rechazó la transacción: la cartera conectada no es miembro ni delegado de este espacio. Usa una cartera del espacio o conéctate como delegado.",
@@ -565,6 +566,35 @@
         "percentageMin": "El porcentaje debe ser al menos 0",
         "percentageMax": "El porcentaje debe ser como máximo 100.",
         "typePercentage": "Escribe un porcentaje"
+      },
+      "exchangeStakesAndTokens": {
+        "avatarAlt": "Avatar",
+        "buyer": "Comprador (dirección de billetera)",
+        "buyerFallback": "comprador",
+        "buyerWillSend": "El comprador enviará",
+        "copyWalletAddress": "Copiar dirección de billetera",
+        "errors": {
+          "buyerAmountTooSmall": "El monto es demasiado pequeño para los decimales de este token. Prueba un valor mayor.",
+          "escrowTokenInvalid": "Una fila de token usa la dirección del contrato de escrow. Usa el contrato ERC-20 del token para los tokens del vendedor y del comprador.",
+          "insufficientSellerBalance": "La billetera conectada no tiene suficientes tokens del vendedor. Fondea la smart wallet que coincide con la dirección del vendedor.",
+          "memberSellerWalletMismatch": "La financiación del intercambio usa tu billetera conectada. Conecta la misma billetera que la dirección del vendedor, o elige al miembro vendedor cuya dirección coincida con tu billetera.",
+          "safeErc20TransferFailed": "El contrato del token rechazó la transferencia al escrow (normalmente por saldo, allowance o reglas de no transferibilidad). Verifica que tu smart wallet tenga suficientes tokens y que el token permita transferencias al escrow.",
+          "sellerAmountExceedsBalance": "El monto ingresado es mayor que el saldo disponible del vendedor.",
+          "sellerAmountTooSmall": "El monto es demasiado pequeño para los decimales de este token. Prueba un valor mayor.",
+          "sellerBalanceCheckFailed": "No se pudo verificar el saldo del vendedor. Revisa tu conexión e inténtalo de nuevo.",
+          "sellerTreasuryUnavailable": "No se pudo cargar la tesorería del espacio. Espera los datos de la cadena e inténtalo de nuevo.",
+          "tokenWhitelistBlocked": "Las reglas on-chain de este token bloquean el envío al escrow (por ejemplo, listas blancas de transferencia/recepción). Elige otro token o actualiza la configuración de listas blancas del token."
+        },
+        "escrowAccountAddress": "Dirección de la cuenta de depósito en garantía",
+        "escrowNotice": "Esta propuesta usa depósito en garantía para el intercambio. Una vez aprobada, cada miembro deposita su parte en garantía desde su perfil; si {activeSpace} es una de las partes, su depósito se realiza cuando la propuesta se aprueba y ejecuta.",
+        "loadingTokens": "Cargando tokens...",
+        "personAvatarAlt": "Avatar de {name}",
+        "seller": "Vendedor (dirección de billetera)",
+        "sellerFallback": "vendedor",
+        "sellerWillSend": "El vendedor envía",
+        "spaceFallback": "espacio",
+        "spaceLogoAlt": "{name} logo",
+        "tokenAlt": "Token"
       }
     },
     "labels": {
@@ -585,7 +615,8 @@
       "contribution": "Contribución",
       "expenses": "Gastos",
       "funding": "Fondos",
-      "investment": "Inversión"
+      "investment": "Inversión",
+      "exchange": "Intercambio"
     },
     "documentBadges": {
       "invite": "Invitación",
@@ -988,6 +1019,7 @@
     "onVoting": "Sobre la votación",
     "accepted": "Aceptado",
     "rejected": "Rechazado",
+    "newProposal": "Nueva propuesta",
     "searchDocuments": "Buscar documentos",
     "listIsEmpty": "La lista está vacía"
   },
@@ -1504,6 +1536,7 @@
     "ecosystemLogoLightDescription": "Sube un logo en modo claro para tu ecosistema (PNG, JPG, GIF o WEBP).",
     "ecosystemLogoDarkDescription": "Sube un logo en modo oscuro para tu ecosistema (PNG, JPG, GIF o WEBP).",
     "search": "Buscar...",
+    "noSpacesFound": "No se encontraron espacios",
     "addYourUrl": "Añade tu URL",
     "exchangeDepositProposalTitleBanner": "Completa la parte de este espacio en el intercambio",
     "exchangeDepositProposalBody": "Una propuesta de intercambio incluye a este espacio como contraparte (escrow #{escrowId}). Crea una propuesta para depositar <send></send> y recibir <receive></receive> de la otra parte.",
@@ -1551,7 +1584,8 @@
       "transparencySettings": "Configuración de transparencia",
       "decaySettings": "Configuración de decadencia",
       "fromWhitelist": "De la lista blanca",
-      "toWhitelist": "A la lista blanca"
+      "toWhitelist": "A la lista blanca",
+      "mutualCredit": "Crédito mutuo"
     },
     "labels": {
       "unknown": "Desconocido",
@@ -1747,7 +1781,7 @@
       "agreements": "¿Qué acuerdos existen en este espacio?",
       "structure": "Describe la estructura de este espacio"
     },
-    "welcome": "¡Hola! Soy tu asistente AI de {spaceName}. Puedo buscar detalles del espacio como número de miembros, acuerdos y estructura. Pregúntame lo que quieras sobre el espacio que estás viendo.",
+    "welcome": "¡Hola! Soy tu asistente de Hypha AI para {spaceName}. Puedo buscar detalles del espacio como número de miembros, acuerdos y estructura. Pregúntame lo que quieras sobre el espacio que estás viendo.",
     "placeholder": "Pregunta a Hypha AI...",
     "sendButton": "Enviar",
     "stopButton": "Detener",
@@ -1756,7 +1790,7 @@
     "signInButton": "Iniciar sesión",
     "loading": "Cargando...",
     "openPanel": "Abrir Hypha AI",
-    "hidePanel": "Ocultar panel AI",
+    "hidePanel": "Ocultar panel de Hypha AI",
     "resetChat": "Reiniciar chat",
     "closePanel": "Cerrar panel",
     "copyButton": "Copiar",
@@ -1942,6 +1976,8 @@
     "callSearchComingSoon": "Buscar en el chat — próximamente",
     "callActiveInSpace": "Llamada del espacio (todos en este espacio pueden unirse)",
     "callConnecting": "Conectando…",
+    "callRemoteParticipantMediaStalled": "Esperando audio/vídeo — comprueba la red o sal y vuelve a unirte.",
+    "callRemoteMediaStallHint": "Hay otras personas en la llamada pero no llega su audio/vídeo; suele ser red o navegador. Sal y vuelve a unirte o cambia de red.",
     "callDisconnecting": "Saliendo de la llamada…",
     "callLeave": "Salir",
     "callMute": "Silenciar micrófono",
@@ -1960,6 +1996,7 @@
     "callErrorPermission": "Se denegó el acceso a la cámara o al micrófono. Revisa la configuración del navegador.",
     "callErrorPermissionGuidance": "Actualiza los permisos de cámara y micrófono de este sitio en la configuración del navegador e inténtalo de nuevo aquí.",
     "callErrorGeneric": "No se pudo iniciar la llamada. Inténtalo de nuevo.",
+    "callErrorConnectStall": "La llamada no pudo conectarse. A menudo se debe a que falta la configuración del servidor TURN de Matrix o a una red restrictiva.",
     "callErrorNotReady": "El servidor de llamadas aún no está listo. Espera un momento e inténtalo de nuevo.",
     "callErrorNoClient": "No estás conectado al chat. Revisa la conexión e inténtalo de nuevo.",
     "callErrorNoRoom": "Esta conversación no está disponible. Vuelve al espacio e inténtalo de nuevo.",
@@ -1988,6 +2025,8 @@
     "callParticipantMicOff": "Micrófono desactivado",
     "callLeftAudio": "Has salido de la llamada de voz.",
     "callLeftVideo": "Has salido de la videollamada.",
+    "callLeftAudioIdle": "Has salido de la llamada de voz — nadie más se unió después de un tiempo.",
+    "callLeftVideoIdle": "Has salido de la videollamada — nadie más se unió después de un tiempo.",
     "callLeftBannerDismiss": "Cerrar",
     "callPaneResizeSharePeople": "Redimensionar pantalla y personas",
     "callPaneResizeShareStrip": "Redimensionar pantalla y tira de vídeo",
@@ -2105,7 +2144,12 @@
       "Capacity": "Capacidad",
       "Network": "Red",
       "Reputation": "Reputación"
-    }
+    },
+    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
+    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
+    "spaceMemoryCallTranscriptExcerpt": "Transcript",
+    "spaceMemoryContextCallRecording": "Grabación de llamada (memoria organizacional)",
+    "spaceMemoryContextCallTranscript": "Transcripción de llamada (memoria organizacional)"
   },
   "SignalCard": {
     "noConversationRoom": "Aún no hay sala de conversación",

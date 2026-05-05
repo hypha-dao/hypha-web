@@ -45,6 +45,8 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
     <div className="flex flex-col w-full justify-center items-center gap-4">
       <div className="flex w-full justify-end">
         <Input
+          type="search"
+          aria-label={tTreasury('searchTransactions')}
           className="w-full xl:w-[22rem]"
           placeholder={tTreasury('searchTransactions')}
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}

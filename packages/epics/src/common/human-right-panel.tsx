@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Minimize2 } from 'lucide-react';
 import {
+  ClientEvent,
   RoomStateEvent,
   type MatrixClient,
   type MatrixEvent,
@@ -57,6 +58,10 @@ import {
   isChatPanelVideoFile,
 } from './human-chat-panel/chat-panel-media-types';
 import { UseMembers } from '../spaces';
+import {
+  UserSpaceState,
+  useUserSpaceState,
+} from '../spaces/hooks/use-user-space-state';
 
 import {
   HumanChatPanelHeader,
@@ -86,13 +91,22 @@ import {
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
-import { computeHumanChatUnreadState } from './human-chat-panel/matrix-chat-unread';
 import {
+  computeAggregateUnreadMentionCount,
+  computeHumanChatUnreadState,
+} from './human-chat-panel/matrix-chat-unread';
+import {
+  looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   shortenMatrixIdForDisplay,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
+import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
+import {
+  sanitizeMentionDisplayLabel,
+  wireComposerPlainForMatrixSend,
+} from './human-chat-panel/human-chat-display-mention';
 import { Empty } from './empty';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
@@ -108,6 +122,39 @@ function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
       URL.revokeObjectURL(a.previewUrl);
     }
   }
+}
+
+/** Sanitized labels shared by multiple members need a disambiguated composer token + map key. */
+function computeDuplicateSanitizedDisplayKeys(
+  mentionLabelByUserId: ReadonlyMap<string, string>,
+): Set<string> {
+  const counts = new Map<string, number>();
+  for (const label of mentionLabelByUserId.values()) {
+    const k = sanitizeMentionDisplayLabel(label);
+    if (!k) continue;
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  const dup = new Set<string>();
+  for (const [k, n] of counts) {
+    if (n > 1) dup.add(k);
+  }
+  return dup;
+}
+
+function disambiguatedMentionTokenKey(
+  userId: string,
+  displayLabel: string,
+  duplicateKeys: ReadonlySet<string>,
+): string {
+  let key = sanitizeMentionDisplayLabel(displayLabel);
+  if (!key) return '';
+  if (!duplicateKeys.has(key)) return key;
+  const stem = shortenMatrixIdForDisplay(userId).replace(/^@/, '').trim();
+  const short =
+    stem.length <= 26 ? stem : `${stem.slice(0, 12)}…${stem.slice(-8)}`;
+  key = sanitizeMentionDisplayLabel(`${displayLabel} (${short})`);
+  if (!key) return sanitizeMentionDisplayLabel(userId);
+  return key;
 }
 
 type UIMessage = {
@@ -168,6 +215,84 @@ type EditDraft = {
 };
 
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
+
+const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
+const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
+const CHAT_HISTORY_MAX_ITEMS = 250;
+
+type PersistedUIMessage = Omit<UIMessage, 'timestamp'> & {
+  timestamp?: string;
+};
+
+function readPersistedChatHistory(roomId: string): UIMessage[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.sessionStorage.getItem(
+      `${CHAT_HISTORY_SESSION_PREFIX}${roomId}`,
+    );
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as PersistedUIMessage[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.slice(-CHAT_HISTORY_MAX_ITEMS).map((m) => ({
+      ...m,
+      timestamp: m.timestamp ? new Date(m.timestamp) : undefined,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function writePersistedChatHistory(
+  roomId: string,
+  messages: UIMessage[],
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const payload: PersistedUIMessage[] = messages
+      .slice(-CHAT_HISTORY_MAX_ITEMS)
+      .map((m) => ({
+        ...m,
+        timestamp: m.timestamp?.toISOString(),
+      }));
+    window.sessionStorage.setItem(
+      `${CHAT_HISTORY_SESSION_PREFIX}${roomId}`,
+      JSON.stringify(payload),
+    );
+  } catch {
+    // ignore
+  }
+}
+
+/** Reverse map for navigating from Matrix room id → DHO space slug (localStorage). */
+function readRoomIdToSpaceSlugFromStorage(): Map<string, string> {
+  const m = new Map<string, string>();
+  if (typeof window === 'undefined') return m;
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (!key?.startsWith(ROOM_STORAGE_KEY)) continue;
+      const slug = key.slice(ROOM_STORAGE_KEY.length);
+      if (!slug) continue;
+      const rid = window.localStorage.getItem(key)?.trim();
+      if (rid) m.set(rid, slug);
+    }
+  } catch {
+    // ignore
+  }
+  return m;
+}
+
+function rememberRoomToSpaceSlugSession(roomId: string, slug: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(
+      `${SESSION_ROOM_TO_SPACE_PREFIX}${roomId}`,
+      slug,
+    );
+  } catch {
+    // ignore
+  }
+}
 
 /**
  * Get a persisted room ID for a space slug from localStorage.
@@ -477,8 +602,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   });
   const spaceMembers = spaceMembersResult?.data ?? [];
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
+  const { userState: userSpaceState, isLoading: isUserSpaceStateLoading } =
+    useUserSpaceState({
+      spaceSlug,
+      space,
+    });
   const { updateSpaceBySlug } = useSpaceMutationsWeb2Rsc(authToken);
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+
+  const hasSpaceChatAccess = userSpaceState === UserSpaceState.LOGGED_IN_SPACE;
+  const blockSpaceChatForMembership =
+    mode === 'space' && !isUserSpaceStateLoading && !hasSpaceChatAccess;
 
   const authTokenRef = useRef(authToken);
   authTokenRef.current = authToken;
@@ -496,6 +630,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   currentUserAvatarUrlRef.current = currentUserAvatarUrl;
 
   const [input, setInput] = useState('');
+  /** Hypha-resolved names from the mention picker (may differ from Matrix fallback displayLabel). */
+  const [mentionDisplayOverride, setMentionDisplayOverride] = useState<
+    Record<string, string>
+  >({});
+
   const [draftAttachments, setDraftAttachments] = useState<
     ChatDraftAttachment[]
   >([]);
@@ -505,9 +644,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const sendOperationTokenRef = useRef<symbol | null>(null);
   const sendAbortControllerRef = useRef<AbortController | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
+  /** Coalesce Matrix timeline bursts into one React commit per frame (sync backfills). */
+  const timelineFlushRafRef = useRef<number | null>(null);
+  const pendingTimelineRedactIdsRef = useRef<Set<string>>(new Set());
+  const pendingTimelineMessagesRef = useRef<Map<string, Message>>(new Map());
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
+  const replyDraftRef = useRef(replyDraft);
+  replyDraftRef.current = replyDraft;
+  const editDraftRef = useRef(editDraft);
+  editDraftRef.current = editDraft;
   const [roomId, setRoomId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMentionDisplayOverride({});
+  }, [roomId]);
+
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState<string | null>(null);
@@ -526,8 +678,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     filmstrip: readCallFullViewPaneSplit('filmstrip'),
     speakerOnTop: readCallFullViewPaneSplit('speakerOnTop'),
   }));
-  const [callLeftMessage, setCallLeftMessage] = useState<string | null>(null);
+  const [callPopupOffset, setCallPopupOffset] = useState({ x: 0, y: 0 });
+  const callPopupDragStateRef = useRef<{
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    startOffsetX: number;
+    startOffsetY: number;
+  } | null>(null);
+  const [isDraggingCallPopup, setIsDraggingCallPopup] = useState(false);
   const callFullViewSplitContainerRef = useRef<HTMLDivElement | null>(null);
+  const callFullViewDialogRef = useRef<HTMLDivElement | null>(null);
   /**
    * `HumanChatPanelCallStage` only mounts the expand control when
    * `layout === "panel" && !fullViewOpen`, so this ref is set on the open
@@ -546,6 +707,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }>(null);
   const joinedRef = useRef<string | null>(null);
   const [unreadBump, setUnreadBump] = useState(0);
+  const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
 
   const currentUserId = client?.getUserId?.() ?? null;
@@ -555,6 +717,38 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   roomIdRef.current = roomId;
   const matrixClientRef = useRef(client);
   matrixClientRef.current = client;
+  const resetChatStateOnAuthDrop = useCallback(() => {
+    const activeRoomId = roomIdRef.current;
+    if (activeRoomId) {
+      matrixRef.current.unregisterRoomListener(activeRoomId);
+    }
+    joinedRef.current = null;
+    setRoomId(null);
+    setMessages([]);
+    setInput('');
+    disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+    setDraftAttachments([]);
+    setReplyDraft(null);
+    setEditDraft(null);
+    setError(null);
+    setReactionError(null);
+    setComposerError(null);
+    setDeleteError(null);
+    setSendingPending(null);
+    setCallFullViewOpen(false);
+  }, [setCallFullViewOpen]);
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (isAuthenticated) return;
+    resetChatStateOnAuthDrop();
+  }, [isAuthLoading, isAuthenticated, resetChatStateOnAuthDrop]);
+
+  useEffect(() => {
+    if (!isMatrixAvailable) return;
+    if (isMatrixAuthenticated) return;
+    resetChatStateOnAuthDrop();
+  }, [isMatrixAvailable, isMatrixAuthenticated, resetChatStateOnAuthDrop]);
 
   const {
     callState: spaceCallState,
@@ -582,6 +776,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     tabBackgroundWhileInCall: spaceCallTabBackground,
     retryFromError: retrySpaceCall,
     dismissCallError: dismissSpaceCallError,
+    remoteMediaStall: spaceCallRemoteMediaStall,
+    dismissRemoteMediaStallBanner: dismissSpaceCallRemoteMediaStall,
   } = useSpaceGroupCall(mode === 'space' ? roomId : null);
 
   const callUiEnabled = useMemo(
@@ -589,8 +785,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       mode === 'space' &&
       Boolean(roomId) &&
       isMatrixAvailable &&
+      isMatrixAuthenticated &&
+      hasSpaceChatAccess,
+    [
+      mode,
+      roomId,
+      isMatrixAvailable,
       isMatrixAuthenticated,
-    [mode, roomId, isMatrixAvailable, isMatrixAuthenticated],
+      hasSpaceChatAccess,
+    ],
   );
 
   const inSpaceCall =
@@ -599,13 +802,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'initializing';
 
-  useEffect(() => {
-    if (inSpaceCall) setCallLeftMessage(null);
-  }, [inSpaceCall]);
-
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
   const showAuthedUi = !isAuthLoading && isAuthenticated;
   const showAuthPrompt = !isAuthLoading && !isAuthenticated;
+
+  /** Distinct Matrix users in the room call besides the current user (not device count). */
+  const spaceCallOtherMemberCount = useMemo(
+    () =>
+      spaceCallInCallUserIds.filter((id) => id && id !== currentUserId).length,
+    [spaceCallInCallUserIds, currentUserId],
+  );
 
   const spaceCallShowJoinChime = useMemo(
     () => callUiEnabled && spaceCallShowJoinStrip && !inSpaceCall,
@@ -635,17 +841,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'connecting';
 
-  const clearCallLeftBanner = useCallback(() => {
-    setCallLeftMessage(null);
-  }, []);
-
   const handleCallAudio = useCallback(() => {
-    setCallLeftMessage(null);
     void enterSpaceCallAudio();
   }, [enterSpaceCallAudio]);
 
   const handleCallVideo = useCallback(() => {
-    setCallLeftMessage(null);
     void enterSpaceCallVideo();
   }, [enterSpaceCallVideo]);
 
@@ -658,10 +858,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const handleCallLeave = useCallback(() => {
-    const k = spaceCallKind;
     void leaveSpaceCall();
-    setCallLeftMessage(k === 'video' ? t('callLeftVideo') : t('callLeftAudio'));
-  }, [leaveSpaceCall, spaceCallKind, t]);
+  }, [leaveSpaceCall]);
+
+  /** End ghost sessions: when connected and no other participants for 5 minutes, leave locally. */
+  useEffect(() => {
+    if (!callUiEnabled || spaceCallState !== 'connected') return;
+    if (spaceCallOthersInRoom > 0 || spaceCallRoomGroupDeviceCount === 0)
+      return;
+
+    const SOLO_IDLE_LEAVE_MS = 5 * 60 * 1000;
+    const id = window.setTimeout(() => {
+      void leaveSpaceCall();
+    }, SOLO_IDLE_LEAVE_MS);
+
+    return () => window.clearTimeout(id);
+  }, [
+    callUiEnabled,
+    spaceCallState,
+    spaceCallOthersInRoom,
+    spaceCallRoomGroupDeviceCount,
+    leaveSpaceCall,
+  ]);
 
   const handleCallToggleMic = useCallback(() => {
     void setSpaceCallMicMuted(!spaceCallMicMuted);
@@ -733,27 +951,77 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
   }, [activeTab, canOpenCallFullView, spaceCallState, callFullViewOpen]);
 
+  useEffect(() => {
+    if (!callFullViewOpen) return;
+    const rafId = window.requestAnimationFrame(() => {
+      callFullViewDialogRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [callFullViewOpen]);
+
+  const handleCallPopupDragStart = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!callFullViewOpen) return;
+      const target = e.target as HTMLElement;
+      if (target.closest('button,[data-call-popup-no-drag]')) {
+        return;
+      }
+      callPopupDragStateRef.current = {
+        pointerId: e.pointerId,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        startOffsetX: callPopupOffset.x,
+        startOffsetY: callPopupOffset.y,
+      };
+      setIsDraggingCallPopup(true);
+    },
+    [callFullViewOpen, callPopupOffset.x, callPopupOffset.y],
+  );
+
+  useEffect(() => {
+    if (!isDraggingCallPopup) return;
+    const onMove = (e: PointerEvent) => {
+      const drag = callPopupDragStateRef.current;
+      if (!drag) return;
+      if (e.pointerId !== drag.pointerId) return;
+      const rawOffsetX = drag.startOffsetX + (e.clientX - drag.startClientX);
+      const rawOffsetY = drag.startOffsetY + (e.clientY - drag.startClientY);
+      const dialogRect = callFullViewDialogRef.current?.getBoundingClientRect();
+      const popupWidth =
+        dialogRect?.width ?? Math.min(window.innerWidth * 0.96, 1280);
+      const popupHeight =
+        dialogRect?.height ?? Math.min(window.innerHeight * 0.9, 900);
+      const baseLeft = window.innerWidth / 2 - popupWidth / 2;
+      const baseTop = window.innerHeight / 2 - popupHeight / 2;
+      const rawLeft = baseLeft + rawOffsetX;
+      const rawTop = baseTop + rawOffsetY;
+      const maxLeft = Math.max(0, window.innerWidth - popupWidth);
+      const maxTop = Math.max(0, window.innerHeight - popupHeight);
+      const clampedLeft = Math.min(Math.max(rawLeft, 0), maxLeft);
+      const clampedTop = Math.min(Math.max(rawTop, 0), maxTop);
+      setCallPopupOffset({
+        x: clampedLeft - baseLeft,
+        y: clampedTop - baseTop,
+      });
+    };
+    const onEnd = (e: PointerEvent) => {
+      const drag = callPopupDragStateRef.current;
+      if (!drag || e.pointerId !== drag.pointerId) return;
+      callPopupDragStateRef.current = null;
+      setIsDraggingCallPopup(false);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onEnd);
+    window.addEventListener('pointercancel', onEnd);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onEnd);
+      window.removeEventListener('pointercancel', onEnd);
+    };
+  }, [isDraggingCallPopup]);
+
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
-
-  const resolveMemberLabel = useCallback(
-    (userId: string | undefined) => {
-      if (!userId) return t('unknownMember');
-      if (currentUserId && userId === currentUserId) {
-        const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
-        return full || t('you');
-      }
-      if (roomId && client) {
-        const room = client.getRoom(roomId);
-        const member = room?.getMember(userId);
-        if (member) {
-          return matrixMemberDisplayLabel(member, userId);
-        }
-      }
-      return shortenMatrixIdForDisplay(userId);
-    },
-    [client, roomId, currentUserId, me?.name, me?.surname, t],
-  );
 
   const rosterSubs = useMemo(
     () =>
@@ -766,6 +1034,51 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const { subToMatrixUserId } = useMatrixUserIdsByPrivySubs({
     privySubs: rosterSubs,
   });
+
+  /** Same source as `@` mention labels: Hypha roster wins over Matrix bridge displaynames. */
+  const matrixUserIdToPersonLabel = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of spaceMembers) {
+      const sub = p.sub?.trim();
+      if (!sub) continue;
+      const mxid = subToMatrixUserId[sub]?.trim();
+      if (!mxid) continue;
+      m.set(mxid, personRosterLabel(p, t('unknownMember')));
+    }
+    return m;
+  }, [spaceMembers, subToMatrixUserId, t]);
+
+  const resolveMemberLabel = useCallback(
+    (userId: string | undefined) => {
+      if (!userId) return t('unknownMember');
+      if (currentUserId && userId === currentUserId) {
+        const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
+        return full || t('you');
+      }
+      const rosterLabel = matrixUserIdToPersonLabel.get(userId)?.trim();
+      if (rosterLabel) return rosterLabel;
+      if (roomId && client) {
+        const room = client.getRoom(roomId);
+        const member = room?.getMember(userId);
+        if (member) {
+          const fromMatrix = matrixMemberDisplayLabel(member, userId);
+          if (!looksLikeTechnicalMatrixDisplayName(fromMatrix, userId)) {
+            return fromMatrix;
+          }
+        }
+      }
+      return shortenMatrixIdForDisplay(userId);
+    },
+    [
+      client,
+      currentUserId,
+      matrixUserIdToPersonLabel,
+      me?.name,
+      me?.surname,
+      roomId,
+      t,
+    ],
+  );
 
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
     if (!client || !roomId) return [];
@@ -828,21 +1141,76 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     mentionMembershipEpoch,
   ]);
 
+  const mergeMentionDisplayLabel = useCallback(
+    (userId: string, displayLabel: string) => {
+      const trimmedLabel = displayLabel.trim();
+      if (!trimmedLabel) return;
+      setMentionDisplayOverride((prev) => {
+        if (prev[userId] === trimmedLabel) return prev;
+        return { ...prev, [userId]: trimmedLabel };
+      });
+    },
+    [],
+  );
+
   const mentionLabelByUserId = useMemo(
     () =>
       new Map(
-        mentionCandidates.map((candidate) => [
-          candidate.userId,
-          candidate.displayLabel,
-        ]),
+        mentionCandidates.map((candidate) => {
+          const o = mentionDisplayOverride[candidate.userId];
+          return [
+            candidate.userId,
+            o?.trim() ? o : candidate.displayLabel,
+          ] as const;
+        }),
       ),
-    [mentionCandidates],
+    [mentionCandidates, mentionDisplayOverride],
+  );
+
+  const duplicateSanitizedDisplayKeys = useMemo(
+    () => computeDuplicateSanitizedDisplayKeys(mentionLabelByUserId),
+    [mentionLabelByUserId],
+  );
+
+  /** Sanitized display label → MXID for converting composer `@Name` tokens before Matrix send. */
+  const mentionSanitizedLabelToUserId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const [userId, label] of mentionLabelByUserId) {
+      const key = disambiguatedMentionTokenKey(
+        userId,
+        label,
+        duplicateSanitizedDisplayKeys,
+      );
+      if (!key) continue;
+      m.set(key, userId);
+    }
+    return m;
+  }, [mentionLabelByUserId, duplicateSanitizedDisplayKeys]);
+
+  const getMentionComposerLabel = useCallback(
+    (member: ChatMentionCandidate, resolvedComposerLabel?: string) => {
+      const label =
+        resolvedComposerLabel?.trim() ||
+        mentionLabelByUserId.get(member.userId)?.trim() ||
+        member.displayLabel;
+      /** Include this pick's effective label when counting duplicates (resolved name can collide). */
+      const effectiveLabels = new Map(mentionLabelByUserId);
+      effectiveLabels.set(member.userId, label);
+      const dupForPick = computeDuplicateSanitizedDisplayKeys(effectiveLabels);
+      return (
+        disambiguatedMentionTokenKey(member.userId, label, dupForPick) || label
+      );
+    },
+    [mentionLabelByUserId],
   );
 
   const resolveMentionMemberLabel = useCallback(
-    (userId: string) =>
-      mentionLabelByUserId.get(userId) ?? resolveMemberLabel(userId),
-    [mentionLabelByUserId, resolveMemberLabel],
+    (userId: string | undefined) => {
+      const id = userId?.trim();
+      if (!id) return t('unknownMember');
+      return mentionLabelByUserId.get(id) ?? resolveMemberLabel(id);
+    },
+    [mentionLabelByUserId, resolveMemberLabel, t],
   );
 
   /** Same roster merge as pills — timeline sender/reply headers use this first. */
@@ -885,10 +1253,34 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!roomId || !client) return;
     setMessages((prev) =>
       prev.map((m) => {
-        const newSenderName =
-          m.role === 'member' && m.senderMatrixId
-            ? resolveMemberLabelRef.current(m.senderMatrixId)
-            : m.senderName;
+        const sid = m.senderMatrixId?.trim();
+        const isSelfRow = Boolean(
+          currentUserIdRef.current && sid && sid === currentUserIdRef.current,
+        );
+
+        /**
+         * On cold load, `client.getUserId()` can be null when we first map
+         * Matrix events to UI — own messages are misclassified as `member` and
+         * get a technical Matrix/Privy display label. Re-sync when Matrix id arrives.
+         */
+        let nextRole = m.role;
+        let newSenderName = m.senderName;
+        let nextMemberAvatar = m.avatarUrl;
+        if (isSelfRow) {
+          nextRole = 'user';
+          newSenderName = undefined;
+          nextMemberAvatar = currentUserAvatarUrlRef.current ?? m.avatarUrl;
+        } else if (m.role === 'member' && sid) {
+          newSenderName = resolveMemberLabelRef.current(sid);
+          nextMemberAvatar =
+            matrixMemberAvatarSquare(
+              matrixClientRef.current,
+              roomIdRef.current,
+              sid,
+              96,
+            ) ?? m.avatarUrl;
+        }
+
         const newAuthorLabel =
           m.replyTo?.sourceUserId != null
             ? resolveMemberLabelRef.current(m.replyTo.sourceUserId)
@@ -913,17 +1305,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               }
             : m.replyTo;
 
-        const nextMemberAvatar =
-          m.role === 'member' && m.senderMatrixId
-            ? matrixMemberAvatarSquare(
-                matrixClientRef.current,
-                roomIdRef.current,
-                m.senderMatrixId,
-                96,
-              ) ?? m.avatarUrl
-            : m.avatarUrl;
-
         if (
+          nextRole === m.role &&
           newSenderName === m.senderName &&
           nextReply?.authorLabel === m.replyTo?.authorLabel &&
           nextReply?.authorAvatarUrl === m.replyTo?.authorAvatarUrl &&
@@ -934,13 +1317,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         return {
           ...m,
+          role: nextRole,
           senderName: newSenderName,
           avatarUrl: nextMemberAvatar,
           replyTo: nextReply,
         };
       }),
     );
-  }, [roomId, client, currentUserId, me?.name, me?.surname, t]);
+  }, [
+    roomId,
+    client,
+    currentUserId,
+    currentUserAvatarUrl,
+    matrixUserIdToPersonLabel,
+    me?.name,
+    me?.surname,
+    t,
+  ]);
 
   // Backfill avatar on self-authored messages after useMe() resolves
   useEffect(() => {
@@ -982,6 +1375,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
   }, [spaceSlug, roomId]);
 
+  useEffect(() => {
+    if (mode !== 'space') return;
+    if (isUserSpaceStateLoading) return;
+    if (hasSpaceChatAccess) return;
+    if (roomId) {
+      matrixRef.current.unregisterRoomListener(roomId);
+    }
+    joinedRef.current = null;
+    setRoomId(null);
+    setMessages([]);
+    setReplyDraft(null);
+    setEditDraft(null);
+    setInput('');
+    setError(null);
+    setCallFullViewOpen(false);
+  }, [
+    mode,
+    roomId,
+    hasSpaceChatAccess,
+    isUserSpaceStateLoading,
+    setCallFullViewOpen,
+  ]);
+
   // Join space room when Matrix is ready (space mode)
   useEffect(() => {
     if (mode !== 'space') return;
@@ -993,10 +1409,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return;
     if (!spaceSlug) return;
     if (isSpaceLoading) return;
+    if (isUserSpaceStateLoading) return;
+    if (!hasSpaceChatAccess) return;
 
     let cancelled = false;
-    const { joinRoom, createRoom, getRoomMessages, loadRoomHistory, client } =
-      matrixRef.current;
+    const { joinRoom, createRoom, getRoomMessages, client } = matrixRef.current;
 
     const initRoom = async () => {
       setIsJoining(true);
@@ -1027,6 +1444,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (targetRoomId) {
           try {
             targetRoomId = await ensureJoined(targetRoomId);
+            storeRoomId(spaceSlug, targetRoomId);
           } catch (joinErr) {
             if (canonicalRoomId && targetRoomId === canonicalRoomId) {
               throw joinErr;
@@ -1065,8 +1483,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         joinedRef.current = spaceSlug;
         setRoomId(targetRoomId);
 
-        await loadRoomHistory(targetRoomId);
-        if (cancelled) return;
         const existing = getRoomMessages(targetRoomId);
         if (existing && !cancelled) {
           setMessages(
@@ -1104,6 +1520,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isMatrixAuthenticated,
     spaceSlug,
     isSpaceLoading,
+    isUserSpaceStateLoading,
+    hasSpaceChatAccess,
     space?.chatRoomId,
   ]);
 
@@ -1210,8 +1628,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         if (cancelled) return;
         setRoomId(targetRoomId);
-        await matrixRef.current.loadRoomHistory(targetRoomId);
-        if (cancelled) return;
         const existing = matrixRef.current.getRoomMessages(targetRoomId);
         if (existing) {
           setMessages(
@@ -1260,47 +1676,80 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (!roomId || !isMatrixAvailable) return;
 
+    const scheduleTimelineFlush = () => {
+      if (timelineFlushRafRef.current != null) return;
+      timelineFlushRafRef.current = requestAnimationFrame(() => {
+        timelineFlushRafRef.current = null;
+
+        const redacts = pendingTimelineRedactIdsRef.current;
+        pendingTimelineRedactIdsRef.current = new Set();
+        const upserts = pendingTimelineMessagesRef.current;
+        pendingTimelineMessagesRef.current = new Map();
+
+        if (redacts.size === 0 && upserts.size === 0) return;
+
+        setMessages((prev) => {
+          let next = prev;
+          if (redacts.size > 0) {
+            next = next.filter((m) => !redacts.has(m.id));
+          }
+          for (const message of upserts.values()) {
+            const ui = toUIMessage(
+              message,
+              currentUserIdRef.current,
+              resolveMemberLabelRef.current,
+              currentUserAvatarUrlRef.current,
+              undefined,
+              roomId,
+              matrixRef.current.client ?? null,
+            );
+            const idx = next.findIndex((m) => m.id === ui.id);
+            if (idx === -1) {
+              next = [...next, ui];
+            } else {
+              next = next.map((m, i) => (i === idx ? ui : m));
+            }
+          }
+          return next;
+        });
+
+        for (const message of upserts.values()) {
+          if (
+            message.sender === currentUserIdRef.current &&
+            message.id &&
+            !String(message.id).startsWith('hypha-send-pending')
+          ) {
+            setSendingPending(null);
+            break;
+          }
+        }
+
+        const rId = replyDraftRef.current?.messageId;
+        if (rId && redacts.has(rId)) {
+          setReplyDraft(null);
+        }
+        const eId = editDraftRef.current?.messageId;
+        if (eId && redacts.has(eId)) {
+          disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+          setDraftAttachments([]);
+          setInput('');
+          setEditDraft(null);
+        }
+      });
+    };
+
     const { registerRoomListener, unregisterRoomListener } = matrixRef.current;
 
     registerRoomListener(
       roomId,
       async (message: Message) => {
         if (message.redacted) {
-          const id = message.id;
-          setMessages((prev) => prev.filter((m) => m.id !== id));
-          setReplyDraft((draft) => (draft?.messageId === id ? null : draft));
-          setEditDraft((draft) => {
-            if (draft?.messageId !== id) return draft;
-            disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-            setDraftAttachments([]);
-            setInput('');
-            return null;
-          });
+          pendingTimelineRedactIdsRef.current.add(message.id);
+          scheduleTimelineFlush();
           return;
         }
-        setMessages((prev) => {
-          const next = toUIMessage(
-            message,
-            currentUserIdRef.current,
-            resolveMemberLabelRef.current,
-            currentUserAvatarUrlRef.current,
-            undefined,
-            roomId,
-            matrixRef.current.client ?? null,
-          );
-          const idx = prev.findIndex((m) => m.id === next.id);
-          if (idx === -1) {
-            return [...prev, next];
-          }
-          return prev.map((m, i) => (i === idx ? next : m));
-        });
-        if (
-          message.sender === currentUserIdRef.current &&
-          message.id &&
-          !String(message.id).startsWith('hypha-send-pending')
-        ) {
-          setSendingPending(null);
-        }
+        pendingTimelineMessagesRef.current.set(message.id, message);
+        scheduleTimelineFlush();
       },
       async (_pinned: string[]) => {
         // pinned messages not used in human chat panel
@@ -1308,9 +1757,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     );
 
     return () => {
+      if (timelineFlushRafRef.current != null) {
+        cancelAnimationFrame(timelineFlushRafRef.current);
+        timelineFlushRafRef.current = null;
+      }
+      pendingTimelineRedactIdsRef.current = new Set();
+      pendingTimelineMessagesRef.current = new Map();
       unregisterRoomListener(roomId);
     };
   }, [roomId, isMatrixAvailable]);
+
+  useEffect(() => {
+    if (!roomId) return;
+    const cached = readPersistedChatHistory(roomId);
+    if (cached.length === 0) return;
+    setMessages((prev) => (prev.length > 0 ? prev : cached));
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!roomId) return;
+    writePersistedChatHistory(roomId, messages);
+  }, [roomId, messages]);
 
   // Keep message ids in sync when the SDK replaces provisional ~… ids with $… after send
   useEffect(() => {
@@ -1394,10 +1861,51 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return `/${lang}/notification-centre`;
   }, [pathname, params?.id, spaceSlug]);
 
-  const handleSelectMentionFromInbox = useCallback((eventId: string) => {
-    setActiveTab('chat');
-    setScrollToEventId(eventId);
-  }, []);
+  const handleSelectMentionFromInbox = useCallback(
+    (eventId: string, fromRoomId?: string) => {
+      const targetRoom = fromRoomId?.trim();
+      const current = roomId?.trim();
+      const langMatch = pathname.match(/^\/([^/]+)\//);
+      const lang = langMatch?.[1] ?? 'en';
+
+      if (
+        targetRoom &&
+        targetRoom !== current &&
+        typeof window !== 'undefined'
+      ) {
+        let slug =
+          window.sessionStorage
+            .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${targetRoom}`)
+            ?.trim() ?? null;
+        if (!slug) {
+          const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
+          slug = fromLs ?? null;
+        }
+        if (!slug && space?.chatRoomId?.trim() === targetRoom && spaceSlug) {
+          slug = spaceSlug;
+        }
+        if (slug) {
+          router.push(
+            `/${lang}/dho/${slug}?msg=${encodeURIComponent(eventId)}`,
+          );
+          openHumanChatPanel();
+          setActiveTab('chat');
+          return;
+        }
+      }
+
+      setActiveTab('chat');
+      setScrollToEventId(eventId);
+    },
+    [
+      roomId,
+      pathname,
+      router,
+      openHumanChatPanel,
+      space?.chatRoomId,
+      spaceSlug,
+    ],
+  );
 
   const handleConsumedScrollTarget = useCallback(() => {
     setScrollToEventId(null);
@@ -1425,19 +1933,74 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const room = client.getRoom(roomId);
     if (!room) return;
 
-    const bumpUnread = () => setUnreadBump((n) => n + 1);
+    /** Timeline fires very often during sync — debounce unread recompute to avoid main-thread thrash. */
+    let debounce: ReturnType<typeof setTimeout> | null = null;
+    const UNREAD_RECOMPUTE_MS = 400;
+    const bumpUnread = () => {
+      if (debounce != null) return;
+      debounce = setTimeout(() => {
+        debounce = null;
+        setUnreadBump((n) => n + 1);
+      }, UNREAD_RECOMPUTE_MS);
+    };
+
     room.on(RoomEvent.Receipt, bumpUnread);
     room.on(RoomEvent.AccountData, bumpUnread);
     room.on(RoomEvent.UnreadNotifications, bumpUnread);
     room.on(RoomEvent.Timeline, bumpUnread);
 
     return () => {
+      if (debounce != null) clearTimeout(debounce);
       room.off(RoomEvent.Receipt, bumpUnread);
       room.off(RoomEvent.AccountData, bumpUnread);
       room.off(RoomEvent.UnreadNotifications, bumpUnread);
       room.off(RoomEvent.Timeline, bumpUnread);
     };
   }, [client, roomId]);
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      mode !== 'space' ||
+      !spaceSlug?.trim() ||
+      !roomId?.trim()
+    )
+      return;
+    rememberRoomToSpaceSlugSession(roomId, spaceSlug.trim());
+  }, [mode, spaceSlug, roomId]);
+
+  useEffect(() => {
+    const pathSlug = getDhoSpaceSlugFromPathname(pathname)?.trim();
+    const rid = roomId?.trim() ?? null;
+    if (pathSlug && rid && mode === 'space' && typeof window !== 'undefined') {
+      rememberRoomToSpaceSlugSession(rid, pathSlug);
+    }
+  }, [pathname, roomId, mode]);
+
+  /**
+   * Global mention badge: avoid listening to `ClientEvent.Room` — it fires on almost every
+   * room/timeline update and was calling `computeAggregateUnreadMentionCount` (full timeline
+   * scan per joined room) hundreds of times per second, freezing the UI and flooding DevTools.
+   * Incremental sync covers new @-mentions across rooms; current-room bumps still flow via
+   * `unreadBump` from timeline/receipt listeners.
+   */
+  useEffect(() => {
+    if (!client || !currentUserId) return;
+    let debounce: ReturnType<typeof setTimeout> | null = null;
+    const SCHEDULE_MS = 500;
+    const scheduleBump = () => {
+      if (debounce != null) return;
+      debounce = setTimeout(() => {
+        debounce = null;
+        setAggregateMentionBump((n) => n + 1);
+      }, SCHEDULE_MS);
+    };
+    client.on(ClientEvent.Sync, scheduleBump);
+    return () => {
+      if (debounce != null) clearTimeout(debounce);
+      client.removeListener(ClientEvent.Sync, scheduleBump);
+    };
+  }, [client, currentUserId]);
 
   const unreadChatState = useMemo(() => {
     if (!client || !roomId || !currentUserId) {
@@ -1450,8 +2013,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       };
     }
     const room = client.getRoom(roomId);
+    /** `mergedMessages.length` omitted — it changed on every timeline row and re-ran a full timeline scan per sync batch. */
     return computeHumanChatUnreadState(room ?? undefined, currentUserId);
-  }, [client, roomId, currentUserId, unreadBump, mergedMessages.length]);
+  }, [client, roomId, currentUserId, unreadBump]);
+
+  /** `unreadBump` intentionally omitted — it was re-running the all-rooms scan on every timeline event. */
+  const aggregateMentionBadge = useMemo(() => {
+    if (!client || !currentUserId) {
+      return { count: 0, capped: false };
+    }
+    return computeAggregateUnreadMentionCount(client.getRooms(), currentUserId);
+  }, [client, currentUserId, aggregateMentionBump]);
+
+  const bellMentionCount = aggregateMentionBadge.count;
+  const bellMentionCapped = aggregateMentionBadge.capped;
 
   const markChatTimelineRead = useCallback(async () => {
     if (!client || !roomId || !currentUserId) return;
@@ -1492,7 +2067,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (mode !== 'space') return;
     const qpChat = searchParams?.get('chat')?.trim();
     const qpMsg = searchParams?.get('msg')?.trim();
-    if (!qpChat || !qpMsg || !roomId || qpChat !== roomId) return;
+    if (!qpMsg || !roomId) return;
+    /** Short link: `?msg=` only (same space room). Legacy: `?chat=` + `msg`. */
+    const sameRoom = (!qpChat && roomId) || (qpChat && qpChat === roomId);
+    if (!sameRoom) return;
 
     openHumanChatPanel();
     setActiveTab('chat');
@@ -1556,14 +2134,67 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return () => {
       cancelled = true;
     };
+  }, [mode, roomId, pathname, router, searchParams, openHumanChatPanel]);
+
+  /**
+   * When `?msg=` is present, retry locating the row after the timeline grows (initial effect may run
+   * before messages arrive). One rAF per `messages.length` change — not merged list length tricks.
+   */
+  const deepLinkEventId =
+    mode === 'space' ? searchParams?.get('msg')?.trim() : undefined;
+  useEffect(() => {
+    if (!deepLinkEventId || !roomId) return;
+    const qpChat = searchParams?.get('chat')?.trim();
+    const sameRoom =
+      (!qpChat && Boolean(roomId)) || (qpChat && qpChat === roomId);
+    if (!sameRoom) return;
+
+    let cancelled = false;
+    const tryOnce = () => {
+      if (cancelled) return;
+      const escaped =
+        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+          ? CSS.escape(deepLinkEventId)
+          : deepLinkEventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      const el = document.querySelector(
+        `[data-matrix-event-id="${escaped}"]`,
+      ) as HTMLElement | null;
+      if (!el) return;
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.classList.add(
+        'ring-2',
+        'ring-primary',
+        'rounded-sm',
+        'transition-shadow',
+      );
+      window.setTimeout(() => {
+        el.classList.remove(
+          'ring-2',
+          'ring-primary',
+          'rounded-sm',
+          'transition-shadow',
+        );
+      }, 2400);
+      const next = new URLSearchParams(searchParams?.toString() ?? '');
+      next.delete('chat');
+      next.delete('msg');
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    };
+
+    const id = requestAnimationFrame(tryOnce);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(id);
+    };
   }, [
-    mode,
+    deepLinkEventId,
     roomId,
+    messages.length,
+    mode,
     pathname,
     router,
     searchParams,
-    mergedMessages.length,
-    openHumanChatPanel,
   ]);
 
   const handleReplyToMessage = useCallback(
@@ -1689,6 +2320,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setDraftAttachments([]);
     const pendingId =
       savedAttachments.length > 0 ? `hypha-send-pending-${Date.now()}` : null;
+    const { wirePlain, mentionUserIds } = wireComposerPlainForMatrixSend(
+      text,
+      mentionSanitizedLabelToUserId,
+    );
     if (pendingId) {
       setSendingPending({
         id: pendingId,
@@ -1722,7 +2357,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           await matrixRef.current.editRoomMessage({
             roomId,
             targetEventId: editTargetEventId,
-            message: text,
+            message: wirePlain,
+            mentionUserIds,
             existingMediaSlots: slots,
             ...(newFiles.length > 0 ? { newAttachments: newFiles } : {}),
             ...(newFiles.length > 0 ? { signal } : {}),
@@ -1734,13 +2370,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           await matrixRef.current.editRoomMessage({
             roomId,
             targetEventId: editTargetEventId,
-            message: text,
+            message: wirePlain,
+            mentionUserIds,
           });
         }
       } else {
         await matrixRef.current.sendMessage({
           roomId,
-          message: text,
+          message: wirePlain,
+          mentionUserIds,
           signal,
           ...(replyToEventId ? { replyToEventId } : {}),
           ...(savedAttachments.length > 0
@@ -1830,7 +2468,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setEditDraft(savedEditDraft);
       setDraftAttachments(savedAttachments);
     }
-  }, [input, roomId, replyDraft, editDraft, draftAttachments, t]);
+  }, [
+    input,
+    roomId,
+    replyDraft,
+    editDraft,
+    draftAttachments,
+    mentionSanitizedLabelToUserId,
+    t,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -1848,8 +2494,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           trailingStart={
             showAuthedUi && roomId ? (
               <HumanChatPanelMentionBell
-                unreadCount={unreadChatState.unreadMentionCount}
-                countIsCapped={unreadChatState.mentionCountIsCapped}
+                unreadCount={bellMentionCount}
+                countIsCapped={bellMentionCapped}
                 mentionsTabActive={activeTab === 'mentions'}
                 onOpenMentions={() => setActiveTab('mentions')}
                 callJoinRingControlsActive={
@@ -1861,47 +2507,39 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {showAuthedUi && (
-          <HumanChatPanelTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            chatMentionCount={unreadChatState.unreadMentionCount}
-            chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
-            mentionTabBadgeCount={unreadChatState.unreadMentionCount}
-            mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
-            tabRowEnd={
-              callUiEnabled ? (
-                <HumanChatPanelCallToolbar
-                  callState={spaceCallState}
-                  callKind={spaceCallKind}
-                  disabled={!callUiEnabled}
-                  roomCallInProgressToJoin={spaceCallToolbarJoinHint}
-                  onlyLocalInRoomCall={
-                    spaceCallShowJoinStrip &&
-                    spaceCallRoomGroupDeviceCount === 1
-                  }
-                  onAudio={handleCallAudio}
-                  onVideo={handleCallVideo}
-                />
-              ) : null
-            }
+        <HumanChatPanelTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          chatMentionCount={bellMentionCount}
+          chatMentionCountCapped={bellMentionCapped}
+          mentionTabBadgeCount={bellMentionCount}
+          mentionTabBadgeCapped={bellMentionCapped}
+          tabRowEnd={
+            callUiEnabled ? (
+              <HumanChatPanelCallToolbar
+                callState={spaceCallState}
+                callKind={spaceCallKind}
+                disabled={!callUiEnabled}
+                roomCallInProgressToJoin={spaceCallToolbarJoinHint}
+                onlyLocalInRoomCall={
+                  spaceCallShowJoinStrip && spaceCallOtherMemberCount === 0
+                }
+                onAudio={handleCallAudio}
+                onVideo={handleCallVideo}
+              />
+            ) : null
+          }
+        />
+        {callUiEnabled && !inSpaceCall && spaceCallShowJoinStrip && (
+          <HumanChatPanelCallJoinStrip
+            deviceCount={spaceCallRoomGroupDeviceCount}
+            disabled={!callUiEnabled}
+            busy={spaceCallBusyJoining}
+            onJoinAudio={handleCallAudio}
+            onJoinVideo={handleCallVideo}
           />
         )}
-        {showAuthedUi &&
-          callUiEnabled &&
-          !inSpaceCall &&
-          (spaceCallShowJoinStrip || callLeftMessage) && (
-            <HumanChatPanelCallJoinStrip
-              deviceCount={spaceCallRoomGroupDeviceCount}
-              disabled={!callUiEnabled}
-              busy={spaceCallBusyJoining}
-              onJoinCall={handleCallAudio}
-              durableMessage={callLeftMessage}
-              onDismissDurable={clearCallLeftBanner}
-            />
-          )}
-        {showAuthedUi &&
-          callUiEnabled &&
+        {callUiEnabled &&
           (inSpaceCall ||
             spaceCallState === 'error' ||
             spaceCallState === 'disconnecting') && (
@@ -1916,6 +2554,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               isLocalVideoMuted={spaceCallVideoMuted}
               participantCount={spaceCallRoomGroupDeviceCount}
               othersInRoomCallCount={spaceCallOthersInRoom}
+              remoteMediaStall={spaceCallRemoteMediaStall}
+              onDismissRemoteMediaStall={dismissSpaceCallRemoteMediaStall}
               onLeave={handleCallLeave}
               onToggleMic={handleCallToggleMic}
               onToggleCamera={handleCallToggleCamera}
@@ -2093,13 +2733,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   currentUserId={currentUserId}
                   resolveMemberLabel={resolveMentionMemberLabel}
                   onSelectMessage={handleSelectMentionFromInbox}
+                  aggregatedMentions={mode === 'space'}
                 />
               </div>
             )}
           </>
         )}
       </SidebarContent>
-      {showAuthedUi && activeTab === 'chat' && (
+      {activeTab === 'chat' && !blockSpaceChatForMembership && (
         <SidebarFooter className="relative z-20 bg-background-2 p-0">
           <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
             <HumanChatPanelChatBar
@@ -2108,6 +2749,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onSend={handleSend}
               mentionCandidates={mentionCandidates}
               mentionPickerEnabled={mentionPickerEnabled}
+              getMentionComposerLabel={getMentionComposerLabel}
+              onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
               draftAttachments={draftAttachments}
               onDraftAttachmentsChange={setDraftAttachments}
               replyPreview={
@@ -2138,111 +2781,120 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         </SidebarFooter>
       )}
 
-      {callUiEnabled && canOpenCallFullView && (
-        <Dialog
-          open={callFullViewOpen}
-          onOpenChange={(o) => {
-            setCallFullViewOpen(o);
+      {callUiEnabled && canOpenCallFullView && callFullViewOpen && (
+        <div
+          ref={callFullViewDialogRef}
+          tabIndex={-1}
+          className="fixed z-[120] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full flex-col overflow-hidden rounded-xl border border-border/50 bg-background p-0 text-foreground shadow-2xl"
+          style={{
+            left: '50%',
+            top: '50%',
+            transform: `translate(calc(-50% + ${callPopupOffset.x}px), calc(-50% + ${callPopupOffset.y}px))`,
           }}
+          role="dialog"
+          aria-modal="false"
+          aria-label={t('callFullView')}
         >
-          <DialogContent
-            className="fixed z-[100] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full !left-1/2 !top-1/2 -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border border-border/50 bg-background p-0 text-foreground shadow-2xl data-[state=open]:sm:rounded-xl data-[state=open]:duration-200 motion-reduce:data-[state=open]:duration-0 motion-reduce:data-[state=open]:zoom-in-100"
-            hideCloseButton
-            overlayClassName="fixed z-[99] !inset-0 !left-0 !right-0 !top-0 !bottom-0 border-0 bg-black/50 backdrop-blur-sm supports-[backdrop-filter]:bg-black/40 motion-reduce:backdrop-blur-none motion-reduce:animate-none"
-            onCloseAutoFocus={(e) => {
-              e.preventDefault();
-              callFullViewTriggerRef.current?.focus();
-            }}
+          <div
+            className="relative flex shrink-0 cursor-grab border-b border-border/50 bg-muted/40 px-3 py-2.5 pe-2 text-left active:cursor-grabbing"
+            onPointerDown={handleCallPopupDragStart}
           >
-            <DialogHeader className="relative flex shrink-0 border-b border-border/50 bg-muted/40 px-3 py-2.5 pe-2 text-left">
-              <DialogClose
-                className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={t('callFullViewClose')}
-                title={t('callFullViewClose')}
-              >
-                <Minimize2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-              </DialogClose>
-              <div className="min-w-0 flex-1 space-y-0.5 pe-10">
-                <DialogTitle className="text-sm font-medium tracking-tight text-foreground sm:text-left">
-                  {t('callFullView')}
-                </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground sm:text-left">
-                  {t('callFullViewDescription')}
-                </DialogDescription>
-              </div>
-              {showCallLayoutMenuInFullView && (
-                <div className="mt-1 w-full shrink-0 sm:mt-0 sm:w-auto sm:justify-self-end sm:pe-10">
-                  <HumanChatPanelCallFullViewLayoutMenu
-                    value={callFullViewLayoutMode}
-                    onValueChange={onCallFullViewLayoutChange}
-                  />
-                </div>
-              )}
-            </DialogHeader>
-            <div
-              ref={callFullViewSplitContainerRef}
-              className="flex min-h-0 min-w-0 flex-1 flex-col p-0"
-              role="presentation"
+            <button
+              type="button"
+              data-call-popup-no-drag
+              onClick={() => {
+                setCallFullViewOpen(false);
+                callFullViewTriggerRef.current?.focus();
+              }}
+              className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={t('callFullViewClose')}
+              title={t('callFullViewClose')}
             >
-              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-                <HumanChatPanelCallStage
-                  client={client}
-                  roomId={roomId}
-                  groupCall={spaceGroupCall}
-                  callKind={spaceCallKind}
-                  isLocalVideoMuted={spaceCallVideoMuted}
-                  isScreensharing={spaceCallScreensharing}
-                  callState={spaceCallState}
-                  feedVersion={spaceCallFeedVersion}
-                  activeSpeakerKey={spaceCallActiveSpeakerKey}
-                  currentUserId={currentUserId}
-                  inCallUserIds={spaceCallInCallUserIds}
-                  currentUserProfileAvatarUrl={currentUserAvatarUrl}
-                  resolveMemberLabel={resolveMemberLabel}
-                  layout="fullView"
-                  fullViewOpen
-                  fullViewLayoutMode={callFullViewLayoutMode}
-                  fullViewPaneSplit={callFullViewPaneSplit}
-                  onFullViewPaneSplitChange={onCallFullViewPaneSplitChange}
-                  fullViewSplitContainerRef={callFullViewSplitContainerRef}
-                />
-              </div>
-              {spaceCallScreenshareError && spaceCallState === 'connected' && (
-                <div
-                  role="alert"
-                  className="flex shrink-0 items-start justify-center gap-2 border-t border-destructive/20 bg-destructive/10 px-3 py-1.5"
-                >
-                  <p className="min-w-0 flex-1 text-center text-xs text-destructive">
-                    {spaceCallScreenshareError === 'PERMISSION_DENIED'
-                      ? t('callErrorPermission')
-                      : t('callErrorScreenshare')}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={dismissSpaceCallScreenshareError}
-                    className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
-                  >
-                    {t('callScreenshareDismiss')}
-                  </button>
-                </div>
-              )}
-              <div className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 backdrop-blur-sm">
-                <HumanChatPanelInCallControls
-                  callState={spaceCallState}
-                  callKind={spaceCallKind}
-                  isMicrophoneMuted={spaceCallMicMuted}
-                  isLocalVideoMuted={spaceCallVideoMuted}
-                  isScreensharing={spaceCallScreensharing}
-                  onToggleMic={handleCallToggleMic}
-                  onToggleCamera={handleCallToggleCamera}
-                  onToggleScreenshare={handleCallToggleScreenshare}
-                  onLeave={handleCallLeave}
-                  variant="fullView"
-                />
-              </div>
+              <Minimize2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            </button>
+            <div className="min-w-0 flex-1 space-y-0.5 pe-10">
+              <p className="text-sm font-medium tracking-tight text-foreground sm:text-left">
+                {t('callFullView')}
+              </p>
+              <p className="text-xs text-muted-foreground sm:text-left">
+                {t('callFullViewDescription')}
+              </p>
             </div>
-          </DialogContent>
-        </Dialog>
+            {showCallLayoutMenuInFullView && (
+              <div
+                className="mt-1 w-full shrink-0 sm:mt-0 sm:w-auto sm:justify-self-end sm:pe-10"
+                data-call-popup-no-drag
+              >
+                <HumanChatPanelCallFullViewLayoutMenu
+                  value={callFullViewLayoutMode}
+                  onValueChange={onCallFullViewLayoutChange}
+                />
+              </div>
+            )}
+          </div>
+          <div
+            ref={callFullViewSplitContainerRef}
+            className="flex min-h-0 min-w-0 flex-1 flex-col p-0"
+            role="presentation"
+          >
+            <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+              <HumanChatPanelCallStage
+                client={client}
+                roomId={roomId}
+                groupCall={spaceGroupCall}
+                callKind={spaceCallKind}
+                isLocalVideoMuted={spaceCallVideoMuted}
+                isScreensharing={spaceCallScreensharing}
+                callState={spaceCallState}
+                feedVersion={spaceCallFeedVersion}
+                activeSpeakerKey={spaceCallActiveSpeakerKey}
+                currentUserId={currentUserId}
+                inCallUserIds={spaceCallInCallUserIds}
+                remoteMediaStall={spaceCallRemoteMediaStall}
+                currentUserProfileAvatarUrl={currentUserAvatarUrl}
+                resolveMemberLabel={resolveMentionMemberLabel}
+                layout="fullView"
+                fullViewOpen
+                fullViewLayoutMode={callFullViewLayoutMode}
+                fullViewPaneSplit={callFullViewPaneSplit}
+                onFullViewPaneSplitChange={onCallFullViewPaneSplitChange}
+                fullViewSplitContainerRef={callFullViewSplitContainerRef}
+              />
+            </div>
+            {spaceCallScreenshareError && spaceCallState === 'connected' && (
+              <div
+                role="alert"
+                className="flex shrink-0 items-start justify-center gap-2 border-t border-destructive/20 bg-destructive/10 px-3 py-1.5"
+              >
+                <p className="min-w-0 flex-1 text-center text-xs text-destructive">
+                  {spaceCallScreenshareError === 'PERMISSION_DENIED'
+                    ? t('callErrorPermission')
+                    : t('callErrorScreenshare')}
+                </p>
+                <button
+                  type="button"
+                  onClick={dismissSpaceCallScreenshareError}
+                  className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+                >
+                  {t('callScreenshareDismiss')}
+                </button>
+              </div>
+            )}
+            <div className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 backdrop-blur-sm">
+              <HumanChatPanelInCallControls
+                callState={spaceCallState}
+                isMicrophoneMuted={spaceCallMicMuted}
+                isLocalVideoMuted={spaceCallVideoMuted}
+                isScreensharing={spaceCallScreensharing}
+                onToggleMic={handleCallToggleMic}
+                onToggleCamera={handleCallToggleCamera}
+                onToggleScreenshare={handleCallToggleScreenshare}
+                onLeave={handleCallLeave}
+                variant="fullView"
+              />
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

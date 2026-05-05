@@ -20,6 +20,7 @@ import {
 } from '@hypha-platform/core/client';
 import { usePathname, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useAiPanel } from '../human-chat-panel-context';
 import { getDhoSpaceContextPath } from '../get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
@@ -27,27 +28,29 @@ import { getRootSpace } from '../get-root-space';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
-function getDisplayIcon(space?: Space): string | null {
-  return resolveSpaceDisplayLogoUrl(space);
+function getDisplayIcon(
+  space: Space | undefined,
+  preferredVariant: 'light' | 'dark',
+): string | null {
+  return resolveSpaceDisplayLogoUrl(space, preferredVariant);
 }
 
 export function AiPanelHeader({
   showCloseButton = true,
   onCloseButtonClick,
   leftSlot,
-  centerRightSlot,
   rightSlot,
 }: {
   showCloseButton?: boolean;
   onCloseButtonClick?: () => void;
   leftSlot?: ReactNode;
-  centerRightSlot?: ReactNode;
   rightSlot?: ReactNode;
 }) {
   const { closeAiPanel } = useAiPanel();
   const t = useTranslations('AiPanel');
   const tNavigation = useTranslations('Navigation');
   const tSpaces = useTranslations('Spaces');
+  const { resolvedTheme } = useTheme();
   const pathname = usePathname();
   const params = useParams<{ lang?: string }>();
   const activeSpaceSlug = useMemo(
@@ -113,8 +116,9 @@ export function AiPanelHeader({
   }, [activeSpace, allSpaces, web3SpaceIds]);
 
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
+  const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
   const currentTitle = activeSpace?.title?.trim() || t('title');
-  const currentIcon = getDisplayIcon(activeSpace);
+  const currentIcon = getDisplayIcon(activeSpace, logoVariant);
   const hasSpaces =
     groupedSpaces.ecosystem.length + groupedSpaces.others.length > 0;
   const [spaceSearch, setSpaceSearch] = useState('');
@@ -148,6 +152,14 @@ export function AiPanelHeader({
     }
   }, [spaceMenuOpen, spaceSearch]);
 
+  useEffect(() => {
+    if (!spaceMenuOpen) return;
+
+    requestAnimationFrame(() => {
+      spaceSearchInputRef.current?.focus();
+    });
+  }, [spaceMenuOpen]);
+
   const renderSpaceOption = (space: Space) => (
     <DropdownMenuItem
       key={space.id}
@@ -155,19 +167,21 @@ export function AiPanelHeader({
       className="rounded-lg py-1.5 hover:bg-background-4/70"
     >
       <Link
-        href={getDhoSpaceContextPath({
-          pathname,
-          lang,
-          spaceSlug: space.slug,
-        })}
+        href={
+          getDhoSpaceContextPath({
+            pathname,
+            lang,
+            spaceSlug: space.slug,
+          }) ?? `/${lang}/dho/${space.slug}/agreements`
+        }
         className="flex min-w-0 items-center gap-2"
       >
         <span className="h-5 w-5 overflow-hidden rounded-full ring-1 ring-border/60">
-          {getDisplayIcon(space) ? (
+          {getDisplayIcon(space, logoVariant) ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={getDisplayIcon(space) ?? undefined}
+                src={getDisplayIcon(space, logoVariant) ?? undefined}
                 alt={space.title}
                 className="h-full w-full object-cover"
               />
@@ -235,12 +249,6 @@ export function AiPanelHeader({
                 side="bottom"
                 align="center"
                 sideOffset={4}
-                onOpenAutoFocus={(event) => {
-                  event.preventDefault();
-                  requestAnimationFrame(() => {
-                    spaceSearchInputRef.current?.focus();
-                  });
-                }}
                 className="relative isolate z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 bg-background-2 p-0 shadow-xl data-[state=open]:animate-none data-[state=closed]:animate-none"
               >
                 <div className="flex max-h-[24.5rem] min-h-0 flex-col">

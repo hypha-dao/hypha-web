@@ -31,19 +31,22 @@ export const SectionFilter: FC<SectionFilterProps> = ({
   children,
 }) => {
   const hasLabel = label.trim().length > 0;
+  const hasCount = count !== undefined && count !== null;
   return (
     <div className="flex justify-between items-center w-full gap-4">
       {inlineLabel ? (
         <>
           {hasLabel ? (
             <Text className="text-4 capitalize text-nowrap">
-              {label} {count ? <>| {count}</> : null}
+              {label} {hasCount ? <>| {count}</> : null}
             </Text>
           ) : null}
           {hasSearch ? (
             <Input
+              type="search"
               className="w-full"
               placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
               leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
               onChange={(e) => onChangeSearch?.(e.target.value)}
               // Prevent parent keyboard handlers (e.g. Radix Tabs) from hijacking typing.
@@ -62,7 +65,7 @@ export const SectionFilter: FC<SectionFilterProps> = ({
             <div className="flex flex-row w-full">
               {hasLabel ? (
                 <Text className="text-4 capitalize text-nowrap">
-                  {label} {count ? <>| {count}</> : null}
+                  {label} {hasCount ? <>| {count}</> : null}
                 </Text>
               ) : null}
               {children && (
@@ -74,8 +77,10 @@ export const SectionFilter: FC<SectionFilterProps> = ({
             <div className="flex flex-row w-full">
               {hasSearch ? (
                 <Input
+                  type="search"
                   className="w-full"
                   placeholder={searchPlaceholder}
+                  aria-label={searchPlaceholder}
                   leftIcon={
                     <SearchIcon className="text-accent-9" size="16px" />
                   }

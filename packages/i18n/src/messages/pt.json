@@ -552,7 +552,8 @@
         "source": "Origem",
         "sourcePlaceholder": "Selecionar origem",
         "sourceMint": "Cunhar novos tokens",
-        "sourceTreasury": "Usar tokens disponíveis no tesouro"
+        "sourceTreasury": "Usar tokens disponíveis no tesouro",
+        "escrowNotice": "This proposal uses escrow for the investment. Once it is approved, the investor ({investor}) deposits their side into escrow from their profile or space page, and {activeSpace}'s deposit is made when the proposal is approved and executed."
       },
       "acceptInvestmentForm": {
         "notMemberRevert": "A cadeia rejeitou a transação: a carteira ligada não é membro nem delegado deste espaço. Use uma carteira do espaço ou ligue-se como delegado.",
@@ -565,6 +566,35 @@
         "percentageMin": "A porcentagem deve ser pelo menos 0",
         "percentageMax": "A porcentagem deve ser no máximo 100",
         "typePercentage": "Digite uma porcentagem"
+      },
+      "exchangeStakesAndTokens": {
+        "avatarAlt": "Avatar",
+        "buyer": "Buyer (Wallet Address)",
+        "buyerFallback": "buyer",
+        "buyerWillSend": "Buyer will send",
+        "copyWalletAddress": "Copy wallet address",
+        "errors": {
+          "buyerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
+          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address.",
+          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
+          "safeErc20TransferFailed": "The token contract rejected the transfer to escrow (often balance, allowance, or non-transferable rules). Check that your smart wallet holds enough tokens and that the token allows transfers to the escrow.",
+          "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
+          "sellerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
+          "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
+          "tokenWhitelistBlocked": "This token's on-chain rules block sending it to escrow (e.g. transfer/receive whitelist). Choose another token or update the token's whitelist settings."
+        },
+        "escrowAccountAddress": "Escrow account address",
+        "escrowNotice": "This proposal uses escrow for the exchange. Once it is approved, each member deposits their side into escrow from their profile; if {activeSpace} is one of the parties, its deposit is made when the proposal is approved and executed.",
+        "loadingTokens": "Loading tokens...",
+        "personAvatarAlt": "{name} avatar",
+        "seller": "Seller (Wallet Address)",
+        "sellerFallback": "seller",
+        "sellerWillSend": "Seller sends",
+        "spaceFallback": "space",
+        "spaceLogoAlt": "{name} logo",
+        "tokenAlt": "Token"
       }
     },
     "labels": {
@@ -585,7 +615,8 @@
       "contribution": "Contribuição",
       "expenses": "Despesas",
       "funding": "Financiamento",
-      "investment": "Investimento"
+      "investment": "Investimento",
+      "exchange": "Exchange"
     },
     "documentBadges": {
       "invite": "Convite",
@@ -988,12 +1019,13 @@
     "onVoting": "Na votação",
     "accepted": "Aceito",
     "rejected": "Rejeitado",
+    "newProposal": "Nova proposta",
     "searchDocuments": "Pesquisar documentos",
     "listIsEmpty": "A lista está vazia"
   },
   "MembersTab": {
     "member": "Membro",
-    "space": "Espaco",
+    "space": "Espaço",
     "searchMembers": "Pesquisar membros",
     "delegateVoting": "Votação de delegado",
     "listIsEmpty": "A lista está vazia",
@@ -1504,6 +1536,7 @@
     "ecosystemLogoLightDescription": "Envie um logo em modo claro para o seu ecossistema (PNG, JPG, GIF ou WEBP).",
     "ecosystemLogoDarkDescription": "Envie um logo em modo escuro para o seu ecossistema (PNG, JPG, GIF ou WEBP).",
     "search": "Procurar...",
+    "noSpacesFound": "Nenhum espaço encontrado",
     "addYourUrl": "Adicione seu URL",
     "exchangeDepositProposalTitleBanner": "Complete o lado deste espaço na troca",
     "exchangeDepositProposalBody": "Uma proposta de troca lista este espaço como contraparte (escrow #{escrowId}). Crie uma proposta para depositar <send></send> e receber <receive></receive> da outra parte.",
@@ -1551,7 +1584,8 @@
       "transparencySettings": "Configurações de transparência",
       "decaySettings": "Configurações de deterioração",
       "fromWhitelist": "Da lista branca",
-      "toWhitelist": "Para colocar na lista de permissões"
+      "toWhitelist": "Para colocar na lista de permissões",
+      "mutualCredit": "Mutual Credit"
     },
     "labels": {
       "unknown": "Desconhecido",
@@ -1942,6 +1976,8 @@
     "callSearchComingSoon": "Pesquisar no chat — em breve",
     "callActiveInSpace": "Chamada do espaço (todos neste espaço podem entrar)",
     "callConnecting": "A conectar…",
+    "callRemoteParticipantMediaStalled": "À espera de áudio/vídeo — verifique a rede ou saia e volte a entrar.",
+    "callRemoteMediaStallHint": "Outras pessoas aparecem na chamada mas o áudio/vídeo não chega — muitas vezes rede ou navegador. Sai e volta a entrar, ou muda de rede.",
     "callDisconnecting": "A sair da chamada…",
     "callLeave": "Sair",
     "callMute": "Silenciar microfone",
@@ -1960,6 +1996,7 @@
     "callErrorPermission": "Acesso à câmara ou microfone recusado. Verifique o navegador.",
     "callErrorPermissionGuidance": "Atualize as permissões de câmara e microfone deste site nas definições do navegador e tente novamente aqui.",
     "callErrorGeneric": "Não foi possível iniciar a chamada. Tente novamente.",
+    "callErrorConnectStall": "A chamada não conseguiu ligar. Isto costuma acontecer quando falta a configuração do servidor TURN do Matrix ou quando a rede é restritiva.",
     "callErrorNotReady": "O servidor de chamada ainda não está pronto. Aguarde um pouco e tente novamente.",
     "callErrorNoClient": "Não está ligado ao chat. Verifique a ligação e tente novamente.",
     "callErrorNoRoom": "Esta conversa não está disponível. Volte ao espaço e tente novamente.",
@@ -1988,6 +2025,8 @@
     "callParticipantMicOff": "Micro desligado",
     "callLeftAudio": "Saiu da chamada de voz.",
     "callLeftVideo": "Saiu da videchamada.",
+    "callLeftAudioIdle": "Saiu da chamada de voz — ninguém mais entrou após algum tempo.",
+    "callLeftVideoIdle": "Saiu da videchamada — ninguém mais entrou após algum tempo.",
     "callLeftBannerDismiss": "Fechar",
     "callPaneResizeSharePeople": "Redimensionar partilha e pessoas",
     "callPaneResizeShareStrip": "Redimensionar partilha e filme",
@@ -2010,7 +2049,7 @@
     "hideArchived": "Ocultar arquivados",
     "messageCount": "{count, plural, one {# mensagem} other {# mensagens}}",
     "priorityVisualAlt": "Nível de prioridade",
-    "typeSignalBannerAlt": "Sinal {type}, prioridade {priority}",
+    "typeSignalBannerAlt": "Sinal de {type}, prioridade {priority}",
     "unarchiveConversation": "Desarquivar conversa",
     "unarchiveConfirm": "Deseja realmente desarquivar esta conversa?",
     "yesUnarchive": "Sim, desarquivar",
@@ -2105,7 +2144,12 @@
       "Capacity": "Capacidade",
       "Network": "Rede",
       "Reputation": "Reputação"
-    }
+    },
+    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
+    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
+    "spaceMemoryCallTranscriptExcerpt": "Transcript",
+    "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
+    "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)"
   },
   "SignalCard": {
     "noConversationRoom": "Ainda não há sala de conversa",

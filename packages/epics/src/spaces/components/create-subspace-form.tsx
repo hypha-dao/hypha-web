@@ -54,21 +54,40 @@ export const CreateSubspaceForm = ({
 
   React.useEffect(() => {
     if (progress === 100 && spaceSlug) {
-      const seed = pendingNavigationSeedRef.current;
-      if (seed) {
-        void mutate(`/api/v1/spaces/${spaceSlug}`, seed.optimisticSpace, {
-          revalidate: false,
-        });
-        void mutate(
-          `/api/v1/spaces/${spaceSlug}/organisation`,
-          seed.organisationSpaces,
-          {
-            revalidate: false,
-          },
-        );
-        pendingNavigationSeedRef.current = null;
-      }
-      router.push(getDhoPathAgreements(lang as Locale, spaceSlug));
+      void (async () => {
+        const seed = pendingNavigationSeedRef.current;
+        if (seed) {
+          const mutationResults = await Promise.allSettled([
+            mutate(`/api/v1/spaces/${spaceSlug}`, seed.optimisticSpace, {
+              revalidate: false,
+            }),
+            mutate(
+              `/api/v1/spaces/${spaceSlug}/organisation`,
+              seed.organisationSpaces,
+              {
+                revalidate: false,
+              },
+            ),
+          ]);
+          mutationResults.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              const key =
+                index === 0
+                  ? `/api/v1/spaces/${spaceSlug}`
+                  : `/api/v1/spaces/${spaceSlug}/organisation`;
+              console.error(
+                '[CreateSubspaceForm] Failed to seed cache before navigation',
+                {
+                  key,
+                  error: result.reason,
+                },
+              );
+            }
+          });
+          pendingNavigationSeedRef.current = null;
+        }
+        router.push(getDhoPathAgreements(lang as Locale, spaceSlug));
+      })();
     }
   }, [lang, mutate, progress, router, spaceSlug]);
 

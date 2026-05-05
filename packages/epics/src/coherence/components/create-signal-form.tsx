@@ -44,11 +44,12 @@ import { CoherencePriorityButton } from './coherence-priority-button';
 import { ButtonClose } from '../../common/button-close';
 import { ButtonBack } from '../../common/button-back';
 import { CardButtonColorVariant } from '../../common/card-button';
+import {
+  SIGNAL_PROVISIONING_NOTICE_EVENT,
+  SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
+} from '../constants';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
-const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
-  'coherence.signalProvisioningNotice';
-const SIGNAL_PROVISIONING_NOTICE_EVENT = 'coherence:signalProvisioningNotice';
 
 interface CreateSignalFormProps {
   spaceId: number;
@@ -215,8 +216,13 @@ export const CreateSignalForm = ({
   }, [form, person?.id, spaceId]);
 
   const setSignalProvisioningNotice = React.useCallback(
-    (message: string, details?: string) => {
+    (message?: string | null, details?: string) => {
       if (typeof window === 'undefined') return;
+      if (!message?.trim()) {
+        sessionStorage.removeItem(SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY);
+        window.dispatchEvent(new Event(SIGNAL_PROVISIONING_NOTICE_EVENT));
+        return;
+      }
       const lines = details ? [message, details] : [message];
       sessionStorage.setItem(
         SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
@@ -231,6 +237,7 @@ export const CreateSignalForm = ({
     async (data: FormValues) => {
       try {
         const coherence = await createCoherence({ ...data });
+        setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
         if (!isMatrixAvailable) {
           setSignalProvisioningNotice(t('provisioning.chatUnavailable'));
@@ -238,9 +245,10 @@ export const CreateSignalForm = ({
         } else if (coherenceSlug) {
           // Do not block successful form close/navigation on Matrix latency/failures.
           void (async () => {
+            let roomId: string;
             try {
-              const { roomId } = await createRoom(coherence.title);
-              await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
+              const roomCreationResult = await createRoom(coherence.title);
+              roomId = roomCreationResult.roomId;
             } catch (matrixError) {
               const matrixErrorMessage =
                 matrixError instanceof Error
@@ -253,6 +261,24 @@ export const CreateSignalForm = ({
               console.warn(
                 'Signal created but Matrix room provisioning failed:',
                 matrixError,
+              );
+              return;
+            }
+
+            try {
+              await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
+            } catch (linkError) {
+              const linkErrorMessage =
+                linkError instanceof Error
+                  ? linkError.message
+                  : String(linkError);
+              setSignalProvisioningNotice(
+                t('provisioning.roomLinkFailedRetry'),
+                linkErrorMessage,
+              );
+              console.warn(
+                'Signal created and room provisioned but room linking failed:',
+                linkError,
               );
             }
           })();

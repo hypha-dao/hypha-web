@@ -62,6 +62,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
     spaceId: space?.web3SpaceId as number,
   });
   const isDisabled = !isAuthenticated || !isMember;
+  const canDelegateLink = !isDisabled && Boolean(person?.slug);
   const tooltipMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember
@@ -101,6 +102,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
         <Input
           type="search"
           placeholder={tMembers('searchMembers')}
+          aria-label={tMembers('searchMembers')}
           onChange={(event) => onUpdateSearch(event.target.value)}
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
           className="w-full"
@@ -108,16 +110,24 @@ export const MembersSection: FC<MemberSectionProps> = ({
         <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
           <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
           {!isDelegate ? (
-            <Link
-              title={tooltipMessage || ''}
-              className={isDisabled ? 'cursor-not-allowed' : ''}
-              href={`${basePath}/${person?.slug}`}
-              scroll={false}
-            >
-              <Button disabled={isDisabled || isMemberLoading}>
-                {tMembers('delegateVoting')}
-              </Button>
-            </Link>
+            canDelegateLink ? (
+              <Link
+                title={tooltipMessage || ''}
+                className={isDisabled ? 'cursor-not-allowed' : ''}
+                href={`${basePath}/${person!.slug}`}
+                scroll={false}
+              >
+                <Button disabled={isDisabled || isMemberLoading}>
+                  {tMembers('delegateVoting')}
+                </Button>
+              </Link>
+            ) : (
+              <div title={tooltipMessage || ''} className="cursor-not-allowed">
+                <Button disabled={isDisabled || isMemberLoading}>
+                  {tMembers('delegateVoting')}
+                </Button>
+              </div>
+            )
           ) : null}
         </div>
       </div>

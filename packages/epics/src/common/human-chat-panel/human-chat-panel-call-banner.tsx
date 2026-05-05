@@ -25,6 +25,9 @@ type HumanChatPanelCallBannerProps = {
   participantCount: number;
   /** When >=1, show that others are in the call (not the local user—used for "Y others"). */
   othersInRoomCallCount: number;
+  /** Others appear in Matrix state but remote video/audio feed never attached (WebRTC/signaling). */
+  remoteMediaStall?: boolean;
+  onDismissRemoteMediaStall?: () => void;
   onLeave: () => void;
   onToggleMic: () => void;
   onToggleCamera: () => void;
@@ -41,6 +44,8 @@ function errorKey(code: SpaceGroupCallErrorCode): string {
       return 'callErrorPermission';
     case 'NOT_READY':
       return 'callErrorNotReady';
+    case 'CONNECT_STALL':
+      return 'callErrorConnectStall';
     case 'NO_ROOM':
       return 'callErrorNoRoom';
     case 'NO_CLIENT':
@@ -69,6 +74,8 @@ export function HumanChatPanelCallBanner({
   isLocalVideoMuted,
   participantCount,
   othersInRoomCallCount,
+  remoteMediaStall = false,
+  onDismissRemoteMediaStall,
   onLeave,
   onToggleMic,
   onToggleCamera,
@@ -81,7 +88,9 @@ export function HumanChatPanelCallBanner({
   const t = useTranslations('HumanChatPanel');
   const showRetryOnError =
     errorCode != null &&
-    (errorCode === 'WEBRTC_FAILED' || errorCode === 'UNKNOWN');
+    (errorCode === 'CONNECT_STALL' ||
+      errorCode === 'WEBRTC_FAILED' ||
+      errorCode === 'UNKNOWN');
 
   if (callState === 'error' && errorCode) {
     return (
@@ -157,6 +166,25 @@ export function HumanChatPanelCallBanner({
           {t('callTabBackgroundHint')}
         </p>
       )}
+      {remoteMediaStall && callState === 'connected' && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 border-b border-amber-500/25 bg-amber-500/10 px-4 py-1.5"
+        >
+          <p className="min-w-0 flex-1 text-xs text-amber-950 dark:text-amber-100">
+            {t('callRemoteMediaStallHint')}
+          </p>
+          {onDismissRemoteMediaStall && (
+            <button
+              type="button"
+              onClick={onDismissRemoteMediaStall}
+              className="shrink-0 text-xs font-medium text-amber-900 underline-offset-2 hover:underline dark:text-amber-50"
+            >
+              {t('callLeftBannerDismiss')}
+            </button>
+          )}
+        </div>
+      )}
       {screenshareErrorCode && callState === 'connected' && (
         <div
           role="alert"
@@ -225,7 +253,6 @@ export function HumanChatPanelCallBanner({
         <div className="shrink-0">
           <HumanChatPanelInCallControls
             callState={callState}
-            callKind={callKind}
             isMicrophoneMuted={isMicrophoneMuted}
             isLocalVideoMuted={isLocalVideoMuted}
             isScreensharing={isScreensharing}

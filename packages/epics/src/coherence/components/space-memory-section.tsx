@@ -50,6 +50,13 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   const [activeFilter, setActiveFilter] =
     React.useState<MemoryFilterValue>('general');
 
+  const isAiChatItem = React.useCallback(
+    (row: (typeof items)[number]) =>
+      row.source === 'matrix_chat' &&
+      row.context.documentLabel?.toLowerCase().includes('ai chat') === true,
+    [],
+  );
+
   const refreshTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -111,9 +118,9 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         ).length,
         conversations: items.filter((row) => row.source === 'matrix_chat')
           .length,
-        'ai-chat': 0,
+        'ai-chat': items.filter((row) => isAiChatItem(row)).length,
       } satisfies Record<MemoryFilterValue, number>),
-    [items],
+    [isAiChatItem, items],
   );
 
   const filteredItems = React.useMemo(() => {
@@ -130,11 +137,22 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       if (activeFilter === 'conversations') {
         return row.source === 'matrix_chat';
       }
+      if (activeFilter === 'ai-chat') {
+        return isAiChatItem(row);
+      }
       return false;
     });
 
     return filterSpaceMemoryItems(byFilter, searchTerm);
-  }, [activeFilter, items, searchTerm]);
+  }, [activeFilter, isAiChatItem, items, searchTerm]);
+
+  const showAiChatTab = counts['ai-chat'] > 0;
+
+  React.useEffect(() => {
+    if (!showAiChatTab && activeFilter === 'ai-chat') {
+      setActiveFilter('general');
+    }
+  }, [activeFilter, showAiChatTab]);
 
   const newMemoryHref = `/${lang}/dho/${id}/memory/new-memory`;
 
@@ -158,6 +176,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         onSearchChange={setSearchTerm}
         newMemoryHref={newMemoryHref}
         counts={counts}
+        showAiChatTab={showAiChatTab}
       />
 
       {error ? (

@@ -103,6 +103,7 @@ export const SelectAction = ({
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder={searchPlaceholder}
+          aria-label={searchPlaceholder}
           leftIcon={<Search className="text-accent-9" size="16px" />}
         />
       ) : null}
@@ -196,7 +197,7 @@ export const SelectAction = ({
           ))
         ) : (
           <div className="rounded-2xl border border-border/80 bg-background-2 p-5 text-sm text-muted-foreground">
-            {noResultsLabel || 'No menus found'}
+            {noResultsLabel || tCommon('noMenusFound')}
           </div>
         )}
       </div>

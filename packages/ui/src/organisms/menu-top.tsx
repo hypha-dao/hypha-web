@@ -90,7 +90,19 @@ export const MenuTop = ({
         <div className="flex items-center gap-2">
           {leadingAction}
           {logoNode ? (
-            logoNode
+            logoHref ? (
+              <Link
+                href={logoHref}
+                target={hrefTarget}
+                rel={
+                  hrefTarget === '_blank' ? 'noopener noreferrer' : undefined
+                }
+              >
+                {logoNode}
+              </Link>
+            ) : (
+              logoNode
+            )
           ) : logoText ? (
             logoHref ? (
               <Link

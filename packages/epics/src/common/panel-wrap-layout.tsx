@@ -118,7 +118,7 @@ export function AiSidebarTrigger() {
     <button
       type="button"
       onClick={toggle}
-      aria-expanded={open && overlayVisible}
+      aria-expanded={overlayVisible}
       className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={t('openPanel')}
       aria-label={t('openPanel')}
@@ -214,7 +214,8 @@ export function PanelWrapLayout({
   const {
     open: leftOpen,
     overlayVisible: leftOverlayVisible,
-    toggle: toggleLeft,
+    openAiPanel,
+    closeAiPanel,
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
@@ -317,7 +318,12 @@ export function PanelWrapLayout({
       <PanelDualSidebarScrollBridge
         leftOpen={leftExpanded}
         onLeftOpenChange={(open) => {
-          if (open !== leftExpanded) toggleLeft();
+          if (open === leftExpanded) return;
+          if (open) {
+            openAiPanel();
+            return;
+          }
+          closeAiPanel();
         }}
         onLeftMouseEnter={showAiOverlay}
         onLeftMouseLeave={hideAiOverlay}
@@ -365,7 +371,12 @@ export function PanelWrapLayout({
         defaultOpen={false}
         open={leftExpanded}
         onOpenChange={(open) => {
-          if (open !== leftExpanded) toggleLeft();
+          if (open === leftExpanded) return;
+          if (open) {
+            openAiPanel();
+            return;
+          }
+          closeAiPanel();
         }}
         style={
           {

@@ -13,6 +13,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@hypha-platform/ui';
 import { SearchIcon } from 'lucide-react';
 import { ScreenToolbar } from '../../common/screen-toolbar';
+import { useTranslations } from 'next-intl';
 
 type ConversationSectionProps = {
   basePath: string;
@@ -61,6 +62,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
   setHideArchived,
   refresh,
 }) => {
+  const t = useTranslations('CoherenceTab');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -101,7 +103,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
           hasSearch ? (
             <Input
               type="search"
-              placeholder="Search conversation"
+              placeholder={t('searchConversation')}
               onChange={(event) => onUpdateSearch(event.target.value)}
               leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
             />
@@ -131,7 +133,7 @@ export const ConversationSection: FC<ConversationSectionProps> = ({
                 className="text-[14px] self-center"
                 htmlFor="hideArchivedCheckbox"
               >
-                Hide archived
+                {t('hideArchived')}
               </label>
             </div>
           </div>

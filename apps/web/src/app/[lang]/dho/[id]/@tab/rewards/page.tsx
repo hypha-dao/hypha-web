@@ -15,7 +15,7 @@ export default async function RewardsPage(props: PageProps) {
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
   const web3SpaceId = spaceFromDb?.web3SpaceId;
 
-  if (!spaceFromDb || typeof web3SpaceId !== 'number') {
+  if (!spaceFromDb || web3SpaceId == null) {
     return notFound();
   }
 

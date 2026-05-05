@@ -6,15 +6,27 @@ type SpaceLogoCandidate = {
   ecosystemLogoUrlDark?: string | null;
 };
 
+export type SpaceLogoVariant = 'light' | 'dark';
+
 export function resolveSpaceDisplayLogoUrl(
   space?: SpaceLogoCandidate | null,
+  preferredVariant: SpaceLogoVariant = 'light',
 ): string | null {
   if (!space) return null;
 
+  const preferredEcosystemLogo =
+    preferredVariant === 'dark'
+      ? space.ecosystemLogoUrlDark
+      : space.ecosystemLogoUrlLight;
+  const fallbackEcosystemLogo =
+    preferredVariant === 'dark'
+      ? space.ecosystemLogoUrlLight
+      : space.ecosystemLogoUrlDark;
+
   const candidates = [
     space.logoUrl,
-    space.ecosystemLogoUrlLight,
-    space.ecosystemLogoUrlDark,
+    preferredEcosystemLogo,
+    fallbackEcosystemLogo,
   ];
 
   for (const candidate of candidates) {

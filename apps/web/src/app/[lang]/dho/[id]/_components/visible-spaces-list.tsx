@@ -26,7 +26,7 @@ import { usePathname } from 'next/navigation';
 
 type VisibleSpacesListProps = {
   visibleSpaces: VisibleSpace[];
-  allSpaces: Space[];
+  allSpaces?: Space[];
   lang: Locale;
   entrySpaceId?: number;
 };
@@ -39,7 +39,8 @@ type AddSpaceButtonProps = {
 
 function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   const t = useTranslations('SelectNavigationAction');
-  const fullSpace = allSpaces.find((s) => s.id === space.id);
+  const safeAllSpaces = Array.isArray(allSpaces) ? allSpaces : [];
+  const fullSpace = safeAllSpaces.find((s) => s.id === space.id);
   const web3SpaceId = fullSpace?.web3SpaceId;
   const spaceSlug = fullSpace?.slug || space.slug;
   const hasSpaceInfo = !!web3SpaceId && !!spaceSlug;
@@ -110,6 +111,7 @@ export function VisibleSpacesList({
 }: VisibleSpacesListProps) {
   const t = useTranslations('SelectNavigationAction');
   const pathname = usePathname();
+  const safeAllSpaces = Array.isArray(allSpaces) ? allSpaces : [];
   const [searchQuery, setSearchQuery] = useState('');
   const buildNestedPath = (space: VisibleSpace): string => {
     if (space.root) {
@@ -117,7 +119,7 @@ export function VisibleSpacesList({
     }
 
     if (space.parentId) {
-      const parent = allSpaces.find((s) => s.id === space.parentId);
+      const parent = safeAllSpaces.find((s) => s.id === space.parentId);
       if (parent) {
         return t('visibleSpaces.nestedIn', { parent: parent.title });
       }
@@ -159,7 +161,7 @@ export function VisibleSpacesList({
         pathname,
         lang,
         spaceSlug: rootSpace.slug,
-      })
+      }) ?? `/${lang}/dho/${rootSpace.slug}/agreements`
     : '#';
 
   return (
@@ -192,7 +194,7 @@ export function VisibleSpacesList({
           <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
             <AddSpaceButton
               space={rootSpace}
-              allSpaces={allSpaces}
+              allSpaces={safeAllSpaces}
               lang={lang}
             />
             <Link href={rootVisitSpacePath} className="flex-1 md:flex-none">
@@ -234,7 +236,7 @@ export function VisibleSpacesList({
                 pathname,
                 lang,
                 spaceSlug: space.slug,
-              })
+              }) ?? `/${lang}/dho/${space.slug}/agreements`
             : '#';
 
           return (
@@ -266,7 +268,7 @@ export function VisibleSpacesList({
                 <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
                   <AddSpaceButton
                     space={space}
-                    allSpaces={allSpaces}
+                    allSpaces={safeAllSpaces}
                     lang={lang}
                   />
                   <Link href={visitSpacePath} className="flex-1 md:flex-none">

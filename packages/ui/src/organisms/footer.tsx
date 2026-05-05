@@ -18,7 +18,7 @@ const customLabelStyles: React.CSSProperties = {
   marginBottom: '12px',
 };
 
-type FooterProps = {
+export interface FooterProps {
   networkLabel?: string;
   legalLabel?: string;
   hyphaServicesLabel?: string;
@@ -26,12 +26,12 @@ type FooterProps = {
   licensingPolicyLabel?: string;
   termsAndConditionsLabel?: string;
   privacyPolicyLabel?: string;
-};
+}
 
 function SpaceContextFooter({
-  licensingPolicyLabel,
-  termsAndConditionsLabel,
-  privacyPolicyLabel,
+  licensingPolicyLabel = 'Licensing policy',
+  termsAndConditionsLabel = 'Terms & Conditions',
+  privacyPolicyLabel = 'Privacy Policy',
 }: FooterProps) {
   return (
     <div className="border-t border-border/60 bg-background-2">
@@ -231,7 +231,7 @@ function LegacyFooter({
 
 export const Footer = (props: FooterProps) => {
   const pathname = usePathname();
-  const isSpaceContext = pathname.includes('/dho/');
+  const isSpaceContext = /(^|\/)dho(?:\/|$)/.test(pathname);
 
   if (isSpaceContext) {
     return <SpaceContextFooter {...props} />;

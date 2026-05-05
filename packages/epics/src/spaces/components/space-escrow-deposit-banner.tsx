@@ -70,6 +70,7 @@ export const SpaceEscrowDepositBanner = ({
   onDismiss,
 }: Props) => {
   const t = useTranslations('Spaces');
+  const tCommon = useTranslations('Common');
   const { jwt } = useJwt();
   const { person } = useMe();
   const { space: activeSpace } = useSpaceBySlug(spaceSlug);
@@ -311,7 +312,7 @@ export const SpaceEscrowDepositBanner = ({
           <Button
             onClick={onDismiss}
             variant="ghost"
-            aria-label="Dismiss banner"
+            aria-label={tCommon('close')}
             className="group rounded-full w-fit flex-shrink-0 text-foreground"
           >
             <Cross1Icon

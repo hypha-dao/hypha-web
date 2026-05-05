@@ -7,6 +7,7 @@
 
   --menu-item-height-1: var(--spacing-5);
   --menu-item-height-2: var(--spacing-6);
+  --menu-top-height-fallback: 70px;
 
   --table-cell-min-height-1: 36px;
   --table-cell-min-height-2: 44px;

@@ -86,17 +86,16 @@ export const UploadAvatar = ({
       }
       const normalizedFile = normalizeSvgMime(acceptedFiles[0] as File);
       const reader = new FileReader();
-      try {
-        reader.onload = () => {
-          setPreview(reader.result as string);
-          onChange(normalizedFile);
-        };
-        reader.readAsDataURL(normalizedFile);
-      } catch (error) {
-        console.error('Error reading file:', error);
+      reader.onload = () => {
+        setPreview(reader.result as string);
+        onChange(normalizedFile);
+      };
+      reader.onerror = (event) => {
+        console.error('Error reading file:', event);
         setPreview(defaultImage || null);
         onChange(null);
-      }
+      };
+      reader.readAsDataURL(normalizedFile);
     },
     [onChange, defaultImage, normalizeSvgMime],
   );

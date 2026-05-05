@@ -149,7 +149,7 @@ export class CoherenceChatPanelPage extends BasePage {
    * Navigate directly to the coherence page.
    */
   async openCoherencePage() {
-    await this.page.goto(`/en/dho/${this.spaceSlug}/coherence`);
+    await this.gotoApp(`/en/dho/${this.spaceSlug}/coherence`);
     await this.waitForPageLoad();
   }
 

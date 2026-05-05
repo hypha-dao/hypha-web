@@ -62,6 +62,9 @@ export const fileRouter: FileRouter = {
       if (!isValidAuthToken) {
         throw new UploadThingError('Unauthorized');
       }
+      if (files.length !== 1) {
+        throw new UploadThingError('Must upload exactly one file');
+      }
 
       for (const file of files) {
         const fileType = typeof file.type === 'string' ? file.type : '';

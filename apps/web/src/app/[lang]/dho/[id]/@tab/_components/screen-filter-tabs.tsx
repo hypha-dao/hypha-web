@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import { useFormatter } from 'next-intl';
 
 type ScreenFilterTabItem = {
   value: string;
@@ -21,6 +22,7 @@ export function ScreenFilterTabs({
   defaultValue,
   items,
 }: ScreenFilterTabsProps) {
+  const format = useFormatter();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -52,7 +54,7 @@ export function ScreenFilterTabs({
               <span>{item.label}</span>
               {typeof item.count === 'number' && Number.isFinite(item.count) ? (
                 <span className="text-xs text-muted-foreground">
-                  ({Intl.NumberFormat().format(item.count)})
+                  ({format.number(item.count)})
                 </span>
               ) : null}
             </span>

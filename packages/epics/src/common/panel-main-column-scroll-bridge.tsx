@@ -96,10 +96,12 @@ export function PanelDualSidebarScrollBridge({
             (MenuTop, plugin, main, Footer) as a fragment — fragments flatten, so without this
             wrapper they become **separate flex items** next to the right Sidebar: header | content
             | footer | panel in one horizontal row.
+            `overflow-x-hidden`: Human/AI panels are `position:fixed`; clip horizontal pan so the
+            scrollport cannot reveal a dead gap beside the fixed rails.
           */}
           <div
             ref={setMainColumnRef}
-            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto narrow-scrollbar"
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto narrow-scrollbar"
           >
             {children}
           </div>

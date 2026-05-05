@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -41,20 +42,14 @@ export const ButtonClose = ({
   }
 
   const title = t('close');
+  const mergedClassName = cn(
+    'inline-flex items-center gap-1 whitespace-nowrap',
+    className,
+  );
 
   return (
-    <Button
-      asChild
-      variant="ghost"
-      colorVariant="neutral"
-      className={className}
-      title={title}
-    >
-      <Link
-        href={closeUrl}
-        scroll={false}
-        className="inline-flex items-center gap-1 whitespace-nowrap"
-      >
+    <Button asChild variant="ghost" colorVariant="neutral" title={title}>
+      <Link href={closeUrl} scroll={false} className={mergedClassName}>
         {narrow ? null : title}
         <RxCross1 />
       </Link>

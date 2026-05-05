@@ -17,6 +17,10 @@ BEGIN
         ecosystem_logo_url_light = COALESCE(ecosystem_logo_url_light, ecosystem_logo_url),
         ecosystem_logo_url_dark = COALESCE(ecosystem_logo_url_dark, ecosystem_logo_url)
       WHERE ecosystem_logo_url IS NOT NULL
+        AND (
+          ecosystem_logo_url_light IS NULL
+          OR ecosystem_logo_url_dark IS NULL
+        )
     ';
   END IF;
 END $$;

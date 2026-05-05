@@ -64,14 +64,16 @@ const isAcceptedSpaceLogoFile = (file: File) => {
 };
 
 const isAcceptedEcosystemLogoFile = (file: File) => {
-  const ecosystemLogoAccept =
+  const acceptedMimeTypes =
     ECOSYSTEM_LOGO_IMAGE_ACCEPT.length > 0
       ? ECOSYSTEM_LOGO_IMAGE_ACCEPT
       : DEFAULT_IMAGE_ACCEPT;
-  if (ecosystemLogoAccept.includes(file.type)) {
+
+  if (acceptedMimeTypes.includes(file.type)) {
     return true;
   }
-  return false;
+
+  return isAcceptedSvgFallbackFile(file);
 };
 
 const createSpaceWeb2Props = {
@@ -159,7 +161,7 @@ export const createSpaceFiles = {
         )
         .refine(
           (file) => isAcceptedEcosystemLogoFile(file),
-          'File must be an image (JPEG, PNG, GIF, or WEBP)',
+          'File must be an image (JPEG, PNG, GIF, WEBP, or SVG)',
         ),
     ])
     .optional(),
@@ -174,7 +176,7 @@ export const createSpaceFiles = {
         )
         .refine(
           (file) => isAcceptedEcosystemLogoFile(file),
-          'File must be an image (JPEG, PNG, GIF, or WEBP)',
+          'File must be an image (JPEG, PNG, GIF, WEBP, or SVG)',
         ),
     ])
     .optional(),

@@ -18,6 +18,7 @@ const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
 const MATRIX_HOMESERVER_URL = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL;
 const ADMIN_BASE_NAME = 'hypha_admin';
+const LEGACY_SHARED_SECRET_DEVICE_ID = 'shared_secret_registration';
 
 function validateEnvVars() {
   if (!PRIVY_APP_ID || !PRIVY_APP_SECRET || !MATRIX_HOMESERVER_URL) {
@@ -200,7 +201,11 @@ export async function GET(request: NextRequest) {
     });
     if (existing) {
       const accessToken = decryptMatrixToken(existing.encryptedAccessToken);
-      if (await matrixAuthClient.validateToken(accessToken)) {
+      const hasValidToken = await matrixAuthClient.validateToken(accessToken);
+      if (
+        hasValidToken &&
+        existing.deviceId !== LEGACY_SHARED_SECRET_DEVICE_ID
+      ) {
         return NextResponse.json({
           accessToken,
           userId: existing.matrixUserId,
@@ -256,7 +261,11 @@ export async function GET(request: NextRequest) {
             });
           }
 
-          throw new Error('Matrix user link exists but cannot be updated');
+          throw new Error(
+            hasValidToken
+              ? 'Matrix user link has legacy device id but cannot be rotated'
+              : 'Matrix user link exists but cannot be updated',
+          );
         }
       }
     }

@@ -15,7 +15,7 @@ import {
 import { Button } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useTheme } from 'next-themes';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { SpaceVisualization } from './space-visualization';
@@ -37,9 +37,10 @@ type HierarchyNode = {
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
+  const spaces = Array.isArray(allSpaces) ? allSpaces : [];
 
   while (current.parentId) {
-    const parent = allSpaces.find((s) => s.id === current.parentId);
+    const parent = spaces.find((s) => s.id === current.parentId);
     if (!parent) break;
     current = parent;
   }
@@ -78,6 +79,7 @@ export function EcosystemNavigationMainPanel({
   lang,
 }: EcosystemNavigationMainPanelProps) {
   const t = useTranslations('SelectNavigationAction');
+  const format = useFormatter();
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
@@ -97,8 +99,8 @@ export function EcosystemNavigationMainPanel({
     [filteredSpaces],
   );
   const isLoading = isLoadingSpace || isLoadingSpaces || isFilteringSpaces;
-  const currentSpaceTitle = currentSpace?.title ?? daoSlug;
-  const currentSpaceSlug = currentSpace?.slug ?? daoSlug;
+  const currentSpaceTitle = currentSpace?.title ?? '';
+  const currentSpaceSlug = currentSpace?.slug;
   const [selectedSpace, setSelectedSpace] = useState<VisibleSpace | null>(null);
   const ecosystemSpaceCount = useMemo(() => {
     if (!currentSpace) return 0;
@@ -111,21 +113,19 @@ export function EcosystemNavigationMainPanel({
   }, [currentSpace, nonArchivedSpaces]);
 
   useEffect(() => {
+    if (!currentSpace || !currentSpaceSlug) {
+      setSelectedSpace(null);
+      return;
+    }
     setSelectedSpace({
-      id: currentSpace?.id ?? -1,
-      name: currentSpaceTitle,
+      id: currentSpace.id,
+      name: currentSpace.title,
       slug: currentSpaceSlug,
-      logoUrl: currentSpace?.logoUrl,
-      parentId: currentSpace?.parentId ?? null,
+      logoUrl: currentSpace.logoUrl,
+      parentId: currentSpace.parentId ?? null,
       root: true,
     });
-  }, [
-    currentSpace?.id,
-    currentSpace?.logoUrl,
-    currentSpace?.parentId,
-    currentSpaceSlug,
-    currentSpaceTitle,
-  ]);
+  }, [currentSpace, currentSpaceSlug]);
 
   const hierarchyData: HierarchyNode | null = useMemo(() => {
     if (!currentSpace || !filteredSpaces) return null;
@@ -164,9 +164,22 @@ export function EcosystemNavigationMainPanel({
     },
     [],
   );
-
-  const selectedSpaceTitle = selectedSpace?.name ?? currentSpaceTitle;
+  const selectedSpaceTitle =
+    selectedSpace?.name ?? currentSpaceTitle ?? t('title');
   const selectedSpaceSlug = selectedSpace?.slug ?? currentSpaceSlug;
+  const canRenderSpaceActions = Boolean(currentSpace && selectedSpaceSlug);
+  const visitSpaceHref =
+    canRenderSpaceActions && selectedSpaceSlug
+      ? getDhoSpaceContextPath({
+          pathname,
+          lang,
+          spaceSlug: selectedSpaceSlug,
+        })
+      : null;
+  const addSpaceHref =
+    canRenderSpaceActions && selectedSpaceSlug
+      ? `/${lang}/dho/${selectedSpaceSlug}/space/create`
+      : null;
 
   const tabs = useMemo(
     () => [
@@ -175,9 +188,26 @@ export function EcosystemNavigationMainPanel({
         label: t('tabs.nestedSpaces'),
         content: (
           <div className="flex min-h-0 flex-col gap-4">
-            <div className="px-3 pt-1 text-center text-4 font-semibold tracking-tight text-foreground sm:px-5">
+            <div
+              className="mx-auto w-full max-w-[min(100%,36rem)] truncate px-2 text-center text-4 font-semibold tracking-tight text-foreground"
+              title={selectedSpaceTitle}
+            >
               {selectedSpaceTitle}
             </div>
+            {canRenderSpaceActions && visitSpaceHref && addSpaceHref ? (
+              <div className="flex w-full items-center justify-end gap-2 px-3 sm:px-5">
+                <Link href={visitSpaceHref}>
+                  <Button variant="outline" colorVariant="neutral">
+                    {t('visibleSpaces.visitSpace')}
+                  </Button>
+                </Link>
+                <Link href={addSpaceHref}>
+                  <Button variant="default" colorVariant="accent">
+                    {t('visibleSpaces.addSpace')}
+                  </Button>
+                </Link>
+              </div>
+            ) : null}
             <div className="w-full overflow-visible px-3 py-2 sm:px-5 sm:py-4">
               {hierarchyData ? (
                 <div className="mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))]">
@@ -217,19 +247,16 @@ export function EcosystemNavigationMainPanel({
       },
     ],
     [
+      addSpaceHref,
+      canRenderSpaceActions,
       currentSpace?.id,
       handleVisibleSpacesChange,
       hierarchyData,
       selectedSpaceTitle,
       t,
+      visitSpaceHref,
     ],
   );
-  const visitSpaceHref = getDhoSpaceContextPath({
-    pathname,
-    lang,
-    spaceSlug: selectedSpaceSlug,
-  });
-  const addSpaceHref = `/${lang}/dho/${selectedSpaceSlug}/space/create`;
 
   return (
     <section className="flex w-full flex-col gap-4 py-4">
@@ -246,7 +273,7 @@ export function EcosystemNavigationMainPanel({
             <h1 className="text-7 font-semibold tracking-tight text-foreground">
               {t('ecosystem')}
               <span className="ml-2 text-5 font-medium text-muted-foreground">
-                | {Intl.NumberFormat().format(ecosystemSpaceCount)}
+                | {format.number(ecosystemSpaceCount)}
               </span>
             </h1>
           }
@@ -254,20 +281,6 @@ export function EcosystemNavigationMainPanel({
             resolvedTheme === 'dark' ? 'bg-background-2' : 'bg-neutral-2/85'
           }
           visualizationClassName="min-h-0"
-          afterTabsContent={
-            <div className="flex w-full items-center justify-end gap-2">
-              <Link href={visitSpaceHref}>
-                <Button variant="outline" colorVariant="neutral">
-                  {t('visibleSpaces.visitSpace')}
-                </Button>
-              </Link>
-              <Link href={addSpaceHref}>
-                <Button variant="default" colorVariant="accent">
-                  {t('visibleSpaces.addSpace')}
-                </Button>
-              </Link>
-            </div>
-          }
         />
       )}
     </section>

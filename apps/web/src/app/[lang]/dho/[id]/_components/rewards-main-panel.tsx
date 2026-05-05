@@ -27,6 +27,7 @@ export function RewardsMainPanel({
       <TabScreenTitle
         title={tTreasury('rewardsSection.title')}
         count={rewardCount}
+        lang={lang}
       />
       <SpacePendingRewardsSection
         web3SpaceId={web3SpaceId}

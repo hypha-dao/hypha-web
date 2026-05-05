@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -31,6 +31,26 @@ export function HumanChatPanelTabs({
 }: HumanChatPanelTabsProps) {
   const t = useTranslations('HumanChatPanel');
   const tabRailScrollRef = useRef<HTMLDivElement | null>(null);
+
+  /** Keep the active tab fully visible inside the horizontally scrollable rail (narrow panels / many tabs). */
+  const scrollTabIntoRailIfClipped = useCallback((tabKey: ChatPanelTab) => {
+    const el = document.getElementById(`chat-tab-${tabKey}`);
+    const rail = tabRailScrollRef.current;
+    if (!el || !rail) return;
+    const elRect = el.getBoundingClientRect();
+    const railRect = rail.getBoundingClientRect();
+    const pad = 2;
+    if (
+      elRect.left < railRect.left + pad ||
+      elRect.right > railRect.right - pad
+    ) {
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    }
+  }, []);
 
   const chatBadgeLabel =
     chatMentionCount > 0
@@ -75,20 +95,8 @@ export function HumanChatPanelTabs({
   const hasEndCluster = Boolean(tabRowEnd);
 
   useLayoutEffect(() => {
-    if (activeTab !== 'mentions') return;
-    const el = document.getElementById('chat-tab-mentions');
-    const rail = tabRailScrollRef.current;
-    if (!el || !rail) return;
-    const elRect = el.getBoundingClientRect();
-    const railRect = rail.getBoundingClientRect();
-    if (elRect.left < railRect.left || elRect.right > railRect.right) {
-      el.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'nearest',
-      });
-    }
-  }, [activeTab]);
+    scrollTabIntoRailIfClipped(activeTab);
+  }, [activeTab, scrollTabIntoRailIfClipped]);
 
   return (
     <div
@@ -148,7 +156,12 @@ export function HumanChatPanelTabs({
               aria-selected={activeTab === tab.key}
               aria-controls={`chat-tabpanel-${tab.key}`}
               tabIndex={activeTab === tab.key ? 0 : -1}
-              onClick={() => onTabChange(tab.key)}
+              onClick={() => {
+                onTabChange(tab.key);
+                requestAnimationFrame(() =>
+                  scrollTabIntoRailIfClipped(tab.key),
+                );
+              }}
               onKeyDown={(e) => handleKeyDown(e, index)}
               className={cn(
                 'shrink-0 select-none',

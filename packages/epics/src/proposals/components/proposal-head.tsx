@@ -4,7 +4,12 @@ import { Text } from '@radix-ui/themes';
 import { Badge, Skeleton } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useParams } from 'next/navigation';
-import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
+import {
+  DOCUMENT_LABEL_BADGE_KEYS,
+  normalizeProposalDocumentLabel,
+  useIsDelegate,
+  useSpaceBySlug,
+} from '@hypha-platform/core/client';
 import { useFormatter, useTranslations } from 'next-intl';
 import React from 'react';
 
@@ -36,6 +41,7 @@ export const ProposalHead = ({
   proposalStatus,
 }: ProposalHeadProps) => {
   const tCommon = useTranslations('Common');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const tProposalDetails = useTranslations('ProposalDetails');
   const format = useFormatter();
   const displayName =
@@ -101,6 +107,13 @@ export const ProposalHead = ({
     });
   }, [createDate, format]);
 
+  const translatedLabel = React.useMemo(() => {
+    const canonicalLabel = normalizeProposalDocumentLabel(label);
+    if (!canonicalLabel) return label;
+    const labelMessageKey = DOCUMENT_LABEL_BADGE_KEYS[canonicalLabel];
+    return labelMessageKey ? tAgreementFlow(labelMessageKey) : label;
+  }, [label, tAgreementFlow]);
+
   return (
     <div className="flex gap-3 w-full">
       <div className="flex items-center space-x-3">
@@ -118,7 +131,7 @@ export const ProposalHead = ({
                 colorVariant="accent"
                 isLoading={isLoading}
               >
-                {label}
+                {translatedLabel}
               </Badge>
               {creator?.type === 'space' && (
                 <Badge

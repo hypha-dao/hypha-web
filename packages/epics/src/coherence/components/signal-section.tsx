@@ -14,10 +14,11 @@ import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
+import {
+  SIGNAL_PROVISIONING_NOTICE_EVENT,
+  SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
+} from '../constants';
 
-const SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY =
-  'coherence.signalProvisioningNotice';
-const SIGNAL_PROVISIONING_NOTICE_EVENT = 'coherence:signalProvisioningNotice';
 const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
 
 type SignalSectionProps = {
@@ -112,22 +113,27 @@ export const SignalSection: FC<SignalSectionProps> = ({
         <Input
           type="search"
           placeholder={t('searchSignals')}
+          aria-label={t('searchSignals')}
           onChange={(event) => onUpdateSearch(event.target.value)}
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
           className="w-full"
         />
-        <Link href={createSignalHref} className="w-full lg:w-auto">
-          <Button
-            variant="default"
-            colorVariant="accent"
-            disabled={isLoading}
-            className="w-full lg:w-auto"
-          >
+        <Button
+          asChild
+          variant="default"
+          colorVariant="accent"
+          disabled={isLoading}
+          className="w-full lg:w-auto"
+        >
+          <Link href={createSignalHref} className="w-full lg:w-auto">
             <PlusIcon />
             {t('newSignal')}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
+      {provisioningNoticeLines.length > 0 ? (
+        <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
+      ) : null}
 
       {pagination?.totalPages === 0 ? (
         <Empty>
@@ -170,9 +176,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </Text>
         </SectionLoadMore>
       )}
-      {provisioningNoticeLines.length > 0 ? (
-        <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
-      ) : null}
     </div>
   );
 };
