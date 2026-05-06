@@ -25,6 +25,12 @@ export type DhoStickySpaceChromeProps = {
 
 function useMenuTopOffsetPx(): number {
   const [px, setPx] = React.useState(70);
+  const pxRef = React.useRef(px);
+  const rafRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    pxRef.current = px;
+  }, [px]);
 
   React.useLayoutEffect(() => {
     const read = () => {
@@ -32,18 +38,33 @@ function useMenuTopOffsetPx(): number {
         '--menu-top-height',
       );
       const n = parseFloat(raw);
-      setPx(Number.isFinite(n) && n > 0 ? n : 70);
+      const next = Number.isFinite(n) && n > 0 ? n : 70;
+      if (next !== pxRef.current) {
+        pxRef.current = next;
+        setPx(next);
+      }
+    };
+    const scheduleRead = () => {
+      if (rafRef.current !== null) return;
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        read();
+      });
     };
     read();
-    const mo = new MutationObserver(read);
+    const mo = new MutationObserver(scheduleRead);
     mo.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['style', 'class'],
     });
-    window.addEventListener('resize', read);
+    window.addEventListener('resize', scheduleRead);
     return () => {
       mo.disconnect();
-      window.removeEventListener('resize', read);
+      window.removeEventListener('resize', scheduleRead);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
   }, []);
 
