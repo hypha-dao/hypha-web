@@ -41,7 +41,7 @@ export function MyFilteredSpaces({
     });
   const [hideArchivedSpaces, setHideArchivedSpaces] = React.useState(true);
   const tSpaces = useTranslations('Spaces');
-  const tCommon = useTranslations('Common');
+  const tMyWallet = useTranslations('MyWallet');
 
   const memberFilteredSpaces = React.useMemo(
     () => filterSpaces(spaces, person?.slug, web3SpaceIds),
@@ -69,7 +69,7 @@ export function MyFilteredSpaces({
   return (
     <div className="space-y-6">
       <SectionFilter
-        count={isLoadingSpaces ? tCommon('loading') : displayedSpaces.length}
+        count={isLoadingSpaces ? tMyWallet('loading') : displayedSpaces.length}
         label={tSpaces('mySpacesLabel')}
       >
         <label
@@ -88,7 +88,7 @@ export function MyFilteredSpaces({
       </SectionFilter>
       {isLoadingSpaces ? (
         <Text className="text-3 text-muted-foreground">
-          {tCommon('loading')}
+          {tMyWallet('loading')}
         </Text>
       ) : (
         <SpaceCardList
