@@ -101,17 +101,89 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
-  const isLanguageSelectVisible = await getShowLanguageSelect();
-  const locale = await getLocale();
-  const messages = await getMessages();
-  const tNav = await getTranslations('Navigation');
-  const tFooter = await getTranslations('Footer');
   const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
   const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
-  const aiChatEnabled = await getEnableAiChat();
-  const spaceMemoryEnabled = await getEnableSpaceMemory();
-  const humanChatEnabled = await getEnableHumanChat();
+  let isLanguageSelectVisible = false;
+  let locale = 'en';
+  let messages: Record<string, unknown> = {};
+  let aiChatEnabled = true;
+  let spaceMemoryEnabled = false;
+  let humanChatEnabled = true;
+
+  let navMySpacesLabel = 'mySpaces';
+  let navNetworkLabel = 'network';
+  let navOpenMenuLabel = 'openMenu';
+  let navCloseMenuLabel = 'closeMenu';
+  let footerNetworkLabel = 'network';
+  let footerLegalLabel = 'legal';
+  let footerHyphaServicesLabel = 'hyphaServices';
+  let footerHyphaTokenomicsLabel = 'hyphaTokenomics';
+  let footerLicensingPolicyLabel = 'licensingPolicy';
+  let footerTermsAndConditionsLabel = 'termsAndConditions';
+  let footerPrivacyPolicyLabel = 'privacyPolicy';
+
+  try {
+    isLanguageSelectVisible = await getShowLanguageSelect();
+  } catch (error) {
+    console.error('[app/layout] Failed to resolve showLanguageSelect', error);
+  }
+
+  try {
+    locale = await getLocale();
+  } catch (error) {
+    console.error('[app/layout] Failed to resolve locale', error);
+  }
+
+  try {
+    messages = await getMessages();
+  } catch (error) {
+    console.error('[app/layout] Failed to resolve messages', error);
+  }
+
+  try {
+    const tNav = await getTranslations('Navigation');
+    navMySpacesLabel = tNav('mySpaces');
+    navNetworkLabel = tNav('network');
+    navOpenMenuLabel = tNav('openMenu');
+    navCloseMenuLabel = tNav('closeMenu');
+  } catch (error) {
+    console.error(
+      '[app/layout] Failed to resolve Navigation translations',
+      error,
+    );
+  }
+
+  try {
+    const tFooter = await getTranslations('Footer');
+    footerNetworkLabel = tFooter('network');
+    footerLegalLabel = tFooter('legal');
+    footerHyphaServicesLabel = tFooter('hyphaServices');
+    footerHyphaTokenomicsLabel = tFooter('hyphaTokenomics');
+    footerLicensingPolicyLabel = tFooter('licensingPolicy');
+    footerTermsAndConditionsLabel = tFooter('termsAndConditions');
+    footerPrivacyPolicyLabel = tFooter('privacyPolicy');
+  } catch (error) {
+    console.error('[app/layout] Failed to resolve Footer translations', error);
+  }
+
+  try {
+    aiChatEnabled = await getEnableAiChat();
+  } catch (error) {
+    console.error('[app/layout] Failed to resolve aiChatEnabled', error);
+  }
+
+  try {
+    spaceMemoryEnabled = await getEnableSpaceMemory();
+  } catch (error) {
+    console.error('[app/layout] Failed to resolve spaceMemoryEnabled', error);
+  }
+
+  try {
+    humanChatEnabled = await getEnableHumanChat();
+  } catch (error) {
+    console.error('[app/layout] Failed to resolve humanChatEnabled', error);
+  }
 
   return (
     <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>
@@ -163,8 +235,8 @@ export default async function RootLayout({
                           <ConnectedMenuTop
                             aiChatEnabled={aiChatEnabled}
                             logoHref={ROOT_URL}
-                            openMenuLabel={tNav('openMenu')}
-                            closeMenuLabel={tNav('closeMenu')}
+                            openMenuLabel={navOpenMenuLabel}
+                            closeMenuLabel={navCloseMenuLabel}
                             leadingAction={
                               aiChatEnabled ? <AiSidebarTrigger /> : undefined
                             }
@@ -181,11 +253,11 @@ export default async function RootLayout({
                               baseRedirectPath="/my-spaces"
                               navItems={[
                                 {
-                                  label: tNav('mySpaces'),
+                                  label: navMySpacesLabel,
                                   href: `/${locale}/my-spaces`,
                                 },
                                 {
-                                  label: tNav('network'),
+                                  label: navNetworkLabel,
                                   href: `/${locale}/network`,
                                 },
                               ]}
@@ -207,15 +279,15 @@ export default async function RootLayout({
                           </div>
                         </div>
                         <Footer
-                          networkLabel={tFooter('network')}
-                          legalLabel={tFooter('legal')}
-                          hyphaServicesLabel={tFooter('hyphaServices')}
-                          hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
-                          licensingPolicyLabel={tFooter('licensingPolicy')}
-                          termsAndConditionsLabel={tFooter(
-                            'termsAndConditions',
-                          )}
-                          privacyPolicyLabel={tFooter('privacyPolicy')}
+                          networkLabel={footerNetworkLabel}
+                          legalLabel={footerLegalLabel}
+                          hyphaServicesLabel={footerHyphaServicesLabel}
+                          hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
+                          licensingPolicyLabel={footerLicensingPolicyLabel}
+                          termsAndConditionsLabel={
+                            footerTermsAndConditionsLabel
+                          }
+                          privacyPolicyLabel={footerPrivacyPolicyLabel}
                         />
                       </PanelWrapLayout>
                     </PanelProviders>
