@@ -1,0 +1,8 @@
+node_modules
+.turbo
+.next
+dist
+coverage
+.env
+.env.local
+.vercel

@@ -1,0 +1,47 @@
+name: Deploy Web
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: npm i -g vercel@latest
+
+      - name: Pull Vercel env
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          else
+            vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          fi
+
+      - name: Build web
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            vercel build --cwd apps/web --token=${{ secrets.VERCEL_TOKEN }}
+          else
+            vercel build --prod --cwd apps/web --token=${{ secrets.VERCEL_TOKEN }}
+          fi
+
+      - name: Deploy web
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            vercel deploy --prebuilt --cwd apps/web --token=${{ secrets.VERCEL_TOKEN }}
+          else
+            vercel deploy --prebuilt --prod --cwd apps/web --token=${{ secrets.VERCEL_TOKEN }}
+          fi

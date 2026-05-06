@@ -1,0 +1,16 @@
+{
+  "name": "agentic-monorepo-starter",
+  "private": true,
+  "packageManager": "pnpm@9.12.2",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.1",
+    "typescript": "^5.6.3"
+  }
+}
