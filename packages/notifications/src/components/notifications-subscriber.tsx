@@ -301,7 +301,14 @@ export function NotificationSubscriber({
         subscriptionChangeHandler,
       );
     };
-  }, [appId, safariWebId, serviceWorkerPath, router, initialized, person?.slug]);
+  }, [
+    appId,
+    safariWebId,
+    serviceWorkerPath,
+    router,
+    initialized,
+    person?.slug,
+  ]);
 
   return (
     <NotificationsContext.Provider
