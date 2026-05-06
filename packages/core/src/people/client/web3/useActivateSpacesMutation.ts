@@ -44,9 +44,15 @@ export const useActivateSpacesMutation = () => {
         throw new Error('spaceIds and amounts length mismatch');
       }
 
+      if (paymentToken === 'USDC' && !USDC_TOKEN?.address) {
+        throw new Error(
+          'USDC token not configured: cannot proceed with USDC payment',
+        );
+      }
+
       const decimals = await getTokenDecimals(
         paymentToken === 'USDC'
-          ? (USDC_TOKEN?.address as `0x${string}`)
+          ? USDC_TOKEN.address
           : hyphaTokenAddress[8453],
       );
 
@@ -56,7 +62,7 @@ export const useActivateSpacesMutation = () => {
 
       if (paymentToken === 'USDC') {
         await client.writeContract({
-          address: USDC_TOKEN?.address as `0x${string}`,
+          address: USDC_TOKEN.address,
           abi: erc20Abi,
           functionName: 'approve',
           args: [
