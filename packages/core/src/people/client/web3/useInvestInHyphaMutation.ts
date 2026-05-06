@@ -30,14 +30,15 @@ export const useInvestInHyphaMutation = () => {
       if (!client) {
         throw new Error('Smart wallet client not available');
       }
+      if (!PAYMENT_TOKEN?.address) {
+        throw new Error('USDC token is not configured');
+      }
 
-      const usdcDecimals = await getTokenDecimals(
-        PAYMENT_TOKEN?.address as `0x${string}`,
-      );
+      const usdcDecimals = await getTokenDecimals(PAYMENT_TOKEN.address);
       const amount = parseUnits(arg.usdcAmount, usdcDecimals ?? 6);
 
       await client.writeContract({
-        address: PAYMENT_TOKEN?.address as `0x${string}`,
+        address: PAYMENT_TOKEN.address,
         abi: erc20Abi,
         functionName: 'approve',
         args: [hyphaTokenAddress[8453] as `0x${string}`, amount],
