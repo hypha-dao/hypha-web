@@ -106,9 +106,9 @@ export default async function RootLayout({
   let isLanguageSelectVisible = false;
   let locale = 'en';
   let messages: Record<string, unknown> = {};
-  let aiChatEnabled = true;
+  let aiChatEnabled = false;
   let spaceMemoryEnabled = false;
-  let humanChatEnabled = true;
+  let humanChatEnabled = false;
 
   let navMySpacesLabel = 'mySpaces';
   let navNetworkLabel = 'network';
@@ -167,19 +167,19 @@ export default async function RootLayout({
   }
 
   try {
-    aiChatEnabled = await getEnableAiChat();
+    aiChatEnabled = (await getEnableAiChat()) === true;
   } catch (error) {
     console.error('[app/layout] Failed to resolve aiChatEnabled', error);
   }
 
   try {
-    spaceMemoryEnabled = await getEnableSpaceMemory();
+    spaceMemoryEnabled = (await getEnableSpaceMemory()) === true;
   } catch (error) {
     console.error('[app/layout] Failed to resolve spaceMemoryEnabled', error);
   }
 
   try {
-    humanChatEnabled = await getEnableHumanChat();
+    humanChatEnabled = (await getEnableHumanChat()) === true;
   } catch (error) {
     console.error('[app/layout] Failed to resolve humanChatEnabled', error);
   }
