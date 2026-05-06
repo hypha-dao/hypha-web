@@ -250,7 +250,10 @@ export function NotificationSubscriber({
         );
       } catch (err) {
         hasInitAttemptRef.current = false;
-        console.log('Initialize error:', err);
+        console.error(
+          '[notifications-subscriber] OneSignal initialization error:',
+          err,
+        );
       }
     };
     initialize();
