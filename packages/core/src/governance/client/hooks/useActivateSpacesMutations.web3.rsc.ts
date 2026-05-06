@@ -64,7 +64,12 @@ export const useActivateSpacesMutationsWeb3Rpc = ({
 
       const tokenAddress =
         arg.paymentToken === 'USDC'
-          ? (USDC_TOKEN?.address as `0x${string}`)
+          ? (() => {
+              if (!USDC_TOKEN?.address) {
+                throw new Error('USDC token not configured in TOKENS');
+              }
+              return USDC_TOKEN.address;
+            })()
           : (hyphaTokenAddress[chainId] as `0x${string}`);
       const decimals = await getTokenDecimals(tokenAddress);
       const parsedAmounts = arg.amounts.map((a) =>
@@ -72,8 +77,11 @@ export const useActivateSpacesMutationsWeb3Rpc = ({
       );
 
       if (arg.paymentToken === 'USDC') {
+        if (!USDC_TOKEN?.address) {
+          throw new Error('USDC token not configured in TOKENS');
+        }
         transactions.push({
-          target: USDC_TOKEN?.address as `0x${string}`,
+          target: USDC_TOKEN.address,
           value: 0,
           data: encodeFunctionData({
             abi: erc20Abi,
