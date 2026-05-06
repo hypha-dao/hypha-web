@@ -278,7 +278,7 @@ export function EcosystemNavigationMainPanel({
             </h1>
           }
           className={
-            resolvedTheme === 'dark' ? 'bg-background-2' : 'bg-neutral-2/85'
+            resolvedTheme === 'light' ? 'bg-neutral-2/85' : 'bg-background-2'
           }
           visualizationClassName="min-h-0"
         />

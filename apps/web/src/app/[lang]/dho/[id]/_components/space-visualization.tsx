@@ -131,7 +131,7 @@ export function SpaceVisualization({
     if (!svgRef.current || !focusRef.current) return;
 
     const getSelectedSpaceFillColor = () =>
-      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
+      themeRef.current === 'light' ? '#ffffff' : '#1a1a1a';
 
     const svg = d3.select(svgRef.current);
     const orbits = svg.selectAll<SVGCircleElement, SpaceHierarchyNode>(
@@ -167,7 +167,7 @@ export function SpaceVisualization({
     if (!svgRef.current) return;
 
     const getSelectedSpaceFillColor = () =>
-      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
+      themeRef.current === 'light' ? '#ffffff' : '#1a1a1a';
 
     const getStrokeWidth = (depth: number): number => {
       return (
