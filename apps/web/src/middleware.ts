@@ -89,6 +89,20 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
 }
 
 export function middleware(request: NextRequest) {
+  const hasPrivyOauthParams = Array.from(
+    request.nextUrl.searchParams.keys(),
+  ).some((key) => key === 'privy_oauth' || key.startsWith('privy_oauth_'));
+  if (hasPrivyOauthParams) {
+    const sanitizedUrl = request.nextUrl.clone();
+    const keys = Array.from(sanitizedUrl.searchParams.keys());
+    for (const key of keys) {
+      if (key === 'privy_oauth' || key.startsWith('privy_oauth_')) {
+        sanitizedUrl.searchParams.delete(key);
+      }
+    }
+    return NextResponse.redirect(sanitizedUrl);
+  }
+
   const response = i18nMiddleware(request);
 
   if (response.status === 301 || response.status === 302) {

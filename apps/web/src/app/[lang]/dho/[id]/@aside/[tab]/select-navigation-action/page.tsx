@@ -13,12 +13,21 @@ export default async function SelectNavigationActions({
   params: Promise<{ id: string; lang: Locale; tab: string }>;
 }) {
   const { id: daoSlug, lang } = await params;
-  const tModalAside = await getTranslations('ModalAside');
+  let spaceNavigationLabel = 'Space navigation';
+  try {
+    const tModalAside = await getTranslations('ModalAside');
+    spaceNavigationLabel = tModalAside('spaceNavigation');
+  } catch (error) {
+    console.error(
+      '[select-navigation-action/page] Failed to load ModalAside translations',
+      error,
+    );
+  }
   return (
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <ModalStickyNavigation
-          contextTitle={tModalAside('spaceNavigation')}
+          contextTitle={spaceNavigationLabel}
           closeDropSegment={PATH_SELECT_NAVIGATION_ACTION}
           showBack={false}
         />
