@@ -89,17 +89,11 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
 }
 
 export function middleware(request: NextRequest) {
-  const hasPrivyOauthParams = Array.from(
-    request.nextUrl.searchParams.keys(),
-  ).some((key) => key === 'privy_oauth' || key.startsWith('privy_oauth_'));
-  if (hasPrivyOauthParams) {
+  const rawUrl = request.url;
+  const hasPrivyOauthParams = /[?&]privy_oauth(?:_|=|&|$)/i.test(rawUrl);
+  if (hasPrivyOauthParams && request.nextUrl.search) {
     const sanitizedUrl = request.nextUrl.clone();
-    const keys = Array.from(sanitizedUrl.searchParams.keys());
-    for (const key of keys) {
-      if (key === 'privy_oauth' || key.startsWith('privy_oauth_')) {
-        sanitizedUrl.searchParams.delete(key);
-      }
-    }
+    sanitizedUrl.search = '';
     return NextResponse.redirect(sanitizedUrl);
   }
 
