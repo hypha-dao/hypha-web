@@ -32,10 +32,23 @@ export async function getSpaceBySlug({
 
     const web3SpaceIds = [web3SpaceId];
 
-    const [web3details, web3proposalsIds] = await Promise.all([
-      fetchSpaceDetails({ spaceIds: web3SpaceIds }),
-      fetchSpaceProposalsIds({ spaceIds: web3SpaceIds }),
-    ]);
+    let web3details: Awaited<ReturnType<typeof fetchSpaceDetails>> = [];
+    let web3proposalsIds: Awaited<ReturnType<typeof fetchSpaceProposalsIds>> =
+      [];
+
+    try {
+      [web3details, web3proposalsIds] = await Promise.all([
+        fetchSpaceDetails({ spaceIds: web3SpaceIds }),
+        fetchSpaceProposalsIds({ spaceIds: web3SpaceIds }),
+      ]);
+    } catch (error) {
+      console.error('[getSpaceBySlug] Failed to fetch web3 enrichment', {
+        error,
+        slug,
+        web3SpaceId: web3SpaceId.toString(),
+      });
+      return space;
+    }
 
     const [spaceDetails] = web3details;
     const [spaceProposals] = web3proposalsIds;
@@ -52,6 +65,7 @@ export async function getSpaceBySlug({
       documentCount: spaceProposals?.accepted.length ?? 0,
     };
   } catch (error) {
+    console.error('[getSpaceBySlug] Failed to fetch space', { error, slug });
     throw new Error('Failed to get space', {
       cause: error instanceof Error ? error : new Error(String(error)),
     });
