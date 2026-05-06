@@ -30,19 +30,19 @@ export async function getAllSpaces(
     );
 
     const [web3details, web3proposalsIds] = await Promise.all([
-      fetchSpaceDetails({ spaceIds: web3SpaceIds, allowFailure: true }).catch(
-        (error) => {
-          console.error('[getAllSpaces] Failed to fetch space details', {
-            error,
-            web3SpaceCount: web3SpaceIds.length,
-          });
-          return [];
-        },
-      ),
+      fetchSpaceDetails({ spaceIds: web3SpaceIds, allowFailure: true }).catch<
+        Awaited<ReturnType<typeof fetchSpaceDetails>>
+      >((error) => {
+        console.error('[getAllSpaces] Failed to fetch space details', {
+          error,
+          web3SpaceCount: web3SpaceIds.length,
+        });
+        return [];
+      }),
       fetchSpaceProposalsIds({
         spaceIds: web3SpaceIds,
         allowFailure: true,
-      }).catch((error) => {
+      }).catch<Awaited<ReturnType<typeof fetchSpaceProposalsIds>>>((error) => {
         console.error('[getAllSpaces] Failed to fetch space proposals ids', {
           error,
           web3SpaceCount: web3SpaceIds.length,
