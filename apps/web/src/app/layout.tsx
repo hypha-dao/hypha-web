@@ -110,18 +110,18 @@ export default async function RootLayout({
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
 
-  let navMySpacesLabel = 'mySpaces';
-  let navNetworkLabel = 'network';
-  let navOpenMenuLabel = 'openMenu';
-  let navCloseMenuLabel = 'closeMenu';
-  let navSelectLanguageLabel = 'selectLanguage';
-  let footerNetworkLabel = 'network';
-  let footerLegalLabel = 'legal';
-  let footerHyphaServicesLabel = 'hyphaServices';
-  let footerHyphaTokenomicsLabel = 'hyphaTokenomics';
-  let footerLicensingPolicyLabel = 'licensingPolicy';
-  let footerTermsAndConditionsLabel = 'termsAndConditions';
-  let footerPrivacyPolicyLabel = 'privacyPolicy';
+  let navMySpacesLabel = 'My Spaces';
+  let navNetworkLabel = 'Network';
+  let navOpenMenuLabel = 'Open menu';
+  let navCloseMenuLabel = 'Close menu';
+  let navSelectLanguageLabel = 'Select language';
+  let footerNetworkLabel = 'Network';
+  let footerLegalLabel = 'Legal';
+  let footerHyphaServicesLabel = 'Hypha Services';
+  let footerHyphaTokenomicsLabel = 'Hypha Tokenomics';
+  let footerLicensingPolicyLabel = 'Licensing Policy';
+  let footerTermsAndConditionsLabel = 'Terms and Conditions';
+  let footerPrivacyPolicyLabel = 'Privacy Policy';
 
   try {
     isLanguageSelectVisible = await getShowLanguageSelect();
