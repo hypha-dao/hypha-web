@@ -114,6 +114,7 @@ export default async function RootLayout({
   let navNetworkLabel = 'network';
   let navOpenMenuLabel = 'openMenu';
   let navCloseMenuLabel = 'closeMenu';
+  let navSelectLanguageLabel = 'selectLanguage';
   let footerNetworkLabel = 'network';
   let footerLegalLabel = 'legal';
   let footerHyphaServicesLabel = 'hyphaServices';
@@ -146,6 +147,7 @@ export default async function RootLayout({
     navNetworkLabel = tNav('network');
     navOpenMenuLabel = tNav('openMenu');
     navCloseMenuLabel = tNav('closeMenu');
+    navSelectLanguageLabel = tNav('selectLanguage');
   } catch (error) {
     console.error(
       '[app/layout] Failed to resolve Navigation translations',
@@ -261,7 +263,9 @@ export default async function RootLayout({
                             ]}
                             trailingBeforeProfile={
                               isLanguageSelectVisible ? (
-                                <ConnectedLanguageSelect />
+                                <ConnectedLanguageSelect
+                                  selectLanguageLabel={navSelectLanguageLabel}
+                                />
                               ) : undefined
                             }
                           />

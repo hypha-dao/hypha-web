@@ -1,6 +1,6 @@
 'use client';
 
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { LanguageSelect } from '@hypha-platform/ui';
@@ -14,10 +14,15 @@ function localeFromPathname(pathname: string): string | null {
     : null;
 }
 
-export function ConnectedLanguageSelect() {
+type ConnectedLanguageSelectProps = {
+  selectLanguageLabel: string;
+};
+
+export function ConnectedLanguageSelect({
+  selectLanguageLabel,
+}: ConnectedLanguageSelectProps) {
   const pathname = usePathname();
   const intlLocale = useLocale();
-  const tNav = useTranslations('Navigation');
 
   const pathLocale = useMemo(() => localeFromPathname(pathname), [pathname]);
   const urlLocale = pathLocale ?? intlLocale;
@@ -54,7 +59,7 @@ export function ConnectedLanguageSelect() {
       currentLocale={activeLocale}
       locales={locales}
       onLocaleChange={handleLocaleChange}
-      ariaLabel={tNav('selectLanguage')}
+      ariaLabel={selectLanguageLabel}
     />
   );
 }
