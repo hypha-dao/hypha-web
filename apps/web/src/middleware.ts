@@ -89,14 +89,6 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
 }
 
 export function middleware(request: NextRequest) {
-  const rawUrl = request.url;
-  const hasPrivyOauthParams = /[?&]privy_oauth(?:_|=|&|$)/i.test(rawUrl);
-  if (hasPrivyOauthParams && request.nextUrl.search) {
-    const sanitizedUrl = request.nextUrl.clone();
-    sanitizedUrl.search = '';
-    return NextResponse.redirect(sanitizedUrl);
-  }
-
   const response = i18nMiddleware(request);
 
   if (response.status === 301 || response.status === 302) {
