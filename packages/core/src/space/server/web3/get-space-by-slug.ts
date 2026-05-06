@@ -47,7 +47,13 @@ export async function getSpaceBySlug({
         slug,
         web3SpaceId: web3SpaceId.toString(),
       });
-      return space;
+      return {
+        ...space,
+        memberCount: 0,
+        memberAddresses: [],
+        documentCount: 0,
+        onChainDataMissing: true,
+      };
     }
 
     const [spaceDetails] = web3details;
