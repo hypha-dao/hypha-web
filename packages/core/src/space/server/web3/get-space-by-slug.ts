@@ -7,6 +7,7 @@ import {
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
 } from '@hypha-platform/core/client';
+import { readWithWarmupRetry } from './internal';
 
 interface GetSpaceBySlugProps {
   slug: string;
@@ -33,9 +34,12 @@ export async function getSpaceBySlug({
     const web3SpaceIds = [web3SpaceId];
 
     const [web3details, web3proposalsIds] = await Promise.all([
-      fetchSpaceDetails({ spaceIds: web3SpaceIds, allowFailure: true }).catch<
-        Awaited<ReturnType<typeof fetchSpaceDetails>>
-      >((error) => {
+      readWithWarmupRetry({
+        label: 'getSpaceBySlug/space-details',
+        spaceIds: web3SpaceIds,
+        read: () =>
+          fetchSpaceDetails({ spaceIds: web3SpaceIds, allowFailure: true }),
+      }).catch<Awaited<ReturnType<typeof fetchSpaceDetails>>>((error) => {
         console.error('[getSpaceBySlug] Failed to fetch space details', {
           error,
           slug,
@@ -43,9 +47,14 @@ export async function getSpaceBySlug({
         });
         return [];
       }),
-      fetchSpaceProposalsIds({
+      readWithWarmupRetry({
+        label: 'getSpaceBySlug/space-proposals',
         spaceIds: web3SpaceIds,
-        allowFailure: true,
+        read: () =>
+          fetchSpaceProposalsIds({
+            spaceIds: web3SpaceIds,
+            allowFailure: true,
+          }),
       }).catch<Awaited<ReturnType<typeof fetchSpaceProposalsIds>>>((error) => {
         console.error('[getSpaceBySlug] Failed to fetch space proposals ids', {
           error,

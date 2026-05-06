@@ -7,7 +7,7 @@ import {
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
 } from '@hypha-platform/core/client';
-import { formMap } from './internal';
+import { formMap, readWithWarmupRetry } from './internal';
 
 interface GetAllSpacesProps {
   search?: string;
@@ -30,18 +30,26 @@ export async function getAllSpaces(
     );
 
     const [web3details, web3proposalsIds] = await Promise.all([
-      fetchSpaceDetails({ spaceIds: web3SpaceIds, allowFailure: true }).catch<
-        Awaited<ReturnType<typeof fetchSpaceDetails>>
-      >((error) => {
+      readWithWarmupRetry({
+        label: 'getAllSpaces/space-details',
+        spaceIds: web3SpaceIds,
+        read: () =>
+          fetchSpaceDetails({ spaceIds: web3SpaceIds, allowFailure: true }),
+      }).catch<Awaited<ReturnType<typeof fetchSpaceDetails>>>((error) => {
         console.error('[getAllSpaces] Failed to fetch space details', {
           error,
           web3SpaceCount: web3SpaceIds.length,
         });
         return [];
       }),
-      fetchSpaceProposalsIds({
+      readWithWarmupRetry({
+        label: 'getAllSpaces/space-proposals',
         spaceIds: web3SpaceIds,
-        allowFailure: true,
+        read: () =>
+          fetchSpaceProposalsIds({
+            spaceIds: web3SpaceIds,
+            allowFailure: true,
+          }),
       }).catch<Awaited<ReturnType<typeof fetchSpaceProposalsIds>>>((error) => {
         console.error('[getAllSpaces] Failed to fetch space proposals ids', {
           error,
