@@ -13,7 +13,7 @@ export default async function SelectNavigationActions({
   params: Promise<{ id: string; lang: Locale; tab: string }>;
 }) {
   const { id: daoSlug, lang } = await params;
-  let spaceNavigationLabel = 'Space navigation';
+  let spaceNavigationLabel: string | undefined;
   try {
     const tModalAside = await getTranslations('ModalAside');
     spaceNavigationLabel = tModalAside('spaceNavigation');
