@@ -23,7 +23,8 @@ import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
 import z from 'zod';
 
-const USDC_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
+const TOKENS_SAFE = Array.isArray(TOKENS) ? TOKENS : [];
+const USDC_TOKEN = TOKENS_SAFE.find((t) => t.symbol === 'USDC');
 const chainId = getGovernanceChainId();
 
 type PaymentToken = 'USDC' | 'HYPHA';

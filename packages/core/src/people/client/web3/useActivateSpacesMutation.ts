@@ -16,7 +16,8 @@ interface ActivateSpacesInput {
   paymentToken: PaymentToken;
 }
 
-const USDC_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
+const TOKENS_SAFE = Array.isArray(TOKENS) ? TOKENS : [];
+const USDC_TOKEN = TOKENS_SAFE.find((t) => t.symbol === 'USDC');
 
 export const useActivateSpacesMutation = () => {
   const { client } = useSmartWallets();

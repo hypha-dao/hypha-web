@@ -8,7 +8,8 @@ import { hyphaTokenAbi, hyphaTokenAddress } from '../../../generated';
 import { TOKENS } from '@hypha-platform/core/client';
 import { erc20Abi } from 'viem';
 
-const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
+const TOKENS_SAFE = Array.isArray(TOKENS) ? TOKENS : [];
+const PAYMENT_TOKEN = TOKENS_SAFE.find((t) => t.symbol === 'USDC');
 
 interface InvestInHyphaInput {
   usdcAmount: string;
