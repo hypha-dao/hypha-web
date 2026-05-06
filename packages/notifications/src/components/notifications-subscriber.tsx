@@ -35,6 +35,7 @@ export function NotificationSubscriber({
   const [initialized, setInitialized] = React.useState(false);
   const [subscribed, setSubscribed] = React.useState(false);
   const [loggedIn, setLoggedIn] = React.useState(false);
+  const hasInitAttemptRef = React.useRef(false);
   const router = useRouter();
 
   React.useEffect(() => {
@@ -156,10 +157,13 @@ export function NotificationSubscriber({
       }
     };
     const initialize = async () => {
-      if (initialized) {
-        console.warn('OneSignal should be initialized only once!');
+      if (initialized || hasInitAttemptRef.current) {
         return;
       }
+      if (!person?.slug || !appId) {
+        return;
+      }
+      hasInitAttemptRef.current = true;
       try {
         const scope = serviceWorkerPath
           ? `/${serviceWorkerPath.split('/').filter(Boolean)[0]}/`
@@ -245,6 +249,7 @@ export function NotificationSubscriber({
           subscriptionChangeHandler,
         );
       } catch (err) {
+        hasInitAttemptRef.current = false;
         console.log('Initialize error:', err);
       }
     };
@@ -296,7 +301,7 @@ export function NotificationSubscriber({
         subscriptionChangeHandler,
       );
     };
-  }, [appId, safariWebId, serviceWorkerPath, router]);
+  }, [appId, safariWebId, serviceWorkerPath, router, initialized, person?.slug]);
 
   return (
     <NotificationsContext.Provider
