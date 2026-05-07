@@ -717,6 +717,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   roomIdRef.current = roomId;
   const matrixClientRef = useRef(client);
   matrixClientRef.current = client;
+
+  console.log(
+    `[DEBUG HumanRightPanel] render — mode=${mode} activeTab=${activeTab} spaceSlug=${spaceSlug} roomId=${roomId} isMatrixAvailable=${isMatrixAvailable} isMatrixAuthenticated=${isMatrixAuthenticated} hasSpaceChatAccess=${hasSpaceChatAccess} isUserSpaceStateLoading=${isUserSpaceStateLoading} messagesCount=${messages.length} currentUserId=${currentUserId ?? 'null'}`,
+  );
   const resetChatStateOnAuthDrop = useCallback(() => {
     const activeRoomId = roomIdRef.current;
     if (activeRoomId) {
@@ -1251,6 +1255,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   useEffect(() => {
     if (!roomId || !client) return;
+    console.log(
+      `[DEBUG HumanRightPanel] label-resync effect fired — roomId=${roomId} currentUserId=${currentUserId ?? 'null'} matrixUserIdToPersonLabelSize=${matrixUserIdToPersonLabel.size} meNameSurname="${me?.name ?? ''} ${me?.surname ?? ''}"`,
+    );
     setMessages((prev) =>
       prev.map((m) => {
         const sid = m.senderMatrixId?.trim();
@@ -1376,9 +1383,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [spaceSlug, roomId]);
 
   useEffect(() => {
+    console.log(
+      `[DEBUG HumanRightPanel] membership-guard effect — mode=${mode} isUserSpaceStateLoading=${isUserSpaceStateLoading} hasSpaceChatAccess=${hasSpaceChatAccess} roomId=${roomId}`,
+    );
     if (mode !== 'space') return;
     if (isUserSpaceStateLoading) return;
     if (hasSpaceChatAccess) return;
+    console.log(
+      `[DEBUG HumanRightPanel] membership-guard CLEARING state — no space chat access`,
+    );
     if (roomId) {
       matrixRef.current.unregisterRoomListener(roomId);
     }
@@ -1400,6 +1413,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   // Join space room when Matrix is ready (space mode)
   useEffect(() => {
+    console.log(
+      `[DEBUG HumanRightPanel] space-room-init effect — mode=${mode} isMatrixAvailable=${isMatrixAvailable} isMatrixAuthenticated=${isMatrixAuthenticated} spaceSlug=${spaceSlug} alreadyJoined=${joinedRef.current === spaceSlug} isSpaceLoading=${isSpaceLoading} isUserSpaceStateLoading=${isUserSpaceStateLoading} hasSpaceChatAccess=${hasSpaceChatAccess} chatRoomId=${space?.chatRoomId ?? 'none'}`,
+    );
     if (mode !== 'space') return;
     if (
       !isMatrixAvailable ||
@@ -1534,6 +1550,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const prevMode = prevModeRef.current;
     prevModeRef.current = mode;
 
+    console.log(
+      `[DEBUG HumanRightPanel] mode-transition effect — prevMode=${prevMode} mode=${mode} roomId=${roomId}`,
+    );
     // Only act on actual mode transitions, not initial mount
     if (prevMode === mode) return;
 
@@ -1576,6 +1595,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   // Join (or create) coherence room when mode switches to 'coherence'
   useEffect(() => {
+    console.log(
+      `[DEBUG HumanRightPanel] coherence-room-init effect — mode=${mode} isMatrixAvailable=${isMatrixAvailable} isMatrixAuthenticated=${isMatrixAuthenticated} coherenceRoomId=${coherenceRoomId ?? 'none'} coherenceSlug=${coherenceSlug ?? 'none'}`,
+    );
     if (mode !== 'coherence' || !isMatrixAvailable || !isMatrixAuthenticated)
       return;
 
@@ -1915,6 +1937,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const handleConsumedScrollTarget = useCallback(() => {
     setScrollToEventId(null);
   }, []);
+
+  useEffect(() => {
+    console.log(`[DEBUG HumanRightPanel] activeTab changed — tab=${activeTab}`);
+  }, [activeTab]);
+
+  useEffect(() => {
+    console.log(`[DEBUG HumanRightPanel] roomId changed — roomId=${roomId ?? 'null'}`);
+  }, [roomId]);
 
   const mergedMessages = useMemo(() => {
     if (!sendingPending) return messages;
