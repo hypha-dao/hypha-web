@@ -1,4 +1,4 @@
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, fallback, http } from 'viem';
 import type { Chain } from 'viem/chains';
 import { base } from 'viem/chains';
 
@@ -23,7 +23,10 @@ export function createGovernancePublicClient() {
   return createPublicClient({
     chain,
     transport: process.env.NEXT_PUBLIC_RPC_URL
-      ? http(process.env.NEXT_PUBLIC_RPC_URL)
-      : http(),
+      ? fallback([
+          http(process.env.NEXT_PUBLIC_RPC_URL),
+          http('https://mainnet.base.org'),
+        ])
+      : http('https://mainnet.base.org'),
   });
 }
