@@ -21,7 +21,7 @@ import {
  * Uses class-variance-authority (cva) to define different styles based on "variant" prop.
  */
 const multiSelectVariants = cva(
-  'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
+  'm-1',
   {
     variants: {
       variant: {
@@ -182,6 +182,12 @@ export const MultiSelect = React.forwardRef<
       event: React.KeyboardEvent<HTMLInputElement>,
     ) => {
       if (event.key === 'Enter') {
+        const term = event.currentTarget.value.trim();
+        if (canCreateOption && term.length > 0) {
+          event.preventDefault();
+          toggleOption(term);
+          return;
+        }
         setIsPopoverOpen(true);
       } else if (event.key === 'Backspace' && !event.currentTarget.value) {
         const newSelectedValues = [...selectedValues];
@@ -325,7 +331,7 @@ export const MultiSelect = React.forwardRef<
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0"
+          className="w-[var(--radix-popover-trigger-width)] p-0"
           align="start"
           onEscapeKeyDown={() => setIsPopoverOpen(false)}
         >
@@ -343,6 +349,7 @@ export const MultiSelect = React.forwardRef<
                   <>
                     <CommandItem
                       key={`create-${searchValue}`}
+                      value={`create-${searchValue.trim().toLowerCase()}`}
                       onSelect={() => toggleOption(searchValue.trim())}
                       className="cursor-pointer"
                     >
@@ -382,6 +389,7 @@ export const MultiSelect = React.forwardRef<
                   ) : (
                     <CommandItem
                       key={`${option.value}-${index}`}
+                      value={option.label}
                       onSelect={() => toggleOption(option.value)}
                       className="cursor-pointer"
                     >

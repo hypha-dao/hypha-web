@@ -2066,6 +2066,7 @@
     "priority": "Priority",
     "tags": "Tags",
     "selectOneOrMore": "Select one or more",
+    "searchOrCreateTag": "Type to search or create a tag",
     "description": "Description",
     "descriptionPlaceholder": "Type your description here...",
     "publish": "Publish",

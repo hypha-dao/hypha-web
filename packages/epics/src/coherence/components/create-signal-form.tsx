@@ -521,6 +521,11 @@ export const CreateSignalForm = ({
                     <FormControl>
                       <MultiSelect
                         placeholder={t('selectOneOrMore')}
+                        searchPlaceholder={
+                          t.has('searchOrCreateTag')
+                            ? t('searchOrCreateTag')
+                            : 'Type to search or create a tag'
+                        }
                         options={tagOptions}
                         value={field.value}
                         allowToggleAll={false}
