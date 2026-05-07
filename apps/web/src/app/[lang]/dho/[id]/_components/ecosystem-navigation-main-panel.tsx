@@ -114,16 +114,31 @@ export function EcosystemNavigationMainPanel({
 
   useEffect(() => {
     if (!currentSpace || !currentSpaceSlug) {
-      setSelectedSpace(null);
+      setSelectedSpace((previous) => (previous === null ? previous : null));
       return;
     }
-    setSelectedSpace({
-      id: currentSpace.id,
-      name: currentSpace.title,
-      slug: currentSpaceSlug,
-      logoUrl: currentSpace.logoUrl,
-      parentId: currentSpace.parentId ?? null,
-      root: true,
+    setSelectedSpace((previous) => {
+      const next = {
+        id: currentSpace.id,
+        name: currentSpace.title,
+        slug: currentSpaceSlug,
+        logoUrl: currentSpace.logoUrl,
+        parentId: currentSpace.parentId ?? null,
+        root: true,
+      } satisfies VisibleSpace;
+
+      if (
+        previous?.id === next.id &&
+        previous.slug === next.slug &&
+        previous.name === next.name &&
+        previous.logoUrl === next.logoUrl &&
+        previous.parentId === next.parentId &&
+        previous.root === next.root
+      ) {
+        return previous;
+      }
+
+      return next;
     });
   }, [currentSpace, currentSpaceSlug]);
 
@@ -278,7 +293,7 @@ export function EcosystemNavigationMainPanel({
             </h1>
           }
           className={
-            resolvedTheme === 'dark' ? 'bg-background-2' : 'bg-neutral-2/85'
+            resolvedTheme === 'light' ? 'bg-neutral-2/85' : 'bg-background-2'
           }
           visualizationClassName="min-h-0"
         />

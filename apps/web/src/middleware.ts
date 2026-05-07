@@ -74,7 +74,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       "font-src 'self' https://fonts.gstatic.com https://vercel.live",
       "object-src 'none'",
       "base-uri 'self'",
-      "form-action 'self'",
+      "form-action 'self' https://auth.privy.io https://privy.hypha.earth https://accounts.google.com",
       "frame-ancestors 'none'",
       `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${UPLOADTHING_FRAME_HOST}`,
       `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live ${UPLOADTHING_FRAME_HOST}`,

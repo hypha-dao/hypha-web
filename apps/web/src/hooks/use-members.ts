@@ -46,8 +46,6 @@ export const useMembers: UseMembers = ({
     return `?${queryString.stringify(effectiveFilter)}`;
   }, [page, pageSize, searchTerm, paginationDisabled]);
 
-  console.debug('useMembers', { queryParams });
-
   const endpoint = React.useMemo(
     () => `/api/v1/spaces/${spaceSlug}/members${queryParams}`,
     [spaceSlug, queryParams],

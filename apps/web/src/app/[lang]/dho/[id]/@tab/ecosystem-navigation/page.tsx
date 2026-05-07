@@ -12,7 +12,15 @@ type PageProps = {
 export default async function EcosystemNavigationPage(props: PageProps) {
   const params = await props.params;
   const { lang, id } = params;
-  const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
+  let spaceFromDb: Awaited<ReturnType<typeof findSpaceBySlug>> = null;
+  try {
+    spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
+  } catch (error) {
+    console.error('[ecosystem-navigation/page] Failed to load space by slug', {
+      error,
+      slug: id,
+    });
+  }
 
   if (!spaceFromDb) {
     return notFound();

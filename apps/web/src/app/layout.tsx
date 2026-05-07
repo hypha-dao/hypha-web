@@ -7,6 +7,7 @@ import type { Metadata } from 'next';
 
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import { defaultMessages } from '@hypha-platform/i18n/messages';
 
 import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
@@ -20,7 +21,6 @@ import {
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
-import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { fileRouter } from '@hypha-platform/core/server';
@@ -101,17 +101,129 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
-  const isLanguageSelectVisible = await getShowLanguageSelect();
-  const locale = await getLocale();
-  const messages = await getMessages();
-  const tNav = await getTranslations('Navigation');
-  const tFooter = await getTranslations('Footer');
   const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
   const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
-  const aiChatEnabled = await getEnableAiChat();
-  const spaceMemoryEnabled = await getEnableSpaceMemory();
-  const humanChatEnabled = await getEnableHumanChat();
+  let isLanguageSelectVisible = false;
+  let locale = 'en';
+  let messages: Record<string, unknown> = defaultMessages;
+  let aiChatEnabled = false;
+  let spaceMemoryEnabled = false;
+  let humanChatEnabled = false;
+
+  let navMySpacesLabel = 'My Spaces';
+  let navNetworkLabel = 'Network';
+  let navOpenMenuLabel = 'Open menu';
+  let navCloseMenuLabel = 'Close menu';
+  let navSelectLanguageLabel = 'Select language';
+  let footerNetworkLabel = 'Network';
+  let footerLegalLabel = 'Legal';
+  let footerHyphaServicesLabel = 'Hypha Services';
+  let footerHyphaTokenomicsLabel = 'Hypha Tokenomics';
+  let footerLicensingPolicyLabel = 'Licensing Policy';
+  let footerTermsAndConditionsLabel = 'Terms and Conditions';
+  let footerPrivacyPolicyLabel = 'Privacy Policy';
+
+  const [
+    languageSelectResult,
+    localeResult,
+    messagesResult,
+    navTranslationsResult,
+    footerTranslationsResult,
+    aiChatEnabledResult,
+    spaceMemoryEnabledResult,
+    humanChatEnabledResult,
+  ] = await Promise.allSettled([
+    getShowLanguageSelect(),
+    getLocale(),
+    getMessages(),
+    getTranslations('Navigation'),
+    getTranslations('Footer'),
+    getEnableAiChat(),
+    getEnableSpaceMemory(),
+    getEnableHumanChat(),
+  ]);
+
+  if (languageSelectResult.status === 'fulfilled') {
+    isLanguageSelectVisible = languageSelectResult.value;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve showLanguageSelect',
+      languageSelectResult.reason,
+    );
+  }
+
+  if (localeResult.status === 'fulfilled') {
+    locale = localeResult.value;
+  } else {
+    console.error('[app/layout] Failed to resolve locale', localeResult.reason);
+  }
+
+  if (messagesResult.status === 'fulfilled') {
+    messages = messagesResult.value;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve messages',
+      messagesResult.reason,
+    );
+  }
+
+  if (navTranslationsResult.status === 'fulfilled') {
+    const tNav = navTranslationsResult.value;
+    navMySpacesLabel = tNav('mySpaces');
+    navNetworkLabel = tNav('network');
+    navOpenMenuLabel = tNav('openMenu');
+    navCloseMenuLabel = tNav('closeMenu');
+    navSelectLanguageLabel = tNav('selectLanguage');
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve Navigation translations',
+      navTranslationsResult.reason,
+    );
+  }
+
+  if (footerTranslationsResult.status === 'fulfilled') {
+    const tFooter = footerTranslationsResult.value;
+    footerNetworkLabel = tFooter('network');
+    footerLegalLabel = tFooter('legal');
+    footerHyphaServicesLabel = tFooter('hyphaServices');
+    footerHyphaTokenomicsLabel = tFooter('hyphaTokenomics');
+    footerLicensingPolicyLabel = tFooter('licensingPolicy');
+    footerTermsAndConditionsLabel = tFooter('termsAndConditions');
+    footerPrivacyPolicyLabel = tFooter('privacyPolicy');
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve Footer translations',
+      footerTranslationsResult.reason,
+    );
+  }
+
+  if (aiChatEnabledResult.status === 'fulfilled') {
+    aiChatEnabled = aiChatEnabledResult.value === true;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve aiChatEnabled',
+      aiChatEnabledResult.reason,
+    );
+  }
+
+  if (spaceMemoryEnabledResult.status === 'fulfilled') {
+    spaceMemoryEnabled = spaceMemoryEnabledResult.value === true;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve spaceMemoryEnabled',
+      spaceMemoryEnabledResult.reason,
+    );
+  }
+
+  if (humanChatEnabledResult.status === 'fulfilled') {
+    humanChatEnabled = humanChatEnabledResult.value === true;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve humanChatEnabled',
+      humanChatEnabledResult.reason,
+    );
+  }
 
   return (
     <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>
@@ -130,100 +242,98 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <ThemeStorageNormalize />
-          <EvmProvider>
-            <NextIntlClientProvider locale={locale} messages={messages}>
-              <TooltipProvider>
-                <NotificationSubscriber
-                  appId={notificationAppId}
-                  safariWebId={safariWebId}
-                  serviceWorkerPath={serviceWorkerPath}
-                >
-                  <ConditionalMatrixProvider enabled={humanChatEnabled}>
-                    <PanelProviders>
-                      <PanelWrapLayout
-                        left={
-                          aiChatEnabled
-                            ? {
-                                content: (
-                                  <AiLeftPanel
-                                    enableSpaceMemory={spaceMemoryEnabled}
-                                  />
-                                ),
-                              }
-                            : undefined
-                        }
-                        right={
-                          humanChatEnabled
-                            ? { content: <ConnectedHumanRightPanel /> }
-                            : undefined
-                        }
-                      >
-                        {/* Fixed menu bar — clamped to center column by SidebarInset */}
-                        <div className="sticky top-0 z-30 shrink-0">
-                          <ConnectedMenuTop
-                            aiChatEnabled={aiChatEnabled}
-                            logoHref={ROOT_URL}
-                            openMenuLabel={tNav('openMenu')}
-                            closeMenuLabel={tNav('closeMenu')}
-                            leadingAction={
-                              aiChatEnabled ? <AiSidebarTrigger /> : undefined
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            <TooltipProvider>
+              <NotificationSubscriber
+                appId={notificationAppId}
+                safariWebId={safariWebId}
+                serviceWorkerPath={serviceWorkerPath}
+              >
+                <ConditionalMatrixProvider enabled={humanChatEnabled}>
+                  <PanelProviders>
+                    <PanelWrapLayout
+                      left={
+                        aiChatEnabled
+                          ? {
+                              content: (
+                                <AiLeftPanel
+                                  enableSpaceMemory={spaceMemoryEnabled}
+                                />
+                              ),
                             }
-                            trailingAction={
-                              humanChatEnabled ? (
-                                <HumanSidebarTrigger />
+                          : undefined
+                      }
+                      right={
+                        humanChatEnabled
+                          ? { content: <ConnectedHumanRightPanel /> }
+                          : undefined
+                      }
+                    >
+                      {/* Fixed menu bar — clamped to center column by SidebarInset */}
+                      <div className="sticky top-0 z-30 shrink-0">
+                        <ConnectedMenuTop
+                          aiChatEnabled={aiChatEnabled}
+                          logoHref={ROOT_URL}
+                          openMenuLabel={navOpenMenuLabel}
+                          closeMenuLabel={navCloseMenuLabel}
+                          leadingAction={
+                            aiChatEnabled ? <AiSidebarTrigger /> : undefined
+                          }
+                          trailingAction={
+                            humanChatEnabled ? (
+                              <HumanSidebarTrigger />
+                            ) : undefined
+                          }
+                        >
+                          <ConnectedButtonProfile
+                            useAuthentication={useAuthentication}
+                            useMe={useMe}
+                            newUserRedirectPath="/profile/signup"
+                            baseRedirectPath="/my-spaces"
+                            navItems={[
+                              {
+                                label: navMySpacesLabel,
+                                href: `/${locale}/my-spaces`,
+                              },
+                              {
+                                label: navNetworkLabel,
+                                href: `/${locale}/network`,
+                              },
+                            ]}
+                            trailingBeforeProfile={
+                              isLanguageSelectVisible ? (
+                                <ConnectedLanguageSelect
+                                  selectLanguageLabel={navSelectLanguageLabel}
+                                />
                               ) : undefined
                             }
-                          >
-                            <ConnectedButtonProfile
-                              useAuthentication={useAuthentication}
-                              useMe={useMe}
-                              newUserRedirectPath="/profile/signup"
-                              baseRedirectPath="/my-spaces"
-                              navItems={[
-                                {
-                                  label: tNav('mySpaces'),
-                                  href: `/${locale}/my-spaces`,
-                                },
-                                {
-                                  label: tNav('network'),
-                                  href: `/${locale}/network`,
-                                },
-                              ]}
-                              trailingBeforeProfile={
-                                isLanguageSelectVisible ? (
-                                  <ConnectedLanguageSelect />
-                                ) : undefined
-                              }
-                            />
-                          </ConnectedMenuTop>
+                          />
+                        </ConnectedMenuTop>
+                      </div>
+                      {/* Scrollable content area */}
+                      <NextSSRPlugin
+                        routerConfig={extractRouterConfig(fileRouter)}
+                      />
+                      <div className="mb-auto pb-8">
+                        <div className="flex h-full justify-normal pt-4 md:pt-5">
+                          <div className="w-full h-full">{children}</div>
                         </div>
-                        {/* Scrollable content area */}
-                        <NextSSRPlugin
-                          routerConfig={extractRouterConfig(fileRouter)}
-                        />
-                        <div className="mb-auto pb-8">
-                          <div className="flex h-full justify-normal pt-4 md:pt-5">
-                            <div className="w-full h-full">{children}</div>
-                          </div>
-                        </div>
-                        <Footer
-                          networkLabel={tFooter('network')}
-                          legalLabel={tFooter('legal')}
-                          hyphaServicesLabel={tFooter('hyphaServices')}
-                          hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
-                          licensingPolicyLabel={tFooter('licensingPolicy')}
-                          termsAndConditionsLabel={tFooter(
-                            'termsAndConditions',
-                          )}
-                          privacyPolicyLabel={tFooter('privacyPolicy')}
-                        />
-                      </PanelWrapLayout>
-                    </PanelProviders>
-                  </ConditionalMatrixProvider>
-                </NotificationSubscriber>
-              </TooltipProvider>
-            </NextIntlClientProvider>
-          </EvmProvider>
+                      </div>
+                      <Footer
+                        networkLabel={footerNetworkLabel}
+                        legalLabel={footerLegalLabel}
+                        hyphaServicesLabel={footerHyphaServicesLabel}
+                        hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
+                        licensingPolicyLabel={footerLicensingPolicyLabel}
+                        termsAndConditionsLabel={footerTermsAndConditionsLabel}
+                        privacyPolicyLabel={footerPrivacyPolicyLabel}
+                      />
+                    </PanelWrapLayout>
+                  </PanelProviders>
+                </ConditionalMatrixProvider>
+              </NotificationSubscriber>
+            </TooltipProvider>
+          </NextIntlClientProvider>
         </ThemeProvider>
       </AuthProvider>
       {shouldInjectToolbar && <VercelToolbar />}

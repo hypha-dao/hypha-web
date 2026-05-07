@@ -1,4 +1,4 @@
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, fallback, http, type PublicClient } from 'viem';
 import { base } from 'viem/chains';
 
 /**
@@ -10,6 +10,9 @@ export const publicClient = createPublicClient({
   },
   chain: base,
   transport: process.env.NEXT_PUBLIC_RPC_URL
-    ? http(process.env.NEXT_PUBLIC_RPC_URL)
-    : http(),
-});
+    ? fallback([
+        http(process.env.NEXT_PUBLIC_RPC_URL),
+        http('https://mainnet.base.org'),
+      ])
+    : http('https://mainnet.base.org'),
+}) as unknown as PublicClient;

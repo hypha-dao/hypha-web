@@ -7,6 +7,7 @@ import {
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
 } from '@hypha-platform/core/client';
+import { readWithWarmupRetry } from './internal';
 
 interface GetSpaceBySlugProps {
   slug: string;
@@ -33,8 +34,35 @@ export async function getSpaceBySlug({
     const web3SpaceIds = [web3SpaceId];
 
     const [web3details, web3proposalsIds] = await Promise.all([
-      fetchSpaceDetails({ spaceIds: web3SpaceIds }),
-      fetchSpaceProposalsIds({ spaceIds: web3SpaceIds }),
+      readWithWarmupRetry({
+        label: 'getSpaceBySlug/space-details',
+        spaceIds: web3SpaceIds,
+        read: () =>
+          fetchSpaceDetails({ spaceIds: web3SpaceIds, allowFailure: true }),
+      }).catch<Awaited<ReturnType<typeof fetchSpaceDetails>>>((error) => {
+        console.error('[getSpaceBySlug] Failed to fetch space details', {
+          error,
+          slug,
+          web3SpaceId: web3SpaceId.toString(),
+        });
+        return [];
+      }),
+      readWithWarmupRetry({
+        label: 'getSpaceBySlug/space-proposals',
+        spaceIds: web3SpaceIds,
+        read: () =>
+          fetchSpaceProposalsIds({
+            spaceIds: web3SpaceIds,
+            allowFailure: true,
+          }),
+      }).catch<Awaited<ReturnType<typeof fetchSpaceProposalsIds>>>((error) => {
+        console.error('[getSpaceBySlug] Failed to fetch space proposals ids', {
+          error,
+          slug,
+          web3SpaceId: web3SpaceId.toString(),
+        });
+        return [];
+      }),
     ]);
 
     const [spaceDetails] = web3details;
@@ -50,8 +78,10 @@ export async function getSpaceBySlug({
             .filter((m): m is `0x${string}` => /^0x[a-f0-9]{40}$/.test(m))
         : [],
       documentCount: spaceProposals?.accepted.length ?? 0,
+      onChainDataMissing: !spaceDetails || !spaceProposals,
     };
   } catch (error) {
+    console.error('[getSpaceBySlug] Failed to fetch space', { error, slug });
     throw new Error('Failed to get space', {
       cause: error instanceof Error ? error : new Error(String(error)),
     });

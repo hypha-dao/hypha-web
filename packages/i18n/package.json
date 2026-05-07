@@ -19,6 +19,7 @@
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./request": "./src/request.ts",
+    "./messages": "./src/messages.ts",
     "./routing": "./src/routing.ts",
     "./navigation": "./src/navigation.ts"
   }

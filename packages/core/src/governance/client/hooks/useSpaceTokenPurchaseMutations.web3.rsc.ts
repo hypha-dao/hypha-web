@@ -15,8 +15,9 @@ import { decayingSpaceTokenAbi } from '@hypha-platform/core/generated';
 import { getDuration } from '@hypha-platform/ui-utils';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
-const USDC_TOKEN = TOKENS.find((token) => token.symbol === 'USDC');
-const EURC_TOKEN = TOKENS.find((token) => token.symbol === 'EURC');
+const TOKENS_SAFE = Array.isArray(TOKENS) ? TOKENS : [];
+const USDC_TOKEN = TOKENS_SAFE.find((token) => token.symbol === 'USDC');
+const EURC_TOKEN = TOKENS_SAFE.find((token) => token.symbol === 'EURC');
 
 type SpaceTokenPurchaseInput = {
   spaceId: number;
