@@ -5,7 +5,6 @@ import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { CompactSpaceBannerLead } from './compact-space-banner-lead';
 import { isSafeExternalUrl, isSafeImageUrl } from '../utils/safe-image-url';
-import { useTheme } from 'next-themes';
 
 /** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint — shared with DHO sticky chrome row */
 export const COMPACT_SPACE_BANNER_AVATAR_CLASSNAME = cn(
@@ -87,9 +86,6 @@ function isSpaceWithStats(
 }
 
 export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
-  const { resolvedTheme } = useTheme();
-  // Hydration-safe default: treat unresolved theme as dark to avoid bright flashes.
-  const isDark = resolvedTheme !== 'light';
   const {
     title,
     description,
@@ -172,18 +168,16 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
           <div
             className="pointer-events-none absolute inset-0 mix-blend-soft-light"
             style={{
-              backgroundImage: isDark
-                ? 'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(209,250,229,calc(0.18 * var(--banner-ov-skylight-op, 0.9))), transparent 62%)'
-                : 'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(209,250,229,calc(0.38 * var(--banner-ov-skylight-op, 0.9))), transparent 62%)',
+              backgroundImage:
+                'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(209,250,229,calc(0.18 * var(--banner-ov-skylight-op, 0.9))), transparent 62%)',
             }}
             aria-hidden
           />
           <div
             className="pointer-events-none absolute inset-0"
             style={{
-              backgroundImage: isDark
-                ? 'linear-gradient(to bottom right, rgba(255,255,255,var(--banner-ov-sheen-op, 0.03)) -10%, transparent 40%, transparent 55%)'
-                : 'linear-gradient(to bottom right, rgba(255,255,255,var(--banner-ov-sheen-op, 0.07)) -10%, transparent 40%, transparent 55%)',
+              backgroundImage:
+                'linear-gradient(to bottom right, rgba(255,255,255,var(--banner-ov-sheen-op, 0.03)) -10%, transparent 40%, transparent 55%)',
             }}
             aria-hidden
           />
