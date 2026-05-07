@@ -78,6 +78,69 @@ export function NotificationSubscriber({
   }, [initialized, OneSignal, isLoading, person]);
 
   React.useEffect(() => {
+    const initialize = async () => {
+      if (initialized || hasInitAttemptRef.current) {
+        return;
+      }
+      if (!person?.slug || !appId) {
+        return;
+      }
+      hasInitAttemptRef.current = true;
+      try {
+        const scope = serviceWorkerPath
+          ? `/${serviceWorkerPath.split('/').filter(Boolean)[0]}/`
+          : '/';
+        await OneSignal.init({
+          appId,
+          safari_web_id: safariWebId,
+          serviceWorkerPath,
+          serviceWorkerParam: { scope },
+          allowLocalhostAsSecureOrigin: DEV_ENV,
+          promptOptions: {
+            slidedown: {
+              prompts: [
+                {
+                  autoPrompt: false,
+                  categories: [],
+                  delay: {},
+                  text: {
+                    actionMessage:
+                      'Subscribe if you’d like to be notified about proposals and other Network activity.',
+                    acceptButton: 'Subscribe',
+                    cancelMessage: 'Later',
+                  },
+                  type: 'push',
+                },
+              ],
+            },
+          },
+          welcomeNotification: {
+            disable: true,
+            message: '',
+          },
+          notificationClickHandlerMatch: 'origin',
+          notificationClickHandlerAction: 'focus',
+        });
+        console.log('OneSignal initialized');
+        setInitialized(true);
+        const isSubscribed = await hasPermission();
+        setSubscribed(isSubscribed);
+      } catch (err) {
+        hasInitAttemptRef.current = false;
+        console.error(
+          '[notifications-subscriber] OneSignal initialization error:',
+          err,
+        );
+      }
+    };
+    initialize();
+  }, [appId, safariWebId, serviceWorkerPath, initialized, person?.slug]);
+
+  React.useEffect(() => {
+    if (!initialized) {
+      return;
+    }
+
     const notificationClickHandler = (event: NotificationClickEvent) => {
       if (DEV_ENV) {
         console.log('The notification was clicked!', event);
@@ -156,107 +219,47 @@ export function NotificationSubscriber({
         });
       }
     };
-    const initialize = async () => {
-      if (initialized || hasInitAttemptRef.current) {
-        return;
-      }
-      if (!person?.slug || !appId) {
-        return;
-      }
-      hasInitAttemptRef.current = true;
-      try {
-        const scope = serviceWorkerPath
-          ? `/${serviceWorkerPath.split('/').filter(Boolean)[0]}/`
-          : '/';
-        await OneSignal.init({
-          appId,
-          safari_web_id: safariWebId,
-          serviceWorkerPath,
-          serviceWorkerParam: { scope },
-          allowLocalhostAsSecureOrigin: DEV_ENV,
-          promptOptions: {
-            slidedown: {
-              prompts: [
-                {
-                  autoPrompt: false,
-                  categories: [],
-                  delay: {},
-                  text: {
-                    actionMessage:
-                      'Subscribe if you’d like to be notified about proposals and other Network activity.',
-                    acceptButton: 'Subscribe',
-                    cancelMessage: 'Later',
-                  },
-                  type: 'push',
-                },
-              ],
-            },
-          },
-          welcomeNotification: {
-            disable: true,
-            message: '',
-          },
-          notificationClickHandlerMatch: 'origin',
-          notificationClickHandlerAction: 'focus',
-        });
-        console.log('OneSignal initialized');
-        setInitialized(true);
-        const isSubscribed = await hasPermission();
-        setSubscribed(isSubscribed);
-        OneSignal.Notifications.addEventListener(
-          'click',
-          notificationClickHandler,
-        );
-        OneSignal.Notifications.addEventListener(
-          'foregroundWillDisplay',
-          foregroundWillDisplayHandler,
-        );
-        OneSignal.Notifications.addEventListener(
-          'dismiss',
-          notificationDismiss,
-        );
-        OneSignal.Notifications.addEventListener(
-          'permissionChange',
-          permissionChangeHandler,
-        );
-        OneSignal.Notifications.addEventListener(
-          'permissionPromptDisplay',
-          permissionPromptDisplayHandler,
-        );
-        OneSignal.Slidedown.addEventListener(
-          'slidedownAllowClick',
-          slidedownAllowClickHandler,
-        );
-        OneSignal.Slidedown.addEventListener(
-          'slidedownCancelClick',
-          slidedownCancelClick,
-        );
-        OneSignal.Slidedown.addEventListener(
-          'slidedownClosed',
-          slidedownClosedHandler,
-        );
-        OneSignal.Slidedown.addEventListener(
-          'slidedownQueued',
-          slidedownQueuedHandler,
-        );
-        OneSignal.Slidedown.addEventListener(
-          'slidedownShown',
-          slidedownShownHandler,
-        );
-        OneSignal.User.addEventListener('change', userChangeHandler);
-        OneSignal.User.PushSubscription.addEventListener(
-          'change',
-          subscriptionChangeHandler,
-        );
-      } catch (err) {
-        hasInitAttemptRef.current = false;
-        console.error(
-          '[notifications-subscriber] OneSignal initialization error:',
-          err,
-        );
-      }
-    };
-    initialize();
+
+    OneSignal.Notifications.addEventListener('click', notificationClickHandler);
+    OneSignal.Notifications.addEventListener(
+      'foregroundWillDisplay',
+      foregroundWillDisplayHandler,
+    );
+    OneSignal.Notifications.addEventListener('dismiss', notificationDismiss);
+    OneSignal.Notifications.addEventListener(
+      'permissionChange',
+      permissionChangeHandler,
+    );
+    OneSignal.Notifications.addEventListener(
+      'permissionPromptDisplay',
+      permissionPromptDisplayHandler,
+    );
+    OneSignal.Slidedown.addEventListener(
+      'slidedownAllowClick',
+      slidedownAllowClickHandler,
+    );
+    OneSignal.Slidedown.addEventListener(
+      'slidedownCancelClick',
+      slidedownCancelClick,
+    );
+    OneSignal.Slidedown.addEventListener(
+      'slidedownClosed',
+      slidedownClosedHandler,
+    );
+    OneSignal.Slidedown.addEventListener(
+      'slidedownQueued',
+      slidedownQueuedHandler,
+    );
+    OneSignal.Slidedown.addEventListener(
+      'slidedownShown',
+      slidedownShownHandler,
+    );
+    OneSignal.User.addEventListener('change', userChangeHandler);
+    OneSignal.User.PushSubscription.addEventListener(
+      'change',
+      subscriptionChangeHandler,
+    );
+
     return () => {
       OneSignal.Notifications.removeEventListener(
         'click',
@@ -304,14 +307,7 @@ export function NotificationSubscriber({
         subscriptionChangeHandler,
       );
     };
-  }, [
-    appId,
-    safariWebId,
-    serviceWorkerPath,
-    router,
-    initialized,
-    person?.slug,
-  ]);
+  }, [initialized, router]);
 
   return (
     <NotificationsContext.Provider
