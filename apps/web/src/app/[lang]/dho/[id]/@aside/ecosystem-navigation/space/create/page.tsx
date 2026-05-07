@@ -1,6 +1,9 @@
 'use client';
 
-import { CreateSubspaceForm, ProposalOverlayShell } from '@hypha-platform/epics';
+import {
+  CreateSubspaceForm,
+  ProposalOverlayShell,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';

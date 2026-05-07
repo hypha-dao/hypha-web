@@ -169,7 +169,9 @@ export function SpaceVisualization({
   const introToRootTimeoutRef = useRef<number | null>(null);
   const introSequenceActiveRef = useRef(false);
   const introRanRef = useRef(false);
-  const accentSampleCacheRef = useRef(new Map<string, Promise<string | null>>());
+  const accentSampleCacheRef = useRef(
+    new Map<string, Promise<string | null>>(),
+  );
 
   const clearTooltipHideTimeout = () => {
     if (tooltipHideTimeoutRef.current == null) return;

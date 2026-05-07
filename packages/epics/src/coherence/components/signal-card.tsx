@@ -144,7 +144,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   }, [createdAt]);
   const normalizedMessagesCount = React.useMemo(() => {
     const parsed =
-      typeof messages === 'number' ? messages : Number.parseInt(`${messages}`, 10);
+      typeof messages === 'number'
+        ? messages
+        : Number.parseInt(`${messages}`, 10);
     if (!Number.isFinite(parsed) || parsed < 0) return 0;
     return parsed;
   }, [messages]);
@@ -435,7 +437,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               className="gap-1.5"
             >
               <Users size={12} aria-hidden />
-              <span>{t('messageCount', { count: normalizedMessagesCount })}</span>
+              <span>
+                {t('messageCount', { count: normalizedMessagesCount })}
+              </span>
             </Badge>
           </div>
 
