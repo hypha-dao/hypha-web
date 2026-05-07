@@ -2117,23 +2117,27 @@
       "Proposal": "Proposal"
     },
     "typeDescriptions": {
-      "Opportunity": "Coordination window or positive opening",
-      "Risk": "Threat, concern or danger ahead",
-      "Tension": "Conflict or disagreement needing resolution",
-      "Insight": "Data-driven observation or discovery",
+      "Opportunity": "We could lean into this.",
+      "Risk": "We could be hurt by this.",
+      "Tension": "Something doesn't fit and needs adjustment.",
+      "Insight": "This changes how we see or understand things.",
       "Trend": "Emerging pattern across spaces",
       "Proposal": "Governance action or vote needed"
     },
     "priorities": {
+      "critical": "Critical",
       "high": "High",
       "medium": "Medium",
       "low": "Low"
     },
     "priorityDescriptions": {
+      "critical": "Immediate action required",
       "high": "Needs immediate attention",
       "medium": "Monitor and act soon",
       "low": "Informational, no rush"
     },
+    "savingSignal": "Saving signal",
+    "saveChanges": "Save changes",
     "keepWindowOpenWhileCreating": "Keep this window open until we're finished.",
     "provisioning": {
       "chatUnavailable": "Signal created but chat is currently unavailable.",
