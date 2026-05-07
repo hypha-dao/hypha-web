@@ -4,7 +4,7 @@ import { base } from 'viem/chains';
 /**
  * @deprecated Insecure. Use server-side version instead
  */
-export const publicClient: PublicClient = createPublicClient({
+export const publicClient = createPublicClient({
   batch: {
     multicall: { wait: 100 },
   },
@@ -15,4 +15,4 @@ export const publicClient: PublicClient = createPublicClient({
         http('https://mainnet.base.org'),
       ])
     : http('https://mainnet.base.org'),
-});
+}) as unknown as PublicClient;

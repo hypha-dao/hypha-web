@@ -28,5 +28,5 @@ export function createGovernancePublicClient(): PublicClient {
           http('https://mainnet.base.org'),
         ])
       : http('https://mainnet.base.org'),
-  });
+  }) as unknown as PublicClient;
 }
