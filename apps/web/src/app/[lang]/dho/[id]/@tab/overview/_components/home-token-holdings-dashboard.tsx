@@ -6,6 +6,8 @@ import { arc as d3Arc, pie as d3Pie } from 'd3-shape';
 import { scaleOrdinal } from 'd3-scale';
 import { format as d3Format } from 'd3-format';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useTranslations } from 'next-intl';
+import { CircleHelp } from 'lucide-react';
 import {
   Badge,
   Card,
@@ -14,6 +16,9 @@ import {
   CardHeader,
   CardTitle,
   Skeleton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@hypha-platform/ui';
 
 type TokenHoldingResponse = {
@@ -72,6 +77,18 @@ function formatAmount(raw: string): string {
   return NUMBER_FORMATTER.format(parsed);
 }
 
+function prettifyTokenType(type: string): string {
+  return type
+    .split('_')
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
+function capitalizeWords(value: string): string {
+  return value.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase());
+}
+
 function fetchHoldings(
   slug: string,
   getAccessToken: (() => Promise<string | null>) | undefined,
@@ -117,8 +134,8 @@ function TokenDonutChart({
     [chartData],
   );
 
-  const outerRadius = 72;
-  const innerRadius = 42;
+  const outerRadius = 92;
+  const innerRadius = 52;
   const arcGenerator = React.useMemo(
     () =>
       d3Arc<(typeof pieData)[number]>()
@@ -133,13 +150,21 @@ function TokenDonutChart({
   }, [chartData]);
 
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-      <div className="flex items-center justify-center">
+    <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+      <div className="relative flex items-center justify-center md:flex-none">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute h-40 w-40 rounded-full opacity-80 blur-2xl"
+          style={{
+            background:
+              'radial-gradient(circle, color-mix(in oklab, var(--space-accent, var(--accent-9)) 30%, transparent) 0%, transparent 70%)',
+          }}
+        />
         <svg
-          viewBox="-90 -90 180 180"
+          viewBox="-110 -110 220 220"
           role="img"
           aria-label={`Token distribution chart for ${title}`}
-          className="h-44 w-44"
+          className="h-60 w-60 transition-transform duration-300 ease-out group-hover:scale-[1.03]"
         >
           {pieData.map((segment) => (
             <path
@@ -153,30 +178,30 @@ function TokenDonutChart({
           <text
             textAnchor="middle"
             dominantBaseline="middle"
-            className="fill-foreground text-[11px] font-medium"
+            className="fill-foreground text-[12px] font-semibold"
           >
             {title}
           </text>
         </svg>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 md:max-w-[34%]">
         {chartData.map((slice) => (
           <div
             key={`${slice.display_name}-${slice.address ?? 'other'}`}
-            className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-background-2/30 px-2 py-1.5"
+            className="flex items-center justify-between gap-2 rounded-md px-1 py-0.5"
           >
             <div className="flex min-w-0 items-center gap-2">
               <span
                 aria-hidden="true"
-                className="h-2.5 w-2.5 rounded-full"
+                className="h-2 w-2 rounded-full"
                 style={{ backgroundColor: colorScale(slice.display_name) }}
               />
-              <span className="truncate text-sm text-foreground">
+              <span className="truncate text-sm text-foreground/90">
                 {slice.display_name}
               </span>
             </div>
-            <span className="shrink-0 text-xs text-muted-foreground">
+            <span className="shrink-0 text-xs font-medium text-muted-foreground">
               {PERCENTAGE_FORMATTER(slice.share_pct)}%
             </span>
           </div>
@@ -212,6 +237,8 @@ export function HomeTokenHoldingsDashboard({
   spaceSlug: string;
 }) {
   const { getAccessToken } = useAuthentication();
+  const tModalAside = useTranslations('ModalAside');
+  const tCommon = useTranslations('Common');
   const { data, error, isLoading } = useSWR(
     ['space-token-holdings-home', spaceSlug],
     fetchHoldings(spaceSlug, getAccessToken),
@@ -222,16 +249,28 @@ export function HomeTokenHoldingsDashboard({
   const lastUpdatedLabel = data?.asOf
     ? new Date(data.asOf).toLocaleString()
     : null;
+  const getTokenTypeLabel = React.useCallback(
+    (type: string) => {
+      try {
+        const translated = tModalAside(
+          `plugins.issueNewToken.general.tokenTypeOptions.${type}.label`,
+        );
+        return capitalizeWords(translated);
+      } catch {
+        return prettifyTokenType(type);
+      }
+    },
+    [tModalAside],
+  );
 
   return (
     <div className="flex flex-col gap-5 py-4">
       <div className="flex flex-col gap-2">
         <h1 className="text-7 font-semibold tracking-tight text-foreground">
-          Home
+          {tCommon('home')}
         </h1>
-        <p className="max-w-3xl text-sm text-muted-foreground">
-          Overview transparency dashboard for space-issued tokens and recipient
-          distribution.
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Token distribution at a glance.
         </p>
       </div>
 
@@ -277,29 +316,58 @@ export function HomeTokenHoldingsDashboard({
           {data.tokens.map((token) => (
             <Card
               key={token.token_address}
-              className="border-border/70 bg-card/95"
+              className="group border-border/50 bg-card/90 backdrop-blur-sm"
             >
-              <CardHeader className="gap-2">
+              <CardHeader className="gap-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <CardTitle className="truncate">
-                      {token.name} ({token.symbol})
-                    </CardTitle>
-                    <CardDescription className="truncate">
-                      {token.token_address}
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="truncate">{token.name}</CardTitle>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label={`Token details for ${token.name}`}
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <CircleHelp className="h-4 w-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          className="max-w-xs text-xs leading-relaxed"
+                        >
+                          <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
+                            <span className="text-muted-foreground">
+                              Total supply
+                            </span>
+                            <span>{formatAmount(token.total_supply)}</span>
+                            <span className="text-muted-foreground">
+                              {tCommon('Treasury')}
+                            </span>
+                            <span>{formatAmount(token.treasury_balance)}</span>
+                            <span className="text-muted-foreground">Other</span>
+                            <span>{formatAmount(token.other_balance)}</span>
+                            <span className="text-muted-foreground">
+                              Address
+                            </span>
+                            <span className="max-w-[160px] truncate">
+                              {token.token_address}
+                            </span>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <CardDescription className="text-xs uppercase tracking-wide text-muted-foreground/80">
+                      {token.symbol}
                     </CardDescription>
                   </div>
-                  <Badge variant="outline" className="shrink-0">
-                    {token.type}
+                  <Badge
+                    variant="outline"
+                    className="shrink-0 border-border/60"
+                  >
+                    {getTokenTypeLabel(token.type)}
                   </Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  <span>Total supply: {formatAmount(token.total_supply)}</span>
-                  <span>Treasury: {formatAmount(token.treasury_balance)}</span>
-                  <span>Other: {formatAmount(token.other_balance)}</span>
-                  <span>
-                    Tracked: {formatAmount(token.total_holders_balance)}
-                  </span>
                 </div>
               </CardHeader>
               <CardContent>
