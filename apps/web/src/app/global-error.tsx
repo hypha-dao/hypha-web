@@ -16,7 +16,9 @@ function GlobalErrorContent({ reset }: { reset: () => void }) {
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center">
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 p-2 text-center md:p-0">
-        <h2 className="text-9 font-medium">{tCommon('errorMaintenanceTitle')}</h2>
+        <h2 className="text-9 font-medium">
+          {tCommon('errorMaintenanceTitle')}
+        </h2>
         <p className="text-4 text-neutral-11">
           {tCommon('errorMaintenanceDescription')}
         </p>
@@ -60,7 +62,10 @@ export default function GlobalError({
     };
 
     loadMessages().catch((loadError) => {
-      console.error('[app/global-error] Failed to load i18n messages', loadError);
+      console.error(
+        '[app/global-error] Failed to load i18n messages',
+        loadError,
+      );
     });
 
     return () => {

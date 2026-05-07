@@ -18,13 +18,13 @@ export async function loadLocaleMessages(
   localeInput: string | null | undefined,
 ): Promise<{ locale: Locale; messages: Messages }> {
   const locale = resolveLocale(localeInput);
-  const defaultMessages = (await import('./messages/en.json')).default as Messages;
+  const defaultMessages = (await import('./messages/en.json'))
+    .default as Messages;
   let localeMessages: Messages = {};
 
   try {
-    localeMessages = (
-      await import(`./messages/${locale}.json`)
-    ).default as Messages;
+    localeMessages = (await import(`./messages/${locale}.json`))
+      .default as Messages;
   } catch (error) {
     console.warn(
       `[i18n] Missing messages for locale "${locale}", falling back to English.`,
