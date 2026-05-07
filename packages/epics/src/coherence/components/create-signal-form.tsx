@@ -117,7 +117,7 @@ export const CreateSignalForm = ({
     () => ({
       title: initialValues?.title ?? '',
       description: initialValues?.description ?? '',
-      creatorId: initialValues?.creatorId ?? person?.id,
+      creatorId: initialValues?.creatorId ?? person?.id ?? 0,
       spaceId: initialValues?.spaceId ?? spaceId,
       archived: initialValues?.archived ?? false,
       type:
@@ -457,7 +457,7 @@ export const CreateSignalForm = ({
                               onClick={() => {
                                 form.setValue(
                                   'type',
-                                  option.type as CoherenceType,
+                                  option.type as FormValues['type'],
                                   {
                                     shouldDirty: true,
                                   },
