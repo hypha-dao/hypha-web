@@ -319,6 +319,7 @@ export function EcosystemNavigationMainPanel({
 
   useEffect(() => {
     let cancelled = false;
+    setSelectedSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
     void (async () => {
       const [logoAccent, leadAccent] = await Promise.all([
         sampleAccentHex(selectedSpaceRecord?.logoUrl),
@@ -373,17 +374,18 @@ export function EcosystemNavigationMainPanel({
                         </span>
                         <Tooltip delayDuration={80}>
                           <TooltipTrigger asChild>
-                            <Link href={visitSpaceHref}>
-                              <Button
-                                variant="outline"
-                                colorVariant="neutral"
-                                className="h-7 w-7 p-0"
-                                style={iconOutlineStyle}
-                                aria-label={t('visibleSpaces.visitSpace')}
-                              >
+                            <Button
+                              asChild
+                              variant="outline"
+                              colorVariant="neutral"
+                              className="h-7 w-7 p-0"
+                              style={iconOutlineStyle}
+                              aria-label={t('visibleSpaces.visitSpace')}
+                            >
+                              <Link href={visitSpaceHref}>
                                 <ArrowTopRightIcon />
-                              </Button>
-                            </Link>
+                              </Link>
+                            </Button>
                           </TooltipTrigger>
                           <TooltipContent>
                             {t('visibleSpaces.visitSpace')}
@@ -391,17 +393,18 @@ export function EcosystemNavigationMainPanel({
                         </Tooltip>
                         <Tooltip delayDuration={80}>
                           <TooltipTrigger asChild>
-                            <Link href={addSpaceHref}>
-                              <Button
-                                variant="default"
-                                colorVariant="accent"
-                                className="h-7 w-7 p-0"
-                                style={iconFilledStyle}
-                                aria-label={t('visibleSpaces.addSpace')}
-                              >
+                            <Button
+                              asChild
+                              variant="default"
+                              colorVariant="accent"
+                              className="h-7 w-7 p-0"
+                              style={iconFilledStyle}
+                              aria-label={t('visibleSpaces.addSpace')}
+                            >
+                              <Link href={addSpaceHref}>
                                 <PlusIcon />
-                              </Button>
-                            </Link>
+                              </Link>
+                            </Button>
                           </TooltipTrigger>
                           <TooltipContent>
                             {t('visibleSpaces.addSpace')}

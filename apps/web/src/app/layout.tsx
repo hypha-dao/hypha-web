@@ -40,6 +40,7 @@ import { getShowLanguageSelect } from '@hypha-platform/feature-flags';
 import ScrollUp from '@web/components/scroll-up';
 import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
 import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
+import { AppNavigationSessionCounter } from '@web/components/app-navigation-session-counter';
 import { ConnectedMenuTop } from '@web/components/connected-menu-top';
 import '@web/utils/initialize-proxy';
 
@@ -242,6 +243,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <ThemeStorageNormalize />
+          <AppNavigationSessionCounter />
           <NextIntlClientProvider locale={locale} messages={messages}>
             <TooltipProvider>
               <NotificationSubscriber

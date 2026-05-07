@@ -1,0 +1,22 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+
+const APP_NAV_COUNT_KEY = 'appNavCount';
+
+export function AppNavigationSessionCounter() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const current = Number.parseInt(
+      window.sessionStorage.getItem(APP_NAV_COUNT_KEY) ?? '0',
+      10,
+    );
+    const next = Number.isFinite(current) ? current + 1 : 1;
+    window.sessionStorage.setItem(APP_NAV_COUNT_KEY, String(next));
+  }, [pathname]);
+
+  return null;
+}

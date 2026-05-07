@@ -4,7 +4,7 @@ import { Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { MouseEvent } from 'react';
+import { MouseEvent, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { RxCross1 } from 'react-icons/rx';
 
@@ -49,19 +49,25 @@ export const ButtonClose = ({
     'inline-flex items-center gap-1 whitespace-nowrap',
     className,
   );
-  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (!preferBack) {
-      return;
-    }
-    if (typeof window === 'undefined') {
-      return;
-    }
-    if (window.history.length <= 1) {
-      return;
-    }
-    event.preventDefault();
-    router.back();
-  };
+  const handleClick = useCallback(
+    (event: MouseEvent<HTMLAnchorElement>) => {
+      if (typeof window === 'undefined') {
+        return;
+      }
+      const appNavCount = Number.parseInt(
+        window.sessionStorage.getItem('appNavCount') ?? '0',
+        10,
+      );
+      if (!Number.isFinite(appNavCount) || appNavCount <= 0) {
+        return;
+      }
+      event.preventDefault();
+      router.back();
+    },
+    [router],
+  );
+
+  const onClick = preferBack ? handleClick : undefined;
 
   return (
     <Button asChild variant="ghost" colorVariant="neutral" title={title}>
@@ -69,7 +75,7 @@ export const ButtonClose = ({
         href={closeUrl}
         scroll={false}
         className={mergedClassName}
-        onClick={handleClick}
+        onClick={onClick}
       >
         {narrow ? null : title}
         <RxCross1 />
