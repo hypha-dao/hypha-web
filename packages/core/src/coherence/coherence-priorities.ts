@@ -33,7 +33,7 @@ export const COHERENCE_PRIORITY_OPTIONS: {
     priority: 'high',
     icon: 'CircleAlert',
     title: 'High',
-    colorVariant: 'error',
+    colorVariant: 'warn',
     description: 'Prioritise next.',
   },
   {
