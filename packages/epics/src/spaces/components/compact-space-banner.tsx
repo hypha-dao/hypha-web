@@ -166,7 +166,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-0 mix-blend-soft-light"
+            className="pointer-events-none absolute inset-0 hidden mix-blend-soft-light dark:block"
             style={{
               backgroundImage:
                 'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(209,250,229,calc(0.18 * var(--banner-ov-skylight-op, 0.9))), transparent 62%)',
@@ -174,10 +174,26 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-0"
+            className="pointer-events-none absolute inset-0 mix-blend-soft-light dark:hidden"
+            style={{
+              backgroundImage:
+                'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(209,250,229,calc(0.38 * var(--banner-ov-skylight-op, 0.9))), transparent 62%)',
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 hidden dark:block"
             style={{
               backgroundImage:
                 'linear-gradient(to bottom right, rgba(255,255,255,var(--banner-ov-sheen-op, 0.03)) -10%, transparent 40%, transparent 55%)',
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 dark:hidden"
+            style={{
+              backgroundImage:
+                'linear-gradient(to bottom right, rgba(255,255,255,var(--banner-ov-sheen-op, 0.07)) -10%, transparent 40%, transparent 55%)',
             }}
             aria-hidden
           />
@@ -209,11 +225,11 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
       ) : (
         <>
           <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(41,115,78)_0%,rgb(14,54,38)_42%,rgb(7,38,26)_68%,rgb(2,14,10)_100%)]"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(115,155,134)_0%,rgb(73,112,94)_42%,rgb(46,78,64)_68%,rgb(29,52,43)_100%)] dark:bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(41,115,78)_0%,rgb(14,54,38)_42%,rgb(7,38,26)_68%,rgb(2,14,10)_100%)]"
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-0 mix-blend-soft-light opacity-80 bg-[radial-gradient(ellipse_50%_40%_at_80%_5%,rgba(52,211,153,0.2),transparent_60%)]"
+            className="pointer-events-none absolute inset-0 mix-blend-soft-light opacity-70 dark:opacity-80 bg-[radial-gradient(ellipse_50%_40%_at_80%_5%,rgba(52,211,153,0.15),transparent_60%)] dark:bg-[radial-gradient(ellipse_50%_40%_at_80%_5%,rgba(52,211,153,0.2),transparent_60%)]"
             aria-hidden
           />
           <div

@@ -337,10 +337,10 @@ export function EcosystemNavigationMainPanel({
   const iconOutlineStyle = useMemo(
     () => ({
       borderColor: toRgba(selectedSpaceAccent, 0.7),
-      color: selectedSpaceAccent,
+      color: resolvedTheme === 'dark' ? '#f8fafc' : selectedSpaceAccent,
       backgroundColor: toRgba(selectedSpaceAccent, 0.12),
     }),
-    [selectedSpaceAccent],
+    [selectedSpaceAccent, resolvedTheme],
   );
 
   const iconFilledStyle = useMemo(
