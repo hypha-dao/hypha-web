@@ -47,12 +47,19 @@ export const useMatrixToken = () => {
           },
         });
         console.log(
-          `[DEBUG useMatrixToken] Fetch response — status=${response.status} ok=${response.ok} elapsed=${Date.now() - fetchStart}ms`,
+          `[DEBUG useMatrixToken] Fetch response — status=${
+            response.status
+          } ok=${response.ok} elapsed=${Date.now() - fetchStart}ms`,
         );
         if (!response.ok) {
           const errorText = await response.text().catch(() => 'Unknown error');
           console.warn(
-            `[DEBUG useMatrixToken] FETCH FAILED — status=${response.status} statusText=${response.statusText} body=${errorText.slice(0, 400)}`,
+            `[DEBUG useMatrixToken] FETCH FAILED — status=${
+              response.status
+            } statusText=${response.statusText} body=${errorText.slice(
+              0,
+              400,
+            )}`,
           );
           throw new Error(
             `Request failed: ${response.status} ${
@@ -70,7 +77,9 @@ export const useMatrixToken = () => {
           typeof data.elementConfig === 'object' &&
           typeof data.elementConfig.theme === 'string';
         console.log(
-          `[DEBUG useMatrixToken] Response parsed — isValid=${isValid} userId=${data?.userId ?? 'missing'} homeserverUrl=${data?.homeserverUrl ?? 'missing'}`,
+          `[DEBUG useMatrixToken] Response parsed — isValid=${isValid} userId=${
+            data?.userId ?? 'missing'
+          } homeserverUrl=${data?.homeserverUrl ?? 'missing'}`,
         );
         if (!isValid) {
           throw new Error(

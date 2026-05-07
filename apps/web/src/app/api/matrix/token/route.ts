@@ -51,8 +51,7 @@ async function verifyPrivyToken(
 }
 
 export async function GET(request: NextRequest) {
-  const correlationId =
-    request.headers.get('x-correlation-id') ?? randomUUID();
+  const correlationId = request.headers.get('x-correlation-id') ?? randomUUID();
   const requestStart = Date.now();
   console.log(
     `[DEBUG /api/matrix/token] [${correlationId}] GET started — url=${request.url}`,
@@ -220,7 +219,10 @@ export async function GET(request: NextRequest) {
 
     const decoratedPrivyUserId = getDecoratedPrivyId(privyUserId, environment);
     console.log(
-      `[DEBUG /api/matrix/token] [${correlationId}] decoratedPrivyUserId prefix=${decoratedPrivyUserId.slice(0, 8)}...`,
+      `[DEBUG /api/matrix/token] [${correlationId}] decoratedPrivyUserId prefix=${decoratedPrivyUserId.slice(
+        0,
+        8,
+      )}...`,
     );
 
     const existing = await getLinkByPrivyUserId({
@@ -228,14 +230,18 @@ export async function GET(request: NextRequest) {
       environment,
     });
     console.log(
-      `[DEBUG /api/matrix/token] [${correlationId}] existingLink=${!!existing} deviceId=${existing?.deviceId ?? 'none'} matrixUserId=${existing?.matrixUserId ?? 'none'}`,
+      `[DEBUG /api/matrix/token] [${correlationId}] existingLink=${!!existing} deviceId=${
+        existing?.deviceId ?? 'none'
+      } matrixUserId=${existing?.matrixUserId ?? 'none'}`,
     );
 
     if (existing) {
       const accessToken = decryptMatrixToken(existing.encryptedAccessToken);
       const hasValidToken = await matrixAuthClient.validateToken(accessToken);
       console.log(
-        `[DEBUG /api/matrix/token] [${correlationId}] existing link — hasValidToken=${hasValidToken} isLegacyDeviceId=${existing.deviceId === LEGACY_SHARED_SECRET_DEVICE_ID}`,
+        `[DEBUG /api/matrix/token] [${correlationId}] existing link — hasValidToken=${hasValidToken} isLegacyDeviceId=${
+          existing.deviceId === LEGACY_SHARED_SECRET_DEVICE_ID
+        }`,
       );
 
       if (
@@ -243,7 +249,9 @@ export async function GET(request: NextRequest) {
         existing.deviceId !== LEGACY_SHARED_SECRET_DEVICE_ID
       ) {
         console.log(
-          `[DEBUG /api/matrix/token] [${correlationId}] 200 — returning cached valid token (${Date.now() - requestStart}ms)`,
+          `[DEBUG /api/matrix/token] [${correlationId}] 200 — returning cached valid token (${
+            Date.now() - requestStart
+          }ms)`,
         );
         return NextResponse.json({
           accessToken,
@@ -264,7 +272,10 @@ export async function GET(request: NextRequest) {
         );
         const adminMatrixUsername = await getAdminMatrixUserName(environment);
         console.log(
-          `[DEBUG /api/matrix/token] [${correlationId}] Admin username resolved: ${adminMatrixUsername.slice(0, 12)}...`,
+          `[DEBUG /api/matrix/token] [${correlationId}] Admin username resolved: ${adminMatrixUsername.slice(
+            0,
+            12,
+          )}...`,
         );
         const admin = await getAdminRecord(
           adminMatrixUsername,
@@ -310,7 +321,9 @@ export async function GET(request: NextRequest) {
             );
 
             console.log(
-              `[DEBUG /api/matrix/token] [${correlationId}] 200 — rotated token via admin resetPassword (${Date.now() - requestStart}ms)`,
+              `[DEBUG /api/matrix/token] [${correlationId}] 200 — rotated token via admin resetPassword (${
+                Date.now() - requestStart
+              }ms)`,
             );
             return NextResponse.json({
               accessToken: decryptMatrixToken(encryptedAccessToken),
@@ -336,7 +349,10 @@ export async function GET(request: NextRequest) {
 
     const matrixUsername = decoratedPrivyUserId;
     console.log(
-      `[DEBUG /api/matrix/token] [${correlationId}] No existing link — attempting registerUser for matrixUsername=${matrixUsername.slice(0, 8)}...`,
+      `[DEBUG /api/matrix/token] [${correlationId}] No existing link — attempting registerUser for matrixUsername=${matrixUsername.slice(
+        0,
+        8,
+      )}...`,
     );
     const {
       accessToken: encryptedAccessToken,
@@ -368,7 +384,10 @@ export async function GET(request: NextRequest) {
       }
       const adminAccessToken = decryptMatrixToken(admin.encryptedAccessToken);
       console.log(
-        `[DEBUG /api/matrix/token] [${correlationId}] Fetching user info for matrixUsername=${matrixUsername.slice(0, 8)}...`,
+        `[DEBUG /api/matrix/token] [${correlationId}] Fetching user info for matrixUsername=${matrixUsername.slice(
+          0,
+          8,
+        )}...`,
       );
       const userInfo = await matrixAuthClient.getUser(
         matrixUsername,
@@ -404,7 +423,9 @@ export async function GET(request: NextRequest) {
         );
 
         console.log(
-          `[DEBUG /api/matrix/token] [${correlationId}] 200 — admin recovery flow succeeded (${Date.now() - requestStart}ms)`,
+          `[DEBUG /api/matrix/token] [${correlationId}] 200 — admin recovery flow succeeded (${
+            Date.now() - requestStart
+          }ms)`,
         );
         return NextResponse.json({
           accessToken: decryptMatrixToken(encryptedAccessToken),
@@ -435,7 +456,9 @@ export async function GET(request: NextRequest) {
     );
 
     console.log(
-      `[DEBUG /api/matrix/token] [${correlationId}] 200 — new user registered and link created (${Date.now() - requestStart}ms)`,
+      `[DEBUG /api/matrix/token] [${correlationId}] 200 — new user registered and link created (${
+        Date.now() - requestStart
+      }ms)`,
     );
     return NextResponse.json({
       accessToken: decryptMatrixToken(encryptedAccessToken),
@@ -448,7 +471,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.warn(
-      `[DEBUG /api/matrix/token] [${correlationId}] 500 — Token generation failed after ${Date.now() - requestStart}ms:`,
+      `[DEBUG /api/matrix/token] [${correlationId}] 500 — Token generation failed after ${
+        Date.now() - requestStart
+      }ms:`,
       error instanceof Error ? error.stack ?? error.message : error,
     );
     return NextResponse.json(

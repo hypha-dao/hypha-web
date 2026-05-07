@@ -129,7 +129,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   // updateCoherence({ messages: n }) when new Matrix messages arrive.
   // If it shows 0, the counter was never written — no auto-sync mechanism exists.
   console.log(
-    `[DEBUG SignalCard] slug=${slug ?? 'none'} roomId=${roomId ?? 'none'} messages=${messages} — NOTE: messages is a DB field, not live from Matrix`,
+    `[DEBUG SignalCard] slug=${slug ?? 'none'} roomId=${
+      roomId ?? 'none'
+    } messages=${messages} — NOTE: messages is a DB field, not live from Matrix`,
   );
 
   const { jwt: authToken } = useJwt();
