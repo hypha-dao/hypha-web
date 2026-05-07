@@ -17,6 +17,8 @@ import {
 import { useRouter } from 'next/navigation';
 
 const DEV_ENV = process.env.NODE_ENV === 'development';
+let oneSignalInitPromise: Promise<void> | null = null;
+let oneSignalInitialized = false;
 
 export interface NotificationSubscriberProps {
   appId: string;
@@ -97,10 +99,17 @@ export function NotificationSubscriber({
       }
       hasInitAttemptRef.current = true;
       try {
+        if (oneSignalInitialized) {
+          setInitialized(true);
+          const alreadySubscribed = await hasPermission();
+          setSubscribed(alreadySubscribed);
+          return;
+        }
+
         const scope = serviceWorkerPath
           ? `/${serviceWorkerPath.split('/').filter(Boolean)[0]}/`
           : '/';
-        await OneSignal.init({
+        oneSignalInitPromise ??= OneSignal.init({
           appId,
           safari_web_id: safariWebId,
           serviceWorkerPath,
@@ -130,12 +139,18 @@ export function NotificationSubscriber({
           },
           notificationClickHandlerMatch: 'origin',
           notificationClickHandlerAction: 'focus',
+        }).then(() => {
+          oneSignalInitialized = true;
         });
+
+        await oneSignalInitPromise;
+        oneSignalInitPromise = null;
         console.log('OneSignal initialized');
         setInitialized(true);
         const isSubscribed = await hasPermission();
         setSubscribed(isSubscribed);
       } catch (err) {
+        oneSignalInitPromise = null;
         hasInitAttemptRef.current = false;
         console.error(
           '[notifications-subscriber] OneSignal initialization error:',
