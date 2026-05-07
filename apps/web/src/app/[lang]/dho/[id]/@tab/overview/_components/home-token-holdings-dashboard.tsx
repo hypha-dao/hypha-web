@@ -2,9 +2,7 @@
 
 import * as React from 'react';
 import useSWR from 'swr';
-import { arc as d3Arc, pie as d3Pie } from 'd3-shape';
-import { scaleOrdinal } from 'd3-scale';
-import { format as d3Format } from 'd3-format';
+import * as d3 from 'd3';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   Badge,
@@ -45,7 +43,11 @@ type TokenHoldingResponse = {
   }>;
 };
 
-const PERCENTAGE_FORMATTER = d3Format('.1f');
+type ChartSlice = TokenHoldingResponse['tokens'][number]['holdings'][number] & {
+  numeric: number;
+};
+
+const PERCENTAGE_FORMATTER = d3.format('.1f');
 const NUMBER_FORMATTER = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
 });
@@ -109,19 +111,19 @@ function TokenDonutChart({
     [slices],
   );
 
-  const pieData = React.useMemo(
-    () =>
-      d3Pie<(typeof chartData)[number]>().value((item) => item.numeric)(
-        chartData,
-      ),
-    [chartData],
-  );
+  const pieData = React.useMemo(() => {
+    const generator = d3
+      .pie<ChartSlice>()
+      .value((item: ChartSlice) => item.numeric);
+    return generator(chartData);
+  }, [chartData]);
 
   const outerRadius = 72;
   const innerRadius = 42;
   const arcGenerator = React.useMemo(
     () =>
-      d3Arc<(typeof pieData)[number]>()
+      d3
+        .arc<d3.PieArcDatum<ChartSlice>>()
         .innerRadius(innerRadius)
         .outerRadius(outerRadius),
     [],
@@ -129,7 +131,7 @@ function TokenDonutChart({
 
   const colorScale = React.useMemo(() => {
     const domain = chartData.map((slice) => slice.display_name);
-    return scaleOrdinal<string, string>().domain(domain).range(COLOR_RANGE);
+    return d3.scaleOrdinal<string, string>().domain(domain).range(COLOR_RANGE);
   }, [chartData]);
 
   return (
@@ -141,7 +143,7 @@ function TokenDonutChart({
           aria-label={`Token distribution chart for ${title}`}
           className="h-44 w-44"
         >
-          {pieData.map((segment) => (
+          {pieData.map((segment: d3.PieArcDatum<ChartSlice>) => (
             <path
               key={`${segment.data.display_name}-${segment.index}`}
               d={arcGenerator(segment) ?? ''}
