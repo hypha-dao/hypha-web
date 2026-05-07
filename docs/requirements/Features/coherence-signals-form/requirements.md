@@ -92,6 +92,8 @@ To support creatable tags, implementation SHALL update:
 
 **AC-5** Given non-creator attempts edit/delete, when action is submitted, then system rejects with authorization error.
 
+**AC-6** Given creator opens Edit Signal and confirms delete, when action completes, then the signal is removed from persistence, no longer appears in the list UI, and subsequent fetch by slug returns not found.
+
 ---
 
 ## 7. Revision history

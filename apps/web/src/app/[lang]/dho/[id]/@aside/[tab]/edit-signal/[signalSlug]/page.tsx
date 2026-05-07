@@ -2,20 +2,12 @@ import { CreateSignalForm, ProposalOverlayShell } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../../../../@tab/coherence/constants';
 import { Locale } from '@hypha-platform/i18n';
 import {
+  COHERENCE_SIGNAL_TYPES,
   findSpaceBySlug,
   getCoherenceBySlug,
 } from '@hypha-platform/core/server';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
-
-const SIGNAL_TYPES = ['Opportunity', 'Risk', 'Tension', 'Insight'] as const;
-type SignalType = (typeof SIGNAL_TYPES)[number];
-
-function toSignalType(value: string): SignalType {
-  return SIGNAL_TYPES.includes(value as SignalType)
-    ? (value as SignalType)
-    : 'Opportunity';
-}
 
 type PageProps = {
   params: Promise<{
@@ -42,9 +34,12 @@ export default async function EditSignalPage({ params }: PageProps) {
   ) {
     notFound();
   }
+  if (!(COHERENCE_SIGNAL_TYPES as readonly string[]).includes(signal.type)) {
+    notFound();
+  }
 
   const successfulUrl = getDhoPathCoherence(lang, id);
-  const signalType = toSignalType(signal.type);
+  const signalType = signal.type as (typeof COHERENCE_SIGNAL_TYPES)[number];
 
   return (
     <ProposalOverlayShell>
@@ -55,7 +50,7 @@ export default async function EditSignalPage({ params }: PageProps) {
           title: signal.title,
           description: signal.description,
           creatorId: signal.creatorId,
-          spaceId: signal.spaceId,
+          spaceId: spaceFromDb.id,
           archived: signal.archived,
           type: signalType,
           priority: signal.priority,

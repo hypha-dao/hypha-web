@@ -2120,15 +2120,23 @@
       "Proposal": "Governance-Aktion oder Abstimmung erforderlich"
     },
     "priorities": {
+      "critical": "Kritisch",
       "high": "Hoch",
       "medium": "Mittel",
       "low": "Niedrig"
     },
     "priorityDescriptions": {
+      "critical": "Sofortiges Handeln erforderlich",
       "high": "Erfordert sofortige Aufmerksamkeit",
       "medium": "Beobachten und bald handeln",
       "low": "Informativ, keine Eile"
     },
+    "deleteSignal": "Signal löschen",
+    "deleteSignalConfirm": "Dieses Signal wird dauerhaft aus dem Space entfernt. Fortfahren?",
+    "deleteSignalAction": "Signal löschen",
+    "deleteAction": "Löschen",
+    "editSignalMissingSlug": "Signal-ID fehlt. Bitte schließen und öffnen Sie das Bearbeitungsformular erneut.",
+    "editSignalSaveFailed": "Signaländerungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
     "keepWindowOpenWhileCreating": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind.",
     "provisioning": {
       "chatUnavailable": "Signal erstellt, aber der Chat ist derzeit nicht verfügbar.",
@@ -2157,6 +2165,7 @@
     "showLess": "Weniger anzeigen",
     "readFullDescription": "Vollständige Beschreibung lesen",
     "fullDescriptionDialogSubtitle": "Vollständige Signale-Beschreibung",
+    "editMenu": "Signal bearbeiten",
     "deleteSignal": "Signal löschen",
     "deleteConfirm": "Dies entfernt das Signal dauerhaft aus dem Space. Fortfahren?",
     "deleteMenu": "Löschen",

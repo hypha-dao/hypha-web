@@ -107,7 +107,8 @@ export const CreateSignalForm = ({
   } = useCoherenceMutationsWeb2Rsc(authToken);
   const { isMatrixAvailable, createRoom } = useMatrix();
 
-  const isMutating = isCreatingCoherence || isUpdatingCoherenceSignal;
+  const isMutating =
+    isCreatingCoherence || isUpdatingCoherenceSignal || isDeletingCoherence;
   const progress = React.useMemo(() => {
     if (mode === 'edit') return isUpdatingCoherenceSignal ? 50 : 0;
     return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
@@ -145,8 +146,9 @@ export const CreateSignalForm = ({
   });
 
   React.useEffect(() => {
+    if (mode !== 'edit') return;
     form.reset(formDefaults);
-  }, [form, formDefaults]);
+  }, [form, formDefaults, mode, signalSlug]);
 
   useScrollToErrors(form, formRef);
 
@@ -232,7 +234,17 @@ export const CreateSignalForm = ({
 
   const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
-      if (mode === 'edit' && signalSlug) {
+      form.clearErrors('root');
+      if (mode === 'edit') {
+        if (!signalSlug) {
+          form.setError('root', {
+            type: 'manual',
+            message: t.has('editSignalMissingSlug')
+              ? t('editSignalMissingSlug')
+              : 'Signal identifier is missing. Please close and reopen the edit form.',
+          });
+          return;
+        }
         try {
           await updateCoherenceSignalBySlug({
             slug: signalSlug,
@@ -244,7 +256,16 @@ export const CreateSignalForm = ({
           });
           router.push(successfulUrl);
         } catch (error) {
-          console.warn('Could not update signal:', error);
+          const message =
+            error instanceof Error && error.message.trim().length > 0
+              ? error.message
+              : t.has('editSignalSaveFailed')
+                ? t('editSignalSaveFailed')
+                : 'Could not save signal changes. Please try again.';
+          form.setError('root', {
+            type: 'manual',
+            message,
+          });
         }
         return;
       }
@@ -570,11 +591,29 @@ export const CreateSignalForm = ({
             />
 
             <div className="flex w-full justify-end gap-2">
+              {form.formState.errors.root?.message ? (
+                <p
+                  role="alert"
+                  className="mr-auto max-w-[28rem] self-center text-sm text-destructive"
+                >
+                  {form.formState.errors.root.message}
+                </p>
+              ) : null}
               {mode === 'edit' && signalSlug ? (
                 <ConfirmDialog
-                  title="Delete signal"
-                  description="This permanently removes this signal from the space. Continue?"
-                  customAcceptButtonText="Delete signal"
+                  title={
+                    t.has('deleteSignal') ? t('deleteSignal') : 'Delete signal'
+                  }
+                  description={
+                    t.has('deleteSignalConfirm')
+                      ? t('deleteSignalConfirm')
+                      : 'This permanently removes this signal from the space. Continue?'
+                  }
+                  customAcceptButtonText={
+                    t.has('deleteSignalAction')
+                      ? t('deleteSignalAction')
+                      : 'Delete signal'
+                  }
                   customRejectButtonText={t('noLeave')}
                   onAcceptClicked={async () => {
                     await deleteCoherenceBySlug({ slug: signalSlug });
@@ -587,7 +626,7 @@ export const CreateSignalForm = ({
                     colorVariant="neutral"
                     disabled={isDeletingCoherence || isMutating}
                   >
-                    Delete
+                    {t.has('deleteAction') ? t('deleteAction') : 'Delete'}
                   </Button>
                 </ConfirmDialog>
               ) : null}

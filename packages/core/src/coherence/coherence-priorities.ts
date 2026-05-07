@@ -9,7 +9,7 @@ export type CoherencePriority = (typeof COHERENCE_PRIORITIES)[number];
 
 /** Icon names used by priority options — matches `DynamicIcon` / Lucide registry. */
 export type CoherencePriorityIconName =
-  | 'AlertOctagon'
+  | 'OctagonAlert'
   | 'CircleAlert'
   | 'CircleDot'
   | 'Circle';
@@ -24,7 +24,7 @@ export const COHERENCE_PRIORITY_OPTIONS: {
 }[] = [
   {
     priority: 'critical',
-    icon: 'AlertOctagon',
+    icon: 'OctagonAlert',
     title: 'Critical',
     colorVariant: 'error',
     description: 'Immediate action required',

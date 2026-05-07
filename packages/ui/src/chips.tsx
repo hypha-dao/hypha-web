@@ -214,12 +214,16 @@ export const MultiSelect = React.forwardRef<
       const term = searchValue.trim();
       if (!allowCreate || term.length === 0) return false;
       const termLower = term.toLowerCase();
-      return !options.some(
+      const notInOptions = !options.some(
         (option) =>
           option.value.toLowerCase() === termLower ||
           option.label.toLowerCase() === termLower,
       );
-    }, [allowCreate, options, searchValue]);
+      const notAlreadySelected = !selectedValues.some(
+        (selectedValue) => selectedValue.toLowerCase() === termLower,
+      );
+      return notInOptions && notAlreadySelected;
+    }, [allowCreate, options, searchValue, selectedValues]);
 
     const handleClear = () => {
       setSelectedValues([]);

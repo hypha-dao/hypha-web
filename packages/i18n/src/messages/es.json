@@ -2120,15 +2120,23 @@
       "Proposal": "Acción de gobernanza o voto necesario"
     },
     "priorities": {
+      "critical": "Crítica",
       "high": "Alta",
       "medium": "Media",
       "low": "Baja"
     },
     "priorityDescriptions": {
+      "critical": "Requiere acción inmediata",
       "high": "Necesita atención inmediata",
       "medium": "Supervisar y actuar pronto",
       "low": "Informativo, sin prisa"
     },
+    "deleteSignal": "Eliminar señal",
+    "deleteSignalConfirm": "Esto elimina permanentemente esta señal del espacio. ¿Continuar?",
+    "deleteSignalAction": "Eliminar señal",
+    "deleteAction": "Eliminar",
+    "editSignalMissingSlug": "Falta el identificador de la señal. Cierra y vuelve a abrir el formulario de edición.",
+    "editSignalSaveFailed": "No se pudieron guardar los cambios de la señal. Inténtalo de nuevo.",
     "keepWindowOpenWhileCreating": "Mantén esta ventana abierta hasta que terminemos.",
     "provisioning": {
       "chatUnavailable": "Señal creada, pero el chat no está disponible en este momento.",
@@ -2157,6 +2165,7 @@
     "showLess": "Mostrar menos",
     "readFullDescription": "Leer descripción completa",
     "fullDescriptionDialogSubtitle": "Descripción completa de la señal",
+    "editMenu": "Editar señal",
     "deleteSignal": "Eliminar señal",
     "deleteConfirm": "Esto elimina permanentemente esta señal del espacio. ¿Continuar?",
     "deleteMenu": "Eliminar",
