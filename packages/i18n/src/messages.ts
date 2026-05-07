@@ -1,11 +1,22 @@
 import type { Locale } from './routing';
 import { routing } from './routing';
 import enMessages from './messages/en.json';
+import deMessages from './messages/de.json';
+import esMessages from './messages/es.json';
+import frMessages from './messages/fr.json';
+import ptMessages from './messages/pt.json';
 
 type Messages = Record<string, unknown>;
 
 const FALLBACK_LOCALE: Locale = routing.defaultLocale;
 export const defaultMessages: Messages = enMessages as Messages;
+const localeMessagesMap: Record<Locale, Messages> = {
+  en: enMessages as Messages,
+  de: deMessages as Messages,
+  es: esMessages as Messages,
+  fr: frMessages as Messages,
+  pt: ptMessages as Messages,
+};
 
 export function resolveLocale(locale: string | null | undefined): Locale {
   if (!locale) {
@@ -35,6 +46,17 @@ export async function loadLocaleMessages(
   return {
     locale,
     messages: deepMerge(defaultMessages, localeMessages),
+  };
+}
+
+export function getLocaleMessagesSync(localeInput: string | null | undefined): {
+  locale: Locale;
+  messages: Messages;
+} {
+  const locale = resolveLocale(localeInput);
+  return {
+    locale,
+    messages: deepMerge(defaultMessages, localeMessagesMap[locale] ?? {}),
   };
 }
 

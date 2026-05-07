@@ -1,44 +1,10 @@
 'use client';
 
 import '@hypha-platform/ui-utils/global.css';
-import {
-  defaultMessages,
-  loadLocaleMessages,
-} from '@hypha-platform/i18n/messages';
+import { getLocaleMessagesSync } from '@hypha-platform/i18n/messages';
 import { Button } from '@hypha-platform/ui';
 import { ReloadIcon } from '@radix-ui/react-icons';
-import { NextIntlClientProvider, useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
-
-type Messages = Record<string, unknown>;
-type IntlState = { locale: string; messages: Messages };
-
-function GlobalErrorContent({ reset }: { reset: () => void }) {
-  const tCommon = useTranslations('Common');
-
-  return (
-    <div className="relative flex min-h-screen w-full items-center justify-center">
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 p-2 text-center md:p-0">
-        <h2 className="text-9 font-medium">
-          {tCommon('errorMaintenanceTitle')}
-        </h2>
-        <p className="text-4 text-neutral-11">
-          {tCommon('errorMaintenanceDescription')}
-        </p>
-        <Button
-          type="button"
-          colorVariant="accent"
-          variant="default"
-          className="gap-2"
-          onClick={reset}
-        >
-          <ReloadIcon />
-          {tCommon('errorRefreshPage')}
-        </Button>
-      </div>
-    </div>
-  );
-}
+import { useEffect } from 'react';
 
 export default function GlobalError({
   error,
@@ -47,47 +13,45 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const [intlState, setIntlState] = useState<IntlState>({
-    locale: 'en',
-    messages: defaultMessages,
-  });
-
   useEffect(() => {
     console.error('[app/global-error] Unhandled root error', error);
   }, [error]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadMessages = async () => {
-      const locale = window.location.pathname.split('/').filter(Boolean)[0];
-      const data = await loadLocaleMessages(locale);
-      if (!cancelled) {
-        setIntlState(data);
-      }
-    };
-
-    loadMessages().catch((loadError) => {
-      console.error(
-        '[app/global-error] Failed to load i18n messages',
-        loadError,
-      );
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const locale = intlState.locale;
-  const messages = intlState.messages;
+  const localeFromPath =
+    typeof window === 'undefined'
+      ? 'en'
+      : window.location.pathname.split('/').filter(Boolean)[0];
+  const { messages } = getLocaleMessagesSync(localeFromPath);
+  const common =
+    (messages['Common'] as Record<string, unknown> | undefined) ?? {};
+  const maintenanceTitle =
+    (common['errorMaintenanceTitle'] as string | undefined) ??
+    "We'll Be Back Shortly!";
+  const maintenanceDescription =
+    (common['errorMaintenanceDescription'] as string | undefined) ??
+    "Hypha is taking a short break while we roll out updates. We'll be back soon with exciting improvements on the way!";
+  const refreshLabel =
+    (common['errorRefreshPage'] as string | undefined) ?? 'Refresh Page';
 
   return (
     <html>
       <body>
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <GlobalErrorContent reset={reset} />
-        </NextIntlClientProvider>
+        <div className="relative flex min-h-screen w-full items-center justify-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 p-2 text-center md:p-0">
+            <h2 className="text-9 font-medium">{maintenanceTitle}</h2>
+            <p className="text-4 text-neutral-11">{maintenanceDescription}</p>
+            <Button
+              type="button"
+              colorVariant="accent"
+              variant="default"
+              className="gap-2"
+              onClick={reset}
+            >
+              <ReloadIcon />
+              {refreshLabel}
+            </Button>
+          </div>
+        </div>
       </body>
     </html>
   );
