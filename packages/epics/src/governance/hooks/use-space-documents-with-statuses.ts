@@ -99,6 +99,7 @@ export const useSpaceDocumentsWithStatuses = ({
     () => `/api/v1/spaces/${spaceSlug}/documents/all${queryParams}`,
     [spaceSlug, queryParams],
   );
+  const shouldFetchDocuments = Boolean(spaceSlug?.trim());
 
   const {
     data: documentsFromDb,
@@ -106,7 +107,7 @@ export const useSpaceDocumentsWithStatuses = ({
     mutate,
     error,
   } = useSWR(
-    [endpoint],
+    shouldFetchDocuments ? [endpoint] : null,
     async ([endpoint]) => {
       const token = await getAccessToken();
       const headers: HeadersInit = {};

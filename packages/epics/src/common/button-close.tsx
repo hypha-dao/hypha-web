@@ -36,7 +36,6 @@ export const ButtonClose = ({
         closeUrl = pathname.replace(dropSegment, '');
       }
     } else {
-      console.debug('ButtonClose: closeUrl or dropSegment must be provided');
       return null;
     }
   }
