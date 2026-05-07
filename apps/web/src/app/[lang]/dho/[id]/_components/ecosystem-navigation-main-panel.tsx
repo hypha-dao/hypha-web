@@ -20,6 +20,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { SpaceVisualization } from './space-visualization';
 import type { VisibleSpace } from './types';
+import { ArrowTopRightIcon, PlusIcon } from '@radix-ui/react-icons';
 
 type EcosystemNavigationMainPanelProps = {
   daoSlug: string;
@@ -203,29 +204,47 @@ export function EcosystemNavigationMainPanel({
         label: t('tabs.nestedSpaces'),
         content: (
           <div className="flex min-h-0 flex-col gap-4">
-            <div
-              className="mx-auto w-full max-w-[min(100%,36rem)] truncate px-2 text-center text-4 font-semibold tracking-tight text-foreground"
-              title={selectedSpaceTitle}
-            >
-              {selectedSpaceTitle}
-            </div>
-            {canRenderSpaceActions && visitSpaceHref && addSpaceHref ? (
-              <div className="flex w-full items-center justify-end gap-2 px-3 sm:px-5">
-                <Link href={visitSpaceHref}>
-                  <Button variant="outline" colorVariant="neutral">
-                    {t('visibleSpaces.visitSpace')}
-                  </Button>
-                </Link>
-                <Link href={addSpaceHref}>
-                  <Button variant="default" colorVariant="accent">
-                    {t('visibleSpaces.addSpace')}
-                  </Button>
-                </Link>
-              </div>
-            ) : null}
             <div className="w-full overflow-visible px-3 py-2 sm:px-5 sm:py-4">
               {hierarchyData ? (
-                <div className="mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))]">
+                <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))]">
+                  <div className="pointer-events-none absolute inset-x-4 top-3 z-20 flex justify-center sm:top-4">
+                    <div className="pointer-events-auto inline-flex max-w-[92%] items-center gap-1.5 rounded-full border border-border/60 bg-background/88 px-2 py-1.5 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-background/72 sm:gap-2 sm:px-3">
+                      <span
+                        className="max-w-[14rem] truncate text-2 font-semibold tracking-tight text-foreground sm:max-w-[20rem]"
+                        title={selectedSpaceTitle}
+                      >
+                        {selectedSpaceTitle}
+                      </span>
+                      {canRenderSpaceActions &&
+                      visitSpaceHref &&
+                      addSpaceHref ? (
+                        <>
+                          <Link href={visitSpaceHref}>
+                            <Button
+                              variant="outline"
+                              colorVariant="neutral"
+                              className="h-7 w-7 p-0"
+                              title={t('visibleSpaces.visitSpace')}
+                              aria-label={t('visibleSpaces.visitSpace')}
+                            >
+                              <ArrowTopRightIcon />
+                            </Button>
+                          </Link>
+                          <Link href={addSpaceHref}>
+                            <Button
+                              variant="default"
+                              colorVariant="accent"
+                              className="h-7 w-7 p-0"
+                              title={t('visibleSpaces.addSpace')}
+                              aria-label={t('visibleSpaces.addSpace')}
+                            >
+                              <PlusIcon />
+                            </Button>
+                          </Link>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
                   <SpaceVisualization
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
@@ -273,6 +292,25 @@ export function EcosystemNavigationMainPanel({
     ],
   );
 
+  const topRowActions =
+    canRenderSpaceActions &&
+    visitSpaceHref &&
+    addSpaceHref &&
+    activeTab === 'nested-spaces' ? (
+      <div className="flex w-full items-center justify-end gap-2">
+        <Link href={visitSpaceHref}>
+          <Button variant="outline" colorVariant="neutral">
+            {t('visibleSpaces.visitSpace')}
+          </Button>
+        </Link>
+        <Link href={addSpaceHref}>
+          <Button variant="default" colorVariant="accent">
+            {t('visibleSpaces.addSpace')}
+          </Button>
+        </Link>
+      </div>
+    ) : null;
+
   return (
     <section className="flex w-full flex-col gap-4 py-4">
       {isLoading ? (
@@ -295,6 +333,7 @@ export function EcosystemNavigationMainPanel({
           className={
             resolvedTheme === 'light' ? 'bg-neutral-2/85' : 'bg-background-2'
           }
+          afterTabsContent={topRowActions}
           visualizationClassName="min-h-0"
         />
       )}

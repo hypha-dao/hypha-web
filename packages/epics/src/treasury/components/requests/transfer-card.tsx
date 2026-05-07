@@ -56,6 +56,20 @@ export const TransferCard: React.FC<TransferCardProps> = ({
     return to === ZeroAddress && counterparty === 'to';
   };
 
+  const parsedDate = date ? new Date(date) : null;
+  const hasValidDate =
+    parsedDate instanceof Date && !Number.isNaN(parsedDate.getTime());
+  const formattedDate = hasValidDate
+    ? format.dateTime(parsedDate, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      })
+    : date || null;
+
   return (
     <Card className="flex flex-col mb-2">
       <div className="w-full p-5">
@@ -125,18 +139,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
             <Skeleton width="96px" height="16px" loading={isLoading}>
               <div className="flex h-full justify-end items-end text-neutral-11">
                 <CalendarIcon className="mr-1" />
-                <Text className="text-1">
-                  {date
-                    ? format.dateTime(new Date(date), {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      })
-                    : null}
-                </Text>
+                <Text className="text-1">{formattedDate}</Text>
               </div>
             </Skeleton>
           </div>

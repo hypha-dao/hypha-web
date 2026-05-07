@@ -35,7 +35,9 @@ export function HumanChatPanelMembers({
 
   const { persons, isLoading } = useMembers({
     spaceSlug,
-    paginationDisabled: true,
+    paginationDisabled: false,
+    page: 1,
+    pageSize: 100,
   });
 
   const members = persons?.data ?? [];

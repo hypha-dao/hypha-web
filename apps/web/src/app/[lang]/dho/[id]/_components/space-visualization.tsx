@@ -23,6 +23,7 @@ type Props = {
   currentSpaceId?: number;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
   enableHoverActions?: boolean;
+  enableContextIntro?: boolean;
 };
 
 const VISUALIZATION_CONFIG = {
@@ -42,6 +43,7 @@ export function SpaceVisualization({
   currentSpaceId,
   onVisibleSpacesChange,
   enableHoverActions = false,
+  enableContextIntro = true,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -61,6 +63,8 @@ export function SpaceVisualization({
   }>({ visible: false, x: 0, y: 0, text: '' });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const tooltipHideTimeoutRef = useRef<number | null>(null);
+  const introStartTimeoutRef = useRef<number | null>(null);
+  const introReturnTimeoutRef = useRef<number | null>(null);
 
   const clearTooltipHideTimeout = () => {
     if (tooltipHideTimeoutRef.current == null) return;
@@ -73,6 +77,17 @@ export function SpaceVisualization({
     tooltipHideTimeoutRef.current = window.setTimeout(() => {
       setTooltip((prev) => ({ ...prev, visible: false }));
     }, 120);
+  };
+
+  const clearIntroTimers = () => {
+    if (introStartTimeoutRef.current != null) {
+      window.clearTimeout(introStartTimeoutRef.current);
+      introStartTimeoutRef.current = null;
+    }
+    if (introReturnTimeoutRef.current != null) {
+      window.clearTimeout(introReturnTimeoutRef.current);
+      introReturnTimeoutRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -594,7 +609,37 @@ export function SpaceVisualization({
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
 
+    const activeNode = focus;
+    if (enableContextIntro && activeNode !== root) {
+      introStartTimeoutRef.current = window.setTimeout(() => {
+        svg.interrupt();
+        svg
+          .transition()
+          .duration(700)
+          .tween('intro-zoom-out', () => {
+            const i = d3.interpolateZoom(view, [root.x!, root.y!, root.r! * 2]);
+            return (t) => zoomTo(i(t));
+          });
+
+        introReturnTimeoutRef.current = window.setTimeout(() => {
+          svg.interrupt();
+          svg
+            .transition()
+            .duration(850)
+            .tween('intro-zoom-in', () => {
+              const i = d3.interpolateZoom(view, [
+                activeNode.x!,
+                activeNode.y!,
+                activeNode.r! * 2,
+              ]);
+              return (t) => zoomTo(i(t));
+            });
+        }, 950);
+      }, 1400);
+    }
+
     function zoom(target: SpaceHierarchyNode) {
+      clearIntroTimers();
       focus = target;
       focusRef.current = focus;
       savedFocusIdRef.current = focus.data.id;
@@ -689,19 +734,43 @@ export function SpaceVisualization({
             .attr('height', r * 2);
         });
     }
-  }, [data, currentSpaceId, resolvedTheme, enableHoverActions]);
+
+    return () => {
+      clearIntroTimers();
+      svg.interrupt();
+    };
+  }, [
+    data,
+    currentSpaceId,
+    resolvedTheme,
+    enableHoverActions,
+    enableContextIntro,
+  ]);
 
   useEffect(() => {
     return () => {
       clearTooltipHideTimeout();
+      clearIntroTimers();
     };
   }, []);
 
   return (
     <div ref={containerRef} className="relative w-full">
+      <div className="pointer-events-none absolute inset-0 z-0">
+        <div className="absolute left-1/2 top-1/2 h-[56%] w-[56%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-9/12 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-[68%] w-[68%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent-8/25 animate-pulse" />
+        <div
+          className="absolute left-1/2 top-1/2 h-[84%] w-[84%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent-7/20 animate-pulse"
+          style={{ animationDelay: '600ms' }}
+        />
+        <div
+          className="absolute left-1/2 top-1/2 h-[98%] w-[98%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent-6/15 animate-pulse"
+          style={{ animationDelay: '1100ms' }}
+        />
+      </div>
       <svg
         ref={svgRef}
-        className="h-auto w-full"
+        className="relative z-10 h-auto w-full"
         role="img"
         aria-label="Space hierarchy visualization"
       />

@@ -66,9 +66,12 @@ export const Plugin = ({
   members,
   resubmitKey,
 }: PluginProps) => {
+  const shouldLoadExtendedMembers = name === 'propose-contribution';
   const { persons, spaces: memberSpaces } = useMembers({
     spaceSlug,
-    paginationDisabled: true,
+    paginationDisabled: !shouldLoadExtendedMembers,
+    page: 1,
+    pageSize: shouldLoadExtendedMembers ? 100 : undefined,
   });
 
   const PluginCmp = PLUGINS[name];
