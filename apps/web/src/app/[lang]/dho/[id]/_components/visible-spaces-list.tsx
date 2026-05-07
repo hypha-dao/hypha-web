@@ -14,10 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
-import {
-  getDhoPathOverview,
-  getDhoSpaceContextPath,
-} from '@hypha-platform/epics';
+import { getDhoSpaceContextPath } from '@hypha-platform/epics';
 import {
   useSpaceDiscoverability,
   useUserSpaceState,
@@ -42,6 +39,7 @@ type AddSpaceButtonProps = {
 
 function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   const t = useTranslations('SelectNavigationAction');
+  const pathname = usePathname();
   const safeAllSpaces = Array.isArray(allSpaces) ? allSpaces : [];
   const fullSpace = safeAllSpaces.find((s) => s.id === space.id);
   const web3SpaceId = fullSpace?.web3SpaceId;
@@ -78,7 +76,13 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   const isLoading = isAccessLoading || isUserStateLoading;
   const isDisabled = isLoading || !hasAccess;
 
-  const createSpacePath = `${getDhoPathOverview(lang, spaceSlug)}/space/create`;
+  const createSpacePath = `${
+    getDhoSpaceContextPath({
+      pathname,
+      lang,
+      spaceSlug,
+    }) ?? `/${lang}/dho/${spaceSlug}/ecosystem-navigation`
+  }/space/create`;
 
   return (
     <Link

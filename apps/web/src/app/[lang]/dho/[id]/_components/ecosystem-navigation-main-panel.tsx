@@ -11,7 +11,6 @@ import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
-  getDhoPathOverview,
 } from '@hypha-platform/epics';
 import {
   Button,
@@ -300,8 +299,8 @@ export function EcosystemNavigationMainPanel({
         })
       : null;
   const addSpaceHref =
-    canRenderSpaceActions && selectedSpaceSlug
-      ? `${getDhoPathOverview(lang, selectedSpaceSlug)}/space/create`
+    canRenderSpaceActions && visitSpaceHref
+      ? `${visitSpaceHref}/space/create`
       : null;
   const selectedSpaceRecord = useMemo(() => {
     if (!currentSpace) return null;
