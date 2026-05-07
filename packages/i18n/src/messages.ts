@@ -1,9 +1,11 @@
 import type { Locale } from './routing';
 import { routing } from './routing';
+import enMessages from './messages/en.json';
 
 type Messages = Record<string, unknown>;
 
 const FALLBACK_LOCALE: Locale = routing.defaultLocale;
+export const defaultMessages: Messages = enMessages as Messages;
 
 export function resolveLocale(locale: string | null | undefined): Locale {
   if (!locale) {
@@ -18,8 +20,6 @@ export async function loadLocaleMessages(
   localeInput: string | null | undefined,
 ): Promise<{ locale: Locale; messages: Messages }> {
   const locale = resolveLocale(localeInput);
-  const defaultMessages = (await import('./messages/en.json'))
-    .default as Messages;
   let localeMessages: Messages = {};
 
   try {

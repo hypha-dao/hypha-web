@@ -1,7 +1,10 @@
 'use client';
 
 import '@hypha-platform/ui-utils/global.css';
-import { loadLocaleMessages } from '@hypha-platform/i18n/messages';
+import {
+  defaultMessages,
+  loadLocaleMessages,
+} from '@hypha-platform/i18n/messages';
 import { Button } from '@hypha-platform/ui';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { NextIntlClientProvider, useTranslations } from 'next-intl';
@@ -44,7 +47,10 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const [intlState, setIntlState] = useState<IntlState | null>(null);
+  const [intlState, setIntlState] = useState<IntlState>({
+    locale: 'en',
+    messages: defaultMessages,
+  });
 
   useEffect(() => {
     console.error('[app/global-error] Unhandled root error', error);
@@ -73,8 +79,8 @@ export default function GlobalError({
     };
   }, []);
 
-  const locale = intlState?.locale ?? 'en';
-  const messages = intlState?.messages ?? {};
+  const locale = intlState.locale;
+  const messages = intlState.messages;
 
   return (
     <html>
