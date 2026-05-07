@@ -168,6 +168,8 @@ export function SpaceVisualization({
   const tooltipHideTimeoutRef = useRef<number | null>(null);
   const introToRootTimeoutRef = useRef<number | null>(null);
   const introSequenceActiveRef = useRef(false);
+  const introRanRef = useRef(false);
+  const accentSampleCacheRef = useRef(new Map<string, Promise<string | null>>());
 
   const clearTooltipHideTimeout = () => {
     if (tooltipHideTimeoutRef.current == null) return;
@@ -762,7 +764,8 @@ export function SpaceVisualization({
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
 
-    if (focus !== root) {
+    if (!introRanRef.current && focus !== root) {
+      introRanRef.current = true;
       const introTargets: SpaceHierarchyNode[] = [];
       let current = focus.parent as SpaceHierarchyNode | undefined;
       while (current) {
@@ -924,25 +927,51 @@ export function SpaceVisualization({
         });
     }
 
+    const setNodeRippleAccent = (node: SpaceHierarchyNode, accent: string) => {
+      nodeAccents.set(node.data.id, accent);
+      ripples
+        .filter((d) => d.data.id === node.data.id)
+        .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
+        .each(function (_, i) {
+          const baseOpacity = node.depth === 0 ? 0.24 : 0.18 - i * 0.03;
+          d3.select(this).attr(
+            'stroke',
+            withAlpha(accent, Math.max(0.08, baseOpacity)),
+          );
+        });
+    };
+
+    const getCachedAccentPromise = (logoUrl?: string | null) => {
+      const src = toSampleableImageSrc(logoUrl);
+      if (!src) return Promise.resolve<string | null>(null);
+      const existing = accentSampleCacheRef.current.get(src);
+      if (existing) return existing;
+      const promise = sampleAccentHex(logoUrl).catch(() => null);
+      accentSampleCacheRef.current.set(src, promise);
+      return promise;
+    };
+
     let isCancelled = false;
-    root.each((node) => {
-      void (async () => {
-        const accent = await sampleAccentHex(node.data.logoUrl);
+    const visibleNodes = (root.descendants() as SpaceHierarchyNode[]).filter(
+      (node) => isVisible(node) && (node.depth <= 2 || node === focus),
+    );
+    const queue = visibleNodes.slice();
+    const maxConcurrentSamples = 4;
+    const runSampleWorker = async () => {
+      while (!isCancelled) {
+        const node = queue.shift();
+        if (!node) return;
+        const accent = await getCachedAccentPromise(node.data.logoUrl);
         if (isCancelled) return;
-        const resolvedAccent = accent ?? SPACE_ACCENT_FALLBACK;
-        nodeAccents.set(node.data.id, resolvedAccent);
-        ripples
-          .filter((d) => d.data.id === node.data.id)
-          .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
-          .each(function (_, i) {
-            const baseOpacity = node.depth === 0 ? 0.24 : 0.18 - i * 0.03;
-            d3.select(this).attr(
-              'stroke',
-              withAlpha(resolvedAccent, Math.max(0.08, baseOpacity)),
-            );
-          });
-      })();
-    });
+        setNodeRippleAccent(node, accent ?? SPACE_ACCENT_FALLBACK);
+      }
+    };
+    void Promise.all(
+      Array.from(
+        { length: Math.min(maxConcurrentSamples, queue.length) },
+        runSampleWorker,
+      ),
+    );
     return () => {
       isCancelled = true;
       cancelIntroSequence();
