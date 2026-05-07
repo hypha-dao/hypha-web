@@ -231,7 +231,18 @@ Follow existing MCP read-tool semantics:
 **Deliverable:** production-ready read-only MCP tool.
 **Exit gate:** MCP tool integration test covers success, not-found, and denied access.
 
-### Phase 3 - Navigation wiring and page shell
+### Phase 3 - AI agent integration on top of MCP
+
+**Goal:** enable agent workflows only after MCP contract is stable.
+
+- Update agent tool guidance/system prompt usage to call `get_token_holdings_by_space_slug` for token distribution questions.
+- Ensure tool selection prefers this MCP path for holdings/transparency prompts.
+- Validate agent responses reflect the same bucket logic (`Treasury`, `< 3%` to `Other`) as UI/API.
+
+**Deliverable:** AI agent integration that consumes the MCP tool reliably.
+**Exit gate:** agent test prompts confirm correct tool usage and output interpretation.
+
+### Phase 4 - Navigation wiring and page shell
 
 **Goal:** make Home visible and routable as the first DHO entry.
 
@@ -243,7 +254,7 @@ Follow existing MCP read-tool semantics:
 **Deliverable:** navigable Home entry with stable route behavior.
 **Exit gate:** nav order + route tests pass.
 
-### Phase 4 - D3 chart components and dashboard UI
+### Phase 5 - D3 chart components and dashboard UI
 
 **Goal:** deliver final visualization experience.
 
@@ -258,7 +269,7 @@ Follow existing MCP read-tool semantics:
 **Deliverable:** full D3-based token dashboard UI.
 **Exit gate:** UI review approved on desktop + mobile breakpoints.
 
-### Phase 5 - Data integration and performance hardening
+### Phase 6 - Data integration and performance hardening
 
 **Goal:** connect real data safely and keep rendering stable.
 
@@ -272,7 +283,7 @@ Follow existing MCP read-tool semantics:
 **Deliverable:** end-to-end data flow from backend to charts.
 **Exit gate:** no hydration warnings; acceptable response time on representative spaces.
 
-### Phase 6 - Validation, rollout, and handoff
+### Phase 7 - Validation, rollout, and handoff
 
 **Goal:** ship confidently with test coverage and operational clarity.
 
@@ -306,6 +317,7 @@ Follow existing MCP read-tool semantics:
 - Token charts are implemented with D3.
 - Home data is loaded through a dedicated API route that mirrors MCP output.
 - MCP tool returns structured holdings with existing access semantics.
+- AI agent integration uses the MCP tool for holdings/transparency requests.
 
 ---
 
