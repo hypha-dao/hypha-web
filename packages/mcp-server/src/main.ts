@@ -42,7 +42,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha read-only tools: space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug.',
+      'Hypha read-only tools: token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug.',
   },
 );
 

@@ -7,7 +7,7 @@ import type { DbConfig } from '../../server';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 import { computeSpaceMemberEntries } from '../../space/server/get-space-members-roster';
-import { fetchSpaceDetails } from '../../space/server/web3/fetch-space-details';
+import { fetchSpaceDetails } from '../../space/client/web3/fetch/fetchSpaceDetails';
 import { web3Client } from '../../common/server/web3-rpc/client';
 import { tokens } from '@hypha-platform/storage-postgres';
 
@@ -77,13 +77,6 @@ type HolderDescriptor = {
   slug: string | null;
 };
 
-const MAX_HOLDER_LIMIT = 1000;
-const SMALL_HOLDER_SHARE_THRESHOLD_PCT = 3;
-const HYPHA_SHARED_TOKEN_ADDRESS =
-  '0x8b93862835c36e9689e9bb1ab21de3982e266cd3' as const;
-const HVOICE_SHARED_TOKEN_ADDRESS =
-  '0x24e0b2bfee025d57a19f9dae4c3849a4a6bf9626' as const;
-
 function normalizeAddress(address: string): `0x${string}` {
   return address.toLowerCase() as `0x${string}`;
 }
@@ -126,15 +119,6 @@ function dedupeAddresses(addresses: readonly `0x${string}`[]): `0x${string}`[] {
   return Array.from(
     new Set(addresses.map((address) => normalizeAddress(address))),
   );
-}
-
-function shouldIncludeHyphaPlatformSharedTokens(input: {
-  spaceSlug: string;
-  spaceTitle: string;
-}): boolean {
-  const slug = input.spaceSlug.toLowerCase();
-  const title = input.spaceTitle.toLowerCase();
-  return slug === 'hypha-platform' || title === 'hypha platform';
 }
 
 async function readTokenContractInfo(tokenAddress: `0x${string}`): Promise<{
@@ -182,36 +166,29 @@ async function readBalancesForHolders(
   holders: HolderDescriptor[],
 ): Promise<Map<`0x${string}`, bigint>> {
   if (holders.length === 0) return new Map();
+
+  const contracts = holders.map((holder) => ({
+    address: tokenAddress,
+    abi: erc20Abi,
+    functionName: 'balanceOf',
+    args: [holder.address] as const,
+  }));
+
+  const results = await web3Client.multicall({
+    allowFailure: true,
+    blockTag: 'safe',
+    contracts,
+  });
+
   const balances = new Map<`0x${string}`, bigint>();
-  const HOLDER_BALANCE_CHUNK_SIZE = 200;
-
-  for (
-    let offset = 0;
-    offset < holders.length;
-    offset += HOLDER_BALANCE_CHUNK_SIZE
-  ) {
-    const chunk = holders.slice(offset, offset + HOLDER_BALANCE_CHUNK_SIZE);
-    const results = await web3Client.multicall({
-      allowFailure: true,
-      blockTag: 'safe',
-      contracts: chunk.map((holder) => ({
-        address: tokenAddress,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [holder.address] as const,
-      })),
-    });
-
-    results.forEach((result, index) => {
-      const address = chunk[index]?.address;
-      if (!address) return;
-      balances.set(
-        address,
-        result.status === 'success' ? (result.result as bigint) : 0n,
-      );
-    });
-  }
-
+  results.forEach((result, index) => {
+    const address = holders[index]?.address;
+    if (!address) return;
+    balances.set(
+      address,
+      result.status === 'success' ? (result.result as bigint) : 0n,
+    );
+  });
   return balances;
 }
 
@@ -235,7 +212,7 @@ export async function getTokenHoldingsBySpaceSlug(
   const asOf = new Date().toISOString();
   const safeHolderLimit =
     typeof holderLimit === 'number' && Number.isFinite(holderLimit)
-      ? Math.max(1, Math.min(MAX_HOLDER_LIMIT, Math.floor(holderLimit)))
+      ? Math.max(1, Math.min(1000, Math.floor(holderLimit)))
       : undefined;
 
   const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
@@ -299,12 +276,6 @@ export async function getTokenHoldingsBySpaceSlug(
         treasuryAddress = normalizeAddress(first.executor);
       }
     } catch (error) {
-      if (dbTokenByAddress.size === 0) {
-        throw new Error(
-          `[getTokenHoldingsBySpaceSlug] failed to fetch on-chain details for "${spaceSlug}"`,
-          { cause: error },
-        );
-      }
       console.warn(
         `[getTokenHoldingsBySpaceSlug] failed to fetch on-chain details for "${spaceSlug}"`,
         error,
@@ -314,19 +285,6 @@ export async function getTokenHoldingsBySpaceSlug(
 
   if (tokenAddresses.length === 0) {
     tokenAddresses = Array.from(dbTokenByAddress.keys());
-  }
-
-  if (
-    shouldIncludeHyphaPlatformSharedTokens({
-      spaceSlug: host.slug,
-      spaceTitle: host.title,
-    })
-  ) {
-    tokenAddresses = dedupeAddresses([
-      ...tokenAddresses,
-      normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS),
-      normalizeAddress(HVOICE_SHARED_TOKEN_ADDRESS),
-    ]);
   }
 
   const computedRoster = await computeSpaceMemberEntries(spaceSlug, { db });
@@ -419,7 +377,7 @@ export async function getTokenHoldingsBySpaceSlug(
         }
 
         const sharePct = toSharePct(balanceRaw, totalSupplyRaw);
-        if (sharePct < SMALL_HOLDER_SHARE_THRESHOLD_PCT) {
+        if (sharePct < 3) {
           collapsedSmallHolderRaw += balanceRaw;
           continue;
         }
@@ -447,26 +405,6 @@ export async function getTokenHoldingsBySpaceSlug(
       if (safeHolderLimit && holderRows.length > safeHolderLimit) {
         const keep = holderRows.slice(0, safeHolderLimit);
         const overflow = holderRows.slice(safeHolderLimit);
-        const treasuryOverflowIndex = overflow.findIndex(
-          (row) => row.holder_kind === 'treasury',
-        );
-        if (treasuryOverflowIndex >= 0) {
-          const treasuryRow = overflow[treasuryOverflowIndex]!;
-          overflow.splice(treasuryOverflowIndex, 1);
-          const keepReplaceIndex = keep.findIndex(
-            (row) => row.holder_kind !== 'treasury',
-          );
-          if (keepReplaceIndex >= 0) {
-            const displaced = keep[keepReplaceIndex]!;
-            keep[keepReplaceIndex] = treasuryRow;
-            overflow.push(displaced);
-          } else if (keep.length > 0) {
-            overflow.push(keep.pop()!);
-            keep.push(treasuryRow);
-          } else {
-            keep.push(treasuryRow);
-          }
-        }
         overflowToOtherRaw = overflow.reduce(
           (sum, row) => sum + BigInt(row.balance_raw),
           0n,
@@ -487,38 +425,21 @@ export async function getTokenHoldingsBySpaceSlug(
           share_pct: toSharePct(otherRaw, totalSupplyRaw),
         });
       }
-      const totalHoldersBalanceRaw = holderRows.reduce(
-        (sum, row) => sum + BigInt(row.balance_raw),
-        0n,
-      );
-
-      const isHyphaSharedToken =
-        tokenAddress === normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS);
-      const isHyphaVoiceSharedToken =
-        tokenAddress === normalizeAddress(HVOICE_SHARED_TOKEN_ADDRESS);
 
       return {
         token_id: tokenMeta?.id ?? null,
         token_address: tokenAddress,
-        name:
-          tokenMeta?.name ??
-          (isHyphaVoiceSharedToken ? 'Hypha Voice' : contractInfo.name),
-        symbol:
-          tokenMeta?.symbol ??
-          (isHyphaVoiceSharedToken ? 'HVOICE' : contractInfo.symbol),
+        name: tokenMeta?.name ?? contractInfo.name,
+        symbol: tokenMeta?.symbol ?? contractInfo.symbol,
         icon_url: tokenMeta?.iconUrl ?? null,
-        type:
-          tokenMeta?.type ??
-          (isHyphaSharedToken || isHyphaVoiceSharedToken
-            ? 'utility'
-            : 'unknown'),
+        type: tokenMeta?.type ?? 'unknown',
         decimals,
         max_supply: tokenMeta?.maxSupply ?? null,
         total_supply: formatUnits(totalSupplyRaw, decimals),
         holdings: holderRows,
         treasury_balance: formatUnits(treasuryRaw, decimals),
         other_balance: formatUnits(otherRaw, decimals),
-        total_holders_balance: formatUnits(totalHoldersBalanceRaw, decimals),
+        total_holders_balance: formatUnits(totalSupplyRaw, decimals),
       } satisfies TokenHoldingRow;
     }),
   );
