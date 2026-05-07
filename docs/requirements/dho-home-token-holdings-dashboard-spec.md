@@ -163,6 +163,8 @@ Follow existing MCP read-tool semantics:
 - readable legend and tooltip with exact amount + share
 - stable color mapping per token/slice
 - collapse holders with `< 3%` share into `Other` by default
+- always keep `Treasury` as its own visible slice; never collapse treasury into `Other`
+- when holdings/recipient classification maps to treasury (including executor-address treasury), label and render as `Treasury`
 - donut center can show token symbol + tracked total
 
 ### 6.2.1 D3 implementation notes
@@ -196,7 +198,8 @@ Follow existing MCP read-tool semantics:
 - Resolve remaining open questions in Section 9 and record final decisions.
 - Route behavior already locked: `Home` label maps to `overview` URL and replaces legacy overview content.
 - Holder bucketing threshold already locked: `< 3%` collapses into `Other`.
-- Confirm remaining treasury-treatment decision.
+- Treasury visibility already locked: treasury is always a dedicated slice.
+- Data path already locked: Home reads via a dedicated API route mirroring MCP output.
 
 **Deliverable:** signed-off "v1 behavior" note in this spec.
 **Exit gate:** no unresolved product decisions blocking backend or UI.
@@ -259,7 +262,9 @@ Follow existing MCP read-tool semantics:
 
 **Goal:** connect real data safely and keep rendering stable.
 
-- Wire Home page data fetching to the shared helper (or approved API adapter).
+- Implement a dedicated Home API route that mirrors MCP output shape.
+- Wire Home page data fetching to that dedicated API route.
+- Keep the dedicated API route backed by the same shared helper used by MCP.
 - Ensure SSR/client output is deterministic to avoid hydration mismatch.
 - Add caching strategy for holdings reads (short TTL + explicit invalidation policy).
 - Add defensive handling for partial token metadata and unknown holders.
@@ -296,18 +301,15 @@ Follow existing MCP read-tool semantics:
 - Home displays one chart per token minted by the space.
 - Each chart exposes holdings context: member/space/treasury/other.
 - Holders below `3%` share are collapsed into `Other` by default.
+- Treasury is always shown as its own slice, including executor-address treasury recipients.
 - Visual style matches existing Hypha surfaces.
 - Token charts are implemented with D3.
+- Home data is loaded through a dedicated API route that mirrors MCP output.
 - MCP tool returns structured holdings with existing access semantics.
 
 ---
 
-## 9) Open questions
-
-1. Should treasury always be a dedicated slice when represented by executor address?
-2. Should UI read directly from shared helper or via dedicated API route mirroring MCP output?
-
-### 9.1 Locked decisions
+## 9) Decision log
 
 - Home/overview routing is finalized:
   - `Home` is the product label in navigation.
@@ -315,3 +317,10 @@ Follow existing MCP read-tool semantics:
   - Existing overview content is replaced by the new Home dashboard.
 - `Other` slice threshold is finalized:
   - holders with `< 3%` share are collapsed into `Other` by default.
+- Treasury slice behavior is finalized:
+  - treasury is always rendered as its own slice.
+  - executor-address treasury recipients are labeled as `Treasury`.
+- UI data path is finalized:
+  - Home uses a dedicated API route.
+  - the API response mirrors MCP output.
+  - both API and MCP are backed by the same shared helper.
