@@ -187,38 +187,103 @@ Follow existing MCP read-tool semantics:
 
 ## 7) Implementation plan
 
-### Step 1 - Finalize data contract
+### Phase 0 - Decisions and scope lock (required before coding)
 
-- lock input/output schema
-- lock bucket semantics (member, space, treasury, other)
+**Goal:** remove ambiguity so implementation does not fork.
 
-### Step 2 - Implement MCP tool
+- Resolve open questions in Section 9 and record final decisions.
+- Confirm canonical route behavior (`overview` as Home, or alias strategy).
+- Confirm holder bucketing policy (`Other` threshold and treasury treatment).
 
-- build shared core helper for holdings aggregation
-- register `get_token_holdings_by_space_slug` in MCP server
-- enforce read-only and access checks
+**Deliverable:** signed-off "v1 behavior" note in this spec.
+**Exit gate:** no unresolved product decisions blocking backend or UI.
 
-### Step 3 - Wire Home navigation
+### Phase 1 - Data contract and shared core helper
 
-- add `Home` as first DHO item
-- map to `overview` route and ensure active-state correctness
+**Goal:** create one source of truth used by MCP and web.
 
-### Step 4 - Build dashboard components
+- Define final TypeScript + zod contract for token holdings payload.
+- Implement shared holdings helper in core:
+  - resolve space by slug
+  - resolve minted token list from chain + DB metadata
+  - resolve holder balances and compute percentages
+  - compute `treasury_balance`, `other_balance`, and totals
+- Add deterministic sorting (token order and holder order) for stable rendering.
 
-- create token holdings dashboard surface
-- render chart cards, legends, totals, and responsive layout using D3-based pie/donut components
+**Deliverable:** reusable server helper with schema-validated output.
+**Exit gate:** unit tests pass for aggregation and bucket math.
 
-### Step 5 - Connect data loading
+### Phase 2 - MCP tool implementation
 
-- fetch from server path backed by same helper as MCP tool
-- keep rendering deterministic and cache-friendly
+**Goal:** expose holdings data through MCP with existing security semantics.
 
-### Step 6 - Validate
+- Add `get_token_holdings_by_space_slug` tool registration.
+- Implement input validation + output `safeParse`.
+- Enforce access checks for gated spaces and return `isError: true` on denial.
+- Return structured payload + concise human-readable summary.
 
-- test nav order and route behavior
-- test loading/empty/error states
-- test MCP schema + output validation
-- test access behavior on public and gated spaces
+**Deliverable:** production-ready read-only MCP tool.
+**Exit gate:** MCP tool integration test covers success, not-found, and denied access.
+
+### Phase 3 - Navigation wiring and page shell
+
+**Goal:** make Home visible and routable as the first DHO entry.
+
+- Insert `Home` as first DHO navigation item.
+- Ensure route mapping to `/{lang}/dho/{id}/overview`.
+- Verify active-state behavior in all DHO tab contexts.
+- Add Home page shell (header, summary placeholders, grid container).
+
+**Deliverable:** navigable Home entry with stable route behavior.
+**Exit gate:** nav order + route tests pass.
+
+### Phase 4 - D3 chart components and dashboard UI
+
+**Goal:** deliver final visualization experience.
+
+- Build reusable D3 chart primitives (pie/donut):
+  - `d3-shape` arcs
+  - `d3-scale` color mapping
+  - `d3-format` value/percent labels
+- Implement token chart cards, legends, center labels, and responsive grid.
+- Implement loading, empty, and error states.
+- Add accessible text equivalents for all chart-only data.
+
+**Deliverable:** full D3-based token dashboard UI.
+**Exit gate:** UI review approved on desktop + mobile breakpoints.
+
+### Phase 5 - Data integration and performance hardening
+
+**Goal:** connect real data safely and keep rendering stable.
+
+- Wire Home page data fetching to the shared helper (or approved API adapter).
+- Ensure SSR/client output is deterministic to avoid hydration mismatch.
+- Add caching strategy for holdings reads (short TTL + explicit invalidation policy).
+- Add defensive handling for partial token metadata and unknown holders.
+
+**Deliverable:** end-to-end data flow from backend to charts.
+**Exit gate:** no hydration warnings; acceptable response time on representative spaces.
+
+### Phase 6 - Validation, rollout, and handoff
+
+**Goal:** ship confidently with test coverage and operational clarity.
+
+- Automated tests:
+  - helper math and bucket tests
+  - MCP tool contract tests
+  - nav order and route tests
+  - UI state tests (loading/empty/error/data)
+- Manual QA:
+  - public and gated spaces
+  - small and high-cardinality holder sets
+  - responsive and accessibility checks
+- PR checklist and rollout notes:
+  - migration notes (if any)
+  - feature flag strategy (if used)
+  - post-merge verification steps
+
+**Deliverable:** merge-ready PR with QA evidence.
+**Exit gate:** acceptance criteria in Section 8 fully satisfied.
 
 ---
 
