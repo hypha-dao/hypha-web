@@ -133,7 +133,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const tSignalCard = useTranslations('SignalCard');
   const tCommon = useTranslations('Common');
   const router = useRouter();
-  const params = useParams<{ lang: string; id: string }>();
+  const params = useParams<{ lang: string; id: string; tab?: string }>();
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const locale = useLocale();
   const dateFnsLocale = React.useMemo(
@@ -380,14 +380,15 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               size="sm"
               className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               disabled={isLoading}
-              aria-label="Edit signal"
-              title="Edit signal"
+              aria-label={tSignalCard('editMenu')}
+              title={tSignalCard('editMenu')}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 if (!params.lang || !params.id || !slug) return;
+                const tab = params.tab ?? 'coherence';
                 router.push(
-                  `/${params.lang}/dho/${params.id}/coherence/edit-signal/${slug}`,
+                  `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
                 );
               }}
               onKeyDown={stopCardActivationKey}

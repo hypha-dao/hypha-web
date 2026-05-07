@@ -157,9 +157,7 @@ export function CoherenceBlock({
         { value: 'all', label: t('all'), count: priorityCounts.all },
         {
           value: 'critical',
-          label: t.has('priorities.critical')
-            ? t('priorities.critical')
-            : 'critical',
+          label: t('priorities.critical'),
           count: priorityCounts.critical,
         },
         {
