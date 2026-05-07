@@ -51,9 +51,23 @@ async function verifyPrivyToken(
 }
 
 export async function GET(request: NextRequest) {
+  const correlationId =
+    request.headers.get('x-correlation-id') ?? randomUUID();
+  const requestStart = Date.now();
+  console.log(
+    `[DEBUG /api/matrix/token] [${correlationId}] GET started — url=${request.url}`,
+  );
+
   const humanChatEnabled = await getEnableHumanChat();
   const authHeader = request.headers.get('Authorization');
+  console.log(
+    `[DEBUG /api/matrix/token] [${correlationId}] humanChatEnabled=${humanChatEnabled} hasAuthHeader=${!!authHeader}`,
+  );
+
   if (!humanChatEnabled || !authHeader?.startsWith('Bearer ')) {
+    console.log(
+      `[DEBUG /api/matrix/token] [${correlationId}] Early 401 — humanChatEnabled=${humanChatEnabled} headerPresent=${!!authHeader}`,
+    );
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -63,10 +77,8 @@ export async function GET(request: NextRequest) {
   try {
     env = validateEnvVars();
   } catch (error) {
-    const correlationId =
-      request.headers.get('x-correlation-id') ?? randomUUID();
     console.warn(
-      `Config validation failed [correlationId: ${correlationId}]:`,
+      `[DEBUG /api/matrix/token] [${correlationId}] 500 — Config validation failed:`,
       error instanceof Error ? error.message : error,
     );
     return NextResponse.json(
@@ -80,8 +92,14 @@ export async function GET(request: NextRequest) {
     env.PRIVY_APP_ID,
     env.PRIVY_APP_SECRET,
   );
+  console.log(
+    `[DEBUG /api/matrix/token] [${correlationId}] Privy token verified — privyUserIdPresent=${!!privyUserId}`,
+  );
 
   if (!privyUserId) {
+    console.log(
+      `[DEBUG /api/matrix/token] [${correlationId}] 401 — Privy token invalid or expired`,
+    );
     return NextResponse.json(
       {
         error: 'Unauthorized',
@@ -95,11 +113,12 @@ export async function GET(request: NextRequest) {
   let matrixAuthClient: MatrixSharedSecret;
   try {
     matrixAuthClient = new MatrixSharedSecret();
+    console.log(
+      `[DEBUG /api/matrix/token] [${correlationId}] MatrixSharedSecret client created`,
+    );
   } catch (error) {
-    const correlationId =
-      request.headers.get('x-correlation-id') ?? randomUUID();
     console.warn(
-      `Matrix client init failed [correlationId: ${correlationId}]:`,
+      `[DEBUG /api/matrix/token] [${correlationId}] 500 — MatrixSharedSecret init failed:`,
       error instanceof Error ? error.message : error,
     );
     return NextResponse.json(
@@ -186,7 +205,13 @@ export async function GET(request: NextRequest) {
 
   try {
     const environment = determineEnvironment(request.url);
+    console.log(
+      `[DEBUG /api/matrix/token] [${correlationId}] environment=${environment}`,
+    );
     if (!environment) {
+      console.log(
+        `[DEBUG /api/matrix/token] [${correlationId}] 400 — could not determine environment from url=${request.url}`,
+      );
       return NextResponse.json(
         { error: 'Unable to determine environment from request URL' },
         { status: 400 },
@@ -194,18 +219,32 @@ export async function GET(request: NextRequest) {
     }
 
     const decoratedPrivyUserId = getDecoratedPrivyId(privyUserId, environment);
+    console.log(
+      `[DEBUG /api/matrix/token] [${correlationId}] decoratedPrivyUserId prefix=${decoratedPrivyUserId.slice(0, 8)}...`,
+    );
 
     const existing = await getLinkByPrivyUserId({
       privyUserId,
       environment,
     });
+    console.log(
+      `[DEBUG /api/matrix/token] [${correlationId}] existingLink=${!!existing} deviceId=${existing?.deviceId ?? 'none'} matrixUserId=${existing?.matrixUserId ?? 'none'}`,
+    );
+
     if (existing) {
       const accessToken = decryptMatrixToken(existing.encryptedAccessToken);
       const hasValidToken = await matrixAuthClient.validateToken(accessToken);
+      console.log(
+        `[DEBUG /api/matrix/token] [${correlationId}] existing link — hasValidToken=${hasValidToken} isLegacyDeviceId=${existing.deviceId === LEGACY_SHARED_SECRET_DEVICE_ID}`,
+      );
+
       if (
         hasValidToken &&
         existing.deviceId !== LEGACY_SHARED_SECRET_DEVICE_ID
       ) {
+        console.log(
+          `[DEBUG /api/matrix/token] [${correlationId}] 200 — returning cached valid token (${Date.now() - requestStart}ms)`,
+        );
         return NextResponse.json({
           accessToken,
           userId: existing.matrixUserId,
@@ -216,19 +255,39 @@ export async function GET(request: NextRequest) {
           },
         });
       } else {
+        // Token expired or legacy device id — need to rotate via admin
+        const rotateReason = hasValidToken
+          ? 'legacy-device-id'
+          : 'token-expired';
+        console.log(
+          `[DEBUG /api/matrix/token] [${correlationId}] Token rotation needed — reason=${rotateReason}`,
+        );
         const adminMatrixUsername = await getAdminMatrixUserName(environment);
+        console.log(
+          `[DEBUG /api/matrix/token] [${correlationId}] Admin username resolved: ${adminMatrixUsername.slice(0, 12)}...`,
+        );
         const admin = await getAdminRecord(
           adminMatrixUsername,
           environment,
           authToken,
         );
+        console.log(
+          `[DEBUG /api/matrix/token] [${correlationId}] Admin record fetched — adminPresent=${!!admin} adminHasToken=${!!admin?.encryptedAccessToken}`,
+        );
+
         if (admin?.encryptedAccessToken) {
           const adminAccessToken = decryptMatrixToken(
             admin.encryptedAccessToken,
           );
+          console.log(
+            `[DEBUG /api/matrix/token] [${correlationId}] Calling resetPassword for matrixUserId=${existing.matrixUserId}`,
+          );
           const { ok, password } = await matrixAuthClient.resetPassword(
             existing.matrixUserId,
             adminAccessToken,
+          );
+          console.log(
+            `[DEBUG /api/matrix/token] [${correlationId}] resetPassword result — ok=${ok}`,
           );
           if (ok) {
             const {
@@ -250,6 +309,9 @@ export async function GET(request: NextRequest) {
               { authToken },
             );
 
+            console.log(
+              `[DEBUG /api/matrix/token] [${correlationId}] 200 — rotated token via admin resetPassword (${Date.now() - requestStart}ms)`,
+            );
             return NextResponse.json({
               accessToken: decryptMatrixToken(encryptedAccessToken),
               userId: matrixUserId,
@@ -261,23 +323,35 @@ export async function GET(request: NextRequest) {
             });
           }
 
-          throw new Error(
-            hasValidToken
-              ? 'Matrix user link has legacy device id but cannot be rotated'
-              : 'Matrix user link exists but cannot be updated',
+          const throwMsg = hasValidToken
+            ? 'Matrix user link has legacy device id but cannot be rotated'
+            : 'Matrix user link exists but cannot be updated';
+          console.log(
+            `[DEBUG /api/matrix/token] [${correlationId}] THROW — ${throwMsg} (resetPassword ok=false)`,
           );
+          throw new Error(throwMsg);
         }
       }
     }
 
     const matrixUsername = decoratedPrivyUserId;
+    console.log(
+      `[DEBUG /api/matrix/token] [${correlationId}] No existing link — attempting registerUser for matrixUsername=${matrixUsername.slice(0, 8)}...`,
+    );
     const {
       accessToken: encryptedAccessToken,
       deviceId,
       userId: matrixUserId,
     } = await matrixAuthClient.registerUser(matrixUsername);
+    console.log(
+      `[DEBUG /api/matrix/token] [${correlationId}] registerUser result — gotToken=${!!encryptedAccessToken} matrixUserId=${matrixUserId}`,
+    );
 
     if (!encryptedAccessToken) {
+      // User already exists in Matrix (Synapse returns no token for existing users)
+      console.log(
+        `[DEBUG /api/matrix/token] [${correlationId}] registerUser returned no token — user likely already exists in Synapse; trying admin recovery flow`,
+      );
       const adminMatrixUsername = await getAdminMatrixUserName(environment);
       const admin = await getAdminRecord(
         adminMatrixUsername,
@@ -285,19 +359,31 @@ export async function GET(request: NextRequest) {
         authToken,
       );
       if (!admin?.encryptedAccessToken) {
+        console.log(
+          `[DEBUG /api/matrix/token] [${correlationId}] THROW — Admin record missing or has no encrypted access token`,
+        );
         throw new Error(
           'Admin record missing or has no encrypted access token',
         );
       }
       const adminAccessToken = decryptMatrixToken(admin.encryptedAccessToken);
+      console.log(
+        `[DEBUG /api/matrix/token] [${correlationId}] Fetching user info for matrixUsername=${matrixUsername.slice(0, 8)}...`,
+      );
       const userInfo = await matrixAuthClient.getUser(
         matrixUsername,
         adminAccessToken,
+      );
+      console.log(
+        `[DEBUG /api/matrix/token] [${correlationId}] getUser returned userId=${userInfo.userId} — calling resetPassword`,
       );
 
       const { ok, password } = await matrixAuthClient.resetPassword(
         userInfo.userId,
         adminAccessToken,
+      );
+      console.log(
+        `[DEBUG /api/matrix/token] [${correlationId}] resetPassword (admin recovery) ok=${ok}`,
       );
       if (ok) {
         const {
@@ -317,6 +403,9 @@ export async function GET(request: NextRequest) {
           { authToken },
         );
 
+        console.log(
+          `[DEBUG /api/matrix/token] [${correlationId}] 200 — admin recovery flow succeeded (${Date.now() - requestStart}ms)`,
+        );
         return NextResponse.json({
           accessToken: decryptMatrixToken(encryptedAccessToken),
           userId,
@@ -328,6 +417,9 @@ export async function GET(request: NextRequest) {
         });
       }
 
+      console.log(
+        `[DEBUG /api/matrix/token] [${correlationId}] THROW — admin recovery resetPassword ok=false; user link exists but cannot be updated`,
+      );
       throw new Error('Matrix user link exists but cannot be updated');
     }
 
@@ -342,6 +434,9 @@ export async function GET(request: NextRequest) {
       { authToken },
     );
 
+    console.log(
+      `[DEBUG /api/matrix/token] [${correlationId}] 200 — new user registered and link created (${Date.now() - requestStart}ms)`,
+    );
     return NextResponse.json({
       accessToken: decryptMatrixToken(encryptedAccessToken),
       userId: matrixUserId,
@@ -352,11 +447,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    const correlationId =
-      request.headers.get('x-correlation-id') ?? randomUUID();
     console.warn(
-      `Token generation failed [correlationId: ${correlationId}]:`,
-      error instanceof Error ? error.message : error,
+      `[DEBUG /api/matrix/token] [${correlationId}] 500 — Token generation failed after ${Date.now() - requestStart}ms:`,
+      error instanceof Error ? error.stack ?? error.message : error,
     );
     return NextResponse.json(
       {

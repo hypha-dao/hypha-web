@@ -124,6 +124,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   className,
   leadImage,
 }) => {
+  // DEBUG: the `messages` field is a DB counter stored on the coherence row.
+  // It is NOT derived live from Matrix. It must be explicitly incremented via
+  // updateCoherence({ messages: n }) when new Matrix messages arrive.
+  // If it shows 0, the counter was never written — no auto-sync mechanism exists.
+  console.log(
+    `[DEBUG SignalCard] slug=${slug ?? 'none'} roomId=${roomId ?? 'none'} messages=${messages} — NOTE: messages is a DB field, not live from Matrix`,
+  );
+
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
   const { updateCoherenceBySlug, deleteCoherenceBySlug } =

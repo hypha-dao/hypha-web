@@ -462,8 +462,12 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const initializeMatrixClient = React.useCallback(
     async (matrixToken: MatrixTokenData) => {
       if (!matrixToken) {
+        console.log('[DEBUG MatrixProvider] initializeMatrixClient called with null token — skipping');
         return;
       }
+      console.log(
+        `[DEBUG MatrixProvider] initializeMatrixClient — userId=${matrixToken.userId} homeserverUrl=${matrixToken.homeserverUrl} deviceId=${matrixToken.deviceId ?? 'none'}`,
+      );
       try {
         const { accessToken, userId, homeserverUrl, deviceId } = matrixToken;
         // Voice and video (group calls): keep VoIP enabled; TURN/ICE for WebRTC. See
@@ -484,16 +488,22 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           iceCandidatePoolSize: matrixWebRtcIceCandidatePoolSizeFromEnv(),
         });
 
+        console.log('[DEBUG MatrixProvider] MatrixClient created — calling startClient()');
         await matrixClient.startClient();
+        console.log('[DEBUG MatrixProvider] startClient() resolved — setting presence online');
 
         await matrixClient.setPresence({ presence: 'online' });
+        console.log('[DEBUG MatrixProvider] Presence set — Matrix client fully initialized');
 
         setClient(matrixClient);
         setActiveMatrixUserId(userId);
         setIsMatrixAvailable(matrixClient !== null);
         setIsAuthenticated(true);
       } catch (error) {
-        console.error('Failed to initialize Matrix client:', error);
+        console.error(
+          '[DEBUG MatrixProvider] Failed to initialize Matrix client:',
+          error instanceof Error ? error.stack ?? error.message : error,
+        );
         setClient(null);
       }
     },
@@ -504,10 +514,15 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     if (!client) {
       return;
     }
-    if (matrixToken && activeMatrixUserId === matrixToken.userId) {
+    const tokenUserIdMatches = matrixToken && activeMatrixUserId === matrixToken.userId;
+    console.log(
+      `[DEBUG MatrixProvider] token-change effect — clientPresent=${!!client} activeUserId=${activeMatrixUserId} tokenUserId=${matrixToken?.userId ?? 'none'} match=${tokenUserIdMatches}`,
+    );
+    if (tokenUserIdMatches) {
       return;
     }
 
+    console.log('[DEBUG MatrixProvider] User mismatch or no token — stopping existing client');
     client.stopClient();
     registeredRoomListenersRef.current = [];
     setRegisteredRoomListeners([]);
@@ -518,6 +533,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   }, [activeMatrixUserId, client, matrixToken]);
 
   React.useEffect(() => {
+    console.log(
+      `[DEBUG MatrixProvider] init-check effect — clientPresent=${!!client} isLoading=${isMatrixTokenLoading} hasToken=${!!matrixToken} error=${matrixTokenError ?? 'none'}`,
+    );
     if (client) {
       //NOTE: already initialized
       return;
@@ -526,12 +544,17 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       return;
     }
     if (matrixTokenError) {
-      console.warn('Cannot initialize client due error:', matrixTokenError);
+      console.warn(
+        '[DEBUG MatrixProvider] Cannot initialize client due to token error:',
+        matrixTokenError,
+      );
       return;
     }
     if (!matrixToken) {
+      console.log('[DEBUG MatrixProvider] No token yet — waiting');
       return;
     }
+    console.log('[DEBUG MatrixProvider] Token available — calling initializeMatrixClient');
     initializeMatrixClient(matrixToken);
   }, [
     matrixToken,
