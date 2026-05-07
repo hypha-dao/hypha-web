@@ -530,6 +530,7 @@ export const CreateSignalForm = ({
                         value={field.value}
                         allowToggleAll={false}
                         allowCreate={true}
+                        uiStyle="tag-picker"
                         onValueChange={field.onChange}
                       />
                     </FormControl>

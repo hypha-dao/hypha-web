@@ -119,6 +119,13 @@ interface MultiSelectProps
   allowCreate?: boolean;
 
   /**
+   * Visual style of the dropdown list.
+   * - default: checkbox-style multi-select rows
+   * - tag-picker: cleaner tag rows with trailing selected indicator
+   */
+  uiStyle?: 'default' | 'tag-picker';
+
+  /**
    * Additional class names to apply custom styles to the multi-select component.
    * Optional, can be used to add custom styles.
    */
@@ -156,6 +163,7 @@ export const MultiSelect = React.forwardRef<
       value,
       allowToggleAll = true,
       allowCreate = false,
+      uiStyle = 'default',
       className,
       ...props
     },
@@ -354,7 +362,7 @@ export const MultiSelect = React.forwardRef<
                     <CommandSeparator />
                   </>
                 ) : null}
-                {allowToggleAll && (
+                {allowToggleAll && uiStyle !== 'tag-picker' && (
                   <>
                     <CommandItem
                       key="all"
@@ -387,51 +395,68 @@ export const MultiSelect = React.forwardRef<
                       key={`${option.value}-${index}`}
                       value={option.label}
                       onSelect={() => toggleOption(option.value)}
-                      className="cursor-pointer"
+                      className={cn(
+                        'cursor-pointer',
+                        uiStyle === 'tag-picker' && 'py-2',
+                      )}
                     >
-                      <div
-                        className={cn(
-                          'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-                          isSelected
-                            ? 'bg-primary text-primary-foreground'
-                            : 'opacity-50 [&_svg]:invisible',
-                        )}
-                      >
-                        <CheckIcon className="h-4 w-4" />
-                      </div>
+                      {uiStyle === 'default' ? (
+                        <div
+                          className={cn(
+                            'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                            isSelected
+                              ? 'bg-primary text-primary-foreground'
+                              : 'opacity-50 [&_svg]:invisible',
+                          )}
+                        >
+                          <CheckIcon className="h-4 w-4" />
+                        </div>
+                      ) : null}
                       {option.icon && (
                         <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                       )}
-                      <span>{option.label}</span>
+                      <span className="flex-1 truncate">{option.label}</span>
+                      {uiStyle === 'tag-picker' ? (
+                        <CheckIcon
+                          className={cn(
+                            'h-4 w-4 text-accent-11',
+                            isSelected ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                      ) : null}
                     </CommandItem>
                   );
                 })}
               </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup>
-                <div className="flex items-center justify-between">
-                  {selectedValues.length > 0 && (
-                    <>
+              {uiStyle === 'default' ? (
+                <>
+                  <CommandSeparator />
+                  <CommandGroup>
+                    <div className="flex items-center justify-between">
+                      {selectedValues.length > 0 && (
+                        <>
+                          <CommandItem
+                            onSelect={handleClear}
+                            className="flex-1 justify-center cursor-pointer"
+                          >
+                            Clear
+                          </CommandItem>
+                          <Separator
+                            orientation="vertical"
+                            className="flex min-h-6 h-full"
+                          />
+                        </>
+                      )}
                       <CommandItem
-                        onSelect={handleClear}
-                        className="flex-1 justify-center cursor-pointer"
+                        onSelect={() => setIsPopoverOpen(false)}
+                        className="flex-1 justify-center cursor-pointer max-w-full"
                       >
-                        Clear
+                        Close
                       </CommandItem>
-                      <Separator
-                        orientation="vertical"
-                        className="flex min-h-6 h-full"
-                      />
-                    </>
-                  )}
-                  <CommandItem
-                    onSelect={() => setIsPopoverOpen(false)}
-                    className="flex-1 justify-center cursor-pointer max-w-full"
-                  >
-                    Close
-                  </CommandItem>
-                </div>
-              </CommandGroup>
+                    </div>
+                  </CommandGroup>
+                </>
+              ) : null}
             </CommandList>
           </Command>
         </PopoverContent>
