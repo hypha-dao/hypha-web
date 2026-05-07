@@ -39,8 +39,10 @@ We need a first-position `Home` menu item that opens a dashboard showing:
 ### 3.1 Navigation
 
 - Insert `Home` in first position of DHO navigation.
-- Route to existing overview path:
+- Keep `overview` as the canonical URL segment for compatibility:
   - `/{lang}/dho/{id}/overview`
+- Replace existing overview content with the new Home dashboard (no parallel legacy overview view).
+- Use `Home` as the UI label while preserving `overview` in route helpers/constants to avoid URL mismatch.
 - Keep route compatibility and active-state behavior stable.
 
 ### 3.2 Page purpose
@@ -160,7 +162,7 @@ Follow existing MCP read-tool semantics:
 - one chart per token
 - readable legend and tooltip with exact amount + share
 - stable color mapping per token/slice
-- collapse high-cardinality tail into `Other` when needed
+- collapse holders with `< 3%` share into `Other` by default
 - donut center can show token symbol + tracked total
 
 ### 6.2.1 D3 implementation notes
@@ -191,9 +193,10 @@ Follow existing MCP read-tool semantics:
 
 **Goal:** remove ambiguity so implementation does not fork.
 
-- Resolve open questions in Section 9 and record final decisions.
-- Confirm canonical route behavior (`overview` as Home, or alias strategy).
-- Confirm holder bucketing policy (`Other` threshold and treasury treatment).
+- Resolve remaining open questions in Section 9 and record final decisions.
+- Route behavior already locked: `Home` label maps to `overview` URL and replaces legacy overview content.
+- Holder bucketing threshold already locked: `< 3%` collapses into `Other`.
+- Confirm remaining treasury-treatment decision.
 
 **Deliverable:** signed-off "v1 behavior" note in this spec.
 **Exit gate:** no unresolved product decisions blocking backend or UI.
@@ -292,6 +295,7 @@ Follow existing MCP read-tool semantics:
 - `Home` is first in DHO navigation.
 - Home displays one chart per token minted by the space.
 - Each chart exposes holdings context: member/space/treasury/other.
+- Holders below `3%` share are collapsed into `Other` by default.
 - Visual style matches existing Hypha surfaces.
 - Token charts are implemented with D3.
 - MCP tool returns structured holdings with existing access semantics.
@@ -300,7 +304,14 @@ Follow existing MCP read-tool semantics:
 
 ## 9) Open questions
 
-1. Should Home replace current overview content completely or coexist with a moved overview surface?
-2. Should small holders always collapse into `Other` by default?
-3. Should treasury always be a dedicated slice when represented by executor address?
-4. Should UI read directly from shared helper or via dedicated API route mirroring MCP output?
+1. Should treasury always be a dedicated slice when represented by executor address?
+2. Should UI read directly from shared helper or via dedicated API route mirroring MCP output?
+
+### 9.1 Locked decisions
+
+- Home/overview routing is finalized:
+  - `Home` is the product label in navigation.
+  - `/{lang}/dho/{id}/overview` remains the canonical URL.
+  - Existing overview content is replaced by the new Home dashboard.
+- `Other` slice threshold is finalized:
+  - holders with `< 3%` share are collapsed into `Other` by default.
