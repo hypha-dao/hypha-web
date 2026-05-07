@@ -1,10 +1,10 @@
-import { createPublicClient, fallback, http } from 'viem';
+import { createPublicClient, fallback, http, type PublicClient } from 'viem';
 import { base } from 'viem/chains';
 
 /**
  * @deprecated Insecure. Use server-side version instead
  */
-export const publicClient = createPublicClient({
+export const publicClient: PublicClient = createPublicClient({
   batch: {
     multicall: { wait: 100 },
   },
