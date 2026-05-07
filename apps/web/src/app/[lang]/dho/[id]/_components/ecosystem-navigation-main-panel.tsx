@@ -292,25 +292,6 @@ export function EcosystemNavigationMainPanel({
     ],
   );
 
-  const topRowActions =
-    canRenderSpaceActions &&
-    visitSpaceHref &&
-    addSpaceHref &&
-    activeTab === 'nested-spaces' ? (
-      <div className="flex w-full items-center justify-end gap-2">
-        <Link href={visitSpaceHref}>
-          <Button variant="outline" colorVariant="neutral">
-            {t('visibleSpaces.visitSpace')}
-          </Button>
-        </Link>
-        <Link href={addSpaceHref}>
-          <Button variant="default" colorVariant="accent">
-            {t('visibleSpaces.addSpace')}
-          </Button>
-        </Link>
-      </div>
-    ) : null;
-
   return (
     <section className="flex w-full flex-col gap-4 py-4">
       {isLoading ? (
@@ -333,7 +314,6 @@ export function EcosystemNavigationMainPanel({
           className={
             resolvedTheme === 'light' ? 'bg-neutral-2/85' : 'bg-background-2'
           }
-          afterTabsContent={topRowActions}
           visualizationClassName="min-h-0"
         />
       )}
