@@ -36,13 +36,18 @@ export function NotificationSubscriber({
   const [subscribed, setSubscribed] = React.useState(false);
   const [loggedIn, setLoggedIn] = React.useState(false);
   const hasInitAttemptRef = React.useRef(false);
+  const syncedExternalIdRef = React.useRef<string | null>(null);
   const router = useRouter();
+  const personSlug = person?.slug ?? null;
 
   React.useEffect(() => {
     if (!initialized || !OneSignal || isLoading) {
       return;
     }
-    if (person?.slug) {
+    if (personSlug) {
+      if (syncedExternalIdRef.current === personSlug) {
+        return;
+      }
       const loginNotifications = async (personSlug: string) => {
         try {
           const currentExternalId = OneSignal.User.externalId;
@@ -52,6 +57,7 @@ export function NotificationSubscriber({
             }
             await OneSignal.login(personSlug);
           }
+          syncedExternalIdRef.current = personSlug;
           setLoggedIn(true);
           const isSubscribed = await hasPermission();
           setSubscribed(isSubscribed);
@@ -59,8 +65,11 @@ export function NotificationSubscriber({
           console.error('Error on login:', err);
         }
       };
-      loginNotifications(person.slug);
+      loginNotifications(personSlug);
     } else {
+      if (syncedExternalIdRef.current === null) {
+        return;
+      }
       const logoutNotifications = async () => {
         try {
           if (OneSignal.User.externalId) {
@@ -69,13 +78,14 @@ export function NotificationSubscriber({
         } catch (err) {
           console.error('Error on logout:', err);
         } finally {
+          syncedExternalIdRef.current = null;
           setLoggedIn(false);
           setSubscribed(false);
         }
       };
       logoutNotifications();
     }
-  }, [initialized, OneSignal, isLoading, person]);
+  }, [initialized, isLoading, personSlug]);
 
   React.useEffect(() => {
     const initialize = async () => {
@@ -134,7 +144,7 @@ export function NotificationSubscriber({
       }
     };
     initialize();
-  }, [appId, safariWebId, serviceWorkerPath, initialized, person?.slug]);
+  }, [appId, safariWebId, serviceWorkerPath, initialized, personSlug]);
 
   React.useEffect(() => {
     if (!initialized) {
