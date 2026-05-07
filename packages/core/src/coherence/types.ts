@@ -43,6 +43,7 @@ export type UpdateCoherenceSignalBySlugInput = {
 export type Coherence = {
   id: number;
   creatorId: number;
+  spaceId?: number | null;
   createdAt: Date;
   updatedAt: Date;
   type: CoherenceType;
