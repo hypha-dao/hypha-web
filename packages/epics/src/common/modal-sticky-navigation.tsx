@@ -48,11 +48,25 @@ export function ModalStickyNavigation({
       : `/${closeDropSegment}`
     : undefined;
 
-  const closeUrl =
-    closeUrlProp ??
-    (normalizedCloseDropSegment && pathname.endsWith(normalizedCloseDropSegment)
-      ? pathname.slice(0, -normalizedCloseDropSegment.length) || '/'
-      : undefined);
+  const closeUrl = (() => {
+    if (closeUrlProp) {
+      return closeUrlProp;
+    }
+    if (!normalizedCloseDropSegment) {
+      return undefined;
+    }
+    if (pathname.endsWith(normalizedCloseDropSegment)) {
+      return pathname.slice(0, -normalizedCloseDropSegment.length) || '/';
+    }
+    if (pathname.endsWith(`${normalizedCloseDropSegment}/`)) {
+      return pathname.slice(0, -(normalizedCloseDropSegment.length + 1)) || '/';
+    }
+    if (pathname.includes(`${normalizedCloseDropSegment}/`)) {
+      return pathname.replace(`${normalizedCloseDropSegment}/`, '/');
+    }
+    const strippedPath = pathname.replace(normalizedCloseDropSegment, '');
+    return strippedPath || '/';
+  })();
 
   if (
     process.env.NODE_ENV !== 'production' &&

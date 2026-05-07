@@ -345,12 +345,24 @@ export const useCreateSpaceOrchestrator = ({
         web2SpaceId = createdSpace?.id;
 
         if (person?.address && createdSpace?.id) {
-          await createEvent({
-            type: 'joinSpace',
-            referenceEntity: 'space',
-            referenceId: createdSpace.id,
-            parameters: { memberAddress: person.address },
-          });
+          try {
+            await createEvent({
+              type: 'joinSpace',
+              referenceEntity: 'space',
+              referenceId: createdSpace.id,
+              parameters: { memberAddress: person.address },
+            });
+          } catch (createEventError) {
+            // Space creation has already succeeded; avoid turning this into a hard failure.
+            console.error(
+              '[useCreateSpaceOrchestrator] Failed to create joinSpace event after successful space creation',
+              {
+                spaceId: createdSpace.id,
+                memberAddress: person.address,
+                error: createEventError,
+              },
+            );
+          }
         }
         completeTask('CREATE_WEB2_SPACE');
       } catch (err) {

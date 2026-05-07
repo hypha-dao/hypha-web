@@ -119,35 +119,40 @@ export const CreateSubspaceForm = ({
             ecosystemLogoUrlDark: _ecosystemLogoUrlDark,
             ...createValues
           } = values;
+          const normalizedParentId = createValues.parentId ?? parentSpaceId ?? null;
+          const normalizedCreateValues = {
+            ...createValues,
+            parentId: normalizedParentId,
+          };
 
           pendingNavigationSeedRef.current = {
             optimisticSpace: {
               id: -1,
-              title: createValues.title,
-              description: createValues.description,
-              slug: createValues.slug || '',
-              parentId: parentSpaceId,
+              title: normalizedCreateValues.title,
+              description: normalizedCreateValues.description,
+              slug: normalizedCreateValues.slug || '',
+              parentId: normalizedParentId,
               logoUrl:
-                typeof createValues.logoUrl === 'string'
-                  ? createValues.logoUrl
+                typeof normalizedCreateValues.logoUrl === 'string'
+                  ? normalizedCreateValues.logoUrl
                   : null,
               leadImage:
-                typeof createValues.leadImage === 'string'
-                  ? createValues.leadImage
+                typeof normalizedCreateValues.leadImage === 'string'
+                  ? normalizedCreateValues.leadImage
                   : null,
               ecosystemLogoUrlLight: null,
               ecosystemLogoUrlDark: null,
               web3SpaceId: null,
-              links: createValues.links ?? [],
-              categories: createValues.categories ?? [],
-              flags: createValues.flags ?? ['sandbox'],
+              links: normalizedCreateValues.links ?? [],
+              categories: normalizedCreateValues.categories ?? [],
+              flags: normalizedCreateValues.flags ?? ['sandbox'],
               createdAt: new Date(),
               updatedAt: new Date(),
             },
             organisationSpaces: organisationSpaces ?? [],
           };
 
-          return createSpace(createValues);
+          return createSpace(normalizedCreateValues);
         }}
         initialParentSpaceId={parentSpaceId as number}
         parentSpaceSlug={parentSpaceSlug}

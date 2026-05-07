@@ -2,18 +2,29 @@
 
 import {
   CreateSubspaceForm,
-  getDhoPathAgreements,
   ProposalOverlayShell,
 } from '@hypha-platform/epics';
-import { Locale } from '@hypha-platform/i18n';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 
 export default function CreateSubspacePage() {
-  const { id: spaceSlug, lang } = useParams<{ id: string; lang: Locale }>();
+  const { id: spaceSlug } = useParams<{ id: string }>();
+  const pathname = usePathname();
   const { space } = useSpaceBySlug(spaceSlug);
-  const successfulUrl = getDhoPathAgreements(lang as Locale, spaceSlug);
+  const successfulUrl = (() => {
+    const segment = '/space/create';
+    if (pathname.endsWith(segment)) {
+      return pathname.slice(0, -segment.length) || '/';
+    }
+    if (pathname.endsWith(`${segment}/`)) {
+      return pathname.slice(0, -(segment.length + 1)) || '/';
+    }
+    if (pathname.includes(`${segment}/`)) {
+      return pathname.replace(`${segment}/`, '/');
+    }
+    return pathname.replace(segment, '') || '/';
+  })();
 
   return (
     <ProposalOverlayShell>
