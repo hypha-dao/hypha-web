@@ -119,7 +119,8 @@ export const CreateSubspaceForm = ({
             ecosystemLogoUrlDark: _ecosystemLogoUrlDark,
             ...createValues
           } = values;
-          const normalizedParentId = createValues.parentId ?? parentSpaceId ?? null;
+          const normalizedParentId =
+            createValues.parentId ?? parentSpaceId ?? null;
           const normalizedCreateValues = {
             ...createValues,
             parentId: normalizedParentId,
