@@ -1,5 +1,6 @@
 'use client';
 
+import '@hypha-platform/ui-utils/global.css';
 import { useEffect } from 'react';
 
 export default function GlobalError({
