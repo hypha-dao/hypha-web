@@ -12,6 +12,7 @@ import {
   HandCoins,
   Coins,
   FileCheck2,
+  House,
   Orbit,
   Menu,
   PanelLeftClose,
@@ -150,6 +151,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const isSectionActive = useCallback(
     (
       section:
+        | 'overview'
         | 'coherence'
         | 'ecosystem-navigation'
         | 'agreements'
@@ -176,6 +178,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const sectionNavItems = useMemo(() => {
     if (!spaceSlug) return [];
     return [
+      {
+        key: 'overview',
+        label: tCommon('home'),
+        icon: House,
+        href: `/${lang}/dho/${spaceSlug}/overview`,
+        active: isSectionActive('overview'),
+      },
       {
         key: 'ecosystem-navigation',
         label: tSelectNavigation('ecosystem'),
