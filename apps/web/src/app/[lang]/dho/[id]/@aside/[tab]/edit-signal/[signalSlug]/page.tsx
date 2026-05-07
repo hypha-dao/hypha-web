@@ -9,6 +9,13 @@ import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 
 const SIGNAL_TYPES = ['Opportunity', 'Risk', 'Tension', 'Insight'] as const;
+type SignalType = (typeof SIGNAL_TYPES)[number];
+
+function toSignalType(value: string): SignalType {
+  return SIGNAL_TYPES.includes(value as SignalType)
+    ? (value as SignalType)
+    : 'Opportunity';
+}
 
 type PageProps = {
   params: Promise<{
@@ -37,11 +44,7 @@ export default async function EditSignalPage({ params }: PageProps) {
   }
 
   const successfulUrl = getDhoPathCoherence(lang, id);
-  const signalType = SIGNAL_TYPES.includes(
-    signal.type as (typeof SIGNAL_TYPES)[number],
-  )
-    ? signal.type
-    : 'Opportunity';
+  const signalType = toSignalType(signal.type);
 
   return (
     <ProposalOverlayShell>
