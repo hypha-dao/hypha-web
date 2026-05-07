@@ -28,6 +28,18 @@ export type UpdateCoherenceBySlugInput = {
   slug: string;
 } & UpdateCoherenceInput;
 
+export interface UpdateCoherenceSignalInput {
+  type: CoherenceType;
+  priority: CoherencePriority;
+  title: string;
+  description: string;
+  tags: CoherenceTag[];
+}
+
+export type UpdateCoherenceSignalBySlugInput = {
+  slug: string;
+} & UpdateCoherenceSignalInput;
+
 export type Coherence = {
   id: number;
   creatorId: number;

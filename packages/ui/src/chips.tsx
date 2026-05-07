@@ -117,6 +117,12 @@ interface MultiSelectProps
   allowToggleAll?: boolean;
 
   /**
+   * Controls whether users can create options that are not in `options`.
+   * Optional, defaults to false.
+   */
+  allowCreate?: boolean;
+
+  /**
    * Additional class names to apply custom styles to the multi-select component.
    * Optional, can be used to add custom styles.
    */
@@ -153,6 +159,7 @@ export const MultiSelect = React.forwardRef<
       asChild = false,
       value,
       allowToggleAll = true,
+      allowCreate = false,
       className,
       ...props
     },
@@ -161,6 +168,7 @@ export const MultiSelect = React.forwardRef<
     const [selectedValues, setSelectedValues] =
       React.useState<string[]>(defaultValue);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
+    const [searchValue, setSearchValue] = React.useState('');
 
     React.useEffect(() => {
       if (value === undefined) return;
@@ -189,7 +197,19 @@ export const MultiSelect = React.forwardRef<
         : [...selectedValues, option];
       setSelectedValues(newSelectedValues);
       onValueChange(newSelectedValues);
+      setSearchValue('');
     };
+
+    const canCreateOption = React.useMemo(() => {
+      const term = searchValue.trim();
+      if (!allowCreate || term.length === 0) return false;
+      const termLower = term.toLowerCase();
+      return !options.some(
+        (option) =>
+          option.value.toLowerCase() === termLower ||
+          option.label.toLowerCase() === termLower,
+      );
+    }, [allowCreate, options, searchValue]);
 
     const handleClear = () => {
       setSelectedValues([]);
@@ -249,7 +269,7 @@ export const MultiSelect = React.forwardRef<
                         {IconComponent && (
                           <IconComponent className="h-4 w-4 mr-2" />
                         )}
-                        {option?.label}
+                        {option?.label ?? value}
                         <XCircle
                           className="ml-2 h-4 w-4 cursor-pointer"
                           onClick={(event) => {
@@ -313,10 +333,24 @@ export const MultiSelect = React.forwardRef<
             <CommandInput
               placeholder={searchPlaceholder}
               onKeyDown={handleInputKeyDown}
+              value={searchValue}
+              onValueChange={setSearchValue}
             />
             <CommandList>
               <CommandEmpty>No results found.</CommandEmpty>
               <CommandGroup>
+                {canCreateOption ? (
+                  <>
+                    <CommandItem
+                      key={`create-${searchValue}`}
+                      onSelect={() => toggleOption(searchValue.trim())}
+                      className="cursor-pointer"
+                    >
+                      <span>{`Create "${searchValue.trim()}"`}</span>
+                    </CommandItem>
+                    <CommandSeparator />
+                  </>
+                ) : null}
                 {allowToggleAll && (
                   <>
                     <CommandItem

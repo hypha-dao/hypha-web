@@ -1,7 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import { DatabaseInstance } from '../../server';
-import { CreateCoherenceInput, UpdateCoherenceInput } from '../types';
+import {
+  CreateCoherenceInput,
+  UpdateCoherenceInput,
+  UpdateCoherenceSignalInput,
+} from '../types';
 import { coherences } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
 
@@ -64,6 +68,43 @@ export const updateCoherenceBySlug = async (
     .update(coherences)
     .set({ ...rest })
     .where(eq(coherences.id, existing[0]!.id))
+    .returning();
+
+  if (!updatedCoherence) {
+    throw new Error(`Failed to update coherence for slug="${slug}"`);
+  }
+
+  return updatedCoherence;
+};
+
+export const updateCoherenceSignalBySlug = async (
+  {
+    slug,
+    requesterPersonId,
+    ...rest
+  }: { slug: string; requesterPersonId: number } & UpdateCoherenceSignalInput,
+  { db }: { db: DatabaseInstance },
+) => {
+  const existing = await db
+    .select({ id: coherences.id, creatorId: coherences.creatorId })
+    .from(coherences)
+    .where(eq(coherences.slug, slug));
+  if (existing.length === 0) {
+    throw new Error(`Coherence not found for slug="${slug}"`);
+  }
+  if (existing.length > 1) {
+    throw new Error(
+      `Multiple coherences found for slug="${slug}", expected exactly one`,
+    );
+  }
+  const row = existing[0]!;
+  if (row.creatorId !== requesterPersonId) {
+    throw new Error('Only the signal creator can edit this coherence');
+  }
+  const [updatedCoherence] = await db
+    .update(coherences)
+    .set({ ...rest })
+    .where(eq(coherences.id, row.id))
     .returning();
 
   if (!updatedCoherence) {

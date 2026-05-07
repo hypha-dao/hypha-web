@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  ConfirmDialog,
   Button,
   Form,
   FormControl,
@@ -10,7 +11,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Image,
   Input,
   LucideReactIcon,
   MultiSelect,
@@ -25,8 +25,10 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
   COHERENCE_PRIORITY_OPTIONS,
+  COHERENCE_SIGNAL_TYPES,
   COHERENCE_TAGS,
   COHERENCE_TYPE_OPTIONS,
+  CoherenceTag,
   CoherenceType,
   schemaCreateCoherenceForm,
   useCoherenceMutationsWeb2Rsc,
@@ -56,6 +58,9 @@ interface CreateSignalFormProps {
   successfulUrl: string;
   closeUrl?: string;
   backUrl?: string;
+  mode?: 'create' | 'edit';
+  signalSlug?: string;
+  initialValues?: Partial<FormValues>;
 }
 
 export const CreateSignalForm = ({
@@ -63,6 +68,9 @@ export const CreateSignalForm = ({
   successfulUrl,
   closeUrl,
   backUrl,
+  mode = 'create',
+  signalSlug,
+  initialValues,
 }: CreateSignalFormProps) => {
   const t = useTranslations('CoherenceTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -92,51 +100,63 @@ export const CreateSignalForm = ({
     errorCreateCoherenceMutation,
     resetCreateCoherenceMutation,
     updateCoherenceBySlug,
+    updateCoherenceSignalBySlug,
+    isUpdatingCoherenceSignal,
+    deleteCoherenceBySlug,
+    isDeletingCoherence,
   } = useCoherenceMutationsWeb2Rsc(authToken);
   const { isMatrixAvailable, createRoom } = useMatrix();
 
+  const isMutating = isCreatingCoherence || isUpdatingCoherenceSignal;
   const progress = React.useMemo(() => {
+    if (mode === 'edit') return isUpdatingCoherenceSignal ? 50 : 0;
     return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
-  }, [isCreatingCoherence, createdCoherence]);
+  }, [createdCoherence, isCreatingCoherence, isUpdatingCoherenceSignal, mode]);
+
+  const formDefaults = React.useMemo<FormValues>(
+    () => ({
+      title: initialValues?.title ?? '',
+      description: initialValues?.description ?? '',
+      creatorId: initialValues?.creatorId ?? person?.id,
+      spaceId: initialValues?.spaceId ?? spaceId,
+      archived: initialValues?.archived ?? false,
+      type:
+        initialValues?.type &&
+        (COHERENCE_SIGNAL_TYPES as readonly string[]).includes(
+          initialValues.type,
+        )
+          ? initialValues.type
+          : 'Opportunity',
+      priority: initialValues?.priority ?? 'medium',
+      tags: Array.isArray(initialValues?.tags)
+        ? (initialValues.tags.filter(
+            (tag): tag is CoherenceTag =>
+              typeof tag === 'string' && tag.trim().length > 0,
+          ) as CoherenceTag[])
+        : [],
+    }),
+    [initialValues, person?.id, spaceId],
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schemaCreateCoherenceForm),
-    defaultValues: {
-      title: '',
-      description: '',
-      creatorId: person?.id,
-      spaceId,
-      archived: false,
-      type: 'Opportunity',
-      priority: 'medium',
-      tags: [],
-    },
+    defaultValues: formDefaults,
   });
+
+  React.useEffect(() => {
+    form.reset(formDefaults);
+  }, [form, formDefaults]);
 
   useScrollToErrors(form, formRef);
 
   const typeOptions = React.useMemo(() => {
-    return COHERENCE_TYPE_OPTIONS.map(({ icon, type }) => ({
+    return COHERENCE_TYPE_OPTIONS.filter((option) =>
+      (COHERENCE_SIGNAL_TYPES as readonly string[]).includes(option.type),
+    ).map(({ icon, type }) => ({
       icon: icon as LucideReactIcon,
-      title: t(
-        `types.${type}` as
-          | 'types.Opportunity'
-          | 'types.Risk'
-          | 'types.Tension'
-          | 'types.Insight'
-          | 'types.Trend'
-          | 'types.Proposal',
-      ),
-      description: t(
-        `typeDescriptions.${type}` as
-          | 'typeDescriptions.Opportunity'
-          | 'typeDescriptions.Risk'
-          | 'typeDescriptions.Tension'
-          | 'typeDescriptions.Insight'
-          | 'typeDescriptions.Trend'
-          | 'typeDescriptions.Proposal',
-      ),
+      title: t(`types.${type}` as never),
+      description: t(`typeDescriptions.${type}` as never),
       type,
       colorVariant: 'subtle' as CardButtonColorVariant,
       titleColor: 'var(--foreground)',
@@ -146,19 +166,13 @@ export const CreateSignalForm = ({
   const priorityOptions = React.useMemo(() => {
     return COHERENCE_PRIORITY_OPTIONS.map(({ priority, icon }) => ({
       icon: icon as LucideReactIcon,
-      title: t(
-        `priorities.${priority}` as
-          | 'priorities.high'
-          | 'priorities.medium'
-          | 'priorities.low',
-      ),
+      title: t.has(`priorities.${priority}` as never)
+        ? t(`priorities.${priority}` as never)
+        : priority,
       priority,
-      description: t(
-        `priorityDescriptions.${priority}` as
-          | 'priorityDescriptions.high'
-          | 'priorityDescriptions.medium'
-          | 'priorityDescriptions.low',
-      ),
+      description: t.has(`priorityDescriptions.${priority}` as never)
+        ? t(`priorityDescriptions.${priority}` as never)
+        : '',
       colorVariant: 'subtle' as CardButtonColorVariant,
     }));
   }, [t]);
@@ -166,17 +180,9 @@ export const CreateSignalForm = ({
   const tagOptions = React.useMemo(() => {
     return COHERENCE_TAGS.map((tag) => ({
       value: tag,
-      label: t(
-        `tagLabels.${tag}` as
-          | 'tagLabels.Strategy'
-          | 'tagLabels.Culture'
-          | 'tagLabels.Onboarding'
-          | 'tagLabels.Engagement'
-          | 'tagLabels.Learning'
-          | 'tagLabels.Capacity'
-          | 'tagLabels.Network'
-          | 'tagLabels.Reputation',
-      ),
+      label: t.has(`tagLabels.${tag}` as never)
+        ? t(`tagLabels.${tag}` as never)
+        : tag,
     }));
   }, [t]);
 
@@ -203,17 +209,8 @@ export const CreateSignalForm = ({
   }, [spaceId, form]);
 
   const handleResetForm = React.useCallback(() => {
-    form.reset({
-      title: '',
-      description: '',
-      creatorId: person?.id,
-      spaceId,
-      archived: false,
-      type: 'Opportunity',
-      priority: 'medium',
-      tags: [],
-    });
-  }, [form, person?.id, spaceId]);
+    form.reset(formDefaults);
+  }, [form, formDefaults]);
 
   const setSignalProvisioningNotice = React.useCallback(
     (message?: string | null, details?: string) => {
@@ -233,8 +230,24 @@ export const CreateSignalForm = ({
     [],
   );
 
-  const handleCreate = React.useCallback(
+  const handleSubmitSignal = React.useCallback(
     async (data: FormValues) => {
+      if (mode === 'edit' && signalSlug) {
+        try {
+          await updateCoherenceSignalBySlug({
+            slug: signalSlug,
+            title: data.title,
+            description: data.description,
+            type: data.type,
+            priority: data.priority,
+            tags: data.tags,
+          });
+          router.push(successfulUrl);
+        } catch (error) {
+          console.warn('Could not update signal:', error);
+        }
+        return;
+      }
       try {
         const coherence = await createCoherence({ ...data });
         setSignalProvisioningNotice(null);
@@ -297,8 +310,11 @@ export const CreateSignalForm = ({
       createCoherence,
       createRoom,
       updateCoherenceBySlug,
+      updateCoherenceSignalBySlug,
       isMatrixAvailable,
+      mode,
       setSignalProvisioningNotice,
+      signalSlug,
       t,
       router,
       successfulUrl,
@@ -316,7 +332,7 @@ export const CreateSignalForm = ({
     <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       progress={progress}
-      isLoading={isCreatingCoherence}
+      isLoading={isMutating}
       fullHeight={true}
       keepWindowOpenMessage={t('keepWindowOpenWhileCreating')}
       message={
@@ -326,14 +342,20 @@ export const CreateSignalForm = ({
             <Button onClick={resetCreateCoherenceMutation}>{t('reset')}</Button>
           </div>
         ) : (
-          <div>{t('creatingNewSignal')}</div>
+          <div>
+            {mode === 'edit'
+              ? t.has('savingSignal')
+                ? t('savingSignal')
+                : 'Saving signal'
+              : t('creatingNewSignal')}
+          </div>
         )
       }
     >
       <Form {...form}>
         <form
           ref={formRef}
-          onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
+          onSubmit={form.handleSubmit(handleSubmitSignal, handleInvalid)}
           className="flex flex-col gap-0"
         >
           <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
@@ -357,7 +379,7 @@ export const CreateSignalForm = ({
                     colorVariant="neutral"
                     className="gap-1.5 px-2 md:px-3"
                     onClick={handleResetForm}
-                    disabled={isCreatingCoherence}
+                    disabled={isMutating}
                   >
                     <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
                     <span>{t('reset')}</span>
@@ -374,7 +396,7 @@ export const CreateSignalForm = ({
             <div className="flex flex-grow gap-3 px-4 pb-4 pt-5 lg:px-7">
               <PersonAvatar
                 size="lg"
-                isLoading={isCreatingCoherence}
+                isLoading={isMutating}
                 avatarSrc={person?.avatarUrl || ''}
                 userName={[person?.name, person?.surname]
                   .filter(Boolean)
@@ -391,7 +413,7 @@ export const CreateSignalForm = ({
                           rootClassName="!h-auto min-h-10 w-full sm:min-h-11"
                           placeholder={t('signalTitle')}
                           className="!h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:!text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:placeholder:!text-lg"
-                          disabled={isCreatingCoherence}
+                          disabled={isMutating}
                           rightIcon={
                             <RequirementMark className="h-4 w-4 text-muted-foreground sm:h-4 sm:w-4" />
                           }
@@ -502,6 +524,7 @@ export const CreateSignalForm = ({
                         options={tagOptions}
                         value={field.value}
                         allowToggleAll={false}
+                        allowCreate={true}
                         onValueChange={field.onChange}
                       />
                     </FormControl>
@@ -540,9 +563,34 @@ export const CreateSignalForm = ({
               }}
             />
 
-            <div className="flex w-full justify-end">
-              <Button type="submit" disabled={isCreatingCoherence}>
-                {tAgreementFlow('buttons.publish')}
+            <div className="flex w-full justify-end gap-2">
+              {mode === 'edit' && signalSlug ? (
+                <ConfirmDialog
+                  title="Delete signal"
+                  description="This permanently removes this signal from the space. Continue?"
+                  customAcceptButtonText="Delete signal"
+                  customRejectButtonText={t('noLeave')}
+                  onAcceptClicked={async () => {
+                    await deleteCoherenceBySlug({ slug: signalSlug });
+                    router.push(successfulUrl);
+                  }}
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    colorVariant="neutral"
+                    disabled={isDeletingCoherence || isMutating}
+                  >
+                    Delete
+                  </Button>
+                </ConfirmDialog>
+              ) : null}
+              <Button type="submit" disabled={isMutating}>
+                {mode === 'edit'
+                  ? t.has('saveChanges')
+                    ? t('saveChanges')
+                    : 'Save changes'
+                  : tAgreementFlow('buttons.publish')}
               </Button>
             </div>
           </div>

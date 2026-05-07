@@ -4,9 +4,14 @@ import useSWRMutation from 'swr/mutation';
 import {
   createCoherenceAction,
   deleteCoherenceBySlugAction,
+  updateCoherenceSignalBySlugAction,
   updateCoherenceBySlugAction,
 } from '../../server/actions';
-import { CreateCoherenceInput, UpdateCoherenceBySlugInput } from '../../types';
+import {
+  CreateCoherenceInput,
+  UpdateCoherenceBySlugInput,
+  UpdateCoherenceSignalBySlugInput,
+} from '../../types';
 
 export const useCoherenceMutationsWeb2Rsc = (authToken?: string | null) => {
   const {
@@ -45,6 +50,18 @@ export const useCoherenceMutationsWeb2Rsc = (authToken?: string | null) => {
       deleteCoherenceBySlugAction(arg, { authToken }),
   );
 
+  const {
+    trigger: updateCoherenceSignalBySlugMutation,
+    reset: resetUpdateCoherenceSignalBySlugMutation,
+    isMutating: isUpdatingCoherenceSignal,
+    error: errorUpdateCoherenceSignalBySlugMutation,
+    data: updatedCoherenceSignal,
+  } = useSWRMutation(
+    authToken ? [authToken, 'updateCoherenceSignal'] : null,
+    async ([authToken], { arg }: { arg: UpdateCoherenceSignalBySlugInput }) =>
+      updateCoherenceSignalBySlugAction(arg, { authToken }),
+  );
+
   return {
     createCoherence: createCoherenceMutation,
     resetCreateCoherenceMutation,
@@ -57,6 +74,12 @@ export const useCoherenceMutationsWeb2Rsc = (authToken?: string | null) => {
     isUpdatingCoherence,
     errorUpdateCoherenceBySlugMutation,
     updatedCoherence,
+
+    updateCoherenceSignalBySlug: updateCoherenceSignalBySlugMutation,
+    resetUpdateCoherenceSignalBySlugMutation,
+    isUpdatingCoherenceSignal,
+    errorUpdateCoherenceSignalBySlugMutation,
+    updatedCoherenceSignal,
 
     deleteCoherenceBySlug: deleteCoherenceBySlugMutation,
     resetDeleteCoherenceBySlugMutation,

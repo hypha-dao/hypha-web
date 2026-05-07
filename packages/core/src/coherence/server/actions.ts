@@ -2,12 +2,17 @@
 
 import { getDb } from '../../common/server/get-db';
 import { findSelf } from '../../people/server/queries';
-import { CreateCoherenceInput, UpdateCoherenceBySlugInput } from '../types';
+import {
+  CreateCoherenceInput,
+  UpdateCoherenceBySlugInput,
+  UpdateCoherenceSignalBySlugInput,
+} from '../types';
 import { db } from '@hypha-platform/storage-postgres';
 import {
   createCoherence,
   deleteCoherenceBySlug,
   updateCoherenceBySlug,
+  updateCoherenceSignalBySlug,
 } from './mutations';
 
 export async function createCoherenceAction(
@@ -41,6 +46,24 @@ export async function deleteCoherenceBySlugAction(
   }
   return deleteCoherenceBySlug(
     { slug: data.slug, requesterPersonId: self.id },
+    { db: authDb },
+  );
+}
+
+export async function updateCoherenceSignalBySlugAction(
+  data: UpdateCoherenceSignalBySlugInput,
+  { authToken }: { authToken?: string },
+) {
+  if (!authToken) throw new Error('authToken is required to update coherence');
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  if (!self?.id) {
+    throw new Error(
+      'Could not resolve authenticated user for update coherence signal',
+    );
+  }
+  return updateCoherenceSignalBySlug(
+    { ...data, requesterPersonId: self.id },
     { db: authDb },
   );
 }

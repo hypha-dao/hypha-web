@@ -40,7 +40,10 @@ export default async function CoherencePage(props: PageProps) {
       : 'mostrecent';
   const priorityRaw = searchParams?.priority;
   const priorityFilter =
-    priorityRaw === 'high' || priorityRaw === 'medium' || priorityRaw === 'low'
+    priorityRaw === 'critical' ||
+    priorityRaw === 'high' ||
+    priorityRaw === 'medium' ||
+    priorityRaw === 'low'
       ? priorityRaw
       : 'all';
 

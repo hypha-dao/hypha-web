@@ -42,11 +42,12 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { Trash2, Users } from 'lucide-react';
+import { Pencil, Trash2, Users } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { useScrollParallax } from '../../common/use-scroll-parallax';
+import { useParams, useRouter } from 'next/navigation';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -131,6 +132,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
   const tCommon = useTranslations('Common');
+  const router = useRouter();
+  const params = useParams<{ lang: string; id: string }>();
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const locale = useLocale();
   const dateFnsLocale = React.useMemo(
@@ -203,12 +206,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       colorVariant: typeColorVariant,
     };
     if (!priorityMeta) return [typeBadge];
-    const priorityLabel = t(
-      `priorities.${priorityMeta.priority}` as
-        | 'priorities.high'
-        | 'priorities.medium'
-        | 'priorities.low',
-    );
+    const priorityKey = `priorities.${priorityMeta.priority}`;
+    const priorityLabel = t.has(priorityKey as never)
+      ? t(priorityKey as never)
+      : priorityMeta.priority;
     const priorityBadge: BadgeItem = {
       label: priorityLabel,
       variant: 'outline',
@@ -218,19 +219,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   }, [priorityMeta, t, typeLabel, typeColorVariant, priorityColorVariant]);
 
   const tagList: BadgeItem[] = tags.map((tag) => {
-    const displayLabel = (COHERENCE_TAGS as readonly string[]).includes(tag)
-      ? t(
-          `tagLabels.${tag}` as
-            | 'tagLabels.Strategy'
-            | 'tagLabels.Culture'
-            | 'tagLabels.Onboarding'
-            | 'tagLabels.Engagement'
-            | 'tagLabels.Learning'
-            | 'tagLabels.Capacity'
-            | 'tagLabels.Network'
-            | 'tagLabels.Reputation',
-        )
-      : tag;
+    const translationKey = `tagLabels.${tag}`;
+    const displayLabel =
+      (COHERENCE_TAGS as readonly string[]).includes(tag) &&
+      t.has(translationKey as never)
+        ? t(translationKey as never)
+        : tag;
     return {
       label: `#${displayLabel}`,
       variant: 'outline',
@@ -378,24 +372,47 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
         {isCreator && slug ? (
-          <Button
-            type="button"
-            variant="ghost"
-            colorVariant="neutral"
-            size="sm"
-            className="absolute right-3 top-3 z-10 h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-            disabled={isLoading}
-            aria-label={tSignalCard('deleteMenu')}
-            title={tSignalCard('deleteMenu')}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setDeleteOpen(true);
-            }}
-            onKeyDown={stopCardActivationKey}
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
-          </Button>
+          <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              size="sm"
+              className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              disabled={isLoading}
+              aria-label="Edit signal"
+              title="Edit signal"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!params.lang || !params.id || !slug) return;
+                router.push(
+                  `/${params.lang}/dho/${params.id}/coherence/edit-signal/${slug}`,
+                );
+              }}
+              onKeyDown={stopCardActivationKey}
+            >
+              <Pencil className="h-4 w-4" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              size="sm"
+              className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              disabled={isLoading}
+              aria-label={tSignalCard('deleteMenu')}
+              title={tSignalCard('deleteMenu')}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDeleteOpen(true);
+              }}
+              onKeyDown={stopCardActivationKey}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden />
+            </Button>
+          </div>
         ) : null}
         <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
           <div className="flex min-w-0 flex-wrap items-center gap-2 pr-10 text-1 text-muted-foreground">
