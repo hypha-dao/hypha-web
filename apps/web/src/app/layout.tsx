@@ -123,40 +123,66 @@ export default async function RootLayout({
   let footerTermsAndConditionsLabel = 'Terms and Conditions';
   let footerPrivacyPolicyLabel = 'Privacy Policy';
 
-  try {
-    isLanguageSelectVisible = await getShowLanguageSelect();
-  } catch (error) {
-    console.error('[app/layout] Failed to resolve showLanguageSelect', error);
+  const [
+    languageSelectResult,
+    localeResult,
+    messagesResult,
+    navTranslationsResult,
+    footerTranslationsResult,
+    aiChatEnabledResult,
+    spaceMemoryEnabledResult,
+    humanChatEnabledResult,
+  ] = await Promise.allSettled([
+    getShowLanguageSelect(),
+    getLocale(),
+    getMessages(),
+    getTranslations('Navigation'),
+    getTranslations('Footer'),
+    getEnableAiChat(),
+    getEnableSpaceMemory(),
+    getEnableHumanChat(),
+  ]);
+
+  if (languageSelectResult.status === 'fulfilled') {
+    isLanguageSelectVisible = languageSelectResult.value;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve showLanguageSelect',
+      languageSelectResult.reason,
+    );
   }
 
-  try {
-    locale = await getLocale();
-  } catch (error) {
-    console.error('[app/layout] Failed to resolve locale', error);
+  if (localeResult.status === 'fulfilled') {
+    locale = localeResult.value;
+  } else {
+    console.error('[app/layout] Failed to resolve locale', localeResult.reason);
   }
 
-  try {
-    messages = await getMessages();
-  } catch (error) {
-    console.error('[app/layout] Failed to resolve messages', error);
+  if (messagesResult.status === 'fulfilled') {
+    messages = messagesResult.value;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve messages',
+      messagesResult.reason,
+    );
   }
 
-  try {
-    const tNav = await getTranslations('Navigation');
+  if (navTranslationsResult.status === 'fulfilled') {
+    const tNav = navTranslationsResult.value;
     navMySpacesLabel = tNav('mySpaces');
     navNetworkLabel = tNav('network');
     navOpenMenuLabel = tNav('openMenu');
     navCloseMenuLabel = tNav('closeMenu');
     navSelectLanguageLabel = tNav('selectLanguage');
-  } catch (error) {
+  } else {
     console.error(
       '[app/layout] Failed to resolve Navigation translations',
-      error,
+      navTranslationsResult.reason,
     );
   }
 
-  try {
-    const tFooter = await getTranslations('Footer');
+  if (footerTranslationsResult.status === 'fulfilled') {
+    const tFooter = footerTranslationsResult.value;
     footerNetworkLabel = tFooter('network');
     footerLegalLabel = tFooter('legal');
     footerHyphaServicesLabel = tFooter('hyphaServices');
@@ -164,26 +190,38 @@ export default async function RootLayout({
     footerLicensingPolicyLabel = tFooter('licensingPolicy');
     footerTermsAndConditionsLabel = tFooter('termsAndConditions');
     footerPrivacyPolicyLabel = tFooter('privacyPolicy');
-  } catch (error) {
-    console.error('[app/layout] Failed to resolve Footer translations', error);
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve Footer translations',
+      footerTranslationsResult.reason,
+    );
   }
 
-  try {
-    aiChatEnabled = (await getEnableAiChat()) === true;
-  } catch (error) {
-    console.error('[app/layout] Failed to resolve aiChatEnabled', error);
+  if (aiChatEnabledResult.status === 'fulfilled') {
+    aiChatEnabled = aiChatEnabledResult.value === true;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve aiChatEnabled',
+      aiChatEnabledResult.reason,
+    );
   }
 
-  try {
-    spaceMemoryEnabled = (await getEnableSpaceMemory()) === true;
-  } catch (error) {
-    console.error('[app/layout] Failed to resolve spaceMemoryEnabled', error);
+  if (spaceMemoryEnabledResult.status === 'fulfilled') {
+    spaceMemoryEnabled = spaceMemoryEnabledResult.value === true;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve spaceMemoryEnabled',
+      spaceMemoryEnabledResult.reason,
+    );
   }
 
-  try {
-    humanChatEnabled = (await getEnableHumanChat()) === true;
-  } catch (error) {
-    console.error('[app/layout] Failed to resolve humanChatEnabled', error);
+  if (humanChatEnabledResult.status === 'fulfilled') {
+    humanChatEnabled = humanChatEnabledResult.value === true;
+  } else {
+    console.error(
+      '[app/layout] Failed to resolve humanChatEnabled',
+      humanChatEnabledResult.reason,
+    );
   }
 
   return (
