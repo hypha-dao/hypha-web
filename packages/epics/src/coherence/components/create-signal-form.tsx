@@ -25,7 +25,6 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
   COHERENCE_PRIORITY_OPTIONS,
-  COHERENCE_SIGNAL_TYPES,
   COHERENCE_TAGS,
   COHERENCE_TYPE_OPTIONS,
   CoherenceType,
@@ -106,7 +105,7 @@ export const CreateSignalForm = ({
     defaultValues: {
       title: '',
       description: '',
-      creatorId: person?.id ?? 0,
+      creatorId: person?.id,
       spaceId,
       archived: false,
       type: 'Opportunity',
@@ -118,9 +117,7 @@ export const CreateSignalForm = ({
   useScrollToErrors(form, formRef);
 
   const typeOptions = React.useMemo(() => {
-    return COHERENCE_TYPE_OPTIONS.filter(({ type }) =>
-      (COHERENCE_SIGNAL_TYPES as readonly string[]).includes(type),
-    ).map(({ icon, type }) => ({
+    return COHERENCE_TYPE_OPTIONS.map(({ icon, type }) => ({
       icon: icon as LucideReactIcon,
       title: t(
         `types.${type}` as
@@ -438,7 +435,7 @@ export const CreateSignalForm = ({
                               onClick={() => {
                                 form.setValue(
                                   'type',
-                                  option.type as FormValues['type'],
+                                  option.type as CoherenceType,
                                   {
                                     shouldDirty: true,
                                   },
