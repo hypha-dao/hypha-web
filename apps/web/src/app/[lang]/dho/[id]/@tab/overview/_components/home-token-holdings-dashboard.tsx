@@ -112,12 +112,13 @@ function TokenDonutChart({
     [slices],
   );
 
-  const pieData = React.useMemo(() => {
-    const generator = d3
-      .pie<ChartSlice>()
-      .value((item: ChartSlice) => item.numeric);
-    return generator(chartData);
-  }, [chartData]);
+  const pieData = React.useMemo(
+    () =>
+      d3
+        .pie<ChartSlice>()
+        .value((item: ChartSlice) => item.numeric)(chartData),
+    [chartData],
+  );
 
   const outerRadius = 72;
   const innerRadius = 42;
