@@ -23,8 +23,9 @@ type Props = {
   currentSpaceId?: number;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
   enableHoverActions?: boolean;
-  enableContextIntro?: boolean;
 };
+
+const SPACE_ACCENT_FALLBACK = '#14b8a6';
 
 const VISUALIZATION_CONFIG = {
   BASE_RADIUS: 420,
@@ -38,12 +39,114 @@ const VISUALIZATION_CONFIG = {
   STROKE_WIDTH_SCALE: 0.7,
 } as const;
 
+function parseHex(hex: string): [number, number, number] | null {
+  const normalized = hex.trim();
+  if (!/^#[0-9a-fA-F]{6}$/.test(normalized)) return null;
+  const r = Number.parseInt(normalized.slice(1, 3), 16);
+  const g = Number.parseInt(normalized.slice(3, 5), 16);
+  const b = Number.parseInt(normalized.slice(5, 7), 16);
+  if ([r, g, b].some((n) => Number.isNaN(n))) return null;
+  return [r, g, b];
+}
+
+function toSampleableImageSrc(src?: string | null): string | null {
+  if (!src) return null;
+  const candidate = src.trim();
+  if (!candidate) return null;
+  if (candidate.startsWith('/')) {
+    return candidate.startsWith('//') ? null : candidate;
+  }
+  try {
+    const url = new URL(candidate);
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
+      return `/_next/image?url=${encodeURIComponent(candidate)}&w=96&q=75`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function sampleAccentHex(src?: string | null): Promise<string | null> {
+  const imageSrc = toSampleableImageSrc(src);
+  if (!imageSrc) return null;
+  return await new Promise((resolve) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => {
+      try {
+        const maxSide = 96;
+        const scale = Math.min(
+          maxSide / image.width,
+          maxSide / image.height,
+          1,
+        );
+        const width = Math.max(8, Math.round(image.width * scale));
+        const height = Math.max(8, Math.round(image.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          resolve(null);
+          return;
+        }
+        context.drawImage(image, 0, 0, width, height);
+        const pixels = context.getImageData(0, 0, width, height).data;
+        let rSum = 0;
+        let gSum = 0;
+        let bSum = 0;
+        let count = 0;
+        for (let i = 0; i < pixels.length; i += 4) {
+          const alpha = pixels[i + 3] ?? 0;
+          if (alpha < 40) continue;
+          const r = pixels[i] ?? 0;
+          const g = pixels[i + 1] ?? 0;
+          const b = pixels[i + 2] ?? 0;
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const saturation = max === 0 ? 0 : (max - min) / max;
+          if (saturation < 0.12) continue;
+          rSum += r;
+          gSum += g;
+          bSum += b;
+          count++;
+        }
+        if (count < 6) {
+          resolve(null);
+          return;
+        }
+        const r = Math.round(rSum / count)
+          .toString(16)
+          .padStart(2, '0');
+        const g = Math.round(gSum / count)
+          .toString(16)
+          .padStart(2, '0');
+        const b = Math.round(bSum / count)
+          .toString(16)
+          .padStart(2, '0');
+        resolve(`#${r}${g}${b}`);
+      } catch {
+        resolve(null);
+      }
+    };
+    image.onerror = () => resolve(null);
+    image.src = imageSrc;
+  });
+}
+
+function withAlpha(hex: string, alpha: number) {
+  const rgb = parseHex(hex);
+  if (!rgb) return `rgba(20, 184, 166, ${alpha})`;
+  const [r, g, b] = rgb;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export function SpaceVisualization({
   data,
   currentSpaceId,
   onVisibleSpacesChange,
   enableHoverActions = false,
-  enableContextIntro = true,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -63,8 +166,8 @@ export function SpaceVisualization({
   }>({ visible: false, x: 0, y: 0, text: '' });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const tooltipHideTimeoutRef = useRef<number | null>(null);
-  const introStartTimeoutRef = useRef<number | null>(null);
-  const introReturnTimeoutRef = useRef<number | null>(null);
+  const introToRootTimeoutRef = useRef<number | null>(null);
+  const introSequenceActiveRef = useRef(false);
 
   const clearTooltipHideTimeout = () => {
     if (tooltipHideTimeoutRef.current == null) return;
@@ -79,15 +182,15 @@ export function SpaceVisualization({
     }, 120);
   };
 
-  const clearIntroTimers = () => {
-    if (introStartTimeoutRef.current != null) {
-      window.clearTimeout(introStartTimeoutRef.current);
-      introStartTimeoutRef.current = null;
-    }
-    if (introReturnTimeoutRef.current != null) {
-      window.clearTimeout(introReturnTimeoutRef.current);
-      introReturnTimeoutRef.current = null;
-    }
+  const clearIntroTimeout = () => {
+    if (introToRootTimeoutRef.current == null) return;
+    window.clearTimeout(introToRootTimeoutRef.current);
+    introToRootTimeoutRef.current = null;
+  };
+
+  const cancelIntroSequence = () => {
+    introSequenceActiveRef.current = false;
+    clearIntroTimeout();
   };
 
   useEffect(() => {
@@ -146,7 +249,7 @@ export function SpaceVisualization({
     if (!svgRef.current || !focusRef.current) return;
 
     const getSelectedSpaceFillColor = () =>
-      themeRef.current === 'light' ? '#ffffff' : '#1a1a1a';
+      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
 
     const svg = d3.select(svgRef.current);
     const orbits = svg.selectAll<SVGCircleElement, SpaceHierarchyNode>(
@@ -182,7 +285,7 @@ export function SpaceVisualization({
     if (!svgRef.current) return;
 
     const getSelectedSpaceFillColor = () =>
-      themeRef.current === 'light' ? '#ffffff' : '#1a1a1a';
+      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
 
     const getStrokeWidth = (depth: number): number => {
       return (
@@ -402,11 +505,15 @@ export function SpaceVisualization({
       .on('click', (event, d) => {
         if (focus !== d) {
           event.stopPropagation();
+          cancelIntroSequence();
           zoom(d);
         }
       });
 
     const defs = svg.append('defs');
+    const nodeAccents = new Map<number, string>();
+    const getNodeAccent = (d: SpaceHierarchyNode) =>
+      nodeAccents.get(d.data.id) ?? SPACE_ACCENT_FALLBACK;
 
     const logos = g
       .selectAll<SVGGElement, SpaceHierarchyNode>('g.logo')
@@ -418,6 +525,7 @@ export function SpaceVisualization({
       .on('click', (event, d) => {
         if (focus !== d) {
           event.stopPropagation();
+          cancelIntroSequence();
           zoom(d);
         }
       });
@@ -477,8 +585,49 @@ export function SpaceVisualization({
         .attr('clip-path', `url(#${clipId})`);
     });
 
+    const ripples = g
+      .selectAll<SVGGElement, SpaceHierarchyNode>('g.ripples')
+      .data(root.descendants() as SpaceHierarchyNode[])
+      .join('g')
+      .attr('class', 'ripples')
+      .style('pointer-events', 'none');
+
+    ripples.each(function (d: SpaceHierarchyNode) {
+      const rippleGroup = d3.select(this);
+      const delays = ['0s', '0.35s', '0.7s'];
+      const scales = [0.56, 0.74, 0.9];
+
+      scales.forEach((scale, index) => {
+        const opacity = d.depth === 0 ? 0.24 : 0.18 - index * 0.03;
+        const circle = rippleGroup
+          .append('circle')
+          .attr('class', 'ripple-ring')
+          .attr('fill', 'none')
+          .attr('stroke', withAlpha(getNodeAccent(d), opacity))
+          .attr('stroke-width', 1)
+          .attr('data-scale', scale.toString());
+
+        circle
+          .append('animate')
+          .attr('attributeName', 'opacity')
+          .attr(
+            'values',
+            `${Math.max(0.08, opacity - 0.08)};${opacity};${Math.max(
+              0.08,
+              opacity - 0.08,
+            )}`,
+          )
+          .attr('dur', '3.2s')
+          .attr('begin', delays[index] ?? '0s')
+          .attr('repeatCount', 'indefinite');
+      });
+    });
+
     svg.on('click', () => {
-      if (focus.parent) zoom(focus.parent);
+      if (focus.parent) {
+        cancelIntroSequence();
+        zoom(focus.parent);
+      }
     });
 
     function isDescendantOf(
@@ -590,10 +739,14 @@ export function SpaceVisualization({
 
     orbits.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     logos.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
+    ripples.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     orbits.style('display', (d: SpaceHierarchyNode) =>
       isVisible(d) ? 'block' : 'none',
     );
     logos.style('display', (d: SpaceHierarchyNode) =>
+      isVisible(d) ? 'block' : 'none',
+    );
+    ripples.style('display', (d: SpaceHierarchyNode) =>
       isVisible(d) ? 'block' : 'none',
     );
 
@@ -609,37 +762,49 @@ export function SpaceVisualization({
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
 
-    const activeNode = focus;
-    if (enableContextIntro && activeNode !== root) {
-      introStartTimeoutRef.current = window.setTimeout(() => {
-        svg.interrupt();
-        svg
-          .transition()
-          .duration(700)
-          .tween('intro-zoom-out', () => {
-            const i = d3.interpolateZoom(view, [root.x!, root.y!, root.r! * 2]);
-            return (t) => zoomTo(i(t));
-          });
+    if (focus !== root) {
+      const introTargets: SpaceHierarchyNode[] = [];
+      let current = focus.parent as SpaceHierarchyNode | undefined;
+      while (current) {
+        introTargets.push(current);
+        if (current === root) break;
+        current = current.parent as SpaceHierarchyNode | undefined;
+      }
+      introSequenceActiveRef.current = introTargets.length > 0;
 
-        introReturnTimeoutRef.current = window.setTimeout(() => {
-          svg.interrupt();
-          svg
-            .transition()
-            .duration(850)
-            .tween('intro-zoom-in', () => {
-              const i = d3.interpolateZoom(view, [
-                activeNode.x!,
-                activeNode.y!,
-                activeNode.r! * 2,
-              ]);
-              return (t) => zoomTo(i(t));
-            });
-        }, 950);
+      const runIntroStep = (index: number) => {
+        if (!introSequenceActiveRef.current) return;
+        const target = introTargets[index];
+        if (!target) {
+          introSequenceActiveRef.current = false;
+          return;
+        }
+        zoom(target, {
+          onEnd: () => {
+            if (!introSequenceActiveRef.current) return;
+            const nextIndex = index + 1;
+            if (nextIndex >= introTargets.length) {
+              introSequenceActiveRef.current = false;
+              return;
+            }
+            introToRootTimeoutRef.current = window.setTimeout(() => {
+              runIntroStep(nextIndex);
+            }, 120);
+          },
+        });
+      };
+
+      introToRootTimeoutRef.current = window.setTimeout(() => {
+        runIntroStep(0);
       }, 1400);
     }
 
-    function zoom(target: SpaceHierarchyNode) {
-      clearIntroTimers();
+    function zoom(
+      target: SpaceHierarchyNode,
+      options?: {
+        onEnd?: () => void;
+      },
+    ) {
       focus = target;
       focusRef.current = focus;
       savedFocusIdRef.current = focus.data.id;
@@ -657,7 +822,9 @@ export function SpaceVisualization({
         });
 
       transition
-        .selectAll<SVGElement, SpaceHierarchyNode>('circle.orbit, g.logo')
+        .selectAll<SVGElement, SpaceHierarchyNode>(
+          'circle.orbit, g.logo, g.ripples',
+        )
         .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
         .on('start', function (d: SpaceHierarchyNode) {
           if (isVisible(d) && this instanceof SVGElement) {
@@ -689,6 +856,7 @@ export function SpaceVisualization({
 
       transition.on('end', () => {
         notifyVisibleSpaces(focus);
+        options?.onEnd?.();
       });
     }
 
@@ -733,44 +901,66 @@ export function SpaceVisualization({
             .attr('width', r * 2)
             .attr('height', r * 2);
         });
+
+      ripples
+        .attr(
+          'transform',
+          (d: SpaceHierarchyNode) =>
+            `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
+        )
+        .each(function (d: SpaceHierarchyNode) {
+          const accent = getNodeAccent(d);
+          d3.select(this)
+            .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
+            .each(function (_, i) {
+              const scale = Number.parseFloat(
+                d3.select(this).attr('data-scale') || '0.7',
+              );
+              const baseOpacity = d.depth === 0 ? 0.24 : 0.18 - i * 0.03;
+              d3.select(this)
+                .attr('r', d.r! * k * scale)
+                .attr('stroke', withAlpha(accent, Math.max(0.08, baseOpacity)));
+            });
+        });
     }
 
+    let isCancelled = false;
+    root.each((node) => {
+      void (async () => {
+        const accent = await sampleAccentHex(node.data.logoUrl);
+        if (isCancelled) return;
+        const resolvedAccent = accent ?? SPACE_ACCENT_FALLBACK;
+        nodeAccents.set(node.data.id, resolvedAccent);
+        ripples
+          .filter((d) => d.data.id === node.data.id)
+          .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
+          .each(function (_, i) {
+            const baseOpacity = node.depth === 0 ? 0.24 : 0.18 - i * 0.03;
+            d3.select(this).attr(
+              'stroke',
+              withAlpha(resolvedAccent, Math.max(0.08, baseOpacity)),
+            );
+          });
+      })();
+    });
     return () => {
-      clearIntroTimers();
-      svg.interrupt();
+      isCancelled = true;
+      cancelIntroSequence();
     };
-  }, [
-    data,
-    currentSpaceId,
-    resolvedTheme,
-    enableHoverActions,
-    enableContextIntro,
-  ]);
+  }, [data, currentSpaceId, resolvedTheme, enableHoverActions]);
 
   useEffect(() => {
     return () => {
       clearTooltipHideTimeout();
-      clearIntroTimers();
+      cancelIntroSequence();
     };
   }, []);
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <div className="pointer-events-none absolute inset-0 z-0">
-        <div className="absolute left-1/2 top-1/2 h-[56%] w-[56%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-9/12 blur-3xl" />
-        <div className="absolute left-1/2 top-1/2 h-[68%] w-[68%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent-8/25 animate-pulse" />
-        <div
-          className="absolute left-1/2 top-1/2 h-[84%] w-[84%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent-7/20 animate-pulse"
-          style={{ animationDelay: '600ms' }}
-        />
-        <div
-          className="absolute left-1/2 top-1/2 h-[98%] w-[98%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent-6/15 animate-pulse"
-          style={{ animationDelay: '1100ms' }}
-        />
-      </div>
       <svg
         ref={svgRef}
-        className="relative z-10 h-auto w-full"
+        className="h-auto w-full"
         role="img"
         aria-label="Space hierarchy visualization"
       />

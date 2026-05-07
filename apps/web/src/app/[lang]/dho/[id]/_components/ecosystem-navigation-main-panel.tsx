@@ -11,8 +11,14 @@ import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
+  getDhoPathOverview,
 } from '@hypha-platform/epics';
-import { Button } from '@hypha-platform/ui';
+import {
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import { useTheme } from 'next-themes';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -35,6 +41,119 @@ type HierarchyNode = {
   value?: number;
   children?: HierarchyNode[];
 };
+
+const SELECTED_SPACE_ACCENT_FALLBACK = '#14b8a6';
+
+function parseHex(hex: string): [number, number, number] | null {
+  const normalized = hex.trim();
+  if (!/^#[0-9a-fA-F]{6}$/.test(normalized)) return null;
+  const r = Number.parseInt(normalized.slice(1, 3), 16);
+  const g = Number.parseInt(normalized.slice(3, 5), 16);
+  const b = Number.parseInt(normalized.slice(5, 7), 16);
+  if ([r, g, b].some((n) => Number.isNaN(n))) return null;
+  return [r, g, b];
+}
+
+function toRgba(hex: string, alpha: number): string {
+  const rgb = parseHex(hex);
+  if (!rgb) return `rgba(20,184,166,${alpha})`;
+  const [r, g, b] = rgb;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function getContrastColor(hex: string): string {
+  const rgb = parseHex(hex);
+  if (!rgb) return '#ffffff';
+  const [r, g, b] = rgb;
+  const luminance = (r * 299 + g * 587 + b * 114) / 1000;
+  return luminance > 160 ? '#0f172a' : '#ffffff';
+}
+
+function toSampleableImageSrc(src?: string | null): string | null {
+  if (!src) return null;
+  const candidate = src.trim();
+  if (!candidate) return null;
+  if (candidate.startsWith('/')) {
+    return candidate.startsWith('//') ? null : candidate;
+  }
+  try {
+    const url = new URL(candidate);
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
+      return `/_next/image?url=${encodeURIComponent(candidate)}&w=96&q=75`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function sampleAccentHex(src?: string | null): Promise<string | null> {
+  const imageSrc = toSampleableImageSrc(src);
+  if (!imageSrc) return null;
+  return await new Promise((resolve) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => {
+      try {
+        const maxSide = 96;
+        const scale = Math.min(
+          maxSide / image.width,
+          maxSide / image.height,
+          1,
+        );
+        const width = Math.max(8, Math.round(image.width * scale));
+        const height = Math.max(8, Math.round(image.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          resolve(null);
+          return;
+        }
+        context.drawImage(image, 0, 0, width, height);
+        const pixels = context.getImageData(0, 0, width, height).data;
+        let rSum = 0;
+        let gSum = 0;
+        let bSum = 0;
+        let count = 0;
+        for (let i = 0; i < pixels.length; i += 4) {
+          const alpha = pixels[i + 3] ?? 0;
+          if (alpha < 40) continue;
+          const r = pixels[i] ?? 0;
+          const g = pixels[i + 1] ?? 0;
+          const b = pixels[i + 2] ?? 0;
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const saturation = max === 0 ? 0 : (max - min) / max;
+          if (saturation < 0.12) continue;
+          rSum += r;
+          gSum += g;
+          bSum += b;
+          count++;
+        }
+        if (count < 6) {
+          resolve(null);
+          return;
+        }
+        const r = Math.round(rSum / count)
+          .toString(16)
+          .padStart(2, '0');
+        const g = Math.round(gSum / count)
+          .toString(16)
+          .padStart(2, '0');
+        const b = Math.round(bSum / count)
+          .toString(16)
+          .padStart(2, '0');
+        resolve(`#${r}${g}${b}`);
+      } catch {
+        resolve(null);
+      }
+    };
+    image.onerror = () => resolve(null);
+    image.src = imageSrc;
+  });
+}
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
@@ -84,6 +203,9 @@ export function EcosystemNavigationMainPanel({
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
+  const [selectedSpaceAccent, setSelectedSpaceAccent] = useState(
+    SELECTED_SPACE_ACCENT_FALLBACK,
+  );
   const { space: currentSpace, isLoading: isLoadingSpace } =
     useSpaceBySlug(daoSlug);
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
@@ -115,31 +237,16 @@ export function EcosystemNavigationMainPanel({
 
   useEffect(() => {
     if (!currentSpace || !currentSpaceSlug) {
-      setSelectedSpace((previous) => (previous === null ? previous : null));
+      setSelectedSpace(null);
       return;
     }
-    setSelectedSpace((previous) => {
-      const next = {
-        id: currentSpace.id,
-        name: currentSpace.title,
-        slug: currentSpaceSlug,
-        logoUrl: currentSpace.logoUrl,
-        parentId: currentSpace.parentId ?? null,
-        root: true,
-      } satisfies VisibleSpace;
-
-      if (
-        previous?.id === next.id &&
-        previous.slug === next.slug &&
-        previous.name === next.name &&
-        previous.logoUrl === next.logoUrl &&
-        previous.parentId === next.parentId &&
-        previous.root === next.root
-      ) {
-        return previous;
-      }
-
-      return next;
+    setSelectedSpace({
+      id: currentSpace.id,
+      name: currentSpace.title,
+      slug: currentSpaceSlug,
+      logoUrl: currentSpace.logoUrl,
+      parentId: currentSpace.parentId ?? null,
+      root: true,
     });
   }, [currentSpace, currentSpaceSlug]);
 
@@ -194,8 +301,56 @@ export function EcosystemNavigationMainPanel({
       : null;
   const addSpaceHref =
     canRenderSpaceActions && selectedSpaceSlug
-      ? `/${lang}/dho/${selectedSpaceSlug}/space/create`
+      ? `${getDhoPathOverview(lang, selectedSpaceSlug)}/space/create`
       : null;
+  const selectedSpaceRecord = useMemo(() => {
+    if (!currentSpace) return null;
+    if (!selectedSpace?.id) return currentSpace;
+    const spacesWithCurrent = nonArchivedSpaces.some(
+      (s) => s.id === currentSpace.id,
+    )
+      ? nonArchivedSpaces
+      : [...nonArchivedSpaces, currentSpace];
+    return (
+      spacesWithCurrent.find((space) => space.id === selectedSpace.id) ??
+      currentSpace
+    );
+  }, [selectedSpace?.id, nonArchivedSpaces, currentSpace]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const [logoAccent, leadAccent] = await Promise.all([
+        sampleAccentHex(selectedSpaceRecord?.logoUrl),
+        sampleAccentHex(selectedSpaceRecord?.leadImage),
+      ]);
+      if (cancelled) return;
+      setSelectedSpaceAccent(
+        logoAccent ?? leadAccent ?? SELECTED_SPACE_ACCENT_FALLBACK,
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSpaceRecord?.logoUrl, selectedSpaceRecord?.leadImage]);
+
+  const iconOutlineStyle = useMemo(
+    () => ({
+      borderColor: toRgba(selectedSpaceAccent, 0.7),
+      color: selectedSpaceAccent,
+      backgroundColor: toRgba(selectedSpaceAccent, 0.12),
+    }),
+    [selectedSpaceAccent],
+  );
+
+  const iconFilledStyle = useMemo(
+    () => ({
+      backgroundColor: selectedSpaceAccent,
+      borderColor: selectedSpaceAccent,
+      color: getContrastColor(selectedSpaceAccent),
+    }),
+    [selectedSpaceAccent],
+  );
 
   const tabs = useMemo(
     () => [
@@ -207,44 +362,54 @@ export function EcosystemNavigationMainPanel({
             <div className="w-full overflow-visible px-3 py-2 sm:px-5 sm:py-4">
               {hierarchyData ? (
                 <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))]">
-                  <div className="pointer-events-none absolute inset-x-4 top-3 z-20 flex justify-center sm:top-4">
-                    <div className="pointer-events-auto inline-flex max-w-[92%] items-center gap-1.5 rounded-full border border-border/60 bg-background/88 px-2 py-1.5 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-background/72 sm:gap-2 sm:px-3">
-                      <span
-                        className="max-w-[14rem] truncate text-2 font-semibold tracking-tight text-foreground sm:max-w-[20rem]"
-                        title={selectedSpaceTitle}
-                      >
-                        {selectedSpaceTitle}
-                      </span>
-                      {canRenderSpaceActions &&
-                      visitSpaceHref &&
-                      addSpaceHref ? (
-                        <>
-                          <Link href={visitSpaceHref}>
-                            <Button
-                              variant="outline"
-                              colorVariant="neutral"
-                              className="h-7 w-7 p-0"
-                              title={t('visibleSpaces.visitSpace')}
-                              aria-label={t('visibleSpaces.visitSpace')}
-                            >
-                              <ArrowTopRightIcon />
-                            </Button>
-                          </Link>
-                          <Link href={addSpaceHref}>
-                            <Button
-                              variant="default"
-                              colorVariant="accent"
-                              className="h-7 w-7 p-0"
-                              title={t('visibleSpaces.addSpace')}
-                              aria-label={t('visibleSpaces.addSpace')}
-                            >
-                              <PlusIcon />
-                            </Button>
-                          </Link>
-                        </>
-                      ) : null}
+                  {canRenderSpaceActions && visitSpaceHref && addSpaceHref ? (
+                    <div className="pointer-events-none absolute inset-x-4 top-10 z-20 flex justify-center sm:top-12">
+                      <div className="pointer-events-auto inline-flex max-w-[92%] items-center gap-1.5 rounded-full border border-border/60 bg-background/88 px-2 py-1.5 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-background/72 sm:gap-2 sm:px-3">
+                        <span
+                          className="max-w-[14rem] truncate text-4 font-semibold tracking-tight text-foreground sm:max-w-[20rem]"
+                          title={selectedSpaceTitle}
+                        >
+                          {selectedSpaceTitle}
+                        </span>
+                        <Tooltip delayDuration={80}>
+                          <TooltipTrigger asChild>
+                            <Link href={visitSpaceHref}>
+                              <Button
+                                variant="outline"
+                                colorVariant="neutral"
+                                className="h-7 w-7 p-0"
+                                style={iconOutlineStyle}
+                                aria-label={t('visibleSpaces.visitSpace')}
+                              >
+                                <ArrowTopRightIcon />
+                              </Button>
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t('visibleSpaces.visitSpace')}
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip delayDuration={80}>
+                          <TooltipTrigger asChild>
+                            <Link href={addSpaceHref}>
+                              <Button
+                                variant="default"
+                                colorVariant="accent"
+                                className="h-7 w-7 p-0"
+                                style={iconFilledStyle}
+                                aria-label={t('visibleSpaces.addSpace')}
+                              >
+                                <PlusIcon />
+                              </Button>
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t('visibleSpaces.addSpace')}
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
                   <SpaceVisualization
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
@@ -287,6 +452,8 @@ export function EcosystemNavigationMainPanel({
       handleVisibleSpacesChange,
       hierarchyData,
       selectedSpaceTitle,
+      iconOutlineStyle,
+      iconFilledStyle,
       t,
       visitSpaceHref,
     ],
@@ -312,7 +479,7 @@ export function EcosystemNavigationMainPanel({
             </h1>
           }
           className={
-            resolvedTheme === 'light' ? 'bg-neutral-2/85' : 'bg-background-2'
+            resolvedTheme === 'dark' ? 'bg-background-2' : 'bg-neutral-2/85'
           }
           visualizationClassName="min-h-0"
         />
