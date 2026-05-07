@@ -169,11 +169,13 @@ export const MultiSelect = React.forwardRef<
     },
     ref,
   ) => {
+    const MAX_TAG_PICKER_RESULTS = 8;
     const [selectedValues, setSelectedValues] =
       React.useState<string[]>(defaultValue);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [searchValue, setSearchValue] = React.useState('');
     const trimmedSearchValue = searchValue.trim();
+    const popoverContentRef = React.useRef<HTMLDivElement>(null);
 
     React.useEffect(() => {
       if (value === undefined) return;
@@ -182,25 +184,6 @@ export const MultiSelect = React.forwardRef<
         arraysShallowEqual(prev, next) ? prev : next,
       );
     }, [value]);
-
-    const handleInputKeyDown = (
-      event: React.KeyboardEvent<HTMLInputElement>,
-    ) => {
-      if (event.key === 'Enter') {
-        const term = event.currentTarget.value.trim();
-        if (canCreateOption && term.length > 0) {
-          event.preventDefault();
-          toggleOption(term);
-          return;
-        }
-        setIsPopoverOpen(true);
-      } else if (event.key === 'Backspace' && !event.currentTarget.value) {
-        const newSelectedValues = [...selectedValues];
-        newSelectedValues.pop();
-        setSelectedValues(newSelectedValues);
-        onValueChange(newSelectedValues);
-      }
-    };
 
     const toggleOption = (option: string) => {
       const newSelectedValues = selectedValues.includes(option)
@@ -250,18 +233,111 @@ export const MultiSelect = React.forwardRef<
         onValueChange(allValues);
       }
     };
+    const getRankedOptions = React.useCallback(
+      (term: string) => {
+        const normalizedTerm = term.trim().toLowerCase();
+        if (!normalizedTerm) {
+          return uiStyle === 'tag-picker' ? [] : options;
+        }
+        const startsWithMatches: typeof options = [];
+        const containsMatches: typeof options = [];
+        for (const option of options) {
+          const valueLower = option.value.toLowerCase();
+          const labelLower = option.label.toLowerCase();
+          const startsWith =
+            valueLower.startsWith(normalizedTerm) ||
+            labelLower.startsWith(normalizedTerm);
+          if (startsWith) {
+            startsWithMatches.push(option);
+            continue;
+          }
+          const contains =
+            valueLower.includes(normalizedTerm) ||
+            labelLower.includes(normalizedTerm);
+          if (contains) {
+            containsMatches.push(option);
+          }
+        }
+        const ranked = [...startsWithMatches, ...containsMatches];
+        if (uiStyle === 'tag-picker') {
+          return ranked.slice(0, MAX_TAG_PICKER_RESULTS);
+        }
+        return ranked;
+      },
+      [options, uiStyle],
+    );
+
     const filteredOptions = React.useMemo(() => {
-      const term = trimmedSearchValue.toLowerCase();
-      if (!term) {
-        return uiStyle === 'tag-picker' ? [] : options;
+      return getRankedOptions(trimmedSearchValue);
+    }, [getRankedOptions, trimmedSearchValue]);
+
+    const focusCommandItem = React.useCallback(
+      (direction: 'first' | 'last') => {
+        const listRoot = popoverContentRef.current;
+        if (!listRoot) return;
+        const commandItems = Array.from(
+          listRoot.querySelectorAll<HTMLElement>('[cmdk-item]'),
+        ).filter((item) => item.getAttribute('aria-disabled') !== 'true');
+        if (commandItems.length === 0) return;
+        const target =
+          direction === 'last'
+            ? commandItems[commandItems.length - 1]
+            : commandItems[0];
+        target?.focus();
+      },
+      [],
+    );
+
+    const handleInputKeyDown = (
+      event: React.KeyboardEvent<HTMLInputElement>,
+    ) => {
+      if (event.key === 'Enter') {
+        const term = event.currentTarget.value.trim();
+        if (canCreateOption && term.length > 0) {
+          event.preventDefault();
+          toggleOption(term);
+          return;
+        }
+        if (uiStyle === 'tag-picker') {
+          event.preventDefault();
+          const topMatch = getRankedOptions(term)[0];
+          if (topMatch) {
+            toggleOption(topMatch.value);
+          }
+          return;
+        }
+        setIsPopoverOpen(true);
+        return;
       }
-      const matches = options.filter(
-        (option) =>
-          option.value.toLowerCase().includes(term) ||
-          option.label.toLowerCase().includes(term),
-      );
-      return uiStyle === 'tag-picker' ? matches.slice(0, 8) : matches;
-    }, [options, trimmedSearchValue, uiStyle]);
+      if (event.key === 'ArrowDown' && uiStyle === 'tag-picker') {
+        event.preventDefault();
+        if (!isPopoverOpen) {
+          if (trimmedSearchValue.length === 0) return;
+          setIsPopoverOpen(true);
+          requestAnimationFrame(() => focusCommandItem('first'));
+          return;
+        }
+        focusCommandItem('first');
+        return;
+      }
+      if (event.key === 'ArrowUp' && uiStyle === 'tag-picker') {
+        event.preventDefault();
+        if (!isPopoverOpen) {
+          if (trimmedSearchValue.length === 0) return;
+          setIsPopoverOpen(true);
+          requestAnimationFrame(() => focusCommandItem('last'));
+          return;
+        }
+        focusCommandItem('last');
+        return;
+      }
+      if (event.key === 'Backspace' && !event.currentTarget.value) {
+        const newSelectedValues = [...selectedValues];
+        newSelectedValues.pop();
+        setSelectedValues(newSelectedValues);
+        onValueChange(newSelectedValues);
+      }
+    };
 
     return (
       <Popover
@@ -431,6 +507,7 @@ export const MultiSelect = React.forwardRef<
           )}
         </PopoverTrigger>
         <PopoverContent
+          ref={popoverContentRef}
           className="w-[var(--radix-popover-trigger-width)] p-0"
           align="start"
           onOpenAutoFocus={(event) => {

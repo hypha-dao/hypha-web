@@ -166,18 +166,20 @@ export const CreateSignalForm = ({
   }, [t]);
 
   const priorityOptions = React.useMemo(() => {
-    return COHERENCE_PRIORITY_OPTIONS.map(({ priority, icon, colorVariant }) => ({
-      icon: icon as LucideReactIcon,
-      title: t.has(`priorities.${priority}` as never)
-        ? t(`priorities.${priority}` as never)
-        : priority,
-      priority,
-      description: t.has(`priorityDescriptions.${priority}` as never)
-        ? t(`priorityDescriptions.${priority}` as never)
-        : '',
-      colorVariant: 'subtle' as CardButtonColorVariant,
-      iconColorVariant: colorVariant as CardButtonColorVariant,
-    }));
+    return COHERENCE_PRIORITY_OPTIONS.map(
+      ({ priority, icon, colorVariant }) => ({
+        icon: icon as LucideReactIcon,
+        title: t.has(`priorities.${priority}` as never)
+          ? t(`priorities.${priority}` as never)
+          : priority,
+        priority,
+        description: t.has(`priorityDescriptions.${priority}` as never)
+          ? t(`priorityDescriptions.${priority}` as never)
+          : '',
+        colorVariant: 'subtle' as CardButtonColorVariant,
+        iconColorVariant: colorVariant as CardButtonColorVariant,
+      }),
+    );
   }, [t]);
 
   const tagOptions = React.useMemo(() => {
@@ -534,6 +536,35 @@ export const CreateSignalForm = ({
             />
             <FormField
               control={form.control}
+              name="description"
+              render={({ field }) => {
+                const descriptionValue = field.value || '';
+                return (
+                  <FormItem>
+                    <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+                      <FormLabel className="gap-1 text-foreground">
+                        {t('description')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
+                          <RichTextEditor
+                            editorRef={null}
+                            markdown={descriptionValue}
+                            translation={translateEditor}
+                            placeholder={t('descriptionPlaceholder')}
+                            onChange={(markdown) => field.onChange(markdown)}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormDescription />
+                      <FormMessage />
+                    </section>
+                  </FormItem>
+                );
+              }}
+            />
+            <FormField
+              control={form.control}
               name="tags"
               render={({ field }) => (
                 <FormItem>
@@ -561,35 +592,6 @@ export const CreateSignalForm = ({
                   <FormMessage />
                 </FormItem>
               )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => {
-                const descriptionValue = field.value || '';
-                return (
-                  <FormItem>
-                    <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
-                      <FormLabel className="gap-1 text-foreground">
-                        {t('description')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
-                          <RichTextEditor
-                            editorRef={null}
-                            markdown={descriptionValue}
-                            translation={translateEditor}
-                            placeholder={t('descriptionPlaceholder')}
-                            onChange={(markdown) => field.onChange(markdown)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormDescription />
-                      <FormMessage />
-                    </section>
-                  </FormItem>
-                );
-              }}
             />
 
             <div className="flex w-full justify-end gap-2">
