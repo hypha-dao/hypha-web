@@ -156,11 +156,20 @@ Follow existing MCP read-tool semantics:
 
 ### 6.2 Chart behavior
 
+- use D3 for chart rendering (no Recharts abstraction for this feature)
 - one chart per token
 - readable legend and tooltip with exact amount + share
 - stable color mapping per token/slice
 - collapse high-cardinality tail into `Other` when needed
 - donut center can show token symbol + tracked total
+
+### 6.2.1 D3 implementation notes
+
+- use `d3-shape` for pie/arc generation
+- use `d3-scale` for deterministic slice color mapping
+- use `d3-format` for percentages and numeric labels
+- keep chart rendering deterministic between SSR and client hydration
+- expose text fallbacks for all visual-only values
 
 ### 6.3 States
 
@@ -197,7 +206,7 @@ Follow existing MCP read-tool semantics:
 ### Step 4 - Build dashboard components
 
 - create token holdings dashboard surface
-- render chart cards, legends, totals, and responsive layout
+- render chart cards, legends, totals, and responsive layout using D3-based pie/donut components
 
 ### Step 5 - Connect data loading
 
@@ -219,6 +228,7 @@ Follow existing MCP read-tool semantics:
 - Home displays one chart per token minted by the space.
 - Each chart exposes holdings context: member/space/treasury/other.
 - Visual style matches existing Hypha surfaces.
+- Token charts are implemented with D3.
 - MCP tool returns structured holdings with existing access semantics.
 
 ---
