@@ -5,7 +5,6 @@ import useSWR from 'swr';
 import * as d3 from 'd3';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
-  Badge,
   Card,
   CardContent,
   CardDescription,
@@ -52,14 +51,16 @@ const NUMBER_FORMATTER = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
 });
 const COLOR_RANGE = [
-  'var(--accent-9)',
-  'var(--info-9)',
-  'var(--success-9)',
-  'var(--warning-9)',
-  'var(--neutral-9)',
-  'var(--accent-8)',
-  'var(--info-8)',
-  'var(--success-8)',
+  'var(--space-accent, var(--accent-9))',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 72%, var(--color-info-9, var(--info-9)) 28%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 72%, var(--color-success-9, var(--success-9)) 28%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 72%, var(--color-warning-9, var(--warning-9)) 28%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 82%, white 18%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 84%, black 16%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 60%, var(--color-info-10, var(--info-10)) 40%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 60%, var(--color-success-10, var(--success-10)) 40%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 60%, var(--color-warning-10, var(--warning-10)) 40%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 74%, var(--color-neutral-9, var(--neutral-9)) 26%)',
 ];
 
 function toNumericValue(raw: string): number {
@@ -220,11 +221,6 @@ export function HomeTokenHoldingsDashboard({
     { revalidateOnFocus: true, refreshInterval: 60_000 },
   );
 
-  const tokenCount = data?.tokens.length ?? 0;
-  const lastUpdatedLabel = data?.asOf
-    ? new Date(data.asOf).toLocaleString()
-    : null;
-
   return (
     <div className="flex flex-col gap-5 py-4">
       <div className="flex flex-col gap-2">
@@ -235,17 +231,6 @@ export function HomeTokenHoldingsDashboard({
           Overview transparency dashboard for space-issued tokens and recipient
           distribution.
         </p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="outline">Tokens: {tokenCount}</Badge>
-        <Badge variant="outline">Other bucket: &lt; 3%</Badge>
-        <Badge variant="outline">Treasury always visible</Badge>
-        {lastUpdatedLabel ? (
-          <span className="text-xs text-muted-foreground">
-            Updated {lastUpdatedLabel}
-          </span>
-        ) : null}
       </div>
 
       {isLoading ? <LoadingState /> : null}
