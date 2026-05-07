@@ -7,6 +7,7 @@ import type { Metadata } from 'next';
 
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import { defaultMessages } from '@hypha-platform/i18n/messages';
 
 import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
@@ -105,7 +106,7 @@ export default async function RootLayout({
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
   let isLanguageSelectVisible = false;
   let locale = 'en';
-  let messages: Record<string, unknown> = {};
+  let messages: Record<string, unknown> = defaultMessages;
   let aiChatEnabled = false;
   let spaceMemoryEnabled = false;
   let humanChatEnabled = false;
