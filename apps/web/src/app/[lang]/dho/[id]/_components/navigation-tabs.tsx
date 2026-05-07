@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
-// import { getDhoPathOverview } from '../@tab/overview/constants'; // Overview tab removed
+import { getDhoPathOverview } from '../@tab/overview/constants';
 import { cn } from '@hypha-platform/ui-utils';
 import {
   getActiveTabFromPath,
@@ -73,6 +73,11 @@ export function NavigationTabs({
       : clampTabParallaxScrollY(mainScrollY);
 
   const tabs = [
+    {
+      title: t('home'),
+      name: 'overview',
+      href: getDhoPathOverview(lang, id),
+    },
     ...(coherenceEnabled
       ? [
           {

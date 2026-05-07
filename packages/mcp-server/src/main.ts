@@ -6,6 +6,7 @@ import { db } from '@hypha-platform/storage-postgres';
 import {
   checkSpaceAccessForSpace,
   findSpaceBySlug,
+  getTokenHoldingsBySpaceSlug,
   getDocumentsBySpaceSlug,
   getOrgMemoryBySpaceSlug,
   fetchOrgMemoryAsset,
@@ -20,6 +21,10 @@ import {
   getDocumentsBySpaceSlugInputSchema,
   getDocumentsBySpaceSlugOutputSchema,
 } from './get-documents-by-space-slug-schema.js';
+import {
+  getTokenHoldingsBySpaceSlugInputSchema,
+  getTokenHoldingsBySpaceSlugOutputSchema,
+} from './get-token-holdings-by-space-slug-schema.js';
 import {
   getOrgMemoryBySpaceSlugInputSchema,
   getOrgMemoryBySpaceSlugOutputSchema,
@@ -348,6 +353,97 @@ server.registerTool(
           {
             type: 'text',
             text: 'Internal error while fetching org memory asset',
+          },
+        ],
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'get_token_holdings_by_space_slug',
+  {
+    description:
+      'Read-only: token holdings transparency view for a space by slug. Returns one row per minted token with holder distribution, including treasury as a dedicated slice and holders below 3% collapsed into Other.',
+    inputSchema: getTokenHoldingsBySpaceSlugInputSchema,
+    outputSchema: getTokenHoldingsBySpaceSlugOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = getTokenHoldingsBySpaceSlugInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Invalid input: ${parsed.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const {
+      space_slug,
+      include_zero_balances,
+      holder_limit,
+      include_treasury,
+    } = parsed.data;
+
+    try {
+      const gated = await getTokenHoldingsBySpaceSlug(
+        {
+          spaceSlug: space_slug,
+          includeZeroBalances: include_zero_balances,
+          holderLimit: holder_limit,
+          includeTreasury: include_treasury,
+        },
+        { db, authToken: process.env.HYPHA_MCP_AUTH_TOKEN },
+      );
+
+      if (gated.access === 'denied') {
+        return {
+          content: [{ type: 'text', text: gated.message }],
+          isError: true,
+        };
+      }
+
+      const outParse = getTokenHoldingsBySpaceSlugOutputSchema.safeParse(
+        gated.result,
+      );
+      if (!outParse.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${outParse.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const structured = outParse.data;
+      const tokenCount = structured.tokens.length;
+      const summary = structured.found
+        ? `Space "${structured.space_slug}": ${tokenCount} token(s) with holdings distribution.`
+        : `No space found for slug "${structured.space_slug}".`;
+
+      return {
+        content: [{ type: 'text', text: summary }],
+        structuredContent: structured,
+      };
+    } catch (err) {
+      console.error('[hypha-mcp:get_token_holdings_by_space_slug] failed', err);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'Internal error while fetching token holdings',
           },
         ],
         isError: true,

@@ -14,7 +14,10 @@ import {
 } from '@hypha-platform/ui';
 import { PlusIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
-import { getDhoSpaceContextPath } from '@hypha-platform/epics';
+import {
+  getDhoPathOverview,
+  getDhoSpaceContextPath,
+} from '@hypha-platform/epics';
 import {
   useSpaceDiscoverability,
   useUserSpaceState,
@@ -75,7 +78,7 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   const isLoading = isAccessLoading || isUserStateLoading;
   const isDisabled = isLoading || !hasAccess;
 
-  const createSpacePath = `/${lang}/dho/${spaceSlug}/space/create`;
+  const createSpacePath = `${getDhoPathOverview(lang, spaceSlug)}/space/create`;
 
   return (
     <Link
@@ -145,17 +148,11 @@ export function VisibleSpacesList({
     );
   }, [descendantSpaces, searchQuery]);
 
-  const getCreateSpacePath = (spaceId: number, spaceSlug?: string) => {
-    if (!spaceSlug) return '#';
-    return `/${lang}/dho/${spaceSlug}/space/create`;
-  };
-
   if (!rootSpace) {
     return null;
   }
 
   const rootNestedPath = buildNestedPath(rootSpace);
-  const rootCreateSpacePath = getCreateSpacePath(rootSpace.id, rootSpace.slug);
   const rootVisitSpacePath = rootSpace.slug
     ? getDhoSpaceContextPath({
         pathname,
@@ -230,7 +227,6 @@ export function VisibleSpacesList({
       <div className="flex flex-col gap-3">
         {filteredSpaces.map((space) => {
           const nestedPath = buildNestedPath(space);
-          const createSpacePath = getCreateSpacePath(space.id, space.slug);
           const visitSpacePath = space.slug
             ? getDhoSpaceContextPath({
                 pathname,

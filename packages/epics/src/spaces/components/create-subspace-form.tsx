@@ -2,7 +2,7 @@
 
 import { useConfig } from 'wagmi';
 import { SpaceForm } from './create-space-form';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   type Space,
   useCreateSpaceOrchestrator,
@@ -12,9 +12,7 @@ import {
 import React from 'react';
 import { SpaceLoadingBackdrop } from './space-loading-backdrop';
 import { Button } from '@hypha-platform/ui';
-import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
-import { getDhoPathAgreements } from '../../common';
 import { useSWRConfig } from 'swr';
 
 interface CreateSpaceFormProps {
@@ -32,7 +30,6 @@ export const CreateSubspaceForm = ({
 }: CreateSpaceFormProps) => {
   const t = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const { lang } = useParams();
   const router = useRouter();
   const config = useConfig();
   const { person } = useMe();
@@ -86,10 +83,10 @@ export const CreateSubspaceForm = ({
           });
           pendingNavigationSeedRef.current = null;
         }
-        router.push(getDhoPathAgreements(lang as Locale, spaceSlug));
+        router.push(successfulUrl);
       })();
     }
-  }, [lang, mutate, progress, router, spaceSlug]);
+  }, [mutate, progress, router, spaceSlug, successfulUrl]);
 
   return (
     <SpaceLoadingBackdrop
