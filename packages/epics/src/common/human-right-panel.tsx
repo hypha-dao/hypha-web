@@ -600,7 +600,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceSlug,
     paginationDisabled: true,
   });
-  const spaceMembers = spaceMembersResult?.data ?? [];
+  const spaceMembers = useMemo(
+    () => spaceMembersResult?.data ?? [],
+    [spaceMembersResult?.data],
+  );
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
   const { userState: userSpaceState, isLoading: isUserSpaceStateLoading } =
     useUserSpaceState({
@@ -1251,8 +1254,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   useEffect(() => {
     if (!roomId || !client) return;
-    setMessages((prev) =>
-      prev.map((m) => {
+    setMessages((prev) => {
+      const next = prev.map((m) => {
         const sid = m.senderMatrixId?.trim();
         const isSelfRow = Boolean(
           currentUserIdRef.current && sid && sid === currentUserIdRef.current,
@@ -1322,8 +1325,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           avatarUrl: nextMemberAvatar,
           replyTo: nextReply,
         };
-      }),
-    );
+      });
+      // Return the same array reference when nothing changed to avoid a re-render
+      return next.every((m, i) => m === prev[i]) ? prev : next;
+    });
   }, [
     roomId,
     client,
