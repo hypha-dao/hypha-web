@@ -18,6 +18,7 @@ export * from './get-root-space';
 export * from './get-path-function';
 export * from './ecosystem-navigation-shell';
 export * from './screen-toolbar';
+export * from './recent-space-history';
 export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';
 export { AiLeftPanelLayout } from './ai-left-panel-layout';

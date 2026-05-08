@@ -19,6 +19,8 @@ import {
   useSpaceDiscoverability,
   useUserSpaceState,
   checkAccess,
+  getDhoSpaceSlugFromPathname,
+  prependRecentSpaceSlug,
 } from '@hypha-platform/epics';
 import type { VisibleSpace } from './types';
 import { useTranslations } from 'next-intl';
@@ -118,6 +120,10 @@ export function VisibleSpacesList({
 }: VisibleSpacesListProps) {
   const t = useTranslations('SelectNavigationAction');
   const pathname = usePathname();
+  const currentSpaceSlug = useMemo(
+    () => getDhoSpaceSlugFromPathname(pathname),
+    [pathname],
+  );
   const safeAllSpaces = Array.isArray(allSpaces) ? allSpaces : [];
   const [searchQuery, setSearchQuery] = useState('');
   const buildNestedPath = (space: VisibleSpace): string => {
@@ -198,7 +204,11 @@ export function VisibleSpacesList({
               allSpaces={safeAllSpaces}
               lang={lang}
             />
-            <Link href={rootVisitSpacePath} className="flex-1 md:flex-none">
+            <Link
+              href={rootVisitSpacePath}
+              className="flex-1 md:flex-none"
+              onClick={() => prependRecentSpaceSlug(currentSpaceSlug)}
+            >
               <Button
                 colorVariant="neutral"
                 variant="outline"
@@ -271,7 +281,11 @@ export function VisibleSpacesList({
                     allSpaces={safeAllSpaces}
                     lang={lang}
                   />
-                  <Link href={visitSpacePath} className="flex-1 md:flex-none">
+                  <Link
+                    href={visitSpacePath}
+                    className="flex-1 md:flex-none"
+                    onClick={() => prependRecentSpaceSlug(currentSpaceSlug)}
+                  >
                     <Button
                       colorVariant="neutral"
                       variant="outline"

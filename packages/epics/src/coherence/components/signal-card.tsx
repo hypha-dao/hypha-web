@@ -311,7 +311,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         className,
       )}
     >
-      <CardHeader className="relative h-[150px] shrink-0 overflow-hidden p-0 isolate">
+      <CardHeader className="relative shrink-0 overflow-hidden p-0 isolate aspect-[64/15]">
         <Skeleton
           className="h-full min-w-full"
           width="100%"
@@ -371,54 +371,56 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         </Skeleton>
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
-        {isCreator && slug ? (
-          <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              colorVariant="neutral"
-              size="sm"
-              className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              disabled={isLoading}
-              aria-label={tSignalCard('editMenu')}
-              title={tSignalCard('editMenu')}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!params.lang || !params.id || !slug) return;
-                const tab = params.tab ?? 'coherence';
-                router.push(
-                  `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
-                );
-              }}
-              onKeyDown={stopCardActivationKey}
-            >
-              <Pencil className="h-4 w-4" aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              colorVariant="neutral"
-              size="sm"
-              className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              disabled={isLoading}
-              aria-label={tSignalCard('deleteMenu')}
-              title={tSignalCard('deleteMenu')}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setDeleteOpen(true);
-              }}
-              onKeyDown={stopCardActivationKey}
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-            </Button>
-          </div>
-        ) : null}
         <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
-          <div className="flex min-w-0 flex-wrap items-center gap-2 pr-10 text-1 text-muted-foreground">
-            {metaBadges.length > 0 ? (
-              <BadgesList isLoading={isLoading} badges={metaBadges} />
+          <div className="flex min-w-0 items-start justify-between gap-2">
+            <div className="min-w-0 flex-1 flex-wrap items-center gap-2 text-1 text-muted-foreground">
+              {metaBadges.length > 0 ? (
+                <BadgesList isLoading={isLoading} badges={metaBadges} />
+              ) : null}
+            </div>
+            {isCreator && slug ? (
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  size="sm"
+                  className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  disabled={isLoading}
+                  aria-label={tSignalCard('editMenu')}
+                  title={tSignalCard('editMenu')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!params.lang || !params.id || !slug) return;
+                    const tab = params.tab ?? 'coherence';
+                    router.push(
+                      `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
+                    );
+                  }}
+                  onKeyDown={stopCardActivationKey}
+                >
+                  <Pencil className="h-4 w-4" aria-hidden />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  size="sm"
+                  className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  disabled={isLoading}
+                  aria-label={tSignalCard('deleteMenu')}
+                  title={tSignalCard('deleteMenu')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDeleteOpen(true);
+                  }}
+                  onKeyDown={stopCardActivationKey}
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                </Button>
+              </div>
             ) : null}
           </div>
 
