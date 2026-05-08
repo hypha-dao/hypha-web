@@ -89,6 +89,28 @@ type ActivityResponse = {
   };
 };
 
+type DistributionHistoryResponse = {
+  found: boolean;
+  space_slug: string;
+  asOf: string;
+  window_days: number;
+  token: {
+    token_address: string;
+    symbol: string;
+    name: string;
+    type: string;
+  } | null;
+  members: Array<{
+    id: string;
+    label: string;
+  }>;
+  points: Array<{
+    date: string;
+    cumulative_amount: number;
+    share_pct: number;
+  }>;
+};
+
 type HomeSectionFilter = 'all' | 'energy' | 'activity' | 'distribution';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
@@ -190,6 +212,36 @@ function fetchOverviewActivity(
       throw new Error(`Failed to load overview activity (${response.status})`);
     }
     return (await response.json()) as ActivityResponse;
+  };
+}
+
+function fetchDistributionHistory(
+  slug: string,
+  tokenAddress: string,
+  memberId: string,
+  getAccessToken: (() => Promise<string | null>) | undefined,
+) {
+  return async (): Promise<DistributionHistoryResponse> => {
+    const token = await getAccessToken?.();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const params = new URLSearchParams({
+      token_address: tokenAddress,
+      member: memberId,
+    });
+    const response = await fetch(
+      `/api/v1/spaces/${slug}/token-distribution-history?${params.toString()}`,
+      { headers },
+    );
+    if (!response.ok) {
+      throw new Error(
+        `Failed to load token distribution history (${response.status})`,
+      );
+    }
+    return (await response.json()) as DistributionHistoryResponse;
   };
 }
 
@@ -304,193 +356,261 @@ function TokenDonutChart({
   );
 }
 
-type DistributionMemberOption = {
-  id: string;
-  label: string;
-};
-
-function DistributionByMemberBarChart({
+function DistributionOverTimeChart({
+  spaceSlug,
   tokens,
+  getAccessToken,
 }: {
+  spaceSlug: string;
   tokens: TokenHoldingResponse['tokens'];
+  getAccessToken: (() => Promise<string | null>) | undefined;
 }) {
-  const memberOptions = React.useMemo<DistributionMemberOption[]>(() => {
-    const seen = new Map<string, DistributionMemberOption>();
-    for (const token of tokens) {
-      for (const holder of token.holdings) {
-        if (holder.holder_kind === 'other') continue;
-        const id = holder.address ?? holder.display_name;
-        if (!id || seen.has(id)) continue;
-        const shortAddress =
-          holder.address && holder.address.length > 10
-            ? `${holder.address.slice(0, 6)}...${holder.address.slice(-4)}`
-            : null;
-        seen.set(id, {
-          id,
-          label: shortAddress
-            ? `${holder.display_name} (${shortAddress})`
-            : holder.display_name,
-        });
-      }
-    }
-    return Array.from(seen.values()).sort((a, b) =>
-      a.label.localeCompare(b.label),
-    );
-  }, [tokens]);
-
-  const [selectedMember, setSelectedMember] = React.useState<string>('');
-
-  React.useEffect(() => {
-    if (!memberOptions.length) {
-      setSelectedMember('');
-      return;
-    }
-    setSelectedMember((current) =>
-      current && memberOptions.some((option) => option.id === current)
-        ? current
-        : memberOptions[0]!.id,
-    );
-  }, [memberOptions]);
-
-  const points = React.useMemo(
+  const tokenOptions = React.useMemo(
     () =>
-      tokens.map((token) => {
-        const holder = token.holdings.find(
-          (item) => (item.address ?? item.display_name) === selectedMember,
-        );
-        return {
-          token: token.symbol,
-          value: holder?.share_pct ?? 0,
-        };
-      }),
-    [selectedMember, tokens],
+      tokens.map((token) => ({
+        id: token.token_address,
+        label: `${token.symbol} · ${token.name}`,
+        type: token.type.toLowerCase(),
+      })),
+    [tokens],
   );
 
-  const width = Math.max(700, points.length * 130);
-  const height = 320;
-  const margin = { top: 24, right: 22, bottom: 58, left: 46 };
+  const [selectedToken, setSelectedToken] = React.useState<string>('');
+  const [selectedMember, setSelectedMember] = React.useState<string>('all');
+
+  React.useEffect(() => {
+    if (!tokenOptions.length) {
+      setSelectedToken('');
+      return;
+    }
+    setSelectedToken((current) => {
+      if (current && tokenOptions.some((option) => option.id === current)) {
+        return current;
+      }
+      return (
+        tokenOptions.find((option) => option.type.includes('utility'))?.id ??
+        tokenOptions[0]!.id
+      );
+    });
+  }, [tokenOptions]);
+
+  const {
+    data: history,
+    error: historyError,
+    isLoading: historyLoading,
+  } = useSWR(
+    selectedToken
+      ? [
+          'space-token-distribution-history',
+          spaceSlug,
+          selectedToken,
+          selectedMember,
+        ]
+      : null,
+    ([, slug, tokenAddress, memberId]) =>
+      fetchDistributionHistory(slug, tokenAddress, memberId, getAccessToken)(),
+    { revalidateOnFocus: true, refreshInterval: 120_000 },
+  );
+
+  React.useEffect(() => {
+    if (!history?.members?.length) return;
+    setSelectedMember((current) =>
+      history.members.some((member) => member.id === current) ? current : 'all',
+    );
+  }, [history?.members]);
+
+  const chartPoints = React.useMemo(
+    () =>
+      (history?.points ?? [])
+        .map((point) => ({
+          ...point,
+          dateObj: new Date(point.date),
+        }))
+        .filter((point) => !Number.isNaN(point.dateObj.getTime())),
+    [history?.points],
+  );
+
+  const width = Math.max(760, chartPoints.length * 34);
+  const height = 340;
+  const margin = { top: 22, right: 22, bottom: 52, left: 54 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
-  const maxValue = Math.max(5, ...points.map((point) => point.value));
+  const xDomain = d3.extent(chartPoints, (point) => point.dateObj);
   const x = d3
-    .scaleBand<string>()
-    .domain(points.map((point) => point.token))
-    .range([0, innerWidth])
-    .padding(0.26);
-  const y = d3
-    .scaleLinear()
-    .domain([0, maxValue])
-    .nice()
-    .range([innerHeight, 0]);
+    .scaleTime()
+    .domain(
+      xDomain[0] && xDomain[1]
+        ? [xDomain[0], xDomain[1]]
+        : [new Date(Date.now() - 86_400_000), new Date()],
+    )
+    .range([0, innerWidth]);
+  const maxY = Math.max(1, ...chartPoints.map((point) => point.share_pct));
+  const y = d3.scaleLinear().domain([0, maxY]).nice().range([innerHeight, 0]);
+  const area = d3
+    .area<(typeof chartPoints)[number]>()
+    .x((point) => x(point.dateObj))
+    .y0(innerHeight)
+    .y1((point) => y(point.share_pct))
+    .curve(d3.curveMonotoneX);
+  const line = d3
+    .line<(typeof chartPoints)[number]>()
+    .x((point) => x(point.dateObj))
+    .y((point) => y(point.share_pct))
+    .curve(d3.curveMonotoneX);
   const gradientId = React.useId().replace(/:/g, '');
+  const memberOptions = history?.members ?? [{ id: 'all', label: 'All' }];
 
   return (
     <Card className="border-border/60 bg-card/95 md:col-span-2">
       <CardHeader className="pb-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <CardTitle className="text-lg">Distribution by member</CardTitle>
+            <CardTitle className="text-lg">Distribution over time</CardTitle>
             <CardDescription className="text-xs">
-              D3 bar chart across tokens using the selected member.
+              X axis shows time from transaction dates.
             </CardDescription>
           </div>
-          <label className="flex min-w-[210px] flex-col gap-1 text-xs text-muted-foreground">
-            Member
-            <select
-              value={selectedMember}
-              onChange={(event) => setSelectedMember(event.target.value)}
-              className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {memberOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <label className="flex min-w-[220px] flex-col gap-1 text-xs text-muted-foreground">
+              Token
+              <select
+                value={selectedToken}
+                onChange={(event) => setSelectedToken(event.target.value)}
+                className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {tokenOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex min-w-[220px] flex-col gap-1 text-xs text-muted-foreground">
+              Member
+              <select
+                value={selectedMember}
+                onChange={(event) => setSelectedMember(event.target.value)}
+                className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {memberOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <svg
-            viewBox={`0 0 ${width} ${height}`}
-            className="h-[280px] min-w-[700px] w-full"
-          >
-            <defs>
-              <linearGradient
-                id={`distribution-bars-${gradientId}`}
-                x1="0%"
-                x2="0%"
-                y1="100%"
-                y2="0%"
-              >
-                <stop
-                  offset="0%"
-                  stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 88%, black 12%)"
-                />
-                <stop
-                  offset="100%"
-                  stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 65%, white 35%)"
-                />
-              </linearGradient>
-            </defs>
-            <g transform={`translate(${margin.left},${margin.top})`}>
-              {y.ticks(4).map((tick) => (
-                <g key={tick} transform={`translate(0,${y(tick)})`}>
-                  <line
-                    x1={0}
-                    x2={innerWidth}
-                    stroke="var(--border)"
-                    strokeDasharray="3 5"
-                    opacity={0.7}
+        {historyLoading ? (
+          <Skeleton className="h-[280px] w-full" />
+        ) : historyError ? (
+          <p className="text-sm text-muted-foreground">
+            Unable to load token distribution history right now.
+          </p>
+        ) : chartPoints.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No transfer history found for the selected filters.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              className="h-[280px] min-w-[760px] w-full"
+            >
+              <defs>
+                <linearGradient
+                  id={`distribution-over-time-${gradientId}`}
+                  x1="0%"
+                  x2="0%"
+                  y1="100%"
+                  y2="0%"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 20%, transparent)"
                   />
-                  <text
-                    x={-8}
-                    textAnchor="end"
-                    dominantBaseline="middle"
-                    className="fill-muted-foreground text-[11px]"
-                  >
-                    {tick}%
-                  </text>
-                </g>
-              ))}
-
-              {points.map((point) => {
-                const barX = x(point.token) ?? 0;
-                const barY = y(point.value);
-                const barHeight = innerHeight - barY;
-                return (
-                  <g key={point.token} transform={`translate(${barX},0)`}>
-                    <rect
-                      x={0}
-                      y={barY}
-                      width={x.bandwidth()}
-                      height={barHeight}
-                      rx={8}
-                      fill={`url(#distribution-bars-${gradientId})`}
+                  <stop
+                    offset="100%"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 74%, white 26%)"
+                  />
+                </linearGradient>
+              </defs>
+              <g transform={`translate(${margin.left},${margin.top})`}>
+                {y.ticks(4).map((tick) => (
+                  <g key={tick} transform={`translate(0,${y(tick)})`}>
+                    <line
+                      x1={0}
+                      x2={innerWidth}
+                      stroke="var(--border)"
+                      strokeDasharray="3 5"
+                      opacity={0.75}
                     />
                     <text
-                      x={x.bandwidth() / 2}
-                      y={Math.max(14, barY - 8)}
-                      textAnchor="middle"
-                      className="fill-foreground text-[11px] font-medium"
+                      x={-8}
+                      textAnchor="end"
+                      dominantBaseline="middle"
+                      className="fill-muted-foreground text-[11px]"
                     >
-                      {PERCENTAGE_FORMATTER(point.value)}%
+                      {PERCENTAGE_FORMATTER(tick)}%
                     </text>
+                  </g>
+                ))}
+
+                <path
+                  d={area(chartPoints) ?? ''}
+                  fill={`url(#distribution-over-time-${gradientId})`}
+                />
+                <path
+                  d={line(chartPoints) ?? ''}
+                  fill="none"
+                  stroke="var(--space-accent, var(--accent-9))"
+                  strokeWidth={2.5}
+                />
+
+                {chartPoints.map((point) => (
+                  <circle
+                    key={point.date}
+                    cx={x(point.dateObj)}
+                    cy={y(point.share_pct)}
+                    r={3}
+                    fill="var(--space-accent, var(--accent-9))"
+                  />
+                ))}
+
+                {x.ticks(6).map((tick) => (
+                  <g
+                    key={tick.toISOString()}
+                    transform={`translate(${x(tick)},0)`}
+                  >
+                    <line
+                      y1={innerHeight}
+                      y2={innerHeight + 5}
+                      stroke="var(--border)"
+                    />
                     <text
-                      x={x.bandwidth() / 2}
-                      y={innerHeight + 20}
+                      y={innerHeight + 18}
                       textAnchor="middle"
                       className="fill-muted-foreground text-[11px]"
                     >
-                      {point.token}
+                      {d3.timeFormat('%b %d')(tick)}
                     </text>
                   </g>
-                );
-              })}
-            </g>
-          </svg>
-        </div>
+                ))}
+
+                <text
+                  x={innerWidth / 2}
+                  y={innerHeight + 40}
+                  textAnchor="middle"
+                  className="fill-muted-foreground text-[11px]"
+                >
+                  Time
+                </text>
+              </g>
+            </svg>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -1089,7 +1209,11 @@ export function HomeTokenHoldingsDashboard({
 
           {!isLoading && !error && data && data.tokens.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
-              <DistributionByMemberBarChart tokens={data.tokens} />
+              <DistributionOverTimeChart
+                spaceSlug={spaceSlug}
+                tokens={data.tokens}
+                getAccessToken={getAccessToken}
+              />
               {data.tokens.map((token) => (
                 <Card
                   key={token.token_address}
