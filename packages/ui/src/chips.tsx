@@ -466,7 +466,6 @@ export const MultiSelect = React.forwardRef<
                 ref={setTagInputRefs}
                 id={props.id}
                 name={props.name}
-                required={props.required}
                 aria-invalid={props['aria-invalid']}
                 aria-describedby={props['aria-describedby']}
                 aria-labelledby={props['aria-labelledby']}
