@@ -77,6 +77,9 @@ type HolderDescriptor = {
   slug: string | null;
 };
 
+const HYPHA_SHARED_TOKEN_ADDRESS =
+  '0x8b93862835c36e9689e9bb1ab21de3982e266cd3' as const;
+
 function normalizeAddress(address: string): `0x${string}` {
   return address.toLowerCase() as `0x${string}`;
 }
@@ -119,6 +122,15 @@ function dedupeAddresses(addresses: readonly `0x${string}`[]): `0x${string}`[] {
   return Array.from(
     new Set(addresses.map((address) => normalizeAddress(address))),
   );
+}
+
+function shouldIncludeHyphaSharedToken(input: {
+  spaceSlug: string;
+  spaceTitle: string;
+}): boolean {
+  const slug = input.spaceSlug.toLowerCase();
+  const title = input.spaceTitle.toLowerCase();
+  return slug.includes('hypha') || title.includes('hypha');
 }
 
 async function readTokenContractInfo(tokenAddress: `0x${string}`): Promise<{
@@ -287,6 +299,18 @@ export async function getTokenHoldingsBySpaceSlug(
     tokenAddresses = Array.from(dbTokenByAddress.keys());
   }
 
+  if (
+    shouldIncludeHyphaSharedToken({
+      spaceSlug: host.slug,
+      spaceTitle: host.title,
+    })
+  ) {
+    tokenAddresses = dedupeAddresses([
+      ...tokenAddresses,
+      normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS),
+    ]);
+  }
+
   const computedRoster = await computeSpaceMemberEntries(spaceSlug, { db });
   const holderMap = new Map<`0x${string}`, HolderDescriptor>();
 
@@ -359,6 +383,16 @@ export async function getTokenHoldingsBySpaceSlug(
       let collapsedSmallHolderRaw = 0n;
       const rows: HolderRow[] = [];
 
+      const aggregatedMembers = new Map<
+        string,
+        {
+          holder_kind: Exclude<HolderKind, 'treasury' | 'other'>;
+          display_name: string;
+          slug: string | null;
+          balance_raw: bigint;
+        }
+      >();
+
       for (const descriptor of holderDescriptors) {
         const balanceRaw = balancesByAddress.get(descriptor.address) ?? 0n;
         if (!includeZeroBalances && balanceRaw <= 0n) continue;
@@ -376,19 +410,37 @@ export async function getTokenHoldingsBySpaceSlug(
           continue;
         }
 
-        const sharePct = toSharePct(balanceRaw, totalSupplyRaw);
+        const entityKey =
+          descriptor.holder_kind === 'person' || descriptor.holder_kind === 'space'
+            ? `${descriptor.holder_kind}:${descriptor.slug ?? descriptor.display_name.toLowerCase()}`
+            : `${descriptor.holder_kind}:${descriptor.address}`;
+        const existing = aggregatedMembers.get(entityKey);
+        if (existing) {
+          existing.balance_raw += balanceRaw;
+        } else {
+          aggregatedMembers.set(entityKey, {
+            holder_kind: descriptor.holder_kind,
+            display_name: descriptor.display_name,
+            slug: descriptor.slug,
+            balance_raw: balanceRaw,
+          });
+        }
+      }
+
+      for (const entry of aggregatedMembers.values()) {
+        const sharePct = toSharePct(entry.balance_raw, totalSupplyRaw);
         if (sharePct < 3) {
-          collapsedSmallHolderRaw += balanceRaw;
+          collapsedSmallHolderRaw += entry.balance_raw;
           continue;
         }
 
         rows.push({
-          holder_kind: descriptor.holder_kind,
-          address: descriptor.address,
-          display_name: descriptor.display_name,
-          slug: descriptor.slug,
-          balance: formatUnits(balanceRaw, decimals),
-          balance_raw: balanceRaw.toString(),
+          holder_kind: entry.holder_kind,
+          address: null,
+          display_name: entry.display_name,
+          slug: entry.slug,
+          balance: formatUnits(entry.balance_raw, decimals),
+          balance_raw: entry.balance_raw.toString(),
           share_pct: sharePct,
         });
       }
