@@ -31,17 +31,28 @@ export const ChatRoom = ({
   const { jwt: authToken } = useJwt();
   const bottomId = React.useId();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+  const hasLoadedMessagesRef = React.useRef(false);
 
   React.useEffect(() => {
-    if (!isMatrixAvailable || !roomId || !slug) {
+    if (!isMatrixAvailable || !roomId || !slug || isLoading) {
       return;
     }
+    // Avoid clobbering persisted counts with transient empty timeline snapshots.
+    if (!hasLoadedMessagesRef.current && messages.length === 0) return;
+    hasLoadedMessagesRef.current = true;
     updateCoherenceBySlug({ slug, messages: messages.length }).catch(
       (error) => {
         console.warn('Error due update conversation:', error);
       },
     );
-  }, [isMatrixAvailable, roomId, messages, slug, updateCoherenceBySlug]);
+  }, [
+    isMatrixAvailable,
+    roomId,
+    messages,
+    slug,
+    updateCoherenceBySlug,
+    isLoading,
+  ]);
 
   React.useEffect(() => {
     if (!isMatrixAvailable || !messages) {
