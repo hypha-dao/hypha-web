@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { MouseEvent, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { RxCross1 } from 'react-icons/rx';
+import { APP_NAV_COUNT_KEY } from './app-navigation-session';
 
 type ButtonCloseProps = {
   closeUrl?: string;
@@ -55,7 +56,7 @@ export const ButtonClose = ({
         return;
       }
       const appNavCount = Number.parseInt(
-        window.sessionStorage.getItem('appNavCount') ?? '0',
+        window.sessionStorage.getItem(APP_NAV_COUNT_KEY) ?? '0',
         10,
       );
       if (!Number.isFinite(appNavCount) || appNavCount <= 0) {

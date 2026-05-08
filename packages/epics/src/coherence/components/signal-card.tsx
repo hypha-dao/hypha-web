@@ -146,9 +146,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     const parsed =
       typeof messages === 'number'
         ? messages
-        : Number.parseInt(`${messages}`, 10);
+        : Number.parseFloat(`${messages}`);
     if (!Number.isFinite(parsed) || parsed < 0) return 0;
-    return parsed;
+    return Math.trunc(parsed);
   }, [messages]);
 
   const [deleteOpen, setDeleteOpen] = React.useState(false);
