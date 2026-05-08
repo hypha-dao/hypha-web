@@ -144,7 +144,30 @@ interface MultiSelectProps
    * Optional, can be used to add custom styles.
    */
   className?: string;
+
+  /**
+   * Optional copy overrides for UI text.
+   */
+  labels?: {
+    more?: (count: number) => string;
+    noRecentTags?: string;
+    noResults?: string;
+    mostUsed?: string;
+    create?: (term: string) => string;
+    clear?: string;
+    close?: string;
+  };
 }
+
+const DEFAULT_MULTISELECT_LABELS = {
+  more: (count: number) => `+ ${count} more`,
+  noRecentTags: 'No recent tags yet. Start typing to search tags.',
+  noResults: 'No results found.',
+  mostUsed: '--- Most used tags ---',
+  create: (term: string) => `Create "${term}"`,
+  clear: 'Clear',
+  close: 'Close',
+} as const;
 
 function isOptionDelimiter(option: { value: string; kind?: string }): boolean {
   if (option.kind === 'separator') return true;
@@ -190,6 +213,7 @@ export const MultiSelect = React.forwardRef<
       allowCreate = false,
       uiStyle = 'default',
       className,
+      labels,
       ...props
     },
     ref,
@@ -204,6 +228,11 @@ export const MultiSelect = React.forwardRef<
     >({});
     const trimmedSearchValue = searchValue.trim();
     const popoverContentRef = React.useRef<HTMLDivElement>(null);
+    const listboxId = React.useId();
+    const resolvedLabels = {
+      ...DEFAULT_MULTISELECT_LABELS,
+      ...(labels ?? {}),
+    };
     const tagInputRef = React.useRef<HTMLInputElement>(null);
     const setTagInputRefs = React.useCallback(
       (node: HTMLInputElement | null) => {
@@ -433,6 +462,9 @@ export const MultiSelect = React.forwardRef<
         }
         if (uiStyle === 'tag-picker') {
           event.preventDefault();
+          if (term.length === 0) {
+            return;
+          }
           const topMatch = getRankedOptions(term)[0];
           if (topMatch) {
             toggleOption(topMatch.value);
@@ -498,11 +530,11 @@ export const MultiSelect = React.forwardRef<
                     key={value}
                     className={cn(
                       multiSelectVariants({ variant }),
-                      'rounded-full border-accent-7 bg-accent-2 text-accent-11',
+                      'rounded-full border-accent-8 bg-accent-4 text-accent-12',
                     )}
                     style={{ animationDuration: `${animation}s` }}
                   >
-                    <span className="text-accent-10">#</span>
+                    <span className="text-accent-11">#</span>
                     <span>{option?.label ?? value}</span>
                     <XCircle
                       className="ml-1 h-4 w-4 cursor-pointer"
@@ -522,7 +554,7 @@ export const MultiSelect = React.forwardRef<
                   )}
                   style={{ animationDuration: `${animation}s` }}
                 >
-                  {`+ ${selectedValues.length - maxCount} more`}
+                  {resolvedLabels.more(selectedValues.length - maxCount)}
                   <XCircle
                     className="ml-2 h-4 w-4 cursor-pointer"
                     onClick={(event) => {
@@ -536,6 +568,12 @@ export const MultiSelect = React.forwardRef<
                 ref={setTagInputRefs}
                 id={props.id}
                 name={props.name}
+                type="text"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-haspopup="listbox"
+                aria-expanded={isPopoverOpen}
+                aria-controls={listboxId}
                 aria-invalid={props['aria-invalid']}
                 aria-describedby={props['aria-describedby']}
                 aria-labelledby={props['aria-labelledby']}
@@ -654,6 +692,8 @@ export const MultiSelect = React.forwardRef<
         )}
         <PopoverContent
           ref={popoverContentRef}
+          id={listboxId}
+          role="listbox"
           className={cn(
             uiStyle === 'tag-picker'
               ? 'w-[var(--radix-popover-anchor-width,var(--radix-popover-trigger-width))] p-0'
@@ -665,7 +705,7 @@ export const MultiSelect = React.forwardRef<
           }}
           onEscapeKeyDown={() => setIsPopoverOpen(false)}
         >
-          <Command>
+          <Command shouldFilter={false}>
             {uiStyle === 'default' ? (
               <CommandInput
                 placeholder={searchPlaceholder}
@@ -677,14 +717,14 @@ export const MultiSelect = React.forwardRef<
             <CommandList>
               <CommandEmpty>
                 {uiStyle === 'tag-picker' && trimmedSearchValue.length === 0
-                  ? 'No recent tags yet. Start typing to search tags.'
-                  : 'No results found.'}
+                  ? resolvedLabels.noRecentTags
+                  : resolvedLabels.noResults}
               </CommandEmpty>
               <CommandGroup>
                 {shouldShowMostUsedHeading ? (
                   <>
-                    <div className="px-2 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Most used tags
+                    <div className="px-2 py-1 text-[10px] font-medium tracking-[0.08em] text-muted-foreground/65">
+                      {resolvedLabels.mostUsed}
                     </div>
                     <CommandSeparator />
                   </>
@@ -697,7 +737,7 @@ export const MultiSelect = React.forwardRef<
                       onSelect={() => toggleOption(searchValue.trim())}
                       className="cursor-pointer"
                     >
-                      <span>{`Create "${searchValue.trim()}"`}</span>
+                      <span>{resolvedLabels.create(searchValue.trim())}</span>
                     </CommandItem>
                     <CommandSeparator />
                   </>
@@ -768,9 +808,9 @@ export const MultiSelect = React.forwardRef<
                 })}
                 {uiStyle === 'tag-picker' &&
                 trimmedSearchValue.length === 0 &&
-                groupedTagPickerOptions.length > 0 ? (
+                groupedTagPickerOptions.length > 0 &&
+                filteredOptions.length === 0 ? (
                   <>
-                    {filteredOptions.length > 0 ? <CommandSeparator /> : null}
                     {groupedTagPickerOptions.map((option, index) => {
                       if (isOptionDelimiter(option)) {
                         return <CommandSeparator key={`group-sep-${index}`} />;
@@ -779,9 +819,9 @@ export const MultiSelect = React.forwardRef<
                         return (
                           <div
                             key={`group-heading-${index}`}
-                            className="px-2 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                            className="px-2 py-1 text-[10px] font-medium tracking-[0.08em] text-muted-foreground/65"
                           >
-                            {option.label}
+                            {`--- ${option.label} ---`}
                           </div>
                         );
                       }
@@ -822,7 +862,7 @@ export const MultiSelect = React.forwardRef<
                             onSelect={handleClear}
                             className="flex-1 justify-center cursor-pointer"
                           >
-                            Clear
+                            {resolvedLabels.clear}
                           </CommandItem>
                           <Separator
                             orientation="vertical"
@@ -834,7 +874,7 @@ export const MultiSelect = React.forwardRef<
                         onSelect={() => setIsPopoverOpen(false)}
                         className="flex-1 justify-center cursor-pointer max-w-full"
                       >
-                        Close
+                        {resolvedLabels.close}
                       </CommandItem>
                     </div>
                   </CommandGroup>

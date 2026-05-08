@@ -166,29 +166,36 @@ async function readBalancesForHolders(
   holders: HolderDescriptor[],
 ): Promise<Map<`0x${string}`, bigint>> {
   if (holders.length === 0) return new Map();
-
-  const contracts = holders.map((holder) => ({
-    address: tokenAddress,
-    abi: erc20Abi,
-    functionName: 'balanceOf',
-    args: [holder.address] as const,
-  }));
-
-  const results = await web3Client.multicall({
-    allowFailure: true,
-    blockTag: 'safe',
-    contracts,
-  });
-
   const balances = new Map<`0x${string}`, bigint>();
-  results.forEach((result, index) => {
-    const address = holders[index]?.address;
-    if (!address) return;
-    balances.set(
-      address,
-      result.status === 'success' ? (result.result as bigint) : 0n,
-    );
-  });
+  const HOLDER_BALANCE_CHUNK_SIZE = 200;
+
+  for (
+    let offset = 0;
+    offset < holders.length;
+    offset += HOLDER_BALANCE_CHUNK_SIZE
+  ) {
+    const chunk = holders.slice(offset, offset + HOLDER_BALANCE_CHUNK_SIZE);
+    const results = await web3Client.multicall({
+      allowFailure: true,
+      blockTag: 'safe',
+      contracts: chunk.map((holder) => ({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [holder.address] as const,
+      })),
+    });
+
+    results.forEach((result, index) => {
+      const address = chunk[index]?.address;
+      if (!address) return;
+      balances.set(
+        address,
+        result.status === 'success' ? (result.result as bigint) : 0n,
+      );
+    });
+  }
+
   return balances;
 }
 
@@ -276,6 +283,12 @@ export async function getTokenHoldingsBySpaceSlug(
         treasuryAddress = normalizeAddress(first.executor);
       }
     } catch (error) {
+      if (dbTokenByAddress.size === 0) {
+        throw new Error(
+          `[getTokenHoldingsBySpaceSlug] failed to fetch on-chain details for "${spaceSlug}"`,
+          { cause: error },
+        );
+      }
       console.warn(
         `[getTokenHoldingsBySpaceSlug] failed to fetch on-chain details for "${spaceSlug}"`,
         error,

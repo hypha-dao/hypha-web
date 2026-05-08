@@ -35,9 +35,14 @@ function parseIntParam(
   const keyList = Array.isArray(keys) ? keys : [keys];
   for (const key of keyList) {
     const raw = url.searchParams.get(key);
-    if (raw == null || raw === '') continue;
+    if (raw == null) continue;
+    if (raw.trim() === '') {
+      throw new Error(`Invalid ${key}: value must be a positive integer`);
+    }
     const parsed = Number.parseInt(raw, 10);
-    if (!Number.isFinite(parsed) || parsed < 1) continue;
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      throw new Error(`Invalid ${key}: value must be a positive integer`);
+    }
     return Math.min(parsed, max);
   }
   return fallback;
@@ -110,6 +115,9 @@ export async function GET(
 
     return NextResponse.json(gated.result);
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Invalid ')) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error('Failed to fetch token holdings:', error);
     return NextResponse.json(
       { error: 'Failed to fetch token holdings' },

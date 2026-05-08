@@ -14,6 +14,7 @@ import {
   updateCoherenceBySlug,
   updateCoherenceSignalBySlug,
 } from './mutations';
+import { schemaUpdateCoherenceSignalBySlug } from '../validation';
 
 export async function createCoherenceAction(
   data: CreateCoherenceInput,
@@ -54,6 +55,7 @@ export async function updateCoherenceSignalBySlugAction(
   data: UpdateCoherenceSignalBySlugInput,
   { authToken }: { authToken?: string },
 ) {
+  const validated = schemaUpdateCoherenceSignalBySlug.parse(data);
   if (!authToken) throw new Error('authToken is required to update coherence');
   const authDb = getDb({ authToken });
   const self = await findSelf({ db: authDb });
@@ -63,7 +65,7 @@ export async function updateCoherenceSignalBySlugAction(
     );
   }
   return updateCoherenceSignalBySlug(
-    { ...data, requesterPersonId: self.id },
+    { ...validated, requesterPersonId: self.id },
     { db: authDb },
   );
 }

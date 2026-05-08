@@ -110,9 +110,16 @@ export const CreateSignalForm = ({
   const isMutating =
     isCreatingCoherence || isUpdatingCoherenceSignal || isDeletingCoherence;
   const progress = React.useMemo(() => {
+    if (isDeletingCoherence) return 50;
     if (mode === 'edit') return isUpdatingCoherenceSignal ? 50 : 0;
     return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
-  }, [createdCoherence, isCreatingCoherence, isUpdatingCoherenceSignal, mode]);
+  }, [
+    createdCoherence,
+    isCreatingCoherence,
+    isDeletingCoherence,
+    isUpdatingCoherenceSignal,
+    mode,
+  ]);
 
   const formDefaults = React.useMemo<FormValues>(
     () => ({
@@ -473,7 +480,13 @@ export const CreateSignalForm = ({
       progress={progress}
       isLoading={isMutating}
       fullHeight={true}
-      keepWindowOpenMessage={t('keepWindowOpenWhileCreating')}
+      keepWindowOpenMessage={
+        isDeletingCoherence
+          ? t.has('keepWindowOpenWhileDeleting')
+            ? t('keepWindowOpenWhileDeleting')
+            : 'Please keep this window open while deleting the signal.'
+          : t('keepWindowOpenWhileCreating')
+      }
       message={
         errorCreateCoherenceMutation ? (
           <div className="flex flex-col">
@@ -482,7 +495,11 @@ export const CreateSignalForm = ({
           </div>
         ) : (
           <div>
-            {mode === 'edit'
+            {isDeletingCoherence
+              ? t.has('deletingSignal')
+                ? t('deletingSignal')
+                : 'Deleting signal'
+              : mode === 'edit'
               ? t.has('savingSignal')
                 ? t('savingSignal')
                 : 'Saving signal'

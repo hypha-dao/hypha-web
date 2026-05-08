@@ -169,6 +169,9 @@ export function SpaceVisualization({
   const introToRootTimeoutRef = useRef<number | null>(null);
   const introSequenceActiveRef = useRef(false);
   const introRanRef = useRef(false);
+  const accentSampleCacheRef = useRef<Map<string, Promise<string | null>>>(
+    new Map(),
+  );
 
   const clearTooltipHideTimeout = () => {
     if (tooltipHideTimeoutRef.current == null) return;
@@ -592,6 +595,10 @@ export function SpaceVisualization({
       .attr('class', 'ripples')
       .style('pointer-events', 'none');
 
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     ripples.each(function (d: SpaceHierarchyNode) {
       const rippleGroup = d3.select(this);
       const delays = ['0s', '0.35s', '0.7s'];
@@ -607,19 +614,21 @@ export function SpaceVisualization({
           .attr('stroke-width', 1)
           .attr('data-scale', scale.toString());
 
-        circle
-          .append('animate')
-          .attr('attributeName', 'opacity')
-          .attr(
-            'values',
-            `${Math.max(0.08, opacity - 0.08)};${opacity};${Math.max(
-              0.08,
-              opacity - 0.08,
-            )}`,
-          )
-          .attr('dur', '3.2s')
-          .attr('begin', delays[index] ?? '0s')
-          .attr('repeatCount', 'indefinite');
+        if (!prefersReducedMotion) {
+          circle
+            .append('animate')
+            .attr('attributeName', 'opacity')
+            .attr(
+              'values',
+              `${Math.max(0.08, opacity - 0.08)};${opacity};${Math.max(
+                0.08,
+                opacity - 0.08,
+              )}`,
+            )
+            .attr('dur', '3.2s')
+            .attr('begin', delays[index] ?? '0s')
+            .attr('repeatCount', 'indefinite');
+        }
       });
     });
 
@@ -934,7 +943,13 @@ export function SpaceVisualization({
     let isCancelled = false;
     root.each((node) => {
       void (async () => {
-        const accent = await sampleAccentHex(node.data.logoUrl);
+        const cacheKey = (node.data.logoUrl ?? '').trim();
+        let accentPromise = accentSampleCacheRef.current.get(cacheKey);
+        if (!accentPromise) {
+          accentPromise = sampleAccentHex(node.data.logoUrl);
+          accentSampleCacheRef.current.set(cacheKey, accentPromise);
+        }
+        const accent = await accentPromise;
         if (isCancelled) return;
         const resolvedAccent = accent ?? SPACE_ACCENT_FALLBACK;
         nodeAccents.set(node.data.id, resolvedAccent);

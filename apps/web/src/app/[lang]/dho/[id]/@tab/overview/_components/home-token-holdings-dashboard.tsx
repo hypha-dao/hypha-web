@@ -74,9 +74,19 @@ function toNumericValue(raw: string): number {
 }
 
 function formatAmount(raw: string): string {
-  const parsed = Number.parseFloat(raw);
-  if (!Number.isFinite(parsed)) return raw;
-  return NUMBER_FORMATTER.format(parsed);
+  const value = raw.trim();
+  if (!/^-?\d+(\.\d+)?$/.test(value)) return raw;
+  const isNegative = value.startsWith('-');
+  const unsigned = isNegative ? value.slice(1) : value;
+  const [integerPart, fractionalPart] = unsigned.split('.');
+  const groupedInteger = (integerPart ?? '0').replace(
+    /\B(?=(\d{3})+(?!\d))/g,
+    ',',
+  );
+  const exact = fractionalPart
+    ? `${groupedInteger}.${fractionalPart}`
+    : groupedInteger;
+  return isNegative ? `-${exact}` : exact;
 }
 
 function prettifyTokenType(type: string): string {
