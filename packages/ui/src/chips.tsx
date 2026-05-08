@@ -36,6 +36,8 @@ const multiSelectVariants = cva('m-1', {
   },
 });
 
+const TAG_USAGE_STORAGE_KEY = 'hypha:tag-picker-usage';
+
 /**
  * Props for MultiSelect component
  */
@@ -174,6 +176,9 @@ export const MultiSelect = React.forwardRef<
       React.useState<string[]>(defaultValue);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [searchValue, setSearchValue] = React.useState('');
+    const [tagUsageMap, setTagUsageMap] = React.useState<
+      Record<string, number>
+    >({});
     const trimmedSearchValue = searchValue.trim();
     const popoverContentRef = React.useRef<HTMLDivElement>(null);
     const tagInputRef = React.useRef<HTMLInputElement>(null);
@@ -207,12 +212,54 @@ export const MultiSelect = React.forwardRef<
       );
     }, [value]);
 
+    React.useEffect(() => {
+      if (uiStyle !== 'tag-picker') return;
+      if (typeof window === 'undefined') return;
+      try {
+        const raw = window.localStorage.getItem(TAG_USAGE_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          setTagUsageMap(parsed as Record<string, number>);
+        }
+      } catch {
+        // Ignore malformed local storage data.
+      }
+    }, [uiStyle]);
+
+    const bumpTagUsage = React.useCallback(
+      (tag: string) => {
+        if (uiStyle !== 'tag-picker') return;
+        if (!tag.trim()) return;
+        const key = tag.trim().toLowerCase();
+        setTagUsageMap((prev) => {
+          const next = { ...prev, [key]: (prev[key] ?? 0) + 1 };
+          if (typeof window !== 'undefined') {
+            try {
+              window.localStorage.setItem(
+                TAG_USAGE_STORAGE_KEY,
+                JSON.stringify(next),
+              );
+            } catch {
+              // Ignore storage write failures.
+            }
+          }
+          return next;
+        });
+      },
+      [uiStyle],
+    );
+
     const toggleOption = (option: string) => {
-      const newSelectedValues = selectedValues.includes(option)
+      const isRemoving = selectedValues.includes(option);
+      const newSelectedValues = isRemoving
         ? selectedValues.filter((value) => value !== option)
         : [...selectedValues, option];
       setSelectedValues(newSelectedValues);
       onValueChange(newSelectedValues);
+      if (!isRemoving) {
+        bumpTagUsage(option);
+      }
       setSearchValue('');
     };
 
@@ -259,34 +306,32 @@ export const MultiSelect = React.forwardRef<
       (term: string) => {
         const normalizedTerm = term.trim().toLowerCase();
         if (!normalizedTerm) {
-          return uiStyle === 'tag-picker' ? [] : options;
+          if (uiStyle !== 'tag-picker') {
+            return options;
+          }
+          const rankedByUsage = [...options].sort((a, b) => {
+            const aUsage = tagUsageMap[a.value.toLowerCase()] ?? 0;
+            const bUsage = tagUsageMap[b.value.toLowerCase()] ?? 0;
+            if (aUsage !== bUsage) return bUsage - aUsage;
+            return a.label.localeCompare(b.label);
+          });
+          return rankedByUsage.slice(0, MAX_TAG_PICKER_RESULTS);
         }
-        const startsWithMatches: typeof options = [];
-        const containsMatches: typeof options = [];
-        for (const option of options) {
+
+        const startsWithMatches = options.filter((option) => {
           const valueLower = option.value.toLowerCase();
           const labelLower = option.label.toLowerCase();
-          const startsWith =
+          return (
             valueLower.startsWith(normalizedTerm) ||
-            labelLower.startsWith(normalizedTerm);
-          if (startsWith) {
-            startsWithMatches.push(option);
-            continue;
-          }
-          const contains =
-            valueLower.includes(normalizedTerm) ||
-            labelLower.includes(normalizedTerm);
-          if (contains) {
-            containsMatches.push(option);
-          }
-        }
-        const ranked = [...startsWithMatches, ...containsMatches];
-        if (uiStyle === 'tag-picker') {
-          return ranked.slice(0, MAX_TAG_PICKER_RESULTS);
-        }
-        return ranked;
+            labelLower.startsWith(normalizedTerm)
+          );
+        });
+
+        return uiStyle === 'tag-picker'
+          ? startsWithMatches.slice(0, MAX_TAG_PICKER_RESULTS)
+          : startsWithMatches;
       },
-      [options, uiStyle],
+      [options, tagUsageMap, uiStyle],
     );
 
     const filteredOptions = React.useMemo(() => {
@@ -377,7 +422,7 @@ export const MultiSelect = React.forwardRef<
               )}
               onClick={() => {
                 tagInputRef.current?.focus();
-                if (trimmedSearchValue.length > 0) setIsPopoverOpen(true);
+                setIsPopoverOpen(true);
               }}
             >
               {selectedValues.slice(0, maxCount).map((value) => {
@@ -436,7 +481,7 @@ export const MultiSelect = React.forwardRef<
                   const nextTrimmedValue = nextValue.trim();
                   setSearchValue(nextValue);
                   if (nextTrimmedValue.length === 0) {
-                    setIsPopoverOpen(false);
+                    setIsPopoverOpen(true);
                     return;
                   }
                   if (!isPopoverOpen) setIsPopoverOpen(true);
@@ -446,7 +491,7 @@ export const MultiSelect = React.forwardRef<
                   props.onFocus?.(
                     event as unknown as React.FocusEvent<HTMLButtonElement>,
                   );
-                  if (trimmedSearchValue.length > 0) setIsPopoverOpen(true);
+                  setIsPopoverOpen(true);
                 }}
                 placeholder={searchPlaceholder}
                 className="min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground"
@@ -557,7 +602,7 @@ export const MultiSelect = React.forwardRef<
             <CommandList>
               <CommandEmpty>
                 {uiStyle === 'tag-picker' && trimmedSearchValue.length === 0
-                  ? 'Start typing to see tag suggestions.'
+                  ? 'No recent tags yet. Start typing to search tags.'
                   : 'No results found.'}
               </CommandEmpty>
               <CommandGroup>

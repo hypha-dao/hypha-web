@@ -463,36 +463,34 @@ export const CreateSignalForm = ({
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <section className="rounded-xl border border-border/70 bg-muted/20 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/12 lg:p-6">
-                    <div className="flex w-full flex-col gap-3">
-                      <FormLabel className="text-foreground">
-                        {t('type')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <span className="grid w-full grid-cols-2 gap-2">
-                          {typeOptions.map((option) => (
-                            <CoherenceTypeButton
-                              key={`type-option-${option.type}`}
-                              icon={option.icon}
-                              title={option.title}
-                              description={option.description}
-                              colorVariant={option.colorVariant}
-                              selected={field.value === option.type}
-                              onClick={() => {
-                                form.setValue(
-                                  'type',
-                                  option.type as FormValues['type'],
-                                  {
-                                    shouldDirty: true,
-                                  },
-                                );
-                              }}
-                            />
-                          ))}
-                        </span>
-                      </FormControl>
-                    </div>
-                  </section>
+                  <div className="flex w-full flex-col gap-3">
+                    <FormLabel className="text-foreground">
+                      {t('type')} <RequirementMark />
+                    </FormLabel>
+                    <FormControl>
+                      <span className="grid w-full grid-cols-2 gap-2">
+                        {typeOptions.map((option) => (
+                          <CoherenceTypeButton
+                            key={`type-option-${option.type}`}
+                            icon={option.icon}
+                            title={option.title}
+                            description={option.description}
+                            colorVariant={option.colorVariant}
+                            selected={field.value === option.type}
+                            onClick={() => {
+                              form.setValue(
+                                'type',
+                                option.type as FormValues['type'],
+                                {
+                                  shouldDirty: true,
+                                },
+                              );
+                            }}
+                          />
+                        ))}
+                      </span>
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -502,34 +500,32 @@ export const CreateSignalForm = ({
               name="priority"
               render={({ field }) => (
                 <FormItem>
-                  <section className="rounded-xl border border-border/70 bg-muted/20 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/12 lg:p-6">
-                    <div className="flex w-full flex-col gap-3">
-                      <FormLabel className="text-foreground">
-                        {t('priority')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <span className="flex w-full flex-row gap-2">
-                          {priorityOptions.map((option) => (
-                            <CoherencePriorityButton
-                              key={`priority-option-${option.priority}`}
-                              className="w-full"
-                              icon={option.icon}
-                              title={option.title}
-                              description={option.description}
-                              colorVariant={option.colorVariant}
-                              iconColorVariant={option.iconColorVariant}
-                              selected={field.value === option.priority}
-                              onClick={() => {
-                                form.setValue('priority', option.priority, {
-                                  shouldDirty: true,
-                                });
-                              }}
-                            />
-                          ))}
-                        </span>
-                      </FormControl>
-                    </div>
-                  </section>
+                  <div className="flex w-full flex-col gap-3">
+                    <FormLabel className="text-foreground">
+                      {t('priority')} <RequirementMark />
+                    </FormLabel>
+                    <FormControl>
+                      <span className="flex w-full flex-row gap-2">
+                        {priorityOptions.map((option) => (
+                          <CoherencePriorityButton
+                            key={`priority-option-${option.priority}`}
+                            className="w-full"
+                            icon={option.icon}
+                            title={option.title}
+                            description={option.description}
+                            colorVariant={option.colorVariant}
+                            iconColorVariant={option.iconColorVariant}
+                            selected={field.value === option.priority}
+                            onClick={() => {
+                              form.setValue('priority', option.priority, {
+                                shouldDirty: true,
+                              });
+                            }}
+                          />
+                        ))}
+                      </span>
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -541,24 +537,22 @@ export const CreateSignalForm = ({
                 const descriptionValue = field.value || '';
                 return (
                   <FormItem>
-                    <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
-                      <FormLabel className="gap-1 text-foreground">
-                        {t('description')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
-                          <RichTextEditor
-                            editorRef={null}
-                            markdown={descriptionValue}
-                            translation={translateEditor}
-                            placeholder={t('descriptionPlaceholder')}
-                            onChange={(markdown) => field.onChange(markdown)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormDescription />
-                      <FormMessage />
-                    </section>
+                    <FormLabel className="gap-1 text-foreground">
+                      {t('description')} <RequirementMark />
+                    </FormLabel>
+                    <FormControl>
+                      <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
+                        <RichTextEditor
+                          editorRef={null}
+                          markdown={descriptionValue}
+                          translation={translateEditor}
+                          placeholder={t('descriptionPlaceholder')}
+                          onChange={(markdown) => field.onChange(markdown)}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormDescription />
+                    <FormMessage />
                   </FormItem>
                 );
               }}
@@ -568,27 +562,23 @@ export const CreateSignalForm = ({
               name="tags"
               render={({ field }) => (
                 <FormItem>
-                  <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
-                    <FormLabel className="text-foreground">
-                      {t('tags')}
-                    </FormLabel>
-                    <FormControl>
-                      <MultiSelect
-                        placeholder={t('selectOneOrMore')}
-                        searchPlaceholder={
-                          t.has('searchOrCreateTag')
-                            ? t('searchOrCreateTag')
-                            : 'Type to search or create a tag'
-                        }
-                        options={tagOptions}
-                        value={field.value}
-                        allowToggleAll={false}
-                        allowCreate={true}
-                        uiStyle="tag-picker"
-                        onValueChange={field.onChange}
-                      />
-                    </FormControl>
-                  </section>
+                  <FormLabel className="text-foreground">{t('tags')}</FormLabel>
+                  <FormControl>
+                    <MultiSelect
+                      placeholder={t('selectOneOrMore')}
+                      searchPlaceholder={
+                        t.has('searchOrCreateTag')
+                          ? t('searchOrCreateTag')
+                          : 'Type to search or create a tag'
+                      }
+                      options={tagOptions}
+                      value={field.value}
+                      allowToggleAll={false}
+                      allowCreate={true}
+                      uiStyle="tag-picker"
+                      onValueChange={field.onChange}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

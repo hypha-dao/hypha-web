@@ -37,6 +37,7 @@ The form SHALL render fields in this order:
 **FR-3** The system SHALL include priority values: `critical`, `high`, `medium`, `low`.
 
 **FR-4** The system SHALL support a tag input that:
+
 - shows suggestions while typing,
 - filters suggestions by typed prefix/text,
 - allows selecting one or more suggested tags,
@@ -98,7 +99,7 @@ To support creatable tags, implementation SHALL update:
 
 ## 7. Revision history
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-05-07 | Requirements + Fullstack (agent) | Initial spec for coherence signal create/edit alignment and tag model clarification |
-| 1.1 | 2026-05-07 | Requirements + Fullstack (agent) | Removed strength from scope; updated feature to no-DB-migration plan |
+| Version | Date       | Author                           | Changes                                                                             |
+| ------- | ---------- | -------------------------------- | ----------------------------------------------------------------------------------- |
+| 1.0     | 2026-05-07 | Requirements + Fullstack (agent) | Initial spec for coherence signal create/edit alignment and tag model clarification |
+| 1.1     | 2026-05-07 | Requirements + Fullstack (agent) | Removed strength from scope; updated feature to no-DB-migration plan                |
