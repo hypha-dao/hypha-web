@@ -249,6 +249,15 @@ export const MultiSelect = React.forwardRef<
         onValueChange(allValues);
       }
     };
+    const filteredOptions = React.useMemo(() => {
+      const term = searchValue.trim().toLowerCase();
+      if (!term) return options;
+      return options.filter(
+        (option) =>
+          option.value.toLowerCase().includes(term) ||
+          option.label.toLowerCase().includes(term),
+      );
+    }, [options, searchValue]);
 
     return (
       <Popover
@@ -257,99 +266,165 @@ export const MultiSelect = React.forwardRef<
         modal={modalPopover}
       >
         <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            colorVariant="neutral"
-            ref={ref}
-            {...props}
-            onClick={handleTogglePopover}
-            className={cn(
-              'flex w-full p-1 rounded-md border min-h-11 h-auto items-center justify-between [&_svg]:pointer-events-auto',
-              className,
-            )}
-          >
-            {selectedValues.length > 0 ? (
-              <div className="flex justify-between items-center w-full">
-                <div className="flex flex-wrap items-center">
-                  {selectedValues.slice(0, maxCount).map((value) => {
-                    const option = options.find((o) => o.value === value);
-                    const IconComponent = option?.icon;
-                    return (
+          {uiStyle === 'tag-picker' ? (
+            <div
+              className={cn(
+                'flex w-full min-h-11 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background',
+                'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+                className,
+              )}
+              onClick={() => setIsPopoverOpen(true)}
+            >
+              {selectedValues.slice(0, maxCount).map((value) => {
+                const option = options.find((o) => o.value === value);
+                return (
+                  <Badge
+                    key={value}
+                    className={cn(multiSelectVariants({ variant }))}
+                    style={{ animationDuration: `${animation}s` }}
+                  >
+                    {option?.label ?? value}
+                    <XCircle
+                      className="ml-2 h-4 w-4 cursor-pointer"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleOption(value);
+                      }}
+                    />
+                  </Badge>
+                );
+              })}
+              {selectedValues.length > maxCount ? (
+                <Badge
+                  className={cn(
+                    'bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
+                    multiSelectVariants({ variant }),
+                  )}
+                  style={{ animationDuration: `${animation}s` }}
+                >
+                  {`+ ${selectedValues.length - maxCount} more`}
+                  <XCircle
+                    className="ml-2 h-4 w-4 cursor-pointer"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      clearExtraOptions();
+                    }}
+                  />
+                </Badge>
+              ) : null}
+              <input
+                value={searchValue}
+                onChange={(event) => {
+                  setSearchValue(event.currentTarget.value);
+                  if (!isPopoverOpen) setIsPopoverOpen(true);
+                }}
+                onKeyDown={handleInputKeyDown}
+                onFocus={() => setIsPopoverOpen(true)}
+                placeholder={searchPlaceholder}
+                className="min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                disabled={props.disabled}
+              />
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              colorVariant="neutral"
+              ref={ref}
+              {...props}
+              onClick={handleTogglePopover}
+              className={cn(
+                'flex w-full p-1 rounded-md border min-h-11 h-auto items-center justify-between [&_svg]:pointer-events-auto',
+                className,
+              )}
+            >
+              {selectedValues.length > 0 ? (
+                <div className="flex justify-between items-center w-full">
+                  <div className="flex flex-wrap items-center">
+                    {selectedValues.slice(0, maxCount).map((value) => {
+                      const option = options.find((o) => o.value === value);
+                      const IconComponent = option?.icon;
+                      return (
+                        <Badge
+                          key={value}
+                          className={cn(multiSelectVariants({ variant }))}
+                          style={{ animationDuration: `${animation}s` }}
+                        >
+                          {IconComponent && (
+                            <IconComponent className="h-4 w-4 mr-2" />
+                          )}
+                          {option?.label ?? value}
+                          <XCircle
+                            className="ml-2 h-4 w-4 cursor-pointer"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              toggleOption(value);
+                            }}
+                          />
+                        </Badge>
+                      );
+                    })}
+                    {selectedValues.length > maxCount && (
                       <Badge
-                        key={value}
-                        className={cn(multiSelectVariants({ variant }))}
+                        className={cn(
+                          'bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
+                          multiSelectVariants({ variant }),
+                        )}
                         style={{ animationDuration: `${animation}s` }}
                       >
-                        {IconComponent && (
-                          <IconComponent className="h-4 w-4 mr-2" />
-                        )}
-                        {option?.label ?? value}
+                        {`+ ${selectedValues.length - maxCount} more`}
                         <XCircle
                           className="ml-2 h-4 w-4 cursor-pointer"
                           onClick={(event) => {
                             event.stopPropagation();
-                            toggleOption(value);
+                            clearExtraOptions();
                           }}
                         />
                       </Badge>
-                    );
-                  })}
-                  {selectedValues.length > maxCount && (
-                    <Badge
-                      className={cn(
-                        'bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
-                        multiSelectVariants({ variant }),
-                      )}
-                      style={{ animationDuration: `${animation}s` }}
-                    >
-                      {`+ ${selectedValues.length - maxCount} more`}
-                      <XCircle
-                        className="ml-2 h-4 w-4 cursor-pointer"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          clearExtraOptions();
-                        }}
-                      />
-                    </Badge>
-                  )}
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <XIcon
+                      className="h-4 mx-2 cursor-pointer text-muted-foreground"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleClear();
+                      }}
+                    />
+                    <Separator
+                      orientation="vertical"
+                      className="flex min-h-6 h-full"
+                    />
+                    <ChevronDown className="h-4 mx-2 cursor-pointer text-muted-foreground" />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <XIcon
-                    className="h-4 mx-2 cursor-pointer text-muted-foreground"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleClear();
-                    }}
-                  />
-                  <Separator
-                    orientation="vertical"
-                    className="flex min-h-6 h-full"
-                  />
-                  <ChevronDown className="h-4 mx-2 cursor-pointer text-muted-foreground" />
+              ) : (
+                <div className="flex items-center justify-between w-full mx-auto">
+                  <span className="text-sm text-muted-foreground mx-3">
+                    {placeholder}
+                  </span>
+                  <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between w-full mx-auto">
-                <span className="text-sm text-muted-foreground mx-3">
-                  {placeholder}
-                </span>
-                <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
-              </div>
-            )}
-          </Button>
+              )}
+            </Button>
+          )}
         </PopoverTrigger>
         <PopoverContent
           className="w-[var(--radix-popover-trigger-width)] p-0"
           align="start"
+          onOpenAutoFocus={(event) => {
+            if (uiStyle === 'tag-picker') event.preventDefault();
+          }}
           onEscapeKeyDown={() => setIsPopoverOpen(false)}
         >
           <Command>
-            <CommandInput
-              placeholder={searchPlaceholder}
-              onKeyDown={handleInputKeyDown}
-              value={searchValue}
-              onValueChange={setSearchValue}
-            />
+            {uiStyle === 'default' ? (
+              <CommandInput
+                placeholder={searchPlaceholder}
+                onKeyDown={handleInputKeyDown}
+                value={searchValue}
+                onValueChange={setSearchValue}
+              />
+            ) : null}
             <CommandList>
               <CommandEmpty>No results found.</CommandEmpty>
               <CommandGroup>
@@ -388,7 +463,7 @@ export const MultiSelect = React.forwardRef<
                     <CommandSeparator />
                   </>
                 )}
-                {options.map((option, index) => {
+                {filteredOptions.map((option, index) => {
                   const isSelected = selectedValues.includes(option.value);
                   const isDelimiter =
                     option.value.length === 0 || option.value === '---';
