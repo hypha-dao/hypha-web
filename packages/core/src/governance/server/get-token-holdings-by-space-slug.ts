@@ -7,7 +7,7 @@ import type { DbConfig } from '../../server';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 import { computeSpaceMemberEntries } from '../../space/server/get-space-members-roster';
-import { fetchSpaceDetails } from '../../space/client/web3/fetch/fetchSpaceDetails';
+import { fetchSpaceDetails } from '../../space/server/web3/fetch-space-details';
 import { web3Client } from '../../common/server/web3-rpc/client';
 import { tokens } from '@hypha-platform/storage-postgres';
 

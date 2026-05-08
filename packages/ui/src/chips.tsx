@@ -177,6 +177,27 @@ export const MultiSelect = React.forwardRef<
     const trimmedSearchValue = searchValue.trim();
     const popoverContentRef = React.useRef<HTMLDivElement>(null);
     const tagInputRef = React.useRef<HTMLInputElement>(null);
+    const setTagInputRefs = React.useCallback(
+      (node: HTMLInputElement | null) => {
+        tagInputRef.current = node;
+        if (!ref) return;
+        const castedRef = ref as
+          | React.Ref<HTMLInputElement>
+          | React.Ref<HTMLButtonElement>;
+        if (typeof castedRef === 'function') {
+          castedRef(node as never);
+          return;
+        }
+        if (castedRef && 'current' in castedRef) {
+          (
+            castedRef as React.MutableRefObject<
+              HTMLInputElement | HTMLButtonElement | null
+            >
+          ).current = node;
+        }
+      },
+      [ref],
+    );
 
     React.useEffect(() => {
       if (value === undefined) return;
@@ -397,7 +418,18 @@ export const MultiSelect = React.forwardRef<
                 </Badge>
               ) : null}
               <input
-                ref={tagInputRef}
+                ref={setTagInputRefs}
+                id={props.id}
+                name={props.name}
+                required={props.required}
+                aria-invalid={props['aria-invalid']}
+                aria-describedby={props['aria-describedby']}
+                aria-labelledby={props['aria-labelledby']}
+                onBlur={(event) => {
+                  props.onBlur?.(
+                    event as unknown as React.FocusEvent<HTMLButtonElement>,
+                  );
+                }}
                 value={searchValue}
                 onChange={(event) => {
                   const nextValue = event.currentTarget.value;
@@ -410,7 +442,10 @@ export const MultiSelect = React.forwardRef<
                   if (!isPopoverOpen) setIsPopoverOpen(true);
                 }}
                 onKeyDown={handleInputKeyDown}
-                onFocus={() => {
+                onFocus={(event) => {
+                  props.onFocus?.(
+                    event as unknown as React.FocusEvent<HTMLButtonElement>,
+                  );
                   if (trimmedSearchValue.length > 0) setIsPopoverOpen(true);
                 }}
                 placeholder={searchPlaceholder}

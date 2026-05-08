@@ -34,17 +34,19 @@ const coherenceSignalFields = {
   tags: coherenceTagsSchema,
 };
 
+const coherenceSlugSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(50)
+  .regex(
+    /^[a-z0-9-]+$/,
+    'Slug must contain only lowercase letters, numbers, and hyphens',
+  );
+
 export const createCoherenceWeb2Props = {
   ...coherenceSignalFields,
-  slug: z
-    .string()
-    .min(1)
-    .max(50)
-    .regex(
-      /^[a-z0-9-]+$/,
-      'Slug must contain only lowercase letters, numbers, and hyphens',
-    )
-    .optional(),
+  slug: coherenceSlugSchema.optional(),
   roomId: z
     .string()
     .min(1)
@@ -64,6 +66,6 @@ export const schemaCreateCoherence = schemaCreateCoherenceWeb2;
 export const schemaCreateCoherenceForm = schemaCreateCoherenceWeb2;
 
 export const schemaUpdateCoherenceSignalBySlug = z.object({
-  slug: z.string().trim().min(1),
+  slug: coherenceSlugSchema,
   ...coherenceSignalFields,
 });

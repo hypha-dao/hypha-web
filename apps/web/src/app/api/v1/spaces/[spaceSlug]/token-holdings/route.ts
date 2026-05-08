@@ -55,19 +55,24 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
+    let resolvedAuthToken: string | undefined;
     if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
-      const { hasAccess, response } = await checkSpaceAccess(
+      const { hasAccess, response, authToken } = await checkSpaceAccess(
         request,
         space.web3SpaceId as number,
       );
       if (!hasAccess && response) {
         return response;
       }
+      resolvedAuthToken = authToken;
     }
 
     const authHeader = request.headers.get('authorization');
     const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
     const bearer = bearerMatch?.[1]?.trim() || undefined;
+    if (!resolvedAuthToken) {
+      resolvedAuthToken = bearer;
+    }
 
     const url = new URL(request.url);
     const includeZeroBalances = parseBooleanParam(
@@ -89,7 +94,7 @@ export async function GET(
         includeTreasury,
         holderLimit,
       },
-      { db, authToken: bearer },
+      { db, authToken: resolvedAuthToken },
     );
 
     if (gated.access === 'denied') {

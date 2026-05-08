@@ -620,8 +620,23 @@ export const CreateSignalForm = ({
                   }
                   customRejectButtonText={t('noLeave')}
                   onAcceptClicked={async () => {
-                    await deleteCoherenceBySlug({ slug: signalSlug });
-                    router.push(successfulUrl);
+                    form.clearErrors('root');
+                    try {
+                      await deleteCoherenceBySlug({ slug: signalSlug });
+                      router.push(successfulUrl);
+                    } catch (error) {
+                      const message =
+                        error instanceof Error &&
+                        error.message.trim().length > 0
+                          ? error.message
+                          : t.has('deleteFailed')
+                          ? t('deleteFailed')
+                          : 'Could not delete signal. Please try again.';
+                      form.setError('root', {
+                        type: 'manual',
+                        message,
+                      });
+                    }
                   }}
                 >
                   <Button

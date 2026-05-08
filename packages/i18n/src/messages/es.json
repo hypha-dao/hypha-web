@@ -2066,6 +2066,7 @@
     "priority": "Prioridad",
     "tags": "Etiquetas",
     "selectOneOrMore": "Seleccione una o más",
+    "searchOrCreateTag": "Escribe para buscar o crear una etiqueta",
     "description": "Descripción",
     "descriptionPlaceholder": "Escriba su descripción aquí...",
     "publish": "Publicar",
@@ -2137,6 +2138,8 @@
     "deleteAction": "Eliminar",
     "editSignalMissingSlug": "Falta el identificador de la señal. Cierra y vuelve a abrir el formulario de edición.",
     "editSignalSaveFailed": "No se pudieron guardar los cambios de la señal. Inténtalo de nuevo.",
+    "savingSignal": "Guardando señal",
+    "saveChanges": "Guardar cambios",
     "keepWindowOpenWhileCreating": "Mantén esta ventana abierta hasta que terminemos.",
     "provisioning": {
       "chatUnavailable": "Señal creada, pero el chat no está disponible en este momento.",

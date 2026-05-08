@@ -3,6 +3,7 @@ import { getDhoPathCoherence } from '../../../../@tab/coherence/constants';
 import { Locale } from '@hypha-platform/i18n';
 import {
   COHERENCE_SIGNAL_TYPES,
+  findSelf,
   findSpaceBySlug,
   getCoherenceBySlug,
 } from '@hypha-platform/core/server';
@@ -21,16 +22,19 @@ type PageProps = {
 export default async function EditSignalPage({ params }: PageProps) {
   const { lang, id, signalSlug } = await params;
 
-  const [spaceFromDb, signal] = await Promise.all([
+  const [spaceFromDb, signal, currentPerson] = await Promise.all([
     findSpaceBySlug({ slug: id }, { db }),
     getCoherenceBySlug({ slug: signalSlug }),
+    findSelf({ db }),
   ]);
 
   if (
     !spaceFromDb ||
     !signal ||
     signal.spaceId !== spaceFromDb.id ||
-    !signal.slug
+    !signal.slug ||
+    !currentPerson ||
+    currentPerson.id !== signal.creatorId
   ) {
     notFound();
   }
