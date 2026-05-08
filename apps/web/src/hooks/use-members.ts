@@ -38,6 +38,10 @@ export const useMembers: UseMembers = ({
   paginationDisabled?: boolean;
 }): UseMembersReturn => {
   const { getAccessToken } = useAuthentication();
+  const endpointBase = React.useMemo(
+    () => `/api/v1/spaces/${spaceSlug}/members`,
+    [spaceSlug],
+  );
 
   const queryParams = React.useMemo(() => {
     const effectiveFilter = paginationDisabled
@@ -47,8 +51,8 @@ export const useMembers: UseMembers = ({
   }, [page, pageSize, searchTerm, paginationDisabled]);
 
   const endpoint = React.useMemo(
-    () => `/api/v1/spaces/${spaceSlug}/members${queryParams}`,
-    [spaceSlug, queryParams],
+    () => `${endpointBase}${queryParams}`,
+    [endpointBase, queryParams],
   );
 
   const interval = refreshInterval ?? 0;
@@ -70,7 +74,112 @@ export const useMembers: UseMembers = ({
         headers.Authorization = `Bearer ${token}`;
       }
 
-      return fetch(endpoint, { headers }).then((res) => res.json());
+      if (!paginationDisabled) {
+        return fetch(endpoint, { headers }).then((res) => res.json());
+      }
+
+      const PAGE_SIZE_ALL = 100;
+      let page = 1;
+      let mergedPersons: unknown[] = [];
+      let mergedSpaces: unknown[] = [];
+      let firstResponse: unknown = null;
+
+      while (true) {
+        const pageQuery = queryString.stringify({
+          page,
+          pageSize: PAGE_SIZE_ALL,
+          ...(searchTerm ? { searchTerm } : {}),
+        });
+        const pageEndpoint = `${endpointBase}?${pageQuery}`;
+        const pageResponse = await fetch(pageEndpoint, { headers }).then(
+          (res) => res.json(),
+        );
+        if (!firstResponse) {
+          firstResponse = pageResponse;
+        }
+
+        const pagePersons = Array.isArray(pageResponse?.persons?.data)
+          ? pageResponse.persons.data
+          : [];
+        const pageSpaces = Array.isArray(pageResponse?.spaces?.data)
+          ? pageResponse.spaces.data
+          : [];
+
+        mergedPersons = mergedPersons.concat(pagePersons);
+        mergedSpaces = mergedSpaces.concat(pageSpaces);
+
+        const personsTotal =
+          typeof pageResponse?.persons?.pagination?.total === 'number'
+            ? pageResponse.persons.pagination.total
+            : undefined;
+        const spacesTotal =
+          typeof pageResponse?.spaces?.pagination?.total === 'number'
+            ? pageResponse.spaces.pagination.total
+            : undefined;
+
+        const isLastPersonsPage =
+          pagePersons.length < PAGE_SIZE_ALL ||
+          (personsTotal !== undefined && mergedPersons.length >= personsTotal);
+        const isLastSpacesPage =
+          pageSpaces.length < PAGE_SIZE_ALL ||
+          (spacesTotal !== undefined && mergedSpaces.length >= spacesTotal);
+
+        if (isLastPersonsPage && isLastSpacesPage) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      const uniqueByIdentity = (items: unknown[]) => {
+        const seen = new Set<string>();
+        return items.filter((item) => {
+          const candidate = item as { id?: unknown; slug?: unknown };
+          const key = `${String(candidate.id ?? '')}::${String(
+            candidate.slug ?? '',
+          )}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      };
+
+      const uniquePersons = uniqueByIdentity(mergedPersons);
+      const uniqueSpaces = uniqueByIdentity(mergedSpaces);
+
+      const base = (firstResponse ?? {}) as Record<string, unknown>;
+      const persons = (base.persons ?? {}) as Record<string, unknown>;
+      const spaces = (base.spaces ?? {}) as Record<string, unknown>;
+      const personsPagination = (persons.pagination ?? {}) as Record<
+        string,
+        unknown
+      >;
+      const spacesPagination = (spaces.pagination ?? {}) as Record<
+        string,
+        unknown
+      >;
+
+      return {
+        ...base,
+        persons: {
+          ...persons,
+          data: uniquePersons,
+          pagination: {
+            ...personsPagination,
+            page: 1,
+            total: uniquePersons.length,
+          },
+        },
+        spaces: {
+          ...spaces,
+          data: uniqueSpaces,
+          pagination: {
+            ...spacesPagination,
+            page: 1,
+            total: uniqueSpaces.length,
+          },
+        },
+      };
     },
     {
       refreshInterval: interval,
@@ -88,15 +197,12 @@ export const useMembers: UseMembers = ({
       (key: Key) => {
         if (!Array.isArray(key)) return false;
         const [url] = key;
-        return (
-          typeof url === 'string' &&
-          url.startsWith(`/api/v1/spaces/${spaceSlug}/members`)
-        );
+        return typeof url === 'string' && url.startsWith(endpointBase);
       },
       undefined,
       { revalidate: true },
     );
-  }, [mutate, spaceSlug]);
+  }, [mutate, endpointBase, spaceSlug]);
 
   return {
     persons: response?.persons || { data: [], pagination: undefined },
