@@ -44,6 +44,7 @@ export type GetTokenHoldingsBySpaceSlugInput = {
   includeZeroBalances?: boolean;
   holderLimit?: number;
   includeTreasury?: boolean;
+  collapseBelowPct?: number;
 };
 
 export type GetTokenHoldingsBySpaceSlugResult =
@@ -210,6 +211,7 @@ export async function getTokenHoldingsBySpaceSlug(
     includeZeroBalances = false,
     holderLimit,
     includeTreasury = true,
+    collapseBelowPct,
   }: GetTokenHoldingsBySpaceSlugInput,
   { db, authToken }: DbConfig & { authToken?: string },
 ): Promise<
@@ -226,6 +228,10 @@ export async function getTokenHoldingsBySpaceSlug(
     typeof holderLimit === 'number' && Number.isFinite(holderLimit)
       ? Math.max(1, Math.min(1000, Math.floor(holderLimit)))
       : undefined;
+  const safeCollapseBelowPct =
+    typeof collapseBelowPct === 'number' && Number.isFinite(collapseBelowPct)
+      ? Math.max(0, Math.min(100, collapseBelowPct))
+      : 3;
 
   const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
   if (!host) {
@@ -432,7 +438,7 @@ export async function getTokenHoldingsBySpaceSlug(
 
       for (const entry of aggregatedMembers.values()) {
         const sharePct = toSharePct(entry.balance_raw, totalSupplyRaw);
-        if (sharePct < 3) {
+        if (sharePct < safeCollapseBelowPct) {
           collapsedSmallHolderRaw += entry.balance_raw;
           continue;
         }

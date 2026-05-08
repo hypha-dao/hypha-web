@@ -162,7 +162,7 @@ function fetchHoldings(
     }
 
     const response = await fetch(
-      `/api/v1/spaces/${slug}/token-holdings?include_treasury=true`,
+      `/api/v1/spaces/${slug}/token-holdings?include_treasury=true&collapse_below_pct=1`,
       { headers },
     );
     if (!response.ok) {

@@ -43,6 +43,24 @@ function parseIntParam(
   return fallback;
 }
 
+function parseFloatParam(
+  url: URL,
+  keys: string | string[],
+  fallback?: number,
+  min = 0,
+  max = 100,
+): number | undefined {
+  const keyList = Array.isArray(keys) ? keys : [keys];
+  for (const key of keyList) {
+    const raw = url.searchParams.get(key);
+    if (raw == null || raw === '') continue;
+    const parsed = Number.parseFloat(raw);
+    if (!Number.isFinite(parsed)) continue;
+    return Math.min(max, Math.max(min, parsed));
+  }
+  return fallback;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<Params> },
@@ -81,6 +99,10 @@ export async function GET(
       true,
     );
     const holderLimit = parseIntParam(url, ['holderLimit', 'holder_limit']);
+    const collapseBelowPct = parseFloatParam(url, [
+      'collapseBelowPct',
+      'collapse_below_pct',
+    ]);
 
     const gated = await getTokenHoldingsBySpaceSlug(
       {
@@ -88,6 +110,7 @@ export async function GET(
         includeZeroBalances,
         includeTreasury,
         holderLimit,
+        collapseBelowPct,
       },
       { db, authToken: bearer },
     );
