@@ -841,6 +841,30 @@
       "noAccess": "No tienes acceso para ver la navegación espacial."
     }
   },
+  "TokenHoldingsDashboard": {
+    "subtitle": "Distribución de tokens de un vistazo.",
+    "badges": {
+      "tokens": "Tokens: {count}",
+      "otherBucket": "Categoría otros: < 3%",
+      "treasuryVisible": "Tesorería siempre visible"
+    },
+    "updatedAt": "Actualizado {date}",
+    "error": {
+      "title": "No se pudieron cargar las tenencias de tokens",
+      "description": "Vuelve a intentarlo en un momento. Si el problema persiste, revisa tu acceso al espacio y la conectividad de red."
+    },
+    "empty": {
+      "title": "Aún no hay tenencias de tokens disponibles",
+      "description": "Este espacio actualmente no expone datos de distribución de tokens acuñados."
+    },
+    "chartAria": "Gráfico de distribución de tokens para {title}",
+    "tokenDetailsAria": "Detalles del token para {tokenName}",
+    "tooltip": {
+      "totalSupply": "Suministro total",
+      "other": "Otros",
+      "address": "Dirección"
+    }
+  },
   "SpaceSettingsAction": {
     "title": "Configuración de espacio",
     "content": "Acceda y administre la configuración de su espacio, incluida su apariencia, estructura, métodos, membresía y tesorería.",
