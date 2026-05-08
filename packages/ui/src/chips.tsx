@@ -424,6 +424,58 @@ export const MultiSelect = React.forwardRef<
     const filteredOptions = React.useMemo(() => {
       return getRankedOptions(trimmedSearchValue);
     }, [getRankedOptions, trimmedSearchValue]);
+    const groupedFilteredTagPickerOptions = React.useMemo(() => {
+      if (uiStyle !== 'tag-picker' || trimmedSearchValue.length === 0)
+        return [];
+      const rankedValues = new Set(
+        filteredOptions.map((option) => option.value),
+      );
+      if (rankedValues.size === 0) return [];
+
+      const groupedRows: Array<
+        (typeof options)[number] & { __renderKind?: 'heading' | 'option' }
+      > = [];
+      let currentHeading: (typeof options)[number] | null = null;
+      let currentOptions: (typeof options)[number][] = [];
+
+      const flushCategory = () => {
+        if (!currentHeading || currentOptions.length === 0) return;
+        groupedRows.push({ ...currentHeading, __renderKind: 'heading' });
+        groupedRows.push(
+          ...currentOptions.map((option) => ({
+            ...option,
+            __renderKind: 'option' as const,
+          })),
+        );
+      };
+
+      for (const option of options) {
+        if (isOptionHeading(option)) {
+          flushCategory();
+          currentHeading = option;
+          currentOptions = [];
+          continue;
+        }
+
+        if (isOptionDelimiter(option) || option.kind === 'separator') {
+          flushCategory();
+          currentHeading = null;
+          currentOptions = [];
+          continue;
+        }
+
+        if (!rankedValues.has(option.value)) continue;
+
+        if (!currentHeading) {
+          groupedRows.push({ ...option, __renderKind: 'option' });
+          continue;
+        }
+        currentOptions.push(option);
+      }
+
+      flushCategory();
+      return groupedRows;
+    }, [filteredOptions, options, trimmedSearchValue, uiStyle]);
     const groupedTagPickerOptions = React.useMemo(() => {
       if (uiStyle !== 'tag-picker' || trimmedSearchValue.length > 0) return [];
       return options;
@@ -536,14 +588,14 @@ export const MultiSelect = React.forwardRef<
                     key={value}
                     className={cn(
                       multiSelectVariants({ variant }),
-                      'rounded-full border-accent-8 bg-accent-4 text-accent-12',
+                      'rounded-full border-neutral-7 bg-neutral-3 text-neutral-12',
                     )}
                     style={{ animationDuration: `${animation}s` }}
                   >
-                    <span className="text-accent-11">#</span>
+                    <span className="text-neutral-10">#</span>
                     <span>{option?.label ?? value}</span>
                     <XCircle
-                      className="ml-1 h-4 w-4 cursor-pointer"
+                      className="ml-1 h-4 w-4 cursor-pointer text-neutral-10 hover:text-neutral-12"
                       onClick={(event) => {
                         event.stopPropagation();
                         toggleOption(value);
@@ -728,12 +780,10 @@ export const MultiSelect = React.forwardRef<
               </CommandEmpty>
               <CommandGroup>
                 {shouldShowMostUsedHeading ? (
-                  <>
-                    <div className="px-2 py-1 text-[10px] font-medium tracking-[0.08em] text-muted-foreground/65">
-                      {resolvedLabels.mostUsed}
-                    </div>
-                    <CommandSeparator />
-                  </>
+                  <div className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55">
+                    <span className="text-muted-foreground/35">• </span>
+                    <span>{resolvedLabels.mostUsed}</span>
+                  </div>
                 ) : null}
                 {canCreateOption ? (
                   <>
@@ -770,7 +820,25 @@ export const MultiSelect = React.forwardRef<
                     <CommandSeparator />
                   </>
                 )}
-                {filteredOptions.map((option, index) => {
+                {(trimmedSearchValue.length > 0 &&
+                groupedFilteredTagPickerOptions.length > 0
+                  ? groupedFilteredTagPickerOptions
+                  : filteredOptions
+                ).map((option, index) => {
+                  if (
+                    '__renderKind' in option &&
+                    option.__renderKind === 'heading'
+                  ) {
+                    return (
+                      <div
+                        key={`typed-group-heading-${index}`}
+                        className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55"
+                      >
+                        <span className="text-muted-foreground/35">• </span>
+                        <span>{option.label}</span>
+                      </div>
+                    );
+                  }
                   const isSelected = selectedValues.includes(option.value);
                   const isDelimiter = isOptionDelimiter(option);
                   return isDelimiter ? (
@@ -814,9 +882,9 @@ export const MultiSelect = React.forwardRef<
                 })}
                 {uiStyle === 'tag-picker' &&
                 trimmedSearchValue.length === 0 &&
-                groupedTagPickerOptions.length > 0 &&
-                filteredOptions.length === 0 ? (
+                groupedTagPickerOptions.length > 0 ? (
                   <>
+                    {filteredOptions.length > 0 ? <CommandSeparator /> : null}
                     {groupedTagPickerOptions.map((option, index) => {
                       if (isOptionDelimiter(option)) {
                         return <CommandSeparator key={`group-sep-${index}`} />;
@@ -825,9 +893,10 @@ export const MultiSelect = React.forwardRef<
                         return (
                           <div
                             key={`group-heading-${index}`}
-                            className="px-2 py-1 text-[10px] font-medium tracking-[0.08em] text-muted-foreground/65"
+                            className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55"
                           >
-                            {`--- ${option.label} ---`}
+                            <span className="text-muted-foreground/35">• </span>
+                            <span>{option.label}</span>
                           </div>
                         );
                       }
