@@ -39,7 +39,11 @@ export async function sampleAccentHex(
     image.onload = () => {
       try {
         const maxSide = 96;
-        const scale = Math.min(maxSide / image.width, maxSide / image.height, 1);
+        const scale = Math.min(
+          maxSide / image.width,
+          maxSide / image.height,
+          1,
+        );
         const width = Math.max(8, Math.round(image.width * scale));
         const height = Math.max(8, Math.round(image.height * scale));
         const canvas = document.createElement('canvas');
