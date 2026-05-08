@@ -37,6 +37,52 @@ function buildRecentMonthBuckets(size: number): MonthBucket[] {
   return buckets;
 }
 
+function buildJoinedAtMonthBuckets(
+  joinedAtValues: Array<string | null>,
+  maxMonths = 12,
+): MonthBucket[] {
+  const now = new Date();
+  const nowMonth = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+  );
+  const joinedDates = joinedAtValues
+    .filter((value): value is string => Boolean(value))
+    .map((value) => new Date(value))
+    .filter((value) => !Number.isNaN(value.getTime()))
+    .map(
+      (value) =>
+        new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), 1)),
+    );
+
+  if (joinedDates.length === 0) {
+    return buildRecentMonthBuckets(6);
+  }
+
+  const earliest = joinedDates.reduce(
+    (min, value) => (value < min ? value : min),
+    joinedDates[0]!,
+  );
+  const latest = nowMonth;
+
+  const monthSpan =
+    (latest.getUTCFullYear() - earliest.getUTCFullYear()) * 12 +
+    (latest.getUTCMonth() - earliest.getUTCMonth()) +
+    1;
+  const boundedSpan = Math.max(1, Math.min(monthSpan, maxMonths));
+
+  const start = new Date(latest);
+  start.setUTCMonth(start.getUTCMonth() - (boundedSpan - 1));
+
+  const buckets: MonthBucket[] = [];
+  for (let offset = 0; offset < boundedSpan; offset += 1) {
+    const cursor = new Date(start);
+    cursor.setUTCMonth(start.getUTCMonth() + offset);
+    buckets.push({ month: toMonthKey(cursor), people: 0, spaces: 0 });
+  }
+
+  return buckets;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<Params> },
@@ -147,7 +193,10 @@ export async function GET(
       rosterPage += 1;
     }
 
-    const months = buildRecentMonthBuckets(12);
+    const months = buildJoinedAtMonthBuckets(
+      memberEntries.map((item) => item.joined_at),
+      12,
+    );
     const monthIndex = new Map(
       months.map((item, index) => [item.month, index]),
     );
