@@ -505,63 +505,69 @@ export function SpaceVisualization({
       .attr('class', 'ripples')
       .style('pointer-events', 'none');
 
+    const grooveScales = Array.from({ length: 12 }, (_, index) => 0.34 + index * 0.05);
+    const sweepStrokeColor =
+      resolvedTheme === 'dark'
+        ? 'rgba(255,255,255,0.08)'
+        : 'rgba(15,23,42,0.08)';
+
     ripples.each(function (d: SpaceHierarchyNode) {
       const rippleGroup = d3.select(this);
-      const delays = ['0s', '0.35s', '0.7s'];
-      const scales = [0.42, 0.62, 0.82];
 
-      const coreOpacity = d.depth === 0 ? 0.24 : 0.2;
+      const baseOpacity = d.depth === 0 ? 0.14 : 0.11;
       rippleGroup
         .append('circle')
-        .attr('class', 'ripple-core')
-        .attr('fill', withAlpha(getNodeAccent(d), coreOpacity))
-        .attr('data-scale', '0.96')
-        .attr('opacity', Math.max(0.12, coreOpacity - 0.08))
+        .attr('class', 'vinyl-base')
+        .attr('fill', withAlpha(getNodeAccent(d), baseOpacity))
+        .attr('data-scale', '0.98')
+        .attr('opacity', 1);
+
+      rippleGroup
+        .append('circle')
+        .attr('class', 'vinyl-outer-halo')
+        .attr('fill', 'none')
+        .attr('stroke', withAlpha(getNodeAccent(d), d.depth === 0 ? 0.24 : 0.2))
+        .attr('stroke-width', 1.1)
+        .attr('data-scale', '0.98')
         .append('animate')
         .attr('attributeName', 'opacity')
         .attr(
           'values',
-          `${Math.max(0.1, coreOpacity - 0.1)};${coreOpacity};${Math.max(
-            0.1,
-            coreOpacity - 0.1,
+          `${d.depth === 0 ? 0.18 : 0.14};${d.depth === 0 ? 0.3 : 0.24};${
+            d.depth === 0 ? 0.18 : 0.14
           )}`,
         )
-        .attr('dur', '4.2s')
+        .attr('dur', '6.5s')
         .attr('begin', '0s')
         .attr('repeatCount', 'indefinite');
 
-      scales.forEach((scale, index) => {
-        const opacity = d.depth === 0 ? 0.32 - index * 0.04 : 0.24 - index * 0.03;
-        const circle = rippleGroup
+      grooveScales.forEach((scale, index) => {
+        const opacity = d.depth === 0 ? 0.12 - index * 0.005 : 0.1 - index * 0.004;
+        rippleGroup
           .append('circle')
-          .attr('class', 'ripple-ring')
+          .attr('class', 'vinyl-groove')
           .attr('fill', 'none')
-          .attr('stroke', withAlpha(getNodeAccent(d), opacity))
-          .attr('stroke-width', 1.2)
+          .attr('stroke', withAlpha(getNodeAccent(d), Math.max(0.04, opacity)))
+          .attr('stroke-width', 0.65)
           .attr('data-scale', scale.toString());
-
-        circle
-          .append('animate')
-          .attr('attributeName', 'opacity')
-          .attr(
-            'values',
-            `${Math.max(0.08, opacity - 0.08)};${opacity};${Math.max(
-              0.08,
-              opacity - 0.08,
-            )}`,
-          )
-          .attr('dur', '3.2s')
-          .attr('begin', delays[index] ?? '0s')
-          .attr('repeatCount', 'indefinite');
-
-        circle
-          .append('animate')
-          .attr('attributeName', 'stroke-width')
-          .attr('values', '0.8;1.8;0.8')
-          .attr('dur', '3.2s')
-          .attr('begin', delays[index] ?? '0s')
-          .attr('repeatCount', 'indefinite');
       });
+
+      rippleGroup
+        .append('circle')
+        .attr('class', 'vinyl-sweep')
+        .attr('fill', 'none')
+        .attr('stroke', sweepStrokeColor)
+        .attr('stroke-width', 1)
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-dasharray', '22 260')
+        .attr('data-scale', '0.82')
+        .append('animateTransform')
+        .attr('attributeName', 'transform')
+        .attr('type', 'rotate')
+        .attr('from', '0 0 0')
+        .attr('to', '360 0 0')
+        .attr('dur', '11s')
+        .attr('repeatCount', 'indefinite');
     });
 
     svg.on('click', () => {
@@ -862,23 +868,34 @@ export function SpaceVisualization({
           const orbitRadius = d.r! * k;
 
           d3.select(this)
-            .select<SVGCircleElement>('circle.ripple-core')
-            .attr('r', orbitRadius * 0.96)
-            .attr('fill', withAlpha(accent, d.depth === 0 ? 0.24 : 0.2));
+            .select<SVGCircleElement>('circle.vinyl-base')
+            .attr('r', orbitRadius * 0.98)
+            .attr('fill', withAlpha(accent, d.depth === 0 ? 0.14 : 0.11));
 
           d3.select(this)
-            .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
+            .select<SVGCircleElement>('circle.vinyl-outer-halo')
+            .attr('r', orbitRadius * 0.98)
+            .attr('stroke', withAlpha(accent, d.depth === 0 ? 0.24 : 0.2))
+            .attr('stroke-width', Math.max(0.9, orbitRadius * 0.004));
+
+          d3.select(this)
+            .selectAll<SVGCircleElement, unknown>('circle.vinyl-groove')
             .each(function (_, i) {
               const scale = Number.parseFloat(
                 d3.select(this).attr('data-scale') || '0.7',
               );
-              const baseOpacity =
-                d.depth === 0 ? 0.32 - i * 0.04 : 0.24 - i * 0.03;
+              const baseOpacity = d.depth === 0 ? 0.12 - i * 0.005 : 0.1 - i * 0.004;
               d3.select(this)
                 .attr('r', orbitRadius * scale)
-                .attr('stroke-width', Math.max(0.8, orbitRadius * 0.01))
+                .attr('stroke-width', Math.max(0.45, orbitRadius * 0.0018))
                 .attr('stroke', withAlpha(accent, Math.max(0.08, baseOpacity)));
             });
+
+          d3.select(this)
+            .select<SVGCircleElement>('circle.vinyl-sweep')
+            .attr('r', orbitRadius * 0.82)
+            .attr('stroke-width', Math.max(0.65, orbitRadius * 0.0024))
+            .attr('stroke', sweepStrokeColor);
         });
     }
 
@@ -886,18 +903,23 @@ export function SpaceVisualization({
       nodeAccents.set(node.data.id, accent);
       ripples
         .filter((d) => d.data.id === node.data.id)
-        .select<SVGCircleElement>('circle.ripple-core')
-        .attr('fill', withAlpha(accent, node.depth === 0 ? 0.24 : 0.2));
+        .select<SVGCircleElement>('circle.vinyl-base')
+        .attr('fill', withAlpha(accent, node.depth === 0 ? 0.14 : 0.11));
 
       ripples
         .filter((d) => d.data.id === node.data.id)
-        .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
+        .select<SVGCircleElement>('circle.vinyl-outer-halo')
+        .attr('stroke', withAlpha(accent, node.depth === 0 ? 0.24 : 0.2));
+
+      ripples
+        .filter((d) => d.data.id === node.data.id)
+        .selectAll<SVGCircleElement, unknown>('circle.vinyl-groove')
         .each(function (_, i) {
           const baseOpacity =
-            node.depth === 0 ? 0.32 - i * 0.04 : 0.24 - i * 0.03;
+            node.depth === 0 ? 0.12 - i * 0.005 : 0.1 - i * 0.004;
           d3.select(this).attr(
             'stroke',
-            withAlpha(accent, Math.max(0.08, baseOpacity)),
+            withAlpha(accent, Math.max(0.04, baseOpacity)),
           );
         });
     };
