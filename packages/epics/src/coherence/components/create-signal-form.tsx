@@ -166,7 +166,7 @@ export const CreateSignalForm = ({
   }, [t]);
 
   const priorityOptions = React.useMemo(() => {
-    return COHERENCE_PRIORITY_OPTIONS.map(({ priority, icon }) => ({
+    return COHERENCE_PRIORITY_OPTIONS.map(({ priority, icon, colorVariant }) => ({
       icon: icon as LucideReactIcon,
       title: t.has(`priorities.${priority}` as never)
         ? t(`priorities.${priority}` as never)
@@ -176,6 +176,7 @@ export const CreateSignalForm = ({
         ? t(`priorityDescriptions.${priority}` as never)
         : '',
       colorVariant: 'subtle' as CardButtonColorVariant,
+      iconColorVariant: colorVariant as CardButtonColorVariant,
     }));
   }, [t]);
 
@@ -514,6 +515,7 @@ export const CreateSignalForm = ({
                               title={option.title}
                               description={option.description}
                               colorVariant={option.colorVariant}
+                              iconColorVariant={option.iconColorVariant}
                               selected={field.value === option.priority}
                               onClick={() => {
                                 form.setValue('priority', option.priority, {
