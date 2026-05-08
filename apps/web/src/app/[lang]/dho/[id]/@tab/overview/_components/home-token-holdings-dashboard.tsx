@@ -203,8 +203,8 @@ function TokenDonutChart({
     [chartData],
   );
 
-  const outerRadius = 92;
-  const innerRadius = 52;
+  const outerRadius = 128;
+  const innerRadius = 74;
   const arcGenerator = React.useMemo(
     () =>
       d3
@@ -220,21 +220,21 @@ function TokenDonutChart({
   }, [chartData]);
 
   return (
-    <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
       <div className="relative flex items-center justify-center md:flex-none">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute h-40 w-40 rounded-full opacity-80 blur-2xl"
+          className="pointer-events-none absolute h-64 w-64 rounded-full opacity-90 blur-3xl"
           style={{
             background:
-              'radial-gradient(circle, color-mix(in oklab, var(--space-accent, var(--accent-9)) 30%, transparent) 0%, transparent 70%)',
+              'radial-gradient(circle, color-mix(in oklab, var(--space-accent, var(--accent-9)) 40%, transparent) 0%, transparent 72%)',
           }}
         />
         <svg
-          viewBox="-110 -110 220 220"
+          viewBox="-145 -145 290 290"
           role="img"
           aria-label={`Token distribution chart for ${title}`}
-          className="h-60 w-60 transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+          className="h-80 w-80 transition-transform duration-300 ease-out group-hover:scale-[1.03]"
         >
           {pieData.map((segment: d3.PieArcDatum<ChartSlice>) => (
             <path
@@ -248,14 +248,14 @@ function TokenDonutChart({
           <text
             textAnchor="middle"
             dominantBaseline="middle"
-            className="fill-foreground text-[12px] font-semibold"
+            className="fill-foreground text-[15px] font-semibold"
           >
             {title}
           </text>
         </svg>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5 md:max-w-[34%]">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 md:max-w-[28%]">
         {chartData.map((slice) => (
           <div
             key={`${slice.display_name}-${slice.address ?? 'other'}`}
@@ -313,21 +313,21 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
     .value((item) => item.value)(chartInput);
   const arc = d3
     .arc<d3.PieArcDatum<(typeof chartInput)[number]>>()
-    .innerRadius(34)
-    .outerRadius(64);
+    .innerRadius(68)
+    .outerRadius(112);
 
   return (
-    <Card className="border-border/60">
-      <CardHeader className="pb-1">
-        <CardTitle className="text-base">Proposals</CardTitle>
-        <CardDescription>
-          On voting, accepted and refused totals
+    <Card className="border-border/60 bg-card/95">
+      <CardHeader className="pb-0">
+        <CardTitle className="text-lg">Proposals</CardTitle>
+        <CardDescription className="text-xs">
+          On voting, accepted, refused
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex items-center gap-4">
+      <CardContent className="grid min-h-[420px] grid-cols-[1fr_auto] items-center gap-2">
         <svg
-          viewBox="-75 -75 150 150"
-          className="h-36 w-36 shrink-0"
+          viewBox="-130 -130 260 260"
+          className="h-[340px] w-full"
           aria-label="Proposals distribution"
         >
           {arcs.map((slice, index) => (
@@ -342,26 +342,28 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           <text
             textAnchor="middle"
             dominantBaseline="middle"
-            className="fill-foreground text-[12px] font-semibold"
+            className="fill-foreground text-[22px] font-semibold"
           >
             {total}
           </text>
         </svg>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div className="flex min-w-[180px] flex-col gap-3 pr-2 text-sm">
           {pieData.map((item) => (
             <div
               key={item.label}
-              className="flex items-center justify-between gap-2 text-sm"
+              className="flex items-center justify-between gap-3"
             >
               <span className="inline-flex min-w-0 items-center gap-2 text-foreground/90">
                 <span
-                  className="h-2.5 w-2.5 rounded-full"
+                  className="h-3 w-3 rounded-full"
                   style={{ backgroundColor: item.color }}
                 />
                 <span className="truncate">{item.label}</span>
               </span>
-              <span className="font-medium text-foreground">{item.value}</span>
+              <span className="text-lg font-semibold text-foreground">
+                {item.value}
+              </span>
             </div>
           ))}
         </div>
@@ -381,9 +383,9 @@ function MembersEvolutionWidget({
     [monthly],
   );
 
-  const width = 620;
-  const height = 260;
-  const margin = { top: 12, right: 10, bottom: 48, left: 30 };
+  const width = 980;
+  const height = 420;
+  const margin = { top: 18, right: 18, bottom: 64, left: 42 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
@@ -404,14 +406,14 @@ function MembersEvolutionWidget({
     .range([innerHeight, 0]);
 
   return (
-    <Card className="border-border/60 md:col-span-2">
-      <CardHeader className="pb-1">
-        <CardTitle className="text-base">Members</CardTitle>
-        <CardDescription>
+    <Card className="border-border/60 bg-card/95 md:col-span-2">
+      <CardHeader className="pb-0">
+        <CardTitle className="text-lg">Members</CardTitle>
+        <CardDescription className="text-xs">
           Monthly evolution of people and spaces
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full">
           <g transform={`translate(${margin.left},${margin.top})`}>
             {[0, maxValue / 2, maxValue].map((tick) => (
@@ -425,7 +427,7 @@ function MembersEvolutionWidget({
                   x={-8}
                   textAnchor="end"
                   dominantBaseline="middle"
-                  className="fill-muted-foreground text-[10px]"
+                  className="fill-muted-foreground text-[11px]"
                 >
                   {Math.round(tick)}
                 </text>
@@ -441,22 +443,22 @@ function MembersEvolutionWidget({
                     y={y(item.people)}
                     width={x1.bandwidth()}
                     height={innerHeight - y(item.people)}
-                    fill="var(--accent-9)"
-                    rx={2}
+                    fill="var(--space-accent, var(--accent-9))"
+                    rx={3}
                   />
                   <rect
                     x={x1('spaces')}
                     y={y(item.spaces)}
                     width={x1.bandwidth()}
                     height={innerHeight - y(item.spaces)}
-                    fill="var(--info-9)"
-                    rx={2}
+                    fill="color-mix(in oklab, var(--space-accent, var(--accent-9)) 55%, var(--info-9) 45%)"
+                    rx={3}
                   />
                   <text
                     x={x0.bandwidth() / 2}
-                    y={innerHeight + 16}
+                    y={innerHeight + 20}
                     textAnchor="middle"
-                    className="fill-muted-foreground text-[10px]"
+                    className="fill-muted-foreground text-[11px]"
                   >
                     {formatMonthLabel(item.month)}
                   </text>
@@ -466,13 +468,22 @@ function MembersEvolutionWidget({
           </g>
         </svg>
 
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-5 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-accent-9" />
+            <span
+              className="h-3 w-3 rounded-sm"
+              style={{ background: 'var(--space-accent, var(--accent-9))' }}
+            />
             Members
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-info-9" />
+            <span
+              className="h-3 w-3 rounded-sm"
+              style={{
+                background:
+                  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 55%, var(--info-9) 45%)',
+              }}
+            />
             Spaces
           </span>
         </div>
@@ -491,7 +502,7 @@ function SignalsPulseMapWidget({
     : ['low', 'medium', 'high'];
   const types = signals.types.length ? signals.types : ['Signal'];
   const maxCount = Math.max(1, ...signals.matrix.map((item) => item.count));
-  const radius = d3.scaleSqrt().domain([0, maxCount]).range([4, 16]);
+  const radius = d3.scaleSqrt().domain([0, maxCount]).range([8, 34]);
   const countByKey = new Map(
     signals.matrix.map((item) => [
       `${item.priority}:::${item.type}`,
@@ -499,9 +510,9 @@ function SignalsPulseMapWidget({
     ]),
   );
 
-  const width = Math.max(260, types.length * 95);
-  const height = Math.max(210, priorities.length * 70);
-  const margin = { top: 26, right: 8, bottom: 8, left: 78 };
+  const width = Math.max(620, types.length * 170);
+  const height = Math.max(420, priorities.length * 120);
+  const margin = { top: 50, right: 26, bottom: 24, left: 100 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
   const x = d3
@@ -516,27 +527,39 @@ function SignalsPulseMapWidget({
     .padding(0.5);
 
   return (
-    <Card className="border-border/60">
-      <CardHeader className="pb-1">
-        <CardTitle className="text-base">Signals</CardTitle>
-        <CardDescription>Pulse map by priority and type</CardDescription>
+    <Card className="border-border/60 bg-card/95">
+      <CardHeader className="pb-0">
+        <CardTitle className="text-lg">Signals</CardTitle>
+        <CardDescription className="text-xs">
+          Pulse map by priority and type
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full">
+      <CardContent className="min-h-[420px]">
+        <svg viewBox={`0 0 ${width} ${height}`} className="h-[360px] w-full">
           <g transform={`translate(${margin.left},${margin.top})`}>
             {priorities.map((priority) => {
               const rowY = y(priority) ?? 0;
               return (
-                <text
-                  key={priority}
-                  x={-10}
-                  y={rowY}
-                  textAnchor="end"
-                  dominantBaseline="middle"
-                  className="fill-muted-foreground text-[10px]"
-                >
-                  {capitalizeWords(priority)}
-                </text>
+                <g key={priority}>
+                  <line
+                    x1={0}
+                    x2={innerWidth}
+                    y1={rowY}
+                    y2={rowY}
+                    stroke="var(--border)"
+                    strokeDasharray="2 8"
+                    opacity={0.45}
+                  />
+                  <text
+                    x={-14}
+                    y={rowY}
+                    textAnchor="end"
+                    dominantBaseline="middle"
+                    className="fill-muted-foreground text-[14px] font-medium"
+                  >
+                    {capitalizeWords(priority)}
+                  </text>
+                </g>
               );
             })}
 
@@ -546,9 +569,9 @@ function SignalsPulseMapWidget({
                 <text
                   key={type}
                   x={colX}
-                  y={-10}
+                  y={-18}
                   textAnchor="middle"
-                  className="fill-muted-foreground text-[10px]"
+                  className="fill-muted-foreground text-[14px] font-medium"
                 >
                   {type}
                 </text>
@@ -566,15 +589,15 @@ function SignalsPulseMapWidget({
                     <circle
                       cx={cx}
                       cy={cy}
-                      r={Math.max(r + 3, 0)}
+                      r={Math.max(r + 12, 0)}
                       className={count > 0 ? 'animate-pulse' : ''}
                       fill="var(--space-accent, var(--accent-9))"
-                      opacity={count > 0 ? 0.2 : 0}
+                      opacity={count > 0 ? 0.18 : 0}
                     />
                     <circle
                       cx={cx}
                       cy={cy}
-                      r={Math.max(r, 2)}
+                      r={Math.max(r, 5)}
                       fill={
                         count > 0
                           ? 'var(--space-accent, var(--accent-9))'
@@ -587,7 +610,7 @@ function SignalsPulseMapWidget({
                       y={cy}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      className="fill-background text-[10px] font-semibold"
+                      className="fill-background text-[16px] font-semibold"
                     >
                       {count > 0 ? count : ''}
                     </text>
@@ -717,7 +740,7 @@ export function HomeTokenHoldingsDashboard({
           ) : null}
 
           {!activityLoading && !activityError && activityData ? (
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <SignalsPulseMapWidget signals={activityData.signals} />
               <ProposalsPieWidget data={activityData.proposals} />
               <MembersEvolutionWidget monthly={activityData.members.monthly} />
@@ -759,7 +782,7 @@ export function HomeTokenHoldingsDashboard({
               {data.tokens.map((token) => (
                 <Card
                   key={token.token_address}
-                  className="group border-border/50 bg-card/90 backdrop-blur-sm"
+                  className="group min-h-[500px] border-border/50 bg-card/90 backdrop-blur-sm"
                 >
                   <CardHeader className="gap-3">
                     <div className="flex items-start justify-between gap-3">
