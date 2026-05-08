@@ -151,6 +151,30 @@
       "noAccess": "You do not have access to view space navigation."
     }
   },
+  "TokenHoldingsDashboard": {
+    "subtitle": "Token distribution at a glance.",
+    "badges": {
+      "tokens": "Tokens: {count}",
+      "otherBucket": "Other bucket: < 3%",
+      "treasuryVisible": "Treasury always visible"
+    },
+    "updatedAt": "Updated {date}",
+    "error": {
+      "title": "Unable to load token holdings",
+      "description": "Please retry in a moment. If this persists, check your space access and network connectivity."
+    },
+    "empty": {
+      "title": "No token holdings available yet",
+      "description": "This space does not currently expose minted token distribution data."
+    },
+    "chartAria": "Token distribution chart for {title}",
+    "tokenDetailsAria": "Token details for {tokenName}",
+    "tooltip": {
+      "totalSupply": "Total supply",
+      "other": "Other",
+      "address": "Address"
+    }
+  },
   "SpaceSettingsAction": {
     "title": "Space Settings",
     "content": "Access and manage the settings for your space, including its appearance, structure, methods, membership, and treasury.",
