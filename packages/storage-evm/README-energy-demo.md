@@ -50,6 +50,7 @@ All scripts live in `scripts/base-mainnet-contracts-scripts/` and run via Hardha
 | **deploy-energy-ppa-v2-factory.ts** | Standalone factory deployment. Deploys EnergyPPAv2 implementation, RegularSpaceToken implementation, and the factory contract. Use when you only need the factory without a community. | `npx hardhat run scripts/base-mainnet-contracts-scripts/deploy-energy-ppa-v2-factory.ts --network base-mainnet` |
 | **energy-ppav2-mainnet-demo.ts** | All-in-one demo script. Deploys a full community (factory + sources + members + fees), then runs randomized consumption intervals with on-chain submission. Supports `deploy`, `once`, `loop` commands via `ENERGY_DEMO_COMMAND` env var. | `ENERGY_DEMO_COMMAND=deploy npx hardhat run scripts/base-mainnet-contracts-scripts/energy-ppav2-mainnet-demo.ts --network base-mainnet` |
 | **energy-ppav2-vpp-loop.ts** | VPP fair-split + on-chain settlement loop. Uses the full 3-pass algorithm from `vpp/fair-split.ts` with detailed trace logging, builds contract readings, and submits on-chain. Most informative logs — shows each algorithm pass step by step. | `ENERGY_DEMO_COMMAND=once npx hardhat run scripts/base-mainnet-contracts-scripts/energy-ppav2-vpp-loop.ts --network base-mainnet` |
+| **energy-ppav2-rds-loop.ts** | Reads `accounting.interval_readings` from PostgreSQL (RDS), detects new 15-min intervals, runs VPP fair-split, and submits `consumeEnergy` on-chain. Persists a local checkpoint so restarts continue from the last processed interval. | `ENERGY_DEMO_COMMAND=loop npx hardhat run scripts/base-mainnet-contracts-scripts/energy-ppav2-rds-loop.ts --network base-mainnet` |
 | **energy-ppav2-demo-state.json** | Stores the deployed community state (proxy address, token addresses, member addresses). Written by the deploy command, read by `once`/`loop` commands. | — |
 
 ### Environment variables
@@ -58,6 +59,16 @@ All scripts live in `scripts/base-mainnet-contracts-scripts/` and run via Hardha
 |---|---|---|
 | `ENERGY_DEMO_COMMAND` | `loop` | `deploy` = deploy new community, `once` = run one batch, `loop` = run continuously, `reset` = call `emergencyReset()` |
 | `ENERGY_DEMO_LOOP_MS` | `45000` | Milliseconds between batches in loop mode |
+| `ENERGY_RDS_POLL_MS` | `900000` | Poll interval for `energy-ppav2-rds-loop.ts` (15 minutes by default) |
+| `ENERGY_RDS_CATCH_UP` | `0` | `1` = process all existing DB intervals from oldest on first run; `0` = initialize checkpoint at latest interval and process only new data |
+| `ENERGY_RDS_CHECKPOINT_FILE` | `scripts/base-mainnet-contracts-scripts/energy-ppav2-rds-loop-state.json` | Path to the local checkpoint file storing last processed interval |
+| `ENERGY_RDS_COMMUNITY_ID` | from state JSON | Community filter when reading `accounting.interval_readings` |
+| `ENERGY_RDS_HOST` | — | PostgreSQL host (required for `energy-ppav2-rds-loop.ts`) |
+| `ENERGY_RDS_PORT` | `5432` | PostgreSQL port |
+| `ENERGY_RDS_DATABASE` | — | PostgreSQL database name |
+| `ENERGY_RDS_USER` | — | PostgreSQL user |
+| `ENERGY_RDS_PASSWORD` | — | PostgreSQL password |
+| `ENERGY_RDS_SSL` | `1` | Set to `0` to disable SSL for DB connection |
 | `DEPLOY_FACTORY` | — | Set to `1` to force deploying a new factory (instead of reusing existing) |
 | `PRIVATE_KEY` | — | Deployer/admin wallet private key |
 
