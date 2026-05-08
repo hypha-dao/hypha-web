@@ -1,6 +1,1 @@
-export const COHERENCE_PRIORITIES = [
-  'critical',
-  'high',
-  'medium',
-  'low',
-] as const;
+export { COHERENCE_PRIORITIES } from '@hypha-platform/ui-utils';

@@ -1,11 +1,8 @@
-export const COHERENCE_PRIORITIES = [
-  'critical',
-  'high',
-  'medium',
-  'low',
-] as const;
+import { COHERENCE_PRIORITIES } from '@hypha-platform/ui-utils';
+import type { CoherencePriority } from '@hypha-platform/ui-utils';
 
-export type CoherencePriority = (typeof COHERENCE_PRIORITIES)[number];
+export { COHERENCE_PRIORITIES };
+export type { CoherencePriority } from '@hypha-platform/ui-utils';
 
 /** Icon names used by priority options — matches `DynamicIcon` / Lucide registry. */
 export type CoherencePriorityIconName =

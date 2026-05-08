@@ -1,6 +1,6 @@
 import type { PaginatedResponse, Person } from '@hypha-platform/core/client';
 import { publicClient } from '../../common/web3/public-client';
-import { getSpaceDetails } from '../client/web3/dao-space-factory/get-space-details';
+import { getSpaceDetails } from '../shared/web3/get-space-details';
 import type { Space } from '../types';
 import {
   memberships,

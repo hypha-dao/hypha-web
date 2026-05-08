@@ -513,6 +513,12 @@ export const MultiSelect = React.forwardRef<
         {uiStyle === 'tag-picker' ? (
           <PopoverAnchor asChild>
             <div
+              role="group"
+              aria-labelledby={props['aria-labelledby']}
+              aria-label={
+                props['aria-label'] ??
+                (props['aria-labelledby'] ? undefined : placeholder)
+              }
               className={cn(
                 'flex w-full min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-0.5 text-sm ring-offset-background',
                 'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',

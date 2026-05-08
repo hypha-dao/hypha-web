@@ -1,7 +1,7 @@
 import { publicClient } from '../../common/web3/public-client';
 import { findSelf } from '../../people/server/queries';
 import { getDb } from '../../common/server/get-db';
-import { getSpaceDetails } from '../client/web3/dao-space-factory/get-space-details';
+import { getSpaceDetails } from '../shared/web3/get-space-details';
 import { getSpaceVisibility } from '../client/web3/dao-space-factory/get-space-visibility';
 import { getDelegatesForSpace } from '../client/web3/dao-space-factory/get-delegates-for-space';
 import { getDelegators } from '../client/web3/dao-space-factory/get-delegators';
