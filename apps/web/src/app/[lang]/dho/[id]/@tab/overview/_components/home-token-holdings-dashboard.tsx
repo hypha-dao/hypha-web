@@ -111,7 +111,7 @@ type DistributionHistoryResponse = {
   }>;
 };
 
-type HomeSectionFilter = 'all' | 'energy' | 'activity' | 'distribution';
+type HomeSectionFilter = 'energy' | 'activity' | 'distribution';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 const NUMBER_FORMATTER = new Intl.NumberFormat(undefined, {
@@ -461,7 +461,7 @@ function DistributionOverTimeChart({
   const memberOptions = history?.members ?? [{ id: 'all', label: 'All' }];
 
   return (
-    <Card className="border-border/60 bg-card/95 md:col-span-2">
+    <Card className="border-border/60 bg-card/95">
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
@@ -470,13 +470,13 @@ function DistributionOverTimeChart({
               X axis shows time from transaction dates.
             </CardDescription>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <label className="flex min-w-[220px] flex-col gap-1 text-xs text-muted-foreground">
+          <div className="flex w-full flex-row items-end justify-end gap-2 md:w-auto">
+            <label className="flex w-[160px] max-w-[160px] flex-col gap-1 text-xs text-muted-foreground">
               Token
               <select
                 value={selectedToken}
                 onChange={(event) => setSelectedToken(event.target.value)}
-                className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {tokenOptions.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -485,12 +485,12 @@ function DistributionOverTimeChart({
                 ))}
               </select>
             </label>
-            <label className="flex min-w-[220px] flex-col gap-1 text-xs text-muted-foreground">
+            <label className="flex w-[140px] max-w-[140px] flex-col gap-1 text-xs text-muted-foreground">
               Member
               <select
                 value={selectedMember}
                 onChange={(event) => setSelectedMember(event.target.value)}
-                className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {memberOptions.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -1100,7 +1100,7 @@ export function HomeTokenHoldingsDashboard({
   );
 
   const [activeFilter, setActiveFilter] =
-    React.useState<HomeSectionFilter>('all');
+    React.useState<HomeSectionFilter>('distribution');
 
   const getTokenTypeLabel = React.useCallback(
     (type: string) => {
@@ -1121,16 +1121,14 @@ export function HomeTokenHoldingsDashboard({
   const filterItems = React.useMemo(
     () =>
       [
-        { value: 'all', label: 'All' },
         ...(hasEnergyData ? [{ value: 'energy', label: 'Energy' }] : []),
         { value: 'activity', label: 'Activity' },
         { value: 'distribution', label: 'Distribution' },
       ] as Array<{ value: HomeSectionFilter; label: string }>,
     [hasEnergyData],
   );
-  const showActivity = activeFilter === 'all' || activeFilter === 'activity';
-  const showDistribution =
-    activeFilter === 'all' || activeFilter === 'distribution';
+  const showActivity = activeFilter === 'activity';
+  const showDistribution = activeFilter === 'distribution';
 
   return (
     <div className="flex flex-col gap-5 py-4">
