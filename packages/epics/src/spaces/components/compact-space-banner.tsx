@@ -39,7 +39,7 @@ export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
 /** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
 const DESCRIPTION_SCROLL_BOX = cn(
   'w-full max-w-full min-h-0 max-h-[4lh] overflow-y-auto overscroll-y-contain touch-pan-y',
-  'text-2 leading-[1.5] sm:max-h-[7lh] sm:max-w-[50%]',
+  'text-2 leading-[1.5] sm:max-w-[50%]',
   '[scrollbar-gutter:stable]',
   '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
