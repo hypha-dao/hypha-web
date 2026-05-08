@@ -139,7 +139,11 @@ export function ModalStickyNavigation({
               className="px-0 md:px-3"
             />
           ) : null}
-          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3" />
+          <ButtonClose
+            closeUrl={closeUrl}
+            preferBack={true}
+            className="px-0 md:px-3"
+          />
         </div>
       </div>
     </div>

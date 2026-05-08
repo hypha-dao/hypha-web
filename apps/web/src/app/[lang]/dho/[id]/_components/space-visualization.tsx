@@ -4,11 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from 'next-themes';
 import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
-import {
-  parseHex,
-  sampleAccentHex,
-  toSampleableImageSrc,
-} from './space-accent-utils';
 import type { VisibleSpace } from './types';
 
 type SpaceNode = {
@@ -30,8 +25,6 @@ type Props = {
   enableHoverActions?: boolean;
 };
 
-const SPACE_ACCENT_FALLBACK = '#14b8a6';
-
 const VISUALIZATION_CONFIG = {
   BASE_RADIUS: 420,
   DEPTH_SCALE: 0.45,
@@ -43,13 +36,6 @@ const VISUALIZATION_CONFIG = {
   LOGO_STROKE_WIDTH: 20,
   STROKE_WIDTH_SCALE: 0.7,
 } as const;
-
-function withAlpha(hex: string, alpha: number) {
-  const rgb = parseHex(hex);
-  if (!rgb) return `rgba(20, 184, 166, ${alpha})`;
-  const [r, g, b] = rgb;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 export function SpaceVisualization({
   data,
@@ -78,9 +64,6 @@ export function SpaceVisualization({
   const introToRootTimeoutRef = useRef<number | null>(null);
   const introSequenceActiveRef = useRef(false);
   const introRanRef = useRef(false);
-  const accentSampleCacheRef = useRef(
-    new Map<string, Promise<string | null>>(),
-  );
 
   const clearTooltipHideTimeout = () => {
     if (tooltipHideTimeoutRef.current == null) return;
@@ -424,10 +407,6 @@ export function SpaceVisualization({
       });
 
     const defs = svg.append('defs');
-    const nodeAccents = new Map<number, string>();
-    const getNodeAccent = (d: SpaceHierarchyNode) =>
-      nodeAccents.get(d.data.id) ?? SPACE_ACCENT_FALLBACK;
-
     const logos = g
       .selectAll<SVGGElement, SpaceHierarchyNode>('g.logo')
       .data(root.descendants() as SpaceHierarchyNode[])
@@ -496,44 +475,6 @@ export function SpaceVisualization({
         .attr('preserveAspectRatio', 'xMidYMid slice')
         .attr('alt', `${d.data.name} logo`)
         .attr('clip-path', `url(#${clipId})`);
-    });
-
-    const ripples = g
-      .selectAll<SVGGElement, SpaceHierarchyNode>('g.ripples')
-      .data(root.descendants() as SpaceHierarchyNode[])
-      .join('g')
-      .attr('class', 'ripples')
-      .style('pointer-events', 'none');
-
-    ripples.each(function (d: SpaceHierarchyNode) {
-      const rippleGroup = d3.select(this);
-      const delays = ['0s', '0.35s', '0.7s'];
-      const scales = [0.56, 0.74, 0.9];
-
-      scales.forEach((scale, index) => {
-        const opacity = d.depth === 0 ? 0.24 : 0.18 - index * 0.03;
-        const circle = rippleGroup
-          .append('circle')
-          .attr('class', 'ripple-ring')
-          .attr('fill', 'none')
-          .attr('stroke', withAlpha(getNodeAccent(d), opacity))
-          .attr('stroke-width', 1)
-          .attr('data-scale', scale.toString());
-
-        circle
-          .append('animate')
-          .attr('attributeName', 'opacity')
-          .attr(
-            'values',
-            `${Math.max(0.08, opacity - 0.08)};${opacity};${Math.max(
-              0.08,
-              opacity - 0.08,
-            )}`,
-          )
-          .attr('dur', '3.2s')
-          .attr('begin', delays[index] ?? '0s')
-          .attr('repeatCount', 'indefinite');
-      });
     });
 
     svg.on('click', () => {
@@ -658,14 +599,10 @@ export function SpaceVisualization({
 
     orbits.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     logos.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
-    ripples.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     orbits.style('display', (d: SpaceHierarchyNode) =>
       isVisible(d) ? 'block' : 'none',
     );
     logos.style('display', (d: SpaceHierarchyNode) =>
-      isVisible(d) ? 'block' : 'none',
-    );
-    ripples.style('display', (d: SpaceHierarchyNode) =>
       isVisible(d) ? 'block' : 'none',
     );
 
@@ -742,9 +679,7 @@ export function SpaceVisualization({
         });
 
       transition
-        .selectAll<SVGElement, SpaceHierarchyNode>(
-          'circle.orbit, g.logo, g.ripples',
-        )
+        .selectAll<SVGElement, SpaceHierarchyNode>('circle.orbit, g.logo')
         .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
         .on('start', function (d: SpaceHierarchyNode) {
           if (isVisible(d) && this instanceof SVGElement) {
@@ -776,7 +711,6 @@ export function SpaceVisualization({
 
       transition.on('end', () => {
         notifyVisibleSpaces(focus);
-        sampleVisibleNodeAccents(focus);
         options?.onEnd?.();
       });
     }
@@ -822,88 +756,9 @@ export function SpaceVisualization({
             .attr('width', r * 2)
             .attr('height', r * 2);
         });
-
-      ripples
-        .attr(
-          'transform',
-          (d: SpaceHierarchyNode) =>
-            `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
-        )
-        .each(function (d: SpaceHierarchyNode) {
-          const accent = getNodeAccent(d);
-          d3.select(this)
-            .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
-            .each(function (_, i) {
-              const scale = Number.parseFloat(
-                d3.select(this).attr('data-scale') || '0.7',
-              );
-              const baseOpacity = d.depth === 0 ? 0.24 : 0.18 - i * 0.03;
-              d3.select(this)
-                .attr('r', d.r! * k * scale)
-                .attr('stroke', withAlpha(accent, Math.max(0.08, baseOpacity)));
-            });
-        });
     }
-
-    const setNodeRippleAccent = (node: SpaceHierarchyNode, accent: string) => {
-      nodeAccents.set(node.data.id, accent);
-      ripples
-        .filter((d) => d.data.id === node.data.id)
-        .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
-        .each(function (_, i) {
-          const baseOpacity = node.depth === 0 ? 0.24 : 0.18 - i * 0.03;
-          d3.select(this).attr(
-            'stroke',
-            withAlpha(accent, Math.max(0.08, baseOpacity)),
-          );
-        });
-    };
-
-    const getCachedAccentPromise = (logoUrl?: string | null) => {
-      const src = toSampleableImageSrc(logoUrl);
-      if (!src) return Promise.resolve<string | null>(null);
-      const existing = accentSampleCacheRef.current.get(src);
-      if (existing) return existing;
-      const promise = sampleAccentHex(logoUrl).catch(() => null);
-      accentSampleCacheRef.current.set(src, promise);
-      return promise;
-    };
-
-    let isCancelled = false;
-    let accentSampleRunId = 0;
-
-    function sampleVisibleNodeAccents(focusNode: SpaceHierarchyNode) {
-      accentSampleRunId += 1;
-      const runId = accentSampleRunId;
-      const visibleNodes = (root.descendants() as SpaceHierarchyNode[]).filter(
-        (node) =>
-          isVisibleForFocus(node, focusNode) &&
-          (node.depth <= 2 || node === focusNode),
-      );
-      const queue = visibleNodes.slice();
-      const maxConcurrentSamples = 4;
-      const runSampleWorker = async () => {
-        while (!isCancelled && runId === accentSampleRunId) {
-          const node = queue.shift();
-          if (!node) return;
-          const accent = await getCachedAccentPromise(node.data.logoUrl);
-          if (isCancelled || runId !== accentSampleRunId) return;
-          setNodeRippleAccent(node, accent ?? SPACE_ACCENT_FALLBACK);
-        }
-      };
-
-      void Promise.all(
-        Array.from(
-          { length: Math.min(maxConcurrentSamples, queue.length) },
-          runSampleWorker,
-        ),
-      );
-    }
-
-    sampleVisibleNodeAccents(focus);
 
     return () => {
-      isCancelled = true;
       cancelIntroSequence();
     };
   }, [data, currentSpaceId, resolvedTheme, enableHoverActions]);
