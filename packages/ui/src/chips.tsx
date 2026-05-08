@@ -272,7 +272,6 @@ export const MultiSelect = React.forwardRef<
       },
       [uiStyle],
     );
-
     const toggleOption = (option: string) => {
       const isRemoving = selectedValues.includes(option);
       const newSelectedValues = isRemoving
@@ -365,18 +364,30 @@ export const MultiSelect = React.forwardRef<
           return rankedByUsage.slice(0, MAX_TAG_PICKER_RESULTS);
         }
 
-        const startsWithMatches = selectableOptions.filter((option) => {
+        const startsWithMatches: typeof selectableOptions = [];
+        const containsMatches: typeof selectableOptions = [];
+        for (const option of selectableOptions) {
           const valueLower = option.value.toLowerCase();
           const labelLower = option.label.toLowerCase();
-          return (
+          const startsWith =
             valueLower.startsWith(normalizedTerm) ||
-            labelLower.startsWith(normalizedTerm)
-          );
-        });
+            labelLower.startsWith(normalizedTerm);
+          if (startsWith) {
+            startsWithMatches.push(option);
+            continue;
+          }
+          const contains =
+            valueLower.includes(normalizedTerm) ||
+            labelLower.includes(normalizedTerm);
+          if (contains) {
+            containsMatches.push(option);
+          }
+        }
 
+        const ranked = [...startsWithMatches, ...containsMatches];
         return uiStyle === 'tag-picker'
-          ? startsWithMatches.slice(0, MAX_TAG_PICKER_RESULTS)
-          : startsWithMatches;
+          ? ranked.slice(0, MAX_TAG_PICKER_RESULTS)
+          : ranked;
       },
       [options, tagUsageMap, uiStyle],
     );
