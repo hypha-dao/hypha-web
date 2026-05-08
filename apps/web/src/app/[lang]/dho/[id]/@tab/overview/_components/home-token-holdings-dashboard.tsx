@@ -461,7 +461,7 @@ function DistributionOverTimeChart({
   const memberOptions = history?.members ?? [{ id: 'all', label: 'All' }];
 
   return (
-    <Card className="border-border/60 bg-card/95">
+    <Card className="border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
@@ -536,8 +536,48 @@ function DistributionOverTimeChart({
                     stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 74%, white 26%)"
                   />
                 </linearGradient>
+                <filter
+                  id={`distribution-line-glow-${gradientId}`}
+                  x="-30%"
+                  y="-30%"
+                  width="160%"
+                  height="180%"
+                >
+                  <feGaussianBlur stdDeviation="4" result="blur" />
+                  <feColorMatrix
+                    in="blur"
+                    type="matrix"
+                    values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.75 0"
+                    result="glow"
+                  />
+                  <feMerge>
+                    <feMergeNode in="glow" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+                <radialGradient
+                  id={`distribution-ambient-${gradientId}`}
+                  cx="56%"
+                  cy="38%"
+                  r="62%"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 42%, transparent)"
+                    stopOpacity="0.34"
+                  />
+                  <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+                </radialGradient>
               </defs>
               <g transform={`translate(${margin.left},${margin.top})`}>
+                <rect
+                  x={0}
+                  y={0}
+                  width={innerWidth}
+                  height={innerHeight}
+                  fill={`url(#distribution-ambient-${gradientId})`}
+                  opacity={0.7}
+                />
                 {y.ticks(4).map((tick) => (
                   <g key={tick} transform={`translate(0,${y(tick)})`}>
                     <line
@@ -567,6 +607,7 @@ function DistributionOverTimeChart({
                   fill="none"
                   stroke="var(--space-accent, var(--accent-9))"
                   strokeWidth={2.5}
+                  filter={`url(#distribution-line-glow-${gradientId})`}
                 />
 
                 {chartPoints.map((point) => (
@@ -576,6 +617,7 @@ function DistributionOverTimeChart({
                     cy={y(point.share_pct)}
                     r={3}
                     fill="var(--space-accent, var(--accent-9))"
+                    className="opacity-95"
                   />
                 ))}
 
