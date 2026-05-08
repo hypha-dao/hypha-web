@@ -59,7 +59,6 @@ function getContrastColor(hex: string): string {
   return luminance > 160 ? '#0f172a' : '#ffffff';
 }
 
-
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
   const spaces = Array.isArray(allSpaces) ? allSpaces : [];
