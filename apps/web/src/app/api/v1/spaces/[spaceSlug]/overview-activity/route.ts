@@ -17,6 +17,13 @@ type MonthBucket = {
   spaces: number;
 };
 
+function toIsoIfValid(value: unknown): string | null {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
 function toMonthKey(value: Date): string {
   const year = value.getUTCFullYear();
   const month = String(value.getUTCMonth() + 1).padStart(2, '0');
@@ -150,26 +157,21 @@ export async function GET(
       }
     }
 
-    const byPriority = new Map<string, number>();
-    const byType = new Map<string, number>();
-    const matrix = new Map<string, number>();
-    for (const signal of signals) {
-      byPriority.set(
-        signal.priority,
-        (byPriority.get(signal.priority) ?? 0) + 1,
-      );
-      byType.set(signal.type, (byType.get(signal.type) ?? 0) + 1);
-      const key = `${signal.priority}:::${signal.type}`;
-      matrix.set(key, (matrix.get(key) ?? 0) + 1);
-    }
-
-    const signalTypes = Array.from(byType.keys());
-    const signalPriorities = Array.from(byPriority.keys());
+    const signalPriorities = Array.from(
+      new Set(signals.map((signal) => signal.priority)),
+    );
+    const signalTypes = Array.from(
+      new Set(signals.map((signal) => signal.type)),
+    );
+    const signalTags = Array.from(
+      new Set(signals.flatMap((signal) => signal.tags ?? [])),
+    );
 
     const memberEntries: Array<{
       member_kind: 'person' | 'space';
-      joined_at: string | null;
+      resolved_joined_at: string | null;
     }> = [];
+    const hostSpaceCreatedAt = toIsoIfValid(space.createdAt);
 
     let rosterPage = 1;
     while (true) {
@@ -185,7 +187,11 @@ export async function GET(
       memberEntries.push(
         ...roster.members.map((member) => ({
           member_kind: member.member_kind,
-          joined_at: member.joined_at,
+          resolved_joined_at:
+            member.joined_at ??
+            (member.member_kind === 'space'
+              ? toIsoIfValid(member.space.createdAt)
+              : hostSpaceCreatedAt),
         })),
       );
 
@@ -194,15 +200,15 @@ export async function GET(
     }
 
     const months = buildJoinedAtMonthBuckets(
-      memberEntries.map((item) => item.joined_at),
+      memberEntries.map((item) => item.resolved_joined_at),
       12,
     );
     const monthIndex = new Map(
       months.map((item, index) => [item.month, index]),
     );
     for (const member of memberEntries) {
-      if (!member.joined_at) continue;
-      const joinedDate = new Date(member.joined_at);
+      if (!member.resolved_joined_at) continue;
+      const joinedDate = new Date(member.resolved_joined_at);
       if (Number.isNaN(joinedDate.getTime())) continue;
       const key = toMonthKey(joinedDate);
       const index = monthIndex.get(key);
@@ -224,17 +230,16 @@ export async function GET(
       proposals: proposalCounts,
       signals: {
         total: signals.length,
-        by_priority: Object.fromEntries(byPriority),
-        by_type: Object.fromEntries(byType),
         priorities: signalPriorities,
         types: signalTypes,
-        matrix: signalPriorities.flatMap((priority) =>
-          signalTypes.map((type) => ({
-            priority,
-            type,
-            count: matrix.get(`${priority}:::${type}`) ?? 0,
-          })),
-        ),
+        tags: signalTags,
+        items: signals.map((signal) => ({
+          id: signal.id,
+          priority: signal.priority,
+          type: signal.type,
+          tags: signal.tags ?? [],
+          created_at: signal.createdAt.toISOString(),
+        })),
       },
       members: {
         monthly: months,

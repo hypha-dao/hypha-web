@@ -71,10 +71,13 @@ type ActivityResponse = {
     total: number;
     priorities: string[];
     types: string[];
-    matrix: Array<{
+    tags: string[];
+    items: Array<{
+      id: number;
       priority: string;
       type: string;
-      count: number;
+      tags: string[];
+      created_at: string;
     }>;
   };
   members: {
@@ -595,7 +598,7 @@ function MembersEvolutionWidget({
     [monthly],
   );
 
-  const width = 980;
+  const width = 700;
   const height = 420;
   const margin = { top: 18, right: 18, bottom: 64, left: 42 };
   const innerWidth = width - margin.left - margin.right;
@@ -618,7 +621,7 @@ function MembersEvolutionWidget({
     .range([innerHeight, 0]);
 
   return (
-    <Card className="border-border/60 bg-card/95 md:col-span-2">
+    <Card className="border-border/60 bg-card/95">
       <CardHeader className="pb-0">
         <CardTitle className="text-lg">Members</CardTitle>
         <CardDescription className="text-xs">
@@ -629,7 +632,7 @@ function MembersEvolutionWidget({
         <div className="overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
-            className="min-w-[720px] w-full"
+            className="min-w-[560px] w-full"
           >
             <g transform={`translate(${margin.left},${margin.top})`}>
               {[0, maxValue / 2, maxValue].map((tick) => (
@@ -711,80 +714,122 @@ function SignalsPulseMapWidget({
 }: {
   signals: ActivityResponse['signals'];
 }) {
-  const priorities = signals.priorities.length
-    ? signals.priorities
-    : ['low', 'medium', 'high'];
-  const types = signals.types.length ? signals.types : ['Signal'];
-  const maxCount = Math.max(1, ...signals.matrix.map((item) => item.count));
-  const countByKey = new Map(
-    signals.matrix.map((item) => [
-      `${item.priority}:::${item.type}`,
-      item.count,
-    ]),
-  );
-
-  const matrixData = React.useMemo(
+  const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
+  const priorityRank = React.useMemo(
     () =>
-      priorities.flatMap((priority) =>
-        types.map((type) => ({
-          priority,
-          type,
-          count: countByKey.get(`${priority}:::${type}`) ?? 0,
-        })),
+      new Map(
+        ['critical', 'high', 'medium', 'low'].map((key, index) => [key, index]),
       ),
-    [countByKey, priorities, types],
+    [],
   );
+  const priorities = React.useMemo(() => {
+    const source = signals.priorities.length
+      ? signals.priorities
+      : ['critical', 'high', 'medium', 'low'];
+    return [...source].sort((a, b) => {
+      const aRank =
+        priorityRank.get(a.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+      const bRank =
+        priorityRank.get(b.toLowerCase()) ?? Number.MAX_SAFE_INTEGER;
+      if (aRank !== bRank) return aRank - bRank;
+      return a.localeCompare(b);
+    });
+  }, [priorityRank, signals.priorities]);
+  const prioritySize = React.useMemo(
+    () => ({
+      critical: 28,
+      high: 24,
+      medium: 20,
+      low: 16,
+      default: 18,
+    }),
+    [],
+  );
+  const filteredSignals = React.useMemo(() => {
+    if (!selectedTags.length) return signals.items;
+    return signals.items.filter((item) =>
+      selectedTags.every((tag) => item.tags.includes(tag)),
+    );
+  }, [selectedTags, signals.items]);
+  const sortedSignals = React.useMemo(
+    () =>
+      [...filteredSignals].sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      ),
+    [filteredSignals],
+  );
+  const dates = sortedSignals
+    .map((item) => new Date(item.created_at))
+    .filter((value) => !Number.isNaN(value.getTime()));
+  const recentDate = dates.length
+    ? new Date(Math.max(...dates.map(Number)))
+    : null;
+  const oldestDate = dates.length
+    ? new Date(Math.min(...dates.map(Number)))
+    : null;
 
-  const width = Math.max(640, types.length * 220);
-  const height = Math.max(440, priorities.length * 130);
-  const margin = { top: 62, right: 26, bottom: 38, left: 126 };
+  const width = Math.max(720, sortedSignals.length * 84);
+  const height = 420;
+  const margin = { top: 54, right: 28, bottom: 34, left: 92 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
   const x = d3
-    .scaleBand<string>()
-    .domain(types)
+    .scaleTime()
+    .domain(
+      recentDate && oldestDate
+        ? [recentDate, oldestDate]
+        : [new Date(Date.now() + 3_600_000), new Date()],
+    )
     .range([0, innerWidth])
-    .padding(0.18);
+    .nice();
   const y = d3
-    .scaleBand<string>()
+    .scalePoint<string>()
     .domain(priorities)
     .range([0, innerHeight])
-    .padding(0.2);
-  const radius = d3
-    .scaleSqrt()
-    .domain([0, maxCount])
-    .range([
-      Math.min(x.bandwidth(), y.bandwidth()) * 0.13,
-      Math.min(x.bandwidth(), y.bandwidth()) * 0.43,
-    ]);
-  const cellColor = d3
-    .scaleLinear<string>()
-    .domain([0, maxCount])
-    .range([
-      'color-mix(in oklab, var(--space-accent, var(--accent-9)) 18%, var(--background-3) 82%)',
-      'color-mix(in oklab, var(--space-accent, var(--accent-9)) 92%, black 8%)',
-    ]);
-  const bubbleColor = d3
-    .scaleLinear<string>()
-    .domain([0, maxCount])
-    .range([
-      'color-mix(in oklab, var(--space-accent, var(--accent-9)) 45%, white 55%)',
-      'var(--space-accent, var(--accent-9))',
-    ]);
+    .padding(0.38);
 
   return (
     <Card className="border-border/60 bg-card/95">
-      <CardHeader className="pb-0">
+      <CardHeader className="pb-2">
         <CardTitle className="text-lg">Signals</CardTitle>
         <CardDescription className="text-xs">
-          Pulse map by priority and type
+          Priority on Y, recency on X (recent left, older right)
         </CardDescription>
+        {signals.tags.length ? (
+          <div className="flex flex-wrap gap-2">
+            {signals.tags.map((tag) => {
+              const selected = selectedTags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() =>
+                    setSelectedTags((current) =>
+                      selected
+                        ? current.filter((item) => item !== tag)
+                        : [...current, tag],
+                    )
+                  }
+                  className="rounded-full border border-border px-2.5 py-1 text-xs text-foreground/85 transition hover:border-foreground/30"
+                  style={{
+                    background: selected
+                      ? 'color-mix(in oklab, var(--space-accent, var(--accent-9)) 20%, transparent)'
+                      : 'transparent',
+                  }}
+                >
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
       </CardHeader>
       <CardContent className="min-h-[380px]">
         <div className="overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
-            className="h-[320px] min-w-[640px] w-full sm:h-[360px]"
+            className="h-[320px] min-w-[720px] w-full sm:h-[360px]"
           >
             <defs>
               <filter
@@ -804,65 +849,21 @@ function SignalsPulseMapWidget({
               </filter>
             </defs>
             <g transform={`translate(${margin.left},${margin.top})`}>
-              {matrixData.map((item) => {
-                const cellX = x(item.type) ?? 0;
-                const cellY = y(item.priority) ?? 0;
-                const cellWidth = x.bandwidth();
-                const cellHeight = y.bandwidth();
-                const cx = cellX + cellWidth / 2;
-                const cy = cellY + cellHeight / 2;
-                const bubbleRadius = radius(item.count);
-                const showCount = item.count > 0;
-
-                return (
-                  <g key={`${item.priority}-${item.type}`}>
-                    <rect
-                      x={cellX}
-                      y={cellY}
-                      width={cellWidth}
-                      height={cellHeight}
-                      rx={8}
-                      fill={cellColor(item.count)}
-                      stroke="color-mix(in oklab, var(--space-accent, var(--accent-9)) 28%, var(--border) 72%)"
-                      strokeWidth={1}
-                      opacity={showCount ? 0.9 : 0.38}
-                    />
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={bubbleRadius + 8}
-                      fill="var(--space-accent, var(--accent-9))"
-                      opacity={showCount ? 0.16 : 0}
-                    />
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={bubbleRadius}
-                      fill={bubbleColor(item.count)}
-                      filter={
-                        showCount ? 'url(#signal-depth-shadow)' : undefined
-                      }
-                      opacity={showCount ? 0.95 : 0.42}
-                    />
-                    <text
-                      x={cx}
-                      y={cy}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      className="fill-background text-[17px] font-semibold"
-                    >
-                      {showCount ? item.count : ''}
-                    </text>
-                  </g>
-                );
-              })}
-
               {priorities.map((priority) => {
-                const rowY = (y(priority) ?? 0) + y.bandwidth() / 2;
+                const rowY = y(priority) ?? 0;
                 return (
                   <g key={priority}>
+                    <line
+                      x1={0}
+                      y1={rowY}
+                      x2={innerWidth}
+                      y2={rowY}
+                      stroke="var(--border)"
+                      strokeDasharray="3 5"
+                      opacity={0.45}
+                    />
                     <text
-                      x={-16}
+                      x={-10}
                       y={rowY}
                       textAnchor="end"
                       dominantBaseline="middle"
@@ -874,18 +875,44 @@ function SignalsPulseMapWidget({
                 );
               })}
 
-              {types.map((type) => {
-                const colX = (x(type) ?? 0) + x.bandwidth() / 2;
+              {sortedSignals.map((signal, index) => {
+                const createdAt = new Date(signal.created_at);
+                if (Number.isNaN(createdAt.getTime())) return null;
+                const cx = x(createdAt);
+                const cy = y(signal.priority) ?? 0;
+                const radius =
+                  prioritySize[
+                    signal.priority.toLowerCase() as keyof typeof prioritySize
+                  ] ?? prioritySize.default;
+                const jitter = (index % 3) * 6 - 6;
+                const bubbleLabel = signal.type.slice(0, 1).toUpperCase();
                 return (
-                  <text
-                    key={type}
-                    x={colX}
-                    y={-20}
-                    textAnchor="middle"
-                    className="fill-muted-foreground text-[14px] font-medium"
-                  >
-                    {type}
-                  </text>
+                  <g key={signal.id}>
+                    <circle
+                      cx={cx}
+                      cy={cy + jitter}
+                      r={radius + 6}
+                      fill="var(--space-accent, var(--accent-9))"
+                      opacity={0.18}
+                    />
+                    <circle
+                      cx={cx}
+                      cy={cy + jitter}
+                      r={radius}
+                      fill="var(--space-accent, var(--accent-9))"
+                      filter="url(#signal-depth-shadow)"
+                      opacity={0.92}
+                    />
+                    <text
+                      x={cx}
+                      y={cy + jitter}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      className="fill-background text-[16px] font-semibold"
+                    >
+                      {bubbleLabel}
+                    </text>
+                  </g>
                 );
               })}
 
@@ -894,37 +921,13 @@ function SignalsPulseMapWidget({
                   innerHeight + 16
                 })`}
               >
-                <text className="fill-muted-foreground text-[11px]">Low</text>
-                <rect
-                  x={26}
-                  y={-10}
-                  width={108}
-                  height={8}
-                  rx={4}
-                  fill="url(#signal-intensity-gradient)"
-                />
-                <text x={142} className="fill-muted-foreground text-[11px]">
-                  High
+                <text className="fill-muted-foreground text-[11px]">
+                  Recent
+                </text>
+                <text x={122} className="fill-muted-foreground text-[11px]">
+                  Older
                 </text>
               </g>
-              <defs>
-                <linearGradient
-                  id="signal-intensity-gradient"
-                  x1="0%"
-                  x2="100%"
-                  y1="0%"
-                  y2="0%"
-                >
-                  <stop
-                    offset="0%"
-                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 24%, var(--background-3) 76%)"
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor="var(--space-accent, var(--accent-9))"
-                  />
-                </linearGradient>
-              </defs>
             </g>
           </svg>
         </div>
