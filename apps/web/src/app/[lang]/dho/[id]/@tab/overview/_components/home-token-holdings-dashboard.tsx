@@ -295,7 +295,7 @@ function TokenDonutChart({
   }, [chartData]);
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex flex-col gap-4">
       <div className="relative flex w-full items-center justify-center lg:w-auto lg:flex-none">
         <div
           aria-hidden="true"
@@ -330,7 +330,7 @@ function TokenDonutChart({
         </svg>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2 lg:max-w-[32%]">
+      <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
         {chartData.map((slice) => (
           <div
             key={`${slice.display_name}-${slice.address ?? 'other'}`}
@@ -1257,9 +1257,15 @@ export function HomeTokenHoldingsDashboard({
               {data.tokens.map((token) => (
                 <Card
                   key={token.token_address}
-                  className="group min-h-[420px] border-border/50 bg-card/90 backdrop-blur-sm lg:min-h-[500px]"
+                  className="group border-border/50 bg-card/90 backdrop-blur-sm"
                 >
-                  <CardHeader className="gap-3">
+                  <CardContent className="pt-5">
+                    <TokenDonutChart
+                      title={token.symbol}
+                      slices={token.holdings}
+                    />
+                  </CardContent>
+                  <CardHeader className="gap-3 pt-0">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -1317,12 +1323,6 @@ export function HomeTokenHoldingsDashboard({
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <TokenDonutChart
-                      title={token.symbol}
-                      slices={token.holdings}
-                    />
-                  </CardContent>
                 </Card>
               ))}
             </div>
