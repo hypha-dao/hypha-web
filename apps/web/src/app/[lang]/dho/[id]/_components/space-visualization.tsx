@@ -508,16 +508,36 @@ export function SpaceVisualization({
     ripples.each(function (d: SpaceHierarchyNode) {
       const rippleGroup = d3.select(this);
       const delays = ['0s', '0.35s', '0.7s'];
-      const scales = [0.56, 0.74, 0.9];
+      const scales = [0.42, 0.62, 0.82];
+
+      const coreOpacity = d.depth === 0 ? 0.24 : 0.2;
+      rippleGroup
+        .append('circle')
+        .attr('class', 'ripple-core')
+        .attr('fill', withAlpha(getNodeAccent(d), coreOpacity))
+        .attr('data-scale', '0.96')
+        .attr('opacity', Math.max(0.12, coreOpacity - 0.08))
+        .append('animate')
+        .attr('attributeName', 'opacity')
+        .attr(
+          'values',
+          `${Math.max(0.1, coreOpacity - 0.1)};${coreOpacity};${Math.max(
+            0.1,
+            coreOpacity - 0.1,
+          )}`,
+        )
+        .attr('dur', '4.2s')
+        .attr('begin', '0s')
+        .attr('repeatCount', 'indefinite');
 
       scales.forEach((scale, index) => {
-        const opacity = d.depth === 0 ? 0.24 : 0.18 - index * 0.03;
+        const opacity = d.depth === 0 ? 0.32 - index * 0.04 : 0.24 - index * 0.03;
         const circle = rippleGroup
           .append('circle')
           .attr('class', 'ripple-ring')
           .attr('fill', 'none')
           .attr('stroke', withAlpha(getNodeAccent(d), opacity))
-          .attr('stroke-width', 1)
+          .attr('stroke-width', 1.2)
           .attr('data-scale', scale.toString());
 
         circle
@@ -530,6 +550,14 @@ export function SpaceVisualization({
               opacity - 0.08,
             )}`,
           )
+          .attr('dur', '3.2s')
+          .attr('begin', delays[index] ?? '0s')
+          .attr('repeatCount', 'indefinite');
+
+        circle
+          .append('animate')
+          .attr('attributeName', 'stroke-width')
+          .attr('values', '0.8;1.8;0.8')
           .attr('dur', '3.2s')
           .attr('begin', delays[index] ?? '0s')
           .attr('repeatCount', 'indefinite');
@@ -831,15 +859,24 @@ export function SpaceVisualization({
         )
         .each(function (d: SpaceHierarchyNode) {
           const accent = getNodeAccent(d);
+          const orbitRadius = d.r! * k;
+
+          d3.select(this)
+            .select<SVGCircleElement>('circle.ripple-core')
+            .attr('r', orbitRadius * 0.96)
+            .attr('fill', withAlpha(accent, d.depth === 0 ? 0.24 : 0.2));
+
           d3.select(this)
             .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
             .each(function (_, i) {
               const scale = Number.parseFloat(
                 d3.select(this).attr('data-scale') || '0.7',
               );
-              const baseOpacity = d.depth === 0 ? 0.24 : 0.18 - i * 0.03;
+              const baseOpacity =
+                d.depth === 0 ? 0.32 - i * 0.04 : 0.24 - i * 0.03;
               d3.select(this)
-                .attr('r', d.r! * k * scale)
+                .attr('r', orbitRadius * scale)
+                .attr('stroke-width', Math.max(0.8, orbitRadius * 0.01))
                 .attr('stroke', withAlpha(accent, Math.max(0.08, baseOpacity)));
             });
         });
@@ -849,9 +886,15 @@ export function SpaceVisualization({
       nodeAccents.set(node.data.id, accent);
       ripples
         .filter((d) => d.data.id === node.data.id)
+        .select<SVGCircleElement>('circle.ripple-core')
+        .attr('fill', withAlpha(accent, node.depth === 0 ? 0.24 : 0.2));
+
+      ripples
+        .filter((d) => d.data.id === node.data.id)
         .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
         .each(function (_, i) {
-          const baseOpacity = node.depth === 0 ? 0.24 : 0.18 - i * 0.03;
+          const baseOpacity =
+            node.depth === 0 ? 0.32 - i * 0.04 : 0.24 - i * 0.03;
           d3.select(this).attr(
             'stroke',
             withAlpha(accent, Math.max(0.08, baseOpacity)),
