@@ -55,7 +55,7 @@ The form SHALL render fields in this order:
 
 ## 4. Tag suggestion catalog (initial)
 
-`Purpose`, `North Star`, `Vision`, `Strategy`, `Values`, `Principles`, `Milestones`, `Impact Goals`, `Trend`, `Social Conditions`, `Planetary Boundaries`, `Policy`, `Regulation`, `Emergency Response`, `Project`, `Quest`, `Job`, `Role`, `Skill`, `Advisory Support`, `Volunteering`, `Serving Audience`, `Customers`, `Users`, `Communities`, `Beneficiaries`, `Partners`, `Governance`, `Processes`, `Rhythms`, `Alignment`, `Support Systems`, `Needs`, `Resources`, `Fundraising`, `Matchmaking`, `Innovation`, `Products`, `Services`, `Product-Market Fit`, `Business Model`, `Data`, `Knowledge`, `Intellectual Property - IP`, `Proof of Action`, `Proof of Impact`, `Learning`, `Feedback Loop`.
+`Purpose`, `North Star`, `Vision`, `Strategy`, `Values`, `Principles`, `Milestones`, `Impact Goals`, `Trend`, `Social Conditions`, `Planetary Boundaries`, `Policy`, `Regulation`, `Emergency Response`, `Project`, `Quest`, `Job`, `Skill`, `Advisory Support`, `Volunteering`, `Serving Audience`, `Customers`, `Users`, `Communities`, `Beneficiaries`, `Partners`, `Governance`, `Processes`, `Structure`, `Rhythms`, `Support Systems`, `Needs`, `Resources`, `Fundraising`, `Matchmaking`, `Innovation`, `Products`, `Services`, `Product-Market Fit`, `Business Model`, `Data`, `Knowledge`, `Intellectual Property`, `Proof of Action`, `Proof of Impact`, `Learning`, `Feedback Loop`.
 
 ---
 

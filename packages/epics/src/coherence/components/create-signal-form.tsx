@@ -183,12 +183,121 @@ export const CreateSignalForm = ({
   }, [t]);
 
   const tagOptions = React.useMemo(() => {
-    return COHERENCE_TAGS.map((tag) => ({
-      value: tag,
-      label: t.has(`tagLabels.${tag}` as never)
-        ? t(`tagLabels.${tag}` as never)
-        : tag,
-    }));
+    const labelFor = (tag: string) =>
+      t.has(`tagLabels.${tag}` as never) ? t(`tagLabels.${tag}` as never) : tag;
+
+    const tagsByCategory: Array<{ title: string; tags: readonly string[] }> = [
+      {
+        title: 'Purpose & Direction',
+        tags: [
+          'Purpose',
+          'North Star',
+          'Vision',
+          'Strategy',
+          'Values',
+          'Principles',
+          'Milestones',
+          'Impact Goals',
+        ],
+      },
+      {
+        title: 'Broader Context',
+        tags: [
+          'Trend',
+          'Social Conditions',
+          'Planetary Boundaries',
+          'Policy',
+          'Regulation',
+          'Emergency Response',
+        ],
+      },
+      {
+        title: 'People & Roles',
+        tags: [
+          'Project',
+          'Quest',
+          'Job',
+          'Skill',
+          'Advisory Support',
+          'Volunteering',
+        ],
+      },
+      {
+        title: 'Ecosystem Mapping',
+        tags: [
+          'Serving Audience',
+          'Customers',
+          'Users',
+          'Communities',
+          'Beneficiaries',
+          'Partners',
+        ],
+      },
+      {
+        title: 'Operating Coherence',
+        tags: [
+          'Governance',
+          'Processes',
+          'Structure',
+          'Rhythms',
+          'Support Systems',
+        ],
+      },
+      {
+        title: 'Needs & Resources',
+        tags: ['Needs', 'Resources', 'Fundraising', 'Matchmaking'],
+      },
+      {
+        title: 'Value & Model',
+        tags: [
+          'Innovation',
+          'Products',
+          'Services',
+          'Product-Market Fit',
+          'Business Model',
+          'Data',
+          'Knowledge',
+          'Intellectual Property',
+        ],
+      },
+      {
+        title: 'Evidence & Impact',
+        tags: [
+          'Proof of Action',
+          'Proof of Impact',
+          'Learning',
+          'Feedback Loop',
+        ],
+      },
+    ];
+
+    const canonicalTags = new Set(COHERENCE_TAGS as readonly string[]);
+    const grouped = tagsByCategory.flatMap((category, categoryIndex) => {
+      const rows = [
+        {
+          value: `__heading__${categoryIndex}`,
+          label: category.title,
+          kind: 'heading' as const,
+        },
+        ...category.tags
+          .filter((tag) => canonicalTags.has(tag))
+          .map((tag) => ({
+            value: tag,
+            label: labelFor(tag),
+            kind: 'option' as const,
+          })),
+      ];
+      if (categoryIndex < tagsByCategory.length - 1) {
+        rows.push({
+          value: `__separator__${categoryIndex}`,
+          label: '',
+          kind: 'separator' as const,
+        });
+      }
+      return rows;
+    });
+
+    return grouped;
   }, [t]);
 
   React.useEffect(() => {

@@ -1,7 +1,12 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { CheckIcon, XCircle, ChevronDown, XIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+  PopoverTrigger,
+} from './popover';
 import { Button } from './button';
 import { cn } from '@hypha-platform/ui-utils';
 import { Badge } from './badge';
@@ -55,6 +60,13 @@ interface MultiSelectProps
     value: string;
     /** Optional icon component to display alongside the option. */
     icon?: React.ComponentType<{ className?: string }>;
+    /**
+     * Optional row kind for grouped lists.
+     * - option: selectable row (default)
+     * - heading: non-selectable section title
+     * - separator: non-selectable visual divider
+     */
+    kind?: 'option' | 'heading' | 'separator';
   }[];
 
   /**
@@ -132,6 +144,17 @@ interface MultiSelectProps
    * Optional, can be used to add custom styles.
    */
   className?: string;
+}
+
+function isOptionDelimiter(option: { value: string; kind?: string }): boolean {
+  if (option.kind === 'separator') return true;
+  return option.value.length === 0 || option.value === '---';
+}
+
+function isOptionHeading(option: {
+  kind?: string;
+}): option is { kind: 'heading' } {
+  return option.kind === 'heading';
 }
 
 function arraysShallowEqual(
@@ -267,7 +290,13 @@ export const MultiSelect = React.forwardRef<
       const term = searchValue.trim();
       if (!allowCreate || term.length === 0) return false;
       const termLower = term.toLowerCase();
-      const notInOptions = !options.some(
+      const selectableOptions = options.filter(
+        (option) =>
+          !isOptionDelimiter(option) &&
+          !isOptionHeading(option) &&
+          option.kind !== 'separator',
+      );
+      const notInOptions = !selectableOptions.some(
         (option) =>
           option.value.toLowerCase() === termLower ||
           option.label.toLowerCase() === termLower,
@@ -294,31 +323,49 @@ export const MultiSelect = React.forwardRef<
     };
 
     const toggleAll = () => {
-      if (selectedValues.length === options.length) {
+      const selectableValues = options
+        .filter(
+          (option) =>
+            !isOptionDelimiter(option) &&
+            !isOptionHeading(option) &&
+            option.kind !== 'separator',
+        )
+        .map((option) => option.value);
+      if (selectedValues.length === selectableValues.length) {
         handleClear();
       } else {
-        const allValues = options.map((option) => option.value);
-        setSelectedValues(allValues);
-        onValueChange(allValues);
+        setSelectedValues(selectableValues);
+        onValueChange(selectableValues);
       }
     };
     const getRankedOptions = React.useCallback(
       (term: string) => {
+        const selectableOptions = options.filter(
+          (option) =>
+            !isOptionDelimiter(option) &&
+            !isOptionHeading(option) &&
+            option.kind !== 'separator',
+        );
         const normalizedTerm = term.trim().toLowerCase();
         if (!normalizedTerm) {
           if (uiStyle !== 'tag-picker') {
-            return options;
+            return selectableOptions;
           }
-          const rankedByUsage = [...options].sort((a, b) => {
-            const aUsage = tagUsageMap[a.value.toLowerCase()] ?? 0;
-            const bUsage = tagUsageMap[b.value.toLowerCase()] ?? 0;
-            if (aUsage !== bUsage) return bUsage - aUsage;
-            return a.label.localeCompare(b.label);
-          });
+          const rankedByUsage = [...selectableOptions]
+            .map((option) => ({
+              option,
+              usage: tagUsageMap[option.value.toLowerCase()] ?? 0,
+            }))
+            .filter(({ usage }) => usage > 0)
+            .sort((a, b) => {
+              if (a.usage !== b.usage) return b.usage - a.usage;
+              return a.option.label.localeCompare(b.option.label);
+            })
+            .map(({ option }) => option);
           return rankedByUsage.slice(0, MAX_TAG_PICKER_RESULTS);
         }
 
-        const startsWithMatches = options.filter((option) => {
+        const startsWithMatches = selectableOptions.filter((option) => {
           const valueLower = option.value.toLowerCase();
           const labelLower = option.label.toLowerCase();
           return (
@@ -337,6 +384,14 @@ export const MultiSelect = React.forwardRef<
     const filteredOptions = React.useMemo(() => {
       return getRankedOptions(trimmedSearchValue);
     }, [getRankedOptions, trimmedSearchValue]);
+    const groupedTagPickerOptions = React.useMemo(() => {
+      if (uiStyle !== 'tag-picker' || trimmedSearchValue.length > 0) return [];
+      return options;
+    }, [options, trimmedSearchValue, uiStyle]);
+    const shouldShowMostUsedHeading =
+      uiStyle === 'tag-picker' &&
+      trimmedSearchValue.length === 0 &&
+      filteredOptions.length > 0;
 
     const focusCommandItem = React.useCallback(
       (direction: 'first' | 'last') => {
@@ -412,8 +467,8 @@ export const MultiSelect = React.forwardRef<
         onOpenChange={setIsPopoverOpen}
         modal={modalPopover}
       >
-        <PopoverTrigger asChild>
-          {uiStyle === 'tag-picker' ? (
+        {uiStyle === 'tag-picker' ? (
+          <PopoverAnchor asChild>
             <div
               className={cn(
                 'flex w-full min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-0.5 text-sm ring-offset-background',
@@ -501,7 +556,9 @@ export const MultiSelect = React.forwardRef<
                 disabled={props.disabled}
               />
             </div>
-          ) : (
+          </PopoverAnchor>
+        ) : (
+          <PopoverTrigger asChild>
             <Button
               variant="outline"
               colorVariant="neutral"
@@ -582,11 +639,15 @@ export const MultiSelect = React.forwardRef<
                 </div>
               )}
             </Button>
-          )}
-        </PopoverTrigger>
+          </PopoverTrigger>
+        )}
         <PopoverContent
           ref={popoverContentRef}
-          className="w-[var(--radix-popover-trigger-width)] p-0"
+          className={cn(
+            uiStyle === 'tag-picker'
+              ? 'w-[var(--radix-popover-anchor-width,var(--radix-popover-trigger-width))] p-0'
+              : 'w-[var(--radix-popover-trigger-width)] p-0',
+          )}
           align="start"
           onOpenAutoFocus={(event) => {
             if (uiStyle === 'tag-picker') event.preventDefault();
@@ -609,6 +670,14 @@ export const MultiSelect = React.forwardRef<
                   : 'No results found.'}
               </CommandEmpty>
               <CommandGroup>
+                {shouldShowMostUsedHeading ? (
+                  <>
+                    <div className="px-2 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Most used tags
+                    </div>
+                    <CommandSeparator />
+                  </>
+                ) : null}
                 {canCreateOption ? (
                   <>
                     <CommandItem
@@ -646,8 +715,7 @@ export const MultiSelect = React.forwardRef<
                 )}
                 {filteredOptions.map((option, index) => {
                   const isSelected = selectedValues.includes(option.value);
-                  const isDelimiter =
-                    option.value.length === 0 || option.value === '---';
+                  const isDelimiter = isOptionDelimiter(option);
                   return isDelimiter ? (
                     <CommandSeparator key={`sep-${index}`} />
                   ) : (
@@ -687,6 +755,50 @@ export const MultiSelect = React.forwardRef<
                     </CommandItem>
                   );
                 })}
+                {uiStyle === 'tag-picker' &&
+                trimmedSearchValue.length === 0 &&
+                groupedTagPickerOptions.length > 0 ? (
+                  <>
+                    {filteredOptions.length > 0 ? <CommandSeparator /> : null}
+                    {groupedTagPickerOptions.map((option, index) => {
+                      if (isOptionDelimiter(option)) {
+                        return <CommandSeparator key={`group-sep-${index}`} />;
+                      }
+                      if (isOptionHeading(option)) {
+                        return (
+                          <div
+                            key={`group-heading-${index}`}
+                            className="px-2 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                          >
+                            {option.label}
+                          </div>
+                        );
+                      }
+                      const isSelected = selectedValues.includes(option.value);
+                      return (
+                        <CommandItem
+                          key={`group-option-${option.value}-${index}`}
+                          value={option.label}
+                          onSelect={() => toggleOption(option.value)}
+                          className="cursor-pointer py-2"
+                        >
+                          {option.icon ? (
+                            <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                          ) : null}
+                          <span className="flex-1 truncate">
+                            {option.label}
+                          </span>
+                          <CheckIcon
+                            className={cn(
+                              'h-4 w-4 text-accent-11',
+                              isSelected ? 'opacity-100' : 'opacity-0',
+                            )}
+                          />
+                        </CommandItem>
+                      );
+                    })}
+                  </>
+                ) : null}
               </CommandGroup>
               {uiStyle === 'default' ? (
                 <>
