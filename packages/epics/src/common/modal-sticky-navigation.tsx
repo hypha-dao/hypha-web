@@ -65,7 +65,16 @@ export function ModalStickyNavigation({
       return pathname.replace(`${normalizedCloseDropSegment}/`, '/');
     }
     const strippedPath = pathname.replace(normalizedCloseDropSegment, '');
-    return strippedPath || '/';
+    if (strippedPath && strippedPath !== pathname) {
+      return strippedPath;
+    }
+    // Fallback: if segment matching failed for any route variant,
+    // still close by navigating to the parent path instead of no-op.
+    const lastSlash = pathname.lastIndexOf('/');
+    if (lastSlash <= 0) {
+      return '/';
+    }
+    return pathname.slice(0, lastSlash) || '/';
   })();
 
   if (
