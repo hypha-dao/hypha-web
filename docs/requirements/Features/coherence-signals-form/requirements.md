@@ -19,8 +19,8 @@ The form SHALL render fields in this order:
 2. **Type**
    - Opportunity = "we could lean into this."
    - Risk = "we could be hurt by this."
-   - Tension = "something doesn't fit and needs adjustment."
-   - Insight = "this changes how we see or understand things."
+   - Tension = "something isn’t aligned."
+   - Insight = "shifts how we see things."
 3. **Priority**
    - Critical / High / Medium / Low
 4. **Description**
@@ -55,7 +55,7 @@ The form SHALL render fields in this order:
 
 ## 4. Tag suggestion catalog (initial)
 
-`Purpose`, `North Star`, `Vision`, `Strategy`, `Values / Principles`, `Milestones`, `Impact Goals`, `Trend`, `Social Conditions`, `Planetary Boundaries`, `Policy & Regulation`, `Emergency Response`, `Contextual Opportunity`, `Contextual Risk`, `Project`, `Quest`, `Job / Role`, `Skill`, `Advisory Support`, `Volunteering`, `Serving Audience`, `Customers / Users / Communities`, `Beneficiaries`, `Partners`, `Governance`, `Processes`, `Rhythms`, `Alignment`, `Support Systems`, `Needs`, `Resources`, `Fundraising`, `Matchmaking`, `Innovation`, `Products / Services`, `Product-Market Fit`, `Business Model`, `Data`, `Knowledge / IP`, `Proof of Action`, `Proof of Impact`, `Learning`, `Feedback Loop`.
+`Purpose`, `North Star`, `Vision`, `Strategy`, `Values`, `Principles`, `Milestones`, `Impact Goals`, `Trend`, `Social Conditions`, `Planetary Boundaries`, `Policy`, `Regulation`, `Emergency Response`, `Project`, `Quest`, `Job`, `Role`, `Skill`, `Advisory Support`, `Volunteering`, `Serving Audience`, `Customers`, `Users`, `Communities`, `Beneficiaries`, `Partners`, `Governance`, `Processes`, `Rhythms`, `Alignment`, `Support Systems`, `Needs`, `Resources`, `Fundraising`, `Matchmaking`, `Innovation`, `Products`, `Services`, `Product-Market Fit`, `Business Model`, `Data`, `Knowledge`, `Intellectual Property - IP`, `Proof of Action`, `Proof of Impact`, `Learning`, `Feedback Loop`.
 
 ---
 

@@ -2120,8 +2120,8 @@
     "typeDescriptions": {
       "Opportunity": "We could lean into this.",
       "Risk": "We could be hurt by this.",
-      "Tension": "Something doesn't fit and needs adjustment.",
-      "Insight": "This changes how we see or understand things.",
+      "Tension": "Something isn’t aligned.",
+      "Insight": "Shifts how we see things.",
       "Trend": "Emerging pattern across spaces",
       "Proposal": "Governance action or vote needed"
     },

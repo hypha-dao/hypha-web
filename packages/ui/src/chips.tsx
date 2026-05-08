@@ -416,7 +416,7 @@ export const MultiSelect = React.forwardRef<
           {uiStyle === 'tag-picker' ? (
             <div
               className={cn(
-                'flex w-full min-h-11 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background',
+                'flex w-full min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-0.5 text-sm ring-offset-background',
                 'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
                 className,
               )}
@@ -430,12 +430,16 @@ export const MultiSelect = React.forwardRef<
                 return (
                   <Badge
                     key={value}
-                    className={cn(multiSelectVariants({ variant }))}
+                    className={cn(
+                      multiSelectVariants({ variant }),
+                      'rounded-full border-accent-7 bg-accent-2 text-accent-11',
+                    )}
                     style={{ animationDuration: `${animation}s` }}
                   >
-                    {option?.label ?? value}
+                    <span className="text-accent-10">#</span>
+                    <span>{option?.label ?? value}</span>
                     <XCircle
-                      className="ml-2 h-4 w-4 cursor-pointer"
+                      className="ml-1 h-4 w-4 cursor-pointer"
                       onClick={(event) => {
                         event.stopPropagation();
                         toggleOption(value);
@@ -447,7 +451,7 @@ export const MultiSelect = React.forwardRef<
               {selectedValues.length > maxCount ? (
                 <Badge
                   className={cn(
-                    'bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
+                    'rounded-full bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
                     multiSelectVariants({ variant }),
                   )}
                   style={{ animationDuration: `${animation}s` }}
@@ -493,7 +497,7 @@ export const MultiSelect = React.forwardRef<
                   setIsPopoverOpen(true);
                 }}
                 placeholder={searchPlaceholder}
-                className="min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                className="min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 disabled={props.disabled}
               />
             </div>
