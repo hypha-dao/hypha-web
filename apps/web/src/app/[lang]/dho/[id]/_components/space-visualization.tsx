@@ -505,7 +505,10 @@ export function SpaceVisualization({
       .attr('class', 'ripples')
       .style('pointer-events', 'none');
 
-    const grooveScales = Array.from({ length: 12 }, (_, index) => 0.34 + index * 0.05);
+    const grooveScales = Array.from(
+      { length: 12 },
+      (_, index) => 0.34 + index * 0.05,
+    );
     const sweepStrokeColor =
       resolvedTheme === 'dark'
         ? 'rgba(255,255,255,0.08)'
@@ -542,7 +545,8 @@ export function SpaceVisualization({
         .attr('repeatCount', 'indefinite');
 
       grooveScales.forEach((scale, index) => {
-        const opacity = d.depth === 0 ? 0.12 - index * 0.005 : 0.1 - index * 0.004;
+        const opacity =
+          d.depth === 0 ? 0.12 - index * 0.005 : 0.1 - index * 0.004;
         rippleGroup
           .append('circle')
           .attr('class', 'vinyl-groove')
@@ -884,7 +888,8 @@ export function SpaceVisualization({
               const scale = Number.parseFloat(
                 d3.select(this).attr('data-scale') || '0.7',
               );
-              const baseOpacity = d.depth === 0 ? 0.12 - i * 0.005 : 0.1 - i * 0.004;
+              const baseOpacity =
+                d.depth === 0 ? 0.12 - i * 0.005 : 0.1 - i * 0.004;
               d3.select(this)
                 .attr('r', orbitRadius * scale)
                 .attr('stroke-width', Math.max(0.45, orbitRadius * 0.0018))
