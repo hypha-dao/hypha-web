@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import * as d3 from 'd3';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
+  Badge,
   Card,
   CardContent,
   CardDescription,
