@@ -3,7 +3,6 @@ import {
   readBooleanOverride,
 } from './vercel-toolbar-overrides';
 
-const isPreviewEnvironment = () => process.env.VERCEL_ENV === 'preview';
 const isEnabled = (value: string | undefined) => {
   if (!value) return false;
   const normalized = value.trim().toLowerCase();
@@ -33,9 +32,7 @@ const isEnabled = (value: string | undefined) => {
 export const flagDefinitionsForDiscovery = {
   showLanguageSelect: {
     key: 'show-language-select',
-    defaultValue:
-      isPreviewEnvironment() ||
-      isEnabled(process.env.NEXT_PUBLIC_ENABLE_SHOW_LANGUAGE_SELECT),
+    defaultValue: true,
     description: 'Show the i18n language select button in the menu bar',
     origin: 'hypha' as const,
     options: undefined as undefined,
@@ -77,17 +74,11 @@ export const flagDefinitionsForDiscovery = {
 };
 
 export async function getShowLanguageSelect(): Promise<boolean> {
-  return getBooleanFlagFromToolbarOrEnv(
+  return getBooleanFlagFromToolbarOrEnvOrDefault(
     'show-language-select',
     process.env.NEXT_PUBLIC_ENABLE_SHOW_LANGUAGE_SELECT,
+    true,
   );
-}
-
-async function getBooleanFlagFromToolbarOrEnv(
-  toolbarKey: string,
-  envValue: string | undefined,
-): Promise<boolean> {
-  return getBooleanFlagFromToolbarOrEnvOrDefault(toolbarKey, envValue, false);
 }
 
 async function getBooleanFlagFromToolbarOrEnvOrDefault(

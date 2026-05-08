@@ -240,8 +240,11 @@ export const SelectSettingsAction = ({
     if (isAbsoluteUrl(action.href)) {
       return action.href;
     }
-    // Special case: space/create is an aside route, not a tab route
+    // Preserve known tab context for add-space modal routing.
     if (action.href === 'space/create') {
+      if (activeTab === 'ecosystem-navigation' || activeTab === 'overview') {
+        return `/${lang}/dho/${daoSlug}/${activeTab}/space/create`;
+      }
       return `/${lang}/dho/${daoSlug}/space/create`;
     }
     const href = `/${lang}/dho/${daoSlug}/${action.baseTab || activeTab}/${

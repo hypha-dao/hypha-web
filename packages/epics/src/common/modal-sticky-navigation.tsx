@@ -48,11 +48,34 @@ export function ModalStickyNavigation({
       : `/${closeDropSegment}`
     : undefined;
 
-  const closeUrl =
-    closeUrlProp ??
-    (normalizedCloseDropSegment && pathname.endsWith(normalizedCloseDropSegment)
-      ? pathname.slice(0, -normalizedCloseDropSegment.length) || '/'
-      : undefined);
+  const closeUrl = (() => {
+    if (closeUrlProp) {
+      return closeUrlProp;
+    }
+    if (!normalizedCloseDropSegment) {
+      return undefined;
+    }
+    if (pathname.endsWith(normalizedCloseDropSegment)) {
+      return pathname.slice(0, -normalizedCloseDropSegment.length) || '/';
+    }
+    if (pathname.endsWith(`${normalizedCloseDropSegment}/`)) {
+      return pathname.slice(0, -(normalizedCloseDropSegment.length + 1)) || '/';
+    }
+    if (pathname.includes(`${normalizedCloseDropSegment}/`)) {
+      return pathname.replace(`${normalizedCloseDropSegment}/`, '/');
+    }
+    const strippedPath = pathname.replace(normalizedCloseDropSegment, '');
+    if (strippedPath && strippedPath !== pathname) {
+      return strippedPath;
+    }
+    // Fallback: if segment matching failed for any route variant,
+    // still close by navigating to the parent path instead of no-op.
+    const lastSlash = pathname.lastIndexOf('/');
+    if (lastSlash <= 0) {
+      return '/';
+    }
+    return pathname.slice(0, lastSlash) || '/';
+  })();
 
   if (
     process.env.NODE_ENV !== 'production' &&
@@ -116,7 +139,11 @@ export function ModalStickyNavigation({
               className="px-0 md:px-3"
             />
           ) : null}
-          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3" />
+          <ButtonClose
+            closeUrl={closeUrl}
+            preferBack={true}
+            className="px-0 md:px-3"
+          />
         </div>
       </div>
     </div>

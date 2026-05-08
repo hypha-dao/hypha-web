@@ -149,7 +149,9 @@ export function DhoStickySpaceChrome({
   const logoSrc = logoUrl || defaultLogoSrc;
 
   const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
-  const isDark = resolvedTheme === 'dark';
+  // During hydration `resolvedTheme` can be undefined briefly; default to dark
+  // to avoid flashing a light (white) secondary banner in dark mode sessions.
+  const isDark = resolvedTheme !== 'light';
 
   React.useEffect(() => {
     const hasRenderableContent = (el: HTMLDivElement | null) => {

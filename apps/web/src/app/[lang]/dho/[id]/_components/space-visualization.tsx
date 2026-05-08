@@ -61,6 +61,9 @@ export function SpaceVisualization({
   }>({ visible: false, x: 0, y: 0, text: '' });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const tooltipHideTimeoutRef = useRef<number | null>(null);
+  const introToRootTimeoutRef = useRef<number | null>(null);
+  const introSequenceActiveRef = useRef(false);
+  const introRanRef = useRef(false);
 
   const clearTooltipHideTimeout = () => {
     if (tooltipHideTimeoutRef.current == null) return;
@@ -73,6 +76,17 @@ export function SpaceVisualization({
     tooltipHideTimeoutRef.current = window.setTimeout(() => {
       setTooltip((prev) => ({ ...prev, visible: false }));
     }, 120);
+  };
+
+  const clearIntroTimeout = () => {
+    if (introToRootTimeoutRef.current == null) return;
+    window.clearTimeout(introToRootTimeoutRef.current);
+    introToRootTimeoutRef.current = null;
+  };
+
+  const cancelIntroSequence = () => {
+    introSequenceActiveRef.current = false;
+    clearIntroTimeout();
   };
 
   useEffect(() => {
@@ -131,7 +145,7 @@ export function SpaceVisualization({
     if (!svgRef.current || !focusRef.current) return;
 
     const getSelectedSpaceFillColor = () =>
-      themeRef.current === 'light' ? '#ffffff' : '#1a1a1a';
+      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
 
     const svg = d3.select(svgRef.current);
     const orbits = svg.selectAll<SVGCircleElement, SpaceHierarchyNode>(
@@ -167,7 +181,7 @@ export function SpaceVisualization({
     if (!svgRef.current) return;
 
     const getSelectedSpaceFillColor = () =>
-      themeRef.current === 'light' ? '#ffffff' : '#1a1a1a';
+      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
 
     const getStrokeWidth = (depth: number): number => {
       return (
@@ -387,12 +401,12 @@ export function SpaceVisualization({
       .on('click', (event, d) => {
         if (focus !== d) {
           event.stopPropagation();
+          cancelIntroSequence();
           zoom(d);
         }
       });
 
     const defs = svg.append('defs');
-
     const logos = g
       .selectAll<SVGGElement, SpaceHierarchyNode>('g.logo')
       .data(root.descendants() as SpaceHierarchyNode[])
@@ -403,6 +417,7 @@ export function SpaceVisualization({
       .on('click', (event, d) => {
         if (focus !== d) {
           event.stopPropagation();
+          cancelIntroSequence();
           zoom(d);
         }
       });
@@ -463,7 +478,10 @@ export function SpaceVisualization({
     });
 
     svg.on('click', () => {
-      if (focus.parent) zoom(focus.parent);
+      if (focus.parent) {
+        cancelIntroSequence();
+        zoom(focus.parent);
+      }
     });
 
     function isDescendantOf(
@@ -504,20 +522,21 @@ export function SpaceVisualization({
       return false;
     }
 
-    function isVisible(d: SpaceHierarchyNode): boolean {
-      if (!focus) return false;
+    function isVisibleForFocus(
+      d: SpaceHierarchyNode,
+      focusNode: SpaceHierarchyNode,
+    ): boolean {
+      if (d === focusNode) return true;
 
-      if (d === focus) return true;
-
-      if (isDescendantOfOrSelf(d, focus)) {
+      if (isDescendantOfOrSelf(d, focusNode)) {
         return true;
       }
 
-      if (isAncestorOf(d, focus)) {
+      if (isAncestorOf(d, focusNode)) {
         return true;
       }
 
-      let currentAncestor = focus.parent;
+      let currentAncestor = focusNode.parent;
       while (currentAncestor) {
         if (isDescendantOfOrSelf(d, currentAncestor)) {
           return true;
@@ -526,6 +545,11 @@ export function SpaceVisualization({
       }
 
       return false;
+    }
+
+    function isVisible(d: SpaceHierarchyNode): boolean {
+      if (!focus) return false;
+      return isVisibleForFocus(d, focus);
     }
 
     function getVisibleSpaces(focusNode: SpaceHierarchyNode): VisibleSpace[] {
@@ -594,7 +618,50 @@ export function SpaceVisualization({
     previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
 
-    function zoom(target: SpaceHierarchyNode) {
+    if (!introRanRef.current && focus !== root) {
+      introRanRef.current = true;
+      const introTargets: SpaceHierarchyNode[] = [];
+      let current = focus.parent as SpaceHierarchyNode | undefined;
+      while (current) {
+        introTargets.push(current);
+        if (current === root) break;
+        current = current.parent as SpaceHierarchyNode | undefined;
+      }
+      introSequenceActiveRef.current = introTargets.length > 0;
+
+      const runIntroStep = (index: number) => {
+        if (!introSequenceActiveRef.current) return;
+        const target = introTargets[index];
+        if (!target) {
+          introSequenceActiveRef.current = false;
+          return;
+        }
+        zoom(target, {
+          onEnd: () => {
+            if (!introSequenceActiveRef.current) return;
+            const nextIndex = index + 1;
+            if (nextIndex >= introTargets.length) {
+              introSequenceActiveRef.current = false;
+              return;
+            }
+            introToRootTimeoutRef.current = window.setTimeout(() => {
+              runIntroStep(nextIndex);
+            }, 120);
+          },
+        });
+      };
+
+      introToRootTimeoutRef.current = window.setTimeout(() => {
+        runIntroStep(0);
+      }, 1400);
+    }
+
+    function zoom(
+      target: SpaceHierarchyNode,
+      options?: {
+        onEnd?: () => void;
+      },
+    ) {
       focus = target;
       focusRef.current = focus;
       savedFocusIdRef.current = focus.data.id;
@@ -644,6 +711,7 @@ export function SpaceVisualization({
 
       transition.on('end', () => {
         notifyVisibleSpaces(focus);
+        options?.onEnd?.();
       });
     }
 
@@ -689,11 +757,16 @@ export function SpaceVisualization({
             .attr('height', r * 2);
         });
     }
+
+    return () => {
+      cancelIntroSequence();
+    };
   }, [data, currentSpaceId, resolvedTheme, enableHoverActions]);
 
   useEffect(() => {
     return () => {
       clearTooltipHideTimeout();
+      cancelIntroSequence();
     };
   }, []);
 

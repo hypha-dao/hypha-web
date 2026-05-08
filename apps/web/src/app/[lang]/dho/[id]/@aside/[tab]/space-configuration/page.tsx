@@ -48,7 +48,19 @@ export default function SpaceConfiguration() {
   const isBusy = isLoadingJwt || isLoadingSpace || isPending;
 
   const pathname = usePathname();
-  const closeUrl = pathname.replace(/\/space-configuration$/, '');
+  const closeUrl = React.useMemo(() => {
+    const segment = '/space-configuration';
+    if (pathname.endsWith(segment)) {
+      return pathname.slice(0, -segment.length) || '/';
+    }
+    if (pathname.endsWith(`${segment}/`)) {
+      return pathname.slice(0, -(segment.length + 1)) || '/';
+    }
+    if (pathname.includes(`${segment}/`)) {
+      return pathname.replace(`${segment}/`, '/');
+    }
+    return pathname.replace(segment, '') || '/';
+  }, [pathname]);
 
   const submitForm = React.useCallback(
     async (

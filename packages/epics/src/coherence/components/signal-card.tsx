@@ -137,6 +137,19 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     () => resolveDateFnsLocale(locale),
     [locale],
   );
+  const createdAtDate = React.useMemo(() => {
+    if (!createdAt) return null;
+    const parsed = new Date(createdAt);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }, [createdAt]);
+  const normalizedMessagesCount = React.useMemo(() => {
+    const parsed =
+      typeof messages === 'number'
+        ? messages
+        : Number.parseFloat(`${messages}`);
+    if (!Number.isFinite(parsed) || parsed < 0) return 0;
+    return Math.trunc(parsed);
+  }, [messages]);
 
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -410,8 +423,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 className="h-3.5 w-3.5 shrink-0 opacity-70"
                 aria-hidden
               />
-              {createdAt
-                ? formatDistanceToNowStrict(new Date(createdAt), {
+              {createdAtDate
+                ? formatDistanceToNowStrict(createdAtDate, {
                     addSuffix: true,
                     locale: dateFnsLocale,
                   })
@@ -424,7 +437,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               className="gap-1.5"
             >
               <Users size={12} aria-hidden />
-              <span>{t('messageCount', { count: messages })}</span>
+              <span>
+                {t('messageCount', { count: normalizedMessagesCount })}
+              </span>
             </Badge>
           </div>
 

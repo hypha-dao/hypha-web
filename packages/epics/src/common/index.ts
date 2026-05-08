@@ -2,6 +2,7 @@ export * from './authenticated-link-button';
 export * from './card-button';
 export * from './button-back';
 export * from './button-close';
+export * from './app-navigation-session';
 export * from './modal-sticky-navigation';
 export * from './empty';
 export * from './link-label';
