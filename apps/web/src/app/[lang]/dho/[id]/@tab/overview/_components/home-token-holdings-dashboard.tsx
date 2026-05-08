@@ -983,9 +983,6 @@ export function HomeTokenHoldingsDashboard({
         <h1 className="text-7 font-semibold tracking-tight text-foreground">
           {tCommon('home')}
         </h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Token distribution at a glance.
-        </p>
       </div>
 
       <Tabs
