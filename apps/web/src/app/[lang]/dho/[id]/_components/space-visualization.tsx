@@ -538,7 +538,7 @@ export function SpaceVisualization({
           'values',
           `${d.depth === 0 ? 0.18 : 0.14};${d.depth === 0 ? 0.3 : 0.24};${
             d.depth === 0 ? 0.18 : 0.14
-          }`,
+          )}`,
         )
         .attr('dur', '6.5s')
         .attr('begin', '0s')
