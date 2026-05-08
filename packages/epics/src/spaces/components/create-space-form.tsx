@@ -455,6 +455,7 @@ export const SpaceForm = ({
               ) : null}
               <ButtonClose
                 closeUrl={closeUrl}
+                preferBack={true}
                 className="px-0 md:px-3 align-top"
               />
             </div>
