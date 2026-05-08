@@ -173,6 +173,7 @@ export const MultiSelect = React.forwardRef<
       React.useState<string[]>(defaultValue);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [searchValue, setSearchValue] = React.useState('');
+    const trimmedSearchValue = searchValue.trim();
 
     React.useEffect(() => {
       if (value === undefined) return;
@@ -250,19 +251,32 @@ export const MultiSelect = React.forwardRef<
       }
     };
     const filteredOptions = React.useMemo(() => {
-      const term = searchValue.trim().toLowerCase();
-      if (!term) return options;
-      return options.filter(
+      const term = trimmedSearchValue.toLowerCase();
+      if (!term) {
+        return uiStyle === 'tag-picker' ? [] : options;
+      }
+      const matches = options.filter(
         (option) =>
           option.value.toLowerCase().includes(term) ||
           option.label.toLowerCase().includes(term),
       );
-    }, [options, searchValue]);
+      return uiStyle === 'tag-picker' ? matches.slice(0, 8) : matches;
+    }, [options, trimmedSearchValue, uiStyle]);
 
     return (
       <Popover
         open={isPopoverOpen}
-        onOpenChange={setIsPopoverOpen}
+        onOpenChange={(nextOpen) => {
+          if (
+            uiStyle === 'tag-picker' &&
+            nextOpen &&
+            trimmedSearchValue.length === 0
+          ) {
+            setIsPopoverOpen(false);
+            return;
+          }
+          setIsPopoverOpen(nextOpen);
+        }}
         modal={modalPopover}
       >
         <PopoverTrigger asChild>
@@ -315,11 +329,19 @@ export const MultiSelect = React.forwardRef<
               <input
                 value={searchValue}
                 onChange={(event) => {
-                  setSearchValue(event.currentTarget.value);
+                  const nextValue = event.currentTarget.value;
+                  const nextTrimmedValue = nextValue.trim();
+                  setSearchValue(nextValue);
+                  if (nextTrimmedValue.length === 0) {
+                    setIsPopoverOpen(false);
+                    return;
+                  }
                   if (!isPopoverOpen) setIsPopoverOpen(true);
                 }}
                 onKeyDown={handleInputKeyDown}
-                onFocus={() => setIsPopoverOpen(true)}
+                onFocus={() => {
+                  if (trimmedSearchValue.length > 0) setIsPopoverOpen(true);
+                }}
                 placeholder={searchPlaceholder}
                 className="min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 disabled={props.disabled}
@@ -426,7 +448,11 @@ export const MultiSelect = React.forwardRef<
               />
             ) : null}
             <CommandList>
-              <CommandEmpty>No results found.</CommandEmpty>
+              <CommandEmpty>
+                {uiStyle === 'tag-picker' && trimmedSearchValue.length === 0
+                  ? 'Start typing to see tag suggestions.'
+                  : 'No results found.'}
+              </CommandEmpty>
               <CommandGroup>
                 {canCreateOption ? (
                   <>
