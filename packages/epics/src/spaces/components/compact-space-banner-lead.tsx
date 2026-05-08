@@ -47,7 +47,11 @@ export function CompactSpaceBannerLead({ src }: Props) {
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
       {/* Same atmosphere as no-lead fallback — visible until decode */}
       <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(41,115,78)_0%,rgb(14,54,38)_42%,rgb(7,38,26)_68%,rgb(2,14,10)_100%)]"
+        className="absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(115,155,134)_0%,rgb(73,112,94)_42%,rgb(46,78,64)_68%,rgb(29,52,43)_100%)]"
+        aria-hidden
+      />
+      <div
+        className="absolute inset-0 mix-blend-soft-light opacity-75 bg-[radial-gradient(ellipse_50%_40%_at_80%_5%,rgba(52,211,153,0.18),transparent_60%)]"
         aria-hidden
       />
       {/* Taller layer + parallax translate so edges never show during scroll */}
