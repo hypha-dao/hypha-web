@@ -176,6 +176,7 @@ export const MultiSelect = React.forwardRef<
     const [searchValue, setSearchValue] = React.useState('');
     const trimmedSearchValue = searchValue.trim();
     const popoverContentRef = React.useRef<HTMLDivElement>(null);
+    const tagInputRef = React.useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
       if (value === undefined) return;
@@ -342,17 +343,7 @@ export const MultiSelect = React.forwardRef<
     return (
       <Popover
         open={isPopoverOpen}
-        onOpenChange={(nextOpen) => {
-          if (
-            uiStyle === 'tag-picker' &&
-            nextOpen &&
-            trimmedSearchValue.length === 0
-          ) {
-            setIsPopoverOpen(false);
-            return;
-          }
-          setIsPopoverOpen(nextOpen);
-        }}
+        onOpenChange={setIsPopoverOpen}
         modal={modalPopover}
       >
         <PopoverTrigger asChild>
@@ -363,7 +354,10 @@ export const MultiSelect = React.forwardRef<
                 'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
                 className,
               )}
-              onClick={() => setIsPopoverOpen(true)}
+              onClick={() => {
+                tagInputRef.current?.focus();
+                if (trimmedSearchValue.length > 0) setIsPopoverOpen(true);
+              }}
             >
               {selectedValues.slice(0, maxCount).map((value) => {
                 const option = options.find((o) => o.value === value);
@@ -403,6 +397,7 @@ export const MultiSelect = React.forwardRef<
                 </Badge>
               ) : null}
               <input
+                ref={tagInputRef}
                 value={searchValue}
                 onChange={(event) => {
                   const nextValue = event.currentTarget.value;

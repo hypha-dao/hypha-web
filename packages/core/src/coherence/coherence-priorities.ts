@@ -40,7 +40,7 @@ export const COHERENCE_PRIORITY_OPTIONS: {
     priority: 'medium',
     icon: 'CircleDot',
     title: 'Medium',
-    colorVariant: 'warn',
+    colorVariant: 'accent',
     description: 'Monitor and plan.',
   },
   {
