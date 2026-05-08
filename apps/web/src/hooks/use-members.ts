@@ -70,7 +70,60 @@ export const useMembers: UseMembers = ({
         headers.Authorization = `Bearer ${token}`;
       }
 
-      return fetch(endpoint, { headers }).then((res) => res.json());
+      if (!paginationDisabled) {
+        return fetch(endpoint, { headers }).then((res) => res.json());
+      }
+
+      const pageSize = 100;
+      let page = 1;
+      const allPersons: any[] = [];
+      const allSpaces: any[] = [];
+      let personsPagination: any;
+      let spacesPagination: any;
+
+      while (true) {
+        const pagedEndpoint = `/api/v1/spaces/${spaceSlug}/members?${queryString.stringify(
+          {
+            page,
+            pageSize,
+            ...(searchTerm ? { searchTerm } : {}),
+          },
+        )}`;
+        const pageResponse = await fetch(pagedEndpoint, { headers }).then(
+          (res) => res.json(),
+        );
+
+        const personsData = pageResponse?.persons?.data ?? [];
+        const spacesData = pageResponse?.spaces?.data ?? [];
+        allPersons.push(...personsData);
+        allSpaces.push(...spacesData);
+        personsPagination = pageResponse?.persons?.pagination;
+        spacesPagination = pageResponse?.spaces?.pagination;
+
+        const personsHasNext = Boolean(
+          pageResponse?.persons?.pagination?.hasNextPage,
+        );
+        const spacesHasNext = Boolean(
+          pageResponse?.spaces?.pagination?.hasNextPage,
+        );
+
+        if (!personsHasNext && !spacesHasNext) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      return {
+        persons: {
+          data: allPersons,
+          pagination: personsPagination,
+        },
+        spaces: {
+          data: allSpaces,
+          pagination: spacesPagination,
+        },
+      };
     },
     {
       refreshInterval: interval,
