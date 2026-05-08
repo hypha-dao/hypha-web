@@ -2132,10 +2132,10 @@
       "low": "Low"
     },
     "priorityDescriptions": {
-      "critical": "Immediate action required",
-      "high": "Needs immediate attention",
-      "medium": "Monitor and act soon",
-      "low": "Informational, no rush"
+      "critical": "Act immediately.",
+      "high": "Prioritise next.",
+      "medium": "Monitor and plan.",
+      "low": "FYI, no action."
     },
     "savingSignal": "Saving signal",
     "saveChanges": "Save changes",
