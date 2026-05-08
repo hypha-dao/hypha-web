@@ -330,7 +330,9 @@ function DistributionByMemberBarChart({
         });
       }
     }
-    return Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label));
+    return Array.from(seen.values()).sort((a, b) =>
+      a.label.localeCompare(b.label),
+    );
   }, [tokens]);
 
   const [selectedMember, setSelectedMember] = React.useState<string>('');
@@ -407,9 +409,18 @@ function DistributionByMemberBarChart({
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <svg viewBox={`0 0 ${width} ${height}`} className="h-[280px] min-w-[700px] w-full">
+          <svg
+            viewBox={`0 0 ${width} ${height}`}
+            className="h-[280px] min-w-[700px] w-full"
+          >
             <defs>
-              <linearGradient id={`distribution-bars-${gradientId}`} x1="0%" x2="0%" y1="100%" y2="0%">
+              <linearGradient
+                id={`distribution-bars-${gradientId}`}
+                x1="0%"
+                x2="0%"
+                y1="100%"
+                y2="0%"
+              >
                 <stop
                   offset="0%"
                   stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 88%, black 12%)"
@@ -620,57 +631,57 @@ function MembersEvolutionWidget({
             viewBox={`0 0 ${width} ${height}`}
             className="min-w-[720px] w-full"
           >
-          <g transform={`translate(${margin.left},${margin.top})`}>
-            {[0, maxValue / 2, maxValue].map((tick) => (
-              <g key={tick} transform={`translate(0,${y(tick)})`}>
-                <line
-                  x1={innerWidth}
-                  stroke="var(--border)"
-                  strokeDasharray="3 3"
-                />
-                <text
-                  x={-8}
-                  textAnchor="end"
-                  dominantBaseline="middle"
-                  className="fill-muted-foreground text-[11px]"
-                >
-                  {Math.round(tick)}
-                </text>
-              </g>
-            ))}
-
-            {monthly.map((item) => {
-              const monthX = x0(item.month) ?? 0;
-              return (
-                <g key={item.month} transform={`translate(${monthX},0)`}>
-                  <rect
-                    x={x1('people')}
-                    y={y(item.people)}
-                    width={x1.bandwidth()}
-                    height={innerHeight - y(item.people)}
-                    fill={MEMBERS_COLOR_RANGE.people}
-                    rx={3}
-                  />
-                  <rect
-                    x={x1('spaces')}
-                    y={y(item.spaces)}
-                    width={x1.bandwidth()}
-                    height={innerHeight - y(item.spaces)}
-                    fill={MEMBERS_COLOR_RANGE.spaces}
-                    rx={3}
+            <g transform={`translate(${margin.left},${margin.top})`}>
+              {[0, maxValue / 2, maxValue].map((tick) => (
+                <g key={tick} transform={`translate(0,${y(tick)})`}>
+                  <line
+                    x1={innerWidth}
+                    stroke="var(--border)"
+                    strokeDasharray="3 3"
                   />
                   <text
-                    x={x0.bandwidth() / 2}
-                    y={innerHeight + 20}
-                    textAnchor="middle"
+                    x={-8}
+                    textAnchor="end"
+                    dominantBaseline="middle"
                     className="fill-muted-foreground text-[11px]"
                   >
-                    {formatMonthLabel(item.month)}
+                    {Math.round(tick)}
                   </text>
                 </g>
-              );
-            })}
-          </g>
+              ))}
+
+              {monthly.map((item) => {
+                const monthX = x0(item.month) ?? 0;
+                return (
+                  <g key={item.month} transform={`translate(${monthX},0)`}>
+                    <rect
+                      x={x1('people')}
+                      y={y(item.people)}
+                      width={x1.bandwidth()}
+                      height={innerHeight - y(item.people)}
+                      fill={MEMBERS_COLOR_RANGE.people}
+                      rx={3}
+                    />
+                    <rect
+                      x={x1('spaces')}
+                      y={y(item.spaces)}
+                      width={x1.bandwidth()}
+                      height={innerHeight - y(item.spaces)}
+                      fill={MEMBERS_COLOR_RANGE.spaces}
+                      rx={3}
+                    />
+                    <text
+                      x={x0.bandwidth() / 2}
+                      y={innerHeight + 20}
+                      textAnchor="middle"
+                      className="fill-muted-foreground text-[11px]"
+                    >
+                      {formatMonthLabel(item.month)}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
           </svg>
         </div>
 
@@ -742,7 +753,10 @@ function SignalsPulseMapWidget({
   const radius = d3
     .scaleSqrt()
     .domain([0, maxCount])
-    .range([Math.min(x.bandwidth(), y.bandwidth()) * 0.13, Math.min(x.bandwidth(), y.bandwidth()) * 0.43]);
+    .range([
+      Math.min(x.bandwidth(), y.bandwidth()) * 0.13,
+      Math.min(x.bandwidth(), y.bandwidth()) * 0.43,
+    ]);
   const cellColor = d3
     .scaleLinear<string>()
     .domain([0, maxCount])
@@ -772,128 +786,146 @@ function SignalsPulseMapWidget({
             viewBox={`0 0 ${width} ${height}`}
             className="h-[320px] min-w-[640px] w-full sm:h-[360px]"
           >
-          <defs>
-            <filter id="signal-depth-shadow" x="-40%" y="-40%" width="180%" height="180%">
-              <feDropShadow
-                dx="0"
-                dy="7"
-                stdDeviation="7"
-                floodColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 52%, black 48%)"
-                floodOpacity="0.26"
-              />
-            </filter>
-          </defs>
-          <g transform={`translate(${margin.left},${margin.top})`}>
-            {matrixData.map((item) => {
-              const cellX = x(item.type) ?? 0;
-              const cellY = y(item.priority) ?? 0;
-              const cellWidth = x.bandwidth();
-              const cellHeight = y.bandwidth();
-              const cx = cellX + cellWidth / 2;
-              const cy = cellY + cellHeight / 2;
-              const bubbleRadius = radius(item.count);
-              const showCount = item.count > 0;
+            <defs>
+              <filter
+                id="signal-depth-shadow"
+                x="-40%"
+                y="-40%"
+                width="180%"
+                height="180%"
+              >
+                <feDropShadow
+                  dx="0"
+                  dy="7"
+                  stdDeviation="7"
+                  floodColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 52%, black 48%)"
+                  floodOpacity="0.26"
+                />
+              </filter>
+            </defs>
+            <g transform={`translate(${margin.left},${margin.top})`}>
+              {matrixData.map((item) => {
+                const cellX = x(item.type) ?? 0;
+                const cellY = y(item.priority) ?? 0;
+                const cellWidth = x.bandwidth();
+                const cellHeight = y.bandwidth();
+                const cx = cellX + cellWidth / 2;
+                const cy = cellY + cellHeight / 2;
+                const bubbleRadius = radius(item.count);
+                const showCount = item.count > 0;
 
-              return (
-                <g key={`${item.priority}-${item.type}`}>
-                  <rect
-                    x={cellX}
-                    y={cellY}
-                    width={cellWidth}
-                    height={cellHeight}
-                    rx={8}
-                    fill={cellColor(item.count)}
-                    stroke="color-mix(in oklab, var(--space-accent, var(--accent-9)) 28%, var(--border) 72%)"
-                    strokeWidth={1}
-                    opacity={showCount ? 0.9 : 0.38}
-                  />
-                  <circle
-                    cx={cx}
-                    cy={cy}
-                    r={bubbleRadius + 8}
-                    fill="var(--space-accent, var(--accent-9))"
-                    opacity={showCount ? 0.16 : 0}
-                  />
-                  <circle
-                    cx={cx}
-                    cy={cy}
-                    r={bubbleRadius}
-                    fill={bubbleColor(item.count)}
-                    filter={showCount ? 'url(#signal-depth-shadow)' : undefined}
-                    opacity={showCount ? 0.95 : 0.42}
-                  />
+                return (
+                  <g key={`${item.priority}-${item.type}`}>
+                    <rect
+                      x={cellX}
+                      y={cellY}
+                      width={cellWidth}
+                      height={cellHeight}
+                      rx={8}
+                      fill={cellColor(item.count)}
+                      stroke="color-mix(in oklab, var(--space-accent, var(--accent-9)) 28%, var(--border) 72%)"
+                      strokeWidth={1}
+                      opacity={showCount ? 0.9 : 0.38}
+                    />
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={bubbleRadius + 8}
+                      fill="var(--space-accent, var(--accent-9))"
+                      opacity={showCount ? 0.16 : 0}
+                    />
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={bubbleRadius}
+                      fill={bubbleColor(item.count)}
+                      filter={
+                        showCount ? 'url(#signal-depth-shadow)' : undefined
+                      }
+                      opacity={showCount ? 0.95 : 0.42}
+                    />
+                    <text
+                      x={cx}
+                      y={cy}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      className="fill-background text-[17px] font-semibold"
+                    >
+                      {showCount ? item.count : ''}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {priorities.map((priority) => {
+                const rowY = (y(priority) ?? 0) + y.bandwidth() / 2;
+                return (
+                  <g key={priority}>
+                    <text
+                      x={-16}
+                      y={rowY}
+                      textAnchor="end"
+                      dominantBaseline="middle"
+                      className="fill-muted-foreground text-[14px] font-medium"
+                    >
+                      {capitalizeWords(priority)}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {types.map((type) => {
+                const colX = (x(type) ?? 0) + x.bandwidth() / 2;
+                return (
                   <text
-                    x={cx}
-                    y={cy}
+                    key={type}
+                    x={colX}
+                    y={-20}
                     textAnchor="middle"
-                    dominantBaseline="middle"
-                    className="fill-background text-[17px] font-semibold"
-                  >
-                    {showCount ? item.count : ''}
-                  </text>
-                </g>
-              );
-            })}
-
-            {priorities.map((priority) => {
-              const rowY = (y(priority) ?? 0) + y.bandwidth() / 2;
-              return (
-                <g key={priority}>
-                  <text
-                    x={-16}
-                    y={rowY}
-                    textAnchor="end"
-                    dominantBaseline="middle"
                     className="fill-muted-foreground text-[14px] font-medium"
                   >
-                    {capitalizeWords(priority)}
+                    {type}
                   </text>
-                </g>
-              );
-            })}
+                );
+              })}
 
-            {types.map((type) => {
-              const colX = (x(type) ?? 0) + x.bandwidth() / 2;
-              return (
-                <text
-                  key={type}
-                  x={colX}
-                  y={-20}
-                  textAnchor="middle"
-                  className="fill-muted-foreground text-[14px] font-medium"
-                >
-                  {type}
+              <g
+                transform={`translate(${innerWidth - 168}, ${
+                  innerHeight + 16
+                })`}
+              >
+                <text className="fill-muted-foreground text-[11px]">Low</text>
+                <rect
+                  x={26}
+                  y={-10}
+                  width={108}
+                  height={8}
+                  rx={4}
+                  fill="url(#signal-intensity-gradient)"
+                />
+                <text x={142} className="fill-muted-foreground text-[11px]">
+                  High
                 </text>
-              );
-            })}
-
-            <g transform={`translate(${innerWidth - 168}, ${innerHeight + 16})`}>
-              <text className="fill-muted-foreground text-[11px]">Low</text>
-              <rect
-                x={26}
-                y={-10}
-                width={108}
-                height={8}
-                rx={4}
-                fill="url(#signal-intensity-gradient)"
-              />
-              <text x={142} className="fill-muted-foreground text-[11px]">
-                High
-              </text>
+              </g>
+              <defs>
+                <linearGradient
+                  id="signal-intensity-gradient"
+                  x1="0%"
+                  x2="100%"
+                  y1="0%"
+                  y2="0%"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 24%, var(--background-3) 76%)"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--space-accent, var(--accent-9))"
+                  />
+                </linearGradient>
+              </defs>
             </g>
-            <defs>
-              <linearGradient id="signal-intensity-gradient" x1="0%" x2="100%" y1="0%" y2="0%">
-                <stop
-                  offset="0%"
-                  stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 24%, var(--background-3) 76%)"
-                />
-                <stop
-                  offset="100%"
-                  stopColor="var(--space-accent, var(--accent-9))"
-                />
-              </linearGradient>
-            </defs>
-          </g>
           </svg>
         </div>
       </CardContent>

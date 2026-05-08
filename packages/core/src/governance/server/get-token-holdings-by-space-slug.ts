@@ -411,8 +411,11 @@ export async function getTokenHoldingsBySpaceSlug(
         }
 
         const entityKey =
-          descriptor.holder_kind === 'person' || descriptor.holder_kind === 'space'
-            ? `${descriptor.holder_kind}:${descriptor.slug ?? descriptor.display_name.toLowerCase()}`
+          descriptor.holder_kind === 'person' ||
+          descriptor.holder_kind === 'space'
+            ? `${descriptor.holder_kind}:${
+                descriptor.slug ?? descriptor.display_name.toLowerCase()
+              }`
             : `${descriptor.holder_kind}:${descriptor.address}`;
         const existing = aggregatedMembers.get(entityKey);
         if (existing) {
