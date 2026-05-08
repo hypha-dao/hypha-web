@@ -115,9 +115,7 @@ function TokenDonutChart({
 
   const pieData = React.useMemo(
     () =>
-      d3
-        .pie<ChartSlice>()
-        .value((item: ChartSlice) => item.numeric)(chartData),
+      d3.pie<ChartSlice>().value((item: ChartSlice) => item.numeric)(chartData),
     [chartData],
   );
 
