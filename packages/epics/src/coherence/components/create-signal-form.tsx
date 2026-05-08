@@ -183,6 +183,12 @@ export const CreateSignalForm = ({
   }, [t]);
 
   const tagOptions = React.useMemo(() => {
+    type TagOptionRow = {
+      value: string;
+      label: string;
+      kind: 'option' | 'heading' | 'separator';
+    };
+
     const labelFor = (tag: string) =>
       t.has(`tagLabels.${tag}` as never) ? t(`tagLabels.${tag}` as never) : tag;
 
@@ -273,7 +279,7 @@ export const CreateSignalForm = ({
 
     const canonicalTags = new Set(COHERENCE_TAGS as readonly string[]);
     const grouped = tagsByCategory.flatMap((category, categoryIndex) => {
-      const rows = [
+      const rows: TagOptionRow[] = [
         {
           value: `__heading__${categoryIndex}`,
           label: category.title,
