@@ -229,6 +229,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       label: `#${displayLabel}`,
       variant: 'outline',
       colorVariant: 'neutral',
+      className: 'rounded-full',
+      style: {
+        borderColor:
+          'color-mix(in srgb, var(--space-accent) 42%, var(--color-neutral-8) 58%)',
+        backgroundColor:
+          'color-mix(in srgb, var(--space-accent) 12%, transparent)',
+        color: 'color-mix(in srgb, var(--space-accent) 78%, white 22%)',
+      },
     };
   });
 
@@ -539,7 +547,13 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </Dialog>
 
           {tagList?.length > 0 ? (
-            <BadgesList isLoading={isLoading} badges={tagList ?? []} />
+            <div className="min-h-8">
+              <BadgesList
+                isLoading={isLoading}
+                badges={tagList ?? []}
+                className="content-start"
+              />
+            </div>
           ) : null}
         </div>
 
