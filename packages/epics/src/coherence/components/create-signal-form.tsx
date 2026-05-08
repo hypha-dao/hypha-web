@@ -260,8 +260,8 @@ export const CreateSignalForm = ({
             error instanceof Error && error.message.trim().length > 0
               ? error.message
               : t.has('editSignalSaveFailed')
-                ? t('editSignalSaveFailed')
-                : 'Could not save signal changes. Please try again.';
+              ? t('editSignalSaveFailed')
+              : 'Could not save signal changes. Please try again.';
           form.setError('root', {
             type: 'manual',
             message,
