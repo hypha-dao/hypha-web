@@ -104,6 +104,18 @@ const COLOR_RANGE = [
   'color-mix(in oklab, var(--space-accent, var(--accent-9)) 60%, var(--color-warning-10, var(--warning-10)) 40%)',
   'color-mix(in oklab, var(--space-accent, var(--accent-9)) 74%, var(--color-neutral-9, var(--neutral-9)) 26%)',
 ];
+const PROPOSALS_COLOR_RANGE = [
+  'var(--space-accent, var(--accent-9))',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 74%, white 26%)',
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 72%, black 28%)',
+];
+const MEMBERS_COLOR_RANGE = {
+  people: 'var(--space-accent, var(--accent-9))',
+  spaces:
+    'color-mix(in oklab, var(--space-accent, var(--accent-9)) 64%, white 36%)',
+};
+const INACTIVE_ACCENT_COLOR =
+  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 32%, var(--neutral-7) 68%)';
 
 function toNumericValue(raw: string): number {
   const parsed = Number.parseFloat(raw);
@@ -127,6 +139,14 @@ function prettifyTokenType(type: string): string {
 
 function capitalizeWords(value: string): string {
   return value.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase());
+}
+
+function isLikelyI18nKey(value: string): boolean {
+  return (
+    value.includes('.') &&
+    /^[A-Za-z][A-Za-z0-9_.-]*$/.test(value) &&
+    !value.includes(' ')
+  );
 }
 
 function fetchHoldings(
@@ -289,17 +309,17 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
       {
         label: 'On voting',
         value: data.onVoting,
-        color: 'var(--info-9)',
+        color: PROPOSALS_COLOR_RANGE[0],
       },
       {
         label: 'Accepted',
         value: data.accepted,
-        color: 'var(--success-9)',
+        color: PROPOSALS_COLOR_RANGE[1],
       },
       {
         label: 'Refused',
         value: data.refused,
-        color: 'var(--error-9)',
+        color: PROPOSALS_COLOR_RANGE[2],
       },
     ],
     [data.accepted, data.onVoting, data.refused],
@@ -445,7 +465,7 @@ function MembersEvolutionWidget({
                     y={y(item.people)}
                     width={x1.bandwidth()}
                     height={innerHeight - y(item.people)}
-                    fill="var(--space-accent, var(--accent-9))"
+                    fill={MEMBERS_COLOR_RANGE.people}
                     rx={3}
                   />
                   <rect
@@ -453,7 +473,7 @@ function MembersEvolutionWidget({
                     y={y(item.spaces)}
                     width={x1.bandwidth()}
                     height={innerHeight - y(item.spaces)}
-                    fill="color-mix(in oklab, var(--space-accent, var(--accent-9)) 55%, var(--info-9) 45%)"
+                    fill={MEMBERS_COLOR_RANGE.spaces}
                     rx={3}
                   />
                   <text
@@ -474,17 +494,14 @@ function MembersEvolutionWidget({
           <span className="inline-flex items-center gap-1.5">
             <span
               className="h-3 w-3 rounded-sm"
-              style={{ background: 'var(--space-accent, var(--accent-9))' }}
+              style={{ background: MEMBERS_COLOR_RANGE.people }}
             />
             Members
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span
               className="h-3 w-3 rounded-sm"
-              style={{
-                background:
-                  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 55%, var(--info-9) 45%)',
-              }}
+              style={{ background: MEMBERS_COLOR_RANGE.spaces }}
             />
             Spaces
           </span>
@@ -504,7 +521,6 @@ function SignalsPulseMapWidget({
     : ['low', 'medium', 'high'];
   const types = signals.types.length ? signals.types : ['Signal'];
   const maxCount = Math.max(1, ...signals.matrix.map((item) => item.count));
-  const radius = d3.scaleSqrt().domain([0, maxCount]).range([8, 34]);
   const countByKey = new Map(
     signals.matrix.map((item) => [
       `${item.priority}:::${item.type}`,
@@ -512,21 +528,51 @@ function SignalsPulseMapWidget({
     ]),
   );
 
-  const width = Math.max(620, types.length * 170);
-  const height = Math.max(420, priorities.length * 120);
-  const margin = { top: 50, right: 26, bottom: 24, left: 100 };
+  const matrixData = React.useMemo(
+    () =>
+      priorities.flatMap((priority) =>
+        types.map((type) => ({
+          priority,
+          type,
+          count: countByKey.get(`${priority}:::${type}`) ?? 0,
+        })),
+      ),
+    [countByKey, priorities, types],
+  );
+
+  const width = Math.max(640, types.length * 220);
+  const height = Math.max(440, priorities.length * 130);
+  const margin = { top: 62, right: 26, bottom: 38, left: 126 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
   const x = d3
-    .scalePoint<string>()
+    .scaleBand<string>()
     .domain(types)
     .range([0, innerWidth])
-    .padding(0.5);
+    .padding(0.18);
   const y = d3
-    .scalePoint<string>()
+    .scaleBand<string>()
     .domain(priorities)
     .range([0, innerHeight])
-    .padding(0.5);
+    .padding(0.2);
+  const radius = d3
+    .scaleSqrt()
+    .domain([0, maxCount])
+    .range([Math.min(x.bandwidth(), y.bandwidth()) * 0.13, Math.min(x.bandwidth(), y.bandwidth()) * 0.43]);
+  const cellColor = d3
+    .scaleLinear<string>()
+    .domain([0, maxCount])
+    .range([
+      'color-mix(in oklab, var(--space-accent, var(--accent-9)) 18%, var(--background-3) 82%)',
+      'color-mix(in oklab, var(--space-accent, var(--accent-9)) 92%, black 8%)',
+    ]);
+  const bubbleColor = d3
+    .scaleLinear<string>()
+    .domain([0, maxCount])
+    .range([
+      'color-mix(in oklab, var(--space-accent, var(--accent-9)) 45%, white 55%)',
+      'var(--space-accent, var(--accent-9))',
+    ]);
 
   return (
     <Card className="border-border/60 bg-card/95">
@@ -538,22 +584,75 @@ function SignalsPulseMapWidget({
       </CardHeader>
       <CardContent className="min-h-[420px]">
         <svg viewBox={`0 0 ${width} ${height}`} className="h-[360px] w-full">
+          <defs>
+            <filter id="signal-depth-shadow" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow
+                dx="0"
+                dy="7"
+                stdDeviation="7"
+                floodColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 52%, black 48%)"
+                floodOpacity="0.26"
+              />
+            </filter>
+          </defs>
           <g transform={`translate(${margin.left},${margin.top})`}>
-            {priorities.map((priority) => {
-              const rowY = y(priority) ?? 0;
+            {matrixData.map((item) => {
+              const cellX = x(item.type) ?? 0;
+              const cellY = y(item.priority) ?? 0;
+              const cellWidth = x.bandwidth();
+              const cellHeight = y.bandwidth();
+              const cx = cellX + cellWidth / 2;
+              const cy = cellY + cellHeight / 2;
+              const bubbleRadius = radius(item.count);
+              const showCount = item.count > 0;
+
               return (
-                <g key={priority}>
-                  <line
-                    x1={0}
-                    x2={innerWidth}
-                    y1={rowY}
-                    y2={rowY}
-                    stroke="var(--border)"
-                    strokeDasharray="2 8"
-                    opacity={0.45}
+                <g key={`${item.priority}-${item.type}`}>
+                  <rect
+                    x={cellX}
+                    y={cellY}
+                    width={cellWidth}
+                    height={cellHeight}
+                    rx={8}
+                    fill={cellColor(item.count)}
+                    stroke="color-mix(in oklab, var(--space-accent, var(--accent-9)) 28%, var(--border) 72%)"
+                    strokeWidth={1}
+                    opacity={showCount ? 0.9 : 0.38}
+                  />
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={bubbleRadius + 8}
+                    fill="var(--space-accent, var(--accent-9))"
+                    opacity={showCount ? 0.16 : 0}
+                  />
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={bubbleRadius}
+                    fill={bubbleColor(item.count)}
+                    filter={showCount ? 'url(#signal-depth-shadow)' : undefined}
+                    opacity={showCount ? 0.95 : 0.42}
                   />
                   <text
-                    x={-14}
+                    x={cx}
+                    y={cy}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="fill-background text-[17px] font-semibold"
+                  >
+                    {showCount ? item.count : ''}
+                  </text>
+                </g>
+              );
+            })}
+
+            {priorities.map((priority) => {
+              const rowY = (y(priority) ?? 0) + y.bandwidth() / 2;
+              return (
+                <g key={priority}>
+                  <text
+                    x={-16}
                     y={rowY}
                     textAnchor="end"
                     dominantBaseline="middle"
@@ -566,12 +665,12 @@ function SignalsPulseMapWidget({
             })}
 
             {types.map((type) => {
-              const colX = x(type) ?? 0;
+              const colX = (x(type) ?? 0) + x.bandwidth() / 2;
               return (
                 <text
                   key={type}
                   x={colX}
-                  y={-18}
+                  y={-20}
                   textAnchor="middle"
                   className="fill-muted-foreground text-[14px] font-medium"
                 >
@@ -580,46 +679,32 @@ function SignalsPulseMapWidget({
               );
             })}
 
-            {priorities.flatMap((priority) =>
-              types.map((type) => {
-                const cx = x(type) ?? 0;
-                const cy = y(priority) ?? 0;
-                const count = countByKey.get(`${priority}:::${type}`) ?? 0;
-                const r = radius(count);
-                return (
-                  <g key={`${priority}-${type}`}>
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={Math.max(r + 12, 0)}
-                      className={count > 0 ? 'animate-pulse' : ''}
-                      fill="var(--space-accent, var(--accent-9))"
-                      opacity={count > 0 ? 0.18 : 0}
-                    />
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={Math.max(r, 5)}
-                      fill={
-                        count > 0
-                          ? 'var(--space-accent, var(--accent-9))'
-                          : 'var(--neutral-6)'
-                      }
-                      opacity={count > 0 ? 0.95 : 0.4}
-                    />
-                    <text
-                      x={cx}
-                      y={cy}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      className="fill-background text-[16px] font-semibold"
-                    >
-                      {count > 0 ? count : ''}
-                    </text>
-                  </g>
-                );
-              }),
-            )}
+            <g transform={`translate(${innerWidth - 168}, ${innerHeight + 16})`}>
+              <text className="fill-muted-foreground text-[11px]">Low</text>
+              <rect
+                x={26}
+                y={-10}
+                width={108}
+                height={8}
+                rx={4}
+                fill="url(#signal-intensity-gradient)"
+              />
+              <text x={142} className="fill-muted-foreground text-[11px]">
+                High
+              </text>
+            </g>
+            <defs>
+              <linearGradient id="signal-intensity-gradient" x1="0%" x2="100%" y1="0%" y2="0%">
+                <stop
+                  offset="0%"
+                  stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 24%, var(--background-3) 76%)"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--space-accent, var(--accent-9))"
+                />
+              </linearGradient>
+            </defs>
           </g>
         </svg>
       </CardContent>
@@ -675,10 +760,12 @@ export function HomeTokenHoldingsDashboard({
 
   const getTokenTypeLabel = React.useCallback(
     (type: string) => {
+      const translationKey = `plugins.issueNewToken.general.tokenTypeOptions.${type}.label`;
       try {
-        const translated = tModalAside(
-          `plugins.issueNewToken.general.tokenTypeOptions.${type}.label`,
-        );
+        const translated = tModalAside(translationKey);
+        if (isLikelyI18nKey(translated)) {
+          return prettifyTokenType(type);
+        }
         return capitalizeWords(translated);
       } catch {
         return prettifyTokenType(type);
