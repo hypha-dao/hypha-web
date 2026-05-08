@@ -114,8 +114,6 @@ const MEMBERS_COLOR_RANGE = {
   spaces:
     'color-mix(in oklab, var(--space-accent, var(--accent-9)) 64%, white 36%)',
 };
-const INACTIVE_ACCENT_COLOR =
-  'color-mix(in oklab, var(--space-accent, var(--accent-9)) 32%, var(--neutral-7) 68%)';
 
 function toNumericValue(raw: string): number {
   const parsed = Number.parseFloat(raw);
@@ -242,11 +240,11 @@ function TokenDonutChart({
   }, [chartData]);
 
   return (
-    <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-      <div className="relative flex items-center justify-center md:flex-none">
+    <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="relative flex items-center justify-center lg:flex-none">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute h-64 w-64 rounded-full opacity-90 blur-3xl"
+          className="pointer-events-none absolute h-52 w-52 rounded-full opacity-90 blur-3xl sm:h-60 sm:w-60 lg:h-64 lg:w-64"
           style={{
             background:
               'radial-gradient(circle, color-mix(in oklab, var(--space-accent, var(--accent-9)) 40%, transparent) 0%, transparent 72%)',
@@ -256,7 +254,7 @@ function TokenDonutChart({
           viewBox="-145 -145 290 290"
           role="img"
           aria-label={`Token distribution chart for ${title}`}
-          className="h-80 w-80 transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+          className="h-64 w-64 transition-transform duration-300 ease-out group-hover:scale-[1.03] sm:h-72 sm:w-72 lg:h-80 lg:w-80"
         >
           {pieData.map((segment: d3.PieArcDatum<ChartSlice>) => (
             <path
@@ -277,7 +275,7 @@ function TokenDonutChart({
         </svg>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2 md:max-w-[28%]">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 lg:max-w-[28%]">
         {chartData.map((slice) => (
           <div
             key={`${slice.display_name}-${slice.address ?? 'other'}`}
@@ -300,6 +298,187 @@ function TokenDonutChart({
         ))}
       </div>
     </div>
+  );
+}
+
+type DistributionMemberOption = {
+  id: string;
+  label: string;
+};
+
+function DistributionByMemberBarChart({
+  tokens,
+}: {
+  tokens: TokenHoldingResponse['tokens'];
+}) {
+  const memberOptions = React.useMemo<DistributionMemberOption[]>(() => {
+    const seen = new Map<string, DistributionMemberOption>();
+    for (const token of tokens) {
+      for (const holder of token.holdings) {
+        if (holder.holder_kind === 'other') continue;
+        const id = holder.address ?? holder.display_name;
+        if (!id || seen.has(id)) continue;
+        const shortAddress =
+          holder.address && holder.address.length > 10
+            ? `${holder.address.slice(0, 6)}...${holder.address.slice(-4)}`
+            : null;
+        seen.set(id, {
+          id,
+          label: shortAddress
+            ? `${holder.display_name} (${shortAddress})`
+            : holder.display_name,
+        });
+      }
+    }
+    return Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [tokens]);
+
+  const [selectedMember, setSelectedMember] = React.useState<string>('');
+
+  React.useEffect(() => {
+    if (!memberOptions.length) {
+      setSelectedMember('');
+      return;
+    }
+    setSelectedMember((current) =>
+      current && memberOptions.some((option) => option.id === current)
+        ? current
+        : memberOptions[0]!.id,
+    );
+  }, [memberOptions]);
+
+  const points = React.useMemo(
+    () =>
+      tokens.map((token) => {
+        const holder = token.holdings.find(
+          (item) => (item.address ?? item.display_name) === selectedMember,
+        );
+        return {
+          token: token.symbol,
+          value: holder?.share_pct ?? 0,
+        };
+      }),
+    [selectedMember, tokens],
+  );
+
+  const width = Math.max(700, points.length * 130);
+  const height = 320;
+  const margin = { top: 24, right: 22, bottom: 58, left: 46 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+  const maxValue = Math.max(5, ...points.map((point) => point.value));
+  const x = d3
+    .scaleBand<string>()
+    .domain(points.map((point) => point.token))
+    .range([0, innerWidth])
+    .padding(0.26);
+  const y = d3
+    .scaleLinear()
+    .domain([0, maxValue])
+    .nice()
+    .range([innerHeight, 0]);
+  const gradientId = React.useId().replace(/:/g, '');
+
+  return (
+    <Card className="border-border/60 bg-card/95 md:col-span-2">
+      <CardHeader className="pb-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <CardTitle className="text-lg">Distribution by member</CardTitle>
+            <CardDescription className="text-xs">
+              D3 bar chart across tokens using the selected member.
+            </CardDescription>
+          </div>
+          <label className="flex min-w-[210px] flex-col gap-1 text-xs text-muted-foreground">
+            Member
+            <select
+              value={selectedMember}
+              onChange={(event) => setSelectedMember(event.target.value)}
+              className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {memberOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <svg viewBox={`0 0 ${width} ${height}`} className="h-[280px] min-w-[700px] w-full">
+            <defs>
+              <linearGradient id={`distribution-bars-${gradientId}`} x1="0%" x2="0%" y1="100%" y2="0%">
+                <stop
+                  offset="0%"
+                  stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 88%, black 12%)"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 65%, white 35%)"
+                />
+              </linearGradient>
+            </defs>
+            <g transform={`translate(${margin.left},${margin.top})`}>
+              {y.ticks(4).map((tick) => (
+                <g key={tick} transform={`translate(0,${y(tick)})`}>
+                  <line
+                    x1={0}
+                    x2={innerWidth}
+                    stroke="var(--border)"
+                    strokeDasharray="3 5"
+                    opacity={0.7}
+                  />
+                  <text
+                    x={-8}
+                    textAnchor="end"
+                    dominantBaseline="middle"
+                    className="fill-muted-foreground text-[11px]"
+                  >
+                    {tick}%
+                  </text>
+                </g>
+              ))}
+
+              {points.map((point) => {
+                const barX = x(point.token) ?? 0;
+                const barY = y(point.value);
+                const barHeight = innerHeight - barY;
+                return (
+                  <g key={point.token} transform={`translate(${barX},0)`}>
+                    <rect
+                      x={0}
+                      y={barY}
+                      width={x.bandwidth()}
+                      height={barHeight}
+                      rx={8}
+                      fill={`url(#distribution-bars-${gradientId})`}
+                    />
+                    <text
+                      x={x.bandwidth() / 2}
+                      y={Math.max(14, barY - 8)}
+                      textAnchor="middle"
+                      className="fill-foreground text-[11px] font-medium"
+                    >
+                      {PERCENTAGE_FORMATTER(point.value)}%
+                    </text>
+                    <text
+                      x={x.bandwidth() / 2}
+                      y={innerHeight + 20}
+                      textAnchor="middle"
+                      className="fill-muted-foreground text-[11px]"
+                    >
+                      {point.token}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          </svg>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -346,10 +525,10 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           On voting, accepted, refused
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid min-h-[420px] grid-cols-[1fr_auto] items-center gap-2">
+      <CardContent className="grid min-h-[320px] grid-cols-1 items-center gap-3 lg:min-h-[420px] lg:grid-cols-[1fr_auto]">
         <svg
           viewBox="-130 -130 260 260"
-          className="h-[340px] w-full"
+          className="h-[240px] w-full sm:h-[280px] lg:h-[340px]"
           aria-label="Proposals distribution"
         >
           {arcs.map((slice, index) => (
@@ -370,7 +549,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           </text>
         </svg>
 
-        <div className="flex min-w-[180px] flex-col gap-3 pr-2 text-sm">
+        <div className="flex min-w-0 flex-col gap-3 text-sm lg:min-w-[180px] lg:pr-2">
           {pieData.map((item) => (
             <div
               key={item.label}
@@ -436,7 +615,11 @@ function MembersEvolutionWidget({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full">
+        <div className="overflow-x-auto">
+          <svg
+            viewBox={`0 0 ${width} ${height}`}
+            className="min-w-[720px] w-full"
+          >
           <g transform={`translate(${margin.left},${margin.top})`}>
             {[0, maxValue / 2, maxValue].map((tick) => (
               <g key={tick} transform={`translate(0,${y(tick)})`}>
@@ -488,7 +671,8 @@ function MembersEvolutionWidget({
               );
             })}
           </g>
-        </svg>
+          </svg>
+        </div>
 
         <div className="flex items-center gap-5 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
@@ -582,8 +766,12 @@ function SignalsPulseMapWidget({
           Pulse map by priority and type
         </CardDescription>
       </CardHeader>
-      <CardContent className="min-h-[420px]">
-        <svg viewBox={`0 0 ${width} ${height}`} className="h-[360px] w-full">
+      <CardContent className="min-h-[380px]">
+        <div className="overflow-x-auto">
+          <svg
+            viewBox={`0 0 ${width} ${height}`}
+            className="h-[320px] min-w-[640px] w-full sm:h-[360px]"
+          >
           <defs>
             <filter id="signal-depth-shadow" x="-40%" y="-40%" width="180%" height="180%">
               <feDropShadow
@@ -706,7 +894,8 @@ function SignalsPulseMapWidget({
               </linearGradient>
             </defs>
           </g>
-        </svg>
+          </svg>
+        </div>
       </CardContent>
     </Card>
   );
@@ -868,10 +1057,11 @@ export function HomeTokenHoldingsDashboard({
 
           {!isLoading && !error && data && data.tokens.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
+              <DistributionByMemberBarChart tokens={data.tokens} />
               {data.tokens.map((token) => (
                 <Card
                   key={token.token_address}
-                  className="group min-h-[500px] border-border/50 bg-card/90 backdrop-blur-sm"
+                  className="group min-h-[420px] border-border/50 bg-card/90 backdrop-blur-sm lg:min-h-[500px]"
                 >
                   <CardHeader className="gap-3">
                     <div className="flex items-start justify-between gap-3">
