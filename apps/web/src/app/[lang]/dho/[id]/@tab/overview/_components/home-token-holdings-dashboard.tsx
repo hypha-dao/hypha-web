@@ -296,7 +296,7 @@ function TokenDonutChart({
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-      <div className="relative flex items-center justify-center lg:flex-none">
+      <div className="relative flex w-full items-center justify-center lg:w-auto lg:flex-none">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute h-52 w-52 rounded-full opacity-90 blur-3xl sm:h-60 sm:w-60 lg:h-64 lg:w-64"
@@ -309,7 +309,7 @@ function TokenDonutChart({
           viewBox="-145 -145 290 290"
           role="img"
           aria-label={`Token distribution chart for ${title}`}
-          className="h-64 w-64 transition-transform duration-300 ease-out group-hover:scale-[1.03] sm:h-72 sm:w-72 lg:h-80 lg:w-80"
+          className="h-auto w-full max-w-[260px] transition-transform duration-300 ease-out group-hover:scale-[1.03] sm:max-w-[300px] lg:max-w-[320px]"
         >
           {pieData.map((segment: d3.PieArcDatum<ChartSlice>) => (
             <path
@@ -330,7 +330,7 @@ function TokenDonutChart({
         </svg>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2 lg:max-w-[28%]">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 lg:max-w-[32%]">
         {chartData.map((slice) => (
           <div
             key={`${slice.display_name}-${slice.address ?? 'other'}`}
@@ -430,7 +430,7 @@ function DistributionOverTimeChart({
     [history?.points],
   );
 
-  const width = Math.max(760, chartPoints.length * 34);
+  const width = Math.max(620, chartPoints.length * 28);
   const height = 340;
   const margin = { top: 22, right: 22, bottom: 52, left: 54 };
   const innerWidth = width - margin.left - margin.right;
@@ -517,7 +517,7 @@ function DistributionOverTimeChart({
           <div className="overflow-x-auto">
             <svg
               viewBox={`0 0 ${width} ${height}`}
-              className="h-[280px] min-w-[760px] w-full"
+              className="h-[280px] min-w-[620px] w-full"
             >
               <defs>
                 <linearGradient
@@ -1208,7 +1208,7 @@ export function HomeTokenHoldingsDashboard({
           ) : null}
 
           {!isLoading && !error && data && data.tokens.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-2">
               <DistributionOverTimeChart
                 spaceSlug={spaceSlug}
                 tokens={data.tokens}
