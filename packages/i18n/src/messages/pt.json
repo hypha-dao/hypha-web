@@ -841,30 +841,6 @@
       "noAccess": "Você não tem acesso para visualizar a navegação espacial."
     }
   },
-  "TokenHoldingsDashboard": {
-    "subtitle": "Distribuição de tokens em um relance.",
-    "badges": {
-      "tokens": "Tokens: {count}",
-      "otherBucket": "Categoria outros: < 3%",
-      "treasuryVisible": "Tesouraria sempre visível"
-    },
-    "updatedAt": "Atualizado {date}",
-    "error": {
-      "title": "Não foi possível carregar as participações em tokens",
-      "description": "Tente novamente em instantes. Se o problema persistir, verifique seu acesso ao espaço e a conectividade de rede."
-    },
-    "empty": {
-      "title": "Ainda não há participações em tokens disponíveis",
-      "description": "Este espaço atualmente não disponibiliza dados de distribuição de tokens emitidos."
-    },
-    "chartAria": "Gráfico de distribuição de tokens para {title}",
-    "tokenDetailsAria": "Detalhes do token para {tokenName}",
-    "tooltip": {
-      "totalSupply": "Oferta total",
-      "other": "Outros",
-      "address": "Endereço"
-    }
-  },
   "SpaceSettingsAction": {
     "title": "Configurações de espaço",
     "content": "Acesse e gerencie as configurações do seu espaço, incluindo aparência, estrutura, métodos, associação e tesouraria.",

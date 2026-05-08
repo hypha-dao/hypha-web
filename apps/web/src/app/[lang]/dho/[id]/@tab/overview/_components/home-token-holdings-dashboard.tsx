@@ -4,7 +4,7 @@ import * as React from 'react';
 import useSWR from 'swr';
 import * as d3 from 'd3';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { CircleHelp } from 'lucide-react';
 import {
   Badge,
@@ -52,6 +52,10 @@ type ChartSlice = TokenHoldingResponse['tokens'][number]['holdings'][number] & {
   numeric: number;
 };
 
+const PERCENTAGE_FORMATTER = d3.format('.1f');
+const NUMBER_FORMATTER = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 2,
+});
 const COLOR_RANGE = [
   'var(--accent-9)',
   'var(--info-9)',
@@ -67,6 +71,12 @@ function toNumericValue(raw: string): number {
   const parsed = Number.parseFloat(raw);
   if (!Number.isFinite(parsed) || parsed < 0) return 0;
   return parsed;
+}
+
+function formatAmount(raw: string): string {
+  const parsed = Number.parseFloat(raw);
+  if (!Number.isFinite(parsed)) return raw;
+  return NUMBER_FORMATTER.format(parsed);
 }
 
 function prettifyTokenType(type: string): string {
@@ -106,13 +116,9 @@ function fetchHoldings(
 function TokenDonutChart({
   title,
   slices,
-  chartAriaLabel,
-  formatSharePercent,
 }: {
   title: string;
   slices: TokenHoldingResponse['tokens'][number]['holdings'];
-  chartAriaLabel: string;
-  formatSharePercent: (value: number) => string;
 }) {
   const chartData = React.useMemo(
     () =>
@@ -158,7 +164,7 @@ function TokenDonutChart({
         <svg
           viewBox="-110 -110 220 220"
           role="img"
-          aria-label={chartAriaLabel}
+          aria-label={`Token distribution chart for ${title}`}
           className="h-60 w-60 transition-transform duration-300 ease-out group-hover:scale-[1.03]"
         >
           {pieData.map((segment: d3.PieArcDatum<ChartSlice>) => (
@@ -197,7 +203,7 @@ function TokenDonutChart({
               </span>
             </div>
             <span className="shrink-0 text-xs font-medium text-muted-foreground">
-              {formatSharePercent(slice.share_pct)}
+              {PERCENTAGE_FORMATTER(slice.share_pct)}%
             </span>
           </div>
         ))}
@@ -231,11 +237,9 @@ export function HomeTokenHoldingsDashboard({
 }: {
   spaceSlug: string;
 }) {
-  const format = useFormatter();
   const { getAccessToken } = useAuthentication();
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
-  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const { data, error, isLoading } = useSWR(
     ['space-token-holdings-home', spaceSlug],
     fetchHoldings(spaceSlug, getAccessToken),
@@ -244,30 +248,8 @@ export function HomeTokenHoldingsDashboard({
 
   const tokenCount = data?.tokens.length ?? 0;
   const lastUpdatedLabel = data?.asOf
-    ? format.dateTime(new Date(data.asOf), {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      })
+    ? new Date(data.asOf).toLocaleString()
     : null;
-  const formatAmount = React.useCallback(
-    (raw: string): string => {
-      const parsed = Number.parseFloat(raw);
-      if (!Number.isFinite(parsed)) return raw;
-      return format.number(parsed, {
-        maximumFractionDigits: 2,
-      });
-    },
-    [format],
-  );
-  const formatSharePercent = React.useCallback(
-    (value: number) =>
-      format.number(value / 100, {
-        style: 'percent',
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1,
-      }),
-    [format],
-  );
   const getTokenTypeLabel = React.useCallback(
     (type: string) => {
       try {
@@ -289,21 +271,17 @@ export function HomeTokenHoldingsDashboard({
           {tCommon('home')}
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          {tTokenHoldings('subtitle')}
+          Token distribution at a glance.
         </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="outline">
-          {tTokenHoldings('badges.tokens', { count: tokenCount })}
-        </Badge>
-        <Badge variant="outline">{tTokenHoldings('badges.otherBucket')}</Badge>
-        <Badge variant="outline">
-          {tTokenHoldings('badges.treasuryVisible')}
-        </Badge>
+        <Badge variant="outline">Tokens: {tokenCount}</Badge>
+        <Badge variant="outline">Other bucket: &lt; 3%</Badge>
+        <Badge variant="outline">Treasury always visible</Badge>
         {lastUpdatedLabel ? (
           <span className="text-xs text-muted-foreground">
-            {tTokenHoldings('updatedAt', { date: lastUpdatedLabel })}
+            Updated {lastUpdatedLabel}
           </span>
         ) : null}
       </div>
@@ -313,9 +291,10 @@ export function HomeTokenHoldingsDashboard({
       {!isLoading && error ? (
         <Card>
           <CardHeader>
-            <CardTitle>{tTokenHoldings('error.title')}</CardTitle>
+            <CardTitle>Unable to load token holdings</CardTitle>
             <CardDescription>
-              {tTokenHoldings('error.description')}
+              Please retry in a moment. If this persists, check your space
+              access and network connectivity.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -324,9 +303,10 @@ export function HomeTokenHoldingsDashboard({
       {!isLoading && !error && data && data.tokens.length === 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>{tTokenHoldings('empty.title')}</CardTitle>
+            <CardTitle>No token holdings available yet</CardTitle>
             <CardDescription>
-              {tTokenHoldings('empty.description')}
+              This space does not currently expose minted token distribution
+              data.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -348,9 +328,7 @@ export function HomeTokenHoldingsDashboard({
                         <TooltipTrigger asChild>
                           <button
                             type="button"
-                            aria-label={tTokenHoldings('tokenDetailsAria', {
-                              tokenName: token.name,
-                            })}
+                            aria-label={`Token details for ${token.name}`}
                             className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             <CircleHelp className="h-4 w-4" />
@@ -362,19 +340,17 @@ export function HomeTokenHoldingsDashboard({
                         >
                           <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
                             <span className="text-muted-foreground">
-                              {tTokenHoldings('tooltip.totalSupply')}
+                              Total supply
                             </span>
                             <span>{formatAmount(token.total_supply)}</span>
                             <span className="text-muted-foreground">
                               {tCommon('Treasury')}
                             </span>
                             <span>{formatAmount(token.treasury_balance)}</span>
-                            <span className="text-muted-foreground">
-                              {tTokenHoldings('tooltip.other')}
-                            </span>
+                            <span className="text-muted-foreground">Other</span>
                             <span>{formatAmount(token.other_balance)}</span>
                             <span className="text-muted-foreground">
-                              {tTokenHoldings('tooltip.address')}
+                              Address
                             </span>
                             <span className="max-w-[160px] truncate">
                               {token.token_address}
@@ -396,14 +372,7 @@ export function HomeTokenHoldingsDashboard({
                 </div>
               </CardHeader>
               <CardContent>
-                <TokenDonutChart
-                  title={token.symbol}
-                  slices={token.holdings}
-                  chartAriaLabel={tTokenHoldings('chartAria', {
-                    title: token.symbol,
-                  })}
-                  formatSharePercent={formatSharePercent}
-                />
+                <TokenDonutChart title={token.symbol} slices={token.holdings} />
               </CardContent>
             </Card>
           ))}

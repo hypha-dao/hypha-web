@@ -151,30 +151,6 @@
       "noAccess": "Sie haben keinen Zugriff, um die Space-Navigation anzuzeigen."
     }
   },
-  "TokenHoldingsDashboard": {
-    "subtitle": "Tokenverteilung auf einen Blick.",
-    "badges": {
-      "tokens": "Token: {count}",
-      "otherBucket": "Sonstiger Anteil: < 3%",
-      "treasuryVisible": "Treasury immer sichtbar"
-    },
-    "updatedAt": "Aktualisiert {date}",
-    "error": {
-      "title": "Token-Bestände konnten nicht geladen werden",
-      "description": "Bitte versuchen Sie es in einem Moment erneut. Wenn das Problem weiterhin besteht, prüfen Sie Ihren Space-Zugriff und die Netzwerkverbindung."
-    },
-    "empty": {
-      "title": "Noch keine Token-Bestände verfügbar",
-      "description": "Dieser Space stellt derzeit keine Daten zur Verteilung geprägter Token bereit."
-    },
-    "chartAria": "Tokenverteilungsdiagramm für {title}",
-    "tokenDetailsAria": "Token-Details für {tokenName}",
-    "tooltip": {
-      "totalSupply": "Gesamtangebot",
-      "other": "Sonstige",
-      "address": "Adresse"
-    }
-  },
   "SpaceSettingsAction": {
     "title": "Space-Einstellungen",
     "content": "Greifen Sie auf die Einstellungen Ihres Spaces zu und verwalten Sie sie, einschließlich Erscheinungsbild, Struktur, Methoden, Mitgliedschaft und Schatzkammer.",
