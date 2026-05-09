@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { MessageCircle, Sparkles } from 'lucide-react';
+import { Menu, MessageCircle, PanelLeftClose } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -108,22 +108,36 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, overlayVisible, toggle } = useAiPanel();
-  const t = useTranslations('AiPanel');
+  const { open, overlayVisible, closeAiPanel, showAiOverlay, hideAiOverlay } =
+    useAiPanel();
   const isSpace = useIsSpaceContext();
+  const t = useTranslations('AiPanel');
 
-  if (!isSpace || open) return null;
+  if (!isSpace) return null;
+
+  const isOpen = open || overlayVisible;
 
   return (
     <button
       type="button"
-      onClick={toggle}
-      aria-expanded={overlayVisible}
+      onClick={() => {
+        if (isOpen) {
+          closeAiPanel();
+          hideAiOverlay();
+          return;
+        }
+        showAiOverlay();
+      }}
+      aria-expanded={isOpen}
       className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
-      title={t('openPanel')}
-      aria-label={t('openPanel')}
+      title={isOpen ? t('closePanel') : t('openPanel')}
+      aria-label={isOpen ? t('closePanel') : t('openPanel')}
     >
-      <Sparkles className="h-4 w-4" />
+      {isOpen ? (
+        <PanelLeftClose className="h-4 w-4" />
+      ) : (
+        <Menu className="h-4 w-4" />
+      )}
     </button>
   );
 }
@@ -213,22 +227,13 @@ export function PanelWrapLayout({
   const {
     open: leftOpen,
     overlayVisible: leftOverlayVisible,
-    toggle: toggleLeft,
+    openAiPanel,
+    closeAiPanel,
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const [isMobileViewport, setIsMobileViewport] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const media = window.matchMedia('(max-width: 767px)');
-    const sync = () => setIsMobileViewport(media.matches);
-    sync();
-    media.addEventListener('change', sync);
-    return () => media.removeEventListener('change', sync);
-  }, []);
 
   // Panels are only available within a space context (/[lang]/dho/[id]/...)
   const effectiveLeft = isSpace ? left : undefined;
@@ -241,8 +246,7 @@ export function PanelWrapLayout({
       ? '320px'
       : LEFT_SIDEBAR_ICON_WIDTH
     : '0px';
-  const fallbackSidebarRightPx =
-    rightOpen && effectiveRight ? (isMobileViewport ? '0px' : '320px') : '0px';
+  const fallbackSidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
   const [sidebarLeftPx, setSidebarLeftPx] = useState(fallbackSidebarLeftPx);
   const [sidebarRightPx, setSidebarRightPx] = useState(fallbackSidebarRightPx);
 
@@ -309,7 +313,6 @@ export function PanelWrapLayout({
     effectiveRight,
     fallbackSidebarLeftPx,
     fallbackSidebarRightPx,
-    isMobileViewport,
   ]);
 
   /** Radix portaled dialogs sit under `body` and do not inherit vars from this div — mirror to `:root`. */
@@ -328,7 +331,12 @@ export function PanelWrapLayout({
       <PanelDualSidebarScrollBridge
         leftOpen={leftExpanded}
         onLeftOpenChange={(open) => {
-          if (open !== leftExpanded) toggleLeft();
+          if (open === leftExpanded) return;
+          if (open) {
+            openAiPanel();
+            return;
+          }
+          closeAiPanel();
         }}
         onLeftMouseEnter={showAiOverlay}
         onLeftMouseLeave={hideAiOverlay}
@@ -363,7 +371,7 @@ export function PanelWrapLayout({
           side="right"
           variant="sidebar"
           collapsible="offcanvas"
-          className="z-[50] max-md:[--sidebar-width:calc(100dvw-var(--sidebar-left-width,0px)-var(--main-column-scrollbar-width,0px))]"
+          className="z-[50]"
         >
           <SidebarResizeHandle />
           {effectiveRight.content}
@@ -376,7 +384,12 @@ export function PanelWrapLayout({
         defaultOpen={false}
         open={leftExpanded}
         onOpenChange={(open) => {
-          if (open !== leftExpanded) toggleLeft();
+          if (open === leftExpanded) return;
+          if (open) {
+            openAiPanel();
+            return;
+          }
+          closeAiPanel();
         }}
         style={
           {

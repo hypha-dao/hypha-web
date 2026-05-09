@@ -26,13 +26,12 @@ export const DocumentGrid = ({
   documents,
 }: DocumentGridProps) => {
   return (
-    <div className="grid w-full grid-cols-1 justify-start gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+    <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-2">
       {documents.map((document) => (
         <Link
           href={`${basePath}/${document.slug}`}
           key={document.slug}
           scroll={false}
-          className="flex h-full min-h-0 w-full max-w-none justify-self-start sm:max-w-[24rem]"
         >
           <DocumentCard {...document} isLoading={isLoading} />
         </Link>
