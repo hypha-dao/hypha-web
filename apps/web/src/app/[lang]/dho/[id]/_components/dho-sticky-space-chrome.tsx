@@ -93,8 +93,6 @@ export function DhoStickySpaceChrome({
   /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
   const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
 
-  const [flowActionsEl, setFlowActionsEl] =
-    React.useState<HTMLDivElement | null>(null);
   const [stickyActionsEl, setStickyActionsEl] =
     React.useState<HTMLDivElement | null>(null);
 
@@ -147,7 +145,7 @@ export function DhoStickySpaceChrome({
 
   const logoSrc = logoUrl || defaultLogoSrc;
 
-  const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
+  const actionsPortalTarget = stuck ? stickyActionsEl : null;
   // During hydration `resolvedTheme` can be undefined briefly; default to dark
   // to avoid flashing a light (white) secondary banner in dark mode sessions.
   const isDark = resolvedTheme !== 'light';
@@ -218,47 +216,6 @@ export function DhoStickySpaceChrome({
             ref={bannerBottomSentinelRef}
             className="pointer-events-none absolute bottom-0 left-0 h-px w-full opacity-0"
             aria-hidden
-          />
-        </div>
-
-        <div
-          className={cn(
-            /*
-             * In-flow secondary chrome mirrors the sticky row to feel visually integrated
-             * with the hero banner. Keep it in document flow; when sticky engages, this row
-             * becomes an invisible spacer to avoid layout jumps.
-             */
-            '-mt-px flex min-h-[var(--secondary-chrome-actions-row-height,52px)] items-center gap-3 border-x border-b border-border/70 px-4 py-2 md:px-8',
-            'bg-background-2/85 supports-[backdrop-filter]:bg-background-2/70 supports-[backdrop-filter]:backdrop-blur-sm',
-            stuck && 'pointer-events-none invisible opacity-0',
-          )}
-          style={
-            stuck
-              ? { minHeight: 'var(--secondary-chrome-actions-row-height,52px)' }
-              : undefined
-          }
-        >
-          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-            <Avatar className={STICKY_SPACE_CHROME_AVATAR_CLASSNAME}>
-              <AvatarImage
-                src={logoSrc}
-                alt={logoAlt}
-                className="object-cover"
-              />
-            </Avatar>
-            <p
-              className={cn(
-                STICKY_SPACE_CHROME_TITLE_CLASSNAME,
-                'min-w-0 flex-1 truncate text-foreground/92',
-              )}
-              title={title}
-            >
-              {title}
-            </p>
-          </div>
-          <div
-            ref={setFlowActionsEl}
-            className="flex shrink-0 flex-nowrap items-center gap-2"
           />
         </div>
       </div>

@@ -207,7 +207,7 @@ export function VisibleSpacesList({
             <Link
               href={rootVisitSpacePath}
               className="flex-1 md:flex-none"
-              onClick={() => prependRecentSpaceSlug(currentSpaceSlug)}
+              onClick={() => prependRecentSpaceSlug(rootSpace.slug)}
             >
               <Button
                 colorVariant="neutral"
@@ -284,7 +284,7 @@ export function VisibleSpacesList({
                   <Link
                     href={visitSpacePath}
                     className="flex-1 md:flex-none"
-                    onClick={() => prependRecentSpaceSlug(currentSpaceSlug)}
+                    onClick={() => prependRecentSpaceSlug(space.slug)}
                   >
                     <Button
                       colorVariant="neutral"

@@ -11,7 +11,6 @@ import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
-  getDhoSpaceSlugFromPathname,
   prependRecentSpaceSlug,
 } from '@hypha-platform/epics';
 import {
@@ -106,10 +105,6 @@ export function EcosystemNavigationMainPanel({
   const t = useTranslations('SelectNavigationAction');
   const format = useFormatter();
   const pathname = usePathname();
-  const currentRouteSpaceSlug = useMemo(
-    () => getDhoSpaceSlugFromPathname(pathname),
-    [pathname],
-  );
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
   const [selectedSpaceAccent, setSelectedSpaceAccent] = useState(
@@ -293,7 +288,7 @@ export function EcosystemNavigationMainPanel({
                               <Link
                                 href={visitSpaceHref}
                                 onClick={() =>
-                                  prependRecentSpaceSlug(currentRouteSpaceSlug)
+                                  prependRecentSpaceSlug(selectedSpaceSlug)
                                 }
                               >
                                 <ArrowTopRightIcon />

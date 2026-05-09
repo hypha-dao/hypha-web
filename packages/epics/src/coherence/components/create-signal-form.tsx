@@ -60,6 +60,7 @@ interface CreateSignalFormProps {
   backUrl?: string;
   mode?: 'create' | 'edit';
   signalSlug?: string;
+  initialRoomId?: string;
   initialValues?: Partial<FormValues>;
 }
 
@@ -70,6 +71,7 @@ export const CreateSignalForm = ({
   backUrl,
   mode = 'create',
   signalSlug,
+  initialRoomId,
   initialValues,
 }: CreateSignalFormProps) => {
   const t = useTranslations('CoherenceTab');
@@ -106,9 +108,14 @@ export const CreateSignalForm = ({
     isDeletingCoherence,
   } = useCoherenceMutationsWeb2Rsc(authToken);
   const {
+    client: matrixClient,
     isMatrixAvailable,
     createRoom,
     sendMessage: sendMatrixMessage,
+    editRoomMessage,
+    getRoomMessages,
+    joinRoom,
+    loadRoomHistory,
   } = useMatrix();
 
   const isMutating =
@@ -383,6 +390,67 @@ export const CreateSignalForm = ({
             priority: data.priority,
             tags: data.tags,
           });
+
+          const nextDescription = data.description.trim();
+          const previousDescription = (initialValues?.description ?? '').trim();
+          const shouldSyncChatDescription =
+            Boolean(nextDescription) &&
+            nextDescription !== previousDescription &&
+            Boolean(initialRoomId) &&
+            isMatrixAvailable;
+
+          if (shouldSyncChatDescription && initialRoomId) {
+            try {
+              const resolvedRoomId = await joinRoom(initialRoomId).catch(
+                () => initialRoomId,
+              );
+              await loadRoomHistory(resolvedRoomId, {
+                pageSize: 100,
+                maxBatches: 40,
+              }).catch(() => undefined);
+
+              const roomMessages = [...(getRoomMessages(resolvedRoomId) ?? [])];
+              const visibleMessages = roomMessages.filter(
+                (message) => !message.redacted,
+              );
+              const currentMatrixUserId = matrixClient?.getUserId();
+
+              const byTimestampAsc = (
+                a: { timestamp: Date },
+                b: { timestamp: Date },
+              ) => a.timestamp.getTime() - b.timestamp.getTime();
+
+              const targetMessage =
+                (previousDescription
+                  ? visibleMessages.find(
+                      (message) =>
+                        message.content.trim() === previousDescription,
+                    )
+                  : undefined) ??
+                visibleMessages
+                  .filter((message) => {
+                    const content = message.content.trim();
+                    if (!content) return false;
+                    if (!currentMatrixUserId) return true;
+                    return message.sender === currentMatrixUserId;
+                  })
+                  .sort(byTimestampAsc)[0];
+
+              if (targetMessage?.id) {
+                await editRoomMessage({
+                  roomId: resolvedRoomId,
+                  targetEventId: targetMessage.id,
+                  message: nextDescription,
+                });
+              }
+            } catch (chatSyncError) {
+              console.warn(
+                'Signal updated but chat description message sync failed:',
+                chatSyncError,
+              );
+            }
+          }
+
           router.push(successfulUrl);
         } catch (error) {
           const message =
@@ -475,7 +543,14 @@ export const CreateSignalForm = ({
       createRoom,
       updateCoherenceBySlug,
       updateCoherenceSignalBySlug,
+      editRoomMessage,
+      getRoomMessages,
+      initialRoomId,
+      initialValues?.description,
       isMatrixAvailable,
+      joinRoom,
+      loadRoomHistory,
+      matrixClient,
       sendMatrixMessage,
       mode,
       setSignalProvisioningNotice,

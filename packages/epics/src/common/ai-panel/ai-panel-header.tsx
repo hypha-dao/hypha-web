@@ -177,7 +177,7 @@ export function AiPanelHeader({
         }
         className="flex min-w-0 items-center gap-2"
         onClick={() => {
-          prependRecentSpaceSlug(activeSpaceSlug);
+          prependRecentSpaceSlug(space.slug);
         }}
       >
         <span className="h-5 w-5 overflow-hidden rounded-full ring-1 ring-border/60">
