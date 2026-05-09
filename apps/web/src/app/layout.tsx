@@ -16,7 +16,6 @@ import {
   AiLeftPanel,
   PanelProviders,
   PanelWrapLayout,
-  AiSidebarTrigger,
   HumanSidebarTrigger,
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
@@ -278,9 +277,6 @@ export default async function RootLayout({
                           logoHref={ROOT_URL}
                           openMenuLabel={navOpenMenuLabel}
                           closeMenuLabel={navCloseMenuLabel}
-                          leadingAction={
-                            aiChatEnabled ? <AiSidebarTrigger /> : undefined
-                          }
                           trailingAction={
                             humanChatEnabled ? (
                               <HumanSidebarTrigger />
