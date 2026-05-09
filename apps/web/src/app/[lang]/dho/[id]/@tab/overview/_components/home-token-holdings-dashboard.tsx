@@ -262,10 +262,19 @@ function TokenDonutChart({
   title: string;
   slices: TokenHoldingResponse['tokens'][number]['holdings'];
 }) {
+  const [hoveredSliceKey, setHoveredSliceKey] = React.useState<string | null>(
+    null,
+  );
   const chartData = React.useMemo(
     () =>
       slices
-        .map((slice) => ({ ...slice, numeric: toNumericValue(slice.balance) }))
+        .map((slice, index) => ({
+          ...slice,
+          hover_key: `${slice.display_name}-${
+            slice.address ?? slice.slug ?? index
+          }`,
+          numeric: toNumericValue(slice.balance),
+        }))
         .filter((slice) => slice.numeric > 0),
     [slices],
   );
@@ -293,6 +302,10 @@ function TokenDonutChart({
     const domain = chartData.map((slice) => slice.display_name);
     return d3.scaleOrdinal<string, string>().domain(domain).range(COLOR_RANGE);
   }, [chartData]);
+  const hasHoveredSlice = hoveredSliceKey !== null;
+  const centerLabel =
+    chartData.find((slice) => slice.hover_key === hoveredSliceKey)
+      ?.display_name ?? title;
 
   return (
     <div className="flex flex-col gap-4">
@@ -317,7 +330,15 @@ function TokenDonutChart({
               d={arcGenerator(segment) ?? ''}
               fill={colorScale(segment.data.display_name)}
               stroke="var(--background)"
-              strokeWidth={1}
+              strokeWidth={hoveredSliceKey === segment.data.hover_key ? 2 : 1}
+              opacity={
+                !hasHoveredSlice || hoveredSliceKey === segment.data.hover_key
+                  ? 1
+                  : 0.3
+              }
+              className="cursor-pointer transition-opacity duration-150"
+              onMouseEnter={() => setHoveredSliceKey(segment.data.hover_key)}
+              onMouseLeave={() => setHoveredSliceKey(null)}
             >
               <title>{`${segment.data.display_name} — ${PERCENTAGE_FORMATTER(
                 segment.data.share_pct,
@@ -329,7 +350,7 @@ function TokenDonutChart({
             dominantBaseline="middle"
             className="fill-foreground text-[15px] font-semibold"
           >
-            {title}
+            {centerLabel}
           </text>
         </svg>
       </div>
@@ -338,7 +359,19 @@ function TokenDonutChart({
         {chartData.map((slice) => (
           <div
             key={`${slice.display_name}-${slice.address ?? 'other'}`}
-            className="flex items-center justify-between gap-2 rounded-md px-1 py-0.5"
+            className="flex cursor-pointer items-center justify-between gap-2 rounded-md px-1 py-0.5 transition-colors duration-150"
+            style={{
+              background:
+                hoveredSliceKey === slice.hover_key
+                  ? 'color-mix(in oklab, var(--space-accent, var(--accent-9)) 14%, transparent)'
+                  : 'transparent',
+              opacity:
+                !hasHoveredSlice || hoveredSliceKey === slice.hover_key
+                  ? 1
+                  : 0.45,
+            }}
+            onMouseEnter={() => setHoveredSliceKey(slice.hover_key)}
+            onMouseLeave={() => setHoveredSliceKey(null)}
           >
             <div className="flex min-w-0 items-center gap-2">
               <span
@@ -468,23 +501,23 @@ function DistributionOverTimeChart({
     .x((point) => x(point.dateObj))
     .y0(innerHeight)
     .y1((point) => y(point.share_pct))
-    .curve(d3.curveCatmullRom.alpha(0.5));
+    .curve(d3.curveStepAfter);
   const line = d3
     .line<(typeof orderedPoints)[number]>()
     .x((point) => x(point.dateObj))
     .y((point) => y(point.share_pct))
-    .curve(d3.curveCatmullRom.alpha(0.5));
+    .curve(d3.curveStepAfter);
   const gradientId = React.useId().replace(/:/g, '');
   const memberOptions = history?.members ?? [{ id: 'all', label: 'All' }];
-  const valueBarWidth = Math.max(
-    2,
-    Math.min(14, (innerWidth / Math.max(10, orderedPoints.length)) * 0.72),
-  );
   const lastPoint = orderedPoints.at(-1);
+  const firstPoint = orderedPoints[0];
+  const netChange =
+    firstPoint && lastPoint ? lastPoint.share_pct - firstPoint.share_pct : 0;
+  const netChangeSign = netChange >= 0 ? '+' : '';
 
   return (
-    <Card className="border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
-      <CardHeader className="pb-2">
+    <Card className="self-start border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
+      <CardHeader className="pb-1">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <CardTitle className="text-lg">Distribution over time</CardTitle>
@@ -523,6 +556,22 @@ function DistributionOverTimeChart({
             </label>
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
+            Start{' '}
+            {firstPoint
+              ? `${PERCENTAGE_FORMATTER(firstPoint.share_pct)}%`
+              : '0%'}
+          </span>
+          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
+            End{' '}
+            {lastPoint ? `${PERCENTAGE_FORMATTER(lastPoint.share_pct)}%` : '0%'}
+          </span>
+          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-foreground">
+            Delta {netChangeSign}
+            {PERCENTAGE_FORMATTER(netChange)}%
+          </span>
+        </div>
       </CardHeader>
       <CardContent>
         {historyLoading ? (
@@ -556,24 +605,6 @@ function DistributionOverTimeChart({
                   <stop
                     offset="100%"
                     stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 74%, white 26%)"
-                  />
-                </linearGradient>
-                <linearGradient
-                  id={`distribution-bars-${gradientId}`}
-                  x1="0%"
-                  x2="0%"
-                  y1="100%"
-                  y2="0%"
-                >
-                  <stop
-                    offset="0%"
-                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 84%, black 16%)"
-                    stopOpacity="0.34"
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 72%, white 28%)"
-                    stopOpacity="0.96"
                   />
                 </linearGradient>
                 <filter
@@ -638,26 +669,6 @@ function DistributionOverTimeChart({
                   </g>
                 ))}
 
-                {orderedPoints.map((point, index) => {
-                  const cx = x(point.dateObj);
-                  const top = y(point.share_pct);
-                  const recencyOpacity =
-                    0.26 +
-                    (index / Math.max(1, orderedPoints.length - 1)) * 0.6;
-                  return (
-                    <rect
-                      key={`bar-${point.date}`}
-                      x={cx - valueBarWidth / 2}
-                      y={top}
-                      width={valueBarWidth}
-                      height={innerHeight - top}
-                      rx={Math.min(6, valueBarWidth / 2)}
-                      fill={`url(#distribution-bars-${gradientId})`}
-                      opacity={recencyOpacity}
-                    />
-                  );
-                })}
-
                 <path
                   d={area(orderedPoints) ?? ''}
                   fill={`url(#distribution-over-time-${gradientId})`}
@@ -675,7 +686,7 @@ function DistributionOverTimeChart({
                   .filter(
                     (_, index) =>
                       index %
-                        Math.max(1, Math.floor(orderedPoints.length / 10)) ===
+                        Math.max(1, Math.floor(orderedPoints.length / 12)) ===
                       0,
                   )
                   .map((point) => (
