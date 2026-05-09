@@ -32,7 +32,8 @@ export const MenuTop = ({
   closeMenuLabel = 'Close menu',
 }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isLikelyMobileDevice, setIsLikelyMobileDevice] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const pathname = usePathname();
@@ -45,18 +46,31 @@ export const MenuTop = ({
     if (typeof window === 'undefined' || typeof navigator === 'undefined') {
       return;
     }
-    const uaData = (
-      navigator as Navigator & { userAgentData?: { mobile?: boolean } }
-    ).userAgentData;
-    const byUaData = Boolean(uaData?.mobile);
-    const byUserAgent =
-      /Android|iPhone|iPod|Mobile|Windows Phone|IEMobile/i.test(
-        navigator.userAgent,
-      );
-    const byIpadOs =
-      /iPad/i.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    setIsMobileDevice(byUaData || byUserAgent || byIpadOs);
+    const viewportMedia = window.matchMedia('(max-width: 767px)');
+    const sync = () => {
+      const uaData = (
+        navigator as Navigator & { userAgentData?: { mobile?: boolean } }
+      ).userAgentData;
+      const byUaData = Boolean(uaData?.mobile);
+      const byUserAgent =
+        /Android|iPhone|iPod|Mobile|Windows Phone|IEMobile/i.test(
+          navigator.userAgent,
+        );
+      const byIpadOs =
+        /iPad/i.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' &&
+          navigator.maxTouchPoints > 1 &&
+          window.matchMedia('(pointer: coarse)').matches);
+      setIsMobileViewport(viewportMedia.matches);
+      setIsLikelyMobileDevice(byUaData || byUserAgent || byIpadOs);
+    };
+    sync();
+    viewportMedia.addEventListener('change', sync);
+    window.addEventListener('resize', sync);
+    return () => {
+      viewportMedia.removeEventListener('change', sync);
+      window.removeEventListener('resize', sync);
+    };
   }, []);
 
   /** Publish measured height so side panels / overlays align with this bar (see e2e menu-top-consistent-height). */
@@ -107,7 +121,9 @@ export const MenuTop = ({
         )}
       >
         <div className="flex items-center gap-2">
-          {leadingAction}
+          {leadingAction ? (
+            <div className="hidden md:flex">{leadingAction}</div>
+          ) : null}
           {logoNode ? (
             logoHref ? (
               <Link
@@ -155,13 +171,8 @@ export const MenuTop = ({
           </div>
         )}
 
-        {/* Mobile trailing action (always visible on small screens) */}
-        {trailingAction && (
-          <div className="flex md:hidden items-center">{trailingAction}</div>
-        )}
-
         {/* Mobile Burger */}
-        {children && isMobileDevice && (
+        {children && isMobileViewport && isLikelyMobileDevice && (
           <button
             type="button"
             className="md:hidden inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
