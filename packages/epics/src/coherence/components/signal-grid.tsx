@@ -21,14 +21,14 @@ export function SignalGrid({
   onSignalClick,
 }: SignalGridProps) {
   return (
-    <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),24rem))] justify-start gap-3 md:gap-4 lg:gap-4">
+    <div className="grid w-full grid-cols-1 justify-start gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 md:gap-4 lg:gap-4">
       {signals.map((signal) =>
         signal.archived ? (
           <SignalCard
             key={signal.id}
             {...signal}
             leadImage={leadImage}
-            className="h-full w-full min-h-0"
+            className="h-full w-full min-h-0 max-w-none justify-self-start sm:max-w-[24rem]"
             isLoading={isLoading}
             refresh={refresh}
           />
@@ -38,7 +38,7 @@ export function SignalGrid({
             role="button"
             tabIndex={0}
             className={cn(
-              'flex h-full min-h-0 w-full cursor-pointer rounded-2xl text-left outline-none',
+              'flex h-full min-h-0 w-full max-w-none cursor-pointer justify-self-start rounded-2xl text-left outline-none sm:max-w-[24rem]',
               'focus-visible:ring-2 focus-visible:ring-accent-9/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             )}
             onClick={() => onSignalClick(signal)}
@@ -62,7 +62,7 @@ export function SignalGrid({
           <Link
             key={signal.id}
             href={`${basePath}/${signal.slug}`}
-            className="flex h-full min-h-0"
+            className="flex h-full min-h-0 w-full max-w-none justify-self-start sm:max-w-[24rem]"
           >
             <SignalCard
               {...signal}
