@@ -32,8 +32,7 @@ export const MenuTop = ({
   closeMenuLabel = 'Close menu',
 }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileViewport, setIsMobileViewport] = useState(false);
-  const [isLikelyMobileDevice, setIsLikelyMobileDevice] = useState(false);
+  const [isTouchMobileContext, setIsTouchMobileContext] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const pathname = usePathname();
@@ -46,29 +45,26 @@ export const MenuTop = ({
     if (typeof window === 'undefined' || typeof navigator === 'undefined') {
       return;
     }
-    const viewportMedia = window.matchMedia('(max-width: 767px)');
+    const coarsePointerMedia = window.matchMedia('(pointer: coarse)');
     const sync = () => {
       const uaData = (
         navigator as Navigator & { userAgentData?: { mobile?: boolean } }
       ).userAgentData;
       const byUaData = Boolean(uaData?.mobile);
-      const byUserAgent =
-        /Android|iPhone|iPod|Mobile|Windows Phone|IEMobile/i.test(
-          navigator.userAgent,
-        );
-      const byIpadOs =
-        /iPad/i.test(navigator.userAgent) ||
-        (navigator.platform === 'MacIntel' &&
-          navigator.maxTouchPoints > 1 &&
-          window.matchMedia('(pointer: coarse)').matches);
-      setIsMobileViewport(viewportMedia.matches);
-      setIsLikelyMobileDevice(byUaData || byUserAgent || byIpadOs);
+      const byUserAgent = /Android|iPhone|iPad|iPod|Mobile/i.test(
+        navigator.userAgent,
+      );
+      const byTouchPoints = navigator.maxTouchPoints > 0;
+      const byCoarsePointer = coarsePointerMedia.matches;
+      setIsTouchMobileContext(
+        byUaData || byUserAgent || byTouchPoints || byCoarsePointer,
+      );
     };
     sync();
-    viewportMedia.addEventListener('change', sync);
+    coarsePointerMedia.addEventListener('change', sync);
     window.addEventListener('resize', sync);
     return () => {
-      viewportMedia.removeEventListener('change', sync);
+      coarsePointerMedia.removeEventListener('change', sync);
       window.removeEventListener('resize', sync);
     };
   }, []);
@@ -121,9 +117,7 @@ export const MenuTop = ({
         )}
       >
         <div className="flex items-center gap-2">
-          {leadingAction ? (
-            <div className="hidden md:flex">{leadingAction}</div>
-          ) : null}
+          {leadingAction}
           {logoNode ? (
             logoHref ? (
               <Link
@@ -171,11 +165,16 @@ export const MenuTop = ({
           </div>
         )}
 
+        {/* Mobile trailing action (always visible on small screens) */}
+        {trailingAction && (
+          <div className="flex md:hidden items-center">{trailingAction}</div>
+        )}
+
         {/* Mobile Burger */}
-        {children && isMobileViewport && isLikelyMobileDevice && (
+        {children && (
           <button
             type="button"
-            className="md:hidden inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+            className="md:hidden flex items-center"
             aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-menu"
