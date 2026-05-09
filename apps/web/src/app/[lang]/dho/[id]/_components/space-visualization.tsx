@@ -23,7 +23,6 @@ type Props = {
   currentSpaceId?: number;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
   enableHoverActions?: boolean;
-  enableRipples?: boolean;
 };
 
 const SPACE_ACCENT_FALLBACK = '#14b8a6';
@@ -148,7 +147,6 @@ export function SpaceVisualization({
   currentSpaceId,
   onVisibleSpacesChange,
   enableHoverActions = false,
-  enableRipples = false,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -592,49 +590,47 @@ export function SpaceVisualization({
 
     const ripples = g
       .selectAll<SVGGElement, SpaceHierarchyNode>('g.ripples')
-      .data(enableRipples ? (root.descendants() as SpaceHierarchyNode[]) : [])
+      .data(root.descendants() as SpaceHierarchyNode[])
       .join('g')
       .attr('class', 'ripples')
       .style('pointer-events', 'none');
 
-    if (enableRipples) {
-      const prefersReducedMotion =
-        typeof window !== 'undefined' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      ripples.each(function (d: SpaceHierarchyNode) {
-        const rippleGroup = d3.select(this);
-        const delays = ['0s', '0.35s', '0.7s'];
-        const scales = [0.56, 0.74, 0.9];
+    ripples.each(function (d: SpaceHierarchyNode) {
+      const rippleGroup = d3.select(this);
+      const delays = ['0s', '0.35s', '0.7s'];
+      const scales = [0.56, 0.74, 0.9];
 
-        scales.forEach((scale, index) => {
-          const opacity = d.depth === 0 ? 0.24 : 0.18 - index * 0.03;
-          const circle = rippleGroup
-            .append('circle')
-            .attr('class', 'ripple-ring')
-            .attr('fill', 'none')
-            .attr('stroke', withAlpha(getNodeAccent(d), opacity))
-            .attr('stroke-width', 1)
-            .attr('data-scale', scale.toString());
+      scales.forEach((scale, index) => {
+        const opacity = d.depth === 0 ? 0.24 : 0.18 - index * 0.03;
+        const circle = rippleGroup
+          .append('circle')
+          .attr('class', 'ripple-ring')
+          .attr('fill', 'none')
+          .attr('stroke', withAlpha(getNodeAccent(d), opacity))
+          .attr('stroke-width', 1)
+          .attr('data-scale', scale.toString());
 
-          if (!prefersReducedMotion) {
-            circle
-              .append('animate')
-              .attr('attributeName', 'opacity')
-              .attr(
-                'values',
-                `${Math.max(0.08, opacity - 0.08)};${opacity};${Math.max(
-                  0.08,
-                  opacity - 0.08,
-                )}`,
-              )
-              .attr('dur', '3.2s')
-              .attr('begin', delays[index] ?? '0s')
-              .attr('repeatCount', 'indefinite');
-          }
-        });
+        if (!prefersReducedMotion) {
+          circle
+            .append('animate')
+            .attr('attributeName', 'opacity')
+            .attr(
+              'values',
+              `${Math.max(0.08, opacity - 0.08)};${opacity};${Math.max(
+                0.08,
+                opacity - 0.08,
+              )}`,
+            )
+            .attr('dur', '3.2s')
+            .attr('begin', delays[index] ?? '0s')
+            .attr('repeatCount', 'indefinite');
+        }
       });
-    }
+    });
 
     svg.on('click', () => {
       if (focus.parent) {
@@ -945,37 +941,35 @@ export function SpaceVisualization({
     }
 
     let isCancelled = false;
-    if (enableRipples) {
-      root.each((node) => {
-        void (async () => {
-          const cacheKey = (node.data.logoUrl ?? '').trim();
-          let accentPromise = accentSampleCacheRef.current.get(cacheKey);
-          if (!accentPromise) {
-            accentPromise = sampleAccentHex(node.data.logoUrl);
-            accentSampleCacheRef.current.set(cacheKey, accentPromise);
-          }
-          const accent = await accentPromise;
-          if (isCancelled) return;
-          const resolvedAccent = accent ?? SPACE_ACCENT_FALLBACK;
-          nodeAccents.set(node.data.id, resolvedAccent);
-          ripples
-            .filter((d) => d.data.id === node.data.id)
-            .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
-            .each(function (_, i) {
-              const baseOpacity = node.depth === 0 ? 0.24 : 0.18 - i * 0.03;
-              d3.select(this).attr(
-                'stroke',
-                withAlpha(resolvedAccent, Math.max(0.08, baseOpacity)),
-              );
-            });
-        })();
-      });
-    }
+    root.each((node) => {
+      void (async () => {
+        const cacheKey = (node.data.logoUrl ?? '').trim();
+        let accentPromise = accentSampleCacheRef.current.get(cacheKey);
+        if (!accentPromise) {
+          accentPromise = sampleAccentHex(node.data.logoUrl);
+          accentSampleCacheRef.current.set(cacheKey, accentPromise);
+        }
+        const accent = await accentPromise;
+        if (isCancelled) return;
+        const resolvedAccent = accent ?? SPACE_ACCENT_FALLBACK;
+        nodeAccents.set(node.data.id, resolvedAccent);
+        ripples
+          .filter((d) => d.data.id === node.data.id)
+          .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
+          .each(function (_, i) {
+            const baseOpacity = node.depth === 0 ? 0.24 : 0.18 - i * 0.03;
+            d3.select(this).attr(
+              'stroke',
+              withAlpha(resolvedAccent, Math.max(0.08, baseOpacity)),
+            );
+          });
+      })();
+    });
     return () => {
       isCancelled = true;
       cancelIntroSequence();
     };
-  }, [data, currentSpaceId, resolvedTheme, enableHoverActions, enableRipples]);
+  }, [data, currentSpaceId, resolvedTheme, enableHoverActions]);
 
   useEffect(() => {
     return () => {

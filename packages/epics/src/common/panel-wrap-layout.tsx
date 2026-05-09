@@ -213,8 +213,7 @@ export function PanelWrapLayout({
   const {
     open: leftOpen,
     overlayVisible: leftOverlayVisible,
-    openAiPanel,
-    closeAiPanel,
+    toggle: toggleLeft,
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
@@ -329,12 +328,7 @@ export function PanelWrapLayout({
       <PanelDualSidebarScrollBridge
         leftOpen={leftExpanded}
         onLeftOpenChange={(open) => {
-          if (open === leftExpanded) return;
-          if (open) {
-            openAiPanel();
-            return;
-          }
-          closeAiPanel();
+          if (open !== leftExpanded) toggleLeft();
         }}
         onLeftMouseEnter={showAiOverlay}
         onLeftMouseLeave={hideAiOverlay}
@@ -382,12 +376,7 @@ export function PanelWrapLayout({
         defaultOpen={false}
         open={leftExpanded}
         onOpenChange={(open) => {
-          if (open === leftExpanded) return;
-          if (open) {
-            openAiPanel();
-            return;
-          }
-          closeAiPanel();
+          if (open !== leftExpanded) toggleLeft();
         }}
         style={
           {

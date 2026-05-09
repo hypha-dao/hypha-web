@@ -46,7 +46,6 @@ export default async function EditSignalPage({ params }: PageProps) {
       <CreateSignalForm
         mode="edit"
         signalSlug={signal.slug}
-        initialRoomId={signal.roomId}
         initialValues={{
           title: signal.title,
           description: signal.description,

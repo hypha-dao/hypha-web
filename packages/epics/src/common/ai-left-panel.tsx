@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -136,7 +136,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
     readRecentSpaceSlugs(),
   );
-  const previousSpaceSlugRef = useRef<string | null>(null);
   const [isHoverOpenLocked, setIsHoverOpenLocked] = useState(false);
   const recentSpaceLookupSlugs = useMemo(
     () =>
@@ -275,13 +274,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   useEffect(() => {
     if (!spaceSlug) return;
-    const previousSpaceSlug = previousSpaceSlugRef.current;
-    const slugToStore =
-      previousSpaceSlug && previousSpaceSlug !== spaceSlug
-        ? previousSpaceSlug
-        : spaceSlug;
-    setRecentSpaceSlugs(prependRecentSpaceSlug(slugToStore));
-    previousSpaceSlugRef.current = spaceSlug;
+    setRecentSpaceSlugs(prependRecentSpaceSlug(spaceSlug));
   }, [spaceSlug]);
 
   const recentSpaces = useMemo(() => {
