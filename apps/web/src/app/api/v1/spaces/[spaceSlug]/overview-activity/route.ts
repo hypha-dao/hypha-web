@@ -44,15 +44,15 @@ function buildRecentMonthBuckets(size: number): MonthBucket[] {
   return buckets;
 }
 
-function buildJoinedAtMonthBuckets(
-  joinedAtValues: Array<string | null>,
+function buildTimelineMonthBuckets(
+  eventDateValues: Array<string | null>,
   maxMonths = 12,
 ): MonthBucket[] {
   const now = new Date();
   const nowMonth = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
   );
-  const joinedDates = joinedAtValues
+  const eventDates = eventDateValues
     .filter((value): value is string => Boolean(value))
     .map((value) => new Date(value))
     .filter((value) => !Number.isNaN(value.getTime()))
@@ -61,13 +61,13 @@ function buildJoinedAtMonthBuckets(
         new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), 1)),
     );
 
-  if (joinedDates.length === 0) {
+  if (eventDates.length === 0) {
     return buildRecentMonthBuckets(6);
   }
 
-  const earliest = joinedDates.reduce(
+  const earliest = eventDates.reduce(
     (min, value) => (value < min ? value : min),
-    joinedDates[0]!,
+    eventDates[0]!,
   );
   const latest = nowMonth;
 
@@ -199,25 +199,74 @@ export async function GET(
       rosterPage += 1;
     }
 
-    const months = buildJoinedAtMonthBuckets(
-      memberEntries.map((item) => item.resolved_joined_at),
+    const membershipExitProposalDates = proposalsResult.result.found
+      ? proposalsResult.result.documents
+          .filter((proposal) => {
+            if (proposal.status !== 'accepted') return false;
+            const label = proposal.label?.toLowerCase() ?? '';
+            return label.includes('membership exit');
+          })
+          .map((proposal) => toIsoIfValid(proposal.updatedAt))
+      : [];
+
+    const months = buildTimelineMonthBuckets(
+      [
+        ...memberEntries.map((item) => item.resolved_joined_at),
+        ...membershipExitProposalDates,
+      ],
       12,
     );
-    const monthIndex = new Map(
-      months.map((item, index) => [item.month, index]),
-    );
+    const monthJoinDeltas = new Map<
+      string,
+      { people: number; spaces: number }
+    >();
+    const monthExitDeltas = new Map<
+      string,
+      { people: number; spaces: number }
+    >();
+
     for (const member of memberEntries) {
       if (!member.resolved_joined_at) continue;
       const joinedDate = new Date(member.resolved_joined_at);
       if (Number.isNaN(joinedDate.getTime())) continue;
       const key = toMonthKey(joinedDate);
-      const index = monthIndex.get(key);
-      if (index == null) continue;
+      const current = monthJoinDeltas.get(key) ?? { people: 0, spaces: 0 };
       if (member.member_kind === 'person') {
-        months[index]!.people += 1;
+        current.people += 1;
       } else {
-        months[index]!.spaces += 1;
+        current.spaces += 1;
       }
+      monthJoinDeltas.set(key, current);
+    }
+
+    for (const exitAt of membershipExitProposalDates) {
+      if (!exitAt) continue;
+      const exitDate = new Date(exitAt);
+      if (Number.isNaN(exitDate.getTime())) continue;
+      const key = toMonthKey(exitDate);
+      const current = monthExitDeltas.get(key) ?? { people: 0, spaces: 0 };
+      // Membership exit proposals currently target members; model as person exits.
+      current.people += 1;
+      monthExitDeltas.set(key, current);
+    }
+
+    let runningPeople = 0;
+    let runningSpaces = 0;
+    for (const bucket of months) {
+      const joins = monthJoinDeltas.get(bucket.month) ?? {
+        people: 0,
+        spaces: 0,
+      };
+      const exits = monthExitDeltas.get(bucket.month) ?? {
+        people: 0,
+        spaces: 0,
+      };
+
+      runningPeople = Math.max(0, runningPeople + joins.people - exits.people);
+      runningSpaces = Math.max(0, runningSpaces + joins.spaces - exits.spaces);
+
+      bucket.people = runningPeople;
+      bucket.spaces = runningSpaces;
     }
 
     return NextResponse.json({

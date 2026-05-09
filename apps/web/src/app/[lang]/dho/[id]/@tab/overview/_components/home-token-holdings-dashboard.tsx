@@ -865,13 +865,16 @@ function MembersEvolutionWidget({
       Math.max(1, ...monthly.map((item) => Math.max(item.people, item.spaces))),
     [monthly],
   );
-  const totals = React.useMemo(
-    () => ({
-      people: monthly.reduce((sum, item) => sum + item.people, 0),
-      spaces: monthly.reduce((sum, item) => sum + item.spaces, 0),
-    }),
-    [monthly],
-  );
+  const totals = React.useMemo(() => {
+    const last = monthly.at(-1);
+    const first = monthly[0];
+    return {
+      people: last?.people ?? 0,
+      spaces: last?.spaces ?? 0,
+      deltaPeople: (last?.people ?? 0) - (first?.people ?? 0),
+      deltaSpaces: (last?.spaces ?? 0) - (first?.spaces ?? 0),
+    };
+  }, [monthly]);
 
   const width = 760;
   const height = 340;
@@ -903,14 +906,16 @@ function MembersEvolutionWidget({
       <CardHeader className="pb-0">
         <CardTitle className="text-lg">Members</CardTitle>
         <CardDescription className="text-xs">
-          Monthly evolution of people and spaces
+          Cumulative monthly members and spaces (net of exits)
         </CardDescription>
         <div className="flex items-center gap-2 pt-1 text-[11px]">
           <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
-            People {totals.people}
+            People {totals.people} ({totals.deltaPeople >= 0 ? '+' : ''}
+            {totals.deltaPeople})
           </span>
           <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
-            Spaces {totals.spaces}
+            Spaces {totals.spaces} ({totals.deltaSpaces >= 0 ? '+' : ''}
+            {totals.deltaSpaces})
           </span>
         </div>
       </CardHeader>
