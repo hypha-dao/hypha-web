@@ -869,10 +869,10 @@ function MembersEvolutionWidget({
     const last = monthly.at(-1);
     const first = monthly[0];
     return {
-      people: last?.people ?? 0,
-      spaces: last?.spaces ?? 0,
-      deltaPeople: (last?.people ?? 0) - (first?.people ?? 0),
-      deltaSpaces: (last?.spaces ?? 0) - (first?.spaces ?? 0),
+      people: Math.round(last?.people ?? 0),
+      spaces: Math.round(last?.spaces ?? 0),
+      deltaPeople: Math.round((last?.people ?? 0) - (first?.people ?? 0)),
+      deltaSpaces: Math.round((last?.spaces ?? 0) - (first?.spaces ?? 0)),
     };
   }, [monthly]);
 
@@ -888,6 +888,20 @@ function MembersEvolutionWidget({
     .range([0, innerWidth])
     .padding(0.5);
   const y = d3.scaleSqrt().domain([0, maxValue]).range([innerHeight, 0]).nice();
+  const memberAxisTicks = React.useMemo(() => {
+    if (maxValue <= 6) {
+      return Array.from({ length: maxValue + 1 }, (_, index) => index);
+    }
+    const step = Math.max(1, Math.ceil(maxValue / 4));
+    const ticks: number[] = [];
+    for (let value = 0; value <= maxValue; value += step) {
+      ticks.push(value);
+    }
+    if (ticks[ticks.length - 1] !== maxValue) {
+      ticks.push(maxValue);
+    }
+    return ticks;
+  }, [maxValue]);
 
   const linePeople = d3
     .line<(typeof monthly)[number]>()
@@ -926,7 +940,7 @@ function MembersEvolutionWidget({
             className="min-w-[620px] w-full"
           >
             <g transform={`translate(${margin.left},${margin.top})`}>
-              {y.ticks(4).map((tick) => (
+              {memberAxisTicks.map((tick) => (
                 <g key={tick} transform={`translate(0,${y(tick)})`}>
                   <line
                     x1={0}
@@ -941,7 +955,7 @@ function MembersEvolutionWidget({
                     dominantBaseline="middle"
                     className="fill-muted-foreground text-[11px]"
                   >
-                    {tick}
+                    {Math.round(tick)}
                   </text>
                 </g>
               ))}
@@ -1062,6 +1076,7 @@ function SignalsPulseMapWidget({
   signals: ActivityResponse['signals'];
 }) {
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
+  const [hoveredSignalId, setHoveredSignalId] = React.useState<number | null>(null);
   const priorityRank = React.useMemo(
     () =>
       new Map(
@@ -1121,6 +1136,12 @@ function SignalsPulseMapWidget({
   const margin = { top: 54, right: 28, bottom: 34, left: 92 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
+  const shouldSpreadRecencySlots = React.useMemo(() => {
+    if (!sortedSignals.length) return false;
+    if (sortedSignals.length <= 4) return true;
+    if (!recentDate || !oldestDate) return true;
+    return recentDate.getTime() === oldestDate.getTime();
+  }, [oldestDate, recentDate, sortedSignals.length]);
   const x = d3
     .scaleTime()
     .domain(
@@ -1130,6 +1151,15 @@ function SignalsPulseMapWidget({
     )
     .range([0, innerWidth])
     .nice();
+  const xByRecencySlot = React.useMemo(
+    () =>
+      d3
+        .scalePoint<number>()
+        .domain(sortedSignals.map((_, index) => index))
+        .range([24, innerWidth - 24])
+        .padding(0.65),
+    [innerWidth, sortedSignals],
+  );
   const y = d3
     .scalePoint<string>()
     .domain(priorities)
@@ -1137,7 +1167,7 @@ function SignalsPulseMapWidget({
     .padding(0.38);
 
   return (
-    <Card className="border-border/60 bg-card/95">
+    <Card className="border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_10%,transparent),0_16px_38px_-26px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_42%,transparent)]">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Signals</CardTitle>
         <CardDescription className="text-xs">
@@ -1172,11 +1202,11 @@ function SignalsPulseMapWidget({
           </div>
         ) : null}
       </CardHeader>
-      <CardContent className="min-h-[380px]">
+      <CardContent className="min-h-[420px]">
         <div className="overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
-            className="h-[320px] min-w-[720px] w-full sm:h-[360px]"
+            className="h-[360px] min-w-[720px] w-full sm:h-[400px]"
           >
             <defs>
               <filter
@@ -1225,7 +1255,9 @@ function SignalsPulseMapWidget({
               {sortedSignals.map((signal, index) => {
                 const createdAt = new Date(signal.created_at);
                 if (Number.isNaN(createdAt.getTime())) return null;
-                const cx = x(createdAt);
+                const cx = shouldSpreadRecencySlots
+                  ? (xByRecencySlot(index) ?? x(createdAt))
+                  : x(createdAt);
                 const cy = y(signal.priority) ?? 0;
                 const radius =
                   prioritySize[
@@ -1233,14 +1265,24 @@ function SignalsPulseMapWidget({
                   ] ?? prioritySize.default;
                 const jitter = (index % 3) * 6 - 6;
                 const bubbleLabel = signal.type.slice(0, 1).toUpperCase();
+                const isHovered = hoveredSignalId === signal.id;
+                const hasHovered = hoveredSignalId !== null;
                 return (
-                  <g key={signal.id}>
+                  <g
+                    key={signal.id}
+                    onMouseEnter={() => setHoveredSignalId(signal.id)}
+                    onMouseLeave={() => setHoveredSignalId(null)}
+                    style={{
+                      opacity: !hasHovered || isHovered ? 1 : 0.38,
+                      transition: 'opacity 150ms ease',
+                    }}
+                  >
                     <circle
                       cx={cx}
                       cy={cy + jitter}
-                      r={radius + 6}
+                      r={radius + (isHovered ? 9 : 6)}
                       fill="var(--space-accent, var(--accent-9))"
-                      opacity={0.18}
+                      opacity={isHovered ? 0.28 : 0.18}
                     />
                     <circle
                       cx={cx}
@@ -1259,6 +1301,11 @@ function SignalsPulseMapWidget({
                     >
                       {bubbleLabel}
                     </text>
+                    <title>
+                      {`${signal.type} · ${capitalizeWords(signal.priority)} · ${d3.timeFormat(
+                        '%b %d, %Y',
+                      )(createdAt)}${signal.tags.length ? ` · ${signal.tags.join(', ')}` : ''}`}
+                    </title>
                   </g>
                 );
               })}
@@ -1278,6 +1325,14 @@ function SignalsPulseMapWidget({
             </g>
           </svg>
         </div>
+        {hoveredSignalId ? (
+          <p className="pt-2 text-xs text-muted-foreground">
+            {
+              sortedSignals.find((item) => item.id === hoveredSignalId)?.type
+            }{' '}
+            signal
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -1395,10 +1450,14 @@ export function HomeTokenHoldingsDashboard({
           ) : null}
 
           {!activityLoading && !activityError && activityData ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <SignalsPulseMapWidget signals={activityData.signals} />
-              <ProposalsPieWidget data={activityData.proposals} />
-              <MembersEvolutionWidget monthly={activityData.members.monthly} />
+            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+              <div className="grid items-start gap-4">
+                <SignalsPulseMapWidget signals={activityData.signals} />
+                <MembersEvolutionWidget monthly={activityData.members.monthly} />
+              </div>
+              <div className="grid items-start gap-4">
+                <ProposalsPieWidget data={activityData.proposals} />
+              </div>
             </div>
           ) : null}
         </>
@@ -1433,83 +1492,85 @@ export function HomeTokenHoldingsDashboard({
           ) : null}
 
           {!isLoading && !error && data && data.tokens.length > 0 ? (
-            <div className="grid items-start gap-4 lg:grid-cols-2">
+            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
               <DistributionOverTimeChart
                 spaceSlug={spaceSlug}
                 tokens={data.tokens}
                 getAccessToken={getAccessToken}
               />
-              {data.tokens.map((token) => (
-                <Card
-                  key={token.token_address}
-                  className="group border-border/50 bg-card/90 backdrop-blur-sm"
-                >
-                  <CardContent className="pt-5">
-                    <TokenDonutChart
-                      title={token.symbol}
-                      slices={token.holdings}
-                    />
-                  </CardContent>
-                  <CardHeader className="gap-3 pt-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="truncate">
-                            {token.name}
-                          </CardTitle>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                type="button"
-                                aria-label={`Token details for ${token.name}`}
-                                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              <div className="grid items-start gap-4">
+                {data.tokens.map((token) => (
+                  <Card
+                    key={token.token_address}
+                    className="group border-border/50 bg-card/90 backdrop-blur-sm"
+                  >
+                    <CardContent className="pt-5">
+                      <TokenDonutChart
+                        title={token.symbol}
+                        slices={token.holdings}
+                      />
+                    </CardContent>
+                    <CardHeader className="gap-3 pt-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="truncate">
+                              {token.name}
+                            </CardTitle>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={`Token details for ${token.name}`}
+                                  className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                  <CircleHelp className="h-4 w-4" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                className="max-w-xs text-xs leading-relaxed"
                               >
-                                <CircleHelp className="h-4 w-4" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="top"
-                              className="max-w-xs text-xs leading-relaxed"
-                            >
-                              <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
-                                <span className="text-muted-foreground">
-                                  Total supply
-                                </span>
-                                <span>{formatAmount(token.total_supply)}</span>
-                                <span className="text-muted-foreground">
-                                  {tCommon('Treasury')}
-                                </span>
-                                <span>
-                                  {formatAmount(token.treasury_balance)}
-                                </span>
-                                <span className="text-muted-foreground">
-                                  Other
-                                </span>
-                                <span>{formatAmount(token.other_balance)}</span>
-                                <span className="text-muted-foreground">
-                                  Address
-                                </span>
-                                <span className="max-w-[160px] truncate">
-                                  {token.token_address}
-                                </span>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
+                                <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
+                                  <span className="text-muted-foreground">
+                                    Total supply
+                                  </span>
+                                  <span>{formatAmount(token.total_supply)}</span>
+                                  <span className="text-muted-foreground">
+                                    {tCommon('Treasury')}
+                                  </span>
+                                  <span>
+                                    {formatAmount(token.treasury_balance)}
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    Other
+                                  </span>
+                                  <span>{formatAmount(token.other_balance)}</span>
+                                  <span className="text-muted-foreground">
+                                    Address
+                                  </span>
+                                  <span className="max-w-[160px] truncate">
+                                    {token.token_address}
+                                  </span>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <CardDescription className="text-xs uppercase tracking-wide text-muted-foreground/80">
+                            {token.symbol}
+                          </CardDescription>
                         </div>
-                        <CardDescription className="text-xs uppercase tracking-wide text-muted-foreground/80">
-                          {token.symbol}
-                        </CardDescription>
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 border-border/60"
+                        >
+                          {getTokenTypeLabel(token.type)}
+                        </Badge>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="shrink-0 border-border/60"
-                      >
-                        {getTokenTypeLabel(token.type)}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
             </div>
           ) : null}
         </>
