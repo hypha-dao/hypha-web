@@ -7,6 +7,7 @@ import { useMainColumnScrollY } from '../../common/main-column-scroll';
 
 type Props = {
   src: string;
+  onReadyChange?: (ready: boolean) => void;
 };
 
 /** Scroll factor: image moves slower than the page for depth (tuned subtle → noticeable). */
@@ -25,11 +26,17 @@ function clampParallaxScrollY(scrollY: number): number {
  * Avoids the grey flash from CSS background-image decoding on first paint.
  * Optional scroll parallax on the photo layer (overlays stay fixed for readable text).
  */
-export function CompactSpaceBannerLead({ src }: Props) {
+export function CompactSpaceBannerLead({ src, onReadyChange }: Props) {
   const [ready, setReady] = React.useState(false);
   const [imageFailed, setImageFailed] = React.useState(false);
   const mainScrollY = useMainColumnScrollY();
   const [reduceMotion, setReduceMotion] = React.useState(false);
+
+  React.useEffect(() => {
+    setReady(false);
+    setImageFailed(false);
+    onReadyChange?.(false);
+  }, [src, onReadyChange]);
 
   React.useLayoutEffect(() => {
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -79,7 +86,10 @@ export function CompactSpaceBannerLead({ src }: Props) {
                 ? 'opacity-100'
                 : 'opacity-0',
             )}
-            onLoad={() => setReady(true)}
+            onLoad={() => {
+              setReady(true);
+              onReadyChange?.(true);
+            }}
             onError={() => {
               if (process.env.NODE_ENV !== 'production') {
                 console.warn(
@@ -90,6 +100,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
                 );
               }
               setImageFailed(true);
+              onReadyChange?.(false);
             }}
           />
         </div>

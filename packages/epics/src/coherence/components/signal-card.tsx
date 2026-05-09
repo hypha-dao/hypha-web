@@ -328,12 +328,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         >
           <div className="absolute inset-0 overflow-hidden">
             <div
-              className="absolute inset-0 will-change-transform"
+              className="absolute -inset-6 will-change-transform"
               style={
                 reduceMotion
-                  ? { transform: 'scale(1.06)' }
+                  ? undefined
                   : {
-                      transform: `translate3d(0, ${parallaxY}px, 0) scale(1.08)`,
+                      transform: `translate3d(0, ${parallaxY}px, 0)`,
                     }
               }
             >

@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { Menu, MessageCircle, PanelLeftClose } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -108,7 +108,38 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  return null;
+  const { open, overlayVisible, closeAiPanel, showAiOverlay, hideAiOverlay } =
+    useAiPanel();
+  const isSpace = useIsSpaceContext();
+  const t = useTranslations('AiPanel');
+
+  if (!isSpace) return null;
+
+  const isOpen = open || overlayVisible;
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (isOpen) {
+          closeAiPanel();
+          hideAiOverlay();
+          return;
+        }
+        showAiOverlay();
+      }}
+      aria-expanded={isOpen}
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+      title={isOpen ? t('closePanel') : t('openPanel')}
+      aria-label={isOpen ? t('closePanel') : t('openPanel')}
+    >
+      {isOpen ? (
+        <PanelLeftClose className="h-4 w-4" />
+      ) : (
+        <Menu className="h-4 w-4" />
+      )}
+    </button>
+  );
 }
 
 export function HumanSidebarTrigger() {
