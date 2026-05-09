@@ -9,7 +9,6 @@ import {
 } from '@hypha-platform/epics';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { useTheme } from 'next-themes';
 
 const STICKY_APPEAR_OFFSET_PX = 0;
 const STICKY_HYSTERESIS_PX = 16;
@@ -89,7 +88,6 @@ export function DhoStickySpaceChrome({
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
   const menuTopPx = useMenuTopOffsetPx();
-  const { resolvedTheme } = useTheme();
   /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
   const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
 
@@ -146,9 +144,6 @@ export function DhoStickySpaceChrome({
   const logoSrc = logoUrl || defaultLogoSrc;
 
   const actionsPortalTarget = stuck ? stickyActionsEl : null;
-  // During hydration `resolvedTheme` can be undefined briefly; default to dark
-  // to avoid flashing a light (white) secondary banner in dark mode sessions.
-  const isDark = resolvedTheme !== 'light';
 
   return (
     <>
@@ -161,6 +156,7 @@ export function DhoStickySpaceChrome({
           'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[30] hidden md:block',
           'right-[var(--panel-right-inset,calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,0px)))]',
           'overflow-hidden border-x border-b border-border/75',
+          'bg-background-2/95 supports-[backdrop-filter]:bg-background-2/80',
           'supports-[backdrop-filter]:backdrop-blur-md',
           'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/65',
           'transition-[opacity,transform,max-height,box-shadow] duration-250 ease-linear motion-reduce:transition-none',
@@ -170,15 +166,8 @@ export function DhoStickySpaceChrome({
         )}
         style={{
           top: 'calc(var(--menu-top-height, 70px) - 1px)',
-          backgroundColor: isDark
-            ? 'rgba(9,12,19,0.95)'
-            : 'rgba(248,250,252,0.96)',
-          backgroundImage: isDark
-            ? 'linear-gradient(to right, rgba(12,17,28,0.96), rgba(13,19,30,0.9)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 10%, transparent), transparent 60%)'
-            : 'linear-gradient(to right, rgba(248,250,252,0.96), rgba(244,247,251,0.94)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 8%, transparent), transparent 62%)',
-          boxShadow: isDark
-            ? '0 8px 24px -18px rgba(0,0,0,0.58), inset 0 1px 0 rgba(255,255,255,0.05)'
-            : '0 8px 20px -18px rgba(15,23,42,0.2), inset 0 1px 0 rgba(255,255,255,0.72)',
+          boxShadow:
+            '0 8px 20px -18px rgba(2, 6, 23, 0.35), inset 0 1px 0 color-mix(in srgb, var(--color-foreground) 8%, transparent)',
         }}
         aria-hidden={!stuck}
       >
