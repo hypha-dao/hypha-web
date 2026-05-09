@@ -25,7 +25,6 @@ import { useAiPanel } from '../human-chat-panel-context';
 import { getDhoSpaceContextPath } from '../get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from '../get-dho-space-slug-from-pathname';
 import { getRootSpace } from '../get-root-space';
-import { prependRecentSpaceSlug } from '../recent-space-history';
 import { useMemberWeb3SpaceIds } from '../../spaces/hooks/use-member-web3-space-ids';
 import { resolveSpaceDisplayLogoUrl } from '../../spaces/utils/resolve-space-display-logo-url';
 
@@ -176,9 +175,6 @@ export function AiPanelHeader({
           }) ?? `/${lang}/dho/${space.slug}/agreements`
         }
         className="flex min-w-0 items-center gap-2"
-        onClick={() => {
-          prependRecentSpaceSlug(activeSpaceSlug);
-        }}
       >
         <span className="h-5 w-5 overflow-hidden rounded-full ring-1 ring-border/60">
           {getDisplayIcon(space, logoVariant) ? (
