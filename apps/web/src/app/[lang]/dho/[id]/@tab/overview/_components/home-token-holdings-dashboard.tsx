@@ -52,6 +52,7 @@ type TokenHoldingResponse = {
 };
 
 type ChartSlice = TokenHoldingResponse['tokens'][number]['holdings'][number] & {
+  hover_key: string;
   numeric: number;
 };
 
