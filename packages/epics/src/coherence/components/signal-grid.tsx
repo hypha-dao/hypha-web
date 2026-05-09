@@ -21,7 +21,7 @@ export function SignalGrid({
   onSignalClick,
 }: SignalGridProps) {
   return (
-    <div className="grid w-full grid-cols-1 justify-start gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 md:gap-4 lg:gap-4">
+    <div className="grid w-full grid-cols-1 justify-start gap-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {signals.map((signal) =>
         signal.archived ? (
           <SignalCard
