@@ -142,10 +142,10 @@ export const MenuTop = ({
         )}
 
         {/* Mobile Burger */}
-        {children && (
+        {children && !leadingAction && (
           <button
             type="button"
-            className="md:hidden flex items-center"
+            className="md:hidden inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
             aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-menu"
