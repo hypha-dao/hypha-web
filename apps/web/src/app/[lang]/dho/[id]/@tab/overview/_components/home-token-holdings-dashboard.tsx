@@ -59,6 +59,21 @@ type ActivityResponse = {
   found: boolean;
   space_slug: string;
   asOf: string;
+  energy: {
+    available: boolean;
+    unit: string;
+    space: {
+      name: string;
+      production: number;
+      consumption: number;
+    };
+    members: Array<{
+      address: string;
+      name: string;
+      production: number;
+      consumption: number;
+    }>;
+  };
   proposals: {
     onVoting: number;
     accepted: number;
@@ -89,7 +104,7 @@ type ActivityResponse = {
   };
 };
 
-type HomeSectionFilter = 'activity' | 'distribution';
+type HomeSectionFilter = 'activity' | 'distribution' | 'energy';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
 const COLOR_RANGE = [
@@ -448,6 +463,186 @@ function SignalsActionListPanel({
   );
 }
 
+function formatEnergyValue(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return '0';
+  return new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: value >= 100 ? 0 : 1,
+  }).format(value);
+}
+
+function EnergyMetricPanel({
+  title,
+  value,
+  maxValue,
+  unit,
+}: {
+  title: string;
+  value: number;
+  maxValue: number;
+  unit: string;
+}) {
+  const normalizedMax = Math.max(1, maxValue);
+  const scale = d3.scaleLinear().domain([0, normalizedMax]).range([0, 1]);
+  const pct = Math.max(0, Math.min(1, scale(value)));
+  const width = 280;
+  const height = 54;
+  const filledWidth = Math.max(12, Math.round((width - 6) * pct));
+
+  return (
+    <Card className="border-border/60 bg-card/95">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="text-2xl font-semibold text-foreground">
+          {formatEnergyValue(value)}{' '}
+          <span className="text-sm font-medium text-muted-foreground">
+            {unit}
+          </span>
+        </div>
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="h-[54px] w-full"
+          aria-label={`${title} energy bar`}
+        >
+          <rect
+            x={0}
+            y={16}
+            width={width}
+            height={22}
+            rx={999}
+            fill="color-mix(in oklab, var(--space-accent, var(--accent-9)) 12%, var(--muted) 88%)"
+          />
+          <rect
+            x={3}
+            y={19}
+            width={filledWidth}
+            height={16}
+            rx={999}
+            fill="var(--space-accent, var(--accent-9))"
+          />
+          <text
+            x={width - 4}
+            y={12}
+            textAnchor="end"
+            className="fill-muted-foreground text-[11px]"
+          >
+            {`${Math.round(pct * 100)}% of current max`}
+          </text>
+        </svg>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EnergyPanels({ energy }: { energy: ActivityResponse['energy'] }) {
+  const [selectedMemberAddress, setSelectedMemberAddress] = React.useState('');
+
+  React.useEffect(() => {
+    if (!energy.members.length) {
+      setSelectedMemberAddress('');
+      return;
+    }
+    setSelectedMemberAddress((current) =>
+      current && energy.members.some((m) => m.address === current)
+        ? current
+        : energy.members[0]!.address,
+    );
+  }, [energy.members]);
+
+  const selectedMember = React.useMemo(
+    () =>
+      energy.members.find(
+        (member) => member.address === selectedMemberAddress,
+      ) ??
+      energy.members[0] ??
+      null,
+    [energy.members, selectedMemberAddress],
+  );
+
+  const metricMax = Math.max(
+    1,
+    energy.space.production,
+    energy.space.consumption,
+    selectedMember?.production ?? 0,
+    selectedMember?.consumption ?? 0,
+  );
+
+  return (
+    <div className="grid gap-4">
+      <Card className="border-border/60 bg-card/95">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Space — {energy.space.name}</CardTitle>
+          <CardDescription className="text-xs">
+            Production and consumption summary for the space.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-2">
+          <EnergyMetricPanel
+            title="Energy Production"
+            value={energy.space.production}
+            maxValue={metricMax}
+            unit={energy.unit}
+          />
+          <EnergyMetricPanel
+            title="Energy Consumption"
+            value={energy.space.consumption}
+            maxValue={metricMax}
+            unit={energy.unit}
+          />
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/60 bg-card/95">
+        <CardHeader className="pb-2">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <CardTitle className="text-lg">
+                Member — {selectedMember?.name ?? 'No member data'}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Production and consumption for one selected member.
+              </CardDescription>
+            </div>
+            {energy.members.length ? (
+              <label className="flex w-full max-w-[260px] flex-col gap-1 text-xs text-muted-foreground">
+                Member
+                <select
+                  value={selectedMember?.address ?? ''}
+                  onChange={(event) =>
+                    setSelectedMemberAddress(event.target.value)
+                  }
+                  className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {energy.members.map((member) => (
+                    <option key={member.address} value={member.address}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-2">
+          <EnergyMetricPanel
+            title="Energy Production"
+            value={selectedMember?.production ?? 0}
+            maxValue={metricMax}
+            unit={energy.unit}
+          />
+          <EnergyMetricPanel
+            title="Energy Consumption"
+            value={selectedMember?.consumption ?? 0}
+            maxValue={metricMax}
+            unit={energy.unit}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function LoadingState() {
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -492,6 +687,13 @@ export function HomeTokenHoldingsDashboard({
   );
   const [activeFilter, setActiveFilter] =
     React.useState<HomeSectionFilter>('activity');
+  const hasEnergyData = Boolean(activityData?.energy.available);
+
+  React.useEffect(() => {
+    if (activeFilter === 'energy' && !hasEnergyData) {
+      setActiveFilter('activity');
+    }
+  }, [activeFilter, hasEnergyData]);
 
   const tokenCount = data?.tokens.length ?? 0;
   const lastUpdatedLabel = data?.asOf
@@ -541,6 +743,11 @@ export function HomeTokenHoldingsDashboard({
           <TabsTrigger value="activity" variant="switch">
             Activity
           </TabsTrigger>
+          {hasEnergyData ? (
+            <TabsTrigger value="energy" variant="switch">
+              Energy
+            </TabsTrigger>
+          ) : null}
           <TabsTrigger value="distribution" variant="switch">
             Distribution
           </TabsTrigger>
@@ -673,6 +880,30 @@ export function HomeTokenHoldingsDashboard({
                 </Card>
               ))}
             </div>
+          ) : null}
+        </>
+      ) : null}
+
+      {activeFilter === 'energy' ? (
+        <>
+          {activityLoading ? <LoadingState /> : null}
+
+          {!activityLoading && activityError ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Unable to load energy widgets</CardTitle>
+                <CardDescription>
+                  Please retry in a moment. Energy data may still be syncing.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
+
+          {!activityLoading &&
+          !activityError &&
+          activityData &&
+          activityData.energy.available ? (
+            <EnergyPanels energy={activityData.energy} />
           ) : null}
         </>
       ) : null}
