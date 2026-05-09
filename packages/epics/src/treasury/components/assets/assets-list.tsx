@@ -24,7 +24,7 @@ export const AssetsList: FC<AssetsListProps> = ({
   const { lang } = useParams<{ lang: Locale }>();
   return (
     <div className="w-full">
-      <div className="mt-2 grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-2">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
         {assets.map((asset, index) => (
           // <Link
           //   key={`${asset.slug}_${index}`}
@@ -42,7 +42,7 @@ export const AssetsList: FC<AssetsListProps> = ({
       </div>
 
       {isLoading && (
-        <div className="mt-2 grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-2">
+        <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
           <AssetCard isLoading />
           <AssetCard isLoading />
           <AssetCard isLoading />
