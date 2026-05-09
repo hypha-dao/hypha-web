@@ -318,7 +318,11 @@ function TokenDonutChart({
               fill={colorScale(segment.data.display_name)}
               stroke="var(--background)"
               strokeWidth={1}
-            />
+            >
+              <title>{`${segment.data.display_name} — ${PERCENTAGE_FORMATTER(
+                segment.data.share_pct,
+              )}%`}</title>
+            </path>
           ))}
           <text
             textAnchor="middle"
@@ -430,11 +434,18 @@ function DistributionOverTimeChart({
     [history?.points],
   );
 
-  const width = Math.max(620, chartPoints.length * 28);
+  const width = Math.max(640, chartPoints.length * 18);
   const height = 340;
   const margin = { top: 22, right: 22, bottom: 52, left: 54 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
+  const orderedPoints = React.useMemo(
+    () =>
+      [...chartPoints].sort(
+        (a, b) => a.dateObj.getTime() - b.dateObj.getTime(),
+      ),
+    [chartPoints],
+  );
   const xDomain = d3.extent(chartPoints, (point) => point.dateObj);
   const x = d3
     .scaleTime()
@@ -444,21 +455,32 @@ function DistributionOverTimeChart({
         : [new Date(Date.now() - 86_400_000), new Date()],
     )
     .range([0, innerWidth]);
-  const maxY = Math.max(1, ...chartPoints.map((point) => point.share_pct));
-  const y = d3.scaleLinear().domain([0, maxY]).nice().range([innerHeight, 0]);
+  const maxY = Math.max(1, ...orderedPoints.map((point) => point.share_pct));
+  const minY = Math.min(...orderedPoints.map((point) => point.share_pct));
+  const spread = Math.max(1, maxY - minY);
+  const y = d3
+    .scaleLinear()
+    .domain([Math.max(0, minY - spread * 0.18), maxY + spread * 0.28])
+    .nice()
+    .range([innerHeight, 0]);
   const area = d3
-    .area<(typeof chartPoints)[number]>()
+    .area<(typeof orderedPoints)[number]>()
     .x((point) => x(point.dateObj))
     .y0(innerHeight)
     .y1((point) => y(point.share_pct))
-    .curve(d3.curveMonotoneX);
+    .curve(d3.curveCatmullRom.alpha(0.5));
   const line = d3
-    .line<(typeof chartPoints)[number]>()
+    .line<(typeof orderedPoints)[number]>()
     .x((point) => x(point.dateObj))
     .y((point) => y(point.share_pct))
-    .curve(d3.curveMonotoneX);
+    .curve(d3.curveCatmullRom.alpha(0.5));
   const gradientId = React.useId().replace(/:/g, '');
   const memberOptions = history?.members ?? [{ id: 'all', label: 'All' }];
+  const valueBarWidth = Math.max(
+    2,
+    Math.min(14, (innerWidth / Math.max(10, orderedPoints.length)) * 0.72),
+  );
+  const lastPoint = orderedPoints.at(-1);
 
   return (
     <Card className="border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
@@ -536,6 +558,24 @@ function DistributionOverTimeChart({
                     stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 74%, white 26%)"
                   />
                 </linearGradient>
+                <linearGradient
+                  id={`distribution-bars-${gradientId}`}
+                  x1="0%"
+                  x2="0%"
+                  y1="100%"
+                  y2="0%"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 84%, black 16%)"
+                    stopOpacity="0.34"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 72%, white 28%)"
+                    stopOpacity="0.96"
+                  />
+                </linearGradient>
                 <filter
                   id={`distribution-line-glow-${gradientId}`}
                   x="-30%"
@@ -598,28 +638,82 @@ function DistributionOverTimeChart({
                   </g>
                 ))}
 
+                {orderedPoints.map((point, index) => {
+                  const cx = x(point.dateObj);
+                  const top = y(point.share_pct);
+                  const recencyOpacity =
+                    0.26 +
+                    (index / Math.max(1, orderedPoints.length - 1)) * 0.6;
+                  return (
+                    <rect
+                      key={`bar-${point.date}`}
+                      x={cx - valueBarWidth / 2}
+                      y={top}
+                      width={valueBarWidth}
+                      height={innerHeight - top}
+                      rx={Math.min(6, valueBarWidth / 2)}
+                      fill={`url(#distribution-bars-${gradientId})`}
+                      opacity={recencyOpacity}
+                    />
+                  );
+                })}
+
                 <path
-                  d={area(chartPoints) ?? ''}
+                  d={area(orderedPoints) ?? ''}
                   fill={`url(#distribution-over-time-${gradientId})`}
+                  opacity={0.9}
                 />
                 <path
-                  d={line(chartPoints) ?? ''}
+                  d={line(orderedPoints) ?? ''}
                   fill="none"
                   stroke="var(--space-accent, var(--accent-9))"
-                  strokeWidth={2.5}
+                  strokeWidth={3}
                   filter={`url(#distribution-line-glow-${gradientId})`}
                 />
 
-                {chartPoints.map((point) => (
-                  <circle
-                    key={point.date}
-                    cx={x(point.dateObj)}
-                    cy={y(point.share_pct)}
-                    r={3}
-                    fill="var(--space-accent, var(--accent-9))"
-                    className="opacity-95"
-                  />
-                ))}
+                {orderedPoints
+                  .filter(
+                    (_, index) =>
+                      index %
+                        Math.max(1, Math.floor(orderedPoints.length / 10)) ===
+                      0,
+                  )
+                  .map((point) => (
+                    <circle
+                      key={point.date}
+                      cx={x(point.dateObj)}
+                      cy={y(point.share_pct)}
+                      r={3.5}
+                      fill="var(--space-accent, var(--accent-9))"
+                      className="opacity-95"
+                    />
+                  ))}
+
+                {lastPoint ? (
+                  <g>
+                    <circle
+                      cx={x(lastPoint.dateObj)}
+                      cy={y(lastPoint.share_pct)}
+                      r={8}
+                      fill="var(--space-accent, var(--accent-9))"
+                      opacity={0.24}
+                    />
+                    <circle
+                      cx={x(lastPoint.dateObj)}
+                      cy={y(lastPoint.share_pct)}
+                      r={4.2}
+                      fill="var(--space-accent, var(--accent-9))"
+                    />
+                    <text
+                      x={Math.min(innerWidth - 8, x(lastPoint.dateObj) + 10)}
+                      y={y(lastPoint.share_pct) - 10}
+                      textAnchor="start"
+                      className="fill-foreground text-[11px] font-semibold"
+                    >
+                      {PERCENTAGE_FORMATTER(lastPoint.share_pct)}%
+                    </text>
+                  </g>
+                ) : null}
 
                 {x.ticks(6).map((tick) => (
                   <g

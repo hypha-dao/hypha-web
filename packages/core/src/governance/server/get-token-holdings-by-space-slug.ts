@@ -493,7 +493,11 @@ export async function getTokenHoldingsBySpaceSlug(
         name: tokenMeta?.name ?? contractInfo.name,
         symbol: tokenMeta?.symbol ?? contractInfo.symbol,
         icon_url: tokenMeta?.iconUrl ?? null,
-        type: tokenMeta?.type ?? 'unknown',
+        type:
+          tokenMeta?.type ??
+          (tokenAddress === normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS)
+            ? 'utility'
+            : 'unknown'),
         decimals,
         max_supply: tokenMeta?.maxSupply ?? null,
         total_supply: formatUnits(totalSupplyRaw, decimals),
