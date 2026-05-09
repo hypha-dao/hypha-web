@@ -115,7 +115,7 @@ export default async function DhoLayout({
         the column (reads as a dead strip beside the hero / secondary chrome). Use padding only.
       */}
       <div className="flex w-full min-w-0">
-        <div className="min-w-0 flex-1 px-4 sm:px-5">
+        <div className="-mt-4 min-w-0 flex-1 px-4 md:-mt-5 sm:px-5">
           {/* React 19+: link rel="preload" is hoisted to document head */}
           {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
             <link
@@ -128,7 +128,7 @@ export default async function DhoLayout({
           <SpaceAccentFromImages
             bannerSrc={heroBannerImageHref}
             logoSrc={accentLogoHref}
-            className="pt-1 md:pt-1.5"
+            className="pt-0"
           >
             {/* gap-4 (16px) matches mt-4 above SalesBanner; slight pt above breadcrumbs vs MenuTop */}
             <DhoStickySpaceChrome
