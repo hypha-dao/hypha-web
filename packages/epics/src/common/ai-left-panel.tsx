@@ -276,9 +276,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   useEffect(() => {
     if (!spaceSlug) return;
     const previousSpaceSlug = previousSpaceSlugRef.current;
-    if (previousSpaceSlug && previousSpaceSlug !== spaceSlug) {
-      setRecentSpaceSlugs(prependRecentSpaceSlug(previousSpaceSlug));
-    }
+    const slugToStore =
+      previousSpaceSlug && previousSpaceSlug !== spaceSlug
+        ? previousSpaceSlug
+        : spaceSlug;
+    setRecentSpaceSlugs(prependRecentSpaceSlug(slugToStore));
     previousSpaceSlugRef.current = spaceSlug;
   }, [spaceSlug]);
 
