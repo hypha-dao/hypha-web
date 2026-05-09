@@ -32,7 +32,7 @@ export const MenuTop = ({
   closeMenuLabel = 'Close menu',
 }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isTouchMobileContext, setIsTouchMobileContext] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const pathname = usePathname();
@@ -42,15 +42,31 @@ export const MenuTop = ({
   }, [pathname]);
 
   useEffect(() => {
-    if (typeof navigator === 'undefined') return;
-    const uaData = (
-      navigator as Navigator & { userAgentData?: { mobile?: boolean } }
-    ).userAgentData;
-    const byUaData = Boolean(uaData?.mobile);
-    const byUserAgent = /Android|iPhone|iPad|iPod|Mobile/i.test(
-      navigator.userAgent,
-    );
-    setIsMobileDevice(byUaData || byUserAgent);
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return;
+    }
+    const coarsePointerMedia = window.matchMedia('(pointer: coarse)');
+    const sync = () => {
+      const uaData = (
+        navigator as Navigator & { userAgentData?: { mobile?: boolean } }
+      ).userAgentData;
+      const byUaData = Boolean(uaData?.mobile);
+      const byUserAgent = /Android|iPhone|iPad|iPod|Mobile/i.test(
+        navigator.userAgent,
+      );
+      const byTouchPoints = navigator.maxTouchPoints > 0;
+      const byCoarsePointer = coarsePointerMedia.matches;
+      setIsTouchMobileContext(
+        byUaData || byUserAgent || byTouchPoints || byCoarsePointer,
+      );
+    };
+    sync();
+    coarsePointerMedia.addEventListener('change', sync);
+    window.addEventListener('resize', sync);
+    return () => {
+      coarsePointerMedia.removeEventListener('change', sync);
+      window.removeEventListener('resize', sync);
+    };
   }, []);
 
   /** Publish measured height so side panels / overlays align with this bar (see e2e menu-top-consistent-height). */
@@ -155,7 +171,7 @@ export const MenuTop = ({
         )}
 
         {/* Mobile Burger */}
-        {children && (!leadingAction || isMobileDevice) && (
+        {children && (!leadingAction || isTouchMobileContext) && (
           <button
             type="button"
             className="md:hidden inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"

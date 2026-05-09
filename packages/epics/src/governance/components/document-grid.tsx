@@ -26,7 +26,7 @@ export const DocumentGrid = ({
   documents,
 }: DocumentGridProps) => {
   return (
-    <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-2">
+    <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),24rem))] justify-start gap-2">
       {documents.map((document) => (
         <Link
           href={`${basePath}/${document.slug}`}

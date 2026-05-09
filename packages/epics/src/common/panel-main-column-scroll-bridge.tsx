@@ -109,7 +109,7 @@ export function PanelDualSidebarScrollBridge({
             side="right"
             variant="sidebar"
             collapsible="offcanvas"
-            className="z-[50]"
+            className="z-[50] max-md:[--sidebar-width:96vw]"
           >
             <SidebarResizeHandle />
             {rightContent}

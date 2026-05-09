@@ -234,6 +234,16 @@ export function PanelWrapLayout({
   } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const media = window.matchMedia('(max-width: 767px)');
+    const sync = () => setIsMobileViewport(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
 
   // Panels are only available within a space context (/[lang]/dho/[id]/...)
   const effectiveLeft = isSpace ? left : undefined;
@@ -246,7 +256,8 @@ export function PanelWrapLayout({
       ? '320px'
       : LEFT_SIDEBAR_ICON_WIDTH
     : '0px';
-  const fallbackSidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
+  const fallbackSidebarRightPx =
+    rightOpen && effectiveRight ? (isMobileViewport ? '0px' : '320px') : '0px';
   const [sidebarLeftPx, setSidebarLeftPx] = useState(fallbackSidebarLeftPx);
   const [sidebarRightPx, setSidebarRightPx] = useState(fallbackSidebarRightPx);
 
@@ -313,6 +324,7 @@ export function PanelWrapLayout({
     effectiveRight,
     fallbackSidebarLeftPx,
     fallbackSidebarRightPx,
+    isMobileViewport,
   ]);
 
   /** Radix portaled dialogs sit under `body` and do not inherit vars from this div — mirror to `:root`. */
@@ -371,7 +383,7 @@ export function PanelWrapLayout({
           side="right"
           variant="sidebar"
           collapsible="offcanvas"
-          className="z-[50]"
+          className="z-[50] max-md:[--sidebar-width:96vw]"
         >
           <SidebarResizeHandle />
           {effectiveRight.content}
