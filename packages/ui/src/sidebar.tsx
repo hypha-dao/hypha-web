@@ -208,7 +208,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             data-sidebar="sidebar"
             data-mobile="true"
             className={cn(
-              'w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden',
+              'w-(--sidebar-width) max-w-none sm:max-w-none bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden',
               className,
             )}
             style={
