@@ -7,7 +7,6 @@ import { useMainColumnScrollY } from '../../common/main-column-scroll';
 
 type Props = {
   src: string;
-  onReadyChange?: (ready: boolean) => void;
 };
 
 /** Scroll factor: image moves slower than the page for depth (tuned subtle → noticeable). */
@@ -26,7 +25,7 @@ function clampParallaxScrollY(scrollY: number): number {
  * Avoids the grey flash from CSS background-image decoding on first paint.
  * Optional scroll parallax on the photo layer (overlays stay fixed for readable text).
  */
-export function CompactSpaceBannerLead({ src, onReadyChange }: Props) {
+export function CompactSpaceBannerLead({ src }: Props) {
   const [ready, setReady] = React.useState(false);
   const [imageFailed, setImageFailed] = React.useState(false);
   const mainScrollY = useMainColumnScrollY();
@@ -35,8 +34,7 @@ export function CompactSpaceBannerLead({ src, onReadyChange }: Props) {
   React.useEffect(() => {
     setReady(false);
     setImageFailed(false);
-    onReadyChange?.(false);
-  }, [src, onReadyChange]);
+  }, [src]);
 
   React.useLayoutEffect(() => {
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -88,7 +86,6 @@ export function CompactSpaceBannerLead({ src, onReadyChange }: Props) {
             )}
             onLoad={() => {
               setReady(true);
-              onReadyChange?.(true);
             }}
             onError={() => {
               if (process.env.NODE_ENV !== 'production') {
@@ -100,11 +97,78 @@ export function CompactSpaceBannerLead({ src, onReadyChange }: Props) {
                 );
               }
               setImageFailed(true);
-              onReadyChange?.(false);
             }}
           />
         </div>
       </div>
+      {ready && !imageFailed ? (
+        <>
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage:
+                'linear-gradient(to top, rgba(0,0,0,var(--banner-ov-v-bottom, 0.88)) 0%, rgba(0,0,0,var(--banner-ov-v-mid, 0.42)) var(--banner-ov-v-mid-at, 52%), rgba(0,0,0,var(--banner-ov-v-top, 0.22)) 100%)',
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage:
+                'linear-gradient(to right, rgba(0,0,0,var(--banner-ov-h-from, 0.58)), transparent, rgba(0,0,0,var(--banner-ov-h-to, 0.4)))',
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage:
+                'linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) calc(var(--banner-ov-accent-wash, 0.18) * 100%), transparent), transparent, transparent)',
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 mix-blend-soft-light"
+            style={{
+              backgroundImage:
+                'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(209,250,229,calc(0.28 * var(--banner-ov-skylight-op, 0.9))), transparent 62%)',
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage:
+                'linear-gradient(to bottom right, rgba(255,255,255,var(--banner-ov-sheen-op, 0.05)) -10%, transparent 40%, transparent 55%)',
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage:
+                'radial-gradient(ellipse 115% 95% at 50% 72%, transparent 22%, rgba(0,18,12,calc(0.62 * var(--banner-ov-vignette-strength, 1))) 88%, rgba(0,8,5,calc(0.92 * var(--banner-ov-vignette-strength, 1))) 100%)',
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 rounded-[inherit] mix-blend-overlay"
+            style={{
+              opacity: 'var(--banner-ov-grain-op, 0.055)',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 rounded-[inherit]"
+            style={{
+              boxShadow:
+                'inset 0 1px 0 rgba(255,255,255,var(--banner-ov-inner-top, 0.09)), inset 0 -1px 0 rgba(0,0,0,var(--banner-ov-inner-bot, 0.18))',
+            }}
+            aria-hidden
+          />
+        </>
+      ) : null}
     </div>
   );
 }
