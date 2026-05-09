@@ -115,6 +115,6 @@ export const fetchSpaceDetails = async ({
       };
     });
   } catch (error) {
-    throw new Error(`Failed to get space details: ${error}`);
+    throw new Error('Failed to get space details', { cause: error });
   }
 };

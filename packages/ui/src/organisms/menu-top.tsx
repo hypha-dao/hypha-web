@@ -32,6 +32,7 @@ export const MenuTop = ({
   closeMenuLabel = 'Close menu',
 }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const pathname = usePathname();
@@ -39,6 +40,18 @@ export const MenuTop = ({
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const uaData = (
+      navigator as Navigator & { userAgentData?: { mobile?: boolean } }
+    ).userAgentData;
+    const byUaData = Boolean(uaData?.mobile);
+    const byUserAgent = /Android|iPhone|iPad|iPod|Mobile/i.test(
+      navigator.userAgent,
+    );
+    setIsMobileDevice(byUaData || byUserAgent);
+  }, []);
 
   /** Publish measured height so side panels / overlays align with this bar (see e2e menu-top-consistent-height). */
   useLayoutEffect(() => {
@@ -142,7 +155,7 @@ export const MenuTop = ({
         )}
 
         {/* Mobile Burger */}
-        {children && !leadingAction && (
+        {children && (!leadingAction || isMobileDevice) && (
           <button
             type="button"
             className="md:hidden inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"

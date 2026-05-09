@@ -5,7 +5,6 @@ import {
   getTokenHoldingsBySpaceSlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 type Params = { spaceSlug: string };
@@ -36,10 +35,11 @@ function parseIntParam(
   for (const key of keyList) {
     const raw = url.searchParams.get(key);
     if (raw == null) continue;
-    if (raw.trim() === '') {
+    const trimmed = raw.trim();
+    if (!/^[1-9]\d*$/.test(trimmed)) {
       throw new Error(`Invalid ${key}: value must be a positive integer`);
     }
-    const parsed = Number.parseInt(raw, 10);
+    const parsed = Number.parseInt(trimmed, 10);
     if (!Number.isFinite(parsed) || parsed < 1) {
       throw new Error(`Invalid ${key}: value must be a positive integer`);
     }
@@ -61,10 +61,10 @@ export async function GET(
     }
 
     let resolvedAuthToken: string | undefined;
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+    if (space.web3SpaceId != null) {
       const { hasAccess, response, authToken } = await checkSpaceAccess(
         request,
-        space.web3SpaceId as number,
+        space.web3SpaceId,
       );
       if (!hasAccess && response) {
         return response;

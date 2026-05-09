@@ -77,6 +77,9 @@ type HolderDescriptor = {
   slug: string | null;
 };
 
+const MAX_HOLDER_LIMIT = 1000;
+const SMALL_HOLDER_SHARE_THRESHOLD_PCT = 3;
+
 function normalizeAddress(address: string): `0x${string}` {
   return address.toLowerCase() as `0x${string}`;
 }
@@ -219,7 +222,7 @@ export async function getTokenHoldingsBySpaceSlug(
   const asOf = new Date().toISOString();
   const safeHolderLimit =
     typeof holderLimit === 'number' && Number.isFinite(holderLimit)
-      ? Math.max(1, Math.min(1000, Math.floor(holderLimit)))
+      ? Math.max(1, Math.min(MAX_HOLDER_LIMIT, Math.floor(holderLimit)))
       : undefined;
 
   const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
@@ -390,7 +393,7 @@ export async function getTokenHoldingsBySpaceSlug(
         }
 
         const sharePct = toSharePct(balanceRaw, totalSupplyRaw);
-        if (sharePct < 3) {
+        if (sharePct < SMALL_HOLDER_SHARE_THRESHOLD_PCT) {
           collapsedSmallHolderRaw += balanceRaw;
           continue;
         }
@@ -418,6 +421,26 @@ export async function getTokenHoldingsBySpaceSlug(
       if (safeHolderLimit && holderRows.length > safeHolderLimit) {
         const keep = holderRows.slice(0, safeHolderLimit);
         const overflow = holderRows.slice(safeHolderLimit);
+        const treasuryOverflowIndex = overflow.findIndex(
+          (row) => row.holder_kind === 'treasury',
+        );
+        if (treasuryOverflowIndex >= 0) {
+          const treasuryRow = overflow[treasuryOverflowIndex]!;
+          overflow.splice(treasuryOverflowIndex, 1);
+          const keepReplaceIndex = keep.findIndex(
+            (row) => row.holder_kind !== 'treasury',
+          );
+          if (keepReplaceIndex >= 0) {
+            const displaced = keep[keepReplaceIndex]!;
+            keep[keepReplaceIndex] = treasuryRow;
+            overflow.push(displaced);
+          } else if (keep.length > 0) {
+            overflow.push(keep.pop()!);
+            keep.push(treasuryRow);
+          } else {
+            keep.push(treasuryRow);
+          }
+        }
         overflowToOtherRaw = overflow.reduce(
           (sum, row) => sum + BigInt(row.balance_raw),
           0n,
@@ -438,6 +461,10 @@ export async function getTokenHoldingsBySpaceSlug(
           share_pct: toSharePct(otherRaw, totalSupplyRaw),
         });
       }
+      const totalHoldersBalanceRaw = holderRows.reduce(
+        (sum, row) => sum + BigInt(row.balance_raw),
+        0n,
+      );
 
       return {
         token_id: tokenMeta?.id ?? null,
@@ -452,7 +479,7 @@ export async function getTokenHoldingsBySpaceSlug(
         holdings: holderRows,
         treasury_balance: formatUnits(treasuryRaw, decimals),
         other_balance: formatUnits(otherRaw, decimals),
-        total_holders_balance: formatUnits(totalSupplyRaw, decimals),
+        total_holders_balance: formatUnits(totalHoldersBalanceRaw, decimals),
       } satisfies TokenHoldingRow;
     }),
   );

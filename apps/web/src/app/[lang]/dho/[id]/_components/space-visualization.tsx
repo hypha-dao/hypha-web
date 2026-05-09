@@ -138,8 +138,8 @@ async function sampleAccentHex(src?: string | null): Promise<string | null> {
 
 function withAlpha(hex: string, alpha: number) {
   const rgb = parseHex(hex);
-  if (!rgb) return `rgba(20, 184, 166, ${alpha})`;
-  const [r, g, b] = rgb;
+  const fallback = parseHex(SPACE_ACCENT_FALLBACK);
+  const [r, g, b] = rgb ?? fallback ?? [20, 184, 166];
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 

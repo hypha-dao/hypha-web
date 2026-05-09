@@ -648,6 +648,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const sendAbortControllerRef = useRef<AbortController | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const hasLoadedCoherenceMessagesRef = useRef(false);
+  const prevCoherenceSlugRef = useRef<string | null | undefined>(coherenceSlug);
   /** Coalesce Matrix timeline bursts into one React commit per frame (sync backfills). */
   const timelineFlushRafRef = useRef<number | null>(null);
   const pendingTimelineRedactIdsRef = useRef<Set<string>>(new Set());
@@ -1790,6 +1791,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     writePersistedChatHistory(roomId, messages);
   }, [roomId, messages]);
 
+  const persistedCoherenceMessageCount = useMemo(
+    () =>
+      messages.filter((message) => !message.id.startsWith('hypha-send-pending'))
+        .length,
+    [messages],
+  );
+
   useEffect(() => {
     if (
       mode !== 'coherence' ||
@@ -1800,19 +1808,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return;
     }
 
-    const persistedMessageCount = messages.filter(
-      (message) => !message.id.startsWith('hypha-send-pending'),
-    ).length;
+    if (prevCoherenceSlugRef.current !== coherenceSlug) {
+      prevCoherenceSlugRef.current = coherenceSlug;
+      hasLoadedCoherenceMessagesRef.current = false;
+    }
 
     // Avoid clobbering persisted counts with transient empty timeline snapshots.
-    if (!hasLoadedCoherenceMessagesRef.current && persistedMessageCount === 0) {
+    if (
+      !hasLoadedCoherenceMessagesRef.current &&
+      persistedCoherenceMessageCount === 0
+    ) {
       return;
     }
 
     hasLoadedCoherenceMessagesRef.current = true;
     updateCoherenceBySlug({
       slug: coherenceSlug,
-      messages: persistedMessageCount,
+      messages: persistedCoherenceMessageCount,
     }).catch((error) => {
       console.warn(
         '[HumanRightPanel] failed to sync coherence message count:',
@@ -1824,7 +1836,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isMatrixAvailable,
     roomId,
     coherenceSlug,
-    messages,
+    persistedCoherenceMessageCount,
     updateCoherenceBySlug,
   ]);
 

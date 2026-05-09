@@ -159,12 +159,14 @@ export function DhoStickySpaceChrome({
           'bg-background-2/95 supports-[backdrop-filter]:bg-background-2/80',
           'supports-[backdrop-filter]:backdrop-blur-md',
           'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/65',
-          'transition-[opacity,transform,max-height,box-shadow] duration-250 ease-linear motion-reduce:transition-none',
+          'transition-[opacity,transform,max-height,box-shadow] duration-[250ms] ease-linear motion-reduce:transition-none',
           stuck
-            ? 'pointer-events-auto max-h-24 translate-y-0 opacity-100'
+            ? 'pointer-events-auto max-h-32 translate-y-0 opacity-100'
             : 'max-h-0 -translate-y-1 opacity-0 motion-reduce:translate-y-0',
         )}
         style={{
+          // Keep a deliberate 1px overlap to avoid subpixel seams under --menu-top-height;
+          // sticky engagement still uses menuTopPx in the effect above.
           top: 'calc(var(--menu-top-height, 70px) - 1px)',
           boxShadow:
             '0 8px 20px -18px rgba(2, 6, 23, 0.35), inset 0 1px 0 color-mix(in srgb, var(--color-foreground) 8%, transparent)',

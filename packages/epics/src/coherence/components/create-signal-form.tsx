@@ -209,10 +209,14 @@ export const CreateSignalForm = ({
 
     const labelFor = (tag: string) =>
       t.has(`tagLabels.${tag}` as never) ? t(`tagLabels.${tag}` as never) : tag;
+    const categoryLabelFor = (key: string, fallback: string) =>
+      t.has(`tagCategories.${key}` as never)
+        ? t(`tagCategories.${key}` as never)
+        : fallback;
 
     const tagsByCategory: Array<{ title: string; tags: readonly string[] }> = [
       {
-        title: 'Purpose & Direction',
+        title: categoryLabelFor('purposeDirection', 'Purpose & Direction'),
         tags: [
           'Purpose',
           'North Star',
@@ -225,7 +229,7 @@ export const CreateSignalForm = ({
         ],
       },
       {
-        title: 'Broader Context',
+        title: categoryLabelFor('broaderContext', 'Broader Context'),
         tags: [
           'Trend',
           'Social Conditions',
@@ -236,7 +240,7 @@ export const CreateSignalForm = ({
         ],
       },
       {
-        title: 'People & Roles',
+        title: categoryLabelFor('peopleRoles', 'People & Roles'),
         tags: [
           'Project',
           'Quest',
@@ -247,7 +251,7 @@ export const CreateSignalForm = ({
         ],
       },
       {
-        title: 'Ecosystem Mapping',
+        title: categoryLabelFor('ecosystemMapping', 'Ecosystem Mapping'),
         tags: [
           'Serving Audience',
           'Customers',
@@ -258,7 +262,7 @@ export const CreateSignalForm = ({
         ],
       },
       {
-        title: 'Operating Coherence',
+        title: categoryLabelFor('operatingCoherence', 'Operating Coherence'),
         tags: [
           'Governance',
           'Processes',
@@ -268,11 +272,11 @@ export const CreateSignalForm = ({
         ],
       },
       {
-        title: 'Needs & Resources',
+        title: categoryLabelFor('needsResources', 'Needs & Resources'),
         tags: ['Needs', 'Resources', 'Fundraising', 'Matchmaking'],
       },
       {
-        title: 'Value & Model',
+        title: categoryLabelFor('valueModel', 'Value & Model'),
         tags: [
           'Innovation',
           'Products',
@@ -285,7 +289,7 @@ export const CreateSignalForm = ({
         ],
       },
       {
-        title: 'Evidence & Impact',
+        title: categoryLabelFor('evidenceImpact', 'Evidence & Impact'),
         tags: [
           'Proof of Action',
           'Proof of Impact',
@@ -802,6 +806,31 @@ export const CreateSignalForm = ({
                       allowToggleAll={false}
                       allowCreate={true}
                       uiStyle="tag-picker"
+                      labels={{
+                        more: (count) =>
+                          t.has('tagsMore' as never)
+                            ? `${t('tagsMore' as never)} ${count}`
+                            : `+ ${count} more`,
+                        noRecentTags: t.has('noRecentTags' as never)
+                          ? t('noRecentTags' as never)
+                          : 'No recent tags yet. Start typing to search tags.',
+                        noResults: t.has('noResults' as never)
+                          ? t('noResults' as never)
+                          : 'No results found.',
+                        mostUsed: t.has('mostUsedTagsHeading' as never)
+                          ? t('mostUsedTagsHeading' as never)
+                          : '--- Most used tags ---',
+                        create: (term) =>
+                          t.has('createTag' as never)
+                            ? `${t('createTag' as never)} "${term}"`
+                            : `Create "${term}"`,
+                        clear: t.has('clear' as never)
+                          ? t('clear' as never)
+                          : 'Clear',
+                        close: t.has('close' as never)
+                          ? t('close' as never)
+                          : 'Close',
+                      }}
                       onValueChange={field.onChange}
                     />
                   </FormControl>

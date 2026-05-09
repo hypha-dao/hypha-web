@@ -48,7 +48,7 @@ export const ChatRoom = ({
   }, [
     isMatrixAvailable,
     roomId,
-    messages,
+    messages.length,
     slug,
     updateCoherenceBySlug,
     isLoading,

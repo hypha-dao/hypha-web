@@ -594,13 +594,17 @@ export const MultiSelect = React.forwardRef<
                   >
                     <span className="text-neutral-10">#</span>
                     <span>{option?.label ?? value}</span>
-                    <XCircle
-                      className="ml-1 h-4 w-4 cursor-pointer text-neutral-10 hover:text-neutral-12"
+                    <button
+                      type="button"
+                      className="ml-1 inline-flex h-4 w-4 items-center justify-center text-neutral-10 hover:text-neutral-12"
+                      aria-label={`Remove ${option?.label ?? value}`}
                       onClick={(event) => {
                         event.stopPropagation();
                         toggleOption(value);
                       }}
-                    />
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
                   </Badge>
                 );
               })}
@@ -613,13 +617,17 @@ export const MultiSelect = React.forwardRef<
                   style={{ animationDuration: `${animation}s` }}
                 >
                   {resolvedLabels.more(selectedValues.length - maxCount)}
-                  <XCircle
-                    className="ml-2 h-4 w-4 cursor-pointer"
+                  <button
+                    type="button"
+                    className="ml-2 inline-flex h-4 w-4 items-center justify-center"
+                    aria-label="Clear extra selected options"
                     onClick={(event) => {
                       event.stopPropagation();
                       clearExtraOptions();
                     }}
-                  />
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </button>
                 </Badge>
               ) : null}
               <input
@@ -693,13 +701,17 @@ export const MultiSelect = React.forwardRef<
                             <IconComponent className="h-4 w-4 mr-2" />
                           )}
                           {option?.label ?? value}
-                          <XCircle
-                            className="ml-2 h-4 w-4 cursor-pointer"
+                          <button
+                            type="button"
+                            className="ml-2 inline-flex h-4 w-4 items-center justify-center"
+                            aria-label={`Remove ${option?.label ?? value}`}
                             onClick={(event) => {
                               event.stopPropagation();
                               toggleOption(value);
                             }}
-                          />
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </button>
                         </Badge>
                       );
                     })}
@@ -712,24 +724,32 @@ export const MultiSelect = React.forwardRef<
                         style={{ animationDuration: `${animation}s` }}
                       >
                         {`+ ${selectedValues.length - maxCount} more`}
-                        <XCircle
-                          className="ml-2 h-4 w-4 cursor-pointer"
+                        <button
+                          type="button"
+                          className="ml-2 inline-flex h-4 w-4 items-center justify-center"
+                          aria-label="Clear extra selected options"
                           onClick={(event) => {
                             event.stopPropagation();
                             clearExtraOptions();
                           }}
-                        />
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </button>
                       </Badge>
                     )}
                   </div>
                   <div className="flex items-center justify-between">
-                    <XIcon
-                      className="h-4 mx-2 cursor-pointer text-muted-foreground"
+                    <button
+                      type="button"
+                      className="mx-2 inline-flex h-4 items-center justify-center text-muted-foreground"
+                      aria-label={resolvedLabels.clear}
                       onClick={(event) => {
                         event.stopPropagation();
                         handleClear();
                       }}
-                    />
+                    >
+                      <XIcon className="h-4" />
+                    </button>
                     <Separator
                       orientation="vertical"
                       className="flex min-h-6 h-full"
@@ -880,51 +900,6 @@ export const MultiSelect = React.forwardRef<
                     </CommandItem>
                   );
                 })}
-                {uiStyle === 'tag-picker' &&
-                trimmedSearchValue.length === 0 &&
-                groupedTagPickerOptions.length > 0 ? (
-                  <>
-                    {filteredOptions.length > 0 ? <CommandSeparator /> : null}
-                    {groupedTagPickerOptions.map((option, index) => {
-                      if (isOptionDelimiter(option)) {
-                        return <CommandSeparator key={`group-sep-${index}`} />;
-                      }
-                      if (isOptionHeading(option)) {
-                        return (
-                          <div
-                            key={`group-heading-${index}`}
-                            className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55"
-                          >
-                            <span className="text-muted-foreground/35">• </span>
-                            <span>{option.label}</span>
-                          </div>
-                        );
-                      }
-                      const isSelected = selectedValues.includes(option.value);
-                      return (
-                        <CommandItem
-                          key={`group-option-${option.value}-${index}`}
-                          value={option.label}
-                          onSelect={() => toggleOption(option.value)}
-                          className="cursor-pointer py-2"
-                        >
-                          {option.icon ? (
-                            <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                          ) : null}
-                          <span className="flex-1 truncate">
-                            {option.label}
-                          </span>
-                          <CheckIcon
-                            className={cn(
-                              'h-4 w-4 text-accent-11',
-                              isSelected ? 'opacity-100' : 'opacity-0',
-                            )}
-                          />
-                        </CommandItem>
-                      );
-                    })}
-                  </>
-                ) : null}
               </CommandGroup>
               {uiStyle === 'default' ? (
                 <>
