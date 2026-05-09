@@ -11,6 +11,7 @@ import {
   useFilterSpacesListWithDiscoverability,
   EcosystemNavigationShell,
   getDhoSpaceContextPath,
+  prependRecentSpaceSlug,
 } from '@hypha-platform/epics';
 import {
   Button,
@@ -284,7 +285,12 @@ export function EcosystemNavigationMainPanel({
                               style={iconOutlineStyle}
                               aria-label={t('visibleSpaces.visitSpace')}
                             >
-                              <Link href={visitSpaceHref}>
+                              <Link
+                                href={visitSpaceHref}
+                                onClick={() =>
+                                  prependRecentSpaceSlug(selectedSpaceSlug)
+                                }
+                              >
                                 <ArrowTopRightIcon />
                               </Link>
                             </Button>
