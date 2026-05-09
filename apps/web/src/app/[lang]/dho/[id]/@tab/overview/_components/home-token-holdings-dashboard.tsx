@@ -1327,7 +1327,7 @@ export function HomeTokenHoldingsDashboard({
   );
 
   const [activeFilter, setActiveFilter] =
-    React.useState<HomeSectionFilter>('distribution');
+    React.useState<HomeSectionFilter>('activity');
 
   const getTokenTypeLabel = React.useCallback(
     (type: string) => {
