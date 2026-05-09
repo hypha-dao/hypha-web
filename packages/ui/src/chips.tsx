@@ -572,7 +572,7 @@ export const MultiSelect = React.forwardRef<
                 (props['aria-labelledby'] ? undefined : placeholder)
               }
               className={cn(
-                'flex w-full min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-0.5 text-sm ring-offset-background',
+                'flex w-full min-h-10 flex-wrap items-center gap-1 rounded-md border border-input bg-background px-2 py-0 text-sm ring-offset-background',
                 'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
                 className,
               )}
@@ -667,7 +667,7 @@ export const MultiSelect = React.forwardRef<
                   setIsPopoverOpen(true);
                 }}
                 placeholder={searchPlaceholder}
-                className="min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                className="h-8 min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 disabled={props.disabled}
               />
             </div>
