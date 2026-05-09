@@ -174,7 +174,6 @@ export const SelectNavigationAction = ({
                 <SpaceVisualization
                   data={hierarchyData}
                   currentSpaceId={currentSpace?.id}
-                  enableHoverActions={true}
                   onVisibleSpacesChange={handleVisibleSpacesChange}
                 />
               )}
