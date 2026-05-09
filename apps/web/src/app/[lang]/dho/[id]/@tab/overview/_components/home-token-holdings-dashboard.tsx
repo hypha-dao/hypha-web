@@ -516,8 +516,8 @@ function DistributionOverTimeChart({
   const netChangeSign = netChange >= 0 ? '+' : '';
 
   return (
-    <Card className="self-start border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
-      <CardHeader className="pb-1">
+    <Card className="h-fit self-start overflow-hidden border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
+      <CardHeader className="pb-2">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <CardTitle className="text-lg">Distribution over time</CardTitle>
@@ -573,7 +573,7 @@ function DistributionOverTimeChart({
           </span>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-1">
         {historyLoading ? (
           <Skeleton className="h-[280px] w-full" />
         ) : historyError ? (
@@ -588,7 +588,7 @@ function DistributionOverTimeChart({
           <div className="overflow-x-auto">
             <svg
               viewBox={`0 0 ${width} ${height}`}
-              className="h-[280px] min-w-[620px] w-full"
+              className="h-[320px] min-w-[620px] w-full"
             >
               <defs>
                 <linearGradient
@@ -864,28 +864,38 @@ function MembersEvolutionWidget({
       Math.max(1, ...monthly.map((item) => Math.max(item.people, item.spaces))),
     [monthly],
   );
+  const totals = React.useMemo(
+    () => ({
+      people: monthly.reduce((sum, item) => sum + item.people, 0),
+      spaces: monthly.reduce((sum, item) => sum + item.spaces, 0),
+    }),
+    [monthly],
+  );
 
-  const width = 700;
-  const height = 420;
-  const margin = { top: 18, right: 18, bottom: 64, left: 42 };
+  const width = 760;
+  const height = 340;
+  const margin = { top: 18, right: 22, bottom: 56, left: 44 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
-  const x0 = d3
-    .scaleBand<string>()
+  const x = d3
+    .scalePoint<string>()
     .domain(monthly.map((item) => item.month))
     .range([0, innerWidth])
-    .padding(0.18);
-  const x1 = d3
-    .scaleBand<string>()
-    .domain(['people', 'spaces'])
-    .range([0, x0.bandwidth()])
-    .padding(0.2);
-  const y = d3
-    .scaleLinear()
-    .domain([0, maxValue])
-    .nice()
-    .range([innerHeight, 0]);
+    .padding(0.5);
+  const y = d3.scaleSqrt().domain([0, maxValue]).range([innerHeight, 0]).nice();
+
+  const linePeople = d3
+    .line<(typeof monthly)[number]>()
+    .x((item) => x(item.month) ?? 0)
+    .y((item) => y(item.people))
+    .curve(d3.curveMonotoneX);
+  const lineSpaces = d3
+    .line<(typeof monthly)[number]>()
+    .x((item) => x(item.month) ?? 0)
+    .y((item) => y(item.spaces))
+    .curve(d3.curveMonotoneX);
+  const gradientId = React.useId().replace(/:/g, '');
 
   return (
     <Card className="border-border/60 bg-card/95">
@@ -894,20 +904,30 @@ function MembersEvolutionWidget({
         <CardDescription className="text-xs">
           Monthly evolution of people and spaces
         </CardDescription>
+        <div className="flex items-center gap-2 pt-1 text-[11px]">
+          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
+            People {totals.people}
+          </span>
+          <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
+            Spaces {totals.spaces}
+          </span>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
-            className="min-w-[560px] w-full"
+            className="min-w-[620px] w-full"
           >
             <g transform={`translate(${margin.left},${margin.top})`}>
-              {[0, maxValue / 2, maxValue].map((tick) => (
+              {y.ticks(4).map((tick) => (
                 <g key={tick} transform={`translate(0,${y(tick)})`}>
                   <line
-                    x1={innerWidth}
+                    x1={0}
+                    x2={innerWidth}
                     stroke="var(--border)"
                     strokeDasharray="3 3"
+                    opacity={0.7}
                   />
                   <text
                     x={-8}
@@ -915,33 +935,87 @@ function MembersEvolutionWidget({
                     dominantBaseline="middle"
                     className="fill-muted-foreground text-[11px]"
                   >
-                    {Math.round(tick)}
+                    {tick}
                   </text>
                 </g>
               ))}
 
+              <defs>
+                <linearGradient
+                  id={`members-people-${gradientId}`}
+                  x1="0%"
+                  x2="100%"
+                  y1="0%"
+                  y2="0%"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 78%, white 22%)"
+                  />
+                  <stop offset="100%" stopColor={MEMBERS_COLOR_RANGE.people} />
+                </linearGradient>
+                <linearGradient
+                  id={`members-spaces-${gradientId}`}
+                  x1="0%"
+                  x2="100%"
+                  y1="0%"
+                  y2="0%"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 65%, white 35%)"
+                  />
+                  <stop offset="100%" stopColor={MEMBERS_COLOR_RANGE.spaces} />
+                </linearGradient>
+              </defs>
+
+              <path
+                d={linePeople(monthly) ?? ''}
+                fill="none"
+                stroke={`url(#members-people-${gradientId})`}
+                strokeWidth={3}
+              />
+              <path
+                d={lineSpaces(monthly) ?? ''}
+                fill="none"
+                stroke={`url(#members-spaces-${gradientId})`}
+                strokeWidth={2.5}
+                strokeDasharray="5 4"
+                opacity={0.9}
+              />
+
               {monthly.map((item) => {
-                const monthX = x0(item.month) ?? 0;
+                const monthX = x(item.month) ?? 0;
+                const peopleY = y(item.people);
+                const spacesY = y(item.spaces);
+                const hasActivity = item.people > 0 || item.spaces > 0;
                 return (
-                  <g key={item.month} transform={`translate(${monthX},0)`}>
-                    <rect
-                      x={x1('people')}
-                      y={y(item.people)}
-                      width={x1.bandwidth()}
-                      height={innerHeight - y(item.people)}
+                  <g key={item.month}>
+                    {hasActivity ? (
+                      <rect
+                        x={monthX - 12}
+                        y={0}
+                        width={24}
+                        height={innerHeight}
+                        rx={8}
+                        fill="color-mix(in oklab, var(--space-accent, var(--accent-9)) 10%, transparent)"
+                        opacity={0.5}
+                      />
+                    ) : null}
+                    <circle
+                      cx={monthX}
+                      cy={peopleY}
+                      r={item.people > 0 ? 4 : 2}
                       fill={MEMBERS_COLOR_RANGE.people}
-                      rx={3}
                     />
-                    <rect
-                      x={x1('spaces')}
-                      y={y(item.spaces)}
-                      width={x1.bandwidth()}
-                      height={innerHeight - y(item.spaces)}
+                    <circle
+                      cx={monthX}
+                      cy={spacesY}
+                      r={item.spaces > 0 ? 3.5 : 1.8}
                       fill={MEMBERS_COLOR_RANGE.spaces}
-                      rx={3}
                     />
                     <text
-                      x={x0.bandwidth() / 2}
+                      x={monthX}
                       y={innerHeight + 20}
                       textAnchor="middle"
                       className="fill-muted-foreground text-[11px]"
@@ -1353,7 +1427,7 @@ export function HomeTokenHoldingsDashboard({
           ) : null}
 
           {!isLoading && !error && data && data.tokens.length > 0 ? (
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid items-start gap-4 lg:grid-cols-2">
               <DistributionOverTimeChart
                 spaceSlug={spaceSlug}
                 tokens={data.tokens}
