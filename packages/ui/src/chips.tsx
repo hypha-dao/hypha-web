@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { CheckIcon, XCircle, ChevronDown, XIcon } from 'lucide-react';
+import { CheckIcon, XCircle, ChevronDown, XIcon, List } from 'lucide-react';
 import {
   Popover,
   PopoverAnchor,
@@ -153,6 +153,7 @@ interface MultiSelectProps
     noRecentTags?: string;
     noResults?: string;
     mostUsed?: string;
+    allTags?: string;
     create?: (term: string) => string;
     clear?: string;
     close?: string;
@@ -164,6 +165,7 @@ const DEFAULT_MULTISELECT_LABELS = {
   noRecentTags: 'No recent tags yet. Start typing to search tags.',
   noResults: 'No results found.',
   mostUsed: '--- Most used tags ---',
+  allTags: 'All tags',
   create: (term: string) => `Create "${term}"`,
   clear: 'Clear',
   close: 'Close',
@@ -223,6 +225,8 @@ export const MultiSelect = React.forwardRef<
       React.useState<string[]>(defaultValue);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [searchValue, setSearchValue] = React.useState('');
+    const [showAllTagsOnEmptySearch, setShowAllTagsOnEmptySearch] =
+      React.useState(false);
     const [tagUsageMap, setTagUsageMap] = React.useState<
       Record<string, number>
     >({});
@@ -263,6 +267,11 @@ export const MultiSelect = React.forwardRef<
         arraysShallowEqual(prev, next) ? prev : next,
       );
     }, [value]);
+
+    React.useEffect(() => {
+      if (isPopoverOpen) return;
+      setShowAllTagsOnEmptySearch(false);
+    }, [isPopoverOpen]);
 
     React.useEffect(() => {
       if (uiStyle !== 'tag-picker') return;
@@ -483,7 +492,20 @@ export const MultiSelect = React.forwardRef<
     const shouldShowMostUsedHeading =
       uiStyle === 'tag-picker' &&
       trimmedSearchValue.length === 0 &&
+      !showAllTagsOnEmptySearch &&
       filteredOptions.length > 0;
+    const shouldShowAllTagsAction =
+      uiStyle === 'tag-picker' &&
+      trimmedSearchValue.length === 0 &&
+      !showAllTagsOnEmptySearch &&
+      groupedTagPickerOptions.length > 0;
+    const renderedOptions =
+      trimmedSearchValue.length > 0 &&
+      groupedFilteredTagPickerOptions.length > 0
+        ? groupedFilteredTagPickerOptions
+        : showAllTagsOnEmptySearch
+        ? groupedTagPickerOptions
+        : filteredOptions;
 
     const focusCommandItem = React.useCallback(
       (direction: 'first' | 'last') => {
@@ -818,6 +840,17 @@ export const MultiSelect = React.forwardRef<
                     <CommandSeparator />
                   </>
                 ) : null}
+                {shouldShowAllTagsAction ? (
+                  <CommandItem
+                    key="show-all-tags"
+                    value="show-all-tags"
+                    onSelect={() => setShowAllTagsOnEmptySearch(true)}
+                    className="cursor-pointer py-2"
+                  >
+                    <List className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span>{resolvedLabels.allTags}</span>
+                  </CommandItem>
+                ) : null}
                 {allowToggleAll && uiStyle !== 'tag-picker' && (
                   <>
                     <CommandItem
@@ -840,11 +873,7 @@ export const MultiSelect = React.forwardRef<
                     <CommandSeparator />
                   </>
                 )}
-                {(trimmedSearchValue.length > 0 &&
-                groupedFilteredTagPickerOptions.length > 0
-                  ? groupedFilteredTagPickerOptions
-                  : filteredOptions
-                ).map((option, index) => {
+                {renderedOptions.map((option, index) => {
                   if (
                     '__renderKind' in option &&
                     option.__renderKind === 'heading'
@@ -852,6 +881,17 @@ export const MultiSelect = React.forwardRef<
                     return (
                       <div
                         key={`typed-group-heading-${index}`}
+                        className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55"
+                      >
+                        <span className="text-muted-foreground/35">• </span>
+                        <span>{option.label}</span>
+                      </div>
+                    );
+                  }
+                  if (isOptionHeading(option)) {
+                    return (
+                      <div
+                        key={`group-heading-${index}`}
                         className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55"
                       >
                         <span className="text-muted-foreground/35">• </span>
