@@ -181,6 +181,7 @@ export const ChatDetail = ({
               <ChatRoom
                 roomId={conversation?.roomId ?? ''}
                 slug={conversation?.slug ?? ''}
+                signalDescription={conversation?.description}
                 isLoading={isLoading || isMessagesLoading}
                 messages={messages}
                 toggleChatPinnedMessage={toggleChatPinnedMessage}

@@ -647,8 +647,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const sendOperationTokenRef = useRef<symbol | null>(null);
   const sendAbortControllerRef = useRef<AbortController | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
-  const hasLoadedCoherenceMessagesRef = useRef(false);
-  const prevCoherenceSlugRef = useRef<string | null | undefined>(coherenceSlug);
   /** Coalesce Matrix timeline bursts into one React commit per frame (sync backfills). */
   const timelineFlushRafRef = useRef<number | null>(null);
   const pendingTimelineRedactIdsRef = useRef<Set<string>>(new Set());
@@ -1790,59 +1788,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!roomId) return;
     writePersistedChatHistory(roomId, messages);
   }, [roomId, messages]);
-
-  const persistedCoherenceMessageCount = useMemo(
-    () =>
-      messages.filter((message) => !message.id.startsWith('hypha-send-pending'))
-        .length,
-    [messages],
-  );
-
-  useEffect(() => {
-    if (
-      mode !== 'coherence' ||
-      !isMatrixAvailable ||
-      !roomId ||
-      !coherenceSlug
-    ) {
-      return;
-    }
-
-    if (prevCoherenceSlugRef.current !== coherenceSlug) {
-      prevCoherenceSlugRef.current = coherenceSlug;
-      hasLoadedCoherenceMessagesRef.current = false;
-    }
-
-    // Avoid clobbering persisted counts with transient empty timeline snapshots.
-    if (
-      !hasLoadedCoherenceMessagesRef.current &&
-      persistedCoherenceMessageCount === 0
-    ) {
-      return;
-    }
-
-    hasLoadedCoherenceMessagesRef.current = true;
-    updateCoherenceBySlug({
-      slug: coherenceSlug,
-      messages: persistedCoherenceMessageCount,
-    }).catch((error) => {
-      console.warn(
-        '[HumanRightPanel] failed to sync coherence message count:',
-        error,
-      );
-    });
-  }, [
-    mode,
-    isMatrixAvailable,
-    roomId,
-    coherenceSlug,
-    persistedCoherenceMessageCount,
-    updateCoherenceBySlug,
-  ]);
-
-  useEffect(() => {
-    hasLoadedCoherenceMessagesRef.current = false;
-  }, [mode, roomId, coherenceSlug]);
 
   // Keep message ids in sync when the SDK replaces provisional ~… ids with $… after send
   useEffect(() => {
