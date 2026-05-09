@@ -105,7 +105,11 @@ export const CreateSignalForm = ({
     deleteCoherenceBySlug,
     isDeletingCoherence,
   } = useCoherenceMutationsWeb2Rsc(authToken);
-  const { isMatrixAvailable, createRoom } = useMatrix();
+  const {
+    isMatrixAvailable,
+    createRoom,
+    sendMessage: sendMatrixMessage,
+  } = useMatrix();
 
   const isMutating =
     isCreatingCoherence || isUpdatingCoherenceSignal || isDeletingCoherence;
@@ -426,6 +430,20 @@ export const CreateSignalForm = ({
 
             try {
               await updateCoherenceBySlug({ slug: coherenceSlug, roomId });
+              const initialDescription = data.description?.trim();
+              if (initialDescription) {
+                try {
+                  await sendMatrixMessage({
+                    roomId,
+                    message: initialDescription,
+                  });
+                } catch (initialMessageError) {
+                  console.warn(
+                    'Signal created and room linked but initial description message failed:',
+                    initialMessageError,
+                  );
+                }
+              }
             } catch (linkError) {
               const linkErrorMessage =
                 linkError instanceof Error
@@ -458,6 +476,7 @@ export const CreateSignalForm = ({
       updateCoherenceBySlug,
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
+      sendMatrixMessage,
       mode,
       setSignalProvisioningNotice,
       signalSlug,

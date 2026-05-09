@@ -647,6 +647,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const sendOperationTokenRef = useRef<symbol | null>(null);
   const sendAbortControllerRef = useRef<AbortController | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
+  const hasLoadedCoherenceMessagesRef = useRef(false);
   /** Coalesce Matrix timeline bursts into one React commit per frame (sync backfills). */
   const timelineFlushRafRef = useRef<number | null>(null);
   const pendingTimelineRedactIdsRef = useRef<Set<string>>(new Set());
@@ -1788,6 +1789,48 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!roomId) return;
     writePersistedChatHistory(roomId, messages);
   }, [roomId, messages]);
+
+  useEffect(() => {
+    if (
+      mode !== 'coherence' ||
+      !isMatrixAvailable ||
+      !roomId ||
+      !coherenceSlug
+    ) {
+      return;
+    }
+
+    const persistedMessageCount = messages.filter(
+      (message) => !message.id.startsWith('hypha-send-pending'),
+    ).length;
+
+    // Avoid clobbering persisted counts with transient empty timeline snapshots.
+    if (!hasLoadedCoherenceMessagesRef.current && persistedMessageCount === 0) {
+      return;
+    }
+
+    hasLoadedCoherenceMessagesRef.current = true;
+    updateCoherenceBySlug({
+      slug: coherenceSlug,
+      messages: persistedMessageCount,
+    }).catch((error) => {
+      console.warn(
+        '[HumanRightPanel] failed to sync coherence message count:',
+        error,
+      );
+    });
+  }, [
+    mode,
+    isMatrixAvailable,
+    roomId,
+    coherenceSlug,
+    messages,
+    updateCoherenceBySlug,
+  ]);
+
+  useEffect(() => {
+    hasLoadedCoherenceMessagesRef.current = false;
+  }, [mode, roomId, coherenceSlug]);
 
   // Keep message ids in sync when the SDK replaces provisional ~… ids with $… after send
   useEffect(() => {
