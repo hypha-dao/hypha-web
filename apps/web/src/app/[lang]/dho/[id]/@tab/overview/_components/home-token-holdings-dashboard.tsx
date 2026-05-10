@@ -547,7 +547,7 @@ function DistributionOverTimeChart({
   }, [orderedPoints]);
 
   return (
-    <Card className="h-fit self-start overflow-hidden border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
+    <Card className="h-fit min-w-0 self-start overflow-hidden border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -783,7 +783,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
     .outerRadius(112);
 
   return (
-    <Card className="border-border/60 bg-card/95">
+    <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-0">
         <CardTitle className="text-lg">Proposals</CardTitle>
         <CardDescription className="text-xs">
@@ -899,7 +899,7 @@ function MembersEvolutionWidget({
   const gradientId = React.useId().replace(/:/g, '');
 
   return (
-    <Card className="border-border/60 bg-card/95">
+    <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-0">
         <CardTitle className="text-lg">Members</CardTitle>
         <CardDescription className="text-xs">
@@ -1175,7 +1175,7 @@ function SignalsPulseMapWidget({
     .paddingOuter(0.08);
 
   return (
-    <Card className="border-border/60 bg-card/95">
+    <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Signals</CardTitle>
         <CardDescription className="text-xs">
@@ -1484,7 +1484,7 @@ export function HomeTokenHoldingsDashboard({
                   : 'grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
               }
             >
-              <div className="grid items-start gap-4">
+              <div className="grid min-w-0 items-start gap-4">
                 {showSignalsWidget ? (
                   <SignalsPulseMapWidget signals={activityData.signals} />
                 ) : null}
@@ -1492,7 +1492,7 @@ export function HomeTokenHoldingsDashboard({
                   monthly={activityData.members.monthly}
                 />
               </div>
-              <div className="grid items-start gap-4">
+              <div className="grid min-w-0 items-start gap-4">
                 <ProposalsPieWidget data={activityData.proposals} />
               </div>
             </div>
@@ -1546,14 +1546,14 @@ export function HomeTokenHoldingsDashboard({
               <div
                 className={
                   showDistributionHistoryWidget
-                    ? 'grid items-start gap-4'
-                    : 'grid items-start gap-4 md:grid-cols-2'
+                    ? 'grid min-w-0 items-start gap-4'
+                    : 'grid min-w-0 items-start gap-4 md:grid-cols-2'
                 }
               >
                 {data.tokens.map((token) => (
                   <Card
                     key={token.token_address}
-                    className="group border-border/50 bg-card/90 backdrop-blur-sm"
+                    className="group min-w-0 overflow-hidden border-border/50 bg-card/90 backdrop-blur-sm"
                   >
                     <CardContent className="pt-5">
                       <TokenDonutChart
