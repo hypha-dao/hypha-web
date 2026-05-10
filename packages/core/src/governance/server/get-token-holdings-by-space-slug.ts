@@ -80,6 +80,8 @@ type HolderDescriptor = {
 
 const HYPHA_SHARED_TOKEN_ADDRESS =
   '0x8b93862835c36e9689e9bb1ab21de3982e266cd3' as const;
+const HVOICE_SHARED_TOKEN_ADDRESS =
+  '0x24e0b2bfee025d57a19f9dae4c3849a4a6bf9626' as const;
 
 function normalizeAddress(address: string): `0x${string}` {
   return address.toLowerCase() as `0x${string}`;
@@ -132,6 +134,15 @@ function shouldIncludeHyphaSharedToken(input: {
   const slug = input.spaceSlug.toLowerCase();
   const title = input.spaceTitle.toLowerCase();
   return slug.includes('hypha') || title.includes('hypha');
+}
+
+function shouldIncludeHyphaPlatformSharedTokens(input: {
+  spaceSlug: string;
+  spaceTitle: string;
+}): boolean {
+  const slug = input.spaceSlug.toLowerCase();
+  const title = input.spaceTitle.toLowerCase();
+  return slug === 'hypha-platform' || title === 'hypha platform';
 }
 
 async function readTokenContractInfo(tokenAddress: `0x${string}`): Promise<{
@@ -317,6 +328,18 @@ export async function getTokenHoldingsBySpaceSlug(
     ]);
   }
 
+  if (
+    shouldIncludeHyphaPlatformSharedTokens({
+      spaceSlug: host.slug,
+      spaceTitle: host.title,
+    })
+  ) {
+    tokenAddresses = dedupeAddresses([
+      ...tokenAddresses,
+      normalizeAddress(HVOICE_SHARED_TOKEN_ADDRESS),
+    ]);
+  }
+
   const computedRoster = await computeSpaceMemberEntries(spaceSlug, { db });
   const holderMap = new Map<`0x${string}`, HolderDescriptor>();
 
@@ -362,6 +385,10 @@ export async function getTokenHoldingsBySpaceSlug(
     tokenAddresses.map(async (tokenAddress) => {
       const contractInfo = await readTokenContractInfo(tokenAddress);
       const tokenMeta = dbTokenByAddress.get(tokenAddress);
+      const isHyphaSharedToken =
+        tokenAddress === normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS);
+      const isHyphaVoiceSharedToken =
+        tokenAddress === normalizeAddress(HVOICE_SHARED_TOKEN_ADDRESS);
       const decimals = contractInfo.decimals;
       const totalSupplyRaw = contractInfo.totalSupplyRaw;
 
@@ -490,12 +517,16 @@ export async function getTokenHoldingsBySpaceSlug(
       return {
         token_id: tokenMeta?.id ?? null,
         token_address: tokenAddress,
-        name: tokenMeta?.name ?? contractInfo.name,
-        symbol: tokenMeta?.symbol ?? contractInfo.symbol,
+        name:
+          tokenMeta?.name ??
+          (isHyphaVoiceSharedToken ? 'Hypha Voice' : contractInfo.name),
+        symbol:
+          tokenMeta?.symbol ??
+          (isHyphaVoiceSharedToken ? 'HVOICE' : contractInfo.symbol),
         icon_url: tokenMeta?.iconUrl ?? null,
         type:
           tokenMeta?.type ??
-          (tokenAddress === normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS)
+          (isHyphaSharedToken || isHyphaVoiceSharedToken
             ? 'utility'
             : 'unknown'),
         decimals,
