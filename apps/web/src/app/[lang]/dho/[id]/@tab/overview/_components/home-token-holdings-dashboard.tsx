@@ -1405,20 +1405,28 @@ export function HomeTokenHoldingsDashboard({
     [tModalAside],
   );
   const hasEnergyData = Boolean(activityData?.energy.available);
+  // Temporarily hidden for deployment/testing; re-enable by switching to `hasEnergyData`.
+  const showEnergyWidget = false && hasEnergyData;
   const filterItems = React.useMemo(
     () =>
       [
-        ...(hasEnergyData ? [{ value: 'energy', label: 'Energy' }] : []),
+        ...(showEnergyWidget ? [{ value: 'energy', label: 'Energy' }] : []),
         { value: 'activity', label: 'Activity' },
         { value: 'distribution', label: 'Distribution' },
       ] as Array<{ value: HomeSectionFilter; label: string }>,
-    [hasEnergyData],
+    [showEnergyWidget],
   );
   const showActivity = activeFilter === 'activity';
   const showDistribution = activeFilter === 'distribution';
   // Temporarily hidden for deployment; keep components wired for quick re-enable.
   const showSignalsWidget = false;
   const showDistributionHistoryWidget = false;
+
+  React.useEffect(() => {
+    if (activeFilter === 'energy' && !showEnergyWidget) {
+      setActiveFilter('activity');
+    }
+  }, [activeFilter, showEnergyWidget]);
 
   return (
     <div className="flex flex-col gap-5 py-4">
@@ -1612,7 +1620,7 @@ export function HomeTokenHoldingsDashboard({
         </>
       ) : null}
 
-      {activeFilter === 'energy' ? (
+      {activeFilter === 'energy' && showEnergyWidget ? (
         <Card>
           <CardHeader>
             <CardTitle>Energy</CardTitle>
