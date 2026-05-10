@@ -31,6 +31,11 @@ export function CompactSpaceBannerLead({ src }: Props) {
   const mainScrollY = useMainColumnScrollY();
   const [reduceMotion, setReduceMotion] = React.useState(false);
 
+  React.useEffect(() => {
+    setReady(false);
+    setImageFailed(false);
+  }, [src]);
+
   React.useLayoutEffect(() => {
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     if (!mq) return;
