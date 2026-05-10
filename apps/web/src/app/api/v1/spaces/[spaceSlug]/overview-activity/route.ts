@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  attachProposalStatusToDocument,
+  fetchProposalOutcomeSetsForSpace,
   findSpaceBySlug,
   getAllCoherences,
   getDocumentsBySpaceSlug,
@@ -102,10 +104,21 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
+    let web3SpaceIdNum: number | null = null;
     if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+      web3SpaceIdNum =
+        typeof space.web3SpaceId === 'number'
+          ? space.web3SpaceId
+          : Number(space.web3SpaceId);
+      if (!Number.isFinite(web3SpaceIdNum)) {
+        return NextResponse.json(
+          { error: 'Invalid web3 space id' },
+          { status: 500 },
+        );
+      }
       const { hasAccess, response } = await checkSpaceAccess(
         request,
-        space.web3SpaceId as number,
+        web3SpaceIdNum,
       );
       if (!hasAccess && response) {
         return response;
@@ -116,14 +129,21 @@ export async function GET(
     const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
     const bearer = bearerMatch?.[1]?.trim() || undefined;
 
-    const signalsPromise = getAllCoherences({
-      spaceId: space.id,
-      includeArchived: false,
-    });
+    const [signals, proposalOutcomes] = await Promise.all([
+      getAllCoherences({
+        spaceId: space.id,
+        includeArchived: false,
+      }),
+      web3SpaceIdNum == null
+        ? Promise.resolve(null)
+        : fetchProposalOutcomeSetsForSpace(web3SpaceIdNum),
+    ]);
     const allProposals: Array<{
       status?: string;
       label?: string | null;
       updatedAt?: string | Date | null;
+      web3ProposalId?: number | null;
+      creator?: unknown;
     }> = [];
     let proposalsPage = 1;
 
@@ -157,8 +177,6 @@ export async function GET(
       proposalsPage += 1;
     }
 
-    const signals = await signalsPromise;
-
     const proposalCounts = {
       onVoting: 0,
       accepted: 0,
@@ -166,11 +184,15 @@ export async function GET(
     };
 
     for (const proposal of allProposals) {
-      if (proposal.status === 'accepted') {
+      const resolvedProposal = attachProposalStatusToDocument(
+        proposal,
+        proposalOutcomes,
+      );
+      if (resolvedProposal.status === 'accepted') {
         proposalCounts.accepted += 1;
-      } else if (proposal.status === 'rejected') {
+      } else if (resolvedProposal.status === 'rejected') {
         proposalCounts.refused += 1;
-      } else {
+      } else if (resolvedProposal.status === 'onVoting') {
         proposalCounts.onVoting += 1;
       }
     }
@@ -218,6 +240,9 @@ export async function GET(
     }
 
     const membershipExitProposalDates = allProposals
+      .map((proposal) =>
+        attachProposalStatusToDocument(proposal, proposalOutcomes),
+      )
       .filter((proposal) => {
         if (proposal.status !== 'accepted') return false;
         const label = proposal.label?.toLowerCase() ?? '';
