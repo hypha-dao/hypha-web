@@ -26,10 +26,7 @@ export const DocumentGrid = ({
   documents,
 }: DocumentGridProps) => {
   return (
-    <div
-      className="mx-auto grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,16.5rem),1fr))] items-start gap-2"
-      style={{ maxWidth: '67.5rem' }}
-    >
+    <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,16.5rem),1fr))] items-start gap-2">
       {documents.map((document) => (
         <Link
           href={`${basePath}/${document.slug}`}
