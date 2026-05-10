@@ -328,7 +328,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         >
           <div className="absolute inset-0 overflow-hidden">
             <div
-              className="absolute inset-x-0 top-[-16%] h-[132%] will-change-transform"
+              className="absolute inset-x-[-2%] top-[-24%] h-[152%] will-change-transform"
               style={
                 reduceMotion
                   ? undefined
