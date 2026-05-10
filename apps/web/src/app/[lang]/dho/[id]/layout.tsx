@@ -113,7 +113,7 @@ export default async function DhoLayout({
         the column (reads as a dead strip beside the hero / secondary chrome). Use padding only.
       */}
       <div className="flex w-full min-w-0">
-        <div className="mt-1 min-w-0 flex-1 px-4 md:mt-2 sm:px-5">
+        <div className="mt-[2px] min-w-0 flex-1 px-4 md:mt-[6px] sm:px-5">
           {/* React 19+: link rel="preload" is hoisted to document head */}
           {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
             <link
