@@ -47,21 +47,28 @@ export function CompactSpaceBannerLead({ src }: Props) {
   }, []);
 
   const parallaxY = reduceMotion ? 0 : clampParallaxScrollY(mainScrollY);
+  const imageVisible = ready && !imageFailed;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
-      {/* Neutral pre-decode plate: avoid both green and black reload flash */}
+      {/* Theme-aware pre-decode plate that cross-fades away once image is ready */}
       <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(232,236,243)_0%,rgb(213,220,232)_42%,rgb(191,200,216)_68%,rgb(168,178,196)_100%)]"
+        className={cn(
+          'absolute inset-0 bg-white dark:bg-black transition-opacity duration-500 ease-out',
+          imageVisible ? 'opacity-0' : 'opacity-100',
+        )}
         aria-hidden
       />
       <div
-        className="absolute inset-0 mix-blend-soft-light opacity-45 bg-[radial-gradient(ellipse_50%_40%_at_80%_5%,rgba(255,255,255,0.22),transparent_60%)]"
+        className={cn(
+          'absolute inset-0 mix-blend-soft-light bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.16),transparent_62%)] dark:bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.06),transparent_62%)] transition-opacity duration-500 ease-out',
+          imageVisible ? 'opacity-0' : 'opacity-100',
+        )}
         aria-hidden
       />
       {/* Taller layer + parallax translate so edges never show during scroll */}
       <div
-        className="absolute left-0 right-0 top-[-12%] h-[124%] will-change-transform"
+        className="absolute inset-[-14%] will-change-transform"
         style={
           reduceMotion
             ? undefined
@@ -80,7 +87,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
               'object-cover object-center transition-opacity duration-500 ease-out',
               imageFailed
                 ? 'pointer-events-none opacity-0'
-                : ready
+                : imageVisible
                 ? 'opacity-100'
                 : 'opacity-0',
             )}
@@ -99,7 +106,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
           />
         </div>
       </div>
-      {ready && !imageFailed ? (
+      {imageVisible ? (
         <div className="hidden dark:block">
           <div
             className="pointer-events-none absolute inset-0"

@@ -128,7 +128,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-xl border border-[#30363d]',
+        'relative overflow-hidden rounded-xl',
         'shadow-[0_24px_48px_-12px_rgba(5,33,22,0.55)]',
         /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
         'px-8 pt-8 pb-0',
@@ -144,15 +144,11 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
       ) : (
         <>
           <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(115,155,134)_0%,rgb(73,112,94)_42%,rgb(46,78,64)_68%,rgb(29,52,43)_100%)]"
+            className="pointer-events-none absolute inset-0 bg-white dark:bg-black"
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-0 mix-blend-soft-light opacity-75 bg-[radial-gradient(ellipse_50%_40%_at_80%_5%,rgba(52,211,153,0.18),transparent_60%)]"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_110%_90%_at_50%_78%,transparent_35%,rgba(0,14,10,0.72)_92%)]"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.16),transparent_62%)] dark:bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.06),transparent_62%)]"
             aria-hidden
           />
         </>
