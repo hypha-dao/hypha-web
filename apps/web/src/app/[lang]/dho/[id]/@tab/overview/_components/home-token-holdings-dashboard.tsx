@@ -981,7 +981,9 @@ function MembersEvolutionWidget({
   return (
     <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-0">
-        <CardTitle className="text-lg">{tTokenHoldings('members.title')}</CardTitle>
+        <CardTitle className="text-lg">
+          {tTokenHoldings('members.title')}
+        </CardTitle>
         <CardDescription className="text-xs">
           {tTokenHoldings('members.subtitle')}
         </CardDescription>
@@ -1260,7 +1262,9 @@ function SignalsPulseMapWidget({
   return (
     <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{tTokenHoldings('signals.title')}</CardTitle>
+        <CardTitle className="text-lg">
+          {tTokenHoldings('signals.title')}
+        </CardTitle>
         <CardDescription className="text-xs">
           {tTokenHoldings('signals.subtitle')}
         </CardDescription>
@@ -1495,7 +1499,10 @@ export function HomeTokenHoldingsDashboard({
           ? [{ value: 'energy', label: tTokenHoldings('filters.energy') }]
           : []),
         { value: 'activity', label: tTokenHoldings('filters.activity') },
-        { value: 'distribution', label: tTokenHoldings('filters.distribution') },
+        {
+          value: 'distribution',
+          label: tTokenHoldings('filters.distribution'),
+        },
       ] as Array<{ value: HomeSectionFilter; label: string }>,
     [showEnergyWidget, tTokenHoldings],
   );
@@ -1640,9 +1647,12 @@ export function HomeTokenHoldingsDashboard({
                               <TooltipTrigger asChild>
                                 <button
                                   type="button"
-                                  aria-label={tTokenHoldings('tokenDetailsAria', {
-                                    tokenName: token.name,
-                                  })}
+                                  aria-label={tTokenHoldings(
+                                    'tokenDetailsAria',
+                                    {
+                                      tokenName: token.name,
+                                    },
+                                  )}
                                   className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
                                   <CircleHelp className="h-4 w-4" />

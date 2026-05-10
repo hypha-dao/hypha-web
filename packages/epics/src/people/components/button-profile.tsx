@@ -17,6 +17,7 @@ import { EthAddress } from './eth-address';
 import {
   Bell,
   ChevronRight,
+  Compass,
   LogOutIcon,
   Repeat,
   Shield,
@@ -40,6 +41,7 @@ export type ButtonProfileProps = {
   onDelete?: () => void;
   onChangeThemeMode?: () => void;
   profileUrl?: string;
+  onboardingUrl?: string;
   notificationCentrePath?: string;
   navItems: ButtonNavItemProps[];
   person?: Person;
@@ -59,6 +61,7 @@ export const ButtonProfile = ({
   onLogout,
   onDelete,
   profileUrl,
+  onboardingUrl,
   notificationCentrePath,
   navItems,
   onChangeThemeMode,
@@ -130,6 +133,13 @@ export const ButtonProfile = ({
 
             {profileUrl && (
               <ButtonNavItem href={profileUrl} label={t('myProfile')} />
+            )}
+
+            {onboardingUrl && (
+              <ButtonNavItem
+                href={onboardingUrl}
+                label={t('continueAdventure')}
+              />
             )}
 
             {notificationCentrePath && (
@@ -252,7 +262,7 @@ export const ButtonProfile = ({
                   </div>
                 ) : null}
 
-                {(profileUrl || notificationCentrePath) && (
+                {(profileUrl || onboardingUrl || notificationCentrePath) && (
                   <>
                     <DropdownMenuSeparator className="-mx-0 my-1" />
                     <DropdownMenuGroup className="space-y-0.5">
@@ -264,6 +274,20 @@ export const ButtonProfile = ({
                               aria-hidden
                             />
                             <span className="flex-1">{t('viewProfile')}</span>
+                            <ChevronRight
+                              className="ml-auto size-4 opacity-60"
+                              aria-hidden
+                            />
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : null}
+                      {onboardingUrl ? (
+                        <DropdownMenuItem className={menuItemClass} asChild>
+                          <Link href={onboardingUrl}>
+                            <Compass className="size-4 shrink-0" aria-hidden />
+                            <span className="flex-1">
+                              {t('continueAdventure')}
+                            </span>
                             <ChevronRight
                               className="ml-auto size-4 opacity-60"
                               aria-hidden

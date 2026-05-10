@@ -783,7 +783,45 @@
     "delete": "Borrar",
     "signIn": "Iniciar sesión",
     "getStarted": "Empezar",
-    "ecosystemLogo": "Logo del ecosistema"
+    "ecosystemLogo": "Logo del ecosistema",
+    "continueAdventure": "Continuar tu aventura"
+  },
+  "OnboardingAdventure": {
+    "title": "Aventura de onboarding",
+    "subtitle": "Elige tu siguiente paso",
+    "spacePlaceholder": "Seleccionar espacio",
+    "spaceSearchPlaceholder": "Buscar espacios...",
+    "noSpacesFound": "No se encontraron espacios.",
+    "loadingSpaces": "Cargando espacios...",
+    "explore": {
+      "title": "Explorar la red",
+      "description": "Descubre comunidades y oportunidades en la red.",
+      "cta": "Explorar ahora"
+    },
+    "create": {
+      "title": "Crea tu espacio",
+      "description": "Inicia un nuevo espacio e invita a otros a colaborar.",
+      "cta": "Crear un espacio"
+    },
+    "join": {
+      "title": "Unirse a un espacio",
+      "description": "Elige un espacio y entra directamente a su actividad.",
+      "cta": "Abrir espacio seleccionado",
+      "unavailable": "No hay espacios disponibles para unirse en este momento."
+    },
+    "deposit": {
+      "title": "Depositar fondos en un espacio",
+      "description": "Elige un espacio con dirección de tesorería para fondearlo.",
+      "cta": "Mostrar detalles de depósito",
+      "unavailable": "No hay espacios con dirección de tesorería disponibles."
+    },
+    "depositDetails": {
+      "title": "Detalles de depósito",
+      "description": "Financia la tesorería de {spaceName} con la dirección de abajo.",
+      "addressLabel": "Dirección de tesorería",
+      "copy": "Copiar dirección",
+      "copied": "Dirección copiada"
+    }
   },
   "MyWallet": {
     "loading": "Cargando...",
