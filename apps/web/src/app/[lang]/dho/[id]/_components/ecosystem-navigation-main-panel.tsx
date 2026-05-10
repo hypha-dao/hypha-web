@@ -318,6 +318,7 @@ export function EcosystemNavigationMainPanel({
                   <SpaceVisualization
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
+                    rootAccentHex={selectedSpaceAccent}
                     enableHoverActions={false}
                     onVisibleSpacesChange={handleVisibleSpacesChange}
                   />

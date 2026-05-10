@@ -21,6 +21,7 @@ type SpaceHierarchyNode = d3.HierarchyNode<SpaceNode> & {
 type Props = {
   data: SpaceNode;
   currentSpaceId?: number;
+  rootAccentHex?: string;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
   enableHoverActions?: boolean;
 };
@@ -140,6 +141,7 @@ function withAlpha(color: string, alpha: number): string {
 export function SpaceVisualization({
   data,
   currentSpaceId,
+  rootAccentHex,
   onVisibleSpacesChange,
   enableHoverActions = true,
 }: Props) {
@@ -248,10 +250,22 @@ export function SpaceVisualization({
     if (!svgRef.current) return;
 
     const getDiagramFillColor = () => 'var(--color-background)';
-    const getRootFillColor = () =>
-      themeRef.current === 'dark'
-        ? 'rgba(255,255,255,0.035)'
-        : 'rgba(15,23,42,0.045)';
+    const getRootFillColor = (accentColor: string) => {
+      const parsed = d3.hsl(accentColor);
+      if (!parsed) {
+        return themeRef.current === 'dark'
+          ? 'rgba(255,255,255,0.06)'
+          : 'rgba(15,23,42,0.08)';
+      }
+      // Keep root tint subtle and non-neon while preserving accent hue.
+      const softAccent = d3.hsl(
+        parsed.h,
+        Math.max(0.16, Math.min(parsed.s * 0.5, 0.36)),
+        themeRef.current === 'dark' ? 0.72 : 0.38,
+      );
+      softAccent.opacity = themeRef.current === 'dark' ? 0.2 : 0.12;
+      return softAccent.formatRgb();
+    };
     const getOrbitStrokeAlpha = () =>
       themeRef.current === 'dark' ? 0.7 : 0.55;
 
@@ -460,6 +474,7 @@ export function SpaceVisualization({
 
     const g = svg.append('g');
     const nodeAccents = new Map<number, string>();
+    const resolvedRootAccent = rootAccentHex?.trim() || SPACE_ACCENT_FALLBACK;
     const getNodeAccent = (d: SpaceHierarchyNode): string =>
       nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
 
@@ -470,7 +485,7 @@ export function SpaceVisualization({
       .join('circle')
       .attr('class', 'orbit')
       .style('fill', (d: SpaceHierarchyNode) =>
-        d.depth === 0 ? getRootFillColor() : 'none',
+        d.depth === 0 ? getRootFillColor(resolvedRootAccent) : 'none',
       )
       .attr('stroke', (d: SpaceHierarchyNode) =>
         d.depth === 0
@@ -800,7 +815,7 @@ export function SpaceVisualization({
         )
         .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
         .style('fill', (d: SpaceHierarchyNode) =>
-          d.depth === 0 ? getRootFillColor() : 'none',
+          d.depth === 0 ? getRootFillColor(resolvedRootAccent) : 'none',
         )
         .attr('stroke', (d: SpaceHierarchyNode) =>
           d.depth === 0
@@ -851,7 +866,7 @@ export function SpaceVisualization({
         orbits
           .filter((d) => d.data.id === node.data.id)
           .style('fill', (d: SpaceHierarchyNode) =>
-            d.depth === 0 ? getRootFillColor() : 'none',
+            d.depth === 0 ? getRootFillColor(resolvedRootAccent) : 'none',
           )
           .attr('stroke', (d: SpaceHierarchyNode) =>
             d.depth === 0
@@ -864,7 +879,7 @@ export function SpaceVisualization({
       isCancelled = true;
       cancelIntroSequence();
     };
-  }, [data, currentSpaceId, resolvedTheme, enableHoverActions]);
+  }, [data, currentSpaceId, resolvedTheme, enableHoverActions, rootAccentHex]);
 
   useEffect(() => {
     return () => {
