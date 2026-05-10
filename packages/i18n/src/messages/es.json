@@ -865,6 +865,59 @@
       "totalSupply": "Suministro total",
       "other": "Otros",
       "address": "Dirección"
+    },
+    "filters": {
+      "energy": "Energía",
+      "activity": "Actividad",
+      "distribution": "Distribución"
+    },
+    "activity": {
+      "title": "No se pudieron cargar los widgets de actividad",
+      "error": "Vuelve a intentarlo en un momento. Es posible que los datos de analítica de actividad aún se estén sincronizando."
+    },
+    "distribution": {
+      "title": "Distribución en el tiempo",
+      "subtitle": "El eje X muestra el tiempo según las fechas de transacción.",
+      "tokenLabel": "Token",
+      "memberLabel": "Miembro",
+      "memberAll": "Todos",
+      "start": "Inicio",
+      "end": "Fin",
+      "delta": "Delta",
+      "timeAxis": "Tiempo",
+      "error": "No se puede cargar ahora el historial de distribución de tokens.",
+      "empty": "No se encontró historial de transferencias para los filtros seleccionados."
+    },
+    "proposals": {
+      "title": "Propuestas",
+      "subtitle": "En votación, aceptadas, rechazadas",
+      "ariaLabel": "Distribución de propuestas",
+      "onVoting": "En votación",
+      "accepted": "Aceptadas",
+      "refused": "Rechazadas",
+      "noData": "Sin datos"
+    },
+    "members": {
+      "title": "Miembros",
+      "subtitle": "Miembros y espacios mensuales acumulados (neto de salidas)",
+      "people": "Personas",
+      "spaces": "Espacios"
+    },
+    "signals": {
+      "title": "Señales",
+      "subtitle": "Mapa de calor por prioridad y recencia (reciente a la izquierda, más antiguo a la derecha)",
+      "count": "Señales",
+      "peakCell": "Celda máxima",
+      "recent": "Reciente",
+      "older": "Antiguo",
+      "recency": "Recencia",
+      "lowActivity": "Baja actividad",
+      "highActivity": "Alta actividad",
+      "cellTitle": "{priority} · {count} señales · ventana de recencia de {start}% a {end}%"
+    },
+    "energy": {
+      "title": "Energía",
+      "description": "Los widgets de energía aparecerán cuando haya datos disponibles."
     }
   },
   "SpaceSettingsAction": {

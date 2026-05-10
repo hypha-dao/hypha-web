@@ -327,6 +327,7 @@ function TokenDonutChart({
   slices: TokenHoldingResponse['tokens'][number]['holdings'];
 }) {
   const locale = useLocale();
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const [hoveredSliceKey, setHoveredSliceKey] = React.useState<string | null>(
     null,
   );
@@ -384,7 +385,7 @@ function TokenDonutChart({
         <svg
           viewBox="-145 -145 290 290"
           role="img"
-          aria-label={`Token distribution chart for ${title}`}
+          aria-label={tTokenHoldings('chartAria', { title })}
           className="h-auto w-full max-w-[260px] transition-transform duration-300 ease-out group-hover:scale-[1.03] sm:max-w-[300px] xl:max-w-[320px]"
         >
           {pieData.map((segment: d3.PieArcDatum<ChartSlice>) => (
@@ -583,7 +584,10 @@ function DistributionOverTimeChart({
     .y((point) => y(point.share_pct))
     .curve(d3.curveMonotoneX);
   const gradientId = React.useId().replace(/:/g, '');
-  const memberOptions = history?.members ?? [{ id: 'all', label: 'All' }];
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
+  const memberOptions = history?.members ?? [
+    { id: 'all', label: tTokenHoldings('distribution.memberAll') },
+  ];
   const lastPoint = orderedPoints.at(-1);
   const firstPoint = orderedPoints[0];
   const netChange =
@@ -613,14 +617,16 @@ function DistributionOverTimeChart({
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <CardTitle className="text-lg">Distribution over time</CardTitle>
+            <CardTitle className="text-lg">
+              {tTokenHoldings('distribution.title')}
+            </CardTitle>
             <CardDescription className="text-xs">
-              X axis shows time from transaction dates.
+              {tTokenHoldings('distribution.subtitle')}
             </CardDescription>
           </div>
           <div className="flex w-full flex-row items-end justify-end gap-2 lg:w-auto">
             <label className="flex w-[160px] max-w-[160px] flex-col gap-1 text-xs text-muted-foreground">
-              Token
+              {tTokenHoldings('distribution.tokenLabel')}
               <select
                 value={selectedToken}
                 onChange={(event) => setSelectedToken(event.target.value)}
@@ -634,7 +640,7 @@ function DistributionOverTimeChart({
               </select>
             </label>
             <label className="flex w-[140px] max-w-[140px] flex-col gap-1 text-xs text-muted-foreground">
-              Member
+              {tTokenHoldings('distribution.memberLabel')}
               <select
                 value={selectedMember}
                 onChange={(event) => setSelectedMember(event.target.value)}
@@ -651,17 +657,17 @@ function DistributionOverTimeChart({
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
           <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
-            Start{' '}
+            {tTokenHoldings('distribution.start')}{' '}
             {firstPoint
               ? `${PERCENTAGE_FORMATTER(firstPoint.share_pct)}%`
               : '0%'}
           </span>
           <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
-            End{' '}
+            {tTokenHoldings('distribution.end')}{' '}
             {lastPoint ? `${PERCENTAGE_FORMATTER(lastPoint.share_pct)}%` : '0%'}
           </span>
           <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-foreground">
-            Delta {netChangeSign}
+            {tTokenHoldings('distribution.delta')} {netChangeSign}
             {PERCENTAGE_FORMATTER(netChange)}%
           </span>
         </div>
@@ -671,11 +677,11 @@ function DistributionOverTimeChart({
           <Skeleton className="h-[280px] w-full" />
         ) : historyError ? (
           <p className="text-sm text-muted-foreground">
-            Unable to load token distribution history right now.
+            {tTokenHoldings('distribution.error')}
           </p>
         ) : chartPoints.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No transfer history found for the selected filters.
+            {tTokenHoldings('distribution.empty')}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -798,7 +804,7 @@ function DistributionOverTimeChart({
                   textAnchor="middle"
                   className="fill-muted-foreground text-[11px]"
                 >
-                  Time
+                  {tTokenHoldings('distribution.timeAxis')}
                 </text>
               </g>
             </svg>
@@ -810,32 +816,39 @@ function DistributionOverTimeChart({
 }
 
 function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const pieData = React.useMemo(
     () => [
       {
-        label: 'On voting',
+        label: tTokenHoldings('proposals.onVoting'),
         value: data.onVoting,
         color: PROPOSALS_COLOR_RANGE[0],
       },
       {
-        label: 'Accepted',
+        label: tTokenHoldings('proposals.accepted'),
         value: data.accepted,
         color: PROPOSALS_COLOR_RANGE[1],
       },
       {
-        label: 'Refused',
+        label: tTokenHoldings('proposals.refused'),
         value: data.refused,
         color: PROPOSALS_COLOR_RANGE[2],
       },
     ],
-    [data.accepted, data.onVoting, data.refused],
+    [data.accepted, data.onVoting, data.refused, tTokenHoldings],
   );
 
   const total = pieData.reduce((sum, item) => sum + item.value, 0);
   const chartInput =
     total > 0
       ? pieData
-      : [{ label: 'No data', value: 1, color: 'var(--neutral-6)' }];
+      : [
+          {
+            label: tTokenHoldings('proposals.noData'),
+            value: 1,
+            color: 'var(--neutral-6)',
+          },
+        ];
   const arcs = d3
     .pie<(typeof chartInput)[number]>()
     .value((item) => item.value)(chartInput);
@@ -847,16 +860,18 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
   return (
     <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-0">
-        <CardTitle className="text-lg">Proposals</CardTitle>
+        <CardTitle className="text-lg">
+          {tTokenHoldings('proposals.title')}
+        </CardTitle>
         <CardDescription className="text-xs">
-          On voting, accepted, refused
+          {tTokenHoldings('proposals.subtitle')}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid min-h-[320px] grid-cols-1 items-center gap-3 2xl:min-h-[420px] 2xl:grid-cols-[1fr_auto]">
         <svg
           viewBox="-130 -130 260 260"
           className="h-[240px] w-full sm:h-[280px] 2xl:h-[340px]"
-          aria-label="Proposals distribution"
+          aria-label={tTokenHoldings('proposals.ariaLabel')}
         >
           {arcs.map((slice, index) => (
             <path
@@ -907,6 +922,7 @@ function MembersEvolutionWidget({
   monthly: ActivityResponse['members']['monthly'];
   locale: string;
 }) {
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const maxValue = React.useMemo(
     () =>
       Math.max(1, ...monthly.map((item) => Math.max(item.people, item.spaces))),
@@ -965,17 +981,21 @@ function MembersEvolutionWidget({
   return (
     <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-0">
-        <CardTitle className="text-lg">Members</CardTitle>
+        <CardTitle className="text-lg">
+          {tTokenHoldings('members.title')}
+        </CardTitle>
         <CardDescription className="text-xs">
-          Cumulative monthly members and spaces (net of exits)
+          {tTokenHoldings('members.subtitle')}
         </CardDescription>
         <div className="flex items-center gap-2 pt-1 text-[11px]">
           <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
-            People {totals.people} ({totals.deltaPeople >= 0 ? '+' : ''}
+            {tTokenHoldings('members.people')} {totals.people} (
+            {totals.deltaPeople >= 0 ? '+' : ''}
             {totals.deltaPeople})
           </span>
           <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
-            Spaces {totals.spaces} ({totals.deltaSpaces >= 0 ? '+' : ''}
+            {tTokenHoldings('members.spaces')} {totals.spaces} (
+            {totals.deltaSpaces >= 0 ? '+' : ''}
             {totals.deltaSpaces})
           </span>
         </div>
@@ -1102,14 +1122,14 @@ function MembersEvolutionWidget({
               className="h-3 w-3 rounded-sm"
               style={{ background: MEMBERS_COLOR_RANGE.people }}
             />
-            Members
+            {tTokenHoldings('members.people')}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span
               className="h-3 w-3 rounded-sm"
               style={{ background: MEMBERS_COLOR_RANGE.spaces }}
             />
-            Spaces
+            {tTokenHoldings('members.spaces')}
           </span>
         </div>
       </CardContent>
@@ -1122,6 +1142,7 @@ function SignalsPulseMapWidget({
 }: {
   signals: ActivityResponse['signals'];
 }) {
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
   const priorityRank = React.useMemo(
     () =>
@@ -1241,16 +1262,18 @@ function SignalsPulseMapWidget({
   return (
     <Card className="min-w-0 overflow-hidden border-border/60 bg-card/95">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Signals</CardTitle>
+        <CardTitle className="text-lg">
+          {tTokenHoldings('signals.title')}
+        </CardTitle>
         <CardDescription className="text-xs">
-          Heat map by priority and recency (recent left, older right)
+          {tTokenHoldings('signals.subtitle')}
         </CardDescription>
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
           <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1">
-            Signals {validSignals.length}
+            {tTokenHoldings('signals.count')} {validSignals.length}
           </span>
           <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1">
-            Peak cell {maxCellCount}
+            {tTokenHoldings('signals.peakCell')} {maxCellCount}
           </span>
         </div>
         {signals.tags.length ? (
@@ -1346,9 +1369,14 @@ function SignalsPulseMapWidget({
                         stroke="var(--border)"
                         strokeOpacity={0.32}
                       >
-                        <title>{`${capitalizeWords(
-                          priority,
-                        )} · ${count} signals · ${rangeStartPct}% to ${rangeEndPct}% recency window`}</title>
+                        <title>
+                          {tTokenHoldings('signals.cellTitle', {
+                            priority: capitalizeWords(priority),
+                            count,
+                            start: rangeStartPct,
+                            end: rangeEndPct,
+                          })}
+                        </title>
                       </rect>
                       {count > 0 ? (
                         <text
@@ -1371,9 +1399,9 @@ function SignalsPulseMapWidget({
                 const cellX = x(bucketIndex) ?? 0;
                 const label =
                   bucketIndex === 0
-                    ? 'Recent'
+                    ? tTokenHoldings('signals.recent')
                     : bucketIndex === bucketCount - 1
-                    ? 'Older'
+                    ? tTokenHoldings('signals.older')
                     : '';
                 return (
                   <g key={`tick-${bucketIndex}`}>
@@ -1402,16 +1430,16 @@ function SignalsPulseMapWidget({
                 textAnchor="middle"
                 className="fill-muted-foreground text-[11px]"
               >
-                Recency
+                {tTokenHoldings('signals.recency')}
               </text>
             </g>
           </svg>
         </div>
         <div className="flex items-center justify-end gap-2 pt-2 text-[11px] text-muted-foreground">
-          <span>Low activity</span>
+          <span>{tTokenHoldings('signals.lowActivity')}</span>
           <span className="h-2 w-14 rounded-full bg-[color-mix(in_oklab,var(--space-accent,var(--accent-9))_20%,transparent)]" />
           <span className="h-2 w-14 rounded-full bg-[var(--space-accent,var(--accent-9))]" />
-          <span>High activity</span>
+          <span>{tTokenHoldings('signals.highActivity')}</span>
         </div>
       </CardContent>
     </Card>
@@ -1467,11 +1495,16 @@ export function HomeTokenHoldingsDashboard({
   const filterItems = React.useMemo(
     () =>
       [
-        ...(showEnergyWidget ? [{ value: 'energy', label: 'Energy' }] : []),
-        { value: 'activity', label: 'Activity' },
-        { value: 'distribution', label: 'Distribution' },
+        ...(showEnergyWidget
+          ? [{ value: 'energy', label: tTokenHoldings('filters.energy') }]
+          : []),
+        { value: 'activity', label: tTokenHoldings('filters.activity') },
+        {
+          value: 'distribution',
+          label: tTokenHoldings('filters.distribution'),
+        },
       ] as Array<{ value: HomeSectionFilter; label: string }>,
-    [showEnergyWidget],
+    [showEnergyWidget, tTokenHoldings],
   );
   const showActivity = activeFilter === 'activity';
   const showDistribution = activeFilter === 'distribution';
@@ -1511,10 +1544,9 @@ export function HomeTokenHoldingsDashboard({
           {!activityLoading && activityError ? (
             <Card>
               <CardHeader>
-                <CardTitle>Unable to load activity widgets</CardTitle>
+                <CardTitle>{tTokenHoldings('activity.title')}</CardTitle>
                 <CardDescription>
-                  Please retry in a moment. Activity analytics data may still be
-                  syncing.
+                  {tTokenHoldings('activity.error')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -1569,10 +1601,9 @@ export function HomeTokenHoldingsDashboard({
           {!isLoading && !error && data && data.tokens.length === 0 ? (
             <Card>
               <CardHeader>
-                <CardTitle>No token holdings available yet</CardTitle>
+                <CardTitle>{tTokenHoldings('empty.title')}</CardTitle>
                 <CardDescription>
-                  This space does not currently expose minted token distribution
-                  data.
+                  {tTokenHoldings('empty.description')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -1616,7 +1647,12 @@ export function HomeTokenHoldingsDashboard({
                               <TooltipTrigger asChild>
                                 <button
                                   type="button"
-                                  aria-label={`Token details for ${token.name}`}
+                                  aria-label={tTokenHoldings(
+                                    'tokenDetailsAria',
+                                    {
+                                      tokenName: token.name,
+                                    },
+                                  )}
                                   className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
                                   <CircleHelp className="h-4 w-4" />
@@ -1628,7 +1664,7 @@ export function HomeTokenHoldingsDashboard({
                               >
                                 <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
                                   <span className="text-muted-foreground">
-                                    Total supply
+                                    {tTokenHoldings('tooltip.totalSupply')}
                                   </span>
                                   <span>
                                     {formatAmount(token.total_supply, locale)}
@@ -1643,13 +1679,13 @@ export function HomeTokenHoldingsDashboard({
                                     )}
                                   </span>
                                   <span className="text-muted-foreground">
-                                    Other
+                                    {tTokenHoldings('tooltip.other')}
                                   </span>
                                   <span>
                                     {formatAmount(token.other_balance, locale)}
                                   </span>
                                   <span className="text-muted-foreground">
-                                    Address
+                                    {tTokenHoldings('tooltip.address')}
                                   </span>
                                   <span className="max-w-[160px] truncate">
                                     {token.token_address}
@@ -1688,9 +1724,9 @@ export function HomeTokenHoldingsDashboard({
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Energy</CardTitle>
+              <CardTitle>{tTokenHoldings('energy.title')}</CardTitle>
               <CardDescription>
-                Energy widgets will appear once energy data is available.
+                {tTokenHoldings('energy.description')}
               </CardDescription>
             </CardHeader>
           </Card>

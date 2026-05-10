@@ -175,6 +175,59 @@
       "totalSupply": "Total supply",
       "other": "Other",
       "address": "Address"
+    },
+    "filters": {
+      "energy": "Energy",
+      "activity": "Activity",
+      "distribution": "Distribution"
+    },
+    "activity": {
+      "title": "Unable to load activity widgets",
+      "error": "Please retry in a moment. Activity analytics data may still be syncing."
+    },
+    "distribution": {
+      "title": "Distribution over time",
+      "subtitle": "X axis shows time from transaction dates.",
+      "tokenLabel": "Token",
+      "memberLabel": "Member",
+      "memberAll": "All",
+      "start": "Start",
+      "end": "End",
+      "delta": "Delta",
+      "timeAxis": "Time",
+      "error": "Unable to load token distribution history right now.",
+      "empty": "No transfer history found for the selected filters."
+    },
+    "proposals": {
+      "title": "Proposals",
+      "subtitle": "On voting, accepted, refused",
+      "ariaLabel": "Proposals distribution",
+      "onVoting": "On voting",
+      "accepted": "Accepted",
+      "refused": "Refused",
+      "noData": "No data"
+    },
+    "members": {
+      "title": "Members",
+      "subtitle": "Cumulative monthly members and spaces (net of exits)",
+      "people": "People",
+      "spaces": "Spaces"
+    },
+    "signals": {
+      "title": "Signals",
+      "subtitle": "Heat map by priority and recency (recent left, older right)",
+      "count": "Signals",
+      "peakCell": "Peak cell",
+      "recent": "Recent",
+      "older": "Older",
+      "recency": "Recency",
+      "lowActivity": "Low activity",
+      "highActivity": "High activity",
+      "cellTitle": "{priority} · {count} signals · {start}% to {end}% recency window"
+    },
+    "energy": {
+      "title": "Energy",
+      "description": "Energy widgets will appear once energy data is available."
     }
   },
   "SpaceSettingsAction": {

@@ -175,6 +175,59 @@
       "totalSupply": "Offre totale",
       "other": "Autres",
       "address": "Adresse"
+    },
+    "filters": {
+      "energy": "Énergie",
+      "activity": "Activité",
+      "distribution": "Distribution"
+    },
+    "activity": {
+      "title": "Impossible de charger les widgets d'activité",
+      "error": "Veuillez réessayer dans un instant. Les données d'analyse d'activité sont peut-être encore en cours de synchronisation."
+    },
+    "distribution": {
+      "title": "Distribution dans le temps",
+      "subtitle": "L'axe X affiche le temps à partir des dates de transaction.",
+      "tokenLabel": "Token",
+      "memberLabel": "Membre",
+      "memberAll": "Tous",
+      "start": "Début",
+      "end": "Fin",
+      "delta": "Delta",
+      "timeAxis": "Temps",
+      "error": "Impossible de charger l'historique de distribution des tokens pour le moment.",
+      "empty": "Aucun historique de transfert trouvé pour les filtres sélectionnés."
+    },
+    "proposals": {
+      "title": "Propositions",
+      "subtitle": "En vote, acceptées, refusées",
+      "ariaLabel": "Distribution des propositions",
+      "onVoting": "En vote",
+      "accepted": "Acceptées",
+      "refused": "Refusées",
+      "noData": "Aucune donnée"
+    },
+    "members": {
+      "title": "Membres",
+      "subtitle": "Membres et espaces mensuels cumulés (nets des sorties)",
+      "people": "Personnes",
+      "spaces": "Espaces"
+    },
+    "signals": {
+      "title": "Signaux",
+      "subtitle": "Carte de chaleur par priorité et récence (récent à gauche, plus ancien à droite)",
+      "count": "Signaux",
+      "peakCell": "Cellule maximale",
+      "recent": "Récent",
+      "older": "Plus ancien",
+      "recency": "Récence",
+      "lowActivity": "Faible activité",
+      "highActivity": "Forte activité",
+      "cellTitle": "{priority} · {count} signaux · fenêtre de récence de {start}% à {end}%"
+    },
+    "energy": {
+      "title": "Énergie",
+      "description": "Les widgets énergie apparaîtront lorsque les données seront disponibles."
     }
   },
   "SpaceSettingsAction": {

@@ -175,6 +175,59 @@
       "totalSupply": "Gesamtangebot",
       "other": "Sonstige",
       "address": "Adresse"
+    },
+    "filters": {
+      "energy": "Energie",
+      "activity": "Aktivität",
+      "distribution": "Verteilung"
+    },
+    "activity": {
+      "title": "Aktivitäts-Widgets konnten nicht geladen werden",
+      "error": "Bitte versuchen Sie es in einem Moment erneut. Aktivitätsanalysen werden möglicherweise noch synchronisiert."
+    },
+    "distribution": {
+      "title": "Verteilung im Zeitverlauf",
+      "subtitle": "Die X-Achse zeigt die Zeit anhand der Transaktionsdaten.",
+      "tokenLabel": "Token",
+      "memberLabel": "Mitglied",
+      "memberAll": "Alle",
+      "start": "Start",
+      "end": "Ende",
+      "delta": "Delta",
+      "timeAxis": "Zeit",
+      "error": "Der Verlauf der Tokenverteilung kann derzeit nicht geladen werden.",
+      "empty": "Für die ausgewählten Filter wurde kein Transferverlauf gefunden."
+    },
+    "proposals": {
+      "title": "Vorschläge",
+      "subtitle": "In Abstimmung, angenommen, abgelehnt",
+      "ariaLabel": "Verteilung der Vorschläge",
+      "onVoting": "In Abstimmung",
+      "accepted": "Angenommen",
+      "refused": "Abgelehnt",
+      "noData": "Keine Daten"
+    },
+    "members": {
+      "title": "Mitglieder",
+      "subtitle": "Kumulierte monatliche Mitglieder und Spaces (abzüglich Austritte)",
+      "people": "Personen",
+      "spaces": "Spaces"
+    },
+    "signals": {
+      "title": "Signale",
+      "subtitle": "Heatmap nach Priorität und Aktualität (neu links, älter rechts)",
+      "count": "Signale",
+      "peakCell": "Maximale Zelle",
+      "recent": "Neu",
+      "older": "Älter",
+      "recency": "Aktualität",
+      "lowActivity": "Niedrige Aktivität",
+      "highActivity": "Hohe Aktivität",
+      "cellTitle": "{priority} · {count} Signale · {start}% bis {end}% Aktualitätsfenster"
+    },
+    "energy": {
+      "title": "Energie",
+      "description": "Energie-Widgets werden angezeigt, sobald Energiedaten verfügbar sind."
     }
   },
   "SpaceSettingsAction": {
