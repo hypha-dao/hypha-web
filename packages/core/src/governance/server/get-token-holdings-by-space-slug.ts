@@ -537,9 +537,9 @@ export async function getTokenHoldingsBySpaceSlug(
         tokenMeta?.symbol ??
         (isHyphaVoiceSharedToken ? 'HVOICE' : contractInfo.symbol),
       icon_url: tokenMeta?.iconUrl ?? null,
-      type:
-        tokenMeta?.type ??
-        (isHyphaSharedToken || isHyphaVoiceSharedToken ? 'utility' : 'unknown'),
+      type: isHyphaVoiceSharedToken
+        ? 'voice'
+        : tokenMeta?.type ?? (isHyphaSharedToken ? 'utility' : 'unknown'),
       decimals,
       max_supply: tokenMeta?.maxSupply ?? null,
       total_supply: formatUnits(totalSupplyRaw, decimals),
