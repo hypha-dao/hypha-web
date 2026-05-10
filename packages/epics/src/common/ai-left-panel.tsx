@@ -44,10 +44,9 @@ import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-displa
 import {
   MAX_RECENT_SPACE_HISTORY,
   MAX_VISIBLE_RECENT_SPACES,
-  recordRecentSpaceTransition,
   readRecentSpaceSlugs,
-  sanitizeRecentSpaceSlugs,
   subscribeRecentSpaceSlugs,
+  syncRecentSpacesForActiveSlug,
 } from './recent-space-history';
 
 type ChatUIMessage = {
@@ -137,7 +136,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
     readRecentSpaceSlugs(),
   );
-  const previousSpaceSlugRef = useRef<string | undefined>(spaceSlug);
   const [isHoverOpenLocked, setIsHoverOpenLocked] = useState(false);
   const recentSpaceLookupSlugs = useMemo(
     () =>
@@ -275,16 +273,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, []);
 
   useEffect(() => {
-    const previousSpaceSlug = previousSpaceSlugRef.current;
-    if (previousSpaceSlug && spaceSlug && previousSpaceSlug !== spaceSlug) {
-      setRecentSpaceSlugs(
-        recordRecentSpaceTransition(previousSpaceSlug, spaceSlug),
-      );
-    } else if (spaceSlug) {
-      // Keep active space out of queue even across reloads/direct entry.
-      setRecentSpaceSlugs(sanitizeRecentSpaceSlugs(spaceSlug));
-    }
-    previousSpaceSlugRef.current = spaceSlug;
+    if (!spaceSlug) return;
+    setRecentSpaceSlugs(syncRecentSpacesForActiveSlug(spaceSlug));
   }, [spaceSlug]);
 
   const recentSpaces = useMemo(() => {

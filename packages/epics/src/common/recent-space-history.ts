@@ -1,5 +1,6 @@
 const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
 const RECENT_SPACE_HISTORY_EVENT = 'hypha:recent-space-slugs:changed';
+const LAST_ACTIVE_SPACE_STORAGE_KEY = 'hypha:last-active-space-slug';
 export const MAX_VISIBLE_RECENT_SPACES = 4;
 // Strict rolling queue of 4 visited (exited) spaces.
 export const MAX_RECENT_SPACE_HISTORY = MAX_VISIBLE_RECENT_SPACES;
@@ -105,4 +106,51 @@ export function subscribeRecentSpaceSlugs(
     window.removeEventListener('storage', onStorage);
     window.removeEventListener(RECENT_SPACE_HISTORY_EVENT, sync);
   };
+}
+
+function readLastActiveSpaceSlug(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return normalizeSlug(
+      window.localStorage.getItem(LAST_ACTIVE_SPACE_STORAGE_KEY),
+    );
+  } catch {
+    return null;
+  }
+}
+
+function writeLastActiveSpaceSlug(slug?: string | null): void {
+  if (typeof window === 'undefined') return;
+  const normalized = normalizeSlug(slug);
+  try {
+    if (normalized) {
+      window.localStorage.setItem(LAST_ACTIVE_SPACE_STORAGE_KEY, normalized);
+    } else {
+      window.localStorage.removeItem(LAST_ACTIVE_SPACE_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage failures so navigation isn't blocked.
+  }
+}
+
+/**
+ * Remount-safe recents updater.
+ *
+ * Uses a persisted "last active space" to infer transitions even when
+ * the sidebar unmounts between route changes.
+ */
+export function syncRecentSpacesForActiveSlug(
+  activeSlug?: string | null,
+): string[] {
+  const active = normalizeSlug(activeSlug);
+  if (!active) return readRecentSpaceSlugs();
+
+  const previousActive = readLastActiveSpaceSlug();
+  const next =
+    previousActive && previousActive !== active
+      ? recordRecentSpaceTransition(previousActive, active)
+      : sanitizeRecentSpaceSlugs(active);
+
+  writeLastActiveSpaceSlug(active);
+  return next;
 }
