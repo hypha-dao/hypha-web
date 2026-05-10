@@ -275,8 +275,8 @@ export function SpaceVisualization({
     const getOrbitStrokeAlpha = () =>
       themeRef.current === 'dark' ? 0.99 : 0.95;
     const ROOT_ORBIT_STROKE_WIDTH = 1.8;
-    // Line-style dashed orbit outlines.
-    const ORBIT_DASH_PATTERN = '8 6';
+    // Plain solid orbit outlines (no dash pattern).
+    const ORBIT_DASH_PATTERN: string | null = null;
     const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
     const pageBackdropLab = d3.lab(
       themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
