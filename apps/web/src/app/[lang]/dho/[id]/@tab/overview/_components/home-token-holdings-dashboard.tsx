@@ -1076,7 +1076,9 @@ function SignalsPulseMapWidget({
   signals: ActivityResponse['signals'];
 }) {
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
-  const [hoveredSignalId, setHoveredSignalId] = React.useState<number | null>(null);
+  const [hoveredSignalId, setHoveredSignalId] = React.useState<number | null>(
+    null,
+  );
   const priorityRank = React.useMemo(
     () =>
       new Map(
@@ -1256,7 +1258,7 @@ function SignalsPulseMapWidget({
                 const createdAt = new Date(signal.created_at);
                 if (Number.isNaN(createdAt.getTime())) return null;
                 const cx = shouldSpreadRecencySlots
-                  ? (xByRecencySlot(index) ?? x(createdAt))
+                  ? xByRecencySlot(index) ?? x(createdAt)
                   : x(createdAt);
                 const cy = y(signal.priority) ?? 0;
                 const radius =
@@ -1302,9 +1304,11 @@ function SignalsPulseMapWidget({
                       {bubbleLabel}
                     </text>
                     <title>
-                      {`${signal.type} · ${capitalizeWords(signal.priority)} · ${d3.timeFormat(
-                        '%b %d, %Y',
-                      )(createdAt)}${signal.tags.length ? ` · ${signal.tags.join(', ')}` : ''}`}
+                      {`${signal.type} · ${capitalizeWords(
+                        signal.priority,
+                      )} · ${d3.timeFormat('%b %d, %Y')(createdAt)}${
+                        signal.tags.length ? ` · ${signal.tags.join(', ')}` : ''
+                      }`}
                     </title>
                   </g>
                 );
@@ -1327,9 +1331,7 @@ function SignalsPulseMapWidget({
         </div>
         {hoveredSignalId ? (
           <p className="pt-2 text-xs text-muted-foreground">
-            {
-              sortedSignals.find((item) => item.id === hoveredSignalId)?.type
-            }{' '}
+            {sortedSignals.find((item) => item.id === hoveredSignalId)?.type}{' '}
             signal
           </p>
         ) : null}
@@ -1453,7 +1455,9 @@ export function HomeTokenHoldingsDashboard({
             <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
               <div className="grid items-start gap-4">
                 <SignalsPulseMapWidget signals={activityData.signals} />
-                <MembersEvolutionWidget monthly={activityData.members.monthly} />
+                <MembersEvolutionWidget
+                  monthly={activityData.members.monthly}
+                />
               </div>
               <div className="grid items-start gap-4">
                 <ProposalsPieWidget data={activityData.proposals} />
@@ -1535,7 +1539,9 @@ export function HomeTokenHoldingsDashboard({
                                   <span className="text-muted-foreground">
                                     Total supply
                                   </span>
-                                  <span>{formatAmount(token.total_supply)}</span>
+                                  <span>
+                                    {formatAmount(token.total_supply)}
+                                  </span>
                                   <span className="text-muted-foreground">
                                     {tCommon('Treasury')}
                                   </span>
@@ -1545,7 +1551,9 @@ export function HomeTokenHoldingsDashboard({
                                   <span className="text-muted-foreground">
                                     Other
                                   </span>
-                                  <span>{formatAmount(token.other_balance)}</span>
+                                  <span>
+                                    {formatAmount(token.other_balance)}
+                                  </span>
                                   <span className="text-muted-foreground">
                                     Address
                                   </span>
