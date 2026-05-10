@@ -74,9 +74,19 @@ export async function GET(
     }
 
     if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+      const web3SpaceIdNum =
+        typeof space.web3SpaceId === 'number'
+          ? space.web3SpaceId
+          : Number(space.web3SpaceId);
+      if (!Number.isFinite(web3SpaceIdNum)) {
+        return NextResponse.json(
+          { error: 'Invalid web3 space id' },
+          { status: 500 },
+        );
+      }
       const { hasAccess, response } = await checkSpaceAccess(
         request,
-        space.web3SpaceId as number,
+        web3SpaceIdNum,
       );
       if (!hasAccess && response) {
         return response;
