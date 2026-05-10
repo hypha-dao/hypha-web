@@ -248,7 +248,10 @@ export function SpaceVisualization({
     if (!svgRef.current) return;
 
     const getDiagramFillColor = () => 'var(--color-background)';
-    const getRootFillAlpha = () => (themeRef.current === 'dark' ? 0.13 : 0.08);
+    const getRootFillColor = () =>
+      themeRef.current === 'dark'
+        ? 'rgba(255,255,255,0.035)'
+        : 'rgba(15,23,42,0.045)';
     const getOrbitStrokeAlpha = () =>
       themeRef.current === 'dark' ? 0.7 : 0.55;
 
@@ -467,9 +470,7 @@ export function SpaceVisualization({
       .join('circle')
       .attr('class', 'orbit')
       .style('fill', (d: SpaceHierarchyNode) =>
-        d.depth === 0
-          ? withAlpha(getNodeAccent(d), getRootFillAlpha())
-          : 'none',
+        d.depth === 0 ? getRootFillColor() : 'none',
       )
       .attr('stroke', (d: SpaceHierarchyNode) =>
         d.depth === 0
@@ -799,9 +800,7 @@ export function SpaceVisualization({
         )
         .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
         .style('fill', (d: SpaceHierarchyNode) =>
-          d.depth === 0
-            ? withAlpha(getNodeAccent(d), getRootFillAlpha())
-            : 'none',
+          d.depth === 0 ? getRootFillColor() : 'none',
         )
         .attr('stroke', (d: SpaceHierarchyNode) =>
           d.depth === 0
@@ -852,9 +851,7 @@ export function SpaceVisualization({
         orbits
           .filter((d) => d.data.id === node.data.id)
           .style('fill', (d: SpaceHierarchyNode) =>
-            d.depth === 0
-              ? withAlpha(resolvedAccent, getRootFillAlpha())
-              : 'none',
+            d.depth === 0 ? getRootFillColor() : 'none',
           )
           .attr('stroke', (d: SpaceHierarchyNode) =>
             d.depth === 0
