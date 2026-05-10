@@ -790,10 +790,10 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           On voting, accepted, refused
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid min-h-[320px] grid-cols-1 items-center gap-3 2xl:min-h-[420px] 2xl:grid-cols-[1fr_auto]">
+      <CardContent className="grid min-h-[320px] grid-cols-1 items-center gap-3 xl:min-h-[420px] xl:grid-cols-[1fr_auto]">
         <svg
           viewBox="-130 -130 260 260"
-          className="h-[240px] w-full sm:h-[280px] 2xl:h-[340px]"
+          className="h-[240px] w-full sm:h-[280px] xl:h-[340px]"
           aria-label="Proposals distribution"
         >
           {arcs.map((slice, index) => (
@@ -814,7 +814,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           </text>
         </svg>
 
-        <div className="flex min-w-0 flex-col gap-3 text-sm 2xl:min-w-[180px] 2xl:pr-2">
+        <div className="flex min-w-0 flex-col gap-3 text-sm xl:min-w-[180px] xl:pr-2">
           {pieData.map((item) => (
             <div
               key={item.label}
@@ -917,8 +917,11 @@ function MembersEvolutionWidget({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="w-full overflow-hidden">
-          <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full">
+        <div className="overflow-x-auto">
+          <svg
+            viewBox={`0 0 ${width} ${height}`}
+            className="min-w-[620px] w-full"
+          >
             <g transform={`translate(${margin.left},${margin.top})`}>
               {memberAxisTicks.map((tick) => (
                 <g key={tick} transform={`translate(0,${y(tick)})`}>
@@ -1216,10 +1219,10 @@ function SignalsPulseMapWidget({
         ) : null}
       </CardHeader>
       <CardContent className="min-h-[360px]">
-        <div className="w-full overflow-hidden">
+        <div className="overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
-            className="h-[320px] w-full sm:h-[340px]"
+            className="h-[320px] min-w-[680px] w-full sm:h-[340px]"
           >
             <g transform={`translate(${margin.left},${margin.top})`}>
               {priorities.map((priority) => {
@@ -1477,8 +1480,8 @@ export function HomeTokenHoldingsDashboard({
             <div
               className={
                 showSignalsWidget
-                  ? 'grid items-start gap-4 2xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
-                  : 'grid items-start gap-4 2xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
+                  ? 'grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
+                  : 'grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]'
               }
             >
               <div className="grid items-start gap-4">
@@ -1529,7 +1532,7 @@ export function HomeTokenHoldingsDashboard({
             <div
               className={
                 showDistributionHistoryWidget
-                  ? 'grid items-start gap-4 2xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
+                  ? 'grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]'
                   : 'grid items-start gap-4'
               }
             >
