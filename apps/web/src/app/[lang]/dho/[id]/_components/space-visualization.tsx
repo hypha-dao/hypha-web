@@ -275,28 +275,48 @@ export function SpaceVisualization({
     const getOrbitStrokeAlpha = () =>
       themeRef.current === 'dark' ? 0.7 : 0.55;
     const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
-    const getOrbitStrokeColor = (accentColor: string): string => {
+    const pageBackdropLab = d3.lab(
+      themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
+    );
+    const MIN_LIGHTNESS_DELTA = 22;
+    const getOrbitStrokeStyle = (
+      accentColor: string,
+    ): { color: string; width: number } => {
       const accentLab = d3.lab(accentColor);
-      const lightnessDelta = Math.abs(accentLab.l - rootFillLab.l);
-      if (Number.isFinite(lightnessDelta) && lightnessDelta >= 18) {
-        return withAlpha(accentColor, getOrbitStrokeAlpha());
+      const rootDelta = Math.abs(accentLab.l - rootFillLab.l);
+      const backdropDelta = Math.abs(accentLab.l - pageBackdropLab.l);
+      const minDelta = Math.min(rootDelta, backdropDelta);
+      if (Number.isFinite(minDelta) && minDelta >= MIN_LIGHTNESS_DELTA) {
+        return {
+          color: withAlpha(accentColor, getOrbitStrokeAlpha()),
+          width: 1.2,
+        };
       }
 
       const parsed = d3.hsl(accentColor);
       if (!parsed) {
-        return withAlpha(accentColor, themeRef.current === 'dark' ? 0.95 : 0.8);
+        return {
+          color: withAlpha(
+            accentColor,
+            themeRef.current === 'dark' ? 0.98 : 0.88,
+          ),
+          width: 1.45,
+        };
       }
 
       // Boost low-contrast strokes so thin outlines stay legible on root tint.
       const boosted = d3.hsl(
         parsed.h,
-        Math.max(parsed.s, 0.62),
-        themeRef.current === 'dark' ? 0.72 : 0.34,
+        Math.max(parsed.s, 0.72),
+        themeRef.current === 'dark' ? 0.8 : 0.24,
       );
-      return withAlpha(
-        boosted.formatRgb(),
-        themeRef.current === 'dark' ? 0.95 : 0.8,
-      );
+      return {
+        color: withAlpha(
+          boosted.formatRgb(),
+          themeRef.current === 'dark' ? 0.98 : 0.88,
+        ),
+        width: 1.45,
+      };
     };
 
     const getStrokeWidth = (depth: number): number => {
@@ -504,10 +524,14 @@ export function SpaceVisualization({
       .join('circle')
       .attr('class', 'orbit')
       .style('fill', 'none')
-      .attr('stroke', (d: SpaceHierarchyNode) =>
-        d.depth === 0 ? 'none' : getOrbitStrokeColor(getNodeAccent(d)),
-      )
-      .attr('stroke-width', 1.2)
+      .attr('stroke', (d: SpaceHierarchyNode) => {
+        if (d.depth === 0) return 'none';
+        return getOrbitStrokeStyle(getNodeAccent(d)).color;
+      })
+      .attr('stroke-width', (d: SpaceHierarchyNode) => {
+        if (d.depth === 0) return 0;
+        return getOrbitStrokeStyle(getNodeAccent(d)).width;
+      })
       .attr('vector-effect', 'non-scaling-stroke')
       .attr('shape-rendering', 'geometricPrecision')
       .style('pointer-events', 'all')
@@ -830,10 +854,14 @@ export function SpaceVisualization({
         )
         .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
         .style('fill', 'none')
-        .attr('stroke', (d: SpaceHierarchyNode) =>
-          d.depth === 0 ? 'none' : getOrbitStrokeColor(getNodeAccent(d)),
-        )
-        .attr('stroke-width', 1.2);
+        .attr('stroke', (d: SpaceHierarchyNode) => {
+          if (d.depth === 0) return 'none';
+          return getOrbitStrokeStyle(getNodeAccent(d)).color;
+        })
+        .attr('stroke-width', (d: SpaceHierarchyNode) => {
+          if (d.depth === 0) return 0;
+          return getOrbitStrokeStyle(getNodeAccent(d)).width;
+        });
 
       logos
         .attr(
@@ -877,9 +905,14 @@ export function SpaceVisualization({
         orbits
           .filter((d) => d.data.id === node.data.id)
           .style('fill', 'none')
-          .attr('stroke', (d: SpaceHierarchyNode) =>
-            d.depth === 0 ? 'none' : getOrbitStrokeColor(resolvedAccent),
-          );
+          .attr('stroke', (d: SpaceHierarchyNode) => {
+            if (d.depth === 0) return 'none';
+            return getOrbitStrokeStyle(resolvedAccent).color;
+          })
+          .attr('stroke-width', (d: SpaceHierarchyNode) => {
+            if (d.depth === 0) return 0;
+            return getOrbitStrokeStyle(resolvedAccent).width;
+          });
       })();
     });
     return () => {
