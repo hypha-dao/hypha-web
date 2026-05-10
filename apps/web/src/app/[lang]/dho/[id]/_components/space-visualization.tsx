@@ -274,6 +274,30 @@ export function SpaceVisualization({
     const getDiagramFillColor = () => 'var(--color-background)';
     const getOrbitStrokeAlpha = () =>
       themeRef.current === 'dark' ? 0.7 : 0.55;
+    const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
+    const getOrbitStrokeColor = (accentColor: string): string => {
+      const accentLab = d3.lab(accentColor);
+      const lightnessDelta = Math.abs(accentLab.l - rootFillLab.l);
+      if (Number.isFinite(lightnessDelta) && lightnessDelta >= 18) {
+        return withAlpha(accentColor, getOrbitStrokeAlpha());
+      }
+
+      const parsed = d3.hsl(accentColor);
+      if (!parsed) {
+        return withAlpha(accentColor, themeRef.current === 'dark' ? 0.95 : 0.8);
+      }
+
+      // Boost low-contrast strokes so thin outlines stay legible on root tint.
+      const boosted = d3.hsl(
+        parsed.h,
+        Math.max(parsed.s, 0.62),
+        themeRef.current === 'dark' ? 0.72 : 0.34,
+      );
+      return withAlpha(
+        boosted.formatRgb(),
+        themeRef.current === 'dark' ? 0.95 : 0.8,
+      );
+    };
 
     const getStrokeWidth = (depth: number): number => {
       return (
@@ -483,9 +507,7 @@ export function SpaceVisualization({
         d.depth === 0 ? getRootFillColor(resolvedRootAccent) : 'none',
       )
       .attr('stroke', (d: SpaceHierarchyNode) =>
-        d.depth === 0
-          ? 'none'
-          : withAlpha(getNodeAccent(d), getOrbitStrokeAlpha()),
+        d.depth === 0 ? 'none' : getOrbitStrokeColor(getNodeAccent(d)),
       )
       .attr('stroke-width', 1.2)
       .attr('vector-effect', 'non-scaling-stroke')
@@ -813,9 +835,7 @@ export function SpaceVisualization({
           d.depth === 0 ? getRootFillColor(resolvedRootAccent) : 'none',
         )
         .attr('stroke', (d: SpaceHierarchyNode) =>
-          d.depth === 0
-            ? 'none'
-            : withAlpha(getNodeAccent(d), getOrbitStrokeAlpha()),
+          d.depth === 0 ? 'none' : getOrbitStrokeColor(getNodeAccent(d)),
         )
         .attr('stroke-width', 1.2);
 
@@ -864,9 +884,7 @@ export function SpaceVisualization({
             d.depth === 0 ? getRootFillColor(resolvedRootAccent) : 'none',
           )
           .attr('stroke', (d: SpaceHierarchyNode) =>
-            d.depth === 0
-              ? 'none'
-              : withAlpha(resolvedAccent, getOrbitStrokeAlpha()),
+            d.depth === 0 ? 'none' : getOrbitStrokeColor(resolvedAccent),
           );
       })();
     });
