@@ -787,8 +787,8 @@
     "continueAdventure": "Continuar tu aventura"
   },
   "OnboardingAdventure": {
-    "title": "Tu próximo gran paso empieza aquí",
-    "subtitle": "Explora, crea, únete y financia espacios",
+    "title": "Tu aventura empieza aquí.",
+    "subtitle": "Elige tu próximo paso.",
     "spacePlaceholder": "Seleccionar espacio",
     "spaceSearchPlaceholder": "Buscar espacios...",
     "searchToSeeSpaces": "Empieza a escribir para ver espacios coincidentes.",
