@@ -468,9 +468,9 @@ function DistributionOverTimeChart({
     [history?.points],
   );
 
-  const width = Math.max(640, chartPoints.length * 18);
-  const height = 340;
-  const margin = { top: 22, right: 22, bottom: 52, left: 54 };
+  const width = Math.max(720, chartPoints.length * 24);
+  const height = 300;
+  const margin = { top: 14, right: 18, bottom: 46, left: 54 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
   const orderedPoints = React.useMemo(
@@ -480,7 +480,7 @@ function DistributionOverTimeChart({
       ),
     [chartPoints],
   );
-  const xDomain = d3.extent(chartPoints, (point) => point.dateObj);
+  const xDomain = d3.extent(orderedPoints, (point) => point.dateObj);
   const x = d3
     .scaleTime()
     .domain(
@@ -492,22 +492,24 @@ function DistributionOverTimeChart({
   const maxY = Math.max(1, ...orderedPoints.map((point) => point.share_pct));
   const minY = Math.min(...orderedPoints.map((point) => point.share_pct));
   const spread = Math.max(1, maxY - minY);
+  const yPadding = Math.max(0.8, spread * 0.12);
+  const minYWithPadding = Math.max(0, minY - yPadding);
   const y = d3
     .scaleLinear()
-    .domain([Math.max(0, minY - spread * 0.18), maxY + spread * 0.28])
-    .nice()
+    .domain([minYWithPadding, maxY + yPadding])
+    .nice(5)
     .range([innerHeight, 0]);
   const area = d3
     .area<(typeof orderedPoints)[number]>()
     .x((point) => x(point.dateObj))
-    .y0(innerHeight)
+    .y0(y(minYWithPadding))
     .y1((point) => y(point.share_pct))
-    .curve(d3.curveStepAfter);
+    .curve(d3.curveMonotoneX);
   const line = d3
     .line<(typeof orderedPoints)[number]>()
     .x((point) => x(point.dateObj))
     .y((point) => y(point.share_pct))
-    .curve(d3.curveStepAfter);
+    .curve(d3.curveMonotoneX);
   const gradientId = React.useId().replace(/:/g, '');
   const memberOptions = history?.members ?? [{ id: 'all', label: 'All' }];
   const lastPoint = orderedPoints.at(-1);
@@ -515,6 +517,24 @@ function DistributionOverTimeChart({
   const netChange =
     firstPoint && lastPoint ? lastPoint.share_pct - firstPoint.share_pct : 0;
   const netChangeSign = netChange >= 0 ? '+' : '';
+  const xTickValues = React.useMemo(() => {
+    if (!orderedPoints.length) return [] as Date[];
+    if (orderedPoints.length <= 6) {
+      return orderedPoints.map((point) => point.dateObj);
+    }
+    const step = Math.max(1, Math.floor((orderedPoints.length - 1) / 5));
+    const ticks = orderedPoints
+      .filter((_, index) => index % step === 0)
+      .map((point) => point.dateObj);
+    const lastDate = orderedPoints.at(-1)?.dateObj;
+    if (
+      lastDate &&
+      !ticks.some((value) => value.getTime() === lastDate.getTime())
+    ) {
+      ticks.push(lastDate);
+    }
+    return ticks;
+  }, [orderedPoints]);
 
   return (
     <Card className="h-fit self-start overflow-hidden border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
@@ -596,68 +616,28 @@ function DistributionOverTimeChart({
                   id={`distribution-over-time-${gradientId}`}
                   x1="0%"
                   x2="0%"
-                  y1="100%"
-                  y2="0%"
+                  y1="0%"
+                  y2="100%"
                 >
                   <stop
                     offset="0%"
-                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 20%, transparent)"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 24%, transparent)"
                   />
                   <stop
                     offset="100%"
-                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 74%, white 26%)"
+                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 8%, transparent)"
                   />
                 </linearGradient>
-                <filter
-                  id={`distribution-line-glow-${gradientId}`}
-                  x="-30%"
-                  y="-30%"
-                  width="160%"
-                  height="180%"
-                >
-                  <feGaussianBlur stdDeviation="4" result="blur" />
-                  <feColorMatrix
-                    in="blur"
-                    type="matrix"
-                    values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.75 0"
-                    result="glow"
-                  />
-                  <feMerge>
-                    <feMergeNode in="glow" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-                <radialGradient
-                  id={`distribution-ambient-${gradientId}`}
-                  cx="56%"
-                  cy="38%"
-                  r="62%"
-                >
-                  <stop
-                    offset="0%"
-                    stopColor="color-mix(in oklab, var(--space-accent, var(--accent-9)) 42%, transparent)"
-                    stopOpacity="0.34"
-                  />
-                  <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-                </radialGradient>
               </defs>
               <g transform={`translate(${margin.left},${margin.top})`}>
-                <rect
-                  x={0}
-                  y={0}
-                  width={innerWidth}
-                  height={innerHeight}
-                  fill={`url(#distribution-ambient-${gradientId})`}
-                  opacity={0.7}
-                />
-                {y.ticks(4).map((tick) => (
+                {y.ticks(5).map((tick) => (
                   <g key={tick} transform={`translate(0,${y(tick)})`}>
                     <line
                       x1={0}
                       x2={innerWidth}
                       stroke="var(--border)"
-                      strokeDasharray="3 5"
-                      opacity={0.75}
+                      strokeDasharray="2 4"
+                      opacity={0.55}
                     />
                     <text
                       x={-8}
@@ -673,14 +653,13 @@ function DistributionOverTimeChart({
                 <path
                   d={area(orderedPoints) ?? ''}
                   fill={`url(#distribution-over-time-${gradientId})`}
-                  opacity={0.9}
+                  opacity={0.95}
                 />
                 <path
                   d={line(orderedPoints) ?? ''}
                   fill="none"
                   stroke="var(--space-accent, var(--accent-9))"
-                  strokeWidth={3}
-                  filter={`url(#distribution-line-glow-${gradientId})`}
+                  strokeWidth={2.5}
                 />
 
                 {orderedPoints
@@ -695,9 +674,9 @@ function DistributionOverTimeChart({
                       key={point.date}
                       cx={x(point.dateObj)}
                       cy={y(point.share_pct)}
-                      r={3.5}
+                      r={2.8}
                       fill="var(--space-accent, var(--accent-9))"
-                      className="opacity-95"
+                      className="opacity-90"
                     />
                   ))}
 
@@ -706,15 +685,9 @@ function DistributionOverTimeChart({
                     <circle
                       cx={x(lastPoint.dateObj)}
                       cy={y(lastPoint.share_pct)}
-                      r={8}
+                      r={6}
                       fill="var(--space-accent, var(--accent-9))"
-                      opacity={0.24}
-                    />
-                    <circle
-                      cx={x(lastPoint.dateObj)}
-                      cy={y(lastPoint.share_pct)}
-                      r={4.2}
-                      fill="var(--space-accent, var(--accent-9))"
+                      opacity={0.2}
                     />
                     <text
                       x={Math.min(innerWidth - 8, x(lastPoint.dateObj) + 10)}
@@ -727,7 +700,7 @@ function DistributionOverTimeChart({
                   </g>
                 ) : null}
 
-                {x.ticks(6).map((tick) => (
+                {xTickValues.map((tick) => (
                   <g
                     key={tick.toISOString()}
                     transform={`translate(${x(tick)},0)`}
