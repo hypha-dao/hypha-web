@@ -1,7 +1,12 @@
 const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
 const RECENT_SPACE_HISTORY_EVENT = 'hypha:recent-space-slugs:changed';
 export const MAX_VISIBLE_RECENT_SPACES = 4;
-export const MAX_RECENT_SPACE_HISTORY = MAX_VISIBLE_RECENT_SPACES + 1;
+/**
+ * Keep a wider buffer than the visible count so filtering (active slug, stale/deleted
+ * spaces, or temporarily unavailable records) still leaves enough candidates to render
+ * 4 "Recently Visited" entries consistently.
+ */
+export const MAX_RECENT_SPACE_HISTORY = 12;
 
 export function readRecentSpaceSlugs(): string[] {
   if (typeof window === 'undefined') return [];
