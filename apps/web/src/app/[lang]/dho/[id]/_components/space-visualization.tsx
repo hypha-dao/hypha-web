@@ -247,8 +247,7 @@ export function SpaceVisualization({
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const getDiagramFillColor = () =>
-      themeRef.current === 'dark' ? '#131821' : '#f2f4f8';
+    const getDiagramFillColor = () => 'var(--color-background)';
     const getOrbitStrokeAlpha = () =>
       themeRef.current === 'dark' ? 0.7 : 0.55;
     const getLogoStrokeAlpha = () => (themeRef.current === 'dark' ? 0.9 : 0.8);
@@ -259,6 +258,8 @@ export function SpaceVisualization({
         Math.pow(VISUALIZATION_CONFIG.STROKE_WIDTH_SCALE, depth)
       );
     };
+    const getLogoStrokeWidth = (node: SpaceHierarchyNode): number =>
+      node.depth === 0 ? 8 : getStrokeWidth(node.depth);
 
     const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
 
@@ -457,8 +458,10 @@ export function SpaceVisualization({
 
     const g = svg.append('g');
     const nodeAccents = new Map<number, string>();
-    const getNodeAccent = (d: SpaceHierarchyNode): string =>
-      nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
+    const getNodeAccent = (d: SpaceHierarchyNode): string => {
+      if (d.depth === 0) return '#000000';
+      return nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
+    };
 
     const orbits = g
       .selectAll<SVGCircleElement, SpaceHierarchyNode>('circle.orbit')
@@ -540,7 +543,7 @@ export function SpaceVisualization({
         .append('circle')
         .attr('fill', getDiagramFillColor())
         .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
-        .attr('stroke-width', getStrokeWidth(d.depth));
+        .attr('stroke-width', getLogoStrokeWidth(d));
 
       logoGroup
         .append('image')
@@ -684,7 +687,7 @@ export function SpaceVisualization({
         .select('circle')
         .attr('fill', getDiagramFillColor())
         .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
-        .attr('stroke-width', getStrokeWidth(d.depth));
+        .attr('stroke-width', getLogoStrokeWidth(d));
     });
 
     zoomTo(view);
@@ -777,7 +780,7 @@ export function SpaceVisualization({
           .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
           .attr('fill', getDiagramFillColor())
           .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
-          .attr('stroke-width', getStrokeWidth(d.depth));
+          .attr('stroke-width', getLogoStrokeWidth(d));
       });
 
       transition.on('end', () => {
@@ -817,7 +820,7 @@ export function SpaceVisualization({
             .attr('r', r)
             .attr('fill', getDiagramFillColor())
             .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
-            .attr('stroke-width', getStrokeWidth(d.depth));
+            .attr('stroke-width', getLogoStrokeWidth(d));
 
           defs.select(`#${clipId} circle`).attr('r', r);
 
