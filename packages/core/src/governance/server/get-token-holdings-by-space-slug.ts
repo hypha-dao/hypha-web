@@ -82,6 +82,8 @@ const HYPHA_SHARED_TOKEN_ADDRESS =
   '0x8b93862835c36e9689e9bb1ab21de3982e266cd3' as const;
 const HVOICE_SHARED_TOKEN_ADDRESS =
   '0x24e0b2bfee025d57a19f9dae4c3849a4a6bf9626' as const;
+const BALANCE_MULTICALL_CHUNK_SIZE = 200;
+const TOKEN_PROCESS_CONCURRENCY = 4;
 
 function normalizeAddress(address: string): `0x${string}` {
   return address.toLowerCase() as `0x${string}`;
@@ -190,29 +192,39 @@ async function readBalancesForHolders(
   holders: HolderDescriptor[],
 ): Promise<Map<`0x${string}`, bigint>> {
   if (holders.length === 0) return new Map();
-
-  const contracts = holders.map((holder) => ({
-    address: tokenAddress,
-    abi: erc20Abi,
-    functionName: 'balanceOf',
-    args: [holder.address] as const,
-  }));
-
-  const results = await web3Client.multicall({
-    allowFailure: true,
-    blockTag: 'safe',
-    contracts,
-  });
-
   const balances = new Map<`0x${string}`, bigint>();
-  results.forEach((result, index) => {
-    const address = holders[index]?.address;
-    if (!address) return;
-    balances.set(
-      address,
-      result.status === 'success' ? (result.result as bigint) : 0n,
+
+  for (
+    let startIndex = 0;
+    startIndex < holders.length;
+    startIndex += BALANCE_MULTICALL_CHUNK_SIZE
+  ) {
+    const holderChunk = holders.slice(
+      startIndex,
+      startIndex + BALANCE_MULTICALL_CHUNK_SIZE,
     );
-  });
+    const contracts = holderChunk.map((holder) => ({
+      address: tokenAddress,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [holder.address] as const,
+    }));
+    const results = await web3Client.multicall({
+      allowFailure: true,
+      blockTag: 'safe',
+      contracts,
+    });
+
+    results.forEach((result, index) => {
+      const address = holderChunk[index]?.address;
+      if (!address) return;
+      balances.set(
+        address,
+        result.status === 'success' ? (result.result as bigint) : 0n,
+      );
+    });
+  }
+
   return balances;
 }
 
@@ -381,8 +393,9 @@ export async function getTokenHoldingsBySpaceSlug(
 
   const holderDescriptors = Array.from(holderMap.values());
 
-  const tokenRows = await Promise.all(
-    tokenAddresses.map(async (tokenAddress) => {
+  const buildTokenRow = async (
+    tokenAddress: `0x${string}`,
+  ): Promise<TokenHoldingRow> => {
       const contractInfo = await readTokenContractInfo(tokenAddress);
       const tokenMeta = dbTokenByAddress.get(tokenAddress);
       const isHyphaSharedToken =
@@ -537,8 +550,21 @@ export async function getTokenHoldingsBySpaceSlug(
         other_balance: formatUnits(otherRaw, decimals),
         total_holders_balance: formatUnits(totalSupplyRaw, decimals),
       } satisfies TokenHoldingRow;
-    }),
-  );
+  };
+
+  const tokenRows: TokenHoldingRow[] = [];
+  for (
+    let startIndex = 0;
+    startIndex < tokenAddresses.length;
+    startIndex += TOKEN_PROCESS_CONCURRENCY
+  ) {
+    const batch = tokenAddresses.slice(
+      startIndex,
+      startIndex + TOKEN_PROCESS_CONCURRENCY,
+    );
+    const batchRows = await Promise.all(batch.map((token) => buildTokenRow(token)));
+    tokenRows.push(...batchRows);
+  }
 
   return {
     access: 'ok',
