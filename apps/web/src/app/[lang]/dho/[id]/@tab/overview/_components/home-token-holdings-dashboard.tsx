@@ -217,7 +217,7 @@ function fetchHoldings(
     }
 
     const response = await fetch(
-      `/api/v1/spaces/${slug}/token-holdings?include_treasury=true&collapse_below_pct=1`,
+      `/api/v1/spaces/${slug}/token-holdings?include_treasury=true&collapse_below_pct=3`,
       { headers },
     );
     const payload = await response.json();
@@ -1626,7 +1626,10 @@ export function HomeTokenHoldingsDashboard({
                                     {tCommon('Treasury')}
                                   </span>
                                   <span>
-                                    {formatAmount(token.treasury_balance, locale)}
+                                    {formatAmount(
+                                      token.treasury_balance,
+                                      locale,
+                                    )}
                                   </span>
                                   <span className="text-muted-foreground">
                                     Other
