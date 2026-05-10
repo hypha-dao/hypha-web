@@ -138,7 +138,19 @@ Follow existing MCP read-tool semantics:
 - return `isError: true` with human-readable reason on denial
 - keep public spaces readable
 
-### 5.5 Tool conventions
+### 5.5 Error response shape
+
+```ts
+{
+  isError: true;
+  found: boolean;
+  space_slug: string;
+  reason: string; // human-readable message
+  error_code?: 'access_denied' | 'not_found' | 'invalid_input' | 'server_error';
+}
+```
+
+### 5.6 Tool conventions
 
 - zod input/output schemas
 - `safeParse` for input/output
