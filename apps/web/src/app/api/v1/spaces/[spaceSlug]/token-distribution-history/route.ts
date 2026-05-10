@@ -18,6 +18,7 @@ const TRANSFER_EVENT = parseAbiItem(
 );
 const APPROX_BLOCKS_PER_DAY = 43_200n;
 const WINDOW_FALLBACK_DAYS = [365, 180, 90, 30] as const;
+const BALANCE_MULTICALL_CHUNK_SIZE = 200;
 
 function parseIntParam(
   url: URL,
@@ -242,18 +243,37 @@ export async function GET(
       selectedMember === 'all'
         ? Array.from(trackedAddressSet)
         : [selectedMember].filter((address) => trackedAddressSet.has(address));
-    const currentBalances = trackedAddresses.length
-      ? await web3Client.multicall({
-          allowFailure: true,
-          blockTag: 'safe',
-          contracts: trackedAddresses.map((address) => ({
-            address: tokenAddress,
-            abi: erc20Abi,
-            functionName: 'balanceOf',
-            args: [address as `0x${string}`] as const,
-          })),
-        })
-      : [];
+    const currentBalances: Array<{
+      status: 'success' | 'failure';
+      result?: unknown;
+    }> = [];
+    for (
+      let startIndex = 0;
+      startIndex < trackedAddresses.length;
+      startIndex += BALANCE_MULTICALL_CHUNK_SIZE
+    ) {
+      const trackedChunk = trackedAddresses.slice(
+        startIndex,
+        startIndex + BALANCE_MULTICALL_CHUNK_SIZE,
+      );
+      if (!trackedChunk.length) continue;
+      const chunkBalances = await web3Client.multicall({
+        allowFailure: true,
+        blockTag: 'safe',
+        contracts: trackedChunk.map((address) => ({
+          address: tokenAddress,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [address as `0x${string}`] as const,
+        })),
+      });
+      currentBalances.push(
+        ...(chunkBalances as Array<{
+          status: 'success' | 'failure';
+          result?: unknown;
+        }>),
+      );
+    }
     const currentBalanceRaw = currentBalances.reduce((sum, result) => {
       if (result.status !== 'success') return sum;
       return sum + (result.result as bigint);
