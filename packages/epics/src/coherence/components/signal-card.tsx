@@ -319,11 +319,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         className,
       )}
     >
-      <CardHeader className="relative h-[150px] shrink-0 overflow-hidden p-0 isolate">
+      <CardHeader className="relative h-[120px] shrink-0 overflow-hidden p-0 isolate">
         <Skeleton
           className="h-full min-w-full"
           width="100%"
-          height="150px"
+          height="120px"
           loading={isLoading}
         >
           <div className="absolute inset-0 overflow-hidden">
@@ -337,7 +337,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             >
               <Image
                 width={640}
-                height={150}
+                height={120}
                 className="h-full w-full object-cover"
                 src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                 alt=""
@@ -545,7 +545,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </Dialog>
 
           {tagList?.length > 0 ? (
-            <div className="min-h-8">
+            <div className="mt-auto pt-1">
               <BadgesList
                 isLoading={isLoading}
                 badges={tagList ?? []}
