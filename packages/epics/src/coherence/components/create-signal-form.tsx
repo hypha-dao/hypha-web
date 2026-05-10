@@ -63,6 +63,28 @@ interface CreateSignalFormProps {
   initialValues?: Partial<FormValues>;
 }
 
+function normalizeSignalDescriptionForChat(
+  description?: string | null,
+): string | null {
+  if (!description) return null;
+  const raw = description.trim();
+  if (!raw) return null;
+
+  // Rich text serialization may persist trailing spaces as HTML entities
+  // (e.g. "&#x20;"), which Matrix then renders as literal text.
+  const decodeHtmlEntities = (value: string): string => {
+    if (typeof document === 'undefined') return value;
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = value;
+    return textarea.value;
+  };
+
+  const decoded = decodeHtmlEntities(raw)
+    .replace(/\u00A0/g, ' ')
+    .trim();
+  return decoded.length > 0 ? decoded : null;
+}
+
 export const CreateSignalForm = ({
   spaceId,
   successfulUrl,
@@ -124,7 +146,7 @@ export const CreateSignalForm = ({
       description?: string | null;
     }) => {
       if (!isMatrixAvailable || !roomId?.trim()) return;
-      const nextDescription = description?.trim();
+      const nextDescription = normalizeSignalDescriptionForChat(description);
       if (!nextDescription) return;
 
       // Ensure we can inspect the full room timeline before deciding whether to
