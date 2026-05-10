@@ -15,7 +15,7 @@ const holderSchema = z.object({
   slug: z.string().nullable(),
   balance: z.string(),
   balance_raw: z.string(),
-  share_pct: z.number(),
+  share_pct: z.number().min(0).max(100),
 });
 
 const tokenHoldingSchema = z.object({
