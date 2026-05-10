@@ -465,7 +465,7 @@ export async function getTokenHoldingsBySpaceSlug(
         descriptor.holder_kind === 'person' ||
         descriptor.holder_kind === 'space'
           ? `${descriptor.holder_kind}:${
-              descriptor.slug ?? descriptor.display_name.toLowerCase()
+              descriptor.slug ?? descriptor.address
             }`
           : `${descriptor.holder_kind}:${descriptor.address}`;
       const existing = aggregatedMembers.get(entityKey);
