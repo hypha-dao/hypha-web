@@ -499,9 +499,44 @@ export const CreateSignalForm = ({
                     <FormControl>
                       <MultiSelect
                         placeholder={t('selectOneOrMore')}
+                        searchPlaceholder={
+                          t.has('searchOrCreateTag')
+                            ? t('searchOrCreateTag')
+                            : 'Type to search or create a tag'
+                        }
                         options={tagOptions}
                         value={field.value}
                         allowToggleAll={false}
+                        allowCreate={true}
+                        uiStyle="tag-picker"
+                        labels={{
+                          more: (count) =>
+                            t.has('tagsMore' as never)
+                              ? `${t('tagsMore' as never)} ${count}`
+                              : `+ ${count} more`,
+                          noRecentTags: t.has('noRecentTags' as never)
+                            ? t('noRecentTags' as never)
+                            : 'No recent tags yet. Start typing to search tags.',
+                          noResults: t.has('noResults' as never)
+                            ? t('noResults' as never)
+                            : 'No results found.',
+                          mostUsed: t.has('mostUsedTagsHeading' as never)
+                            ? t('mostUsedTagsHeading' as never)
+                            : '--- Most used tags ---',
+                          allTags: t.has('allTags' as never)
+                            ? t('allTags' as never)
+                            : 'All tags',
+                          create: (term) =>
+                            t.has('createTag' as never)
+                              ? `${t('createTag' as never)} "${term}"`
+                              : `Create "${term}"`,
+                          clear: t.has('clear' as never)
+                            ? t('clear' as never)
+                            : 'Clear',
+                          close: t.has('close' as never)
+                            ? t('close' as never)
+                            : 'Close',
+                        }}
                         onValueChange={field.onChange}
                       />
                     </FormControl>
@@ -539,7 +574,6 @@ export const CreateSignalForm = ({
                 );
               }}
             />
-
             <div className="flex w-full justify-end">
               <Button type="submit" disabled={isCreatingCoherence}>
                 {tAgreementFlow('buttons.publish')}
