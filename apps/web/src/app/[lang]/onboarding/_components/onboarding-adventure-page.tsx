@@ -27,12 +27,7 @@ import {
 } from 'lucide-react';
 import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space } from '@hypha-platform/core/client';
-
-const EXCHANGE_LINKS = [
-  { id: 'coinbase', label: 'Coinbase', href: 'https://www.coinbase.com' },
-  { id: 'wirex', label: 'Wirex', href: 'https://wirexapp.com' },
-  { id: 'kraken', label: 'Kraken', href: 'https://www.kraken.com' },
-] as const;
+import { EXCHANGE_LINKS } from './onboarding-adventure.constants';
 
 const getSpacePath = (lang: string, spaceSlug: string) =>
   `/${lang}/dho/${spaceSlug}/agreements`;
