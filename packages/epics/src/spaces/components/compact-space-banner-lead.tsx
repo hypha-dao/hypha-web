@@ -117,7 +117,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
       />
       {/* Taller layer + parallax translate so edges never show during scroll */}
       <div
-        className="absolute inset-[-14%] will-change-transform"
+        className="absolute inset-[-14%]"
         style={
           reduceMotion
             ? undefined
