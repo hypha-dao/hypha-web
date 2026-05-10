@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  attachProposalStatusToDocument,
+  fetchProposalOutcomeSetsForSpace,
   findSpaceBySlug,
   getAllCoherences,
   getDocumentsBySpaceSlug,
@@ -95,10 +97,21 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
+    let web3SpaceIdNum: number | null = null;
     if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+      web3SpaceIdNum =
+        typeof space.web3SpaceId === 'number'
+          ? space.web3SpaceId
+          : Number(space.web3SpaceId);
+      if (!Number.isFinite(web3SpaceIdNum)) {
+        return NextResponse.json(
+          { error: 'Invalid web3 space id' },
+          { status: 500 },
+        );
+      }
       const { hasAccess, response } = await checkSpaceAccess(
         request,
-        space.web3SpaceId as number,
+        web3SpaceIdNum,
       );
       if (!hasAccess && response) {
         return response;
@@ -109,27 +122,45 @@ export async function GET(
     const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
     const bearer = bearerMatch?.[1]?.trim() || undefined;
 
-    const [signals, proposalsResult] = await Promise.all([
+    const [signals, proposalOutcomes] = await Promise.all([
       getAllCoherences({
         spaceId: space.id,
         includeArchived: false,
       }),
-      getDocumentsBySpaceSlug(
+      web3SpaceIdNum == null
+        ? Promise.resolve(null)
+        : fetchProposalOutcomeSetsForSpace(web3SpaceIdNum),
+    ]);
+    const allProposals: Array<{
+      status?: string;
+      web3ProposalId?: number | null;
+      creator?: unknown;
+    }> = [];
+    let proposalsPage = 1;
+    while (true) {
+      const proposalsResult = await getDocumentsBySpaceSlug(
         {
           spaceSlug,
-          page: 1,
+          page: proposalsPage,
           pageSize: 100,
           state: 'proposal',
         },
         { db, authToken: bearer },
-      ),
-    ]);
-
-    if (proposalsResult.access === 'denied') {
-      return NextResponse.json(
-        { error: proposalsResult.message },
-        { status: 403 },
       );
+      if (proposalsResult.access === 'denied') {
+        return NextResponse.json(
+          { error: proposalsResult.message },
+          { status: 403 },
+        );
+      }
+      if (!proposalsResult.result.found) {
+        break;
+      }
+      allProposals.push(...proposalsResult.result.documents);
+      if (!proposalsResult.result.pagination.has_next_page) {
+        break;
+      }
+      proposalsPage += 1;
     }
 
     const proposalCounts = {
@@ -138,15 +169,17 @@ export async function GET(
       refused: 0,
     };
 
-    if (proposalsResult.result.found) {
-      for (const proposal of proposalsResult.result.documents) {
-        if (proposal.status === 'accepted') {
-          proposalCounts.accepted += 1;
-        } else if (proposal.status === 'rejected') {
-          proposalCounts.refused += 1;
-        } else {
-          proposalCounts.onVoting += 1;
-        }
+    for (const proposal of allProposals) {
+      const resolvedProposal = attachProposalStatusToDocument(
+        proposal,
+        proposalOutcomes,
+      );
+      if (resolvedProposal.status === 'accepted') {
+        proposalCounts.accepted += 1;
+      } else if (resolvedProposal.status === 'rejected') {
+        proposalCounts.refused += 1;
+      } else if (resolvedProposal.status === 'onVoting') {
+        proposalCounts.onVoting += 1;
       }
     }
 
