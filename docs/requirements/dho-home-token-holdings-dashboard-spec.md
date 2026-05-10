@@ -190,7 +190,7 @@ Follow existing MCP read-tool semantics:
 ### 6.3 States
 
 - Loading: skeleton cards
-- Empty: no minted token friendly message
+- Empty: friendly message when no tokens are minted
 - Error: actionable and access-aware message
 
 ### 6.4 Accessibility
