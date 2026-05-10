@@ -105,6 +105,7 @@
     "selected": "Sélectionné",
     "noSpacesFound": "Aucun espace trouvé.",
     "loadingSpaces": "Chargement des espaces...",
+    "loadSpacesError": "Impossible de charger les espaces pour le moment. Veuillez réessayer.",
     "explore": {
       "title": "Explorer le réseau",
       "description": "Découvrez des communautés et des opportunités dans le réseau.",
@@ -133,7 +134,8 @@
       "networkWarning": "Avertissement : transférez les fonds uniquement sur le réseau BASE.",
       "addressLabel": "Adresse de trésorerie",
       "copy": "Copier l'adresse",
-      "copied": "Adresse copiée"
+      "copied": "Adresse copiée",
+      "invalidAddress": "Le format de l'adresse de trésorerie est invalide."
     }
   },
   "MyWallet": {

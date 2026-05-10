@@ -105,6 +105,7 @@
     "selected": "Ausgewählt",
     "noSpacesFound": "Keine Spaces gefunden.",
     "loadingSpaces": "Spaces werden geladen...",
+    "loadSpacesError": "Spaces konnten gerade nicht geladen werden. Bitte versuche es erneut.",
     "explore": {
       "title": "Netzwerk erkunden",
       "description": "Entdecke Communities und Möglichkeiten im Netzwerk.",
@@ -122,7 +123,7 @@
       "unavailable": "Derzeit sind keine Spaces zum Beitreten verfügbar."
     },
     "deposit": {
-      "title": "Funds in einen Space einzahlen",
+      "title": "Mittel in einen Space einzahlen",
       "description": "Wähle einen Space mit Treasury-Adresse aus.",
       "cta": "Einzahlungsdetails anzeigen",
       "unavailable": "Derzeit sind keine Spaces mit Treasury-Adresse verfügbar."
@@ -130,10 +131,11 @@
     "depositDetails": {
       "title": "Einzahlungsdetails",
       "description": "Finanziere die Treasury von {spaceName} mit der untenstehenden Adresse.",
-      "networkWarning": "Warnung: Überweise Funds nur im BASE-Netzwerk.",
+      "networkWarning": "Warnung: Überweise Guthaben nur im BASE-Netzwerk.",
       "addressLabel": "Treasury-Adresse",
       "copy": "Adresse kopieren",
-      "copied": "Adresse kopiert"
+      "copied": "Adresse kopiert",
+      "invalidAddress": "Das Format der Treasury-Adresse ist ungültig."
     }
   },
   "MyWallet": {

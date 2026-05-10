@@ -795,6 +795,7 @@
     "selected": "Seleccionado",
     "noSpacesFound": "No se encontraron espacios.",
     "loadingSpaces": "Cargando espacios...",
+    "loadSpacesError": "No se pueden cargar los espacios en este momento. Inténtalo de nuevo.",
     "explore": {
       "title": "Explorar la red",
       "description": "Descubre comunidades y oportunidades en la red.",
@@ -823,7 +824,8 @@
       "networkWarning": "Advertencia: transfiere fondos solo en la red BASE.",
       "addressLabel": "Dirección de tesorería",
       "copy": "Copiar dirección",
-      "copied": "Dirección copiada"
+      "copied": "Dirección copiada",
+      "invalidAddress": "El formato de la dirección de tesorería no es válido."
     }
   },
   "MyWallet": {
