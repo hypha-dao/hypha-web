@@ -97,8 +97,8 @@
     "continueAdventure": "Abenteuer fortsetzen"
   },
   "OnboardingAdventure": {
-    "title": "Onboarding-Abenteuer",
-    "subtitle": "Wähle deinen nächsten Schritt",
+    "title": "Dein nächster großer Schritt beginnt hier",
+    "subtitle": "Entdecke, erstelle, tritt bei und finanziere Spaces",
     "spacePlaceholder": "Space auswählen",
     "spaceSearchPlaceholder": "Spaces suchen...",
     "noSpacesFound": "Keine Spaces gefunden.",
