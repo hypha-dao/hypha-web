@@ -83,8 +83,8 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
-          firstPageSize={9}
-          pageSize={15}
+          firstPageSize={12}
+          pageSize={12}
         />
       </TabsContent>
       <TabsContent value="accepted" className="mt-0">
@@ -95,8 +95,8 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
-          firstPageSize={3}
-          pageSize={15}
+          firstPageSize={4}
+          pageSize={12}
         />
       </TabsContent>
       <TabsContent value="rejected" className="mt-0">
@@ -107,8 +107,8 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
-          firstPageSize={3}
-          pageSize={15}
+          firstPageSize={4}
+          pageSize={12}
         />
       </TabsContent>
     </Tabs>

@@ -199,8 +199,8 @@ export function CoherenceBlock({
             signals={filteredSignals}
             leadImage={space?.leadImage ?? undefined}
             isLoading={isSpaceLoading || isSignalsLoading}
-            firstPageSize={3}
-            pageSize={3}
+            firstPageSize={4}
+            pageSize={4}
             refresh={refresh}
             onSignalClick={onSignalClick}
           />
