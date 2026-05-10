@@ -128,6 +128,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   } = useAiPanel();
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
+    false,
   );
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
@@ -145,7 +146,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [recentSpaceSlugs],
   );
   const { spaces: recentSpacesData, error: recentSpacesError } =
-    useSpacesBySlugs(recentSpaceLookupSlugs);
+    useSpacesBySlugs(recentSpaceLookupSlugs, false);
   const isSectionActive = useCallback(
     (
       section:

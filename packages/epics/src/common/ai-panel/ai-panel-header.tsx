@@ -59,6 +59,7 @@ export function AiPanelHeader({
   );
   const { spaces: activeSpaces } = useSpacesBySlugs(
     activeSpaceSlug ? [activeSpaceSlug] : [],
+    false,
   );
   const { person } = useMe();
   const { web3SpaceIds } = useMemberWeb3SpaceIds({
