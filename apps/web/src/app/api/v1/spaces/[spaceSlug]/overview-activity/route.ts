@@ -185,16 +185,28 @@ export async function GET(
       status?: string;
       web3ProposalId?: number | null;
     }): 'accepted' | 'rejected' | 'onVoting' | null => {
-      if (
-        proposalOutcomes &&
+      const proposalId =
         typeof proposal.web3ProposalId === 'number' &&
-        Number.isFinite(proposal.web3ProposalId)
-      ) {
-        const pid = proposal.web3ProposalId;
-        if (proposalOutcomes.withdrawn.has(pid)) return null;
-        if (proposalOutcomes.accepted.has(pid)) return 'accepted';
-        if (proposalOutcomes.rejected.has(pid)) return 'rejected';
+        Number.isFinite(proposal.web3ProposalId) &&
+        proposal.web3ProposalId > 0
+          ? proposal.web3ProposalId
+          : null;
+
+      if (proposalOutcomes && proposalId != null) {
+        if (proposalOutcomes.withdrawn.has(proposalId)) return null;
+        if (proposalOutcomes.accepted.has(proposalId)) return 'accepted';
+        if (proposalOutcomes.rejected.has(proposalId)) return 'rejected';
         return 'onVoting';
+      }
+
+      if (proposalOutcomes && proposalId == null) {
+        // Keep behavior aligned with Agreements tab: skip proposal docs that do
+        // not map to an on-chain proposal id when chain outcomes are available.
+        return null;
+      }
+
+      if (proposalId == null) {
+        return null;
       }
 
       if (proposal.status === 'accepted') return 'accepted';
