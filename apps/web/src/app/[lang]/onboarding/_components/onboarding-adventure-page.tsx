@@ -36,12 +36,18 @@ const getCreateSpacePath = (lang: string) => `/${lang}/my-spaces/create`;
 const onboardingCardClass =
   'group h-full border-border/70 bg-card/100 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md';
 const exchangeButtonBaseClass =
-  'inline-flex min-h-11 items-center justify-center rounded-md border border-border/70 bg-background px-3 py-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'inline-flex min-h-11 items-center justify-center rounded-md border border-transparent px-3 py-2 transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 const exchangeBrandLogos = {
   coinbase: '/exchange-logos/coinbase.svg',
   wirex: '/exchange-logos/wirex.png',
   kraken: '/exchange-logos/kraken-wordmark.png',
+} as const;
+
+const exchangeBrandColors = {
+  coinbase: '#0052FF',
+  wirex: '#004032',
+  kraken: '#6936EB',
 } as const;
 const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
 
@@ -409,13 +415,16 @@ function DepositDetailsCard({
                 rel="noopener noreferrer"
                 className={exchangeButtonBaseClass}
                 aria-label={link.label}
+                style={{ backgroundColor: exchangeBrandColors[link.id] }}
               >
-                <img
-                  src={exchangeBrandLogos[link.id]}
-                  alt=""
-                  aria-hidden
-                  className="h-5 w-auto max-w-32 object-contain"
-                />
+                <span className="rounded-sm bg-white/95 px-2 py-1">
+                  <img
+                    src={exchangeBrandLogos[link.id]}
+                    alt=""
+                    aria-hidden
+                    className="h-5 w-auto max-w-32 object-contain"
+                  />
+                </span>
               </a>
             ))}
           </div>
