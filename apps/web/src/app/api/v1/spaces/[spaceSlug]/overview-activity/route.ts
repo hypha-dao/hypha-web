@@ -266,8 +266,33 @@ export async function GET(
       monthExitDeltas.set(key, current);
     }
 
+    const firstBucketMonth = months[0]?.month;
     let runningPeople = 0;
     let runningSpaces = 0;
+    if (firstBucketMonth) {
+      for (const member of memberEntries) {
+        if (!member.resolved_joined_at) continue;
+        const joinedDate = new Date(member.resolved_joined_at);
+        if (Number.isNaN(joinedDate.getTime())) continue;
+        const joinedMonth = toMonthKey(joinedDate);
+        if (joinedMonth >= firstBucketMonth) continue;
+        if (member.member_kind === 'person') {
+          runningPeople += 1;
+        } else {
+          runningSpaces += 1;
+        }
+      }
+
+      for (const exitAt of membershipExitProposalDates) {
+        if (!exitAt) continue;
+        const exitDate = new Date(exitAt);
+        if (Number.isNaN(exitDate.getTime())) continue;
+        const exitMonth = toMonthKey(exitDate);
+        if (exitMonth >= firstBucketMonth) continue;
+        runningPeople = Math.max(0, runningPeople - 1);
+      }
+    }
+
     for (const bucket of months) {
       const joins = monthJoinDeltas.get(bucket.month) ?? {
         people: 0,
