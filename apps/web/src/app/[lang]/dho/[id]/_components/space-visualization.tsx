@@ -274,6 +274,8 @@ export function SpaceVisualization({
     const getDiagramFillColor = () => 'var(--color-background)';
     const getOrbitStrokeAlpha = () =>
       themeRef.current === 'dark' ? 0.7 : 0.55;
+    const ROOT_ORBIT_STROKE_WIDTH = 1.35;
+    const ORBIT_DASH_PATTERN = '8 6';
     const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
     const pageBackdropLab = d3.lab(
       themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
@@ -525,13 +527,14 @@ export function SpaceVisualization({
       .attr('class', 'orbit')
       .style('fill', 'none')
       .attr('stroke', (d: SpaceHierarchyNode) => {
-        if (d.depth === 0) return 'none';
-        return getOrbitStrokeStyle(getNodeAccent(d)).color;
+        const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
+        return getOrbitStrokeStyle(accent).color;
       })
       .attr('stroke-width', (d: SpaceHierarchyNode) => {
-        if (d.depth === 0) return 0;
+        if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
         return getOrbitStrokeStyle(getNodeAccent(d)).width;
       })
+      .attr('stroke-dasharray', ORBIT_DASH_PATTERN)
       .attr('vector-effect', 'non-scaling-stroke')
       .attr('shape-rendering', 'geometricPrecision')
       .style('pointer-events', 'all')
@@ -831,13 +834,14 @@ export function SpaceVisualization({
         .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
         .style('fill', 'none')
         .attr('stroke', (d: SpaceHierarchyNode) => {
-          if (d.depth === 0) return 'none';
-          return getOrbitStrokeStyle(getNodeAccent(d)).color;
+          const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
+          return getOrbitStrokeStyle(accent).color;
         })
         .attr('stroke-width', (d: SpaceHierarchyNode) => {
-          if (d.depth === 0) return 0;
+          if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
           return getOrbitStrokeStyle(getNodeAccent(d)).width;
-        });
+        })
+        .attr('stroke-dasharray', ORBIT_DASH_PATTERN);
 
       logos
         .attr(
@@ -882,13 +886,14 @@ export function SpaceVisualization({
           .filter((d) => d.data.id === node.data.id)
           .style('fill', 'none')
           .attr('stroke', (d: SpaceHierarchyNode) => {
-            if (d.depth === 0) return 'none';
-            return getOrbitStrokeStyle(resolvedAccent).color;
+            const accent = d.depth === 0 ? resolvedRootAccent : resolvedAccent;
+            return getOrbitStrokeStyle(accent).color;
           })
           .attr('stroke-width', (d: SpaceHierarchyNode) => {
-            if (d.depth === 0) return 0;
+            if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
             return getOrbitStrokeStyle(resolvedAccent).width;
-          });
+          })
+          .attr('stroke-dasharray', ORBIT_DASH_PATTERN);
       })();
     });
     return () => {
