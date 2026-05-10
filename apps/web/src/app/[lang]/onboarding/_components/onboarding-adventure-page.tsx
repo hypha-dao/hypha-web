@@ -182,7 +182,6 @@ export function OnboardingAdventurePage() {
                   type="button"
                   onClick={() => {
                     onChange(option.value);
-                    onQueryChange(option.label);
                   }}
                   className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-2 text-foreground transition-colors hover:bg-muted"
                 >
