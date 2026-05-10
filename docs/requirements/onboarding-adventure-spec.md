@@ -64,6 +64,7 @@ Replace the post-signup "empty profile landing" with an engaging onboarding deci
 - Onboarding route: `/{lang}/onboarding` (final slug confirmable via open question OQ-1).
 - Locale SHALL be preserved in all transitions.
 - Returning users SHALL not be forced into onboarding unless explicitly gated by feature flag.
+- The onboarding route SHALL remain directly reachable for authenticated users after signup completion (re-entry behavior).
 - Onboarding render failure SHALL fall back to existing profile destination.
 
 ---
@@ -140,6 +141,16 @@ External-link behavior:
 - Reserve a top-level optional container region for future AI onboarding content.
 - Current four-card flow SHALL not depend on AI availability.
 
+### 4.6 Re-entry entry points (post-signup access)
+
+To support "continue your adventure" behavior later in the user journey, expose a persistent re-entry path to onboarding:
+
+- Add a primary re-entry CTA in the user profile/account menu dropdown (recommended label: "Continue your adventure").
+- Add a secondary re-entry CTA in navigation surfaces where users commonly recover orientation (e.g., sidebar or dashboard empty states).
+- Keep direct route access at `/{lang}/onboarding` for authenticated users.
+- If users have already completed some onboarding actions, show progress-oriented copy while preserving all four card actions.
+- Do not implement onboarding access as a default profile-page tab in this phase; keep onboarding as a standalone route linked from menu/CTA surfaces.
+
 ---
 
 ## 5) Functional requirements
@@ -163,6 +174,12 @@ External-link behavior:
 **FR-9** The system SHALL preserve locale across all onboarding transitions.
 
 **FR-10** The system SHALL allow users to leave onboarding and continue normal navigation at any time.
+
+**FR-11** The system SHALL provide at least one persistent in-app entry point for authenticated users to re-enter onboarding after signup via the profile/account menu dropdown.
+
+**FR-12** The system SHALL allow authenticated returning users to access the localized onboarding route directly without requiring account recreation.
+
+**FR-13** The system SHALL implement onboarding as a standalone page route and SHALL NOT require a profile-page tab for access in phase 1.
 
 ---
 
@@ -232,6 +249,14 @@ Then non-selector cards remain usable and selector cards show recoverable empty/
 When signup/profile creation is executed,  
 Then no regression occurs in success rate, validation, or auth continuity.
 
+**AC-9** Given an authenticated returning user,  
+When they select "Continue your adventure" from a persistent in-app entry point,  
+Then they land on the localized onboarding page.
+
+**AC-10** Given an authenticated returning user,  
+When they navigate directly to the localized onboarding route,  
+Then onboarding renders and all four actions remain available under existing eligibility rules.
+
 ---
 
 ## 9) QA and test engineering plan
@@ -251,6 +276,7 @@ Then no regression occurs in success rate, validation, or auth continuity.
 - Existing direct navigation to profile/my-spaces/network.
 - Existing create-space flow remains reachable and successful.
 - Existing space page routing/rendering remains unaffected.
+- Profile page behavior remains unchanged (no new default onboarding tab behavior introduced in phase 1).
 
 ### 9.3 Suggested event instrumentation contract
 
@@ -276,7 +302,7 @@ Then no regression occurs in success rate, validation, or auth continuity.
 | ONB-5 | Join a Space action card | Build selector UX + disabled/enabled CTA + navigation to selected space destination. | FR-5, FR-6, AC-4 | ONB-4 |
 | ONB-6 | Deposit Funds flow and details state | Build deposit selector + treasury address display + copy action + QR generation + external links. | FR-7, FR-8, NFR-5, AC-5, AC-6 | ONB-4 |
 | ONB-7 | Observability + analytics hooks | Emit impression/selection/link-click events with typed payloads and coverage tests. | NFR-4 | ONB-2, ONB-5, ONB-6 |
-| ONB-8 | QA automation + regression hardening | Add Playwright coverage, accessibility checks, visual snapshots, and regression assertions for signup/profile baselines. | AC-1..AC-8, PAR-1..PAR-7 | ONB-1..ONB-7 |
+| ONB-8 | QA automation + regression hardening | Add Playwright coverage, accessibility checks, visual snapshots, and regression assertions for signup/profile baselines. | AC-1..AC-10, PAR-1..PAR-7 | ONB-1..ONB-7 |
 
 ---
 
@@ -288,6 +314,7 @@ Then no regression occurs in success rate, validation, or auth continuity.
 | OQ-2 | Canonical join destination for selected space (overview vs agreements vs home) | Product + UX | Use space default overview/agreements target already used by existing navigation |
 | OQ-3 | Canonical external URLs for Coinbase/Wirex/Kraken | Product + Compliance | Read from configuration constants owned by product/compliance |
 | OQ-4 | Onboarding experience policy (one-time, skippable, re-entry path) | Product | One-time for new profiles; skippable via normal navigation; returning users gated by flag |
+| OQ-5 | Canonical persistent re-entry location in app chrome (profile menu only vs profile + sidebar/empty states) | Product + UX | Profile menu dropdown primary + one secondary contextual CTA; not a profile-page tab |
 
 ---
 
@@ -315,3 +342,5 @@ Then no regression occurs in success rate, validation, or auth continuity.
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-05-10 | Requirements + UX + QA (agent) | Initial ready-to-implement onboarding adventure spec with FR/PAR/NFR, ACs, QA plan, and ticket decomposition. |
+| 1.1 | 2026-05-10 | Requirements + UX + QA (agent) | Added persistent post-signup re-entry model (`FR-11`, `FR-12`, `AC-9`, `AC-10`) and defined recommended placement in profile menu plus secondary contextual CTA surfaces. |
+| 1.2 | 2026-05-10 | Requirements + UX + QA (agent) | Clarified re-entry is via profile/account menu dropdown (not profile tab), added `FR-13`, and aligned QA/ticket traceability for re-entry coverage. |

@@ -93,7 +93,45 @@
     "delete": "Supprimer",
     "signIn": "Se connecter",
     "getStarted": "Commencer",
-    "ecosystemLogo": "Logo de l’écosystème"
+    "ecosystemLogo": "Logo de l’écosystème",
+    "continueAdventure": "Continuer votre aventure"
+  },
+  "OnboardingAdventure": {
+    "title": "Aventure d'onboarding",
+    "subtitle": "Choisissez votre prochaine étape",
+    "spacePlaceholder": "Sélectionner un espace",
+    "spaceSearchPlaceholder": "Rechercher des espaces...",
+    "noSpacesFound": "Aucun espace trouvé.",
+    "loadingSpaces": "Chargement des espaces...",
+    "explore": {
+      "title": "Explorer le réseau",
+      "description": "Découvrez des communautés et des opportunités dans le réseau.",
+      "cta": "Explorer maintenant"
+    },
+    "create": {
+      "title": "Créer votre espace",
+      "description": "Lancez un nouvel espace et invitez d'autres personnes à collaborer.",
+      "cta": "Créer un espace"
+    },
+    "join": {
+      "title": "Rejoindre un espace",
+      "description": "Choisissez un espace et accédez directement à son activité.",
+      "cta": "Ouvrir l'espace sélectionné",
+      "unavailable": "Aucun espace n'est actuellement disponible pour rejoindre."
+    },
+    "deposit": {
+      "title": "Déposer des fonds dans un espace",
+      "description": "Choisissez un espace avec une adresse de trésorerie.",
+      "cta": "Afficher les détails du dépôt",
+      "unavailable": "Aucun espace avec adresse de trésorerie n'est actuellement disponible."
+    },
+    "depositDetails": {
+      "title": "Détails du dépôt",
+      "description": "Alimentez la trésorerie de {spaceName} avec l'adresse ci-dessous.",
+      "addressLabel": "Adresse de trésorerie",
+      "copy": "Copier l'adresse",
+      "copied": "Adresse copiée"
+    }
   },
   "MyWallet": {
     "loading": "Chargement...",

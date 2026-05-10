@@ -93,7 +93,45 @@
     "delete": "Delete",
     "signIn": "Sign in",
     "getStarted": "Get started",
-    "ecosystemLogo": "Ecosystem Logo"
+    "ecosystemLogo": "Ecosystem Logo",
+    "continueAdventure": "Continue your adventure"
+  },
+  "OnboardingAdventure": {
+    "title": "Onboarding Adventure",
+    "subtitle": "Choose your next step",
+    "spacePlaceholder": "Select a space",
+    "spaceSearchPlaceholder": "Search spaces...",
+    "noSpacesFound": "No spaces found.",
+    "loadingSpaces": "Loading spaces...",
+    "explore": {
+      "title": "Explore the Network",
+      "description": "Discover communities and opportunities across the network.",
+      "cta": "Explore now"
+    },
+    "create": {
+      "title": "Create your Space",
+      "description": "Start a new space and invite others to collaborate.",
+      "cta": "Create a space"
+    },
+    "join": {
+      "title": "Join a Space",
+      "description": "Pick a space and jump directly into its activity.",
+      "cta": "Open selected space",
+      "unavailable": "No spaces are currently available to join."
+    },
+    "deposit": {
+      "title": "Deposit Funds in a Space",
+      "description": "Choose a space with a treasury address to fund it.",
+      "cta": "Show deposit details",
+      "unavailable": "No spaces with treasury addresses are currently available."
+    },
+    "depositDetails": {
+      "title": "Deposit details",
+      "description": "Fund {spaceName} treasury using the address below.",
+      "addressLabel": "Treasury address",
+      "copy": "Copy address",
+      "copied": "Address copied"
+    }
   },
   "MyWallet": {
     "loading": "Loading...",
