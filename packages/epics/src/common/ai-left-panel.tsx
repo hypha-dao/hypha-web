@@ -550,26 +550,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay();
   }, [handleOverlayClose, isAiOpen, overlayVisible, showAiOverlay]);
   const shouldCloseFromTrigger = isAiOpen || overlayVisible;
-  const handleTriggerMouseLeave = useCallback(() => {
-    if (isHoverOpenLocked) {
-      setIsHoverOpenLocked(false);
-    }
-  }, [isHoverOpenLocked]);
-  const canHoverOpenFromTrigger = !shouldCloseFromTrigger && !isHoverOpenLocked;
 
   const triggerButton = (
     <button
       type="button"
       onClick={handleTriggerClick}
-      onMouseEnter={
-        canHoverOpenFromTrigger ? handleHeaderIconMouseEnter : undefined
-      }
-      onMouseLeave={
-        !shouldCloseFromTrigger ? handleTriggerMouseLeave : undefined
-      }
       className={MENU_TRIGGER_CANVAS_CLASS}
       aria-label={shouldCloseFromTrigger ? t('closePanel') : t('openPanel')}
-      title={shouldCloseFromTrigger ? t('hidePanel') : t('openPanel')}
     >
       <Menu className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
     </button>
