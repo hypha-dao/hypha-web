@@ -318,7 +318,7 @@ export function EcosystemNavigationMainPanel({
                   <SpaceVisualization
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
-                    enableHoverActions={false}
+                    enableHoverActions={true}
                     onVisibleSpacesChange={handleVisibleSpacesChange}
                   />
                 </div>

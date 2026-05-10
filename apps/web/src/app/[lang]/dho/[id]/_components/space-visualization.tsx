@@ -146,7 +146,7 @@ export function SpaceVisualization({
   data,
   currentSpaceId,
   onVisibleSpacesChange,
-  enableHoverActions = false,
+  enableHoverActions = true,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
