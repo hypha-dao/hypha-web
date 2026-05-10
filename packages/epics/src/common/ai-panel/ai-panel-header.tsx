@@ -118,7 +118,8 @@ export function AiPanelHeader({
 
   const lang = typeof params.lang === 'string' ? params.lang : 'en';
   const logoVariant = resolvedTheme === 'dark' ? 'dark' : 'light';
-  const currentTitle = activeSpace?.title?.trim() || t('title');
+  const currentTitle =
+    activeSpace?.title?.trim() || activeSpaceSlug?.trim() || t('title');
   const currentIcon = getDisplayIcon(activeSpace, logoVariant);
   const hasSpaces =
     groupedSpaces.ecosystem.length + groupedSpaces.others.length > 0;
@@ -140,7 +141,8 @@ export function AiPanelHeader({
     filteredGroupedSpaces.ecosystem.length +
       filteredGroupedSpaces.others.length >
     0;
-  const fallbackTitle = activeSpace?.title?.trim() || t('title');
+  const fallbackTitle =
+    activeSpace?.title?.trim() || activeSpaceSlug?.trim() || t('title');
   const canOpenSpaceMenu =
     Boolean(person?.address) &&
     !isAllSpacesLoading &&
