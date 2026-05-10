@@ -116,28 +116,48 @@ export async function GET(
     const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
     const bearer = bearerMatch?.[1]?.trim() || undefined;
 
-    const [signals, proposalsResult] = await Promise.all([
-      getAllCoherences({
-        spaceId: space.id,
-        includeArchived: false,
-      }),
-      getDocumentsBySpaceSlug(
+    const signalsPromise = getAllCoherences({
+      spaceId: space.id,
+      includeArchived: false,
+    });
+    const allProposals: Array<{
+      status?: string;
+      label?: string | null;
+      updatedAt?: string | Date | null;
+    }> = [];
+    let proposalsPage = 1;
+
+    while (true) {
+      const proposalsResult = await getDocumentsBySpaceSlug(
         {
           spaceSlug,
-          page: 1,
+          page: proposalsPage,
           pageSize: 100,
           state: 'proposal',
         },
         { db, authToken: bearer },
-      ),
-    ]);
-
-    if (proposalsResult.access === 'denied') {
-      return NextResponse.json(
-        { error: proposalsResult.message },
-        { status: 403 },
       );
+
+      if (proposalsResult.access === 'denied') {
+        return NextResponse.json(
+          { error: proposalsResult.message },
+          { status: 403 },
+        );
+      }
+
+      if (!proposalsResult.result.found) {
+        break;
+      }
+
+      allProposals.push(...proposalsResult.result.documents);
+
+      if (!proposalsResult.result.pagination.has_next_page) {
+        break;
+      }
+      proposalsPage += 1;
     }
+
+    const signals = await signalsPromise;
 
     const proposalCounts = {
       onVoting: 0,
@@ -145,15 +165,13 @@ export async function GET(
       refused: 0,
     };
 
-    if (proposalsResult.result.found) {
-      for (const proposal of proposalsResult.result.documents) {
-        if (proposal.status === 'accepted') {
-          proposalCounts.accepted += 1;
-        } else if (proposal.status === 'rejected') {
-          proposalCounts.refused += 1;
-        } else {
-          proposalCounts.onVoting += 1;
-        }
+    for (const proposal of allProposals) {
+      if (proposal.status === 'accepted') {
+        proposalCounts.accepted += 1;
+      } else if (proposal.status === 'rejected') {
+        proposalCounts.refused += 1;
+      } else {
+        proposalCounts.onVoting += 1;
       }
     }
 
@@ -199,15 +217,13 @@ export async function GET(
       rosterPage += 1;
     }
 
-    const membershipExitProposalDates = proposalsResult.result.found
-      ? proposalsResult.result.documents
-          .filter((proposal) => {
-            if (proposal.status !== 'accepted') return false;
-            const label = proposal.label?.toLowerCase() ?? '';
-            return label.includes('membership exit');
-          })
-          .map((proposal) => toIsoIfValid(proposal.updatedAt))
-      : [];
+    const membershipExitProposalDates = allProposals
+      .filter((proposal) => {
+        if (proposal.status !== 'accepted') return false;
+        const label = proposal.label?.toLowerCase() ?? '';
+        return label.includes('membership exit');
+      })
+      .map((proposal) => toIsoIfValid(proposal.updatedAt));
 
     const months = buildTimelineMonthBuckets(
       [
