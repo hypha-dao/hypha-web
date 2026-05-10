@@ -23,6 +23,7 @@ import { useTheme } from 'next-themes';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import useSWR from 'swr';
 import { SpaceVisualization } from './space-visualization';
 import { parseHex, sampleAccentHex } from './space-accent-utils';
 import type { VisibleSpace } from './types';
@@ -40,6 +41,10 @@ type HierarchyNode = {
   slug?: string;
   value?: number;
   children?: HierarchyNode[];
+};
+
+type SpaceVaultSummaryResponse = {
+  vaults?: Array<{ totalUsd?: number }>;
 };
 
 const SELECTED_SPACE_ACCENT_FALLBACK = '#14b8a6';
@@ -219,6 +224,42 @@ export function EcosystemNavigationMainPanel({
       currentSpace
     );
   }, [selectedSpace?.id, nonArchivedSpaces, currentSpace]);
+
+  const selectedSpaceSlugForStats =
+    selectedSpaceRecord?.slug ?? selectedSpaceSlug ?? undefined;
+  const { data: selectedSpaceVaultsData } = useSWR<SpaceVaultSummaryResponse>(
+    selectedSpaceSlugForStats
+      ? `/api/v1/spaces/${selectedSpaceSlugForStats}/vaults`
+      : null,
+    async (url: string) => {
+      const response = await fetch(url, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) {
+        return { vaults: [] };
+      }
+      return (await response.json()) as SpaceVaultSummaryResponse;
+    },
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 20_000,
+    },
+  );
+
+  const selectedSpaceMembers = selectedSpaceRecord?.memberCount ?? null;
+  const selectedSpaceAgreements = selectedSpaceRecord?.documentCount ?? null;
+  const selectedSpaceTreasuryUsd = useMemo(() => {
+    const vaults = selectedSpaceVaultsData?.vaults ?? [];
+    return vaults.reduce((sum, vault) => sum + (vault.totalUsd ?? 0), 0);
+  }, [selectedSpaceVaultsData?.vaults]);
+  const selectedSpaceTreasuryLabel =
+    selectedSpaceTreasuryUsd > 0
+      ? format.number(selectedSpaceTreasuryUsd, {
+          style: 'currency',
+          currency: 'USD',
+          maximumFractionDigits: 0,
+        })
+      : '—';
   useEffect(() => {
     let cancelled = false;
     setSelectedSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
@@ -315,10 +356,23 @@ export function EcosystemNavigationMainPanel({
                       </div>
                     </div>
                   ) : null}
+                  <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 w-[min(92%,34rem)] -translate-x-1/2 translate-y-[5.8rem]">
+                    <div className="mx-auto inline-flex max-w-full flex-wrap items-center justify-center gap-1 rounded-full border border-border/60 bg-background/76 px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-background/64">
+                      <span className="max-w-[12rem] truncate text-foreground/90">
+                        {selectedSpaceTitle}
+                      </span>
+                      <span aria-hidden>·</span>
+                      <span>{selectedSpaceMembers ?? '—'} members</span>
+                      <span aria-hidden>·</span>
+                      <span>{selectedSpaceAgreements ?? '—'} agreements</span>
+                      <span aria-hidden>·</span>
+                      <span>{selectedSpaceTreasuryLabel} treasury</span>
+                    </div>
+                  </div>
                   <SpaceVisualization
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
-                    enableHoverActions={true}
+                    enableHoverActions={false}
                     onVisibleSpacesChange={handleVisibleSpacesChange}
                   />
                 </div>
