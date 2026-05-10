@@ -26,7 +26,6 @@ import {
 } from 'lucide-react';
 import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space } from '@hypha-platform/core/client';
-import { EXCHANGE_LINKS } from './onboarding-adventure.constants';
 
 const getSpacePath = (lang: string, spaceSlug: string) =>
   `/${lang}/dho/${spaceSlug}/agreements`;
@@ -37,6 +36,11 @@ const onboardingCardClass =
   'group h-full border-border/70 bg-card/100 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md';
 const exchangeButtonBaseClass =
   'inline-flex min-h-11 items-center justify-center rounded-md border border-transparent px-3 py-2 transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const EXCHANGE_LINKS = [
+  { id: 'coinbase', label: 'Coinbase', href: 'https://www.coinbase.com' },
+  { id: 'wirex', label: 'Wirex', href: 'https://wirexapp.com' },
+  { id: 'kraken', label: 'Kraken', href: 'https://www.kraken.com' },
+] as const;
 
 const exchangeBrandLogos = {
   coinbase: '/exchange-logos/coinbase.svg',
@@ -367,6 +371,7 @@ function DepositDetailsCard({
   onCopyAddress: (address: string) => void;
 }) {
   if (!space.address) return null;
+  const address = space.address;
 
   return (
     <Card className={onboardingCardClass}>
@@ -390,13 +395,13 @@ function DepositDetailsCard({
               {t('depositDetails.addressLabel')}
             </p>
             <p className="break-all font-mono text-2 text-foreground">
-              {space.address}
+              {address}
             </p>
             <Button
               type="button"
               variant="outline"
               colorVariant="neutral"
-              onClick={() => onCopyAddress(space.address)}
+              onClick={() => onCopyAddress(address)}
               className="inline-flex min-h-11 items-center gap-2"
             >
               <Copy className="size-4" aria-hidden />
@@ -431,9 +436,9 @@ function DepositDetailsCard({
         </div>
 
         <div className="mx-auto rounded-lg border border-border/70 bg-white p-3">
-          {evmAddressPattern.test(space.address) ? (
+          {evmAddressPattern.test(address) ? (
             <QRCode
-              value={space.address}
+              value={address}
               size={160}
               aria-label={`Space deposit address QR code for ${space.title}`}
             />
