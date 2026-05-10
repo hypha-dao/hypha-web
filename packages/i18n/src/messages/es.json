@@ -841,6 +841,85 @@
       "noAccess": "No tienes acceso para ver la navegación espacial."
     }
   },
+  "TokenHoldingsDashboard": {
+    "subtitle": "Distribución de tokens de un vistazo.",
+    "badges": {
+      "tokens": "Tokens: {count}",
+      "otherBucket": "Categoría otros: < {threshold}%",
+      "treasuryVisible": "Tesorería siempre visible"
+    },
+    "updatedAt": "Actualizado {date}",
+    "error": {
+      "title": "No se pudieron cargar las tenencias de tokens",
+      "description": "Vuelve a intentarlo en un momento. Si el problema persiste, revisa tu acceso al espacio y la conectividad de red.",
+      "accessDeniedTitle": "El acceso a las tenencias de tokens está restringido",
+      "accessDeniedDescription": "Actualmente no tienes permiso para ver las tenencias de tokens de este espacio."
+    },
+    "empty": {
+      "title": "Aún no hay tenencias de tokens disponibles",
+      "description": "Este espacio actualmente no expone datos de distribución de tokens acuñados."
+    },
+    "chartAria": "Gráfico de distribución de tokens para {title}",
+    "tokenDetailsAria": "Detalles del token para {tokenName}",
+    "tooltip": {
+      "totalSupply": "Suministro total",
+      "other": "Otros",
+      "address": "Dirección"
+    },
+    "filters": {
+      "energy": "Energía",
+      "activity": "Actividad",
+      "distribution": "Distribución"
+    },
+    "activity": {
+      "title": "No se pudieron cargar los widgets de actividad",
+      "error": "Vuelve a intentarlo en un momento. Es posible que los datos de analítica de actividad aún se estén sincronizando."
+    },
+    "distribution": {
+      "title": "Distribución en el tiempo",
+      "subtitle": "El eje X muestra el tiempo según las fechas de transacción.",
+      "tokenLabel": "Token",
+      "memberLabel": "Miembro",
+      "memberAll": "Todos",
+      "start": "Inicio",
+      "end": "Fin",
+      "delta": "Delta",
+      "timeAxis": "Tiempo",
+      "error": "No se puede cargar ahora el historial de distribución de tokens.",
+      "empty": "No se encontró historial de transferencias para los filtros seleccionados."
+    },
+    "proposals": {
+      "title": "Propuestas",
+      "subtitle": "En votación, aceptadas, rechazadas",
+      "ariaLabel": "Distribución de propuestas",
+      "onVoting": "En votación",
+      "accepted": "Aceptadas",
+      "refused": "Rechazadas",
+      "noData": "Sin datos"
+    },
+    "members": {
+      "title": "Miembros",
+      "subtitle": "Miembros y espacios mensuales acumulados (neto de salidas)",
+      "people": "Personas",
+      "spaces": "Espacios"
+    },
+    "signals": {
+      "title": "Señales",
+      "subtitle": "Mapa de calor por prioridad y recencia (reciente a la izquierda, más antiguo a la derecha)",
+      "count": "Señales",
+      "peakCell": "Celda máxima",
+      "recent": "Reciente",
+      "older": "Antiguo",
+      "recency": "Recencia",
+      "lowActivity": "Baja actividad",
+      "highActivity": "Alta actividad",
+      "cellTitle": "{priority} · {count} señales · ventana de recencia de {start}% a {end}%"
+    },
+    "energy": {
+      "title": "Energía",
+      "description": "Los widgets de energía aparecerán cuando haya datos disponibles."
+    }
+  },
   "SpaceSettingsAction": {
     "title": "Configuración de espacio",
     "content": "Acceda y administre la configuración de su espacio, incluida su apariencia, estructura, métodos, membresía y tesorería.",
