@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { formatUnits, isAddress, parseAbiItem } from 'viem';
+import { erc20Abi, formatUnits, isAddress, parseAbiItem } from 'viem';
 
 import {
   findSpaceBySlug,
@@ -221,35 +221,64 @@ export async function GET(
       }),
     );
 
-    const amountByDay = new Map<string, number>();
+    const isTrackedAddress = (address: string | undefined): boolean => {
+      if (!address) return false;
+      return selectedMember === 'all'
+        ? trackedAddressSet.has(address)
+        : address === selectedMember;
+    };
+
+    const trackedAddresses =
+      selectedMember === 'all'
+        ? Array.from(trackedAddressSet)
+        : [selectedMember].filter((address) => trackedAddressSet.has(address));
+    const currentBalances = trackedAddresses.length
+      ? await web3Client.multicall({
+          allowFailure: true,
+          blockTag: 'safe',
+          contracts: trackedAddresses.map((address) => ({
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: 'balanceOf',
+            args: [address as `0x${string}`] as const,
+          })),
+        })
+      : [];
+    const currentBalanceRaw = currentBalances.reduce((sum, result) => {
+      if (result.status !== 'success') return sum;
+      return sum + (result.result as bigint);
+    }, 0n);
+
+    const netByDayRaw = new Map<string, bigint>();
+    let totalNetFlowRaw = 0n;
     for (const log of logs) {
+      const from = log.args.from?.toLowerCase();
       const to = log.args.to?.toLowerCase();
       const value = log.args.value;
       const blockNumber = log.blockNumber;
-      if (!to || value == null || value <= 0n || blockNumber == null) continue;
-
-      const includeRecipient =
-        selectedMember === 'all'
-          ? trackedAddressSet.has(to)
-          : to === selectedMember;
-      if (!includeRecipient) continue;
+      if (value == null || value <= 0n || blockNumber == null) continue;
 
       const timestampMs = blockToTimestamp.get(blockNumber);
       if (!timestampMs) continue;
       const dayKey = new Date(timestampMs).toISOString().slice(0, 10);
-      const amount = Number.parseFloat(
-        formatUnits(value, selectedToken.decimals),
-      );
-      if (!Number.isFinite(amount) || amount <= 0) continue;
-      amountByDay.set(dayKey, (amountByDay.get(dayKey) ?? 0) + amount);
+      let deltaRaw = 0n;
+      if (isTrackedAddress(to)) deltaRaw += value;
+      if (isTrackedAddress(from)) deltaRaw -= value;
+      if (deltaRaw === 0n) continue;
+
+      totalNetFlowRaw += deltaRaw;
+      netByDayRaw.set(dayKey, (netByDayRaw.get(dayKey) ?? 0n) + deltaRaw);
     }
 
-    const orderedDays = Array.from(amountByDay.keys()).sort();
+    const orderedDays = Array.from(netByDayRaw.keys()).sort();
     const totalSupply = Number.parseFloat(selectedToken.total_supply);
-    let cumulative = 0;
+    let cumulativeRaw = currentBalanceRaw - totalNetFlowRaw;
     const points = orderedDays
       .map((dayKey) => {
-        cumulative += amountByDay.get(dayKey) ?? 0;
+        cumulativeRaw += netByDayRaw.get(dayKey) ?? 0n;
+        const cumulative = Number.parseFloat(
+          formatUnits(cumulativeRaw, selectedToken.decimals),
+        );
         return {
           date: dayKey,
           cumulative_amount: cumulative,
