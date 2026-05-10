@@ -827,6 +827,9 @@ export const CreateSignalForm = ({
                         mostUsed: t.has('mostUsedTagsHeading' as never)
                           ? t('mostUsedTagsHeading' as never)
                           : '--- Most used tags ---',
+                        allTags: t.has('allTags' as never)
+                          ? t('allTags' as never)
+                          : 'All tags',
                         create: (term) =>
                           t.has('createTag' as never)
                             ? `${t('createTag' as never)} "${term}"`
