@@ -137,6 +137,12 @@ function withAlpha(color: string, alpha: number): string {
   return parsed.formatRgb();
 }
 
+function withLightness(color: string, delta: number): string {
+  const parsed = d3.hsl(color);
+  parsed.l = Math.min(0.9, Math.max(0.08, parsed.l + delta));
+  return parsed.formatHex();
+}
+
 export function SpaceVisualization({
   data,
   currentSpaceId,
@@ -248,11 +254,6 @@ export function SpaceVisualization({
     if (!svgRef.current) return;
 
     const getDiagramFillColor = () => 'var(--color-background)';
-    const getRootOutlineColor = () =>
-      themeRef.current === 'dark' ? '#e5e7eb' : '#111827';
-    const getOrbitStrokeAlpha = () =>
-      themeRef.current === 'dark' ? 0.7 : 0.55;
-    const getLogoStrokeAlpha = () => (themeRef.current === 'dark' ? 0.9 : 0.8);
 
     const getStrokeWidth = (depth: number): number => {
       return (
@@ -260,8 +261,6 @@ export function SpaceVisualization({
         Math.pow(VISUALIZATION_CONFIG.STROKE_WIDTH_SCALE, depth)
       );
     };
-    const getLogoStrokeWidth = (node: SpaceHierarchyNode): number =>
-      node.depth === 0 ? 8 : getStrokeWidth(node.depth);
 
     const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
 
@@ -462,21 +461,70 @@ export function SpaceVisualization({
     const g = svg.append('g');
     const nodeAccents = new Map<number, string>();
     const getNodeAccent = (d: SpaceHierarchyNode): string => {
-      if (d.depth === 0) return getRootOutlineColor();
       return nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
     };
+    const getVinylGradientId = (d: SpaceHierarchyNode) =>
+      `space-vinyl-gradient-${d.data.id}`;
+
+    const defs = svg.append('defs');
+    const upsertVinylGradient = (d: SpaceHierarchyNode, accent: string) => {
+      const gradientId = getVinylGradientId(d);
+      let gradient = defs.select<SVGRadialGradientElement>(`#${gradientId}`);
+      if (gradient.empty()) {
+        gradient = defs
+          .append('radialGradient')
+          .attr('id', gradientId)
+          .attr('cx', '50%')
+          .attr('cy', '50%')
+          .attr('r', '62%')
+          .attr('fx', '50%')
+          .attr('fy', '50%');
+      }
+
+      const ringStops = [
+        { offset: '0%', delta: 0.14 },
+        { offset: '8%', delta: 0.1 },
+        { offset: '14%', delta: 0.03 },
+        { offset: '20%', delta: 0.08 },
+        { offset: '26%', delta: 0.01 },
+        { offset: '33%', delta: 0.07 },
+        { offset: '40%', delta: 0.0 },
+        { offset: '47%', delta: 0.06 },
+        { offset: '55%', delta: -0.01 },
+        { offset: '63%', delta: 0.05 },
+        { offset: '71%', delta: -0.01 },
+        { offset: '79%', delta: 0.04 },
+        { offset: '87%', delta: -0.02 },
+        { offset: '94%', delta: 0.02 },
+        { offset: '100%', delta: -0.04 },
+      ];
+
+      gradient
+        .selectAll<SVGStopElement, { offset: string; delta: number }>('stop')
+        .data(ringStops)
+        .join('stop')
+        .attr('offset', (stop) => stop.offset)
+        .attr('stop-color', (stop) => withLightness(accent, stop.delta))
+        .attr('stop-opacity', 0.98);
+    };
+
+    root.descendants().forEach((d) => {
+      upsertVinylGradient(
+        d as SpaceHierarchyNode,
+        getNodeAccent(d as SpaceHierarchyNode),
+      );
+    });
 
     const orbits = g
       .selectAll<SVGCircleElement, SpaceHierarchyNode>('circle.orbit')
       .data(root.descendants() as SpaceHierarchyNode[])
       .join('circle')
       .attr('class', 'orbit')
-      .style('fill', 'none')
-      .attr('stroke', (d: SpaceHierarchyNode) =>
-        withAlpha(getNodeAccent(d), getOrbitStrokeAlpha()),
+      .style(
+        'fill',
+        (d: SpaceHierarchyNode) => `url(#${getVinylGradientId(d)})`,
       )
-      .attr('stroke-width', 1.2)
-      .attr('vector-effect', 'non-scaling-stroke')
+      .attr('stroke', 'none')
       .attr('shape-rendering', 'geometricPrecision')
       .style('pointer-events', 'all')
       .on('click', (event, d) => {
@@ -487,7 +535,6 @@ export function SpaceVisualization({
         }
       });
 
-    const defs = svg.append('defs');
     const logos = g
       .selectAll<SVGGElement, SpaceHierarchyNode>('g.logo')
       .data(root.descendants() as SpaceHierarchyNode[])
@@ -546,10 +593,8 @@ export function SpaceVisualization({
 
       logoGroup
         .append('circle')
-        .attr('fill', getDiagramFillColor())
-        .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
-        .attr('stroke-width', getLogoStrokeWidth(d))
-        .attr('vector-effect', 'non-scaling-stroke')
+        .attr('fill', getNodeAccent(d))
+        .attr('stroke', 'none')
         .attr('shape-rendering', 'geometricPrecision');
 
       logoGroup
@@ -692,9 +737,8 @@ export function SpaceVisualization({
     logos.each(function (d: SpaceHierarchyNode) {
       d3.select(this)
         .select('circle')
-        .attr('fill', getDiagramFillColor())
-        .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
-        .attr('stroke-width', getLogoStrokeWidth(d));
+        .attr('fill', getNodeAccent(d))
+        .attr('stroke', 'none');
     });
 
     zoomTo(view);
@@ -780,9 +824,8 @@ export function SpaceVisualization({
           .select('circle')
           .transition()
           .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-          .attr('fill', getDiagramFillColor())
-          .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
-          .attr('stroke-width', getLogoStrokeWidth(d));
+          .attr('fill', getNodeAccent(d))
+          .attr('stroke', 'none');
       });
 
       transition.on('end', () => {
@@ -802,9 +845,11 @@ export function SpaceVisualization({
             `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
         )
         .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
-        .attr('stroke', (d: SpaceHierarchyNode) =>
-          withAlpha(getNodeAccent(d), getOrbitStrokeAlpha()),
-        );
+        .style(
+          'fill',
+          (d: SpaceHierarchyNode) => `url(#${getVinylGradientId(d)})`,
+        )
+        .attr('stroke', 'none');
 
       logos
         .attr(
@@ -819,9 +864,8 @@ export function SpaceVisualization({
           d3.select(this)
             .select('circle')
             .attr('r', r)
-            .attr('fill', getDiagramFillColor())
-            .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
-            .attr('stroke-width', getLogoStrokeWidth(d));
+            .attr('fill', getNodeAccent(d))
+            .attr('stroke', 'none');
 
           defs.select(`#${clipId} circle`).attr('r', r);
 
@@ -836,18 +880,6 @@ export function SpaceVisualization({
     let isCancelled = false;
     root.each((node) => {
       void (async () => {
-        if (node.depth === 0) {
-          const rootAccent = getRootOutlineColor();
-          nodeAccents.set(node.data.id, rootAccent);
-          orbits
-            .filter((d) => d.data.id === node.data.id)
-            .attr('stroke', withAlpha(rootAccent, getOrbitStrokeAlpha()));
-          logos
-            .filter((d) => d.data.id === node.data.id)
-            .select('circle')
-            .attr('stroke', withAlpha(rootAccent, getLogoStrokeAlpha()));
-          return;
-        }
         const cacheKey = (node.data.logoUrl ?? '').trim();
         let accentPromise = accentSampleCacheRef.current.get(cacheKey);
         if (!accentPromise) {
@@ -858,13 +890,17 @@ export function SpaceVisualization({
         if (isCancelled) return;
         const resolvedAccent = sampledAccent ?? accentFromSpaceId(node.data.id);
         nodeAccents.set(node.data.id, resolvedAccent);
+        const gradientId = getVinylGradientId(node as SpaceHierarchyNode);
+        upsertVinylGradient(node as SpaceHierarchyNode, resolvedAccent);
         orbits
           .filter((d) => d.data.id === node.data.id)
-          .attr('stroke', withAlpha(resolvedAccent, getOrbitStrokeAlpha()));
+          .style('fill', `url(#${gradientId})`)
+          .attr('stroke', 'none');
         logos
           .filter((d) => d.data.id === node.data.id)
           .select('circle')
-          .attr('stroke', withAlpha(resolvedAccent, getLogoStrokeAlpha()));
+          .attr('fill', resolvedAccent)
+          .attr('stroke', 'none');
       })();
     });
     return () => {
