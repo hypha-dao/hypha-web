@@ -108,6 +108,8 @@ export const CreateSignalForm = ({
   const {
     isMatrixAvailable,
     createRoom,
+    joinRoom,
+    loadRoomHistory,
     sendMessage,
     getRoomMessages,
     editRoomMessage,
@@ -125,26 +127,38 @@ export const CreateSignalForm = ({
       const nextDescription = description?.trim();
       if (!nextDescription) return;
 
-      const existingMessages = getRoomMessages(roomId) ?? [];
+      // Ensure we can inspect the full room timeline before deciding whether to
+      // seed a message or update the earliest existing one.
+      const canonicalRoomId = await joinRoom(roomId);
+      await loadRoomHistory(canonicalRoomId);
+
+      const existingMessages = getRoomMessages(canonicalRoomId) ?? [];
       const firstMessage = [...existingMessages].sort(
         (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
       )[0];
 
       if (!firstMessage?.id) {
         await sendMessage({
-          roomId,
+          roomId: canonicalRoomId,
           message: nextDescription,
         });
         return;
       }
 
       await editRoomMessage({
-        roomId,
+        roomId: canonicalRoomId,
         targetEventId: firstMessage.id,
         message: nextDescription,
       });
     },
-    [editRoomMessage, getRoomMessages, isMatrixAvailable, sendMessage],
+    [
+      editRoomMessage,
+      getRoomMessages,
+      isMatrixAvailable,
+      joinRoom,
+      loadRoomHistory,
+      sendMessage,
+    ],
   );
 
   const isMutating =
