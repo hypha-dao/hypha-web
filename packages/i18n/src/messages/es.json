@@ -818,6 +818,7 @@
     "depositDetails": {
       "title": "Detalles de depósito",
       "description": "Financia la tesorería de {spaceName} con la dirección de abajo.",
+      "networkWarning": "Advertencia: transfiere fondos solo en la red BASE.",
       "addressLabel": "Dirección de tesorería",
       "copy": "Copiar dirección",
       "copied": "Dirección copiada"

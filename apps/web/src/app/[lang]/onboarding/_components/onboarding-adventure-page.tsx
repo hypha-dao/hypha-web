@@ -17,6 +17,7 @@ import {
 } from '@hypha-platform/ui';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
 import {
+  AlertTriangle,
   Compass,
   Copy,
   ExternalLink,
@@ -287,6 +288,13 @@ function DepositDetailsCard({
       </CardHeader>
       <CardContent className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto]">
         <div className="space-y-4">
+          <div className="flex items-start gap-2 rounded-md border border-warning-8/60 bg-warning-3 px-3 py-2 text-warning-11">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <p className="text-1 font-medium">
+              {t('depositDetails.networkWarning')}
+            </p>
+          </div>
+
           <div className="space-y-2 rounded-lg border border-border/70 bg-background/30 p-3">
             <p className="text-1 text-muted-foreground">
               {t('depositDetails.addressLabel')}

@@ -128,6 +128,7 @@
     "depositDetails": {
       "title": "Deposit details",
       "description": "Fund {spaceName} treasury using the address below.",
+      "networkWarning": "Warning: transfer funds on the BASE Network only.",
       "addressLabel": "Treasury address",
       "copy": "Copy address",
       "copied": "Address copied"

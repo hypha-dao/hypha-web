@@ -128,6 +128,7 @@
     "depositDetails": {
       "title": "Détails du dépôt",
       "description": "Alimentez la trésorerie de {spaceName} avec l'adresse ci-dessous.",
+      "networkWarning": "Avertissement : transférez les fonds uniquement sur le réseau BASE.",
       "addressLabel": "Adresse de trésorerie",
       "copy": "Copier l'adresse",
       "copied": "Adresse copiée"
