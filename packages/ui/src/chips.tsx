@@ -594,8 +594,11 @@ export const MultiSelect = React.forwardRef<
                 (props['aria-labelledby'] ? undefined : placeholder)
               }
               className={cn(
-                'flex w-full min-h-10 flex-wrap items-center gap-1 rounded-md border border-input bg-background px-2 py-0 text-sm ring-offset-background',
-                'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+                'flex w-full min-h-10 flex-wrap items-center gap-1 rounded-md border border-border/70 bg-background px-2 py-0 text-sm transition-colors',
+                'focus-within:border-accent-8/60 focus-within:ring-1 focus-within:ring-accent-8/45',
+                isPopoverOpen
+                  ? 'rounded-t-none border-t border-t-border/55 shadow-[inset_0_1px_0_0_color-mix(in_srgb,var(--color-foreground)_7%,transparent)]'
+                  : '',
                 className,
               )}
               onClick={() => {
@@ -805,7 +808,10 @@ export const MultiSelect = React.forwardRef<
           }}
           onEscapeKeyDown={() => setIsPopoverOpen(false)}
         >
-          <Command shouldFilter={false}>
+          <Command
+            shouldFilter={false}
+            className={cn(uiStyle === 'tag-picker' && 'bg-popover')}
+          >
             {uiStyle === 'default' ? (
               <CommandInput
                 placeholder={searchPlaceholder}
@@ -814,7 +820,12 @@ export const MultiSelect = React.forwardRef<
                 onValueChange={setSearchValue}
               />
             ) : null}
-            <CommandList>
+            <CommandList
+              className={cn(
+                uiStyle === 'tag-picker' &&
+                  'max-h-[min(300px,50vh)] overscroll-contain',
+              )}
+            >
               <CommandEmpty>
                 {uiStyle === 'tag-picker' && trimmedSearchValue.length === 0
                   ? resolvedLabels.noRecentTags
@@ -822,9 +833,9 @@ export const MultiSelect = React.forwardRef<
               </CommandEmpty>
               <CommandGroup>
                 {shouldShowMostUsedHeading || shouldShowAllTagsAction ? (
-                  <div className="flex items-center justify-between gap-2 px-2 pt-2 pb-1">
+                  <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border/45 bg-popover/95 px-2 py-1.5 backdrop-blur supports-[backdrop-filter]:bg-popover/85">
                     {shouldShowMostUsedHeading ? (
-                      <div className="min-w-0 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55">
+                      <div className="min-w-0 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/60">
                         <span className="text-muted-foreground/35">• </span>
                         <span>{resolvedLabels.mostUsed}</span>
                       </div>
@@ -834,7 +845,7 @@ export const MultiSelect = React.forwardRef<
                     {shouldShowAllTagsAction ? (
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-medium tracking-[0.06em] text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/85 transition-colors hover:bg-muted/70 hover:text-foreground"
                         onClick={() => setShowAllTagsOnEmptySearch(true)}
                       >
                         <List className="h-3.5 w-3.5" />
@@ -915,7 +926,7 @@ export const MultiSelect = React.forwardRef<
                       onSelect={() => toggleOption(option.value)}
                       className={cn(
                         'cursor-pointer',
-                        uiStyle === 'tag-picker' && 'py-2',
+                        uiStyle === 'tag-picker' && 'py-1.5',
                       )}
                     >
                       {uiStyle === 'default' ? (
