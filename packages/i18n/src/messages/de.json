@@ -101,6 +101,8 @@
     "subtitle": "Entdecke, erstelle, tritt bei und finanziere Spaces",
     "spacePlaceholder": "Space auswählen",
     "spaceSearchPlaceholder": "Spaces suchen...",
+    "searchToSeeSpaces": "Beginne zu tippen, um passende Spaces zu sehen.",
+    "selected": "Ausgewählt",
     "noSpacesFound": "Keine Spaces gefunden.",
     "loadingSpaces": "Spaces werden geladen...",
     "explore": {

@@ -101,6 +101,8 @@
     "subtitle": "Explorez, créez, rejoignez et financez des espaces",
     "spacePlaceholder": "Sélectionner un espace",
     "spaceSearchPlaceholder": "Rechercher des espaces...",
+    "searchToSeeSpaces": "Commencez à taper pour voir les espaces correspondants.",
+    "selected": "Sélectionné",
     "noSpacesFound": "Aucun espace trouvé.",
     "loadingSpaces": "Chargement des espaces...",
     "explore": {

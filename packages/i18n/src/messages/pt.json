@@ -791,6 +791,8 @@
     "subtitle": "Explore, crie, entre e financie espaços",
     "spacePlaceholder": "Selecionar espaço",
     "spaceSearchPlaceholder": "Buscar espaços...",
+    "searchToSeeSpaces": "Comece a digitar para ver espaços correspondentes.",
+    "selected": "Selecionado",
     "noSpacesFound": "Nenhum espaço encontrado.",
     "loadingSpaces": "Carregando espaços...",
     "explore": {

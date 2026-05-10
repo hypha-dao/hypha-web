@@ -11,9 +11,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Combobox,
   Container,
   Heading,
+  Input,
 } from '@hypha-platform/ui';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
 import {
@@ -44,7 +44,9 @@ export function OnboardingAdventurePage() {
   const { spaces, isLoading } = useAllSpaces();
 
   const [joinSpaceSlug, setJoinSpaceSlug] = useState('');
+  const [joinQuery, setJoinQuery] = useState('');
   const [depositSpaceSlug, setDepositSpaceSlug] = useState('');
+  const [depositQuery, setDepositQuery] = useState('');
   const [depositDetailsSpaceSlug, setDepositDetailsSpaceSlug] = useState('');
   const [copiedAddress, setCopiedAddress] = useState(false);
 
@@ -95,11 +97,25 @@ export function OnboardingAdventurePage() {
     setDepositDetailsSpaceSlug('');
   };
 
+  const filterOptionsByQuery = (
+    options: Array<{ value: string; label: string; searchText?: string }>,
+    query: string,
+  ) => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return [];
+
+    return options.filter((option) =>
+      (option.searchText ?? option.label).toLowerCase().includes(normalized),
+    );
+  };
+
   const renderSelectorCard = ({
     icon,
     title,
     description,
     options,
+    query,
+    onQueryChange,
     value,
     onChange,
     actionLabel,
@@ -111,47 +127,82 @@ export function OnboardingAdventurePage() {
     title: string;
     description: string;
     options: Array<{ value: string; label: string; searchText?: string }>;
+    query: string;
+    onQueryChange: (next: string) => void;
     value: string;
     onChange: (next: string) => void;
     actionLabel: string;
     onAction: () => void;
     disabled: boolean;
     unavailableText: string;
-  }) => (
-    <Card className={onboardingCardClass}>
-      <CardHeader className="space-y-2">
-        <CardTitle className="flex items-center gap-2 text-5">
-          <span className="text-accent-11">{icon}</span>
-          {title}
-        </CardTitle>
-        <CardDescription className="text-2">{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-1">
-        <Combobox
-          options={options}
-          placeholder={t('spacePlaceholder')}
-          searchPlaceholder={t('spaceSearchPlaceholder')}
-          onChange={onChange}
-          initialValue={value}
-          allowEmptyChoice={false}
-          className="w-full md:w-full"
-          disabled={disabled}
-          emptyListMessage={t('noSpacesFound')}
-        />
-        <Button
-          type="button"
-          className="w-full"
-          onClick={onAction}
-          disabled={disabled || !value}
-        >
-          {actionLabel}
-        </Button>
-        {disabled ? (
-          <p className="text-1 text-muted-foreground">{unavailableText}</p>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
+  }) => {
+    const filteredOptions = filterOptionsByQuery(options, query);
+
+    return (
+      <Card className={onboardingCardClass}>
+        <CardHeader className="space-y-2">
+          <CardTitle className="flex items-center gap-2 text-5">
+            <span className="text-accent-11">{icon}</span>
+            {title}
+          </CardTitle>
+          <CardDescription className="text-2">{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-1">
+          <Input
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder={t('spaceSearchPlaceholder')}
+            disabled={disabled}
+          />
+
+          {!disabled && !query.trim() ? (
+            <p className="text-1 text-muted-foreground">
+              {t('searchToSeeSpaces')}
+            </p>
+          ) : null}
+
+          {!disabled && query.trim() && filteredOptions.length === 0 ? (
+            <p className="text-1 text-muted-foreground">{t('noSpacesFound')}</p>
+          ) : null}
+
+          {!disabled && filteredOptions.length > 0 ? (
+            <div className="max-h-44 space-y-1 overflow-auto rounded-md border border-border/60 p-1">
+              {filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    onQueryChange(option.label);
+                  }}
+                  className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-2 text-foreground transition-colors hover:bg-muted"
+                >
+                  <span>{option.label}</span>
+                  {value === option.value ? (
+                    <span className="text-1 text-muted-foreground">
+                      {t('selected')}
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <Button
+            type="button"
+            className="w-full"
+            onClick={onAction}
+            disabled={disabled || !value}
+          >
+            {actionLabel}
+          </Button>
+          {disabled ? (
+            <p className="text-1 text-muted-foreground">{unavailableText}</p>
+          ) : null}
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <Container className="flex flex-col gap-9 py-9">
@@ -216,6 +267,11 @@ export function OnboardingAdventurePage() {
           title: t('join.title'),
           description: t('join.description'),
           options: spaceOptions,
+          query: joinQuery,
+          onQueryChange: (next) => {
+            setJoinQuery(next);
+            setJoinSpaceSlug('');
+          },
           value: joinSpaceSlug,
           onChange: setJoinSpaceSlug,
           actionLabel: t('join.cta'),
@@ -234,6 +290,12 @@ export function OnboardingAdventurePage() {
           title: t('deposit.title'),
           description: t('deposit.description'),
           options: depositOptions,
+          query: depositQuery,
+          onQueryChange: (next) => {
+            setDepositQuery(next);
+            setDepositSpaceSlug('');
+            setDepositDetailsSpaceSlug('');
+          },
           value: depositSpaceSlug,
           onChange: handleDepositSpaceChange,
           actionLabel: t('deposit.cta'),

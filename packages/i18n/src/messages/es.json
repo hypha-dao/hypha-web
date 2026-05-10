@@ -791,6 +791,8 @@
     "subtitle": "Explora, crea, únete y financia espacios",
     "spacePlaceholder": "Seleccionar espacio",
     "spaceSearchPlaceholder": "Buscar espacios...",
+    "searchToSeeSpaces": "Empieza a escribir para ver espacios coincidentes.",
+    "selected": "Seleccionado",
     "noSpacesFound": "No se encontraron espacios.",
     "loadingSpaces": "Cargando espacios...",
     "explore": {
