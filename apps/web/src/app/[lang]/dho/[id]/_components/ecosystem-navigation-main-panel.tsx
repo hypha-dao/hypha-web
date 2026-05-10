@@ -396,11 +396,7 @@ export function EcosystemNavigationMainPanel({
 
   return (
     <section className="flex w-full flex-col gap-4 py-4">
-      {isLoading ? (
-        <div className="flex min-h-[20rem] items-center justify-center rounded-xl border border-border/60 bg-background-2 text-sm text-muted-foreground">
-          {t('title')}
-        </div>
-      ) : (
+      {isLoading ? null : (
         <EcosystemNavigationShell
           activeTab={activeTab}
           onTabChange={setActiveTab}
