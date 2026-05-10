@@ -821,10 +821,26 @@ export const MultiSelect = React.forwardRef<
                   : resolvedLabels.noResults}
               </CommandEmpty>
               <CommandGroup>
-                {shouldShowMostUsedHeading ? (
-                  <div className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55">
-                    <span className="text-muted-foreground/35">• </span>
-                    <span>{resolvedLabels.mostUsed}</span>
+                {shouldShowMostUsedHeading || shouldShowAllTagsAction ? (
+                  <div className="flex items-center justify-between gap-2 px-2 pt-2 pb-1">
+                    {shouldShowMostUsedHeading ? (
+                      <div className="min-w-0 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55">
+                        <span className="text-muted-foreground/35">• </span>
+                        <span>{resolvedLabels.mostUsed}</span>
+                      </div>
+                    ) : (
+                      <span />
+                    )}
+                    {shouldShowAllTagsAction ? (
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-medium tracking-[0.06em] text-muted-foreground transition-colors hover:text-foreground"
+                        onClick={() => setShowAllTagsOnEmptySearch(true)}
+                      >
+                        <List className="h-3.5 w-3.5" />
+                        <span>{resolvedLabels.allTags}</span>
+                      </button>
+                    ) : null}
                   </div>
                 ) : null}
                 {canCreateOption ? (
@@ -839,17 +855,6 @@ export const MultiSelect = React.forwardRef<
                     </CommandItem>
                     <CommandSeparator />
                   </>
-                ) : null}
-                {shouldShowAllTagsAction ? (
-                  <CommandItem
-                    key="show-all-tags"
-                    value="show-all-tags"
-                    onSelect={() => setShowAllTagsOnEmptySearch(true)}
-                    className="cursor-pointer py-2"
-                  >
-                    <List className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>{resolvedLabels.allTags}</span>
-                  </CommandItem>
                 ) : null}
                 {allowToggleAll && uiStyle !== 'tag-picker' && (
                   <>
