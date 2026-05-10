@@ -246,8 +246,6 @@ export function PanelWrapLayout({
     overlayVisible: leftOverlayVisible,
     openAiPanel,
     closeAiPanel,
-    showAiOverlay,
-    hideAiOverlay,
   } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
@@ -271,12 +269,14 @@ export function PanelWrapLayout({
   const rightSidebarWidth = isMobileViewport
     ? 'calc(100vw - var(--sidebar-left-width, 0px))'
     : '320px';
+  const leftExpandedSidebarWidth =
+    rightOpen && effectiveRight ? 'var(--sidebar-right-width, 320px)' : '320px';
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
   const fallbackSidebarLeftPx = effectiveLeft
     ? leftExpanded
-      ? '320px'
+      ? leftExpandedSidebarWidth
       : LEFT_SIDEBAR_ICON_WIDTH
     : '0px';
   const fallbackSidebarRightPx =
@@ -364,6 +364,7 @@ export function PanelWrapLayout({
     content = (
       <PanelDualSidebarScrollBridge
         leftOpen={leftExpanded}
+        leftSidebarWidth={leftExpandedSidebarWidth}
         onLeftOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
@@ -372,8 +373,6 @@ export function PanelWrapLayout({
           }
           closeAiPanel();
         }}
-        onLeftMouseEnter={showAiOverlay}
-        onLeftMouseLeave={hideAiOverlay}
         rightOpen={rightOpen}
         onRightOpenChange={(open) => {
           if (open !== rightOpen) toggleRight();
@@ -428,7 +427,7 @@ export function PanelWrapLayout({
         }}
         style={
           {
-            '--sidebar-width': '320px',
+            '--sidebar-width': leftExpandedSidebarWidth,
             '--sidebar-width-icon': LEFT_SIDEBAR_ICON_WIDTH,
           } as React.CSSProperties
         }
