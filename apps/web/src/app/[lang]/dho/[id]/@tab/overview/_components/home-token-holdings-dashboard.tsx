@@ -14,7 +14,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Skeleton,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -1354,26 +1353,6 @@ function SignalsPulseMapWidget({
   );
 }
 
-function LoadingState() {
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <Card key={index}>
-          <CardHeader className="gap-2">
-            <Skeleton className="h-5 w-28" />
-            <Skeleton className="h-4 w-40" />
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Skeleton className="h-44 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-[80%]" />
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
 export function HomeTokenHoldingsDashboard({
   spaceSlug,
 }: {
@@ -1462,8 +1441,6 @@ export function HomeTokenHoldingsDashboard({
 
       {showActivity ? (
         <>
-          {activityLoading ? <LoadingState /> : null}
-
           {!activityLoading && activityError ? (
             <Card>
               <CardHeader>
@@ -1502,8 +1479,6 @@ export function HomeTokenHoldingsDashboard({
 
       {showDistribution ? (
         <>
-          {isLoading ? <LoadingState /> : null}
-
           {!isLoading && error ? (
             <Card>
               <CardHeader>
@@ -1632,14 +1607,16 @@ export function HomeTokenHoldingsDashboard({
       ) : null}
 
       {activeFilter === 'energy' && showEnergyWidget ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Energy</CardTitle>
-            <CardDescription>
-              Energy widgets will appear once energy data is available.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Energy</CardTitle>
+              <CardDescription>
+                Energy widgets will appear once energy data is available.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </>
       ) : null}
     </div>
   );
