@@ -845,7 +845,7 @@
     "subtitle": "Distribución de tokens de un vistazo.",
     "badges": {
       "tokens": "Tokens: {count}",
-      "otherBucket": "Categoría otros: < 3%",
+      "otherBucket": "Categoría otros: < 1%",
       "treasuryVisible": "Tesorería siempre visible"
     },
     "updatedAt": "Actualizado {date}",

@@ -155,7 +155,7 @@
     "subtitle": "Token distribution at a glance.",
     "badges": {
       "tokens": "Tokens: {count}",
-      "otherBucket": "Other bucket: < 3%",
+      "otherBucket": "Other bucket: < 1%",
       "treasuryVisible": "Treasury always visible"
     },
     "updatedAt": "Updated {date}",
