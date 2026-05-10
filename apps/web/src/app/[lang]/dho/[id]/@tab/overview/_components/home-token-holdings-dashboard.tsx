@@ -14,6 +14,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Skeleton,
   Tabs,
   TabsList,
   TabsTrigger,
