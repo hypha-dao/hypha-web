@@ -326,6 +326,7 @@ function TokenDonutChart({
   title: string;
   slices: TokenHoldingResponse['tokens'][number]['holdings'];
 }) {
+  const locale = useLocale();
   const [hoveredSliceKey, setHoveredSliceKey] = React.useState<string | null>(
     null,
   );
@@ -393,6 +394,10 @@ function TokenDonutChart({
               fill={colorScale(segment.data.display_name)}
               stroke="var(--background)"
               strokeWidth={hoveredSliceKey === segment.data.hover_key ? 2 : 1}
+              tabIndex={0}
+              aria-label={`${segment.data.display_name}: ${PERCENTAGE_FORMATTER(
+                segment.data.share_pct,
+              )}% (${formatAmount(segment.data.balance, locale)})`}
               opacity={
                 !hasHoveredSlice || hoveredSliceKey === segment.data.hover_key
                   ? 1
@@ -401,10 +406,12 @@ function TokenDonutChart({
               className="cursor-pointer transition-opacity duration-150"
               onMouseEnter={() => setHoveredSliceKey(segment.data.hover_key)}
               onMouseLeave={() => setHoveredSliceKey(null)}
+              onFocus={() => setHoveredSliceKey(segment.data.hover_key)}
+              onBlur={() => setHoveredSliceKey(null)}
             >
               <title>{`${segment.data.display_name} — ${PERCENTAGE_FORMATTER(
                 segment.data.share_pct,
-              )}%`}</title>
+              )}% (${formatAmount(segment.data.balance, locale)})`}</title>
             </path>
           ))}
           <text
@@ -419,9 +426,10 @@ function TokenDonutChart({
 
       <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
         {chartData.map((slice) => (
-          <div
+          <button
+            type="button"
             key={`${slice.display_name}-${slice.address ?? 'other'}`}
-            className="flex cursor-pointer items-center justify-between gap-2 rounded-md px-1 py-0.5 transition-colors duration-150"
+            className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border-0 bg-transparent px-1 py-0.5 text-left transition-colors duration-150"
             style={{
               background:
                 hoveredSliceKey === slice.hover_key
@@ -434,6 +442,8 @@ function TokenDonutChart({
             }}
             onMouseEnter={() => setHoveredSliceKey(slice.hover_key)}
             onMouseLeave={() => setHoveredSliceKey(null)}
+            onFocus={() => setHoveredSliceKey(slice.hover_key)}
+            onBlur={() => setHoveredSliceKey(null)}
           >
             <div className="flex min-w-0 items-center gap-2">
               <span
@@ -446,9 +456,10 @@ function TokenDonutChart({
               </span>
             </div>
             <span className="shrink-0 text-xs font-medium text-muted-foreground">
-              {PERCENTAGE_FORMATTER(slice.share_pct)}%
+              {PERCENTAGE_FORMATTER(slice.share_pct)}% ·{' '}
+              {formatAmount(slice.balance, locale)}
             </span>
-          </div>
+          </button>
         ))}
       </div>
     </div>
