@@ -204,6 +204,10 @@ export function SpaceVisualization({
 
   useEffect(() => {
     previousVisibleSpacesRef.current = '';
+    // Re-arm the opening sequence whenever the focused space context changes.
+    introRanRef.current = false;
+    introSequenceActiveRef.current = false;
+    clearIntroTimeout();
   }, [data, currentSpaceId]);
 
   useEffect(() => {
