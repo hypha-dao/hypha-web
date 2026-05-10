@@ -503,9 +503,7 @@ export function SpaceVisualization({
       .data(root.descendants() as SpaceHierarchyNode[])
       .join('circle')
       .attr('class', 'orbit')
-      .style('fill', (d: SpaceHierarchyNode) =>
-        d.depth === 0 ? getRootFillColor(resolvedRootAccent) : 'none',
-      )
+      .style('fill', 'none')
       .attr('stroke', (d: SpaceHierarchyNode) =>
         d.depth === 0 ? 'none' : getOrbitStrokeColor(getNodeAccent(d)),
       )
@@ -831,9 +829,7 @@ export function SpaceVisualization({
             `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
         )
         .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
-        .style('fill', (d: SpaceHierarchyNode) =>
-          d.depth === 0 ? getRootFillColor(resolvedRootAccent) : 'none',
-        )
+        .style('fill', 'none')
         .attr('stroke', (d: SpaceHierarchyNode) =>
           d.depth === 0 ? 'none' : getOrbitStrokeColor(getNodeAccent(d)),
         )
@@ -880,9 +876,7 @@ export function SpaceVisualization({
         nodeAccents.set(node.data.id, resolvedAccent);
         orbits
           .filter((d) => d.data.id === node.data.id)
-          .style('fill', (d: SpaceHierarchyNode) =>
-            d.depth === 0 ? getRootFillColor(resolvedRootAccent) : 'none',
-          )
+          .style('fill', 'none')
           .attr('stroke', (d: SpaceHierarchyNode) =>
             d.depth === 0 ? 'none' : getOrbitStrokeColor(resolvedAccent),
           );
