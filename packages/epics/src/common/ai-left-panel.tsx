@@ -345,7 +345,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
 
   const renderRecentSpaceItem = useCallback(
-    (space: Space, mode: 'expanded' | 'collapsed', keyPrefix: string) => {
+    (
+      space: Space,
+      index: number,
+      mode: 'expanded' | 'collapsed',
+      keyPrefix: string,
+    ) => {
       const showLabel = mode === 'expanded';
       const isRecentActive = space.slug === spaceSlug;
       const href = getDhoSpaceContextPath({
@@ -360,7 +365,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       );
 
       return (
-        <SidebarMenuItem key={`${keyPrefix}-${space.slug}`}>
+        <SidebarMenuItem key={`${keyPrefix}-${space.slug}-${index}`}>
           <SidebarMenuButton
             asChild
             tooltip={!showLabel ? space.title : undefined}
@@ -425,8 +430,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
-              {recentSpaces.map((space) =>
-                renderRecentSpaceItem(space, mode, `${keyPrefix}-recent`),
+              {recentSpaces.map((space, index) =>
+                renderRecentSpaceItem(
+                  space,
+                  index,
+                  mode,
+                  `${keyPrefix}-recent`,
+                ),
               )}
             </SidebarMenu>
           </SidebarGroupContent>

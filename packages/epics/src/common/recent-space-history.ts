@@ -16,15 +16,12 @@ function normalizeQueue(
   options?: { excludeSlug?: string | null },
 ): string[] {
   const exclude = normalizeSlug(options?.excludeSlug);
-  const unique = new Set<string>();
   const queue: string[] = [];
 
   for (const candidate of slugs) {
     const slug = normalizeSlug(candidate);
     if (!slug) continue;
     if (exclude && slug === exclude) continue;
-    if (unique.has(slug)) continue;
-    unique.add(slug);
     queue.push(slug);
     if (queue.length >= MAX_RECENT_SPACE_HISTORY) break;
   }
