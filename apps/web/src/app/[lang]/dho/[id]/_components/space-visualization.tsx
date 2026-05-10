@@ -271,7 +271,7 @@ export function SpaceVisualization({
       softAccent.opacity = themeRef.current === 'dark' ? 0.2 : 0.12;
       return softAccent.formatRgb();
     };
-    const getDiagramFillColor = () => getRootFillColor(resolvedRootAccent);
+    const getDiagramFillColor = () => 'var(--color-background)';
     const getOrbitStrokeAlpha = () =>
       themeRef.current === 'dark' ? 0.7 : 0.55;
 
@@ -463,7 +463,6 @@ export function SpaceVisualization({
     const svg = d3
       .select(svgRef.current)
       .attr('viewBox', `-${width / 2} -${height / 2} ${width} ${height}`)
-      .style('background-color', getDiagramFillColor())
       .style('shape-rendering', 'geometricPrecision')
       .style('cursor', 'pointer');
 
