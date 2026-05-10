@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import { cn } from '@hypha-platform/ui-utils';
+import { useTheme } from 'next-themes';
 import { useMainColumnScrollY } from '../../common/main-column-scroll';
 
 type Props = {
@@ -30,6 +31,18 @@ export function CompactSpaceBannerLead({ src }: Props) {
   const [imageFailed, setImageFailed] = React.useState(false);
   const mainScrollY = useMainColumnScrollY();
   const [reduceMotion, setReduceMotion] = React.useState(false);
+  const { resolvedTheme } = useTheme();
+  const [isDarkTheme, setIsDarkTheme] = React.useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const storedTheme = window.localStorage.getItem('theme');
+      if (storedTheme === 'light') return false;
+      if (storedTheme === 'dark') return true;
+    } catch {
+      // Ignore storage access failures and fall back to document attribute.
+    }
+    return document.documentElement.getAttribute('data-theme') === 'dark';
+  });
 
   React.useEffect(() => {
     setReady(false);
@@ -46,6 +59,11 @@ export function CompactSpaceBannerLead({ src }: Props) {
     return () => mq.removeEventListener('change', sync);
   }, []);
 
+  React.useEffect(() => {
+    if (!resolvedTheme) return;
+    setIsDarkTheme(resolvedTheme === 'dark');
+  }, [resolvedTheme]);
+
   const parallaxY = reduceMotion ? 0 : clampParallaxScrollY(mainScrollY);
   const imageVisible = ready && !imageFailed;
 
@@ -54,14 +72,18 @@ export function CompactSpaceBannerLead({ src }: Props) {
       {/* Theme-aware pre-decode plate that cross-fades away once image is ready */}
       <div
         className={cn(
-          'absolute inset-0 bg-white dark:bg-black transition-opacity duration-500 ease-out',
+          'absolute inset-0 transition-opacity duration-500 ease-out',
+          isDarkTheme ? 'bg-black' : 'bg-white',
           imageVisible ? 'opacity-0' : 'opacity-100',
         )}
         aria-hidden
       />
       <div
         className={cn(
-          'absolute inset-0 mix-blend-soft-light bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.16),transparent_62%)] dark:bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.06),transparent_62%)] transition-opacity duration-500 ease-out',
+          'absolute inset-0 mix-blend-soft-light transition-opacity duration-500 ease-out',
+          isDarkTheme
+            ? 'bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.06),transparent_62%)]'
+            : 'bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.16),transparent_62%)]',
           imageVisible ? 'opacity-0' : 'opacity-100',
         )}
         aria-hidden
@@ -108,98 +130,101 @@ export function CompactSpaceBannerLead({ src }: Props) {
       </div>
       {imageVisible ? (
         <>
-          <div className="dark:hidden">
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                backgroundImage:
-                  'linear-gradient(to top, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.2) 52%, rgba(0,0,0,0.08) 100%)',
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                backgroundImage:
-                  'linear-gradient(to right, rgba(7,10,18,0.22), transparent, rgba(7,10,18,0.16))',
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 mix-blend-soft-light"
-              style={{
-                backgroundImage:
-                  'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(255,255,255,0.15), transparent 62%)',
-              }}
-              aria-hidden
-            />
-          </div>
-          <div className="hidden dark:block">
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                backgroundImage:
-                  'linear-gradient(to top, rgba(0,0,0,var(--banner-ov-v-bottom, 0.88)) 0%, rgba(0,0,0,var(--banner-ov-v-mid, 0.42)) var(--banner-ov-v-mid-at, 52%), rgba(0,0,0,var(--banner-ov-v-top, 0.22)) 100%)',
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                backgroundImage:
-                  'linear-gradient(to right, rgba(0,0,0,var(--banner-ov-h-from, 0.58)), transparent, rgba(0,0,0,var(--banner-ov-h-to, 0.4)))',
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                backgroundImage:
-                  'linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) calc(var(--banner-ov-accent-wash, 0.18) * 100%), transparent), transparent, transparent)',
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 mix-blend-soft-light"
-              style={{
-                backgroundImage:
-                  'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(209,250,229,calc(0.28 * var(--banner-ov-skylight-op, 0.9))), transparent 62%)',
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                backgroundImage:
-                  'linear-gradient(to bottom right, rgba(255,255,255,var(--banner-ov-sheen-op, 0.05)) -10%, transparent 40%, transparent 55%)',
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                backgroundImage:
-                  'radial-gradient(ellipse 115% 95% at 50% 72%, transparent 22%, rgba(0,18,12,calc(0.62 * var(--banner-ov-vignette-strength, 1))) 88%, rgba(0,8,5,calc(0.92 * var(--banner-ov-vignette-strength, 1))) 100%)',
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 rounded-[inherit] mix-blend-overlay"
-              style={{
-                opacity: 'var(--banner-ov-grain-op, 0.055)',
-                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 rounded-[inherit]"
-              style={{
-                boxShadow:
-                  'inset 0 1px 0 rgba(255,255,255,var(--banner-ov-inner-top, 0.09)), inset 0 -1px 0 rgba(0,0,0,var(--banner-ov-inner-bot, 0.18))',
-              }}
-              aria-hidden
-            />
-          </div>
+          {isDarkTheme ? (
+            <div>
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(to top, rgba(0,0,0,var(--banner-ov-v-bottom, 0.88)) 0%, rgba(0,0,0,var(--banner-ov-v-mid, 0.42)) var(--banner-ov-v-mid-at, 52%), rgba(0,0,0,var(--banner-ov-v-top, 0.22)) 100%)',
+                }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(to right, rgba(0,0,0,var(--banner-ov-h-from, 0.58)), transparent, rgba(0,0,0,var(--banner-ov-h-to, 0.4)))',
+                }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) calc(var(--banner-ov-accent-wash, 0.18) * 100%), transparent), transparent, transparent)',
+                }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0 mix-blend-soft-light"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(209,250,229,calc(0.28 * var(--banner-ov-skylight-op, 0.9))), transparent 62%)',
+                }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(to bottom right, rgba(255,255,255,var(--banner-ov-sheen-op, 0.05)) -10%, transparent 40%, transparent 55%)',
+                }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(ellipse 115% 95% at 50% 72%, transparent 22%, rgba(0,18,12,calc(0.62 * var(--banner-ov-vignette-strength, 1))) 88%, rgba(0,8,5,calc(0.92 * var(--banner-ov-vignette-strength, 1))) 100%)',
+                }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0 rounded-[inherit] mix-blend-overlay"
+                style={{
+                  opacity: 'var(--banner-ov-grain-op, 0.055)',
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0 rounded-[inherit]"
+                style={{
+                  boxShadow:
+                    'inset 0 1px 0 rgba(255,255,255,var(--banner-ov-inner-top, 0.09)), inset 0 -1px 0 rgba(0,0,0,var(--banner-ov-inner-bot, 0.18))',
+                }}
+                aria-hidden
+              />
+            </div>
+          ) : (
+            <div>
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(to top, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.2) 52%, rgba(0,0,0,0.08) 100%)',
+                }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(to right, rgba(7,10,18,0.22), transparent, rgba(7,10,18,0.16))',
+                }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0 mix-blend-soft-light"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(255,255,255,0.15), transparent 62%)',
+                }}
+                aria-hidden
+              />
+            </div>
+          )}
         </>
       ) : null}
     </div>
