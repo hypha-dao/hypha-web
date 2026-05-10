@@ -845,7 +845,7 @@
     "subtitle": "Distribuição de tokens em um relance.",
     "badges": {
       "tokens": "Tokens: {count}",
-      "otherBucket": "Categoria outros: < 1%",
+      "otherBucket": "Categoria outros: < {threshold}%",
       "treasuryVisible": "Tesouraria sempre visível"
     },
     "updatedAt": "Atualizado {date}",

@@ -155,7 +155,7 @@
     "subtitle": "Répartition des tokens en un coup d'œil.",
     "badges": {
       "tokens": "Tokens : {count}",
-      "otherBucket": "Catégorie autres : < 1 %",
+      "otherBucket": "Catégorie autres : < {threshold} %",
       "treasuryVisible": "Trésorerie toujours visible"
     },
     "updatedAt": "Mis à jour {date}",
