@@ -39,6 +39,104 @@ const VISUALIZATION_CONFIG = {
   STROKE_WIDTH_SCALE: 0.7,
 } as const;
 
+function accentFromSpaceId(id: number): string {
+  const hue = Math.abs((id * 47) % 360);
+  return `hsl(${hue} 68% 58%)`;
+}
+
+function toSampleableImageSrc(src?: string | null): string | null {
+  if (!src) return null;
+  const candidate = src.trim();
+  if (!candidate) return null;
+  if (candidate.startsWith('/')) {
+    return candidate.startsWith('//') ? null : candidate;
+  }
+  try {
+    const url = new URL(candidate);
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
+      return `/_next/image?url=${encodeURIComponent(candidate)}&w=96&q=75`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function sampleAccentHex(src?: string | null): Promise<string | null> {
+  const imageSrc = toSampleableImageSrc(src);
+  if (!imageSrc) return null;
+  return await new Promise((resolve) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => {
+      try {
+        const maxSide = 96;
+        const scale = Math.min(
+          maxSide / image.width,
+          maxSide / image.height,
+          1,
+        );
+        const width = Math.max(8, Math.round(image.width * scale));
+        const height = Math.max(8, Math.round(image.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          resolve(null);
+          return;
+        }
+        context.drawImage(image, 0, 0, width, height);
+        const pixels = context.getImageData(0, 0, width, height).data;
+        let rSum = 0;
+        let gSum = 0;
+        let bSum = 0;
+        let count = 0;
+        for (let i = 0; i < pixels.length; i += 4) {
+          const alpha = pixels[i + 3] ?? 0;
+          if (alpha < 40) continue;
+          const r = pixels[i] ?? 0;
+          const g = pixels[i + 1] ?? 0;
+          const b = pixels[i + 2] ?? 0;
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const saturation = max === 0 ? 0 : (max - min) / max;
+          if (saturation < 0.12) continue;
+          rSum += r;
+          gSum += g;
+          bSum += b;
+          count++;
+        }
+        if (count < 6) {
+          resolve(null);
+          return;
+        }
+        const r = Math.round(rSum / count)
+          .toString(16)
+          .padStart(2, '0');
+        const g = Math.round(gSum / count)
+          .toString(16)
+          .padStart(2, '0');
+        const b = Math.round(bSum / count)
+          .toString(16)
+          .padStart(2, '0');
+        resolve(`#${r}${g}${b}`);
+      } catch {
+        resolve(null);
+      }
+    };
+    image.onerror = () => resolve(null);
+    image.src = imageSrc;
+  });
+}
+
+function withAlpha(color: string, alpha: number): string {
+  const parsed = d3.color(color);
+  if (!parsed) return color;
+  parsed.opacity = alpha;
+  return parsed.formatRgb();
+}
+
 export function SpaceVisualization({
   data,
   currentSpaceId,
@@ -66,6 +164,9 @@ export function SpaceVisualization({
   const introToRootTimeoutRef = useRef<number | null>(null);
   const introSequenceActiveRef = useRef(false);
   const introRanRef = useRef(false);
+  const accentSampleCacheRef = useRef<Map<string, Promise<string | null>>>(
+    new Map(),
+  );
 
   const clearTooltipHideTimeout = () => {
     if (tooltipHideTimeoutRef.current == null) return;
@@ -144,46 +245,13 @@ export function SpaceVisualization({
   }, [tooltip.visible, tooltip.x, tooltip.y]);
 
   useEffect(() => {
-    if (!svgRef.current || !focusRef.current) return;
-
-    const getSelectedSpaceFillColor = () =>
-      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
-
-    const svg = d3.select(svgRef.current);
-    const orbits = svg.selectAll<SVGCircleElement, SpaceHierarchyNode>(
-      'circle.orbit',
-    );
-
-    orbits.each(function (d: SpaceHierarchyNode) {
-      if (d === focusRef.current) {
-        d3.select(this).style('fill', getSelectedSpaceFillColor());
-      }
-    });
-
-    const getStrokeWidth = (depth: number): number => {
-      return (
-        VISUALIZATION_CONFIG.LOGO_STROKE_WIDTH *
-        Math.pow(VISUALIZATION_CONFIG.STROKE_WIDTH_SCALE, depth)
-      );
-    };
-
-    const logos = svg.selectAll<SVGGElement, SpaceHierarchyNode>('g.logo');
-    logos.each(function (d: SpaceHierarchyNode) {
-      const circle = d3.select(this).select('circle');
-      if (d === focusRef.current) {
-        circle.attr('fill', getSelectedSpaceFillColor());
-      }
-      circle
-        .attr('stroke', getSelectedSpaceFillColor())
-        .attr('stroke-width', getStrokeWidth(d.depth));
-    });
-  }, [resolvedTheme]);
-
-  useEffect(() => {
     if (!svgRef.current) return;
 
-    const getSelectedSpaceFillColor = () =>
-      themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
+    const getDiagramFillColor = () =>
+      themeRef.current === 'dark' ? '#131821' : '#f2f4f8';
+    const getOrbitStrokeAlpha = () =>
+      themeRef.current === 'dark' ? 0.7 : 0.55;
+    const getLogoStrokeAlpha = () => (themeRef.current === 'dark' ? 0.9 : 0.8);
 
     const getStrokeWidth = (depth: number): number => {
       return (
@@ -388,16 +456,19 @@ export function SpaceVisualization({
     svg.selectAll('*').remove();
 
     const g = svg.append('g');
+    const nodeAccents = new Map<number, string>();
+    const getNodeAccent = (d: SpaceHierarchyNode): string =>
+      nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
 
     const orbits = g
       .selectAll<SVGCircleElement, SpaceHierarchyNode>('circle.orbit')
       .data(root.descendants() as SpaceHierarchyNode[])
       .join('circle')
       .attr('class', 'orbit')
-      .style('fill', (d: SpaceHierarchyNode) =>
-        d === focus ? getSelectedSpaceFillColor() : 'transparent',
+      .style('fill', () => getDiagramFillColor())
+      .attr('stroke', (d: SpaceHierarchyNode) =>
+        withAlpha(getNodeAccent(d), getOrbitStrokeAlpha()),
       )
-      .attr('stroke', '#8F8F8F')
       .attr('stroke-width', 1.2)
       .style('pointer-events', 'all')
       .on('click', (event, d) => {
@@ -467,8 +538,8 @@ export function SpaceVisualization({
 
       logoGroup
         .append('circle')
-        .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
-        .attr('stroke', getSelectedSpaceFillColor())
+        .attr('fill', getDiagramFillColor())
+        .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
         .attr('stroke-width', getStrokeWidth(d.depth));
 
       logoGroup
@@ -611,8 +682,8 @@ export function SpaceVisualization({
     logos.each(function (d: SpaceHierarchyNode) {
       d3.select(this)
         .select('circle')
-        .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
-        .attr('stroke', getSelectedSpaceFillColor())
+        .attr('fill', getDiagramFillColor())
+        .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
         .attr('stroke-width', getStrokeWidth(d.depth));
     });
 
@@ -697,17 +768,15 @@ export function SpaceVisualization({
       orbits
         .transition()
         .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-        .style('fill', (d: SpaceHierarchyNode) =>
-          d === focus ? getSelectedSpaceFillColor() : 'transparent',
-        );
+        .style('fill', () => getDiagramFillColor());
 
       logos.each(function (d: SpaceHierarchyNode) {
         d3.select(this)
           .select('circle')
           .transition()
           .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-          .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
-          .attr('stroke', getSelectedSpaceFillColor())
+          .attr('fill', getDiagramFillColor())
+          .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
           .attr('stroke-width', getStrokeWidth(d.depth));
       });
 
@@ -728,8 +797,9 @@ export function SpaceVisualization({
             `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
         )
         .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
-        .style('fill', (d: SpaceHierarchyNode) =>
-          d === focus ? getSelectedSpaceFillColor() : 'transparent',
+        .style('fill', () => getDiagramFillColor())
+        .attr('stroke', (d: SpaceHierarchyNode) =>
+          withAlpha(getNodeAccent(d), getOrbitStrokeAlpha()),
         );
 
       logos
@@ -745,8 +815,8 @@ export function SpaceVisualization({
           d3.select(this)
             .select('circle')
             .attr('r', r)
-            .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
-            .attr('stroke', getSelectedSpaceFillColor())
+            .attr('fill', getDiagramFillColor())
+            .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
             .attr('stroke-width', getStrokeWidth(d.depth));
 
           defs.select(`#${clipId} circle`).attr('r', r);
@@ -759,7 +829,30 @@ export function SpaceVisualization({
             .attr('height', r * 2);
         });
     }
+    let isCancelled = false;
+    root.each((node) => {
+      void (async () => {
+        const cacheKey = (node.data.logoUrl ?? '').trim();
+        let accentPromise = accentSampleCacheRef.current.get(cacheKey);
+        if (!accentPromise) {
+          accentPromise = sampleAccentHex(node.data.logoUrl);
+          accentSampleCacheRef.current.set(cacheKey, accentPromise);
+        }
+        const sampledAccent = await accentPromise;
+        if (isCancelled) return;
+        const resolvedAccent = sampledAccent ?? accentFromSpaceId(node.data.id);
+        nodeAccents.set(node.data.id, resolvedAccent);
+        orbits
+          .filter((d) => d.data.id === node.data.id)
+          .attr('stroke', withAlpha(resolvedAccent, getOrbitStrokeAlpha()));
+        logos
+          .filter((d) => d.data.id === node.data.id)
+          .select('circle')
+          .attr('stroke', withAlpha(resolvedAccent, getLogoStrokeAlpha()));
+      })();
+    });
     return () => {
+      isCancelled = true;
       cancelIntroSequence();
     };
   }, [data, currentSpaceId, resolvedTheme, enableHoverActions]);
