@@ -40,8 +40,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
   leadImage,
   toolbarLeft,
   isLoading,
-  firstPageSize = 3,
-  pageSize = 3,
+  firstPageSize = 4,
+  pageSize = 4,
   refresh,
   onSignalClick,
 }) => {

@@ -260,8 +260,8 @@ export const EscrowDepositBanner = ({
   // contract orders the legs.
 
   return (
-    <div className="bg-accent-surface-mix rounded-[8px] border-1 border-accent-6 bg-center p-5 flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between">
-      <div className="flex items-start gap-3 md:gap-5 w-full md:w-auto">
+    <div className="bg-accent-surface-mix rounded-[8px] border-1 border-accent-6 bg-center p-5 flex flex-col lg:flex-row gap-4 lg:gap-5 items-start lg:items-center justify-between">
+      <div className="flex items-start gap-3 lg:gap-5 w-full lg:w-auto">
         <ArrowRightIcon
           width={16}
           height={16}
@@ -300,12 +300,12 @@ export const EscrowDepositBanner = ({
         </div>
       </div>
 
-      <div className="flex gap-2 w-full md:w-auto justify-between md:justify-normal">
+      <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto lg:justify-normal">
         <Button
           variant="outline"
           onClick={handleRefuse}
           disabled={depositInFlight || refuseInFlight}
-          className="w-full md:w-fit text-wrap justify-center"
+          className="w-full sm:flex-1 lg:w-fit lg:flex-none text-wrap justify-center"
         >
           {refuseInFlight && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {refuseLabel}
@@ -313,7 +313,7 @@ export const EscrowDepositBanner = ({
         <Button
           onClick={handleClick}
           disabled={depositInFlight || refuseInFlight || insufficientBalance}
-          className="w-full md:w-fit text-wrap justify-center"
+          className="w-full sm:flex-1 lg:w-fit lg:flex-none text-wrap justify-center"
         >
           {depositInFlight && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {actionLabel}

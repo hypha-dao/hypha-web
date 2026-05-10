@@ -136,16 +136,14 @@ export const MenuTop = ({
           </div>
         )}
 
-        {/* Mobile trailing action (always visible on small screens) */}
-        {trailingAction && (
-          <div className="flex md:hidden items-center">{trailingAction}</div>
-        )}
-
-        {/* Mobile Burger */}
-        {children && (
+        {/* Mobile action group (right side): chat, then hamburger */}
+        <div className="ml-auto flex items-center gap-2 md:hidden">
+          {trailingAction ? (
+            <div className="flex items-center">{trailingAction}</div>
+          ) : null}
           <button
             type="button"
-            className="md:hidden flex items-center"
+            className="flex items-center"
             aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-menu"
@@ -154,11 +152,12 @@ export const MenuTop = ({
             {!isMobileMenuOpen && <Menu className="size-5" />}
             {isMobileMenuOpen && <RxCross1 className="size-5" />}
           </button>
-        )}
+        </div>
 
         {/* Mobile Full Screen Menu */}
         {isMobileMenuOpen && (
           <div
+            id="mobile-menu"
             className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto"
             style={{ top: headerHeight }}
           >

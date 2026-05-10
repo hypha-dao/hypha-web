@@ -21,14 +21,14 @@ export function SignalGrid({
   onSignalClick,
 }: SignalGridProps) {
   return (
-    <div className="grid w-full auto-rows-fr grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 lg:gap-4">
+    <div className="grid w-full grid-cols-1 items-start gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       {signals.map((signal) =>
         signal.archived ? (
           <SignalCard
             key={signal.id}
             {...signal}
             leadImage={leadImage}
-            className="h-full w-full min-h-0"
+            className="w-full min-h-0"
             isLoading={isLoading}
             refresh={refresh}
           />
@@ -38,7 +38,7 @@ export function SignalGrid({
             role="button"
             tabIndex={0}
             className={cn(
-              'flex h-full min-h-0 w-full cursor-pointer rounded-2xl text-left outline-none',
+              'flex min-h-0 w-full cursor-pointer rounded-2xl text-left outline-none',
               'focus-visible:ring-2 focus-visible:ring-accent-9/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             )}
             onClick={() => onSignalClick(signal)}
@@ -52,7 +52,7 @@ export function SignalGrid({
             <SignalCard
               {...signal}
               leadImage={leadImage}
-              className="h-full w-full min-h-0"
+              className="w-full min-h-0"
               isLoading={isLoading}
               refresh={refresh}
               onOpenConversation={() => onSignalClick(signal)}
@@ -62,12 +62,12 @@ export function SignalGrid({
           <Link
             key={signal.id}
             href={`${basePath}/${signal.slug}`}
-            className="flex h-full min-h-0"
+            className="flex min-h-0 w-full"
           >
             <SignalCard
               {...signal}
               leadImage={leadImage}
-              className="h-full w-full min-h-0"
+              className="w-full min-h-0"
               isLoading={isLoading}
               refresh={refresh}
             />

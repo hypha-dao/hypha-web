@@ -1,9 +1,15 @@
-export const COHERENCE_PRIORITIES = ['high', 'medium', 'low'] as const;
+import { COHERENCE_PRIORITIES } from '@hypha-platform/ui-utils';
+import type { CoherencePriority } from '@hypha-platform/ui-utils';
 
-export type CoherencePriority = (typeof COHERENCE_PRIORITIES)[number];
+export { COHERENCE_PRIORITIES };
+export type { CoherencePriority } from '@hypha-platform/ui-utils';
 
 /** Icon names used by priority options — matches `DynamicIcon` / Lucide registry. */
-export type CoherencePriorityIconName = 'CircleAlert' | 'CircleDot' | 'Circle';
+export type CoherencePriorityIconName =
+  | 'OctagonAlert'
+  | 'CircleAlert'
+  | 'CircleDot'
+  | 'Circle';
 
 export const COHERENCE_PRIORITY_OPTIONS: {
   priority: CoherencePriority;
@@ -14,24 +20,31 @@ export const COHERENCE_PRIORITY_OPTIONS: {
   colorVariant: string;
 }[] = [
   {
+    priority: 'critical',
+    icon: 'OctagonAlert',
+    title: 'Critical',
+    colorVariant: 'error',
+    description: 'Act immediately.',
+  },
+  {
     priority: 'high',
     icon: 'CircleAlert',
     title: 'High',
-    colorVariant: 'error',
-    description: 'Needs immediate attention',
+    colorVariant: 'warn',
+    description: 'Prioritise next.',
   },
   {
     priority: 'medium',
     icon: 'CircleDot',
     title: 'Medium',
-    colorVariant: 'warn',
-    description: 'Monitor and act soon',
+    colorVariant: 'accent',
+    description: 'Monitor and plan.',
   },
   {
     priority: 'low',
     icon: 'Circle',
     title: 'Low',
     colorVariant: 'success',
-    description: 'Informational, no rush',
+    description: 'FYI, no action.',
   },
 ];

@@ -20,7 +20,7 @@ type CoherenceBlockProps = {
   lang: Locale;
   spaceSlug: string;
   order?: CoherenceOrder;
-  priorityFilter?: 'all' | 'high' | 'medium' | 'low';
+  priorityFilter?: 'all' | 'critical' | 'high' | 'medium' | 'low';
   humanChatEnabled?: boolean;
 };
 
@@ -118,6 +118,7 @@ export function CoherenceBlock({
     const items = signals ?? [];
     return {
       all: items.length,
+      critical: items.filter((signal) => signal.priority === 'critical').length,
       high: items.filter((signal) => signal.priority === 'high').length,
       medium: items.filter((signal) => signal.priority === 'medium').length,
       low: items.filter((signal) => signal.priority === 'low').length,
@@ -154,6 +155,11 @@ export function CoherenceBlock({
       defaultValue="all"
       items={[
         { value: 'all', label: t('all'), count: priorityCounts.all },
+        {
+          value: 'critical',
+          label: t('priorities.critical'),
+          count: priorityCounts.critical,
+        },
         {
           value: 'high',
           label: t('priorities.high'),
@@ -193,8 +199,8 @@ export function CoherenceBlock({
             signals={filteredSignals}
             leadImage={space?.leadImage ?? undefined}
             isLoading={isSpaceLoading || isSignalsLoading}
-            firstPageSize={3}
-            pageSize={3}
+            firstPageSize={4}
+            pageSize={4}
             refresh={refresh}
             onSignalClick={onSignalClick}
           />

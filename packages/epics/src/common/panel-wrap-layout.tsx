@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { Menu, MessageCircle, PanelLeftClose } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -108,20 +108,68 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  return null;
-}
-
-export function HumanSidebarTrigger() {
-  const { open, toggle } = useHumanChatPanel();
-  const t = useTranslations('HumanChatPanel');
+  const { open, overlayVisible, openAiPanel, closeAiPanel } = useAiPanel();
   const isSpace = useIsSpaceContext();
+  const t = useTranslations('AiPanel');
 
-  if (!isSpace || open) return null;
+  if (!isSpace) return null;
+
+  const isOpen = open || overlayVisible;
 
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={() => {
+        if (isOpen) {
+          closeAiPanel();
+          return;
+        }
+        openAiPanel();
+      }}
+      aria-expanded={isOpen}
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+      title={isOpen ? t('closePanel') : t('openPanel')}
+      aria-label={isOpen ? t('closePanel') : t('openPanel')}
+    >
+      {isOpen ? (
+        <PanelLeftClose className="h-4 w-4" />
+      ) : (
+        <Menu className="h-4 w-4" />
+      )}
+    </button>
+  );
+}
+
+export function HumanSidebarTrigger() {
+  const { open, toggle, openHumanChatPanel } = useHumanChatPanel();
+  const t = useTranslations('HumanChatPanel');
+  const isSpace = useIsSpaceContext();
+  const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 767px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const query = window.matchMedia('(max-width: 767px)');
+    const sync = () => setIsMobileViewport(query.matches);
+    sync();
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
+  }, []);
+
+  if (!isSpace || (open && !isMobileViewport)) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (open) {
+          toggle();
+          return;
+        }
+        openHumanChatPanel();
+      }}
       aria-expanded={open}
       className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={t('openPanel')}
@@ -203,10 +251,26 @@ export function PanelWrapLayout({
   } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 767px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const query = window.matchMedia('(max-width: 767px)');
+    const sync = () => setIsMobileViewport(query.matches);
+    sync();
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
+  }, []);
 
   // Panels are only available within a space context (/[lang]/dho/[id]/...)
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
+  const rightSidebarWidth = isMobileViewport
+    ? 'calc(100vw - var(--sidebar-left-width, 0px))'
+    : '320px';
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
@@ -215,7 +279,8 @@ export function PanelWrapLayout({
       ? '320px'
       : LEFT_SIDEBAR_ICON_WIDTH
     : '0px';
-  const fallbackSidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
+  const fallbackSidebarRightPx =
+    rightOpen && effectiveRight ? rightSidebarWidth : '0px';
   const [sidebarLeftPx, setSidebarLeftPx] = useState(fallbackSidebarLeftPx);
   const [sidebarRightPx, setSidebarRightPx] = useState(fallbackSidebarRightPx);
 
@@ -313,6 +378,7 @@ export function PanelWrapLayout({
         onRightOpenChange={(open) => {
           if (open !== rightOpen) toggleRight();
         }}
+        rightSidebarWidth={rightSidebarWidth}
         leftContent={effectiveLeft.content}
         rightContent={effectiveRight.content}
       >
@@ -329,7 +395,7 @@ export function PanelWrapLayout({
         }}
         style={
           {
-            '--sidebar-width': '320px',
+            '--sidebar-width': rightSidebarWidth,
           } as React.CSSProperties
         }
       >

@@ -1,6 +1,6 @@
 import { Coherence as DbCoherence } from '@hypha-platform/storage-postgres';
 import { COHERENCE_TYPES, CoherenceType } from '../../coherence-types';
-import { COHERENCE_TAGS, CoherenceTag } from '../../coherence-tags';
+import { CoherenceTag } from '../../coherence-tags';
 import {
   COHERENCE_PRIORITIES,
   CoherencePriority,
@@ -28,9 +28,10 @@ export function normalizeCoherence({
         ? (priority as CoherencePriority)
         : 'medium',
     tags: Array.isArray(tags)
-      ? (tags.filter((t) =>
-          (COHERENCE_TAGS as readonly string[]).includes(t),
-        ) as CoherenceTag[])
+      ? (tags
+          .filter((tag): tag is string => typeof tag === 'string')
+          .map((tag) => tag.trim())
+          .filter((tag) => tag.length > 0) as CoherenceTag[])
       : [],
     roomId: roomId ?? undefined,
     archived: archived ?? false,

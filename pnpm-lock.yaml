@@ -1173,6 +1173,9 @@ importers:
 
   packages/storage-postgres:
     dependencies:
+      '@hypha-platform/ui-utils':
+        specifier: workspace:*
+        version: link:../ui-utils
       drizzle-kit:
         specifier: ^0.30.5
         version: 0.30.6

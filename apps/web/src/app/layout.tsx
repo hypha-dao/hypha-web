@@ -14,9 +14,9 @@ import { AuthProvider } from '@hypha-platform/authentication';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   AiLeftPanel,
+  AiSidebarTrigger,
   PanelProviders,
   PanelWrapLayout,
-  AiSidebarTrigger,
   HumanSidebarTrigger,
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
@@ -279,7 +279,11 @@ export default async function RootLayout({
                           openMenuLabel={navOpenMenuLabel}
                           closeMenuLabel={navCloseMenuLabel}
                           leadingAction={
-                            aiChatEnabled ? <AiSidebarTrigger /> : undefined
+                            aiChatEnabled ? (
+                              <div className="md:hidden">
+                                <AiSidebarTrigger />
+                              </div>
+                            ) : undefined
                           }
                           trailingAction={
                             humanChatEnabled ? (

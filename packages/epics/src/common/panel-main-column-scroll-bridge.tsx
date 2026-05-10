@@ -17,6 +17,7 @@ type Props = {
   onLeftMouseLeave?: () => void;
   rightOpen: boolean;
   onRightOpenChange: (open: boolean) => void;
+  rightSidebarWidth: string;
   leftContent: React.ReactNode;
   rightContent: React.ReactNode;
   children: React.ReactNode;
@@ -35,6 +36,7 @@ export function PanelDualSidebarScrollBridge({
   onLeftMouseLeave,
   rightOpen,
   onRightOpenChange,
+  rightSidebarWidth,
   leftContent,
   rightContent,
   children,
@@ -87,7 +89,7 @@ export function PanelDualSidebarScrollBridge({
           onOpenChange={onRightOpenChange}
           style={
             {
-              '--sidebar-width': '320px',
+              '--sidebar-width': rightSidebarWidth,
             } as React.CSSProperties
           }
         >

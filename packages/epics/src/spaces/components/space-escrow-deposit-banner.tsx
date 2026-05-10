@@ -260,8 +260,8 @@ export const SpaceEscrowDepositBanner = ({
   const sellerLabel = counterpartyLabel;
 
   return (
-    <div className="rounded-[8px] border-1 border-accent-6 bg-accent-surface-mix bg-center p-5 flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between">
-      <div className="flex items-start gap-3 md:gap-5 w-full md:w-auto">
+    <div className="rounded-[8px] border-1 border-accent-6 bg-accent-surface-mix bg-center p-5 flex flex-col lg:flex-row gap-4 lg:gap-5 items-start lg:items-center justify-between">
+      <div className="flex items-start gap-3 lg:gap-5 w-full lg:w-auto">
         <ArrowRightIcon
           width={16}
           height={16}
@@ -297,11 +297,11 @@ export const SpaceEscrowDepositBanner = ({
         </div>
       </div>
 
-      <div className="flex gap-2 w-full md:w-auto justify-between md:justify-normal">
+      <div className="flex gap-2 w-full lg:w-auto justify-between lg:justify-normal">
         <Button
           onClick={handleClick}
           disabled={isCreatingDepositProposal || isWaitingReceipt}
-          className="w-full md:w-fit text-wrap justify-center"
+          className="w-full lg:w-fit text-wrap justify-center"
         >
           {(isCreatingDepositProposal || isWaitingReceipt) && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

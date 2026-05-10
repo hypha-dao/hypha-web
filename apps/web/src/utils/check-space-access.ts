@@ -20,6 +20,7 @@ export type CheckSpaceAccessResult = {
   hasAccess: boolean;
   response?: NextResponse;
   userAddress?: `0x${string}`;
+  authToken?: string;
 };
 
 /**
@@ -84,7 +85,7 @@ export async function checkSpaceAccess(
     const userAddress = person.address as `0x${string}`;
 
     if (accessLevel === TransparencyLevel.NETWORK) {
-      return { hasAccess: true, userAddress };
+      return { hasAccess: true, userAddress, authToken };
     }
 
     const isMemberResult = await publicClient.readContract(
@@ -95,7 +96,7 @@ export async function checkSpaceAccess(
     );
 
     if (isMemberResult) {
-      return { hasAccess: true, userAddress };
+      return { hasAccess: true, userAddress, authToken };
     }
 
     const delegates = await publicClient.readContract(
@@ -128,7 +129,7 @@ export async function checkSpaceAccess(
       );
 
       if (isValidDelegate) {
-        return { hasAccess: true, userAddress };
+        return { hasAccess: true, userAddress, authToken };
       }
     }
 

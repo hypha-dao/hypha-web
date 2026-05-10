@@ -93,11 +93,8 @@ export function DhoStickySpaceChrome({
   /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
   const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
 
-  const [flowActionsEl, setFlowActionsEl] =
-    React.useState<HTMLDivElement | null>(null);
   const [stickyActionsEl, setStickyActionsEl] =
     React.useState<HTMLDivElement | null>(null);
-  const [hasActionsContent, setHasActionsContent] = React.useState(false);
 
   const [stuck, setStuck] = React.useState(false);
   const stuckRef = React.useRef(false);
@@ -148,42 +145,10 @@ export function DhoStickySpaceChrome({
 
   const logoSrc = logoUrl || defaultLogoSrc;
 
-  const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
+  const actionsPortalTarget = stuck ? stickyActionsEl : null;
   // During hydration `resolvedTheme` can be undefined briefly; default to dark
   // to avoid flashing a light (white) secondary banner in dark mode sessions.
   const isDark = resolvedTheme !== 'light';
-
-  React.useEffect(() => {
-    const hasRenderableContent = (el: HTMLDivElement | null) => {
-      if (!el) return false;
-      return Array.from(el.childNodes).some((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE) return true;
-        if (node.nodeType === Node.TEXT_NODE) {
-          return Boolean(node.textContent?.trim());
-        }
-        return false;
-      });
-    };
-
-    const updateHasActionsContent = () => {
-      const next =
-        hasRenderableContent(flowActionsEl) ||
-        hasRenderableContent(stickyActionsEl);
-      setHasActionsContent((prev) => (prev === next ? prev : next));
-    };
-
-    updateHasActionsContent();
-
-    const observer = new MutationObserver(updateHasActionsContent);
-    if (flowActionsEl) {
-      observer.observe(flowActionsEl, { childList: true, subtree: true });
-    }
-    if (stickyActionsEl) {
-      observer.observe(stickyActionsEl, { childList: true, subtree: true });
-    }
-
-    return () => observer.disconnect();
-  }, [flowActionsEl, stickyActionsEl]);
 
   return (
     <>
@@ -195,7 +160,7 @@ export function DhoStickySpaceChrome({
            */
           'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] hidden md:block',
           'right-[var(--panel-right-inset,calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,0px)))]',
-          'overflow-hidden border-b border-border/75',
+          'overflow-hidden border-x border-b border-border/75',
           'supports-[backdrop-filter]:backdrop-blur-md',
           'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10',
           'transition-[opacity,transform,box-shadow] duration-250 ease-linear motion-reduce:transition-none',
@@ -244,9 +209,7 @@ export function DhoStickySpaceChrome({
         </div>
       </div>
 
-      <div
-        className={cn('flex flex-col', hasActionsContent ? 'gap-4' : 'gap-0')}
-      >
+      <div className="flex flex-col">
         <div className="relative">
           {banner}
           <div
@@ -255,22 +218,6 @@ export function DhoStickySpaceChrome({
             aria-hidden
           />
         </div>
-
-        <div
-          ref={setFlowActionsEl}
-          className={cn(
-            /* Same min-height as HumanChatPanelTabs so bottom borders align with chat panel */
-            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center',
-            hasActionsContent &&
-              'md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
-            stuck && 'pointer-events-none invisible opacity-0',
-          )}
-          style={
-            stuck
-              ? { minHeight: 'var(--secondary-chrome-actions-row-height,52px)' }
-              : undefined
-          }
-        />
       </div>
 
       {actionsPortalTarget

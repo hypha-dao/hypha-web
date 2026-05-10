@@ -58,7 +58,6 @@ function getContrastColor(hex: string): string {
   const luminance = (r * 299 + g * 587 + b * 114) / 1000;
   return luminance > 160 ? '#0f172a' : '#ffffff';
 }
-
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
   const spaces = Array.isArray(allSpaces) ? allSpaces : [];
@@ -108,6 +107,9 @@ export function EcosystemNavigationMainPanel({
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
   const [selectedSpaceAccent, setSelectedSpaceAccent] = useState(
+    SELECTED_SPACE_ACCENT_FALLBACK,
+  );
+  const [rootSpaceAccent, setRootSpaceAccent] = useState(
     SELECTED_SPACE_ACCENT_FALLBACK,
   );
   const { space: currentSpace, isLoading: isLoadingSpace } =
@@ -220,6 +222,15 @@ export function EcosystemNavigationMainPanel({
       currentSpace
     );
   }, [selectedSpace?.id, nonArchivedSpaces, currentSpace]);
+  const rootSpaceRecord = useMemo(() => {
+    if (!currentSpace) return null;
+    const spacesWithCurrent = nonArchivedSpaces.some(
+      (s) => s.id === currentSpace.id,
+    )
+      ? nonArchivedSpaces
+      : [...nonArchivedSpaces, currentSpace];
+    return findRootSpace(currentSpace, spacesWithCurrent);
+  }, [currentSpace, nonArchivedSpaces]);
   useEffect(() => {
     let cancelled = false;
     setSelectedSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
@@ -237,6 +248,23 @@ export function EcosystemNavigationMainPanel({
       cancelled = true;
     };
   }, [selectedSpaceRecord?.logoUrl, selectedSpaceRecord?.leadImage]);
+  useEffect(() => {
+    let cancelled = false;
+    setRootSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
+    void (async () => {
+      const [logoAccent, leadAccent] = await Promise.all([
+        sampleAccentHex(rootSpaceRecord?.logoUrl),
+        sampleAccentHex(rootSpaceRecord?.leadImage),
+      ]);
+      if (cancelled) return;
+      setRootSpaceAccent(
+        logoAccent ?? leadAccent ?? SELECTED_SPACE_ACCENT_FALLBACK,
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [rootSpaceRecord?.logoUrl, rootSpaceRecord?.leadImage]);
 
   const iconOutlineStyle = useMemo(
     () => ({
@@ -265,12 +293,12 @@ export function EcosystemNavigationMainPanel({
           <div className="flex min-h-0 flex-col gap-4">
             <div className="w-full overflow-visible px-3 py-2 sm:px-5 sm:py-4">
               {hierarchyData ? (
-                <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))]">
+                <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))] p-4 sm:p-6">
                   {canRenderSpaceActions && visitSpaceHref && addSpaceHref ? (
-                    <div className="pointer-events-none absolute inset-x-4 top-10 z-20 flex justify-center sm:top-12">
-                      <div className="pointer-events-auto inline-flex max-w-[92%] items-center gap-1.5 rounded-full border border-border/60 bg-background/88 px-2 py-1.5 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-background/72 sm:gap-2 sm:px-3">
+                    <div className="pointer-events-none mb-[6px] flex justify-center">
+                      <div className="pointer-events-auto inline-flex w-fit max-w-[min(96vw,46rem)] items-center gap-1 rounded-full border border-border/60 bg-background/88 px-2 py-1.5 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-background/72 dark:border-border/85 sm:gap-1.5 sm:px-2.5">
                         <span
-                          className="max-w-[14rem] truncate text-4 font-semibold tracking-tight text-foreground sm:max-w-[20rem]"
+                          className="block max-w-[min(62vw,30rem)] truncate pe-1 text-4 font-semibold tracking-tight text-foreground sm:max-w-[min(56vw,36rem)] sm:pe-1.5"
                           title={selectedSpaceTitle}
                         >
                           {selectedSpaceTitle}
@@ -319,6 +347,7 @@ export function EcosystemNavigationMainPanel({
                   <SpaceVisualization
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
+                    rootAccentHex={rootSpaceAccent}
                     enableHoverActions={false}
                     onVisibleSpacesChange={handleVisibleSpacesChange}
                   />
@@ -367,11 +396,7 @@ export function EcosystemNavigationMainPanel({
 
   return (
     <section className="flex w-full flex-col gap-4 py-4">
-      {isLoading ? (
-        <div className="flex min-h-[20rem] items-center justify-center rounded-xl border border-border/60 bg-background-2 text-sm text-muted-foreground">
-          {t('title')}
-        </div>
-      ) : (
+      {isLoading ? null : (
         <EcosystemNavigationShell
           activeTab={activeTab}
           onTabChange={setActiveTab}

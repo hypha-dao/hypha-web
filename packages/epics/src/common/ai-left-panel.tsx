@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -41,6 +41,13 @@ import { useAiPanel } from './human-chat-panel-context';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { Empty } from './empty';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
+import {
+  MAX_RECENT_SPACE_HISTORY,
+  MAX_VISIBLE_RECENT_SPACES,
+  readRecentSpaceSlugs,
+  subscribeRecentSpaceSlugs,
+  syncRecentSpacesForActiveSlug,
+} from './recent-space-history';
 
 type ChatUIMessage = {
   id: string;
@@ -75,9 +82,6 @@ function MemoryIcon({ className }: MemoryIconProps) {
 }
 
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
-const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
-const MAX_VISIBLE_RECENT_SPACES = 4;
-const MAX_RECENT_SPACE_HISTORY = MAX_VISIBLE_RECENT_SPACES + 1;
 const MENU_BUTTON_CLASS =
   'h-10 w-full rounded-lg border border-transparent p-0 text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!rounded-lg group-data-[collapsible=icon]:!p-0';
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
@@ -124,12 +128,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   } = useAiPanel();
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
+    false,
   );
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
   const [input, setInput] = useState('');
   const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
-  const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>([]);
+  const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
+    readRecentSpaceSlugs(),
+  );
   const [isHoverOpenLocked, setIsHoverOpenLocked] = useState(false);
   const recentSpaceLookupSlugs = useMemo(
     () =>
@@ -139,7 +146,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [recentSpaceSlugs],
   );
   const { spaces: recentSpacesData, error: recentSpacesError } =
-    useSpacesBySlugs(recentSpaceLookupSlugs);
+    useSpacesBySlugs(recentSpaceLookupSlugs, false);
   const isSectionActive = useCallback(
     (
       section:
@@ -260,37 +267,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [recentSpacesError, recentSpaceLookupSlugs]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const raw = window.localStorage.getItem(RECENT_SPACE_STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        const cleaned = parsed
-          .filter((slug): slug is string => typeof slug === 'string')
-          .slice(0, MAX_RECENT_SPACE_HISTORY);
-        setRecentSpaceSlugs(cleaned);
-      }
-    } catch (error) {
-      console.warn('[AiLeftPanel] failed to parse recent spaces', error);
-    }
+    const unsubscribe = subscribeRecentSpaceSlugs((slugs) =>
+      setRecentSpaceSlugs(slugs),
+    );
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (!spaceSlug) return;
-    setRecentSpaceSlugs((prev) => {
-      const next = [
-        spaceSlug,
-        ...prev.filter((slug) => slug !== spaceSlug),
-      ].slice(0, MAX_RECENT_SPACE_HISTORY);
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(
-          RECENT_SPACE_STORAGE_KEY,
-          JSON.stringify(next),
-        );
-      }
-      return next;
-    });
+    setRecentSpaceSlugs(syncRecentSpacesForActiveSlug(spaceSlug));
   }, [spaceSlug]);
 
   const recentSpaces = useMemo(() => {
@@ -361,7 +346,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
 
   const renderRecentSpaceItem = useCallback(
-    (space: Space, mode: 'expanded' | 'collapsed', keyPrefix: string) => {
+    (
+      space: Space,
+      index: number,
+      mode: 'expanded' | 'collapsed',
+      keyPrefix: string,
+    ) => {
       const showLabel = mode === 'expanded';
       const isRecentActive = space.slug === spaceSlug;
       const href = getDhoSpaceContextPath({
@@ -376,7 +366,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       );
 
       return (
-        <SidebarMenuItem key={`${keyPrefix}-${space.slug}`}>
+        <SidebarMenuItem key={`${keyPrefix}-${space.slug}-${index}`}>
           <SidebarMenuButton
             asChild
             tooltip={!showLabel ? space.title : undefined}
@@ -441,8 +431,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
-              {recentSpaces.map((space) =>
-                renderRecentSpaceItem(space, mode, `${keyPrefix}-recent`),
+              {recentSpaces.map((space, index) =>
+                renderRecentSpaceItem(
+                  space,
+                  index,
+                  mode,
+                  `${keyPrefix}-recent`,
+                ),
               )}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -566,26 +561,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay();
   }, [handleOverlayClose, isAiOpen, overlayVisible, showAiOverlay]);
   const shouldCloseFromTrigger = isAiOpen || overlayVisible;
-  const handleTriggerMouseLeave = useCallback(() => {
-    if (isHoverOpenLocked) {
-      setIsHoverOpenLocked(false);
-    }
-  }, [isHoverOpenLocked]);
-  const canHoverOpenFromTrigger = !shouldCloseFromTrigger && !isHoverOpenLocked;
 
   const triggerButton = (
     <button
       type="button"
       onClick={handleTriggerClick}
-      onMouseEnter={
-        canHoverOpenFromTrigger ? handleHeaderIconMouseEnter : undefined
-      }
-      onMouseLeave={
-        !shouldCloseFromTrigger ? handleTriggerMouseLeave : undefined
-      }
       className={MENU_TRIGGER_CANVAS_CLASS}
       aria-label={shouldCloseFromTrigger ? t('closePanel') : t('openPanel')}
-      title={shouldCloseFromTrigger ? t('hidePanel') : t('openPanel')}
     >
       <Menu className="pointer-events-none absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
     </button>

@@ -1,7 +1,12 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { CheckIcon, XCircle, ChevronDown, XIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import { CheckIcon, XCircle, ChevronDown, XIcon, List } from 'lucide-react';
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+  PopoverTrigger,
+} from './popover';
 import { Button } from './button';
 import { cn } from '@hypha-platform/ui-utils';
 import { Badge } from './badge';
@@ -20,25 +25,23 @@ import {
  * Variants for the multi-select component to handle different styles.
  * Uses class-variance-authority (cva) to define different styles based on "variant" prop.
  */
-const multiSelectVariants = cva(
-  'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
-  {
-    variants: {
-      variant: {
-        default:
-          'border-foreground/10 text-foreground bg-card hover:bg-card/80',
-        secondary:
-          'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        destructive:
-          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-        inverted: 'inverted',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
+const multiSelectVariants = cva('m-1', {
+  variants: {
+    variant: {
+      default: 'border-foreground/10 text-foreground bg-card hover:bg-card/80',
+      secondary:
+        'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
+      destructive:
+        'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
+      inverted: 'inverted',
     },
   },
-);
+  defaultVariants: {
+    variant: 'default',
+  },
+});
+
+const TAG_USAGE_STORAGE_KEY = 'hypha:tag-picker-usage';
 
 /**
  * Props for MultiSelect component
@@ -57,6 +60,13 @@ interface MultiSelectProps
     value: string;
     /** Optional icon component to display alongside the option. */
     icon?: React.ComponentType<{ className?: string }>;
+    /**
+     * Optional row kind for grouped lists.
+     * - option: selectable row (default)
+     * - heading: non-selectable section title
+     * - separator: non-selectable visual divider
+     */
+    kind?: 'option' | 'heading' | 'separator';
   }[];
 
   /**
@@ -117,10 +127,59 @@ interface MultiSelectProps
   allowToggleAll?: boolean;
 
   /**
+   * Controls whether users can create options that are not in `options`.
+   * Optional, defaults to false.
+   */
+  allowCreate?: boolean;
+
+  /**
+   * Visual style of the dropdown list.
+   * - default: checkbox-style multi-select rows
+   * - tag-picker: cleaner tag rows with trailing selected indicator
+   */
+  uiStyle?: 'default' | 'tag-picker';
+
+  /**
    * Additional class names to apply custom styles to the multi-select component.
    * Optional, can be used to add custom styles.
    */
   className?: string;
+
+  /**
+   * Optional copy overrides for UI text.
+   */
+  labels?: {
+    more?: (count: number) => string;
+    noRecentTags?: string;
+    noResults?: string;
+    mostUsed?: string;
+    allTags?: string;
+    create?: (term: string) => string;
+    clear?: string;
+    close?: string;
+  };
+}
+
+const DEFAULT_MULTISELECT_LABELS = {
+  more: (count: number) => `+ ${count} more`,
+  noRecentTags: 'No recent tags yet. Start typing to search tags.',
+  noResults: 'No results found.',
+  mostUsed: '--- Most used tags ---',
+  allTags: 'All tags',
+  create: (term: string) => `Create "${term}"`,
+  clear: 'Clear',
+  close: 'Close',
+} as const;
+
+function isOptionDelimiter(option: { value: string; kind?: string }): boolean {
+  if (option.kind === 'separator') return true;
+  return option.value.length === 0 || option.value === '---';
+}
+
+function isOptionHeading(option: {
+  kind?: string;
+}): option is { kind: 'heading' } {
+  return option.kind === 'heading';
 }
 
 function arraysShallowEqual(
@@ -153,14 +212,53 @@ export const MultiSelect = React.forwardRef<
       asChild = false,
       value,
       allowToggleAll = true,
+      allowCreate = false,
+      uiStyle = 'default',
       className,
+      labels,
       ...props
     },
     ref,
   ) => {
+    const MAX_TAG_PICKER_RESULTS = 8;
     const [selectedValues, setSelectedValues] =
       React.useState<string[]>(defaultValue);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
+    const [searchValue, setSearchValue] = React.useState('');
+    const [showAllTagsOnEmptySearch, setShowAllTagsOnEmptySearch] =
+      React.useState(false);
+    const [tagUsageMap, setTagUsageMap] = React.useState<
+      Record<string, number>
+    >({});
+    const trimmedSearchValue = searchValue.trim();
+    const popoverContentRef = React.useRef<HTMLDivElement>(null);
+    const listboxId = React.useId();
+    const resolvedLabels = {
+      ...DEFAULT_MULTISELECT_LABELS,
+      ...(labels ?? {}),
+    };
+    const tagInputRef = React.useRef<HTMLInputElement>(null);
+    const setTagInputRefs = React.useCallback(
+      (node: HTMLInputElement | null) => {
+        tagInputRef.current = node;
+        if (!ref) return;
+        const castedRef = ref as
+          | React.Ref<HTMLInputElement>
+          | React.Ref<HTMLButtonElement>;
+        if (typeof castedRef === 'function') {
+          castedRef(node as never);
+          return;
+        }
+        if (castedRef && 'current' in castedRef) {
+          (
+            castedRef as React.MutableRefObject<
+              HTMLInputElement | HTMLButtonElement | null
+            >
+          ).current = node;
+        }
+      },
+      [ref],
+    );
 
     React.useEffect(() => {
       if (value === undefined) return;
@@ -170,26 +268,81 @@ export const MultiSelect = React.forwardRef<
       );
     }, [value]);
 
-    const handleInputKeyDown = (
-      event: React.KeyboardEvent<HTMLInputElement>,
-    ) => {
-      if (event.key === 'Enter') {
-        setIsPopoverOpen(true);
-      } else if (event.key === 'Backspace' && !event.currentTarget.value) {
-        const newSelectedValues = [...selectedValues];
-        newSelectedValues.pop();
-        setSelectedValues(newSelectedValues);
-        onValueChange(newSelectedValues);
-      }
-    };
+    React.useEffect(() => {
+      if (isPopoverOpen) return;
+      setShowAllTagsOnEmptySearch(false);
+    }, [isPopoverOpen]);
 
+    React.useEffect(() => {
+      if (uiStyle !== 'tag-picker') return;
+      if (typeof window === 'undefined') return;
+      try {
+        const raw = window.localStorage.getItem(TAG_USAGE_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          setTagUsageMap(parsed as Record<string, number>);
+        }
+      } catch {
+        // Ignore malformed local storage data.
+      }
+    }, [uiStyle]);
+
+    const bumpTagUsage = React.useCallback(
+      (tag: string) => {
+        if (uiStyle !== 'tag-picker') return;
+        if (!tag.trim()) return;
+        const key = tag.trim().toLowerCase();
+        setTagUsageMap((prev) => {
+          const next = { ...prev, [key]: (prev[key] ?? 0) + 1 };
+          if (typeof window !== 'undefined') {
+            try {
+              window.localStorage.setItem(
+                TAG_USAGE_STORAGE_KEY,
+                JSON.stringify(next),
+              );
+            } catch {
+              // Ignore storage write failures.
+            }
+          }
+          return next;
+        });
+      },
+      [uiStyle],
+    );
     const toggleOption = (option: string) => {
-      const newSelectedValues = selectedValues.includes(option)
+      const isRemoving = selectedValues.includes(option);
+      const newSelectedValues = isRemoving
         ? selectedValues.filter((value) => value !== option)
         : [...selectedValues, option];
       setSelectedValues(newSelectedValues);
       onValueChange(newSelectedValues);
+      if (!isRemoving) {
+        bumpTagUsage(option);
+      }
+      setSearchValue('');
     };
+
+    const canCreateOption = React.useMemo(() => {
+      const term = searchValue.trim();
+      if (!allowCreate || term.length === 0) return false;
+      const termLower = term.toLowerCase();
+      const selectableOptions = options.filter(
+        (option) =>
+          !isOptionDelimiter(option) &&
+          !isOptionHeading(option) &&
+          option.kind !== 'separator',
+      );
+      const notInOptions = !selectableOptions.some(
+        (option) =>
+          option.value.toLowerCase() === termLower ||
+          option.label.toLowerCase() === termLower,
+      );
+      const notAlreadySelected = !selectedValues.some(
+        (selectedValue) => selectedValue.toLowerCase() === termLower,
+      );
+      return notInOptions && notAlreadySelected;
+    }, [allowCreate, options, searchValue, selectedValues]);
 
     const handleClear = () => {
       setSelectedValues([]);
@@ -207,12 +360,221 @@ export const MultiSelect = React.forwardRef<
     };
 
     const toggleAll = () => {
-      if (selectedValues.length === options.length) {
+      const selectableValues = options
+        .filter(
+          (option) =>
+            !isOptionDelimiter(option) &&
+            !isOptionHeading(option) &&
+            option.kind !== 'separator',
+        )
+        .map((option) => option.value);
+      if (selectedValues.length === selectableValues.length) {
         handleClear();
       } else {
-        const allValues = options.map((option) => option.value);
-        setSelectedValues(allValues);
-        onValueChange(allValues);
+        setSelectedValues(selectableValues);
+        onValueChange(selectableValues);
+      }
+    };
+    const getRankedOptions = React.useCallback(
+      (term: string) => {
+        const selectableOptions = options.filter(
+          (option) =>
+            !isOptionDelimiter(option) &&
+            !isOptionHeading(option) &&
+            option.kind !== 'separator',
+        );
+        const normalizedTerm = term.trim().toLowerCase();
+        if (!normalizedTerm) {
+          if (uiStyle !== 'tag-picker') {
+            return selectableOptions;
+          }
+          const rankedByUsage = [...selectableOptions]
+            .map((option) => ({
+              option,
+              usage: tagUsageMap[option.value.toLowerCase()] ?? 0,
+            }))
+            .filter(({ usage }) => usage > 0)
+            .sort((a, b) => {
+              if (a.usage !== b.usage) return b.usage - a.usage;
+              return a.option.label.localeCompare(b.option.label);
+            })
+            .map(({ option }) => option);
+          return rankedByUsage.slice(0, MAX_TAG_PICKER_RESULTS);
+        }
+
+        const startsWithMatches: typeof selectableOptions = [];
+        const containsMatches: typeof selectableOptions = [];
+        for (const option of selectableOptions) {
+          const valueLower = option.value.toLowerCase();
+          const labelLower = option.label.toLowerCase();
+          const startsWith =
+            valueLower.startsWith(normalizedTerm) ||
+            labelLower.startsWith(normalizedTerm);
+          if (startsWith) {
+            startsWithMatches.push(option);
+            continue;
+          }
+          const contains =
+            valueLower.includes(normalizedTerm) ||
+            labelLower.includes(normalizedTerm);
+          if (contains) {
+            containsMatches.push(option);
+          }
+        }
+
+        const ranked = [...startsWithMatches, ...containsMatches];
+        return uiStyle === 'tag-picker'
+          ? ranked.slice(0, MAX_TAG_PICKER_RESULTS)
+          : ranked;
+      },
+      [options, tagUsageMap, uiStyle],
+    );
+
+    const filteredOptions = React.useMemo(() => {
+      return getRankedOptions(trimmedSearchValue);
+    }, [getRankedOptions, trimmedSearchValue]);
+    const groupedFilteredTagPickerOptions = React.useMemo(() => {
+      if (uiStyle !== 'tag-picker' || trimmedSearchValue.length === 0)
+        return [];
+      const rankedValues = new Set(
+        filteredOptions.map((option) => option.value),
+      );
+      if (rankedValues.size === 0) return [];
+
+      const groupedRows: Array<
+        (typeof options)[number] & { __renderKind?: 'heading' | 'option' }
+      > = [];
+      let currentHeading: (typeof options)[number] | null = null;
+      let currentOptions: (typeof options)[number][] = [];
+
+      const flushCategory = () => {
+        if (!currentHeading || currentOptions.length === 0) return;
+        groupedRows.push({ ...currentHeading, __renderKind: 'heading' });
+        groupedRows.push(
+          ...currentOptions.map((option) => ({
+            ...option,
+            __renderKind: 'option' as const,
+          })),
+        );
+      };
+
+      for (const option of options) {
+        if (isOptionHeading(option)) {
+          flushCategory();
+          currentHeading = option;
+          currentOptions = [];
+          continue;
+        }
+
+        if (isOptionDelimiter(option) || option.kind === 'separator') {
+          flushCategory();
+          currentHeading = null;
+          currentOptions = [];
+          continue;
+        }
+
+        if (!rankedValues.has(option.value)) continue;
+
+        if (!currentHeading) {
+          groupedRows.push({ ...option, __renderKind: 'option' });
+          continue;
+        }
+        currentOptions.push(option);
+      }
+
+      flushCategory();
+      return groupedRows;
+    }, [filteredOptions, options, trimmedSearchValue, uiStyle]);
+    const groupedTagPickerOptions = React.useMemo(() => {
+      if (uiStyle !== 'tag-picker' || trimmedSearchValue.length > 0) return [];
+      return options;
+    }, [options, trimmedSearchValue, uiStyle]);
+    const shouldShowMostUsedHeading =
+      uiStyle === 'tag-picker' &&
+      trimmedSearchValue.length === 0 &&
+      !showAllTagsOnEmptySearch &&
+      filteredOptions.length > 0;
+    const shouldShowAllTagsAction =
+      uiStyle === 'tag-picker' &&
+      trimmedSearchValue.length === 0 &&
+      !showAllTagsOnEmptySearch &&
+      groupedTagPickerOptions.length > 0;
+    const renderedOptions =
+      trimmedSearchValue.length > 0 &&
+      groupedFilteredTagPickerOptions.length > 0
+        ? groupedFilteredTagPickerOptions
+        : showAllTagsOnEmptySearch
+        ? groupedTagPickerOptions
+        : filteredOptions;
+
+    const focusCommandItem = React.useCallback(
+      (direction: 'first' | 'last') => {
+        const listRoot = popoverContentRef.current;
+        if (!listRoot) return;
+        const commandItems = Array.from(
+          listRoot.querySelectorAll<HTMLElement>('[cmdk-item]'),
+        ).filter((item) => item.getAttribute('aria-disabled') !== 'true');
+        if (commandItems.length === 0) return;
+        const target =
+          direction === 'last'
+            ? commandItems[commandItems.length - 1]
+            : commandItems[0];
+        target?.focus();
+      },
+      [],
+    );
+
+    const handleInputKeyDown = (
+      event: React.KeyboardEvent<HTMLInputElement>,
+    ) => {
+      if (event.key === 'Enter') {
+        const term = event.currentTarget.value.trim();
+        if (canCreateOption && term.length > 0) {
+          event.preventDefault();
+          toggleOption(term);
+          return;
+        }
+        if (uiStyle === 'tag-picker') {
+          event.preventDefault();
+          if (term.length === 0) {
+            return;
+          }
+          const topMatch = getRankedOptions(term)[0];
+          if (topMatch) {
+            toggleOption(topMatch.value);
+          }
+          return;
+        }
+        setIsPopoverOpen(true);
+        return;
+      }
+      if (event.key === 'ArrowDown' && uiStyle === 'tag-picker') {
+        event.preventDefault();
+        if (!isPopoverOpen) {
+          if (trimmedSearchValue.length === 0) return;
+          setIsPopoverOpen(true);
+          requestAnimationFrame(() => focusCommandItem('first'));
+          return;
+        }
+        focusCommandItem('first');
+        return;
+      }
+      if (event.key === 'ArrowUp' && uiStyle === 'tag-picker') {
+        event.preventDefault();
+        if (!isPopoverOpen) {
+          if (trimmedSearchValue.length === 0) return;
+          setIsPopoverOpen(true);
+          requestAnimationFrame(() => focusCommandItem('last'));
+          return;
+        }
+        focusCommandItem('last');
+        return;
+      }
+      if (event.key === 'Backspace' && !event.currentTarget.value) {
+        const newSelectedValues = [...selectedValues];
+        newSelectedValues.pop();
+        setSelectedValues(newSelectedValues);
+        onValueChange(newSelectedValues);
       }
     };
 
@@ -222,102 +584,290 @@ export const MultiSelect = React.forwardRef<
         onOpenChange={setIsPopoverOpen}
         modal={modalPopover}
       >
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            colorVariant="neutral"
-            ref={ref}
-            {...props}
-            onClick={handleTogglePopover}
-            className={cn(
-              'flex w-full p-1 rounded-md border min-h-11 h-auto items-center justify-between [&_svg]:pointer-events-auto',
-              className,
-            )}
-          >
-            {selectedValues.length > 0 ? (
-              <div className="flex justify-between items-center w-full">
-                <div className="flex flex-wrap items-center">
-                  {selectedValues.slice(0, maxCount).map((value) => {
-                    const option = options.find((o) => o.value === value);
-                    const IconComponent = option?.icon;
-                    return (
-                      <Badge
-                        key={value}
-                        className={cn(multiSelectVariants({ variant }))}
-                        style={{ animationDuration: `${animation}s` }}
-                      >
-                        {IconComponent && (
-                          <IconComponent className="h-4 w-4 mr-2" />
-                        )}
-                        {option?.label}
-                        <XCircle
-                          className="ml-2 h-4 w-4 cursor-pointer"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            toggleOption(value);
-                          }}
-                        />
-                      </Badge>
-                    );
-                  })}
-                  {selectedValues.length > maxCount && (
-                    <Badge
-                      className={cn(
-                        'bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
-                        multiSelectVariants({ variant }),
-                      )}
-                      style={{ animationDuration: `${animation}s` }}
+        {uiStyle === 'tag-picker' ? (
+          <PopoverAnchor asChild>
+            <div
+              role="group"
+              aria-labelledby={props['aria-labelledby']}
+              aria-label={
+                props['aria-label'] ??
+                (props['aria-labelledby'] ? undefined : placeholder)
+              }
+              className={cn(
+                'flex w-full min-h-10 flex-wrap items-center gap-1 rounded-md border border-border/70 bg-background px-2 py-0 text-sm transition-colors',
+                'focus-within:border-accent-8/60 focus-within:ring-1 focus-within:ring-accent-8/45',
+                isPopoverOpen
+                  ? 'rounded-t-none border-t border-t-border/55 shadow-[inset_0_1px_0_0_color-mix(in_srgb,var(--color-foreground)_7%,transparent)]'
+                  : '',
+                className,
+              )}
+              onClick={() => {
+                tagInputRef.current?.focus();
+                setIsPopoverOpen(true);
+              }}
+            >
+              {selectedValues.slice(0, maxCount).map((value) => {
+                const option = options.find((o) => o.value === value);
+                return (
+                  <Badge
+                    key={value}
+                    className={cn(
+                      multiSelectVariants({ variant }),
+                      'rounded-full border-neutral-7 bg-neutral-3 text-neutral-12',
+                    )}
+                    style={{ animationDuration: `${animation}s` }}
+                  >
+                    <span className="text-neutral-10">#</span>
+                    <span>{option?.label ?? value}</span>
+                    <button
+                      type="button"
+                      className="ml-1 inline-flex h-4 w-4 items-center justify-center text-neutral-10 hover:text-neutral-12"
+                      aria-label={`Remove ${option?.label ?? value}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleOption(value);
+                      }}
                     >
-                      {`+ ${selectedValues.length - maxCount} more`}
-                      <XCircle
-                        className="ml-2 h-4 w-4 cursor-pointer"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          clearExtraOptions();
-                        }}
-                      />
-                    </Badge>
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </Badge>
+                );
+              })}
+              {selectedValues.length > maxCount ? (
+                <Badge
+                  className={cn(
+                    'rounded-full bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
+                    multiSelectVariants({ variant }),
                   )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <XIcon
-                    className="h-4 mx-2 cursor-pointer text-muted-foreground"
+                  style={{ animationDuration: `${animation}s` }}
+                >
+                  {resolvedLabels.more(selectedValues.length - maxCount)}
+                  <button
+                    type="button"
+                    className="ml-2 inline-flex h-4 w-4 items-center justify-center"
+                    aria-label="Clear extra selected options"
                     onClick={(event) => {
                       event.stopPropagation();
-                      handleClear();
+                      clearExtraOptions();
                     }}
-                  />
-                  <Separator
-                    orientation="vertical"
-                    className="flex min-h-6 h-full"
-                  />
-                  <ChevronDown className="h-4 mx-2 cursor-pointer text-muted-foreground" />
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </button>
+                </Badge>
+              ) : null}
+              <input
+                ref={setTagInputRefs}
+                id={props.id}
+                name={props.name}
+                type="text"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-haspopup="listbox"
+                aria-expanded={isPopoverOpen}
+                aria-controls={listboxId}
+                aria-invalid={props['aria-invalid']}
+                aria-describedby={props['aria-describedby']}
+                aria-labelledby={props['aria-labelledby']}
+                onBlur={(event) => {
+                  props.onBlur?.(
+                    event as unknown as React.FocusEvent<HTMLButtonElement>,
+                  );
+                }}
+                value={searchValue}
+                onChange={(event) => {
+                  const nextValue = event.currentTarget.value;
+                  const nextTrimmedValue = nextValue.trim();
+                  setSearchValue(nextValue);
+                  if (nextTrimmedValue.length === 0) {
+                    setIsPopoverOpen(true);
+                    return;
+                  }
+                  if (!isPopoverOpen) setIsPopoverOpen(true);
+                }}
+                onKeyDown={handleInputKeyDown}
+                onFocus={(event) => {
+                  props.onFocus?.(
+                    event as unknown as React.FocusEvent<HTMLButtonElement>,
+                  );
+                  setIsPopoverOpen(true);
+                }}
+                placeholder={searchPlaceholder}
+                className="h-8 min-w-[12ch] flex-1 border-0 bg-transparent px-1 py-0 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                disabled={props.disabled}
+              />
+            </div>
+          </PopoverAnchor>
+        ) : (
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              colorVariant="neutral"
+              ref={ref}
+              {...props}
+              onClick={handleTogglePopover}
+              className={cn(
+                'flex w-full p-1 rounded-md border min-h-11 h-auto items-center justify-between [&_svg]:pointer-events-auto',
+                className,
+              )}
+            >
+              {selectedValues.length > 0 ? (
+                <div className="flex justify-between items-center w-full">
+                  <div className="flex flex-wrap items-center">
+                    {selectedValues.slice(0, maxCount).map((value) => {
+                      const option = options.find((o) => o.value === value);
+                      const IconComponent = option?.icon;
+                      return (
+                        <Badge
+                          key={value}
+                          className={cn(multiSelectVariants({ variant }))}
+                          style={{ animationDuration: `${animation}s` }}
+                        >
+                          {IconComponent && (
+                            <IconComponent className="h-4 w-4 mr-2" />
+                          )}
+                          {option?.label ?? value}
+                          <button
+                            type="button"
+                            className="ml-2 inline-flex h-4 w-4 items-center justify-center"
+                            aria-label={`Remove ${option?.label ?? value}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              toggleOption(value);
+                            }}
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                    {selectedValues.length > maxCount && (
+                      <Badge
+                        className={cn(
+                          'bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
+                          multiSelectVariants({ variant }),
+                        )}
+                        style={{ animationDuration: `${animation}s` }}
+                      >
+                        {`+ ${selectedValues.length - maxCount} more`}
+                        <button
+                          type="button"
+                          className="ml-2 inline-flex h-4 w-4 items-center justify-center"
+                          aria-label="Clear extra selected options"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            clearExtraOptions();
+                          }}
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </button>
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      className="mx-2 inline-flex h-4 items-center justify-center text-muted-foreground"
+                      aria-label={resolvedLabels.clear}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleClear();
+                      }}
+                    >
+                      <XIcon className="h-4" />
+                    </button>
+                    <Separator
+                      orientation="vertical"
+                      className="flex min-h-6 h-full"
+                    />
+                    <ChevronDown className="h-4 mx-2 cursor-pointer text-muted-foreground" />
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between w-full mx-auto">
-                <span className="text-sm text-muted-foreground mx-3">
-                  {placeholder}
-                </span>
-                <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
-              </div>
-            )}
-          </Button>
-        </PopoverTrigger>
+              ) : (
+                <div className="flex items-center justify-between w-full mx-auto">
+                  <span className="text-sm text-muted-foreground mx-3">
+                    {placeholder}
+                  </span>
+                  <ChevronDown className="h-4 cursor-pointer text-muted-foreground mx-2" />
+                </div>
+              )}
+            </Button>
+          </PopoverTrigger>
+        )}
         <PopoverContent
-          className="w-auto p-0"
+          ref={popoverContentRef}
+          id={listboxId}
+          role="listbox"
+          className={cn(
+            uiStyle === 'tag-picker'
+              ? 'w-[var(--radix-popover-anchor-width,var(--radix-popover-trigger-width))] p-0'
+              : 'w-[var(--radix-popover-trigger-width)] p-0',
+          )}
           align="start"
+          onOpenAutoFocus={(event) => {
+            if (uiStyle === 'tag-picker') event.preventDefault();
+          }}
           onEscapeKeyDown={() => setIsPopoverOpen(false)}
         >
-          <Command>
-            <CommandInput
-              placeholder={searchPlaceholder}
-              onKeyDown={handleInputKeyDown}
-            />
-            <CommandList>
-              <CommandEmpty>No results found.</CommandEmpty>
+          <Command
+            shouldFilter={false}
+            className={cn(uiStyle === 'tag-picker' && 'bg-popover')}
+          >
+            {uiStyle === 'default' ? (
+              <CommandInput
+                placeholder={searchPlaceholder}
+                onKeyDown={handleInputKeyDown}
+                value={searchValue}
+                onValueChange={setSearchValue}
+              />
+            ) : null}
+            <CommandList
+              className={cn(
+                uiStyle === 'tag-picker' &&
+                  'max-h-[min(300px,50vh)] overscroll-contain',
+              )}
+            >
+              <CommandEmpty>
+                {uiStyle === 'tag-picker' && trimmedSearchValue.length === 0
+                  ? resolvedLabels.noRecentTags
+                  : resolvedLabels.noResults}
+              </CommandEmpty>
               <CommandGroup>
-                {allowToggleAll && (
+                {shouldShowMostUsedHeading || shouldShowAllTagsAction ? (
+                  <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border/45 bg-popover/95 px-2 py-1.5 backdrop-blur supports-[backdrop-filter]:bg-popover/85">
+                    {shouldShowMostUsedHeading ? (
+                      <div className="min-w-0 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/60">
+                        <span className="text-muted-foreground/35">• </span>
+                        <span>{resolvedLabels.mostUsed}</span>
+                      </div>
+                    ) : (
+                      <span />
+                    )}
+                    {shouldShowAllTagsAction ? (
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/85 transition-colors hover:bg-muted/70 hover:text-foreground"
+                        onClick={() => setShowAllTagsOnEmptySearch(true)}
+                      >
+                        <List className="h-3.5 w-3.5" />
+                        <span>{resolvedLabels.allTags}</span>
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+                {canCreateOption ? (
+                  <>
+                    <CommandItem
+                      key={`create-${searchValue}`}
+                      value={`create-${searchValue.trim().toLowerCase()}`}
+                      onSelect={() => toggleOption(searchValue.trim())}
+                      className="cursor-pointer"
+                    >
+                      <span>{resolvedLabels.create(searchValue.trim())}</span>
+                    </CommandItem>
+                    <CommandSeparator />
+                  </>
+                ) : null}
+                {allowToggleAll && uiStyle !== 'tag-picker' && (
                   <>
                     <CommandItem
                       key="all"
@@ -339,61 +889,103 @@ export const MultiSelect = React.forwardRef<
                     <CommandSeparator />
                   </>
                 )}
-                {options.map((option, index) => {
+                {renderedOptions.map((option, index) => {
+                  if (
+                    '__renderKind' in option &&
+                    option.__renderKind === 'heading'
+                  ) {
+                    return (
+                      <div
+                        key={`typed-group-heading-${index}`}
+                        className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55"
+                      >
+                        <span className="text-muted-foreground/35">• </span>
+                        <span>{option.label}</span>
+                      </div>
+                    );
+                  }
+                  if (isOptionHeading(option)) {
+                    return (
+                      <div
+                        key={`group-heading-${index}`}
+                        className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/55"
+                      >
+                        <span className="text-muted-foreground/35">• </span>
+                        <span>{option.label}</span>
+                      </div>
+                    );
+                  }
                   const isSelected = selectedValues.includes(option.value);
-                  const isDelimiter =
-                    option.value.length === 0 || option.value === '---';
+                  const isDelimiter = isOptionDelimiter(option);
                   return isDelimiter ? (
                     <CommandSeparator key={`sep-${index}`} />
                   ) : (
                     <CommandItem
                       key={`${option.value}-${index}`}
+                      value={option.label}
                       onSelect={() => toggleOption(option.value)}
-                      className="cursor-pointer"
+                      className={cn(
+                        'cursor-pointer',
+                        uiStyle === 'tag-picker' && 'py-1.5',
+                      )}
                     >
-                      <div
-                        className={cn(
-                          'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-                          isSelected
-                            ? 'bg-primary text-primary-foreground'
-                            : 'opacity-50 [&_svg]:invisible',
-                        )}
-                      >
-                        <CheckIcon className="h-4 w-4" />
-                      </div>
+                      {uiStyle === 'default' ? (
+                        <div
+                          className={cn(
+                            'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                            isSelected
+                              ? 'bg-primary text-primary-foreground'
+                              : 'opacity-50 [&_svg]:invisible',
+                          )}
+                        >
+                          <CheckIcon className="h-4 w-4" />
+                        </div>
+                      ) : null}
                       {option.icon && (
                         <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                       )}
-                      <span>{option.label}</span>
+                      <span className="flex-1 truncate">{option.label}</span>
+                      {uiStyle === 'tag-picker' ? (
+                        <CheckIcon
+                          className={cn(
+                            'h-4 w-4 text-accent-11',
+                            isSelected ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                      ) : null}
                     </CommandItem>
                   );
                 })}
               </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup>
-                <div className="flex items-center justify-between">
-                  {selectedValues.length > 0 && (
-                    <>
+              {uiStyle === 'default' ? (
+                <>
+                  <CommandSeparator />
+                  <CommandGroup>
+                    <div className="flex items-center justify-between">
+                      {selectedValues.length > 0 && (
+                        <>
+                          <CommandItem
+                            onSelect={handleClear}
+                            className="flex-1 justify-center cursor-pointer"
+                          >
+                            {resolvedLabels.clear}
+                          </CommandItem>
+                          <Separator
+                            orientation="vertical"
+                            className="flex min-h-6 h-full"
+                          />
+                        </>
+                      )}
                       <CommandItem
-                        onSelect={handleClear}
-                        className="flex-1 justify-center cursor-pointer"
+                        onSelect={() => setIsPopoverOpen(false)}
+                        className="flex-1 justify-center cursor-pointer max-w-full"
                       >
-                        Clear
+                        {resolvedLabels.close}
                       </CommandItem>
-                      <Separator
-                        orientation="vertical"
-                        className="flex min-h-6 h-full"
-                      />
-                    </>
-                  )}
-                  <CommandItem
-                    onSelect={() => setIsPopoverOpen(false)}
-                    className="flex-1 justify-center cursor-pointer max-w-full"
-                  >
-                    Close
-                  </CommandItem>
-                </div>
-              </CommandGroup>
+                    </div>
+                  </CommandGroup>
+                </>
+              ) : null}
             </CommandList>
           </Command>
         </PopoverContent>
