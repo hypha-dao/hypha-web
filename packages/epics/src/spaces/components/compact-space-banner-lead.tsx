@@ -50,13 +50,13 @@ export function CompactSpaceBannerLead({ src }: Props) {
 
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
-      {/* Keep pre-decode plate light enough for light mode while image loads/fails */}
+      {/* Neutral pre-decode plate: avoid both green and black reload flash */}
       <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(173,184,200)_0%,rgb(139,151,170)_42%,rgb(110,122,142)_68%,rgb(84,95,114)_100%)]"
+        className="absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(232,236,243)_0%,rgb(213,220,232)_42%,rgb(191,200,216)_68%,rgb(168,178,196)_100%)]"
         aria-hidden
       />
       <div
-        className="absolute inset-0 mix-blend-soft-light opacity-55 bg-[radial-gradient(ellipse_50%_40%_at_80%_5%,rgba(191,219,254,0.2),transparent_60%)]"
+        className="absolute inset-0 mix-blend-soft-light opacity-45 bg-[radial-gradient(ellipse_50%_40%_at_80%_5%,rgba(255,255,255,0.22),transparent_60%)]"
         aria-hidden
       />
       {/* Taller layer + parallax translate so edges never show during scroll */}
