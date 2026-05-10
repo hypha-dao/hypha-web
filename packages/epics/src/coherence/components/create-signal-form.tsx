@@ -105,7 +105,47 @@ export const CreateSignalForm = ({
     deleteCoherenceBySlug,
     isDeletingCoherence,
   } = useCoherenceMutationsWeb2Rsc(authToken);
-  const { isMatrixAvailable, createRoom } = useMatrix();
+  const {
+    isMatrixAvailable,
+    createRoom,
+    sendMessage,
+    getRoomMessages,
+    editRoomMessage,
+  } = useMatrix();
+
+  const upsertSignalDescriptionMessage = React.useCallback(
+    async ({
+      roomId,
+      description,
+    }: {
+      roomId: string;
+      description?: string | null;
+    }) => {
+      if (!isMatrixAvailable || !roomId?.trim()) return;
+      const nextDescription = description?.trim();
+      if (!nextDescription) return;
+
+      const existingMessages = getRoomMessages(roomId) ?? [];
+      const firstMessage = [...existingMessages].sort(
+        (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+      )[0];
+
+      if (!firstMessage?.id) {
+        await sendMessage({
+          roomId,
+          message: nextDescription,
+        });
+        return;
+      }
+
+      await editRoomMessage({
+        roomId,
+        targetEventId: firstMessage.id,
+        message: nextDescription,
+      });
+    },
+    [editRoomMessage, getRoomMessages, isMatrixAvailable, sendMessage],
+  );
 
   const isMutating =
     isCreatingCoherence || isUpdatingCoherenceSignal || isDeletingCoherence;
@@ -375,7 +415,7 @@ export const CreateSignalForm = ({
           return;
         }
         try {
-          await updateCoherenceSignalBySlug({
+          const updatedSignal = await updateCoherenceSignalBySlug({
             slug: signalSlug,
             title: data.title,
             description: data.description,
@@ -383,6 +423,19 @@ export const CreateSignalForm = ({
             priority: data.priority,
             tags: data.tags,
           });
+          if (updatedSignal?.roomId) {
+            try {
+              await upsertSignalDescriptionMessage({
+                roomId: updatedSignal.roomId,
+                description: data.description,
+              });
+            } catch (matrixSyncError) {
+              console.warn(
+                'Signal saved but failed to sync description to chat room:',
+                matrixSyncError,
+              );
+            }
+          }
           router.push(successfulUrl);
         } catch (error) {
           const message =
@@ -412,6 +465,17 @@ export const CreateSignalForm = ({
             try {
               const roomCreationResult = await createRoom(coherence.title);
               roomId = roomCreationResult.roomId;
+              try {
+                await upsertSignalDescriptionMessage({
+                  roomId,
+                  description: coherence.description,
+                });
+              } catch (messageSeedError) {
+                console.warn(
+                  'Signal room created but failed to seed description message:',
+                  messageSeedError,
+                );
+              }
             } catch (matrixError) {
               const matrixErrorMessage =
                 matrixError instanceof Error
@@ -462,6 +526,7 @@ export const CreateSignalForm = ({
       updateCoherenceBySlug,
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
+      upsertSignalDescriptionMessage,
       mode,
       setSignalProvisioningNotice,
       signalSlug,
