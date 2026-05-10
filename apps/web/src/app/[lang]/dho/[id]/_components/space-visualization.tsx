@@ -207,6 +207,7 @@ export function SpaceVisualization({
     // Re-arm the opening sequence whenever the focused space context changes.
     introRanRef.current = false;
     introSequenceActiveRef.current = false;
+    savedFocusIdRef.current = null;
     clearIntroTimeout();
   }, [data, currentSpaceId]);
 
@@ -253,7 +254,7 @@ export function SpaceVisualization({
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const getDiagramFillColor = () => 'var(--color-background)';
+    const resolvedRootAccent = rootAccentHex?.trim() || SPACE_ACCENT_FALLBACK;
     const getRootFillColor = (accentColor: string) => {
       const parsed = d3.hsl(accentColor);
       if (!parsed) {
@@ -270,6 +271,7 @@ export function SpaceVisualization({
       softAccent.opacity = themeRef.current === 'dark' ? 0.2 : 0.12;
       return softAccent.formatRgb();
     };
+    const getDiagramFillColor = () => getRootFillColor(resolvedRootAccent);
     const getOrbitStrokeAlpha = () =>
       themeRef.current === 'dark' ? 0.7 : 0.55;
 
@@ -438,26 +440,16 @@ export function SpaceVisualization({
 
     let focus = root;
 
-    if (currentSpaceId && currentSpaceId !== savedFocusIdRef.current) {
-      const currentSpaceNode = findNodeById(root, currentSpaceId);
-      if (currentSpaceNode) {
-        focus = currentSpaceNode;
-        savedFocusIdRef.current = null;
-      }
-    } else if (savedFocusIdRef.current) {
+    if (savedFocusIdRef.current) {
       const savedNode = findNodeById(root, savedFocusIdRef.current);
       if (savedNode) {
         focus = savedNode;
       } else {
         savedFocusIdRef.current = null;
-        if (currentSpaceId) {
-          const currentSpaceNode = findNodeById(root, currentSpaceId);
-          if (currentSpaceNode) {
-            focus = currentSpaceNode;
-          }
-        }
       }
-    } else if (currentSpaceId) {
+    }
+
+    if (!savedFocusIdRef.current && currentSpaceId) {
       const currentSpaceNode = findNodeById(root, currentSpaceId);
       if (currentSpaceNode) {
         focus = currentSpaceNode;
@@ -471,6 +463,7 @@ export function SpaceVisualization({
     const svg = d3
       .select(svgRef.current)
       .attr('viewBox', `-${width / 2} -${height / 2} ${width} ${height}`)
+      .style('background-color', getDiagramFillColor())
       .style('shape-rendering', 'geometricPrecision')
       .style('cursor', 'pointer');
 
@@ -478,7 +471,6 @@ export function SpaceVisualization({
 
     const g = svg.append('g');
     const nodeAccents = new Map<number, string>();
-    const resolvedRootAccent = rootAccentHex?.trim() || SPACE_ACCENT_FALLBACK;
     const getNodeAccent = (d: SpaceHierarchyNode): string =>
       nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
 
