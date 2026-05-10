@@ -100,7 +100,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
         </div>
       </div>
       {ready && !imageFailed ? (
-        <>
+        <div className="hidden dark:block">
           <div
             className="pointer-events-none absolute inset-0"
             style={{
@@ -165,7 +165,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
             }}
             aria-hidden
           />
-        </>
+        </div>
       ) : null}
     </div>
   );
