@@ -2146,6 +2146,8 @@
     "tags": "Etiquetas",
     "selectOneOrMore": "Seleccione una o más",
     "searchOrCreateTag": "Escribe para buscar o crear una etiqueta",
+    "noRecentTags": "Aún no hay etiquetas recientes. Empieza a escribir para buscar etiquetas.",
+    "allTags": "Todas las etiquetas",
     "description": "Descripción",
     "descriptionPlaceholder": "Escriba su descripción aquí...",
     "publish": "Publicar",

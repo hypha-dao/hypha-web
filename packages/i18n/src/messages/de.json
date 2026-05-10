@@ -2146,6 +2146,8 @@
     "tags": "Tags",
     "selectOneOrMore": "Eines oder mehrere auswählen",
     "searchOrCreateTag": "Tippen, um ein Tag zu suchen oder zu erstellen",
+    "noRecentTags": "Noch keine zuletzt verwendeten Tags. Tippen Sie, um Tags zu suchen.",
+    "allTags": "Alle Tags",
     "description": "Beschreibung",
     "descriptionPlaceholder": "Geben Sie hier Ihre Beschreibung ein...",
     "publish": "Veröffentlichen",
