@@ -790,10 +790,10 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           On voting, accepted, refused
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid min-h-[320px] grid-cols-1 items-center gap-3 xl:min-h-[420px] xl:grid-cols-[1fr_auto]">
+      <CardContent className="grid min-h-[320px] grid-cols-1 items-center gap-3 2xl:min-h-[420px] 2xl:grid-cols-[1fr_auto]">
         <svg
           viewBox="-130 -130 260 260"
-          className="h-[240px] w-full sm:h-[280px] xl:h-[340px]"
+          className="h-[240px] w-full sm:h-[280px] 2xl:h-[340px]"
           aria-label="Proposals distribution"
         >
           {arcs.map((slice, index) => (
@@ -814,7 +814,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           </text>
         </svg>
 
-        <div className="flex min-w-0 flex-col gap-3 text-sm xl:min-w-[180px] xl:pr-2">
+        <div className="flex min-w-0 flex-col gap-3 text-sm 2xl:min-w-[180px] 2xl:pr-2">
           {pieData.map((item) => (
             <div
               key={item.label}
@@ -1555,13 +1555,7 @@ export function HomeTokenHoldingsDashboard({
                     key={token.token_address}
                     className="group min-w-0 overflow-hidden border-border/50 bg-card/90 backdrop-blur-sm"
                   >
-                    <CardContent className="pt-5">
-                      <TokenDonutChart
-                        title={token.symbol}
-                        slices={token.holdings}
-                      />
-                    </CardContent>
-                    <CardHeader className="gap-3 pt-0">
+                    <CardHeader className="gap-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -1623,6 +1617,12 @@ export function HomeTokenHoldingsDashboard({
                         </Badge>
                       </div>
                     </CardHeader>
+                    <CardContent className="pt-0">
+                      <TokenDonutChart
+                        title={token.symbol}
+                        slices={token.holdings}
+                      />
+                    </CardContent>
                   </Card>
                 ))}
               </div>
