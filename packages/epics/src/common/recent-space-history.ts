@@ -1,9 +1,15 @@
 const RECENT_SPACE_STORAGE_KEY = 'hypha:recent-space-slugs';
 const RECENT_SPACE_HISTORY_EVENT = 'hypha:recent-space-slugs:changed';
 export const MAX_VISIBLE_RECENT_SPACES = 4;
-// Keep the persisted history aligned with the visible list so recents behave
-// like a strict queue: newest enters at the top, oldest drops off at 4.
-export const MAX_RECENT_SPACE_HISTORY = MAX_VISIBLE_RECENT_SPACES;
+// Keep extra history so we can still render 4 items after filtering out
+// the active slug or stale entries.
+export const MAX_RECENT_SPACE_HISTORY = 12;
+
+function normalizeSlug(slug?: string | null): string | null {
+  if (typeof slug !== 'string') return null;
+  const trimmed = slug.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
 
 export function readRecentSpaceSlugs(): string[] {
   if (typeof window === 'undefined') return [];
@@ -37,12 +43,38 @@ export function writeRecentSpaceSlugs(slugs: string[]): void {
 }
 
 export function prependRecentSpaceSlug(slug?: string | null): string[] {
-  if (!slug) return readRecentSpaceSlugs();
+  const normalizedSlug = normalizeSlug(slug);
+  if (!normalizedSlug) return readRecentSpaceSlugs();
   const current = readRecentSpaceSlugs();
-  const next = [slug, ...current.filter((s) => s !== slug)].slice(
-    0,
-    MAX_RECENT_SPACE_HISTORY,
-  );
+  const next = [
+    normalizedSlug,
+    ...current.filter((s) => s !== normalizedSlug),
+  ].slice(0, MAX_RECENT_SPACE_HISTORY);
+  writeRecentSpaceSlugs(next);
+  return next;
+}
+
+/**
+ * Persist recents from a route transition: add the exited space at the top and
+ * remove the newly active space from history to keep "Recently Visited" stable.
+ */
+export function recordExitedSpaceSlug(
+  exitedSlug?: string | null,
+  activeSlug?: string | null,
+): string[] {
+  const normalizedExitedSlug = normalizeSlug(exitedSlug);
+  const normalizedActiveSlug = normalizeSlug(activeSlug);
+  const current = readRecentSpaceSlugs();
+
+  let next = current.filter((slug) => slug !== normalizedActiveSlug);
+  if (normalizedExitedSlug && normalizedExitedSlug !== normalizedActiveSlug) {
+    next = [
+      normalizedExitedSlug,
+      ...next.filter((slug) => slug !== normalizedExitedSlug),
+    ];
+  }
+
+  next = next.slice(0, MAX_RECENT_SPACE_HISTORY);
   writeRecentSpaceSlugs(next);
   return next;
 }

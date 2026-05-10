@@ -44,7 +44,7 @@ import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-displa
 import {
   MAX_RECENT_SPACE_HISTORY,
   MAX_VISIBLE_RECENT_SPACES,
-  prependRecentSpaceSlug,
+  recordExitedSpaceSlug,
   readRecentSpaceSlugs,
   subscribeRecentSpaceSlugs,
 } from './recent-space-history';
@@ -276,8 +276,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   useEffect(() => {
     const previousSpaceSlug = previousSpaceSlugRef.current;
     if (previousSpaceSlug && previousSpaceSlug !== spaceSlug) {
-      // Persist the space we are leaving once it is no longer the active route.
-      setRecentSpaceSlugs(prependRecentSpaceSlug(previousSpaceSlug));
+      // Persist route transition as `from -> to`, so recents always record
+      // the exited space and explicitly remove the newly active one.
+      setRecentSpaceSlugs(recordExitedSpaceSlug(previousSpaceSlug, spaceSlug));
     }
     previousSpaceSlugRef.current = spaceSlug;
   }, [spaceSlug]);
