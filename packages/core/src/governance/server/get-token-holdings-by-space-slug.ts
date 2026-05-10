@@ -135,7 +135,12 @@ function shouldIncludeHyphaSharedToken(input: {
 }): boolean {
   const slug = input.spaceSlug.toLowerCase();
   const title = input.spaceTitle.toLowerCase();
-  return slug.includes('hypha') || title.includes('hypha');
+  return (
+    slug === 'hypha' ||
+    slug.startsWith('hypha-') ||
+    title === 'hypha' ||
+    title.startsWith('hypha ')
+  );
 }
 
 function shouldIncludeHyphaPlatformSharedTokens(input: {
