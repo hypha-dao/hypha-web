@@ -14,6 +14,7 @@ import {
   FileCheck2,
   House,
   Orbit,
+  Navigation,
   Menu,
   PanelLeftClose,
   Radio,
@@ -188,7 +189,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       {
         key: 'ecosystem-navigation',
         label: tSelectNavigation('ecosystem'),
-        icon: Orbit,
+        icon: Navigation,
         href: `/${lang}/dho/${spaceSlug}/ecosystem-navigation`,
         active: isSectionActive('ecosystem-navigation'),
       },
