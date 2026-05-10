@@ -275,7 +275,8 @@ export function SpaceVisualization({
     const getOrbitStrokeAlpha = () =>
       themeRef.current === 'dark' ? 0.7 : 0.55;
     const ROOT_ORBIT_STROKE_WIDTH = 1.35;
-    const ORBIT_DASH_PATTERN = '8 6';
+    // Dot-like orbit outlines (round caps on very short dashes).
+    const ORBIT_DASH_PATTERN = '1 7';
     const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
     const pageBackdropLab = d3.lab(
       themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
@@ -534,6 +535,7 @@ export function SpaceVisualization({
         if (d.depth === 0) return ROOT_ORBIT_STROKE_WIDTH;
         return getOrbitStrokeStyle(getNodeAccent(d)).width;
       })
+      .attr('stroke-linecap', 'round')
       .attr('stroke-dasharray', ORBIT_DASH_PATTERN)
       .attr('vector-effect', 'non-scaling-stroke')
       .attr('shape-rendering', 'geometricPrecision')
