@@ -5,7 +5,7 @@ import useSWR from 'swr';
 import * as d3 from 'd3';
 import { z } from 'zod';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { CircleHelp } from 'lucide-react';
 import {
   Badge,
@@ -148,9 +148,6 @@ type DistributionHistoryResponse = {
 type HomeSectionFilter = 'energy' | 'activity' | 'distribution';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
-const NUMBER_FORMATTER = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 2,
-});
 const COLOR_RANGE = [
   'var(--space-accent, var(--accent-9))',
   'color-mix(in oklab, var(--space-accent, var(--accent-9)) 72%, var(--color-info-9, var(--info-9)) 28%)',
@@ -180,10 +177,12 @@ function toNumericValue(raw: string): number {
   return parsed;
 }
 
-function formatAmount(raw: string): string {
+function formatAmount(raw: string, locale: string): string {
   const parsed = Number.parseFloat(raw);
   if (!Number.isFinite(parsed)) return raw;
-  return NUMBER_FORMATTER.format(parsed);
+  return new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 2,
+  }).format(parsed);
 }
 
 function prettifyTokenType(type: string): string {
@@ -310,11 +309,11 @@ function fetchDistributionHistory(
   };
 }
 
-function formatMonthLabel(monthKey: string): string {
+function formatMonthLabel(monthKey: string, locale: string): string {
   const [year, month] = monthKey.split('-').map((part) => Number(part));
   if (!year || !month) return monthKey;
   const date = new Date(Date.UTC(year, month - 1, 1));
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     year: '2-digit',
   }).format(date);
@@ -892,8 +891,10 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
 
 function MembersEvolutionWidget({
   monthly,
+  locale,
 }: {
   monthly: ActivityResponse['members']['monthly'];
+  locale: string;
 }) {
   const maxValue = React.useMemo(
     () =>
@@ -1075,7 +1076,7 @@ function MembersEvolutionWidget({
                       textAnchor="middle"
                       className="fill-muted-foreground text-[11px]"
                     >
-                      {formatMonthLabel(item.month)}
+                      {formatMonthLabel(item.month, locale)}
                     </text>
                   </g>
                 );
@@ -1412,6 +1413,7 @@ export function HomeTokenHoldingsDashboard({
   spaceSlug: string;
 }) {
   const { getAccessToken } = useAuthentication();
+  const locale = useLocale();
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
   const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
@@ -1521,6 +1523,7 @@ export function HomeTokenHoldingsDashboard({
                 ) : null}
                 <MembersEvolutionWidget
                   monthly={activityData.members.monthly}
+                  locale={locale}
                 />
               </div>
               <div className="grid min-w-0 items-start gap-4">
@@ -1617,19 +1620,19 @@ export function HomeTokenHoldingsDashboard({
                                     Total supply
                                   </span>
                                   <span>
-                                    {formatAmount(token.total_supply)}
+                                    {formatAmount(token.total_supply, locale)}
                                   </span>
                                   <span className="text-muted-foreground">
                                     {tCommon('Treasury')}
                                   </span>
                                   <span>
-                                    {formatAmount(token.treasury_balance)}
+                                    {formatAmount(token.treasury_balance, locale)}
                                   </span>
                                   <span className="text-muted-foreground">
                                     Other
                                   </span>
                                   <span>
-                                    {formatAmount(token.other_balance)}
+                                    {formatAmount(token.other_balance, locale)}
                                   </span>
                                   <span className="text-muted-foreground">
                                     Address
