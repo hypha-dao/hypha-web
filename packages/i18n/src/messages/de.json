@@ -161,7 +161,9 @@
     "updatedAt": "Aktualisiert {date}",
     "error": {
       "title": "Token-Bestände konnten nicht geladen werden",
-      "description": "Bitte versuchen Sie es in einem Moment erneut. Wenn das Problem weiterhin besteht, prüfen Sie Ihren Space-Zugriff und die Netzwerkverbindung."
+      "description": "Bitte versuchen Sie es in einem Moment erneut. Wenn das Problem weiterhin besteht, prüfen Sie Ihren Space-Zugriff und die Netzwerkverbindung.",
+      "accessDeniedTitle": "Der Zugriff auf Token-Bestände ist eingeschränkt",
+      "accessDeniedDescription": "Sie haben derzeit keine Berechtigung, die Token-Bestände dieses Spaces einzusehen."
     },
     "empty": {
       "title": "Noch keine Token-Bestände verfügbar",

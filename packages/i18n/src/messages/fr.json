@@ -161,7 +161,9 @@
     "updatedAt": "Mis à jour {date}",
     "error": {
       "title": "Impossible de charger les avoirs en tokens",
-      "description": "Veuillez réessayer dans un instant. Si le problème persiste, vérifiez votre accès à l'espace et votre connexion réseau."
+      "description": "Veuillez réessayer dans un instant. Si le problème persiste, vérifiez votre accès à l'espace et votre connexion réseau.",
+      "accessDeniedTitle": "L'accès aux avoirs en tokens est restreint",
+      "accessDeniedDescription": "Vous n'avez actuellement pas l'autorisation de consulter les avoirs en tokens de cet espace."
     },
     "empty": {
       "title": "Aucun avoir en tokens disponible pour le moment",

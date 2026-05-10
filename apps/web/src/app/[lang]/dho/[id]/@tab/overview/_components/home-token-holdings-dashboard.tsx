@@ -23,7 +23,7 @@ import {
   TooltipTrigger,
 } from '@hypha-platform/ui';
 
-const tokenHoldingResponseSchema = z.object({
+const tokenHoldingSuccessSchema = z.object({
   found: z.boolean(),
   space_slug: z.string(),
   asOf: z.string(),
@@ -56,7 +56,33 @@ const tokenHoldingResponseSchema = z.object({
   ),
 });
 
-type TokenHoldingResponse = z.infer<typeof tokenHoldingResponseSchema>;
+const tokenHoldingErrorEnvelopeSchema = z.object({
+  isError: z.literal(true),
+  found: z.boolean().optional(),
+  space_slug: z.string().optional(),
+  reason: z.string().optional(),
+  error_code: z
+    .enum(['access_denied', 'not_found', 'invalid_input', 'server_error'])
+    .optional(),
+});
+
+const tokenHoldingRouteErrorSchema = z.object({
+  error: z.string(),
+  message: z.string().optional(),
+});
+
+type TokenHoldingResponse = z.infer<typeof tokenHoldingSuccessSchema>;
+
+class TokenHoldingsFetchError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string | null,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'TokenHoldingsFetchError';
+  }
+}
 
 type ChartSlice = TokenHoldingResponse['tokens'][number]['holdings'][number] & {
   hover_key: string;
@@ -195,11 +221,37 @@ function fetchHoldings(
       `/api/v1/spaces/${slug}/token-holdings?include_treasury=true&collapse_below_pct=1`,
       { headers },
     );
-    if (!response.ok) {
-      throw new Error(`Failed to load token holdings (${response.status})`);
-    }
     const payload = await response.json();
-    const parsed = tokenHoldingResponseSchema.safeParse(payload);
+    const parsedErrorEnvelope =
+      tokenHoldingErrorEnvelopeSchema.safeParse(payload);
+    const parsedRouteError = tokenHoldingRouteErrorSchema.safeParse(payload);
+
+    if (!response.ok) {
+      const code =
+        parsedErrorEnvelope.success && parsedErrorEnvelope.data.error_code
+          ? parsedErrorEnvelope.data.error_code
+          : response.status === 401 || response.status === 403
+          ? 'access_denied'
+          : null;
+      const reason =
+        (parsedErrorEnvelope.success
+          ? parsedErrorEnvelope.data.reason
+          : null) ??
+        (parsedRouteError.success ? parsedRouteError.data.message : null) ??
+        (parsedRouteError.success ? parsedRouteError.data.error : null) ??
+        `Failed to load token holdings (${response.status})`;
+      throw new TokenHoldingsFetchError(reason, code, response.status);
+    }
+
+    if (parsedErrorEnvelope.success) {
+      throw new TokenHoldingsFetchError(
+        parsedErrorEnvelope.data.reason ?? 'Failed to load token holdings',
+        parsedErrorEnvelope.data.error_code ?? null,
+        response.status,
+      );
+    }
+
+    const parsed = tokenHoldingSuccessSchema.safeParse(payload);
     if (!parsed.success) {
       throw new Error('Token holdings response shape is invalid');
     }
@@ -1362,6 +1414,7 @@ export function HomeTokenHoldingsDashboard({
   const { getAccessToken } = useAuthentication();
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const { data, error, isLoading } = useSWR(
     ['space-token-holdings-home', spaceSlug],
     fetchHoldings(spaceSlug, getAccessToken),
@@ -1483,10 +1536,17 @@ export function HomeTokenHoldingsDashboard({
           {!isLoading && error ? (
             <Card>
               <CardHeader>
-                <CardTitle>Unable to load token holdings</CardTitle>
+                <CardTitle>
+                  {error instanceof TokenHoldingsFetchError &&
+                  (error.code === 'access_denied' || error.status === 401)
+                    ? tTokenHoldings('error.accessDeniedTitle')
+                    : tTokenHoldings('error.title')}
+                </CardTitle>
                 <CardDescription>
-                  Please retry in a moment. If this persists, check your space
-                  access and network connectivity.
+                  {error instanceof TokenHoldingsFetchError &&
+                  (error.code === 'access_denied' || error.status === 401)
+                    ? tTokenHoldings('error.accessDeniedDescription')
+                    : tTokenHoldings('error.description')}
                 </CardDescription>
               </CardHeader>
             </Card>

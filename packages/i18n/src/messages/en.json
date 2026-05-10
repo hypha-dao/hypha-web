@@ -161,7 +161,9 @@
     "updatedAt": "Updated {date}",
     "error": {
       "title": "Unable to load token holdings",
-      "description": "Please retry in a moment. If this persists, check your space access and network connectivity."
+      "description": "Please retry in a moment. If this persists, check your space access and network connectivity.",
+      "accessDeniedTitle": "Token holdings are restricted",
+      "accessDeniedDescription": "You do not currently have permission to view token holdings for this space."
     },
     "empty": {
       "title": "No token holdings available yet",

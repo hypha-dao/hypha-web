@@ -851,7 +851,9 @@
     "updatedAt": "Actualizado {date}",
     "error": {
       "title": "No se pudieron cargar las tenencias de tokens",
-      "description": "Vuelve a intentarlo en un momento. Si el problema persiste, revisa tu acceso al espacio y la conectividad de red."
+      "description": "Vuelve a intentarlo en un momento. Si el problema persiste, revisa tu acceso al espacio y la conectividad de red.",
+      "accessDeniedTitle": "El acceso a las tenencias de tokens está restringido",
+      "accessDeniedDescription": "Actualmente no tienes permiso para ver las tenencias de tokens de este espacio."
     },
     "empty": {
       "title": "Aún no hay tenencias de tokens disponibles",

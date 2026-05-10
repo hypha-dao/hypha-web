@@ -851,7 +851,9 @@
     "updatedAt": "Atualizado {date}",
     "error": {
       "title": "Não foi possível carregar as participações em tokens",
-      "description": "Tente novamente em instantes. Se o problema persistir, verifique seu acesso ao espaço e a conectividade de rede."
+      "description": "Tente novamente em instantes. Se o problema persistir, verifique seu acesso ao espaço e a conectividade de rede.",
+      "accessDeniedTitle": "O acesso às participações em tokens está restrito",
+      "accessDeniedDescription": "Você não tem permissão para visualizar as participações em tokens deste espaço no momento."
     },
     "empty": {
       "title": "Ainda não há participações em tokens disponíveis",
