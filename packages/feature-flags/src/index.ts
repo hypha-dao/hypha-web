@@ -4,17 +4,23 @@ import {
 } from './vercel-toolbar-overrides';
 
 const isPreviewEnvironment = () => process.env.VERCEL_ENV === 'preview';
-const isEnabled = (value: string | undefined) => {
-  if (!value) return false;
+const parseBoolean = (value: string | undefined): boolean | undefined => {
+  if (!value) return undefined;
   const normalized = value.trim().toLowerCase();
-  return ['true', '1', 'yes', 'y', 'on'].includes(normalized);
+  if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'n', 'off'].includes(normalized)) return false;
+  return undefined;
 };
 
 /**
- * **Guideline:** AI / Coherence / Space Memory / Human Chat default **off** until
- * enabled via cookie, `NEXT_PUBLIC_*=true`, or Vercel Flags Toolbar. Human Chat
- * opt-in: `getEnableHumanChat`. Kill switch: `HYPHA_DISABLE_HUMAN_CHAT=true` /
- * `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true` (wins over enable).
+ * Default feature exposure:
+ * - Language select: on
+ * - AI panel: on
+ * - Coherence/signals: on
+ * - Space memory: off
+ * - Human chat: on
+ *
+ * Toolbar overrides and `NEXT_PUBLIC_*` env values still take precedence.
  */
 
 /**
@@ -31,26 +37,21 @@ export const flagDefinitionsForDiscovery = {
   showLanguageSelect: {
     key: 'show-language-select',
     defaultValue:
-      isPreviewEnvironment() ||
-      isEnabled(process.env.NEXT_PUBLIC_ENABLE_SHOW_LANGUAGE_SELECT),
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_SHOW_LANGUAGE_SELECT) ?? true,
     description: 'Show the i18n language select button in the menu bar',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
   enableAiChat: {
     key: 'enable-ai-chat',
-    defaultValue:
-      isPreviewEnvironment() ||
-      isEnabled(process.env.NEXT_PUBLIC_ENABLE_AI_CHAT),
+    defaultValue: true,
     description: 'Enable the AI Chat panel in space pages',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
   enableCoherence: {
     key: 'enable-coherence',
-    defaultValue:
-      isPreviewEnvironment() ||
-      isEnabled(process.env.NEXT_PUBLIC_ENABLE_COHERENCE),
+    defaultValue: true,
     description:
       'Coherence tab and signals. Opt in: HYPHA_ENABLE_COHERENCE cookie or NEXT_PUBLIC_ENABLE_COHERENCE=true. Space Memory uses enable-space-memory.',
     origin: 'hypha' as const,
@@ -58,7 +59,8 @@ export const flagDefinitionsForDiscovery = {
   },
   enableSpaceMemory: {
     key: 'enable-space-memory',
-    defaultValue: false,
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY) ?? false,
     description:
       'Space Memory on Coherence tab. Opt in: HYPHA_ENABLE_SPACE_MEMORY cookie or NEXT_PUBLIC_ENABLE_SPACE_MEMORY=true',
     origin: 'hypha' as const,
@@ -70,9 +72,7 @@ export const flagDefinitionsForDiscovery = {
    */
   enableHumanChat: {
     key: 'enable-human-chat',
-    defaultValue:
-      isPreviewEnvironment() ||
-      isEnabled(process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT),
+    defaultValue: true,
     description: 'Enable the Human Chat panel in space pages',
     origin: 'hypha' as const,
     options: undefined as undefined,
@@ -83,25 +83,33 @@ export async function getShowLanguageSelect(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'show-language-select',
     process.env.NEXT_PUBLIC_ENABLE_SHOW_LANGUAGE_SELECT,
+    true,
   );
 }
 
 async function getBooleanFlagFromToolbarOrEnv(
   toolbarKey: string,
   envValue: string | undefined,
+  fallbackDefaultValue: boolean,
+  previewDefaultValue: boolean = true,
 ): Promise<boolean> {
   const overrides = await getVercelToolbarFlagOverrides();
   const o = readBooleanOverride(overrides, toolbarKey);
   if (o !== undefined) return o;
 
-  if (isEnabled(envValue)) return true;
-  return isPreviewEnvironment();
+  const env = parseBoolean(envValue);
+  if (env !== undefined) return env;
+
+  // Preserve preview behavior while allowing explicit prod defaults per flag.
+  if (isPreviewEnvironment()) return previewDefaultValue;
+  return fallbackDefaultValue;
 }
 
 export async function getEnableAiChat(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-ai-chat',
     process.env.NEXT_PUBLIC_ENABLE_AI_CHAT,
+    true,
   );
 }
 
@@ -109,17 +117,25 @@ export async function getEnableCoherence(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-coherence',
     process.env.NEXT_PUBLIC_ENABLE_COHERENCE,
+    true,
   );
 }
 
 /**
- * Human Chat right panel: **off** by default. Opt in via cookie, `NEXT_PUBLIC_ENABLE_HUMAN_CHAT`,
- * or Vercel toolbar. Kill switch (`HYPHA_DISABLE_HUMAN_CHAT` / `NEXT_PUBLIC_DISABLE_HUMAN_CHAT`) wins.
+ * Human Chat right panel defaults on, but can be disabled via env/toolbar.
+ * Kill switch (`HYPHA_DISABLE_HUMAN_CHAT` / `NEXT_PUBLIC_DISABLE_HUMAN_CHAT`) wins.
  */
 export async function getEnableHumanChat(): Promise<boolean> {
+  const killSwitch = parseBoolean(process.env.HYPHA_DISABLE_HUMAN_CHAT);
+  const publicKillSwitch = parseBoolean(
+    process.env.NEXT_PUBLIC_DISABLE_HUMAN_CHAT,
+  );
+  if (killSwitch === true || publicKillSwitch === true) return false;
+
   return getBooleanFlagFromToolbarOrEnv(
     'enable-human-chat',
     process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT,
+    true,
   );
 }
 
@@ -127,5 +143,7 @@ export async function getEnableSpaceMemory(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-space-memory',
     process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY,
+    false,
+    false,
   );
 }
