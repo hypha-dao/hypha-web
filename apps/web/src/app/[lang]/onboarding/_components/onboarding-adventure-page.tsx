@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import QRCode from 'react-qr-code';
@@ -45,6 +45,7 @@ const exchangeBrandStyles = {
   kraken:
     'border border-transparent bg-[#6C3BFF] text-white hover:bg-[#5a30d6]',
 } as const;
+const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
 
 export function OnboardingAdventurePage() {
   const t = useTranslations('OnboardingAdventure');
@@ -58,6 +59,7 @@ export function OnboardingAdventurePage() {
   const [depositQuery, setDepositQuery] = useState('');
   const [depositDetailsSpaceSlug, setDepositDetailsSpaceSlug] = useState('');
   const [copiedAddress, setCopiedAddress] = useState(false);
+  const copyTimeoutRef = useRef<number | null>(null);
 
   const spaceOptions = useMemo(
     () =>
@@ -95,15 +97,31 @@ export function OnboardingAdventurePage() {
   const hasJoinChoices = spaceOptions.length > 0;
   const hasDepositChoices = depositOptions.length > 0;
 
+  useEffect(
+    () => () => {
+      if (copyTimeoutRef.current !== null) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
   const handleCopyAddress = (address: string) => {
     copyToClipboard(address);
     setCopiedAddress(true);
-    window.setTimeout(() => setCopiedAddress(false), 2000);
+    if (copyTimeoutRef.current !== null) {
+      window.clearTimeout(copyTimeoutRef.current);
+    }
+    copyTimeoutRef.current = window.setTimeout(
+      () => setCopiedAddress(false),
+      2000,
+    );
   };
 
   const handleDepositSpaceChange = (next: string) => {
     setDepositSpaceSlug(next);
     setDepositDetailsSpaceSlug('');
+    setCopiedAddress(false);
   };
 
   const filterOptionsByQuery = (
@@ -161,6 +179,7 @@ export function OnboardingAdventurePage() {
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder={t('spaceSearchPlaceholder')}
+            aria-label={title}
             disabled={disabled}
           />
 
@@ -231,7 +250,7 @@ export function OnboardingAdventurePage() {
         <Card className={onboardingCardClass}>
           <CardHeader className="space-y-2">
             <CardTitle className="flex items-center gap-2 text-5">
-              <Compass className="size-5 text-accent-11" />
+              <Compass className="size-5 text-accent-11" aria-hidden />
               {t('explore.title')}
             </CardTitle>
             <CardDescription className="text-2">
@@ -252,7 +271,7 @@ export function OnboardingAdventurePage() {
         <Card className={onboardingCardClass}>
           <CardHeader className="space-y-2">
             <CardTitle className="flex items-center gap-2 text-5">
-              <PlusCircle className="size-5 text-accent-11" />
+              <PlusCircle className="size-5 text-accent-11" aria-hidden />
               {t('create.title')}
             </CardTitle>
             <CardDescription className="text-2">
@@ -271,7 +290,7 @@ export function OnboardingAdventurePage() {
         </Card>
 
         {renderSelectorCard({
-          icon: <Handshake className="size-5" />,
+          icon: <Handshake className="size-5" aria-hidden />,
           title: t('join.title'),
           description: t('join.description'),
           options: spaceOptions,
@@ -294,7 +313,7 @@ export function OnboardingAdventurePage() {
         })}
 
         {renderSelectorCard({
-          icon: <Wallet className="size-5" />,
+          icon: <Wallet className="size-5" aria-hidden />,
           title: t('deposit.title'),
           description: t('deposit.description'),
           options: depositOptions,
@@ -303,12 +322,14 @@ export function OnboardingAdventurePage() {
             setDepositQuery(next);
             setDepositSpaceSlug('');
             setDepositDetailsSpaceSlug('');
+            setCopiedAddress(false);
           },
           value: depositSpaceSlug,
           onChange: handleDepositSpaceChange,
           actionLabel: t('deposit.cta'),
           onAction: () => {
             if (!depositSpaceSlug) return;
+            setCopiedAddress(false);
             setDepositDetailsSpaceSlug(depositSpaceSlug);
           },
           disabled: isLoading || !hasDepositChoices,
@@ -354,7 +375,7 @@ function DepositDetailsCard({
       <CardContent className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto]">
         <div className="space-y-4">
           <div className="flex items-start gap-2 rounded-md border border-warning-8/60 bg-warning-3 px-3 py-2 text-warning-11">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
             <p className="text-1 font-medium">
               {t('depositDetails.networkWarning')}
             </p>
@@ -371,10 +392,10 @@ function DepositDetailsCard({
               type="button"
               variant="outline"
               colorVariant="neutral"
-              onClick={() => onCopyAddress(space.address as string)}
+              onClick={() => onCopyAddress(space.address)}
               className="inline-flex min-h-11 items-center gap-2"
             >
-              <Copy className="size-4" />
+              <Copy className="size-4" aria-hidden />
               {copiedAddress
                 ? t('depositDetails.copied')
                 : t('depositDetails.copy')}
@@ -400,7 +421,17 @@ function DepositDetailsCard({
         </div>
 
         <div className="mx-auto rounded-lg border border-border/70 bg-white p-3">
-          <QRCode value={space.address} size={160} />
+          {evmAddressPattern.test(space.address) ? (
+            <QRCode
+              value={space.address}
+              size={160}
+              aria-label={`Space deposit address QR code for ${space.title}`}
+            />
+          ) : (
+            <p className="max-w-40 text-1 text-muted-foreground">
+              Invalid treasury address format.
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
