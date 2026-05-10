@@ -273,10 +273,10 @@ export function SpaceVisualization({
     };
     const getDiagramFillColor = () => 'var(--color-background)';
     const getOrbitStrokeAlpha = () =>
-      themeRef.current === 'dark' ? 0.7 : 0.55;
-    const ROOT_ORBIT_STROKE_WIDTH = 1.35;
+      themeRef.current === 'dark' ? 0.9 : 0.72;
+    const ROOT_ORBIT_STROKE_WIDTH = 1.5;
     // Dot-like orbit outlines (round caps on very short dashes).
-    const ORBIT_DASH_PATTERN = '1 7';
+    const ORBIT_DASH_PATTERN = '1 6';
     const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
     const pageBackdropLab = d3.lab(
       themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
@@ -292,7 +292,7 @@ export function SpaceVisualization({
       if (Number.isFinite(minDelta) && minDelta >= MIN_LIGHTNESS_DELTA) {
         return {
           color: withAlpha(accentColor, getOrbitStrokeAlpha()),
-          width: 1.2,
+          width: 1.35,
         };
       }
 
@@ -301,9 +301,9 @@ export function SpaceVisualization({
         return {
           color: withAlpha(
             accentColor,
-            themeRef.current === 'dark' ? 0.98 : 0.88,
+            themeRef.current === 'dark' ? 0.98 : 0.92,
           ),
-          width: 1.45,
+          width: 1.6,
         };
       }
 
@@ -316,9 +316,9 @@ export function SpaceVisualization({
       return {
         color: withAlpha(
           boosted.formatRgb(),
-          themeRef.current === 'dark' ? 0.98 : 0.88,
+          themeRef.current === 'dark' ? 0.98 : 0.92,
         ),
-        width: 1.45,
+        width: 1.6,
       };
     };
 
