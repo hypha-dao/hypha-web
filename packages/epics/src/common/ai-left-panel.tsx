@@ -17,6 +17,7 @@ import {
   Menu,
   PanelLeftClose,
   Radio,
+  Settings,
   SlidersHorizontal,
   Sparkles,
   UsersRound,
@@ -260,7 +261,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     return {
       key: 'space-settings',
       label: tModalAside('spaceSettings'),
-      icon: SlidersHorizontal,
+      icon: Settings,
       href: `/${lang}/dho/${spaceSlug}/agreements/select-settings-action`,
       active: isSpaceSettingsActive,
     };
