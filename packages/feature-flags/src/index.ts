@@ -91,6 +91,7 @@ async function getBooleanFlagFromToolbarOrEnv(
   toolbarKey: string,
   envValue: string | undefined,
   fallbackDefaultValue: boolean,
+  previewDefaultValue: boolean = true,
 ): Promise<boolean> {
   const overrides = await getVercelToolbarFlagOverrides();
   const o = readBooleanOverride(overrides, toolbarKey);
@@ -100,7 +101,7 @@ async function getBooleanFlagFromToolbarOrEnv(
   if (env !== undefined) return env;
 
   // Preserve preview behavior while allowing explicit prod defaults per flag.
-  if (isPreviewEnvironment()) return true;
+  if (isPreviewEnvironment()) return previewDefaultValue;
   return fallbackDefaultValue;
 }
 
@@ -142,6 +143,7 @@ export async function getEnableSpaceMemory(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-space-memory',
     process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY,
+    false,
     false,
   );
 }
