@@ -248,6 +248,8 @@ export function SpaceVisualization({
     if (!svgRef.current) return;
 
     const getDiagramFillColor = () => 'var(--color-background)';
+    const getRootOutlineColor = () =>
+      themeRef.current === 'dark' ? '#e5e7eb' : '#111827';
     const getOrbitStrokeAlpha = () =>
       themeRef.current === 'dark' ? 0.7 : 0.55;
     const getLogoStrokeAlpha = () => (themeRef.current === 'dark' ? 0.9 : 0.8);
@@ -452,6 +454,7 @@ export function SpaceVisualization({
     const svg = d3
       .select(svgRef.current)
       .attr('viewBox', `-${width / 2} -${height / 2} ${width} ${height}`)
+      .style('shape-rendering', 'geometricPrecision')
       .style('cursor', 'pointer');
 
     svg.selectAll('*').remove();
@@ -459,7 +462,7 @@ export function SpaceVisualization({
     const g = svg.append('g');
     const nodeAccents = new Map<number, string>();
     const getNodeAccent = (d: SpaceHierarchyNode): string => {
-      if (d.depth === 0) return '#000000';
+      if (d.depth === 0) return getRootOutlineColor();
       return nodeAccents.get(d.data.id) ?? accentFromSpaceId(d.data.id);
     };
 
@@ -468,11 +471,13 @@ export function SpaceVisualization({
       .data(root.descendants() as SpaceHierarchyNode[])
       .join('circle')
       .attr('class', 'orbit')
-      .style('fill', () => getDiagramFillColor())
+      .style('fill', 'none')
       .attr('stroke', (d: SpaceHierarchyNode) =>
         withAlpha(getNodeAccent(d), getOrbitStrokeAlpha()),
       )
       .attr('stroke-width', 1.2)
+      .attr('vector-effect', 'non-scaling-stroke')
+      .attr('shape-rendering', 'geometricPrecision')
       .style('pointer-events', 'all')
       .on('click', (event, d) => {
         if (focus !== d) {
@@ -543,7 +548,9 @@ export function SpaceVisualization({
         .append('circle')
         .attr('fill', getDiagramFillColor())
         .attr('stroke', withAlpha(getNodeAccent(d), getLogoStrokeAlpha()))
-        .attr('stroke-width', getLogoStrokeWidth(d));
+        .attr('stroke-width', getLogoStrokeWidth(d))
+        .attr('vector-effect', 'non-scaling-stroke')
+        .attr('shape-rendering', 'geometricPrecision');
 
       logoGroup
         .append('image')
@@ -768,11 +775,6 @@ export function SpaceVisualization({
           }
         });
 
-      orbits
-        .transition()
-        .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-        .style('fill', () => getDiagramFillColor());
-
       logos.each(function (d: SpaceHierarchyNode) {
         d3.select(this)
           .select('circle')
@@ -800,7 +802,6 @@ export function SpaceVisualization({
             `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
         )
         .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
-        .style('fill', () => getDiagramFillColor())
         .attr('stroke', (d: SpaceHierarchyNode) =>
           withAlpha(getNodeAccent(d), getOrbitStrokeAlpha()),
         );
@@ -835,6 +836,18 @@ export function SpaceVisualization({
     let isCancelled = false;
     root.each((node) => {
       void (async () => {
+        if (node.depth === 0) {
+          const rootAccent = getRootOutlineColor();
+          nodeAccents.set(node.data.id, rootAccent);
+          orbits
+            .filter((d) => d.data.id === node.data.id)
+            .attr('stroke', withAlpha(rootAccent, getOrbitStrokeAlpha()));
+          logos
+            .filter((d) => d.data.id === node.data.id)
+            .select('circle')
+            .attr('stroke', withAlpha(rootAccent, getLogoStrokeAlpha()));
+          return;
+        }
         const cacheKey = (node.data.logoUrl ?? '').trim();
         let accentPromise = accentSampleCacheRef.current.get(cacheKey);
         if (!accentPromise) {
