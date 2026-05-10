@@ -293,9 +293,9 @@ export function EcosystemNavigationMainPanel({
           <div className="flex min-h-0 flex-col gap-4">
             <div className="w-full overflow-visible px-3 py-2 sm:px-5 sm:py-4">
               {hierarchyData ? (
-                <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))] p-2 sm:p-3">
+                <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))] p-4 sm:p-6">
                   {canRenderSpaceActions && visitSpaceHref && addSpaceHref ? (
-                    <div className="pointer-events-none absolute inset-x-4 top-2 z-20 flex justify-center sm:top-3">
+                    <div className="pointer-events-none absolute left-1/2 top-4 z-20 flex -translate-x-1/2 -translate-y-1/2 justify-center sm:top-6">
                       <div className="pointer-events-auto inline-flex max-w-[92%] items-center gap-1.5 rounded-full border border-border/60 bg-background/88 px-2 py-1.5 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-background/72 sm:gap-2 sm:px-3">
                         <span
                           className="max-w-[14rem] truncate text-4 font-semibold tracking-tight text-foreground sm:max-w-[20rem]"
