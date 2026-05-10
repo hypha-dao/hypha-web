@@ -86,7 +86,7 @@ Create read-only MCP tool:
 
 - `space_slug` (required)
 - optional: `include_zero_balances` (default false)
-- optional: `holder_limit` (default unlimited)
+- optional: `holder_limit` (default unlimited; provided values are clamped to max `1000`)
 - optional: `include_treasury` (default true)
 
 ### 5.3 Output shape (recommended)
