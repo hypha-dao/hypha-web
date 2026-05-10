@@ -39,109 +39,6 @@ const VISUALIZATION_CONFIG = {
   STROKE_WIDTH_SCALE: 0.7,
 } as const;
 
-function parseHex(hex: string): [number, number, number] | null {
-  const normalized = hex.trim();
-  if (!/^#[0-9a-fA-F]{6}$/.test(normalized)) return null;
-  const r = Number.parseInt(normalized.slice(1, 3), 16);
-  const g = Number.parseInt(normalized.slice(3, 5), 16);
-  const b = Number.parseInt(normalized.slice(5, 7), 16);
-  if ([r, g, b].some((n) => Number.isNaN(n))) return null;
-  return [r, g, b];
-}
-
-function toSampleableImageSrc(src?: string | null): string | null {
-  if (!src) return null;
-  const candidate = src.trim();
-  if (!candidate) return null;
-  if (candidate.startsWith('/')) {
-    return candidate.startsWith('//') ? null : candidate;
-  }
-  try {
-    const url = new URL(candidate);
-    if (url.protocol === 'http:' || url.protocol === 'https:') {
-      return `/_next/image?url=${encodeURIComponent(candidate)}&w=96&q=75`;
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
-async function sampleAccentHex(src?: string | null): Promise<string | null> {
-  const imageSrc = toSampleableImageSrc(src);
-  if (!imageSrc) return null;
-  return await new Promise((resolve) => {
-    const image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.onload = () => {
-      try {
-        const maxSide = 96;
-        const scale = Math.min(
-          maxSide / image.width,
-          maxSide / image.height,
-          1,
-        );
-        const width = Math.max(8, Math.round(image.width * scale));
-        const height = Math.max(8, Math.round(image.height * scale));
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const context = canvas.getContext('2d');
-        if (!context) {
-          resolve(null);
-          return;
-        }
-        context.drawImage(image, 0, 0, width, height);
-        const pixels = context.getImageData(0, 0, width, height).data;
-        let rSum = 0;
-        let gSum = 0;
-        let bSum = 0;
-        let count = 0;
-        for (let i = 0; i < pixels.length; i += 4) {
-          const alpha = pixels[i + 3] ?? 0;
-          if (alpha < 40) continue;
-          const r = pixels[i] ?? 0;
-          const g = pixels[i + 1] ?? 0;
-          const b = pixels[i + 2] ?? 0;
-          const max = Math.max(r, g, b);
-          const min = Math.min(r, g, b);
-          const saturation = max === 0 ? 0 : (max - min) / max;
-          if (saturation < 0.12) continue;
-          rSum += r;
-          gSum += g;
-          bSum += b;
-          count++;
-        }
-        if (count < 6) {
-          resolve(null);
-          return;
-        }
-        const r = Math.round(rSum / count)
-          .toString(16)
-          .padStart(2, '0');
-        const g = Math.round(gSum / count)
-          .toString(16)
-          .padStart(2, '0');
-        const b = Math.round(bSum / count)
-          .toString(16)
-          .padStart(2, '0');
-        resolve(`#${r}${g}${b}`);
-      } catch {
-        resolve(null);
-      }
-    };
-    image.onerror = () => resolve(null);
-    image.src = imageSrc;
-  });
-}
-
-function withAlpha(hex: string, alpha: number) {
-  const rgb = parseHex(hex);
-  const fallback = parseHex(SPACE_ACCENT_FALLBACK);
-  const [r, g, b] = rgb ?? fallback ?? [20, 184, 166];
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 export function SpaceVisualization({
   data,
   currentSpaceId,
@@ -169,9 +66,6 @@ export function SpaceVisualization({
   const introToRootTimeoutRef = useRef<number | null>(null);
   const introSequenceActiveRef = useRef(false);
   const introRanRef = useRef(false);
-  const accentSampleCacheRef = useRef<Map<string, Promise<string | null>>>(
-    new Map(),
-  );
 
   const clearTooltipHideTimeout = () => {
     if (tooltipHideTimeoutRef.current == null) return;
@@ -515,9 +409,6 @@ export function SpaceVisualization({
       });
 
     const defs = svg.append('defs');
-    const nodeAccents = new Map<number, string>();
-    const getNodeAccent = (d: SpaceHierarchyNode) =>
-      nodeAccents.get(d.data.id) ?? SPACE_ACCENT_FALLBACK;
     const logos = g
       .selectAll<SVGGElement, SpaceHierarchyNode>('g.logo')
       .data(root.descendants() as SpaceHierarchyNode[])
@@ -586,50 +477,6 @@ export function SpaceVisualization({
         .attr('preserveAspectRatio', 'xMidYMid slice')
         .attr('alt', `${d.data.name} logo`)
         .attr('clip-path', `url(#${clipId})`);
-    });
-
-    const ripples = g
-      .selectAll<SVGGElement, SpaceHierarchyNode>('g.ripples')
-      .data(root.descendants() as SpaceHierarchyNode[])
-      .join('g')
-      .attr('class', 'ripples')
-      .style('pointer-events', 'none');
-
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    ripples.each(function (d: SpaceHierarchyNode) {
-      const rippleGroup = d3.select(this);
-      const delays = ['0s', '0.35s', '0.7s'];
-      const scales = [0.56, 0.74, 0.9];
-
-      scales.forEach((scale, index) => {
-        const opacity = d.depth === 0 ? 0.24 : 0.18 - index * 0.03;
-        const circle = rippleGroup
-          .append('circle')
-          .attr('class', 'ripple-ring')
-          .attr('fill', 'none')
-          .attr('stroke', withAlpha(getNodeAccent(d), opacity))
-          .attr('stroke-width', 1)
-          .attr('data-scale', scale.toString());
-
-        if (!prefersReducedMotion) {
-          circle
-            .append('animate')
-            .attr('attributeName', 'opacity')
-            .attr(
-              'values',
-              `${Math.max(0.08, opacity - 0.08)};${opacity};${Math.max(
-                0.08,
-                opacity - 0.08,
-              )}`,
-            )
-            .attr('dur', '3.2s')
-            .attr('begin', delays[index] ?? '0s')
-            .attr('repeatCount', 'indefinite');
-        }
-      });
     });
 
     svg.on('click', () => {
@@ -754,14 +601,10 @@ export function SpaceVisualization({
 
     orbits.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     logos.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
-    ripples.style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0));
     orbits.style('display', (d: SpaceHierarchyNode) =>
       isVisible(d) ? 'block' : 'none',
     );
     logos.style('display', (d: SpaceHierarchyNode) =>
-      isVisible(d) ? 'block' : 'none',
-    );
-    ripples.style('display', (d: SpaceHierarchyNode) =>
       isVisible(d) ? 'block' : 'none',
     );
 
@@ -838,9 +681,7 @@ export function SpaceVisualization({
         });
 
       transition
-        .selectAll<SVGElement, SpaceHierarchyNode>(
-          'circle.orbit, g.logo, g.ripples',
-        )
+        .selectAll<SVGElement, SpaceHierarchyNode>('circle.orbit, g.logo')
         .style('opacity', (d: SpaceHierarchyNode) => (isVisible(d) ? 1 : 0))
         .on('start', function (d: SpaceHierarchyNode) {
           if (isVisible(d) && this instanceof SVGElement) {
@@ -917,56 +758,8 @@ export function SpaceVisualization({
             .attr('width', r * 2)
             .attr('height', r * 2);
         });
-
-      ripples
-        .attr(
-          'transform',
-          (d: SpaceHierarchyNode) =>
-            `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
-        )
-        .each(function (d: SpaceHierarchyNode) {
-          const accent = getNodeAccent(d);
-          d3.select(this)
-            .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
-            .each(function (_, i) {
-              const scale = Number.parseFloat(
-                d3.select(this).attr('data-scale') || '0.7',
-              );
-              const baseOpacity = d.depth === 0 ? 0.24 : 0.18 - i * 0.03;
-              d3.select(this)
-                .attr('r', d.r! * k * scale)
-                .attr('stroke', withAlpha(accent, Math.max(0.08, baseOpacity)));
-            });
-        });
     }
-
-    let isCancelled = false;
-    root.each((node) => {
-      void (async () => {
-        const cacheKey = (node.data.logoUrl ?? '').trim();
-        let accentPromise = accentSampleCacheRef.current.get(cacheKey);
-        if (!accentPromise) {
-          accentPromise = sampleAccentHex(node.data.logoUrl);
-          accentSampleCacheRef.current.set(cacheKey, accentPromise);
-        }
-        const accent = await accentPromise;
-        if (isCancelled) return;
-        const resolvedAccent = accent ?? SPACE_ACCENT_FALLBACK;
-        nodeAccents.set(node.data.id, resolvedAccent);
-        ripples
-          .filter((d) => d.data.id === node.data.id)
-          .selectAll<SVGCircleElement, unknown>('circle.ripple-ring')
-          .each(function (_, i) {
-            const baseOpacity = node.depth === 0 ? 0.24 : 0.18 - i * 0.03;
-            d3.select(this).attr(
-              'stroke',
-              withAlpha(resolvedAccent, Math.max(0.08, baseOpacity)),
-            );
-          });
-      })();
-    });
     return () => {
-      isCancelled = true;
       cancelIntroSequence();
     };
   }, [data, currentSpaceId, resolvedTheme, enableHoverActions]);
