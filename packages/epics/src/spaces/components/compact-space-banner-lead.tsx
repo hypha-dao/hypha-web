@@ -66,26 +66,42 @@ export function CompactSpaceBannerLead({ src }: Props) {
 
   const parallaxY = reduceMotion ? 0 : clampParallaxScrollY(mainScrollY);
   const imageVisible = ready && !imageFailed;
+  const predecodePlateStyle = isDarkTheme
+    ? {
+        backgroundImage:
+          'radial-gradient(ellipse 140% 100% at 12% -5%, rgb(20,24,34) 0%, rgb(14,18,27) 42%, rgb(10,14,22) 68%, rgb(7,10,16) 100%)',
+      }
+    : {
+        backgroundImage:
+          'radial-gradient(ellipse 140% 100% at 12% -5%, rgb(238,242,248) 0%, rgb(226,232,241) 42%, rgb(210,218,230) 68%, rgb(191,201,216) 100%)',
+      };
+  const predecodeGlowStyle = isDarkTheme
+    ? {
+        backgroundImage:
+          'radial-gradient(ellipse 55% 45% at 80% 8%, rgba(255,255,255,0.08), transparent 62%)',
+      }
+    : {
+        backgroundImage:
+          'radial-gradient(ellipse 55% 45% at 80% 8%, rgba(255,255,255,0.24), transparent 62%)',
+      };
 
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
       {/* Theme-aware pre-decode plate that cross-fades away once image is ready */}
       <div
         className={cn(
-          'absolute inset-0 transition-opacity duration-500 ease-out',
-          isDarkTheme ? 'bg-black' : 'bg-white',
+          'absolute inset-0 transition-opacity duration-700 ease-out',
           imageVisible ? 'opacity-0' : 'opacity-100',
         )}
+        style={predecodePlateStyle}
         aria-hidden
       />
       <div
         className={cn(
-          'absolute inset-0 mix-blend-soft-light transition-opacity duration-500 ease-out',
-          isDarkTheme
-            ? 'bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.06),transparent_62%)]'
-            : 'bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.16),transparent_62%)]',
+          'absolute inset-0 mix-blend-soft-light transition-opacity duration-700 ease-out',
           imageVisible ? 'opacity-0' : 'opacity-100',
         )}
+        style={predecodeGlowStyle}
         aria-hidden
       />
       {/* Taller layer + parallax translate so edges never show during scroll */}
@@ -106,7 +122,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
             priority
             sizes="(max-width: 1280px) 100vw, min(1280px, 100vw)"
             className={cn(
-              'object-cover object-center transition-opacity duration-500 ease-out',
+              'object-cover object-center transition-opacity duration-700 ease-out',
               imageFailed
                 ? 'pointer-events-none opacity-0'
                 : imageVisible
