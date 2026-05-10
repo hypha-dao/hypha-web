@@ -38,10 +38,16 @@ export function CompactSpaceBannerLead({ src }: Props) {
       const storedTheme = window.localStorage.getItem('theme');
       if (storedTheme === 'light') return false;
       if (storedTheme === 'dark') return true;
+      if (storedTheme === 'system') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
     } catch {
       // Ignore storage access failures and fall back to document attribute.
     }
-    return document.documentElement.getAttribute('data-theme') === 'dark';
+    const docTheme = document.documentElement.getAttribute('data-theme');
+    if (docTheme === 'dark') return true;
+    if (docTheme === 'light') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
   React.useEffect(() => {
@@ -69,7 +75,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
   const predecodePlateStyle = isDarkTheme
     ? {
         backgroundImage:
-          'radial-gradient(ellipse 140% 100% at 12% -5%, rgb(20,24,34) 0%, rgb(14,18,27) 42%, rgb(10,14,22) 68%, rgb(7,10,16) 100%)',
+          'radial-gradient(ellipse 140% 100% at 12% -5%, rgb(14,17,25) 0%, rgb(10,13,20) 42%, rgb(7,9,15) 68%, rgb(4,6,11) 100%)',
       }
     : {
         backgroundImage:
@@ -78,7 +84,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
   const predecodeGlowStyle = isDarkTheme
     ? {
         backgroundImage:
-          'radial-gradient(ellipse 55% 45% at 80% 8%, rgba(255,255,255,0.08), transparent 62%)',
+          'radial-gradient(ellipse 55% 45% at 80% 8%, rgba(255,255,255,0.04), transparent 62%)',
       }
     : {
         backgroundImage:
@@ -104,6 +110,19 @@ export function CompactSpaceBannerLead({ src }: Props) {
         style={predecodeGlowStyle}
         aria-hidden
       />
+      {isDarkTheme ? (
+        <div
+          className={cn(
+            'absolute inset-0 transition-opacity duration-700 ease-out',
+            imageVisible ? 'opacity-0' : 'opacity-100',
+          )}
+          style={{
+            backgroundImage:
+              'linear-gradient(to top, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.26) 52%, rgba(0,0,0,0.08) 100%)',
+          }}
+          aria-hidden
+        />
+      ) : null}
       {/* Taller layer + parallax translate so edges never show during scroll */}
       <div
         className="absolute inset-[-14%] will-change-transform"
