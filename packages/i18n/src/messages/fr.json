@@ -151,6 +151,57 @@
       "noAccess": "Vous n'avez pas accès à la navigation des espaces."
     }
   },
+  "TokenHoldingsDashboard": {
+    "subtitle": "Répartition des tokens en un coup d'œil.",
+    "error": {
+      "title": "Impossible de charger les avoirs en tokens",
+      "description": "Veuillez réessayer dans un instant. Si le problème persiste, vérifiez votre accès à l'espace et votre connexion réseau."
+    },
+    "empty": {
+      "title": "Aucun avoir en tokens disponible pour le moment",
+      "description": "Cet espace n'expose actuellement pas de données de distribution des tokens émis."
+    },
+    "chartAria": "Graphique de répartition des tokens pour {title}",
+    "tokenDetailsAria": "Détails du token pour {tokenName}",
+    "tooltip": {
+      "totalSupply": "Offre totale",
+      "other": "Autres",
+      "address": "Adresse"
+    },
+    "filters": {
+      "all": "Tous",
+      "energy": "Énergie",
+      "activity": "Activité",
+      "distribution": "Distribution"
+    },
+    "activity": {
+      "title": "Impossible de charger les widgets d'activité",
+      "error": "Veuillez réessayer dans un instant. Les données d'analyse d'activité sont peut-être encore en cours de synchronisation."
+    },
+    "proposals": {
+      "title": "Propositions",
+      "subtitle": "En vote, acceptées, refusées",
+      "ariaLabel": "Distribution des propositions",
+      "onVoting": "En vote",
+      "accepted": "Acceptées",
+      "refused": "Refusées",
+      "noData": "Aucune donnée"
+    },
+    "members": {
+      "title": "Membres",
+      "subtitle": "Évolution mensuelle des personnes et des espaces",
+      "people": "Membres",
+      "spaces": "Espaces"
+    },
+    "signals": {
+      "title": "Signaux",
+      "subtitle": "Carte de pulsation par priorité et type"
+    },
+    "energy": {
+      "title": "Énergie",
+      "description": "Les widgets énergie apparaîtront lorsque les données seront disponibles."
+    }
+  },
   "SpaceSettingsAction": {
     "title": "Paramètres de l'espace",
     "content": "Accédez aux paramètres de votre espace et gérez-les, y compris son apparence, sa structure, ses méthodes, l'adhésion et la trésorerie.",

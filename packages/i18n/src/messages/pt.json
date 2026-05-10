@@ -841,6 +841,57 @@
       "noAccess": "Você não tem acesso para visualizar a navegação espacial."
     }
   },
+  "TokenHoldingsDashboard": {
+    "subtitle": "Distribuição de tokens em um relance.",
+    "error": {
+      "title": "Não foi possível carregar as participações em tokens",
+      "description": "Tente novamente em instantes. Se o problema persistir, verifique seu acesso ao espaço e a conectividade de rede."
+    },
+    "empty": {
+      "title": "Ainda não há participações em tokens disponíveis",
+      "description": "Este espaço atualmente não disponibiliza dados de distribuição de tokens emitidos."
+    },
+    "chartAria": "Gráfico de distribuição de tokens para {title}",
+    "tokenDetailsAria": "Detalhes do token para {tokenName}",
+    "tooltip": {
+      "totalSupply": "Oferta total",
+      "other": "Outros",
+      "address": "Endereço"
+    },
+    "filters": {
+      "all": "Todos",
+      "energy": "Energia",
+      "activity": "Atividade",
+      "distribution": "Distribuição"
+    },
+    "activity": {
+      "title": "Não foi possível carregar os widgets de atividade",
+      "error": "Tente novamente em instantes. Os dados analíticos de atividade ainda podem estar sincronizando."
+    },
+    "proposals": {
+      "title": "Propostas",
+      "subtitle": "Em votação, aceitas, recusadas",
+      "ariaLabel": "Distribuição de propostas",
+      "onVoting": "Em votação",
+      "accepted": "Aceitas",
+      "refused": "Recusadas",
+      "noData": "Sem dados"
+    },
+    "members": {
+      "title": "Membros",
+      "subtitle": "Evolução mensal de pessoas e espaços",
+      "people": "Membros",
+      "spaces": "Espaços"
+    },
+    "signals": {
+      "title": "Sinais",
+      "subtitle": "Mapa de pulso por prioridade e tipo"
+    },
+    "energy": {
+      "title": "Energia",
+      "description": "Os widgets de energia aparecerão quando houver dados disponíveis."
+    }
+  },
   "SpaceSettingsAction": {
     "title": "Configurações de espaço",
     "content": "Acesse e gerencie as configurações do seu espaço, incluindo aparência, estrutura, métodos, associação e tesouraria.",

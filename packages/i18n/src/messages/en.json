@@ -151,6 +151,57 @@
       "noAccess": "You do not have access to view space navigation."
     }
   },
+  "TokenHoldingsDashboard": {
+    "subtitle": "Token distribution at a glance.",
+    "error": {
+      "title": "Unable to load token holdings",
+      "description": "Please retry in a moment. If this persists, check your space access and network connectivity."
+    },
+    "empty": {
+      "title": "No token holdings available yet",
+      "description": "This space does not currently expose minted token distribution data."
+    },
+    "chartAria": "Token distribution chart for {title}",
+    "tokenDetailsAria": "Token details for {tokenName}",
+    "tooltip": {
+      "totalSupply": "Total supply",
+      "other": "Other",
+      "address": "Address"
+    },
+    "filters": {
+      "all": "All",
+      "energy": "Energy",
+      "activity": "Activity",
+      "distribution": "Distribution"
+    },
+    "activity": {
+      "title": "Unable to load activity widgets",
+      "error": "Please retry in a moment. Activity analytics data may still be syncing."
+    },
+    "proposals": {
+      "title": "Proposals",
+      "subtitle": "On voting, accepted, refused",
+      "ariaLabel": "Proposals distribution",
+      "onVoting": "On voting",
+      "accepted": "Accepted",
+      "refused": "Refused",
+      "noData": "No data"
+    },
+    "members": {
+      "title": "Members",
+      "subtitle": "Monthly evolution of people and spaces",
+      "people": "Members",
+      "spaces": "Spaces"
+    },
+    "signals": {
+      "title": "Signals",
+      "subtitle": "Pulse map by priority and type"
+    },
+    "energy": {
+      "title": "Energy",
+      "description": "Energy widgets will appear once energy data is available."
+    }
+  },
   "SpaceSettingsAction": {
     "title": "Space Settings",
     "content": "Access and manage the settings for your space, including its appearance, structure, methods, membership, and treasury.",

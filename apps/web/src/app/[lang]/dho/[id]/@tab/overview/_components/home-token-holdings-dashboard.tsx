@@ -4,7 +4,7 @@ import * as React from 'react';
 import useSWR from 'swr';
 import * as d3 from 'd3';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { CircleHelp } from 'lucide-react';
 import {
   Badge,
@@ -89,9 +89,6 @@ type ActivityResponse = {
 type HomeSectionFilter = 'all' | 'energy' | 'activity' | 'distribution';
 
 const PERCENTAGE_FORMATTER = d3.format('.1f');
-const NUMBER_FORMATTER = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 2,
-});
 const COLOR_RANGE = [
   'var(--space-accent, var(--accent-9))',
   'color-mix(in oklab, var(--space-accent, var(--accent-9)) 72%, var(--color-info-9, var(--info-9)) 28%)',
@@ -111,10 +108,12 @@ function toNumericValue(raw: string): number {
   return parsed;
 }
 
-function formatAmount(raw: string): string {
+function formatAmount(raw: string, locale: string): string {
   const parsed = Number.parseFloat(raw);
   if (!Number.isFinite(parsed)) return raw;
-  return NUMBER_FORMATTER.format(parsed);
+  return new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 2,
+  }).format(parsed);
 }
 
 function prettifyTokenType(type: string): string {
@@ -172,11 +171,11 @@ function fetchOverviewActivity(
   };
 }
 
-function formatMonthLabel(monthKey: string): string {
+function formatMonthLabel(monthKey: string, locale: string): string {
   const [year, month] = monthKey.split('-').map((part) => Number(part));
   if (!year || !month) return monthKey;
   const date = new Date(Date.UTC(year, month - 1, 1));
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     year: '2-digit',
   }).format(date);
@@ -185,10 +184,13 @@ function formatMonthLabel(monthKey: string): string {
 function TokenDonutChart({
   title,
   slices,
+  locale,
 }: {
   title: string;
   slices: TokenHoldingResponse['tokens'][number]['holdings'];
+  locale: string;
 }) {
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const chartData = React.useMemo(
     () =>
       slices
@@ -233,7 +235,7 @@ function TokenDonutChart({
         <svg
           viewBox="-145 -145 290 290"
           role="img"
-          aria-label={`Token distribution chart for ${title}`}
+          aria-label={tTokenHoldings('chartAria', { title })}
           className="h-80 w-80 transition-transform duration-300 ease-out group-hover:scale-[1.03]"
         >
           {pieData.map((segment: d3.PieArcDatum<ChartSlice>) => (
@@ -272,7 +274,8 @@ function TokenDonutChart({
               </span>
             </div>
             <span className="shrink-0 text-xs font-medium text-muted-foreground">
-              {PERCENTAGE_FORMATTER(slice.share_pct)}%
+              {PERCENTAGE_FORMATTER(slice.share_pct)}% ·{' '}
+              {formatAmount(slice.balance, locale)}
             </span>
           </div>
         ))}
@@ -282,32 +285,39 @@ function TokenDonutChart({
 }
 
 function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const pieData = React.useMemo(
     () => [
       {
-        label: 'On voting',
+        label: tTokenHoldings('proposals.onVoting'),
         value: data.onVoting,
         color: 'var(--info-9)',
       },
       {
-        label: 'Accepted',
+        label: tTokenHoldings('proposals.accepted'),
         value: data.accepted,
         color: 'var(--success-9)',
       },
       {
-        label: 'Refused',
+        label: tTokenHoldings('proposals.refused'),
         value: data.refused,
         color: 'var(--error-9)',
       },
     ],
-    [data.accepted, data.onVoting, data.refused],
+    [data.accepted, data.onVoting, data.refused, tTokenHoldings],
   );
 
   const total = pieData.reduce((sum, item) => sum + item.value, 0);
   const chartInput =
     total > 0
       ? pieData
-      : [{ label: 'No data', value: 1, color: 'var(--neutral-6)' }];
+      : [
+          {
+            label: tTokenHoldings('proposals.noData'),
+            value: 1,
+            color: 'var(--neutral-6)',
+          },
+        ];
   const arcs = d3
     .pie<(typeof chartInput)[number]>()
     .value((item) => item.value)(chartInput);
@@ -319,16 +329,18 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
   return (
     <Card className="border-border/60 bg-card/95">
       <CardHeader className="pb-0">
-        <CardTitle className="text-lg">Proposals</CardTitle>
+        <CardTitle className="text-lg">
+          {tTokenHoldings('proposals.title')}
+        </CardTitle>
         <CardDescription className="text-xs">
-          On voting, accepted, refused
+          {tTokenHoldings('proposals.subtitle')}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid min-h-[420px] grid-cols-[1fr_auto] items-center gap-2">
         <svg
           viewBox="-130 -130 260 260"
           className="h-[340px] w-full"
-          aria-label="Proposals distribution"
+          aria-label={tTokenHoldings('proposals.ariaLabel')}
         >
           {arcs.map((slice, index) => (
             <path
@@ -374,9 +386,12 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
 
 function MembersEvolutionWidget({
   monthly,
+  locale,
 }: {
   monthly: ActivityResponse['members']['monthly'];
+  locale: string;
 }) {
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const maxValue = React.useMemo(
     () =>
       Math.max(1, ...monthly.map((item) => Math.max(item.people, item.spaces))),
@@ -408,9 +423,11 @@ function MembersEvolutionWidget({
   return (
     <Card className="border-border/60 bg-card/95 md:col-span-2">
       <CardHeader className="pb-0">
-        <CardTitle className="text-lg">Members</CardTitle>
+        <CardTitle className="text-lg">
+          {tTokenHoldings('members.title')}
+        </CardTitle>
         <CardDescription className="text-xs">
-          Monthly evolution of people and spaces
+          {tTokenHoldings('members.subtitle')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -460,7 +477,7 @@ function MembersEvolutionWidget({
                     textAnchor="middle"
                     className="fill-muted-foreground text-[11px]"
                   >
-                    {formatMonthLabel(item.month)}
+                    {formatMonthLabel(item.month, locale)}
                   </text>
                 </g>
               );
@@ -474,7 +491,7 @@ function MembersEvolutionWidget({
               className="h-3 w-3 rounded-sm"
               style={{ background: 'var(--space-accent, var(--accent-9))' }}
             />
-            Members
+            {tTokenHoldings('members.people')}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span
@@ -484,7 +501,7 @@ function MembersEvolutionWidget({
                   'color-mix(in oklab, var(--space-accent, var(--accent-9)) 55%, var(--info-9) 45%)',
               }}
             />
-            Spaces
+            {tTokenHoldings('members.spaces')}
           </span>
         </div>
       </CardContent>
@@ -497,6 +514,7 @@ function SignalsPulseMapWidget({
 }: {
   signals: ActivityResponse['signals'];
 }) {
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const priorities = signals.priorities.length
     ? signals.priorities
     : ['low', 'medium', 'high'];
@@ -529,9 +547,11 @@ function SignalsPulseMapWidget({
   return (
     <Card className="border-border/60 bg-card/95">
       <CardHeader className="pb-0">
-        <CardTitle className="text-lg">Signals</CardTitle>
+        <CardTitle className="text-lg">
+          {tTokenHoldings('signals.title')}
+        </CardTitle>
         <CardDescription className="text-xs">
-          Pulse map by priority and type
+          {tTokenHoldings('signals.subtitle')}
         </CardDescription>
       </CardHeader>
       <CardContent className="min-h-[420px]">
@@ -651,8 +671,10 @@ export function HomeTokenHoldingsDashboard({
   spaceSlug: string;
 }) {
   const { getAccessToken } = useAuthentication();
+  const locale = useLocale();
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
+  const tTokenHoldings = useTranslations('TokenHoldingsDashboard');
   const { data, error, isLoading } = useSWR(
     ['space-token-holdings-home', spaceSlug],
     fetchHoldings(spaceSlug, getAccessToken),
@@ -688,12 +710,17 @@ export function HomeTokenHoldingsDashboard({
   const filterItems = React.useMemo(
     () =>
       [
-        { value: 'all', label: 'All' },
-        ...(hasEnergyData ? [{ value: 'energy', label: 'Energy' }] : []),
-        { value: 'activity', label: 'Activity' },
-        { value: 'distribution', label: 'Distribution' },
+        { value: 'all', label: tTokenHoldings('filters.all') },
+        ...(hasEnergyData
+          ? [{ value: 'energy', label: tTokenHoldings('filters.energy') }]
+          : []),
+        { value: 'activity', label: tTokenHoldings('filters.activity') },
+        {
+          value: 'distribution',
+          label: tTokenHoldings('filters.distribution'),
+        },
       ] as Array<{ value: HomeSectionFilter; label: string }>,
-    [hasEnergyData],
+    [hasEnergyData, tTokenHoldings],
   );
   const showActivity = activeFilter === 'all' || activeFilter === 'activity';
   const showDistribution =
@@ -706,7 +733,7 @@ export function HomeTokenHoldingsDashboard({
           {tCommon('home')}
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Token distribution at a glance.
+          {tTokenHoldings('subtitle')}
         </p>
       </div>
 
@@ -730,10 +757,9 @@ export function HomeTokenHoldingsDashboard({
           {!activityLoading && activityError ? (
             <Card>
               <CardHeader>
-                <CardTitle>Unable to load activity widgets</CardTitle>
+                <CardTitle>{tTokenHoldings('activity.title')}</CardTitle>
                 <CardDescription>
-                  Please retry in a moment. Activity analytics data may still be
-                  syncing.
+                  {tTokenHoldings('activity.error')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -743,7 +769,10 @@ export function HomeTokenHoldingsDashboard({
             <div className="grid gap-4 md:grid-cols-2">
               <SignalsPulseMapWidget signals={activityData.signals} />
               <ProposalsPieWidget data={activityData.proposals} />
-              <MembersEvolutionWidget monthly={activityData.members.monthly} />
+              <MembersEvolutionWidget
+                monthly={activityData.members.monthly}
+                locale={locale}
+              />
             </div>
           ) : null}
         </>
@@ -756,10 +785,9 @@ export function HomeTokenHoldingsDashboard({
           {!isLoading && error ? (
             <Card>
               <CardHeader>
-                <CardTitle>Unable to load token holdings</CardTitle>
+                <CardTitle>{tTokenHoldings('error.title')}</CardTitle>
                 <CardDescription>
-                  Please retry in a moment. If this persists, check your space
-                  access and network connectivity.
+                  {tTokenHoldings('error.description')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -768,10 +796,9 @@ export function HomeTokenHoldingsDashboard({
           {!isLoading && !error && data && data.tokens.length === 0 ? (
             <Card>
               <CardHeader>
-                <CardTitle>No token holdings available yet</CardTitle>
+                <CardTitle>{tTokenHoldings('empty.title')}</CardTitle>
                 <CardDescription>
-                  This space does not currently expose minted token distribution
-                  data.
+                  {tTokenHoldings('empty.description')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -795,7 +822,9 @@ export function HomeTokenHoldingsDashboard({
                             <TooltipTrigger asChild>
                               <button
                                 type="button"
-                                aria-label={`Token details for ${token.name}`}
+                                aria-label={tTokenHoldings('tokenDetailsAria', {
+                                  tokenName: token.name,
+                                })}
                                 className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               >
                                 <CircleHelp className="h-4 w-4" />
@@ -807,21 +836,25 @@ export function HomeTokenHoldingsDashboard({
                             >
                               <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
                                 <span className="text-muted-foreground">
-                                  Total supply
+                                  {tTokenHoldings('tooltip.totalSupply')}
                                 </span>
-                                <span>{formatAmount(token.total_supply)}</span>
+                                <span>
+                                  {formatAmount(token.total_supply, locale)}
+                                </span>
                                 <span className="text-muted-foreground">
                                   {tCommon('Treasury')}
                                 </span>
                                 <span>
-                                  {formatAmount(token.treasury_balance)}
+                                  {formatAmount(token.treasury_balance, locale)}
                                 </span>
                                 <span className="text-muted-foreground">
-                                  Other
+                                  {tTokenHoldings('tooltip.other')}
                                 </span>
-                                <span>{formatAmount(token.other_balance)}</span>
+                                <span>
+                                  {formatAmount(token.other_balance, locale)}
+                                </span>
                                 <span className="text-muted-foreground">
-                                  Address
+                                  {tTokenHoldings('tooltip.address')}
                                 </span>
                                 <span className="max-w-[160px] truncate">
                                   {token.token_address}
@@ -846,6 +879,7 @@ export function HomeTokenHoldingsDashboard({
                     <TokenDonutChart
                       title={token.symbol}
                       slices={token.holdings}
+                      locale={locale}
                     />
                   </CardContent>
                 </Card>
@@ -858,9 +892,9 @@ export function HomeTokenHoldingsDashboard({
       {activeFilter === 'energy' ? (
         <Card>
           <CardHeader>
-            <CardTitle>Energy</CardTitle>
+            <CardTitle>{tTokenHoldings('energy.title')}</CardTitle>
             <CardDescription>
-              Energy widgets will appear once energy data is available.
+              {tTokenHoldings('energy.description')}
             </CardDescription>
           </CardHeader>
         </Card>
