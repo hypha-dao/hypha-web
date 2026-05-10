@@ -396,160 +396,158 @@ export async function getTokenHoldingsBySpaceSlug(
   const buildTokenRow = async (
     tokenAddress: `0x${string}`,
   ): Promise<TokenHoldingRow> => {
-      const contractInfo = await readTokenContractInfo(tokenAddress);
-      const tokenMeta = dbTokenByAddress.get(tokenAddress);
-      const isHyphaSharedToken =
-        tokenAddress === normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS);
-      const isHyphaVoiceSharedToken =
-        tokenAddress === normalizeAddress(HVOICE_SHARED_TOKEN_ADDRESS);
-      const decimals = contractInfo.decimals;
-      const totalSupplyRaw = contractInfo.totalSupplyRaw;
+    const contractInfo = await readTokenContractInfo(tokenAddress);
+    const tokenMeta = dbTokenByAddress.get(tokenAddress);
+    const isHyphaSharedToken =
+      tokenAddress === normalizeAddress(HYPHA_SHARED_TOKEN_ADDRESS);
+    const isHyphaVoiceSharedToken =
+      tokenAddress === normalizeAddress(HVOICE_SHARED_TOKEN_ADDRESS);
+    const decimals = contractInfo.decimals;
+    const totalSupplyRaw = contractInfo.totalSupplyRaw;
 
-      const balancesByAddress = await readBalancesForHolders(
-        tokenAddress,
-        holderDescriptors,
-      );
+    const balancesByAddress = await readBalancesForHolders(
+      tokenAddress,
+      holderDescriptors,
+    );
 
-      const treasuryDescriptor = holderDescriptors.find(
-        (holder) => holder.holder_kind === 'treasury',
-      );
-      const treasuryRaw =
-        treasuryDescriptor && balancesByAddress.has(treasuryDescriptor.address)
-          ? balancesByAddress.get(treasuryDescriptor.address) ?? 0n
-          : 0n;
+    const treasuryDescriptor = holderDescriptors.find(
+      (holder) => holder.holder_kind === 'treasury',
+    );
+    const treasuryRaw =
+      treasuryDescriptor && balancesByAddress.has(treasuryDescriptor.address)
+        ? balancesByAddress.get(treasuryDescriptor.address) ?? 0n
+        : 0n;
 
-      let knownBalancesRaw = 0n;
-      for (const value of balancesByAddress.values()) {
-        knownBalancesRaw += value;
+    let knownBalancesRaw = 0n;
+    for (const value of balancesByAddress.values()) {
+      knownBalancesRaw += value;
+    }
+    const externalOtherRaw = ensureNonNegativeBigInt(
+      totalSupplyRaw - knownBalancesRaw,
+    );
+
+    let collapsedSmallHolderRaw = 0n;
+    const rows: HolderRow[] = [];
+
+    const aggregatedMembers = new Map<
+      string,
+      {
+        holder_kind: Exclude<HolderKind, 'treasury' | 'other'>;
+        display_name: string;
+        slug: string | null;
+        balance_raw: bigint;
       }
-      const externalOtherRaw = ensureNonNegativeBigInt(
-        totalSupplyRaw - knownBalancesRaw,
-      );
+    >();
 
-      let collapsedSmallHolderRaw = 0n;
-      const rows: HolderRow[] = [];
+    for (const descriptor of holderDescriptors) {
+      const balanceRaw = balancesByAddress.get(descriptor.address) ?? 0n;
+      if (!includeZeroBalances && balanceRaw <= 0n) continue;
 
-      const aggregatedMembers = new Map<
-        string,
-        {
-          holder_kind: Exclude<HolderKind, 'treasury' | 'other'>;
-          display_name: string;
-          slug: string | null;
-          balance_raw: bigint;
-        }
-      >();
-
-      for (const descriptor of holderDescriptors) {
-        const balanceRaw = balancesByAddress.get(descriptor.address) ?? 0n;
-        if (!includeZeroBalances && balanceRaw <= 0n) continue;
-
-        if (descriptor.holder_kind === 'treasury') {
-          rows.push({
-            holder_kind: 'treasury',
-            address: descriptor.address,
-            display_name: 'Treasury',
-            slug: null,
-            balance: formatUnits(balanceRaw, decimals),
-            balance_raw: balanceRaw.toString(),
-            share_pct: toSharePct(balanceRaw, totalSupplyRaw),
-          });
-          continue;
-        }
-
-        const entityKey =
-          descriptor.holder_kind === 'person' ||
-          descriptor.holder_kind === 'space'
-            ? `${descriptor.holder_kind}:${
-                descriptor.slug ?? descriptor.display_name.toLowerCase()
-              }`
-            : `${descriptor.holder_kind}:${descriptor.address}`;
-        const existing = aggregatedMembers.get(entityKey);
-        if (existing) {
-          existing.balance_raw += balanceRaw;
-        } else {
-          aggregatedMembers.set(entityKey, {
-            holder_kind: descriptor.holder_kind,
-            display_name: descriptor.display_name,
-            slug: descriptor.slug,
-            balance_raw: balanceRaw,
-          });
-        }
-      }
-
-      for (const entry of aggregatedMembers.values()) {
-        const sharePct = toSharePct(entry.balance_raw, totalSupplyRaw);
-        if (sharePct < safeCollapseBelowPct) {
-          collapsedSmallHolderRaw += entry.balance_raw;
-          continue;
-        }
-
+      if (descriptor.holder_kind === 'treasury') {
         rows.push({
-          holder_kind: entry.holder_kind,
-          address: null,
-          display_name: entry.display_name,
-          slug: entry.slug,
-          balance: formatUnits(entry.balance_raw, decimals),
-          balance_raw: entry.balance_raw.toString(),
-          share_pct: sharePct,
-        });
-      }
-
-      rows.sort((a, b) => {
-        const diff = BigInt(b.balance_raw) - BigInt(a.balance_raw);
-        if (diff > 0n) return 1;
-        if (diff < 0n) return -1;
-        return a.display_name.localeCompare(b.display_name);
-      });
-
-      let holderRows = rows;
-      let overflowToOtherRaw = 0n;
-      if (safeHolderLimit && holderRows.length > safeHolderLimit) {
-        const keep = holderRows.slice(0, safeHolderLimit);
-        const overflow = holderRows.slice(safeHolderLimit);
-        overflowToOtherRaw = overflow.reduce(
-          (sum, row) => sum + BigInt(row.balance_raw),
-          0n,
-        );
-        holderRows = keep;
-      }
-
-      const otherRaw =
-        externalOtherRaw + collapsedSmallHolderRaw + overflowToOtherRaw;
-      if (otherRaw > 0n || includeZeroBalances) {
-        holderRows.push({
-          holder_kind: 'other',
-          address: null,
-          display_name: 'Other',
+          holder_kind: 'treasury',
+          address: descriptor.address,
+          display_name: 'Treasury',
           slug: null,
-          balance: formatUnits(otherRaw, decimals),
-          balance_raw: otherRaw.toString(),
-          share_pct: toSharePct(otherRaw, totalSupplyRaw),
+          balance: formatUnits(balanceRaw, decimals),
+          balance_raw: balanceRaw.toString(),
+          share_pct: toSharePct(balanceRaw, totalSupplyRaw),
         });
+        continue;
       }
 
-      return {
-        token_id: tokenMeta?.id ?? null,
-        token_address: tokenAddress,
-        name:
-          tokenMeta?.name ??
-          (isHyphaVoiceSharedToken ? 'Hypha Voice' : contractInfo.name),
-        symbol:
-          tokenMeta?.symbol ??
-          (isHyphaVoiceSharedToken ? 'HVOICE' : contractInfo.symbol),
-        icon_url: tokenMeta?.iconUrl ?? null,
-        type:
-          tokenMeta?.type ??
-          (isHyphaSharedToken || isHyphaVoiceSharedToken
-            ? 'utility'
-            : 'unknown'),
-        decimals,
-        max_supply: tokenMeta?.maxSupply ?? null,
-        total_supply: formatUnits(totalSupplyRaw, decimals),
-        holdings: holderRows,
-        treasury_balance: formatUnits(treasuryRaw, decimals),
-        other_balance: formatUnits(otherRaw, decimals),
-        total_holders_balance: formatUnits(totalSupplyRaw, decimals),
-      } satisfies TokenHoldingRow;
+      const entityKey =
+        descriptor.holder_kind === 'person' ||
+        descriptor.holder_kind === 'space'
+          ? `${descriptor.holder_kind}:${
+              descriptor.slug ?? descriptor.display_name.toLowerCase()
+            }`
+          : `${descriptor.holder_kind}:${descriptor.address}`;
+      const existing = aggregatedMembers.get(entityKey);
+      if (existing) {
+        existing.balance_raw += balanceRaw;
+      } else {
+        aggregatedMembers.set(entityKey, {
+          holder_kind: descriptor.holder_kind,
+          display_name: descriptor.display_name,
+          slug: descriptor.slug,
+          balance_raw: balanceRaw,
+        });
+      }
+    }
+
+    for (const entry of aggregatedMembers.values()) {
+      const sharePct = toSharePct(entry.balance_raw, totalSupplyRaw);
+      if (sharePct < safeCollapseBelowPct) {
+        collapsedSmallHolderRaw += entry.balance_raw;
+        continue;
+      }
+
+      rows.push({
+        holder_kind: entry.holder_kind,
+        address: null,
+        display_name: entry.display_name,
+        slug: entry.slug,
+        balance: formatUnits(entry.balance_raw, decimals),
+        balance_raw: entry.balance_raw.toString(),
+        share_pct: sharePct,
+      });
+    }
+
+    rows.sort((a, b) => {
+      const diff = BigInt(b.balance_raw) - BigInt(a.balance_raw);
+      if (diff > 0n) return 1;
+      if (diff < 0n) return -1;
+      return a.display_name.localeCompare(b.display_name);
+    });
+
+    let holderRows = rows;
+    let overflowToOtherRaw = 0n;
+    if (safeHolderLimit && holderRows.length > safeHolderLimit) {
+      const keep = holderRows.slice(0, safeHolderLimit);
+      const overflow = holderRows.slice(safeHolderLimit);
+      overflowToOtherRaw = overflow.reduce(
+        (sum, row) => sum + BigInt(row.balance_raw),
+        0n,
+      );
+      holderRows = keep;
+    }
+
+    const otherRaw =
+      externalOtherRaw + collapsedSmallHolderRaw + overflowToOtherRaw;
+    if (otherRaw > 0n || includeZeroBalances) {
+      holderRows.push({
+        holder_kind: 'other',
+        address: null,
+        display_name: 'Other',
+        slug: null,
+        balance: formatUnits(otherRaw, decimals),
+        balance_raw: otherRaw.toString(),
+        share_pct: toSharePct(otherRaw, totalSupplyRaw),
+      });
+    }
+
+    return {
+      token_id: tokenMeta?.id ?? null,
+      token_address: tokenAddress,
+      name:
+        tokenMeta?.name ??
+        (isHyphaVoiceSharedToken ? 'Hypha Voice' : contractInfo.name),
+      symbol:
+        tokenMeta?.symbol ??
+        (isHyphaVoiceSharedToken ? 'HVOICE' : contractInfo.symbol),
+      icon_url: tokenMeta?.iconUrl ?? null,
+      type:
+        tokenMeta?.type ??
+        (isHyphaSharedToken || isHyphaVoiceSharedToken ? 'utility' : 'unknown'),
+      decimals,
+      max_supply: tokenMeta?.maxSupply ?? null,
+      total_supply: formatUnits(totalSupplyRaw, decimals),
+      holdings: holderRows,
+      treasury_balance: formatUnits(treasuryRaw, decimals),
+      other_balance: formatUnits(otherRaw, decimals),
+      total_holders_balance: formatUnits(totalSupplyRaw, decimals),
+    } satisfies TokenHoldingRow;
   };
 
   const tokenRows: TokenHoldingRow[] = [];
@@ -562,7 +560,9 @@ export async function getTokenHoldingsBySpaceSlug(
       startIndex,
       startIndex + TOKEN_PROCESS_CONCURRENCY,
     );
-    const batchRows = await Promise.all(batch.map((token) => buildTokenRow(token)));
+    const batchRows = await Promise.all(
+      batch.map((token) => buildTokenRow(token)),
+    );
     tokenRows.push(...batchRows);
   }
 

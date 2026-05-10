@@ -294,9 +294,7 @@ function TokenDonutChart({
 
   const pieData = React.useMemo(
     () =>
-      d3
-        .pie<ChartSlice>()
-        .value((item: ChartSlice) => item.numeric)(chartData),
+      d3.pie<ChartSlice>().value((item: ChartSlice) => item.numeric)(chartData),
     [chartData],
   );
 
@@ -1120,7 +1118,7 @@ function SignalsPulseMapWidget({
     [validSignals],
   );
   const recentTs =
-    recencyExtent[1] ?? (recencyExtent[0] ?? Date.now() + 3_600_000);
+    recencyExtent[1] ?? recencyExtent[0] ?? Date.now() + 3_600_000;
   const oldestTs = recencyExtent[0] ?? Date.now();
   const recencySpan = Math.max(1, recentTs - oldestTs);
   const bucketIndexByTimestamp = React.useCallback(
@@ -1311,8 +1309,8 @@ function SignalsPulseMapWidget({
                   bucketIndex === 0
                     ? 'Recent'
                     : bucketIndex === bucketCount - 1
-                      ? 'Older'
-                      : '';
+                    ? 'Older'
+                    : '';
                 return (
                   <g key={`tick-${bucketIndex}`}>
                     <line
