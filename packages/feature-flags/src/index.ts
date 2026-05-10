@@ -3,7 +3,6 @@ import {
   readBooleanOverride,
 } from './vercel-toolbar-overrides';
 
-const isPreviewEnvironment = () => process.env.VERCEL_ENV === 'preview';
 const parseBoolean = (value: string | undefined): boolean | undefined => {
   if (!value) return undefined;
   const normalized = value.trim().toLowerCase();
@@ -29,7 +28,7 @@ const parseBoolean = (value: string | undefined): boolean | undefined => {
  *
  * **Vercel Toolbar:** When `FLAGS_SECRET` is set, `get*` reads the
  * `vercel-flag-overrides` cookie (same as `flags/next`) so toolbar toggles apply.
- * `NEXT_PUBLIC_*` env vars and preview defaults apply when there is no override for that key.
+ * `NEXT_PUBLIC_*` env vars and fallback defaults apply when there is no override for that key.
  * Without `FLAGS_SECRET`, SSR still works; toolbar overrides are ignored until the
  * secret is configured on the project.
  */
@@ -68,7 +67,8 @@ export const flagDefinitionsForDiscovery = {
   },
   /**
    * Toolbar key matches `readBooleanOverride(..., 'enable-human-chat')`.
-   * Discovery `defaultValue` matches {@link getEnableHumanChat} when unset (opt-in).
+   * Discovery `defaultValue` matches {@link getEnableHumanChat} when unset
+   * (default on, disabled only by explicit kill switches).
    */
   enableHumanChat: {
     key: 'enable-human-chat',
@@ -91,7 +91,6 @@ async function getBooleanFlagFromToolbarOrEnv(
   toolbarKey: string,
   envValue: string | undefined,
   fallbackDefaultValue: boolean,
-  previewDefaultValue: boolean = true,
 ): Promise<boolean> {
   const overrides = await getVercelToolbarFlagOverrides();
   const o = readBooleanOverride(overrides, toolbarKey);
@@ -100,8 +99,6 @@ async function getBooleanFlagFromToolbarOrEnv(
   const env = parseBoolean(envValue);
   if (env !== undefined) return env;
 
-  // Preserve preview behavior while allowing explicit prod defaults per flag.
-  if (isPreviewEnvironment()) return previewDefaultValue;
   return fallbackDefaultValue;
 }
 
@@ -143,7 +140,6 @@ export async function getEnableSpaceMemory(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-space-memory',
     process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY,
-    false,
     false,
   );
 }

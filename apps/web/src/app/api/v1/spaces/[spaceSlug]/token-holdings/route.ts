@@ -5,6 +5,7 @@ import {
   getTokenHoldingsBySpaceSlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 type Params = { spaceSlug: string };
@@ -34,16 +35,28 @@ function parseIntParam(
   const keyList = Array.isArray(keys) ? keys : [keys];
   for (const key of keyList) {
     const raw = url.searchParams.get(key);
-    if (raw == null) continue;
-    const trimmed = raw.trim();
-    if (!/^[1-9]\d*$/.test(trimmed)) {
-      throw new Error(`Invalid ${key}: value must be a positive integer`);
-    }
-    const parsed = Number.parseInt(trimmed, 10);
-    if (!Number.isFinite(parsed) || parsed < 1) {
-      throw new Error(`Invalid ${key}: value must be a positive integer`);
-    }
+    if (raw == null || raw === '') continue;
+    const parsed = Number.parseInt(raw, 10);
+    if (!Number.isFinite(parsed) || parsed < 1) continue;
     return Math.min(parsed, max);
+  }
+  return fallback;
+}
+
+function parseFloatParam(
+  url: URL,
+  keys: string | string[],
+  fallback?: number,
+  min = 0,
+  max = 100,
+): number | undefined {
+  const keyList = Array.isArray(keys) ? keys : [keys];
+  for (const key of keyList) {
+    const raw = url.searchParams.get(key);
+    if (raw == null || raw === '') continue;
+    const parsed = Number.parseFloat(raw);
+    if (!Number.isFinite(parsed)) continue;
+    return Math.min(max, Math.max(min, parsed));
   }
   return fallback;
 }
@@ -60,24 +73,29 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
-    let resolvedAuthToken: string | undefined;
-    if (space.web3SpaceId != null) {
-      const { hasAccess, response, authToken } = await checkSpaceAccess(
+    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+      const web3SpaceIdNum =
+        typeof space.web3SpaceId === 'number'
+          ? space.web3SpaceId
+          : Number(space.web3SpaceId);
+      if (!Number.isFinite(web3SpaceIdNum)) {
+        return NextResponse.json(
+          { error: 'Invalid web3 space id' },
+          { status: 500 },
+        );
+      }
+      const { hasAccess, response } = await checkSpaceAccess(
         request,
-        space.web3SpaceId,
+        web3SpaceIdNum,
       );
       if (!hasAccess && response) {
         return response;
       }
-      resolvedAuthToken = authToken;
     }
 
     const authHeader = request.headers.get('authorization');
     const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
     const bearer = bearerMatch?.[1]?.trim() || undefined;
-    if (!resolvedAuthToken) {
-      resolvedAuthToken = bearer;
-    }
 
     const url = new URL(request.url);
     const includeZeroBalances = parseBooleanParam(
@@ -91,6 +109,10 @@ export async function GET(
       true,
     );
     const holderLimit = parseIntParam(url, ['holderLimit', 'holder_limit']);
+    const collapseBelowPct = parseFloatParam(url, [
+      'collapseBelowPct',
+      'collapse_below_pct',
+    ]);
 
     const gated = await getTokenHoldingsBySpaceSlug(
       {
@@ -98,8 +120,9 @@ export async function GET(
         includeZeroBalances,
         includeTreasury,
         holderLimit,
+        collapseBelowPct,
       },
-      { db, authToken: resolvedAuthToken },
+      { db, authToken: bearer },
     );
 
     if (gated.access === 'denied') {
@@ -115,9 +138,6 @@ export async function GET(
 
     return NextResponse.json(gated.result);
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('Invalid ')) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
     console.error('Failed to fetch token holdings:', error);
     return NextResponse.json(
       { error: 'Failed to fetch token holdings' },

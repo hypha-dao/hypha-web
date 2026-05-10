@@ -1,14 +1,5 @@
 import { z } from 'zod';
-
-const slugSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(50)
-  .regex(
-    /^[a-z0-9'-]+$/,
-    'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes',
-  );
+import { slugSchema } from './common-schemas.js';
 
 export const getTokenHoldingsBySpaceSlugInputSchema = z.object({
   space_slug: slugSchema,
@@ -24,7 +15,7 @@ const holderSchema = z.object({
   slug: z.string().nullable(),
   balance: z.string(),
   balance_raw: z.string(),
-  share_pct: z.number(),
+  share_pct: z.number().min(0).max(100),
 });
 
 const tokenHoldingSchema = z.object({

@@ -151,6 +151,85 @@
       "noAccess": "Vous n'avez pas accès à la navigation des espaces."
     }
   },
+  "TokenHoldingsDashboard": {
+    "subtitle": "Répartition des tokens en un coup d'œil.",
+    "badges": {
+      "tokens": "Tokens : {count}",
+      "otherBucket": "Catégorie autres : < {threshold} %",
+      "treasuryVisible": "Trésorerie toujours visible"
+    },
+    "updatedAt": "Mis à jour {date}",
+    "error": {
+      "title": "Impossible de charger les avoirs en tokens",
+      "description": "Veuillez réessayer dans un instant. Si le problème persiste, vérifiez votre accès à l'espace et votre connexion réseau.",
+      "accessDeniedTitle": "L'accès aux avoirs en tokens est restreint",
+      "accessDeniedDescription": "Vous n'avez actuellement pas l'autorisation de consulter les avoirs en tokens de cet espace."
+    },
+    "empty": {
+      "title": "Aucun avoir en tokens disponible pour le moment",
+      "description": "Cet espace n'expose actuellement pas de données de distribution des tokens émis."
+    },
+    "chartAria": "Graphique de répartition des tokens pour {title}",
+    "tokenDetailsAria": "Détails du token pour {tokenName}",
+    "tooltip": {
+      "totalSupply": "Offre totale",
+      "other": "Autres",
+      "address": "Adresse"
+    },
+    "filters": {
+      "energy": "Énergie",
+      "activity": "Activité",
+      "distribution": "Distribution"
+    },
+    "activity": {
+      "title": "Impossible de charger les widgets d'activité",
+      "error": "Veuillez réessayer dans un instant. Les données d'analyse d'activité sont peut-être encore en cours de synchronisation."
+    },
+    "distribution": {
+      "title": "Distribution dans le temps",
+      "subtitle": "L'axe X affiche le temps à partir des dates de transaction.",
+      "tokenLabel": "Token",
+      "memberLabel": "Membre",
+      "memberAll": "Tous",
+      "start": "Début",
+      "end": "Fin",
+      "delta": "Delta",
+      "timeAxis": "Temps",
+      "error": "Impossible de charger l'historique de distribution des tokens pour le moment.",
+      "empty": "Aucun historique de transfert trouvé pour les filtres sélectionnés."
+    },
+    "proposals": {
+      "title": "Propositions",
+      "subtitle": "En vote, acceptées, refusées",
+      "ariaLabel": "Distribution des propositions",
+      "onVoting": "En vote",
+      "accepted": "Acceptées",
+      "refused": "Refusées",
+      "noData": "Aucune donnée"
+    },
+    "members": {
+      "title": "Membres",
+      "subtitle": "Membres et espaces mensuels cumulés (nets des sorties)",
+      "people": "Personnes",
+      "spaces": "Espaces"
+    },
+    "signals": {
+      "title": "Signaux",
+      "subtitle": "Carte de chaleur par priorité et récence (récent à gauche, plus ancien à droite)",
+      "count": "Signaux",
+      "peakCell": "Cellule maximale",
+      "recent": "Récent",
+      "older": "Plus ancien",
+      "recency": "Récence",
+      "lowActivity": "Faible activité",
+      "highActivity": "Forte activité",
+      "cellTitle": "{priority} · {count} signaux · fenêtre de récence de {start}% à {end}%"
+    },
+    "energy": {
+      "title": "Énergie",
+      "description": "Les widgets énergie apparaîtront lorsque les données seront disponibles."
+    }
+  },
   "SpaceSettingsAction": {
     "title": "Paramètres de l'espace",
     "content": "Accédez aux paramètres de votre espace et gérez-les, y compris son apparence, sa structure, ses méthodes, l'adhésion et la trésorerie.",
@@ -2066,6 +2145,9 @@
     "priority": "Priorité",
     "tags": "Tags",
     "selectOneOrMore": "Sélectionnez un ou plusieurs",
+    "searchOrCreateTag": "Tapez pour rechercher ou créer un tag",
+    "noRecentTags": "Aucun tag récent pour le moment. Commencez à taper pour rechercher des tags.",
+    "allTags": "Tous les tags",
     "description": "Description",
     "descriptionPlaceholder": "Tapez votre description ici...",
     "publish": "Publier",
@@ -2149,14 +2231,69 @@
       "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer."
     },
     "tagLabels": {
+      "Purpose": "Raison d'être",
+      "North Star": "Étoile polaire",
+      "Vision": "Vision",
       "Strategy": "Stratégie",
+      "Values": "Valeurs",
+      "Principles": "Principes",
+      "Milestones": "Jalons",
+      "Impact Goals": "Objectifs d'impact",
+      "Trend": "Tendance",
+      "Social Conditions": "Conditions sociales",
+      "Planetary Boundaries": "Limites planétaires",
+      "Policy": "Politique",
+      "Regulation": "Réglementation",
+      "Emergency Response": "Réponse d'urgence",
+      "Project": "Projet",
+      "Quest": "Mission",
+      "Job": "Rôle",
+      "Skill": "Compétence",
+      "Advisory Support": "Soutien consultatif",
+      "Volunteering": "Bénévolat",
+      "Serving Audience": "Public servi",
+      "Customers": "Clients",
+      "Users": "Utilisateurs",
+      "Communities": "Communautés",
+      "Beneficiaries": "Bénéficiaires",
+      "Partners": "Partenaires",
+      "Governance": "Gouvernance",
+      "Processes": "Processus",
+      "Structure": "Structure",
+      "Rhythms": "Rythmes",
+      "Support Systems": "Systèmes de soutien",
+      "Needs": "Besoins",
+      "Resources": "Ressources",
+      "Fundraising": "Collecte de fonds",
+      "Matchmaking": "Mise en relation",
+      "Innovation": "Innovation",
+      "Products": "Produits",
+      "Services": "Services",
+      "Product-Market Fit": "Adéquation produit-marché",
+      "Business Model": "Modèle économique",
+      "Data": "Données",
+      "Knowledge": "Connaissance",
+      "Intellectual Property": "Propriété intellectuelle",
+      "Proof of Action": "Preuve d'action",
+      "Proof of Impact": "Preuve d'impact",
+      "Learning": "Apprentissage",
+      "Feedback Loop": "Boucle de rétroaction",
       "Culture": "Culture",
       "Onboarding": "Intégration",
       "Engagement": "Engagement",
-      "Learning": "Apprentissage",
       "Capacity": "Capacité",
       "Network": "Réseau",
       "Reputation": "Réputation"
+    },
+    "tagCategories": {
+      "purposeDirection": "Raison d'être & direction",
+      "broaderContext": "Contexte élargi",
+      "peopleRoles": "Personnes & rôles",
+      "ecosystemMapping": "Cartographie de l'écosystème",
+      "operatingCoherence": "Cohérence opérationnelle",
+      "needsResources": "Besoins & ressources",
+      "valueModel": "Valeur & modèle",
+      "evidenceImpact": "Preuves & impact"
     }
   },
   "SignalCard": {

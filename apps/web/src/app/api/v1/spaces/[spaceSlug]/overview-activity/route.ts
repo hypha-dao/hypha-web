@@ -1,21 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
+  fetchProposalOutcomeSetsForSpace,
   getAllCoherences,
   getDocumentsBySpaceSlug,
   getSpaceMembersRoster,
-  web3Client,
 } from '@hypha-platform/core/server';
-import {
-  energyDistributionImplementationAddress,
-  energyDistributionImplementationAbi,
-} from '@hypha-platform/core/generated';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
-import { isAddress, parseAbiItem } from 'viem';
 
 type Params = { spaceSlug: string };
+
+type MonthBucket = {
+  month: string;
+  people: number;
+  spaces: number;
+};
 
 function toIsoIfValid(value: unknown): string | null {
   if (!value) return null;
@@ -24,30 +25,70 @@ function toIsoIfValid(value: unknown): string | null {
   return date.toISOString();
 }
 
-function isOnVotingStatus(status: string | undefined): boolean {
-  return status !== 'accepted' && status !== 'rejected';
+function toMonthKey(value: Date): string {
+  const year = value.getUTCFullYear();
+  const month = String(value.getUTCMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
 }
 
-const ENERGY_CONSUMED_EVENT = parseAbiItem(
-  'event EnergyConsumed(address indexed member, uint256 quantity, int256 cashCreditBalance)',
-);
+function buildRecentMonthBuckets(size: number): MonthBucket[] {
+  const now = new Date();
+  const base = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const buckets: MonthBucket[] = [];
 
-function normalizeAddress(address: string): `0x${string}` {
-  return address.toLowerCase() as `0x${string}`;
+  for (let offset = size - 1; offset >= 0; offset -= 1) {
+    const cursor = new Date(base);
+    cursor.setUTCMonth(base.getUTCMonth() - offset);
+    buckets.push({ month: toMonthKey(cursor), people: 0, spaces: 0 });
+  }
+
+  return buckets;
 }
 
-function formatMemberDisplayName(input: {
-  name?: string | null;
-  surname?: string | null;
-  nickname?: string | null;
-  slug?: string | null;
-  address: `0x${string}`;
-}): string {
-  const fullName = `${input.name ?? ''} ${input.surname ?? ''}`.trim();
-  if (fullName) return fullName;
-  if (input.nickname?.trim()) return input.nickname.trim();
-  if (input.slug?.trim()) return input.slug.trim();
-  return `${input.address.slice(0, 6)}...${input.address.slice(-4)}`;
+function buildTimelineMonthBuckets(
+  eventDateValues: Array<string | null>,
+  maxMonths = 12,
+): MonthBucket[] {
+  const now = new Date();
+  const nowMonth = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+  );
+  const eventDates = eventDateValues
+    .filter((value): value is string => Boolean(value))
+    .map((value) => new Date(value))
+    .filter((value) => !Number.isNaN(value.getTime()))
+    .map(
+      (value) =>
+        new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), 1)),
+    );
+
+  if (eventDates.length === 0) {
+    return buildRecentMonthBuckets(6);
+  }
+
+  const earliest = eventDates.reduce(
+    (min, value) => (value < min ? value : min),
+    eventDates[0]!,
+  );
+  const latest = nowMonth;
+
+  const monthSpan =
+    (latest.getUTCFullYear() - earliest.getUTCFullYear()) * 12 +
+    (latest.getUTCMonth() - earliest.getUTCMonth()) +
+    1;
+  const boundedSpan = Math.max(1, Math.min(monthSpan, maxMonths));
+
+  const start = new Date(latest);
+  start.setUTCMonth(start.getUTCMonth() - (boundedSpan - 1));
+
+  const buckets: MonthBucket[] = [];
+  for (let offset = 0; offset < boundedSpan; offset += 1) {
+    const cursor = new Date(start);
+    cursor.setUTCMonth(start.getUTCMonth() + offset);
+    buckets.push({ month: toMonthKey(cursor), people: 0, spaces: 0 });
+  }
+
+  return buckets;
 }
 
 export async function GET(
@@ -62,10 +103,21 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
+    let web3SpaceIdNum: number | null = null;
     if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+      web3SpaceIdNum =
+        typeof space.web3SpaceId === 'number'
+          ? space.web3SpaceId
+          : Number(space.web3SpaceId);
+      if (!Number.isFinite(web3SpaceIdNum)) {
+        return NextResponse.json(
+          { error: 'Invalid web3 space id' },
+          { status: 500 },
+        );
+      }
       const { hasAccess, response } = await checkSpaceAccess(
         request,
-        space.web3SpaceId as number,
+        web3SpaceIdNum,
       );
       if (!hasAccess && response) {
         return response;
@@ -76,27 +128,51 @@ export async function GET(
     const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
     const bearer = bearerMatch?.[1]?.trim() || undefined;
 
-    const [signals, proposalsResult] = await Promise.all([
+    const [signals, proposalOutcomes] = await Promise.all([
       getAllCoherences({
         spaceId: space.id,
         includeArchived: false,
       }),
-      getDocumentsBySpaceSlug(
+      web3SpaceIdNum == null
+        ? Promise.resolve(null)
+        : fetchProposalOutcomeSetsForSpace(web3SpaceIdNum),
+    ]);
+    const allProposals: Array<{
+      status?: string;
+      label?: string | null;
+      updatedAt?: string | Date | null;
+      web3ProposalId?: number | null;
+    }> = [];
+    let proposalsPage = 1;
+
+    while (true) {
+      const proposalsResult = await getDocumentsBySpaceSlug(
         {
           spaceSlug,
-          page: 1,
-          pageSize: 120,
+          page: proposalsPage,
+          pageSize: 100,
           state: 'proposal',
         },
         { db, authToken: bearer },
-      ),
-    ]);
-
-    if (proposalsResult.access === 'denied') {
-      return NextResponse.json(
-        { error: proposalsResult.message },
-        { status: 403 },
       );
+
+      if (proposalsResult.access === 'denied') {
+        return NextResponse.json(
+          { error: proposalsResult.message },
+          { status: 403 },
+        );
+      }
+
+      if (!proposalsResult.result.found) {
+        break;
+      }
+
+      allProposals.push(...proposalsResult.result.documents);
+
+      if (!proposalsResult.result.pagination.has_next_page) {
+        break;
+      }
+      proposalsPage += 1;
     }
 
     const proposalCounts = {
@@ -105,34 +181,47 @@ export async function GET(
       refused: 0,
     };
 
-    const onVotingProposals = proposalsResult.result.found
-      ? proposalsResult.result.documents
-          .filter((proposal) => isOnVotingStatus(proposal.status))
-          .sort(
-            (a, b) =>
-              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-          )
-          .slice(0, 12)
-          .map((proposal) => ({
-            id: proposal.id,
-            title:
-              proposal.title || proposal.label || `Proposal #${proposal.id}`,
-            description: proposal.description ?? '',
-            label: proposal.label ?? null,
-            status: proposal.status ?? 'onVoting',
-            updated_at: proposal.updatedAt,
-          }))
-      : [];
+    const resolveProposalStatus = (proposal: {
+      status?: string;
+      web3ProposalId?: number | null;
+    }): 'accepted' | 'rejected' | 'onVoting' | null => {
+      const proposalId =
+        typeof proposal.web3ProposalId === 'number' &&
+        Number.isFinite(proposal.web3ProposalId) &&
+        proposal.web3ProposalId > 0
+          ? proposal.web3ProposalId
+          : null;
 
-    if (proposalsResult.result.found) {
-      for (const proposal of proposalsResult.result.documents) {
-        if (proposal.status === 'accepted') {
-          proposalCounts.accepted += 1;
-        } else if (proposal.status === 'rejected') {
-          proposalCounts.refused += 1;
-        } else {
-          proposalCounts.onVoting += 1;
-        }
+      if (proposalOutcomes && proposalId != null) {
+        if (proposalOutcomes.withdrawn.has(proposalId)) return null;
+        if (proposalOutcomes.accepted.has(proposalId)) return 'accepted';
+        if (proposalOutcomes.rejected.has(proposalId)) return 'rejected';
+        return 'onVoting';
+      }
+
+      if (proposalOutcomes && proposalId == null) {
+        // Keep behavior aligned with Agreements tab: skip proposal docs that do
+        // not map to an on-chain proposal id when chain outcomes are available.
+        return null;
+      }
+
+      if (proposalId == null) {
+        return null;
+      }
+
+      if (proposal.status === 'accepted') return 'accepted';
+      if (proposal.status === 'rejected') return 'rejected';
+      return 'onVoting';
+    };
+
+    for (const proposal of allProposals) {
+      const resolvedStatus = resolveProposalStatus(proposal);
+      if (resolvedStatus === 'accepted') {
+        proposalCounts.accepted += 1;
+      } else if (resolvedStatus === 'rejected') {
+        proposalCounts.refused += 1;
+      } else if (resolvedStatus === 'onVoting') {
+        proposalCounts.onVoting += 1;
       }
     }
 
@@ -146,72 +235,12 @@ export async function GET(
       new Set(signals.flatMap((signal) => signal.tags ?? [])),
     );
 
-    const energyAddress = energyDistributionImplementationAddress[8453];
-    const memberConsumptionByAddress = new Map<`0x${string}`, number>();
-    let spaceConsumption = 0;
-    let spaceProduction = 0;
-    let collectiveRows: Array<{ owner: `0x${string}`; quantity: number }> = [];
+    const memberEntries: Array<{
+      member_kind: 'person' | 'space';
+      resolved_joined_at: string | null;
+    }> = [];
+    const hostSpaceCreatedAt = toIsoIfValid(space.createdAt);
 
-    try {
-      const latestBlock = await web3Client.getBlockNumber();
-      const approxBlocksPerDay = 43_200n;
-      const lookbackDays = 90n;
-      const span = approxBlocksPerDay * lookbackDays;
-      const fromBlock = latestBlock > span ? latestBlock - span : 0n;
-
-      const [energyConsumedLogs, collectiveConsumption] = await Promise.all([
-        web3Client.getLogs({
-          address: energyAddress,
-          event: ENERGY_CONSUMED_EVENT,
-          fromBlock,
-          toBlock: 'latest',
-        }),
-        web3Client.readContract({
-          address: energyAddress,
-          abi: energyDistributionImplementationAbi,
-          functionName: 'getCollectiveConsumption',
-        }),
-      ]);
-
-      for (const log of energyConsumedLogs) {
-        const member = log.args.member;
-        const quantityRaw = log.args.quantity;
-        if (!member || quantityRaw == null) continue;
-        const address = normalizeAddress(member);
-        const quantity = Number(quantityRaw);
-        if (!Number.isFinite(quantity) || quantity <= 0) continue;
-        memberConsumptionByAddress.set(
-          address,
-          (memberConsumptionByAddress.get(address) ?? 0) + quantity,
-        );
-        spaceConsumption += quantity;
-      }
-
-      if (Array.isArray(collectiveConsumption)) {
-        collectiveRows = collectiveConsumption
-          .map((row) => {
-            const rowOwner = row.owner;
-            const rowQuantity = Number(row.quantity);
-            if (!rowOwner || !isAddress(rowOwner)) return null;
-            if (!Number.isFinite(rowQuantity) || rowQuantity <= 0) return null;
-            return {
-              owner: normalizeAddress(rowOwner),
-              quantity: rowQuantity,
-            };
-          })
-          .filter((row): row is { owner: `0x${string}`; quantity: number } =>
-            Boolean(row),
-          );
-        spaceProduction = collectiveRows.reduce(
-          (sum, row) => sum + row.quantity,
-          0,
-        );
-      }
-    } catch (error) {
-      console.warn('Energy activity fetch failed:', error);
-    }
-
-    const memberNameByAddress = new Map<`0x${string}`, string>();
     let rosterPage = 1;
     while (true) {
       const roster = await getSpaceMembersRoster(
@@ -223,100 +252,137 @@ export async function GET(
         { db },
       );
       if (!roster.found) break;
-      for (const member of roster.members) {
-        if (member.member_kind !== 'person') continue;
-        const addressRaw = member.person.address;
-        if (!addressRaw || !isAddress(addressRaw)) continue;
-        const address = normalizeAddress(addressRaw);
-        memberNameByAddress.set(
-          address,
-          formatMemberDisplayName({
-            name: member.person.name,
-            surname: member.person.surname,
-            nickname: member.person.nickname,
-            slug: member.person.slug,
-            address,
-          }),
-        );
-      }
+      memberEntries.push(
+        ...roster.members.map((member) => ({
+          member_kind: member.member_kind,
+          resolved_joined_at:
+            member.joined_at ??
+            (member.member_kind === 'space'
+              ? toIsoIfValid(member.space.createdAt)
+              : hostSpaceCreatedAt),
+        })),
+      );
+
       if (!roster.pagination.has_next_page) break;
       rosterPage += 1;
     }
 
-    const memberProductionByAddress = new Map<`0x${string}`, number>();
-    for (const row of collectiveRows) {
-      memberProductionByAddress.set(
-        row.owner,
-        (memberProductionByAddress.get(row.owner) ?? 0) + row.quantity,
-      );
+    const membershipExitProposalDates = allProposals
+      .filter((proposal) => {
+        if (resolveProposalStatus(proposal) !== 'accepted') return false;
+        const label = proposal.label?.toLowerCase() ?? '';
+        return label.includes('membership exit');
+      })
+      .map((proposal) => toIsoIfValid(proposal.updatedAt));
+
+    const months = buildTimelineMonthBuckets(
+      [
+        ...memberEntries.map((item) => item.resolved_joined_at),
+        ...membershipExitProposalDates,
+      ],
+      12,
+    );
+    const monthJoinDeltas = new Map<
+      string,
+      { people: number; spaces: number }
+    >();
+    const monthExitDeltas = new Map<
+      string,
+      { people: number; spaces: number }
+    >();
+
+    for (const member of memberEntries) {
+      if (!member.resolved_joined_at) continue;
+      const joinedDate = new Date(member.resolved_joined_at);
+      if (Number.isNaN(joinedDate.getTime())) continue;
+      const key = toMonthKey(joinedDate);
+      const current = monthJoinDeltas.get(key) ?? { people: 0, spaces: 0 };
+      if (member.member_kind === 'person') {
+        current.people += 1;
+      } else {
+        current.spaces += 1;
+      }
+      monthJoinDeltas.set(key, current);
     }
 
-    const energyMemberAddresses = Array.from(
-      new Set([
-        ...memberConsumptionByAddress.keys(),
-        ...memberProductionByAddress.keys(),
-      ]),
-    );
-    const memberItems = energyMemberAddresses
-      .map((address) => {
-        const production = memberProductionByAddress.get(address) ?? 0;
-        const consumption = memberConsumptionByAddress.get(address) ?? 0;
-        return {
-          address,
-          name:
-            memberNameByAddress.get(address) ??
-            `${address.slice(0, 6)}...${address.slice(-4)}`,
-          production,
-          consumption,
-        };
-      })
-      .sort(
-        (a, b) => b.production + b.consumption - (a.production + a.consumption),
-      )
-      .slice(0, 30);
+    for (const exitAt of membershipExitProposalDates) {
+      if (!exitAt) continue;
+      const exitDate = new Date(exitAt);
+      if (Number.isNaN(exitDate.getTime())) continue;
+      const key = toMonthKey(exitDate);
+      const current = monthExitDeltas.get(key) ?? { people: 0, spaces: 0 };
+      // Membership exit proposals currently target members; model as person exits.
+      current.people += 1;
+      monthExitDeltas.set(key, current);
+    }
 
-    const hasEnergyData =
-      spaceProduction > 0 || spaceConsumption > 0 || memberItems.length > 0;
+    const firstBucketMonth = months[0]?.month;
+    let runningPeople = 0;
+    let runningSpaces = 0;
+    if (firstBucketMonth) {
+      for (const member of memberEntries) {
+        if (!member.resolved_joined_at) continue;
+        const joinedDate = new Date(member.resolved_joined_at);
+        if (Number.isNaN(joinedDate.getTime())) continue;
+        const joinedMonth = toMonthKey(joinedDate);
+        if (joinedMonth >= firstBucketMonth) continue;
+        if (member.member_kind === 'person') {
+          runningPeople += 1;
+        } else {
+          runningSpaces += 1;
+        }
+      }
+
+      for (const exitAt of membershipExitProposalDates) {
+        if (!exitAt) continue;
+        const exitDate = new Date(exitAt);
+        if (Number.isNaN(exitDate.getTime())) continue;
+        const exitMonth = toMonthKey(exitDate);
+        if (exitMonth >= firstBucketMonth) continue;
+        runningPeople = Math.max(0, runningPeople - 1);
+      }
+    }
+
+    for (const bucket of months) {
+      const joins = monthJoinDeltas.get(bucket.month) ?? {
+        people: 0,
+        spaces: 0,
+      };
+      const exits = monthExitDeltas.get(bucket.month) ?? {
+        people: 0,
+        spaces: 0,
+      };
+
+      runningPeople = Math.max(0, runningPeople + joins.people - exits.people);
+      runningSpaces = Math.max(0, runningSpaces + joins.spaces - exits.spaces);
+
+      bucket.people = runningPeople;
+      bucket.spaces = runningSpaces;
+    }
 
     return NextResponse.json({
       found: true,
       space_slug: spaceSlug,
       asOf: new Date().toISOString(),
       energy: {
-        available: hasEnergyData,
-        unit: 'kWh',
-        space: {
-          name: space.title || space.slug,
-          production: spaceProduction,
-          consumption: spaceConsumption,
-        },
-        members: memberItems,
+        available: false,
       },
-      proposals: {
-        ...proposalCounts,
-        onVotingItems: onVotingProposals,
-      },
+      proposals: proposalCounts,
       signals: {
         total: signals.length,
         priorities: signalPriorities,
         types: signalTypes,
         tags: signalTags,
-        items: signals
-          .sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          )
-          .slice(0, 20)
-          .map((signal) => ({
-            id: signal.id,
-            title: signal.title || `Signal #${signal.id}`,
-            description: signal.description ?? '',
-            priority: signal.priority,
-            type: signal.type,
-            tags: signal.tags ?? [],
-            created_at:
-              toIsoIfValid(signal.createdAt) ?? new Date().toISOString(),
-          })),
+        items: signals.map((signal) => ({
+          id: signal.id,
+          priority: signal.priority,
+          type: signal.type,
+          tags: signal.tags ?? [],
+          created_at: signal.createdAt.toISOString(),
+        })),
+      },
+      members: {
+        monthly: months,
       },
     });
   } catch (error) {

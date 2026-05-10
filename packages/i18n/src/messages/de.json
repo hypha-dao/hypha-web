@@ -151,6 +151,85 @@
       "noAccess": "Sie haben keinen Zugriff, um die Space-Navigation anzuzeigen."
     }
   },
+  "TokenHoldingsDashboard": {
+    "subtitle": "Tokenverteilung auf einen Blick.",
+    "badges": {
+      "tokens": "Token: {count}",
+      "otherBucket": "Sonstiger Anteil: < {threshold}%",
+      "treasuryVisible": "Treasury immer sichtbar"
+    },
+    "updatedAt": "Aktualisiert {date}",
+    "error": {
+      "title": "Token-Bestände konnten nicht geladen werden",
+      "description": "Bitte versuchen Sie es in einem Moment erneut. Wenn das Problem weiterhin besteht, prüfen Sie Ihren Space-Zugriff und die Netzwerkverbindung.",
+      "accessDeniedTitle": "Der Zugriff auf Token-Bestände ist eingeschränkt",
+      "accessDeniedDescription": "Sie haben derzeit keine Berechtigung, die Token-Bestände dieses Spaces einzusehen."
+    },
+    "empty": {
+      "title": "Noch keine Token-Bestände verfügbar",
+      "description": "Dieser Space stellt derzeit keine Daten zur Verteilung geprägter Token bereit."
+    },
+    "chartAria": "Tokenverteilungsdiagramm für {title}",
+    "tokenDetailsAria": "Token-Details für {tokenName}",
+    "tooltip": {
+      "totalSupply": "Gesamtangebot",
+      "other": "Sonstige",
+      "address": "Adresse"
+    },
+    "filters": {
+      "energy": "Energie",
+      "activity": "Aktivität",
+      "distribution": "Verteilung"
+    },
+    "activity": {
+      "title": "Aktivitäts-Widgets konnten nicht geladen werden",
+      "error": "Bitte versuchen Sie es in einem Moment erneut. Aktivitätsanalysen werden möglicherweise noch synchronisiert."
+    },
+    "distribution": {
+      "title": "Verteilung im Zeitverlauf",
+      "subtitle": "Die X-Achse zeigt die Zeit anhand der Transaktionsdaten.",
+      "tokenLabel": "Token",
+      "memberLabel": "Mitglied",
+      "memberAll": "Alle",
+      "start": "Start",
+      "end": "Ende",
+      "delta": "Delta",
+      "timeAxis": "Zeit",
+      "error": "Der Verlauf der Tokenverteilung kann derzeit nicht geladen werden.",
+      "empty": "Für die ausgewählten Filter wurde kein Transferverlauf gefunden."
+    },
+    "proposals": {
+      "title": "Vorschläge",
+      "subtitle": "In Abstimmung, angenommen, abgelehnt",
+      "ariaLabel": "Verteilung der Vorschläge",
+      "onVoting": "In Abstimmung",
+      "accepted": "Angenommen",
+      "refused": "Abgelehnt",
+      "noData": "Keine Daten"
+    },
+    "members": {
+      "title": "Mitglieder",
+      "subtitle": "Kumulierte monatliche Mitglieder und Spaces (abzüglich Austritte)",
+      "people": "Personen",
+      "spaces": "Spaces"
+    },
+    "signals": {
+      "title": "Signale",
+      "subtitle": "Heatmap nach Priorität und Aktualität (neu links, älter rechts)",
+      "count": "Signale",
+      "peakCell": "Maximale Zelle",
+      "recent": "Neu",
+      "older": "Älter",
+      "recency": "Aktualität",
+      "lowActivity": "Niedrige Aktivität",
+      "highActivity": "Hohe Aktivität",
+      "cellTitle": "{priority} · {count} Signale · {start}% bis {end}% Aktualitätsfenster"
+    },
+    "energy": {
+      "title": "Energie",
+      "description": "Energie-Widgets werden angezeigt, sobald Energiedaten verfügbar sind."
+    }
+  },
   "SpaceSettingsAction": {
     "title": "Space-Einstellungen",
     "content": "Greifen Sie auf die Einstellungen Ihres Spaces zu und verwalten Sie sie, einschließlich Erscheinungsbild, Struktur, Methoden, Mitgliedschaft und Schatzkammer.",
@@ -2067,6 +2146,8 @@
     "tags": "Tags",
     "selectOneOrMore": "Eines oder mehrere auswählen",
     "searchOrCreateTag": "Tippen, um ein Tag zu suchen oder zu erstellen",
+    "noRecentTags": "Noch keine zuletzt verwendeten Tags. Tippen Sie, um Tags zu suchen.",
+    "allTags": "Alle Tags",
     "description": "Beschreibung",
     "descriptionPlaceholder": "Geben Sie hier Ihre Beschreibung ein...",
     "publish": "Veröffentlichen",
@@ -2147,14 +2228,69 @@
       "roomLinkFailedRetry": "Signal erstellt, aber der Chatraum konnte nicht verknüpft werden. Bitte versuchen Sie es erneut."
     },
     "tagLabels": {
+      "Purpose": "Zweck",
+      "North Star": "Nordstern",
+      "Vision": "Vision",
       "Strategy": "Strategie",
+      "Values": "Werte",
+      "Principles": "Prinzipien",
+      "Milestones": "Meilensteine",
+      "Impact Goals": "Wirkungsziele",
+      "Trend": "Trend",
+      "Social Conditions": "Soziale Bedingungen",
+      "Planetary Boundaries": "Planetare Grenzen",
+      "Policy": "Politik",
+      "Regulation": "Regulierung",
+      "Emergency Response": "Notfallreaktion",
+      "Project": "Projekt",
+      "Quest": "Mission",
+      "Job": "Aufgabe",
+      "Skill": "Kompetenz",
+      "Advisory Support": "Beratungsunterstützung",
+      "Volunteering": "Freiwilligenarbeit",
+      "Serving Audience": "Zielgruppe",
+      "Customers": "Kunden",
+      "Users": "Nutzer",
+      "Communities": "Gemeinschaften",
+      "Beneficiaries": "Begünstigte",
+      "Partners": "Partner",
+      "Governance": "Governance",
+      "Processes": "Prozesse",
+      "Structure": "Struktur",
+      "Rhythms": "Rhythmen",
+      "Support Systems": "Unterstützungssysteme",
+      "Needs": "Bedarfe",
+      "Resources": "Ressourcen",
+      "Fundraising": "Fundraising",
+      "Matchmaking": "Matchmaking",
+      "Innovation": "Innovation",
+      "Products": "Produkte",
+      "Services": "Dienstleistungen",
+      "Product-Market Fit": "Product-Market-Fit",
+      "Business Model": "Geschäftsmodell",
+      "Data": "Daten",
+      "Knowledge": "Wissen",
+      "Intellectual Property": "Geistiges Eigentum",
+      "Proof of Action": "Handlungsnachweis",
+      "Proof of Impact": "Wirkungsnachweis",
+      "Learning": "Lernen",
+      "Feedback Loop": "Feedback-Schleife",
       "Culture": "Kultur",
       "Onboarding": "Onboarding",
       "Engagement": "Engagement",
-      "Learning": "Lernen",
       "Capacity": "Kapazität",
       "Network": "Netzwerk",
       "Reputation": "Reputation"
+    },
+    "tagCategories": {
+      "purposeDirection": "Zweck & Ausrichtung",
+      "broaderContext": "Übergeordneter Kontext",
+      "peopleRoles": "Menschen & Rollen",
+      "ecosystemMapping": "Ökosystem-Mapping",
+      "operatingCoherence": "Operative Kohärenz",
+      "needsResources": "Bedarfe & Ressourcen",
+      "valueModel": "Wert & Modell",
+      "evidenceImpact": "Evidenz & Wirkung"
     },
     "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
     "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",

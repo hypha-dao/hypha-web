@@ -2,7 +2,8 @@ import { z } from 'zod';
 
 const documentStateSchema = z.enum(['discussion', 'proposal', 'agreement']);
 
-/** Parity with `spaceSlugSchema` in `@hypha-platform/core` — local copy avoids Zod+TS2589 in this file. */
+/** Parity with `spaceSlugSchema` in `@hypha-platform/core`. */
+/** TODO: Prefer importing `slugSchema` from `common-schemas.ts` once TS2589 is resolved here. */
 const mcpSpaceSlugSchema = z
   .string()
   .trim()
