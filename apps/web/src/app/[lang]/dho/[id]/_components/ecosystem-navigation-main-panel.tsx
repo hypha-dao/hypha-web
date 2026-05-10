@@ -109,6 +109,9 @@ export function EcosystemNavigationMainPanel({
   const [selectedSpaceAccent, setSelectedSpaceAccent] = useState(
     SELECTED_SPACE_ACCENT_FALLBACK,
   );
+  const [rootSpaceAccent, setRootSpaceAccent] = useState(
+    SELECTED_SPACE_ACCENT_FALLBACK,
+  );
   const { space: currentSpace, isLoading: isLoadingSpace } =
     useSpaceBySlug(daoSlug);
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
@@ -219,6 +222,15 @@ export function EcosystemNavigationMainPanel({
       currentSpace
     );
   }, [selectedSpace?.id, nonArchivedSpaces, currentSpace]);
+  const rootSpaceRecord = useMemo(() => {
+    if (!currentSpace) return null;
+    const spacesWithCurrent = nonArchivedSpaces.some(
+      (s) => s.id === currentSpace.id,
+    )
+      ? nonArchivedSpaces
+      : [...nonArchivedSpaces, currentSpace];
+    return findRootSpace(currentSpace, spacesWithCurrent);
+  }, [currentSpace, nonArchivedSpaces]);
   useEffect(() => {
     let cancelled = false;
     setSelectedSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
@@ -236,6 +248,23 @@ export function EcosystemNavigationMainPanel({
       cancelled = true;
     };
   }, [selectedSpaceRecord?.logoUrl, selectedSpaceRecord?.leadImage]);
+  useEffect(() => {
+    let cancelled = false;
+    setRootSpaceAccent(SELECTED_SPACE_ACCENT_FALLBACK);
+    void (async () => {
+      const [logoAccent, leadAccent] = await Promise.all([
+        sampleAccentHex(rootSpaceRecord?.logoUrl),
+        sampleAccentHex(rootSpaceRecord?.leadImage),
+      ]);
+      if (cancelled) return;
+      setRootSpaceAccent(
+        logoAccent ?? leadAccent ?? SELECTED_SPACE_ACCENT_FALLBACK,
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [rootSpaceRecord?.logoUrl, rootSpaceRecord?.leadImage]);
 
   const iconOutlineStyle = useMemo(
     () => ({
@@ -318,7 +347,7 @@ export function EcosystemNavigationMainPanel({
                   <SpaceVisualization
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
-                    rootAccentHex={selectedSpaceAccent}
+                    rootAccentHex={rootSpaceAccent}
                     enableHoverActions={false}
                     onVisibleSpacesChange={handleVisibleSpacesChange}
                   />
