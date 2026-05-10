@@ -310,10 +310,10 @@ function TokenDonutChart({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative flex w-full items-center justify-center lg:w-auto lg:flex-none">
+      <div className="relative flex w-full items-center justify-center xl:w-auto xl:flex-none">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute h-52 w-52 rounded-full opacity-90 blur-3xl sm:h-60 sm:w-60 lg:h-64 lg:w-64"
+          className="pointer-events-none absolute h-52 w-52 rounded-full opacity-90 blur-3xl sm:h-60 sm:w-60 xl:h-64 xl:w-64"
           style={{
             background:
               'radial-gradient(circle, color-mix(in oklab, var(--space-accent, var(--accent-9)) 40%, transparent) 0%, transparent 72%)',
@@ -323,7 +323,7 @@ function TokenDonutChart({
           viewBox="-145 -145 290 290"
           role="img"
           aria-label={`Token distribution chart for ${title}`}
-          className="h-auto w-full max-w-[260px] transition-transform duration-300 ease-out group-hover:scale-[1.03] sm:max-w-[300px] lg:max-w-[320px]"
+          className="h-auto w-full max-w-[260px] transition-transform duration-300 ease-out group-hover:scale-[1.03] sm:max-w-[300px] xl:max-w-[320px]"
         >
           {pieData.map((segment: d3.PieArcDatum<ChartSlice>) => (
             <path
@@ -519,14 +519,14 @@ function DistributionOverTimeChart({
   return (
     <Card className="h-fit self-start overflow-hidden border-border/60 bg-card/95 shadow-[0_0_0_1px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_12%,transparent),0_22px_48px_-30px_color-mix(in_oklab,var(--space-accent,var(--accent-9))_48%,transparent)]">
       <CardHeader className="pb-2">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <CardTitle className="text-lg">Distribution over time</CardTitle>
             <CardDescription className="text-xs">
               X axis shows time from transaction dates.
             </CardDescription>
           </div>
-          <div className="flex w-full flex-row items-end justify-end gap-2 md:w-auto">
+          <div className="flex w-full flex-row items-end justify-end gap-2 lg:w-auto">
             <label className="flex w-[160px] max-w-[160px] flex-col gap-1 text-xs text-muted-foreground">
               Token
               <select
@@ -807,10 +807,10 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           On voting, accepted, refused
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid min-h-[320px] grid-cols-1 items-center gap-3 lg:min-h-[420px] lg:grid-cols-[1fr_auto]">
+      <CardContent className="grid min-h-[320px] grid-cols-1 items-center gap-3 xl:min-h-[420px] xl:grid-cols-[1fr_auto]">
         <svg
           viewBox="-130 -130 260 260"
-          className="h-[240px] w-full sm:h-[280px] lg:h-[340px]"
+          className="h-[240px] w-full sm:h-[280px] xl:h-[340px]"
           aria-label="Proposals distribution"
         >
           {arcs.map((slice, index) => (
@@ -831,7 +831,7 @@ function ProposalsPieWidget({ data }: { data: ActivityResponse['proposals'] }) {
           </text>
         </svg>
 
-        <div className="flex min-w-0 flex-col gap-3 text-sm lg:min-w-[180px] lg:pr-2">
+        <div className="flex min-w-0 flex-col gap-3 text-sm xl:min-w-[180px] xl:pr-2">
           {pieData.map((item) => (
             <div
               key={item.label}
@@ -1342,7 +1342,7 @@ function SignalsPulseMapWidget({
 
 function LoadingState() {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2">
       {Array.from({ length: 4 }).map((_, index) => (
         <Card key={index}>
           <CardHeader className="gap-2">
@@ -1452,7 +1452,7 @@ export function HomeTokenHoldingsDashboard({
           ) : null}
 
           {!activityLoading && !activityError && activityData ? (
-            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+            <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
               <div className="grid items-start gap-4">
                 <SignalsPulseMapWidget signals={activityData.signals} />
                 <MembersEvolutionWidget
@@ -1496,7 +1496,7 @@ export function HomeTokenHoldingsDashboard({
           ) : null}
 
           {!isLoading && !error && data && data.tokens.length > 0 ? (
-            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+            <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
               <DistributionOverTimeChart
                 spaceSlug={spaceSlug}
                 tokens={data.tokens}
