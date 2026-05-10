@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  attachProposalStatusToDocument,
-  fetchProposalOutcomeSetsForSpace,
   findSpaceBySlug,
+  fetchProposalOutcomeSetsForSpace,
   getAllCoherences,
   getDocumentsBySpaceSlug,
   getSpaceMembersRoster,
@@ -143,7 +142,6 @@ export async function GET(
       label?: string | null;
       updatedAt?: string | Date | null;
       web3ProposalId?: number | null;
-      creator?: unknown;
     }> = [];
     let proposalsPage = 1;
 
@@ -183,16 +181,34 @@ export async function GET(
       refused: 0,
     };
 
+    const resolveProposalStatus = (proposal: {
+      status?: string;
+      web3ProposalId?: number | null;
+    }): 'accepted' | 'rejected' | 'onVoting' | null => {
+      if (
+        proposalOutcomes &&
+        typeof proposal.web3ProposalId === 'number' &&
+        Number.isFinite(proposal.web3ProposalId)
+      ) {
+        const pid = proposal.web3ProposalId;
+        if (proposalOutcomes.withdrawn.has(pid)) return null;
+        if (proposalOutcomes.accepted.has(pid)) return 'accepted';
+        if (proposalOutcomes.rejected.has(pid)) return 'rejected';
+        return 'onVoting';
+      }
+
+      if (proposal.status === 'accepted') return 'accepted';
+      if (proposal.status === 'rejected') return 'rejected';
+      return 'onVoting';
+    };
+
     for (const proposal of allProposals) {
-      const resolvedProposal = attachProposalStatusToDocument(
-        proposal,
-        proposalOutcomes,
-      );
-      if (resolvedProposal.status === 'accepted') {
+      const resolvedStatus = resolveProposalStatus(proposal);
+      if (resolvedStatus === 'accepted') {
         proposalCounts.accepted += 1;
-      } else if (resolvedProposal.status === 'rejected') {
+      } else if (resolvedStatus === 'rejected') {
         proposalCounts.refused += 1;
-      } else if (resolvedProposal.status === 'onVoting') {
+      } else if (resolvedStatus === 'onVoting') {
         proposalCounts.onVoting += 1;
       }
     }
@@ -240,11 +256,8 @@ export async function GET(
     }
 
     const membershipExitProposalDates = allProposals
-      .map((proposal) =>
-        attachProposalStatusToDocument(proposal, proposalOutcomes),
-      )
       .filter((proposal) => {
-        if (proposal.status !== 'accepted') return false;
+        if (resolveProposalStatus(proposal) !== 'accepted') return false;
         const label = proposal.label?.toLowerCase() ?? '';
         return label.includes('membership exit');
       })
