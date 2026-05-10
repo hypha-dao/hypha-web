@@ -7,6 +7,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
+import { JoinSpace } from './join-space';
 
 type SpaceAccessDeniedProps = {
   userState: UserSpaceState;
@@ -54,7 +55,15 @@ export function SpaceAccessDenied({
       <Empty>
         <div className="flex flex-col gap-7">
           <p>{t('accessDeniedNotMember')}</p>
-          {/* CTA for joining the space lives in the DHO header already. */}
+          {space?.id && effectiveSpaceId ? (
+            <div className="flex items-center justify-center">
+              <JoinSpace
+                spaceId={space.id}
+                web3SpaceId={effectiveSpaceId}
+                hideWhenMember
+              />
+            </div>
+          ) : null}
         </div>
       </Empty>
     );

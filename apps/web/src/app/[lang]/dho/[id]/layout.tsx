@@ -1,5 +1,4 @@
 import {
-  JoinSpace,
   SalesBanner,
   SpaceEscrowDepositBanners,
   SpaceModeLabel,
@@ -151,13 +150,6 @@ export default async function DhoLayout({
               })}
               footerTrailing={
                 <>
-                  {web3SpaceId !== undefined && (
-                    <JoinSpace
-                      web3SpaceId={web3SpaceId}
-                      spaceId={spaceFromDb.id}
-                      hideWhenMember
-                    />
-                  )}
                   {web3SpaceId !== undefined && (
                     <SubscriptionBadge
                       web3SpaceId={web3SpaceId}
