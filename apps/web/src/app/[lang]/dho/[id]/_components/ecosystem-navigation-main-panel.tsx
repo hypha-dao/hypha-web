@@ -296,9 +296,9 @@ export function EcosystemNavigationMainPanel({
                 <div className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))] p-4 sm:p-6">
                   {canRenderSpaceActions && visitSpaceHref && addSpaceHref ? (
                     <div className="pointer-events-none absolute left-1/2 top-4 z-20 flex -translate-x-1/2 -translate-y-1/2 justify-center sm:top-6">
-                      <div className="pointer-events-auto inline-flex w-auto max-w-[min(96%,34rem)] items-center gap-1.5 rounded-full border border-border/60 bg-background/88 px-2 py-1.5 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-background/72 sm:gap-2 sm:px-3">
+                      <div className="pointer-events-auto inline-flex w-auto min-w-[18rem] max-w-[min(97%,44rem)] items-center gap-1.5 rounded-full border border-border/60 bg-background/88 px-2 py-1.5 shadow-sm backdrop-blur-sm supports-[backdrop-filter]:bg-background/72 sm:min-w-[22rem] sm:gap-2 sm:px-3">
                         <span
-                          className="max-w-[20rem] truncate text-4 font-semibold tracking-tight text-foreground sm:max-w-[26rem]"
+                          className="max-w-[24rem] truncate text-4 font-semibold tracking-tight text-foreground sm:max-w-[34rem]"
                           title={selectedSpaceTitle}
                         >
                           {selectedSpaceTitle}

@@ -273,10 +273,10 @@ export function SpaceVisualization({
     };
     const getDiagramFillColor = () => 'var(--color-background)';
     const getOrbitStrokeAlpha = () =>
-      themeRef.current === 'dark' ? 0.9 : 0.72;
-    const ROOT_ORBIT_STROKE_WIDTH = 1.5;
+      themeRef.current === 'dark' ? 0.99 : 0.95;
+    const ROOT_ORBIT_STROKE_WIDTH = 1.8;
     // Dot-like orbit outlines (round caps on very short dashes).
-    const ORBIT_DASH_PATTERN = '1 6';
+    const ORBIT_DASH_PATTERN = '1 4.5';
     const rootFillLab = d3.lab(getRootFillColor(resolvedRootAccent));
     const pageBackdropLab = d3.lab(
       themeRef.current === 'dark' ? '#0b0f18' : '#f3f4f6',
@@ -285,40 +285,32 @@ export function SpaceVisualization({
     const getOrbitStrokeStyle = (
       accentColor: string,
     ): { color: string; width: number } => {
-      const accentLab = d3.lab(accentColor);
-      const rootDelta = Math.abs(accentLab.l - rootFillLab.l);
-      const backdropDelta = Math.abs(accentLab.l - pageBackdropLab.l);
-      const minDelta = Math.min(rootDelta, backdropDelta);
-      if (Number.isFinite(minDelta) && minDelta >= MIN_LIGHTNESS_DELTA) {
-        return {
-          color: withAlpha(accentColor, getOrbitStrokeAlpha()),
-          width: 1.35,
-        };
-      }
-
       const parsed = d3.hsl(accentColor);
       if (!parsed) {
         return {
-          color: withAlpha(
-            accentColor,
-            themeRef.current === 'dark' ? 0.98 : 0.92,
-          ),
-          width: 1.6,
+          color: withAlpha(accentColor, getOrbitStrokeAlpha()),
+          width: 1.8,
         };
       }
 
-      // Boost low-contrast strokes so thin outlines stay legible on root tint.
-      const boosted = d3.hsl(
+      // Always normalize saturation/lightness for strong orbit readability in both themes.
+      const tuned = d3.hsl(
         parsed.h,
-        Math.max(parsed.s, 0.72),
-        themeRef.current === 'dark' ? 0.8 : 0.24,
+        Math.max(parsed.s, 0.78),
+        themeRef.current === 'dark'
+          ? Math.max(parsed.l, 0.74)
+          : Math.min(parsed.l, 0.28),
       );
+
+      const tunedLab = d3.lab(tuned.formatRgb());
+      const rootDelta = Math.abs(tunedLab.l - rootFillLab.l);
+      const backdropDelta = Math.abs(tunedLab.l - pageBackdropLab.l);
+      const minDelta = Math.min(rootDelta, backdropDelta);
+      const width = minDelta < MIN_LIGHTNESS_DELTA ? 1.95 : 1.8;
+
       return {
-        color: withAlpha(
-          boosted.formatRgb(),
-          themeRef.current === 'dark' ? 0.98 : 0.92,
-        ),
-        width: 1.6,
+        color: withAlpha(tuned.formatRgb(), getOrbitStrokeAlpha()),
+        width,
       };
     };
 
