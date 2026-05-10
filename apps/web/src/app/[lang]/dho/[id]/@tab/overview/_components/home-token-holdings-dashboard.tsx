@@ -3,6 +3,7 @@
 import * as React from 'react';
 import useSWR from 'swr';
 import * as d3 from 'd3';
+import { z } from 'zod';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useTranslations } from 'next-intl';
 import { CircleHelp } from 'lucide-react';
@@ -22,34 +23,40 @@ import {
   TooltipTrigger,
 } from '@hypha-platform/ui';
 
-type TokenHoldingResponse = {
-  found: boolean;
-  space_slug: string;
-  asOf: string;
-  tokens: Array<{
-    token_id: number | null;
-    token_address: string;
-    name: string;
-    symbol: string;
-    icon_url: string | null;
-    type: string;
-    decimals: number;
-    max_supply: string | number | null;
-    total_supply: string;
-    holdings: Array<{
-      holder_kind: 'person' | 'space' | 'treasury' | 'other';
-      address: string | null;
-      display_name: string;
-      slug: string | null;
-      balance: string;
-      balance_raw: string;
-      share_pct: number;
-    }>;
-    treasury_balance: string;
-    other_balance: string;
-    total_holders_balance: string;
-  }>;
-};
+const tokenHoldingResponseSchema = z.object({
+  found: z.boolean(),
+  space_slug: z.string(),
+  asOf: z.string(),
+  tokens: z.array(
+    z.object({
+      token_id: z.number().nullable(),
+      token_address: z.string(),
+      name: z.string(),
+      symbol: z.string(),
+      icon_url: z.string().nullable(),
+      type: z.string(),
+      decimals: z.number(),
+      max_supply: z.union([z.string(), z.number()]).nullable(),
+      total_supply: z.string(),
+      holdings: z.array(
+        z.object({
+          holder_kind: z.enum(['person', 'space', 'treasury', 'other']),
+          address: z.string().nullable(),
+          display_name: z.string(),
+          slug: z.string().nullable(),
+          balance: z.string(),
+          balance_raw: z.string(),
+          share_pct: z.number().min(0).max(100),
+        }),
+      ),
+      treasury_balance: z.string(),
+      other_balance: z.string(),
+      total_holders_balance: z.string(),
+    }),
+  ),
+});
+
+type TokenHoldingResponse = z.infer<typeof tokenHoldingResponseSchema>;
 
 type ChartSlice = TokenHoldingResponse['tokens'][number]['holdings'][number] & {
   hover_key: string;
@@ -191,7 +198,12 @@ function fetchHoldings(
     if (!response.ok) {
       throw new Error(`Failed to load token holdings (${response.status})`);
     }
-    return (await response.json()) as TokenHoldingResponse;
+    const payload = await response.json();
+    const parsed = tokenHoldingResponseSchema.safeParse(payload);
+    if (!parsed.success) {
+      throw new Error('Token holdings response shape is invalid');
+    }
+    return parsed.data;
   };
 }
 
