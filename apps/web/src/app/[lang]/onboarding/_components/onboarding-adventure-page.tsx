@@ -13,6 +13,7 @@ import {
   CardTitle,
   Combobox,
   Container,
+  Heading,
 } from '@hypha-platform/ui';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
 import {
@@ -37,6 +38,8 @@ const getSpacePath = (lang: string, spaceSlug: string) =>
 
 const getNetworkPath = (lang: string) => `/${lang}/network`;
 const getCreateSpacePath = (lang: string) => `/${lang}/my-spaces/create`;
+const onboardingCardClass =
+  'group h-full border-border/70 bg-card/100 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md';
 
 export function OnboardingAdventurePage() {
   const t = useTranslations('OnboardingAdventure');
@@ -119,15 +122,15 @@ export function OnboardingAdventurePage() {
     disabled: boolean;
     unavailableText: string;
   }) => (
-    <Card className="h-full border-border/60 bg-card/95">
-      <CardHeader>
+    <Card className={onboardingCardClass}>
+      <CardHeader className="space-y-2">
         <CardTitle className="flex items-center gap-2 text-5">
           <span className="text-accent-11">{icon}</span>
           {title}
         </CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardDescription className="text-2">{description}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4 pt-1">
         <Combobox
           options={options}
           placeholder={t('spacePlaceholder')}
@@ -155,22 +158,32 @@ export function OnboardingAdventurePage() {
   );
 
   return (
-    <Container className="flex flex-col gap-6 py-8">
-      <header className="space-y-2 text-center">
-        <h1 className="text-8 font-semibold text-foreground">{t('title')}</h1>
-        <p className="text-3 text-muted-foreground">{t('subtitle')}</p>
+    <Container className="flex flex-col gap-9 py-9">
+      <header className="space-y-4">
+        <Heading
+          size="9"
+          color="secondary"
+          weight="medium"
+          align="center"
+          className="flex flex-col"
+        >
+          <span>{t('title')}</span>
+          <span>{t('subtitle')}</span>
+        </Heading>
       </header>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="h-full border-border/60 bg-card/95">
-          <CardHeader>
+      <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Card className={onboardingCardClass}>
+          <CardHeader className="space-y-2">
             <CardTitle className="flex items-center gap-2 text-5">
               <Compass className="size-5 text-accent-11" />
               {t('explore.title')}
             </CardTitle>
-            <CardDescription>{t('explore.description')}</CardDescription>
+            <CardDescription className="text-2">
+              {t('explore.description')}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-1">
             <Button
               type="button"
               className="w-full"
@@ -181,15 +194,17 @@ export function OnboardingAdventurePage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full border-border/60 bg-card/95">
-          <CardHeader>
+        <Card className={onboardingCardClass}>
+          <CardHeader className="space-y-2">
             <CardTitle className="flex items-center gap-2 text-5">
               <PlusCircle className="size-5 text-accent-11" />
               {t('create.title')}
             </CardTitle>
-            <CardDescription>{t('create.description')}</CardDescription>
+            <CardDescription className="text-2">
+              {t('create.description')}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-1">
             <Button
               type="button"
               className="w-full"
@@ -263,7 +278,7 @@ function DepositDetailsCard({
   if (!space.address) return null;
 
   return (
-    <Card className="border-border/60 bg-card/95">
+    <Card className={onboardingCardClass}>
       <CardHeader>
         <CardTitle className="text-5">{t('depositDetails.title')}</CardTitle>
         <CardDescription>

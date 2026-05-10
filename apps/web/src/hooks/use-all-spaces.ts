@@ -10,7 +10,7 @@ type UseAllSpacesReturn = {
 };
 
 export const useAllSpaces = (): UseAllSpacesReturn => {
-  const endpoint = '/api/v1/spaces';
+  const endpoint = '/api/v1/spaces?parentOnly=false';
 
   const { jwt } = useJwt();
 
