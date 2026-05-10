@@ -1265,44 +1265,45 @@ function SignalsPulseMapWidget({
                     count >= Math.max(2, Math.ceil(maxCellCount * 0.52))
                       ? 'var(--background)'
                       : 'var(--foreground)';
-                  const rangeStartPct = Math.round((bucketIndex / bucketCount) * 100);
+                  const rangeStartPct = Math.round(
+                    (bucketIndex / bucketCount) * 100,
+                  );
                   const rangeEndPct = Math.round(
                     ((bucketIndex + 1) / bucketCount) * 100,
                   );
-                return (
-                  <g
-                    key={`${priority}-${bucketIndex}`}
-                  >
-                    <rect
-                      x={cellX}
-                      y={cellY}
-                      width={bandwidth}
-                      height={bandheight}
-                      rx={10}
-                      fill="var(--space-accent, var(--accent-9))"
-                      opacity={cellOpacity(count)}
-                      stroke="var(--border)"
-                      strokeOpacity={0.32}
-                    >
-                      <title>{`${capitalizeWords(
-                        priority,
-                      )} · ${count} signals · ${rangeStartPct}% to ${rangeEndPct}% recency window`}</title>
-                    </rect>
-                    {count > 0 ? (
-                      <text
-                        x={cellX + bandwidth / 2}
-                        y={cellY + bandheight / 2}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        className="text-[13px] font-semibold"
-                        fill={labelColor}
+                  return (
+                    <g key={`${priority}-${bucketIndex}`}>
+                      <rect
+                        x={cellX}
+                        y={cellY}
+                        width={bandwidth}
+                        height={bandheight}
+                        rx={10}
+                        fill="var(--space-accent, var(--accent-9))"
+                        opacity={cellOpacity(count)}
+                        stroke="var(--border)"
+                        strokeOpacity={0.32}
                       >
-                        {count}
-                      </text>
-                    ) : null}
-                  </g>
-                );
-              })}
+                        <title>{`${capitalizeWords(
+                          priority,
+                        )} · ${count} signals · ${rangeStartPct}% to ${rangeEndPct}% recency window`}</title>
+                      </rect>
+                      {count > 0 ? (
+                        <text
+                          x={cellX + bandwidth / 2}
+                          y={cellY + bandheight / 2}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          className="text-[13px] font-semibold"
+                          fill={labelColor}
+                        >
+                          {count}
+                        </text>
+                      ) : null}
+                    </g>
+                  );
+                }),
+              )}
 
               {d3.range(bucketCount).map((bucketIndex) => {
                 const cellX = x(bucketIndex) ?? 0;
