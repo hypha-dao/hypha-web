@@ -755,39 +755,15 @@ export function SpaceVisualization({
 
     if (!introRanRef.current && focus !== root) {
       introRanRef.current = true;
-      const introTargets: SpaceHierarchyNode[] = [];
-      let current = focus.parent as SpaceHierarchyNode | undefined;
-      while (current) {
-        introTargets.push(current);
-        if (current === root) break;
-        current = current.parent as SpaceHierarchyNode | undefined;
-      }
-      introSequenceActiveRef.current = introTargets.length > 0;
-
-      const runIntroStep = (index: number) => {
-        if (!introSequenceActiveRef.current) return;
-        const target = introTargets[index];
-        if (!target) {
-          introSequenceActiveRef.current = false;
-          return;
-        }
-        zoom(target, {
-          onEnd: () => {
-            if (!introSequenceActiveRef.current) return;
-            const nextIndex = index + 1;
-            if (nextIndex >= introTargets.length) {
-              introSequenceActiveRef.current = false;
-              return;
-            }
-            introToRootTimeoutRef.current = window.setTimeout(() => {
-              runIntroStep(nextIndex);
-            }, 120);
-          },
-        });
-      };
+      introSequenceActiveRef.current = true;
 
       introToRootTimeoutRef.current = window.setTimeout(() => {
-        runIntroStep(0);
+        if (!introSequenceActiveRef.current) return;
+        zoom(root, {
+          onEnd: () => {
+            introSequenceActiveRef.current = false;
+          },
+        });
       }, 1400);
     }
 
