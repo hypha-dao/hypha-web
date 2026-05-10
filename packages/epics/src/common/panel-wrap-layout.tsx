@@ -108,7 +108,7 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, overlayVisible, toggle } = useAiPanel();
+  const { open, overlayVisible, openAiPanel, closeAiPanel } = useAiPanel();
   const isSpace = useIsSpaceContext();
   const t = useTranslations('AiPanel');
 
@@ -119,7 +119,13 @@ export function AiSidebarTrigger() {
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={() => {
+        if (isOpen) {
+          closeAiPanel();
+          return;
+        }
+        openAiPanel();
+      }}
       aria-expanded={isOpen}
       className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={isOpen ? t('closePanel') : t('openPanel')}
@@ -135,7 +141,7 @@ export function AiSidebarTrigger() {
 }
 
 export function HumanSidebarTrigger() {
-  const { open, toggle } = useHumanChatPanel();
+  const { open, toggle, openHumanChatPanel } = useHumanChatPanel();
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
   const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
@@ -157,7 +163,13 @@ export function HumanSidebarTrigger() {
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={() => {
+        if (open) {
+          toggle();
+          return;
+        }
+        openHumanChatPanel();
+      }}
       aria-expanded={open}
       className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
       title={t('openPanel')}

@@ -136,23 +136,23 @@ export const MenuTop = ({
           </div>
         )}
 
-        {/* Mobile trailing action (shown next to hamburger) */}
-        {trailingAction && (
-          <div className="flex md:hidden items-center">{trailingAction}</div>
-        )}
-
-        {/* Mobile Burger (always visible on small screens) */}
-        <button
-          type="button"
-          className="md:hidden flex items-center"
-          aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
-          aria-expanded={isMobileMenuOpen}
-          aria-controls="mobile-menu"
-          onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
-        >
-          {!isMobileMenuOpen && <Menu className="size-5" />}
-          {isMobileMenuOpen && <RxCross1 className="size-5" />}
-        </button>
+        {/* Mobile action group (right side): chat, then hamburger */}
+        <div className="ml-auto flex items-center gap-2 md:hidden">
+          {trailingAction ? (
+            <div className="flex items-center">{trailingAction}</div>
+          ) : null}
+          <button
+            type="button"
+            className="flex items-center"
+            aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-menu"
+            onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+          >
+            {!isMobileMenuOpen && <Menu className="size-5" />}
+            {isMobileMenuOpen && <RxCross1 className="size-5" />}
+          </button>
+        </div>
 
         {/* Mobile Full Screen Menu */}
         {isMobileMenuOpen && (
