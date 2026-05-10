@@ -32,7 +32,6 @@ export const MenuTop = ({
   closeMenuLabel = 'Close menu',
 }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const pathname = usePathname();
@@ -40,18 +39,6 @@ export const MenuTop = ({
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    if (typeof navigator === 'undefined') return;
-    const uaData = (
-      navigator as Navigator & { userAgentData?: { mobile?: boolean } }
-    ).userAgentData;
-    const byUaData = Boolean(uaData?.mobile);
-    const byUserAgent = /Android|iPhone|iPad|iPod|Mobile/i.test(
-      navigator.userAgent,
-    );
-    setIsMobileDevice(byUaData || byUserAgent);
-  }, []);
 
   /** Publish measured height so side panels / overlays align with this bar (see e2e menu-top-consistent-height). */
   useLayoutEffect(() => {
@@ -149,29 +136,23 @@ export const MenuTop = ({
           </div>
         )}
 
-        {/* Mobile trailing action (always visible on small screens) */}
-        {trailingAction && (
-          <div className="flex md:hidden items-center">{trailingAction}</div>
-        )}
-
-        {/* Mobile Burger */}
-        {children && (!leadingAction || isMobileDevice) && (
-          <button
-            type="button"
-            className="md:hidden flex items-center"
-            aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="mobile-menu"
-            onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
-          >
-            {!isMobileMenuOpen && <Menu className="size-5" />}
-            {isMobileMenuOpen && <RxCross1 className="size-5" />}
-          </button>
-        )}
+        {/* Mobile Burger (always visible on small screens) */}
+        <button
+          type="button"
+          className="md:hidden flex items-center"
+          aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="mobile-menu"
+          onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+        >
+          {!isMobileMenuOpen && <Menu className="size-5" />}
+          {isMobileMenuOpen && <RxCross1 className="size-5" />}
+        </button>
 
         {/* Mobile Full Screen Menu */}
         {isMobileMenuOpen && (
           <div
+            id="mobile-menu"
             className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto"
             style={{ top: headerHeight }}
           >
