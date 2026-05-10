@@ -83,6 +83,7 @@ export function EcosystemNavigationMainPanel({
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
+  const [nestedSpacesRenderKey, setNestedSpacesRenderKey] = useState(0);
   const { space: currentSpace, isLoading: isLoadingSpace } =
     useSpaceBySlug(daoSlug);
   const { spaces: allSpaces, isLoading: isLoadingSpaces } =
@@ -141,6 +142,11 @@ export function EcosystemNavigationMainPanel({
       return next;
     });
   }, [currentSpace, currentSpaceSlug]);
+
+  useEffect(() => {
+    if (activeTab !== 'nested-spaces') return;
+    setNestedSpacesRenderKey((previous) => previous + 1);
+  }, [activeTab, pathname]);
 
   const hierarchyData: HierarchyNode | null = useMemo(() => {
     if (!currentSpace || !filteredSpaces) return null;
@@ -227,6 +233,7 @@ export function EcosystemNavigationMainPanel({
               {hierarchyData ? (
                 <div className="mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-16rem))]">
                   <SpaceVisualization
+                    key={`nested-spaces-${nestedSpacesRenderKey}`}
                     data={hierarchyData}
                     currentSpaceId={currentSpace?.id}
                     enableHoverActions={false}
