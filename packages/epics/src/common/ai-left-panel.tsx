@@ -434,9 +434,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             spaceSettingsItem ? 'p-2 pb-4 pt-2' : 'mt-auto p-2 pb-4'
           }`}
         >
-          <SidebarGroupLabel>
-            {tSpaces('recentlyVisitedSpacesLabel')}
-          </SidebarGroupLabel>
+          {mode === 'expanded' ? (
+            <SidebarGroupLabel className="pointer-events-none">
+              {tSpaces('recentlyVisitedSpacesLabel')}
+            </SidebarGroupLabel>
+          ) : null}
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
               {recentSpaces.map((space, index) =>
