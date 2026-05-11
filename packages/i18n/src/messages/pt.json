@@ -821,6 +821,7 @@
     "depositDetails": {
       "title": "Detalhes de depósito",
       "description": "Deposite na tesouraria de {spaceName} usando o endereço abaixo.",
+      "qrAriaLabel": "QR code do endereço da tesouraria de {spaceName}",
       "networkWarning": "Aviso: transfira fundos somente na rede BASE.",
       "addressLabel": "Endereço da tesouraria",
       "copy": "Copiar endereço",

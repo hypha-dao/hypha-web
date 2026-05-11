@@ -130,10 +130,12 @@
     "depositDetails": {
       "title": "Deposit details",
       "description": "Fund {spaceName} treasury using the address below.",
+      "qrAriaLabel": "Treasury address QR code for {spaceName}",
       "networkWarning": "Warning: transfer funds on the BASE Network only.",
       "addressLabel": "Treasury address",
       "copy": "Copy address",
-      "copied": "Address copied"
+      "copied": "Address copied",
+      "invalidAddress": "Invalid treasury address format."
     }
   },
   "MyWallet": {

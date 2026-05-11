@@ -131,6 +131,7 @@
     "depositDetails": {
       "title": "Détails du dépôt",
       "description": "Alimentez la trésorerie de {spaceName} avec l'adresse ci-dessous.",
+      "qrAriaLabel": "Code QR de l'adresse de trésorerie pour {spaceName}",
       "networkWarning": "Avertissement : transférez les fonds uniquement sur le réseau BASE.",
       "addressLabel": "Adresse de trésorerie",
       "copy": "Copier l'adresse",

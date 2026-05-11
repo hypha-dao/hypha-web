@@ -131,6 +131,7 @@
     "depositDetails": {
       "title": "Einzahlungsdetails",
       "description": "Finanziere die Treasury von {spaceName} mit der untenstehenden Adresse.",
+      "qrAriaLabel": "QR-Code der Treasury-Adresse für {spaceName}",
       "networkWarning": "Warnung: Überweise Guthaben nur im BASE-Netzwerk.",
       "addressLabel": "Treasury-Adresse",
       "copy": "Adresse kopieren",

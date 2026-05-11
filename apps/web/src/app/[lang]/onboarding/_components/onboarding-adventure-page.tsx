@@ -447,11 +447,13 @@ function DepositDetailsCard({
             <QRCode
               value={address}
               size={160}
-              aria-label={`Space deposit address QR code for ${space.title}`}
+              aria-label={t('depositDetails.qrAriaLabel', {
+                spaceName: space.title,
+              })}
             />
           ) : (
             <p className="max-w-40 text-1 text-muted-foreground">
-              Invalid treasury address format.
+              {t('depositDetails.invalidAddress')}
             </p>
           )}
         </div>
