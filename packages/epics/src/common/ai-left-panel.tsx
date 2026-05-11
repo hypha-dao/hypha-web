@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -13,11 +13,11 @@ import {
   Coins,
   FileCheck2,
   House,
-  Orbit,
+  Navigation,
   Menu,
   PanelLeftClose,
   Radio,
-  SlidersHorizontal,
+  Settings,
   Sparkles,
   UsersRound,
 } from 'lucide-react';
@@ -86,7 +86,7 @@ const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
 const MENU_BUTTON_CLASS =
   'h-10 w-full rounded-lg border border-transparent p-0 text-sm font-medium text-muted-foreground transition-colors hover:border-border/70 hover:bg-muted/80 hover:text-foreground data-[active=true]:border-accent-9/40 data-[active=true]:bg-accent-9/18 data-[active=true]:text-foreground group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!rounded-lg group-data-[collapsible=icon]:!p-0';
 const ICON_COLUMN_CLASS = 'flex h-10 w-10 shrink-0 items-center justify-center';
-const MENU_ROW_LINK_BASE_CLASS = 'flex w-full min-w-0 items-center';
+const MENU_ROW_LINK_BASE_CLASS = 'flex h-full w-full min-w-0 items-center';
 const MENU_ROW_LINK_EXPANDED_CLASS = 'pl-1.5';
 const MENU_ROW_LINK_COLLAPSED_CLASS = 'justify-center';
 const MENU_TRIGGER_CANVAS_CLASS =
@@ -138,7 +138,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
     readRecentSpaceSlugs(),
   );
-  const [isHoverOpenLocked, setIsHoverOpenLocked] = useState(false);
   const recentSpaceLookupSlugs = useMemo(
     () =>
       recentSpaceSlugs
@@ -165,7 +164,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       if (
         section === 'agreements' &&
         pathname.includes(`/dho/${spaceSlug}/`) &&
-        pathname.includes('/space-configuration')
+        (pathname.includes('/space-configuration') ||
+          pathname.includes('/select-settings-action'))
       ) {
         return false;
       }
@@ -188,7 +188,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       {
         key: 'ecosystem-navigation',
         label: tSelectNavigation('ecosystem'),
-        icon: Orbit,
+        icon: Navigation,
         href: `/${lang}/dho/${spaceSlug}/ecosystem-navigation`,
         active: isSectionActive('ecosystem-navigation'),
       },
@@ -261,7 +261,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     return {
       key: 'space-settings',
       label: tModalAside('spaceSettings'),
-      icon: SlidersHorizontal,
+      icon: Settings,
       href: `/${lang}/dho/${spaceSlug}/agreements/select-settings-action`,
       active: isSpaceSettingsActive,
     };
@@ -435,9 +435,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             spaceSettingsItem ? 'p-2 pb-4 pt-2' : 'mt-auto p-2 pb-4'
           }`}
         >
-          <SidebarGroupLabel>
-            {tSpaces('recentlyVisitedSpacesLabel')}
-          </SidebarGroupLabel>
+          {mode === 'expanded' ? (
+            <SidebarGroupLabel className="pointer-events-none">
+              {tSpaces('recentlyVisitedSpacesLabel')}
+            </SidebarGroupLabel>
+          ) : null}
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
               {recentSpaces.map((space, index) =>
@@ -533,34 +535,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     },
     [sendMessage, buildMessageOptions],
   );
-  const handleHeaderIconMouseEnter = useCallback(() => {
-    if (isHoverOpenLocked) return;
-    if (!overlayVisible) {
-      showAiOverlay();
-    }
-  }, [isHoverOpenLocked, overlayVisible, showAiOverlay]);
-
-  const handleExpandedRegionMouseEnter = useCallback(() => {
-    if (isHoverOpenLocked) return;
-    if (overlayVisible) {
-      showAiOverlay();
-    }
-  }, [isHoverOpenLocked, overlayVisible, showAiOverlay]);
-
-  const handleCollapsedRegionMouseEnter = useCallback(() => {
-    if (isHoverOpenLocked) return;
-    showAiOverlay();
-  }, [isHoverOpenLocked, showAiOverlay]);
-
-  const handleOverlayMouseLeave = useCallback(() => {
-    setIsHoverOpenLocked(false);
-    hideAiOverlay();
-  }, [hideAiOverlay]);
-
   const handleOverlayClose = useCallback(() => {
-    setIsHoverOpenLocked(true);
+    hideAiOverlay();
     closeAiPanel();
-  }, [closeAiPanel]);
+  }, [closeAiPanel, hideAiOverlay]);
 
   const handleTriggerClick = useCallback(() => {
     if (isAiOpen || overlayVisible) {
@@ -597,22 +575,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     if (overlayVisible) {
       return (
         <>
-          <SidebarHeader
-            className="bg-background-2 p-0"
-            onMouseEnter={handleExpandedRegionMouseEnter}
-            onMouseLeave={handleOverlayMouseLeave}
-          >
+          <SidebarHeader className="bg-background-2 p-0">
             <AiPanelHeader
               showCloseButton={false}
               leftSlot={triggerButton}
               rightSlot={closeButton}
             />
           </SidebarHeader>
-          <SidebarContent
-            className="bg-background-2"
-            onMouseEnter={handleExpandedRegionMouseEnter}
-            onMouseLeave={handleOverlayMouseLeave}
-          >
+          <SidebarContent className="bg-background-2">
             <SidebarGroup className="p-2 pt-4">
               <SidebarGroupContent>
                 <SidebarMenu className="gap-2">
@@ -651,11 +621,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             {triggerButton}
           </div>
         </SidebarHeader>
-        <SidebarContent
-          className="relative overflow-visible bg-background-2"
-          onMouseEnter={handleCollapsedRegionMouseEnter}
-          onMouseLeave={handleOverlayMouseLeave}
-        >
+        <SidebarContent className="relative overflow-visible bg-background-2">
           <SidebarGroup className="p-2 pt-4">
             <SidebarGroupContent>
               <SidebarMenu className="gap-2">

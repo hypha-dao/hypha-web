@@ -12,9 +12,8 @@ import { setMainColumnScrollRoot } from './main-column-scroll';
 
 type Props = {
   leftOpen: boolean;
+  leftSidebarWidth: string;
   onLeftOpenChange: (open: boolean) => void;
-  onLeftMouseEnter?: () => void;
-  onLeftMouseLeave?: () => void;
   rightOpen: boolean;
   onRightOpenChange: (open: boolean) => void;
   rightSidebarWidth: string;
@@ -31,9 +30,8 @@ type Props = {
  */
 export function PanelDualSidebarScrollBridge({
   leftOpen,
+  leftSidebarWidth,
   onLeftOpenChange,
-  onLeftMouseEnter,
-  onLeftMouseLeave,
   rightOpen,
   onRightOpenChange,
   rightSidebarWidth,
@@ -52,7 +50,7 @@ export function PanelDualSidebarScrollBridge({
       onOpenChange={onLeftOpenChange}
       style={
         {
-          '--sidebar-width': '320px',
+          '--sidebar-width': leftSidebarWidth,
           '--sidebar-width-icon': '72px',
         } as React.CSSProperties
       }
@@ -62,8 +60,6 @@ export function PanelDualSidebarScrollBridge({
         variant="sidebar"
         collapsible="icon"
         className="z-[50] overflow-visible"
-        onMouseEnter={onLeftMouseEnter}
-        onMouseLeave={onLeftMouseLeave}
       >
         {leftContent}
         <SidebarResizeHandle />
