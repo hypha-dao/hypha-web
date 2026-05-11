@@ -164,7 +164,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       if (
         section === 'agreements' &&
         pathname.includes(`/dho/${spaceSlug}/`) &&
-        pathname.includes('/space-configuration')
+        (pathname.includes('/space-configuration') ||
+          pathname.includes('/select-settings-action'))
       ) {
         return false;
       }
