@@ -67,7 +67,7 @@ export const useCreateProfile = (
 
         const createdProfile = await response.json();
         const lang = params?.lang;
-        const onboardingPath = lang ? `/${lang}/onboarding` : '/profile';
+        const onboardingPath = lang ? `/${lang}/onboarding` : '/en/profile';
         router.push(onboardingPath);
         return createdProfile;
       } catch (err) {
