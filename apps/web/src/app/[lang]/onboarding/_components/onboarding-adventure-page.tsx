@@ -35,23 +35,19 @@ const getCreateSpacePath = (lang: string) => `/${lang}/my-spaces/create`;
 const onboardingCardClass =
   'group h-full border-border/70 bg-card/100 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md';
 const exchangeButtonBaseClass =
-  'inline-flex min-h-11 items-center justify-center rounded-md border border-transparent px-3 py-2 transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'inline-flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const EXCHANGE_LINKS = [
   { id: 'coinbase', label: 'Coinbase', href: 'https://www.coinbase.com' },
   { id: 'wirex', label: 'Wirex', href: 'https://wirexapp.com' },
   { id: 'kraken', label: 'Kraken', href: 'https://www.kraken.com' },
 ] as const;
 
-const exchangeBrandLogos = {
-  coinbase: '/exchange-logos/coinbase.svg',
-  wirex: '/exchange-logos/wirex.png',
-  kraken: '/exchange-logos/kraken-wordmark.png',
-} as const;
-
-const exchangeBrandColors = {
-  coinbase: '#0052FF',
-  wirex: '#004032',
-  kraken: '#6936EB',
+const exchangeBrandStyles = {
+  coinbase:
+    'border border-transparent bg-[#0052FF] text-white hover:bg-[#0048e0]',
+  wirex: 'border border-transparent bg-[#1973F6] text-white hover:bg-[#155fd0]',
+  kraken:
+    'border border-transparent bg-[#6C3BFF] text-white hover:bg-[#5a30d6]',
 } as const;
 const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
 
@@ -418,18 +414,13 @@ function DepositDetailsCard({
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={exchangeButtonBaseClass}
+                className={`${exchangeButtonBaseClass} ${
+                  exchangeBrandStyles[link.id]
+                }`}
                 aria-label={link.label}
-                style={{ backgroundColor: exchangeBrandColors[link.id] }}
               >
-                <span className="rounded-sm bg-white/95 px-2 py-1">
-                  <img
-                    src={exchangeBrandLogos[link.id]}
-                    alt=""
-                    aria-hidden
-                    className="h-5 w-auto max-w-32 object-contain"
-                  />
-                </span>
+                <ExchangeBrandLogo brand={link.id} />
+                {link.label}
               </a>
             ))}
           </div>
@@ -450,5 +441,62 @@ function DepositDetailsCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function ExchangeBrandLogo({
+  brand,
+}: {
+  brand: (typeof EXCHANGE_LINKS)[number]['id'];
+}) {
+  if (brand === 'coinbase') {
+    return (
+      <svg
+        aria-hidden
+        viewBox="0 0 20 20"
+        className="size-4"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle cx="10" cy="10" r="10" fill="white" />
+        <circle cx="10" cy="10" r="6.3" fill="#0052FF" />
+        <circle cx="10" cy="10" r="3.8" fill="white" />
+      </svg>
+    );
+  }
+
+  if (brand === 'wirex') {
+    return (
+      <svg
+        aria-hidden
+        viewBox="0 0 20 20"
+        className="size-4"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect x="1.5" y="1.5" width="17" height="17" rx="4.5" fill="white" />
+        <path
+          d="M5 6.25H8.15L10 8.85L11.85 6.25H15L11.6 10L15 13.75H11.85L10 11.15L8.15 13.75H5L8.4 10L5 6.25Z"
+          fill="#1973F6"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 20 20"
+      className="size-4"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M3 4.8C3 3.81 3.81 3 4.8 3H15.2C16.19 3 17 3.81 17 4.8V8.3C17 9.29 16.19 10.1 15.2 10.1H4.8C3.81 10.1 3 9.29 3 8.3V4.8Z"
+        fill="white"
+      />
+      <circle cx="7" cy="14.7" r="1.8" fill="white" />
+      <circle cx="13" cy="14.7" r="1.8" fill="white" />
+    </svg>
   );
 }
