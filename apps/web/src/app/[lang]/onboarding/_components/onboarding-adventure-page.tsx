@@ -54,6 +54,116 @@ const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
 const normalizeEvmAddress = (value: string | null | undefined) =>
   (value ?? '').replace(/\s+/g, '').trim();
 
+type SelectorOption = { value: string; label: string; searchText?: string };
+
+type SelectorCardProps = {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  options: SelectorOption[];
+  query: string;
+  onQueryChange: (next: string) => void;
+  value: string;
+  onChange: (next: string) => void;
+  actionLabel: string;
+  onAction: () => void;
+  disabled: boolean;
+  unavailableText: string;
+  t: (key: string) => string;
+};
+
+const filterOptionsByQuery = (options: SelectorOption[], query: string) => {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return [];
+
+  return options.filter((option) =>
+    (option.searchText ?? option.label).toLowerCase().includes(normalized),
+  );
+};
+
+function SelectorCard({
+  icon,
+  title,
+  description,
+  options,
+  query,
+  onQueryChange,
+  value,
+  onChange,
+  actionLabel,
+  onAction,
+  disabled,
+  unavailableText,
+  t,
+}: SelectorCardProps) {
+  const filteredOptions = filterOptionsByQuery(options, query);
+
+  return (
+    <Card className={onboardingCardClass}>
+      <CardHeader className="space-y-2">
+        <CardTitle className="flex items-center gap-2 text-5">
+          <span className="text-accent-11">{icon}</span>
+          {title}
+        </CardTitle>
+        <CardDescription className="text-2">{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 pt-1">
+        <Input
+          value={query}
+          onChange={(event) => onQueryChange(event.target.value)}
+          placeholder={t('spaceSearchPlaceholder')}
+          aria-label={title}
+          disabled={disabled}
+        />
+
+        {!disabled && !query.trim() ? (
+          <p className="text-1 text-muted-foreground">
+            {t('searchToSeeSpaces')}
+          </p>
+        ) : null}
+
+        {!disabled && query.trim() && filteredOptions.length === 0 ? (
+          <p className="text-1 text-muted-foreground">{t('noSpacesFound')}</p>
+        ) : null}
+
+        {!disabled && filteredOptions.length > 0 ? (
+          <div className="max-h-44 space-y-1 overflow-auto rounded-md border border-border/60 p-1">
+            {filteredOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  onChange(option.value);
+                }}
+                className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-2 text-foreground transition-colors hover:bg-muted"
+              >
+                <span>{option.label}</span>
+                {value === option.value ? (
+                  <span className="text-1 text-muted-foreground">
+                    {t('selected')}
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <Button
+          type="button"
+          className="w-full"
+          onClick={onAction}
+          disabled={disabled || !value}
+        >
+          {actionLabel}
+        </Button>
+        {disabled ? (
+          <p className="text-1 text-muted-foreground">{unavailableText}</p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function OnboardingAdventurePage() {
   const t = useTranslations('OnboardingAdventure');
   const locale = useLocale();
@@ -131,113 +241,6 @@ export function OnboardingAdventurePage() {
     setCopiedAddress(false);
   };
 
-  const filterOptionsByQuery = (
-    options: Array<{ value: string; label: string; searchText?: string }>,
-    query: string,
-  ) => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return [];
-
-    return options.filter((option) =>
-      (option.searchText ?? option.label).toLowerCase().includes(normalized),
-    );
-  };
-
-  const renderSelectorCard = ({
-    icon,
-    title,
-    description,
-    options,
-    query,
-    onQueryChange,
-    value,
-    onChange,
-    actionLabel,
-    onAction,
-    disabled,
-    unavailableText,
-  }: {
-    icon: ReactNode;
-    title: string;
-    description: string;
-    options: Array<{ value: string; label: string; searchText?: string }>;
-    query: string;
-    onQueryChange: (next: string) => void;
-    value: string;
-    onChange: (next: string) => void;
-    actionLabel: string;
-    onAction: () => void;
-    disabled: boolean;
-    unavailableText: string;
-  }) => {
-    const filteredOptions = filterOptionsByQuery(options, query);
-
-    return (
-      <Card className={onboardingCardClass}>
-        <CardHeader className="space-y-2">
-          <CardTitle className="flex items-center gap-2 text-5">
-            <span className="text-accent-11">{icon}</span>
-            {title}
-          </CardTitle>
-          <CardDescription className="text-2">{description}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 pt-1">
-          <Input
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder={t('spaceSearchPlaceholder')}
-            aria-label={title}
-            disabled={disabled}
-          />
-
-          {!disabled && !query.trim() ? (
-            <p className="text-1 text-muted-foreground">
-              {t('searchToSeeSpaces')}
-            </p>
-          ) : null}
-
-          {!disabled && query.trim() && filteredOptions.length === 0 ? (
-            <p className="text-1 text-muted-foreground">{t('noSpacesFound')}</p>
-          ) : null}
-
-          {!disabled && filteredOptions.length > 0 ? (
-            <div className="max-h-44 space-y-1 overflow-auto rounded-md border border-border/60 p-1">
-              {filteredOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    onChange(option.value);
-                  }}
-                  className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-2 text-foreground transition-colors hover:bg-muted"
-                >
-                  <span>{option.label}</span>
-                  {value === option.value ? (
-                    <span className="text-1 text-muted-foreground">
-                      {t('selected')}
-                    </span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          <Button
-            type="button"
-            className="w-full"
-            onClick={onAction}
-            disabled={disabled || !value}
-          >
-            {actionLabel}
-          </Button>
-          {disabled ? (
-            <p className="text-1 text-muted-foreground">{unavailableText}</p>
-          ) : null}
-        </CardContent>
-      </Card>
-    );
-  };
-
   return (
     <Container className="flex flex-col gap-9 py-9">
       <header className="space-y-4">
@@ -296,58 +299,64 @@ export function OnboardingAdventurePage() {
           </CardContent>
         </Card>
 
-        {renderSelectorCard({
-          icon: <Handshake className="size-5" aria-hidden />,
-          title: t('join.title'),
-          description: t('join.description'),
-          options: spaceOptions,
-          query: joinQuery,
-          onQueryChange: (next) => {
+        <SelectorCard
+          icon={<Handshake className="size-5" aria-hidden />}
+          title={t('join.title')}
+          description={t('join.description')}
+          options={spaceOptions}
+          query={joinQuery}
+          onQueryChange={(next) => {
             setJoinQuery(next);
             setJoinSpaceSlug('');
-          },
-          value: joinSpaceSlug,
-          onChange: setJoinSpaceSlug,
-          actionLabel: t('join.cta'),
-          onAction: () => {
+          }}
+          value={joinSpaceSlug}
+          onChange={setJoinSpaceSlug}
+          actionLabel={t('join.cta')}
+          onAction={() => {
             if (!joinSpaceSlug) return;
             router.push(getSpacePath(locale, joinSpaceSlug));
-          },
-          disabled: isLoading || !hasJoinChoices,
-          unavailableText: isLoading
-            ? t('loadingSpaces')
-            : spacesError?.message
-            ? spacesError.message
-            : t('join.unavailable'),
-        })}
+          }}
+          disabled={isLoading || !hasJoinChoices}
+          unavailableText={
+            isLoading
+              ? t('loadingSpaces')
+              : spacesError?.message
+              ? spacesError.message
+              : t('join.unavailable')
+          }
+          t={t}
+        />
 
-        {renderSelectorCard({
-          icon: <Wallet className="size-5" aria-hidden />,
-          title: t('deposit.title'),
-          description: t('deposit.description'),
-          options: depositOptions,
-          query: depositQuery,
-          onQueryChange: (next) => {
+        <SelectorCard
+          icon={<Wallet className="size-5" aria-hidden />}
+          title={t('deposit.title')}
+          description={t('deposit.description')}
+          options={depositOptions}
+          query={depositQuery}
+          onQueryChange={(next) => {
             setDepositQuery(next);
             setDepositSpaceSlug('');
             setDepositDetailsSpaceSlug('');
             setCopiedAddress(false);
-          },
-          value: depositSpaceSlug,
-          onChange: handleDepositSpaceChange,
-          actionLabel: t('deposit.cta'),
-          onAction: () => {
+          }}
+          value={depositSpaceSlug}
+          onChange={handleDepositSpaceChange}
+          actionLabel={t('deposit.cta')}
+          onAction={() => {
             if (!depositSpaceSlug) return;
             setCopiedAddress(false);
             setDepositDetailsSpaceSlug(depositSpaceSlug);
-          },
-          disabled: isLoading || !hasDepositChoices,
-          unavailableText: isLoading
-            ? t('loadingSpaces')
-            : spacesError?.message
-            ? spacesError.message
-            : t('deposit.unavailable'),
-        })}
+          }}
+          disabled={isLoading || !hasDepositChoices}
+          unavailableText={
+            isLoading
+              ? t('loadingSpaces')
+              : spacesError?.message
+              ? spacesError.message
+              : t('deposit.unavailable')
+          }
+          t={t}
+        />
       </section>
 
       {selectedDepositSpace?.address ? (
