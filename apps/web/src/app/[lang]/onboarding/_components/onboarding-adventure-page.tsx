@@ -58,7 +58,7 @@ export function OnboardingAdventurePage() {
   const t = useTranslations('OnboardingAdventure');
   const locale = useLocale();
   const router = useRouter();
-  const { spaces, isLoading } = useAllSpaces();
+  const { spaces, isLoading, error: spacesError } = useAllSpaces();
 
   const [joinSpaceSlug, setJoinSpaceSlug] = useState('');
   const [joinQuery, setJoinQuery] = useState('');
@@ -316,6 +316,8 @@ export function OnboardingAdventurePage() {
           disabled: isLoading || !hasJoinChoices,
           unavailableText: isLoading
             ? t('loadingSpaces')
+            : spacesError?.message
+            ? spacesError.message
             : t('join.unavailable'),
         })}
 
@@ -342,6 +344,8 @@ export function OnboardingAdventurePage() {
           disabled: isLoading || !hasDepositChoices,
           unavailableText: isLoading
             ? t('loadingSpaces')
+            : spacesError?.message
+            ? spacesError.message
             : t('deposit.unavailable'),
         })}
       </section>
