@@ -51,6 +51,9 @@ const exchangeBrandStyles = {
 } as const;
 const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
 
+const normalizeEvmAddress = (value: string | null | undefined) =>
+  (value ?? '').replace(/\s+/g, '').trim();
+
 export function OnboardingAdventurePage() {
   const t = useTranslations('OnboardingAdventure');
   const locale = useLocale();
@@ -366,8 +369,8 @@ function DepositDetailsCard({
   copiedAddress: boolean;
   onCopyAddress: (address: string) => void;
 }) {
-  if (!space.address) return null;
-  const address = space.address;
+  const address = normalizeEvmAddress(space.address);
+  if (!address) return null;
 
   return (
     <Card className={onboardingCardClass}>
