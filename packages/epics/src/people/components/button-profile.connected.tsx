@@ -47,6 +47,8 @@ export const ConnectedButtonProfile = ({
   const pathname = usePathname();
   const { lang, id } = useParams();
   const { resolvedTheme, setTheme } = useTheme();
+  const onboardingUrl =
+    typeof lang === 'string' ? `/${lang}/onboarding` : undefined;
 
   const notificationCentrePath = useMemo(() => {
     if (!isPersonLoading && person?.slug) {
@@ -121,6 +123,7 @@ export const ConnectedButtonProfile = ({
           ? `/${lang}/profile/${person?.slug ?? ''}`
           : newUserRedirectPath
       }
+      onboardingUrl={onboardingUrl}
       notificationCentrePath={notificationCentrePath}
       navItems={navItems}
       trailingBeforeProfile={trailingBeforeProfile}

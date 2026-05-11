@@ -93,7 +93,51 @@
     "delete": "Supprimer",
     "signIn": "Se connecter",
     "getStarted": "Commencer",
-    "ecosystemLogo": "Logo de l’écosystème"
+    "ecosystemLogo": "Logo de l’écosystème",
+    "continueAdventure": "Continuer votre aventure"
+  },
+  "OnboardingAdventure": {
+    "title": "Votre aventure commence ici.",
+    "subtitle": "Choisissez votre prochaine étape.",
+    "spacePlaceholder": "Sélectionner un espace",
+    "spaceSearchPlaceholder": "Rechercher des espaces...",
+    "searchToSeeSpaces": "Commencez à taper pour voir les espaces correspondants.",
+    "selected": "Sélectionné",
+    "noSpacesFound": "Aucun espace trouvé.",
+    "loadingSpaces": "Chargement des espaces...",
+    "loadSpacesError": "Impossible de charger les espaces pour le moment. Veuillez réessayer.",
+    "explore": {
+      "title": "Explorer le réseau",
+      "description": "Découvrez des communautés et des opportunités dans le réseau.",
+      "cta": "Explorer maintenant"
+    },
+    "create": {
+      "title": "Créer votre espace",
+      "description": "Lancez un nouvel espace et invitez d'autres personnes à collaborer.",
+      "cta": "Créer un espace"
+    },
+    "join": {
+      "title": "Rejoindre un espace",
+      "description": "Choisissez un espace et accédez directement à son activité.",
+      "cta": "Ouvrir l'espace sélectionné",
+      "unavailable": "Aucun espace n'est actuellement disponible pour rejoindre."
+    },
+    "deposit": {
+      "title": "Déposer des fonds dans un espace",
+      "description": "Choisissez un espace avec une adresse de trésorerie.",
+      "cta": "Afficher les détails du dépôt",
+      "unavailable": "Aucun espace avec adresse de trésorerie n'est actuellement disponible."
+    },
+    "depositDetails": {
+      "title": "Détails du dépôt",
+      "description": "Alimentez la trésorerie de {spaceName} avec l'adresse ci-dessous.",
+      "qrAriaLabel": "Code QR de l'adresse de trésorerie pour {spaceName}",
+      "networkWarning": "Avertissement : transférez les fonds uniquement sur le réseau BASE.",
+      "addressLabel": "Adresse de trésorerie",
+      "copy": "Copier l'adresse",
+      "copied": "Adresse copiée",
+      "invalidAddress": "Le format de l'adresse de trésorerie est invalide."
+    }
   },
   "MyWallet": {
     "loading": "Chargement...",

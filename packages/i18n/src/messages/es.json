@@ -783,7 +783,51 @@
     "delete": "Borrar",
     "signIn": "Iniciar sesión",
     "getStarted": "Empezar",
-    "ecosystemLogo": "Logo del ecosistema"
+    "ecosystemLogo": "Logo del ecosistema",
+    "continueAdventure": "Continuar tu aventura"
+  },
+  "OnboardingAdventure": {
+    "title": "Tu aventura empieza aquí.",
+    "subtitle": "Elige tu próximo paso.",
+    "spacePlaceholder": "Seleccionar espacio",
+    "spaceSearchPlaceholder": "Buscar espacios...",
+    "searchToSeeSpaces": "Empieza a escribir para ver espacios coincidentes.",
+    "selected": "Seleccionado",
+    "noSpacesFound": "No se encontraron espacios.",
+    "loadingSpaces": "Cargando espacios...",
+    "loadSpacesError": "No se pueden cargar los espacios en este momento. Inténtalo de nuevo.",
+    "explore": {
+      "title": "Explorar la red",
+      "description": "Descubre comunidades y oportunidades en la red.",
+      "cta": "Explorar ahora"
+    },
+    "create": {
+      "title": "Crea tu espacio",
+      "description": "Inicia un nuevo espacio e invita a otros a colaborar.",
+      "cta": "Crear un espacio"
+    },
+    "join": {
+      "title": "Unirse a un espacio",
+      "description": "Elige un espacio y entra directamente a su actividad.",
+      "cta": "Abrir espacio seleccionado",
+      "unavailable": "No hay espacios disponibles para unirse en este momento."
+    },
+    "deposit": {
+      "title": "Depositar fondos en un espacio",
+      "description": "Elige un espacio con dirección de tesorería para fondearlo.",
+      "cta": "Mostrar detalles de depósito",
+      "unavailable": "No hay espacios con dirección de tesorería disponibles."
+    },
+    "depositDetails": {
+      "title": "Detalles de depósito",
+      "description": "Financia la tesorería de {spaceName} con la dirección de abajo.",
+      "qrAriaLabel": "Código QR de la dirección de tesorería de {spaceName}",
+      "networkWarning": "Advertencia: transfiere fondos solo en la red BASE.",
+      "addressLabel": "Dirección de tesorería",
+      "copy": "Copiar dirección",
+      "copied": "Dirección copiada",
+      "invalidAddress": "El formato de la dirección de tesorería no es válido."
+    }
   },
   "MyWallet": {
     "loading": "Cargando...",
