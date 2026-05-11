@@ -13,13 +13,11 @@ import {
   Coins,
   FileCheck2,
   House,
-  Orbit,
   Navigation,
   Menu,
   PanelLeftClose,
   Radio,
   Settings,
-  SlidersHorizontal,
   Sparkles,
   UsersRound,
 } from 'lucide-react';
