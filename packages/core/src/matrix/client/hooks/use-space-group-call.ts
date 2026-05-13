@@ -46,6 +46,38 @@ const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
 const PLACE_OUTGOING_DELAYED_MS = 600;
 const PLACE_OUTGOING_RETRY_MS = [1500, 4000, 8000] as const;
 
+type SpaceGroupCallOptions = {
+  authToken?: string | null;
+  spaceSlug?: string | null;
+};
+
+async function tryRepairRoomCallPermissions(
+  authToken: string | null | undefined,
+  spaceSlug: string | null | undefined,
+  roomId: string,
+): Promise<boolean> {
+  const token = authToken?.trim();
+  const slug = spaceSlug?.trim();
+  if (!token || !slug) return false;
+  try {
+    const response = await fetch('/api/matrix/room-call-permissions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ roomId, spaceSlug: slug }),
+    });
+    if (!response.ok) return false;
+    const data = (await response.json().catch(() => null)) as {
+      ok?: boolean;
+    } | null;
+    return data?.ok === true;
+  } catch {
+    return false;
+  }
+}
+
 function nudgeGroupCallPlaceOutgoing(gc: MatrixSdk.GroupCall): void {
   const fn = (gc as unknown as { placeOutgoingCalls?: () => void })
     .placeOutgoingCalls;
@@ -82,8 +114,12 @@ function newCallSessionId(): string {
   );
 }
 
-export function useSpaceGroupCall(roomId: string | null) {
+export function useSpaceGroupCall(
+  roomId: string | null,
+  options: SpaceGroupCallOptions = {},
+) {
   const { client } = useMatrix();
+  const { authToken = null, spaceSlug = null } = options;
 
   const [callState, setCallState] = useState<SpaceGroupCallState>('idle');
   const [errorCode, setErrorCode] = useState<SpaceGroupCallErrorCode | null>(
@@ -622,22 +658,60 @@ export function useSpaceGroupCall(roomId: string | null) {
           ) {
             gc = client.getGroupCallForRoom(roomId);
           } else {
-            isJoiningRef.current = false;
-            setErrorCode('UNKNOWN');
-            setCallSessionId(null);
-            if (roomId) {
-              logSpaceGroupCallEvent({
-                name: 'hypha.group_call.error',
+            let errorCode: SpaceGroupCallErrorCode =
+              isPermissionLikeGroupCallError(e)
+                ? 'PERMISSION_DENIED'
+                : 'UNKNOWN';
+            if (errorCode === 'PERMISSION_DENIED') {
+              const repaired = await tryRepairRoomCallPermissions(
+                authToken,
+                spaceSlug,
                 roomId,
-                kind,
-                errorCode: 'UNKNOWN',
-              });
+              );
+              if (repaired) {
+                try {
+                  gc = await client.createGroupCall(
+                    roomId,
+                    type,
+                    false,
+                    GroupCallIntent.Room,
+                  );
+                } catch (retryError) {
+                  if (
+                    retryError instanceof Error &&
+                    retryError.message.includes(
+                      'already has an existing group call',
+                    )
+                  ) {
+                    gc = client.getGroupCallForRoom(roomId);
+                  } else {
+                    errorCode = isPermissionLikeGroupCallError(retryError)
+                      ? 'PERMISSION_DENIED'
+                      : 'UNKNOWN';
+                  }
+                }
+              }
             }
-            setCallState('error');
-            setCallKind(null);
-            setThreadContext(null);
-            joinStartedAtRef.current = null;
-            return;
+            if (gc) {
+              // permission repair/retry recovered; continue normal flow.
+            } else {
+              isJoiningRef.current = false;
+              setErrorCode(errorCode);
+              setCallSessionId(null);
+              if (roomId) {
+                logSpaceGroupCallEvent({
+                  name: 'hypha.group_call.error',
+                  roomId,
+                  kind,
+                  errorCode,
+                });
+              }
+              setCallState('error');
+              setCallKind(null);
+              setThreadContext(null);
+              joinStartedAtRef.current = null;
+              return;
+            }
           }
         }
       }
@@ -689,17 +763,20 @@ export function useSpaceGroupCall(roomId: string | null) {
               roomGroupCallType: String(GroupCallType.Video),
             });
           }
-        } catch {
+        } catch (e) {
+          const permissionLike = isPermissionLikeGroupCallError(e);
           gcSync.type = prevType;
           isJoiningRef.current = false;
-          setErrorCode('UNKNOWN');
+          setErrorCode(permissionLike ? 'PERMISSION_DENIED' : 'UNKNOWN');
           setCallSessionId(null);
           if (roomId) {
             logSpaceGroupCallEvent({
               name: 'hypha.group_call.error',
               roomId,
               kind,
-              errorCode: 'ROOM_TYPE_SYNC',
+              errorCode: permissionLike
+                ? 'PERMISSION_DENIED'
+                : 'ROOM_TYPE_SYNC',
             });
           }
           setCallState('error');
@@ -904,7 +981,9 @@ export function useSpaceGroupCall(roomId: string | null) {
     },
     [
       attachGroupCallListeners,
+      authToken,
       client,
+      spaceSlug,
       roomId,
       refreshLocalPreview,
       runCleanup,
