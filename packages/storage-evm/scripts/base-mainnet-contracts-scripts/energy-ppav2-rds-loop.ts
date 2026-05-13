@@ -13,7 +13,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { ethers } from 'hardhat';
+import hre, { ethers } from 'hardhat';
 import dotenv from 'dotenv';
 import { Client } from 'pg';
 
@@ -95,6 +95,16 @@ function getRequiredEnv(name: string): string {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function rpcHostForLog(): string {
+  const url = (hre.network.config as { url?: string }).url ?? '';
+  if (!url) return '(unknown)';
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return '(configured)';
+  }
 }
 
 function stateFilePath(): string {
@@ -287,6 +297,7 @@ async function main(): Promise<void> {
   console.log(`  Catch-up mode       : ${catchUp ? 'on' : 'off'}`);
   console.log(`  Checkpoint file     : ${checkpointFilePath()}`);
   console.log(`  Signer whitelisted  : yes (${signer.address})`);
+  console.log(`  RPC host            : ${rpcHostForLog()}`);
 
   const client = new Client({
     host: dbConfig.host,
