@@ -108,7 +108,7 @@ export function NavigationTabs({
     ...(spaceEnergy?.enabled
       ? [
           {
-            title: 'Energy',
+            title: t('Energy'),
             name: 'energy',
             href: getDhoPathEnergy(lang as Locale, id as string),
           },

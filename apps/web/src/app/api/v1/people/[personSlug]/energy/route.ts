@@ -69,6 +69,7 @@ export async function GET(
     const communityData = await Promise.all(
       communityMappings.map(async (mapping) => {
         const communityProxy = mapping.communityProxyAddress as `0x${string}`;
+        const spaceRow = spaces.find((s) => s.id === mapping.spaceId);
 
         const [
           energyCreditBalance,
@@ -106,6 +107,8 @@ export async function GET(
 
         return {
           spaceId: mapping.spaceId,
+          spaceSlug: spaceRow?.slug ?? null,
+          spaceTitle: spaceRow?.title ?? null,
           chainId: mapping.chainId,
           communityProxyAddress: mapping.communityProxyAddress,
           energyTokenAddress: mapping.energyTokenAddress,

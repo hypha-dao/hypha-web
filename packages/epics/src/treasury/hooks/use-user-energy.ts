@@ -6,6 +6,8 @@ import { useJwt } from '@hypha-platform/core/client';
 
 export type UserEnergyCommunity = {
   spaceId: number;
+  spaceSlug: string | null;
+  spaceTitle: string | null;
   chainId: number;
   communityProxyAddress: `0x${string}`;
   energyTokenAddress: `0x${string}`;

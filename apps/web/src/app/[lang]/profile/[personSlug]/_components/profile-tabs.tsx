@@ -44,6 +44,7 @@ export const ProfileTabs = ({
         <UserEnergySection
           personSlug={person?.slug || ''}
           isMyProfile={isMyProfile}
+          lang={lang}
         />
         <UserAssetsSection
           isMyProfile={isMyProfile}

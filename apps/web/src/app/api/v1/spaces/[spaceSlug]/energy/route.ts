@@ -114,6 +114,10 @@ export async function GET(
       zeroSumStatus,
       sourceIds,
       memberAddresses,
+      communityRoleAddress,
+      aggregatorRoleAddress,
+      gridOperatorAddress,
+      exportDeviceId,
     ] = await Promise.all([
       web3Client.readContract({
         address: communityProxy,
@@ -154,6 +158,26 @@ export async function GET(
         address: communityProxy,
         abi: energyPpaV2Abi,
         functionName: 'getMemberAddresses',
+      }),
+      web3Client.readContract({
+        address: communityProxy,
+        abi: energyPpaV2Abi,
+        functionName: 'getCommunityAddress',
+      }),
+      web3Client.readContract({
+        address: communityProxy,
+        abi: energyPpaV2Abi,
+        functionName: 'getAggregatorAddress',
+      }),
+      web3Client.readContract({
+        address: communityProxy,
+        abi: energyPpaV2Abi,
+        functionName: 'getGridOperator',
+      }),
+      web3Client.readContract({
+        address: communityProxy,
+        abi: energyPpaV2Abi,
+        functionName: 'getExportDeviceId',
       }),
     ]);
 
@@ -207,6 +231,13 @@ export async function GET(
         zeroSumOk: zeroSumStatus[0],
         zeroSumDelta: zeroSumStatus[1].toString(),
       },
+      roles: {
+        communityAddress: communityRoleAddress.toLowerCase() as `0x${string}`,
+        aggregatorAddress: aggregatorRoleAddress.toLowerCase() as `0x${string}`,
+        gridOperator: gridOperatorAddress.toLowerCase() as `0x${string}`,
+        exportDeviceId: exportDeviceId.toString(),
+      },
+      members: memberAddresses.map((a) => a.toLowerCase() as `0x${string}`),
       sources,
     });
   } catch (error) {

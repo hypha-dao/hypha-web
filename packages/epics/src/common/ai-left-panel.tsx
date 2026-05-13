@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
+  Bolt,
   HandCoins,
   Coins,
   FileCheck2,
@@ -37,7 +38,10 @@ import {
 
 import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
+import { getDhoPathEnergy } from './get-path-function';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import { useSpaceEnergy } from '../treasury/hooks/use-space-energy';
+import type { Locale } from '@hypha-platform/i18n';
 import { useAiPanel } from './human-chat-panel-context';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { Empty } from './empty';
@@ -131,6 +135,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     spaceSlug ? [spaceSlug] : [],
     false,
   );
+  const { data: spaceEnergyData } = useSpaceEnergy();
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
   const [input, setInput] = useState('');
@@ -156,6 +161,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         | 'agreements'
         | 'members'
         | 'treasury'
+        | 'energy'
         | 'rewards'
         | 'memory'
         | 'wallet',
@@ -220,6 +226,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         href: `/${lang}/dho/${spaceSlug}/treasury`,
         active: isSectionActive('treasury'),
       },
+      ...(spaceEnergyData?.enabled
+        ? [
+            {
+              key: 'energy',
+              label: tCommon('Energy'),
+              icon: Bolt,
+              href: getDhoPathEnergy(lang as Locale, spaceSlug),
+              active: isSectionActive('energy'),
+            },
+          ]
+        : []),
       {
         key: 'rewards',
         label: tTreasury('rewardsSection.title'),
@@ -243,6 +260,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     enableSpaceMemory,
     isSectionActive,
     lang,
+    spaceEnergyData?.enabled,
     spaceSlug,
     tCommon,
     tCoherence,

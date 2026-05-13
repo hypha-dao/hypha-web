@@ -3,7 +3,8 @@
 import React from 'react';
 import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { getDhoSpaceSlugFromPathname } from '../../common/get-dho-space-slug-from-pathname';
 
 export type SpaceEnergySource = {
   sourceId: `0x${string}`;
@@ -37,16 +38,30 @@ export type SpaceEnergyResponse = {
     zeroSumDelta: string;
   };
   sources?: SpaceEnergySource[];
+  roles?: {
+    communityAddress: `0x${string}`;
+    aggregatorAddress: `0x${string}`;
+    gridOperator: `0x${string}`;
+    exportDeviceId: string;
+  };
+  members?: `0x${string}`[];
 };
 
 export const useSpaceEnergy = () => {
-  const { id } = useParams<{ id: string }>();
+  const pathname = usePathname();
+  const spaceSlug = React.useMemo(
+    () => getDhoSpaceSlugFromPathname(pathname),
+    [pathname],
+  );
   const { getAccessToken } = useAuthentication();
 
-  const endpoint = React.useMemo(() => `/api/v1/spaces/${id}/energy`, [id]);
+  const endpoint = React.useMemo(
+    () => (spaceSlug ? `/api/v1/spaces/${spaceSlug}/energy` : null),
+    [spaceSlug],
+  );
 
   const { data, isLoading, mutate, error } = useSWR(
-    [endpoint],
+    endpoint ? [endpoint] : null,
     async ([path]) => {
       const token = await getAccessToken();
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
