@@ -5,12 +5,18 @@ import {
   upsertEnergyCommunityActivation,
   web3Client,
   getDb,
+  type DatabaseInstance,
 } from '@hypha-platform/core/server';
 import {
   energyPpaV2Abi,
   energyPpaV2FactoryAbi,
   getEnergyPpaFactoryAddress,
+  getGovernanceChainId,
 } from '@hypha-platform/core/client';
+import {
+  daoSpaceFactoryImplementationAbi,
+  daoSpaceFactoryImplementationAddress,
+} from '@hypha-platform/core/generated';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { headers } from 'next/headers';
@@ -22,6 +28,91 @@ const SOURCE_TYPES: Record<number, string> = {
 };
 
 const toLowerHex = (address: string) => address.toLowerCase() as `0x${string}`;
+
+/**
+ * Hypha links a space to `EnergyPPAv2Factory.adminCommunities[admin]`.
+ * The Enable Energy Community proposal sets `admin` to an arbitrary address;
+ * it is often the **space executor** (smart account) rather than `spaces.address`
+ * (space contract). Try space wallet first, then fall back to `getSpaceExecutor`.
+ */
+async function syncEnergyCommunityFromFactory(input: {
+  spaceId: number;
+  spaceAddress: string | null;
+  web3SpaceId: number | null;
+  appDb: DatabaseInstance;
+}) {
+  const factoryAddress = getEnergyPpaFactoryAddress();
+  if (!factoryAddress) return null;
+
+  const chainId = getGovernanceChainId();
+  const adminCandidates: `0x${string}`[] = [];
+  const seen = new Set<string>();
+
+  const pushAdmin = (raw: string | null | undefined) => {
+    if (!raw || typeof raw !== 'string') return;
+    const t = raw.trim().toLowerCase();
+    if (!/^0x[a-f0-9]{40}$/.test(t)) return;
+    if (seen.has(t)) return;
+    seen.add(t);
+    adminCandidates.push(t as `0x${string}`);
+  };
+
+  pushAdmin(input.spaceAddress ?? undefined);
+
+  const spaceFactoryAddr =
+    daoSpaceFactoryImplementationAddress[
+      chainId as keyof typeof daoSpaceFactoryImplementationAddress
+    ];
+  if (input.web3SpaceId != null && spaceFactoryAddr) {
+    try {
+      const executor = await web3Client.readContract({
+        address: spaceFactoryAddr as `0x${string}`,
+        abi: daoSpaceFactoryImplementationAbi,
+        functionName: 'getSpaceExecutor',
+        args: [BigInt(input.web3SpaceId)],
+      });
+      pushAdmin(executor as string);
+    } catch (e) {
+      console.warn('[spaces/energy] getSpaceExecutor failed', e);
+    }
+  }
+
+  for (const admin of adminCandidates) {
+    const communityIds = await web3Client.readContract({
+      address: factoryAddress,
+      abi: energyPpaV2FactoryAbi,
+      functionName: 'getAdminCommunities',
+      args: [admin],
+    });
+
+    const latestCommunityId = communityIds.at(-1);
+    if (latestCommunityId === undefined) continue;
+
+    const communityRecord = await web3Client.readContract({
+      address: factoryAddress,
+      abi: energyPpaV2FactoryAbi,
+      functionName: 'communities',
+      args: [latestCommunityId],
+    });
+
+    return (
+      (await upsertEnergyCommunityActivation(
+        {
+          spaceId: input.spaceId,
+          chainId: Number(chainId),
+          communityProxyAddress: communityRecord[0],
+          energyTokenAddress: communityRecord[1],
+          adminAddress: communityRecord[2],
+          factoryCommunityId: Number(latestCommunityId),
+          activatedAt: new Date(Number(communityRecord[3]) * 1000),
+        },
+        { db: input.appDb },
+      )) ?? null
+    );
+  }
+
+  return null;
+}
 
 const decodeSourceId = (value: `0x${string}`) => {
   try {
@@ -64,40 +155,13 @@ export async function GET(
 
     let mapping = await findEnergyCommunityBySpaceId(space.id, { db: appDb });
 
-    if (!mapping && space.address) {
-      const factoryAddress = getEnergyPpaFactoryAddress();
-      if (factoryAddress) {
-        const communityIds = await web3Client.readContract({
-          address: factoryAddress,
-          abi: energyPpaV2FactoryAbi,
-          functionName: 'getAdminCommunities',
-          args: [toLowerHex(space.address)],
-        });
-
-        const latestCommunityId = communityIds.at(-1);
-        if (latestCommunityId !== undefined) {
-          const communityRecord = await web3Client.readContract({
-            address: factoryAddress,
-            abi: energyPpaV2FactoryAbi,
-            functionName: 'communities',
-            args: [latestCommunityId],
-          });
-
-          mapping =
-            (await upsertEnergyCommunityActivation(
-              {
-                spaceId: space.id,
-                chainId: 8453,
-                communityProxyAddress: communityRecord[0],
-                energyTokenAddress: communityRecord[1],
-                adminAddress: communityRecord[2],
-                factoryCommunityId: Number(latestCommunityId),
-                activatedAt: new Date(Number(communityRecord[3]) * 1000),
-              },
-              { db: appDb },
-            )) ?? null;
-        }
-      }
+    if (!mapping) {
+      mapping = await syncEnergyCommunityFromFactory({
+        spaceId: space.id,
+        spaceAddress: space.address,
+        web3SpaceId: space.web3SpaceId,
+        appDb,
+      });
     }
 
     if (!mapping) {
