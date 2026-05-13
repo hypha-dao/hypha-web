@@ -44,16 +44,18 @@ export const CreateSubspaceForm = ({
     progress,
     space: { slug: spaceSlug },
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
+  const hasNavigatedAfterSuccessRef = React.useRef(false);
   const pendingNavigationSeedRef = React.useRef<{
     optimisticSpace: Space;
     organisationSpaces: Space[];
   } | null>(null);
 
   React.useEffect(() => {
-    if (progress === 100 && spaceSlug) {
+    if (progress === 100 && !hasNavigatedAfterSuccessRef.current) {
+      hasNavigatedAfterSuccessRef.current = true;
       void (async () => {
         const seed = pendingNavigationSeedRef.current;
-        if (seed) {
+        if (seed && spaceSlug) {
           const mutationResults = await Promise.allSettled([
             mutate(`/api/v1/spaces/${spaceSlug}`, seed.optimisticSpace, {
               revalidate: false,
@@ -83,7 +85,7 @@ export const CreateSubspaceForm = ({
           });
           pendingNavigationSeedRef.current = null;
         }
-        router.push(successfulUrl);
+        router.replace(successfulUrl);
       })();
     }
   }, [mutate, progress, router, spaceSlug, successfulUrl]);
@@ -107,7 +109,7 @@ export const CreateSubspaceForm = ({
       }
     >
       <SpaceForm
-        isLoading={false}
+        isLoading={isPending || progress === 100}
         creator={{ name: person?.name, surname: person?.surname }}
         closeUrl={successfulUrl}
         backUrl={backUrl}
