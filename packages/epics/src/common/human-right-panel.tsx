@@ -781,10 +781,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     dismissCallError: dismissSpaceCallError,
     remoteMediaStall: spaceCallRemoteMediaStall,
     dismissRemoteMediaStallBanner: dismissSpaceCallRemoteMediaStall,
-  } = useSpaceGroupCall(mode === 'space' ? roomId : null, {
-    authToken,
-    spaceSlug,
-  });
+  } = useSpaceGroupCall(mode === 'space' ? roomId : null);
 
   const callUiEnabled = useMemo(
     () =>
