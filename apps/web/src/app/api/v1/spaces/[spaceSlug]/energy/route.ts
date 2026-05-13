@@ -76,37 +76,65 @@ async function syncEnergyCommunityFromFactory(input: {
   }
 
   for (const admin of adminCandidates) {
-    const communityIds = await web3Client.readContract({
-      address: factoryAddress,
-      abi: energyPpaV2FactoryAbi,
-      functionName: 'getAdminCommunities',
-      args: [admin],
-    });
+    let communityIds: readonly bigint[];
+    try {
+      communityIds = await web3Client.readContract({
+        address: factoryAddress,
+        abi: energyPpaV2FactoryAbi,
+        functionName: 'getAdminCommunities',
+        args: [admin],
+      });
+    } catch (e) {
+      console.warn(
+        `[spaces/energy] getAdminCommunities failed for admin ${admin}`,
+        e,
+      );
+      continue;
+    }
 
     const latestCommunityId = communityIds.at(-1);
     if (latestCommunityId === undefined) continue;
 
-    const communityRecord = await web3Client.readContract({
-      address: factoryAddress,
-      abi: energyPpaV2FactoryAbi,
-      functionName: 'communities',
-      args: [latestCommunityId],
-    });
+    let communityRecord: readonly [
+      `0x${string}`,
+      `0x${string}`,
+      `0x${string}`,
+      bigint,
+    ];
+    try {
+      communityRecord = (await web3Client.readContract({
+        address: factoryAddress,
+        abi: energyPpaV2FactoryAbi,
+        functionName: 'communities',
+        args: [latestCommunityId],
+      })) as typeof communityRecord;
+    } catch (e) {
+      console.warn(
+        `[spaces/energy] communities(${latestCommunityId}) read failed`,
+        e,
+      );
+      continue;
+    }
 
-    return (
-      (await upsertEnergyCommunityActivation(
-        {
-          spaceId: input.spaceId,
-          chainId: Number(chainId),
-          communityProxyAddress: communityRecord[0],
-          energyTokenAddress: communityRecord[1],
-          adminAddress: communityRecord[2],
-          factoryCommunityId: Number(latestCommunityId),
-          activatedAt: new Date(Number(communityRecord[3]) * 1000),
-        },
-        { db: input.appDb },
-      )) ?? null
-    );
+    try {
+      return (
+        (await upsertEnergyCommunityActivation(
+          {
+            spaceId: input.spaceId,
+            chainId: Number(chainId),
+            communityProxyAddress: communityRecord[0],
+            energyTokenAddress: communityRecord[1],
+            adminAddress: communityRecord[2],
+            factoryCommunityId: Number(latestCommunityId),
+            activatedAt: new Date(Number(communityRecord[3]) * 1000),
+          },
+          { db: input.appDb },
+        )) ?? null
+      );
+    } catch (e) {
+      console.warn('[spaces/energy] upsertEnergyCommunityActivation failed', e);
+      return null;
+    }
   }
 
   return null;
@@ -154,12 +182,19 @@ export async function GET(
     let mapping = await findEnergyCommunityBySpaceId(space.id, { db: appDb });
 
     if (!mapping) {
-      mapping = await syncEnergyCommunityFromFactory({
-        spaceId: space.id,
-        spaceAddress: space.address,
-        web3SpaceId: space.web3SpaceId,
-        appDb,
-      });
+      try {
+        mapping = await syncEnergyCommunityFromFactory({
+          spaceId: space.id,
+          spaceAddress: space.address,
+          web3SpaceId: space.web3SpaceId,
+          appDb,
+        });
+      } catch (e) {
+        // Never let factory sync turn into a 500 — the UI just renders
+        // "energy not enabled yet" when this path fails.
+        console.warn('[spaces/energy] syncEnergyCommunityFromFactory threw', e);
+        mapping = null;
+      }
     }
 
     if (!mapping) {

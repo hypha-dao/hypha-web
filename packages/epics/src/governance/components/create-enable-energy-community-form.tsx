@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+import type { UseFormReturn } from 'react-hook-form';
 import { useReadContract } from 'wagmi';
 import { z } from 'zod';
 import {
@@ -14,6 +16,8 @@ import {
 } from '@hypha-platform/core/generated';
 import { CreateEnergyProposalForm } from './create-energy-proposal-form';
 import { EnableEnergyCommunityPlugin } from '../../agreements/plugins/enable-energy-community/plugin';
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
@@ -216,6 +220,33 @@ export const CreateEnableEnergyCommunityForm = ({
     query: { enabled: typeof web3SpaceId === 'number' },
   });
 
+  const isValidExecutor =
+    typeof executorAddress === 'string' &&
+    executorAddress.length === 42 &&
+    executorAddress.toLowerCase() !== ZERO_ADDRESS;
+
+  const formRef = React.useRef<UseFormReturn<
+    FormValues,
+    unknown,
+    FormValues
+  > | null>(null);
+
+  // `react-hook-form` only reads `defaultValues` on first mount, so push the
+  // executor address into the admin field via `setValue` once it resolves.
+  React.useEffect(() => {
+    if (!isValidExecutor || !formRef.current) return;
+    const current = formRef.current.getValues(
+      'energyCommunityActivation.admin' as const,
+    );
+    if (!current || current.trim() === '') {
+      formRef.current.setValue(
+        'energyCommunityActivation.admin' as const,
+        executorAddress as string,
+        { shouldValidate: true, shouldDirty: false, shouldTouch: false },
+      );
+    }
+  }, [executorAddress, isValidExecutor]);
+
   return (
     <CreateEnergyProposalForm<FormValues>
       schema={schemaCreateEnableEnergyCommunityForm}
@@ -227,8 +258,9 @@ export const CreateEnableEnergyCommunityForm = ({
       successfulUrl={successfulUrl}
       backUrl={backUrl}
       plugin={<EnableEnergyCommunityPlugin />}
+      formRef={formRef}
       defaultValues={
-        executorAddress
+        isValidExecutor
           ? ({
               energyCommunityActivation: {
                 admin: executorAddress,

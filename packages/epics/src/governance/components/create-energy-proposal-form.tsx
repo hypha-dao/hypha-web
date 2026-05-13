@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { DefaultValues, useForm } from 'react-hook-form';
+import { DefaultValues, useForm, UseFormReturn } from 'react-hook-form';
 import { z, ZodType } from 'zod';
 import { useConfig } from 'wagmi';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -55,8 +55,16 @@ interface CreateEnergyProposalFormProps<T extends EnergyProposalBaseFields> {
   /**
    * Optional default values for the form. Useful when a proposal type needs to
    * pre-fill fields from on-chain reads (e.g. space executor address).
+   * NOTE: `react-hook-form` consumes `defaultValues` only on first mount. For
+   * values that resolve asynchronously, use {@link formRef} and `setValue` /
+   * `reset` from the parent.
    */
   defaultValues?: Partial<T>;
+  /**
+   * Optional ref the parent can use to control the form imperatively
+   * (e.g. populate fields once on-chain data resolves).
+   */
+  formRef?: React.MutableRefObject<UseFormReturn<T, unknown, T> | null>;
   /**
    * Optional builder that produces additional on-chain transactions to attach
    * to the DAO proposal. These execute via the space executor when the
@@ -82,6 +90,7 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
   plugin,
   mapPayload,
   defaultValues,
+  formRef: externalFormRef,
   buildExtraTransactions,
 }: CreateEnergyProposalFormProps<T>) => {
   const tSpaces = useTranslations('Spaces');
@@ -114,6 +123,18 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
       ...(defaultValues ?? {}),
     } as DefaultValues<T>,
   });
+
+  React.useEffect(() => {
+    if (externalFormRef) {
+      externalFormRef.current = form;
+      return () => {
+        if (externalFormRef.current === form) {
+          externalFormRef.current = null;
+        }
+      };
+    }
+    return undefined;
+  }, [externalFormRef, form]);
 
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(
