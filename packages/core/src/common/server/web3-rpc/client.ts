@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { createPublicClient, fallback, http } from 'viem';
+import { createPublicClient, fallback, http, type PublicClient } from 'viem';
 import { base } from 'viem/chains';
 
 /**
@@ -17,7 +17,7 @@ import { base } from 'viem/chains';
  *                             the server when no server-only key is set
  *  3. `https://mainnet.base.org` — always-available public default
  */
-const buildTransport = () => {
+const buildTransports = () => {
   const transports = [] as ReturnType<typeof http>[];
   if (process.env.RPC_URL) {
     transports.push(http(process.env.RPC_URL));
@@ -29,13 +29,20 @@ const buildTransport = () => {
     transports.push(http(process.env.NEXT_PUBLIC_RPC_URL));
   }
   transports.push(http('https://mainnet.base.org'));
-  return transports.length === 1 ? transports[0]! : fallback(transports);
+  return transports;
 };
 
+/**
+ * Typed as `PublicClient` so consumers (and project references) don't need to
+ * resolve viem internals like `FallbackTransport` — the inferred type leaks
+ * those paths and breaks `tsc --noEmit` for downstream packages.
+ */
 export const web3Client = createPublicClient({
   batch: {
     multicall: { wait: 100 },
   },
   chain: base,
-  transport: buildTransport(),
-});
+  // Always wrap in `fallback` (even with a single transport) so the resulting
+  // client has a stable, portable type signature across all build envs.
+  transport: fallback(buildTransports()),
+}) as unknown as PublicClient;
