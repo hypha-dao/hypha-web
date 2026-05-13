@@ -8,10 +8,10 @@ import {
   type DatabaseInstance,
 } from '@hypha-platform/core/server';
 import {
+  ENERGY_PPA_CHAIN_ID,
   energyPpaV2Abi,
   energyPpaV2FactoryAbi,
   getEnergyPpaFactoryAddress,
-  getGovernanceChainId,
 } from '@hypha-platform/core/client';
 import {
   daoSpaceFactoryImplementationAbi,
@@ -42,9 +42,7 @@ async function syncEnergyCommunityFromFactory(input: {
   appDb: DatabaseInstance;
 }) {
   const factoryAddress = getEnergyPpaFactoryAddress();
-  if (!factoryAddress) return null;
-
-  const chainId = getGovernanceChainId();
+  const chainId = ENERGY_PPA_CHAIN_ID;
   const adminCandidates: `0x${string}`[] = [];
   const seen = new Set<string>();
 

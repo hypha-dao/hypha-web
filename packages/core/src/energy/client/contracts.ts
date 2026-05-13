@@ -1,8 +1,5 @@
 import type { Abi } from 'viem';
-import { getGovernanceChainId } from '../../governance/client/governance-chain-id';
 import type { GovernanceChainId } from '../../governance/client/governance-chain-id';
-
-const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
 export const energyPpaV2FactoryAbi = [
   {
@@ -181,8 +178,15 @@ export const energyPpaV2Abi = [
 ] as const satisfies Abi;
 
 /**
- * EnergyPPAv2Factory addresses by governance chain.
- * Keep this in sync with deployed infra similarly to other generated address maps.
+ * Base mainnet — Energy PPA v2 reads and sync use this chain only.
+ * Intentionally not driven by `NEXT_PUBLIC_GOVERNANCE_CHAIN_ID` / factory env vars
+ * so server RPC (`web3Client` on Base) always matches discovery.
+ */
+export const ENERGY_PPA_CHAIN_ID = 8453 as const satisfies GovernanceChainId;
+
+/**
+ * EnergyPPAv2Factory on {@link ENERGY_PPA_CHAIN_ID}.
+ * Keep in sync with deployed infra (see `packages/storage-evm` demo state).
  */
 export const energyPpaV2FactoryAddress: Record<
   GovernanceChainId,
@@ -191,22 +195,6 @@ export const energyPpaV2FactoryAddress: Record<
   8453: '0xB8e042Bc361d1D44Cfe408667B63fAe7E10B90ef',
 } as const;
 
-export function getEnergyPpaFactoryAddress(): `0x${string}` | undefined {
-  if (typeof process === 'undefined') return undefined;
-
-  // Optional runtime override for emergency rollouts / local testing.
-  const explicit = process.env.NEXT_PUBLIC_ENERGY_PPA_FACTORY_ADDRESS?.trim();
-  if (explicit) {
-    if (ADDRESS_RE.test(explicit)) return explicit as `0x${string}`;
-    return undefined;
-  }
-
-  const chainId = getGovernanceChainId();
-  const chainScoped =
-    process.env[`NEXT_PUBLIC_ENERGY_PPA_FACTORY_ADDRESS_${chainId}`]?.trim();
-  if (chainScoped && ADDRESS_RE.test(chainScoped)) {
-    return chainScoped as `0x${string}`;
-  }
-
-  return energyPpaV2FactoryAddress[chainId];
+export function getEnergyPpaFactoryAddress(): `0x${string}` {
+  return energyPpaV2FactoryAddress[ENERGY_PPA_CHAIN_ID];
 }
