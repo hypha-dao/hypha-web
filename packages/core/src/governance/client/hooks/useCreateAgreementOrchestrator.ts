@@ -169,6 +169,13 @@ export const useCreateAgreementOrchestrator = ({
       let web3ProposalResult = undefined;
       const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
       const web3SpaceId = (arg as any).web3SpaceId;
+      const extraTransactions = (arg as any).extraTransactions as
+        | ReadonlyArray<{
+            target: `0x${string}`;
+            value?: bigint | number;
+            data: `0x${string}`;
+          }>
+        | undefined;
       try {
         if (config) {
           if (typeof web3SpaceId !== 'number') {
@@ -179,6 +186,9 @@ export const useCreateAgreementOrchestrator = ({
           startTask('CREATE_WEB3_AGREEMENT');
           web3ProposalResult = await web3.createAgreement({
             spaceId: web3SpaceId,
+            ...(extraTransactions && extraTransactions.length > 0
+              ? { extraTransactions }
+              : {}),
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }

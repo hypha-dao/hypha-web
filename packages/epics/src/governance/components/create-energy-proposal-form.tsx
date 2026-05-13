@@ -35,6 +35,12 @@ type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
+type ProposalExtraTransaction = {
+  target: `0x${string}`;
+  value?: bigint | number;
+  data: `0x${string}`;
+};
+
 interface CreateEnergyProposalFormProps<T extends EnergyProposalBaseFields> {
   schema: ZodType<T, z.ZodTypeDef, any>;
   label: string;
@@ -46,6 +52,22 @@ interface CreateEnergyProposalFormProps<T extends EnergyProposalBaseFields> {
   backUrl?: string;
   plugin: React.ReactNode;
   mapPayload: (values: T) => JsonValue;
+  /**
+   * Optional default values for the form. Useful when a proposal type needs to
+   * pre-fill fields from on-chain reads (e.g. space executor address).
+   */
+  defaultValues?: Partial<T>;
+  /**
+   * Optional builder that produces additional on-chain transactions to attach
+   * to the DAO proposal. These execute via the space executor when the
+   * proposal passes. Used by Enable Energy Community to trigger
+   * `EnergyPPAv2Factory.deployCommunity`.
+   */
+  buildExtraTransactions?: (
+    values: T,
+  ) =>
+    | ReadonlyArray<ProposalExtraTransaction>
+    | Promise<ReadonlyArray<ProposalExtraTransaction>>;
 }
 
 export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
@@ -59,6 +81,8 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
   backUrl,
   plugin,
   mapPayload,
+  defaultValues,
+  buildExtraTransactions,
 }: CreateEnergyProposalFormProps<T>) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -87,6 +111,7 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
       label,
+      ...(defaultValues ?? {}),
     } as DefaultValues<T>,
   });
 
@@ -108,12 +133,19 @@ export const CreateEnergyProposalForm = <T extends EnergyProposalBaseFields>({
       payload,
     );
 
+    const extraTransactions = buildExtraTransactions
+      ? await buildExtraTransactions(data)
+      : undefined;
+
     await createAgreement({
       ...data,
       label,
       description: descriptionWithMarker,
       spaceId: spaceId as number,
       ...(typeof web3SpaceId === 'number' ? { web3SpaceId } : {}),
+      ...(extraTransactions && extraTransactions.length > 0
+        ? { extraTransactions }
+        : {}),
     } as any);
   };
 

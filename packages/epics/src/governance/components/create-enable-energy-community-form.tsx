@@ -1,10 +1,17 @@
 'use client';
 
+import { useReadContract } from 'wagmi';
 import { z } from 'zod';
 import {
+  buildDeployCommunityTransaction,
   createAgreementFiles,
+  ENERGY_PPA_CHAIN_ID,
   schemaCreateAgreementForm,
 } from '@hypha-platform/core/client';
+import {
+  daoSpaceFactoryImplementationAbi,
+  daoSpaceFactoryImplementationAddress,
+} from '@hypha-platform/core/generated';
 import { CreateEnergyProposalForm } from './create-energy-proposal-form';
 import { EnableEnergyCommunityPlugin } from '../../agreements/plugins/enable-energy-community/plugin';
 
@@ -168,6 +175,24 @@ const parseOptionalNumber = (value: string | undefined): number => {
   return Number(value);
 };
 
+const formActivationFromValues = (values: FormValues) => ({
+  ...values.energyCommunityActivation,
+  sources: values.energyCommunityActivation.sources.map((source) => ({
+    sourceId: source.sourceId,
+    sourceType: source.sourceType.toUpperCase(),
+    tokenName: source.tokenName,
+    tokenSymbol: source.tokenSymbol,
+    basePricePerKwh: source.basePricePerKwh,
+    holders: parseCsv(source.holdersCsv),
+    holderAmounts: parseCsv(source.holderAmountsCsv),
+  })),
+  members: (values.energyCommunityActivation.members ?? []).map((member) => ({
+    memberAddress: member.memberAddress,
+    deviceIds: parseCsv(member.deviceIdsCsv).map((id) => Number(id)),
+    metadataHash: member.metadataHash,
+  })),
+});
+
 export const CreateEnableEnergyCommunityForm = ({
   spaceId,
   web3SpaceId,
@@ -179,6 +204,18 @@ export const CreateEnableEnergyCommunityForm = ({
   successfulUrl: string;
   backUrl?: string;
 }) => {
+  const daoSpaceFactory =
+    daoSpaceFactoryImplementationAddress[ENERGY_PPA_CHAIN_ID];
+
+  const { data: executorAddress } = useReadContract({
+    chainId: ENERGY_PPA_CHAIN_ID,
+    address: daoSpaceFactory,
+    abi: daoSpaceFactoryImplementationAbi,
+    functionName: 'getSpaceExecutor',
+    args: typeof web3SpaceId === 'number' ? [BigInt(web3SpaceId)] : undefined,
+    query: { enabled: typeof web3SpaceId === 'number' },
+  });
+
   return (
     <CreateEnergyProposalForm<FormValues>
       schema={schemaCreateEnableEnergyCommunityForm}
@@ -190,44 +227,63 @@ export const CreateEnableEnergyCommunityForm = ({
       successfulUrl={successfulUrl}
       backUrl={backUrl}
       plugin={<EnableEnergyCommunityPlugin />}
-      mapPayload={(values) => ({
-        contractMethod: 'deployCommunity',
-        communityParams: {
-          admin: values.energyCommunityActivation.admin,
-          stablecoin: values.energyCommunityActivation.stablecoin,
-          communityAddress:
-            values.energyCommunityActivation.communityAddress || '',
-          aggregatorAddress:
-            values.energyCommunityActivation.aggregatorAddress || '',
-          gridOperator: values.energyCommunityActivation.gridOperator,
-          communityFeeBps: parseOptionalNumber(
-            values.energyCommunityActivation.communityFeeBps,
-          ),
-          aggregatorFeeBps: parseOptionalNumber(
-            values.energyCommunityActivation.aggregatorFeeBps,
-          ),
-          exportDeviceId:
-            values.energyCommunityActivation.exportDeviceId?.trim() || '0',
-          energyTokenName: values.energyCommunityActivation.energyTokenName,
-          energyTokenSymbol: values.energyCommunityActivation.energyTokenSymbol,
-          sources: values.energyCommunityActivation.sources.map((source) => ({
-            sourceId: source.sourceId,
-            sourceType: source.sourceType.toUpperCase(),
-            tokenName: source.tokenName,
-            tokenSymbol: source.tokenSymbol,
-            basePricePerKwh: source.basePricePerKwh,
-            holders: parseCsv(source.holdersCsv),
-            holderAmounts: parseCsv(source.holderAmountsCsv),
-          })),
-          members: (values.energyCommunityActivation.members ?? []).map(
-            (member) => ({
-              memberAddress: member.memberAddress,
-              deviceIds: parseCsv(member.deviceIdsCsv).map((id) => Number(id)),
-              metadataHash: member.metadataHash,
-            }),
-          ),
-        },
-      })}
+      defaultValues={
+        executorAddress
+          ? ({
+              energyCommunityActivation: {
+                admin: executorAddress,
+              },
+            } as Partial<FormValues>)
+          : undefined
+      }
+      mapPayload={(values) => {
+        const activation = formActivationFromValues(values);
+        const adminOverride = (executorAddress ?? activation.admin) as string;
+        return {
+          contractMethod: 'deployCommunity',
+          communityParams: {
+            admin: adminOverride,
+            stablecoin: activation.stablecoin,
+            communityAddress: activation.communityAddress || '',
+            aggregatorAddress: activation.aggregatorAddress || '',
+            gridOperator: activation.gridOperator,
+            communityFeeBps: parseOptionalNumber(activation.communityFeeBps),
+            aggregatorFeeBps: parseOptionalNumber(activation.aggregatorFeeBps),
+            exportDeviceId: activation.exportDeviceId?.trim() || '0',
+            energyTokenName: activation.energyTokenName,
+            energyTokenSymbol: activation.energyTokenSymbol,
+            sources: activation.sources,
+            members: activation.members,
+          },
+        };
+      }}
+      buildExtraTransactions={(values) => {
+        // Hypha discovery looks up `EnergyPPAv2Factory.adminCommunities[admin]`
+        // where `admin` must match the address that called the factory. Since
+        // the DAO proposal executes via the space executor, force `admin` to
+        // the executor regardless of what the user typed.
+        if (!executorAddress) {
+          throw new Error(
+            'Space executor is not loaded yet. Please retry in a moment.',
+          );
+        }
+        const activation = formActivationFromValues(values);
+        const tx = buildDeployCommunityTransaction({
+          admin: executorAddress as string,
+          stablecoin: activation.stablecoin,
+          communityAddress: activation.communityAddress,
+          aggregatorAddress: activation.aggregatorAddress,
+          gridOperator: activation.gridOperator,
+          communityFeeBps: activation.communityFeeBps,
+          aggregatorFeeBps: activation.aggregatorFeeBps,
+          exportDeviceId: activation.exportDeviceId,
+          energyTokenName: activation.energyTokenName,
+          energyTokenSymbol: activation.energyTokenSymbol,
+          sources: activation.sources,
+          members: activation.members,
+        });
+        return [tx];
+      }}
     />
   );
 };

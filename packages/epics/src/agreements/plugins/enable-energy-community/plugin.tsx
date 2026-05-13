@@ -53,14 +53,20 @@ export const EnableEnergyCommunityPlugin = () => {
         name="energyCommunityActivation.admin"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Admin Address</FormLabel>
+            <FormLabel>Admin Address (space executor)</FormLabel>
             <FormControl>
               <Input
                 placeholder="0x..."
                 value={field.value ?? ''}
                 onChange={field.onChange}
+                readOnly
               />
             </FormControl>
+            <p className="text-2 text-secondary-foreground">
+              Auto-filled with this space&rsquo;s executor. The DAO proposal
+              executes the factory call from this address, so it must own the
+              new community for Hypha to discover it.
+            </p>
             <FormMessage />
           </FormItem>
         )}

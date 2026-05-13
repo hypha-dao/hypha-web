@@ -42,7 +42,28 @@ export const useAgreementMutationsWeb3Rpc = ({
     error: errorCreateAgreement,
   } = useSWRMutation(
     `createProposal-${proposalSlug}`,
-    async (_, { arg }: { arg: { spaceId: number } }) => {
+    async (
+      _,
+      {
+        arg,
+      }: {
+        arg: {
+          spaceId: number;
+          /**
+           * Optional additional transactions to execute when the proposal
+           * passes. Useful for agreements that should also trigger an
+           * on-chain action (e.g. Enable Energy Community →
+           * `EnergyPPAv2Factory.deployCommunity`). Each tx is executed by
+           * the space executor.
+           */
+          extraTransactions?: ReadonlyArray<{
+            target: `0x${string}`;
+            value?: bigint | number;
+            data: `0x${string}`;
+          }>;
+        };
+      },
+    ) => {
       if (!client) {
         throw new Error('Smart wallet not connected');
       }
@@ -67,10 +88,16 @@ export const useAgreementMutationsWeb3Rpc = ({
         }),
       };
 
+      const extraTransactions = (arg.extraTransactions ?? []).map((tx) => ({
+        target: tx.target,
+        value: tx.value ?? 0,
+        data: tx.data,
+      }));
+
       const input = {
         spaceId: BigInt(arg.spaceId),
         duration: duration && duration > 0 ? duration : getDuration(3),
-        transactions: [acceptAgreementTx],
+        transactions: [acceptAgreementTx, ...extraTransactions],
       };
 
       const parsedInput = schemaCreateProposalWeb3.parse(input);
