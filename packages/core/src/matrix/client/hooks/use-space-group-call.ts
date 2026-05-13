@@ -622,15 +622,16 @@ export function useSpaceGroupCall(roomId: string | null) {
           ) {
             gc = client.getGroupCallForRoom(roomId);
           } else {
+            const permissionLike = isPermissionLikeGroupCallError(e);
             isJoiningRef.current = false;
-            setErrorCode('UNKNOWN');
+            setErrorCode(permissionLike ? 'PERMISSION_DENIED' : 'UNKNOWN');
             setCallSessionId(null);
             if (roomId) {
               logSpaceGroupCallEvent({
                 name: 'hypha.group_call.error',
                 roomId,
                 kind,
-                errorCode: 'UNKNOWN',
+                errorCode: permissionLike ? 'PERMISSION_DENIED' : 'UNKNOWN',
               });
             }
             setCallState('error');
@@ -689,17 +690,20 @@ export function useSpaceGroupCall(roomId: string | null) {
               roomGroupCallType: String(GroupCallType.Video),
             });
           }
-        } catch {
+        } catch (e) {
+          const permissionLike = isPermissionLikeGroupCallError(e);
           gcSync.type = prevType;
           isJoiningRef.current = false;
-          setErrorCode('UNKNOWN');
+          setErrorCode(permissionLike ? 'PERMISSION_DENIED' : 'UNKNOWN');
           setCallSessionId(null);
           if (roomId) {
             logSpaceGroupCallEvent({
               name: 'hypha.group_call.error',
               roomId,
               kind,
-              errorCode: 'ROOM_TYPE_SYNC',
+              errorCode: permissionLike
+                ? 'PERMISSION_DENIED'
+                : 'ROOM_TYPE_SYNC',
             });
           }
           setCallState('error');
