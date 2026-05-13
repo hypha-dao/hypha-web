@@ -63,8 +63,18 @@ export const CreateSubspaceForm = ({
       hasNavigatedAfterSuccessRef.current = true;
       void (async () => {
         const seed = pendingNavigationSeedRef.current;
+        const mutationPromises: Promise<unknown>[] = [];
+
+        // Keep the ecosystem graph fresh when the modal closes back to it.
+        if (jwt) {
+          mutationPromises.push(
+            mutate([`/api/v1/spaces/${parentSpaceSlug}/organisation`, jwt]),
+          );
+        }
+        mutationPromises.push(mutate(`/api/v1/spaces/${parentSpaceSlug}`));
+
         if (seed && spaceSlug) {
-          const mutationResults = await Promise.allSettled([
+          mutationPromises.push(
             mutate(`/api/v1/spaces/${spaceSlug}`, seed.optimisticSpace, {
               revalidate: false,
             }),
@@ -75,8 +85,24 @@ export const CreateSubspaceForm = ({
                 revalidate: false,
               },
             ),
-          ]);
-          mutationResults.forEach((result, index) => {
+          );
+        }
+
+        const mutationResults = await Promise.allSettled(mutationPromises);
+        mutationResults.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            console.error(
+              '[CreateSubspaceForm] Failed to refresh cache before navigation',
+              {
+                index,
+                error: result.reason,
+              },
+            );
+          }
+        });
+        if (seed && spaceSlug) {
+          const seedFailures = mutationResults.slice(-2);
+          seedFailures.forEach((result, index) => {
             if (result.status === 'rejected') {
               const key =
                 index === 0
@@ -96,7 +122,7 @@ export const CreateSubspaceForm = ({
         closeAfterSuccess();
       })();
     }
-  }, [closeAfterSuccess, mutate, progress, spaceSlug]);
+  }, [closeAfterSuccess, jwt, mutate, parentSpaceSlug, progress, spaceSlug]);
 
   return (
     <SpaceLoadingBackdrop
