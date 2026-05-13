@@ -202,6 +202,48 @@ export async function GET(
     }
 
     const communityProxy = toLowerHex(mapping.communityProxyAddress);
+
+    /**
+     * Read a single view function on the community proxy without ever throwing.
+     * Returns `null` on revert / RPC failure and logs a warning so the route
+     * can still surface partial data (`enabled: true` + activation) instead of
+     * 500ing the whole request. Important because:
+     *  - public Base RPC rate-limits aggressively (multi-call batches still
+     *    occasionally fail);
+     *  - misconfigured proposals (e.g. stablecoin set to a non-ERC20) make
+     *    individual reads revert while the community itself is valid.
+     */
+    const safeRead = async <V>(
+      functionName: Parameters<
+        typeof web3Client.readContract
+      >[0] extends infer T
+        ? T extends { functionName: infer F }
+          ? F
+          : never
+        : never,
+      args?: readonly unknown[],
+    ): Promise<V | null> => {
+      try {
+        return (await web3Client.readContract({
+          address: communityProxy,
+          abi: energyPpaV2Abi,
+          functionName: functionName as never,
+          ...(args ? { args: args as never } : {}),
+        })) as V;
+      } catch (e: unknown) {
+        const message =
+          (e as { shortMessage?: string })?.shortMessage ||
+          (e as Error)?.message ||
+          String(e);
+        console.warn(
+          `[spaces/energy] readContract(${String(
+            functionName,
+          )}) failed on ${communityProxy}: ${message}`,
+        );
+        return null;
+      }
+    };
+
     const [
       communityFeeBps,
       aggregatorFeeBps,
@@ -216,83 +258,34 @@ export async function GET(
       gridOperatorAddress,
       exportDeviceId,
     ] = await Promise.all([
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'getCommunityFeeBps',
-      }),
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'getAggregatorFeeBps',
-      }),
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'getGridBalance',
-      }),
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'getSettledBalance',
-      }),
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'getContractStablecoinBalance',
-      }),
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'verifyZeroSum',
-      }),
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'getSourceIds',
-      }),
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'getMemberAddresses',
-      }),
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'getCommunityAddress',
-      }),
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'getAggregatorAddress',
-      }),
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'getGridOperator',
-      }),
-      web3Client.readContract({
-        address: communityProxy,
-        abi: energyPpaV2Abi,
-        functionName: 'getExportDeviceId',
-      }),
+      safeRead<number>('getCommunityFeeBps'),
+      safeRead<number>('getAggregatorFeeBps'),
+      safeRead<bigint>('getGridBalance'),
+      safeRead<bigint>('getSettledBalance'),
+      safeRead<bigint>('getContractStablecoinBalance'),
+      safeRead<readonly [boolean, bigint]>('verifyZeroSum'),
+      safeRead<readonly `0x${string}`[]>('getSourceIds'),
+      safeRead<readonly `0x${string}`[]>('getMemberAddresses'),
+      safeRead<`0x${string}`>('getCommunityAddress'),
+      safeRead<`0x${string}`>('getAggregatorAddress'),
+      safeRead<`0x${string}`>('getGridOperator'),
+      safeRead<bigint>('getExportDeviceId'),
     ]);
 
+    const sourceIdList = sourceIds ?? [];
     const sourceResults = await Promise.all(
-      sourceIds.map((sourceId) =>
-        web3Client.readContract({
-          address: communityProxy,
-          abi: energyPpaV2Abi,
-          functionName: 'getSource',
-          args: [sourceId],
-        }),
+      sourceIdList.map((sourceId) =>
+        safeRead<readonly [number, `0x${string}`, bigint, boolean]>(
+          'getSource',
+          [sourceId],
+        ),
       ),
     );
 
     const sources = sourceResults
       .map((value, index) => {
-        const sourceId = sourceIds[index];
-        if (!sourceId) {
+        const sourceId = sourceIdList[index];
+        if (!sourceId || !value) {
           return null;
         }
         return {
@@ -306,6 +299,8 @@ export async function GET(
       })
       .filter((row): row is NonNullable<typeof row> => row !== null);
 
+    const memberAddressList = memberAddresses ?? [];
+
     return NextResponse.json({
       enabled: true,
       activation: {
@@ -318,23 +313,36 @@ export async function GET(
         activatedAt: mapping.activatedAt.toISOString(),
       },
       overview: {
-        memberCount: memberAddresses.length,
-        sourceCount: sourceIds.length,
-        communityFeeBps: Number(communityFeeBps),
-        aggregatorFeeBps: Number(aggregatorFeeBps),
-        gridBalance: gridBalance.toString(),
-        settledBalance: settledBalance.toString(),
-        contractStablecoinBalance: contractStablecoinBalance.toString(),
-        zeroSumOk: zeroSumStatus[0],
-        zeroSumDelta: zeroSumStatus[1].toString(),
+        memberCount: memberAddressList.length,
+        sourceCount: sourceIdList.length,
+        communityFeeBps:
+          communityFeeBps !== null ? Number(communityFeeBps) : null,
+        aggregatorFeeBps:
+          aggregatorFeeBps !== null ? Number(aggregatorFeeBps) : null,
+        gridBalance: gridBalance !== null ? gridBalance.toString() : null,
+        settledBalance:
+          settledBalance !== null ? settledBalance.toString() : null,
+        contractStablecoinBalance:
+          contractStablecoinBalance !== null
+            ? contractStablecoinBalance.toString()
+            : null,
+        zeroSumOk: zeroSumStatus ? zeroSumStatus[0] : null,
+        zeroSumDelta: zeroSumStatus ? zeroSumStatus[1].toString() : null,
       },
       roles: {
-        communityAddress: communityRoleAddress.toLowerCase() as `0x${string}`,
-        aggregatorAddress: aggregatorRoleAddress.toLowerCase() as `0x${string}`,
-        gridOperator: gridOperatorAddress.toLowerCase() as `0x${string}`,
-        exportDeviceId: exportDeviceId.toString(),
+        communityAddress: communityRoleAddress
+          ? (communityRoleAddress.toLowerCase() as `0x${string}`)
+          : null,
+        aggregatorAddress: aggregatorRoleAddress
+          ? (aggregatorRoleAddress.toLowerCase() as `0x${string}`)
+          : null,
+        gridOperator: gridOperatorAddress
+          ? (gridOperatorAddress.toLowerCase() as `0x${string}`)
+          : null,
+        exportDeviceId:
+          exportDeviceId !== null ? exportDeviceId.toString() : null,
       },
-      members: memberAddresses.map((a) => a.toLowerCase() as `0x${string}`),
+      members: memberAddressList.map((a) => a.toLowerCase() as `0x${string}`),
       sources,
     });
   } catch (error) {

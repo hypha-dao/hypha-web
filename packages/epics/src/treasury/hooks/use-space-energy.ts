@@ -29,20 +29,23 @@ export type SpaceEnergyResponse = {
   overview?: {
     memberCount: number;
     sourceCount: number;
-    communityFeeBps: number;
-    aggregatorFeeBps: number;
-    gridBalance: string;
-    settledBalance: string;
-    contractStablecoinBalance: string;
-    zeroSumOk: boolean;
-    zeroSumDelta: string;
+    // Per-field reads can fail (RPC throttling, individual revert from a
+    // misconfigured proxy). The API exposes `null` so the UI can render a
+    // partial overview instead of erroring out.
+    communityFeeBps: number | null;
+    aggregatorFeeBps: number | null;
+    gridBalance: string | null;
+    settledBalance: string | null;
+    contractStablecoinBalance: string | null;
+    zeroSumOk: boolean | null;
+    zeroSumDelta: string | null;
   };
   sources?: SpaceEnergySource[];
   roles?: {
-    communityAddress: `0x${string}`;
-    aggregatorAddress: `0x${string}`;
-    gridOperator: `0x${string}`;
-    exportDeviceId: string;
+    communityAddress: `0x${string}` | null;
+    aggregatorAddress: `0x${string}` | null;
+    gridOperator: `0x${string}` | null;
+    exportDeviceId: string | null;
   };
   members?: `0x${string}`[];
 };

@@ -14,8 +14,11 @@ import { useSpaceEnergy } from '../../hooks/use-space-energy';
 
 const ZERO = '0x0000000000000000000000000000000000000000';
 
+const UNAVAILABLE = '—';
+
 /** Stablecoin held by the PPA (e.g. USDC, 6 decimals). */
-const formatStablecoinMicro = (value: string) => {
+const formatStablecoinMicro = (value: string | null) => {
+  if (value === null) return UNAVAILABLE;
   try {
     return Number(formatUnits(BigInt(value), 6)).toLocaleString(undefined, {
       maximumFractionDigits: 4,
@@ -29,7 +32,8 @@ const formatStablecoinMicro = (value: string) => {
  * Internal settlement units on EnergyPPAv2 (integers; README: 1 unit ≈ 0.01 display currency
  * for interpretation alongside stablecoin scaling).
  */
-const formatSignedInternal = (value: string) => {
+const formatSignedInternal = (value: string | null) => {
+  if (value === null) return UNAVAILABLE;
   try {
     const parsed = BigInt(value);
     const neg = parsed < 0n;
@@ -41,11 +45,14 @@ const formatSignedInternal = (value: string) => {
   }
 };
 
+const formatBpsPct = (value: number | null) =>
+  value === null ? UNAVAILABLE : `${(value / 100).toFixed(2)}%`;
+
 const shortAddr = (a: string) =>
   a.length > 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a;
 
-const roleOrDash = (a: string) =>
-  !a || a.toLowerCase() === ZERO ? '—' : shortAddr(a);
+const roleOrDash = (a: string | null) =>
+  !a || a.toLowerCase() === ZERO ? UNAVAILABLE : shortAddr(a);
 
 export const SpaceEnergySection = () => {
   const { data, isLoading } = useSpaceEnergy();
@@ -89,13 +96,13 @@ export const SpaceEnergySection = () => {
             <div>
               <p className="text-neutral-11">Community fee</p>
               <p className="font-medium">
-                {(data.overview.communityFeeBps / 100).toFixed(2)}%
+                {formatBpsPct(data.overview.communityFeeBps)}
               </p>
             </div>
             <div>
               <p className="text-neutral-11">Aggregator fee</p>
               <p className="font-medium">
-                {(data.overview.aggregatorFeeBps / 100).toFixed(2)}%
+                {formatBpsPct(data.overview.aggregatorFeeBps)}
               </p>
             </div>
             <div>
@@ -119,7 +126,11 @@ export const SpaceEnergySection = () => {
             <div>
               <p className="text-neutral-11">Zero-sum</p>
               <p className="font-medium">
-                {data.overview.zeroSumOk ? 'Healthy' : 'Mismatch'}{' '}
+                {data.overview.zeroSumOk === null
+                  ? UNAVAILABLE
+                  : data.overview.zeroSumOk
+                  ? 'Healthy'
+                  : 'Mismatch'}{' '}
                 <span className="text-1 text-neutral-11">
                   (Δ {formatSignedInternal(data.overview.zeroSumDelta)})
                 </span>
@@ -204,7 +215,9 @@ export const SpaceEnergySection = () => {
             </div>
             <div>
               <p className="text-neutral-11">Export device id</p>
-              <p className="font-medium">{roles.exportDeviceId}</p>
+              <p className="font-medium">
+                {roles.exportDeviceId ?? UNAVAILABLE}
+              </p>
             </div>
           </CardContent>
         </Card>
