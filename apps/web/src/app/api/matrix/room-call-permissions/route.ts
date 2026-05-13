@@ -29,6 +29,14 @@ type MatrixPowerLevels = {
   [k: string]: unknown;
 };
 
+type SynapseAdminRoomStateResponse = {
+  state?: Array<{
+    type?: string;
+    state_key?: string;
+    content?: Record<string, unknown>;
+  }>;
+};
+
 const CALL_EVENT_TYPES = [
   'org.matrix.msc3401.call',
   'org.matrix.msc3401.call.member',
@@ -101,6 +109,74 @@ async function resolveAdminMatrixAccessToken(
   const matrixAuthClient = new MatrixSharedSecret();
   const valid = await matrixAuthClient.validateToken(decrypted);
   return valid ? decrypted : null;
+}
+
+async function readPowerLevelsViaSynapseAdminApi(
+  homeserver: string,
+  roomId: string,
+  accessToken: string,
+): Promise<
+  { ok: true; powerLevels: MatrixPowerLevels } | { ok: false; details: string }
+> {
+  const encodedRoomId = encodeURIComponent(roomId);
+  const result = await matrixRequest<SynapseAdminRoomStateResponse>(
+    'GET',
+    `${homeserver}/_synapse/admin/v1/rooms/${encodedRoomId}/state`,
+    accessToken,
+  );
+  if (!result.ok) {
+    return {
+      ok: false,
+      details: `synapse-admin-read-failed: ${result.status} ${result.body}`,
+    };
+  }
+  const events = result.data.state ?? [];
+  for (const event of events) {
+    if (
+      event.type === 'm.room.power_levels' &&
+      (event.state_key ?? '') === ''
+    ) {
+      const content = event.content ?? {};
+      return {
+        ok: true,
+        powerLevels: content as MatrixPowerLevels,
+      };
+    }
+  }
+  return {
+    ok: false,
+    details: 'synapse-admin-read-failed: m.room.power_levels not found',
+  };
+}
+
+async function writePowerLevelsViaSynapseAdminApi(
+  homeserver: string,
+  roomId: string,
+  accessToken: string,
+  content: MatrixPowerLevels,
+): Promise<{ ok: true } | { ok: false; details: string }> {
+  const encodedRoomId = encodeURIComponent(roomId);
+  const attempts = [
+    `${homeserver}/_synapse/admin/v2/rooms/${encodedRoomId}/state/m.room.power_levels/`,
+    `${homeserver}/_synapse/admin/v1/rooms/${encodedRoomId}/state/m.room.power_levels/`,
+  ] as const;
+  let lastFailure = 'unknown';
+  for (const url of attempts) {
+    const result = await matrixRequest<Record<string, unknown>>(
+      'PUT',
+      url,
+      accessToken,
+      content,
+    );
+    if (result.ok) {
+      return { ok: true };
+    }
+    lastFailure = `${result.status} ${result.body}`;
+  }
+  return {
+    ok: false,
+    details: `synapse-admin-write-failed: ${lastFailure}`,
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -181,22 +257,45 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let current: MatrixPowerLevels | null = null;
   const powerLevelsResult = await matrixRequest<MatrixPowerLevels>(
     'GET',
     `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
     adminAccessToken,
   );
-  if (!powerLevelsResult.ok) {
+  if (powerLevelsResult.ok) {
+    current = powerLevelsResult.data;
+  } else {
+    const fallbackRead = await readPowerLevelsViaSynapseAdminApi(
+      homeserver,
+      roomId,
+      adminAccessToken,
+    );
+    if (fallbackRead.ok) {
+      current = fallbackRead.powerLevels;
+    } else {
+      return NextResponse.json(
+        {
+          error: 'Failed to read room power levels',
+          details: {
+            matrixClient: powerLevelsResult.body,
+            synapseAdmin: fallbackRead.details,
+          },
+        },
+        { status: 502 },
+      );
+    }
+  }
+
+  if (!current) {
     return NextResponse.json(
       {
         error: 'Failed to read room power levels',
-        details: powerLevelsResult.body,
+        details: 'Power levels not available',
       },
       { status: 502 },
     );
   }
-
-  const current = powerLevelsResult.data;
   const currentEvents = { ...(current.events ?? {}) };
   let changed = false;
   for (const eventType of CALL_EVENT_TYPES) {
@@ -210,20 +309,39 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, changed: false });
   }
 
+  const nextPowerLevels: MatrixPowerLevels = {
+    ...current,
+    events: currentEvents,
+  };
   const updateResult = await matrixRequest<Record<string, unknown>>(
     'PUT',
     `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
     adminAccessToken,
-    {
-      ...current,
-      events: currentEvents,
-    },
+    nextPowerLevels,
   );
-  if (!updateResult.ok) {
+  if (updateResult.ok) {
+    return NextResponse.json({
+      ok: true,
+      changed: true,
+      roomId,
+      correlationId: request.headers.get('x-correlation-id') ?? randomUUID(),
+    });
+  }
+
+  const fallbackWrite = await writePowerLevelsViaSynapseAdminApi(
+    homeserver,
+    roomId,
+    adminAccessToken,
+    nextPowerLevels,
+  );
+  if (!fallbackWrite.ok) {
     return NextResponse.json(
       {
         error: 'Failed to update room power levels for call events',
-        details: updateResult.body,
+        details: {
+          matrixClient: updateResult.body,
+          synapseAdmin: fallbackWrite.details,
+        },
       },
       { status: 502 },
     );
