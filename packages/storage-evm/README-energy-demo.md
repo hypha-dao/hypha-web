@@ -2,6 +2,8 @@
 
 On-chain energy settlement for a community of households and investors who co-own renewable energy sources (solar park, batteries). A backend VPP (Virtual Power Plant) service allocates energy fairly, then submits settlement readings to the smart contract which tracks credits, fees, and grid balance.
 
+**Hypha UI — Enable Energy Community:** field-by-field explanations and copy-paste values aligned with this demo (plus notes on the AWS RDS loop) live in [`README-energy-demo-enable-energy-community-ui.md`](./README-energy-demo-enable-energy-community-ui.md).
+
 ## Contracts
 
 | Contract | File | Purpose |
@@ -50,7 +52,7 @@ All scripts live in `scripts/base-mainnet-contracts-scripts/` and run via Hardha
 | **deploy-energy-ppa-v2-factory.ts** | Standalone factory deployment. Deploys EnergyPPAv2 implementation, RegularSpaceToken implementation, and the factory contract. Use when you only need the factory without a community. | `npx hardhat run scripts/base-mainnet-contracts-scripts/deploy-energy-ppa-v2-factory.ts --network base-mainnet` |
 | **energy-ppav2-mainnet-demo.ts** | All-in-one demo script. Deploys a full community (factory + sources + members + fees), then runs randomized consumption intervals with on-chain submission. Supports `deploy`, `once`, `loop` commands via `ENERGY_DEMO_COMMAND` env var. | `ENERGY_DEMO_COMMAND=deploy npx hardhat run scripts/base-mainnet-contracts-scripts/energy-ppav2-mainnet-demo.ts --network base-mainnet` |
 | **energy-ppav2-vpp-loop.ts** | VPP fair-split + on-chain settlement loop. Uses the full 3-pass algorithm from `vpp/fair-split.ts` with detailed trace logging, builds contract readings, and submits on-chain. Most informative logs — shows each algorithm pass step by step. | `ENERGY_DEMO_COMMAND=once npx hardhat run scripts/base-mainnet-contracts-scripts/energy-ppav2-vpp-loop.ts --network base-mainnet` |
-| **energy-ppav2-rds-loop.ts** | Reads `accounting.interval_readings` from PostgreSQL (RDS), detects new 15-min intervals, runs VPP fair-split, and submits `consumeEnergy` on-chain. Persists a local checkpoint so restarts continue from the last processed interval. | `ENERGY_DEMO_COMMAND=loop npx hardhat run scripts/base-mainnet-contracts-scripts/energy-ppav2-rds-loop.ts --network base-mainnet` |
+| **energy-ppav2-rds-loop.ts** | **AWS RDS path:** connects with the `pg` driver to PostgreSQL on **AWS RDS** (host/user/password via `ENERGY_RDS_*` env vars, SSL on by default). Reads `accounting.interval_readings`, detects new 15-min intervals, runs VPP fair-split, and submits `consumeEnergy` on-chain. Persists a local checkpoint so restarts continue from the last processed interval. | `ENERGY_DEMO_COMMAND=loop npx hardhat run scripts/base-mainnet-contracts-scripts/energy-ppav2-rds-loop.ts --network base-mainnet` |
 | **energy-ppav2-demo-state.json** | Stores the deployed community state (proxy address, token addresses, member addresses). Written by the deploy command, read by `once`/`loop` commands. | — |
 
 ### Environment variables
