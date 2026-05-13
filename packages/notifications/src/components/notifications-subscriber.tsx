@@ -17,6 +17,8 @@ import {
 import { useRouter } from 'next/navigation';
 
 const DEV_ENV = process.env.NODE_ENV === 'development';
+let oneSignalInitPromise: Promise<void> | null = null;
+let oneSignalInitialized = false;
 
 export interface NotificationSubscriberProps {
   appId: string;
@@ -35,13 +37,19 @@ export function NotificationSubscriber({
   const [initialized, setInitialized] = React.useState(false);
   const [subscribed, setSubscribed] = React.useState(false);
   const [loggedIn, setLoggedIn] = React.useState(false);
+  const hasInitAttemptRef = React.useRef(false);
+  const syncedExternalIdRef = React.useRef<string | null>(null);
   const router = useRouter();
+  const personSlug = person?.slug ?? null;
 
   React.useEffect(() => {
     if (!initialized || !OneSignal || isLoading) {
       return;
     }
-    if (person?.slug) {
+    if (personSlug) {
+      if (syncedExternalIdRef.current === personSlug) {
+        return;
+      }
       const loginNotifications = async (personSlug: string) => {
         try {
           const currentExternalId = OneSignal.User.externalId;
@@ -51,6 +59,7 @@ export function NotificationSubscriber({
             }
             await OneSignal.login(personSlug);
           }
+          syncedExternalIdRef.current = personSlug;
           setLoggedIn(true);
           const isSubscribed = await hasPermission();
           setSubscribed(isSubscribed);
@@ -58,8 +67,11 @@ export function NotificationSubscriber({
           console.error('Error on login:', err);
         }
       };
-      loginNotifications(person.slug);
+      loginNotifications(personSlug);
     } else {
+      if (syncedExternalIdRef.current === null) {
+        return;
+      }
       const logoutNotifications = async () => {
         try {
           if (OneSignal.User.externalId) {
@@ -68,15 +80,92 @@ export function NotificationSubscriber({
         } catch (err) {
           console.error('Error on logout:', err);
         } finally {
+          syncedExternalIdRef.current = null;
           setLoggedIn(false);
           setSubscribed(false);
         }
       };
       logoutNotifications();
     }
-  }, [initialized, OneSignal, isLoading, person]);
+  }, [initialized, isLoading, personSlug]);
 
   React.useEffect(() => {
+    const initialize = async () => {
+      if (initialized || hasInitAttemptRef.current) {
+        return;
+      }
+      if (!person?.slug || !appId) {
+        return;
+      }
+      hasInitAttemptRef.current = true;
+      try {
+        if (oneSignalInitialized) {
+          setInitialized(true);
+          const alreadySubscribed = await hasPermission();
+          setSubscribed(alreadySubscribed);
+          return;
+        }
+
+        const scope = serviceWorkerPath
+          ? `/${serviceWorkerPath.split('/').filter(Boolean)[0]}/`
+          : '/';
+        oneSignalInitPromise ??= OneSignal.init({
+          appId,
+          safari_web_id: safariWebId,
+          serviceWorkerPath,
+          serviceWorkerParam: { scope },
+          allowLocalhostAsSecureOrigin: DEV_ENV,
+          promptOptions: {
+            slidedown: {
+              prompts: [
+                {
+                  autoPrompt: false,
+                  categories: [],
+                  delay: {},
+                  text: {
+                    actionMessage:
+                      'Subscribe if you’d like to be notified about proposals and other Network activity.',
+                    acceptButton: 'Subscribe',
+                    cancelMessage: 'Later',
+                  },
+                  type: 'push',
+                },
+              ],
+            },
+          },
+          welcomeNotification: {
+            disable: true,
+            message: '',
+          },
+          notificationClickHandlerMatch: 'origin',
+          notificationClickHandlerAction: 'focus',
+        }).then(() => {
+          oneSignalInitialized = true;
+        });
+
+        await oneSignalInitPromise;
+        oneSignalInitPromise = null;
+        console.log('OneSignal initialized');
+        setInitialized(true);
+        const isSubscribed = await hasPermission();
+        setSubscribed(isSubscribed);
+      } catch (err) {
+        oneSignalInitPromise = null;
+        hasInitAttemptRef.current = false;
+        console.error(
+          '[notifications-subscriber] OneSignal initialization error:',
+          err,
+        );
+      }
+    };
+    initialize();
+  }, [appId, safariWebId, serviceWorkerPath, initialized, personSlug]);
+
+  React.useEffect(() => {
+    if (!initialized) {
+      return;
+    }
+
     const notificationClickHandler = (event: NotificationClickEvent) => {
       if (DEV_ENV) {
         console.log('The notification was clicked!', event);
@@ -155,100 +244,47 @@ export function NotificationSubscriber({
         });
       }
     };
-    const initialize = async () => {
-      if (initialized) {
-        console.warn('OneSignal should be initialized only once!');
-        return;
-      }
-      try {
-        const scope = serviceWorkerPath
-          ? `/${serviceWorkerPath.split('/').filter(Boolean)[0]}/`
-          : '/';
-        await OneSignal.init({
-          appId,
-          safari_web_id: safariWebId,
-          serviceWorkerPath,
-          serviceWorkerParam: { scope },
-          allowLocalhostAsSecureOrigin: DEV_ENV,
-          promptOptions: {
-            slidedown: {
-              prompts: [
-                {
-                  autoPrompt: false,
-                  categories: [],
-                  delay: {},
-                  text: {
-                    actionMessage:
-                      'Subscribe if you’d like to be notified about proposals and other Network activity.',
-                    acceptButton: 'Subscribe',
-                    cancelMessage: 'Later',
-                  },
-                  type: 'push',
-                },
-              ],
-            },
-          },
-          welcomeNotification: {
-            disable: true,
-            message: '',
-          },
-          notificationClickHandlerMatch: 'origin',
-          notificationClickHandlerAction: 'focus',
-        });
-        console.log('OneSignal initialized');
-        setInitialized(true);
-        const isSubscribed = await hasPermission();
-        setSubscribed(isSubscribed);
-        OneSignal.Notifications.addEventListener(
-          'click',
-          notificationClickHandler,
-        );
-        OneSignal.Notifications.addEventListener(
-          'foregroundWillDisplay',
-          foregroundWillDisplayHandler,
-        );
-        OneSignal.Notifications.addEventListener(
-          'dismiss',
-          notificationDismiss,
-        );
-        OneSignal.Notifications.addEventListener(
-          'permissionChange',
-          permissionChangeHandler,
-        );
-        OneSignal.Notifications.addEventListener(
-          'permissionPromptDisplay',
-          permissionPromptDisplayHandler,
-        );
-        OneSignal.Slidedown.addEventListener(
-          'slidedownAllowClick',
-          slidedownAllowClickHandler,
-        );
-        OneSignal.Slidedown.addEventListener(
-          'slidedownCancelClick',
-          slidedownCancelClick,
-        );
-        OneSignal.Slidedown.addEventListener(
-          'slidedownClosed',
-          slidedownClosedHandler,
-        );
-        OneSignal.Slidedown.addEventListener(
-          'slidedownQueued',
-          slidedownQueuedHandler,
-        );
-        OneSignal.Slidedown.addEventListener(
-          'slidedownShown',
-          slidedownShownHandler,
-        );
-        OneSignal.User.addEventListener('change', userChangeHandler);
-        OneSignal.User.PushSubscription.addEventListener(
-          'change',
-          subscriptionChangeHandler,
-        );
-      } catch (err) {
-        console.log('Initialize error:', err);
-      }
-    };
-    initialize();
+
+    OneSignal.Notifications.addEventListener('click', notificationClickHandler);
+    OneSignal.Notifications.addEventListener(
+      'foregroundWillDisplay',
+      foregroundWillDisplayHandler,
+    );
+    OneSignal.Notifications.addEventListener('dismiss', notificationDismiss);
+    OneSignal.Notifications.addEventListener(
+      'permissionChange',
+      permissionChangeHandler,
+    );
+    OneSignal.Notifications.addEventListener(
+      'permissionPromptDisplay',
+      permissionPromptDisplayHandler,
+    );
+    OneSignal.Slidedown.addEventListener(
+      'slidedownAllowClick',
+      slidedownAllowClickHandler,
+    );
+    OneSignal.Slidedown.addEventListener(
+      'slidedownCancelClick',
+      slidedownCancelClick,
+    );
+    OneSignal.Slidedown.addEventListener(
+      'slidedownClosed',
+      slidedownClosedHandler,
+    );
+    OneSignal.Slidedown.addEventListener(
+      'slidedownQueued',
+      slidedownQueuedHandler,
+    );
+    OneSignal.Slidedown.addEventListener(
+      'slidedownShown',
+      slidedownShownHandler,
+    );
+    OneSignal.User.addEventListener('change', userChangeHandler);
+    OneSignal.User.PushSubscription.addEventListener(
+      'change',
+      subscriptionChangeHandler,
+    );
+
     return () => {
       OneSignal.Notifications.removeEventListener(
         'click',
@@ -296,7 +332,7 @@ export function NotificationSubscriber({
         subscriptionChangeHandler,
       );
     };
-  }, [appId, safariWebId, serviceWorkerPath, router]);
+  }, [initialized, router]);
 
   return (
     <NotificationsContext.Provider

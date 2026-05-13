@@ -21,12 +21,11 @@ export type Message = {
   isStreaming?: boolean;
 };
 
-export function createMockWelcomeMessage(): Message {
+export function createMockWelcomeMessage(spaceName = 'Hypha'): Message {
   return {
     id: 'welcome',
     role: 'assistant',
-    content:
-      "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
+    content: `Hello! I'm your ${spaceName} AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.`,
     timestamp: new Date(),
   };
 }

@@ -4,13 +4,15 @@ import { TransactionsList } from './transactions-list';
 import { RefundableEscrowsList } from './refundable-escrows-list';
 import { Text } from '@radix-ui/themes';
 import { useTransfersSection } from '../../hooks/use-transfers-section';
-import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
+import { SectionLoadMore } from '@hypha-platform/ui/server';
 import { Empty } from '../../../common';
 import { useTranslations } from 'next-intl';
 import {
   useSpaceBySlug,
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
+import { Input } from '@hypha-platform/ui';
+import { SearchIcon } from 'lucide-react';
 
 type TransactionsSectionProps = {
   spaceSlug?: string;
@@ -41,12 +43,16 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <SectionFilter
-        label={tTreasury('transactions')}
-        hasSearch
-        searchPlaceholder={tTreasury('searchTransactions')}
-        onChangeSearch={setSearchTerm}
-      />
+      <div className="flex w-full justify-end">
+        <Input
+          type="search"
+          aria-label={tTreasury('searchTransactions')}
+          className="w-full xl:w-[22rem]"
+          placeholder={tTreasury('searchTransactions')}
+          leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
+          onChange={(event) => setSearchTerm(event.target.value)}
+        />
+      </div>
 
       <RefundableEscrowsList
         user={executorAddress}

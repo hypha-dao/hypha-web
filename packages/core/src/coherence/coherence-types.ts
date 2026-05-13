@@ -9,6 +9,15 @@ export const COHERENCE_TYPES = [
 
 export type CoherenceType = (typeof COHERENCE_TYPES)[number];
 
+export const COHERENCE_SIGNAL_TYPES = [
+  'Opportunity',
+  'Risk',
+  'Tension',
+  'Insight',
+] as const;
+
+export type CoherenceSignalType = (typeof COHERENCE_SIGNAL_TYPES)[number];
+
 export const COHERENCE_TYPE_OPTIONS: {
   icon: string;
   colorVariant: string;

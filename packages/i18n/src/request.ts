@@ -1,50 +1,13 @@
 import { getRequestConfig } from 'next-intl/server';
-import { hasLocale } from 'next-intl';
-import { routing } from './routing';
+import { loadLocaleMessages, resolveLocale } from './messages';
 
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;
-  const locale = hasLocale(routing.locales, requested)
-    ? requested
-    : routing.defaultLocale;
-
-  const defaultMessages = (await import('./messages/en.json')).default;
-  let localeMessages: Record<string, unknown> = {};
-
-  try {
-    localeMessages = (await import(`./messages/${locale}.json`)).default;
-  } catch (error) {
-    console.warn(
-      `[i18n] Missing messages for locale "${locale}", falling back to English.`,
-      error,
-    );
-  }
+  const locale = resolveLocale(requested);
+  const { messages } = await loadLocaleMessages(locale);
 
   return {
     locale,
-    messages: deepMerge(defaultMessages, localeMessages),
+    messages,
   };
 });
-
-function deepMerge(
-  base: Record<string, unknown>,
-  override: Record<string, unknown>,
-): Record<string, unknown> {
-  const result: Record<string, unknown> = { ...base };
-
-  for (const [key, value] of Object.entries(override)) {
-    const baseValue = result[key];
-
-    if (isObject(baseValue) && isObject(value)) {
-      result[key] = deepMerge(baseValue, value);
-    } else {
-      result[key] = value;
-    }
-  }
-
-  return result;
-}
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}

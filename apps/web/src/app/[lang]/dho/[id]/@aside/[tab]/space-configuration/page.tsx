@@ -21,6 +21,11 @@ import { useRouter } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { useTranslations } from 'next-intl';
+import { mutate } from 'swr';
+
+const normalizeNullableUrl = (
+  value: string | null | undefined,
+): string | undefined => value ?? undefined;
 
 export default function SpaceConfiguration() {
   const tSpaces = useTranslations('Spaces');
@@ -43,7 +48,19 @@ export default function SpaceConfiguration() {
   const isBusy = isLoadingJwt || isLoadingSpace || isPending;
 
   const pathname = usePathname();
-  const closeUrl = pathname.replace(/\/space-configuration$/, '');
+  const closeUrl = React.useMemo(() => {
+    const segment = '/space-configuration';
+    if (pathname.endsWith(segment)) {
+      return pathname.slice(0, -segment.length) || '/';
+    }
+    if (pathname.endsWith(`${segment}/`)) {
+      return pathname.slice(0, -(segment.length + 1)) || '/';
+    }
+    if (pathname.includes(`${segment}/`)) {
+      return pathname.replace(`${segment}/`, '/');
+    }
+    return pathname.replace(segment, '') || '/';
+  }, [pathname]);
 
   const submitForm = React.useCallback(
     async (
@@ -85,6 +102,14 @@ export default function SpaceConfiguration() {
                   description: description as string | undefined,
                   address: address as string | undefined,
                   web3SpaceId: web3SpaceId as number | undefined,
+                  logoUrl: normalizeNullableUrl(updates.logoUrl),
+                  leadImage: normalizeNullableUrl(updates.leadImage),
+                  ecosystemLogoUrlLight: normalizeNullableUrl(
+                    updates.ecosystemLogoUrlLight,
+                  ),
+                  ecosystemLogoUrlDark: normalizeNullableUrl(
+                    updates.ecosystemLogoUrlDark,
+                  ),
                 },
               });
             }
@@ -112,12 +137,32 @@ export default function SpaceConfiguration() {
                   description: description as string | undefined,
                   address: address as string | undefined,
                   web3SpaceId: web3SpaceId as number | undefined,
+                  logoUrl: normalizeNullableUrl(updates.logoUrl),
+                  leadImage: normalizeNullableUrl(updates.leadImage),
+                  ecosystemLogoUrlLight: normalizeNullableUrl(
+                    updates.ecosystemLogoUrlLight,
+                  ),
+                  ecosystemLogoUrlDark: normalizeNullableUrl(
+                    updates.ecosystemLogoUrlDark,
+                  ),
                 },
               });
             }
           }
           setNewSpaceSlug(normalizedUpdatedSpace.slug || '');
-          await updateSpace({ id: space.id, data: normalizedUpdatedSpace });
+          await updateSpace({
+            id: space.id,
+            data: normalizedUpdatedSpace,
+          });
+          const mutateRequests = [mutate('/api/v1/spaces?parentOnly=false')];
+          if (normalizedUpdatedSpace.slug) {
+            mutateRequests.push(
+              mutate(
+                `/api/v1/spaces?slugs=${normalizedUpdatedSpace.slug}&parentOnly=false`,
+              ),
+            );
+          }
+          await Promise.all(mutateRequests);
         }
       } catch (e) {
         console.warn(e);
@@ -164,6 +209,8 @@ export default function SpaceConfiguration() {
             description: space?.description || '',
             slug: space?.slug || '',
             logoUrl: space?.logoUrl || '',
+            ecosystemLogoUrlLight: space?.ecosystemLogoUrlLight ?? undefined,
+            ecosystemLogoUrlDark: space?.ecosystemLogoUrlDark ?? undefined,
             leadImage: space?.leadImage || '',
             categories: space?.categories || [],
             links: space?.links || [],

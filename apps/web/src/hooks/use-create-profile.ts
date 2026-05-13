@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { z } from 'zod';
 import {
   schemaSignupPerson,
@@ -18,6 +18,7 @@ export const useCreateProfile = (
   const { jwt } = useJwt();
   const { headers } = useAuthHeader();
   const router = useRouter();
+  const params = useParams<{ lang?: string }>();
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,7 +66,9 @@ export const useCreateProfile = (
         }
 
         const createdProfile = await response.json();
-        router.push('/profile');
+        const lang = params?.lang;
+        const onboardingPath = lang ? `/${lang}/onboarding` : '/en/profile';
+        router.push(onboardingPath);
         return createdProfile;
       } catch (err) {
         console.error('Profile creation error:', err);
@@ -75,7 +78,7 @@ export const useCreateProfile = (
         setIsCreating(false);
       }
     },
-    [endpoint, headers, router, upload],
+    [endpoint, headers, params?.lang, router, upload],
   );
 
   return {

@@ -57,6 +57,7 @@ export const useAssetsSection = ({
   }, [assets, hideSmallBalances, searchTerm, visibleCount]);
 
   const hasMore = filteredAssets.length < assets.length;
+  const positiveAssetCount = assets.filter((asset) => asset.value > 0).length;
 
   return {
     isLoading,
@@ -72,5 +73,6 @@ export const useAssetsSection = ({
     hideSmallBalances,
     setHideSmallBalances,
     visibleCount,
+    positiveAssetCount,
   };
 };

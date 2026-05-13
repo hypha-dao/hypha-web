@@ -175,15 +175,6 @@ export const SelectSettingsAction = ({
     },
     {
       group: t('groups.treasury'),
-      title: t('actions.redeemTokens.title'),
-      description: t('actions.redeemTokens.description'),
-      href: 'create/redeem-tokens',
-      baseTab: 'agreements',
-      disabled: isPaymentExpired,
-      icon: <Gift className="size-[22px] shrink-0" strokeWidth={1.75} />,
-    },
-    {
-      group: t('groups.treasury'),
       title: t('actions.spaceTokenPurchase.title'),
       description: t('actions.spaceTokenPurchase.description'),
       href: 'create/space-token-purchase',
@@ -249,8 +240,11 @@ export const SelectSettingsAction = ({
     if (isAbsoluteUrl(action.href)) {
       return action.href;
     }
-    // Special case: space/create is an aside route, not a tab route
+    // Preserve known tab context for add-space modal routing.
     if (action.href === 'space/create') {
+      if (activeTab === 'ecosystem-navigation' || activeTab === 'overview') {
+        return `/${lang}/dho/${daoSlug}/${activeTab}/space/create`;
+      }
       return `/${lang}/dho/${daoSlug}/space/create`;
     }
     const href = `/${lang}/dho/${daoSlug}/${action.baseTab || activeTab}/${
@@ -267,6 +261,8 @@ export const SelectSettingsAction = ({
       title={t('title')}
       content={t('content')}
       showTitle={false}
+      searchPlaceholder={t('searchMenus')}
+      noResultsLabel={t('noMenusFound')}
       actions={SETTINGS_ACTIONS.map((action) => {
         const href = computeHref(action);
         return {

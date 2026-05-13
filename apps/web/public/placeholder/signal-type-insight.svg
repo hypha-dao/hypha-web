@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 96" fill="none" aria-hidden="true">
+  <defs>
+    <radialGradient id="insGlow" cx="50%" cy="100%" r="85%" gradientUnits="objectBoundingBox">
+      <stop stop-color="#fef9c3"/>
+      <stop offset="0.35" stop-color="#fde047"/>
+      <stop offset="1" stop-color="#ca8a04"/>
+    </radialGradient>
+    <linearGradient id="insRay" x1="200" y1="96" x2="200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="96" fill="url(#insGlow)"/>
+  <path d="M200 8 L208 32 L232 32 L212 46 L220 70 L200 56 L180 70 L188 46 L168 32 L192 32 Z" fill="#fff" fill-opacity="0.55"/>
+  <ellipse cx="200" cy="88" rx="160" ry="36" fill="url(#insRay)"/>
+</svg>

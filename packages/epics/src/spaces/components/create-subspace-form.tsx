@@ -2,16 +2,18 @@
 
 import { useConfig } from 'wagmi';
 import { SpaceForm } from './create-space-form';
-import { useParams, useRouter } from 'next/navigation';
-import { useJwt } from '@hypha-platform/core/client';
-import { useCreateSpaceOrchestrator } from '@hypha-platform/core/client';
+import { useRouter } from 'next/navigation';
+import {
+  type Space,
+  useCreateSpaceOrchestrator,
+  useJwt,
+  useMe,
+} from '@hypha-platform/core/client';
 import React from 'react';
 import { SpaceLoadingBackdrop } from './space-loading-backdrop';
 import { Button } from '@hypha-platform/ui';
-import { useMe } from '@hypha-platform/core/client';
-import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
-import { getDhoPathAgreements } from '../../common';
+import { useSWRConfig } from 'swr';
 
 interface CreateSpaceFormProps {
   parentSpaceId: number | null;
@@ -28,11 +30,11 @@ export const CreateSubspaceForm = ({
 }: CreateSpaceFormProps) => {
   const t = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const { lang } = useParams();
   const router = useRouter();
   const config = useConfig();
   const { person } = useMe();
   const { jwt } = useJwt();
+  const { mutate } = useSWRConfig();
   const {
     createSpace,
     reset,
@@ -42,12 +44,49 @@ export const CreateSubspaceForm = ({
     progress,
     space: { slug: spaceSlug },
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
+  const pendingNavigationSeedRef = React.useRef<{
+    optimisticSpace: Space;
+    organisationSpaces: Space[];
+  } | null>(null);
 
   React.useEffect(() => {
     if (progress === 100 && spaceSlug) {
-      router.push(getDhoPathAgreements(lang as Locale, spaceSlug));
+      void (async () => {
+        const seed = pendingNavigationSeedRef.current;
+        if (seed) {
+          const mutationResults = await Promise.allSettled([
+            mutate(`/api/v1/spaces/${spaceSlug}`, seed.optimisticSpace, {
+              revalidate: false,
+            }),
+            mutate(
+              `/api/v1/spaces/${spaceSlug}/organisation`,
+              seed.organisationSpaces,
+              {
+                revalidate: false,
+              },
+            ),
+          ]);
+          mutationResults.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              const key =
+                index === 0
+                  ? `/api/v1/spaces/${spaceSlug}`
+                  : `/api/v1/spaces/${spaceSlug}/organisation`;
+              console.error(
+                '[CreateSubspaceForm] Failed to seed cache before navigation',
+                {
+                  key,
+                  error: result.reason,
+                },
+              );
+            }
+          });
+          pendingNavigationSeedRef.current = null;
+        }
+        router.push(successfulUrl);
+      })();
     }
-  }, [progress, spaceSlug]);
+  }, [mutate, progress, router, spaceSlug, successfulUrl]);
 
   return (
     <SpaceLoadingBackdrop
@@ -73,7 +112,49 @@ export const CreateSubspaceForm = ({
         closeUrl={successfulUrl}
         backUrl={backUrl}
         backLabel={t('backToSettings')}
-        onSubmit={(values) => createSpace(values)}
+        onSubmit={(values, organisationSpaces) => {
+          // Subspace creation does not use root-only ecosystem branding fields.
+          const {
+            ecosystemLogoUrlLight: _ecosystemLogoUrlLight,
+            ecosystemLogoUrlDark: _ecosystemLogoUrlDark,
+            ...createValues
+          } = values;
+          const normalizedParentId =
+            createValues.parentId ?? parentSpaceId ?? null;
+          const normalizedCreateValues = {
+            ...createValues,
+            parentId: normalizedParentId,
+          };
+
+          pendingNavigationSeedRef.current = {
+            optimisticSpace: {
+              id: -1,
+              title: normalizedCreateValues.title,
+              description: normalizedCreateValues.description,
+              slug: normalizedCreateValues.slug || '',
+              parentId: normalizedParentId,
+              logoUrl:
+                typeof normalizedCreateValues.logoUrl === 'string'
+                  ? normalizedCreateValues.logoUrl
+                  : null,
+              leadImage:
+                typeof normalizedCreateValues.leadImage === 'string'
+                  ? normalizedCreateValues.leadImage
+                  : null,
+              ecosystemLogoUrlLight: null,
+              ecosystemLogoUrlDark: null,
+              web3SpaceId: null,
+              links: normalizedCreateValues.links ?? [],
+              categories: normalizedCreateValues.categories ?? [],
+              flags: normalizedCreateValues.flags ?? ['sandbox'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            organisationSpaces: organisationSpaces ?? [],
+          };
+
+          return createSpace(normalizedCreateValues);
+        }}
         initialParentSpaceId={parentSpaceId as number}
         parentSpaceSlug={parentSpaceSlug}
         label="add"

@@ -41,7 +41,8 @@
     "errorLoadTreasuryTab": "Ops, algo deu errado. Não foi possível carregar a aba de tesouraria.",
     "publish": "Publicar",
     "invalidTransactions": "Transações inválidas",
-    "Coherence": "Coerência",
+    "Coherence": "Sinais",
+    "Signals": "Sinais",
     "uploadLeadImage": {
       "cropTitle": "Carregar uma imagem",
       "cropDescription": "Ajuste o enquadramento e salve. Arraste para reposicionar e use o zoom para a área do banner (JPEG, PNG ou WebP — máx. 4 MB).",
@@ -551,7 +552,8 @@
         "source": "Origem",
         "sourcePlaceholder": "Selecionar origem",
         "sourceMint": "Cunhar novos tokens",
-        "sourceTreasury": "Usar tokens disponíveis no tesouro"
+        "sourceTreasury": "Usar tokens disponíveis no tesouro",
+        "escrowNotice": "This proposal uses escrow for the investment. Once it is approved, the investor ({investor}) deposits their side into escrow from their profile or space page, and {activeSpace}'s deposit is made when the proposal is approved and executed."
       },
       "acceptInvestmentForm": {
         "notMemberRevert": "A cadeia rejeitou a transação: a carteira ligada não é membro nem delegado deste espaço. Use uma carteira do espaço ou ligue-se como delegado.",
@@ -564,6 +566,35 @@
         "percentageMin": "A porcentagem deve ser pelo menos 0",
         "percentageMax": "A porcentagem deve ser no máximo 100",
         "typePercentage": "Digite uma porcentagem"
+      },
+      "exchangeStakesAndTokens": {
+        "avatarAlt": "Avatar",
+        "buyer": "Buyer (Wallet Address)",
+        "buyerFallback": "buyer",
+        "buyerWillSend": "Buyer will send",
+        "copyWalletAddress": "Copy wallet address",
+        "errors": {
+          "buyerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
+          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address.",
+          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
+          "safeErc20TransferFailed": "The token contract rejected the transfer to escrow (often balance, allowance, or non-transferable rules). Check that your smart wallet holds enough tokens and that the token allows transfers to the escrow.",
+          "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
+          "sellerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
+          "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
+          "tokenWhitelistBlocked": "This token's on-chain rules block sending it to escrow (e.g. transfer/receive whitelist). Choose another token or update the token's whitelist settings."
+        },
+        "escrowAccountAddress": "Escrow account address",
+        "escrowNotice": "This proposal uses escrow for the exchange. Once it is approved, each member deposits their side into escrow from their profile; if {activeSpace} is one of the parties, its deposit is made when the proposal is approved and executed.",
+        "loadingTokens": "Loading tokens...",
+        "personAvatarAlt": "{name} avatar",
+        "seller": "Seller (Wallet Address)",
+        "sellerFallback": "seller",
+        "sellerWillSend": "Seller sends",
+        "spaceFallback": "space",
+        "spaceLogoAlt": "{name} logo",
+        "tokenAlt": "Token"
       }
     },
     "labels": {
@@ -585,6 +616,7 @@
       "expenses": "Despesas",
       "funding": "Financiamento",
       "investment": "Investimento",
+      "exchange": "Exchange",
       "enableEnergyCommunity": "Enable Energy Community",
       "energySharing": "Energy Sharing",
       "registerEnergySource": "Register Energy Source",
@@ -739,6 +771,7 @@
   "Navigation": {
     "network": "Rede",
     "mySpaces": "Meus espaços",
+    "myWallet": "Minha carteira",
     "openMenu": "Abrir menu",
     "openProfileMenu": "Abrir menu do perfil",
     "closeMenu": "Fechar menu",
@@ -753,7 +786,56 @@
     "viewProfile": "Ver perfil",
     "delete": "Excluir",
     "signIn": "Entrar",
-    "getStarted": "Comece"
+    "getStarted": "Comece",
+    "ecosystemLogo": "Logo do ecossistema",
+    "continueAdventure": "Continuar sua aventura"
+  },
+  "OnboardingAdventure": {
+    "title": "Sua aventura começa aqui.",
+    "subtitle": "Escolha seu próximo passo.",
+    "spacePlaceholder": "Selecionar espaço",
+    "spaceSearchPlaceholder": "Buscar espaços...",
+    "searchToSeeSpaces": "Comece a digitar para ver espaços correspondentes.",
+    "selected": "Selecionado",
+    "noSpacesFound": "Nenhum espaço encontrado.",
+    "loadingSpaces": "Carregando espaços...",
+    "loadSpacesError": "Não foi possível carregar os espaços agora. Tente novamente.",
+    "explore": {
+      "title": "Explorar a rede",
+      "description": "Descubra comunidades e oportunidades na rede.",
+      "cta": "Explorar agora"
+    },
+    "create": {
+      "title": "Crie seu espaço",
+      "description": "Inicie um novo espaço e convide outras pessoas para colaborar.",
+      "cta": "Criar um espaço"
+    },
+    "join": {
+      "title": "Entrar em um espaço",
+      "description": "Escolha um espaço e acesse diretamente sua atividade.",
+      "cta": "Abrir espaço selecionado",
+      "unavailable": "Não há espaços disponíveis para entrar no momento."
+    },
+    "deposit": {
+      "title": "Depositar fundos em um espaço",
+      "description": "Escolha um espaço com endereço de tesouraria para depositar.",
+      "cta": "Mostrar detalhes de depósito",
+      "unavailable": "Não há espaços com endereço de tesouraria disponíveis."
+    },
+    "depositDetails": {
+      "title": "Detalhes de depósito",
+      "description": "Deposite na tesouraria de {spaceName} usando o endereço abaixo.",
+      "qrAriaLabel": "QR code do endereço da tesouraria de {spaceName}",
+      "networkWarning": "Aviso: transfira fundos somente na rede BASE.",
+      "addressLabel": "Endereço da tesouraria",
+      "copy": "Copiar endereço",
+      "copied": "Endereço copiado",
+      "invalidAddress": "O formato do endereço da tesouraria é inválido."
+    }
+  },
+  "MyWallet": {
+    "loading": "Carregando...",
+    "signInToViewWallet": "Faça login para ver sua carteira."
   },
   "NotificationCentre": {
     "title": "Central de Notificações",
@@ -807,9 +889,90 @@
       "noAccess": "Você não tem acesso para visualizar a navegação espacial."
     }
   },
+  "TokenHoldingsDashboard": {
+    "subtitle": "Distribuição de tokens em um relance.",
+    "badges": {
+      "tokens": "Tokens: {count}",
+      "otherBucket": "Categoria outros: < {threshold}%",
+      "treasuryVisible": "Tesouraria sempre visível"
+    },
+    "updatedAt": "Atualizado {date}",
+    "error": {
+      "title": "Não foi possível carregar as participações em tokens",
+      "description": "Tente novamente em instantes. Se o problema persistir, verifique seu acesso ao espaço e a conectividade de rede.",
+      "accessDeniedTitle": "O acesso às participações em tokens está restrito",
+      "accessDeniedDescription": "Você não tem permissão para visualizar as participações em tokens deste espaço no momento."
+    },
+    "empty": {
+      "title": "Ainda não há participações em tokens disponíveis",
+      "description": "Este espaço atualmente não disponibiliza dados de distribuição de tokens emitidos."
+    },
+    "chartAria": "Gráfico de distribuição de tokens para {title}",
+    "tokenDetailsAria": "Detalhes do token para {tokenName}",
+    "tooltip": {
+      "totalSupply": "Oferta total",
+      "other": "Outros",
+      "address": "Endereço"
+    },
+    "filters": {
+      "energy": "Energia",
+      "activity": "Atividade",
+      "distribution": "Distribuição"
+    },
+    "activity": {
+      "title": "Não foi possível carregar os widgets de atividade",
+      "error": "Tente novamente em instantes. Os dados analíticos de atividade ainda podem estar sincronizando."
+    },
+    "distribution": {
+      "title": "Distribuição ao longo do tempo",
+      "subtitle": "O eixo X mostra o tempo com base nas datas de transação.",
+      "tokenLabel": "Token",
+      "memberLabel": "Membro",
+      "memberAll": "Todos",
+      "start": "Início",
+      "end": "Fim",
+      "delta": "Delta",
+      "timeAxis": "Tempo",
+      "error": "Não foi possível carregar o histórico de distribuição de tokens agora.",
+      "empty": "Nenhum histórico de transferência encontrado para os filtros selecionados."
+    },
+    "proposals": {
+      "title": "Propostas",
+      "subtitle": "Em votação, aceitas, recusadas",
+      "ariaLabel": "Distribuição de propostas",
+      "onVoting": "Em votação",
+      "accepted": "Aceitas",
+      "refused": "Recusadas",
+      "noData": "Sem dados"
+    },
+    "members": {
+      "title": "Membros",
+      "subtitle": "Membros e espaços mensais acumulados (líquido de saídas)",
+      "people": "Pessoas",
+      "spaces": "Espaços"
+    },
+    "signals": {
+      "title": "Sinais",
+      "subtitle": "Mapa de calor por prioridade e recência (mais recente à esquerda, mais antigo à direita)",
+      "count": "Sinais",
+      "peakCell": "Pico de célula",
+      "recent": "Recente",
+      "older": "Mais antigo",
+      "recency": "Recência",
+      "lowActivity": "Baixa atividade",
+      "highActivity": "Alta atividade",
+      "cellTitle": "{priority} · {count} sinais · janela de recência de {start}% a {end}%"
+    },
+    "energy": {
+      "title": "Energia",
+      "description": "Os widgets de energia aparecerão quando houver dados disponíveis."
+    }
+  },
   "SpaceSettingsAction": {
     "title": "Configurações de espaço",
     "content": "Acesse e gerencie as configurações do seu espaço, incluindo aparência, estrutura, métodos, associação e tesouraria.",
+    "searchMenus": "Buscar menus",
+    "noMenusFound": "Nenhum menu encontrado",
     "groups": {
       "overview": "Visão geral",
       "agreements": "Acordos",
@@ -956,6 +1119,7 @@
   "SelectNavigationAction": {
     "title": "Navegação Espacial",
     "content": "Navegue por todos os seus espaços em um único mapa interativo para ver como eles se conectam. Visite facilmente espaços aninhados, explore associações de espaço para espaço e siga os fluxos de valor em todo o seu ecossistema direto.",
+    "ecosystem": "Ecossistema",
     "tabs": {
       "nestedSpaces": "Espaços aninhados",
       "spaceToSpace": "Espaço-a-Espaço",
@@ -982,10 +1146,13 @@
     "onVoting": "Na votação",
     "accepted": "Aceito",
     "rejected": "Rejeitado",
+    "newProposal": "Nova proposta",
     "searchDocuments": "Pesquisar documentos",
     "listIsEmpty": "A lista está vazia"
   },
   "MembersTab": {
+    "member": "Membro",
+    "space": "Espaço",
     "searchMembers": "Pesquisar membros",
     "delegateVoting": "Votação de delegado",
     "listIsEmpty": "A lista está vazia",
@@ -1022,13 +1189,16 @@
   },
   "TreasuryTab": {
     "balance": "Equilíbrio",
+    "wallet": "Carteira",
     "searchTokens": "Tokens de pesquisa",
+    "hideSmall": "Ocultar pequenos",
     "hideSmallBalances": "Ocultar pequenos saldos",
     "newToken": "Novo token",
     "depositFunds": "Depositar fundos",
     "listIsEmpty": "A lista está vazia",
     "loadMoreAssets": "Carregar mais ativos",
     "transactions": "Transações",
+    "vaults": "Cofres",
     "searchTransactions": "Transações de pesquisa",
     "noTransactionsFound": "Nenhuma transação encontrada",
     "loadMoreTransactions": "Carregar mais transações",
@@ -1308,7 +1478,7 @@
   },
   "Network": {
     "manySpaces": "Muitos espaços,",
-    "oneVibrantNetwork": "Uma rede vibrante",
+    "oneVibrantNetwork": "Uma rede",
     "findASpace": "Encontre um espaço",
     "createSpace": "Criar espaço",
     "mostMembers": "A maioria dos membros",
@@ -1479,6 +1649,7 @@
     "inOnePlace": "em um só lugar",
     "spacesYouMightLike": "Espaços que você pode gostar",
     "mySpacesLabel": "Meus espaços",
+    "recentlyVisitedSpacesLabel": "Visitados recentemente",
     "hideArchivedSpaces": "Ocultar espaços arquivados",
     "creating": "Criando espaço...",
     "expiredToday": "hoje",
@@ -1487,7 +1658,12 @@
     "linkedTo": "Vinculado a",
     "rootSpace": "Espaço Raiz",
     "rootSpaceDescription": "Marcar este espaço como Root Space o tornará independente. Não estará mais vinculado à organização atual e todos os seus espaços vinculados se moverão com ele.",
+    "uploadEcosystemLogoLight": "Enviar logo do ecossistema (claro)",
+    "uploadEcosystemLogoDark": "Enviar logo do ecossistema (escuro)",
+    "ecosystemLogoLightDescription": "Envie um logo em modo claro para o seu ecossistema (PNG, JPG, GIF ou WEBP).",
+    "ecosystemLogoDarkDescription": "Envie um logo em modo escuro para o seu ecossistema (PNG, JPG, GIF ou WEBP).",
     "search": "Procurar...",
+    "noSpacesFound": "Nenhum espaço encontrado",
     "addYourUrl": "Adicione seu URL",
     "exchangeDepositProposalTitleBanner": "Complete o lado deste espaço na troca",
     "exchangeDepositProposalBody": "Uma proposta de troca lista este espaço como contraparte (escrow #{escrowId}). Crie uma proposta para depositar <send></send> e receber <receive></receive> da outra parte.",
@@ -1535,7 +1711,8 @@
       "transparencySettings": "Configurações de transparência",
       "decaySettings": "Configurações de deterioração",
       "fromWhitelist": "Da lista branca",
-      "toWhitelist": "Para colocar na lista de permissões"
+      "toWhitelist": "Para colocar na lista de permissões",
+      "mutualCredit": "Mutual Credit"
     },
     "labels": {
       "unknown": "Desconhecido",
@@ -1731,7 +1908,7 @@
       "agreements": "Quais acordos existem neste espaço?",
       "structure": "Descreva a estrutura deste espaço"
     },
-    "welcome": "Olá! Sou seu assistente Hypha AI. Posso buscar detalhes do espaço como número de membros, acordos e estrutura. Pergunte-me qualquer coisa sobre o espaço que você está visualizando.",
+    "welcome": "Olá! Sou seu assistente AI de {spaceName}. Posso buscar detalhes do espaço como número de membros, acordos e estrutura. Pergunte-me qualquer coisa sobre o espaço que você está visualizando.",
     "placeholder": "Pergunte ao Hypha AI...",
     "sendButton": "Enviar",
     "stopButton": "Parar",
@@ -1926,6 +2103,8 @@
     "callSearchComingSoon": "Pesquisar no chat — em breve",
     "callActiveInSpace": "Chamada do espaço (todos neste espaço podem entrar)",
     "callConnecting": "A conectar…",
+    "callRemoteParticipantMediaStalled": "À espera de áudio/vídeo — verifique a rede ou saia e volte a entrar.",
+    "callRemoteMediaStallHint": "Outras pessoas aparecem na chamada mas o áudio/vídeo não chega — muitas vezes rede ou navegador. Sai e volta a entrar, ou muda de rede.",
     "callDisconnecting": "A sair da chamada…",
     "callLeave": "Sair",
     "callMute": "Silenciar microfone",
@@ -1944,6 +2123,7 @@
     "callErrorPermission": "Acesso à câmara ou microfone recusado. Verifique o navegador.",
     "callErrorPermissionGuidance": "Atualize as permissões de câmara e microfone deste site nas definições do navegador e tente novamente aqui.",
     "callErrorGeneric": "Não foi possível iniciar a chamada. Tente novamente.",
+    "callErrorConnectStall": "A chamada não conseguiu ligar. Isto costuma acontecer quando falta a configuração do servidor TURN do Matrix ou quando a rede é restritiva.",
     "callErrorNotReady": "O servidor de chamada ainda não está pronto. Aguarde um pouco e tente novamente.",
     "callErrorNoClient": "Não está ligado ao chat. Verifique a ligação e tente novamente.",
     "callErrorNoRoom": "Esta conversa não está disponível. Volte ao espaço e tente novamente.",
@@ -1972,6 +2152,8 @@
     "callParticipantMicOff": "Micro desligado",
     "callLeftAudio": "Saiu da chamada de voz.",
     "callLeftVideo": "Saiu da videchamada.",
+    "callLeftAudioIdle": "Saiu da chamada de voz — ninguém mais entrou após algum tempo.",
+    "callLeftVideoIdle": "Saiu da videchamada — ninguém mais entrou após algum tempo.",
     "callLeftBannerDismiss": "Fechar",
     "callPaneResizeSharePeople": "Redimensionar partilha e pessoas",
     "callPaneResizeShareStrip": "Redimensionar partilha e filme",
@@ -1992,7 +2174,9 @@
     "mostRecent": "Mais recentes",
     "searchConversation": "Pesquisar conversa",
     "hideArchived": "Ocultar arquivados",
-    "mentions": "{count, plural, one {# menção} other {# menções}}",
+    "messageCount": "{count, plural, one {# mensagem} other {# mensagens}}",
+    "priorityVisualAlt": "Nível de prioridade",
+    "typeSignalBannerAlt": "Sinal de {type}, prioridade {priority}",
     "unarchiveConversation": "Desarquivar conversa",
     "unarchiveConfirm": "Deseja realmente desarquivar esta conversa?",
     "yesUnarchive": "Sim, desarquivar",
@@ -2009,6 +2193,9 @@
     "priority": "Prioridade",
     "tags": "Tags",
     "selectOneOrMore": "Selecione um ou mais",
+    "searchOrCreateTag": "Digite para procurar ou criar uma tag",
+    "noRecentTags": "Ainda não há tags recentes. Comece a digitar para procurar tags.",
+    "allTags": "Todas as tags",
     "description": "Descrição",
     "descriptionPlaceholder": "Digite sua descrição aqui...",
     "publish": "Publicar",
@@ -2034,6 +2221,13 @@
     "spaceMemoryMatrixVideoPlayHint": "Toque para ver a pré-visualização",
     "spaceMemoryOpenAsset": "Abrir {name}",
     "untitledDocument": "Documento sem título",
+    "spaceMemoryGeneral": "Geral",
+    "spaceMemoryProposals": "Propostas",
+    "spaceMemoryConversations": "Conversas",
+    "spaceMemoryAiChat": "Chat com IA",
+    "newMemory": "Nova memória",
+    "spaceMemoryEmptyTab": "Nenhum item encontrado nesta visualização.",
+    "spaceMemoryAiChatEmpty": "As memórias do chat com IA ainda não estão disponíveis.",
     "documentStates": {
       "discussion": "Discussão",
       "proposal": "Proposta",
@@ -2056,26 +2250,99 @@
       "Proposal": "Ação de governança ou voto necessário"
     },
     "priorities": {
+      "critical": "Crítica",
       "high": "Alta",
       "medium": "Média",
       "low": "Baixa"
     },
     "priorityDescriptions": {
+      "critical": "Requer ação imediata",
       "high": "Necessita atenção imediata",
       "medium": "Monitorar e agir em breve",
       "low": "Informativo, sem pressa"
     },
+    "deleteSignal": "Eliminar sinal",
+    "deleteSignalConfirm": "Isto remove permanentemente este sinal do espaço. Continuar?",
+    "deleteSignalAction": "Eliminar sinal",
+    "deleteAction": "Eliminar",
+    "editSignalMissingSlug": "O identificador do sinal está em falta. Feche e volte a abrir o formulário de edição.",
+    "editSignalSaveFailed": "Não foi possível guardar as alterações do sinal. Tente novamente.",
     "keepWindowOpenWhileCreating": "Mantenha esta janela aberta até terminarmos.",
+    "provisioning": {
+      "chatUnavailable": "Sinal criado, mas o chat está indisponível no momento.",
+      "roomProvisionFailed": "Sinal criado, mas a criação da sala de chat falhou.",
+      "roomLinkFailedRetry": "Sinal criado, mas não foi possível vincular a sala de chat. Tente novamente."
+    },
     "tagLabels": {
+      "Purpose": "Propósito",
+      "North Star": "Estrela guia",
+      "Vision": "Visão",
       "Strategy": "Estratégia",
+      "Values": "Valores",
+      "Principles": "Princípios",
+      "Milestones": "Marcos",
+      "Impact Goals": "Metas de impacto",
+      "Trend": "Tendência",
+      "Social Conditions": "Condições sociais",
+      "Planetary Boundaries": "Limites planetários",
+      "Policy": "Política",
+      "Regulation": "Regulação",
+      "Emergency Response": "Resposta a emergências",
+      "Project": "Projeto",
+      "Quest": "Missão",
+      "Job": "Função",
+      "Skill": "Habilidade",
+      "Advisory Support": "Apoio consultivo",
+      "Volunteering": "Voluntariado",
+      "Serving Audience": "Público atendido",
+      "Customers": "Clientes",
+      "Users": "Usuários",
+      "Communities": "Comunidades",
+      "Beneficiaries": "Beneficiários",
+      "Partners": "Parceiros",
+      "Governance": "Governança",
+      "Processes": "Processos",
+      "Structure": "Estrutura",
+      "Rhythms": "Ritmos",
+      "Support Systems": "Sistemas de apoio",
+      "Needs": "Necessidades",
+      "Resources": "Recursos",
+      "Fundraising": "Captação de recursos",
+      "Matchmaking": "Conexão entre atores",
+      "Innovation": "Inovação",
+      "Products": "Produtos",
+      "Services": "Serviços",
+      "Product-Market Fit": "Ajuste produto-mercado",
+      "Business Model": "Modelo de negócio",
+      "Data": "Dados",
+      "Knowledge": "Conhecimento",
+      "Intellectual Property": "Propriedade intelectual",
+      "Proof of Action": "Prova de ação",
+      "Proof of Impact": "Prova de impacto",
+      "Learning": "Aprendizado",
+      "Feedback Loop": "Ciclo de feedback",
       "Culture": "Cultura",
       "Onboarding": "Integração",
       "Engagement": "Engajamento",
-      "Learning": "Aprendizado",
       "Capacity": "Capacidade",
       "Network": "Rede",
       "Reputation": "Reputação"
-    }
+    },
+    "tagCategories": {
+      "purposeDirection": "Propósito e direção",
+      "broaderContext": "Contexto mais amplo",
+      "peopleRoles": "Pessoas e papéis",
+      "ecosystemMapping": "Mapeamento do ecossistema",
+      "operatingCoherence": "Coerência operacional",
+      "needsResources": "Necessidades e recursos",
+      "valueModel": "Valor e modelo",
+      "evidenceImpact": "Evidências e impacto"
+    },
+    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
+    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
+    "spaceMemoryCallTranscriptExcerpt": "Transcript",
+    "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
+    "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)"
   },
   "SignalCard": {
     "noConversationRoom": "Ainda não há sala de conversa",
@@ -2083,6 +2350,7 @@
     "showLess": "Mostrar menos",
     "readFullDescription": "Ler descrição completa",
     "fullDescriptionDialogSubtitle": "Descrição completa do sinal",
+    "editMenu": "Editar sinal",
     "deleteSignal": "Eliminar sinal",
     "deleteConfirm": "Isto remove permanentemente este sinal do espaço. Continuar?",
     "deleteMenu": "Eliminar",

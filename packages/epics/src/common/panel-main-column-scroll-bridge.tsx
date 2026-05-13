@@ -12,9 +12,11 @@ import { setMainColumnScrollRoot } from './main-column-scroll';
 
 type Props = {
   leftOpen: boolean;
+  leftSidebarWidth: string;
   onLeftOpenChange: (open: boolean) => void;
   rightOpen: boolean;
   onRightOpenChange: (open: boolean) => void;
+  rightSidebarWidth: string;
   leftContent: React.ReactNode;
   rightContent: React.ReactNode;
   children: React.ReactNode;
@@ -28,9 +30,11 @@ type Props = {
  */
 export function PanelDualSidebarScrollBridge({
   leftOpen,
+  leftSidebarWidth,
   onLeftOpenChange,
   rightOpen,
   onRightOpenChange,
+  rightSidebarWidth,
   leftContent,
   rightContent,
   children,
@@ -46,15 +50,16 @@ export function PanelDualSidebarScrollBridge({
       onOpenChange={onLeftOpenChange}
       style={
         {
-          '--sidebar-width': '320px',
+          '--sidebar-width': leftSidebarWidth,
+          '--sidebar-width-icon': '72px',
         } as React.CSSProperties
       }
     >
       <Sidebar
         side="left"
         variant="sidebar"
-        collapsible="offcanvas"
-        className="z-[50]"
+        collapsible="icon"
+        className="z-[50] overflow-visible"
       >
         {leftContent}
         <SidebarResizeHandle />
@@ -80,7 +85,7 @@ export function PanelDualSidebarScrollBridge({
           onOpenChange={onRightOpenChange}
           style={
             {
-              '--sidebar-width': '320px',
+              '--sidebar-width': rightSidebarWidth,
             } as React.CSSProperties
           }
         >
@@ -89,10 +94,12 @@ export function PanelDualSidebarScrollBridge({
             (MenuTop, plugin, main, Footer) as a fragment — fragments flatten, so without this
             wrapper they become **separate flex items** next to the right Sidebar: header | content
             | footer | panel in one horizontal row.
+            `overflow-x-hidden`: Human/AI panels are `position:fixed`; clip horizontal pan so the
+            scrollport cannot reveal a dead gap beside the fixed rails.
           */}
           <div
             ref={setMainColumnRef}
-            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto narrow-scrollbar"
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto narrow-scrollbar"
           >
             {children}
           </div>

@@ -8,6 +8,8 @@ This document satisfies **Phase 0** of [voice-video-call-implementation-plan.md]
 
 **Owner:** whoever operates the Matrix homeserver used by Hypha (staging + production).
 
+**Full operator steps (Synapse + coturn, curl checks, QA):** [matrix-voip-turn-server-setup.md](./matrix-voip-turn-server-setup.md).
+
 Use the table below and record **server name**, **date**, and **result** in your deployment notes or ticket.
 
 | Check | How | Pass criteria |

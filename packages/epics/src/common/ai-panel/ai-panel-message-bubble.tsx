@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { Bot, Copy } from 'lucide-react';
+import { Copy, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
@@ -54,6 +54,9 @@ export function AiPanelMessageBubble({
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
+  const normalizedTextContent = textContent.trim();
+  const hasVisibleText =
+    normalizedTextContent.length > 0 && normalizedTextContent !== '(no text)';
   const fileParts =
     message.parts?.filter(
       (p): p is { type: 'file'; mediaType?: string; url: string } =>
@@ -64,6 +67,9 @@ export function AiPanelMessageBubble({
       (p): p is ToolPart =>
         typeof p.type === 'string' && p.type.startsWith('tool-'),
     ) ?? [];
+  const visibleToolParts = toolParts.filter(
+    (part) => part.state !== 'output-available' || !hasVisibleText,
+  );
 
   const handleCopy = useCallback(async () => {
     if (!textContent) return;
@@ -150,8 +156,8 @@ export function AiPanelMessageBubble({
   return (
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
       {!isUser && (
-        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary">
-          <Bot className="h-3.5 w-3.5 text-primary-foreground" />
+        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary">
+          <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
         </div>
       )}
       <div
@@ -165,9 +171,7 @@ export function AiPanelMessageBubble({
               : 'rounded-tl-sm border border-border bg-muted text-foreground',
           )}
         >
-          {textContent && textContent !== '(no text)' && (
-            <span>{textContent}</span>
-          )}
+          {hasVisibleText && <span>{textContent}</span>}
           {fileParts.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {fileParts.map((part, i) =>
@@ -192,9 +196,9 @@ export function AiPanelMessageBubble({
               )}
             </div>
           )}
-          {toolParts.length > 0 && (
+          {visibleToolParts.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              {toolParts.map((part) => (
+              {visibleToolParts.map((part) => (
                 <div
                   key={part.toolCallId}
                   className="rounded-lg border border-border bg-muted/50 px-2 py-1.5 text-xs"
@@ -237,7 +241,7 @@ export function AiPanelMessageBubble({
             <button
               type="button"
               onClick={handleCopy}
-              disabled={!textContent}
+              disabled={!hasVisibleText}
               className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
               aria-label={copied ? t('copiedButton') : t('copyButton')}
               title={copied ? t('copiedButton') : t('copyButton')}

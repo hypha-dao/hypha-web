@@ -17,7 +17,7 @@
     "signIn": "Please sign in to use this feature.",
     "joinSpaceToUse": "Please join this space to use this feature.",
     "back": "Back",
-    "home": "Home",
+    "home": "Overview",
     "remove": "Remove",
     "by": "by",
     "copyWalletAddress": "Copy wallet address",
@@ -41,7 +41,8 @@
     "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab.",
     "publish": "Publish",
     "invalidTransactions": "Invalid transactions",
-    "Coherence": "Coherence",
+    "Coherence": "Signals",
+    "Signals": "Signals",
     "uploadLeadImage": {
       "cropTitle": "Upload an image",
       "cropDescription": "Adjust how your image is framed, then save. Drag to reposition and use zoom to fit the banner area (JPEG, PNG, or WebP — max 4 MB).",
@@ -76,6 +77,7 @@
   "Navigation": {
     "network": "Network",
     "mySpaces": "My Spaces",
+    "myWallet": "My Wallet",
     "openMenu": "Open menu",
     "openProfileMenu": "Open profile menu",
     "closeMenu": "Close menu",
@@ -90,7 +92,55 @@
     "viewProfile": "View profile",
     "delete": "Delete",
     "signIn": "Sign in",
-    "getStarted": "Get started"
+    "getStarted": "Get started",
+    "ecosystemLogo": "Ecosystem Logo",
+    "continueAdventure": "Continue your adventure"
+  },
+  "OnboardingAdventure": {
+    "title": "Your Adventure starts here.",
+    "subtitle": "Pick your next move.",
+    "spacePlaceholder": "Select a space",
+    "spaceSearchPlaceholder": "Search spaces...",
+    "searchToSeeSpaces": "Start typing to see matching spaces.",
+    "selected": "Selected",
+    "noSpacesFound": "No spaces found.",
+    "loadingSpaces": "Loading spaces...",
+    "explore": {
+      "title": "Explore the Network",
+      "description": "Discover communities and opportunities across the network.",
+      "cta": "Explore now"
+    },
+    "create": {
+      "title": "Create your Space",
+      "description": "Start a new space and invite others to collaborate.",
+      "cta": "Create a space"
+    },
+    "join": {
+      "title": "Join a Space",
+      "description": "Pick a space and jump directly into its activity.",
+      "cta": "Open selected space",
+      "unavailable": "No spaces are currently available to join."
+    },
+    "deposit": {
+      "title": "Deposit Funds in a Space",
+      "description": "Choose a space with a treasury address to fund it.",
+      "cta": "Show deposit details",
+      "unavailable": "No spaces with treasury addresses are currently available."
+    },
+    "depositDetails": {
+      "title": "Deposit details",
+      "description": "Fund {spaceName} treasury using the address below.",
+      "qrAriaLabel": "Treasury address QR code for {spaceName}",
+      "networkWarning": "Warning: transfer funds on the BASE Network only.",
+      "addressLabel": "Treasury address",
+      "copy": "Copy address",
+      "copied": "Address copied",
+      "invalidAddress": "Invalid treasury address format."
+    }
+  },
+  "MyWallet": {
+    "loading": "Loading...",
+    "signInToViewWallet": "Sign in to view your wallet."
   },
   "NotificationCentre": {
     "title": "Notification Centre",
@@ -144,9 +194,90 @@
       "noAccess": "You do not have access to view space navigation."
     }
   },
+  "TokenHoldingsDashboard": {
+    "subtitle": "Token distribution at a glance.",
+    "badges": {
+      "tokens": "Tokens: {count}",
+      "otherBucket": "Other bucket: < {threshold}%",
+      "treasuryVisible": "Treasury always visible"
+    },
+    "updatedAt": "Updated {date}",
+    "error": {
+      "title": "Unable to load token holdings",
+      "description": "Please retry in a moment. If this persists, check your space access and network connectivity.",
+      "accessDeniedTitle": "Token holdings are restricted",
+      "accessDeniedDescription": "You do not currently have permission to view token holdings for this space."
+    },
+    "empty": {
+      "title": "No token holdings available yet",
+      "description": "This space does not currently expose minted token distribution data."
+    },
+    "chartAria": "Token distribution chart for {title}",
+    "tokenDetailsAria": "Token details for {tokenName}",
+    "tooltip": {
+      "totalSupply": "Total supply",
+      "other": "Other",
+      "address": "Address"
+    },
+    "filters": {
+      "energy": "Energy",
+      "activity": "Activity",
+      "distribution": "Distribution"
+    },
+    "activity": {
+      "title": "Unable to load activity widgets",
+      "error": "Please retry in a moment. Activity analytics data may still be syncing."
+    },
+    "distribution": {
+      "title": "Distribution over time",
+      "subtitle": "X axis shows time from transaction dates.",
+      "tokenLabel": "Token",
+      "memberLabel": "Member",
+      "memberAll": "All",
+      "start": "Start",
+      "end": "End",
+      "delta": "Delta",
+      "timeAxis": "Time",
+      "error": "Unable to load token distribution history right now.",
+      "empty": "No transfer history found for the selected filters."
+    },
+    "proposals": {
+      "title": "Proposals",
+      "subtitle": "On voting, accepted, refused",
+      "ariaLabel": "Proposals distribution",
+      "onVoting": "On voting",
+      "accepted": "Accepted",
+      "refused": "Refused",
+      "noData": "No data"
+    },
+    "members": {
+      "title": "Members",
+      "subtitle": "Cumulative monthly members and spaces (net of exits)",
+      "people": "People",
+      "spaces": "Spaces"
+    },
+    "signals": {
+      "title": "Signals",
+      "subtitle": "Heat map by priority and recency (recent left, older right)",
+      "count": "Signals",
+      "peakCell": "Peak cell",
+      "recent": "Recent",
+      "older": "Older",
+      "recency": "Recency",
+      "lowActivity": "Low activity",
+      "highActivity": "High activity",
+      "cellTitle": "{priority} · {count} signals · {start}% to {end}% recency window"
+    },
+    "energy": {
+      "title": "Energy",
+      "description": "Energy widgets will appear once energy data is available."
+    }
+  },
   "SpaceSettingsAction": {
     "title": "Space Settings",
     "content": "Access and manage the settings for your space, including its appearance, structure, methods, membership, and treasury.",
+    "searchMenus": "Search menus",
+    "noMenusFound": "No menus found",
     "groups": {
       "overview": "Overview",
       "agreements": "Agreements",
@@ -293,6 +424,7 @@
   "SelectNavigationAction": {
     "title": "Space Navigation",
     "content": "Navigate all your spaces in a single interactive map to see how they connect to each other. Easily visit nested spaces, explore space-to-space memberships, and follow value flows across your direct ecosystem.",
+    "ecosystem": "Ecosystem",
     "tabs": {
       "nestedSpaces": "Nested Spaces",
       "spaceToSpace": "Space-to-Space",
@@ -319,10 +451,13 @@
     "onVoting": "On Voting",
     "accepted": "Accepted",
     "rejected": "Rejected",
+    "newProposal": "New Proposal",
     "searchDocuments": "Search documents",
     "listIsEmpty": "List is empty"
   },
   "MembersTab": {
+    "member": "Member",
+    "space": "Space",
     "searchMembers": "Search members",
     "delegateVoting": "Delegate Voting",
     "listIsEmpty": "List is empty",
@@ -359,13 +494,16 @@
   },
   "TreasuryTab": {
     "balance": "Balance",
+    "wallet": "Wallet",
     "searchTokens": "Search tokens",
+    "hideSmall": "Hide small",
     "hideSmallBalances": "Hide small balances",
     "newToken": "New Token",
     "depositFunds": "Deposit funds",
     "listIsEmpty": "List is empty",
     "loadMoreAssets": "Load more assets",
     "transactions": "Transactions",
+    "vaults": "Vaults",
     "searchTransactions": "Search transactions",
     "noTransactionsFound": "No transactions found",
     "loadMoreTransactions": "Load more transactions",
@@ -645,7 +783,7 @@
   },
   "Network": {
     "manySpaces": "Many Spaces,",
-    "oneVibrantNetwork": "One Vibrant Network",
+    "oneVibrantNetwork": "One Network",
     "findASpace": "Find a Space",
     "createSpace": "Create Space",
     "mostMembers": "Most Members",
@@ -816,6 +954,7 @@
     "inOnePlace": "in One Place",
     "spacesYouMightLike": "Spaces you might like",
     "mySpacesLabel": "My Spaces",
+    "recentlyVisitedSpacesLabel": "Recently Visited",
     "hideArchivedSpaces": "Hide archived spaces",
     "creating": "Creating Space...",
     "expiredToday": "today",
@@ -824,7 +963,12 @@
     "linkedTo": "Linked to",
     "rootSpace": "Root Space",
     "rootSpaceDescription": "Marking this space as a Root Space will make it independent. It will no longer be linked to the current organisation, and all of its linked spaces will move with it.",
+    "uploadEcosystemLogoLight": "Upload Ecosystem Logo (Light)",
+    "uploadEcosystemLogoDark": "Upload Ecosystem Logo (Dark)",
+    "ecosystemLogoLightDescription": "Upload a light-mode logo for your ecosystem (PNG, JPG, GIF, or WEBP).",
+    "ecosystemLogoDarkDescription": "Upload a dark-mode logo for your ecosystem (PNG, JPG, GIF, or WEBP).",
     "search": "Search...",
+    "noSpacesFound": "No spaces found",
     "addYourUrl": "Add your URL",
     "exchangeDepositProposalTitleBanner": "Complete this space's side of an exchange",
     "exchangeDepositProposalBody": "An exchange proposal lists this space as counterparty (escrow #{escrowId}). Create a proposal to deposit <send></send> and receive <receive></receive> from the other party.",
@@ -1763,7 +1907,7 @@
       "agreements": "What agreements exist in this space?",
       "structure": "Describe the structure of this space"
     },
-    "welcome": "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
+    "welcome": "Hello! I'm your {spaceName} AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
     "placeholder": "Ask Hypha AI anything...",
     "sendButton": "Send",
     "stopButton": "Stop",
@@ -1771,7 +1915,7 @@
     "signIn": "Sign in to use Hypha AI",
     "signInButton": "Sign In",
     "loading": "Loading...",
-    "openPanel": "Open Hypha AI panel",
+    "openPanel": "Open Hypha AI",
     "hidePanel": "Hide AI panel",
     "resetChat": "Reset chat",
     "closePanel": "Close panel",
@@ -1958,6 +2102,8 @@
     "callSearchComingSoon": "Search in chat — coming soon",
     "callActiveInSpace": "Space call (everyone in this space can join)",
     "callConnecting": "Connecting…",
+    "callRemoteParticipantMediaStalled": "Waiting for audio/video — check network or try leaving and rejoining.",
+    "callRemoteMediaStallHint": "Others are listed in this call but their audio/video is not arriving — often a network or browser issue. Try leaving and rejoining, or switch networks.",
     "callDisconnecting": "Leaving call…",
     "callLeave": "Leave",
     "callMute": "Mute microphone",
@@ -1976,6 +2122,7 @@
     "callErrorPermission": "Camera or microphone access was denied. Check browser settings and try again.",
     "callErrorPermissionGuidance": "Update this site’s camera/microphone permissions in your browser settings, then try again from here.",
     "callErrorGeneric": "Could not start the call. Try again.",
+    "callErrorConnectStall": "The call could not connect. This is often caused by missing Matrix TURN server setup or a restrictive network.",
     "callErrorNotReady": "The call server is not ready yet. Wait a moment, then try again.",
     "callErrorNoClient": "You are not connected to chat. Check your connection, then try again.",
     "callErrorNoRoom": "This conversation is not available. Go back to the space, then try again.",
@@ -2004,6 +2151,8 @@
     "callParticipantMicOff": "Microphone off",
     "callLeftAudio": "You left the voice call.",
     "callLeftVideo": "You left the video call.",
+    "callLeftAudioIdle": "You left the voice call — no one else joined after a while.",
+    "callLeftVideoIdle": "You left the video call — no one else joined after a while.",
     "callLeftBannerDismiss": "Dismiss",
     "callPaneResizeSharePeople": "Resize screen share and people",
     "callPaneResizeShareStrip": "Resize screen share and filmstrip",
@@ -2014,7 +2163,7 @@
     "signInToSee": "Please, sign in to see signals, space memory, and conversations",
     "searchSignals": "Search signals...",
     "newSignal": "New Signal",
-    "backToCoherence": "Back to Coherence",
+    "backToCoherence": "Back to Signals",
     "all": "All",
     "listIsEmpty": "List is empty",
     "loadMore": "Load more",
@@ -2024,7 +2173,9 @@
     "mostRecent": "Most Recent",
     "searchConversation": "Search conversation",
     "hideArchived": "Hide archived",
-    "mentions": "{count, plural, one {# mention} other {# mentions}}",
+    "messageCount": "{count, plural, one {# message} other {# messages}}",
+    "priorityVisualAlt": "Priority level {priority}",
+    "typeSignalBannerAlt": "{type} signal, {priority} priority",
     "unarchiveConversation": "Unarchive Conversation",
     "unarchiveConfirm": "Do you really want to unarchive this conversation?",
     "yesUnarchive": "Yes, unarchive",
@@ -2041,6 +2192,9 @@
     "priority": "Priority",
     "tags": "Tags",
     "selectOneOrMore": "Select one or more",
+    "searchOrCreateTag": "Type to search or create a tag",
+    "noRecentTags": "No recent tags yet. Start typing to search tags.",
+    "allTags": "All tags",
     "description": "Description",
     "descriptionPlaceholder": "Type your description here...",
     "publish": "Publish",
@@ -2048,7 +2202,7 @@
     "archiveConversation": "Archive Conversation",
     "archiveConfirm": "Do you really want to archive this conversation?",
     "yesArchive": "Yes, archive",
-    "errorCoherenceTab": "Oops, something went wrong. Couldn't load coherence tab.",
+    "errorCoherenceTab": "Oops, something went wrong. Couldn't load signals tab.",
     "spaceMemory": "Space memory",
     "searchSpaceMemory": "Search space memory...",
     "spaceMemoryLoading": "Loading assets…",
@@ -2071,6 +2225,13 @@
     "spaceMemoryMatrixVideoPlayHint": "Tap to play preview",
     "spaceMemoryOpenAsset": "Open {name}",
     "untitledDocument": "Untitled document",
+    "spaceMemoryGeneral": "General",
+    "spaceMemoryProposals": "Proposals",
+    "spaceMemoryConversations": "Conversations",
+    "spaceMemoryAiChat": "AI Chat",
+    "newMemory": "New memory",
+    "spaceMemoryEmptyTab": "No items found in this view.",
+    "spaceMemoryAiChatEmpty": "AI chat memories are not available yet.",
     "documentStates": {
       "discussion": "Discussion",
       "proposal": "Proposal",
@@ -2085,33 +2246,103 @@
       "Proposal": "Proposal"
     },
     "typeDescriptions": {
-      "Opportunity": "Coordination window or positive opening",
-      "Risk": "Threat, concern or danger ahead",
-      "Tension": "Conflict or disagreement needing resolution",
-      "Insight": "Data-driven observation or discovery",
+      "Opportunity": "We could lean into this.",
+      "Risk": "We could be hurt by this.",
+      "Tension": "Something isn’t aligned.",
+      "Insight": "Shifts how we see things.",
       "Trend": "Emerging pattern across spaces",
       "Proposal": "Governance action or vote needed"
     },
     "priorities": {
+      "critical": "Critical",
       "high": "High",
       "medium": "Medium",
       "low": "Low"
     },
     "priorityDescriptions": {
-      "high": "Needs immediate attention",
-      "medium": "Monitor and act soon",
-      "low": "Informational, no rush"
+      "critical": "Act immediately.",
+      "high": "Prioritise next.",
+      "medium": "Monitor and plan.",
+      "low": "FYI, no action."
     },
+    "savingSignal": "Saving signal",
+    "saveChanges": "Save changes",
+    "deleteSignal": "Delete signal",
+    "deleteSignalConfirm": "This permanently removes this signal from the space. Continue?",
+    "deleteSignalAction": "Delete signal",
+    "deleteAction": "Delete",
+    "editSignalMissingSlug": "Signal identifier is missing. Please close and reopen the edit form.",
+    "editSignalSaveFailed": "Could not save signal changes. Please try again.",
     "keepWindowOpenWhileCreating": "Keep this window open until we're finished.",
+    "provisioning": {
+      "chatUnavailable": "Signal created but chat is currently unavailable.",
+      "roomProvisionFailed": "Signal created but chat room provisioning failed.",
+      "roomLinkFailedRetry": "Signal created but chat room could not be linked. Please retry."
+    },
     "tagLabels": {
+      "Purpose": "Purpose",
+      "North Star": "North Star",
+      "Vision": "Vision",
       "Strategy": "Strategy",
+      "Values": "Values",
+      "Principles": "Principles",
+      "Milestones": "Milestones",
+      "Impact Goals": "Impact Goals",
+      "Trend": "Trend",
+      "Social Conditions": "Social Conditions",
+      "Planetary Boundaries": "Planetary Boundaries",
+      "Policy": "Policy",
+      "Regulation": "Regulation",
+      "Emergency Response": "Emergency Response",
+      "Project": "Project",
+      "Quest": "Quest",
+      "Job": "Job",
+      "Skill": "Skill",
+      "Advisory Support": "Advisory Support",
+      "Volunteering": "Volunteering",
+      "Serving Audience": "Serving Audience",
+      "Customers": "Customers",
+      "Users": "Users",
+      "Communities": "Communities",
+      "Beneficiaries": "Beneficiaries",
+      "Partners": "Partners",
+      "Governance": "Governance",
+      "Processes": "Processes",
+      "Structure": "Structure",
+      "Rhythms": "Rhythms",
+      "Support Systems": "Support Systems",
+      "Needs": "Needs",
+      "Resources": "Resources",
+      "Fundraising": "Fundraising",
+      "Matchmaking": "Matchmaking",
+      "Innovation": "Innovation",
+      "Products": "Products",
+      "Services": "Services",
+      "Product-Market Fit": "Product-Market Fit",
+      "Business Model": "Business Model",
+      "Data": "Data",
+      "Knowledge": "Knowledge",
+      "Intellectual Property": "Intellectual Property",
+      "Proof of Action": "Proof of Action",
+      "Proof of Impact": "Proof of Impact",
+      "Learning": "Learning",
+      "Feedback Loop": "Feedback Loop",
       "Culture": "Culture",
       "Onboarding": "Onboarding",
       "Engagement": "Engagement",
-      "Learning": "Learning",
       "Capacity": "Capacity",
       "Network": "Network",
       "Reputation": "Reputation"
+    },
+    "tagCategories": {
+      "purposeDirection": "Purpose & Direction",
+      "broaderContext": "Broader Context",
+      "peopleRoles": "People & Roles",
+      "ecosystemMapping": "Ecosystem Mapping",
+      "operatingCoherence": "Operating Coherence",
+      "needsResources": "Needs & Resources",
+      "valueModel": "Value & Model",
+      "evidenceImpact": "Evidence & Impact"
     }
   },
   "SignalCard": {
@@ -2120,6 +2351,7 @@
     "showLess": "Show less",
     "readFullDescription": "Read full description",
     "fullDescriptionDialogSubtitle": "Full signal description",
+    "editMenu": "Edit signal",
     "deleteSignal": "Delete signal",
     "deleteConfirm": "This permanently removes this signal from the space. Continue?",
     "deleteMenu": "Delete",

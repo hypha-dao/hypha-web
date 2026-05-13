@@ -14,7 +14,7 @@ export default function AppError({
 }) {
   const tCommon = useTranslations('Common');
   useEffect(() => {
-    console.error(error);
+    console.error('[app/error] Unhandled client error', error);
   }, [error]);
 
   return (

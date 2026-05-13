@@ -27,6 +27,12 @@ import {
   mergeMatrixMentionsIntoContent,
   resolveMentionUserIdsForSend,
 } from '../../mentions';
+import {
+  matrixWebRtcFallbackIceAllowedFromEnv,
+  matrixWebRtcForceTurnFromEnv,
+  matrixWebRtcIceCandidatePoolSizeFromEnv,
+} from '../matrix-webrtc-env';
+import { createHyphaMatrixClientLogger } from '../matrix-client-logger';
 
 export interface SendAttachmentInput {
   file: File;
@@ -136,6 +142,73 @@ export const MATRIX_UPLOAD_TIMEOUT_MS = 120_000;
 const MATRIX_UPLOAD_STAGGER_MS = 400;
 
 const MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS = 4;
+const MATRIX_GROUP_CALL_EVENT_TYPE = 'org.matrix.msc3401.call';
+const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
+const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
+
+async function ensureRoomCallPowerLevels(
+  client: MatrixSdk.MatrixClient,
+  roomId: string,
+): Promise<void> {
+  try {
+    const current =
+      (client
+        .getRoom(roomId)
+        ?.currentState.getStateEvents(MatrixSdk.EventType.RoomPowerLevels, '')
+        ?.getContent() as { events?: Record<string, number> } | undefined) ??
+      ((await client.getStateEvent(
+        roomId,
+        MatrixSdk.EventType.RoomPowerLevels,
+        '',
+      )) as { events?: Record<string, number> });
+    const events = { ...(current.events ?? {}) };
+    if (
+      events[MATRIX_GROUP_CALL_EVENT_TYPE] === 0 &&
+      events[MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE] === 0 &&
+      events[MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE] === 0
+    ) {
+      return;
+    }
+    await client.sendStateEvent(
+      roomId,
+      MatrixSdk.EventType.RoomPowerLevels,
+      {
+        ...current,
+        events: {
+          ...events,
+          [MATRIX_GROUP_CALL_EVENT_TYPE]: 0,
+          [MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE]: 0,
+          [MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE]: 0,
+        },
+      },
+      '',
+    );
+  } catch (error) {
+    const e = error as
+      | {
+          errcode?: string;
+          name?: string;
+          message?: string;
+          data?: { errcode?: string };
+          httpStatus?: number;
+        }
+      | undefined;
+    const isPermissionDenied =
+      e?.errcode === 'M_FORBIDDEN' ||
+      e?.data?.errcode === 'M_FORBIDDEN' ||
+      e?.httpStatus === 403 ||
+      e?.name === 'ForbiddenError';
+    if (isPermissionDenied) {
+      console.warn(
+        'Cannot ensure Matrix call power levels due to permissions:',
+        error,
+      );
+      return;
+    }
+    console.warn('Cannot ensure Matrix call power levels:', error);
+    throw error;
+  }
+}
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -332,6 +405,10 @@ interface MatrixContextType {
   redactRoomEvent: (params: RedactRoomEventInput) => Promise<void>;
   toggleReaction: (params: ToggleReactionInput) => Promise<void>;
   getRoomMessages: (roomId: string) => Message[] | null;
+  loadRoomHistory: (
+    roomId: string,
+    options?: { pageSize?: number; maxBatches?: number },
+  ) => Promise<void>;
   getPinnedMessageIds: (roomId: string) => string[];
   togglePinnedMessage: (roomId: string, messageId: string) => Promise<void>;
   getRoomMembers: (roomId: string) => Promise<ChatMember[]>;
@@ -370,6 +447,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const registeredRoomListenersRef = React.useRef<RoomMessageListenerRecord[]>(
     [],
   );
+  const roomHistoryLoadRef = React.useRef<Map<string, Promise<void>>>(
+    new Map(),
+  );
   const [registeredRoomListeners, setRegisteredRoomListeners] = React.useState<
     RoomMessageListenerRecord[]
   >([]);
@@ -393,12 +473,15 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           accessToken,
           userId,
           deviceId,
+          /** Default matrix-js-sdk log level is extremely chatty in the browser. */
+          logger: createHyphaMatrixClientLogger(),
           disableVoip: false,
-          useE2eForGroupCall: true,
+          /** matrix-js-sdk v40 Rust crypto path cannot send encrypted group-call to-device VoIP events. */
+          useE2eForGroupCall: false,
           useLivekitForGroupCalls: false,
-          forceTURN: false,
-          fallbackICEServerAllowed: false,
-          iceCandidatePoolSize: 0,
+          forceTURN: matrixWebRtcForceTurnFromEnv(),
+          fallbackICEServerAllowed: matrixWebRtcFallbackIceAllowedFromEnv(),
+          iceCandidatePoolSize: matrixWebRtcIceCandidatePoolSizeFromEnv(),
         });
 
         await matrixClient.startClient();
@@ -409,7 +492,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         setActiveMatrixUserId(userId);
         setIsMatrixAvailable(matrixClient !== null);
         setIsAuthenticated(true);
-        console.log('Matrix client initialized');
       } catch (error) {
         console.error('Failed to initialize Matrix client:', error);
         setClient(null);
@@ -479,6 +561,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         name: title,
         topic: title,
       });
+      await ensureRoomCallPowerLevels(client, roomId);
       return { roomId };
     },
     [client],
@@ -1143,6 +1226,56 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client, getPinnedMessageIds],
   );
 
+  const loadRoomHistory = React.useCallback(
+    async (
+      roomId: string,
+      options?: { pageSize?: number; maxBatches?: number },
+    ): Promise<void> => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+
+      const existingLoad = roomHistoryLoadRef.current.get(roomId);
+      if (existingLoad) {
+        await existingLoad;
+        return;
+      }
+
+      const pageSize = Math.max(10, options?.pageSize ?? 50);
+      const maxBatches = Math.max(1, options?.maxBatches ?? 40);
+      const loadPromise = (async () => {
+        for (let i = 0; i < maxBatches; i++) {
+          const beforeCount = room.getLiveTimeline().getEvents().length;
+          try {
+            await client.scrollback(room, pageSize);
+          } catch (error) {
+            console.warn(
+              '[MatrixProvider] Failed while loading room history:',
+              error,
+            );
+            break;
+          }
+          const afterCount = room.getLiveTimeline().getEvents().length;
+          if (afterCount <= beforeCount) {
+            break;
+          }
+        }
+      })();
+
+      roomHistoryLoadRef.current.set(roomId, loadPromise);
+      try {
+        await loadPromise;
+      } finally {
+        roomHistoryLoadRef.current.delete(roomId);
+      }
+    },
+    [client],
+  );
+
   const togglePinnedMessage = React.useCallback(
     async (roomId: string, messageId: string) => {
       if (!client) {
@@ -1209,6 +1342,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       try {
         const joined = await client.joinRoom(roomIdOrAlias);
         const resolvedId = joined.roomId;
+        await ensureRoomCallPowerLevels(client, resolvedId);
         // `joinRoom` resolves before the lazy room store always exposes `getRoom`
         // (race with sync / canonical id). Wait briefly for `getRoom` parity with listeners.
         for (let i = 0; i < 40; i++) {
@@ -1289,8 +1423,22 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         if (event.getRoomId() !== roomId) {
           return;
         }
-        const room = client.getRoom(roomId);
         const type = event.getType();
+        /**
+         * `RoomEvent.Timeline` fires for **every** persisted event in the room during
+         * incremental sync (membership, typing, power levels, …). Human chat only cares
+         * about a handful — skipping early avoids heavy `findEventById` / reaction work
+         * per event and stops React from saturating on large backfills.
+         */
+        if (
+          type !== MatrixSdk.EventType.RoomMessage &&
+          type !== MatrixSdk.EventType.RoomPinnedEvents &&
+          type !== MatrixSdk.EventType.Reaction &&
+          type !== MatrixSdk.EventType.RoomRedaction
+        ) {
+          return;
+        }
+        const room = client.getRoom(roomId);
 
         if (type === EventType.RoomMessage) {
           if (isRedactedRoomMessageEvent(event)) {
@@ -1482,6 +1630,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     redactRoomEvent,
     toggleReaction,
     getRoomMessages,
+    loadRoomHistory,
     getPinnedMessageIds,
     togglePinnedMessage,
     getRoomMembers,
@@ -1516,6 +1665,7 @@ const noopMatrixContext: MatrixContextType = {
     throw new Error('Matrix unavailable');
   },
   getRoomMessages: () => null,
+  loadRoomHistory: async () => {},
   joinRoom: async (): Promise<string> => {
     throw new Error('Matrix unavailable');
   },

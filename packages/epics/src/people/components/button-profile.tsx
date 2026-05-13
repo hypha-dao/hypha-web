@@ -17,6 +17,7 @@ import { EthAddress } from './eth-address';
 import {
   Bell,
   ChevronRight,
+  Compass,
   LogOutIcon,
   Repeat,
   Shield,
@@ -40,6 +41,7 @@ export type ButtonProfileProps = {
   onDelete?: () => void;
   onChangeThemeMode?: () => void;
   profileUrl?: string;
+  onboardingUrl?: string;
   notificationCentrePath?: string;
   navItems: ButtonNavItemProps[];
   person?: Person;
@@ -59,6 +61,7 @@ export const ButtonProfile = ({
   onLogout,
   onDelete,
   profileUrl,
+  onboardingUrl,
   notificationCentrePath,
   navItems,
   onChangeThemeMode,
@@ -132,6 +135,13 @@ export const ButtonProfile = ({
               <ButtonNavItem href={profileUrl} label={t('myProfile')} />
             )}
 
+            {onboardingUrl && (
+              <ButtonNavItem
+                href={onboardingUrl}
+                label={t('continueAdventure')}
+              />
+            )}
+
             {notificationCentrePath && (
               <ButtonNavItem
                 label={t('notificationCentre')}
@@ -190,11 +200,11 @@ export const ButtonProfile = ({
                   className={cn(
                     /* Match LanguageSelect trigger: h-10 toolbar row, square hit target */
                     'box-border flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center',
-                    'isolate overflow-hidden rounded-md border border-neutral-9 bg-neutral-1 p-0 text-neutral-12 outline-none',
+                    'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
                     'shadow-sm transition-colors duration-150',
-                    'hover:border-neutral-11 hover:text-foreground',
+                    'hover:text-foreground',
                     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                    'data-[state=open]:border-neutral-11 data-[state=open]:shadow-md',
+                    'data-[state=open]:shadow-md',
                   )}
                   aria-label={t('openProfileMenu')}
                   aria-haspopup="menu"
@@ -252,7 +262,7 @@ export const ButtonProfile = ({
                   </div>
                 ) : null}
 
-                {(profileUrl || notificationCentrePath) && (
+                {(profileUrl || onboardingUrl || notificationCentrePath) && (
                   <>
                     <DropdownMenuSeparator className="-mx-0 my-1" />
                     <DropdownMenuGroup className="space-y-0.5">
@@ -264,6 +274,20 @@ export const ButtonProfile = ({
                               aria-hidden
                             />
                             <span className="flex-1">{t('viewProfile')}</span>
+                            <ChevronRight
+                              className="ml-auto size-4 opacity-60"
+                              aria-hidden
+                            />
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : null}
+                      {onboardingUrl ? (
+                        <DropdownMenuItem className={menuItemClass} asChild>
+                          <Link href={onboardingUrl}>
+                            <Compass className="size-4 shrink-0" aria-hidden />
+                            <span className="flex-1">
+                              {t('continueAdventure')}
+                            </span>
                             <ChevronRight
                               className="ml-auto size-4 opacity-60"
                               aria-hidden

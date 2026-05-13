@@ -6,10 +6,7 @@ import {
 import { SelectSettingsAction } from '../../../_components/select-settings-action';
 import { Locale } from '@hypha-platform/i18n';
 import { getTranslations } from 'next-intl/server';
-import {
-  PATH_SELECT_ACTIVATE_ACTION,
-  PATH_SELECT_SETTINGS_ACTION,
-} from '@web/app/constants';
+import { PATH_SELECT_ACTIVATE_ACTION } from '@web/app/constants';
 
 export default async function SelectSettingsActions({
   params,
@@ -23,7 +20,7 @@ export default async function SelectSettingsActions({
       <div className="flex flex-col gap-5">
         <ModalStickyNavigation
           contextTitle={tModalAside('spaceSettings')}
-          closeDropSegment={PATH_SELECT_SETTINGS_ACTION}
+          closeUrl={`/${lang}/dho/${daoSlug}/${tab}`}
           showBack={false}
         />
         <SelectSettingsAction lang={lang} daoSlug={daoSlug} activeTab={tab}>

@@ -35,6 +35,8 @@ export const findAllSpaces = async (
     .select({
       id: spaces.id,
       logoUrl: spaces.logoUrl,
+      ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+      ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
       leadImage: spaces.leadImage,
       title: spaces.title,
       description: spaces.description,
@@ -305,6 +307,8 @@ const getSpaceDefaultFields = () => {
   return {
     id: spaces.id,
     logoUrl: spaces.logoUrl,
+    ecosystemLogoUrlLight: spaces.ecosystemLogoUrlLight,
+    ecosystemLogoUrlDark: spaces.ecosystemLogoUrlDark,
     leadImage: spaces.leadImage,
     title: spaces.title,
     description: spaces.description,

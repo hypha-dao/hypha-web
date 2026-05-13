@@ -39,7 +39,7 @@ export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
 /** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
 const DESCRIPTION_SCROLL_BOX = cn(
   'w-full max-w-full min-h-0 max-h-[4lh] overflow-y-auto overscroll-y-contain touch-pan-y',
-  'text-2 leading-[1.5] sm:max-h-[min(45vh,280px)] sm:max-w-[50%]',
+  'text-2 leading-[1.5] sm:max-w-[50%]',
   '[scrollbar-gutter:stable]',
   '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
@@ -128,7 +128,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-xl border border-[#30363d]',
+        'relative overflow-hidden rounded-xl',
         'shadow-[0_24px_48px_-12px_rgba(5,33,22,0.55)]',
         /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
         'px-8 pt-8 pb-0',
@@ -140,84 +140,15 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
       {textureSrc ? (
         <>
           <CompactSpaceBannerLead src={textureSrc} />
-          {/* PR #2165 stack + depth pass — alphas modulated via inherited CSS vars from SpaceAccentFromImages */}
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage:
-                'linear-gradient(to top, rgba(0,0,0,var(--banner-ov-v-bottom, 0.88)) 0%, rgba(0,0,0,var(--banner-ov-v-mid, 0.42)) var(--banner-ov-v-mid-at, 52%), rgba(0,0,0,var(--banner-ov-v-top, 0.22)) 100%)',
-            }}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage:
-                'linear-gradient(to right, rgba(0,0,0,var(--banner-ov-h-from, 0.58)), transparent, rgba(0,0,0,var(--banner-ov-h-to, 0.4)))',
-            }}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage:
-                'linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) calc(var(--banner-ov-accent-wash, 0.18) * 100%), transparent), transparent, transparent)',
-            }}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 mix-blend-soft-light"
-            style={{
-              backgroundImage:
-                'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(209,250,229,calc(0.38 * var(--banner-ov-skylight-op, 0.9))), transparent 62%)',
-            }}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage:
-                'linear-gradient(to bottom right, rgba(255,255,255,var(--banner-ov-sheen-op, 0.07)) -10%, transparent 40%, transparent 55%)',
-            }}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage:
-                'radial-gradient(ellipse 115% 95% at 50% 72%, transparent 22%, rgba(0,18,12,calc(0.62 * var(--banner-ov-vignette-strength, 1))) 88%, rgba(0,8,5,calc(0.92 * var(--banner-ov-vignette-strength, 1))) 100%)',
-            }}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 rounded-[inherit] mix-blend-overlay"
-            style={{
-              opacity: 'var(--banner-ov-grain-op, 0.055)',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-            }}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 rounded-[inherit]"
-            style={{
-              boxShadow:
-                'inset 0 1px 0 rgba(255,255,255,var(--banner-ov-inner-top, 0.09)), inset 0 -1px 0 rgba(0,0,0,var(--banner-ov-inner-bot, 0.18))',
-            }}
-            aria-hidden
-          />
         </>
       ) : (
         <>
           <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(41,115,78)_0%,rgb(14,54,38)_42%,rgb(7,38,26)_68%,rgb(2,14,10)_100%)]"
+            className="pointer-events-none absolute inset-0 bg-white dark:bg-black"
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-0 mix-blend-soft-light opacity-80 bg-[radial-gradient(ellipse_50%_40%_at_80%_5%,rgba(52,211,153,0.2),transparent_60%)]"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_110%_90%_at_50%_78%,transparent_35%,rgba(0,14,10,0.72)_92%)]"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.16),transparent_62%)] dark:bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.06),transparent_62%)]"
             aria-hidden
           />
         </>

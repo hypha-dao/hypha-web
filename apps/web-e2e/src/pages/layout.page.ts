@@ -53,7 +53,7 @@ export class LayoutPage extends BasePage {
   }
 
   async open(path = '/en/dho/hypha/agreements') {
-    await this.page.goto(path);
+    await this.gotoApp(path);
     await this.waitForPageLoad();
   }
 

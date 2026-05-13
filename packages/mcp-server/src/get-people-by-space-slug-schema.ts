@@ -1,15 +1,5 @@
 import { z } from 'zod';
-
-/** Keep in sync with `spaceSlugSchema` in `packages/core/src/space/validation.ts`. */
-const slugSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(50)
-  .regex(
-    /^[a-z0-9'-]+$/,
-    'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes',
-  );
+import { slugSchema } from './common-schemas.js';
 
 export const getPeopleBySpaceSlugInputSchema = z.object({
   space_slug: slugSchema,

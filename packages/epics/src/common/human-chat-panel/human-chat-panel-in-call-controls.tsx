@@ -18,7 +18,6 @@ import {
 
 type HumanChatPanelInCallControlsProps = {
   callState: SpaceGroupCallState;
-  callKind: 'audio' | 'video' | null;
   isMicrophoneMuted: boolean;
   isLocalVideoMuted: boolean;
   isScreensharing: boolean;
@@ -36,7 +35,6 @@ type HumanChatPanelInCallControlsProps = {
  */
 export function HumanChatPanelInCallControls({
   callState,
-  callKind,
   isMicrophoneMuted,
   isLocalVideoMuted,
   isScreensharing,
@@ -57,7 +55,9 @@ export function HumanChatPanelInCallControls({
   const baseBtn = isFull
     ? 'h-10 min-w-10 sm:h-11 sm:min-w-11 inline-flex items-center justify-center rounded-full border border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
-  const neutralBtn = isFull ? baseBtn : 'bg-background text-foreground';
+  const neutralBtn = isFull
+    ? baseBtn
+    : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const leaveIcon = isFull ? fullViewIcon : 'h-4 w-4';
   /**
    * End call — classic “hang up” red (explicit red-600/700, not `destructive` token
@@ -82,7 +82,10 @@ export function HumanChatPanelInCallControls({
 
   return (
     <div
-      className="flex w-full items-center justify-center gap-1.5 sm:gap-2"
+      className={cn(
+        'flex items-center gap-1.5 sm:gap-2',
+        isFull ? 'w-full justify-center' : 'w-auto justify-start',
+      )}
       role="group"
       aria-label={t('callToolbarLabel')}
     >
@@ -116,38 +119,36 @@ export function HumanChatPanelInCallControls({
           <Mic className={icon} />
         )}
       </button>
-      {callKind === 'video' && (
-        <button
-          type="button"
-          onClick={onToggleCamera}
-          disabled={controlsDisabled}
-          className={cn(
-            isFull
-              ? isLocalVideoMuted
-                ? camOffBtn
-                : baseBtn
-              : isLocalVideoMuted
+      <button
+        type="button"
+        onClick={onToggleCamera}
+        disabled={controlsDisabled}
+        className={cn(
+          isFull
+            ? isLocalVideoMuted
               ? camOffBtn
-              : neutralBtn,
-            (isFull || isLocalVideoMuted) &&
-              'inline-flex items-center justify-center',
-            'disabled:cursor-not-allowed',
-            !isFull && controlsDisabled && 'opacity-50',
-          )}
-          title={t('callControlsCamera')}
-          aria-label={
-            isLocalVideoMuted
-              ? t('callControlsCameraOffAria')
-              : t('callControlsCameraOnAria')
-          }
-        >
-          {isLocalVideoMuted ? (
-            <VideoOff className={icon} />
-          ) : (
-            <Video className={icon} />
-          )}
-        </button>
-      )}
+              : baseBtn
+            : isLocalVideoMuted
+            ? camOffBtn
+            : neutralBtn,
+          (isFull || isLocalVideoMuted) &&
+            'inline-flex items-center justify-center',
+          'disabled:cursor-not-allowed',
+          !isFull && controlsDisabled && 'opacity-50',
+        )}
+        title={t('callControlsCamera')}
+        aria-label={
+          isLocalVideoMuted
+            ? t('callControlsCameraOffAria')
+            : t('callControlsCameraOnAria')
+        }
+      >
+        {isLocalVideoMuted ? (
+          <VideoOff className={icon} />
+        ) : (
+          <Video className={icon} />
+        )}
+      </button>
       <button
         type="button"
         onClick={onToggleScreenshare}

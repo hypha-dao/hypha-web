@@ -6,20 +6,22 @@ import queryString from 'query-string';
 
 import { type UseMembers, type UseMembersReturn } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
+import {
+  FilterParams,
+  PaginationMetadata,
+  Person,
+  Space,
+} from '@hypha-platform/core/client';
 
-type MemberItem = {
-  name: string;
-  surname: string;
-  nickname: string;
-  location: string;
-  avatar: string;
-  status: string;
-  about: string;
-  slug: string;
-  isLoading?: boolean;
+type MembersCollection<T> = {
+  data?: T[];
+  pagination?: PaginationMetadata;
 };
 
-import { FilterParams } from '@hypha-platform/core/client';
+type MembersResponse = {
+  persons?: MembersCollection<Person>;
+  spaces?: MembersCollection<Space>;
+};
 
 export const useMembers: UseMembers = ({
   page = 1,
@@ -31,7 +33,7 @@ export const useMembers: UseMembers = ({
 }: {
   page?: number;
   pageSize?: number;
-  filter?: FilterParams<MemberItem>;
+  filter?: FilterParams<Person>;
   spaceSlug?: string;
   searchTerm?: string;
   refreshInterval?: number;
@@ -45,8 +47,6 @@ export const useMembers: UseMembers = ({
       : { page, pageSize, ...(searchTerm ? { searchTerm } : {}) };
     return `?${queryString.stringify(effectiveFilter)}`;
   }, [page, pageSize, searchTerm, paginationDisabled]);
-
-  console.debug('useMembers', { queryParams });
 
   const endpoint = React.useMemo(
     () => `/api/v1/spaces/${spaceSlug}/members${queryParams}`,
@@ -72,7 +72,75 @@ export const useMembers: UseMembers = ({
         headers.Authorization = `Bearer ${token}`;
       }
 
-      return fetch(endpoint, { headers }).then((res) => res.json());
+      const fetchJson = async (url: string): Promise<MembersResponse> => {
+        const res = await fetch(url, { headers });
+        if (!res.ok) {
+          const errorText = (await res.text().catch(() => '')).trim();
+          throw new Error(
+            `Failed to fetch members (${res.status})${
+              errorText ? `: ${errorText}` : ''
+            }`,
+          );
+        }
+        return (await res.json()) as MembersResponse;
+      };
+
+      if (!paginationDisabled) {
+        return fetchJson(endpoint);
+      }
+
+      const pageSize = 100;
+      let page = 1;
+      const allPersons: Person[] = [];
+      const allSpaces: Space[] = [];
+      let personsPagination: PaginationMetadata | undefined;
+      let spacesPagination: PaginationMetadata | undefined;
+      const MAX_PAGES = 200;
+
+      while (true) {
+        if (page > MAX_PAGES) {
+          throw new Error('Members pagination exceeded safety limit');
+        }
+        const pagedEndpoint = `/api/v1/spaces/${spaceSlug}/members?${queryString.stringify(
+          {
+            page,
+            pageSize,
+            ...(searchTerm ? { searchTerm } : {}),
+          },
+        )}`;
+        const pageResponse = await fetchJson(pagedEndpoint);
+
+        const personsData = pageResponse?.persons?.data ?? [];
+        const spacesData = pageResponse?.spaces?.data ?? [];
+        allPersons.push(...personsData);
+        allSpaces.push(...spacesData);
+        personsPagination = pageResponse?.persons?.pagination;
+        spacesPagination = pageResponse?.spaces?.pagination;
+
+        const personsHasNext = Boolean(
+          pageResponse?.persons?.pagination?.hasNextPage,
+        );
+        const spacesHasNext = Boolean(
+          pageResponse?.spaces?.pagination?.hasNextPage,
+        );
+
+        if (!personsHasNext && !spacesHasNext) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      return {
+        persons: {
+          data: allPersons,
+          pagination: personsPagination,
+        },
+        spaces: {
+          data: allSpaces,
+          pagination: spacesPagination,
+        },
+      };
     },
     {
       refreshInterval: interval,
@@ -101,8 +169,14 @@ export const useMembers: UseMembers = ({
   }, [mutate, spaceSlug]);
 
   return {
-    persons: response?.persons || { data: [], pagination: undefined },
-    spaces: response?.spaces || { data: [], pagination: undefined },
+    persons: {
+      data: response?.persons?.data ?? [],
+      pagination: response?.persons?.pagination,
+    },
+    spaces: {
+      data: response?.spaces?.data ?? [],
+      pagination: response?.spaces?.pagination,
+    },
     isLoading,
     updateMembers,
   };

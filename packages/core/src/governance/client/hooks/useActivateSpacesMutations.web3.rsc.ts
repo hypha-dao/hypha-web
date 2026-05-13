@@ -23,7 +23,8 @@ import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
 import z from 'zod';
 
-const USDC_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
+const TOKENS_SAFE = Array.isArray(TOKENS) ? TOKENS : [];
+const USDC_TOKEN = TOKENS_SAFE.find((t) => t.symbol === 'USDC');
 const chainId = getGovernanceChainId();
 
 type PaymentToken = 'USDC' | 'HYPHA';
@@ -63,7 +64,12 @@ export const useActivateSpacesMutationsWeb3Rpc = ({
 
       const tokenAddress =
         arg.paymentToken === 'USDC'
-          ? (USDC_TOKEN?.address as `0x${string}`)
+          ? (() => {
+              if (!USDC_TOKEN?.address) {
+                throw new Error('USDC token not configured in TOKENS');
+              }
+              return USDC_TOKEN.address;
+            })()
           : (hyphaTokenAddress[chainId] as `0x${string}`);
       const decimals = await getTokenDecimals(tokenAddress);
       const parsedAmounts = arg.amounts.map((a) =>
@@ -71,8 +77,11 @@ export const useActivateSpacesMutationsWeb3Rpc = ({
       );
 
       if (arg.paymentToken === 'USDC') {
+        if (!USDC_TOKEN?.address) {
+          throw new Error('USDC token not configured in TOKENS');
+        }
         transactions.push({
-          target: USDC_TOKEN?.address as `0x${string}`,
+          target: USDC_TOKEN.address,
           value: 0,
           data: encodeFunctionData({
             abi: erc20Abi,

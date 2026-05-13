@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { AiChatPanelPage } from './pages/ai-chat-panel.page';
+import { gotoApp } from './utils/nav-url';
 
 /**
  * Feature Flag: NEXT_PUBLIC_ENABLE_AI_CHAT
@@ -57,7 +58,7 @@ test.describe('AI Chat Panel — Feature Flag Enabled', () => {
   test('should not render AI trigger button on non-space pages', async ({
     page,
   }) => {
-    await page.goto('/my-spaces');
+    await gotoApp(page, '/en/my-spaces');
     await page.waitForLoadState('domcontentloaded');
 
     const aiButton = page.getByRole('button', {
@@ -91,7 +92,7 @@ test.describe('AI Chat Panel — Feature Flag Disabled', () => {
   test('should not render AI trigger button on space page', async ({
     page,
   }) => {
-    await page.goto('/en/dho/hypha');
+    await gotoApp(page, '/en/dho/hypha');
     await page.waitForLoadState('domcontentloaded');
 
     const aiButton = page.getByRole('button', {
@@ -101,7 +102,7 @@ test.describe('AI Chat Panel — Feature Flag Disabled', () => {
   });
 
   test('should not render sidebar panel markup', async ({ page }) => {
-    await page.goto('/en/dho/hypha');
+    await gotoApp(page, '/en/dho/hypha');
     await page.waitForLoadState('domcontentloaded');
 
     const sidebar = page.locator('[data-sidebar="sidebar"]');
@@ -109,7 +110,7 @@ test.describe('AI Chat Panel — Feature Flag Disabled', () => {
   });
 
   test('should render page content normally', async ({ page }) => {
-    await page.goto('/en/dho/hypha');
+    await gotoApp(page, '/en/dho/hypha');
     await page.waitForLoadState('domcontentloaded');
 
     // Space page content should still render

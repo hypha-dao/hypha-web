@@ -16,7 +16,8 @@ interface ActivateSpacesInput {
   paymentToken: PaymentToken;
 }
 
-const USDC_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
+const TOKENS_SAFE = Array.isArray(TOKENS) ? TOKENS : [];
+const USDC_TOKEN = TOKENS_SAFE.find((t) => t.symbol === 'USDC');
 
 export const useActivateSpacesMutation = () => {
   const { client } = useSmartWallets();
@@ -43,11 +44,19 @@ export const useActivateSpacesMutation = () => {
         throw new Error('spaceIds and amounts length mismatch');
       }
 
-      const decimals = await getTokenDecimals(
+      const paymentTokenAddress: `0x${string}` =
         paymentToken === 'USDC'
-          ? (USDC_TOKEN?.address as `0x${string}`)
-          : hyphaTokenAddress[8453],
-      );
+          ? (() => {
+              if (!USDC_TOKEN?.address) {
+                throw new Error(
+                  'USDC token not configured: cannot proceed with USDC payment',
+                );
+              }
+              return USDC_TOKEN.address;
+            })()
+          : (hyphaTokenAddress[8453] as `0x${string}`);
+
+      const decimals = await getTokenDecimals(paymentTokenAddress);
 
       const parsedAmounts = amounts.map((a) =>
         parseUnits(a.toString(), decimals ?? 6),
@@ -55,7 +64,7 @@ export const useActivateSpacesMutation = () => {
 
       if (paymentToken === 'USDC') {
         await client.writeContract({
-          address: USDC_TOKEN?.address as `0x${string}`,
+          address: paymentTokenAddress,
           abi: erc20Abi,
           functionName: 'approve',
           args: [

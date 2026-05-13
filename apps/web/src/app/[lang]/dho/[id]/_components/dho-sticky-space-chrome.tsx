@@ -9,12 +9,14 @@ import {
 } from '@hypha-platform/epics';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { useTheme } from 'next-themes';
+
+const STICKY_APPEAR_OFFSET_PX = 0;
+const STICKY_HYSTERESIS_PX = 16;
 
 export type DhoStickySpaceChromeProps = {
-  breadcrumbsRow: React.ReactNode;
   banner: React.ReactNode;
   actionsSlot: React.ReactNode;
-  nestedSpacesSlot: React.ReactNode;
   title: string;
   logoUrl: string;
   logoAlt: string;
@@ -22,7 +24,13 @@ export type DhoStickySpaceChromeProps = {
 };
 
 function useMenuTopOffsetPx(): number {
-  const [px, setPx] = React.useState(64);
+  const [px, setPx] = React.useState(70);
+  const pxRef = React.useRef(px);
+  const rafRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    pxRef.current = px;
+  }, [px]);
 
   React.useLayoutEffect(() => {
     const read = () => {
@@ -30,15 +38,33 @@ function useMenuTopOffsetPx(): number {
         '--menu-top-height',
       );
       const n = parseFloat(raw);
-      setPx(Number.isFinite(n) && n > 0 ? n : 64);
+      const next = Number.isFinite(n) && n > 0 ? n : 70;
+      if (next !== pxRef.current) {
+        pxRef.current = next;
+        setPx(next);
+      }
+    };
+    const scheduleRead = () => {
+      if (rafRef.current !== null) return;
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        read();
+      });
     };
     read();
-    const ro = new ResizeObserver(read);
-    ro.observe(document.documentElement);
-    window.addEventListener('resize', read);
+    const mo = new MutationObserver(scheduleRead);
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
+    window.addEventListener('resize', scheduleRead);
     return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', read);
+      mo.disconnect();
+      window.removeEventListener('resize', scheduleRead);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
   }, []);
 
@@ -55,51 +81,29 @@ function useMenuTopOffsetPx(): number {
  * lift state above the portaled subtree if that becomes a problem.
  */
 export function DhoStickySpaceChrome({
-  breadcrumbsRow,
   banner,
   actionsSlot,
-  nestedSpacesSlot,
   title,
   logoUrl,
   logoAlt,
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
   const menuTopPx = useMenuTopOffsetPx();
+  const { resolvedTheme } = useTheme();
   /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
   const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
 
-  const [flowActionsEl, setFlowActionsEl] =
-    React.useState<HTMLDivElement | null>(null);
   const [stickyActionsEl, setStickyActionsEl] =
     React.useState<HTMLDivElement | null>(null);
-  const [flowNestedEl, setFlowNestedEl] = React.useState<HTMLDivElement | null>(
-    null,
-  );
 
   const [stuck, setStuck] = React.useState(false);
   const stuckRef = React.useRef(false);
-
-  const [flowMinH, setFlowMinH] = React.useState(44);
-
-  React.useLayoutEffect(() => {
-    const el = flowActionsEl;
-    if (!el || stuck) return;
-    const measure = () => {
-      const h = Math.ceil(el.getBoundingClientRect().height);
-      if (h > 0) setFlowMinH(h);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [stuck, flowActionsEl]);
 
   React.useEffect(() => {
     const sentinel = bannerBottomSentinelRef.current;
     if (!sentinel) return;
 
     const mq = window.matchMedia('(min-width: 768px)');
-    const HYST = 12;
     let raf = 0;
 
     const tick = () => {
@@ -113,8 +117,9 @@ export function DhoStickySpaceChrome({
       }
       const bannerBottom = sentinel.getBoundingClientRect().bottom;
       let next = stuckRef.current;
-      if (!next && bannerBottom <= menuTopPx) next = true;
-      if (next && bannerBottom >= menuTopPx + HYST) next = false;
+      const appearAt = menuTopPx + STICKY_APPEAR_OFFSET_PX;
+      if (!next && bannerBottom <= appearAt - 1) next = true;
+      if (next && bannerBottom >= appearAt + STICKY_HYSTERESIS_PX) next = false;
       if (next !== stuckRef.current) {
         stuckRef.current = next;
         setStuck(next);
@@ -140,24 +145,41 @@ export function DhoStickySpaceChrome({
 
   const logoSrc = logoUrl || defaultLogoSrc;
 
-  const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
-  const nestedPortalTarget = nestedSpacesSlot ? flowNestedEl : null;
+  const actionsPortalTarget = stuck ? stickyActionsEl : null;
+  // During hydration `resolvedTheme` can be undefined briefly; default to dark
+  // to avoid flashing a light (white) secondary banner in dark mode sessions.
+  const isDark = resolvedTheme !== 'light';
 
   return (
     <>
       <div
         className={cn(
-          /* Leave room for main-column scrollbar (narrow-scrollbar ~8–12px) so it is not painted under this bar */
-          'pointer-events-none fixed left-[var(--sidebar-left-width,0px)] z-[25] hidden md:block',
-          'right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))]',
-          'bg-background supports-[backdrop-filter]:bg-background/85 supports-[backdrop-filter]:backdrop-blur-md',
-          'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/80',
-          'transition-[opacity,transform] duration-200 ease-linear motion-reduce:transition-none',
+          /*
+           * Use live panel inset vars (non-animated) so sticky chrome stays physically attached
+           * to panel edges while users drag-resize left/right sidebars.
+           */
+          'pointer-events-none fixed left-[var(--panel-left-inset,var(--sidebar-left-width,0px))] z-[25] hidden md:block',
+          'right-[var(--panel-right-inset,calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,0px)))]',
+          'overflow-hidden border-x border-b border-border/75',
+          'supports-[backdrop-filter]:backdrop-blur-md',
+          'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10',
+          'transition-[opacity,transform,box-shadow] duration-250 ease-linear motion-reduce:transition-none',
           stuck
             ? 'pointer-events-auto translate-y-0 opacity-100'
             : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
         )}
-        style={{ top: 'var(--menu-top-height, 4rem)' }}
+        style={{
+          top: 'var(--menu-top-height, 70px)',
+          backgroundColor: isDark
+            ? 'rgba(7,10,16,0.92)'
+            : 'rgba(248,250,252,0.94)',
+          backgroundImage: isDark
+            ? 'linear-gradient(to right, rgba(0,0,0,0.58), rgba(0,0,0,0.42), rgba(0,0,0,0.5)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 14%, transparent), transparent 55%)'
+            : 'linear-gradient(to right, rgba(255,255,255,0.78), rgba(255,255,255,0.64), rgba(255,255,255,0.74)), linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) 11%, transparent), transparent 58%)',
+          boxShadow: isDark
+            ? '0 10px 28px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)'
+            : '0 10px 24px -20px rgba(15,23,42,0.26), inset 0 1px 0 rgba(255,255,255,0.78)',
+        }}
         aria-hidden={!stuck}
       >
         <div className="mx-auto flex min-h-11 max-w-container-2xl items-center gap-3 px-4 py-2.5 sm:px-6 md:min-h-[52px] md:py-3 md:px-8">
@@ -187,16 +209,7 @@ export function DhoStickySpaceChrome({
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:flex-nowrap md:gap-x-4">
-          <div className="flex min-w-0 flex-1 items-center">
-            {breadcrumbsRow}
-          </div>
-          {nestedSpacesSlot ? (
-            <div ref={setFlowNestedEl} className="shrink-0" />
-          ) : null}
-        </div>
-
+      <div className="flex flex-col">
         <div className="relative">
           {banner}
           <div
@@ -205,23 +218,10 @@ export function DhoStickySpaceChrome({
             aria-hidden
           />
         </div>
-
-        <div
-          ref={setFlowActionsEl}
-          className={cn(
-            /* Same min-height as HumanChatPanelTabs so bottom borders align with chat panel */
-            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
-            stuck && 'pointer-events-none invisible opacity-0',
-          )}
-          style={stuck ? { minHeight: flowMinH } : undefined}
-        />
       </div>
 
       {actionsPortalTarget
         ? createPortal(actionsSlot, actionsPortalTarget)
-        : null}
-      {nestedSpacesSlot && nestedPortalTarget
-        ? createPortal(nestedSpacesSlot, nestedPortalTarget)
         : null}
     </>
   );

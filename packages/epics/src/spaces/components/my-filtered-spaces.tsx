@@ -34,12 +34,14 @@ export function MyFilteredSpaces({
   spaces: Space[];
   showLoadMore?: boolean;
 }) {
-  const { person } = useMe();
-  const { web3SpaceIds } = useMemberWeb3SpaceIds({
-    personAddress: person?.address as Address | undefined,
-  });
+  const { person, isLoading: isLoadingPerson } = useMe();
+  const { web3SpaceIds, isLoading: isLoadingMemberSpaceIds } =
+    useMemberWeb3SpaceIds({
+      personAddress: person?.address as Address | undefined,
+    });
   const [hideArchivedSpaces, setHideArchivedSpaces] = React.useState(true);
   const tSpaces = useTranslations('Spaces');
+  const tMyWallet = useTranslations('MyWallet');
 
   const memberFilteredSpaces = React.useMemo(
     () => filterSpaces(spaces, person?.slug, web3SpaceIds),
@@ -52,6 +54,11 @@ export function MyFilteredSpaces({
       useGeneralState: false,
     });
 
+  const isLoadingSpaces =
+    isLoadingPerson ||
+    (Boolean(person?.address) && isLoadingMemberSpaceIds) ||
+    isDiscoverabilityLoading;
+
   const displayedSpaces = React.useMemo(() => {
     if (hideArchivedSpaces) {
       return filteredSpaces.filter((space) => !isSpaceArchived(space));
@@ -62,7 +69,7 @@ export function MyFilteredSpaces({
   return (
     <div className="space-y-6">
       <SectionFilter
-        count={displayedSpaces.length}
+        count={isLoadingSpaces ? tMyWallet('loading') : displayedSpaces.length}
         label={tSpaces('mySpacesLabel')}
       >
         <label
@@ -79,12 +86,18 @@ export function MyFilteredSpaces({
           <span>{tSpaces('hideArchivedSpaces')}</span>
         </label>
       </SectionFilter>
-      <SpaceCardList
-        lang={lang}
-        spaces={displayedSpaces}
-        showLoadMore={showLoadMore}
-        showExitButton={true}
-      />
+      {isLoadingSpaces ? (
+        <Text className="text-3 text-muted-foreground">
+          {tMyWallet('loading')}
+        </Text>
+      ) : (
+        <SpaceCardList
+          lang={lang}
+          spaces={displayedSpaces}
+          showLoadMore={showLoadMore}
+          showExitButton={true}
+        />
+      )}
     </div>
   );
 }

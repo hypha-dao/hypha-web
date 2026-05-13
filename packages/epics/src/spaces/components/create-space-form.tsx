@@ -88,6 +88,8 @@ const DEFAULT_VALUES = {
   title: '',
   description: '',
   logoUrl: '',
+  ecosystemLogoUrlLight: undefined,
+  ecosystemLogoUrlDark: undefined,
   slug: '',
   leadImage: '',
   categories: [] as Category[],
@@ -158,6 +160,7 @@ export const SpaceForm = ({
 
   const parentSpaceId = form.watch('parentId');
   const slug = form.watch('slug');
+  const isRootConfiguration = label === 'configure' && parentSpaceId === null;
 
   const {
     exists: slugExists,
@@ -452,6 +455,7 @@ export const SpaceForm = ({
               ) : null}
               <ButtonClose
                 closeUrl={closeUrl}
+                preferBack={true}
                 className="px-0 md:px-3 align-top"
               />
             </div>
@@ -468,6 +472,14 @@ export const SpaceForm = ({
                         <UploadAvatar
                           {...field}
                           maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                          accept={{
+                            'image/gif': [],
+                            'image/png': [],
+                            'image/jpg': [],
+                            'image/jpeg': [],
+                            'image/webp': [],
+                            'image/svg+xml': [],
+                          }}
                           defaultImage={
                             typeof values?.logoUrl === 'string'
                               ? values?.logoUrl
@@ -475,7 +487,6 @@ export const SpaceForm = ({
                               ? defaultValues?.logoUrl
                               : undefined
                           }
-                          required={true}
                         />
                       </FormControl>
                       <FormMessage />
@@ -623,6 +634,114 @@ export const SpaceForm = ({
             )}
           />
         )}
+        {isRootConfiguration ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="ecosystemLogoUrlLight"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">
+                    {tSpaces('uploadEcosystemLogoLight')}
+                  </FormLabel>
+                  <FormControl>
+                    <UploadLeadImage
+                      {...field}
+                      maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                      aspectRatio={12 / 3}
+                      enableImageResizer
+                      cropDialogLabels={{
+                        title: tCommon('uploadLeadImage.cropTitle'),
+                        description: tCommon('uploadLeadImage.cropDescription'),
+                        cancel: tCommon('uploadLeadImage.cancel'),
+                        confirm: tCommon('uploadLeadImage.confirm'),
+                      }}
+                      messages={{
+                        dropHere: tCommon('uploadLeadImage.dropHere'),
+                        fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                        uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                      }}
+                      accept={{
+                        'image/gif': [],
+                        'image/png': [],
+                        'image/jpg': [],
+                        'image/jpeg': [],
+                        'image/webp': [],
+                        'image/svg+xml': [],
+                      }}
+                      className="w-full max-w-[14rem] rounded-md border border-border bg-muted/30"
+                      imageClassName="object-contain bg-white p-2"
+                      defaultImage={
+                        typeof values?.ecosystemLogoUrlLight === 'string'
+                          ? values?.ecosystemLogoUrlLight
+                          : typeof defaultValues?.ecosystemLogoUrlLight ===
+                            'string'
+                          ? defaultValues?.ecosystemLogoUrlLight
+                          : undefined
+                      }
+                    />
+                  </FormControl>
+                  <p className="text-1 text-neutral-11">
+                    {tSpaces('ecosystemLogoLightDescription')}
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ecosystemLogoUrlDark"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">
+                    {tSpaces('uploadEcosystemLogoDark')}
+                  </FormLabel>
+                  <FormControl>
+                    <UploadLeadImage
+                      {...field}
+                      maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                      aspectRatio={12 / 3}
+                      enableImageResizer
+                      cropDialogLabels={{
+                        title: tCommon('uploadLeadImage.cropTitle'),
+                        description: tCommon('uploadLeadImage.cropDescription'),
+                        cancel: tCommon('uploadLeadImage.cancel'),
+                        confirm: tCommon('uploadLeadImage.confirm'),
+                      }}
+                      messages={{
+                        dropHere: tCommon('uploadLeadImage.dropHere'),
+                        fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                        uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                      }}
+                      accept={{
+                        'image/gif': [],
+                        'image/png': [],
+                        'image/jpg': [],
+                        'image/jpeg': [],
+                        'image/webp': [],
+                        'image/svg+xml': [],
+                      }}
+                      className="w-full max-w-[14rem] rounded-md border border-border bg-muted/30"
+                      imageClassName="object-contain bg-white p-2"
+                      defaultImage={
+                        typeof values?.ecosystemLogoUrlDark === 'string'
+                          ? values?.ecosystemLogoUrlDark
+                          : typeof defaultValues?.ecosystemLogoUrlDark ===
+                            'string'
+                          ? defaultValues?.ecosystemLogoUrlDark
+                          : undefined
+                      }
+                    />
+                  </FormControl>
+                  <p className="text-1 text-neutral-11">
+                    {tSpaces('ecosystemLogoDarkDescription')}
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        ) : null}
         <FormField
           control={form.control}
           name="categories"

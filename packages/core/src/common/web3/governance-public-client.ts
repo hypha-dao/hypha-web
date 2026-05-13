@@ -1,4 +1,4 @@
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, fallback, http, type PublicClient } from 'viem';
 import type { Chain } from 'viem/chains';
 import { base } from 'viem/chains';
 
@@ -12,7 +12,7 @@ const governanceChains: Record<number, Chain> = {
  * Public client for reading governance txs (same chain as `getGovernanceChainId()`).
  * Prefer this over the legacy `public-client` singleton for receipt waits.
  */
-export function createGovernancePublicClient() {
+export function createGovernancePublicClient(): PublicClient {
   const chainId = getGovernanceChainId();
   const chain = governanceChains[chainId];
   if (!chain) {
@@ -23,7 +23,10 @@ export function createGovernancePublicClient() {
   return createPublicClient({
     chain,
     transport: process.env.NEXT_PUBLIC_RPC_URL
-      ? http(process.env.NEXT_PUBLIC_RPC_URL)
-      : http(),
-  });
+      ? fallback([
+          http(process.env.NEXT_PUBLIC_RPC_URL),
+          http('https://mainnet.base.org'),
+        ])
+      : http('https://mainnet.base.org'),
+  }) as unknown as PublicClient;
 }

@@ -38,7 +38,7 @@ Relevant options (see [ICreateClientOpts](https://matrix-org.github.io/matrix-js
 | **`forceTURN`** | Force relay via TURN (stricter NAT/firewall behavior). |
 | **`fallbackICEServerAllowed`** | Allow SDK fallback ICE if the homeserver offers none. |
 | **`iceCandidatePoolSize`** | Pre-gather candidates for faster setup (privacy/battery tradeoff). |
-| **`useE2eForGroupCall`** | Encrypt **to-device** signaling for group calls (default **true** in typings). |
+| **`useE2eForGroupCall`** | Encrypt **to-device** signaling for group calls where supported. Keep **false** on `matrix-js-sdk@40.x`; its Rust crypto path throws `Unimplemented` for encrypted group-call VoIP signaling. |
 | **`useLivekitForGroupCalls`** | If **true**, the SDK **does not** establish WebRTC media for group calls; it creates **signaling** only so the app can attach **LiveKit** (or similar) for media. |
 | **`livekitServiceURL`** | Service URL used when integrating LiveKit-style flows. |
 | **`isVoipWithNoMediaAllowed`** | Allow joining group call **without** local A/V (interpretation per SDK docs). |

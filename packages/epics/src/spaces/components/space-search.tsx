@@ -21,8 +21,6 @@ export const SpaceSearch = ({ suggestions, value }: SpaceSearchProps) => {
   const { replace } = useRouter();
 
   const handleSearch = useDebouncedCallback((term: string) => {
-    console.log(`Searching... ${term}`);
-
     const params = new URLSearchParams(searchParams);
     if (term) {
       params.set('query', term);
@@ -37,7 +35,7 @@ export const SpaceSearch = ({ suggestions, value }: SpaceSearchProps) => {
       <Input
         type="search"
         placeholder={t('findASpace')}
-        leftIcon={<SearchIcon size="16px" />}
+        leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
         defaultValue={value}
         onChange={(e) => handleSearch(e.target.value)}
       />

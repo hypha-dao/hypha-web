@@ -23,7 +23,8 @@ import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
 import z from 'zod';
 
-const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
+const TOKENS_SAFE = Array.isArray(TOKENS) ? TOKENS : [];
+const PAYMENT_TOKEN = TOKENS_SAFE.find((t) => t.symbol === 'USDC');
 const chainId = getGovernanceChainId();
 
 interface InvestInHyphaInput {
@@ -50,6 +51,9 @@ export const useBuyHyphaTokensMutationsWeb3Rpc = ({
       if (!client) {
         throw new Error('Smart wallet client not available');
       }
+      if (!PAYMENT_TOKEN?.address) {
+        throw new Error('USDC payment token not configured');
+      }
 
       const duration = await publicClient.readContract(
         getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
@@ -57,13 +61,11 @@ export const useBuyHyphaTokensMutationsWeb3Rpc = ({
 
       const transactions: z.infer<typeof transactionSchema>[] = [];
 
-      const usdcDecimals = await getTokenDecimals(
-        PAYMENT_TOKEN?.address as `0x${string}`,
-      );
+      const usdcDecimals = await getTokenDecimals(PAYMENT_TOKEN.address);
       const amount = parseUnits(arg.usdcAmount, usdcDecimals ?? 6);
 
       transactions.push({
-        target: PAYMENT_TOKEN?.address as `0x${string}`,
+        target: PAYMENT_TOKEN.address,
         value: 0,
         data: encodeFunctionData({
           abi: erc20Abi,

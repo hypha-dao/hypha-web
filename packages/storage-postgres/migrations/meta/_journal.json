@@ -341,8 +341,15 @@
     {
       "idx": 48,
       "version": "7",
-      "when": 1775300000000,
-      "tag": "0048_energy_communities",
+      "when": 1777800000000,
+      "tag": "0048_ecosystem_logo_theme_variants",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1777800000001,
+      "tag": "0049_energy_communities",
       "breakpoints": true
     }
   ]

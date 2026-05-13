@@ -49,11 +49,19 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await getAllSpaces({
-    search: query?.trim() || undefined,
-    parentOnly: false,
-    omitArchived: true,
-  });
+  let spaces: Space[] = [];
+  try {
+    spaces = await getAllSpaces({
+      search: query?.trim() || undefined,
+      parentOnly: false,
+      omitArchived: true,
+    });
+  } catch (error) {
+    console.error('[network/page] Failed to load spaces', {
+      error,
+      query: query?.trim() || undefined,
+    });
+  }
 
   const uniqueCategories = extractUniqueCategories(spaces);
 

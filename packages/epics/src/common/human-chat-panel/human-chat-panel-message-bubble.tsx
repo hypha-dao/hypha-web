@@ -38,6 +38,10 @@ import {
   HumanChatPanelMessageOverflow,
   pushRecentChatReaction,
 } from './human-chat-panel-message-overflow';
+import {
+  hyphaDhoSlugFromUrl,
+  isHyphaDhoChatMessageUrl,
+} from './human-chat-message-link';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
 import {
   matrixMemberDisplayLabelFromRoom,
@@ -858,150 +862,6 @@ function formatTimestamp(
   return t('timestampDate', { date: dateStr, time: timeStr });
 }
 
-/**
- * Split plaintext into runs of literal text vs full Matrix MXIDs (`@local:homeserver`).
- * A naive `@(\w+)…` regex breaks on the colon inside bridged Privy locals — root cause of ugly pills.
- */
-function splitPlainTextMatrixMentions(
-  text: string,
-): Array<{ kind: 'text'; value: string } | { kind: 'mxid'; full: string }> {
-  const out: Array<
-    { kind: 'text'; value: string } | { kind: 'mxid'; full: string }
-  > = [];
-  const re = new RegExp(MATRIX_MXID_IN_PLAIN_TEXT.source, 'g');
-  let lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    const mid = normalizePlainTextMxidCaptureFromMatch(
-      m[1] ?? '',
-      text,
-      m.index,
-      m[0].length,
-    );
-    if (!mid) continue;
-    const full = `@${mid}`;
-    if (m.index > lastIndex) {
-      out.push({ kind: 'text', value: text.slice(lastIndex, m.index) });
-    }
-    out.push({ kind: 'mxid', full });
-    // `full` can be shorter than m[0] when normalizePlainTextMxidCaptureFromMatch strips
-    // a sentence-punctuation colon; the regex still advances to m.index + m[0].length, while
-    // the following text slice uses lastIndex so the stripped `:` remains in a plain 'text' run.
-    lastIndex = m.index + full.length;
-  }
-  if (lastIndex < text.length) {
-    out.push({ kind: 'text', value: text.slice(lastIndex) });
-  }
-  return out;
-}
-
-/**
- * Discord-like mention chip: translucent **accent-9** (same hue as primary buttons `bg-accent-9`),
- * inset ring — not a flat “notification” blue box.
- */
-function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
-  return cn(
-    /* `min-h` + vertical centering so the chip fills the message line box (not only the glyph bbox). */
-    'inline-flex min-h-[1.35em] w-fit max-w-full min-w-0 items-center self-baseline rounded-md px-[5px] py-0.5 text-[13px] font-semibold leading-snug tracking-tight',
-    /* Foreground text keeps contrast on any space-derived accent tint (lime, etc.). */
-    onViewerMentionTintRow
-      ? 'bg-accent-9/22 text-foreground ring-1 ring-inset ring-accent-9/45 dark:bg-accent-9/28 dark:text-foreground dark:ring-accent-10/50'
-      : 'bg-muted/70 text-foreground ring-1 ring-inset ring-accent-9/35 dark:bg-muted/50 dark:text-foreground dark:ring-accent-10/40',
-  );
-}
-
-/**
- * Render plaintext with Matrix MXIDs as pills showing room display names (`resolveMx`).
- * Non‑MXID `@handles` keep optional Discord-style pills (no colon in capture).
- */
-function renderTextWithMentions(
-  text: string,
-  resolveMx: (matrixUserId: string) => string,
-  viewerMentionTintRow = false,
-): React.ReactNode[] {
-  const segments = splitPlainTextMatrixMentions(text);
-  /**
-   * Discord-style `@handle` pills — require a left boundary so `jane@example.com`
-   * does not render `@example` as a pill.
-   */
-  const localHandleRe = /(^|[^\w.+-])@([^\s@]{1,100}?)(?=\s|$|[.,!?;:])/g;
-
-  const mapPlainFragment = (
-    fragment: string,
-    keyBase: string,
-  ): React.ReactNode[] => {
-    const chunks: React.ReactNode[] = [];
-    let last = 0;
-    let mh: RegExpExecArray | null;
-    const reLocal = new RegExp(localHandleRe.source, localHandleRe.flags);
-    let keyN = 0;
-    while ((mh = reLocal.exec(fragment)) !== null) {
-      const prefix = mh[1] ?? '';
-      const handle = mh[2]?.trim() ?? '';
-      const mentionStart = mh.index + prefix.length;
-      if (mentionStart > last) {
-        chunks.push(
-          <span key={`${keyBase}-t-${keyN++}`}>
-            {fragment.slice(last, mentionStart)}
-          </span>,
-        );
-      }
-      chunks.push(
-        <span
-          key={`${keyBase}-at-${keyN++}`}
-          className={chatMentionPillClass(viewerMentionTintRow)}
-        >
-          @{handle}
-        </span>,
-      );
-      last = mentionStart + handle.length + 1;
-    }
-    if (last < fragment.length) {
-      chunks.push(
-        <span key={`${keyBase}-t-${keyN++}`}>{fragment.slice(last)}</span>,
-      );
-    }
-    if (chunks.length === 0 && fragment) {
-      return [<span key={keyBase}>{fragment}</span>];
-    }
-    return chunks;
-  };
-
-  const parts: React.ReactNode[] = [];
-  let segIdx = 0;
-  for (const seg of segments) {
-    if (seg.kind === 'mxid') {
-      const label = resolveMx(seg.full).trim();
-      const displayLabel = label
-        ? label.startsWith('@')
-          ? label
-          : `@${label}`
-        : seg.full;
-      parts.push(
-        <span
-          key={`mx-${segIdx}-${seg.full}`}
-          title={seg.full}
-          className={chatMentionPillClass(viewerMentionTintRow)}
-        >
-          {displayLabel}
-        </span>,
-      );
-    } else if (seg.value) {
-      parts.push(...mapPlainFragment(seg.value, `seg-${segIdx}`));
-    }
-    segIdx += 1;
-  }
-  return parts;
-}
-
-function resolveMatrixPlainAndHtmlFragments(
-  fragment: string,
-  resolveMx: (matrixUserId: string) => string,
-  viewerMentionTintRow = false,
-): React.ReactNode[] {
-  return renderTextWithMentions(fragment, resolveMx, viewerMentionTintRow);
-}
-
 type ReplyConnectorGeometry = {
   width: number;
   height: number;
@@ -1206,6 +1066,371 @@ function formatPersonDisplayName(p: {
   if (full) return full;
   if (p.nickname?.trim()) return p.nickname.trim();
   return '';
+}
+
+/**
+ * Split plaintext into runs of literal text vs full Matrix MXIDs (`@local:homeserver`).
+ * A naive `@(\w+)…` regex breaks on the colon inside bridged Privy locals — root cause of ugly pills.
+ */
+function splitPlainTextMatrixMentions(
+  text: string,
+): Array<{ kind: 'text'; value: string } | { kind: 'mxid'; full: string }> {
+  const out: Array<
+    { kind: 'text'; value: string } | { kind: 'mxid'; full: string }
+  > = [];
+  const re = new RegExp(MATRIX_MXID_IN_PLAIN_TEXT.source, 'g');
+  let lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const mid = normalizePlainTextMxidCaptureFromMatch(
+      m[1] ?? '',
+      text,
+      m.index,
+      m[0].length,
+    );
+    if (!mid) continue;
+    const full = `@${mid}`;
+    if (m.index > lastIndex) {
+      out.push({ kind: 'text', value: text.slice(lastIndex, m.index) });
+    }
+    out.push({ kind: 'mxid', full });
+    lastIndex = m.index + full.length;
+  }
+  if (lastIndex < text.length) {
+    out.push({ kind: 'text', value: text.slice(lastIndex) });
+  }
+  return out;
+}
+
+/**
+ * Discord-like mention: soft fill, **no ring**, minimal horizontal padding so the box hugs `@name`.
+ */
+function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
+  return cn(
+    'inline-flex min-h-[1.35em] w-fit max-w-full min-w-0 items-center self-baseline rounded px-1 py-0 text-[13px] font-semibold leading-snug tracking-tight',
+    onViewerMentionTintRow
+      ? 'bg-accent-9/22 text-foreground dark:bg-accent-9/28 dark:text-foreground'
+      : 'bg-muted/70 text-foreground dark:bg-muted/50 dark:text-foreground',
+  );
+}
+
+/** Strip trailing punctuation — linear scan (avoid polynomial regex on user text). */
+function trimTrailingUrlPunctuation(raw: string): string {
+  let s = raw;
+  /** `. , ; : ! ?` — safe to peel from the end of a pasted URL. */
+  while (s.length > 0) {
+    const ch = s[s.length - 1];
+    if (
+      ch === '.' ||
+      ch === ',' ||
+      ch === ';' ||
+      ch === ':' ||
+      ch === '!' ||
+      ch === '?'
+    ) {
+      s = s.slice(0, -1);
+      continue;
+    }
+    break;
+  }
+  /**
+   * `)` / `]` / `}` — strip only *extra* closers (e.g. `…Foo))` ), not the
+   * closing paren in `Function_(mathematics)` (opens > closes in prefix).
+   */
+  const stripExtraCloser = (
+    openCh: '(' | '[' | '{',
+    closeCh: ')' | ']' | '}',
+  ) => {
+    while (s.length > 0 && s[s.length - 1] === closeCh) {
+      const prefix = s.slice(0, -1);
+      let opens = 0;
+      let closes = 0;
+      for (let i = 0; i < prefix.length; i++) {
+        const c = prefix[i];
+        if (c === openCh) opens++;
+        else if (c === closeCh) closes++;
+      }
+      if (opens > closes) break;
+      s = prefix;
+    }
+  };
+  stripExtraCloser('(', ')');
+  stripExtraCloser('[', ']');
+  stripExtraCloser('{', '}');
+  return s;
+}
+
+function nextHttpSchemeIndex(text: string, from: number): number {
+  const httpIdx = text.indexOf('http://', from);
+  const httpsIdx = text.indexOf('https://', from);
+  const hi = httpsIdx >= 0 ? httpsIdx : Number.POSITIVE_INFINITY;
+  const lo = httpIdx >= 0 ? httpIdx : Number.POSITIVE_INFINITY;
+  const start = Math.min(lo, hi);
+  return Number.isFinite(start) ? start : -1;
+}
+
+type PlainUrlPiece =
+  | { kind: 'text'; value: string }
+  | { kind: 'url'; href: string; trailing: string };
+
+function splitPlainTextUrls(text: string): PlainUrlPiece[] {
+  const out: PlainUrlPiece[] = [];
+  let last = 0;
+  const n = text.length;
+  while (last < n) {
+    const start = nextHttpSchemeIndex(text, last);
+    if (start < 0) {
+      out.push({ kind: 'text', value: text.slice(last) });
+      break;
+    }
+    if (start > last) {
+      out.push({ kind: 'text', value: text.slice(last, start) });
+    }
+    const schemeLen = text.startsWith('https://', start) ? 8 : 7;
+    let end = start + schemeLen;
+    while (end < n) {
+      const ch = text[end];
+      if (
+        ch === ' ' ||
+        ch === '\t' ||
+        ch === '\n' ||
+        ch === '\r' ||
+        ch === '<' ||
+        ch === '>' ||
+        ch === '"' ||
+        ch === "'"
+      ) {
+        break;
+      }
+      end++;
+    }
+    const raw = text.slice(start, end);
+    const href = trimTrailingUrlPunctuation(raw);
+    const trailing = raw.slice(href.length);
+    out.push({ kind: 'url', href, trailing });
+    last = start + raw.length;
+  }
+  return out.length > 0 ? out : [{ kind: 'text', value: text }];
+}
+
+const chatBodyLinkClass =
+  'break-all font-medium text-primary underline decoration-primary/35 underline-offset-2 hover:decoration-primary/70';
+
+/** Discord-style compact chip for Hypha chat deep links (short `?msg=` URLs). */
+const chatDeepLinkPillClass =
+  'inline-flex max-w-[min(100%,18rem)] min-w-0 items-center gap-1 self-baseline truncate rounded-md bg-indigo-100 px-2 py-0.5 text-[13px] font-semibold leading-snug text-indigo-950 ring-1 ring-inset ring-indigo-300/40 dark:bg-indigo-950/50 dark:text-indigo-50 dark:ring-indigo-400/25';
+
+function shortMatrixEventLabel(id: string): string {
+  const t = id.trim();
+  if (!t) return '';
+  if (t.startsWith('$') && t.length > 14) return `${t.slice(0, 10)}…`;
+  return t.length > 16 ? `${t.slice(0, 12)}…` : t;
+}
+
+function renderPlainUrlLink(href: string, key: string): ReactNode {
+  const safe = href.trim();
+  if (!safe) return null;
+  if (isHyphaDhoChatMessageUrl(safe)) {
+    const slug = hyphaDhoSlugFromUrl(safe) ?? 'chat';
+    let msgShort = '';
+    try {
+      const msg = new URL(safe).searchParams.get('msg');
+      if (msg) msgShort = shortMatrixEventLabel(msg);
+    } catch {
+      // ignore
+    }
+    const label = msgShort ? `# ${slug} · ${msgShort}` : `# ${slug}`;
+    return (
+      <a
+        key={key}
+        href={safe}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={safe}
+        className={chatDeepLinkPillClass}
+      >
+        {label}
+      </a>
+    );
+  }
+  return (
+    <a
+      key={key}
+      href={safe}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={chatBodyLinkClass}
+    >
+      {safe}
+    </a>
+  );
+}
+
+/**
+ * `@mxid` pill in message body: sync label from room/roster may be a technical bridged ID after reload.
+ * Mirror sender-row logic — resolve Hypha Person via matrix_user_links when the label still looks synthetic.
+ */
+function MxidMentionPill({
+  fullMxid,
+  syncLabel,
+  viewerMentionTintRow,
+}: {
+  fullMxid: string;
+  syncLabel: string;
+  viewerMentionTintRow: boolean;
+}) {
+  const needsProfile = needsHyphaProfileForMatrixLabel(syncLabel, fullMxid);
+  const { privyUserId: linkedSub, isLoading: loadingLink } =
+    useUserPrivyIdByMatrixId({
+      matrixUserId: needsProfile ? fullMxid : undefined,
+    });
+  const { person, isLoading: loadingPerson } = usePersonBySub({
+    sub: linkedSub,
+  });
+
+  const displayLabel = useMemo(() => {
+    const fromPerson = person ? formatPersonDisplayName(person) : '';
+    const resolved = fromPerson.trim() || syncLabel.trim();
+    if (!resolved) return fullMxid;
+    return resolved.startsWith('@') ? resolved : `@${resolved}`;
+  }, [person, syncLabel, fullMxid]);
+
+  const loading =
+    needsProfile && (loadingLink || (Boolean(linkedSub) && loadingPerson));
+
+  if (loading) {
+    return (
+      <Skeleton
+        className="inline-block rounded align-baseline"
+        loading
+        width={100}
+        height={14}
+      />
+    );
+  }
+
+  return (
+    <span
+      title={fullMxid}
+      className={chatMentionPillClass(viewerMentionTintRow)}
+    >
+      {displayLabel}
+    </span>
+  );
+}
+
+/**
+ * Render plaintext with Matrix MXIDs as pills showing room display names (`resolveMx`).
+ * Non‑MXID `@handles` keep optional Discord-style pills (no colon in capture).
+ */
+export function renderTextWithMentions(
+  text: string,
+  resolveMx: (matrixUserId: string) => string,
+  viewerMentionTintRow = false,
+): React.ReactNode[] {
+  const segments = splitPlainTextMatrixMentions(text);
+  const localHandleRe = /(^|[^\w.+-])@([^\s@]{1,100}?)(?=\s|$|[.,!?;:])/g;
+
+  const mapPlainFragmentWithMentionsOnly = (
+    fragment: string,
+    keyBase: string,
+  ): React.ReactNode[] => {
+    const chunks: React.ReactNode[] = [];
+    let last = 0;
+    let mh: RegExpExecArray | null;
+    const reLocal = new RegExp(localHandleRe.source, localHandleRe.flags);
+    let keyN = 0;
+    while ((mh = reLocal.exec(fragment)) !== null) {
+      const prefix = mh[1] ?? '';
+      const handle = mh[2]?.trim() ?? '';
+      const mentionStart = mh.index + prefix.length;
+      if (mentionStart > last) {
+        chunks.push(
+          <span key={`${keyBase}-t-${keyN++}`}>
+            {fragment.slice(last, mentionStart)}
+          </span>,
+        );
+      }
+      chunks.push(
+        <span
+          key={`${keyBase}-at-${keyN++}`}
+          className={chatMentionPillClass(viewerMentionTintRow)}
+        >
+          @{handle}
+        </span>,
+      );
+      last = mentionStart + handle.length + 1;
+    }
+    if (last < fragment.length) {
+      chunks.push(
+        <span key={`${keyBase}-t-${keyN++}`}>{fragment.slice(last)}</span>,
+      );
+    }
+    if (chunks.length === 0 && fragment) {
+      return [<span key={keyBase}>{fragment}</span>];
+    }
+    return chunks;
+  };
+
+  const mapPlainFragment = (
+    fragment: string,
+    keyBase: string,
+  ): React.ReactNode[] => {
+    const pieces = splitPlainTextUrls(fragment);
+    const out: React.ReactNode[] = [];
+    let pieceIdx = 0;
+    for (const piece of pieces) {
+      if (piece.kind === 'text') {
+        out.push(
+          ...mapPlainFragmentWithMentionsOnly(
+            piece.value,
+            `${keyBase}-tx${pieceIdx++}`,
+          ),
+        );
+      } else {
+        const linkKey = `${keyBase}-url${pieceIdx++}`;
+        const linkEl = renderPlainUrlLink(piece.href, linkKey);
+        if (linkEl) out.push(linkEl);
+        if (piece.trailing) {
+          out.push(
+            ...mapPlainFragmentWithMentionsOnly(
+              piece.trailing,
+              `${keyBase}-trail${pieceIdx++}`,
+            ),
+          );
+        }
+      }
+    }
+    return out;
+  };
+
+  const parts: React.ReactNode[] = [];
+  let segIdx = 0;
+  for (const seg of segments) {
+    if (seg.kind === 'mxid') {
+      const syncLabel = resolveMx(seg.full).trim();
+      parts.push(
+        <MxidMentionPill
+          key={`mx-${segIdx}-${seg.full}`}
+          fullMxid={seg.full}
+          syncLabel={syncLabel}
+          viewerMentionTintRow={viewerMentionTintRow}
+        />,
+      );
+    } else if (seg.value) {
+      parts.push(...mapPlainFragment(seg.value, `seg-${segIdx}`));
+    }
+    segIdx += 1;
+  }
+  return parts;
+}
+
+function resolveMatrixPlainAndHtmlFragments(
+  fragment: string,
+  resolveMx: (matrixUserId: string) => string,
+  viewerMentionTintRow = false,
+): React.ReactNode[] {
+  return renderTextWithMentions(fragment, resolveMx, viewerMentionTintRow);
 }
 
 function reactionTooltipText(
@@ -1439,7 +1664,7 @@ export function HumanChatPanelMessageBubble({
           'border-l-[3px] border-l-accent-9 bg-muted/75 dark:border-l-accent-10 dark:bg-muted/55',
         unreadBoundary &&
           !highlightMentionForViewer &&
-          'border-l-[3px] border-l-accent-8 bg-accent-1 dark:border-l-accent-9 dark:bg-accent-2/45',
+          'border-l-[3px] border-l-border bg-muted/75 dark:border-l-border dark:bg-muted/55',
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}

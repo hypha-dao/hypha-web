@@ -1,1 +1,6 @@
-export const COHERENCE_PRIORITIES = ['high', 'medium', 'low'] as const;
+export const COHERENCE_PRIORITIES = [
+  'critical',
+  'high',
+  'medium',
+  'low',
+] as const;

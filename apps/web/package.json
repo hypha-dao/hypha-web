@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack --port 3000",
-    "build": "next build",
+    "build": "node --max-old-space-size=6144 ./node_modules/next/dist/bin/next build",
     "start": "next start",
     "lint": "next lint",
     "check-types": "tsc --noEmit",
@@ -42,6 +42,7 @@
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
     "@hypha-platform/config-typescript": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.11",
     "@types/d3": "^7.4.3",
     "@types/node": "^22.14.0",
     "@types/react": "^19.1.2",
