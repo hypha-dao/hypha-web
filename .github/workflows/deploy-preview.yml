@@ -139,13 +139,22 @@ jobs:
           vercel env pull --environment=preview --token=${{ env.VERCEL_TOKEN }}
           pnpm run migrate
 
+      # Neon schema-diff can return HTTP 408 if the Control Plane is still catching
+      # up right after migrations. A short pause materially reduces flakes.
+      - name: Wait before Neon schema diff
+        if: needs.detect-changes.outputs.has_migrations == 'true'
+        run: sleep 45
+
       - name: Post Schema Diff Comment to PR
         if: needs.detect-changes.outputs.has_migrations == 'true'
         uses: neondatabase/schema-diff-action@v1
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
           compare_branch: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
+          base_branch: main
+          database: ${{ env.NEON_DATABASE_NAME }}
           api_key: ${{ secrets.NEON_API_KEY }}
+          github-token: ${{ github.token }}
 
       - name: Build Project Artifacts
         env:
