@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  publicClient,
   getSpaceVisibility,
   isMember as isMemberConfig,
   getSpaceDetails,
   getDelegatesForSpace,
   getDelegators,
 } from '@hypha-platform/core/client';
-import { findSelf, getDb } from '@hypha-platform/core/server';
+import { findSelf, getDb, web3Client } from '@hypha-platform/core/server';
 
 export enum TransparencyLevel {
   PUBLIC = 0,
@@ -39,7 +38,7 @@ export async function checkSpaceAccess(
     const spaceIdBigInt =
       typeof spaceId === 'number' ? BigInt(spaceId) : spaceId;
 
-    const visibility = await publicClient.readContract(
+    const visibility = await web3Client.readContract(
       getSpaceVisibility({ spaceId: spaceIdBigInt }),
     );
 
@@ -88,7 +87,7 @@ export async function checkSpaceAccess(
       return { hasAccess: true, userAddress, authToken };
     }
 
-    const isMemberResult = await publicClient.readContract(
+    const isMemberResult = await web3Client.readContract(
       isMemberConfig({
         spaceId: spaceIdBigInt,
         memberAddress: userAddress,
@@ -99,7 +98,7 @@ export async function checkSpaceAccess(
       return { hasAccess: true, userAddress, authToken };
     }
 
-    const delegates = await publicClient.readContract(
+    const delegates = await web3Client.readContract(
       getDelegatesForSpace({ spaceId: spaceIdBigInt }),
     );
 
@@ -108,12 +107,12 @@ export async function checkSpaceAccess(
     );
 
     if (isInDelegates) {
-      const spaceDetails = await publicClient.readContract(
+      const spaceDetails = await web3Client.readContract(
         getSpaceDetails({ spaceId: spaceIdBigInt }),
       );
       const [, , , , members] = spaceDetails;
 
-      const delegators = await publicClient.readContract(
+      const delegators = await web3Client.readContract(
         getDelegators({
           user: userAddress,
           spaceId: spaceIdBigInt,
