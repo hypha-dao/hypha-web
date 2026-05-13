@@ -45,6 +45,14 @@ export const CreateSubspaceForm = ({
     space: { slug: spaceSlug },
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
   const hasNavigatedAfterSuccessRef = React.useRef(false);
+  const closeAfterSuccess = React.useCallback(() => {
+    // In @aside parallel routes, the visible URL can already be the parent path.
+    // Prefer history back to close the overlay state, then hard-fallback to replace.
+    router.back();
+    window.setTimeout(() => {
+      router.replace(successfulUrl);
+    }, 250);
+  }, [router, successfulUrl]);
   const pendingNavigationSeedRef = React.useRef<{
     optimisticSpace: Space;
     organisationSpaces: Space[];
@@ -85,10 +93,10 @@ export const CreateSubspaceForm = ({
           });
           pendingNavigationSeedRef.current = null;
         }
-        router.replace(successfulUrl);
+        closeAfterSuccess();
       })();
     }
-  }, [mutate, progress, router, spaceSlug, successfulUrl]);
+  }, [closeAfterSuccess, mutate, progress, spaceSlug]);
 
   return (
     <SpaceLoadingBackdrop
