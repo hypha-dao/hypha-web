@@ -167,12 +167,25 @@ export async function GET(
       return NextResponse.json({ enabled: false });
     }
 
-    const { hasAccess, response } = await checkSpaceAccess(
-      request,
-      space.web3SpaceId as number,
-    );
-    if (!hasAccess && response) {
-      return response;
+    /**
+     * Gate access via the standard transparency-matrix check, BUT never let a
+     * transient RPC failure inside `checkSpaceAccess` (it calls
+     * `publicClient.readContract(getSpaceVisibility(...))` against a public
+     * Base RPC that throttles aggressively) turn into a 500 here. Everything
+     * we eventually return (community proxy, members, sources, fees…) is
+     * already public on-chain data readable by anyone via Basescan, so on
+     * verifier infrastructure failure we fall through and treat the request
+     * as anonymous-public rather than serving a misleading 500.
+     */
+    const access = await checkSpaceAccess(request, space.web3SpaceId as number);
+    if (!access.hasAccess && access.response) {
+      const status = access.response.status;
+      if (status === 401 || status === 403) {
+        return access.response;
+      }
+      console.warn(
+        `[spaces/energy] checkSpaceAccess returned ${status} — falling through (public on-chain data).`,
+      );
     }
 
     const headersList = await headers();
