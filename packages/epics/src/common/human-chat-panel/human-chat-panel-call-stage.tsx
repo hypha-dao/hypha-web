@@ -354,17 +354,29 @@ export function HumanChatPanelCallStage({
 
   const {
     isVideoCall,
-    shareFeeds,
+    shareFeeds: rawShareFeeds,
     hasLocalWebcam,
     remoteUserMedia,
     missingRemoteUserIds,
     localUserMedia,
-    hasRemotesOrShare,
-    showLocalInMainGrid,
-    showLocalPip,
+    showLocalInMainGrid: rawShowLocalInMainGrid,
+    showLocalPip: rawShowLocalPip,
   } = model;
 
   const isFull = layout === 'fullView';
+  /**
+   * Never render the local display-capture feed in the stage preview. When the user
+   * shares the same window that contains the call UI, rendering this feed causes
+   * recursive "window-in-window" feedback.
+   */
+  const shareFeeds = rawShareFeeds.filter((feed) => !feed.isLocal());
+  const hasRemotesOrShare =
+    remoteUserMedia.length > 0 ||
+    missingRemoteUserIds.length > 0 ||
+    shareFeeds.length > 0;
+  const showLocalInMainGrid =
+    rawShowLocalInMainGrid || (!hasRemotesOrShare && localUserMedia.length > 0);
+  const showLocalPip = rawShowLocalPip && hasRemotesOrShare;
   const userGridTileCount =
     remoteUserMedia.length +
     missingRemoteUserIds.length +

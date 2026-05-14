@@ -1,16 +1,27 @@
 'use client';
 
 import {
+  Check,
+  ChevronDown,
   Mic,
   MicOff,
   Monitor,
   MonitorOff,
   Video,
   VideoOff,
+  Volume2,
 } from 'lucide-react';
 import { CallHangUpIcon } from './call-hang-up-icon';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@hypha-platform/ui';
 import {
   getCallControlsPhase,
   type SpaceGroupCallState,
@@ -89,27 +100,82 @@ export function HumanChatPanelInCallControls({
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20';
   const icon = isFull ? fullViewIcon : 'h-4 w-4';
-  const voicePresetClass = isFull
-    ? 'h-10 rounded-full border border-zinc-600/80 bg-zinc-900/90 px-3 text-xs text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
-    : 'h-8 rounded-full border border-border/60 bg-background px-2.5 text-[11px] text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+  const audioSettingsBtn = isFull
+    ? 'inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center gap-1 rounded-full border border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
+    : 'inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-border/60 bg-background px-2 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+  const menuCheckIcon = isFull ? 'h-4 w-4 text-white' : 'h-4 w-4 text-foreground';
+  const useSideAudioSettings =
+    isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered';
+
+  const renderAudioSettingsMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={audioSettingsBtn}
+          title={t('callVoiceProcessingLabel')}
+          aria-label={t('callVoiceProcessingLabel')}
+        >
+          <Volume2 className={icon} />
+          <ChevronDown className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        side="top"
+        className={cn(isFull ? 'min-w-44 border-zinc-700 bg-zinc-900 text-white' : 'min-w-40')}
+      >
+        <DropdownMenuLabel>{t('callVoiceProcessingLabel')}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => onVoiceProcessingPresetChange('standard')}
+          className="flex items-center justify-between gap-2"
+        >
+          <span>{t('callVoiceProcessingStandard')}</span>
+          {voiceProcessingPreset === 'standard' ? (
+            <Check className={menuCheckIcon} />
+          ) : null}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => onVoiceProcessingPresetChange('voice_isolation')}
+          className="flex items-center justify-between gap-2"
+        >
+          <span>{t('callVoiceProcessingIsolation')}</span>
+          {voiceProcessingPreset === 'voice_isolation' ? (
+            <Check className={menuCheckIcon} />
+          ) : null}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => onVoiceProcessingPresetChange('music')}
+          className="flex items-center justify-between gap-2"
+        >
+          <span>{t('callVoiceProcessingMusic')}</span>
+          {voiceProcessingPreset === 'music' ? (
+            <Check className={menuCheckIcon} />
+          ) : null}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
-    <div
-      className={cn(
-        'flex items-center',
-        isCenteredInBanner ? 'gap-2.5 sm:gap-3' : 'gap-1.5 sm:gap-2',
-        isFull
-          ? 'w-full justify-center'
-          : inBannerLayout === 'balanced'
-          ? 'w-full justify-evenly'
-          : inBannerLayout === 'centered'
-          ? 'w-full justify-center'
-          : 'w-auto justify-start',
-      )}
-      role="group"
-      aria-label={t('callToolbarLabel')}
-    >
-      <button
+    <div role="group" aria-label={t('callToolbarLabel')}>
+      <div
+        className={cn(
+          useSideAudioSettings
+            ? 'grid w-full grid-cols-[1fr_auto_1fr] items-center'
+            : 'flex w-auto items-center',
+        )}
+      >
+        <div />
+        <div
+          className={cn(
+            'flex items-center',
+            isCenteredInBanner ? 'gap-2.5 sm:gap-3' : 'gap-1.5 sm:gap-2',
+            useSideAudioSettings ? 'justify-center' : 'justify-start',
+          )}
+        >
+          <button
         type="button"
         onClick={onToggleMic}
         disabled={controlsDisabled}
@@ -139,7 +205,7 @@ export function HumanChatPanelInCallControls({
           <Mic className={icon} />
         )}
       </button>
-      <button
+          <button
         type="button"
         onClick={onToggleCamera}
         disabled={controlsDisabled}
@@ -169,7 +235,7 @@ export function HumanChatPanelInCallControls({
           <Video className={icon} />
         )}
       </button>
-      <button
+          <button
         type="button"
         onClick={onToggleScreenshare}
         disabled={controlsDisabled}
@@ -199,31 +265,7 @@ export function HumanChatPanelInCallControls({
           <Monitor className={icon} />
         )}
       </button>
-      <label className="sr-only" htmlFor="voice-processing-preset">
-        {t('callVoiceProcessingLabel')}
-      </label>
-      <select
-        id="voice-processing-preset"
-        value={voiceProcessingPreset}
-        onChange={(event) =>
-          onVoiceProcessingPresetChange(
-            event.currentTarget.value as
-              | 'standard'
-              | 'voice_isolation'
-              | 'music',
-          )
-        }
-        className={voicePresetClass}
-        title={t('callVoiceProcessingLabel')}
-        aria-label={t('callVoiceProcessingLabel')}
-      >
-        <option value="standard">{t('callVoiceProcessingStandard')}</option>
-        <option value="voice_isolation">
-          {t('callVoiceProcessingIsolation')}
-        </option>
-        <option value="music">{t('callVoiceProcessingMusic')}</option>
-      </select>
-      <button
+          <button
         type="button"
         onClick={onLeave}
         disabled={callState === 'disconnecting'}
@@ -237,6 +279,12 @@ export function HumanChatPanelInCallControls({
       >
         <CallHangUpIcon className={leaveIcon} />
       </button>
+          {!useSideAudioSettings ? renderAudioSettingsMenu : null}
+        </div>
+        {useSideAudioSettings ? (
+          <div className="justify-self-end">{renderAudioSettingsMenu}</div>
+        ) : null}
+      </div>
     </div>
   );
 }
