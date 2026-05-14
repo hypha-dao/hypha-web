@@ -49,6 +49,11 @@ const EXPANDED_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
   width: 760,
   height: 560,
 };
+const DEFAULT_PANE_SPLIT: Record<CallFullViewPaneSplit, number> = {
+  sideBySide: 0.68,
+  filmstrip: 0.72,
+  speakerOnTop: 0.28,
+};
 
 function getDockOffsetBounds(width: number, height: number) {
   if (typeof window === 'undefined') {
@@ -166,14 +171,16 @@ export function GlobalCallDockOverlay() {
     sideBySide: number;
     filmstrip: number;
     speakerOnTop: number;
-  }>(() => ({
-    sideBySide: readCallFullViewPaneSplit('sideBySide'),
-    filmstrip: readCallFullViewPaneSplit('filmstrip'),
-    speakerOnTop: readCallFullViewPaneSplit('speakerOnTop'),
-  }));
-  const [geometry, setGeometry] = React.useState<DockGeometry>(() =>
-    clampDockGeometry(readDockGeometry()),
+  }>(DEFAULT_PANE_SPLIT);
+  const [geometry, setGeometry] = React.useState<DockGeometry>(
+    clampDockGeometry({
+      x: 0,
+      y: 0,
+      width: THUMBNAIL_GEOMETRY.width,
+      height: THUMBNAIL_GEOMETRY.height,
+    }),
   );
+  const [dockStorageHydrated, setDockStorageHydrated] = React.useState(false);
   const splitContainerRef = React.useRef<HTMLDivElement | null>(null);
   const dockRef = React.useRef<HTMLDivElement | null>(null);
   const lastNonFullscreenModeRef = React.useRef<'thumbnail' | 'expanded'>(
@@ -221,6 +228,16 @@ export function GlobalCallDockOverlay() {
     setLayoutMode(readCallFullViewLayoutFromStorage());
   }, []);
 
+  React.useEffect(() => {
+    setPaneSplit({
+      sideBySide: readCallFullViewPaneSplit('sideBySide'),
+      filmstrip: readCallFullViewPaneSplit('filmstrip'),
+      speakerOnTop: readCallFullViewPaneSplit('speakerOnTop'),
+    });
+    setGeometry(clampDockGeometry(readDockGeometry()));
+    setDockStorageHydrated(true);
+  }, []);
+
   const onPaneSplitChange = React.useCallback(
     (which: CallFullViewPaneSplit, value: number) => {
       persistCallFullViewPaneSplit(which, value);
@@ -230,8 +247,9 @@ export function GlobalCallDockOverlay() {
   );
 
   React.useEffect(() => {
+    if (!dockStorageHydrated) return;
     persistDockGeometry(clampDockGeometry(geometry));
-  }, [geometry]);
+  }, [dockStorageHydrated, geometry]);
 
   React.useEffect(() => {
     if (dockMode === 'fullscreen') return;
