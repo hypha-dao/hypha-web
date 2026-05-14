@@ -21,6 +21,7 @@ import {
   useHumanChatPanel,
 } from './human-chat-panel-context';
 import { useIsSpaceContext } from './use-is-space-context';
+import { useCompactHeaderMode } from './use-compact-header-mode';
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
 import { PanelScrollInset } from './panel-scroll-inset';
 
@@ -109,7 +110,9 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 
 export function AiSidebarTrigger() {
   const { open, overlayVisible, openAiPanel, closeAiPanel } = useAiPanel();
+  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const isCompactHeader = useCompactHeaderMode();
   const t = useTranslations('AiPanel');
 
   if (!isSpace) return null;
@@ -123,6 +126,9 @@ export function AiSidebarTrigger() {
         if (isOpen) {
           closeAiPanel();
           return;
+        }
+        if (isCompactHeader && rightOpen) {
+          toggleRight();
         }
         openAiPanel();
       }}
@@ -142,23 +148,12 @@ export function AiSidebarTrigger() {
 
 export function HumanSidebarTrigger() {
   const { open, toggle, openHumanChatPanel } = useHumanChatPanel();
+  const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
-  const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(max-width: 767px)').matches;
-  });
+  const isCompactHeader = useCompactHeaderMode();
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const query = window.matchMedia('(max-width: 767px)');
-    const sync = () => setIsMobileViewport(query.matches);
-    sync();
-    query.addEventListener('change', sync);
-    return () => query.removeEventListener('change', sync);
-  }, []);
-
-  if (!isSpace || (open && !isMobileViewport)) return null;
+  if (!isSpace || (open && !isCompactHeader)) return null;
 
   return (
     <button
@@ -167,6 +162,9 @@ export function HumanSidebarTrigger() {
         if (open) {
           toggle();
           return;
+        }
+        if (isCompactHeader && (leftOpen || overlayVisible)) {
+          closeAiPanel();
         }
         openHumanChatPanel();
       }}
@@ -249,24 +247,12 @@ export function PanelWrapLayout({
   } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(max-width: 767px)').matches;
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const query = window.matchMedia('(max-width: 767px)');
-    const sync = () => setIsMobileViewport(query.matches);
-    sync();
-    query.addEventListener('change', sync);
-    return () => query.removeEventListener('change', sync);
-  }, []);
+  const isCompactHeader = useCompactHeaderMode();
 
   // Panels are only available within a space context (/[lang]/dho/[id]/...)
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
-  const rightSidebarWidth = isMobileViewport
+  const rightSidebarWidth = isCompactHeader
     ? 'calc(100vw - var(--sidebar-left-width, 0px))'
     : '320px';
   const leftExpandedSidebarWidth =
@@ -368,6 +354,9 @@ export function PanelWrapLayout({
         onLeftOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
+            if (isCompactHeader && rightOpen) {
+              toggleRight();
+            }
             openAiPanel();
             return;
           }
@@ -375,6 +364,9 @@ export function PanelWrapLayout({
         }}
         rightOpen={rightOpen}
         onRightOpenChange={(open) => {
+          if (open && isCompactHeader && leftExpanded) {
+            closeAiPanel();
+          }
           if (open !== rightOpen) toggleRight();
         }}
         rightSidebarWidth={rightSidebarWidth}
@@ -390,6 +382,9 @@ export function PanelWrapLayout({
         defaultOpen={false}
         open={rightOpen}
         onOpenChange={(open) => {
+          if (open && isCompactHeader && leftExpanded) {
+            closeAiPanel();
+          }
           if (open !== rightOpen) toggleRight();
         }}
         style={
@@ -420,6 +415,9 @@ export function PanelWrapLayout({
         onOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
+            if (isCompactHeader && rightOpen) {
+              toggleRight();
+            }
             openAiPanel();
             return;
           }

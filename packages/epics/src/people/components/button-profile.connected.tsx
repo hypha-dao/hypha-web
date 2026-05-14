@@ -14,6 +14,7 @@ type ConnectedButtonProfileProps = {
   baseRedirectPath: string;
   navItems: ButtonNavItemProps[];
   trailingBeforeProfile?: ReactNode;
+  compact?: boolean;
 };
 
 type ErrorUser = {
@@ -31,6 +32,7 @@ export const ConnectedButtonProfile = ({
   baseRedirectPath,
   navItems,
   trailingBeforeProfile,
+  compact = false,
 }: ConnectedButtonProfileProps) => {
   const {
     isAuthenticated,
@@ -127,6 +129,7 @@ export const ConnectedButtonProfile = ({
       notificationCentrePath={notificationCentrePath}
       navItems={navItems}
       trailingBeforeProfile={trailingBeforeProfile}
+      compact={compact}
     />
   );
 };

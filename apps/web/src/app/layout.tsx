@@ -280,15 +280,39 @@ export default async function RootLayout({
                           closeMenuLabel={navCloseMenuLabel}
                           leadingAction={
                             aiChatEnabled ? (
-                              <div className="md:hidden">
-                                <AiSidebarTrigger />
-                              </div>
+                              <AiSidebarTrigger />
                             ) : undefined
                           }
                           trailingAction={
                             humanChatEnabled ? (
                               <HumanSidebarTrigger />
                             ) : undefined
+                          }
+                          mobileAction={
+                            <ConnectedButtonProfile
+                              useAuthentication={useAuthentication}
+                              useMe={useMe}
+                              newUserRedirectPath="/profile/signup"
+                              baseRedirectPath="/my-spaces"
+                              navItems={[
+                                {
+                                  label: navMySpacesLabel,
+                                  href: `/${locale}/my-spaces`,
+                                },
+                                {
+                                  label: navNetworkLabel,
+                                  href: `/${locale}/network`,
+                                },
+                              ]}
+                              trailingBeforeProfile={
+                                isLanguageSelectVisible ? (
+                                  <ConnectedLanguageSelect
+                                    selectLanguageLabel={navSelectLanguageLabel}
+                                  />
+                                ) : undefined
+                              }
+                              compact
+                            />
                           }
                         >
                           <ConnectedButtonProfile

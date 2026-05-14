@@ -20,6 +20,7 @@ type ConnectedMenuTopProps = {
   children?: ReactNode;
   leadingAction?: ReactNode;
   trailingAction?: ReactNode;
+  mobileAction?: ReactNode;
   logoHref?: string;
   hrefTarget?: string;
   openMenuLabel?: string;
@@ -35,6 +36,7 @@ export function ConnectedMenuTop({
   children,
   leadingAction,
   trailingAction,
+  mobileAction,
   logoHref,
   hrefTarget,
   openMenuLabel,
@@ -181,6 +183,9 @@ export function ConnectedMenuTop({
       closeMenuLabel={closeMenuLabel}
       leadingAction={leadingAction}
       trailingAction={trailingAction}
+      mobileAction={mobileAction}
+      showMobileHamburger={false}
+      showLeadingActionOnlyWhenCompact
     >
       {children}
     </MenuTop>
