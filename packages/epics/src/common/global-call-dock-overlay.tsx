@@ -359,7 +359,7 @@ export function GlobalCallDockOverlay() {
   );
   const locale = React.useMemo(() => getLocaleFromPath(pathname), [pathname]);
   const callSpaceHref = activeSpaceSlug
-    ? `/${locale}/dho/${activeSpaceSlug}`
+    ? `/${locale}/dho/${activeSpaceSlug}/signal`
     : null;
 
   if (!showFloatingDock || !activeRoomId) return null;
