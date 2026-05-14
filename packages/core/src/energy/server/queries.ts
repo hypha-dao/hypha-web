@@ -12,16 +12,34 @@ type UpsertEnergyCommunityActivationInput = {
   activatedAt: Date;
 };
 
+export const isMissingEnergyCommunitiesTableError = (error: unknown) => {
+  const candidate = error as { code?: string; message?: string } | null;
+  return (
+    candidate?.code === '42P01' &&
+    (candidate.message?.includes('energy_communities') ?? false)
+  );
+};
+
 export const findEnergyCommunityBySpaceId = async (
   spaceId: number,
   { db }: DbConfig,
 ) => {
-  const [row] = await db
-    .select()
-    .from(energyCommunities)
-    .where(eq(energyCommunities.spaceId, spaceId))
-    .limit(1);
-  return row ?? null;
+  try {
+    const [row] = await db
+      .select()
+      .from(energyCommunities)
+      .where(eq(energyCommunities.spaceId, spaceId))
+      .limit(1);
+    return row ?? null;
+  } catch (error) {
+    if (isMissingEnergyCommunitiesTableError(error)) {
+      console.warn(
+        '[energy] energy_communities table is missing; treating activation as unsynced.',
+      );
+      return null;
+    }
+    throw error;
+  }
 };
 
 export const findEnergyCommunityBySpaceSlug = async (

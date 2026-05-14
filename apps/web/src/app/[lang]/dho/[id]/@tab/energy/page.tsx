@@ -4,10 +4,7 @@ import {
   SpaceEnergySection,
   TransactionsSection,
 } from '@hypha-platform/epics';
-import {
-  findEnergyCommunityBySpaceId,
-  findSpaceBySlug,
-} from '@hypha-platform/core/server';
+import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { notFound } from 'next/navigation';
 
@@ -20,11 +17,6 @@ export default async function EnergyPage(props: PageProps) {
   const { id } = params;
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
   if (!spaceFromDb) notFound();
-
-  const energyMapping = await findEnergyCommunityBySpaceId(spaceFromDb.id, {
-    db,
-  });
-  if (!energyMapping) notFound();
 
   return (
     <SpaceTabAccessWrapper

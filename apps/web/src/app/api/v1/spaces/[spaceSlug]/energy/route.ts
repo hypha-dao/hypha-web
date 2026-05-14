@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
   findEnergyCommunityBySpaceId,
+  isMissingEnergyCommunitiesTableError,
   upsertEnergyCommunityActivation,
   web3Client,
   getDb,
@@ -29,6 +30,16 @@ const SOURCE_TYPES: Record<number, string> = {
 
 const toLowerHex = (address: string) => address.toLowerCase() as `0x${string}`;
 
+type EnergyCommunityActivation = {
+  spaceId: number;
+  chainId: number;
+  communityProxyAddress: string;
+  energyTokenAddress: string;
+  adminAddress: string;
+  factoryCommunityId: number | null;
+  activatedAt: Date;
+};
+
 /**
  * Hypha links a space to `EnergyPPAv2Factory.adminCommunities[admin]`.
  * The Enable Energy Community proposal sets `admin` to an arbitrary address;
@@ -40,7 +51,7 @@ async function syncEnergyCommunityFromFactory(input: {
   spaceAddress: string | null;
   web3SpaceId: number | null;
   appDb: DatabaseInstance;
-}) {
+}): Promise<EnergyCommunityActivation | null> {
   const factoryAddress = getEnergyPpaFactoryAddress();
   const chainId = ENERGY_PPA_CHAIN_ID;
   const adminCandidates: `0x${string}`[] = [];
@@ -116,22 +127,29 @@ async function syncEnergyCommunityFromFactory(input: {
       continue;
     }
 
+    const activation: EnergyCommunityActivation = {
+      spaceId: input.spaceId,
+      chainId: Number(chainId),
+      communityProxyAddress: communityRecord[0],
+      energyTokenAddress: communityRecord[1],
+      adminAddress: communityRecord[2],
+      factoryCommunityId: Number(latestCommunityId),
+      activatedAt: new Date(Number(communityRecord[3]) * 1000),
+    };
+
     try {
       return (
-        (await upsertEnergyCommunityActivation(
-          {
-            spaceId: input.spaceId,
-            chainId: Number(chainId),
-            communityProxyAddress: communityRecord[0],
-            energyTokenAddress: communityRecord[1],
-            adminAddress: communityRecord[2],
-            factoryCommunityId: Number(latestCommunityId),
-            activatedAt: new Date(Number(communityRecord[3]) * 1000),
-          },
-          { db: input.appDb },
-        )) ?? null
+        (await upsertEnergyCommunityActivation(activation, {
+          db: input.appDb,
+        })) ?? activation
       );
     } catch (e) {
+      if (isMissingEnergyCommunitiesTableError(e)) {
+        console.warn(
+          '[spaces/energy] energy_communities table is missing; returning on-chain activation without persistence.',
+        );
+        return activation;
+      }
       console.warn('[spaces/energy] upsertEnergyCommunityActivation failed', e);
       return null;
     }
@@ -192,7 +210,8 @@ export async function GET(
     const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
     const appDb = authToken ? getDb({ authToken }) : db;
 
-    let mapping = await findEnergyCommunityBySpaceId(space.id, { db: appDb });
+    let mapping: EnergyCommunityActivation | null =
+      await findEnergyCommunityBySpaceId(space.id, { db: appDb });
 
     if (!mapping) {
       try {
