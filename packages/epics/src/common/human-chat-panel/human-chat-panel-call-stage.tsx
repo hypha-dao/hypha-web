@@ -1247,6 +1247,7 @@ const CallFeedTile = ({
   isPip = false,
   isActiveSpeaker = false,
   isFullView = false,
+  panelVideoFit = 'cover',
   room,
   currentUserId,
   resolveMemberLabel,
@@ -1260,6 +1261,7 @@ const CallFeedTile = ({
   isPip?: boolean;
   isActiveSpeaker?: boolean;
   isFullView?: boolean;
+  panelVideoFit?: 'cover' | 'contain';
   room: Room | null;
   currentUserId: string | null;
   resolveMemberLabel: (userId: string | undefined) => string;

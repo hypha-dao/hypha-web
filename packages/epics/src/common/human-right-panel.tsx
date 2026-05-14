@@ -1252,14 +1252,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setEditDraft(null);
     setInput('');
     setError(null);
-    setCallFullViewOpen(false);
-  }, [
-    mode,
-    roomId,
-    hasSpaceChatAccess,
-    isUserSpaceStateLoading,
-    setCallFullViewOpen,
-  ]);
+  }, [mode, roomId, hasSpaceChatAccess, isUserSpaceStateLoading]);
 
   // Join space room when Matrix is ready (space mode)
   useEffect(() => {
