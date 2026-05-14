@@ -98,7 +98,9 @@ export function HumanChatPanelInCallControls({
   const audioSettingsBtn = isFull
     ? 'inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center gap-1 rounded-full border border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
     : 'inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-border/60 bg-background px-2 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
-  const menuCheckIcon = isFull ? 'h-4 w-4 text-white' : 'h-4 w-4 text-foreground';
+  const menuCheckIcon = isFull
+    ? 'h-4 w-4 text-white'
+    : 'h-4 w-4 text-foreground';
   const useSideAudioSettings =
     isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered';
 
@@ -133,7 +135,9 @@ export function HumanChatPanelInCallControls({
         onClick={() => setIsAudioMenuOpen((open) => !open)}
       >
         <Volume2 className={icon} />
-        <ChevronDown className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')} />
+        <ChevronDown
+          className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
+        />
       </button>
       {isAudioMenuOpen ? (
         <div
@@ -147,13 +151,13 @@ export function HumanChatPanelInCallControls({
             {t('callVoiceProcessingLabel')}
           </p>
           <div className="-mx-0 my-1 h-px bg-neutral-6" />
-        <button
-          type="button"
+          <button
+            type="button"
             role="menuitemradio"
             aria-checked={voiceProcessingPreset === 'standard'}
             onClick={() => selectVoicePreset('standard')}
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
-        >
+          >
             <span>{t('callVoiceProcessingStandard')}</span>
             {voiceProcessingPreset === 'standard' ? (
               <Check className={menuCheckIcon} />
@@ -206,109 +210,109 @@ export function HumanChatPanelInCallControls({
           )}
         >
           <button
-        type="button"
-        onClick={onToggleMic}
-        disabled={controlsDisabled}
-        className={cn(
-          isFull
-            ? isMicrophoneMuted
-              ? micMutedBtn
-              : baseBtn
-            : isMicrophoneMuted
-            ? micMutedBtn
-            : neutralBtn,
-          (isFull || isMicrophoneMuted) &&
-            'inline-flex items-center justify-center',
-          'disabled:cursor-not-allowed',
-          !isFull && controlsDisabled && 'opacity-50',
-        )}
-        title={t('callControlsMicrophone')}
-        aria-label={
-          isMicrophoneMuted
-            ? t('callControlsMicrophoneMutedAria')
-            : t('callControlsMicrophoneUnmutedAria')
-        }
-      >
-        {isMicrophoneMuted ? (
-          <MicOff className={icon} />
-        ) : (
-          <Mic className={icon} />
-        )}
-      </button>
+            type="button"
+            onClick={onToggleMic}
+            disabled={controlsDisabled}
+            className={cn(
+              isFull
+                ? isMicrophoneMuted
+                  ? micMutedBtn
+                  : baseBtn
+                : isMicrophoneMuted
+                ? micMutedBtn
+                : neutralBtn,
+              (isFull || isMicrophoneMuted) &&
+                'inline-flex items-center justify-center',
+              'disabled:cursor-not-allowed',
+              !isFull && controlsDisabled && 'opacity-50',
+            )}
+            title={t('callControlsMicrophone')}
+            aria-label={
+              isMicrophoneMuted
+                ? t('callControlsMicrophoneMutedAria')
+                : t('callControlsMicrophoneUnmutedAria')
+            }
+          >
+            {isMicrophoneMuted ? (
+              <MicOff className={icon} />
+            ) : (
+              <Mic className={icon} />
+            )}
+          </button>
           <button
-        type="button"
-        onClick={onToggleCamera}
-        disabled={controlsDisabled}
-        className={cn(
-          isFull
-            ? isLocalVideoMuted
-              ? camOffBtn
-              : baseBtn
-            : isLocalVideoMuted
-            ? camOffBtn
-            : neutralBtn,
-          (isFull || isLocalVideoMuted) &&
-            'inline-flex items-center justify-center',
-          'disabled:cursor-not-allowed',
-          !isFull && controlsDisabled && 'opacity-50',
-        )}
-        title={t('callControlsCamera')}
-        aria-label={
-          isLocalVideoMuted
-            ? t('callControlsCameraOffAria')
-            : t('callControlsCameraOnAria')
-        }
-      >
-        {isLocalVideoMuted ? (
-          <VideoOff className={icon} />
-        ) : (
-          <Video className={icon} />
-        )}
-      </button>
+            type="button"
+            onClick={onToggleCamera}
+            disabled={controlsDisabled}
+            className={cn(
+              isFull
+                ? isLocalVideoMuted
+                  ? camOffBtn
+                  : baseBtn
+                : isLocalVideoMuted
+                ? camOffBtn
+                : neutralBtn,
+              (isFull || isLocalVideoMuted) &&
+                'inline-flex items-center justify-center',
+              'disabled:cursor-not-allowed',
+              !isFull && controlsDisabled && 'opacity-50',
+            )}
+            title={t('callControlsCamera')}
+            aria-label={
+              isLocalVideoMuted
+                ? t('callControlsCameraOffAria')
+                : t('callControlsCameraOnAria')
+            }
+          >
+            {isLocalVideoMuted ? (
+              <VideoOff className={icon} />
+            ) : (
+              <Video className={icon} />
+            )}
+          </button>
           <button
-        type="button"
-        onClick={onToggleScreenshare}
-        disabled={controlsDisabled}
-        className={cn(
-          isFull
-            ? isScreensharing
-              ? shareActiveBtn
-              : baseBtn
-            : isScreensharing
-            ? shareActiveBtn
-            : neutralBtn,
-          (isFull || isScreensharing) &&
-            'inline-flex items-center justify-center',
-          'disabled:cursor-not-allowed',
-          !isFull && controlsDisabled && 'opacity-50',
-        )}
-        title={t('callControlsScreenshare')}
-        aria-label={
-          isScreensharing
-            ? t('callControlsScreenshareActiveAria')
-            : t('callControlsScreenshareInactiveAria')
-        }
-      >
-        {isScreensharing ? (
-          <MonitorOff className={icon} />
-        ) : (
-          <Monitor className={icon} />
-        )}
-      </button>
+            type="button"
+            onClick={onToggleScreenshare}
+            disabled={controlsDisabled}
+            className={cn(
+              isFull
+                ? isScreensharing
+                  ? shareActiveBtn
+                  : baseBtn
+                : isScreensharing
+                ? shareActiveBtn
+                : neutralBtn,
+              (isFull || isScreensharing) &&
+                'inline-flex items-center justify-center',
+              'disabled:cursor-not-allowed',
+              !isFull && controlsDisabled && 'opacity-50',
+            )}
+            title={t('callControlsScreenshare')}
+            aria-label={
+              isScreensharing
+                ? t('callControlsScreenshareActiveAria')
+                : t('callControlsScreenshareInactiveAria')
+            }
+          >
+            {isScreensharing ? (
+              <MonitorOff className={icon} />
+            ) : (
+              <Monitor className={icon} />
+            )}
+          </button>
           <button
-        type="button"
-        onClick={onLeave}
-        disabled={callState === 'disconnecting'}
-        className={cn(
-          leaveBtn,
-          'disabled:cursor-not-allowed',
-          callState === 'disconnecting' && 'opacity-50',
-        )}
-        title={t('callLeave')}
-        aria-label={t('callLeave')}
-      >
-        <CallHangUpIcon className={leaveIcon} />
-      </button>
+            type="button"
+            onClick={onLeave}
+            disabled={callState === 'disconnecting'}
+            className={cn(
+              leaveBtn,
+              'disabled:cursor-not-allowed',
+              callState === 'disconnecting' && 'opacity-50',
+            )}
+            title={t('callLeave')}
+            aria-label={t('callLeave')}
+          >
+            <CallHangUpIcon className={leaveIcon} />
+          </button>
           {!useSideAudioSettings ? renderAudioSettingsMenu : null}
         </div>
         {useSideAudioSettings ? (

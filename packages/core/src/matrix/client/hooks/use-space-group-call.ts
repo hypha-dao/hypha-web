@@ -1068,7 +1068,9 @@ export function useSpaceGroupCall(
            * live video track is present shortly after `enter()`.
            */
           if (!hasLiveLocalVideoTrack()) {
-            await new Promise<void>((resolve) => window.setTimeout(resolve, 320));
+            await new Promise<void>((resolve) =>
+              window.setTimeout(resolve, 320),
+            );
             if (!hasLiveLocalVideoTrack()) {
               await gc.setLocalVideoMuted(true);
               await gc.setLocalVideoMuted(false);
