@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { test, expect, type Page } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
 import { gotoApp } from './utils/nav-url';
@@ -27,6 +28,8 @@ test.describe('Global Call Dock - navigation persistence', () => {
 
   test('dock is hidden when no call is active', async ({ page }) => {
     await openSpaceChat(page, SPACE_A);
+    const a11y = await new AxeBuilder({ page }).analyze();
+    expect(a11y.violations).toEqual([]);
     const dock = page.getByTestId('global-call-dock');
     await expect(dock).toHaveCount(0);
   });
