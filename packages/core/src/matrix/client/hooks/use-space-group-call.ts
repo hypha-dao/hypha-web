@@ -45,6 +45,7 @@ const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
  */
 const PLACE_OUTGOING_DELAYED_MS = 600;
 const PLACE_OUTGOING_RETRY_MS = [1500, 4000, 8000] as const;
+const ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS = 30_000;
 
 type SpaceGroupCallOptions = {
   authToken?: string | null;
@@ -59,6 +60,10 @@ async function tryRepairRoomCallPermissions(
   const token = authToken?.trim();
   const slug = spaceSlug?.trim();
   if (!token || !slug) return false;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS);
   try {
     const response = await fetch('/api/matrix/room-call-permissions', {
       method: 'POST',
@@ -67,14 +72,20 @@ async function tryRepairRoomCallPermissions(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ roomId, spaceSlug: slug }),
+      signal: controller.signal,
     });
     if (!response.ok) return false;
     const data = (await response.json().catch(() => null)) as {
       ok?: boolean;
     } | null;
     return data?.ok === true;
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return false;
+    }
     return false;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
