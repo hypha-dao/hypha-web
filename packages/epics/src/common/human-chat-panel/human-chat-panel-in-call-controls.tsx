@@ -27,8 +27,8 @@ type HumanChatPanelInCallControlsProps = {
   onLeave: () => void;
   /** In header strip: compact buttons; in full view: larger, high-contrast on video. */
   variant?: 'inBanner' | 'fullView';
-  /** Use balanced horizontal distribution for compact rows (dock usage). */
-  inBannerLayout?: 'inline' | 'balanced';
+  /** Compact row alignment for dock/banner usage. */
+  inBannerLayout?: 'inline' | 'balanced' | 'centered';
 };
 
 /**
@@ -50,6 +50,7 @@ export function HumanChatPanelInCallControls({
   const t = useTranslations('HumanChatPanel');
   const { controlsDisabled } = getCallControlsPhase(callState);
   const isFull = variant === 'fullView';
+  const isCenteredInBanner = !isFull && inBannerLayout === 'centered';
   /**
    * Full view modal: §3.4.4.4 — white glyphs on dark / green / red (not
    * `text-foreground` on near-black / green where Lucide would read as black).
@@ -86,11 +87,14 @@ export function HumanChatPanelInCallControls({
   return (
     <div
       className={cn(
-        'flex items-center gap-1.5 sm:gap-2',
+        'flex items-center',
+        isCenteredInBanner ? 'gap-2.5 sm:gap-3' : 'gap-1.5 sm:gap-2',
         isFull
           ? 'w-full justify-center'
           : inBannerLayout === 'balanced'
           ? 'w-full justify-evenly'
+          : inBannerLayout === 'centered'
+          ? 'w-full justify-center'
           : 'w-auto justify-start',
       )}
       role="group"
