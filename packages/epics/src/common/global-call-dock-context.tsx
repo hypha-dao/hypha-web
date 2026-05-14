@@ -131,6 +131,9 @@ function useGlobalCallDockValue() {
       if (!targetRoomId) return;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
       if (activeRoomId !== targetRoomId) {
+        setBoundRoomId(targetRoomId);
+        setBoundSpaceSlug(targetSpaceSlug);
+        setBoundAuthToken(boundAuthToken);
         setActiveRoomId(targetRoomId);
         setActiveSpaceSlug(targetSpaceSlug);
         setActiveAuthToken(boundAuthToken);
@@ -156,6 +159,9 @@ function useGlobalCallDockValue() {
       if (!targetRoomId) return;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
       if (activeRoomId !== targetRoomId) {
+        setBoundRoomId(targetRoomId);
+        setBoundSpaceSlug(targetSpaceSlug);
+        setBoundAuthToken(boundAuthToken);
         setActiveRoomId(targetRoomId);
         setActiveSpaceSlug(targetSpaceSlug);
         setActiveAuthToken(boundAuthToken);
