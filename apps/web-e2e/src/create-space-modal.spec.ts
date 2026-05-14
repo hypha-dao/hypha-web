@@ -13,6 +13,14 @@ test.describe('Create Space modal', () => {
   test('locks submit after first create attempt to prevent duplicates', async ({
     page,
   }) => {
+    let createCalls = 0;
+    await page.route('**/api/v1/spaces*', async (route) => {
+      if (route.request().method() === 'POST') {
+        createCalls += 1;
+      }
+      await route.fallback();
+    });
+
     await gotoApp(page, SPACE_CREATE_PATH);
     await page.waitForLoadState('domcontentloaded');
     const results = await new AxeBuilder({ page }).analyze();
@@ -38,5 +46,7 @@ test.describe('Create Space modal', () => {
     await submitButton.click();
 
     await expect(submitButton).toBeDisabled();
+    await submitButton.click({ force: true }).catch(() => {});
+    expect(createCalls).toBeLessThanOrEqual(1);
   });
 });
