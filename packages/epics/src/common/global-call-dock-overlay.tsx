@@ -39,15 +39,15 @@ type ResizeCorner = 'top-right' | 'bottom-left';
 const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v1';
 const DOCK_MARGIN_PX = 16;
 const SNAP_EDGE_PX = 24;
-const DOCK_MIN_WIDTH = 320;
-const DOCK_MIN_HEIGHT = 220;
+const DOCK_MIN_WIDTH = 640;
+const DOCK_MIN_HEIGHT = 520;
 const THUMBNAIL_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
-  width: 380,
-  height: 300,
+  width: 640,
+  height: 520,
 };
 const EXPANDED_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
-  width: 720,
-  height: 460,
+  width: 760,
+  height: 560,
 };
 
 function getDockOffsetBounds(width: number, height: number) {
