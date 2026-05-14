@@ -203,6 +203,7 @@ export function useSpaceGroupCall(
   const remoteMediaRecoverRequestedRef = useRef(false);
   const remoteMediaRecoverAttemptedRef = useRef(false);
   const remoteMediaRecoverInFlightRef = useRef(false);
+  const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
 
   const dismissRemoteMediaStallBanner = useCallback(() => {
@@ -442,6 +443,7 @@ export function useSpaceGroupCall(
       ) {
         remoteMediaRecoverAttemptedRef.current = true;
         remoteMediaRecoverRequestedRef.current = true;
+        setRemoteMediaRecoverNonce((value) => value + 1);
       }
     } else {
       remoteMediaGapSinceRef.current = null;
@@ -1294,7 +1296,7 @@ export function useSpaceGroupCall(
     void enterWithKind(retryKind, retryThreadRootEventId).finally(() => {
       remoteMediaRecoverInFlightRef.current = false;
     });
-  }, [callState, enterWithKind, roomId, runCleanup]);
+  }, [callState, enterWithKind, remoteMediaRecoverNonce, roomId, runCleanup]);
 
   const idleGroupCallUnsubRef = useRef<(() => void) | null>(null);
 
