@@ -297,9 +297,16 @@ export async function POST(request: NextRequest) {
     callerAccess.accessToken,
   );
   if (!callerPowerLevelsResult.ok) {
-    return NextResponse.json(
-      { error: 'Only space admins can repair room call permissions' },
-      { status: 403 },
+    return createFailureResponse(
+      correlationId,
+      'Failed to read caller power levels for authorization check',
+      502,
+      {
+        matrixClient: {
+          status: callerPowerLevelsResult.status,
+          body: callerPowerLevelsResult.body,
+        },
+      },
     );
   }
   const callerRequired = requiredPowerLevelToEditPowerLevels(
