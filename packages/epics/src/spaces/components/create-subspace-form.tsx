@@ -230,8 +230,14 @@ export const CreateSubspaceForm = ({
             ecosystemLogoUrlDark: _ecosystemLogoUrlDark,
             ...createValues
           } = values;
+          if (parentSpaceId === null) {
+            // Guard against transient route hydration where the parent space
+            // context isn't resolved yet; avoid creating an orphan root space.
+            setIsSubmitting(false);
+            return;
+          }
           const normalizedParentId =
-            createValues.parentId ?? parentSpaceId ?? null;
+            parentSpaceId ?? createValues.parentId ?? null;
           const normalizedCreateValues = {
             ...createValues,
             parentId: normalizedParentId,
