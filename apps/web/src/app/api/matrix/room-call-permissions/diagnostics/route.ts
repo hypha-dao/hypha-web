@@ -1,105 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrivyClient } from '@privy-io/node';
 import { getEnableHumanChat } from '@hypha-platform/feature-flags';
 import { db } from '@hypha-platform/storage-postgres';
 import {
   checkSpaceAccessForSpace,
-  decryptMatrixToken,
   determineEnvironment,
   findSpaceHostFieldsBySlug,
-  getAdminUserNameAction,
-  getLinkByPrivyUserId,
-  MatrixSharedSecret,
 } from '@hypha-platform/core/server';
-
-const ADMIN_BASE_NAME = 'hypha_admin';
-
-type MatrixPowerLevels = {
-  users?: Record<string, number>;
-  users_default?: number;
-  events?: Record<string, number>;
-  events_default?: number;
-  state_default?: number;
-  [k: string]: unknown;
-};
-
-const CALL_EVENT_TYPES = [
-  'org.matrix.msc3401.call',
-  'org.matrix.msc3401.call.member',
-  'm.call.member',
-] as const;
-
-async function verifyPrivyToken(token: string): Promise<string | null> {
-  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID?.trim();
-  const appSecret = process.env.PRIVY_APP_SECRET?.trim();
-  if (!appId || !appSecret) return null;
-  try {
-    const privy = new PrivyClient({ appId, appSecret });
-    const { user_id } = await privy.utils().auth().verifyAuthToken(token);
-    return user_id;
-  } catch {
-    return null;
-  }
-}
-
-function matrixHeaders(accessToken: string): Record<string, string> {
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    'Content-Type': 'application/json',
-  };
-}
-
-async function matrixRequest<T>(
-  method: 'GET',
-  url: string,
-  accessToken: string,
-): Promise<
-  { ok: true; data: T } | { ok: false; status: number; body: string }
-> {
-  const response = await fetch(url, {
-    method,
-    headers: matrixHeaders(accessToken),
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    return { ok: false, status: response.status, body: text };
-  }
-  const data = (await response.json()) as T;
-  return { ok: true, data };
-}
-
-async function resolveMatrixAccessToken(
-  environment: ReturnType<typeof determineEnvironment>,
-  privyUserId: string,
-): Promise<string | null> {
-  if (!environment) return null;
-  const link = await getLinkByPrivyUserId({
-    privyUserId,
-    environment,
-  });
-  const encrypted = link?.encryptedAccessToken?.trim();
-  if (!encrypted) return null;
-  const decrypted = decryptMatrixToken(encrypted).trim();
-  if (!decrypted) return null;
-  const matrixAuthClient = new MatrixSharedSecret();
-  const valid = await matrixAuthClient.validateToken(decrypted);
-  return valid ? decrypted : null;
-}
-
-async function resolveAdminMatrixAccessToken(
-  environment: ReturnType<typeof determineEnvironment>,
-  authToken: string,
-): Promise<string | null> {
-  if (!environment) return null;
-  const adminUsername =
-    (await getAdminUserNameAction(
-      { baseName: ADMIN_BASE_NAME, environment },
-      { authToken },
-    )) ?? null;
-  if (!adminUsername) return null;
-  return resolveMatrixAccessToken(environment, adminUsername);
-}
+import {
+  CALL_EVENT_TYPES,
+  matrixRequest,
+  type MatrixPowerLevels,
+  resolveAdminMatrixAccessToken,
+  resolveMatrixAccessToken,
+  verifyPrivyToken,
+} from '../_lib';
 
 function buildManualPatch(powerLevels: MatrixPowerLevels): MatrixPowerLevels {
   const events = { ...(powerLevels.events ?? {}) };
@@ -164,17 +78,14 @@ export async function POST(request: NextRequest) {
   }
 
   const environment = determineEnvironment(request.url);
-  const callerAccessToken = await resolveMatrixAccessToken(
-    environment,
-    privyUserId,
-  );
-  const adminAccessToken = await resolveAdminMatrixAccessToken(
+  const callerAccess = await resolveMatrixAccessToken(environment, privyUserId);
+  const adminAccess = await resolveAdminMatrixAccessToken(
     environment,
     authToken,
   );
 
   const encodedRoomId = encodeURIComponent(roomId);
-  let readerToken = callerAccessToken ?? adminAccessToken;
+  let readerToken = callerAccess?.accessToken ?? adminAccess?.accessToken;
   if (!readerToken) {
     return NextResponse.json(
       {
@@ -189,9 +100,11 @@ export async function POST(request: NextRequest) {
     `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
     readerToken,
   );
-  if (!powerLevelsResult.ok && callerAccessToken && adminAccessToken) {
+  if (!powerLevelsResult.ok && callerAccess && adminAccess) {
     readerToken =
-      readerToken === callerAccessToken ? adminAccessToken : callerAccessToken;
+      readerToken === callerAccess.accessToken
+        ? adminAccess.accessToken
+        : callerAccess.accessToken;
     powerLevelsResult = await matrixRequest<MatrixPowerLevels>(
       'GET',
       `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
