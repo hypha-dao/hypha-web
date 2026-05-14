@@ -274,10 +274,10 @@ export function GlobalCallDockOverlay() {
 
   const resolveMemberLabel = React.useCallback(
     (userId: string | undefined) => {
-      if (!userId?.trim()) return 'Unknown';
+      if (!userId?.trim()) return t('unknownMember');
       return matrixMemberDisplayLabelFromRoom(client, activeRoomId, userId);
     },
-    [client, activeRoomId],
+    [client, activeRoomId, t],
   );
 
   const currentUserId = client?.getUserId?.() ?? null;
