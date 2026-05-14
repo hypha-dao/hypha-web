@@ -86,7 +86,6 @@ export const CreateSubspaceForm = ({
   React.useEffect(() => {
     if (progress === 100 && !hasNavigatedAfterSuccessRef.current) {
       hasNavigatedAfterSuccessRef.current = true;
-      setIsSubmitting(false);
       void (async () => {
         const seed = pendingNavigationSeedRef.current;
         const mutationPromises: Promise<unknown>[] = [];
@@ -219,11 +218,10 @@ export const CreateSubspaceForm = ({
         backUrl={backUrl}
         backLabel={t('backToSettings')}
         onSubmit={(values, organisationSpaces) => {
-          if (isSubmitting) {
+          if (isSubmitting || hasNavigatedAfterSuccessRef.current) {
             return;
           }
           setIsSubmitting(true);
-          hasNavigatedAfterSuccessRef.current = false;
           // Subspace creation does not use root-only ecosystem branding fields.
           const {
             ecosystemLogoUrlLight: _ecosystemLogoUrlLight,
