@@ -98,7 +98,12 @@ export async function resolveMatrixAccessToken(
   });
   const encrypted = link?.encryptedAccessToken?.trim();
   if (!encrypted) return null;
-  const decrypted = decryptMatrixToken(encrypted).trim();
+  let decrypted: string;
+  try {
+    decrypted = decryptMatrixToken(encrypted).trim();
+  } catch {
+    return null;
+  }
   if (!decrypted) return null;
   const userId = link?.matrixUserId?.trim();
   if (!userId) return null;
