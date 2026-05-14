@@ -74,7 +74,11 @@ function useGlobalCallDockValue() {
     call.callState === 'disconnecting';
 
   const bindRoomContext = React.useCallback(
-    (roomId: string | null, spaceSlug: string | null, authToken?: string | null) => {
+    (
+      roomId: string | null,
+      spaceSlug: string | null,
+      authToken?: string | null,
+    ) => {
       setBoundRoomId(roomId);
       setBoundSpaceSlug(spaceSlug);
       setBoundAuthToken(authToken?.trim() || null);
