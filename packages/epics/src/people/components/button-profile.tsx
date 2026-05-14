@@ -171,14 +171,31 @@ export const ButtonProfile = ({
 
             <DropdownMenuSeparator className="-mx-0 my-1" />
             <DropdownMenuGroup className="space-y-0.5">
-              {navItems.map((item) => (
-                <DropdownMenuItem key={item.href} className={menuItemClass} asChild>
-                  <Link href={item.href}>
+              {navItems.map((item) =>
+                item.href ? (
+                  <DropdownMenuItem
+                    key={`${item.label}-${String(item.href)}`}
+                    className={menuItemClass}
+                    asChild
+                  >
+                    <Link href={item.href}>
+                      <span className="flex-1">{item.label}</span>
+                      <ChevronRight
+                        className="ml-auto size-4 opacity-60"
+                        aria-hidden
+                      />
+                    </Link>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    key={`nav-action-${item.label}`}
+                    className={menuItemClass}
+                    onClick={item.onClick}
+                  >
                     <span className="flex-1">{item.label}</span>
-                    <ChevronRight className="ml-auto size-4 opacity-60" aria-hidden />
-                  </Link>
-                </DropdownMenuItem>
-              ))}
+                  </DropdownMenuItem>
+                ),
+              )}
               {profileUrl ? (
                 <DropdownMenuItem className={menuItemClass} asChild>
                   <Link href={profileUrl}>
