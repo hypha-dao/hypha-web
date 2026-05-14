@@ -354,36 +354,17 @@ export function HumanChatPanelCallStage({
 
   const {
     isVideoCall,
-    shareFeeds: rawShareFeeds,
+    shareFeeds,
     hasLocalWebcam,
     remoteUserMedia,
     missingRemoteUserIds,
     localUserMedia,
-    hasRemotesOrShare: rawHasRemotesOrShare,
-    showLocalInMainGrid: rawShowLocalInMainGrid,
-    showLocalPip: rawShowLocalPip,
+    hasRemotesOrShare,
+    showLocalInMainGrid,
+    showLocalPip,
   } = model;
 
   const isFull = layout === 'fullView';
-  /**
-   * Avoid recursive "hall of mirrors" when the user is alone and sharing the same
-   * window that renders this stage. In that case, show the local camera tile instead.
-   */
-  const suppressLocalSelfSharePreview =
-    isFull &&
-    rawShareFeeds.length > 0 &&
-    rawShareFeeds.every((feed) => feed.isLocal()) &&
-    remoteUserMedia.length === 0 &&
-    missingRemoteUserIds.length === 0;
-  const shareFeeds = suppressLocalSelfSharePreview ? [] : rawShareFeeds;
-  const hasRemotesOrShare = suppressLocalSelfSharePreview
-    ? remoteUserMedia.length > 0 || missingRemoteUserIds.length > 0
-    : rawHasRemotesOrShare;
-  const showLocalInMainGrid = suppressLocalSelfSharePreview
-    ? localUserMedia.length > 0
-    : rawShowLocalInMainGrid;
-  const showLocalPip = suppressLocalSelfSharePreview ? false : rawShowLocalPip;
-
   const userGridTileCount =
     remoteUserMedia.length +
     missingRemoteUserIds.length +
