@@ -742,9 +742,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (mode === 'space') {
       bindRoomContext(roomId, spaceSlug ?? null, authToken ?? null);
-      return;
+    } else {
+      bindRoomContext(null, null);
     }
-    bindRoomContext(null, null);
+    return () => {
+      bindRoomContext(null, null);
+    };
   }, [authToken, bindRoomContext, mode, roomId, spaceSlug]);
 
   const callUiEnabled = useMemo(
