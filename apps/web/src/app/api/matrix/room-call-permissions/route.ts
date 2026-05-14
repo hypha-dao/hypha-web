@@ -159,6 +159,8 @@ async function writePowerLevelsViaSynapseAdminApi(
 ): Promise<{ ok: true } | { ok: false; details: string }> {
   const encodedRoomId = encodeURIComponent(roomId);
   const attempts = [
+    `${homeserver}/_synapse/admin/v2/rooms/${encodedRoomId}/state/m.room.power_levels`,
+    `${homeserver}/_synapse/admin/v1/rooms/${encodedRoomId}/state/m.room.power_levels`,
     `${homeserver}/_synapse/admin/v2/rooms/${encodedRoomId}/state/m.room.power_levels/`,
     `${homeserver}/_synapse/admin/v1/rooms/${encodedRoomId}/state/m.room.power_levels/`,
   ] as const;
