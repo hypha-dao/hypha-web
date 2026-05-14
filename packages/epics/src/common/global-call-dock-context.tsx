@@ -57,9 +57,9 @@ function useGlobalCallDockValue() {
   const [pendingJoin, setPendingJoin] = React.useState<PendingJoin | null>(
     null,
   );
-  const [dockMode, setDockMode] = React.useState<GlobalCallDockMode>(() =>
-    readDockModeFromStorage(),
-  );
+  const [dockMode, setDockMode] =
+    React.useState<GlobalCallDockMode>('thumbnail');
+  const [dockModeHydrated, setDockModeHydrated] = React.useState(false);
 
   const call = useSpaceGroupCall(activeRoomId, {
     authToken: activeAuthToken,
@@ -106,8 +106,14 @@ function useGlobalCallDockValue() {
   }, [call.callState]);
 
   React.useEffect(() => {
+    setDockMode(readDockModeFromStorage());
+    setDockModeHydrated(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (!dockModeHydrated) return;
     persistDockMode(dockMode);
-  }, [dockMode]);
+  }, [dockMode, dockModeHydrated]);
 
   React.useEffect(() => {
     if (!pendingJoin) return;
