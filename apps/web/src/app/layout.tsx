@@ -14,6 +14,7 @@ import { AuthProvider } from '@hypha-platform/authentication';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   AiLeftPanel,
+  AiPanelTrigger,
   AiSidebarTrigger,
   GlobalCallDockProvider,
   PanelProviders,
@@ -283,8 +284,9 @@ export default async function RootLayout({
                             closeMenuLabel={navCloseMenuLabel}
                             leadingAction={
                               aiChatEnabled ? (
-                                <div className="md:hidden">
+                                <div className="md:hidden flex items-center gap-2">
                                   <AiSidebarTrigger />
+                                  <AiPanelTrigger />
                                 </div>
                               ) : undefined
                             }
