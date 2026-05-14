@@ -223,12 +223,18 @@ export async function POST(request: NextRequest) {
   const humanChatEnabled = await getEnableHumanChat();
   const authHeader = request.headers.get('Authorization');
   if (!humanChatEnabled || !authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'Unauthorized', correlationId },
+      { status: 401 },
+    );
   }
   const authToken = authHeader.slice('Bearer '.length).trim();
   const privyUserId = await verifyPrivyToken(authToken);
   if (!privyUserId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'Unauthorized', correlationId },
+      { status: 401 },
+    );
   }
 
   const body = (await request.json().catch(() => null)) as {
