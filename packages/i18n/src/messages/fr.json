@@ -2348,7 +2348,9 @@
     "expandLabel": "Agrandir l'appel",
     "fullscreenLabel": "Plein écran",
     "exitFullscreenLabel": "Quitter le plein écran",
-    "unknownMember": "Inconnu"
+    "unknownMember": "Inconnu",
+    "resizeTopRightLabel": "Redimensionner l'appel depuis le coin supérieur droit",
+    "resizeBottomLeftLabel": "Redimensionner l'appel depuis le coin inférieur gauche"
   },
   "SignalCard": {
     "noConversationRoom": "Pas encore de salle de conversation",

@@ -2350,7 +2350,9 @@
     "expandLabel": "Expandir llamada",
     "fullscreenLabel": "Pantalla completa",
     "exitFullscreenLabel": "Salir de pantalla completa",
-    "unknownMember": "Desconocido"
+    "unknownMember": "Desconocido",
+    "resizeTopRightLabel": "Redimensionar la llamada desde la esquina superior derecha",
+    "resizeBottomLeftLabel": "Redimensionar la llamada desde la esquina inferior izquierda"
   },
   "SignalCard": {
     "noConversationRoom": "Aún no hay sala de conversación",

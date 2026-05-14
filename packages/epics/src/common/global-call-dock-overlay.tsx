@@ -34,6 +34,7 @@ type DockGeometry = {
   width: number;
   height: number;
 };
+type ResizeCorner = 'top-right' | 'bottom-left';
 
 const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v1';
 const DOCK_MARGIN_PX = 16;
@@ -172,7 +173,15 @@ export function GlobalCallDockOverlay() {
     startOffsetX: number;
     startOffsetY: number;
   } | null>(null);
+  const resizeRef = React.useRef<{
+    pointerId: number;
+    corner: ResizeCorner;
+    startX: number;
+    startY: number;
+    startGeometry: DockGeometry;
+  } | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [isResizing, setIsResizing] = React.useState(false);
 
   React.useEffect(() => {
     setLayoutMode(readCallFullViewLayoutFromStorage());
@@ -232,25 +241,65 @@ export function GlobalCallDockOverlay() {
   }, [dockMode]);
 
   React.useEffect(() => {
-    if (!isDragging) return;
+    if (!isDragging && !isResizing) return;
 
     const onMove = (e: PointerEvent) => {
       const drag = dragRef.current;
-      if (!drag || e.pointerId !== drag.pointerId) return;
-      setGeometry((prev) =>
+      if (drag && e.pointerId === drag.pointerId) {
+        setGeometry((prev) =>
+          clampDockGeometry({
+            ...prev,
+            x: drag.startOffsetX + (e.clientX - drag.startX),
+            y: drag.startOffsetY + (e.clientY - drag.startY),
+          }),
+        );
+      }
+
+      const resize = resizeRef.current;
+      if (!resize || e.pointerId !== resize.pointerId) return;
+      const dx = e.clientX - resize.startX;
+      const dy = e.clientY - resize.startY;
+      const start = resize.startGeometry;
+
+      if (resize.corner === 'top-right') {
+        const nextWidth = Math.max(DOCK_MIN_WIDTH, start.width + dx);
+        const nextHeight = Math.max(DOCK_MIN_HEIGHT, start.height - dy);
+        const widthDelta = nextWidth - start.width;
+        setGeometry(
+          clampDockGeometry({
+            x: start.x + widthDelta,
+            y: start.y,
+            width: nextWidth,
+            height: nextHeight,
+          }),
+        );
+        return;
+      }
+
+      const nextWidth = Math.max(DOCK_MIN_WIDTH, start.width - dx);
+      const nextHeight = Math.max(DOCK_MIN_HEIGHT, start.height + dy);
+      const heightDelta = nextHeight - start.height;
+      setGeometry(
         clampDockGeometry({
-          ...prev,
-          x: drag.startOffsetX + (e.clientX - drag.startX),
-          y: drag.startOffsetY + (e.clientY - drag.startY),
+          x: start.x,
+          y: start.y + heightDelta,
+          width: nextWidth,
+          height: nextHeight,
         }),
       );
     };
 
     const onEnd = (e: PointerEvent) => {
       const drag = dragRef.current;
-      if (!drag || e.pointerId !== drag.pointerId) return;
-      dragRef.current = null;
-      setIsDragging(false);
+      if (drag && e.pointerId === drag.pointerId) {
+        dragRef.current = null;
+        setIsDragging(false);
+      }
+      const resize = resizeRef.current;
+      if (resize && e.pointerId === resize.pointerId) {
+        resizeRef.current = null;
+        setIsResizing(false);
+      }
       setGeometry((prev) => snapDockGeometry(clampDockGeometry(prev)));
     };
 
@@ -262,7 +311,7 @@ export function GlobalCallDockOverlay() {
       window.removeEventListener('pointerup', onEnd);
       window.removeEventListener('pointercancel', onEnd);
     };
-  }, [isDragging]);
+  }, [isDragging, isResizing]);
 
   const onDragStart = React.useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -279,6 +328,23 @@ export function GlobalCallDockOverlay() {
       setIsDragging(true);
     },
     [dockMode, geometry.x, geometry.y],
+  );
+
+  const onResizeStart = React.useCallback(
+    (corner: ResizeCorner) => (e: React.PointerEvent<HTMLDivElement>) => {
+      if (dockMode === 'fullscreen') return;
+      e.preventDefault();
+      e.stopPropagation();
+      resizeRef.current = {
+        pointerId: e.pointerId,
+        corner,
+        startX: e.clientX,
+        startY: e.clientY,
+        startGeometry: geometry,
+      };
+      setIsResizing(true);
+    },
+    [dockMode, geometry],
   );
 
   const resolveMemberLabel = React.useCallback(
@@ -311,7 +377,6 @@ export function GlobalCallDockOverlay() {
         right: 16,
         bottom: 16,
         transform: `translate(${geometry.x}px, ${geometry.y}px)`,
-        resize: 'both',
       };
 
   const onToggleMic = () => {
@@ -338,6 +403,28 @@ export function GlobalCallDockOverlay() {
       )}
       style={containerStyle}
     >
+      {!modeIsFullscreen && (
+        <>
+          <div
+            data-no-dock-drag
+            onPointerDown={onResizeStart('top-right')}
+            className="absolute -top-1 -right-1 z-[2] h-4 w-4 cursor-nesw-resize touch-none"
+            aria-label={t('resizeTopRightLabel')}
+            title={t('resizeTopRightLabel')}
+          >
+            <div className="pointer-events-none absolute right-0 top-0 h-3 w-3 border-r-2 border-t-2 border-foreground/55" />
+          </div>
+          <div
+            data-no-dock-drag
+            onPointerDown={onResizeStart('bottom-left')}
+            className="absolute -bottom-1 -left-1 z-[2] h-4 w-4 cursor-nesw-resize touch-none"
+            aria-label={t('resizeBottomLeftLabel')}
+            title={t('resizeBottomLeftLabel')}
+          >
+            <div className="pointer-events-none absolute bottom-0 left-0 h-3 w-3 border-b-2 border-l-2 border-foreground/55" />
+          </div>
+        </>
+      )}
       <div
         className={cn(
           'flex shrink-0 items-center gap-2 border-b border-border/50 bg-muted/45 px-2.5 py-2',

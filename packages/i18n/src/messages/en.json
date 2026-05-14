@@ -2357,7 +2357,9 @@
     "expandLabel": "Expand call",
     "fullscreenLabel": "Fullscreen",
     "exitFullscreenLabel": "Exit fullscreen",
-    "unknownMember": "Unknown"
+    "unknownMember": "Unknown",
+    "resizeTopRightLabel": "Resize call window from top-right corner",
+    "resizeBottomLeftLabel": "Resize call window from bottom-left corner"
   },
   "SignalCard": {
     "noConversationRoom": "No conversation room yet",

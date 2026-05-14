@@ -2358,7 +2358,9 @@
     "expandLabel": "Anruf erweitern",
     "fullscreenLabel": "Vollbild",
     "exitFullscreenLabel": "Vollbild beenden",
-    "unknownMember": "Unbekannt"
+    "unknownMember": "Unbekannt",
+    "resizeTopRightLabel": "Anruffenster über die obere rechte Ecke skalieren",
+    "resizeBottomLeftLabel": "Anruffenster über die untere linke Ecke skalieren"
   },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",
