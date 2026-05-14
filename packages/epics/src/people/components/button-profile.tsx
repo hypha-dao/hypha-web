@@ -11,6 +11,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Sheet,
+  SheetContent,
 } from '@hypha-platform/ui';
 import { PersonAvatar } from './person-avatar';
 import { EthAddress } from './eth-address';
@@ -54,6 +56,8 @@ export type ButtonProfileProps = {
 
 const menuItemClass =
   'gap-2 px-2 py-2 text-2 [&_svg]:text-muted-foreground data-[highlighted]:[&_svg]:text-foreground';
+const compactSheetItemClass =
+  'flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left text-2 text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export const ButtonProfile = ({
   person,
@@ -97,199 +101,215 @@ export const ButtonProfile = ({
     return (
       <div className="flex items-center gap-2">
         {trailingBeforeProfile}
-        <DropdownMenu
-          open={profileMenuOpen}
-          onOpenChange={setProfileMenuOpen}
-          modal={false}
-        >
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className={cn(
-                'box-border flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center',
-                'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
-                'shadow-sm transition-colors duration-150',
-                'hover:text-foreground',
-                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                'data-[state=open]:shadow-md',
-              )}
-              aria-label={t('openProfileMenu')}
-              aria-haspopup="menu"
-            >
-              <PersonAvatar
-                size="toolbar"
-                avatarSrc={person?.avatarUrl}
-                userName={person?.nickname}
-                shape="rounded"
-                className="h-full w-full rounded-md ring-0"
-              />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            side="bottom"
-            sideOffset={6}
-            collisionPadding={12}
+        <Sheet open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
+          <button
+            type="button"
             className={cn(
-              'w-[min(17.5rem,calc(100vw-1.5rem))] border border-border/90 p-1',
+              'box-border flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center',
+              'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
+              'shadow-sm transition-colors duration-150',
+              'hover:text-foreground',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+            )}
+            aria-label={t('openProfileMenu')}
+            aria-haspopup="dialog"
+            aria-expanded={profileMenuOpen}
+            onClick={() => setProfileMenuOpen(true)}
+          >
+            <PersonAvatar
+              size="toolbar"
+              avatarSrc={person?.avatarUrl}
+              userName={person?.nickname}
+              shape="rounded"
+              className="h-full w-full rounded-md ring-0"
+            />
+          </button>
+          <SheetContent
+            side="right"
+            closeLabel="Close"
+            className={cn(
+              'w-[calc(100vw-1rem)] max-w-[560px] border-l border-border/80 p-0',
               'bg-popover text-popover-foreground shadow-xl',
             )}
           >
-            <DropdownMenuLabel className="cursor-default px-2 pb-0 pt-1.5 font-normal">
-              <div className="flex gap-3">
-                <PersonAvatar
-                  size="md"
-                  avatarSrc={person?.avatarUrl}
-                  userName={person?.nickname}
-                  shape="rounded"
-                  className="ring-1 ring-border/60"
-                />
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="truncate text-2 font-semibold leading-snug text-foreground">
-                    {primaryLine}
-                  </span>
-                  {displayName.trim() && person?.nickname ? (
-                    <span className="truncate text-1 text-muted-foreground">
-                      {person.nickname}
+            <div className="flex h-full flex-col">
+              <div className="border-b border-border/60 px-4 pb-4 pt-5">
+                <div className="flex gap-3">
+                  <PersonAvatar
+                    size="md"
+                    avatarSrc={person?.avatarUrl}
+                    userName={person?.nickname}
+                    shape="rounded"
+                    className="ring-1 ring-border/60"
+                  />
+                  <div className="flex min-w-0 flex-1 flex-col gap-1 pr-8">
+                    <span className="truncate text-2 font-semibold leading-snug text-foreground">
+                      {primaryLine}
                     </span>
-                  ) : null}
+                    {displayName.trim() && person?.nickname ? (
+                      <span className="truncate text-1 text-muted-foreground">
+                        {person.nickname}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
+                {address ? (
+                  <div className="mt-3 w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5 text-1 text-muted-foreground">
+                    <EthAddress address={address} />
+                  </div>
+                ) : null}
               </div>
-            </DropdownMenuLabel>
-            {address ? (
-              <div className="mt-2 w-full border-t border-border/50 pt-2 pb-1">
-                <div
-                  className={cn(
-                    'w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5',
-                    'text-1 text-muted-foreground',
-                  )}
-                >
-                  <EthAddress address={address} />
-                </div>
-              </div>
-            ) : null}
 
-            <DropdownMenuSeparator className="-mx-0 my-1" />
-            <DropdownMenuGroup className="space-y-0.5">
-              {navItems.map((item) =>
-                item.href ? (
-                  <DropdownMenuItem
-                    key={`${item.label}-${String(item.href)}`}
-                    className={menuItemClass}
-                    asChild
-                  >
-                    <Link href={item.href}>
-                      <span className="flex-1">{item.label}</span>
+              <div className="flex-1 overflow-y-auto px-2 py-2">
+                <div className="space-y-1">
+                  {navItems.map((item) =>
+                    item.href ? (
+                      <Link
+                        key={`${item.label}-${String(item.href)}`}
+                        href={item.href}
+                        className={compactSheetItemClass}
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <span className="flex-1">{item.label}</span>
+                        <ChevronRight
+                          className="ml-auto size-4 text-muted-foreground"
+                          aria-hidden
+                        />
+                      </Link>
+                    ) : (
+                      <button
+                        key={`nav-action-${item.label}`}
+                        type="button"
+                        className={compactSheetItemClass}
+                        onClick={(event) => {
+                          setProfileMenuOpen(false);
+                          item.onClick?.(event);
+                        }}
+                      >
+                        <span className="flex-1">{item.label}</span>
+                      </button>
+                    ),
+                  )}
+                  {profileUrl ? (
+                    <Link
+                      href={profileUrl}
+                      className={compactSheetItemClass}
+                      onClick={() => setProfileMenuOpen(false)}
+                    >
+                      <UserRound className="size-4 shrink-0 text-muted-foreground" />
+                      <span className="flex-1">{t('viewProfile')}</span>
                       <ChevronRight
-                        className="ml-auto size-4 opacity-60"
+                        className="ml-auto size-4 text-muted-foreground"
                         aria-hidden
                       />
                     </Link>
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem
-                    key={`nav-action-${item.label}`}
-                    className={menuItemClass}
-                    onClick={item.onClick}
+                  ) : null}
+                  {onboardingUrl ? (
+                    <Link
+                      href={onboardingUrl}
+                      className={compactSheetItemClass}
+                      onClick={() => setProfileMenuOpen(false)}
+                    >
+                      <Compass className="size-4 shrink-0 text-muted-foreground" />
+                      <span className="flex-1">{t('continueAdventure')}</span>
+                      <ChevronRight
+                        className="ml-auto size-4 text-muted-foreground"
+                        aria-hidden
+                      />
+                    </Link>
+                  ) : null}
+                  {notificationCentrePath ? (
+                    <Link
+                      href={notificationCentrePath}
+                      className={compactSheetItemClass}
+                      onClick={() => setProfileMenuOpen(false)}
+                    >
+                      <Bell className="size-4 shrink-0 text-muted-foreground" />
+                      <span className="flex-1">{t('notificationCentre')}</span>
+                      <ChevronRight
+                        className="ml-auto size-4 text-muted-foreground"
+                        aria-hidden
+                      />
+                    </Link>
+                  ) : null}
+                </div>
+
+                <div className="my-2 border-t border-border/60" />
+
+                <div className="space-y-1">
+                  {onChangeThemeMode ? (
+                    <button
+                      type="button"
+                      className={compactSheetItemClass}
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        onChangeThemeMode();
+                      }}
+                    >
+                      <span className="flex-1">
+                        {resolvedTheme === 'dark'
+                          ? t('switchToLightMode')
+                          : t('switchToDarkMode')}
+                      </span>
+                      <Repeat className="size-4 shrink-0 text-muted-foreground" />
+                    </button>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    className={compactSheetItemClass}
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      showMfaEnrollmentModal();
+                    }}
                   >
-                    <span className="flex-1">{item.label}</span>
-                  </DropdownMenuItem>
-                ),
-              )}
-              {profileUrl ? (
-                <DropdownMenuItem className={menuItemClass} asChild>
-                  <Link href={profileUrl}>
-                    <UserRound className="size-4 shrink-0" aria-hidden />
-                    <span className="flex-1">{t('viewProfile')}</span>
-                    <ChevronRight
-                      className="ml-auto size-4 opacity-60"
-                      aria-hidden
-                    />
-                  </Link>
-                </DropdownMenuItem>
-              ) : null}
-              {onboardingUrl ? (
-                <DropdownMenuItem className={menuItemClass} asChild>
-                  <Link href={onboardingUrl}>
-                    <Compass className="size-4 shrink-0" aria-hidden />
-                    <span className="flex-1">{t('continueAdventure')}</span>
-                    <ChevronRight
-                      className="ml-auto size-4 opacity-60"
-                      aria-hidden
-                    />
-                  </Link>
-                </DropdownMenuItem>
-              ) : null}
-              {notificationCentrePath ? (
-                <DropdownMenuItem className={menuItemClass} asChild>
-                  <Link href={notificationCentrePath}>
-                    <Bell className="size-4 shrink-0" aria-hidden />
-                    <span className="flex-1">{t('notificationCentre')}</span>
-                    <ChevronRight
-                      className="ml-auto size-4 opacity-60"
-                      aria-hidden
-                    />
-                  </Link>
-                </DropdownMenuItem>
-              ) : null}
-            </DropdownMenuGroup>
+                    <span className="flex-1">
+                      {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
+                    </span>
+                    <Shield className="size-4 shrink-0 text-muted-foreground" />
+                  </button>
+                </div>
 
-            <DropdownMenuSeparator className="-mx-0 my-1" />
-            <DropdownMenuGroup className="space-y-0.5">
-              {onChangeThemeMode ? (
-                <DropdownMenuItem
-                  className={menuItemClass}
-                  onClick={onChangeThemeMode}
-                >
-                  <span className="flex-1">
-                    {resolvedTheme === 'dark'
-                      ? t('switchToLightMode')
-                      : t('switchToDarkMode')}
-                  </span>
-                  <Repeat className="size-4 shrink-0" aria-hidden />
-                </DropdownMenuItem>
-              ) : null}
-              <DropdownMenuItem
-                className={menuItemClass}
-                onClick={showMfaEnrollmentModal}
-              >
-                <span className="flex-1">
-                  {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
-                </span>
-                <Shield className="size-4 shrink-0" aria-hidden />
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+                <div className="my-2 border-t border-border/60" />
 
-            {onDelete ? (
-              <>
-                <DropdownMenuSeparator className="-mx-0 my-1" />
-                <DropdownMenuItem
-                  onClick={onDelete}
-                  className={cn(
-                    menuItemClass,
-                    'text-error-11 focus:text-error-11',
-                  )}
-                  disabled
-                >
-                  <span className="flex-1">{t('delete')}</span>
-                  <TrashIcon className="size-4 shrink-0" aria-hidden />
-                </DropdownMenuItem>
-              </>
-            ) : null}
+                <div className="space-y-1">
+                  {onDelete ? (
+                    <button
+                      type="button"
+                      className={cn(
+                        compactSheetItemClass,
+                        'text-error-11 hover:bg-error-3/40',
+                      )}
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        onDelete();
+                      }}
+                      disabled
+                    >
+                      <span className="flex-1">{t('delete')}</span>
+                      <TrashIcon className="size-4 shrink-0 text-error-11" />
+                    </button>
+                  ) : null}
 
-            <DropdownMenuSeparator className="-mx-0 my-1" />
-            <DropdownMenuItem
-              onClick={onLogout}
-              className={cn(
-                menuItemClass,
-                'text-error-11 focus:bg-error-3 focus:text-error-12 data-[highlighted]:bg-error-3',
-              )}
-            >
-              <span className="flex-1">{t('logout')}</span>
-              <LogOutIcon className="size-4 shrink-0" aria-hidden />
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                  <button
+                    type="button"
+                    className={cn(
+                      compactSheetItemClass,
+                      'text-error-11 hover:bg-error-3/40',
+                    )}
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      onLogout();
+                    }}
+                  >
+                    <span className="flex-1">{t('logout')}</span>
+                    <LogOutIcon className="size-4 shrink-0 text-error-11" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     );
   }
