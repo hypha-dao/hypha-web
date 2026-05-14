@@ -31,7 +31,7 @@ export function HumanChatPanelHeader({
   trailingStart,
   notificationSettingsHref,
 }: HumanChatPanelHeaderProps) {
-  const { toggleSidebar } = useSidebar();
+  const { setOpen, setOpenMobile } = useSidebar();
   const t = useTranslations('HumanChatPanel');
 
   const displayTitle = title ?? t('title');
@@ -52,7 +52,11 @@ export function HumanChatPanelHeader({
         ) : (
           <button
             type="button"
-            onClick={toggleSidebar}
+            onClick={() => {
+              // Keep both desktop/sidebar and mobile/sheet states in sync.
+              setOpen(false);
+              setOpenMobile(false);
+            }}
             className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             title={t('hidePanel')}
             aria-label={t('closePanel')}
