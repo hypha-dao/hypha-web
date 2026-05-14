@@ -46,15 +46,31 @@ export const CreateSubspaceForm = ({
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const hasNavigatedAfterSuccessRef = React.useRef(false);
-  const closeAfterSuccess = React.useCallback(() => {
-    // In @aside parallel routes, the visible URL can already be the parent path.
-    // Prefer history back to close the overlay state, then hard-fallback to a
-    // full navigation so parallel-route state is always cleared.
-    router.back();
-    window.setTimeout(() => {
-      window.location.assign(successfulUrl);
-    }, 250);
-  }, [router, successfulUrl]);
+  const resolveSuccessUrl = React.useCallback(
+    (targetSpaceSlug?: string) => {
+      if (!targetSpaceSlug) {
+        return successfulUrl;
+      }
+      // Keep current context path (e.g. /ecosystem-navigation) but switch space slug.
+      return successfulUrl.replace(
+        /(\/dho\/)([^/]+)(?=\/|$)/,
+        `$1${targetSpaceSlug}`,
+      );
+    },
+    [successfulUrl],
+  );
+  const closeAfterSuccess = React.useCallback(
+    (targetUrl: string) => {
+      // In @aside parallel routes, the visible URL can already be the parent path.
+      // Prefer history back to close the overlay state, then hard-fallback to a
+      // full navigation so parallel-route state is always cleared.
+      router.back();
+      window.setTimeout(() => {
+        window.location.assign(targetUrl);
+      }, 250);
+    },
+    [router],
+  );
   const pendingNavigationSeedRef = React.useRef<{
     optimisticSpace: Space;
     organisationSpaces: Space[];
@@ -140,10 +156,21 @@ export const CreateSubspaceForm = ({
           });
           pendingNavigationSeedRef.current = null;
         }
-        closeAfterSuccess();
+        const targetUrl = resolveSuccessUrl(
+          spaceSlug ?? seed?.optimisticSpace.slug,
+        );
+        closeAfterSuccess(targetUrl);
       })();
     }
-  }, [closeAfterSuccess, jwt, mutate, parentSpaceSlug, progress, spaceSlug]);
+  }, [
+    closeAfterSuccess,
+    jwt,
+    mutate,
+    parentSpaceSlug,
+    progress,
+    resolveSuccessUrl,
+    spaceSlug,
+  ]);
 
   React.useEffect(() => {
     if (isError) {
