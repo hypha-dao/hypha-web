@@ -311,6 +311,7 @@ export function PanelWrapLayout({
     ? RIGHT_SIDEBAR_WIDTH_COMPACT
     : RIGHT_SIDEBAR_WIDTH;
   const leftExpandedSidebarWidth = LEFT_SIDEBAR_EXPANDED_WIDTH;
+  const leftCollapsibleMode = isCompactPanels ? 'offcanvas' : 'icon';
   const fallbackSidebarLeftPx = effectiveLeft
     ? leftExpanded
       ? leftExpandedSidebarWidth
@@ -425,6 +426,7 @@ export function PanelWrapLayout({
       <PanelDualSidebarScrollBridge
         leftOpen={leftExpanded}
         leftSidebarWidth={leftExpandedSidebarWidth}
+        leftCollapsible={leftCollapsibleMode}
         onLeftOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
@@ -507,7 +509,7 @@ export function PanelWrapLayout({
         <Sidebar
           side="left"
           variant="sidebar"
-          collapsible="icon"
+          collapsible={leftCollapsibleMode}
           className="z-[50] overflow-visible"
         >
           {effectiveLeft.content}

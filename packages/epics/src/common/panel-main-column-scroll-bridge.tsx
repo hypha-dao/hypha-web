@@ -13,6 +13,7 @@ import { setMainColumnScrollRoot } from './main-column-scroll';
 type Props = {
   leftOpen: boolean;
   leftSidebarWidth: string;
+  leftCollapsible: 'offcanvas' | 'icon';
   onLeftOpenChange: (open: boolean) => void;
   rightOpen: boolean;
   onRightOpenChange: (open: boolean) => void;
@@ -31,6 +32,7 @@ type Props = {
 export function PanelDualSidebarScrollBridge({
   leftOpen,
   leftSidebarWidth,
+  leftCollapsible,
   onLeftOpenChange,
   rightOpen,
   onRightOpenChange,
@@ -58,7 +60,7 @@ export function PanelDualSidebarScrollBridge({
       <Sidebar
         side="left"
         variant="sidebar"
-        collapsible="icon"
+        collapsible={leftCollapsible}
         className="z-[50] overflow-visible"
       >
         {leftContent}
