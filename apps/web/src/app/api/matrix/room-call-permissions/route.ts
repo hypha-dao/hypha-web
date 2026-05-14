@@ -492,6 +492,29 @@ export async function POST(request: NextRequest) {
       );
       if (refreshedPowerLevels.ok) {
         nextPowerLevels = applyCallEventLevels(refreshedPowerLevels.data).next;
+      } else {
+        const adminFallback = await readPowerLevelsViaSynapseAdminApi(
+          homeserver,
+          roomId,
+          adminAccessToken,
+        );
+        if (!adminFallback.ok) {
+          return createFailureResponse(
+            correlationId,
+            'Failed to refresh room power levels after make_room_admin',
+            502,
+            {
+              joinAttemptDetails,
+              makeRoomAdminAttempt: makeRoomAdminAttemptDetails,
+              matrixClient: {
+                status: refreshedPowerLevels.status,
+                body: refreshedPowerLevels.body,
+              },
+              synapseAdmin: adminFallback.details,
+            },
+          );
+        }
+        nextPowerLevels = applyCallEventLevels(adminFallback.powerLevels).next;
       }
       updateResult = await matrixRequest<Record<string, unknown>>(
         'PUT',
