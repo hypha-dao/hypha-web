@@ -39,6 +39,7 @@ import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { useAiPanel } from './human-chat-panel-context';
+import { useCompactHeaderMode } from './use-compact-header-mode';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { Empty } from './empty';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
@@ -120,6 +121,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tSpaces = useTranslations('Spaces');
   const { resolvedTheme } = useTheme();
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
+  const isCompactHeader = useCompactHeaderMode();
   const {
     open: isAiOpen,
     overlayVisible,
@@ -332,6 +334,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           >
             <Link
               href={item.href}
+              onClick={handleMenuItemNavigation}
               aria-label={item.label}
               aria-current={item.active ? 'page' : undefined}
               className={`${MENU_ROW_LINK_BASE_CLASS} ${
@@ -351,7 +354,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         </SidebarMenuItem>
       );
     },
-    [],
+    [handleMenuItemNavigation],
   );
 
   const renderRecentSpaceItem = useCallback(
@@ -384,6 +387,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           >
             <Link
               href={safeHref}
+              onClick={handleMenuItemNavigation}
               aria-label={space.title}
               aria-current={isRecentActive ? 'page' : undefined}
               className={`${MENU_ROW_LINK_BASE_CLASS} ${
@@ -424,7 +428,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         </SidebarMenuItem>
       );
     },
-    [lang, pathname, resolvedTheme, spaceSlug],
+    [lang, pathname, resolvedTheme, spaceSlug, handleMenuItemNavigation],
   );
 
   const renderRecentSpacesSection = useCallback(
@@ -539,6 +543,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     hideAiOverlay();
     closeAiPanel();
   }, [closeAiPanel, hideAiOverlay]);
+  const handleMenuItemNavigation = useCallback(() => {
+    if (!isCompactHeader) return;
+    handleOverlayClose();
+  }, [isCompactHeader, handleOverlayClose]);
 
   const handleTriggerClick = useCallback(() => {
     if (isAiOpen || overlayVisible) {
