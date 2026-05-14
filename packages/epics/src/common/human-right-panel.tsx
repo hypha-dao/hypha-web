@@ -1354,12 +1354,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   // Track previous sidebar open state to detect close events
   const prevSidebarOpenRef = useRef(sidebarOpen);
+  const hasLoadedCoherenceMessagesRef = useRef(false);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
       closeCoherenceChat();
     }
     prevSidebarOpenRef.current = sidebarOpen;
   }, [sidebarOpen, mode, closeCoherenceChat]);
+
+  useEffect(() => {
+    hasLoadedCoherenceMessagesRef.current = false;
+  }, [coherenceSlug, mode]);
 
   // Reset chat state when space changes
   useEffect(() => {
@@ -1788,6 +1793,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!roomId) return;
     writePersistedChatHistory(roomId, messages);
   }, [roomId, messages]);
+
+  useEffect(() => {
+    if (mode !== 'coherence') return;
+    if (!isMatrixAvailable || !coherenceSlug || !roomId || isJoining) return;
+    // Avoid clobbering persisted counts with transient empty timeline snapshots.
+    if (!hasLoadedCoherenceMessagesRef.current && messages.length === 0) return;
+    hasLoadedCoherenceMessagesRef.current = true;
+    updateCoherenceBySlug({
+      slug: coherenceSlug,
+      messages: messages.length,
+    }).catch((error) => {
+      console.warn(
+        '[HumanRightPanel] Failed to persist coherence message count:',
+        error,
+      );
+    });
+  }, [
+    mode,
+    isMatrixAvailable,
+    coherenceSlug,
+    roomId,
+    isJoining,
+    messages.length,
+    updateCoherenceBySlug,
+  ]);
 
   // Keep message ids in sync when the SDK replaces provisional ~… ids with $… after send
   useEffect(() => {
