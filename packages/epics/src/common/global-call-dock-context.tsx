@@ -144,6 +144,11 @@ function useGlobalCallDockValue() {
     call.callState === 'awaiting_media' ||
     call.callState === 'initializing' ||
     call.callState === 'disconnecting';
+  const inSessionRef = React.useRef(inSession);
+
+  React.useEffect(() => {
+    inSessionRef.current = inSession;
+  }, [inSession]);
 
   const bindRoomContext = React.useCallback(
     (
@@ -151,7 +156,7 @@ function useGlobalCallDockValue() {
       spaceSlug: string | null,
       authToken?: string | null,
     ) => {
-      if (!roomId && !inSession && restoreInProgressRef.current) {
+      if (!roomId && !inSessionRef.current && restoreInProgressRef.current) {
         return;
       }
       if (roomId) {
@@ -160,13 +165,13 @@ function useGlobalCallDockValue() {
       setBoundRoomId(roomId);
       setBoundSpaceSlug(spaceSlug);
       setBoundAuthToken(authToken?.trim() || null);
-      if (!inSession) {
+      if (!inSessionRef.current) {
         setActiveRoomId(roomId);
         setActiveSpaceSlug(spaceSlug);
         setActiveAuthToken(authToken?.trim() || null);
       }
     },
-    [inSession],
+    [],
   );
 
   React.useEffect(() => {
