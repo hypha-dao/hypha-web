@@ -39,11 +39,11 @@ type ResizeCorner = 'top-right' | 'bottom-left';
 const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v1';
 const DOCK_MARGIN_PX = 16;
 const SNAP_EDGE_PX = 24;
-const DOCK_MIN_WIDTH = 640;
-const DOCK_MIN_HEIGHT = 520;
+const DOCK_MIN_WIDTH = 420;
+const DOCK_MIN_HEIGHT = 300;
 const THUMBNAIL_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
-  width: 640,
-  height: 520,
+  width: 420,
+  height: 300,
 };
 const EXPANDED_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
   width: 760,
@@ -289,8 +289,8 @@ export function GlobalCallDockOverlay() {
       const start = resize.startGeometry;
 
       if (resize.corner === 'top-right') {
-        const nextWidth = Math.max(DOCK_MIN_WIDTH, start.width + dx);
-        const nextHeight = Math.max(DOCK_MIN_HEIGHT, start.height - dy);
+        const nextWidth = start.width + dx;
+        const nextHeight = start.height - dy;
         const widthDelta = nextWidth - start.width;
         setGeometry(
           clampDockGeometry({
@@ -303,8 +303,8 @@ export function GlobalCallDockOverlay() {
         return;
       }
 
-      const nextWidth = Math.max(DOCK_MIN_WIDTH, start.width - dx);
-      const nextHeight = Math.max(DOCK_MIN_HEIGHT, start.height + dy);
+      const nextWidth = start.width - dx;
+      const nextHeight = start.height + dy;
       const heightDelta = nextHeight - start.height;
       setGeometry(
         clampDockGeometry({
