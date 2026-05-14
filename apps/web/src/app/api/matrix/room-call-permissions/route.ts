@@ -411,7 +411,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let current: MatrixPowerLevels | null = null;
+  let current: MatrixPowerLevels;
   const powerLevelsResult = await matrixRequest<MatrixPowerLevels>(
     'GET',
     `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
@@ -439,15 +439,6 @@ export async function POST(request: NextRequest) {
         },
       );
     }
-  }
-
-  if (!current) {
-    return createFailureResponse(
-      correlationId,
-      'Failed to read room power levels',
-      502,
-      { reason: 'Power levels not available' },
-    );
   }
   const applyCallEventLevels = (source: MatrixPowerLevels) => {
     const events = { ...(source.events ?? {}) };
