@@ -44,6 +44,7 @@ export const CreateSubspaceForm = ({
     progress,
     space: { slug: spaceSlug },
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const hasNavigatedAfterSuccessRef = React.useRef(false);
   const closeAfterSuccess = React.useCallback(() => {
     // In @aside parallel routes, the visible URL can already be the parent path.
@@ -61,12 +62,31 @@ export const CreateSubspaceForm = ({
   React.useEffect(() => {
     if (progress === 100 && !hasNavigatedAfterSuccessRef.current) {
       hasNavigatedAfterSuccessRef.current = true;
+      setIsSubmitting(false);
       void (async () => {
         const seed = pendingNavigationSeedRef.current;
         const mutationPromises: Promise<unknown>[] = [];
 
         // Keep the ecosystem graph fresh when the modal closes back to it.
         if (jwt) {
+          if (seed) {
+            mutationPromises.push(
+              mutate(
+                [`/api/v1/spaces/${parentSpaceSlug}/organisation`, jwt],
+                (current: Space[] = []) => {
+                  if (
+                    current.some(
+                      (space) => space.slug === seed.optimisticSpace.slug,
+                    )
+                  ) {
+                    return current;
+                  }
+                  return [...current, seed.optimisticSpace];
+                },
+                { revalidate: true },
+              ),
+            );
+          }
           mutationPromises.push(
             mutate([`/api/v1/spaces/${parentSpaceSlug}/organisation`, jwt]),
           );
@@ -124,6 +144,13 @@ export const CreateSubspaceForm = ({
     }
   }, [closeAfterSuccess, jwt, mutate, parentSpaceSlug, progress, spaceSlug]);
 
+  React.useEffect(() => {
+    if (isError) {
+      setIsSubmitting(false);
+      hasNavigatedAfterSuccessRef.current = false;
+    }
+  }, [isError]);
+
   return (
     <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
@@ -135,7 +162,15 @@ export const CreateSubspaceForm = ({
         isError ? (
           <div className="flex flex-col">
             <div>{t('errorOhSnap')}</div>
-            <Button onClick={reset}>{t('reset')}</Button>
+            <Button
+              onClick={() => {
+                setIsSubmitting(false);
+                hasNavigatedAfterSuccessRef.current = false;
+                reset();
+              }}
+            >
+              {t('reset')}
+            </Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -143,12 +178,17 @@ export const CreateSubspaceForm = ({
       }
     >
       <SpaceForm
-        isLoading={isPending || progress === 100}
+        isLoading={isPending || isSubmitting}
         creator={{ name: person?.name, surname: person?.surname }}
         closeUrl={successfulUrl}
         backUrl={backUrl}
         backLabel={t('backToSettings')}
         onSubmit={(values, organisationSpaces) => {
+          if (isSubmitting) {
+            return;
+          }
+          setIsSubmitting(true);
+          hasNavigatedAfterSuccessRef.current = false;
           // Subspace creation does not use root-only ecosystem branding fields.
           const {
             ecosystemLogoUrlLight: _ecosystemLogoUrlLight,
