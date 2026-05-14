@@ -14,6 +14,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   DEFAULT_CALL_FULL_VIEW_LAYOUT,
+  HumanChatPanelCallBanner,
   HumanChatPanelCallStage,
   HumanChatPanelInCallControls,
   readCallFullViewLayoutFromStorage,
@@ -124,12 +125,20 @@ export function GlobalCallDockOverlay() {
     setDockMode,
     callState,
     callKind,
+    errorCode,
+    screenshareErrorCode,
+    dismissScreenshareError,
+    dismissCallError,
+    retryFromError,
     isLocalVideoMuted,
     isScreensharing,
+    tabBackgroundWhileInCall,
+    othersInRoomCallCount,
+    remoteMediaStall,
+    dismissRemoteMediaStallBanner,
     feedVersion,
     activeSpeakerKey,
     inCallUserIdsForRoster,
-    remoteMediaStall,
     groupCall,
     roomGroupCallDeviceCount,
     isMicrophoneMuted,
@@ -316,6 +325,8 @@ export function GlobalCallDockOverlay() {
   const onToggleScreenshare = () => {
     void setScreensharingEnabled(!isScreensharing);
   };
+  const showDockBanner =
+    errorCode != null || screenshareErrorCode != null || remoteMediaStall;
 
   return (
     <div
@@ -427,19 +438,45 @@ export function GlobalCallDockOverlay() {
       </div>
 
       <div className="shrink-0 border-t border-border/50 bg-muted/35 px-2 py-2">
-        <HumanChatPanelInCallControls
-          callState={callState}
-          isMicrophoneMuted={isMicrophoneMuted}
-          isLocalVideoMuted={isLocalVideoMuted}
-          isScreensharing={isScreensharing}
-          onToggleMic={onToggleMic}
-          onToggleCamera={onToggleCamera}
-          onToggleScreenshare={onToggleScreenshare}
-          onLeave={() => {
-            void leave();
-          }}
-          variant={modeIsFullscreen ? 'fullView' : 'inBanner'}
-        />
+        {showDockBanner ? (
+          <HumanChatPanelCallBanner
+            callState={callState}
+            callKind={callKind}
+            errorCode={errorCode}
+            isScreensharing={isScreensharing}
+            screenshareErrorCode={screenshareErrorCode}
+            tabBackgroundWhileInCall={tabBackgroundWhileInCall}
+            isMicrophoneMuted={isMicrophoneMuted}
+            isLocalVideoMuted={isLocalVideoMuted}
+            participantCount={roomGroupCallDeviceCount}
+            othersInRoomCallCount={othersInRoomCallCount}
+            remoteMediaStall={remoteMediaStall}
+            onDismissRemoteMediaStall={dismissRemoteMediaStallBanner}
+            onLeave={() => {
+              void leave();
+            }}
+            onToggleMic={onToggleMic}
+            onToggleCamera={onToggleCamera}
+            onToggleScreenshare={onToggleScreenshare}
+            onDismissScreenshareError={dismissScreenshareError}
+            onRetryCall={retryFromError}
+            onDismissCallError={dismissCallError}
+          />
+        ) : (
+          <HumanChatPanelInCallControls
+            callState={callState}
+            isMicrophoneMuted={isMicrophoneMuted}
+            isLocalVideoMuted={isLocalVideoMuted}
+            isScreensharing={isScreensharing}
+            onToggleMic={onToggleMic}
+            onToggleCamera={onToggleCamera}
+            onToggleScreenshare={onToggleScreenshare}
+            onLeave={() => {
+              void leave();
+            }}
+            variant={modeIsFullscreen ? 'fullView' : 'inBanner'}
+          />
+        )}
       </div>
 
       {modeIsFullscreen && (
