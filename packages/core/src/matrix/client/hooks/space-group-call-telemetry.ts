@@ -15,6 +15,7 @@ export type SpaceGroupCallTelemetryEvent = {
     | 'hypha.group_call.connected'
     | 'hypha.group_call.media_snapshot'
     | 'hypha.group_call.remote_media_stall'
+    | 'hypha.group_call.remote_media_recover'
     | 'hypha.group_call.turn_probe'
     | 'hypha.group_call.ice_gather_probe'
     | 'hypha.group_call.webrtc_summary'
