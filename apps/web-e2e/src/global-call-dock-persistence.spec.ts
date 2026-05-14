@@ -81,6 +81,10 @@ test.describe('Global Call Dock - navigation persistence', () => {
 
     const dock = page.getByTestId('global-call-dock');
     await expect(dock).toBeVisible();
+    const signatureBeforeDrag = await dock.evaluate((el) => {
+      const css = window.getComputedStyle(el);
+      return `${css.right}|${css.bottom}|${css.transform}`;
+    });
 
     const box = await dock.boundingBox();
     if (box) {
@@ -91,7 +95,15 @@ test.describe('Global Call Dock - navigation persistence', () => {
       await page.mouse.move(dragStartX - 110, dragStartY - 70, { steps: 8 });
       await page.mouse.up();
     }
-    await page.waitForTimeout(120);
+    await expect
+      .poll(async () => {
+        const signature = await dock.evaluate((el) => {
+          const css = window.getComputedStyle(el);
+          return `${css.right}|${css.bottom}|${css.transform}`;
+        });
+        return signature;
+      })
+      .not.toBe(signatureBeforeDrag);
 
     const before = await dock.evaluate((el) => ({
       right: window.getComputedStyle(el).right,
