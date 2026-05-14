@@ -11,6 +11,19 @@ type PendingJoin = {
 
 type GlobalCallDockMode = 'thumbnail' | 'expanded' | 'fullscreen';
 const DOCK_MODE_KEY = 'hypha-global-call-dock-mode-v1';
+const CALL_RESUME_KEY = 'hypha-global-call-resume-v1';
+const CALL_RESUME_MAX_AGE_MS = 30 * 60 * 1000;
+
+type CallResumeSnapshot = {
+  version: 1;
+  roomId: string;
+  spaceSlug: string | null;
+  authToken: string | null;
+  callKind: PendingJoin['kind'];
+  threadRootEventId?: string;
+  dockMode: GlobalCallDockMode;
+  updatedAt: number;
+};
 
 function readDockModeFromStorage(): GlobalCallDockMode {
   if (typeof window === 'undefined') return 'thumbnail';
@@ -31,6 +44,63 @@ function persistDockMode(mode: GlobalCallDockMode): void {
     window.localStorage.setItem(DOCK_MODE_KEY, mode);
   } catch {
     // ignore storage write failure
+  }
+}
+
+function clearCallResumeSnapshot(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(CALL_RESUME_KEY);
+  } catch {
+    // ignore persistence write failure
+  }
+}
+
+function persistCallResumeSnapshot(snapshot: CallResumeSnapshot): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(CALL_RESUME_KEY, JSON.stringify(snapshot));
+  } catch {
+    // ignore persistence write failure
+  }
+}
+
+function readCallResumeSnapshot(): CallResumeSnapshot | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(CALL_RESUME_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<CallResumeSnapshot>;
+    if (
+      parsed.version !== 1 ||
+      typeof parsed.roomId !== 'string' ||
+      !parsed.roomId.trim() ||
+      (parsed.callKind !== 'audio' && parsed.callKind !== 'video') ||
+      (parsed.dockMode !== 'thumbnail' &&
+        parsed.dockMode !== 'expanded' &&
+        parsed.dockMode !== 'fullscreen') ||
+      typeof parsed.updatedAt !== 'number'
+    ) {
+      clearCallResumeSnapshot();
+      return null;
+    }
+    if (Date.now() - parsed.updatedAt > CALL_RESUME_MAX_AGE_MS) {
+      clearCallResumeSnapshot();
+      return null;
+    }
+    return {
+      version: 1,
+      roomId: parsed.roomId.trim(),
+      spaceSlug: parsed.spaceSlug?.trim() || null,
+      authToken: parsed.authToken?.trim() || null,
+      callKind: parsed.callKind,
+      threadRootEventId: parsed.threadRootEventId?.trim() || undefined,
+      dockMode: parsed.dockMode,
+      updatedAt: parsed.updatedAt,
+    };
+  } catch {
+    clearCallResumeSnapshot();
+    return null;
   }
 }
 
@@ -60,6 +130,8 @@ function useGlobalCallDockValue() {
   const [dockMode, setDockMode] =
     React.useState<GlobalCallDockMode>('thumbnail');
   const [dockModeHydrated, setDockModeHydrated] = React.useState(false);
+  const restoreInProgressRef = React.useRef(false);
+  const restoreTimerRef = React.useRef<number | null>(null);
 
   const call = useSpaceGroupCall(activeRoomId, {
     authToken: activeAuthToken,
@@ -79,6 +151,12 @@ function useGlobalCallDockValue() {
       spaceSlug: string | null,
       authToken?: string | null,
     ) => {
+      if (!roomId && !inSession && restoreInProgressRef.current) {
+        return;
+      }
+      if (roomId) {
+        restoreInProgressRef.current = false;
+      }
       setBoundRoomId(roomId);
       setBoundSpaceSlug(spaceSlug);
       setBoundAuthToken(authToken?.trim() || null);
@@ -106,6 +184,31 @@ function useGlobalCallDockValue() {
   }, [call.callState]);
 
   React.useEffect(() => {
+    const snapshot = readCallResumeSnapshot();
+    if (!snapshot) return;
+    restoreInProgressRef.current = true;
+    setBoundRoomId(snapshot.roomId);
+    setBoundSpaceSlug(snapshot.spaceSlug);
+    setBoundAuthToken(snapshot.authToken);
+    setActiveRoomId(snapshot.roomId);
+    setActiveSpaceSlug(snapshot.spaceSlug);
+    setActiveAuthToken(snapshot.authToken);
+    setPendingJoin({
+      kind: snapshot.callKind,
+      roomId: snapshot.roomId,
+      threadRootEventId: snapshot.threadRootEventId,
+    });
+    setDockMode(snapshot.dockMode);
+    if (restoreTimerRef.current != null) {
+      window.clearTimeout(restoreTimerRef.current);
+    }
+    restoreTimerRef.current = window.setTimeout(() => {
+      restoreInProgressRef.current = false;
+      restoreTimerRef.current = null;
+    }, 15_000);
+  }, []);
+
+  React.useEffect(() => {
     setDockMode(readDockModeFromStorage());
     setDockModeHydrated(true);
   }, []);
@@ -120,12 +223,62 @@ function useGlobalCallDockValue() {
     if (activeRoomId !== pendingJoin.roomId) return;
 
     setPendingJoin(null);
+    restoreInProgressRef.current = false;
     if (pendingJoin.kind === 'audio') {
       void call.enterAudio(pendingJoin.threadRootEventId);
       return;
     }
     void call.enterVideo(pendingJoin.threadRootEventId);
   }, [pendingJoin, activeRoomId, call]);
+
+  React.useEffect(() => {
+    if (
+      call.callState === 'connecting' ||
+      call.callState === 'connected' ||
+      call.callState === 'awaiting_media' ||
+      call.callState === 'initializing'
+    ) {
+      restoreInProgressRef.current = false;
+    }
+  }, [call.callState]);
+
+  React.useEffect(() => {
+    const callKind = pendingJoin?.kind ?? call.callKind;
+    if (!activeRoomId || !callKind) {
+      if (call.callState === 'idle' && !pendingJoin) {
+        clearCallResumeSnapshot();
+      }
+      return;
+    }
+    persistCallResumeSnapshot({
+      version: 1,
+      roomId: activeRoomId,
+      spaceSlug: activeSpaceSlug,
+      authToken: activeAuthToken,
+      callKind,
+      threadRootEventId:
+        pendingJoin?.threadRootEventId ?? call.threadContext?.threadRootEventId,
+      dockMode,
+      updatedAt: Date.now(),
+    });
+  }, [
+    activeAuthToken,
+    activeRoomId,
+    activeSpaceSlug,
+    call.callKind,
+    call.callState,
+    call.threadContext?.threadRootEventId,
+    dockMode,
+    pendingJoin,
+  ]);
+
+  React.useEffect(() => {
+    return () => {
+      if (restoreTimerRef.current != null) {
+        window.clearTimeout(restoreTimerRef.current);
+      }
+    };
+  }, []);
 
   const startAudioForRoom = React.useCallback(
     async (
