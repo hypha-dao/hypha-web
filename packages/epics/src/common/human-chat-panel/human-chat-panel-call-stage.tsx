@@ -61,6 +61,8 @@ type HumanChatPanelCallStageBaseProps = {
 
 type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
   layout: HumanChatPanelCallStageLayout;
+  /** In panel layout, choose between immersive crop (`cover`) and full-frame (`contain`). */
+  panelVideoFit?: 'cover' | 'contain';
   /** Shown in panel when full view is available; opens the enlarged dialog. */
   onRequestFullView?: () => void;
   /** `true` when the app-level full-view dialog is open; hides the inline stage so one video tree remains mounted. */
@@ -282,6 +284,7 @@ export function HumanChatPanelCallStage({
   inCallUserIds = null,
   remoteMediaStall = false,
   layout,
+  panelVideoFit = 'cover',
   onRequestFullView,
   fullViewOpen = false,
   fullViewTriggerRef,
@@ -1279,6 +1282,7 @@ const CallFeedTile = ({
       isActiveSpeaker={isActiveSpeaker}
       resolveMemberLabel={resolveMemberLabel}
       nameFallback={nameFallback}
+      panelVideoFit={panelVideoFit}
       t={t}
     />
   );
@@ -1294,6 +1298,7 @@ const FeedContent = ({
   isShare,
   isPip,
   isFullView,
+  panelVideoFit,
   isActiveSpeaker,
   resolveMemberLabel,
   nameFallback,
@@ -1308,6 +1313,7 @@ const FeedContent = ({
   isShare: boolean;
   isPip: boolean;
   isFullView: boolean;
+  panelVideoFit: 'cover' | 'contain';
   isActiveSpeaker: boolean;
   resolveMemberLabel: (userId: string | undefined) => string;
   nameFallback: string;
@@ -1472,7 +1478,11 @@ const FeedContent = ({
               isPip && 'h-full flex-1',
               isFullView && !isPip && 'absolute inset-0 h-full w-full',
               !isPip && !isFullView && 'h-full min-h-0 flex-1',
-              isShare ? 'object-contain' : 'object-cover',
+              isShare
+                ? 'object-contain'
+                : !isPip && !isFullView && panelVideoFit === 'contain'
+                ? 'object-contain'
+                : 'object-cover',
             )}
             autoPlay
             playsInline

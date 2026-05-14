@@ -35,8 +35,16 @@ type DockGeometry = {
 const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v1';
 const DOCK_MARGIN_PX = 16;
 const SNAP_EDGE_PX = 24;
-const DOCK_MIN_WIDTH = 280;
-const DOCK_MIN_HEIGHT = 180;
+const DOCK_MIN_WIDTH = 320;
+const DOCK_MIN_HEIGHT = 220;
+const THUMBNAIL_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
+  width: 380,
+  height: 300,
+};
+const EXPANDED_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
+  width: 720,
+  height: 460,
+};
 
 function getDockOffsetBounds(width: number, height: number) {
   if (typeof window === 'undefined') {
@@ -199,6 +207,19 @@ export function GlobalCallDockOverlay() {
   }, [dockMode]);
 
   React.useEffect(() => {
+    if (dockMode === 'fullscreen') return;
+    const preset =
+      dockMode === 'thumbnail' ? THUMBNAIL_GEOMETRY : EXPANDED_GEOMETRY;
+    setGeometry((prev) =>
+      clampDockGeometry({
+        ...prev,
+        width: Math.max(prev.width, preset.width),
+        height: Math.max(prev.height, preset.height),
+      }),
+    );
+  }, [dockMode]);
+
+  React.useEffect(() => {
     if (!isDragging) return;
 
     const onMove = (e: PointerEvent) => {
@@ -304,7 +325,6 @@ export function GlobalCallDockOverlay() {
         modeIsFullscreen ? 'rounded-2xl' : '',
       )}
       style={containerStyle}
-      data-no-dock-drag={modeIsFullscreen ? undefined : true}
     >
       <div
         className={cn(
@@ -393,6 +413,7 @@ export function GlobalCallDockOverlay() {
           currentUserProfileAvatarUrl={me?.avatarUrl ?? null}
           resolveMemberLabel={resolveMemberLabel}
           layout={modeIsFullscreen ? 'fullView' : 'panel'}
+          panelVideoFit={dockMode === 'thumbnail' ? 'contain' : 'cover'}
           fullViewOpen={modeIsFullscreen}
           fullViewLayoutMode={layoutMode}
           fullViewPaneSplit={paneSplit}

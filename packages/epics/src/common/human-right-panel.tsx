@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Minimize2 } from 'lucide-react';
 import {
   ClientEvent,
   RoomStateEvent,
@@ -22,12 +21,6 @@ import {
   SidebarFooter,
   useSidebar,
   Button,
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -73,20 +66,10 @@ import {
   HumanChatPanelCallToolbar,
   HumanChatPanelCallBanner,
   HumanChatPanelCallJoinStrip,
-  HumanChatPanelInCallControls,
   HumanChatPanelCallStage,
-  canOpenHumanChatCallFullView,
-  DEFAULT_CALL_FULL_VIEW_LAYOUT,
-  HumanChatPanelCallFullViewLayoutMenu,
-  persistCallFullViewLayout,
-  readCallFullViewLayoutFromStorage,
-  type CallFullViewPaneSplit,
-  readCallFullViewPaneSplit,
-  persistCallFullViewPaneSplit,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
-  type CallFullViewLayoutMode,
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
@@ -671,37 +654,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [composerError, setComposerError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
-  const [callFullViewOpen, setCallFullViewOpen] = useState(false);
-  const [callFullViewLayoutMode, setCallFullViewLayoutMode] =
-    useState<CallFullViewLayoutMode>(DEFAULT_CALL_FULL_VIEW_LAYOUT);
-  const [callFullViewPaneSplit, setCallFullViewPaneSplit] = useState<{
-    sideBySide: number;
-    filmstrip: number;
-    speakerOnTop: number;
-  }>(() => ({
-    sideBySide: readCallFullViewPaneSplit('sideBySide'),
-    filmstrip: readCallFullViewPaneSplit('filmstrip'),
-    speakerOnTop: readCallFullViewPaneSplit('speakerOnTop'),
-  }));
-  const [callPopupOffset, setCallPopupOffset] = useState({ x: 0, y: 0 });
-  const callPopupDragStateRef = useRef<{
-    pointerId: number;
-    startClientX: number;
-    startClientY: number;
-    startOffsetX: number;
-    startOffsetY: number;
-  } | null>(null);
-  const [isDraggingCallPopup, setIsDraggingCallPopup] = useState(false);
-  const callFullViewSplitContainerRef = useRef<HTMLDivElement | null>(null);
-  const callFullViewDialogRef = useRef<HTMLDivElement | null>(null);
-  /**
-   * `HumanChatPanelCallStage` only mounts the expand control when
-   * `layout === "panel" && !fullViewOpen`, so this ref is set on the open
-   * button in the sidebar. While the full-view `Dialog` is open the stage
-   * uses `layout="hidden"`, so the button unmounts but the ref value is
-   * retained for Radix `onCloseAutoFocus` to restore focus to the trigger.
-   */
-  const callFullViewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [scrollToEventId, setScrollToEventId] = useState<string | null>(null);
   /** Shown in timeline after a short delay while large attachment sends run. */
   const [sendingPending, setSendingPending] = useState<null | {
@@ -740,8 +692,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setComposerError(null);
     setDeleteError(null);
     setSendingPending(null);
-    setCallFullViewOpen(false);
-  }, [setCallFullViewOpen]);
+  }, []);
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -904,37 +855,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     void startVideoForRoom(roomId, spaceSlug ?? null);
   }, [startVideoForRoom, roomId, spaceSlug]);
 
-  const onCallFullViewPaneSplitChange = useCallback(
-    (which: CallFullViewPaneSplit, value: number) => {
-      persistCallFullViewPaneSplit(which, value);
-      setCallFullViewPaneSplit((prev) => ({ ...prev, [which]: value }));
-    },
-    [],
-  );
-
   const handleCallLeave = useCallback(() => {
     void leaveSpaceCall();
   }, [leaveSpaceCall]);
-
-  /** End ghost sessions: when connected and no other participants for 5 minutes, leave locally. */
-  useEffect(() => {
-    if (!callUiEnabled || spaceCallState !== 'connected') return;
-    if (spaceCallOthersInRoom > 0 || spaceCallRoomGroupDeviceCount === 0)
-      return;
-
-    const SOLO_IDLE_LEAVE_MS = 5 * 60 * 1000;
-    const id = window.setTimeout(() => {
-      void leaveSpaceCall();
-    }, SOLO_IDLE_LEAVE_MS);
-
-    return () => window.clearTimeout(id);
-  }, [
-    callUiEnabled,
-    spaceCallState,
-    spaceCallOthersInRoom,
-    spaceCallRoomGroupDeviceCount,
-    leaveSpaceCall,
-  ]);
 
   const handleCallToggleMic = useCallback(() => {
     void setSpaceCallMicMuted(!spaceCallMicMuted);
@@ -952,128 +875,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     retrySpaceCall();
   }, [retrySpaceCall]);
 
-  const canOpenCallFullView = useMemo(
-    () =>
-      canOpenHumanChatCallFullView(
-        spaceGroupCall,
-        spaceCallKind,
-        spaceCallVideoMuted,
-        spaceCallScreensharing,
-        spaceCallState,
-        currentUserId,
-        spaceCallInCallUserIds,
-      ),
-    [
-      spaceGroupCall,
-      spaceCallKind,
-      spaceCallVideoMuted,
-      spaceCallScreensharing,
-      spaceCallState,
-      currentUserId,
-      spaceCallInCallUserIds,
-    ],
-  );
-
-  const showCallLayoutMenuInFullView = useMemo(() => {
-    if (!spaceGroupCall) return false;
-    return (
-      spaceGroupCall.screenshareFeeds.length > 0 &&
-      spaceGroupCall.userMediaFeeds.length > 0
-    );
-  }, [spaceGroupCall]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    setCallFullViewLayoutMode(readCallFullViewLayoutFromStorage());
-  }, []);
-
-  const onCallFullViewLayoutChange = useCallback(
-    (m: CallFullViewLayoutMode) => {
-      setCallFullViewLayoutMode(m);
-      persistCallFullViewLayout(m);
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (!callFullViewOpen) return;
-    if (
-      activeTab !== 'chat' ||
-      !canOpenCallFullView ||
-      spaceCallState !== 'connected'
-    ) {
-      setCallFullViewOpen(false);
-    }
-  }, [activeTab, canOpenCallFullView, spaceCallState, callFullViewOpen]);
-
-  useEffect(() => {
-    if (!callFullViewOpen) return;
-    const rafId = window.requestAnimationFrame(() => {
-      callFullViewDialogRef.current?.focus();
-    });
-    return () => window.cancelAnimationFrame(rafId);
-  }, [callFullViewOpen]);
-
-  const handleCallPopupDragStart = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!callFullViewOpen) return;
-      const target = e.target as HTMLElement;
-      if (target.closest('button,[data-call-popup-no-drag]')) {
-        return;
-      }
-      callPopupDragStateRef.current = {
-        pointerId: e.pointerId,
-        startClientX: e.clientX,
-        startClientY: e.clientY,
-        startOffsetX: callPopupOffset.x,
-        startOffsetY: callPopupOffset.y,
-      };
-      setIsDraggingCallPopup(true);
-    },
-    [callFullViewOpen, callPopupOffset.x, callPopupOffset.y],
-  );
-
-  useEffect(() => {
-    if (!isDraggingCallPopup) return;
-    const onMove = (e: PointerEvent) => {
-      const drag = callPopupDragStateRef.current;
-      if (!drag) return;
-      if (e.pointerId !== drag.pointerId) return;
-      const rawOffsetX = drag.startOffsetX + (e.clientX - drag.startClientX);
-      const rawOffsetY = drag.startOffsetY + (e.clientY - drag.startClientY);
-      const dialogRect = callFullViewDialogRef.current?.getBoundingClientRect();
-      const popupWidth =
-        dialogRect?.width ?? Math.min(window.innerWidth * 0.96, 1280);
-      const popupHeight =
-        dialogRect?.height ?? Math.min(window.innerHeight * 0.9, 900);
-      const baseLeft = window.innerWidth / 2 - popupWidth / 2;
-      const baseTop = window.innerHeight / 2 - popupHeight / 2;
-      const rawLeft = baseLeft + rawOffsetX;
-      const rawTop = baseTop + rawOffsetY;
-      const maxLeft = Math.max(0, window.innerWidth - popupWidth);
-      const maxTop = Math.max(0, window.innerHeight - popupHeight);
-      const clampedLeft = Math.min(Math.max(rawLeft, 0), maxLeft);
-      const clampedTop = Math.min(Math.max(rawTop, 0), maxTop);
-      setCallPopupOffset({
-        x: clampedLeft - baseLeft,
-        y: clampedTop - baseTop,
-      });
-    };
-    const onEnd = (e: PointerEvent) => {
-      const drag = callPopupDragStateRef.current;
-      if (!drag || e.pointerId !== drag.pointerId) return;
-      callPopupDragStateRef.current = null;
-      setIsDraggingCallPopup(false);
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onEnd);
-    window.addEventListener('pointercancel', onEnd);
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onEnd);
-      window.removeEventListener('pointercancel', onEnd);
-    };
-  }, [isDraggingCallPopup]);
 
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
@@ -2717,20 +2518,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       inCallUserIds={spaceCallInCallUserIds}
                       currentUserProfileAvatarUrl={currentUserAvatarUrl}
                       resolveMemberLabel={resolveMemberLabel}
-                      layout={
-                        callFullViewOpen && canOpenCallFullView
-                          ? 'hidden'
-                          : 'panel'
-                      }
-                      onRequestFullView={
-                        canOpenCallFullView
-                          ? () => {
-                              setCallFullViewOpen(true);
-                            }
-                          : undefined
-                      }
-                      fullViewOpen={callFullViewOpen}
-                      fullViewTriggerRef={callFullViewTriggerRef}
+                      layout="panel"
                     />
                   </div>
                 )}
@@ -2880,125 +2668,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           </div>
         </SidebarFooter>
       )}
-
-      {callUiEnabled &&
-        !showFloatingDock &&
-        canOpenCallFullView &&
-        callFullViewOpen && (
-          <div
-            ref={callFullViewDialogRef}
-            tabIndex={-1}
-            className="fixed z-[120] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full flex-col overflow-hidden rounded-xl border border-border/50 bg-background p-0 text-foreground shadow-2xl"
-            style={{
-              left: '50%',
-              top: '50%',
-              transform: `translate(calc(-50% + ${callPopupOffset.x}px), calc(-50% + ${callPopupOffset.y}px))`,
-            }}
-            role="dialog"
-            aria-modal="false"
-            aria-label={t('callFullView')}
-          >
-            <div
-              className="relative flex shrink-0 cursor-grab border-b border-border/50 bg-muted/40 px-3 py-2.5 pe-2 text-left active:cursor-grabbing"
-              onPointerDown={handleCallPopupDragStart}
-            >
-              <button
-                type="button"
-                data-call-popup-no-drag
-                onClick={() => {
-                  setCallFullViewOpen(false);
-                  callFullViewTriggerRef.current?.focus();
-                }}
-                className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={t('callFullViewClose')}
-                title={t('callFullViewClose')}
-              >
-                <Minimize2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-              </button>
-              <div className="min-w-0 flex-1 space-y-0.5 pe-10">
-                <p className="text-sm font-medium tracking-tight text-foreground sm:text-left">
-                  {t('callFullView')}
-                </p>
-                <p className="text-xs text-muted-foreground sm:text-left">
-                  {t('callFullViewDescription')}
-                </p>
-              </div>
-              {showCallLayoutMenuInFullView && (
-                <div
-                  className="mt-1 w-full shrink-0 sm:mt-0 sm:w-auto sm:justify-self-end sm:pe-10"
-                  data-call-popup-no-drag
-                >
-                  <HumanChatPanelCallFullViewLayoutMenu
-                    value={callFullViewLayoutMode}
-                    onValueChange={onCallFullViewLayoutChange}
-                  />
-                </div>
-              )}
-            </div>
-            <div
-              ref={callFullViewSplitContainerRef}
-              className="flex min-h-0 min-w-0 flex-1 flex-col p-0"
-              role="presentation"
-            >
-              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-                <HumanChatPanelCallStage
-                  client={client}
-                  roomId={roomId}
-                  groupCall={spaceGroupCall}
-                  callKind={spaceCallKind}
-                  isLocalVideoMuted={spaceCallVideoMuted}
-                  isScreensharing={spaceCallScreensharing}
-                  callState={spaceCallState}
-                  feedVersion={spaceCallFeedVersion}
-                  activeSpeakerKey={spaceCallActiveSpeakerKey}
-                  currentUserId={currentUserId}
-                  inCallUserIds={spaceCallInCallUserIds}
-                  remoteMediaStall={spaceCallRemoteMediaStall}
-                  currentUserProfileAvatarUrl={currentUserAvatarUrl}
-                  resolveMemberLabel={resolveMentionMemberLabel}
-                  layout="fullView"
-                  fullViewOpen
-                  fullViewLayoutMode={callFullViewLayoutMode}
-                  fullViewPaneSplit={callFullViewPaneSplit}
-                  onFullViewPaneSplitChange={onCallFullViewPaneSplitChange}
-                  fullViewSplitContainerRef={callFullViewSplitContainerRef}
-                />
-              </div>
-              {spaceCallScreenshareError && spaceCallState === 'connected' && (
-                <div
-                  role="alert"
-                  className="flex shrink-0 items-start justify-center gap-2 border-t border-destructive/20 bg-destructive/10 px-3 py-1.5"
-                >
-                  <p className="min-w-0 flex-1 text-center text-xs text-destructive">
-                    {spaceCallScreenshareError === 'PERMISSION_DENIED'
-                      ? t('callErrorPermission')
-                      : t('callErrorScreenshare')}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={dismissSpaceCallScreenshareError}
-                    className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
-                  >
-                    {t('callScreenshareDismiss')}
-                  </button>
-                </div>
-              )}
-              <div className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 backdrop-blur-sm">
-                <HumanChatPanelInCallControls
-                  callState={spaceCallState}
-                  isMicrophoneMuted={spaceCallMicMuted}
-                  isLocalVideoMuted={spaceCallVideoMuted}
-                  isScreensharing={spaceCallScreensharing}
-                  onToggleMic={handleCallToggleMic}
-                  onToggleCamera={handleCallToggleCamera}
-                  onToggleScreenshare={handleCallToggleScreenshare}
-                  onLeave={handleCallLeave}
-                  variant="fullView"
-                />
-              </div>
-            </div>
-          </div>
-        )}
     </>
   );
 }
