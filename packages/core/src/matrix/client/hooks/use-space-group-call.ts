@@ -603,7 +603,11 @@ export function useSpaceGroupCall(
   );
 
   const enterWithKind = useCallback(
-    async (kind: 'audio' | 'video', threadRootEventId?: string) => {
+    async (
+      kind: 'audio' | 'video',
+      threadRootEventId?: string,
+      options?: { preserveRemoteMediaRecoverInFlight?: boolean },
+    ) => {
       if (!client || !roomId?.trim()) {
         setErrorCode(!client ? 'NO_CLIENT' : 'NO_ROOM');
         setCallState('error');
@@ -629,7 +633,9 @@ export function useSpaceGroupCall(
       isJoiningRef.current = true;
       remoteMediaRecoverRequestedRef.current = false;
       remoteMediaRecoverAttemptedRef.current = false;
-      remoteMediaRecoverInFlightRef.current = false;
+      if (!options?.preserveRemoteMediaRecoverInFlight) {
+        remoteMediaRecoverInFlightRef.current = false;
+      }
       const newSessionId = newCallSessionId();
       setCallSessionId(newSessionId);
       lastJoinKindRef.current = kind;
@@ -1276,7 +1282,6 @@ export function useSpaceGroupCall(
     if (!retryKind) return;
     const retryThreadRootEventId = lastThreadRootEventIdRef.current;
     remoteMediaRecoverRequestedRef.current = false;
-    remoteMediaRecoverInFlightRef.current = true;
     if (roomId) {
       logSpaceGroupCallEvent({
         name: 'hypha.group_call.remote_media_recover',
@@ -1285,6 +1290,7 @@ export function useSpaceGroupCall(
       });
     }
     runCleanup();
+    remoteMediaRecoverInFlightRef.current = true;
     setCallState('idle');
     setErrorCode(null);
     setCallKind(null);
@@ -1293,7 +1299,9 @@ export function useSpaceGroupCall(
     setParticipantCount(0);
     setScreenshareErrorCode(null);
     setTabBackgroundWhileInCall(false);
-    void enterWithKind(retryKind, retryThreadRootEventId).finally(() => {
+    void enterWithKind(retryKind, retryThreadRootEventId, {
+      preserveRemoteMediaRecoverInFlight: true,
+    }).finally(() => {
       remoteMediaRecoverInFlightRef.current = false;
     });
   }, [callState, enterWithKind, remoteMediaRecoverNonce, roomId, runCleanup]);
