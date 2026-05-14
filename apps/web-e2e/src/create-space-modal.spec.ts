@@ -22,8 +22,7 @@ test.describe('Create Space modal', () => {
       .getByPlaceholder(/name your space/i)
       .fill('Playwright duplicate guard');
     await page
-      .locator('textarea')
-      .first()
+      .getByRole('textbox', { name: /purpose/i })
       .fill(
         'Space created from regression test to verify duplicate prevention.',
       );
