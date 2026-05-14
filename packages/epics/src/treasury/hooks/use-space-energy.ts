@@ -56,11 +56,12 @@ export const useSpaceEnergy = () => {
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
   );
-  const { getAccessToken } = useAuthentication();
+  const { getAccessToken, isLoading: isAuthLoading } = useAuthentication();
 
   const endpoint = React.useMemo(
-    () => (spaceSlug ? `/api/v1/spaces/${spaceSlug}/energy` : null),
-    [spaceSlug],
+    () =>
+      !isAuthLoading && spaceSlug ? `/api/v1/spaces/${spaceSlug}/energy` : null,
+    [isAuthLoading, spaceSlug],
   );
 
   const { data, isLoading, mutate, error } = useSWR(
