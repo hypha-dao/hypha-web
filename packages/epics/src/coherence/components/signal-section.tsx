@@ -123,9 +123,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
           variant="default"
           colorVariant="accent"
           disabled={isLoading}
-          className="w-full lg:w-auto"
+          className="w-auto self-start"
         >
-          <Link href={createSignalHref} className="w-full lg:w-auto">
+          <Link href={createSignalHref}>
             <PlusIcon />
             {t('newSignal')}
           </Link>
