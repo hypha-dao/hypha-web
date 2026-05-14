@@ -49,7 +49,7 @@ const PLACE_OUTGOING_DELAYED_MS = 600;
 const PLACE_OUTGOING_RETRY_MS = [1500, 4000, 8000] as const;
 const ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS = 30_000;
 
-type SpaceGroupCallOptions = {
+export type SpaceGroupCallOptions = {
   authToken?: string | null;
   spaceSlug?: string | null;
 };
