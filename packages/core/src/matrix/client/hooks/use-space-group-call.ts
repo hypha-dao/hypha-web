@@ -1302,6 +1302,9 @@ export function useSpaceGroupCall(
     void enterWithKind(retryKind, retryThreadRootEventId, {
       preserveRemoteMediaRecoverInFlight: true,
     }).finally(() => {
+      if (!groupCallRef.current) {
+        remoteMediaRecoverAttemptedRef.current = false;
+      }
       remoteMediaRecoverInFlightRef.current = false;
     });
   }, [callState, enterWithKind, remoteMediaRecoverNonce, roomId, runCleanup]);
