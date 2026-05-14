@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Menu, MessageCircle, PanelLeftClose } from 'lucide-react';
+import { Menu, MessageCircle, PanelLeftClose, Sparkles } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -48,13 +48,14 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
     setLeftOverlayVisible(false);
   }, []);
   const showLeftOverlay = useCallback(() => {
-    if (leftOpen) return;
     if (leftOverlayHideTimeoutRef.current) {
       clearTimeout(leftOverlayHideTimeoutRef.current);
       leftOverlayHideTimeoutRef.current = null;
     }
+    // Ensure the compact overlay menu can open immediately from an expanded state.
+    setLeftOpen(false);
     setLeftOverlayVisible(true);
-  }, [leftOpen]);
+  }, []);
   const hideLeftOverlay = useCallback(() => {
     if (leftOverlayHideTimeoutRef.current) {
       clearTimeout(leftOverlayHideTimeoutRef.current);
@@ -109,7 +110,8 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, overlayVisible, openAiPanel, closeAiPanel } = useAiPanel();
+  const { open, overlayVisible, showAiOverlay, hideAiOverlay, closeAiPanel } =
+    useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
   const isCompactHeader = useCompactHeaderMode();
@@ -117,31 +119,62 @@ export function AiSidebarTrigger() {
 
   if (!isSpace) return null;
 
-  const isOpen = open || overlayVisible;
+  const isMenuOpen = overlayVisible;
 
   return (
     <button
       type="button"
       onClick={() => {
-        if (isOpen) {
-          closeAiPanel();
+        if (isMenuOpen) {
+          hideAiOverlay();
           return;
         }
         if (isCompactHeader && rightOpen) {
           toggleRight();
         }
-        openAiPanel();
+        if (open) {
+          closeAiPanel();
+        }
+        showAiOverlay();
       }}
-      aria-expanded={isOpen}
+      aria-expanded={isMenuOpen}
       className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
-      title={isOpen ? t('closePanel') : t('openPanel')}
-      aria-label={isOpen ? t('closePanel') : t('openPanel')}
+      title={isMenuOpen ? t('closePanel') : t('openPanel')}
+      aria-label={isMenuOpen ? t('closePanel') : t('openPanel')}
     >
-      {isOpen ? (
+      {isMenuOpen ? (
         <PanelLeftClose className="h-4 w-4" />
       ) : (
         <Menu className="h-4 w-4" />
       )}
+    </button>
+  );
+}
+
+export function AiPanelTrigger() {
+  const { open, openAiPanel, closeAiPanel, hideAiOverlay } = useAiPanel();
+  const isSpace = useIsSpaceContext();
+  const t = useTranslations('AiPanel');
+
+  if (!isSpace) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (open) {
+          closeAiPanel();
+          return;
+        }
+        hideAiOverlay();
+        openAiPanel();
+      }}
+      aria-expanded={open}
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+      title={open ? t('closePanel') : t('openPanel')}
+      aria-label={open ? t('closePanel') : t('openPanel')}
+    >
+      <Sparkles className="h-4 w-4" />
     </button>
   );
 }
