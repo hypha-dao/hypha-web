@@ -16,14 +16,12 @@ import {
   AiLeftPanel,
   AiPanelTrigger,
   AiSidebarTrigger,
-  GlobalCallDockProvider,
   PanelProviders,
   PanelWrapLayout,
   HumanSidebarTrigger,
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
-import { ConnectedGlobalCallDock } from '@web/components/connected-global-call-dock';
 import { useMe } from '@hypha-platform/core/client';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { fileRouter } from '@hypha-platform/core/server';
@@ -256,72 +254,45 @@ export default async function RootLayout({
               >
                 <ConditionalMatrixProvider enabled={humanChatEnabled}>
                   <PanelProviders>
-                    <GlobalCallDockProvider>
-                      <PanelWrapLayout
-                        left={
-                          aiChatEnabled
-                            ? {
-                                content: (
-                                  <AiLeftPanel
-                                    enableSpaceMemory={spaceMemoryEnabled}
-                                  />
-                                ),
-                              }
-                            : undefined
-                        }
-                        right={
-                          humanChatEnabled
-                            ? { content: <ConnectedHumanRightPanel /> }
-                            : undefined
-                        }
-                      >
-                        {/* Fixed menu bar — clamped to center column by SidebarInset */}
-                        <div className="sticky top-0 z-30 shrink-0">
-                          <ConnectedMenuTop
-                            aiChatEnabled={aiChatEnabled}
-                            logoHref={ROOT_URL}
-                            openMenuLabel={navOpenMenuLabel}
-                            closeMenuLabel={navCloseMenuLabel}
-                            leadingAction={
-                              aiChatEnabled ? (
-                                <div className="md:hidden flex items-center gap-2">
-                                  <AiSidebarTrigger />
-                                  <AiPanelTrigger />
-                                </div>
-                              ) : undefined
+                    <PanelWrapLayout
+                      left={
+                        aiChatEnabled
+                          ? {
+                              content: (
+                                <AiLeftPanel
+                                  enableSpaceMemory={spaceMemoryEnabled}
+                                />
+                              ),
                             }
-                            trailingAction={
-                              humanChatEnabled ? (
-                                <HumanSidebarTrigger />
-                              ) : undefined
-                            }
-                            mobileAction={
-                              <ConnectedButtonProfile
-                                useAuthentication={useAuthentication}
-                                useMe={useMe}
-                                newUserRedirectPath="/profile/signup"
-                                baseRedirectPath="/my-spaces"
-                                navItems={[
-                                  {
-                                    label: navMySpacesLabel,
-                                    href: `/${locale}/my-spaces`,
-                                  },
-                                  {
-                                    label: navNetworkLabel,
-                                    href: `/${locale}/network`,
-                                  },
-                                ]}
-                                trailingBeforeProfile={
-                                  isLanguageSelectVisible ? (
-                                    <ConnectedLanguageSelect
-                                      selectLanguageLabel={navSelectLanguageLabel}
-                                    />
-                                  ) : undefined
-                                }
-                                compact
-                              />
-                            }
-                          >
+                          : undefined
+                      }
+                      right={
+                        humanChatEnabled
+                          ? { content: <ConnectedHumanRightPanel /> }
+                          : undefined
+                      }
+                    >
+                      {/* Fixed menu bar — clamped to center column by SidebarInset */}
+                      <div className="sticky top-0 z-30 shrink-0">
+                        <ConnectedMenuTop
+                          aiChatEnabled={aiChatEnabled}
+                          logoHref={ROOT_URL}
+                          openMenuLabel={navOpenMenuLabel}
+                          closeMenuLabel={navCloseMenuLabel}
+                          leadingAction={
+                            aiChatEnabled ? (
+                              <div className="md:hidden flex items-center gap-2">
+                                <AiSidebarTrigger />
+                                <AiPanelTrigger />
+                              </div>
+                            ) : undefined
+                          }
+                          trailingAction={
+                            humanChatEnabled ? (
+                              <HumanSidebarTrigger />
+                            ) : undefined
+                          }
+                          mobileAction={
                             <ConnectedButtonProfile
                               useAuthentication={useAuthentication}
                               useMe={useMe}
@@ -344,30 +315,54 @@ export default async function RootLayout({
                                   />
                                 ) : undefined
                               }
+                              compact
                             />
-                          </ConnectedMenuTop>
+                          }
+                        >
+                          <ConnectedButtonProfile
+                            useAuthentication={useAuthentication}
+                            useMe={useMe}
+                            newUserRedirectPath="/profile/signup"
+                            baseRedirectPath="/my-spaces"
+                            navItems={[
+                              {
+                                label: navMySpacesLabel,
+                                href: `/${locale}/my-spaces`,
+                              },
+                              {
+                                label: navNetworkLabel,
+                                href: `/${locale}/network`,
+                              },
+                            ]}
+                            trailingBeforeProfile={
+                              isLanguageSelectVisible ? (
+                                <ConnectedLanguageSelect
+                                  selectLanguageLabel={navSelectLanguageLabel}
+                                />
+                              ) : undefined
+                            }
+                          />
+                        </ConnectedMenuTop>
+                      </div>
+                      {/* Scrollable content area */}
+                      <NextSSRPlugin
+                        routerConfig={extractRouterConfig(fileRouter)}
+                      />
+                      <div className="mb-auto pb-8">
+                        <div className="flex h-full justify-normal pt-4 md:pt-5">
+                          <div className="w-full h-full">{children}</div>
                         </div>
-                        {/* Scrollable content area */}
-                        <NextSSRPlugin
-                          routerConfig={extractRouterConfig(fileRouter)}
-                        />
-                        <div className="mb-auto pb-8">
-                          <div className="flex h-full justify-normal pt-4 md:pt-5">
-                            <div className="w-full h-full">{children}</div>
-                          </div>
-                        </div>
-                        <Footer
-                          networkLabel={footerNetworkLabel}
-                          legalLabel={footerLegalLabel}
-                          hyphaServicesLabel={footerHyphaServicesLabel}
-                          hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
-                          licensingPolicyLabel={footerLicensingPolicyLabel}
-                          termsAndConditionsLabel={footerTermsAndConditionsLabel}
-                          privacyPolicyLabel={footerPrivacyPolicyLabel}
-                        />
-                      </PanelWrapLayout>
-                      {humanChatEnabled && <ConnectedGlobalCallDock />}
-                    </GlobalCallDockProvider>
+                      </div>
+                      <Footer
+                        networkLabel={footerNetworkLabel}
+                        legalLabel={footerLegalLabel}
+                        hyphaServicesLabel={footerHyphaServicesLabel}
+                        hyphaTokenomicsLabel={footerHyphaTokenomicsLabel}
+                        licensingPolicyLabel={footerLicensingPolicyLabel}
+                        termsAndConditionsLabel={footerTermsAndConditionsLabel}
+                        privacyPolicyLabel={footerPrivacyPolicyLabel}
+                      />
+                    </PanelWrapLayout>
                   </PanelProviders>
                 </ConditionalMatrixProvider>
               </NotificationSubscriber>

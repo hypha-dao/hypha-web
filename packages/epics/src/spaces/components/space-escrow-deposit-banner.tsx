@@ -272,19 +272,17 @@ export const SpaceEscrowDepositBanner = ({
             {bannerTitle}
           </span>
           <span className="text-2 text-foreground">
-            {investment ? (
-              t('acceptInvestmentBody', {
-                sellerLabel,
-                buyerAmountLabel,
-                sellerAmountLabel,
-              })
-            ) : (
-              t('exchangeStakesAndTokensBody', {
-                sellerLabel,
-                sellerAmountLabel,
-                buyerAmountLabel,
-              })
-            )}
+            {investment
+              ? t('acceptInvestmentBody', {
+                  sellerLabel,
+                  buyerAmountLabel,
+                  sellerAmountLabel,
+                })
+              : t('exchangeStakesAndTokensBody', {
+                  sellerLabel,
+                  sellerAmountLabel,
+                  buyerAmountLabel,
+                })}
           </span>
           {errorMessage ? (
             <span className="text-2 text-error-11 break-all">
