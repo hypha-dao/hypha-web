@@ -3,10 +3,15 @@
 import { useEffect, useState } from 'react';
 
 const COMPACT_ATTR = 'data-compact-header';
+const PANEL_COMPACT_ATTR = 'data-compact-panels';
 
 function readCompactHeaderMode(): boolean {
   if (typeof document === 'undefined') return false;
-  return document.documentElement.getAttribute(COMPACT_ATTR) === 'true';
+  const root = document.documentElement;
+  return (
+    root.getAttribute(COMPACT_ATTR) === 'true' ||
+    root.getAttribute(PANEL_COMPACT_ATTR) === 'true'
+  );
 }
 
 export function useCompactHeaderMode(): boolean {
@@ -22,7 +27,7 @@ export function useCompactHeaderMode(): boolean {
     const observer = new MutationObserver(sync);
     observer.observe(root, {
       attributes: true,
-      attributeFilter: [COMPACT_ATTR],
+      attributeFilter: [COMPACT_ATTR, PANEL_COMPACT_ATTR],
     });
     return () => observer.disconnect();
   }, []);

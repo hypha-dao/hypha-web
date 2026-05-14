@@ -172,7 +172,10 @@ export const MenuTop = ({
           children ? 'justify-between' : 'justify-center',
         )}
       >
-        <div ref={leadingClusterRef} className="flex min-w-0 items-center gap-2">
+        <div
+          ref={leadingClusterRef}
+          className="flex min-w-0 items-center gap-2"
+        >
           {leadingAction ? (
             <div
               className={
@@ -245,7 +248,9 @@ export const MenuTop = ({
           {trailingAction ? (
             <div className="flex shrink-0 items-center">{trailingAction}</div>
           ) : null}
-          {mobileAction ? <div className="flex shrink-0 items-center">{mobileAction}</div> : null}
+          {mobileAction ? (
+            <div className="flex shrink-0 items-center">{mobileAction}</div>
+          ) : null}
           {showMobileHamburger ? (
             <button
               type="button"

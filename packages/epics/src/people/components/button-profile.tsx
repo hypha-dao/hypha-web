@@ -201,7 +201,10 @@ export const ButtonProfile = ({
                   <Link href={profileUrl}>
                     <UserRound className="size-4 shrink-0" aria-hidden />
                     <span className="flex-1">{t('viewProfile')}</span>
-                    <ChevronRight className="ml-auto size-4 opacity-60" aria-hidden />
+                    <ChevronRight
+                      className="ml-auto size-4 opacity-60"
+                      aria-hidden
+                    />
                   </Link>
                 </DropdownMenuItem>
               ) : null}
@@ -210,7 +213,10 @@ export const ButtonProfile = ({
                   <Link href={onboardingUrl}>
                     <Compass className="size-4 shrink-0" aria-hidden />
                     <span className="flex-1">{t('continueAdventure')}</span>
-                    <ChevronRight className="ml-auto size-4 opacity-60" aria-hidden />
+                    <ChevronRight
+                      className="ml-auto size-4 opacity-60"
+                      aria-hidden
+                    />
                   </Link>
                 </DropdownMenuItem>
               ) : null}
@@ -219,7 +225,10 @@ export const ButtonProfile = ({
                   <Link href={notificationCentrePath}>
                     <Bell className="size-4 shrink-0" aria-hidden />
                     <span className="flex-1">{t('notificationCentre')}</span>
-                    <ChevronRight className="ml-auto size-4 opacity-60" aria-hidden />
+                    <ChevronRight
+                      className="ml-auto size-4 opacity-60"
+                      aria-hidden
+                    />
                   </Link>
                 </DropdownMenuItem>
               ) : null}

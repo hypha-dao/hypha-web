@@ -279,9 +279,7 @@ export default async function RootLayout({
                           openMenuLabel={navOpenMenuLabel}
                           closeMenuLabel={navCloseMenuLabel}
                           leadingAction={
-                            aiChatEnabled ? (
-                              <AiSidebarTrigger />
-                            ) : undefined
+                            aiChatEnabled ? <AiSidebarTrigger /> : undefined
                           }
                           trailingAction={
                             humanChatEnabled ? (

@@ -192,6 +192,11 @@ type PanelWrapLayoutProps = {
 
 /** Matches scroll inset — `0px` so fixed chrome / dividers span full main column (lines may cross overlay scrollbar). */
 const MAIN_COLUMN_SCROLLBAR_WIDTH_CSS = '0px';
+const PANEL_COMPACT_ATTR = 'data-compact-panels';
+const LEFT_SIDEBAR_EXPANDED_WIDTH = '320px';
+const RIGHT_SIDEBAR_WIDTH = '320px';
+const RIGHT_SIDEBAR_WIDTH_COMPACT = '360px';
+const MIN_MAIN_COLUMN_WIDTH_PX = 560;
 
 const SIDEBAR_WIDTH_MIRROR_KEYS = [
   '--sidebar-left-width',
@@ -247,19 +252,29 @@ export function PanelWrapLayout({
   } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const isCompactHeader = useCompactHeaderMode();
+  const isCompactUi = useCompactHeaderMode();
 
   // Panels are only available within a space context (/[lang]/dho/[id]/...)
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
-  const rightSidebarWidth = isCompactHeader
-    ? 'calc(100vw - var(--sidebar-left-width, 0px))'
-    : '320px';
-  const leftExpandedSidebarWidth =
-    rightOpen && effectiveRight ? 'var(--sidebar-right-width, 320px)' : '320px';
+  const [viewportWidth, setViewportWidth] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1440;
+    return window.innerWidth;
+  });
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
+  const leftFootprintPx = leftExpanded ? 320 : 72;
+  const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
+  const forceCompactPanels =
+    Boolean(effectiveLeft && effectiveRight) &&
+    viewportWidth - leftFootprintPx - rightFootprintPx <
+      MIN_MAIN_COLUMN_WIDTH_PX;
+  const isCompactPanels = isCompactUi || forceCompactPanels;
+  const rightSidebarWidth = isCompactPanels
+    ? RIGHT_SIDEBAR_WIDTH_COMPACT
+    : RIGHT_SIDEBAR_WIDTH;
+  const leftExpandedSidebarWidth = LEFT_SIDEBAR_EXPANDED_WIDTH;
   const fallbackSidebarLeftPx = effectiveLeft
     ? leftExpanded
       ? leftExpandedSidebarWidth
@@ -269,6 +284,29 @@ export function PanelWrapLayout({
     rightOpen && effectiveRight ? rightSidebarWidth : '0px';
   const [sidebarLeftPx, setSidebarLeftPx] = useState(fallbackSidebarLeftPx);
   const [sidebarRightPx, setSidebarRightPx] = useState(fallbackSidebarRightPx);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onResize = () => setViewportWidth(window.innerWidth);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    root.setAttribute(PANEL_COMPACT_ATTR, isCompactPanels ? 'true' : 'false');
+    return () => root.removeAttribute(PANEL_COMPACT_ATTR);
+  }, [isCompactPanels]);
+
+  useEffect(() => {
+    if (!isCompactPanels) return;
+    if (leftExpanded && rightOpen) {
+      // Compact mode allows one expanded rail at a time to preserve main content width.
+      closeAiPanel();
+    }
+  }, [isCompactPanels, leftExpanded, rightOpen, closeAiPanel]);
 
   useLayoutEffect(() => {
     const root = wrapperRef.current;
@@ -354,7 +392,7 @@ export function PanelWrapLayout({
         onLeftOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
-            if (isCompactHeader && rightOpen) {
+            if (isCompactPanels && rightOpen) {
               toggleRight();
             }
             openAiPanel();
@@ -364,7 +402,7 @@ export function PanelWrapLayout({
         }}
         rightOpen={rightOpen}
         onRightOpenChange={(open) => {
-          if (open && isCompactHeader && leftExpanded) {
+          if (open && isCompactPanels && leftExpanded) {
             closeAiPanel();
           }
           if (open !== rightOpen) toggleRight();
@@ -382,7 +420,7 @@ export function PanelWrapLayout({
         defaultOpen={false}
         open={rightOpen}
         onOpenChange={(open) => {
-          if (open && isCompactHeader && leftExpanded) {
+          if (open && isCompactPanels && leftExpanded) {
             closeAiPanel();
           }
           if (open !== rightOpen) toggleRight();
@@ -415,7 +453,7 @@ export function PanelWrapLayout({
         onOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
-            if (isCompactHeader && rightOpen) {
+            if (isCompactPanels && rightOpen) {
               toggleRight();
             }
             openAiPanel();
