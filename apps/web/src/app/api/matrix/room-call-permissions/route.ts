@@ -265,6 +265,26 @@ async function resolveCallerMatrixAccessToken(
   return valid ? decrypted : null;
 }
 
+async function writePowerLevelsWithClientApi(
+  homeserver: string,
+  roomId: string,
+  accessToken: string,
+  content: MatrixPowerLevels,
+): Promise<{ ok: true } | { ok: false; details: string }> {
+  const encodedRoomId = encodeURIComponent(roomId);
+  const result = await matrixRequest<Record<string, unknown>>(
+    'PUT',
+    `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
+    accessToken,
+    content,
+  );
+  if (result.ok) return { ok: true };
+  return {
+    ok: false,
+    details: `matrix-client-write-failed: ${result.status} ${result.body}`,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const humanChatEnabled = await getEnableHumanChat();
   const authHeader = request.headers.get('Authorization');
@@ -316,6 +336,10 @@ export async function POST(request: NextRequest) {
   }
 
   const environment = determineEnvironment(request.url);
+  const callerMatrixAccessToken = await resolveCallerMatrixAccessToken(
+    environment,
+    privyUserId,
+  );
   const adminCredentials = await resolveAdminMatrixAccessToken(
     environment,
     authToken,
@@ -338,15 +362,11 @@ export async function POST(request: NextRequest) {
   let joinAttemptDetails: Record<string, unknown> | undefined;
   let joinedAsAdmin = joinResult.ok;
   if (!joinResult.ok && joinResult.status === 403) {
-    const callerToken = await resolveCallerMatrixAccessToken(
-      environment,
-      privyUserId,
-    );
-    if (callerToken) {
+    if (callerMatrixAccessToken) {
       const inviteAttempt = await matrixRequest<Record<string, unknown>>(
         'POST',
         `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/invite`,
-        callerToken,
+        callerMatrixAccessToken,
         {
           user_id: adminCredentials.userId,
         },
@@ -514,12 +534,43 @@ export async function POST(request: NextRequest) {
     nextPowerLevels,
   );
   if (!fallbackWrite.ok) {
+    let callerWriteAttempt:
+      | { ok: true }
+      | { ok: false; details: string }
+      | undefined;
+    if (callerMatrixAccessToken) {
+      const callerWrite = await writePowerLevelsWithClientApi(
+        homeserver,
+        roomId,
+        callerMatrixAccessToken,
+        nextPowerLevels,
+      );
+      callerWriteAttempt = callerWrite.ok
+        ? { ok: true }
+        : { ok: false, details: callerWrite.details };
+      if (callerWrite.ok) {
+        return NextResponse.json({
+          ok: true,
+          changed: true,
+          roomId,
+          correlationId:
+            request.headers.get('x-correlation-id') ?? randomUUID(),
+        });
+      }
+    } else {
+      callerWriteAttempt = {
+        ok: false,
+        details: 'caller-matrix-token-unavailable',
+      };
+    }
+
     return NextResponse.json(
       {
         error: 'Failed to update room power levels for call events',
         details: {
           joinAttemptDetails,
           makeRoomAdminAttempt: makeRoomAdminAttemptDetails,
+          callerWriteAttempt,
           matrixClient: updateResult.body,
           synapseAdmin: fallbackWrite.details,
         },
