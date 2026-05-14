@@ -15,12 +15,14 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import {
   AiLeftPanel,
   AiSidebarTrigger,
+  GlobalCallDockProvider,
   PanelProviders,
   PanelWrapLayout,
   HumanSidebarTrigger,
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
+import { ConnectedGlobalCallDock } from '@web/components/connected-global-call-dock';
 import { useMe } from '@hypha-platform/core/client';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { fileRouter } from '@hypha-platform/core/server';
@@ -253,6 +255,7 @@ export default async function RootLayout({
               >
                 <ConditionalMatrixProvider enabled={humanChatEnabled}>
                   <PanelProviders>
+                    <GlobalCallDockProvider>
                     <PanelWrapLayout
                       left={
                         aiChatEnabled
@@ -363,6 +366,8 @@ export default async function RootLayout({
                         privacyPolicyLabel={footerPrivacyPolicyLabel}
                       />
                     </PanelWrapLayout>
+                    {humanChatEnabled && <ConnectedGlobalCallDock />}
+                    </GlobalCallDockProvider>
                   </PanelProviders>
                 </ConditionalMatrixProvider>
               </NotificationSubscriber>

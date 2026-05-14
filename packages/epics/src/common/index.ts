@@ -43,3 +43,8 @@ export {
   HumanChatPanelMessages,
 } from './human-chat-panel';
 export { HumanRightPanel } from './human-right-panel';
+export {
+  GlobalCallDockProvider,
+  useGlobalCallDock,
+} from './global-call-dock-context';
+export { GlobalCallDockOverlay } from './global-call-dock-overlay';

@@ -49,7 +49,6 @@ import {
   isMatrixRateLimitedError,
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
-  useSpaceGroupCall,
   type MessageReaction,
   type Person,
 } from '@hypha-platform/core/client';
@@ -108,6 +107,7 @@ import {
   wireComposerPlainForMatrixSend,
 } from './human-chat-panel/human-chat-display-mention';
 import { Empty } from './empty';
+import { useGlobalCallDock } from './global-call-dock-context';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -756,11 +756,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [isMatrixAvailable, isMatrixAuthenticated, resetChatStateOnAuthDrop]);
 
   const {
+    bindRoomContext,
     callState: spaceCallState,
     errorCode: spaceCallError,
     callKind: spaceCallKind,
-    enterAudio: enterSpaceCallAudio,
-    enterVideo: enterSpaceCallVideo,
+    startAudioForRoom,
+    startVideoForRoom,
     leave: leaveSpaceCall,
     setMicrophoneMuted: setSpaceCallMicMuted,
     setCameraMuted: setSpaceCallCameraMuted,
@@ -783,10 +784,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     dismissCallError: dismissSpaceCallError,
     remoteMediaStall: spaceCallRemoteMediaStall,
     dismissRemoteMediaStallBanner: dismissSpaceCallRemoteMediaStall,
-  } = useSpaceGroupCall(mode === 'space' ? roomId : null, {
-    authToken,
-    spaceSlug,
-  });
+    showFloatingDock,
+  } = useGlobalCallDock();
+
+  useEffect(() => {
+    if (mode === 'space') {
+      bindRoomContext(roomId, spaceSlug ?? null, authToken ?? null);
+      return;
+    }
+    bindRoomContext(null, null);
+  }, [authToken, bindRoomContext, mode, roomId, spaceSlug]);
 
   const callUiEnabled = useMemo(
     () =>
@@ -890,12 +897,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'connecting';
 
   const handleCallAudio = useCallback(() => {
-    void enterSpaceCallAudio();
-  }, [enterSpaceCallAudio]);
+    void startAudioForRoom(roomId, spaceSlug ?? null);
+  }, [startAudioForRoom, roomId, spaceSlug]);
 
   const handleCallVideo = useCallback(() => {
-    void enterSpaceCallVideo();
-  }, [enterSpaceCallVideo]);
+    void startVideoForRoom(roomId, spaceSlug ?? null);
+  }, [startVideoForRoom, roomId, spaceSlug]);
 
   const onCallFullViewPaneSplitChange = useCallback(
     (which: CallFullViewPaneSplit, value: number) => {
@@ -2601,7 +2608,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionTabBadgeCount={bellMentionCount}
           mentionTabBadgeCapped={bellMentionCapped}
           tabRowEnd={
-            callUiEnabled ? (
+            callUiEnabled && !showFloatingDock ? (
               <HumanChatPanelCallToolbar
                 callState={spaceCallState}
                 callKind={spaceCallKind}
@@ -2616,16 +2623,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {callUiEnabled && !inSpaceCall && spaceCallShowJoinStrip && (
-          <HumanChatPanelCallJoinStrip
-            deviceCount={spaceCallRoomGroupDeviceCount}
-            disabled={!callUiEnabled}
-            busy={spaceCallBusyJoining}
-            onJoinAudio={handleCallAudio}
-            onJoinVideo={handleCallVideo}
-          />
-        )}
         {callUiEnabled &&
+          !showFloatingDock &&
+          !inSpaceCall &&
+          spaceCallShowJoinStrip && (
+            <HumanChatPanelCallJoinStrip
+              deviceCount={spaceCallRoomGroupDeviceCount}
+              disabled={!callUiEnabled}
+              busy={spaceCallBusyJoining}
+              onJoinAudio={handleCallAudio}
+              onJoinVideo={handleCallVideo}
+            />
+          )}
+        {callUiEnabled &&
+          !showFloatingDock &&
           (inSpaceCall ||
             spaceCallState === 'error' ||
             spaceCallState === 'disconnecting') && (
@@ -2683,7 +2694,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 role="tabpanel"
                 id="chat-tabpanel-chat"
               >
-                {callUiEnabled && (
+                {callUiEnabled && !showFloatingDock && (
                   <div
                     className={
                       inSpaceCall
@@ -2870,121 +2881,124 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         </SidebarFooter>
       )}
 
-      {callUiEnabled && canOpenCallFullView && callFullViewOpen && (
-        <div
-          ref={callFullViewDialogRef}
-          tabIndex={-1}
-          className="fixed z-[120] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full flex-col overflow-hidden rounded-xl border border-border/50 bg-background p-0 text-foreground shadow-2xl"
-          style={{
-            left: '50%',
-            top: '50%',
-            transform: `translate(calc(-50% + ${callPopupOffset.x}px), calc(-50% + ${callPopupOffset.y}px))`,
-          }}
-          role="dialog"
-          aria-modal="false"
-          aria-label={t('callFullView')}
-        >
+      {callUiEnabled &&
+        !showFloatingDock &&
+        canOpenCallFullView &&
+        callFullViewOpen && (
           <div
-            className="relative flex shrink-0 cursor-grab border-b border-border/50 bg-muted/40 px-3 py-2.5 pe-2 text-left active:cursor-grabbing"
-            onPointerDown={handleCallPopupDragStart}
+            ref={callFullViewDialogRef}
+            tabIndex={-1}
+            className="fixed z-[120] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full flex-col overflow-hidden rounded-xl border border-border/50 bg-background p-0 text-foreground shadow-2xl"
+            style={{
+              left: '50%',
+              top: '50%',
+              transform: `translate(calc(-50% + ${callPopupOffset.x}px), calc(-50% + ${callPopupOffset.y}px))`,
+            }}
+            role="dialog"
+            aria-modal="false"
+            aria-label={t('callFullView')}
           >
-            <button
-              type="button"
-              data-call-popup-no-drag
-              onClick={() => {
-                setCallFullViewOpen(false);
-                callFullViewTriggerRef.current?.focus();
-              }}
-              className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={t('callFullViewClose')}
-              title={t('callFullViewClose')}
+            <div
+              className="relative flex shrink-0 cursor-grab border-b border-border/50 bg-muted/40 px-3 py-2.5 pe-2 text-left active:cursor-grabbing"
+              onPointerDown={handleCallPopupDragStart}
             >
-              <Minimize2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-            </button>
-            <div className="min-w-0 flex-1 space-y-0.5 pe-10">
-              <p className="text-sm font-medium tracking-tight text-foreground sm:text-left">
-                {t('callFullView')}
-              </p>
-              <p className="text-xs text-muted-foreground sm:text-left">
-                {t('callFullViewDescription')}
-              </p>
-            </div>
-            {showCallLayoutMenuInFullView && (
-              <div
-                className="mt-1 w-full shrink-0 sm:mt-0 sm:w-auto sm:justify-self-end sm:pe-10"
+              <button
+                type="button"
                 data-call-popup-no-drag
+                onClick={() => {
+                  setCallFullViewOpen(false);
+                  callFullViewTriggerRef.current?.focus();
+                }}
+                className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={t('callFullViewClose')}
+                title={t('callFullViewClose')}
               >
-                <HumanChatPanelCallFullViewLayoutMenu
-                  value={callFullViewLayoutMode}
-                  onValueChange={onCallFullViewLayoutChange}
+                <Minimize2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              </button>
+              <div className="min-w-0 flex-1 space-y-0.5 pe-10">
+                <p className="text-sm font-medium tracking-tight text-foreground sm:text-left">
+                  {t('callFullView')}
+                </p>
+                <p className="text-xs text-muted-foreground sm:text-left">
+                  {t('callFullViewDescription')}
+                </p>
+              </div>
+              {showCallLayoutMenuInFullView && (
+                <div
+                  className="mt-1 w-full shrink-0 sm:mt-0 sm:w-auto sm:justify-self-end sm:pe-10"
+                  data-call-popup-no-drag
+                >
+                  <HumanChatPanelCallFullViewLayoutMenu
+                    value={callFullViewLayoutMode}
+                    onValueChange={onCallFullViewLayoutChange}
+                  />
+                </div>
+              )}
+            </div>
+            <div
+              ref={callFullViewSplitContainerRef}
+              className="flex min-h-0 min-w-0 flex-1 flex-col p-0"
+              role="presentation"
+            >
+              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+                <HumanChatPanelCallStage
+                  client={client}
+                  roomId={roomId}
+                  groupCall={spaceGroupCall}
+                  callKind={spaceCallKind}
+                  isLocalVideoMuted={spaceCallVideoMuted}
+                  isScreensharing={spaceCallScreensharing}
+                  callState={spaceCallState}
+                  feedVersion={spaceCallFeedVersion}
+                  activeSpeakerKey={spaceCallActiveSpeakerKey}
+                  currentUserId={currentUserId}
+                  inCallUserIds={spaceCallInCallUserIds}
+                  remoteMediaStall={spaceCallRemoteMediaStall}
+                  currentUserProfileAvatarUrl={currentUserAvatarUrl}
+                  resolveMemberLabel={resolveMentionMemberLabel}
+                  layout="fullView"
+                  fullViewOpen
+                  fullViewLayoutMode={callFullViewLayoutMode}
+                  fullViewPaneSplit={callFullViewPaneSplit}
+                  onFullViewPaneSplitChange={onCallFullViewPaneSplitChange}
+                  fullViewSplitContainerRef={callFullViewSplitContainerRef}
                 />
               </div>
-            )}
-          </div>
-          <div
-            ref={callFullViewSplitContainerRef}
-            className="flex min-h-0 min-w-0 flex-1 flex-col p-0"
-            role="presentation"
-          >
-            <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-              <HumanChatPanelCallStage
-                client={client}
-                roomId={roomId}
-                groupCall={spaceGroupCall}
-                callKind={spaceCallKind}
-                isLocalVideoMuted={spaceCallVideoMuted}
-                isScreensharing={spaceCallScreensharing}
-                callState={spaceCallState}
-                feedVersion={spaceCallFeedVersion}
-                activeSpeakerKey={spaceCallActiveSpeakerKey}
-                currentUserId={currentUserId}
-                inCallUserIds={spaceCallInCallUserIds}
-                remoteMediaStall={spaceCallRemoteMediaStall}
-                currentUserProfileAvatarUrl={currentUserAvatarUrl}
-                resolveMemberLabel={resolveMentionMemberLabel}
-                layout="fullView"
-                fullViewOpen
-                fullViewLayoutMode={callFullViewLayoutMode}
-                fullViewPaneSplit={callFullViewPaneSplit}
-                onFullViewPaneSplitChange={onCallFullViewPaneSplitChange}
-                fullViewSplitContainerRef={callFullViewSplitContainerRef}
-              />
-            </div>
-            {spaceCallScreenshareError && spaceCallState === 'connected' && (
-              <div
-                role="alert"
-                className="flex shrink-0 items-start justify-center gap-2 border-t border-destructive/20 bg-destructive/10 px-3 py-1.5"
-              >
-                <p className="min-w-0 flex-1 text-center text-xs text-destructive">
-                  {spaceCallScreenshareError === 'PERMISSION_DENIED'
-                    ? t('callErrorPermission')
-                    : t('callErrorScreenshare')}
-                </p>
-                <button
-                  type="button"
-                  onClick={dismissSpaceCallScreenshareError}
-                  className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+              {spaceCallScreenshareError && spaceCallState === 'connected' && (
+                <div
+                  role="alert"
+                  className="flex shrink-0 items-start justify-center gap-2 border-t border-destructive/20 bg-destructive/10 px-3 py-1.5"
                 >
-                  {t('callScreenshareDismiss')}
-                </button>
+                  <p className="min-w-0 flex-1 text-center text-xs text-destructive">
+                    {spaceCallScreenshareError === 'PERMISSION_DENIED'
+                      ? t('callErrorPermission')
+                      : t('callErrorScreenshare')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={dismissSpaceCallScreenshareError}
+                    className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+                  >
+                    {t('callScreenshareDismiss')}
+                  </button>
+                </div>
+              )}
+              <div className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 backdrop-blur-sm">
+                <HumanChatPanelInCallControls
+                  callState={spaceCallState}
+                  isMicrophoneMuted={spaceCallMicMuted}
+                  isLocalVideoMuted={spaceCallVideoMuted}
+                  isScreensharing={spaceCallScreensharing}
+                  onToggleMic={handleCallToggleMic}
+                  onToggleCamera={handleCallToggleCamera}
+                  onToggleScreenshare={handleCallToggleScreenshare}
+                  onLeave={handleCallLeave}
+                  variant="fullView"
+                />
               </div>
-            )}
-            <div className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 backdrop-blur-sm">
-              <HumanChatPanelInCallControls
-                callState={spaceCallState}
-                isMicrophoneMuted={spaceCallMicMuted}
-                isLocalVideoMuted={spaceCallVideoMuted}
-                isScreensharing={spaceCallScreensharing}
-                onToggleMic={handleCallToggleMic}
-                onToggleCamera={handleCallToggleCamera}
-                onToggleScreenshare={handleCallToggleScreenshare}
-                onLeave={handleCallLeave}
-                variant="fullView"
-              />
             </div>
           </div>
-        </div>
-      )}
+        )}
     </>
   );
 }
