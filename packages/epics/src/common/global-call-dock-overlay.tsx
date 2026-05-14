@@ -200,25 +200,6 @@ export function GlobalCallDockOverlay() {
   }, [geometry]);
 
   React.useEffect(() => {
-    const el = dockRef.current;
-    if (!el || dockMode === 'fullscreen') return;
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      const rect = entry.contentRect;
-      setGeometry((prev) =>
-        clampDockGeometry({
-          ...prev,
-          width: Math.round(rect.width),
-          height: Math.round(rect.height),
-        }),
-      );
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [dockMode]);
-
-  React.useEffect(() => {
     if (dockMode === 'fullscreen') return;
     const onResize = () => {
       setGeometry((prev) => clampDockGeometry(prev));
