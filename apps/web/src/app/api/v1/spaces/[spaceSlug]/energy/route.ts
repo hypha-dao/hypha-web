@@ -5,7 +5,6 @@ import {
   isMissingEnergyCommunitiesTableError,
   upsertEnergyCommunityActivation,
   web3Client,
-  getDb,
   type DatabaseInstance,
 } from '@hypha-platform/core/server';
 import {
@@ -20,7 +19,6 @@ import {
 } from '@hypha-platform/core/generated';
 import { db } from '@hypha-platform/storage-postgres';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
-import { headers } from 'next/headers';
 import { hexToString } from 'viem';
 
 const SOURCE_TYPES: Record<number, string> = {
@@ -50,7 +48,8 @@ async function syncEnergyCommunityFromFactory(input: {
   spaceId: number;
   spaceAddress: string | null;
   web3SpaceId: number | null;
-  appDb: DatabaseInstance;
+  /** Server pool (`db`); avoids Neon JWT `authenticated` lacking sequence grants on `energy_communities`. */
+  persistDb: DatabaseInstance;
 }): Promise<EnergyCommunityActivation | null> {
   const factoryAddress = getEnergyPpaFactoryAddress();
   const chainId = ENERGY_PPA_CHAIN_ID;
@@ -140,7 +139,7 @@ async function syncEnergyCommunityFromFactory(input: {
     try {
       return (
         (await upsertEnergyCommunityActivation(activation, {
-          db: input.appDb,
+          db: input.persistDb,
         })) ?? activation
       );
     } catch (e) {
@@ -206,12 +205,8 @@ export async function GET(
       );
     }
 
-    const headersList = await headers();
-    const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
-    const appDb = authToken ? getDb({ authToken }) : db;
-
     let mapping: EnergyCommunityActivation | null =
-      await findEnergyCommunityBySpaceId(space.id, { db: appDb });
+      await findEnergyCommunityBySpaceId(space.id, { db });
 
     if (!mapping) {
       try {
@@ -219,7 +214,7 @@ export async function GET(
           spaceId: space.id,
           spaceAddress: space.address,
           web3SpaceId: space.web3SpaceId,
-          appDb,
+          persistDb: db,
         });
       } catch (e) {
         // Never let factory sync turn into a 500 — the UI just renders
