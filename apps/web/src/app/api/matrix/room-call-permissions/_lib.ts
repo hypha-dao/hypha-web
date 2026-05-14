@@ -56,18 +56,35 @@ export async function matrixRequest<T>(
 ): Promise<
   { ok: true; data: T } | { ok: false; status: number; body: string }
 > {
-  const response = await fetch(url, {
-    method,
-    headers: matrixHeaders(accessToken),
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-    signal: AbortSignal.timeout(15_000),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers: matrixHeaders(accessToken),
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      status: 502,
+      body: error instanceof Error ? error.message : String(error),
+    };
+  }
   if (!response.ok) {
     const text = await response.text().catch(() => '');
     return { ok: false, status: response.status, body: text };
   }
-  const data = (await response.json()) as T;
-  return { ok: true, data };
+  try {
+    const data = (await response.json()) as T;
+    return { ok: true, data };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 502,
+      body: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
 export async function resolveMatrixAccessToken(
