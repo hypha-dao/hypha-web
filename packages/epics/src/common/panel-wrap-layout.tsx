@@ -228,7 +228,8 @@ const MAIN_COLUMN_SCROLLBAR_WIDTH_CSS = '0px';
 const PANEL_COMPACT_ATTR = 'data-compact-panels';
 const LEFT_SIDEBAR_EXPANDED_WIDTH = '320px';
 const RIGHT_SIDEBAR_WIDTH = '320px';
-const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(360px, calc(100vw - 88px))';
+// Mobile: keep only a slim gutter so chat/menu content uses almost full width.
+const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(560px, calc(100vw - 16px))';
 const DUAL_PANEL_MIN_VIEWPORT_PX = 1200;
 const MIN_MAIN_COLUMN_WIDTH_PX = 560;
 
