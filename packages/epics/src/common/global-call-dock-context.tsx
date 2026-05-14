@@ -133,6 +133,7 @@ function useGlobalCallDockValue() {
       if (activeRoomId !== targetRoomId) {
         setActiveRoomId(targetRoomId);
         setActiveSpaceSlug(targetSpaceSlug);
+        setActiveAuthToken(boundAuthToken);
         setPendingJoin({
           kind: 'audio',
           roomId: targetRoomId,
@@ -142,7 +143,7 @@ function useGlobalCallDockValue() {
       }
       await call.enterAudio(threadRootEventId);
     },
-    [activeRoomId, call],
+    [activeRoomId, boundAuthToken, call],
   );
 
   const startVideoForRoom = React.useCallback(
