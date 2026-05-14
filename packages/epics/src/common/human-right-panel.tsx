@@ -84,6 +84,7 @@ import {
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
 import {
   sanitizeMentionDisplayLabel,
@@ -1723,7 +1724,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const notificationCentreHref = useMemo(() => {
     const parts = pathname.split('/').filter(Boolean);
     if (parts.length === 0) return '/notification-centre';
-    const lang = parts[0];
+    const lang = getLocaleFromPath(pathname);
 
     /** Match `ConnectedButtonProfile` / aside routes under `apps/web/src/app/[lang]/…/@aside/`. */
     if (pathname.includes('/network')) {

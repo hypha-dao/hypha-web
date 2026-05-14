@@ -24,6 +24,7 @@ import {
 } from './human-chat-panel';
 import { matrixMemberDisplayLabelFromRoom } from './human-chat-panel/matrix-room-member-display';
 import { useGlobalCallDock } from './global-call-dock-context';
+import { getLocaleFromPath } from './get-locale-from-path';
 
 type DockGeometry = {
   x: number;
@@ -278,10 +279,7 @@ export function GlobalCallDockOverlay() {
   );
 
   const currentUserId = client?.getUserId?.() ?? null;
-  const locale = React.useMemo(() => {
-    const parts = pathname.split('/').filter(Boolean);
-    return parts[0] ?? 'en';
-  }, [pathname]);
+  const locale = React.useMemo(() => getLocaleFromPath(pathname), [pathname]);
   const callSpaceHref = activeSpaceSlug
     ? `/${locale}/dho/${activeSpaceSlug}`
     : null;
