@@ -445,6 +445,7 @@ export function HumanChatPanelCallStage({
       isActiveSpeaker={
         activeSpeakerKey != null && activeSpeakerKey === feedKeyForActive(feed)
       }
+      panelVideoFit={panelVideoFit}
       room={room}
       currentUserId={currentUserId}
       resolveMemberLabel={resolveMemberLabel}
@@ -550,6 +551,7 @@ export function HumanChatPanelCallStage({
                           feed={feed}
                           isShare
                           isFullView={isFull}
+                          panelVideoFit={panelVideoFit}
                           isActiveSpeaker={
                             activeSpeakerKey != null &&
                             activeSpeakerKey === feedKeyForActive(feed)
@@ -617,6 +619,7 @@ export function HumanChatPanelCallStage({
                           feed={feed}
                           isShare
                           isFullView={isFull}
+                          panelVideoFit={panelVideoFit}
                           isActiveSpeaker={
                             activeSpeakerKey != null &&
                             activeSpeakerKey === feedKeyForActive(feed)
@@ -681,6 +684,7 @@ export function HumanChatPanelCallStage({
                             }
                             feed={speakerFeedForTopMode}
                             isFullView={isFull}
+                            panelVideoFit={panelVideoFit}
                             isActiveSpeaker
                             room={room}
                             currentUserId={currentUserId}
@@ -736,6 +740,7 @@ export function HumanChatPanelCallStage({
                           feed={feed}
                           isShare
                           isFullView={isFull}
+                          panelVideoFit={panelVideoFit}
                           isActiveSpeaker={
                             activeSpeakerKey != null &&
                             activeSpeakerKey === feedKeyForActive(feed)
@@ -765,6 +770,7 @@ export function HumanChatPanelCallStage({
                     feed={feed}
                     isShare
                     isFullView={isFull}
+                    panelVideoFit={panelVideoFit}
                     isActiveSpeaker={
                       activeSpeakerKey != null &&
                       activeSpeakerKey === feedKeyForActive(feed)
@@ -822,6 +828,7 @@ export function HumanChatPanelCallStage({
                   feed={feed}
                   isShare
                   isFullView={isFull}
+                  panelVideoFit={panelVideoFit}
                   isActiveSpeaker={
                     activeSpeakerKey != null &&
                     activeSpeakerKey === feedKeyForActive(feed)
@@ -851,6 +858,7 @@ export function HumanChatPanelCallStage({
                   currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                   feed={remoteUserMedia[0]}
                   isFullView={isFull}
+                  panelVideoFit={panelVideoFit}
                   isActiveSpeaker={
                     activeSpeakerKey != null &&
                     activeSpeakerKey === feedKeyForActive(remoteUserMedia[0]!)
@@ -884,6 +892,7 @@ export function HumanChatPanelCallStage({
                   currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                   feed={localUserMedia[0]}
                   isFullView={isFull}
+                  panelVideoFit={panelVideoFit}
                   isActiveSpeaker={
                     activeSpeakerKey != null &&
                     activeSpeakerKey === feedKeyForActive(localUserMedia[0]!)
@@ -947,6 +956,7 @@ export function HumanChatPanelCallStage({
                     currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                     feed={feed}
                     isFullView={isFull}
+                    panelVideoFit={panelVideoFit}
                     isActiveSpeaker={
                       activeSpeakerKey != null &&
                       activeSpeakerKey === feedKeyForActive(feed)
@@ -981,6 +991,7 @@ export function HumanChatPanelCallStage({
                 feed={feed}
                 isPip
                 isFullView={isFull}
+                panelVideoFit={panelVideoFit}
                 isActiveSpeaker={
                   activeSpeakerKey != null &&
                   activeSpeakerKey === feedKeyForActive(feed)
