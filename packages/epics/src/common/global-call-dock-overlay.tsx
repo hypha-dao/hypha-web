@@ -320,6 +320,7 @@ export function GlobalCallDockOverlay() {
   return (
     <div
       ref={dockRef}
+      data-testid="global-call-dock"
       className={cn(
         'fixed z-[130] flex min-h-[180px] min-w-[280px] flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
         modeIsFullscreen ? 'rounded-2xl' : '',

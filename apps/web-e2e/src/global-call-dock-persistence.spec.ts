@@ -27,7 +27,7 @@ test.describe('Global Call Dock - navigation persistence', () => {
 
   test('dock is hidden when no call is active', async ({ page }) => {
     await openSpaceChat(page, SPACE_A);
-    const dock = page.locator('div.fixed.z-\\[130\\]');
+    const dock = page.getByTestId('global-call-dock');
     await expect(dock).toHaveCount(0);
   });
 
@@ -42,7 +42,7 @@ test.describe('Global Call Dock - navigation persistence', () => {
       );
       await panel.getByRole('button', { name: /video/i }).first().click();
 
-      const dock = page.locator('div.fixed.z-\\[130\\]');
+      const dock = page.getByTestId('global-call-dock');
       await expect(dock).toBeVisible();
 
       await gotoApp(page, `/en/dho/${SPACE_A}/signal`);
@@ -61,7 +61,7 @@ test.describe('Global Call Dock - navigation persistence', () => {
       );
       await panel.getByRole('button', { name: /video/i }).first().click();
 
-      const dock = page.locator('div.fixed.z-\\[130\\]');
+      const dock = page.getByTestId('global-call-dock');
       await expect(dock).toBeVisible();
 
       await gotoApp(page, `/en/dho/${SPACE_B}/agreements`);
@@ -76,7 +76,7 @@ test.describe('Global Call Dock - navigation persistence', () => {
     const panel = page.locator('[data-side="right"] [data-sidebar="sidebar"]');
     await panel.getByRole('button', { name: /video/i }).first().click();
 
-    const dock = page.locator('div.fixed.z-\\[130\\]');
+    const dock = page.getByTestId('global-call-dock');
     await expect(dock).toBeVisible();
 
     const before = await dock.evaluate((el) => ({
