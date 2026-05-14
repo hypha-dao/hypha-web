@@ -48,10 +48,11 @@ export const CreateSubspaceForm = ({
   const hasNavigatedAfterSuccessRef = React.useRef(false);
   const closeAfterSuccess = React.useCallback(() => {
     // In @aside parallel routes, the visible URL can already be the parent path.
-    // Prefer history back to close the overlay state, then hard-fallback to replace.
+    // Prefer history back to close the overlay state, then hard-fallback to a
+    // full navigation so parallel-route state is always cleared.
     router.back();
     window.setTimeout(() => {
-      router.replace(successfulUrl);
+      window.location.assign(successfulUrl);
     }, 250);
   }, [router, successfulUrl]);
   const pendingNavigationSeedRef = React.useRef<{
