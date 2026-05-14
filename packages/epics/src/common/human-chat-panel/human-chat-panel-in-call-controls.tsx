@@ -27,6 +27,8 @@ type HumanChatPanelInCallControlsProps = {
   onLeave: () => void;
   /** In header strip: compact buttons; in full view: larger, high-contrast on video. */
   variant?: 'inBanner' | 'fullView';
+  /** Use balanced horizontal distribution for compact rows (dock usage). */
+  inBannerLayout?: 'inline' | 'balanced';
 };
 
 /**
@@ -43,6 +45,7 @@ export function HumanChatPanelInCallControls({
   onToggleScreenshare,
   onLeave,
   variant = 'inBanner',
+  inBannerLayout = 'inline',
 }: HumanChatPanelInCallControlsProps) {
   const t = useTranslations('HumanChatPanel');
   const { controlsDisabled } = getCallControlsPhase(callState);
@@ -84,7 +87,11 @@ export function HumanChatPanelInCallControls({
     <div
       className={cn(
         'flex items-center gap-1.5 sm:gap-2',
-        isFull ? 'w-full justify-center' : 'w-auto justify-start',
+        isFull
+          ? 'w-full justify-center'
+          : inBannerLayout === 'balanced'
+          ? 'w-full justify-evenly'
+          : 'w-auto justify-start',
       )}
       role="group"
       aria-label={t('callToolbarLabel')}

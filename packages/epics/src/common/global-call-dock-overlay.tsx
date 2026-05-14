@@ -543,6 +543,7 @@ export function GlobalCallDockOverlay() {
               void leave();
             }}
             variant={modeIsFullscreen ? 'fullView' : 'inBanner'}
+            inBannerLayout={modeIsFullscreen ? 'inline' : 'balanced'}
           />
         )}
       </div>
