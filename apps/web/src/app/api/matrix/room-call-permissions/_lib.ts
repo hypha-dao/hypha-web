@@ -20,7 +20,6 @@ export type MatrixPowerLevels = {
   redact?: number;
   invite?: number;
   notifications?: Record<string, unknown>;
-  [k: string]: unknown;
 };
 
 export const CALL_EVENT_TYPES = [
