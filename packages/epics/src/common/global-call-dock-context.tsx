@@ -341,7 +341,7 @@ function useGlobalCallDockValue() {
     [activeRoomId, boundAuthToken, call],
   );
 
-  const showFloatingDock = call.callState !== 'idle';
+  const showFloatingDock = inSession;
 
   return {
     bindRoomContext,

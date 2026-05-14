@@ -39,11 +39,11 @@ type ResizeCorner = 'top-right' | 'bottom-left';
 const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v1';
 const DOCK_MARGIN_PX = 16;
 const SNAP_EDGE_PX = 24;
-const DOCK_MIN_WIDTH = 420;
-const DOCK_MIN_HEIGHT = 300;
+const DOCK_MIN_WIDTH = 320;
+const DOCK_MIN_HEIGHT = 200;
 const THUMBNAIL_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
-  width: 420,
-  height: 300,
+  width: 360,
+  height: 220,
 };
 const EXPANDED_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
   width: 760,
@@ -381,7 +381,13 @@ export function GlobalCallDockOverlay() {
       const saved = modeGeometryRef.current[nextMode];
       setGeometry((prev) =>
         clampDockGeometry(
-          saved
+          nextMode === 'thumbnail'
+            ? {
+                ...(saved ?? prev),
+                width: preset.width,
+                height: preset.height,
+              }
+            : saved
             ? saved
             : {
                 ...prev,

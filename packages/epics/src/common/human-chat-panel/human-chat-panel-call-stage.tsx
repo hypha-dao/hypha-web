@@ -365,11 +365,15 @@ export function HumanChatPanelCallStage({
 
   const isFull = layout === 'fullView';
   /**
-   * Never render the local display-capture feed in the stage preview. When the user
-   * shares the same window that contains the call UI, rendering this feed causes
-   * recursive "window-in-window" feedback.
+   * Suppress only local browser-tab captures in self preview to avoid recursive
+   * "window-in-window" feedback. Keep monitor/window local shares visible.
    */
-  const shareFeeds = rawShareFeeds.filter((feed) => !feed.isLocal());
+  const shareFeeds = rawShareFeeds.filter((feed) => {
+    if (!feed.isLocal()) return true;
+    const track = feed.stream.getVideoTracks()[0];
+    const displaySurface = track?.getSettings?.().displaySurface;
+    return displaySurface !== 'browser';
+  });
   const hasRemotesOrShare =
     remoteUserMedia.length > 0 ||
     missingRemoteUserIds.length > 0 ||
