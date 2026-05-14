@@ -731,6 +731,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     dismissScreenshareError: dismissSpaceCallScreenshareError,
     activeSpeakerKey: spaceCallActiveSpeakerKey,
     setScreensharingEnabled: setSpaceCallScreensharing,
+    voiceProcessingPreset: spaceCallVoiceProcessingPreset,
+    setVoiceProcessingPreset: setSpaceCallVoiceProcessingPreset,
     tabBackgroundWhileInCall: spaceCallTabBackground,
     retryFromError: retrySpaceCall,
     dismissCallError: dismissSpaceCallError,
@@ -874,6 +876,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const handleCallToggleScreenshare = useCallback(() => {
     void setSpaceCallScreensharing(!spaceCallScreensharing);
   }, [setSpaceCallScreensharing, spaceCallScreensharing]);
+
+  const handleCallVoiceProcessingPresetChange = useCallback(
+    (preset: 'standard' | 'voice_isolation' | 'music') => {
+      void setSpaceCallVoiceProcessingPreset(preset);
+    },
+    [setSpaceCallVoiceProcessingPreset],
+  );
 
   const handleRetrySpaceCall = useCallback(() => {
     retrySpaceCall();
@@ -2454,6 +2463,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onToggleMic={handleCallToggleMic}
               onToggleCamera={handleCallToggleCamera}
               onToggleScreenshare={handleCallToggleScreenshare}
+              voiceProcessingPreset={spaceCallVoiceProcessingPreset}
+              onVoiceProcessingPresetChange={
+                handleCallVoiceProcessingPresetChange
+              }
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
               onRetryCall={handleRetrySpaceCall}
               onDismissCallError={dismissSpaceCallError}

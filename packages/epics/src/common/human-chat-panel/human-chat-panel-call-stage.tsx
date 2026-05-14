@@ -354,17 +354,36 @@ export function HumanChatPanelCallStage({
 
   const {
     isVideoCall,
-    shareFeeds,
+    shareFeeds: rawShareFeeds,
     hasLocalWebcam,
     remoteUserMedia,
     missingRemoteUserIds,
     localUserMedia,
-    hasRemotesOrShare,
-    showLocalInMainGrid,
-    showLocalPip,
+    hasRemotesOrShare: rawHasRemotesOrShare,
+    showLocalInMainGrid: rawShowLocalInMainGrid,
+    showLocalPip: rawShowLocalPip,
   } = model;
 
   const isFull = layout === 'fullView';
+  /**
+   * Avoid recursive "hall of mirrors" when the user is alone and sharing the same
+   * window that renders this stage. In that case, show the local camera tile instead.
+   */
+  const suppressLocalSelfSharePreview =
+    isFull &&
+    rawShareFeeds.length > 0 &&
+    rawShareFeeds.every((feed) => feed.isLocal()) &&
+    remoteUserMedia.length === 0 &&
+    missingRemoteUserIds.length === 0;
+  const shareFeeds = suppressLocalSelfSharePreview ? [] : rawShareFeeds;
+  const hasRemotesOrShare = suppressLocalSelfSharePreview
+    ? remoteUserMedia.length > 0 || missingRemoteUserIds.length > 0
+    : rawHasRemotesOrShare;
+  const showLocalInMainGrid = suppressLocalSelfSharePreview
+    ? localUserMedia.length > 0
+    : rawShowLocalInMainGrid;
+  const showLocalPip = suppressLocalSelfSharePreview ? false : rawShowLocalPip;
+
   const userGridTileCount =
     remoteUserMedia.length +
     missingRemoteUserIds.length +
@@ -1491,11 +1510,11 @@ const FeedContent = ({
               isPip && 'h-full flex-1',
               isFullView && !isPip && 'absolute inset-0 h-full w-full',
               !isPip && !isFullView && 'h-full min-h-0 flex-1',
-              isShare
-                ? isFullView
-                  ? 'object-cover'
-                  : 'object-contain'
-                : !isPip && !isFullView && panelVideoFit === 'contain'
+              isFullView && !isPip
+                ? 'object-contain'
+                : isShare
+                ? 'object-contain'
+                : !isPip && panelVideoFit === 'contain'
                 ? 'object-contain'
                 : 'object-cover',
             )}
@@ -1507,17 +1526,19 @@ const FeedContent = ({
           {!isPip && (
             <div
               className={cn(
-                'absolute start-1 z-[1] max-w-[90%] truncate rounded bg-background/80 px-1.5 py-0.5 text-xs',
+                'absolute start-1 z-[1] flex max-w-[90%] flex-col rounded bg-background/80 px-1.5 py-0.5 text-xs',
                 isFullView ? 'bottom-2' : 'bottom-1',
               )}
             >
-              {showSkeleton ? (
-                <Skeleton loading width={88} height={14} />
-              ) : (
-                overlayLabel
-              )}
+              <span className="truncate">
+                {showSkeleton ? (
+                  <Skeleton loading width={88} height={14} />
+                ) : (
+                  overlayLabel
+                )}
+              </span>
               {feed.isAudioMuted() ? (
-                <span className="inline-flex items-center gap-1 text-destructive">
+                <span className="mt-0.5 inline-flex items-center gap-1 text-destructive">
                   <MicOff
                     className="h-3.5 w-3.5"
                     strokeWidth={2.25}

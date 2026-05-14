@@ -48,11 +48,74 @@ const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
 const PLACE_OUTGOING_DELAYED_MS = 600;
 const PLACE_OUTGOING_RETRY_MS = [1500, 4000, 8000] as const;
 const ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS = 30_000;
+const VOICE_PROCESSING_PRESET_KEY = 'hypha-group-call-voice-processing-v1';
 
 export type SpaceGroupCallOptions = {
   authToken?: string | null;
   spaceSlug?: string | null;
 };
+export type SpaceGroupCallVoiceProcessingPreset =
+  | 'standard'
+  | 'voice_isolation'
+  | 'music';
+
+type AudioProcessingConstraints = {
+  autoGainControl: boolean;
+  echoCancellation: boolean;
+  noiseSuppression: boolean;
+};
+
+function constraintsForVoicePreset(
+  preset: SpaceGroupCallVoiceProcessingPreset,
+): AudioProcessingConstraints {
+  switch (preset) {
+    case 'voice_isolation':
+      return {
+        autoGainControl: false,
+        echoCancellation: true,
+        noiseSuppression: true,
+      };
+    case 'music':
+      return {
+        autoGainControl: false,
+        echoCancellation: true,
+        noiseSuppression: false,
+      };
+    case 'standard':
+    default:
+      return {
+        autoGainControl: true,
+        echoCancellation: true,
+        noiseSuppression: true,
+      };
+  }
+}
+
+function readVoiceProcessingPreset(): SpaceGroupCallVoiceProcessingPreset {
+  if (typeof window === 'undefined') return 'standard';
+  try {
+    const raw = window.localStorage
+      .getItem(VOICE_PROCESSING_PRESET_KEY)
+      ?.trim();
+    if (raw === 'standard' || raw === 'voice_isolation' || raw === 'music') {
+      return raw;
+    }
+  } catch {
+    // ignore persistence read failures
+  }
+  return 'standard';
+}
+
+function persistVoiceProcessingPreset(
+  preset: SpaceGroupCallVoiceProcessingPreset,
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(VOICE_PROCESSING_PRESET_KEY, preset);
+  } catch {
+    // ignore persistence write failures
+  }
+}
 
 async function tryRepairRoomCallPermissions(
   authToken: string | null | undefined,
@@ -146,6 +209,8 @@ export function useSpaceGroupCall(
   const [isScreensharing, setIsScreensharing] = useState(false);
   const [localPreviewStream, setLocalPreviewStream] =
     useState<MediaStream | null>(null);
+  const [voiceProcessingPreset, setVoiceProcessingPresetState] =
+    useState<SpaceGroupCallVoiceProcessingPreset>('standard');
   const [isMicrophoneMuted, setIsMicrophoneMuted] = useState(false);
   const [isLocalVideoMuted, setIsLocalVideoMuted] = useState(true);
   /** Active GroupCall for UI (tiles); cleared on leave. */
@@ -338,6 +403,56 @@ export function useSpaceGroupCall(
     const feed = gc.localCallFeed;
     setLocalPreviewStream(feed?.stream ?? null);
   }, []);
+
+  const applyVoiceProcessingPresetToGroupCall = useCallback(
+    async (
+      gc: MatrixSdk.GroupCall,
+      preset: SpaceGroupCallVoiceProcessingPreset,
+    ): Promise<boolean> => {
+      if (
+        typeof navigator === 'undefined' ||
+        !navigator.mediaDevices?.getUserMedia
+      ) {
+        return false;
+      }
+      const existingStream = gc.localCallFeed?.stream ?? null;
+      const previousAudioTrack = existingStream?.getAudioTracks()[0] ?? null;
+      const videoTracks = existingStream?.getVideoTracks() ?? [];
+      const audioConstraints = constraintsForVoicePreset(preset);
+      const refreshedAudioStream = await navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: {
+          autoGainControl: { ideal: audioConstraints.autoGainControl },
+          echoCancellation: { ideal: audioConstraints.echoCancellation },
+          noiseSuppression: { ideal: audioConstraints.noiseSuppression },
+        },
+      });
+      const nextAudioTrack = refreshedAudioStream.getAudioTracks()[0];
+      if (!nextAudioTrack) {
+        refreshedAudioStream.getTracks().forEach((track) => track.stop());
+        return false;
+      }
+      if (previousAudioTrack) {
+        nextAudioTrack.enabled = previousAudioTrack.enabled;
+      }
+      const nextStream = new MediaStream();
+      nextStream.addTrack(nextAudioTrack);
+      for (const videoTrack of videoTracks) {
+        nextStream.addTrack(videoTrack);
+      }
+      await gc.updateLocalUsermediaStream(nextStream);
+      for (const track of refreshedAudioStream.getTracks()) {
+        if (track !== nextAudioTrack) {
+          track.stop();
+        }
+      }
+      if (previousAudioTrack && previousAudioTrack !== nextAudioTrack) {
+        previousAudioTrack.stop();
+      }
+      return true;
+    },
+    [],
+  );
 
   const updateParticipantCount = useCallback(() => {
     const gc = groupCallRef.current;
@@ -947,6 +1062,11 @@ export function useSpaceGroupCall(
           /* camera permission / hardware — remain in call with video off */
         }
       }
+      try {
+        await applyVoiceProcessingPresetToGroupCall(gc, voiceProcessingPreset);
+      } catch {
+        // keep the call connected if browser denies advanced audio constraints
+      }
 
       nudgeGroupCallPlaceOutgoing(gc);
       if (typeof window !== 'undefined') {
@@ -1040,6 +1160,8 @@ export function useSpaceGroupCall(
       updateParticipantCount,
       logDevMediaSnapshot,
       evalRemoteMediaStall,
+      applyVoiceProcessingPresetToGroupCall,
+      voiceProcessingPreset,
     ],
   );
 
@@ -1164,6 +1286,33 @@ export function useSpaceGroupCall(
     },
     [scheduleFeedBatched],
   );
+
+  const setVoiceProcessingPreset = useCallback(
+    async (preset: SpaceGroupCallVoiceProcessingPreset) => {
+      setVoiceProcessingPresetState(preset);
+      persistVoiceProcessingPreset(preset);
+      const gc = groupCallRef.current;
+      if (!gc) return;
+      try {
+        const applied = await applyVoiceProcessingPresetToGroupCall(gc, preset);
+        if (applied) {
+          scheduleFeedBatched();
+          refreshLocalPreview();
+        }
+      } catch {
+        // keep current call media if constraints fail on this device/browser
+      }
+    },
+    [
+      applyVoiceProcessingPresetToGroupCall,
+      refreshLocalPreview,
+      scheduleFeedBatched,
+    ],
+  );
+
+  useEffect(() => {
+    setVoiceProcessingPresetState(readVoiceProcessingPreset());
+  }, []);
 
   useEffect(() => {
     if (!groupCallRef.current) return;
@@ -1507,6 +1656,8 @@ export function useSpaceGroupCall(
     setMicrophoneMuted,
     setCameraMuted,
     setScreensharingEnabled,
+    voiceProcessingPreset,
+    setVoiceProcessingPreset,
     isScreensharing,
     localPreviewStream,
     /** Devices in the room’s GroupCall (or 0 if none). */

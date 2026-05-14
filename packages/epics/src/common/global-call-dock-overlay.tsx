@@ -161,6 +161,8 @@ export function GlobalCallDockOverlay() {
     setMicrophoneMuted,
     setCameraMuted,
     setScreensharingEnabled,
+    voiceProcessingPreset,
+    setVoiceProcessingPreset,
     leave,
   } = useGlobalCallDock();
 
@@ -422,7 +424,7 @@ export function GlobalCallDockOverlay() {
   );
   const locale = React.useMemo(() => getLocaleFromPath(pathname), [pathname]);
   const callSpaceHref = activeSpaceSlug
-    ? `/${locale}/dho/${activeSpaceSlug}/signal`
+    ? `/${locale}/dho/${activeSpaceSlug}/coherence`
     : null;
 
   if (!showFloatingDock || !activeRoomId) return null;
@@ -453,6 +455,11 @@ export function GlobalCallDockOverlay() {
 
   const onToggleScreenshare = () => {
     void setScreensharingEnabled(!isScreensharing);
+  };
+  const onVoiceProcessingPresetChange = (
+    preset: 'standard' | 'voice_isolation' | 'music',
+  ) => {
+    void setVoiceProcessingPreset(preset);
   };
   const showDockBanner =
     errorCode != null || screenshareErrorCode != null || remoteMediaStall;
@@ -607,6 +614,8 @@ export function GlobalCallDockOverlay() {
             onToggleMic={onToggleMic}
             onToggleCamera={onToggleCamera}
             onToggleScreenshare={onToggleScreenshare}
+            voiceProcessingPreset={voiceProcessingPreset}
+            onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
             onDismissScreenshareError={dismissScreenshareError}
             onRetryCall={retryFromError}
             onDismissCallError={dismissCallError}
@@ -620,6 +629,8 @@ export function GlobalCallDockOverlay() {
             onToggleMic={onToggleMic}
             onToggleCamera={onToggleCamera}
             onToggleScreenshare={onToggleScreenshare}
+            voiceProcessingPreset={voiceProcessingPreset}
+            onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
             onLeave={() => {
               void leave();
             }}

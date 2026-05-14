@@ -24,6 +24,10 @@ type HumanChatPanelInCallControlsProps = {
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleScreenshare: () => void;
+  voiceProcessingPreset: 'standard' | 'voice_isolation' | 'music';
+  onVoiceProcessingPresetChange: (
+    preset: 'standard' | 'voice_isolation' | 'music',
+  ) => void;
   onLeave: () => void;
   /** In header strip: compact buttons; in full view: larger, high-contrast on video. */
   variant?: 'inBanner' | 'fullView';
@@ -43,6 +47,8 @@ export function HumanChatPanelInCallControls({
   onToggleMic,
   onToggleCamera,
   onToggleScreenshare,
+  voiceProcessingPreset,
+  onVoiceProcessingPresetChange,
   onLeave,
   variant = 'inBanner',
   inBannerLayout = 'inline',
@@ -83,6 +89,9 @@ export function HumanChatPanelInCallControls({
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20';
   const icon = isFull ? fullViewIcon : 'h-4 w-4';
+  const voicePresetClass = isFull
+    ? 'h-10 rounded-full border border-zinc-600/80 bg-zinc-900/90 px-3 text-xs text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
+    : 'h-8 rounded-full border border-border/60 bg-background px-2.5 text-[11px] text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
 
   return (
     <div
@@ -190,6 +199,30 @@ export function HumanChatPanelInCallControls({
           <Monitor className={icon} />
         )}
       </button>
+      <label className="sr-only" htmlFor="voice-processing-preset">
+        {t('callVoiceProcessingLabel')}
+      </label>
+      <select
+        id="voice-processing-preset"
+        value={voiceProcessingPreset}
+        onChange={(event) =>
+          onVoiceProcessingPresetChange(
+            event.currentTarget.value as
+              | 'standard'
+              | 'voice_isolation'
+              | 'music',
+          )
+        }
+        className={voicePresetClass}
+        title={t('callVoiceProcessingLabel')}
+        aria-label={t('callVoiceProcessingLabel')}
+      >
+        <option value="standard">{t('callVoiceProcessingStandard')}</option>
+        <option value="voice_isolation">
+          {t('callVoiceProcessingIsolation')}
+        </option>
+        <option value="music">{t('callVoiceProcessingMusic')}</option>
+      </select>
       <button
         type="button"
         onClick={onLeave}
