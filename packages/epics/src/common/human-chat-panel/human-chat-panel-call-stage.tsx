@@ -1492,7 +1492,9 @@ const FeedContent = ({
               isFullView && !isPip && 'absolute inset-0 h-full w-full',
               !isPip && !isFullView && 'h-full min-h-0 flex-1',
               isShare
-                ? 'object-contain'
+                ? isFullView
+                  ? 'object-cover'
+                  : 'object-contain'
                 : !isPip && !isFullView && panelVideoFit === 'contain'
                 ? 'object-contain'
                 : 'object-cover',
@@ -1502,25 +1504,6 @@ const FeedContent = ({
             muted
             aria-label={ariaLabel}
           />
-          {feed.isAudioMuted() && !(isFullView && !isPip) && (
-            <div
-              className={cn(
-                'pointer-events-none absolute z-[2] flex items-center justify-center rounded-md border border-destructive/30 bg-destructive/20 text-destructive-foreground shadow-sm backdrop-blur-sm',
-                isPip
-                  ? 'end-0.5 top-0.5 h-4 w-4'
-                  : 'end-1 top-1 h-7 w-7 sm:end-1.5 sm:top-1.5',
-              )}
-              title={t('callParticipantMicOff')}
-              role="img"
-              aria-label={t('callParticipantMicOff')}
-            >
-              <MicOff
-                className={isPip ? 'h-2.5 w-2.5' : 'h-3.5 w-3.5'}
-                strokeWidth={2.25}
-                aria-hidden
-              />
-            </div>
-          )}
           {!isPip && (
             <div
               className={cn(
@@ -1533,6 +1516,16 @@ const FeedContent = ({
               ) : (
                 overlayLabel
               )}
+              {feed.isAudioMuted() ? (
+                <span className="inline-flex items-center gap-1 text-destructive">
+                  <MicOff
+                    className="h-3.5 w-3.5"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                  {t('callParticipantMuted')}
+                </span>
+              ) : null}
             </div>
           )}
         </>
@@ -1598,21 +1591,31 @@ const FeedContent = ({
                 className="mx-auto rounded"
               />
             ) : (
-              <>
-                {overlayLabel}
-                {feed.isAudioMuted() && !(isFullView && !isPip)
-                  ? ` · ${t('callParticipantMuted')}`
-                  : null}
-              </>
+              overlayLabel
             )}
           </p>
+          {feed.isAudioMuted() ? (
+            <p
+              className={cn(
+                'inline-flex items-center gap-1 font-medium text-destructive',
+                isPip ? 'text-[9px]' : 'text-xs',
+              )}
+            >
+              <MicOff
+                className={isPip ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                strokeWidth={2.25}
+                aria-hidden
+              />
+              {t('callParticipantMuted')}
+            </p>
+          ) : null}
           <CallAudioVoiceWaves
             mediaStream={stream}
             active={canVoiceWave}
             onDarkScrim
             size={isPip ? 'sm' : isFullView && !isPip ? 'lg' : 'md'}
             className={
-              isPip ? 'max-w-[4.5rem]' : 'w-full max-w-[min(18rem,92%)]'
+              isPip ? 'max-w-[5.5rem]' : 'w-full max-w-[min(24rem,96%)]'
             }
           />
         </div>

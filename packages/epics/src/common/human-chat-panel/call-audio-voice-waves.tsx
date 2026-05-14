@@ -61,7 +61,7 @@ function sizeBounds(size: 'sm' | 'md' | 'lg'): {
     return { minPx: 3, maxPx: 12 };
   }
   if (size === 'lg') {
-    return { minPx: 6, maxPx: 40 };
+    return { minPx: 8, maxPx: 52 };
   }
   return { minPx: 4, maxPx: 22 };
 }
@@ -104,11 +104,7 @@ export function CallAudioVoiceWaves({
     : 'bg-primary/80';
   const barIdle = onDarkScrim ? 'bg-zinc-500/55' : 'bg-muted-foreground/30';
   const rowH =
-    size === 'sm'
-      ? 'h-4'
-      : size === 'lg'
-      ? 'h-12 min-h-[2.5rem] sm:h-14'
-      : 'h-7';
+    size === 'sm' ? 'h-4' : size === 'lg' ? 'h-16 min-h-[3rem] sm:h-20' : 'h-7';
 
   const buildAnalysis = useCallback((stream: MediaStream) => {
     if (stream.getAudioTracks().length === 0) {
