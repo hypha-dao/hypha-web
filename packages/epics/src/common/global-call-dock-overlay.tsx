@@ -182,6 +182,20 @@ export function GlobalCallDockOverlay() {
   } | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isResizing, setIsResizing] = React.useState(false);
+  const currentUserId = client?.getUserId?.() ?? null;
+  const currentUserDisplayName = React.useMemo(() => {
+    const profile = (me ?? null) as {
+      name?: string | null;
+      surname?: string | null;
+      nickname?: string | null;
+    } | null;
+    const full = [profile?.name, profile?.surname]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    if (full) return full;
+    return profile?.nickname?.trim() || '';
+  }, [me]);
 
   React.useEffect(() => {
     setLayoutMode(readCallFullViewLayoutFromStorage());
@@ -330,13 +344,19 @@ export function GlobalCallDockOverlay() {
 
   const resolveMemberLabel = React.useCallback(
     (userId: string | undefined) => {
+      if (
+        userId?.trim() &&
+        currentUserId &&
+        userId === currentUserId &&
+        currentUserDisplayName
+      ) {
+        return currentUserDisplayName;
+      }
       if (!userId?.trim()) return t('unknownMember');
       return matrixMemberDisplayLabelFromRoom(client, activeRoomId, userId);
     },
-    [client, activeRoomId, t],
+    [activeRoomId, client, currentUserDisplayName, currentUserId, t],
   );
-
-  const currentUserId = client?.getUserId?.() ?? null;
   const locale = React.useMemo(() => getLocaleFromPath(pathname), [pathname]);
   const callSpaceHref = activeSpaceSlug
     ? `/${locale}/dho/${activeSpaceSlug}`
