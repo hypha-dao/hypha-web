@@ -45,6 +45,9 @@ export const CreateSubspaceForm = ({
     space: { slug: spaceSlug },
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submitBlockError, setSubmitBlockError] = React.useState<string | null>(
+    null,
+  );
   const hasNavigatedAfterSuccessRef = React.useRef(false);
   const resolveSuccessUrl = React.useCallback(
     (targetSpaceSlug?: string) => {
@@ -182,6 +185,7 @@ export const CreateSubspaceForm = ({
     if (isError) {
       setIsSubmitting(false);
       hasNavigatedAfterSuccessRef.current = false;
+      setSubmitBlockError(null);
     }
   }, [isError]);
 
@@ -200,6 +204,7 @@ export const CreateSubspaceForm = ({
               onClick={() => {
                 setIsSubmitting(false);
                 hasNavigatedAfterSuccessRef.current = false;
+                setSubmitBlockError(null);
                 reset();
               }}
             >
@@ -222,6 +227,7 @@ export const CreateSubspaceForm = ({
             return;
           }
           setIsSubmitting(true);
+          setSubmitBlockError(null);
           // Subspace creation does not use root-only ecosystem branding fields.
           const {
             ecosystemLogoUrlLight: _ecosystemLogoUrlLight,
@@ -231,6 +237,10 @@ export const CreateSubspaceForm = ({
           if (parentSpaceId === null) {
             // Guard against transient route hydration where the parent space
             // context isn't resolved yet; avoid creating an orphan root space.
+            console.warn(
+              '[CreateSubspaceForm] Submit blocked: parentSpaceId not yet resolved',
+            );
+            setSubmitBlockError(t('errorOhSnap'));
             setIsSubmitting(false);
             return;
           }
@@ -275,6 +285,9 @@ export const CreateSubspaceForm = ({
         label="add"
         slugIncorrectMessage={t('slugAlreadyExistsLong')}
       />
+      {submitBlockError ? (
+        <div className="text-sm text-error-11">{submitBlockError}</div>
+      ) : null}
     </SpaceLoadingBackdrop>
   );
 };
