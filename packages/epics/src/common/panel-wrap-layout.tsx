@@ -195,7 +195,8 @@ const MAIN_COLUMN_SCROLLBAR_WIDTH_CSS = '0px';
 const PANEL_COMPACT_ATTR = 'data-compact-panels';
 const LEFT_SIDEBAR_EXPANDED_WIDTH = '320px';
 const RIGHT_SIDEBAR_WIDTH = '320px';
-const RIGHT_SIDEBAR_WIDTH_COMPACT = '360px';
+const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(360px, calc(100vw - 88px))';
+const DUAL_PANEL_MIN_VIEWPORT_PX = 1200;
 const MIN_MAIN_COLUMN_WIDTH_PX = 560;
 
 const SIDEBAR_WIDTH_MIRROR_KEYS = [
@@ -268,8 +269,9 @@ export function PanelWrapLayout({
   const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
   const forceCompactPanels =
     Boolean(effectiveLeft && effectiveRight) &&
-    viewportWidth - leftFootprintPx - rightFootprintPx <
-      MIN_MAIN_COLUMN_WIDTH_PX;
+    (viewportWidth < DUAL_PANEL_MIN_VIEWPORT_PX ||
+      viewportWidth - leftFootprintPx - rightFootprintPx <
+        MIN_MAIN_COLUMN_WIDTH_PX);
   const isCompactPanels = isCompactUi || forceCompactPanels;
   const rightSidebarWidth = isCompactPanels
     ? RIGHT_SIDEBAR_WIDTH_COMPACT
