@@ -669,11 +669,11 @@ export function useSpaceGroupCall(
           ) {
             gc = client.getGroupCallForRoom(roomId);
           } else {
-            let errorCode: SpaceGroupCallErrorCode =
+            let nextErrorCode: SpaceGroupCallErrorCode =
               isPermissionLikeGroupCallError(e)
                 ? 'PERMISSION_DENIED'
                 : 'UNKNOWN';
-            if (errorCode === 'PERMISSION_DENIED') {
+            if (nextErrorCode === 'PERMISSION_DENIED') {
               const repaired = await tryRepairRoomCallPermissions(
                 authToken,
                 spaceSlug,
@@ -696,25 +696,23 @@ export function useSpaceGroupCall(
                   ) {
                     gc = client.getGroupCallForRoom(roomId);
                   } else {
-                    errorCode = isPermissionLikeGroupCallError(retryError)
+                    nextErrorCode = isPermissionLikeGroupCallError(retryError)
                       ? 'PERMISSION_DENIED'
                       : 'UNKNOWN';
                   }
                 }
               }
             }
-            if (gc) {
-              // permission repair/retry recovered; continue normal flow.
-            } else {
+            if (!gc) {
               isJoiningRef.current = false;
-              setErrorCode(errorCode);
+              setErrorCode(nextErrorCode);
               setCallSessionId(null);
               if (roomId) {
                 logSpaceGroupCallEvent({
                   name: 'hypha.group_call.error',
                   roomId,
                   kind,
-                  errorCode,
+                  errorCode: nextErrorCode,
                 });
               }
               setCallState('error');
