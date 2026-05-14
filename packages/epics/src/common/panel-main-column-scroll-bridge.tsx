@@ -12,6 +12,7 @@ import { setMainColumnScrollRoot } from './main-column-scroll';
 
 type Props = {
   leftOpen: boolean;
+  leftPanelOpen: boolean;
   leftSidebarWidth: string;
   onLeftOpenChange: (open: boolean) => void;
   rightOpen: boolean;
@@ -30,6 +31,7 @@ type Props = {
  */
 export function PanelDualSidebarScrollBridge({
   leftOpen,
+  leftPanelOpen,
   leftSidebarWidth,
   onLeftOpenChange,
   rightOpen,
@@ -59,6 +61,7 @@ export function PanelDualSidebarScrollBridge({
         side="left"
         variant="sidebar"
         collapsible="icon"
+        mobileWidth={leftPanelOpen ? '100vw' : undefined}
         className="z-[50] overflow-visible"
       >
         {leftContent}
@@ -107,6 +110,7 @@ export function PanelDualSidebarScrollBridge({
             side="right"
             variant="sidebar"
             collapsible="offcanvas"
+            mobileWidth="100vw"
             className="z-[50]"
           >
             <SidebarResizeHandle />

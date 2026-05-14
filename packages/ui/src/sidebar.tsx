@@ -184,6 +184,8 @@ export interface SidebarProps extends React.ComponentProps<'div'> {
   side?: 'left' | 'right';
   variant?: 'sidebar' | 'floating' | 'inset';
   collapsible?: 'offcanvas' | 'icon' | 'none';
+  /** Optional mobile sheet width override (e.g. "100vw"). */
+  mobileWidth?: string;
 }
 
 const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
@@ -192,6 +194,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
       side = 'left',
       variant = 'sidebar',
       collapsible = 'offcanvas',
+      mobileWidth,
       className,
       children,
       ...props
@@ -235,7 +238,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
             )}
             style={
               {
-                '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
+                '--sidebar-width': mobileWidth ?? SIDEBAR_WIDTH_MOBILE,
                 ...(props.style as React.CSSProperties),
               } as React.CSSProperties
             }

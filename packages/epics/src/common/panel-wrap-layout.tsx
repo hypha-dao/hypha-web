@@ -424,6 +424,7 @@ export function PanelWrapLayout({
     content = (
       <PanelDualSidebarScrollBridge
         leftOpen={leftExpanded}
+        leftPanelOpen={leftOpen}
         leftSidebarWidth={leftExpandedSidebarWidth}
         onLeftOpenChange={(open) => {
           if (open === leftExpanded) return;
@@ -474,6 +475,7 @@ export function PanelWrapLayout({
           side="right"
           variant="sidebar"
           collapsible="offcanvas"
+          mobileWidth="100vw"
           className="z-[50]"
         >
           <SidebarResizeHandle />
@@ -508,6 +510,7 @@ export function PanelWrapLayout({
           side="left"
           variant="sidebar"
           collapsible="icon"
+          mobileWidth={leftOpen ? '100vw' : undefined}
           className="z-[50] overflow-visible"
         >
           {effectiveLeft.content}
