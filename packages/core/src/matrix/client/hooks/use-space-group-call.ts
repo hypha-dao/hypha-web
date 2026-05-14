@@ -33,6 +33,8 @@ const CONNECT_STALL_ABORT_MS = 90_000;
 
 /** Room shows others in-call but no remote userMedia CallFeed yet (signaling/WebRTC issue). */
 const REMOTE_MEDIA_STALL_MS = 45_000;
+const REMOTE_MEDIA_REPAIR_NUDGE_MS = 1500;
+const REMOTE_MEDIA_AUTO_RECOVER_MS = 70_000;
 
 /** Dev console: periodic sample of feeds vs participant map (not every Matrix event). */
 const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
@@ -195,6 +197,12 @@ export function useSpaceGroupCall(
   const remoteMediaGapSinceRef = useRef<number | null>(null);
   const remoteMediaStallLoggedRef = useRef(false);
   const remoteMediaStallBannerDismissedRef = useRef(false);
+  const remoteMediaRepairNudgeIntervalRef = useRef<ReturnType<
+    typeof setInterval
+  > | null>(null);
+  const remoteMediaRecoverRequestedRef = useRef(false);
+  const remoteMediaRecoverAttemptedRef = useRef(false);
+  const remoteMediaRecoverInFlightRef = useRef(false);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
 
   const dismissRemoteMediaStallBanner = useCallback(() => {
@@ -262,6 +270,13 @@ export function useSpaceGroupCall(
     remoteMediaGapSinceRef.current = null;
     remoteMediaStallLoggedRef.current = false;
     remoteMediaStallBannerDismissedRef.current = false;
+    if (remoteMediaRepairNudgeIntervalRef.current != null) {
+      clearInterval(remoteMediaRepairNudgeIntervalRef.current);
+      remoteMediaRepairNudgeIntervalRef.current = null;
+    }
+    remoteMediaRecoverRequestedRef.current = false;
+    remoteMediaRecoverAttemptedRef.current = false;
+    remoteMediaRecoverInFlightRef.current = false;
     setRemoteMediaStall(false);
     if (feedUpdateRafRef.current != null) {
       cancelAnimationFrame(feedUpdateRafRef.current);
@@ -386,6 +401,12 @@ export function useSpaceGroupCall(
 
     const now = Date.now();
     if (missingRemoteFeedCount > 0 && othersInCall.length > 0) {
+      if (remoteMediaRepairNudgeIntervalRef.current == null) {
+        remoteMediaRepairNudgeIntervalRef.current = setInterval(() => {
+          if (groupCallRef.current !== gc) return;
+          nudgeGroupCallPlaceOutgoing(gc);
+        }, REMOTE_MEDIA_REPAIR_NUDGE_MS);
+      }
       /**
        * The SDK can know the remote participant from group-call member state
        * while the pairwise `MatrixCall` never finishes selecting an opponent
@@ -414,18 +435,25 @@ export function useSpaceGroupCall(
           setRemoteMediaStall(true);
         }
       }
+      if (
+        waitedMs >= REMOTE_MEDIA_AUTO_RECOVER_MS &&
+        !remoteMediaRecoverAttemptedRef.current &&
+        !remoteMediaRecoverInFlightRef.current
+      ) {
+        remoteMediaRecoverAttemptedRef.current = true;
+        remoteMediaRecoverRequestedRef.current = true;
+      }
     } else {
       remoteMediaGapSinceRef.current = null;
       remoteMediaStallLoggedRef.current = false;
       remoteMediaStallBannerDismissedRef.current = false;
+      if (remoteMediaRepairNudgeIntervalRef.current != null) {
+        clearInterval(remoteMediaRepairNudgeIntervalRef.current);
+        remoteMediaRepairNudgeIntervalRef.current = null;
+      }
       setRemoteMediaStall(false);
     }
-  }, [
-    client,
-    roomId,
-    inCallUserIdsFromGroupCall,
-    readParticipantsFromGroupCall,
-  ]);
+  }, [client, roomId, inCallUserIdsFromGroupCall]);
 
   const logDevMediaSnapshot = useCallback(() => {
     const gc = groupCallRef.current;
@@ -597,6 +625,9 @@ export function useSpaceGroupCall(
       const joinEpoch = joinEpochRef.current;
 
       isJoiningRef.current = true;
+      remoteMediaRecoverRequestedRef.current = false;
+      remoteMediaRecoverAttemptedRef.current = false;
+      remoteMediaRecoverInFlightRef.current = false;
       const newSessionId = newCallSessionId();
       setCallSessionId(newSessionId);
       lastJoinKindRef.current = kind;
@@ -1234,6 +1265,36 @@ export function useSpaceGroupCall(
       runCleanup();
     };
   }, [runCleanup]);
+
+  useEffect(() => {
+    if (!remoteMediaRecoverRequestedRef.current) return;
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    if (isJoiningRef.current || remoteMediaRecoverInFlightRef.current) return;
+    const retryKind = lastJoinKindRef.current;
+    if (!retryKind) return;
+    const retryThreadRootEventId = lastThreadRootEventIdRef.current;
+    remoteMediaRecoverRequestedRef.current = false;
+    remoteMediaRecoverInFlightRef.current = true;
+    if (roomId) {
+      logSpaceGroupCallEvent({
+        name: 'hypha.group_call.remote_media_recover',
+        roomId,
+        kind: retryKind,
+      });
+    }
+    runCleanup();
+    setCallState('idle');
+    setErrorCode(null);
+    setCallKind(null);
+    setIsScreensharing(false);
+    setThreadContext(null);
+    setParticipantCount(0);
+    setScreenshareErrorCode(null);
+    setTabBackgroundWhileInCall(false);
+    void enterWithKind(retryKind, retryThreadRootEventId).finally(() => {
+      remoteMediaRecoverInFlightRef.current = false;
+    });
+  }, [callState, enterWithKind, roomId, runCleanup]);
 
   const idleGroupCallUnsubRef = useRef<(() => void) | null>(null);
 
