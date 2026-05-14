@@ -471,23 +471,29 @@ export async function POST(request: NextRequest) {
       { status: 502 },
     );
   }
-  const currentEvents = { ...(current.events ?? {}) };
-  let changed = false;
-  for (const eventType of CALL_EVENT_TYPES) {
-    if (currentEvents[eventType] !== 0) {
-      currentEvents[eventType] = 0;
-      changed = true;
+  const applyCallEventLevels = (source: MatrixPowerLevels) => {
+    const events = { ...(source.events ?? {}) };
+    let changedAtSource = false;
+    for (const eventType of CALL_EVENT_TYPES) {
+      if (events[eventType] !== 0) {
+        events[eventType] = 0;
+        changedAtSource = true;
+      }
     }
-  }
-
-  if (!changed) {
+    return {
+      changedAtSource,
+      next: {
+        ...source,
+        events,
+      } as MatrixPowerLevels,
+    };
+  };
+  const fromCurrent = applyCallEventLevels(current);
+  if (!fromCurrent.changedAtSource) {
     return NextResponse.json({ ok: true, changed: false });
   }
 
-  const nextPowerLevels: MatrixPowerLevels = {
-    ...current,
-    events: currentEvents,
-  };
+  let nextPowerLevels = fromCurrent.next;
   let updateResult = await matrixRequest<Record<string, unknown>>(
     'PUT',
     `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
@@ -510,6 +516,14 @@ export async function POST(request: NextRequest) {
       : { ok: false, details: makeRoomAdminAttempt.details };
 
     if (makeRoomAdminAttempt.ok) {
+      const refreshedPowerLevels = await matrixRequest<MatrixPowerLevels>(
+        'GET',
+        `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
+        adminAccessToken,
+      );
+      if (refreshedPowerLevels.ok) {
+        nextPowerLevels = applyCallEventLevels(refreshedPowerLevels.data).next;
+      }
       updateResult = await matrixRequest<Record<string, unknown>>(
         'PUT',
         `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
