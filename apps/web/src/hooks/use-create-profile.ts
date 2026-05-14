@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { z } from 'zod';
 import {
+  Person,
   schemaSignupPerson,
   PersonFiles,
   useJwt,
@@ -11,6 +12,7 @@ import {
 import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
 import type { ProfileFormData } from './profile-form-data';
+import { useSWRConfig } from 'swr';
 
 export const useCreateProfile = (
   endpoint = '/api/v1/people/create-profile',
@@ -19,6 +21,7 @@ export const useCreateProfile = (
   const { headers } = useAuthHeader();
   const router = useRouter();
   const params = useParams<{ lang?: string }>();
+  const { mutate } = useSWRConfig();
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,10 +68,28 @@ export const useCreateProfile = (
           throw new Error(errorData.error || 'Failed to create profile');
         }
 
-        const createdProfile = await response.json();
+        const createdProfileResponse = (await response.json()) as
+          | { profile?: Person }
+          | Person;
+        const createdProfile =
+          'profile' in createdProfileResponse
+            ? createdProfileResponse.profile
+            : createdProfileResponse;
+        if (!createdProfile) {
+          throw new Error('Profile was created but missing from response');
+        }
+
+        // Prevent post-signup redirect guards from briefly treating the user
+        // as profile-less on the next route transition.
+        if (jwt) {
+          await mutate(['/api/v1/people/me', jwt], createdProfile, {
+            revalidate: false,
+          });
+        }
+
         const lang = params?.lang;
         const onboardingPath = lang ? `/${lang}/onboarding` : '/en/profile';
-        router.push(onboardingPath);
+        router.replace(onboardingPath);
         return createdProfile;
       } catch (err) {
         console.error('Profile creation error:', err);
@@ -78,7 +99,7 @@ export const useCreateProfile = (
         setIsCreating(false);
       }
     },
-    [endpoint, headers, params?.lang, router, upload],
+    [endpoint, headers, jwt, mutate, params?.lang, router, upload],
   );
 
   return {

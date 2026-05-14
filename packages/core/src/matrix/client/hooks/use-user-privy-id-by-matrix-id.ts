@@ -10,6 +10,8 @@ export interface UseUserPrivyIdByMatrixIdInput {
   matrixUserId?: string;
 }
 
+const privyIdByMatrixUserIdCache = new Map<string, string>();
+
 export const useUserPrivyIdByMatrixId = ({
   matrixUserId,
 }: UseUserPrivyIdByMatrixIdInput) => {
@@ -25,6 +27,20 @@ export const useUserPrivyIdByMatrixId = ({
     isLoadingJwt || !trimmedId
       ? null
       : { matrixUserId: trimmedId, environment };
+  const [stablePrivyUserId, setStablePrivyUserId] = React.useState<
+    string | undefined
+  >(() => {
+    if (!trimmedId) return undefined;
+    return privyIdByMatrixUserIdCache.get(trimmedId);
+  });
+
+  React.useEffect(() => {
+    if (!trimmedId) {
+      setStablePrivyUserId(undefined);
+      return;
+    }
+    setStablePrivyUserId(privyIdByMatrixUserIdCache.get(trimmedId));
+  }, [trimmedId]);
 
   const { data: privyUserId, isLoading } = useSWR(
     [jwt ? arg : null, 'getLinkByMatrixUserId'],
@@ -54,9 +70,18 @@ export const useUserPrivyIdByMatrixId = ({
     },
   );
 
+  React.useEffect(() => {
+    if (!trimmedId || !privyUserId) return;
+    privyIdByMatrixUserIdCache.set(trimmedId, privyUserId);
+    setStablePrivyUserId(privyUserId);
+  }, [trimmedId, privyUserId]);
+
+  const resolvedPrivyUserId = privyUserId ?? stablePrivyUserId;
+
   return {
-    isLoading: isLoadingJwt || isLoading,
-    privyUserId,
+    isLoading:
+      Boolean(trimmedId) && !resolvedPrivyUserId && (isLoadingJwt || isLoading),
+    privyUserId: resolvedPrivyUserId,
     error,
   };
 };
