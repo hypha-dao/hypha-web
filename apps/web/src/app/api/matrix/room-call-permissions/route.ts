@@ -215,6 +215,38 @@ async function forceJoinUserViaSynapseAdminApi(
   };
 }
 
+async function makeRoomAdminViaSynapseAdminApi(
+  homeserver: string,
+  roomId: string,
+  userId: string,
+  accessToken: string,
+): Promise<{ ok: true } | { ok: false; details: string }> {
+  const encodedRoomId = encodeURIComponent(roomId);
+  const attempts = [
+    `${homeserver}/_synapse/admin/v1/rooms/${encodedRoomId}/make_room_admin`,
+    `${homeserver}/_synapse/admin/v1/rooms/${roomId}/make_room_admin`,
+  ] as const;
+
+  let lastFailure = 'unknown';
+  for (const url of attempts) {
+    const result = await matrixRequest<Record<string, unknown>>(
+      'POST',
+      url,
+      accessToken,
+      { user_id: userId },
+    );
+    if (result.ok) {
+      return { ok: true };
+    }
+    lastFailure = `${result.status} ${result.body}`;
+  }
+
+  return {
+    ok: false,
+    details: `synapse-admin-make-room-admin-failed: ${lastFailure}`,
+  };
+}
+
 async function resolveCallerMatrixAccessToken(
   environment: ReturnType<typeof determineEnvironment>,
   privyUserId: string,
@@ -436,12 +468,36 @@ export async function POST(request: NextRequest) {
     ...current,
     events: currentEvents,
   };
-  const updateResult = await matrixRequest<Record<string, unknown>>(
+  let updateResult = await matrixRequest<Record<string, unknown>>(
     'PUT',
     `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
     adminAccessToken,
     nextPowerLevels,
   );
+  let makeRoomAdminAttemptDetails:
+    | { ok: true }
+    | { ok: false; details: string }
+    | undefined;
+  if (!updateResult.ok && updateResult.status === 403) {
+    const makeRoomAdminAttempt = await makeRoomAdminViaSynapseAdminApi(
+      homeserver,
+      roomId,
+      adminCredentials.userId,
+      adminAccessToken,
+    );
+    makeRoomAdminAttemptDetails = makeRoomAdminAttempt.ok
+      ? { ok: true }
+      : { ok: false, details: makeRoomAdminAttempt.details };
+
+    if (makeRoomAdminAttempt.ok) {
+      updateResult = await matrixRequest<Record<string, unknown>>(
+        'PUT',
+        `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
+        adminAccessToken,
+        nextPowerLevels,
+      );
+    }
+  }
   if (updateResult.ok) {
     return NextResponse.json({
       ok: true,
@@ -463,6 +519,7 @@ export async function POST(request: NextRequest) {
         error: 'Failed to update room power levels for call events',
         details: {
           joinAttemptDetails,
+          makeRoomAdminAttempt: makeRoomAdminAttemptDetails,
           matrixClient: updateResult.body,
           synapseAdmin: fallbackWrite.details,
         },
