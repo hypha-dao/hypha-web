@@ -875,7 +875,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     retrySpaceCall();
   }, [retrySpaceCall]);
 
-
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
 
