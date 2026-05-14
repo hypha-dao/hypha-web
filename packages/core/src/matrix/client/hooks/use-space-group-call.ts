@@ -1058,6 +1058,22 @@ export function useSpaceGroupCall(
       if (kind === 'video') {
         try {
           await gc.setLocalVideoMuted(false);
+          const hasLiveLocalVideoTrack = () => {
+            const track = gc.localCallFeed?.stream.getVideoTracks()[0];
+            return Boolean(track && track.readyState === 'live');
+          };
+          /**
+           * Direct video-join can occasionally land in a stale local video state
+           * (black tile with a non-live track). Retry camera unmute once if no
+           * live video track is present shortly after `enter()`.
+           */
+          if (!hasLiveLocalVideoTrack()) {
+            await new Promise<void>((resolve) => window.setTimeout(resolve, 320));
+            if (!hasLiveLocalVideoTrack()) {
+              await gc.setLocalVideoMuted(true);
+              await gc.setLocalVideoMuted(false);
+            }
+          }
         } catch {
           /* camera permission / hardware — remain in call with video off */
         }
