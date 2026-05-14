@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import {
   Check,
   ChevronDown,
@@ -14,14 +15,6 @@ import {
 import { CallHangUpIcon } from './call-hang-up-icon';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@hypha-platform/ui';
 import {
   getCallControlsPhase,
   type SpaceGroupCallState,
@@ -66,6 +59,8 @@ export function HumanChatPanelInCallControls({
 }: HumanChatPanelInCallControlsProps) {
   const t = useTranslations('HumanChatPanel');
   const { controlsDisabled } = getCallControlsPhase(callState);
+  const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
+  const audioMenuRef = useRef<HTMLDivElement | null>(null);
   const isFull = variant === 'fullView';
   const isCenteredInBanner = !isFull && inBannerLayout === 'centered';
   /**
@@ -107,55 +102,90 @@ export function HumanChatPanelInCallControls({
   const useSideAudioSettings =
     isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered';
 
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (!audioMenuRef.current?.contains(target)) {
+        setIsAudioMenuOpen(false);
+      }
+    };
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => window.removeEventListener('pointerdown', onPointerDown);
+  }, []);
+
+  const selectVoicePreset = (
+    preset: 'standard' | 'voice_isolation' | 'music',
+  ) => {
+    onVoiceProcessingPresetChange(preset);
+    setIsAudioMenuOpen(false);
+  };
+
   const renderAudioSettingsMenu = (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <div className="relative" ref={audioMenuRef}>
+      <button
+        type="button"
+        className={audioSettingsBtn}
+        title={t('callVoiceProcessingLabel')}
+        aria-label={t('callVoiceProcessingLabel')}
+        aria-haspopup="menu"
+        aria-expanded={isAudioMenuOpen}
+        onClick={() => setIsAudioMenuOpen((open) => !open)}
+      >
+        <Volume2 className={icon} />
+        <ChevronDown className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')} />
+      </button>
+      {isAudioMenuOpen ? (
+        <div
+          role="menu"
+          className={cn(
+            'absolute bottom-full right-0 z-[60] mb-2 min-w-40 rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            isFull && 'min-w-44 border-zinc-700 bg-zinc-900 text-white',
+          )}
+        >
+          <p className="px-2 py-1.5 text-sm font-semibold">
+            {t('callVoiceProcessingLabel')}
+          </p>
+          <div className="-mx-0 my-1 h-px bg-neutral-6" />
         <button
           type="button"
-          className={audioSettingsBtn}
-          title={t('callVoiceProcessingLabel')}
-          aria-label={t('callVoiceProcessingLabel')}
+            role="menuitemradio"
+            aria-checked={voiceProcessingPreset === 'standard'}
+            onClick={() => selectVoicePreset('standard')}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
         >
-          <Volume2 className={icon} />
-          <ChevronDown className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')} />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        side="top"
-        className={cn(isFull ? 'min-w-44 border-zinc-700 bg-zinc-900 text-white' : 'min-w-40')}
-      >
-        <DropdownMenuLabel>{t('callVoiceProcessingLabel')}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={() => onVoiceProcessingPresetChange('standard')}
-          className="flex items-center justify-between gap-2"
-        >
-          <span>{t('callVoiceProcessingStandard')}</span>
-          {voiceProcessingPreset === 'standard' ? (
-            <Check className={menuCheckIcon} />
-          ) : null}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={() => onVoiceProcessingPresetChange('voice_isolation')}
-          className="flex items-center justify-between gap-2"
-        >
-          <span>{t('callVoiceProcessingIsolation')}</span>
-          {voiceProcessingPreset === 'voice_isolation' ? (
-            <Check className={menuCheckIcon} />
-          ) : null}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={() => onVoiceProcessingPresetChange('music')}
-          className="flex items-center justify-between gap-2"
-        >
-          <span>{t('callVoiceProcessingMusic')}</span>
-          {voiceProcessingPreset === 'music' ? (
-            <Check className={menuCheckIcon} />
-          ) : null}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <span>{t('callVoiceProcessingStandard')}</span>
+            {voiceProcessingPreset === 'standard' ? (
+              <Check className={menuCheckIcon} />
+            ) : null}
+          </button>
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={voiceProcessingPreset === 'voice_isolation'}
+            onClick={() => selectVoicePreset('voice_isolation')}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+          >
+            <span>{t('callVoiceProcessingIsolation')}</span>
+            {voiceProcessingPreset === 'voice_isolation' ? (
+              <Check className={menuCheckIcon} />
+            ) : null}
+          </button>
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={voiceProcessingPreset === 'music'}
+            onClick={() => selectVoicePreset('music')}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+          >
+            <span>{t('callVoiceProcessingMusic')}</span>
+            {voiceProcessingPreset === 'music' ? (
+              <Check className={menuCheckIcon} />
+            ) : null}
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 
   return (
