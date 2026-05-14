@@ -166,6 +166,16 @@ export function GlobalCallDockOverlay() {
   );
   const splitContainerRef = React.useRef<HTMLDivElement | null>(null);
   const dockRef = React.useRef<HTMLDivElement | null>(null);
+  const lastNonFullscreenModeRef = React.useRef<'thumbnail' | 'expanded'>(
+    dockMode === 'fullscreen' ? 'thumbnail' : dockMode,
+  );
+  const modeGeometryRef = React.useRef<{
+    thumbnail: DockGeometry | null;
+    expanded: DockGeometry | null;
+  }>({
+    thumbnail: null,
+    expanded: null,
+  });
   const dragRef = React.useRef<{
     pointerId: number;
     startX: number;
@@ -224,16 +234,8 @@ export function GlobalCallDockOverlay() {
 
   React.useEffect(() => {
     if (dockMode === 'fullscreen') return;
-    const preset =
-      dockMode === 'thumbnail' ? THUMBNAIL_GEOMETRY : EXPANDED_GEOMETRY;
-    setGeometry((prev) =>
-      clampDockGeometry({
-        ...prev,
-        width: Math.max(prev.width, preset.width),
-        height: Math.max(prev.height, preset.height),
-      }),
-    );
-  }, [dockMode]);
+    modeGeometryRef.current[dockMode] = clampDockGeometry(geometry);
+  }, [dockMode, geometry]);
 
   React.useEffect(() => {
     if (!isDragging && !isResizing) return;
@@ -341,6 +343,39 @@ export function GlobalCallDockOverlay() {
     },
     [dockMode, geometry],
   );
+
+  const applyDockMode = React.useCallback(
+    (nextMode: 'thumbnail' | 'expanded') => {
+      const preset =
+        nextMode === 'thumbnail' ? THUMBNAIL_GEOMETRY : EXPANDED_GEOMETRY;
+      const saved = modeGeometryRef.current[nextMode];
+      setGeometry((prev) =>
+        clampDockGeometry(
+          saved
+            ? saved
+            : {
+                ...prev,
+                width: preset.width,
+                height: preset.height,
+              },
+        ),
+      );
+      setDockMode(nextMode);
+      lastNonFullscreenModeRef.current = nextMode;
+    },
+    [setDockMode],
+  );
+
+  const onToggleFullscreen = React.useCallback(() => {
+    if (dockMode === 'fullscreen') {
+      applyDockMode(lastNonFullscreenModeRef.current ?? 'thumbnail');
+      return;
+    }
+    if (dockMode === 'thumbnail' || dockMode === 'expanded') {
+      lastNonFullscreenModeRef.current = dockMode;
+    }
+    setDockMode('fullscreen');
+  }, [applyDockMode, dockMode, setDockMode]);
 
   const resolveMemberLabel = React.useCallback(
     (userId: string | undefined) => {
@@ -456,7 +491,7 @@ export function GlobalCallDockOverlay() {
             <button
               type="button"
               data-no-dock-drag
-              onClick={() => setDockMode('thumbnail')}
+              onClick={() => applyDockMode('thumbnail')}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
               aria-label={t('minimizeLabel')}
               title={t('minimizeLabel')}
@@ -468,7 +503,7 @@ export function GlobalCallDockOverlay() {
             <button
               type="button"
               data-no-dock-drag
-              onClick={() => setDockMode('expanded')}
+              onClick={() => applyDockMode('expanded')}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
               aria-label={t('expandLabel')}
               title={t('expandLabel')}
@@ -479,9 +514,7 @@ export function GlobalCallDockOverlay() {
           <button
             type="button"
             data-no-dock-drag
-            onClick={() =>
-              setDockMode(modeIsFullscreen ? 'expanded' : 'fullscreen')
-            }
+            onClick={onToggleFullscreen}
             className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
             aria-label={
               modeIsFullscreen ? t('exitFullscreenLabel') : t('fullscreenLabel')
