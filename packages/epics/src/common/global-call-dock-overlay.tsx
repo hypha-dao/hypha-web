@@ -62,8 +62,18 @@ function getDockOffsetBounds(width: number, height: number) {
 }
 
 function clampDockGeometry(next: DockGeometry): DockGeometry {
-  const width = Math.max(DOCK_MIN_WIDTH, next.width);
-  const height = Math.max(DOCK_MIN_HEIGHT, next.height);
+  const maxWidth =
+    typeof window === 'undefined'
+      ? DOCK_MIN_WIDTH
+      : Math.max(280, window.innerWidth - 2 * DOCK_MARGIN_PX);
+  const maxHeight =
+    typeof window === 'undefined'
+      ? DOCK_MIN_HEIGHT
+      : Math.max(180, window.innerHeight - 2 * DOCK_MARGIN_PX);
+  const minWidth = Math.min(DOCK_MIN_WIDTH, maxWidth);
+  const minHeight = Math.min(DOCK_MIN_HEIGHT, maxHeight);
+  const width = Math.min(Math.max(next.width, minWidth), maxWidth);
+  const height = Math.min(Math.max(next.height, minHeight), maxHeight);
   const bounds = getDockOffsetBounds(width, height);
   return {
     width,
