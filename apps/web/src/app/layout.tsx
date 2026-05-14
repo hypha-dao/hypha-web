@@ -319,29 +319,31 @@ export default async function RootLayout({
                             />
                           }
                         >
-                          <ConnectedButtonProfile
-                            useAuthentication={useAuthentication}
-                            useMe={useMe}
-                            newUserRedirectPath="/profile/signup"
-                            baseRedirectPath="/my-spaces"
-                            navItems={[
-                              {
-                                label: navMySpacesLabel,
-                                href: `/${locale}/my-spaces`,
-                              },
-                              {
-                                label: navNetworkLabel,
-                                href: `/${locale}/network`,
-                              },
-                            ]}
-                            trailingBeforeProfile={
-                              isLanguageSelectVisible ? (
-                                <ConnectedLanguageSelect
-                                  selectLanguageLabel={navSelectLanguageLabel}
-                                />
-                              ) : undefined
-                            }
-                          />
+                          <div className="hidden md:flex">
+                            <ConnectedButtonProfile
+                              useAuthentication={useAuthentication}
+                              useMe={useMe}
+                              newUserRedirectPath="/profile/signup"
+                              baseRedirectPath="/my-spaces"
+                              navItems={[
+                                {
+                                  label: navMySpacesLabel,
+                                  href: `/${locale}/my-spaces`,
+                                },
+                                {
+                                  label: navNetworkLabel,
+                                  href: `/${locale}/network`,
+                                },
+                              ]}
+                              trailingBeforeProfile={
+                                isLanguageSelectVisible ? (
+                                  <ConnectedLanguageSelect
+                                    selectLanguageLabel={navSelectLanguageLabel}
+                                  />
+                                ) : undefined
+                              }
+                            />
+                          </div>
                         </ConnectedMenuTop>
                       </div>
                       {/* Scrollable content area */}
