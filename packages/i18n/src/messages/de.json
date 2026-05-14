@@ -978,7 +978,12 @@
     "exchangeDepositProposalConfirming": "Bestätigung läuft...",
     "exchangeDepositProposalTitle": "{amount} {symbol} einzahlen – Escrow abschließen (#{escrowId})",
     "exchangeDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um den Tausch mit {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um die Investition in {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um die Investition in {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}.",
+    "confirmInvestmentCta": "Investition bestätigen",
+    "acceptInvestmentTitle": "Investition annehmen",
+    "acceptInvestmentBody": "{sellerLabel} hat die Investition deines Spaces über {buyerAmountLabel} angenommen und bietet im Gegenzug {sellerAmountLabel} an.",
+    "exchangeStakesAndTokensTitle": "Anteile & Tokens tauschen",
+    "exchangeStakesAndTokensBody": "{sellerLabel} hat vorgeschlagen, {sellerAmountLabel} gegen {buyerAmountLabel} aus deinem Space zu tauschen."
   },
   "AgreementFlow": {
     "labels": {

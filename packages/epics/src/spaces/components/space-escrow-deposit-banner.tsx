@@ -243,12 +243,12 @@ export const SpaceEscrowDepositBanner = ({
     : isCreatingDepositProposal
     ? t('exchangeDepositProposalCreating')
     : investment
-    ? 'Confirm Investment'
+    ? t('confirmInvestmentCta')
     : t('exchangeDepositProposalCta');
 
   const bannerTitle = investment
-    ? 'Accept Investment'
-    : 'Exchange Stakes & Tokens';
+    ? t('acceptInvestmentTitle')
+    : t('exchangeStakesAndTokensTitle');
 
   const mutationError = depositProposalError
     ? depositProposalError instanceof Error
@@ -273,20 +273,17 @@ export const SpaceEscrowDepositBanner = ({
           </span>
           <span className="text-2 text-foreground">
             {investment ? (
-              <>
-                <span className="font-bold">{sellerLabel}</span> has accepted
-                your space's investment of{' '}
-                <span className="font-bold">{buyerAmountLabel}</span> and offers{' '}
-                <span className="font-bold">{sellerAmountLabel}</span> in
-                return.
-              </>
+              t('acceptInvestmentBody', {
+                sellerLabel,
+                buyerAmountLabel,
+                sellerAmountLabel,
+              })
             ) : (
-              <>
-                <span className="font-bold">{sellerLabel}</span> has proposed to
-                exchange <span className="font-bold">{sellerAmountLabel}</span>{' '}
-                for <span className="font-bold">{buyerAmountLabel}</span> from
-                your space.
-              </>
+              t('exchangeStakesAndTokensBody', {
+                sellerLabel,
+                sellerAmountLabel,
+                buyerAmountLabel,
+              })
             )}
           </span>
           {errorMessage ? (
