@@ -48,14 +48,21 @@ export const CreateSubspaceForm = ({
   const hasNavigatedAfterSuccessRef = React.useRef(false);
   const resolveSuccessUrl = React.useCallback(
     (targetSpaceSlug?: string) => {
-      if (!targetSpaceSlug) {
-        return successfulUrl;
+      const baseUrl = targetSpaceSlug
+        ? // Keep current context path (e.g. /ecosystem-navigation) but switch slug.
+          successfulUrl.replace(
+            /(\/dho\/)([^/]+)(?=\/|$)/,
+            `$1${targetSpaceSlug}`,
+          )
+        : successfulUrl;
+
+      // Some entry points (space settings -> add space) resolve to /en/dho/<slug>
+      // which has no active tab content; normalize to ecosystem view.
+      if (/\/dho\/[^/]+\/?$/.test(baseUrl)) {
+        return `${baseUrl.replace(/\/$/, '')}/ecosystem-navigation`;
       }
-      // Keep current context path (e.g. /ecosystem-navigation) but switch space slug.
-      return successfulUrl.replace(
-        /(\/dho\/)([^/]+)(?=\/|$)/,
-        `$1${targetSpaceSlug}`,
-      );
+
+      return baseUrl;
     },
     [successfulUrl],
   );
