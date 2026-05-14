@@ -1,4 +1,5 @@
 import path from 'node:path';
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { gotoApp } from './utils/nav-url';
 
@@ -14,6 +15,8 @@ test.describe('Create Space modal', () => {
   }) => {
     await gotoApp(page, SPACE_CREATE_PATH);
     await page.waitForLoadState('domcontentloaded');
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations).toEqual([]);
 
     await page
       .getByPlaceholder(/name your space/i)
