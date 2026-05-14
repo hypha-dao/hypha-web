@@ -90,7 +90,7 @@ async function matrixRequest<T>(
 async function resolveAdminMatrixAccessToken(
   environment: ReturnType<typeof determineEnvironment>,
   authToken: string,
-): Promise<string | null> {
+): Promise<{ accessToken: string; userId: string } | null> {
   if (!environment) return null;
   const adminUsername =
     (await getAdminUserNameAction(
@@ -106,9 +106,11 @@ async function resolveAdminMatrixAccessToken(
   if (!encrypted) return null;
   const decrypted = decryptMatrixToken(encrypted).trim();
   if (!decrypted) return null;
+  const adminUserId = admin?.matrixUserId?.trim();
+  if (!adminUserId) return null;
   const matrixAuthClient = new MatrixSharedSecret();
   const valid = await matrixAuthClient.validateToken(decrypted);
-  return valid ? decrypted : null;
+  return valid ? { accessToken: decrypted, userId: adminUserId } : null;
 }
 
 async function readPowerLevelsViaSynapseAdminApi(
@@ -179,6 +181,24 @@ async function writePowerLevelsViaSynapseAdminApi(
   };
 }
 
+async function resolveCallerMatrixAccessToken(
+  environment: ReturnType<typeof determineEnvironment>,
+  privyUserId: string,
+): Promise<string | null> {
+  if (!environment) return null;
+  const userLink = await getLinkByPrivyUserId({
+    privyUserId,
+    environment,
+  });
+  const encrypted = userLink?.encryptedAccessToken?.trim();
+  if (!encrypted) return null;
+  const decrypted = decryptMatrixToken(encrypted).trim();
+  if (!decrypted) return null;
+  const matrixAuthClient = new MatrixSharedSecret();
+  const valid = await matrixAuthClient.validateToken(decrypted);
+  return valid ? decrypted : null;
+}
+
 export async function POST(request: NextRequest) {
   const humanChatEnabled = await getEnableHumanChat();
   const authHeader = request.headers.get('Authorization');
@@ -186,7 +206,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const authToken = authHeader.slice('Bearer '.length).trim();
-  if (!(await verifyPrivyToken(authToken))) {
+  const privyUserId = await verifyPrivyToken(authToken);
+  if (!privyUserId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -229,11 +250,11 @@ export async function POST(request: NextRequest) {
   }
 
   const environment = determineEnvironment(request.url);
-  const adminAccessToken = await resolveAdminMatrixAccessToken(
+  const adminCredentials = await resolveAdminMatrixAccessToken(
     environment,
     authToken,
   );
-  if (!adminAccessToken) {
+  if (!adminCredentials) {
     return NextResponse.json(
       { error: 'No valid Matrix admin access token found' },
       { status: 503 },
@@ -241,17 +262,67 @@ export async function POST(request: NextRequest) {
   }
 
   const encodedRoomId = encodeURIComponent(roomId);
+  const adminAccessToken = adminCredentials.accessToken;
   const joinResult = await matrixRequest<Record<string, unknown>>(
     'POST',
     `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/join`,
     adminAccessToken,
     {},
   );
-  if (!joinResult.ok && joinResult.status !== 403) {
+  let joinAttemptDetails: Record<string, unknown> | undefined;
+  if (!joinResult.ok && joinResult.status === 403) {
+    const callerToken = await resolveCallerMatrixAccessToken(
+      environment,
+      privyUserId,
+    );
+    if (callerToken) {
+      const inviteAttempt = await matrixRequest<Record<string, unknown>>(
+        'POST',
+        `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/invite`,
+        callerToken,
+        {
+          user_id: adminCredentials.userId,
+        },
+      );
+      const rejoinAttempt = await matrixRequest<Record<string, unknown>>(
+        'POST',
+        `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/join`,
+        adminAccessToken,
+        {},
+      );
+      joinAttemptDetails = {
+        initialJoin: { status: joinResult.status, body: joinResult.body },
+        inviteAttempt: inviteAttempt.ok
+          ? { ok: true }
+          : {
+              ok: false,
+              status: inviteAttempt.status,
+              body: inviteAttempt.body,
+            },
+        rejoinAttempt: rejoinAttempt.ok
+          ? { ok: true }
+          : {
+              ok: false,
+              status: rejoinAttempt.status,
+              body: rejoinAttempt.body,
+            },
+      };
+      if (rejoinAttempt.ok) {
+        // joined successfully after invite flow
+      }
+    } else {
+      joinAttemptDetails = {
+        initialJoin: { status: joinResult.status, body: joinResult.body },
+        inviteAttempt: { ok: false, reason: 'caller-matrix-token-unavailable' },
+      };
+    }
+  } else if (!joinResult.ok && joinResult.status !== 403) {
     return NextResponse.json(
       {
         error: 'Failed to join room as admin before permission repair',
-        details: joinResult.body,
+        details: {
+          joinResult: { status: joinResult.status, body: joinResult.body },
+        },
       },
       { status: 502 },
     );
@@ -278,6 +349,7 @@ export async function POST(request: NextRequest) {
         {
           error: 'Failed to read room power levels',
           details: {
+            joinAttemptDetails,
             matrixClient: powerLevelsResult.body,
             synapseAdmin: fallbackRead.details,
           },
@@ -339,6 +411,7 @@ export async function POST(request: NextRequest) {
       {
         error: 'Failed to update room power levels for call events',
         details: {
+          joinAttemptDetails,
           matrixClient: updateResult.body,
           synapseAdmin: fallbackWrite.details,
         },
