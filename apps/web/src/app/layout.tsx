@@ -284,7 +284,7 @@ export default async function RootLayout({
                             closeMenuLabel={navCloseMenuLabel}
                             leadingAction={
                               aiChatEnabled ? (
-                                <div className="md:hidden flex items-center gap-2">
+                                <div className="flex items-center gap-2">
                                   <AiSidebarTrigger />
                                   <AiPanelTrigger />
                                 </div>
