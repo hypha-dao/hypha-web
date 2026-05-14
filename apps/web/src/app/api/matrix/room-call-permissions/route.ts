@@ -285,7 +285,23 @@ async function writePowerLevelsWithClientApi(
   };
 }
 
+function createFailureResponse(
+  correlationId: string,
+  error: string,
+  status: number,
+  details: Record<string, unknown>,
+) {
+  console.warn('[room-call-permissions] request failed', {
+    correlationId,
+    error,
+    details,
+  });
+  return NextResponse.json({ error, correlationId }, { status });
+}
+
 export async function POST(request: NextRequest) {
+  const correlationId =
+    request.headers.get('x-correlation-id')?.trim() || randomUUID();
   const humanChatEnabled = await getEnableHumanChat();
   const authHeader = request.headers.get('Authorization');
   if (!humanChatEnabled || !authHeader?.startsWith('Bearer ')) {
@@ -420,14 +436,13 @@ export async function POST(request: NextRequest) {
       joinedAsAdmin = forceJoinAttempt.ok;
     }
   } else if (!joinResult.ok && joinResult.status !== 403) {
-    return NextResponse.json(
+    return createFailureResponse(
+      correlationId,
+      'Failed to join room as admin before permission repair',
+      502,
       {
-        error: 'Failed to join room as admin before permission repair',
-        details: {
-          joinResult: { status: joinResult.status, body: joinResult.body },
-        },
+        joinResult: { status: joinResult.status, body: joinResult.body },
       },
-      { status: 502 },
     );
   }
 
@@ -448,27 +463,25 @@ export async function POST(request: NextRequest) {
     if (fallbackRead.ok) {
       current = fallbackRead.powerLevels;
     } else {
-      return NextResponse.json(
+      return createFailureResponse(
+        correlationId,
+        'Failed to read room power levels',
+        502,
         {
-          error: 'Failed to read room power levels',
-          details: {
-            joinAttemptDetails,
-            matrixClient: powerLevelsResult.body,
-            synapseAdmin: fallbackRead.details,
-          },
+          joinAttemptDetails,
+          matrixClient: powerLevelsResult.body,
+          synapseAdmin: fallbackRead.details,
         },
-        { status: 502 },
       );
     }
   }
 
   if (!current) {
-    return NextResponse.json(
-      {
-        error: 'Failed to read room power levels',
-        details: 'Power levels not available',
-      },
-      { status: 502 },
+    return createFailureResponse(
+      correlationId,
+      'Failed to read room power levels',
+      502,
+      { reason: 'Power levels not available' },
     );
   }
   const applyCallEventLevels = (source: MatrixPowerLevels) => {
@@ -537,7 +550,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       changed: true,
       roomId,
-      correlationId: request.headers.get('x-correlation-id') ?? randomUUID(),
+      correlationId,
     });
   }
 
@@ -567,8 +580,7 @@ export async function POST(request: NextRequest) {
           ok: true,
           changed: true,
           roomId,
-          correlationId:
-            request.headers.get('x-correlation-id') ?? randomUUID(),
+          correlationId,
         });
       }
     } else {
@@ -578,18 +590,17 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    return NextResponse.json(
+    return createFailureResponse(
+      correlationId,
+      'Failed to update room power levels for call events',
+      502,
       {
-        error: 'Failed to update room power levels for call events',
-        details: {
-          joinAttemptDetails,
-          makeRoomAdminAttempt: makeRoomAdminAttemptDetails,
-          callerWriteAttempt,
-          matrixClient: updateResult.body,
-          synapseAdmin: fallbackWrite.details,
-        },
+        joinAttemptDetails,
+        makeRoomAdminAttempt: makeRoomAdminAttemptDetails,
+        callerWriteAttempt,
+        matrixClient: updateResult.body,
+        synapseAdmin: fallbackWrite.details,
       },
-      { status: 502 },
     );
   }
 
@@ -597,6 +608,6 @@ export async function POST(request: NextRequest) {
     ok: true,
     changed: true,
     roomId,
-    correlationId: request.headers.get('x-correlation-id') ?? randomUUID(),
+    correlationId,
   });
 }
