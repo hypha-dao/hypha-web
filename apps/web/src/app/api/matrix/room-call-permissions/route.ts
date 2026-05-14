@@ -299,6 +299,31 @@ function createFailureResponse(
   return NextResponse.json({ error, correlationId }, { status });
 }
 
+function requiredPowerLevelToEditPowerLevels(
+  powerLevels: MatrixPowerLevels,
+): number {
+  const events = powerLevels.events ?? {};
+  const fromEvents = events['m.room.power_levels'];
+  if (typeof fromEvents === 'number') return fromEvents;
+  if (typeof powerLevels.state_default === 'number') {
+    return powerLevels.state_default;
+  }
+  return 50;
+}
+
+function effectiveUserPowerLevel(
+  powerLevels: MatrixPowerLevels,
+  userId: string,
+): number {
+  const users = powerLevels.users ?? {};
+  const explicit = users[userId];
+  if (typeof explicit === 'number') return explicit;
+  if (typeof powerLevels.users_default === 'number') {
+    return powerLevels.users_default;
+  }
+  return 0;
+}
+
 export async function POST(request: NextRequest) {
   const correlationId =
     request.headers.get('x-correlation-id')?.trim() || randomUUID();
@@ -356,6 +381,48 @@ export async function POST(request: NextRequest) {
     environment,
     privyUserId,
   );
+  if (!callerMatrixAccessToken) {
+    return NextResponse.json(
+      { error: 'Only space admins can repair room call permissions' },
+      { status: 403 },
+    );
+  }
+  const callerLink = await getLinkByPrivyUserId({
+    privyUserId,
+    environment,
+  });
+  const callerMatrixUserId = callerLink?.matrixUserId?.trim();
+  if (!callerMatrixUserId) {
+    return NextResponse.json(
+      { error: 'Only space admins can repair room call permissions' },
+      { status: 403 },
+    );
+  }
+  const encodedRoomId = encodeURIComponent(roomId);
+  const callerPowerLevelsResult = await matrixRequest<MatrixPowerLevels>(
+    'GET',
+    `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
+    callerMatrixAccessToken,
+  );
+  if (!callerPowerLevelsResult.ok) {
+    return NextResponse.json(
+      { error: 'Only space admins can repair room call permissions' },
+      { status: 403 },
+    );
+  }
+  const callerRequired = requiredPowerLevelToEditPowerLevels(
+    callerPowerLevelsResult.data,
+  );
+  const callerLevel = effectiveUserPowerLevel(
+    callerPowerLevelsResult.data,
+    callerMatrixUserId,
+  );
+  if (callerLevel < callerRequired) {
+    return NextResponse.json(
+      { error: 'Only space admins can repair room call permissions' },
+      { status: 403 },
+    );
+  }
   const adminCredentials = await resolveAdminMatrixAccessToken(
     environment,
     authToken,
@@ -367,7 +434,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const encodedRoomId = encodeURIComponent(roomId);
   const adminAccessToken = adminCredentials.accessToken;
   const joinResult = await matrixRequest<Record<string, unknown>>(
     'POST',
