@@ -181,6 +181,38 @@ async function writePowerLevelsViaSynapseAdminApi(
   };
 }
 
+async function forceJoinUserViaSynapseAdminApi(
+  homeserver: string,
+  roomId: string,
+  userId: string,
+  accessToken: string,
+): Promise<{ ok: true } | { ok: false; details: string }> {
+  const encodedRoomId = encodeURIComponent(roomId);
+  const attempts = [
+    `${homeserver}/_synapse/admin/v1/join/${encodedRoomId}`,
+    `${homeserver}/_synapse/admin/v1/join/${roomId}`,
+  ] as const;
+
+  let lastFailure = 'unknown';
+  for (const url of attempts) {
+    const result = await matrixRequest<Record<string, unknown>>(
+      'POST',
+      url,
+      accessToken,
+      { user_id: userId },
+    );
+    if (result.ok) {
+      return { ok: true };
+    }
+    lastFailure = `${result.status} ${result.body}`;
+  }
+
+  return {
+    ok: false,
+    details: `synapse-admin-force-join-failed: ${lastFailure}`,
+  };
+}
+
 async function resolveCallerMatrixAccessToken(
   environment: ReturnType<typeof determineEnvironment>,
   privyUserId: string,
@@ -270,6 +302,7 @@ export async function POST(request: NextRequest) {
     {},
   );
   let joinAttemptDetails: Record<string, unknown> | undefined;
+  let joinedAsAdmin = joinResult.ok;
   if (!joinResult.ok && joinResult.status === 403) {
     const callerToken = await resolveCallerMatrixAccessToken(
       environment,
@@ -307,14 +340,30 @@ export async function POST(request: NextRequest) {
               body: rejoinAttempt.body,
             },
       };
-      if (rejoinAttempt.ok) {
-        // joined successfully after invite flow
-      }
+      joinedAsAdmin = rejoinAttempt.ok;
     } else {
       joinAttemptDetails = {
         initialJoin: { status: joinResult.status, body: joinResult.body },
         inviteAttempt: { ok: false, reason: 'caller-matrix-token-unavailable' },
       };
+    }
+
+    if (!joinedAsAdmin) {
+      const forceJoinAttempt = await forceJoinUserViaSynapseAdminApi(
+        homeserver,
+        roomId,
+        adminCredentials.userId,
+        adminAccessToken,
+      );
+      joinAttemptDetails = {
+        ...(joinAttemptDetails ?? {
+          initialJoin: { status: joinResult.status, body: joinResult.body },
+        }),
+        forceJoinAttempt: forceJoinAttempt.ok
+          ? { ok: true }
+          : { ok: false, details: forceJoinAttempt.details },
+      };
+      joinedAsAdmin = forceJoinAttempt.ok;
     }
   } else if (!joinResult.ok && joinResult.status !== 403) {
     return NextResponse.json(
