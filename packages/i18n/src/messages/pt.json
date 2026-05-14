@@ -2340,6 +2340,16 @@
     "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
     "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)"
   },
+  "GlobalCallDock": {
+    "callTitle": "Chamada - {count, plural, one {# membro} other {# membros}}",
+    "openSpaceLabel": "Abrir espaço da chamada",
+    "spaceButton": "Espaço",
+    "minimizeLabel": "Minimizar chamada",
+    "expandLabel": "Expandir chamada",
+    "fullscreenLabel": "Ecrã inteiro",
+    "exitFullscreenLabel": "Sair do ecrã inteiro",
+    "unknownMember": "Desconhecido"
+  },
   "SignalCard": {
     "noConversationRoom": "Ainda não há sala de conversa",
     "readMore": "Ler mais",

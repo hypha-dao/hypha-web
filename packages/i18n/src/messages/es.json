@@ -2342,6 +2342,16 @@
     "spaceMemoryContextCallRecording": "Grabación de llamada (memoria organizacional)",
     "spaceMemoryContextCallTranscript": "Transcripción de llamada (memoria organizacional)"
   },
+  "GlobalCallDock": {
+    "callTitle": "Llamada - {count, plural, one {# miembro} other {# miembros}}",
+    "openSpaceLabel": "Abrir espacio de llamada",
+    "spaceButton": "Espacio",
+    "minimizeLabel": "Minimizar llamada",
+    "expandLabel": "Expandir llamada",
+    "fullscreenLabel": "Pantalla completa",
+    "exitFullscreenLabel": "Salir de pantalla completa",
+    "unknownMember": "Desconocido"
+  },
   "SignalCard": {
     "noConversationRoom": "Aún no hay sala de conversación",
     "readMore": "Leer más",

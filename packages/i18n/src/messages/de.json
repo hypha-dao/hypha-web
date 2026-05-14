@@ -2350,6 +2350,16 @@
     "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
     "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)"
   },
+  "GlobalCallDock": {
+    "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",
+    "openSpaceLabel": "Anruf-Space öffnen",
+    "spaceButton": "Space",
+    "minimizeLabel": "Anruf minimieren",
+    "expandLabel": "Anruf erweitern",
+    "fullscreenLabel": "Vollbild",
+    "exitFullscreenLabel": "Vollbild beenden",
+    "unknownMember": "Unbekannt"
+  },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",
     "readMore": "Mehr lesen",

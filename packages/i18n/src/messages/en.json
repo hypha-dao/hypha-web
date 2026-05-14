@@ -2349,6 +2349,16 @@
       "evidenceImpact": "Evidence & Impact"
     }
   },
+  "GlobalCallDock": {
+    "callTitle": "Call - {count, plural, one {# member} other {# members}}",
+    "openSpaceLabel": "Open call space",
+    "spaceButton": "Space",
+    "minimizeLabel": "Minimize call",
+    "expandLabel": "Expand call",
+    "fullscreenLabel": "Fullscreen",
+    "exitFullscreenLabel": "Exit fullscreen",
+    "unknownMember": "Unknown"
+  },
   "SignalCard": {
     "noConversationRoom": "No conversation room yet",
     "readMore": "Read more",

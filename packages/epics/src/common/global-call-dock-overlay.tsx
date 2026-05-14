@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Maximize2,
   Minimize2,
@@ -110,6 +111,7 @@ function persistDockGeometry(next: DockGeometry): void {
 }
 
 export function GlobalCallDockOverlay() {
+  const t = useTranslations('GlobalCallDock');
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const { client } = useMatrix();
@@ -334,8 +336,7 @@ export function GlobalCallDockOverlay() {
         onPointerDown={onDragStart}
       >
         <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-          Call - {roomGroupCallDeviceCount} member
-          {roomGroupCallDeviceCount === 1 ? '' : 's'}
+          {t('callTitle', { count: roomGroupCallDeviceCount })}
         </p>
         {callSpaceHref && (
           <button
@@ -343,11 +344,11 @@ export function GlobalCallDockOverlay() {
             data-no-dock-drag
             onClick={() => router.push(callSpaceHref)}
             className="inline-flex h-7 items-center gap-1 rounded-md border border-border/60 bg-background px-2 text-xs hover:bg-muted"
-            aria-label="Open call space"
-            title="Open call space"
+            aria-label={t('openSpaceLabel')}
+            title={t('openSpaceLabel')}
           >
             <ArrowUpRight className="h-3.5 w-3.5" />
-            Space
+            {t('spaceButton')}
           </button>
         )}
         <div className="flex items-center gap-1">
@@ -357,8 +358,8 @@ export function GlobalCallDockOverlay() {
               data-no-dock-drag
               onClick={() => setDockMode('thumbnail')}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
-              aria-label="Minimize call"
-              title="Minimize call"
+              aria-label={t('minimizeLabel')}
+              title={t('minimizeLabel')}
             >
               <PictureInPicture2 className="h-3.5 w-3.5" />
             </button>
@@ -369,8 +370,8 @@ export function GlobalCallDockOverlay() {
               data-no-dock-drag
               onClick={() => setDockMode('expanded')}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
-              aria-label="Expand call"
-              title="Expand call"
+              aria-label={t('expandLabel')}
+              title={t('expandLabel')}
             >
               <PanelBottomOpen className="h-3.5 w-3.5" />
             </button>
@@ -382,8 +383,12 @@ export function GlobalCallDockOverlay() {
               setDockMode(modeIsFullscreen ? 'expanded' : 'fullscreen')
             }
             className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
-            aria-label={modeIsFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-            title={modeIsFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            aria-label={
+              modeIsFullscreen ? t('exitFullscreenLabel') : t('fullscreenLabel')
+            }
+            title={
+              modeIsFullscreen ? t('exitFullscreenLabel') : t('fullscreenLabel')
+            }
           >
             {modeIsFullscreen ? (
               <Minimize2 className="h-3.5 w-3.5" />

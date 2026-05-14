@@ -2340,6 +2340,16 @@
       "evidenceImpact": "Preuves & impact"
     }
   },
+  "GlobalCallDock": {
+    "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",
+    "openSpaceLabel": "Ouvrir l'espace d'appel",
+    "spaceButton": "Espace",
+    "minimizeLabel": "Réduire l'appel",
+    "expandLabel": "Agrandir l'appel",
+    "fullscreenLabel": "Plein écran",
+    "exitFullscreenLabel": "Quitter le plein écran",
+    "unknownMember": "Inconnu"
+  },
   "SignalCard": {
     "noConversationRoom": "Pas encore de salle de conversation",
     "readMore": "Lire la suite",
