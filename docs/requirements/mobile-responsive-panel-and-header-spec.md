@@ -68,7 +68,7 @@ Replace hard-only `max-width: 767px` top-bar switching with a collision-aware th
 
 - Compute available action-row width in runtime.
 - Enter compact mode when:
-  - viewport `< md` **OR**
+  - viewport `< 768px` (strictly less than 768px) **OR**
   - measured free horizontal space between logo group and trailing actions is below safe threshold.
 
 #### Safe threshold definition
@@ -92,7 +92,7 @@ Create `useCompactHeaderMode` (client hook in `packages/epics/src/common` or `pa
 
 Inputs:
 
-- viewport width media query (`(max-width: 767px)` baseline),
+- viewport width threshold (`viewport < 768px` baseline),
 - element refs from header (`left cluster`, `right cluster`, full row).
 
 Behavior:
