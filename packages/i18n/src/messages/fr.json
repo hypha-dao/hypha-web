@@ -2114,6 +2114,10 @@
     "callControlsScreenshare": "Partage d’écran",
     "callControlsScreenshareActiveAria": "Partage d’écran, actif",
     "callControlsScreenshareInactiveAria": "Partage d’écran, inactif",
+    "callVoiceProcessingLabel": "Traitement vocal",
+    "callVoiceProcessingStandard": "Voix",
+    "callVoiceProcessingIsolation": "Isolation",
+    "callVoiceProcessingMusic": "Musique",
     "callCameraOn": "Allumer la caméra",
     "callCameraOff": "Éteindre la caméra",
     "callErrorPermission": "Accès refusé à la caméra ou au micro. Vérifiez les paramètres du navigateur.",
@@ -2339,6 +2343,18 @@
       "valueModel": "Valeur & modèle",
       "evidenceImpact": "Preuves & impact"
     }
+  },
+  "GlobalCallDock": {
+    "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",
+    "openSpaceLabel": "Ouvrir l'espace d'appel",
+    "spaceButton": "Espace",
+    "minimizeLabel": "Réduire l'appel",
+    "expandLabel": "Agrandir l'appel",
+    "fullscreenLabel": "Plein écran",
+    "exitFullscreenLabel": "Quitter le plein écran",
+    "unknownMember": "Inconnu",
+    "resizeTopRightLabel": "Redimensionner l'appel depuis le coin supérieur droit",
+    "resizeBottomLeftLabel": "Redimensionner l'appel depuis le coin inférieur gauche"
   },
   "SignalCard": {
     "noConversationRoom": "Pas encore de salle de conversation",

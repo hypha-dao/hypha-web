@@ -61,6 +61,8 @@ type HumanChatPanelCallStageBaseProps = {
 
 type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
   layout: HumanChatPanelCallStageLayout;
+  /** In panel layout, choose between immersive crop (`cover`) and full-frame (`contain`). */
+  panelVideoFit?: 'cover' | 'contain';
   /** Shown in panel when full view is available; opens the enlarged dialog. */
   onRequestFullView?: () => void;
   /** `true` when the app-level full-view dialog is open; hides the inline stage so one video tree remains mounted. */
@@ -282,6 +284,7 @@ export function HumanChatPanelCallStage({
   inCallUserIds = null,
   remoteMediaStall = false,
   layout,
+  panelVideoFit = 'cover',
   onRequestFullView,
   fullViewOpen = false,
   fullViewTriggerRef,
@@ -351,17 +354,37 @@ export function HumanChatPanelCallStage({
 
   const {
     isVideoCall,
-    shareFeeds,
+    shareFeeds: rawShareFeeds,
     hasLocalWebcam,
     remoteUserMedia,
     missingRemoteUserIds,
     localUserMedia,
-    hasRemotesOrShare,
-    showLocalInMainGrid,
-    showLocalPip,
+    showLocalInMainGrid: rawShowLocalInMainGrid,
+    showLocalPip: rawShowLocalPip,
   } = model;
 
   const isFull = layout === 'fullView';
+  /**
+   * Suppress only local browser-tab captures in self preview to avoid recursive
+   * "window-in-window" feedback. Keep monitor/window local shares visible.
+   * Also ignore stale/non-live share tracks — those can leave fullscreen layouts
+   * in a split state with no usable share frame rendered.
+   */
+  const shareFeeds = rawShareFeeds.filter((feed) => {
+    const track = feed.stream.getVideoTracks()[0];
+    if (!track || track.readyState !== 'live') return false;
+    if (feed.isVideoMuted()) return false;
+    if (!feed.isLocal()) return true;
+    const displaySurface = track?.getSettings?.().displaySurface;
+    return displaySurface !== 'browser';
+  });
+  const hasRemotesOrShare =
+    remoteUserMedia.length > 0 ||
+    missingRemoteUserIds.length > 0 ||
+    shareFeeds.length > 0;
+  const showLocalInMainGrid =
+    rawShowLocalInMainGrid || (!hasRemotesOrShare && localUserMedia.length > 0);
+  const showLocalPip = rawShowLocalPip && hasRemotesOrShare;
   const userGridTileCount =
     remoteUserMedia.length +
     missingRemoteUserIds.length +
@@ -442,6 +465,7 @@ export function HumanChatPanelCallStage({
       isActiveSpeaker={
         activeSpeakerKey != null && activeSpeakerKey === feedKeyForActive(feed)
       }
+      panelVideoFit={panelVideoFit}
       room={room}
       currentUserId={currentUserId}
       resolveMemberLabel={resolveMemberLabel}
@@ -547,6 +571,7 @@ export function HumanChatPanelCallStage({
                           feed={feed}
                           isShare
                           isFullView={isFull}
+                          panelVideoFit={panelVideoFit}
                           isActiveSpeaker={
                             activeSpeakerKey != null &&
                             activeSpeakerKey === feedKeyForActive(feed)
@@ -614,6 +639,7 @@ export function HumanChatPanelCallStage({
                           feed={feed}
                           isShare
                           isFullView={isFull}
+                          panelVideoFit={panelVideoFit}
                           isActiveSpeaker={
                             activeSpeakerKey != null &&
                             activeSpeakerKey === feedKeyForActive(feed)
@@ -678,6 +704,7 @@ export function HumanChatPanelCallStage({
                             }
                             feed={speakerFeedForTopMode}
                             isFullView={isFull}
+                            panelVideoFit={panelVideoFit}
                             isActiveSpeaker
                             room={room}
                             currentUserId={currentUserId}
@@ -733,6 +760,7 @@ export function HumanChatPanelCallStage({
                           feed={feed}
                           isShare
                           isFullView={isFull}
+                          panelVideoFit={panelVideoFit}
                           isActiveSpeaker={
                             activeSpeakerKey != null &&
                             activeSpeakerKey === feedKeyForActive(feed)
@@ -762,6 +790,7 @@ export function HumanChatPanelCallStage({
                     feed={feed}
                     isShare
                     isFullView={isFull}
+                    panelVideoFit={panelVideoFit}
                     isActiveSpeaker={
                       activeSpeakerKey != null &&
                       activeSpeakerKey === feedKeyForActive(feed)
@@ -819,6 +848,7 @@ export function HumanChatPanelCallStage({
                   feed={feed}
                   isShare
                   isFullView={isFull}
+                  panelVideoFit={panelVideoFit}
                   isActiveSpeaker={
                     activeSpeakerKey != null &&
                     activeSpeakerKey === feedKeyForActive(feed)
@@ -848,6 +878,7 @@ export function HumanChatPanelCallStage({
                   currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                   feed={remoteUserMedia[0]}
                   isFullView={isFull}
+                  panelVideoFit={panelVideoFit}
                   isActiveSpeaker={
                     activeSpeakerKey != null &&
                     activeSpeakerKey === feedKeyForActive(remoteUserMedia[0]!)
@@ -881,6 +912,7 @@ export function HumanChatPanelCallStage({
                   currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                   feed={localUserMedia[0]}
                   isFullView={isFull}
+                  panelVideoFit={panelVideoFit}
                   isActiveSpeaker={
                     activeSpeakerKey != null &&
                     activeSpeakerKey === feedKeyForActive(localUserMedia[0]!)
@@ -944,6 +976,7 @@ export function HumanChatPanelCallStage({
                     currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                     feed={feed}
                     isFullView={isFull}
+                    panelVideoFit={panelVideoFit}
                     isActiveSpeaker={
                       activeSpeakerKey != null &&
                       activeSpeakerKey === feedKeyForActive(feed)
@@ -978,6 +1011,7 @@ export function HumanChatPanelCallStage({
                 feed={feed}
                 isPip
                 isFullView={isFull}
+                panelVideoFit={panelVideoFit}
                 isActiveSpeaker={
                   activeSpeakerKey != null &&
                   activeSpeakerKey === feedKeyForActive(feed)
@@ -1244,6 +1278,7 @@ const CallFeedTile = ({
   isPip = false,
   isActiveSpeaker = false,
   isFullView = false,
+  panelVideoFit = 'cover',
   room,
   currentUserId,
   resolveMemberLabel,
@@ -1257,6 +1292,7 @@ const CallFeedTile = ({
   isPip?: boolean;
   isActiveSpeaker?: boolean;
   isFullView?: boolean;
+  panelVideoFit?: 'cover' | 'contain';
   room: Room | null;
   currentUserId: string | null;
   resolveMemberLabel: (userId: string | undefined) => string;
@@ -1279,6 +1315,7 @@ const CallFeedTile = ({
       isActiveSpeaker={isActiveSpeaker}
       resolveMemberLabel={resolveMemberLabel}
       nameFallback={nameFallback}
+      panelVideoFit={panelVideoFit}
       t={t}
     />
   );
@@ -1294,6 +1331,7 @@ const FeedContent = ({
   isShare,
   isPip,
   isFullView,
+  panelVideoFit,
   isActiveSpeaker,
   resolveMemberLabel,
   nameFallback,
@@ -1308,6 +1346,7 @@ const FeedContent = ({
   isShare: boolean;
   isPip: boolean;
   isFullView: boolean;
+  panelVideoFit: 'cover' | 'contain';
   isActiveSpeaker: boolean;
   resolveMemberLabel: (userId: string | undefined) => string;
   nameFallback: string;
@@ -1472,44 +1511,43 @@ const FeedContent = ({
               isPip && 'h-full flex-1',
               isFullView && !isPip && 'absolute inset-0 h-full w-full',
               !isPip && !isFullView && 'h-full min-h-0 flex-1',
-              isShare ? 'object-contain' : 'object-cover',
+              isFullView && !isPip
+                ? 'object-contain'
+                : isShare
+                ? 'object-contain'
+                : !isPip && panelVideoFit === 'contain'
+                ? 'object-contain'
+                : 'object-cover',
             )}
             autoPlay
             playsInline
             muted
             aria-label={ariaLabel}
           />
-          {feed.isAudioMuted() && !(isFullView && !isPip) && (
-            <div
-              className={cn(
-                'pointer-events-none absolute z-[2] flex items-center justify-center rounded-md border border-destructive/30 bg-destructive/20 text-destructive-foreground shadow-sm backdrop-blur-sm',
-                isPip
-                  ? 'end-0.5 top-0.5 h-4 w-4'
-                  : 'end-1 top-1 h-7 w-7 sm:end-1.5 sm:top-1.5',
-              )}
-              title={t('callParticipantMicOff')}
-              role="img"
-              aria-label={t('callParticipantMicOff')}
-            >
-              <MicOff
-                className={isPip ? 'h-2.5 w-2.5' : 'h-3.5 w-3.5'}
-                strokeWidth={2.25}
-                aria-hidden
-              />
-            </div>
-          )}
           {!isPip && (
             <div
               className={cn(
-                'absolute start-1 z-[1] max-w-[90%] truncate rounded bg-background/80 px-1.5 py-0.5 text-xs',
+                'absolute start-1 z-[1] flex max-w-[90%] flex-col rounded bg-background/80 px-1.5 py-0.5 text-xs',
                 isFullView ? 'bottom-2' : 'bottom-1',
               )}
             >
-              {showSkeleton ? (
-                <Skeleton loading width={88} height={14} />
-              ) : (
-                overlayLabel
-              )}
+              <span className="truncate">
+                {showSkeleton ? (
+                  <Skeleton loading width={88} height={14} />
+                ) : (
+                  overlayLabel
+                )}
+              </span>
+              {feed.isAudioMuted() ? (
+                <span className="mt-0.5 inline-flex items-center gap-1 text-destructive">
+                  <MicOff
+                    className="h-3.5 w-3.5"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                  {t('callParticipantMuted')}
+                </span>
+              ) : null}
             </div>
           )}
         </>
@@ -1575,21 +1613,31 @@ const FeedContent = ({
                 className="mx-auto rounded"
               />
             ) : (
-              <>
-                {overlayLabel}
-                {feed.isAudioMuted() && !(isFullView && !isPip)
-                  ? ` · ${t('callParticipantMuted')}`
-                  : null}
-              </>
+              overlayLabel
             )}
           </p>
+          {feed.isAudioMuted() ? (
+            <p
+              className={cn(
+                'inline-flex items-center gap-1 font-medium text-destructive',
+                isPip ? 'text-[9px]' : 'text-xs',
+              )}
+            >
+              <MicOff
+                className={isPip ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                strokeWidth={2.25}
+                aria-hidden
+              />
+              {t('callParticipantMuted')}
+            </p>
+          ) : null}
           <CallAudioVoiceWaves
             mediaStream={stream}
             active={canVoiceWave}
             onDarkScrim
             size={isPip ? 'sm' : isFullView && !isPip ? 'lg' : 'md'}
             className={
-              isPip ? 'max-w-[4.5rem]' : 'w-full max-w-[min(18rem,92%)]'
+              isPip ? 'max-w-[5.5rem]' : 'w-full max-w-[min(24rem,96%)]'
             }
           />
         </div>

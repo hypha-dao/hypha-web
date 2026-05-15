@@ -1,12 +1,16 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import {
+  Check,
+  ChevronDown,
   Mic,
   MicOff,
   Monitor,
   MonitorOff,
   Video,
   VideoOff,
+  Volume2,
 } from 'lucide-react';
 import { CallHangUpIcon } from './call-hang-up-icon';
 import { useTranslations } from 'next-intl';
@@ -24,9 +28,15 @@ type HumanChatPanelInCallControlsProps = {
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleScreenshare: () => void;
+  voiceProcessingPreset: 'standard' | 'voice_isolation' | 'music';
+  onVoiceProcessingPresetChange: (
+    preset: 'standard' | 'voice_isolation' | 'music',
+  ) => void;
   onLeave: () => void;
   /** In header strip: compact buttons; in full view: larger, high-contrast on video. */
   variant?: 'inBanner' | 'fullView';
+  /** Compact row alignment for dock/banner usage. */
+  inBannerLayout?: 'inline' | 'balanced' | 'centered';
 };
 
 /**
@@ -41,12 +51,18 @@ export function HumanChatPanelInCallControls({
   onToggleMic,
   onToggleCamera,
   onToggleScreenshare,
+  voiceProcessingPreset,
+  onVoiceProcessingPresetChange,
   onLeave,
   variant = 'inBanner',
+  inBannerLayout = 'inline',
 }: HumanChatPanelInCallControlsProps) {
   const t = useTranslations('HumanChatPanel');
   const { controlsDisabled } = getCallControlsPhase(callState);
+  const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
+  const audioMenuRef = useRef<HTMLDivElement | null>(null);
   const isFull = variant === 'fullView';
+  const isCenteredInBanner = !isFull && inBannerLayout === 'centered';
   /**
    * Full view modal: §3.4.4.4 — white glyphs on dark / green / red (not
    * `text-foreground` on near-black / green where Lucide would read as black).
@@ -79,120 +95,241 @@ export function HumanChatPanelInCallControls({
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20';
   const icon = isFull ? fullViewIcon : 'h-4 w-4';
+  const audioSettingsBtn = isFull
+    ? 'inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center gap-1 rounded-full border border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
+    : 'inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-border/60 bg-background px-2 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+  const menuCheckIcon = isFull
+    ? 'h-4 w-4 text-white'
+    : 'h-4 w-4 text-foreground';
+  const useSideAudioSettings =
+    isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered';
+
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (!audioMenuRef.current?.contains(target)) {
+        setIsAudioMenuOpen(false);
+      }
+    };
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => window.removeEventListener('pointerdown', onPointerDown);
+  }, []);
+
+  useEffect(() => {
+    if (!isAudioMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsAudioMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isAudioMenuOpen]);
+
+  const selectVoicePreset = (
+    preset: 'standard' | 'voice_isolation' | 'music',
+  ) => {
+    onVoiceProcessingPresetChange(preset);
+    setIsAudioMenuOpen(false);
+  };
+
+  const renderAudioSettingsMenu = (
+    <div className="relative" ref={audioMenuRef}>
+      <button
+        type="button"
+        className={audioSettingsBtn}
+        title={t('callVoiceProcessingLabel')}
+        aria-label={t('callVoiceProcessingLabel')}
+        aria-haspopup="menu"
+        aria-expanded={isAudioMenuOpen}
+        onClick={() => setIsAudioMenuOpen((open) => !open)}
+      >
+        <Volume2 className={icon} />
+        <ChevronDown
+          className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
+        />
+      </button>
+      {isAudioMenuOpen ? (
+        <div
+          role="menu"
+          className={cn(
+            'absolute bottom-full right-0 z-[60] mb-2 min-w-40 rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            isFull && 'min-w-44 border-zinc-700 bg-zinc-900 text-white',
+          )}
+        >
+          <p className="px-2 py-1.5 text-sm font-semibold">
+            {t('callVoiceProcessingLabel')}
+          </p>
+          <div className="-mx-0 my-1 h-px bg-neutral-6" />
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={voiceProcessingPreset === 'standard'}
+            onClick={() => selectVoicePreset('standard')}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+          >
+            <span>{t('callVoiceProcessingStandard')}</span>
+            {voiceProcessingPreset === 'standard' ? (
+              <Check className={menuCheckIcon} />
+            ) : null}
+          </button>
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={voiceProcessingPreset === 'voice_isolation'}
+            onClick={() => selectVoicePreset('voice_isolation')}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+          >
+            <span>{t('callVoiceProcessingIsolation')}</span>
+            {voiceProcessingPreset === 'voice_isolation' ? (
+              <Check className={menuCheckIcon} />
+            ) : null}
+          </button>
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={voiceProcessingPreset === 'music'}
+            onClick={() => selectVoicePreset('music')}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+          >
+            <span>{t('callVoiceProcessingMusic')}</span>
+            {voiceProcessingPreset === 'music' ? (
+              <Check className={menuCheckIcon} />
+            ) : null}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
 
   return (
-    <div
-      className={cn(
-        'flex items-center gap-1.5 sm:gap-2',
-        isFull ? 'w-full justify-center' : 'w-auto justify-start',
-      )}
-      role="group"
-      aria-label={t('callToolbarLabel')}
-    >
-      <button
-        type="button"
-        onClick={onToggleMic}
-        disabled={controlsDisabled}
+    <div role="group" aria-label={t('callToolbarLabel')}>
+      <div
         className={cn(
-          isFull
-            ? isMicrophoneMuted
-              ? micMutedBtn
-              : baseBtn
-            : isMicrophoneMuted
-            ? micMutedBtn
-            : neutralBtn,
-          (isFull || isMicrophoneMuted) &&
-            'inline-flex items-center justify-center',
-          'disabled:cursor-not-allowed',
-          !isFull && controlsDisabled && 'opacity-50',
+          useSideAudioSettings
+            ? 'grid w-full grid-cols-[1fr_auto_1fr] items-center'
+            : 'flex w-auto items-center',
         )}
-        title={t('callControlsMicrophone')}
-        aria-label={
-          isMicrophoneMuted
-            ? t('callControlsMicrophoneMutedAria')
-            : t('callControlsMicrophoneUnmutedAria')
-        }
       >
-        {isMicrophoneMuted ? (
-          <MicOff className={icon} />
-        ) : (
-          <Mic className={icon} />
-        )}
-      </button>
-      <button
-        type="button"
-        onClick={onToggleCamera}
-        disabled={controlsDisabled}
-        className={cn(
-          isFull
-            ? isLocalVideoMuted
-              ? camOffBtn
-              : baseBtn
-            : isLocalVideoMuted
-            ? camOffBtn
-            : neutralBtn,
-          (isFull || isLocalVideoMuted) &&
-            'inline-flex items-center justify-center',
-          'disabled:cursor-not-allowed',
-          !isFull && controlsDisabled && 'opacity-50',
-        )}
-        title={t('callControlsCamera')}
-        aria-label={
-          isLocalVideoMuted
-            ? t('callControlsCameraOffAria')
-            : t('callControlsCameraOnAria')
-        }
-      >
-        {isLocalVideoMuted ? (
-          <VideoOff className={icon} />
-        ) : (
-          <Video className={icon} />
-        )}
-      </button>
-      <button
-        type="button"
-        onClick={onToggleScreenshare}
-        disabled={controlsDisabled}
-        className={cn(
-          isFull
-            ? isScreensharing
-              ? shareActiveBtn
-              : baseBtn
-            : isScreensharing
-            ? shareActiveBtn
-            : neutralBtn,
-          (isFull || isScreensharing) &&
-            'inline-flex items-center justify-center',
-          'disabled:cursor-not-allowed',
-          !isFull && controlsDisabled && 'opacity-50',
-        )}
-        title={t('callControlsScreenshare')}
-        aria-label={
-          isScreensharing
-            ? t('callControlsScreenshareActiveAria')
-            : t('callControlsScreenshareInactiveAria')
-        }
-      >
-        {isScreensharing ? (
-          <MonitorOff className={icon} />
-        ) : (
-          <Monitor className={icon} />
-        )}
-      </button>
-      <button
-        type="button"
-        onClick={onLeave}
-        disabled={callState === 'disconnecting'}
-        className={cn(
-          leaveBtn,
-          'disabled:cursor-not-allowed',
-          callState === 'disconnecting' && 'opacity-50',
-        )}
-        title={t('callLeave')}
-        aria-label={t('callLeave')}
-      >
-        <CallHangUpIcon className={leaveIcon} />
-      </button>
+        <div />
+        <div
+          className={cn(
+            'flex items-center',
+            isCenteredInBanner ? 'gap-2.5 sm:gap-3' : 'gap-1.5 sm:gap-2',
+            useSideAudioSettings ? 'justify-center' : 'justify-start',
+          )}
+        >
+          <button
+            type="button"
+            onClick={onToggleMic}
+            disabled={controlsDisabled}
+            className={cn(
+              isFull
+                ? isMicrophoneMuted
+                  ? micMutedBtn
+                  : baseBtn
+                : isMicrophoneMuted
+                ? micMutedBtn
+                : neutralBtn,
+              (isFull || isMicrophoneMuted) &&
+                'inline-flex items-center justify-center',
+              'disabled:cursor-not-allowed',
+              !isFull && controlsDisabled && 'opacity-50',
+            )}
+            title={t('callControlsMicrophone')}
+            aria-label={
+              isMicrophoneMuted
+                ? t('callControlsMicrophoneMutedAria')
+                : t('callControlsMicrophoneUnmutedAria')
+            }
+          >
+            {isMicrophoneMuted ? (
+              <MicOff className={icon} />
+            ) : (
+              <Mic className={icon} />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={onToggleCamera}
+            disabled={controlsDisabled}
+            className={cn(
+              isFull
+                ? isLocalVideoMuted
+                  ? camOffBtn
+                  : baseBtn
+                : isLocalVideoMuted
+                ? camOffBtn
+                : neutralBtn,
+              (isFull || isLocalVideoMuted) &&
+                'inline-flex items-center justify-center',
+              'disabled:cursor-not-allowed',
+              !isFull && controlsDisabled && 'opacity-50',
+            )}
+            title={t('callControlsCamera')}
+            aria-label={
+              isLocalVideoMuted
+                ? t('callControlsCameraOffAria')
+                : t('callControlsCameraOnAria')
+            }
+          >
+            {isLocalVideoMuted ? (
+              <VideoOff className={icon} />
+            ) : (
+              <Video className={icon} />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={onToggleScreenshare}
+            disabled={controlsDisabled}
+            className={cn(
+              isFull
+                ? isScreensharing
+                  ? shareActiveBtn
+                  : baseBtn
+                : isScreensharing
+                ? shareActiveBtn
+                : neutralBtn,
+              (isFull || isScreensharing) &&
+                'inline-flex items-center justify-center',
+              'disabled:cursor-not-allowed',
+              !isFull && controlsDisabled && 'opacity-50',
+            )}
+            title={t('callControlsScreenshare')}
+            aria-label={
+              isScreensharing
+                ? t('callControlsScreenshareActiveAria')
+                : t('callControlsScreenshareInactiveAria')
+            }
+          >
+            {isScreensharing ? (
+              <MonitorOff className={icon} />
+            ) : (
+              <Monitor className={icon} />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={onLeave}
+            disabled={callState === 'disconnecting'}
+            className={cn(
+              leaveBtn,
+              'disabled:cursor-not-allowed',
+              callState === 'disconnecting' && 'opacity-50',
+            )}
+            title={t('callLeave')}
+            aria-label={t('callLeave')}
+          >
+            <CallHangUpIcon className={leaveIcon} />
+          </button>
+          {!useSideAudioSettings ? renderAudioSettingsMenu : null}
+        </div>
+        {useSideAudioSettings ? (
+          <div className="justify-self-end">{renderAudioSettingsMenu}</div>
+        ) : null}
+      </div>
     </div>
   );
 }

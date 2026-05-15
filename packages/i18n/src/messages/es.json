@@ -2114,6 +2114,10 @@
     "callControlsScreenshare": "Compartir pantalla",
     "callControlsScreenshareActiveAria": "Compartir pantalla, activa",
     "callControlsScreenshareInactiveAria": "Compartir pantalla, inactiva",
+    "callVoiceProcessingLabel": "Procesamiento de voz",
+    "callVoiceProcessingStandard": "Voz",
+    "callVoiceProcessingIsolation": "Aislamiento",
+    "callVoiceProcessingMusic": "Música",
     "callCameraOn": "Encender cámara",
     "callCameraOff": "Apagar cámara",
     "callErrorPermission": "Se denegó el acceso a la cámara o al micrófono. Revisa la configuración del navegador.",
@@ -2341,6 +2345,18 @@
     "spaceMemoryCallTranscriptExcerpt": "Transcript",
     "spaceMemoryContextCallRecording": "Grabación de llamada (memoria organizacional)",
     "spaceMemoryContextCallTranscript": "Transcripción de llamada (memoria organizacional)"
+  },
+  "GlobalCallDock": {
+    "callTitle": "Llamada - {count, plural, one {# miembro} other {# miembros}}",
+    "openSpaceLabel": "Abrir espacio de llamada",
+    "spaceButton": "Espacio",
+    "minimizeLabel": "Minimizar llamada",
+    "expandLabel": "Expandir llamada",
+    "fullscreenLabel": "Pantalla completa",
+    "exitFullscreenLabel": "Salir de pantalla completa",
+    "unknownMember": "Desconocido",
+    "resizeTopRightLabel": "Redimensionar la llamada desde la esquina superior derecha",
+    "resizeBottomLeftLabel": "Redimensionar la llamada desde la esquina inferior izquierda"
   },
   "SignalCard": {
     "noConversationRoom": "Aún no hay sala de conversación",

@@ -33,6 +33,8 @@ const CONNECT_STALL_ABORT_MS = 90_000;
 
 /** Room shows others in-call but no remote userMedia CallFeed yet (signaling/WebRTC issue). */
 const REMOTE_MEDIA_STALL_MS = 45_000;
+const REMOTE_MEDIA_REPAIR_NUDGE_MS = 1500;
+const REMOTE_MEDIA_AUTO_RECOVER_MS = 70_000;
 
 /** Dev console: periodic sample of feeds vs participant map (not every Matrix event). */
 const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
@@ -45,6 +47,112 @@ const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
  */
 const PLACE_OUTGOING_DELAYED_MS = 600;
 const PLACE_OUTGOING_RETRY_MS = [1500, 4000, 8000] as const;
+const ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS = 30_000;
+const VOICE_PROCESSING_PRESET_KEY = 'hypha-group-call-voice-processing-v1';
+
+export type SpaceGroupCallOptions = {
+  authToken?: string | null;
+  spaceSlug?: string | null;
+};
+export type SpaceGroupCallVoiceProcessingPreset =
+  | 'standard'
+  | 'voice_isolation'
+  | 'music';
+
+type AudioProcessingConstraints = {
+  autoGainControl: boolean;
+  echoCancellation: boolean;
+  noiseSuppression: boolean;
+};
+
+function constraintsForVoicePreset(
+  preset: SpaceGroupCallVoiceProcessingPreset,
+): AudioProcessingConstraints {
+  switch (preset) {
+    case 'voice_isolation':
+      return {
+        autoGainControl: false,
+        echoCancellation: true,
+        noiseSuppression: true,
+      };
+    case 'music':
+      return {
+        autoGainControl: false,
+        echoCancellation: true,
+        noiseSuppression: false,
+      };
+    case 'standard':
+    default:
+      return {
+        autoGainControl: true,
+        echoCancellation: true,
+        noiseSuppression: true,
+      };
+  }
+}
+
+function readVoiceProcessingPreset(): SpaceGroupCallVoiceProcessingPreset {
+  if (typeof window === 'undefined') return 'standard';
+  try {
+    const raw = window.localStorage
+      .getItem(VOICE_PROCESSING_PRESET_KEY)
+      ?.trim();
+    if (raw === 'standard' || raw === 'voice_isolation' || raw === 'music') {
+      return raw;
+    }
+  } catch {
+    // ignore persistence read failures
+  }
+  return 'standard';
+}
+
+function persistVoiceProcessingPreset(
+  preset: SpaceGroupCallVoiceProcessingPreset,
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(VOICE_PROCESSING_PRESET_KEY, preset);
+  } catch {
+    // ignore persistence write failures
+  }
+}
+
+async function tryRepairRoomCallPermissions(
+  authToken: string | null | undefined,
+  spaceSlug: string | null | undefined,
+  roomId: string,
+): Promise<boolean> {
+  const token = authToken?.trim();
+  const slug = spaceSlug?.trim();
+  if (!token || !slug) return false;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS);
+  try {
+    const response = await fetch('/api/matrix/room-call-permissions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ roomId, spaceSlug: slug }),
+      signal: controller.signal,
+    });
+    if (!response.ok) return false;
+    const data = (await response.json().catch(() => null)) as {
+      ok?: boolean;
+    } | null;
+    return data?.ok === true;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return false;
+    }
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 function nudgeGroupCallPlaceOutgoing(gc: MatrixSdk.GroupCall): void {
   const fn = (gc as unknown as { placeOutgoingCalls?: () => void })
@@ -82,8 +190,12 @@ function newCallSessionId(): string {
   );
 }
 
-export function useSpaceGroupCall(roomId: string | null) {
+export function useSpaceGroupCall(
+  roomId: string | null,
+  options: SpaceGroupCallOptions = {},
+) {
   const { client } = useMatrix();
+  const { authToken = null, spaceSlug = null } = options;
 
   const [callState, setCallState] = useState<SpaceGroupCallState>('idle');
   const [errorCode, setErrorCode] = useState<SpaceGroupCallErrorCode | null>(
@@ -97,6 +209,8 @@ export function useSpaceGroupCall(roomId: string | null) {
   const [isScreensharing, setIsScreensharing] = useState(false);
   const [localPreviewStream, setLocalPreviewStream] =
     useState<MediaStream | null>(null);
+  const [voiceProcessingPreset, setVoiceProcessingPresetState] =
+    useState<SpaceGroupCallVoiceProcessingPreset>('standard');
   const [isMicrophoneMuted, setIsMicrophoneMuted] = useState(false);
   const [isLocalVideoMuted, setIsLocalVideoMuted] = useState(true);
   /** Active GroupCall for UI (tiles); cleared on leave. */
@@ -148,6 +262,13 @@ export function useSpaceGroupCall(roomId: string | null) {
   const remoteMediaGapSinceRef = useRef<number | null>(null);
   const remoteMediaStallLoggedRef = useRef(false);
   const remoteMediaStallBannerDismissedRef = useRef(false);
+  const remoteMediaRepairNudgeIntervalRef = useRef<ReturnType<
+    typeof setInterval
+  > | null>(null);
+  const remoteMediaRecoverRequestedRef = useRef(false);
+  const remoteMediaRecoverAttemptedRef = useRef(false);
+  const remoteMediaRecoverInFlightRef = useRef(false);
+  const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
 
   const dismissRemoteMediaStallBanner = useCallback(() => {
@@ -215,6 +336,13 @@ export function useSpaceGroupCall(roomId: string | null) {
     remoteMediaGapSinceRef.current = null;
     remoteMediaStallLoggedRef.current = false;
     remoteMediaStallBannerDismissedRef.current = false;
+    if (remoteMediaRepairNudgeIntervalRef.current != null) {
+      clearInterval(remoteMediaRepairNudgeIntervalRef.current);
+      remoteMediaRepairNudgeIntervalRef.current = null;
+    }
+    remoteMediaRecoverRequestedRef.current = false;
+    remoteMediaRecoverAttemptedRef.current = false;
+    remoteMediaRecoverInFlightRef.current = false;
     setRemoteMediaStall(false);
     if (feedUpdateRafRef.current != null) {
       cancelAnimationFrame(feedUpdateRafRef.current);
@@ -275,6 +403,72 @@ export function useSpaceGroupCall(roomId: string | null) {
     const feed = gc.localCallFeed;
     setLocalPreviewStream(feed?.stream ?? null);
   }, []);
+
+  const applyVoiceProcessingPresetToGroupCall = useCallback(
+    async (
+      gc: MatrixSdk.GroupCall,
+      preset: SpaceGroupCallVoiceProcessingPreset,
+    ): Promise<boolean> => {
+      if (
+        typeof navigator === 'undefined' ||
+        !navigator.mediaDevices?.getUserMedia
+      ) {
+        return false;
+      }
+      const existingStream = gc.localCallFeed?.stream ?? null;
+      const previousAudioTrack = existingStream?.getAudioTracks()[0] ?? null;
+      const videoTracks =
+        existingStream?.getVideoTracks().filter((track) => {
+          return track.readyState === 'live';
+        }) ?? [];
+      const audioConstraints = constraintsForVoicePreset(preset);
+      const refreshedAudioStream = await navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: {
+          autoGainControl: { ideal: audioConstraints.autoGainControl },
+          echoCancellation: { ideal: audioConstraints.echoCancellation },
+          noiseSuppression: { ideal: audioConstraints.noiseSuppression },
+        },
+      });
+      const nextAudioTrack = refreshedAudioStream.getAudioTracks()[0];
+      if (!nextAudioTrack) {
+        refreshedAudioStream.getTracks().forEach((track) => track.stop());
+        return false;
+      }
+      if (previousAudioTrack) {
+        nextAudioTrack.enabled = previousAudioTrack.enabled;
+      }
+      const nextStream = new MediaStream();
+      nextStream.addTrack(nextAudioTrack);
+      for (const videoTrack of videoTracks) {
+        nextStream.addTrack(videoTrack);
+      }
+      try {
+        await gc.updateLocalUsermediaStream(nextStream);
+      } catch (error) {
+        for (const track of refreshedAudioStream.getTracks()) {
+          track.stop();
+        }
+        for (const track of nextStream.getTracks()) {
+          if (track !== nextAudioTrack) continue;
+          if (track.readyState !== 'ended') {
+            track.stop();
+          }
+        }
+        throw error;
+      }
+      for (const track of refreshedAudioStream.getTracks()) {
+        if (track !== nextAudioTrack) {
+          track.stop();
+        }
+      }
+      if (previousAudioTrack && previousAudioTrack !== nextAudioTrack) {
+        previousAudioTrack.stop();
+      }
+      return true;
+    },
+    [],
+  );
 
   const updateParticipantCount = useCallback(() => {
     const gc = groupCallRef.current;
@@ -339,6 +533,12 @@ export function useSpaceGroupCall(roomId: string | null) {
 
     const now = Date.now();
     if (missingRemoteFeedCount > 0 && othersInCall.length > 0) {
+      if (remoteMediaRepairNudgeIntervalRef.current == null) {
+        remoteMediaRepairNudgeIntervalRef.current = setInterval(() => {
+          if (groupCallRef.current !== gc) return;
+          nudgeGroupCallPlaceOutgoing(gc);
+        }, REMOTE_MEDIA_REPAIR_NUDGE_MS);
+      }
       /**
        * The SDK can know the remote participant from group-call member state
        * while the pairwise `MatrixCall` never finishes selecting an opponent
@@ -367,18 +567,26 @@ export function useSpaceGroupCall(roomId: string | null) {
           setRemoteMediaStall(true);
         }
       }
+      if (
+        waitedMs >= REMOTE_MEDIA_AUTO_RECOVER_MS &&
+        !remoteMediaRecoverAttemptedRef.current &&
+        !remoteMediaRecoverInFlightRef.current
+      ) {
+        remoteMediaRecoverAttemptedRef.current = true;
+        remoteMediaRecoverRequestedRef.current = true;
+        setRemoteMediaRecoverNonce((value) => value + 1);
+      }
     } else {
       remoteMediaGapSinceRef.current = null;
       remoteMediaStallLoggedRef.current = false;
       remoteMediaStallBannerDismissedRef.current = false;
+      if (remoteMediaRepairNudgeIntervalRef.current != null) {
+        clearInterval(remoteMediaRepairNudgeIntervalRef.current);
+        remoteMediaRepairNudgeIntervalRef.current = null;
+      }
       setRemoteMediaStall(false);
     }
-  }, [
-    client,
-    roomId,
-    inCallUserIdsFromGroupCall,
-    readParticipantsFromGroupCall,
-  ]);
+  }, [client, roomId, inCallUserIdsFromGroupCall]);
 
   const logDevMediaSnapshot = useCallback(() => {
     const gc = groupCallRef.current;
@@ -526,7 +734,11 @@ export function useSpaceGroupCall(roomId: string | null) {
   );
 
   const enterWithKind = useCallback(
-    async (kind: 'audio' | 'video', threadRootEventId?: string) => {
+    async (
+      kind: 'audio' | 'video',
+      threadRootEventId?: string,
+      options?: { preserveRemoteMediaRecoverInFlight?: boolean },
+    ) => {
       if (!client || !roomId?.trim()) {
         setErrorCode(!client ? 'NO_CLIENT' : 'NO_ROOM');
         setCallState('error');
@@ -550,6 +762,11 @@ export function useSpaceGroupCall(roomId: string | null) {
       const joinEpoch = joinEpochRef.current;
 
       isJoiningRef.current = true;
+      remoteMediaRecoverRequestedRef.current = false;
+      remoteMediaRecoverAttemptedRef.current = false;
+      if (!options?.preserveRemoteMediaRecoverInFlight) {
+        remoteMediaRecoverInFlightRef.current = false;
+      }
       const newSessionId = newCallSessionId();
       setCallSessionId(newSessionId);
       lastJoinKindRef.current = kind;
@@ -622,22 +839,58 @@ export function useSpaceGroupCall(roomId: string | null) {
           ) {
             gc = client.getGroupCallForRoom(roomId);
           } else {
-            isJoiningRef.current = false;
-            setErrorCode('UNKNOWN');
-            setCallSessionId(null);
-            if (roomId) {
-              logSpaceGroupCallEvent({
-                name: 'hypha.group_call.error',
+            let nextErrorCode: SpaceGroupCallErrorCode =
+              isPermissionLikeGroupCallError(e)
+                ? 'PERMISSION_DENIED'
+                : 'UNKNOWN';
+            if (nextErrorCode === 'PERMISSION_DENIED') {
+              const repaired = await tryRepairRoomCallPermissions(
+                authToken,
+                spaceSlug,
                 roomId,
-                kind,
-                errorCode: 'UNKNOWN',
-              });
+              );
+              if (repaired) {
+                try {
+                  gc = await client.createGroupCall(
+                    roomId,
+                    type,
+                    false,
+                    GroupCallIntent.Room,
+                  );
+                } catch (retryError) {
+                  if (
+                    retryError instanceof Error &&
+                    retryError.message.includes(
+                      'already has an existing group call',
+                    )
+                  ) {
+                    gc = client.getGroupCallForRoom(roomId);
+                  } else {
+                    nextErrorCode = isPermissionLikeGroupCallError(retryError)
+                      ? 'PERMISSION_DENIED'
+                      : 'UNKNOWN';
+                  }
+                }
+              }
             }
-            setCallState('error');
-            setCallKind(null);
-            setThreadContext(null);
-            joinStartedAtRef.current = null;
-            return;
+            if (!gc) {
+              isJoiningRef.current = false;
+              setErrorCode(nextErrorCode);
+              setCallSessionId(null);
+              if (roomId) {
+                logSpaceGroupCallEvent({
+                  name: 'hypha.group_call.error',
+                  roomId,
+                  kind,
+                  errorCode: nextErrorCode,
+                });
+              }
+              setCallState('error');
+              setCallKind(null);
+              setThreadContext(null);
+              joinStartedAtRef.current = null;
+              return;
+            }
           }
         }
       }
@@ -689,17 +942,20 @@ export function useSpaceGroupCall(roomId: string | null) {
               roomGroupCallType: String(GroupCallType.Video),
             });
           }
-        } catch {
+        } catch (e) {
+          const permissionLike = isPermissionLikeGroupCallError(e);
           gcSync.type = prevType;
           isJoiningRef.current = false;
-          setErrorCode('UNKNOWN');
+          setErrorCode(permissionLike ? 'PERMISSION_DENIED' : 'UNKNOWN');
           setCallSessionId(null);
           if (roomId) {
             logSpaceGroupCallEvent({
               name: 'hypha.group_call.error',
               roomId,
               kind,
-              errorCode: 'ROOM_TYPE_SYNC',
+              errorCode: permissionLike
+                ? 'PERMISSION_DENIED'
+                : 'ROOM_TYPE_SYNC',
             });
           }
           setCallState('error');
@@ -810,14 +1066,45 @@ export function useSpaceGroupCall(roomId: string | null) {
         return;
       }
 
+      try {
+        await applyVoiceProcessingPresetToGroupCall(gc, voiceProcessingPreset);
+      } catch {
+        // keep the call connected if browser denies advanced audio constraints
+      }
       /**
-       * Voice→video: `enter()` used `initWithVideoMuted` from our audio intent earlier in
-       * this session, or upgraded from voice room state — request camera explicitly so
-       * outbound video negotiates after room `m.type` is video.
+       * Voice→video: request camera explicitly after the post-enter voice preset step.
+       * `applyVoiceProcessingPresetToGroupCall()` can replace local streams, so running
+       * camera recovery after that avoids settling in an audio-only stream on direct
+       * video joins.
        */
       if (kind === 'video') {
         try {
-          await gc.setLocalVideoMuted(false);
+          const hasLiveLocalVideoTrack = () => {
+            const track = gc.localCallFeed?.stream.getVideoTracks()[0];
+            return Boolean(track && track.readyState === 'live');
+          };
+          /**
+           * Avoid unnecessary camera churn: if `enter()` already yielded a live
+           * local video track, forcing another `setLocalVideoMuted(false)` can
+           * cause a visible video→black→video flash.
+           */
+          if (gc.isLocalVideoMuted() || !hasLiveLocalVideoTrack()) {
+            await gc.setLocalVideoMuted(false);
+          }
+          /**
+           * Direct video-join can occasionally land in a stale local video state
+           * (black tile with a non-live track). Retry camera unmute once if no
+           * live video track is present shortly after `enter()`.
+           */
+          if (!hasLiveLocalVideoTrack()) {
+            await new Promise<void>((resolve) =>
+              window.setTimeout(resolve, 320),
+            );
+            if (!hasLiveLocalVideoTrack()) {
+              await gc.setLocalVideoMuted(true);
+              await gc.setLocalVideoMuted(false);
+            }
+          }
         } catch {
           /* camera permission / hardware — remain in call with video off */
         }
@@ -904,7 +1191,9 @@ export function useSpaceGroupCall(roomId: string | null) {
     },
     [
       attachGroupCallListeners,
+      authToken,
       client,
+      spaceSlug,
       roomId,
       refreshLocalPreview,
       runCleanup,
@@ -913,6 +1202,8 @@ export function useSpaceGroupCall(roomId: string | null) {
       updateParticipantCount,
       logDevMediaSnapshot,
       evalRemoteMediaStall,
+      applyVoiceProcessingPresetToGroupCall,
+      voiceProcessingPreset,
     ],
   );
 
@@ -1038,6 +1329,48 @@ export function useSpaceGroupCall(roomId: string | null) {
     [scheduleFeedBatched],
   );
 
+  const setVoiceProcessingPreset = useCallback(
+    async (preset: SpaceGroupCallVoiceProcessingPreset) => {
+      setVoiceProcessingPresetState(preset);
+      persistVoiceProcessingPreset(preset);
+      const gc = groupCallRef.current;
+      if (!gc) return;
+      try {
+        const applied = await applyVoiceProcessingPresetToGroupCall(gc, preset);
+        if (applied) {
+          const hasLiveLocalVideoTrack = () => {
+            const track = gc.localCallFeed?.stream.getVideoTracks()[0];
+            return Boolean(track && track.readyState === 'live');
+          };
+          // Keep camera stable when audio preset swaps local streams mid-call.
+          if (!gc.isLocalVideoMuted() && !hasLiveLocalVideoTrack()) {
+            await gc.setLocalVideoMuted(false);
+            await new Promise<void>((resolve) => {
+              setTimeout(resolve, 220);
+            });
+            if (!hasLiveLocalVideoTrack()) {
+              await gc.setLocalVideoMuted(true);
+              await gc.setLocalVideoMuted(false);
+            }
+          }
+          scheduleFeedBatched();
+          refreshLocalPreview();
+        }
+      } catch {
+        // keep current call media if constraints fail on this device/browser
+      }
+    },
+    [
+      applyVoiceProcessingPresetToGroupCall,
+      refreshLocalPreview,
+      scheduleFeedBatched,
+    ],
+  );
+
+  useEffect(() => {
+    setVoiceProcessingPresetState(readVoiceProcessingPreset());
+  }, []);
+
   useEffect(() => {
     if (!groupCallRef.current) return;
     if (activeGroupCallRoomIdRef.current === roomId) return;
@@ -1146,6 +1479,41 @@ export function useSpaceGroupCall(roomId: string | null) {
       runCleanup();
     };
   }, [runCleanup]);
+
+  useEffect(() => {
+    if (!remoteMediaRecoverRequestedRef.current) return;
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    if (isJoiningRef.current || remoteMediaRecoverInFlightRef.current) return;
+    const retryKind = lastJoinKindRef.current;
+    if (!retryKind) return;
+    const retryThreadRootEventId = lastThreadRootEventIdRef.current;
+    remoteMediaRecoverRequestedRef.current = false;
+    if (roomId) {
+      logSpaceGroupCallEvent({
+        name: 'hypha.group_call.remote_media_recover',
+        roomId,
+        kind: retryKind,
+      });
+    }
+    runCleanup();
+    remoteMediaRecoverInFlightRef.current = true;
+    setCallState('idle');
+    setErrorCode(null);
+    setCallKind(null);
+    setIsScreensharing(false);
+    setThreadContext(null);
+    setParticipantCount(0);
+    setScreenshareErrorCode(null);
+    setTabBackgroundWhileInCall(false);
+    void enterWithKind(retryKind, retryThreadRootEventId, {
+      preserveRemoteMediaRecoverInFlight: true,
+    }).finally(() => {
+      if (!groupCallRef.current) {
+        remoteMediaRecoverAttemptedRef.current = false;
+      }
+      remoteMediaRecoverInFlightRef.current = false;
+    });
+  }, [callState, enterWithKind, remoteMediaRecoverNonce, roomId, runCleanup]);
 
   const idleGroupCallUnsubRef = useRef<(() => void) | null>(null);
 
@@ -1345,6 +1713,8 @@ export function useSpaceGroupCall(roomId: string | null) {
     setMicrophoneMuted,
     setCameraMuted,
     setScreensharingEnabled,
+    voiceProcessingPreset,
+    setVoiceProcessingPreset,
     isScreensharing,
     localPreviewStream,
     /** Devices in the room’s GroupCall (or 0 if none). */

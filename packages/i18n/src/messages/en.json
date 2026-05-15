@@ -2121,10 +2121,14 @@
     "callControlsScreenshare": "Screen share",
     "callControlsScreenshareActiveAria": "Screen share, active",
     "callControlsScreenshareInactiveAria": "Screen share, inactive",
+    "callVoiceProcessingLabel": "Voice processing",
+    "callVoiceProcessingStandard": "Speech",
+    "callVoiceProcessingIsolation": "Isolation",
+    "callVoiceProcessingMusic": "Music",
     "callCameraOn": "Turn camera on",
     "callCameraOff": "Turn camera off",
-    "callErrorPermission": "Camera or microphone access was denied. Check browser settings and try again.",
-    "callErrorPermissionGuidance": "Update this site’s camera/microphone permissions in your browser settings, then try again from here.",
+    "callErrorPermission": "Call start was blocked by permissions (camera/microphone or room call permissions).",
+    "callErrorPermissionGuidance": "Allow camera/microphone in your browser and ensure this room allows members to start calls, then try again.",
     "callErrorGeneric": "Could not start the call. Try again.",
     "callErrorConnectStall": "The call could not connect. This is often caused by missing Matrix TURN server setup or a restrictive network.",
     "callErrorNotReady": "The call server is not ready yet. Wait a moment, then try again.",
@@ -2348,6 +2352,18 @@
       "valueModel": "Value & Model",
       "evidenceImpact": "Evidence & Impact"
     }
+  },
+  "GlobalCallDock": {
+    "callTitle": "Call - {count, plural, one {# member} other {# members}}",
+    "openSpaceLabel": "Open call space",
+    "spaceButton": "Space",
+    "minimizeLabel": "Minimize call",
+    "expandLabel": "Expand call",
+    "fullscreenLabel": "Fullscreen",
+    "exitFullscreenLabel": "Exit fullscreen",
+    "unknownMember": "Unknown",
+    "resizeTopRightLabel": "Resize call window from top-right corner",
+    "resizeBottomLeftLabel": "Resize call window from bottom-left corner"
   },
   "SignalCard": {
     "noConversationRoom": "No conversation room yet",

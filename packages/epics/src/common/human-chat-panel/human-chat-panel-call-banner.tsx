@@ -32,6 +32,10 @@ type HumanChatPanelCallBannerProps = {
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleScreenshare: () => void;
+  voiceProcessingPreset: 'standard' | 'voice_isolation' | 'music';
+  onVoiceProcessingPresetChange: (
+    preset: 'standard' | 'voice_isolation' | 'music',
+  ) => void;
   onDismissScreenshareError: () => void;
   /** Reconnect after a recoverable call error. */
   onRetryCall: () => void;
@@ -80,6 +84,8 @@ export function HumanChatPanelCallBanner({
   onToggleMic,
   onToggleCamera,
   onToggleScreenshare,
+  voiceProcessingPreset,
+  onVoiceProcessingPresetChange,
   onDismissScreenshareError,
   tabBackgroundWhileInCall,
   onRetryCall,
@@ -259,6 +265,8 @@ export function HumanChatPanelCallBanner({
             onToggleMic={onToggleMic}
             onToggleCamera={onToggleCamera}
             onToggleScreenshare={onToggleScreenshare}
+            voiceProcessingPreset={voiceProcessingPreset}
+            onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
             onLeave={onLeave}
             variant="inBanner"
           />

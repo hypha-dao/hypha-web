@@ -146,6 +146,24 @@ const MATRIX_GROUP_CALL_EVENT_TYPE = 'org.matrix.msc3401.call';
 const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
 const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
 
+function myRoomPowerLevel(
+  client: MatrixSdk.MatrixClient,
+  roomId: string,
+  powerLevels: {
+    users?: Record<string, number>;
+    users_default?: number;
+  },
+): number {
+  const userId = client.getUserId();
+  if (!userId) return powerLevels.users_default ?? 0;
+  const fromEvent = powerLevels.users?.[userId];
+  if (typeof fromEvent === 'number') return fromEvent;
+  const fromRoom = client.getRoom(roomId)?.getMember(userId)?.powerLevel;
+  return typeof fromRoom === 'number'
+    ? fromRoom
+    : powerLevels.users_default ?? 0;
+}
+
 async function ensureRoomCallPowerLevels(
   client: MatrixSdk.MatrixClient,
   roomId: string,
@@ -155,12 +173,32 @@ async function ensureRoomCallPowerLevels(
       (client
         .getRoom(roomId)
         ?.currentState.getStateEvents(MatrixSdk.EventType.RoomPowerLevels, '')
-        ?.getContent() as { events?: Record<string, number> } | undefined) ??
+        ?.getContent() as
+        | {
+            events?: Record<string, number>;
+            state_default?: number;
+            users?: Record<string, number>;
+            users_default?: number;
+          }
+        | undefined) ??
       ((await client.getStateEvent(
         roomId,
         MatrixSdk.EventType.RoomPowerLevels,
         '',
-      )) as { events?: Record<string, number> });
+      )) as {
+        events?: Record<string, number>;
+        state_default?: number;
+        users?: Record<string, number>;
+        users_default?: number;
+      });
+    const myLevel = myRoomPowerLevel(client, roomId, current);
+    const requiredToEditPowerLevels =
+      current.events?.[MatrixSdk.EventType.RoomPowerLevels] ??
+      current.state_default ??
+      50;
+    if (myLevel < requiredToEditPowerLevels) {
+      return;
+    }
     const events = { ...(current.events ?? {}) };
     if (
       events[MATRIX_GROUP_CALL_EVENT_TYPE] === 0 &&

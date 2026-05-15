@@ -2122,6 +2122,10 @@
     "callControlsScreenshare": "Bildschirmfreigabe",
     "callControlsScreenshareActiveAria": "Bildschirmfreigabe, aktiv",
     "callControlsScreenshareInactiveAria": "Bildschirmfreigabe, inaktiv",
+    "callVoiceProcessingLabel": "Sprachverarbeitung",
+    "callVoiceProcessingStandard": "Sprache",
+    "callVoiceProcessingIsolation": "Isolierung",
+    "callVoiceProcessingMusic": "Musik",
     "callCameraOn": "Kamera einschalten",
     "callCameraOff": "Kamera ausschalten",
     "callErrorPermission": "Kamera- oder Mikrofonzugriff verweigert. Bitte Browsereinstellungen prüfen.",
@@ -2349,6 +2353,18 @@
     "spaceMemoryCallTranscriptExcerpt": "Transcript",
     "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
     "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)"
+  },
+  "GlobalCallDock": {
+    "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",
+    "openSpaceLabel": "Anruf-Space öffnen",
+    "spaceButton": "Space",
+    "minimizeLabel": "Anruf minimieren",
+    "expandLabel": "Anruf erweitern",
+    "fullscreenLabel": "Vollbild",
+    "exitFullscreenLabel": "Vollbild beenden",
+    "unknownMember": "Unbekannt",
+    "resizeTopRightLabel": "Anruffenster über die obere rechte Ecke skalieren",
+    "resizeBottomLeftLabel": "Anruffenster über die untere linke Ecke skalieren"
   },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",
