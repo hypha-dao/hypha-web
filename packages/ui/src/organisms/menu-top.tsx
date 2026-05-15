@@ -57,10 +57,10 @@ export const MenuTop = ({
   }, [pathname]);
 
   useEffect(() => {
-    if (!showMobileHamburger && isMobileMenuOpen) {
+    if (!showMobileHamburger) {
       setIsMobileMenuOpen(false);
     }
-  }, [showMobileHamburger, isMobileMenuOpen]);
+  }, [showMobileHamburger]);
 
   /** Publish measured height so side panels / overlays align with this bar (see e2e menu-top-consistent-height). */
   useLayoutEffect(() => {
