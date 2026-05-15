@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import { SignalCard } from './signal-card';
-import { useCompactHeaderMode } from '@hypha-platform/ui';
 import { Coherence } from '@hypha-platform/core/client';
 
 type SignalGridProps = {
@@ -22,34 +20,12 @@ export function SignalGrid({
   refresh,
   onSignalClick,
 }: SignalGridProps) {
-  const isCompactHeader = useCompactHeaderMode();
-  const [hasOpenSidePanel, setHasOpenSidePanel] = useState(false);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const root = document.documentElement;
-    const sync = () =>
-      setHasOpenSidePanel(
-        root.getAttribute('data-side-panels-open') === 'true',
-      );
-    sync();
-    const observer = new MutationObserver(sync);
-    observer.observe(root, {
-      attributes: true,
-      attributeFilter: ['data-side-panels-open'],
-    });
-    return () => observer.disconnect();
-  }, []);
-
-  const useIpadGridColumns = isCompactHeader && hasOpenSidePanel;
-
   return (
     <div
       className={cn(
-        'grid w-full grid-cols-1 items-start gap-2 sm:grid-cols-2',
-        useIpadGridColumns
-          ? 'xl:grid-cols-2 2xl:grid-cols-2'
-          : 'xl:grid-cols-3 2xl:grid-cols-4',
+        'grid w-full grid-cols-1 items-start gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
+        "[html[data-side-panels-open='true'][data-compact-panels='true']_&]:xl:grid-cols-2",
+        "[html[data-side-panels-open='true'][data-compact-panels='true']_&]:2xl:grid-cols-2",
       )}
     >
       {signals.map((signal) =>

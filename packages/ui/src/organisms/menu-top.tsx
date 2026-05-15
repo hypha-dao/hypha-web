@@ -115,10 +115,7 @@ export const MenuTop = ({
       const shouldCompact = compactRef
         ? freeSpace < compactReleaseThresholdPx
         : freeSpace < compactSafeThresholdPx;
-      const shouldCompactForOpenPanel =
-        hasOpenSidePanel &&
-        isCompactPanels &&
-        freeSpace < compactReleaseThresholdPx;
+      const shouldCompactForOpenPanel = hasOpenSidePanel && isCompactPanels;
 
       const nextCompact = shouldCompact || shouldCompactForOpenPanel;
       if (nextCompact !== compactRef) {
