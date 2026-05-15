@@ -293,10 +293,9 @@ export function PanelWrapLayout({
   // Panels are only available within a space context (/[lang]/dho/[id]/...)
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
-  const [viewportWidth, setViewportWidth] = useState<number>(() => {
-    if (typeof window === 'undefined') return 1440;
-    return window.innerWidth;
-  });
+  const [viewportWidth, setViewportWidth] = useState<number>(
+    DUAL_PANEL_MIN_VIEWPORT_PX,
+  );
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
