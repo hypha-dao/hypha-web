@@ -820,9 +820,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       '[data-sidebar="wrapper"]',
     ) as HTMLElement | null;
     if (!providerEl) return;
-
-    // Keep mobile behavior untouched; only normalize desktop unauthenticated width.
-    if (isSidebarMobile || !sidebarOpen) {
+    const restoreSidebarWidth = () => {
       if (sidebarWidthBeforeAuthPromptRef.current != null) {
         const previous = sidebarWidthBeforeAuthPromptRef.current;
         if (previous) {
@@ -832,6 +830,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
         sidebarWidthBeforeAuthPromptRef.current = null;
       }
+    };
+
+    // Keep mobile behavior untouched; only normalize desktop unauthenticated width.
+    if (isSidebarMobile || !sidebarOpen) {
+      restoreSidebarWidth();
       return;
     }
 
@@ -841,18 +844,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           providerEl.style.getPropertyValue('--sidebar-width') || '';
       }
       providerEl.style.setProperty('--sidebar-width', '320px');
-      return;
+      return restoreSidebarWidth;
     }
 
-    if (sidebarWidthBeforeAuthPromptRef.current != null) {
-      const previous = sidebarWidthBeforeAuthPromptRef.current;
-      if (previous) {
-        providerEl.style.setProperty('--sidebar-width', previous);
-      } else {
-        providerEl.style.removeProperty('--sidebar-width');
-      }
-      sidebarWidthBeforeAuthPromptRef.current = null;
-    }
+    restoreSidebarWidth();
+    return restoreSidebarWidth;
   }, [isSidebarMobile, showAuthPrompt, sidebarOpen]);
 
   /** Distinct Matrix users in the room call besides the current user (not device count). */
