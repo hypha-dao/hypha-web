@@ -76,6 +76,7 @@ export const ButtonProfile = ({
   compact = false,
 }: ButtonProfileProps) => {
   const t = useTranslations('Navigation');
+  const tCommon = useTranslations('Common');
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { user } = usePrivy();
@@ -125,7 +126,7 @@ export const ButtonProfile = ({
           </button>
           <SheetContent
             side="right"
-            closeLabel="Close"
+            closeLabel={tCommon('close')}
             className={cn(
               'w-[calc(100vw-1rem)] max-w-[560px] border-l border-border/80 p-0',
               'bg-popover text-popover-foreground shadow-xl',
