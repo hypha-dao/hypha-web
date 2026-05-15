@@ -76,26 +76,23 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
         </Empty>
       ) : (
         <div className="w-full space-y-2">
-          {Array.from({ length: pages }).map((_, index) => (
-            <DocumentGridContainer
-              key={index}
-              basePath={basePath}
-              web3SpaceId={web3SpaceId}
-              pagination={{
-                page: index + 1,
-                firstPageSize,
-                pageSize,
-                searchTerm,
-                order: [
-                  {
-                    dir: DirectionType.DESC,
-                    name: 'createdAt',
-                  },
-                ],
-              }}
-              documents={filteredDocuments}
-            />
-          ))}
+          <DocumentGridContainer
+            basePath={basePath}
+            web3SpaceId={web3SpaceId}
+            pagination={{
+              page: 1,
+              firstPageSize: firstPageSize + (pages - 1) * pageSize,
+              pageSize,
+              searchTerm,
+              order: [
+                {
+                  dir: DirectionType.DESC,
+                  name: 'createdAt',
+                },
+              ],
+            }}
+            documents={filteredDocuments}
+          />
         </div>
       )}
       {pagination?.totalPages === 0 ? null : (
