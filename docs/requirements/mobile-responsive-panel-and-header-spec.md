@@ -85,7 +85,7 @@ This ensures the UI switches before right-side controls touch/overlap the profil
 
 ## A. Introduce Shared Compact Header State
 
-Create `useCompactHeaderMode` (client hook in `packages/epics/src/common` or `packages/ui` depending ownership) that returns:
+Create `useCompactHeaderMode` (client hook in `packages/ui/src/hooks/use-compact-header-mode.ts`) that returns:
 
 - `isCompactHeader: boolean`
 - `headerMetrics` (optional debug info: `freeSpacePx`, `viewportWidth`)

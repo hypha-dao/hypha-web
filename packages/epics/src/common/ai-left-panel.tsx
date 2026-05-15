@@ -39,7 +39,7 @@ import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
-import { useCompactHeaderMode } from './use-compact-header-mode';
+import { useCompactHeaderMode } from '@hypha-platform/ui';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { Empty } from './empty';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';

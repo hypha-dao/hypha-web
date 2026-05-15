@@ -12,6 +12,7 @@ import {
   SidebarProvider,
   Sidebar,
   SidebarResizeHandle,
+  useCompactHeaderMode,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import {
@@ -21,7 +22,6 @@ import {
   useHumanChatPanel,
 } from './human-chat-panel-context';
 import { useIsSpaceContext } from './use-is-space-context';
-import { useCompactHeaderMode } from './use-compact-header-mode';
 import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
 import { PanelScrollInset } from './panel-scroll-inset';
 
