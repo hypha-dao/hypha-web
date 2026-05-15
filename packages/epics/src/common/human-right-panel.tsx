@@ -2442,7 +2442,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             />
           )}
         {callUiEnabled &&
-          !showFloatingDock &&
           (inSpaceCall ||
             spaceCallState === 'error' ||
             spaceCallState === 'disconnecting') && (
