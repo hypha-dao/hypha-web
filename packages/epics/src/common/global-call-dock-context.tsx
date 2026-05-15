@@ -18,7 +18,6 @@ type CallResumeSnapshot = {
   version: 1;
   roomId: string;
   spaceSlug: string | null;
-  authToken: string | null;
   callKind: PendingJoin['kind'];
   threadRootEventId?: string;
   dockMode: GlobalCallDockMode;
@@ -92,7 +91,6 @@ function readCallResumeSnapshot(): CallResumeSnapshot | null {
       version: 1,
       roomId: parsed.roomId.trim(),
       spaceSlug: parsed.spaceSlug?.trim() || null,
-      authToken: parsed.authToken?.trim() || null,
       callKind: parsed.callKind,
       threadRootEventId: parsed.threadRootEventId?.trim() || undefined,
       dockMode: parsed.dockMode,
@@ -194,10 +192,8 @@ function useGlobalCallDockValue() {
     restoreInProgressRef.current = true;
     setBoundRoomId(snapshot.roomId);
     setBoundSpaceSlug(snapshot.spaceSlug);
-    setBoundAuthToken(snapshot.authToken);
     setActiveRoomId(snapshot.roomId);
     setActiveSpaceSlug(snapshot.spaceSlug);
-    setActiveAuthToken(snapshot.authToken);
     setPendingJoin({
       kind: snapshot.callKind,
       roomId: snapshot.roomId,
@@ -226,6 +222,7 @@ function useGlobalCallDockValue() {
   React.useEffect(() => {
     if (!pendingJoin) return;
     if (activeRoomId !== pendingJoin.roomId) return;
+    if (!activeAuthToken) return;
 
     setPendingJoin(null);
     restoreInProgressRef.current = false;
@@ -234,7 +231,7 @@ function useGlobalCallDockValue() {
       return;
     }
     void call.enterVideo(pendingJoin.threadRootEventId);
-  }, [pendingJoin, activeRoomId, call]);
+  }, [pendingJoin, activeAuthToken, activeRoomId, call]);
 
   React.useEffect(() => {
     if (
@@ -259,7 +256,6 @@ function useGlobalCallDockValue() {
       version: 1,
       roomId: activeRoomId,
       spaceSlug: activeSpaceSlug,
-      authToken: activeAuthToken,
       callKind,
       threadRootEventId:
         pendingJoin?.threadRootEventId ?? call.threadContext?.threadRootEventId,
@@ -267,7 +263,6 @@ function useGlobalCallDockValue() {
       updatedAt: Date.now(),
     });
   }, [
-    activeAuthToken,
     activeRoomId,
     activeSpaceSlug,
     call.callKind,
