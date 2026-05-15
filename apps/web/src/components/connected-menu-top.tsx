@@ -102,15 +102,14 @@ export function ConnectedMenuTop({
       organisationSpaces,
     );
   }, [activeSpace, activeSpaceSlug, organisationSpaces]);
-  const rootConfigHref =
+  const rootSpaceHref =
     rootSpace?.slug != null
-      ? `/${lang}/dho/${rootSpace.slug}/agreements/space-configuration`
+      ? `/${lang}/dho/${rootSpace.slug}/agreements`
       : logoHref;
   useEffect(() => {
-    if (!rootConfigHref || rootConfigHref === '#') return;
-    if (pathname.endsWith('/space-configuration')) return;
-    router.prefetch(rootConfigHref);
-  }, [pathname, rootConfigHref, router]);
+    if (!rootSpaceHref || rootSpaceHref === '#') return;
+    router.prefetch(rootSpaceHref);
+  }, [rootSpaceHref, router]);
   const rootLogoLight = rootSpace?.ecosystemLogoUrlLight?.trim() || '';
   const rootLogoDark = rootSpace?.ecosystemLogoUrlDark?.trim() || '';
   const preferredThemeLogo =
@@ -131,7 +130,7 @@ export function ConnectedMenuTop({
     rootSpace ? (
       rootHasCustomLogo && rootLogoUrl ? (
         <Link
-          href={rootConfigHref ?? '#'}
+          href={rootSpaceHref ?? '#'}
           prefetch={true}
           className="group relative -ml-0.5 inline-flex h-9 max-w-[12rem] items-center justify-start overflow-hidden rounded-md px-0.5 transition-colors hover:bg-muted/40"
           aria-label={tNavigation('ecosystemLogo')}
@@ -150,7 +149,7 @@ export function ConnectedMenuTop({
         </Link>
       ) : (
         <Link
-          href={rootConfigHref ?? '#'}
+          href={rootSpaceHref ?? '#'}
           prefetch={true}
           className="group relative -ml-0.5 inline-flex h-9 max-w-[13.5rem] items-center justify-center overflow-hidden rounded-md border border-border/70 bg-background px-3.5 text-sm font-semibold text-muted-foreground shadow-sm transition-[background-color,border-color,box-shadow,color] duration-200 hover:border-border hover:bg-muted/40 hover:text-foreground hover:shadow-md"
           aria-label={tNavigation('ecosystemLogo')}
