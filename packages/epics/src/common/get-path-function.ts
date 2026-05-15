@@ -33,3 +33,7 @@ export const getProposalUrl = (
 export const getDhoPathOverview = (lang: Locale, id: string) => {
   return `/${lang}/dho/${id}/overview`;
 };
+
+export const getDhoPathEnergy = (lang: Locale, id: string) => {
+  return `/${lang}/dho/${id}/energy`;
+};

@@ -5,6 +5,7 @@
     "memberRoleLabel": "Mitglied",
     "delegatedVotingMemberLabel": "Delegiertes Stimmmitglied",
     "Treasury": "Schatzkammer",
+    "Energy": "Energie",
     "Agreements": "Vereinbarungen",
     "Spaces": "Spaces",
     "loadMore": "Mehr laden",
@@ -1000,7 +1001,11 @@
       "expenses": "Ausgaben",
       "funding": "Finanzierung",
       "investment": "Investition",
-      "exchange": "Exchange"
+      "exchange": "Exchange",
+      "enableEnergyCommunity": "Enable Energy Community",
+      "energySharing": "Energy Sharing",
+      "registerEnergySource": "Register Energy Source",
+      "addEnergyMember": "Add Energy Member"
     },
     "documentBadges": {
       "invite": "Einladung",

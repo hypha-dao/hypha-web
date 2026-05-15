@@ -1,4 +1,9 @@
 export * from './create-agreement-form';
+export * from './create-energy-proposal-form';
+export * from './create-enable-energy-community-form';
+export * from './create-energy-sharing-form';
+export * from './create-register-energy-source-form';
+export * from './create-add-energy-member-form';
 export * from './create-deploy-funds-form';
 export * from './create-redeem-tokens-form';
 export * from './create-pay-for-expenses-form';
@@ -16,6 +21,7 @@ export * from './proposal-token-requirements-info';
 export * from './proposal-transaction-item';
 export * from './proposal-update-token';
 export * from './proposal-voting-info';
+export * from './proposal-energy-proposal-data';
 export * from './full-voter-list';
 export * from './buy-hypha-tokens-form';
 export * from './proposal-buy-hypha-tokens-data';
