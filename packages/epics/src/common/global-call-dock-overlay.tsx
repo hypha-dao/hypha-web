@@ -39,11 +39,11 @@ type ResizeCorner = 'top-right' | 'bottom-left';
 const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v1';
 const DOCK_MARGIN_PX = 16;
 const SNAP_EDGE_PX = 24;
-const DOCK_MIN_WIDTH = 320;
-const DOCK_MIN_HEIGHT = 200;
+const DOCK_MIN_WIDTH = 420;
+const DOCK_MIN_HEIGHT = 280;
 const THUMBNAIL_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
-  width: 360,
-  height: 220,
+  width: 480,
+  height: 320,
 };
 const EXPANDED_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
   width: 760,
@@ -101,20 +101,41 @@ function snapDockGeometry(next: DockGeometry): DockGeometry {
 
 function readDockGeometry(): DockGeometry {
   if (typeof window === 'undefined') {
-    return { x: 0, y: 0, width: 360, height: 240 };
+    return {
+      x: 0,
+      y: 0,
+      width: THUMBNAIL_GEOMETRY.width,
+      height: THUMBNAIL_GEOMETRY.height,
+    };
   }
   try {
     const raw = window.localStorage.getItem(DOCK_GEOMETRY_KEY);
-    if (!raw) return { x: 0, y: 0, width: 360, height: 240 };
+    if (!raw) {
+      return {
+        x: 0,
+        y: 0,
+        width: THUMBNAIL_GEOMETRY.width,
+        height: THUMBNAIL_GEOMETRY.height,
+      };
+    }
     const parsed = JSON.parse(raw) as Partial<DockGeometry>;
     return {
       x: Number.isFinite(parsed.x) ? Number(parsed.x) : 0,
       y: Number.isFinite(parsed.y) ? Number(parsed.y) : 0,
-      width: Number.isFinite(parsed.width) ? Number(parsed.width) : 360,
-      height: Number.isFinite(parsed.height) ? Number(parsed.height) : 240,
+      width: Number.isFinite(parsed.width)
+        ? Number(parsed.width)
+        : THUMBNAIL_GEOMETRY.width,
+      height: Number.isFinite(parsed.height)
+        ? Number(parsed.height)
+        : THUMBNAIL_GEOMETRY.height,
     };
   } catch {
-    return { x: 0, y: 0, width: 360, height: 240 };
+    return {
+      x: 0,
+      y: 0,
+      width: THUMBNAIL_GEOMETRY.width,
+      height: THUMBNAIL_GEOMETRY.height,
+    };
   }
 }
 
@@ -475,7 +496,7 @@ export function GlobalCallDockOverlay() {
       ref={dockRef}
       data-testid="global-call-dock"
       className={cn(
-        'fixed z-[130] flex min-h-[180px] min-w-[280px] flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
+        'fixed z-[130] flex min-h-[260px] min-w-[360px] flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
         modeIsFullscreen ? 'rounded-2xl' : '',
       )}
       style={containerStyle}
