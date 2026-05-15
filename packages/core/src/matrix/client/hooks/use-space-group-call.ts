@@ -440,7 +440,20 @@ export function useSpaceGroupCall(
       for (const videoTrack of videoTracks) {
         nextStream.addTrack(videoTrack);
       }
-      await gc.updateLocalUsermediaStream(nextStream);
+      try {
+        await gc.updateLocalUsermediaStream(nextStream);
+      } catch (error) {
+        for (const track of refreshedAudioStream.getTracks()) {
+          track.stop();
+        }
+        for (const track of nextStream.getTracks()) {
+          if (track !== nextAudioTrack) continue;
+          if (track.readyState !== 'ended') {
+            track.stop();
+          }
+        }
+        throw error;
+      }
       for (const track of refreshedAudioStream.getTracks()) {
         if (track !== nextAudioTrack) {
           track.stop();
