@@ -983,7 +983,8 @@
     "acceptInvestmentTitle": "Investition annehmen",
     "acceptInvestmentBody": "{sellerLabel} hat die Investition deines Spaces über {buyerAmountLabel} angenommen und bietet im Gegenzug {sellerAmountLabel} an.",
     "exchangeStakesAndTokensTitle": "Anteile & Tokens tauschen",
-    "exchangeStakesAndTokensBody": "{sellerLabel} hat vorgeschlagen, {sellerAmountLabel} gegen {buyerAmountLabel} aus deinem Space zu tauschen."
+    "exchangeStakesAndTokensBody": "{sellerLabel} hat vorgeschlagen, {sellerAmountLabel} gegen {buyerAmountLabel} aus deinem Space zu tauschen.",
+    "exchangeCounterpartyFallback": "die andere Partei"
   },
   "AgreementFlow": {
     "labels": {

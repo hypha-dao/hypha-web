@@ -982,7 +982,8 @@
     "acceptInvestmentTitle": "Accept Investment",
     "acceptInvestmentBody": "{sellerLabel} has accepted your space's investment of {buyerAmountLabel} and offers {sellerAmountLabel} in return.",
     "exchangeStakesAndTokensTitle": "Exchange Stakes & Tokens",
-    "exchangeStakesAndTokensBody": "{sellerLabel} has proposed to exchange {sellerAmountLabel} for {buyerAmountLabel} from your space."
+    "exchangeStakesAndTokensBody": "{sellerLabel} has proposed to exchange {sellerAmountLabel} for {buyerAmountLabel} from your space.",
+    "exchangeCounterpartyFallback": "the other party"
   },
   "AgreementFlow": {
     "labels": {

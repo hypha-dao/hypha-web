@@ -257,7 +257,7 @@ export const SpaceEscrowDepositBanner = ({
     : null;
   const errorMessage = localError ?? mutationError;
 
-  const sellerLabel = counterpartyLabel;
+  const sellerLabel = counterpartyLabel ?? t('exchangeCounterpartyFallback');
 
   return (
     <div className="rounded-[8px] border-1 border-accent-6 bg-accent-surface-mix bg-center p-5 flex flex-col lg:flex-row gap-4 lg:gap-5 items-start lg:items-center justify-between">
