@@ -18,6 +18,7 @@ type SpaceCardListProps = {
   pageSize?: number;
   showLoadMore?: boolean;
   showExitButton?: boolean;
+  cardGridClassName?: string;
 };
 
 export function SpaceCardList({
@@ -26,6 +27,7 @@ export function SpaceCardList({
   pageSize = 3,
   showLoadMore = true,
   showExitButton = false,
+  cardGridClassName,
 }: SpaceCardListProps) {
   const { pages, loadMore, pagination } = useSpaceCardList({
     spaces,
@@ -51,6 +53,7 @@ export function SpaceCardList({
                     spaces={pageSpaces}
                     lang={lang}
                     showExitButton={showExitButton}
+                    gridClassName={cardGridClassName}
                   />
                 );
               })
@@ -60,6 +63,7 @@ export function SpaceCardList({
                 spaces={spaces}
                 lang={lang}
                 showExitButton={showExitButton}
+                gridClassName={cardGridClassName}
               />
             )}
           </div>
