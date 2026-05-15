@@ -232,6 +232,7 @@ const RIGHT_SIDEBAR_WIDTH = '320px';
 const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(560px, calc(100vw - 16px))';
 const DUAL_PANEL_MIN_VIEWPORT_PX = 1200;
 const MIN_MAIN_COLUMN_WIDTH_PX = 560;
+const MOBILE_PANEL_BREAKPOINT_PX = 768;
 
 const SIDEBAR_WIDTH_MIRROR_KEYS = [
   '--sidebar-left-width',
@@ -307,8 +308,11 @@ export function PanelWrapLayout({
       viewportWidth - leftFootprintPx - rightFootprintPx <
         MIN_MAIN_COLUMN_WIDTH_PX);
   const isCompactPanels = isCompactUi || forceCompactPanels;
+  const useMobilePanelWidths = viewportWidth < MOBILE_PANEL_BREAKPOINT_PX;
   const rightSidebarWidth = isCompactPanels
-    ? RIGHT_SIDEBAR_WIDTH_COMPACT
+    ? useMobilePanelWidths
+      ? RIGHT_SIDEBAR_WIDTH_COMPACT
+      : RIGHT_SIDEBAR_WIDTH
     : RIGHT_SIDEBAR_WIDTH;
   const leftExpandedSidebarWidth = LEFT_SIDEBAR_EXPANDED_WIDTH;
   const fallbackSidebarLeftPx = effectiveLeft

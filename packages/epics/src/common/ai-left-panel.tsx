@@ -38,7 +38,7 @@ import {
 import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
-import { useAiPanel } from './human-chat-panel-context';
+import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 import { useCompactHeaderMode } from './use-compact-header-mode';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { Empty } from './empty';
@@ -144,6 +144,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
+  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
     false,
@@ -592,8 +593,19 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       handleOverlayClose();
       return;
     }
+    if (isCompactHeader && rightOpen) {
+      toggleRight();
+    }
     showAiOverlay();
-  }, [handleOverlayClose, isAiOpen, overlayVisible, showAiOverlay]);
+  }, [
+    handleOverlayClose,
+    isAiOpen,
+    overlayVisible,
+    isCompactHeader,
+    rightOpen,
+    toggleRight,
+    showAiOverlay,
+  ]);
   const shouldCloseFromTrigger = isAiOpen || overlayVisible;
 
   const triggerButton = (
