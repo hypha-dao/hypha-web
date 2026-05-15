@@ -621,7 +621,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   authTokenRef.current = authToken;
   const updateSpaceBySlugRef = useRef(updateSpaceBySlug);
   updateSpaceBySlugRef.current = updateSpaceBySlug;
-  const { open: sidebarOpen } = useSidebar();
+  const { open: sidebarOpen, isMobile: isSidebarMobile } = useSidebar();
   const {
     isAuthenticated,
     isLoading: isAuthLoading,
@@ -808,6 +808,50 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
   const showAuthedUi = !isAuthLoading && isAuthenticated;
   const showAuthPrompt = !isAuthLoading && !isAuthenticated;
+  const sidebarContentRef = useRef<HTMLDivElement | null>(null);
+  const sidebarWidthBeforeAuthPromptRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const contentEl = sidebarContentRef.current;
+    if (!contentEl) return;
+    const providerEl = contentEl.closest(
+      '[data-sidebar="wrapper"]',
+    ) as HTMLElement | null;
+    if (!providerEl) return;
+
+    // Keep mobile behavior untouched; only normalize desktop unauthenticated width.
+    if (isSidebarMobile || !sidebarOpen) {
+      if (sidebarWidthBeforeAuthPromptRef.current != null) {
+        const previous = sidebarWidthBeforeAuthPromptRef.current;
+        if (previous) {
+          providerEl.style.setProperty('--sidebar-width', previous);
+        } else {
+          providerEl.style.removeProperty('--sidebar-width');
+        }
+        sidebarWidthBeforeAuthPromptRef.current = null;
+      }
+      return;
+    }
+
+    if (showAuthPrompt) {
+      if (sidebarWidthBeforeAuthPromptRef.current == null) {
+        sidebarWidthBeforeAuthPromptRef.current =
+          providerEl.style.getPropertyValue('--sidebar-width') || '';
+      }
+      providerEl.style.setProperty('--sidebar-width', '320px');
+      return;
+    }
+
+    if (sidebarWidthBeforeAuthPromptRef.current != null) {
+      const previous = sidebarWidthBeforeAuthPromptRef.current;
+      if (previous) {
+        providerEl.style.setProperty('--sidebar-width', previous);
+      } else {
+        providerEl.style.removeProperty('--sidebar-width');
+      }
+      sidebarWidthBeforeAuthPromptRef.current = null;
+    }
+  }, [isSidebarMobile, showAuthPrompt, sidebarOpen]);
 
   /** Distinct Matrix users in the room call besides the current user (not device count). */
   const spaceCallOtherMemberCount = useMemo(
@@ -2607,7 +2651,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           )}
       </SidebarHeader>
       {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
-      <SidebarContent className="flex min-h-0 flex-col overflow-hidden bg-background-2">
+      <SidebarContent
+        ref={sidebarContentRef}
+        className="flex min-h-0 flex-col overflow-hidden bg-background-2"
+      >
         {isAuthLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <div className="text-sm text-muted-foreground">{t('loading')}</div>
