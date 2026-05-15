@@ -312,6 +312,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [t],
   );
 
+  const handleOverlayClose = useCallback(() => {
+    hideAiOverlay();
+    closeAiPanel();
+  }, [closeAiPanel, hideAiOverlay]);
+
+  const handleMenuItemNavigation = useCallback(() => {
+    if (!isCompactHeader) return;
+    handleOverlayClose();
+  }, [isCompactHeader, handleOverlayClose]);
+
   const renderSectionNavItem = useCallback(
     (
       item: (typeof sectionNavItems)[number],
@@ -539,14 +549,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     },
     [sendMessage, buildMessageOptions],
   );
-  const handleOverlayClose = useCallback(() => {
-    hideAiOverlay();
-    closeAiPanel();
-  }, [closeAiPanel, hideAiOverlay]);
-  const handleMenuItemNavigation = useCallback(() => {
-    if (!isCompactHeader) return;
-    handleOverlayClose();
-  }, [isCompactHeader, handleOverlayClose]);
 
   const handleTriggerClick = useCallback(() => {
     if (isAiOpen || overlayVisible) {
