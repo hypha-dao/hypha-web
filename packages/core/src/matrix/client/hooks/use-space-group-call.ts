@@ -417,7 +417,10 @@ export function useSpaceGroupCall(
       }
       const existingStream = gc.localCallFeed?.stream ?? null;
       const previousAudioTrack = existingStream?.getAudioTracks()[0] ?? null;
-      const videoTracks = existingStream?.getVideoTracks() ?? [];
+      const videoTracks =
+        existingStream?.getVideoTracks().filter((track) => {
+          return track.readyState === 'live';
+        }) ?? [];
       const audioConstraints = constraintsForVoicePreset(preset);
       const refreshedAudioStream = await navigator.mediaDevices.getUserMedia({
         video: false,
@@ -1335,6 +1338,21 @@ export function useSpaceGroupCall(
       try {
         const applied = await applyVoiceProcessingPresetToGroupCall(gc, preset);
         if (applied) {
+          const hasLiveLocalVideoTrack = () => {
+            const track = gc.localCallFeed?.stream.getVideoTracks()[0];
+            return Boolean(track && track.readyState === 'live');
+          };
+          // Keep camera stable when audio preset swaps local streams mid-call.
+          if (!gc.isLocalVideoMuted() && !hasLiveLocalVideoTrack()) {
+            await gc.setLocalVideoMuted(false);
+            await new Promise<void>((resolve) => {
+              setTimeout(resolve, 220);
+            });
+            if (!hasLiveLocalVideoTrack()) {
+              await gc.setLocalVideoMuted(true);
+              await gc.setLocalVideoMuted(false);
+            }
+          }
           scheduleFeedBatched();
           refreshLocalPreview();
         }
