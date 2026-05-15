@@ -222,36 +222,36 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               className="h-px w-full shrink-0 bg-white/12"
               role="presentation"
             />
-            <div className="flex flex-wrap items-center justify-between gap-3 gap-x-5 py-5">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
+            <div className="flex flex-col gap-3 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-5">
+              <div className="flex min-w-0 flex-1 flex-col gap-2 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)] sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-1">
                 {footerLeading ? (
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                     {footerLeading}
                   </div>
                 ) : null}
                 {footerLeading && showSpaceStats ? (
-                  <span className="text-white/45" aria-hidden>
+                  <span className="hidden text-white/45 sm:inline" aria-hidden>
                     ·
                   </span>
                 ) : null}
                 {showSpaceStats ? (
                   <>
-                    <span>
+                    <span className="inline-flex items-baseline gap-1.5">
                       <span className="font-bold tabular-nums text-white">
                         {memberCount ?? '—'}
                       </span>{' '}
                       <span className="text-white/92">{membersLabel}</span>
                     </span>
-                    <span className="text-white/45" aria-hidden>
+                    <span className="hidden text-white/45 sm:inline" aria-hidden>
                       ·
                     </span>
-                    <span>
+                    <span className="inline-flex items-baseline gap-1.5">
                       <span className="font-bold tabular-nums text-white">
                         {agreementCount ?? '—'}
                       </span>{' '}
                       <span className="text-white/92">{agreementsLabel}</span>
                     </span>
-                    <span className="text-white/45" aria-hidden>
+                    <span className="hidden text-white/45 sm:inline" aria-hidden>
                       ·
                     </span>
                     <span className="text-white/88">{createdOnText}</span>
@@ -260,7 +260,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               </div>
 
               {footerTrailing ? (
-                <div className="flex shrink-0 flex-wrap items-center justify-start gap-2 [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
+                <div className="flex w-full shrink-0 flex-wrap items-center justify-start gap-2 sm:w-auto [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
                   {footerTrailing}
                 </div>
               ) : null}

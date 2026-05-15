@@ -100,7 +100,6 @@ export const ButtonProfile = ({
 
     return (
       <div className="flex items-center gap-2">
-        {trailingBeforeProfile}
         <Sheet open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
           <button
             type="button"
@@ -161,6 +160,13 @@ export const ButtonProfile = ({
               </div>
 
               <div className="flex-1 overflow-y-auto px-2 py-2">
+                {trailingBeforeProfile ? (
+                  <>
+                    <div className="px-1 pb-2">{trailingBeforeProfile}</div>
+                    <div className="mb-2 border-t border-border/60" />
+                  </>
+                ) : null}
+
                 <div className="space-y-1">
                   {navItems.map((item) =>
                     item.href ? (
