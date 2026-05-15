@@ -184,7 +184,6 @@ export function ConnectedMenuTop({
       trailingAction={trailingAction}
       mobileAction={mobileAction}
       showMobileHamburger={false}
-      showLeadingActionOnlyWhenCompact
     >
       {children}
     </MenuTop>
