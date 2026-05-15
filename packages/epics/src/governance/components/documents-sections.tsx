@@ -95,7 +95,7 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
-          firstPageSize={4}
+          firstPageSize={12}
           pageSize={12}
         />
       </TabsContent>
@@ -107,7 +107,7 @@ export function DocumentsSections({
           headSectionButton={createProposalButton}
           hasSearch={true}
           isLoading={isLoading}
-          firstPageSize={4}
+          firstPageSize={12}
           pageSize={12}
         />
       </TabsContent>
