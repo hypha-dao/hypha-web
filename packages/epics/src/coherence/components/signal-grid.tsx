@@ -21,14 +21,7 @@ export function SignalGrid({
   onSignalClick,
 }: SignalGridProps) {
   return (
-    <div
-      className={cn(
-        'grid w-full grid-cols-1 items-start gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
-        "[html[data-side-panels-open='true']_&]:sm:grid-cols-1",
-        "[html[data-side-panels-open='true']_&]:xl:grid-cols-2",
-        "[html[data-side-panels-open='true']_&]:2xl:grid-cols-3",
-      )}
-    >
+    <div className="grid w-full grid-cols-1 items-start gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       {signals.map((signal) =>
         signal.archived ? (
           <SignalCard
