@@ -621,6 +621,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   authTokenRef.current = authToken;
   const updateSpaceBySlugRef = useRef(updateSpaceBySlug);
   updateSpaceBySlugRef.current = updateSpaceBySlug;
+  const updateCoherenceBySlugRef = useRef(updateCoherenceBySlug);
+  updateCoherenceBySlugRef.current = updateCoherenceBySlug;
   const { open: sidebarOpen, isMobile: isSidebarMobile } = useSidebar();
   const {
     isAuthenticated,
@@ -1844,7 +1846,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     // Avoid clobbering persisted counts with transient empty timeline snapshots.
     if (!hasLoadedCoherenceMessagesRef.current && messages.length === 0) return;
     hasLoadedCoherenceMessagesRef.current = true;
-    updateCoherenceBySlug({
+    updateCoherenceBySlugRef.current({
       slug: coherenceSlug,
       messages: messages.length,
     }).catch((error) => {
@@ -1860,7 +1862,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     roomId,
     isJoining,
     messages.length,
-    updateCoherenceBySlug,
   ]);
 
   // Keep message ids in sync when the SDK replaces provisional ~… ids with $… after send
