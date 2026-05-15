@@ -81,6 +81,9 @@ contract RegularSpaceToken is
   uint256[] internal _purchaseWhitelistedSpaceIds;
   mapping(uint256 => bool) public isPurchaseWhitelistedSpace;
 
+  // Address-level mutual credit eligibility (upgrade-safe: appended at end)
+  mapping(address => bool) public isCreditWhitelistedAddress;
+
   // Events
   event MaxSupplyUpdated(uint256 oldMaxSupply, uint256 newMaxSupply);
   event TransferableUpdated(bool transferable);
@@ -116,6 +119,7 @@ contract RegularSpaceToken is
   );
   event CreditWhitelistSpaceAdded(uint256 indexed spaceId);
   event CreditWhitelistSpaceRemoved(uint256 indexed spaceId);
+  event CreditWhitelistAddressUpdated(address indexed account, bool allowed);
   event TokenSaleConfigured(
     address indexed paymentToken,
     uint256 paymentTokenPricePerToken,
@@ -817,10 +821,11 @@ contract RegularSpaceToken is
 
   /**
    * @dev Credit limit for an account. Members of credit-whitelisted spaces
-   * get the defaultCreditLimit; everyone else gets 0.
+   * and addresses on the credit address whitelist get defaultCreditLimit;
+   * everyone else gets 0.
    */
   function creditLimitOf(address account) public view returns (uint256) {
-    if (_isInCreditWhitelistedSpace(account)) {
+    if (_isCreditEligible(account)) {
       return defaultCreditLimit;
     }
     return 0;
@@ -911,6 +916,25 @@ contract RegularSpaceToken is
       if (_removeSpaceFromList(_creditWhitelistedSpaceIds, isCreditWhitelistedSpace, spaceIds[i])) {
         emit CreditWhitelistSpaceRemoved(spaceIds[i]);
       }
+    }
+  }
+
+  /**
+   * @dev Batch set per-address mutual credit eligibility (executor or Ownable owner).
+   * Eligible addresses receive defaultCreditLimit like members of credit-whitelisted spaces.
+   */
+  function batchSetCreditWhitelistAddresses(
+    address[] calldata accounts,
+    bool[] calldata allowed
+  ) external {
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      '!executor/owner'
+    );
+    require(accounts.length == allowed.length, 'length mismatch');
+    for (uint256 i = 0; i < accounts.length; i++) {
+      isCreditWhitelistedAddress[accounts[i]] = allowed[i];
+      emit CreditWhitelistAddressUpdated(accounts[i], allowed[i]);
     }
   }
 
@@ -1007,6 +1031,12 @@ contract RegularSpaceToken is
     _burn(to, repay);
 
     emit CreditRepaid(to, repay, creditBalanceOf[to]);
+  }
+
+  function _isCreditEligible(address account) internal view returns (bool) {
+    return
+      isCreditWhitelistedAddress[account] ||
+      _isInCreditWhitelistedSpace(account);
   }
 
   function _isInCreditWhitelistedSpace(
