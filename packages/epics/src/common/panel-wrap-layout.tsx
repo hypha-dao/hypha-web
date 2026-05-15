@@ -161,7 +161,9 @@ export function AiSidebarTrigger() {
 
 export function AiPanelTrigger() {
   const { open, openAiPanel, closeAiPanel, setAiOverlayVisible } = useAiPanel();
+  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const isCompactHeader = useCompactHeaderMode();
   const t = useTranslations('AiPanel');
 
   if (!isSpace) return null;
@@ -173,6 +175,9 @@ export function AiPanelTrigger() {
         if (open) {
           closeAiPanel();
           return;
+        }
+        if (isCompactHeader && rightOpen) {
+          toggleRight();
         }
         openAiPanel();
         setAiOverlayVisible(false);
