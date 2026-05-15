@@ -1063,10 +1063,16 @@ export function useSpaceGroupCall(
         return;
       }
 
+      try {
+        await applyVoiceProcessingPresetToGroupCall(gc, voiceProcessingPreset);
+      } catch {
+        // keep the call connected if browser denies advanced audio constraints
+      }
       /**
-       * Voice→video: `enter()` used `initWithVideoMuted` from our audio intent earlier in
-       * this session, or upgraded from voice room state — request camera explicitly so
-       * outbound video negotiates after room `m.type` is video.
+       * Voice→video: request camera explicitly after the post-enter voice preset step.
+       * `applyVoiceProcessingPresetToGroupCall()` can replace local streams, so running
+       * camera recovery after that avoids settling in an audio-only stream on direct
+       * video joins.
        */
       if (kind === 'video') {
         try {
@@ -1092,11 +1098,6 @@ export function useSpaceGroupCall(
         } catch {
           /* camera permission / hardware — remain in call with video off */
         }
-      }
-      try {
-        await applyVoiceProcessingPresetToGroupCall(gc, voiceProcessingPreset);
-      } catch {
-        // keep the call connected if browser denies advanced audio constraints
       }
 
       nudgeGroupCallPlaceOutgoing(gc);
