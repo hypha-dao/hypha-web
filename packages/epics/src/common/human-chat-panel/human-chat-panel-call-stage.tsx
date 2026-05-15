@@ -373,6 +373,7 @@ export function HumanChatPanelCallStage({
   const shareFeeds = rawShareFeeds.filter((feed) => {
     const track = feed.stream.getVideoTracks()[0];
     if (!track || track.readyState !== 'live') return false;
+    if (feed.isVideoMuted()) return false;
     if (!feed.isLocal()) return true;
     const displaySurface = track?.getSettings?.().displaySurface;
     return displaySurface !== 'browser';
