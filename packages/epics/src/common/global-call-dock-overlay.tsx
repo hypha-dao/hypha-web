@@ -561,12 +561,18 @@ export function GlobalCallDockOverlay() {
               <PictureInPicture2 className="h-3.5 w-3.5" />
             </button>
           )}
-          {dockMode !== 'expanded' && !modeIsFullscreen && (
+          {!modeIsFullscreen && (
             <button
               type="button"
               data-no-dock-drag
               onClick={() => applyDockMode('expanded')}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
+              disabled={dockMode === 'expanded'}
+              className={cn(
+                'inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background',
+                dockMode === 'expanded'
+                  ? 'cursor-not-allowed opacity-45'
+                  : 'hover:bg-muted',
+              )}
               aria-label={t('expandLabel')}
               title={t('expandLabel')}
             >
