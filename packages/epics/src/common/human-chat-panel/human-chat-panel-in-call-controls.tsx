@@ -116,6 +116,17 @@ export function HumanChatPanelInCallControls({
     return () => window.removeEventListener('pointerdown', onPointerDown);
   }, []);
 
+  useEffect(() => {
+    if (!isAudioMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsAudioMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isAudioMenuOpen]);
+
   const selectVoicePreset = (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => {
