@@ -1846,15 +1846,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     // Avoid clobbering persisted counts with transient empty timeline snapshots.
     if (!hasLoadedCoherenceMessagesRef.current && messages.length === 0) return;
     hasLoadedCoherenceMessagesRef.current = true;
-    updateCoherenceBySlugRef.current({
-      slug: coherenceSlug,
-      messages: messages.length,
-    }).catch((error) => {
-      console.warn(
-        '[HumanRightPanel] Failed to persist coherence message count:',
-        error,
-      );
-    });
+    updateCoherenceBySlugRef
+      .current({
+        slug: coherenceSlug,
+        messages: messages.length,
+      })
+      .catch((error) => {
+        console.warn(
+          '[HumanRightPanel] Failed to persist coherence message count:',
+          error,
+        );
+      });
   }, [
     mode,
     isMatrixAvailable,

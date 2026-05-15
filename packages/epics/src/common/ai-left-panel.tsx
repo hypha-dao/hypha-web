@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect, type ElementType } from 'react';
+import {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  type ElementType,
+} from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -275,7 +281,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [pathname, spaceSlug],
   );
   const isSpaceSettingsDisabled =
-    isUserSpaceStateLoading || userSpaceState !== UserSpaceState.LOGGED_IN_SPACE;
+    isUserSpaceStateLoading ||
+    userSpaceState !== UserSpaceState.LOGGED_IN_SPACE;
   const spaceSettingsItem = useMemo(() => {
     if (!spaceSlug) return null;
     return {
@@ -356,9 +363,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         showLabel && item.active ? ' text-accent-9' : ''
       }`;
       const rowClassName = `${MENU_ROW_LINK_BASE_CLASS} ${
-        showLabel
-          ? MENU_ROW_LINK_EXPANDED_CLASS
-          : MENU_ROW_LINK_COLLAPSED_CLASS
+        showLabel ? MENU_ROW_LINK_EXPANDED_CLASS : MENU_ROW_LINK_COLLAPSED_CLASS
       } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`;
 
       return (

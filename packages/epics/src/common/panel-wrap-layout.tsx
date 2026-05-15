@@ -234,6 +234,7 @@ type PanelWrapLayoutProps = {
 /** Matches scroll inset — `0px` so fixed chrome / dividers span full main column (lines may cross overlay scrollbar). */
 const MAIN_COLUMN_SCROLLBAR_WIDTH_CSS = '0px';
 const PANEL_COMPACT_ATTR = 'data-compact-panels';
+const PANEL_OPEN_ATTR = 'data-side-panels-open';
 const LEFT_SIDEBAR_EXPANDED_WIDTH = '320px';
 const RIGHT_SIDEBAR_WIDTH = '320px';
 // Mobile: keep only a slim gutter so chat/menu content uses almost full width.
@@ -344,8 +345,20 @@ export function PanelWrapLayout({
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
     root.setAttribute(PANEL_COMPACT_ATTR, isCompactPanels ? 'true' : 'false');
-    return () => root.removeAttribute(PANEL_COMPACT_ATTR);
+    return () => {
+      root.removeAttribute(PANEL_COMPACT_ATTR);
+      root.removeAttribute(PANEL_OPEN_ATTR);
+    };
   }, [isCompactPanels]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    const hasOpenSidePanel =
+      Boolean(effectiveLeft && leftExpanded) ||
+      Boolean(effectiveRight && rightOpen);
+    root.setAttribute(PANEL_OPEN_ATTR, hasOpenSidePanel ? 'true' : 'false');
+  }, [effectiveLeft, leftExpanded, effectiveRight, rightOpen]);
 
   useEffect(() => {
     if (!isCompactPanels) return;

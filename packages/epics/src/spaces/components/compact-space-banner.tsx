@@ -242,7 +242,10 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
                       </span>{' '}
                       <span className="text-white/92">{membersLabel}</span>
                     </span>
-                    <span className="hidden text-white/45 sm:inline" aria-hidden>
+                    <span
+                      className="hidden text-white/45 sm:inline"
+                      aria-hidden
+                    >
                       ·
                     </span>
                     <span className="inline-flex items-baseline gap-1.5">
@@ -251,7 +254,10 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
                       </span>{' '}
                       <span className="text-white/92">{agreementsLabel}</span>
                     </span>
-                    <span className="hidden text-white/45 sm:inline" aria-hidden>
+                    <span
+                      className="hidden text-white/45 sm:inline"
+                      aria-hidden
+                    >
                       ·
                     </span>
                     <span className="text-white/88">{createdOnText}</span>
