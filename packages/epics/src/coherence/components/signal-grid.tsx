@@ -24,8 +24,9 @@ export function SignalGrid({
     <div
       className={cn(
         'grid w-full grid-cols-1 items-start gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
-        "[html[data-side-panels-open='true'][data-compact-panels='true']_&]:xl:grid-cols-2",
-        "[html[data-side-panels-open='true'][data-compact-panels='true']_&]:2xl:grid-cols-2",
+        "[html[data-side-panels-open='true']_&]:sm:grid-cols-1",
+        "[html[data-side-panels-open='true']_&]:xl:grid-cols-2",
+        "[html[data-side-panels-open='true']_&]:2xl:grid-cols-3",
       )}
     >
       {signals.map((signal) =>
