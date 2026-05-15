@@ -171,8 +171,8 @@ export function AiPanelTrigger() {
       }}
       aria-expanded={open}
       className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
-      title={open ? t('closePanel') : t('openPanel')}
-      aria-label={open ? t('closePanel') : t('openPanel')}
+      title={open ? t('closeAiPanel') : t('openAiPanel')}
+      aria-label={open ? t('closeAiPanel') : t('openAiPanel')}
     >
       <Sparkles className="h-4 w-4" />
     </button>
