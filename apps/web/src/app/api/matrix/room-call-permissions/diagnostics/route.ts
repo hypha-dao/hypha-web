@@ -10,7 +10,6 @@ import {
   CALL_EVENT_TYPES,
   matrixRequest,
   type MatrixPowerLevels,
-  resolveAdminMatrixAccessToken,
   resolveMatrixAccessToken,
   verifyPrivyToken,
 } from '../_lib';
@@ -24,6 +23,31 @@ function buildManualPatch(powerLevels: MatrixPowerLevels): MatrixPowerLevels {
     ...powerLevels,
     events,
   };
+}
+
+function requiredPowerLevelToEditPowerLevels(
+  powerLevels: MatrixPowerLevels,
+): number {
+  const events = powerLevels.events ?? {};
+  const fromEvents = events['m.room.power_levels'];
+  if (typeof fromEvents === 'number') return fromEvents;
+  if (typeof powerLevels.state_default === 'number') {
+    return powerLevels.state_default;
+  }
+  return 50;
+}
+
+function effectiveUserPowerLevel(
+  powerLevels: MatrixPowerLevels,
+  userId: string,
+): number {
+  const users = powerLevels.users ?? {};
+  const explicit = users[userId];
+  if (typeof explicit === 'number') return explicit;
+  if (typeof powerLevels.users_default === 'number') {
+    return powerLevels.users_default;
+  }
+  return 0;
 }
 
 export async function POST(request: NextRequest) {
@@ -79,50 +103,50 @@ export async function POST(request: NextRequest) {
 
   const environment = determineEnvironment(request.url);
   const callerAccess = await resolveMatrixAccessToken(environment, privyUserId);
-  const adminAccess = await resolveAdminMatrixAccessToken(
-    environment,
-    authToken,
-  );
+  if (!callerAccess) {
+    return NextResponse.json(
+      { error: 'Only space admins can access diagnostics' },
+      { status: 403 },
+    );
+  }
+  const callerMatrixUserId = callerAccess.userId.trim();
+  if (!callerMatrixUserId) {
+    return NextResponse.json(
+      { error: 'Only space admins can access diagnostics' },
+      { status: 403 },
+    );
+  }
 
   const encodedRoomId = encodeURIComponent(roomId);
-  let readerToken = callerAccess?.accessToken ?? adminAccess?.accessToken;
-  if (!readerToken) {
-    return NextResponse.json(
-      {
-        error: 'No valid Matrix access token available for diagnostics',
-      },
-      { status: 503 },
-    );
-  }
-
-  let powerLevelsResult = await matrixRequest<MatrixPowerLevels>(
+  const powerLevelsResult = await matrixRequest<MatrixPowerLevels>(
     'GET',
     `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
-    readerToken,
+    callerAccess.accessToken,
   );
-  if (!powerLevelsResult.ok && callerAccess && adminAccess) {
-    readerToken =
-      readerToken === callerAccess.accessToken
-        ? adminAccess.accessToken
-        : callerAccess.accessToken;
-    powerLevelsResult = await matrixRequest<MatrixPowerLevels>(
-      'GET',
-      `${homeserver}/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`,
-      readerToken,
-    );
-  }
-
   if (!powerLevelsResult.ok) {
+    const status =
+      powerLevelsResult.status === 401 || powerLevelsResult.status === 403
+        ? 403
+        : 503;
     return NextResponse.json(
       {
         error: 'Failed to read room power levels for diagnostics',
         details: `${powerLevelsResult.status} ${powerLevelsResult.body}`,
       },
-      { status: 502 },
+      { status },
     );
   }
 
   const powerLevels = powerLevelsResult.data;
+  const requiredToEditPowerLevels =
+    requiredPowerLevelToEditPowerLevels(powerLevels);
+  const callerLevel = effectiveUserPowerLevel(powerLevels, callerMatrixUserId);
+  if (callerLevel < requiredToEditPowerLevels) {
+    return NextResponse.json(
+      { error: 'Only space admins can access diagnostics' },
+      { status: 403 },
+    );
+  }
   const users = Object.entries(powerLevels.users ?? {});
   const usersAtOrAbove100 = users
     .filter(([, level]) => level >= 100)
@@ -136,8 +160,6 @@ export async function POST(request: NextRequest) {
       eventLevels[eventType] ?? powerLevels.events_default ?? 0,
     ]),
   );
-  const requiredToEditPowerLevels =
-    eventLevels['m.room.power_levels'] ?? powerLevels.state_default ?? 50;
 
   const manualPatchContent = buildManualPatch(powerLevels);
   const matrixStatePutPath = `/_matrix/client/v3/rooms/${encodedRoomId}/state/m.room.power_levels`;
