@@ -367,10 +367,13 @@ export function HumanChatPanelCallStage({
   /**
    * Suppress only local browser-tab captures in self preview to avoid recursive
    * "window-in-window" feedback. Keep monitor/window local shares visible.
+   * Also ignore stale/non-live share tracks — those can leave fullscreen layouts
+   * in a split state with no usable share frame rendered.
    */
   const shareFeeds = rawShareFeeds.filter((feed) => {
-    if (!feed.isLocal()) return true;
     const track = feed.stream.getVideoTracks()[0];
+    if (!track || track.readyState !== 'live') return false;
+    if (!feed.isLocal()) return true;
     const displaySurface = track?.getSettings?.().displaySurface;
     return displaySurface !== 'browser';
   });
