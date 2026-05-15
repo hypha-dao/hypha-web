@@ -19,6 +19,8 @@ export type PanelContextValue = {
   showAiOverlay: () => void;
   /** Hides AI overlay without changing collapsed/expanded intent. */
   hideAiOverlay: () => void;
+  /** Sets AI overlay visibility immediately without transition delay. */
+  setAiOverlayVisible: (visible: boolean) => void;
 };
 
 // ─── AI Panel Context ────────────────────────────────────────────────────────
@@ -31,6 +33,7 @@ const AiPanelContext = createContext<PanelContextValue>({
   closeAiPanel: () => {},
   showAiOverlay: () => {},
   hideAiOverlay: () => {},
+  setAiOverlayVisible: () => {},
 });
 
 export const AiPanelProvider = AiPanelContext.Provider;

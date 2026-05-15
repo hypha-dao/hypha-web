@@ -56,6 +56,13 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
     setLeftOpen(false);
     setLeftOverlayVisible(true);
   }, []);
+  const setLeftOverlayVisibleImmediate = useCallback((visible: boolean) => {
+    if (leftOverlayHideTimeoutRef.current) {
+      clearTimeout(leftOverlayHideTimeoutRef.current);
+      leftOverlayHideTimeoutRef.current = null;
+    }
+    setLeftOverlayVisible(visible);
+  }, []);
   const hideLeftOverlay = useCallback(() => {
     if (leftOverlayHideTimeoutRef.current) {
       clearTimeout(leftOverlayHideTimeoutRef.current);
@@ -92,6 +99,7 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
         closeAiPanel: closeLeft,
         showAiOverlay: showLeftOverlay,
         hideAiOverlay: hideLeftOverlay,
+        setAiOverlayVisible: setLeftOverlayVisibleImmediate,
       }}
     >
       <HumanChatPanelProvider
@@ -152,7 +160,7 @@ export function AiSidebarTrigger() {
 }
 
 export function AiPanelTrigger() {
-  const { open, openAiPanel, closeAiPanel, hideAiOverlay } = useAiPanel();
+  const { open, openAiPanel, closeAiPanel, setAiOverlayVisible } = useAiPanel();
   const isSpace = useIsSpaceContext();
   const t = useTranslations('AiPanel');
 
@@ -166,8 +174,8 @@ export function AiPanelTrigger() {
           closeAiPanel();
           return;
         }
-        hideAiOverlay();
         openAiPanel();
+        setAiOverlayVisible(false);
       }}
       aria-expanded={open}
       className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
