@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  type ElementType,
+} from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -38,10 +44,15 @@ import {
 import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
-import { useAiPanel } from './human-chat-panel-context';
+import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
+import { useCompactHeaderMode } from '@hypha-platform/ui';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { Empty } from './empty';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
+import {
+  UserSpaceState,
+  useUserSpaceState,
+} from '../spaces/hooks/use-user-space-state';
 import {
   MAX_RECENT_SPACE_HISTORY,
   MAX_VISIBLE_RECENT_SPACES,
@@ -100,6 +111,15 @@ type AiLeftPanelProps = {
   enableSpaceMemory?: boolean;
 };
 
+type NavItem = {
+  key: string;
+  label: string;
+  icon: ElementType;
+  href: string;
+  active: boolean;
+  disabled?: boolean;
+};
+
 export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const { isAuthenticated, isLoading, login, getAccessToken } =
     useAuthentication();
@@ -120,6 +140,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tSpaces = useTranslations('Spaces');
   const { resolvedTheme } = useTheme();
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
+  const isCompactHeader = useCompactHeaderMode();
+  const { userState: userSpaceState, isLoading: isUserSpaceStateLoading } =
+    useUserSpaceState({ spaceSlug });
   const {
     open: isAiOpen,
     overlayVisible,
@@ -127,6 +150,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
+  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const { spaces: activeSpaces } = useSpacesBySlugs(
     spaceSlug ? [spaceSlug] : [],
     false,
@@ -175,7 +199,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [lang, pathname, spaceSlug],
   );
 
-  const sectionNavItems = useMemo(() => {
+  const sectionNavItems = useMemo<NavItem[]>(() => {
     if (!spaceSlug) return [];
     return [
       {
@@ -256,6 +280,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       pathname.includes('/select-settings-action'),
     [pathname, spaceSlug],
   );
+  const isSpaceSettingsDisabled =
+    isUserSpaceStateLoading ||
+    userSpaceState !== UserSpaceState.LOGGED_IN_SPACE;
   const spaceSettingsItem = useMemo(() => {
     if (!spaceSlug) return null;
     return {
@@ -264,8 +291,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       icon: Settings,
       href: `/${lang}/dho/${spaceSlug}/agreements/select-settings-action`,
       active: isSpaceSettingsActive,
+      disabled: isSpaceSettingsDisabled,
     };
-  }, [isSpaceSettingsActive, lang, spaceSlug, tModalAside]);
+  }, [
+    isSpaceSettingsActive,
+    isSpaceSettingsDisabled,
+    lang,
+    spaceSlug,
+    tModalAside,
+  ]);
 
   useEffect(() => {
     if (!recentSpacesError) return;
@@ -310,17 +344,27 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [t],
   );
 
+  const handleOverlayClose = useCallback(() => {
+    hideAiOverlay();
+    closeAiPanel();
+  }, [closeAiPanel, hideAiOverlay]);
+
+  const handleMenuItemNavigation = useCallback(() => {
+    if (!isCompactHeader) return;
+    handleOverlayClose();
+  }, [isCompactHeader, handleOverlayClose]);
+
   const renderSectionNavItem = useCallback(
-    (
-      item: (typeof sectionNavItems)[number],
-      mode: 'expanded' | 'collapsed',
-      keyPrefix: string,
-    ) => {
+    (item: NavItem, mode: 'expanded' | 'collapsed', keyPrefix: string) => {
       const showLabel = mode === 'expanded';
+      const isDisabled = item.disabled === true;
       const iconClassName = `h-4 w-4${item.active ? ' text-accent-9' : ''}`;
       const labelClassName = `min-w-0 truncate${
         showLabel && item.active ? ' text-accent-9' : ''
       }`;
+      const rowClassName = `${MENU_ROW_LINK_BASE_CLASS} ${
+        showLabel ? MENU_ROW_LINK_EXPANDED_CLASS : MENU_ROW_LINK_COLLAPSED_CLASS
+      } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`;
 
       return (
         <SidebarMenuItem key={`${keyPrefix}-${item.key}`}>
@@ -330,28 +374,40 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             isActive={item.active}
             className={MENU_BUTTON_CLASS}
           >
-            <Link
-              href={item.href}
-              aria-label={item.label}
-              aria-current={item.active ? 'page' : undefined}
-              className={`${MENU_ROW_LINK_BASE_CLASS} ${
-                showLabel
-                  ? MENU_ROW_LINK_EXPANDED_CLASS
-                  : MENU_ROW_LINK_COLLAPSED_CLASS
-              }`}
-            >
-              <span className={ICON_COLUMN_CLASS}>
-                <item.icon className={iconClassName} />
+            {isDisabled ? (
+              <span
+                aria-label={item.label}
+                aria-disabled="true"
+                className={rowClassName}
+              >
+                <span className={ICON_COLUMN_CLASS}>
+                  <item.icon className={iconClassName} />
+                </span>
+                {showLabel ? (
+                  <span className={labelClassName}>{item.label}</span>
+                ) : null}
               </span>
-              {showLabel ? (
-                <span className={labelClassName}>{item.label}</span>
-              ) : null}
-            </Link>
+            ) : (
+              <Link
+                href={item.href}
+                onClick={handleMenuItemNavigation}
+                aria-label={item.label}
+                aria-current={item.active ? 'page' : undefined}
+                className={rowClassName}
+              >
+                <span className={ICON_COLUMN_CLASS}>
+                  <item.icon className={iconClassName} />
+                </span>
+                {showLabel ? (
+                  <span className={labelClassName}>{item.label}</span>
+                ) : null}
+              </Link>
+            )}
           </SidebarMenuButton>
         </SidebarMenuItem>
       );
     },
-    [],
+    [handleMenuItemNavigation],
   );
 
   const renderRecentSpaceItem = useCallback(
@@ -384,6 +440,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           >
             <Link
               href={safeHref}
+              onClick={handleMenuItemNavigation}
               aria-label={space.title}
               aria-current={isRecentActive ? 'page' : undefined}
               className={`${MENU_ROW_LINK_BASE_CLASS} ${
@@ -424,7 +481,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         </SidebarMenuItem>
       );
     },
-    [lang, pathname, resolvedTheme, spaceSlug],
+    [lang, pathname, resolvedTheme, spaceSlug, handleMenuItemNavigation],
   );
 
   const renderRecentSpacesSection = useCallback(
@@ -535,18 +592,25 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     },
     [sendMessage, buildMessageOptions],
   );
-  const handleOverlayClose = useCallback(() => {
-    hideAiOverlay();
-    closeAiPanel();
-  }, [closeAiPanel, hideAiOverlay]);
 
   const handleTriggerClick = useCallback(() => {
     if (isAiOpen || overlayVisible) {
       handleOverlayClose();
       return;
     }
+    if (isCompactHeader && rightOpen) {
+      toggleRight();
+    }
     showAiOverlay();
-  }, [handleOverlayClose, isAiOpen, overlayVisible, showAiOverlay]);
+  }, [
+    handleOverlayClose,
+    isAiOpen,
+    overlayVisible,
+    isCompactHeader,
+    rightOpen,
+    toggleRight,
+    showAiOverlay,
+  ]);
   const shouldCloseFromTrigger = isAiOpen || overlayVisible;
 
   const triggerButton = (

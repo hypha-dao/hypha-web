@@ -96,6 +96,7 @@ export function MyFilteredSpaces({
           spaces={displayedSpaces}
           showLoadMore={showLoadMore}
           showExitButton={true}
+          cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
         />
       )}
     </div>

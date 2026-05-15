@@ -43,7 +43,7 @@ export function LanguageSelect({
   const currentMeta = locales.find((l) => l.code === currentLocale);
 
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu modal={true}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -65,6 +65,7 @@ export function LanguageSelect({
         sideOffset={6}
         collisionPadding={12}
         className={cn(
+          'z-[120]',
           'w-[var(--radix-dropdown-menu-trigger-width)] min-w-[10.5rem] border border-border/90',
           'bg-popover px-1 py-1 text-popover-foreground shadow-xl',
         )}

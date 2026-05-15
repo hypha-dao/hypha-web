@@ -977,7 +977,13 @@
     "exchangeDepositProposalConfirming": "Confirming...",
     "exchangeDepositProposalTitle": "Deposit {amount} {symbol} – Settle escrow (#{escrowId})",
     "exchangeDepositProposalDescription": "Approve and deposit {payAmount} {paySymbol} into escrow (#{escrowId}) to complete the exchange with {otherParty}. In return, {activeSpace} will receive {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Approve and deposit {payAmount} {paySymbol} into escrow (#{escrowId}) to complete the investment into {otherParty}. In return, {activeSpace} will receive {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Approve and deposit {payAmount} {paySymbol} into escrow (#{escrowId}) to complete the investment into {otherParty}. In return, {activeSpace} will receive {receiveAmount} {receiveSymbol}.",
+    "confirmInvestmentCta": "Confirm Investment",
+    "acceptInvestmentTitle": "Accept Investment",
+    "acceptInvestmentBody": "{sellerLabel} has accepted your space's investment of {buyerAmountLabel} and offers {sellerAmountLabel} in return.",
+    "exchangeStakesAndTokensTitle": "Exchange Stakes & Tokens",
+    "exchangeStakesAndTokensBody": "{sellerLabel} has proposed to exchange {sellerAmountLabel} for {buyerAmountLabel} from your space.",
+    "exchangeCounterpartyFallback": "the other party"
   },
   "AgreementFlow": {
     "labels": {
@@ -1912,9 +1918,11 @@
     "signInButton": "Sign In",
     "loading": "Loading...",
     "openPanel": "Open Hypha AI",
+    "openAiPanel": "Open AI panel",
     "hidePanel": "Hide AI panel",
     "resetChat": "Reset chat",
     "closePanel": "Close panel",
+    "closeAiPanel": "Close AI panel",
     "copyButton": "Copy",
     "copiedButton": "Copied!",
     "toolLookingUp": "Looking up space…",

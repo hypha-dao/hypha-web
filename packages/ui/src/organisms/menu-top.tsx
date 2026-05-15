@@ -12,33 +12,57 @@ type MenuTopProps = {
   children?: React.ReactNode;
   leadingAction?: React.ReactNode;
   trailingAction?: React.ReactNode;
+  mobileAction?: React.ReactNode;
   logoHref?: string;
   logoText?: string;
   logoNode?: React.ReactNode;
   hrefTarget?: string;
   openMenuLabel?: string;
   closeMenuLabel?: string;
+  showMobileHamburger?: boolean;
+  compactSafeThresholdPx?: number;
+  compactReleaseThresholdPx?: number;
+  compactDataAttribute?: string;
+  showLeadingActionOnlyWhenCompact?: boolean;
 };
 
 export const MenuTop = ({
   children,
   leadingAction,
   trailingAction,
+  mobileAction,
   logoHref,
   logoText,
   logoNode,
   hrefTarget,
   openMenuLabel = 'Open menu',
   closeMenuLabel = 'Close menu',
+  showMobileHamburger = true,
+  compactSafeThresholdPx = 232,
+  compactReleaseThresholdPx = 256,
+  compactDataAttribute = 'data-compact-header',
+  showLeadingActionOnlyWhenCompact = false,
 }: MenuTopProps) => {
+  const PANEL_COMPACT_ATTR = 'data-compact-panels';
+  const PANEL_OPEN_ATTR = 'data-side-panels-open';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const leadingClusterRef = useRef<HTMLDivElement>(null);
+  const desktopActionsRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [isCompact, setIsCompact] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!showMobileHamburger) {
+      setIsMobileMenuOpen(false);
+    }
+  }, [showMobileHamburger]);
 
   /** Publish measured height so side panels / overlays align with this bar (see e2e menu-top-consistent-height). */
   useLayoutEffect(() => {
@@ -65,6 +89,79 @@ export const MenuTop = ({
     };
   }, []);
 
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    const rowEl = rowRef.current;
+    const leadEl = leadingClusterRef.current;
+    const desktopEl = desktopActionsRef.current;
+    if (!rowEl || !leadEl || !desktopEl) return;
+
+    let raf = 0;
+    let compactRef = isCompact;
+    const evaluate = () => {
+      raf = 0;
+      const root = document.documentElement;
+      const rowWidth = rowEl.getBoundingClientRect().width;
+      const leadWidth = leadEl.getBoundingClientRect().width;
+      // Keep measurable even when visually hidden; use scrollWidth as "needed" width.
+      const desktopNeeded = Math.max(
+        desktopEl.scrollWidth,
+        desktopEl.getBoundingClientRect().width,
+      );
+      const freeSpace = rowWidth - leadWidth - desktopNeeded - 16;
+      const isCompactPanels = root.getAttribute(PANEL_COMPACT_ATTR) === 'true';
+      const hasOpenSidePanel = root.getAttribute(PANEL_OPEN_ATTR) === 'true';
+
+      const shouldCompact = compactRef
+        ? freeSpace < compactReleaseThresholdPx
+        : freeSpace < compactSafeThresholdPx;
+      const shouldCompactForOpenPanel = hasOpenSidePanel && isCompactPanels;
+
+      const nextCompact = shouldCompact || shouldCompactForOpenPanel;
+      if (nextCompact !== compactRef) {
+        compactRef = nextCompact;
+        setIsCompact(nextCompact);
+      }
+    };
+
+    const schedule = () => {
+      if (raf !== 0) return;
+      raf = window.requestAnimationFrame(evaluate);
+    };
+
+    const ro = new ResizeObserver(schedule);
+    ro.observe(rowEl);
+    ro.observe(leadEl);
+    ro.observe(desktopEl);
+    const attrObserver = new MutationObserver(schedule);
+    attrObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: [PANEL_COMPACT_ATTR, PANEL_OPEN_ATTR],
+    });
+    window.addEventListener('resize', schedule);
+    schedule();
+
+    return () => {
+      if (raf !== 0) {
+        window.cancelAnimationFrame(raf);
+      }
+      ro.disconnect();
+      attrObserver.disconnect();
+      window.removeEventListener('resize', schedule);
+    };
+  }, [compactReleaseThresholdPx, compactSafeThresholdPx, isCompact]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.setAttribute(
+      compactDataAttribute,
+      isCompact ? 'true' : 'false',
+    );
+    return () => {
+      document.documentElement.removeAttribute(compactDataAttribute);
+    };
+  }, [compactDataAttribute, isCompact]);
+
   return (
     <header
       ref={headerRef}
@@ -82,13 +179,25 @@ export const MenuTop = ({
       )}
     >
       <div
+        ref={rowRef}
         className={clsx(
-          'w-full mx-auto flex items-center',
+          'w-full mx-auto flex min-w-0 items-center',
           children ? 'justify-between' : 'justify-center',
         )}
       >
-        <div className="flex items-center gap-2">
-          {leadingAction}
+        <div
+          ref={leadingClusterRef}
+          className="flex min-w-0 items-center gap-2"
+        >
+          {leadingAction ? (
+            <div
+              className={
+                showLeadingActionOnlyWhenCompact && !isCompact ? 'hidden' : ''
+              }
+            >
+              {leadingAction}
+            </div>
+          ) : null}
           {logoNode ? (
             logoHref ? (
               <Link
@@ -128,37 +237,53 @@ export const MenuTop = ({
         {/* Desktop Nav + Trailing action (right-aligned group) */}
         {(children || trailingAction) && (
           <div
+            ref={desktopActionsRef}
             id="menu-top-actions"
-            className="hidden md:flex items-center gap-2"
+            className={clsx(
+              'items-center gap-2',
+              isCompact
+                ? 'pointer-events-none invisible absolute'
+                : 'relative flex',
+            )}
           >
             {children}
             {trailingAction}
           </div>
         )}
 
-        {/* Mobile action group (right side): chat, then hamburger */}
-        <div className="ml-auto flex items-center gap-2 md:hidden">
+        {/* Compact action group (right side): chat, profile, optional hamburger */}
+        <div
+          className={clsx(
+            'ml-auto items-center gap-2',
+            isCompact ? 'flex' : 'hidden',
+          )}
+        >
           {trailingAction ? (
-            <div className="flex items-center">{trailingAction}</div>
+            <div className="flex shrink-0 items-center">{trailingAction}</div>
           ) : null}
-          <button
-            type="button"
-            className="flex items-center"
-            aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="mobile-menu"
-            onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
-          >
-            {!isMobileMenuOpen && <Menu className="size-5" />}
-            {isMobileMenuOpen && <RxCross1 className="size-5" />}
-          </button>
+          {mobileAction ? (
+            <div className="flex shrink-0 items-center">{mobileAction}</div>
+          ) : null}
+          {showMobileHamburger ? (
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center"
+              aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
+              onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+            >
+              {!isMobileMenuOpen && <Menu className="size-5" />}
+              {isMobileMenuOpen && <RxCross1 className="size-5" />}
+            </button>
+          ) : null}
         </div>
 
         {/* Mobile Full Screen Menu */}
-        {isMobileMenuOpen && (
+        {showMobileHamburger && isCompact && isMobileMenuOpen && (
           <div
             id="mobile-menu"
-            className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto"
+            className="fixed inset-x-0 bottom-0 z-40 flex flex-col items-center overflow-y-auto bg-background-2 p-4"
             style={{ top: headerHeight }}
           >
             <div className="flex flex-col space-y-8 items-center">

@@ -118,18 +118,20 @@ export const SignalSection: FC<SignalSectionProps> = ({
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
           className="w-full"
         />
-        <Button
-          asChild
-          variant="default"
-          colorVariant="accent"
-          disabled={isLoading}
-          className="w-full lg:w-auto"
-        >
-          <Link href={createSignalHref} className="w-full lg:w-auto">
-            <PlusIcon />
-            {t('newSignal')}
-          </Link>
-        </Button>
+        <div className="flex w-full items-center justify-end lg:w-auto">
+          <Button
+            asChild
+            variant="default"
+            colorVariant="accent"
+            disabled={isLoading}
+            className="w-auto"
+          >
+            <Link href={createSignalHref}>
+              <PlusIcon />
+              {t('newSignal')}
+            </Link>
+          </Button>
+        </div>
       </div>
       {provisioningNoticeLines.length > 0 ? (
         <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />

@@ -7,11 +7,12 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Menu, MessageCircle, PanelLeftClose } from 'lucide-react';
+import { Menu, MessageCircle, PanelLeftClose, Sparkles } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
   SidebarResizeHandle,
+  useCompactHeaderMode,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import {
@@ -47,13 +48,21 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
     setLeftOverlayVisible(false);
   }, []);
   const showLeftOverlay = useCallback(() => {
-    if (leftOpen) return;
     if (leftOverlayHideTimeoutRef.current) {
       clearTimeout(leftOverlayHideTimeoutRef.current);
       leftOverlayHideTimeoutRef.current = null;
     }
+    // Ensure the compact overlay menu can open immediately from an expanded state.
+    setLeftOpen(false);
     setLeftOverlayVisible(true);
-  }, [leftOpen]);
+  }, []);
+  const setLeftOverlayVisibleImmediate = useCallback((visible: boolean) => {
+    if (leftOverlayHideTimeoutRef.current) {
+      clearTimeout(leftOverlayHideTimeoutRef.current);
+      leftOverlayHideTimeoutRef.current = null;
+    }
+    setLeftOverlayVisible(visible);
+  }, []);
   const hideLeftOverlay = useCallback(() => {
     if (leftOverlayHideTimeoutRef.current) {
       clearTimeout(leftOverlayHideTimeoutRef.current);
@@ -90,6 +99,7 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
         closeAiPanel: closeLeft,
         showAiOverlay: showLeftOverlay,
         hideAiOverlay: hideLeftOverlay,
+        setAiOverlayVisible: setLeftOverlayVisibleImmediate,
       }}
     >
       <HumanChatPanelProvider
@@ -108,30 +118,39 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 // regardless of SidebarProvider nesting order.
 
 export function AiSidebarTrigger() {
-  const { open, overlayVisible, openAiPanel, closeAiPanel } = useAiPanel();
+  const { open, overlayVisible, showAiOverlay, hideAiOverlay, closeAiPanel } =
+    useAiPanel();
+  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const isCompactHeader = useCompactHeaderMode();
   const t = useTranslations('AiPanel');
 
   if (!isSpace) return null;
 
-  const isOpen = open || overlayVisible;
+  const isMenuOpen = overlayVisible;
 
   return (
     <button
       type="button"
       onClick={() => {
-        if (isOpen) {
-          closeAiPanel();
+        if (isMenuOpen) {
+          hideAiOverlay();
           return;
         }
-        openAiPanel();
+        if (isCompactHeader && rightOpen) {
+          toggleRight();
+        }
+        if (open) {
+          closeAiPanel();
+        }
+        showAiOverlay();
       }}
-      aria-expanded={isOpen}
+      aria-expanded={isMenuOpen}
       className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
-      title={isOpen ? t('closePanel') : t('openPanel')}
-      aria-label={isOpen ? t('closePanel') : t('openPanel')}
+      title={isMenuOpen ? t('closePanel') : t('openPanel')}
+      aria-label={isMenuOpen ? t('closePanel') : t('openPanel')}
     >
-      {isOpen ? (
+      {isMenuOpen ? (
         <PanelLeftClose className="h-4 w-4" />
       ) : (
         <Menu className="h-4 w-4" />
@@ -140,25 +159,47 @@ export function AiSidebarTrigger() {
   );
 }
 
+export function AiPanelTrigger() {
+  const { open, openAiPanel, closeAiPanel, setAiOverlayVisible } = useAiPanel();
+  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
+  const isSpace = useIsSpaceContext();
+  const isCompactHeader = useCompactHeaderMode();
+  const t = useTranslations('AiPanel');
+
+  if (!isSpace) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (open) {
+          closeAiPanel();
+          return;
+        }
+        if (isCompactHeader && rightOpen) {
+          toggleRight();
+        }
+        openAiPanel();
+        setAiOverlayVisible(false);
+      }}
+      aria-expanded={open}
+      className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted p-0 text-muted-foreground ring-1 ring-border/70 transition-colors hover:text-foreground"
+      title={open ? t('closeAiPanel') : t('openAiPanel')}
+      aria-label={open ? t('closeAiPanel') : t('openAiPanel')}
+    >
+      <Sparkles className="h-4 w-4" />
+    </button>
+  );
+}
+
 export function HumanSidebarTrigger() {
   const { open, toggle, openHumanChatPanel } = useHumanChatPanel();
+  const { open: leftOpen, overlayVisible, closeAiPanel } = useAiPanel();
   const t = useTranslations('HumanChatPanel');
   const isSpace = useIsSpaceContext();
-  const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(max-width: 767px)').matches;
-  });
+  const isCompactHeader = useCompactHeaderMode();
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const query = window.matchMedia('(max-width: 767px)');
-    const sync = () => setIsMobileViewport(query.matches);
-    sync();
-    query.addEventListener('change', sync);
-    return () => query.removeEventListener('change', sync);
-  }, []);
-
-  if (!isSpace || (open && !isMobileViewport)) return null;
+  if (!isSpace || (open && !isCompactHeader)) return null;
 
   return (
     <button
@@ -167,6 +208,9 @@ export function HumanSidebarTrigger() {
         if (open) {
           toggle();
           return;
+        }
+        if (isCompactHeader && (leftOpen || overlayVisible)) {
+          closeAiPanel();
         }
         openHumanChatPanel();
       }}
@@ -194,6 +238,15 @@ type PanelWrapLayoutProps = {
 
 /** Matches scroll inset — `0px` so fixed chrome / dividers span full main column (lines may cross overlay scrollbar). */
 const MAIN_COLUMN_SCROLLBAR_WIDTH_CSS = '0px';
+const PANEL_COMPACT_ATTR = 'data-compact-panels';
+const PANEL_OPEN_ATTR = 'data-side-panels-open';
+const LEFT_SIDEBAR_EXPANDED_WIDTH = '320px';
+const RIGHT_SIDEBAR_WIDTH = '320px';
+// Mobile: keep only a slim gutter so chat/menu content uses almost full width.
+const RIGHT_SIDEBAR_WIDTH_COMPACT = 'min(560px, calc(100vw - 16px))';
+const DUAL_PANEL_MIN_VIEWPORT_PX = 1200;
+const MIN_MAIN_COLUMN_WIDTH_PX = 560;
+const MOBILE_PANEL_BREAKPOINT_PX = 768;
 
 const SIDEBAR_WIDTH_MIRROR_KEYS = [
   '--sidebar-left-width',
@@ -249,31 +302,32 @@ export function PanelWrapLayout({
   } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
-  const [isMobileViewport, setIsMobileViewport] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(max-width: 767px)').matches;
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const query = window.matchMedia('(max-width: 767px)');
-    const sync = () => setIsMobileViewport(query.matches);
-    sync();
-    query.addEventListener('change', sync);
-    return () => query.removeEventListener('change', sync);
-  }, []);
+  const isCompactUi = useCompactHeaderMode();
 
   // Panels are only available within a space context (/[lang]/dho/[id]/...)
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
-  const rightSidebarWidth = isMobileViewport
-    ? 'calc(100vw - var(--sidebar-left-width, 0px))'
-    : '320px';
-  const leftExpandedSidebarWidth =
-    rightOpen && effectiveRight ? 'var(--sidebar-right-width, 320px)' : '320px';
+  const [viewportWidth, setViewportWidth] = useState<number>(
+    DUAL_PANEL_MIN_VIEWPORT_PX,
+  );
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
+  const leftFootprintPx = leftExpanded ? 320 : 72;
+  const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
+  const forceCompactPanels =
+    Boolean(effectiveLeft && effectiveRight) &&
+    (viewportWidth < DUAL_PANEL_MIN_VIEWPORT_PX ||
+      viewportWidth - leftFootprintPx - rightFootprintPx <
+        MIN_MAIN_COLUMN_WIDTH_PX);
+  const isCompactPanels = isCompactUi || forceCompactPanels;
+  const useMobilePanelWidths = viewportWidth < MOBILE_PANEL_BREAKPOINT_PX;
+  const rightSidebarWidth = isCompactPanels
+    ? useMobilePanelWidths
+      ? RIGHT_SIDEBAR_WIDTH_COMPACT
+      : RIGHT_SIDEBAR_WIDTH
+    : RIGHT_SIDEBAR_WIDTH;
+  const leftExpandedSidebarWidth = LEFT_SIDEBAR_EXPANDED_WIDTH;
   const fallbackSidebarLeftPx = effectiveLeft
     ? leftExpanded
       ? leftExpandedSidebarWidth
@@ -283,6 +337,41 @@ export function PanelWrapLayout({
     rightOpen && effectiveRight ? rightSidebarWidth : '0px';
   const [sidebarLeftPx, setSidebarLeftPx] = useState(fallbackSidebarLeftPx);
   const [sidebarRightPx, setSidebarRightPx] = useState(fallbackSidebarRightPx);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onResize = () => setViewportWidth(window.innerWidth);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    root.setAttribute(PANEL_COMPACT_ATTR, isCompactPanels ? 'true' : 'false');
+    return () => {
+      root.removeAttribute(PANEL_COMPACT_ATTR);
+      root.removeAttribute(PANEL_OPEN_ATTR);
+    };
+  }, [isCompactPanels]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    const hasOpenSidePanel =
+      Boolean(effectiveLeft && leftExpanded) ||
+      Boolean(effectiveRight && rightOpen);
+    root.setAttribute(PANEL_OPEN_ATTR, hasOpenSidePanel ? 'true' : 'false');
+  }, [effectiveLeft, leftExpanded, effectiveRight, rightOpen]);
+
+  useEffect(() => {
+    if (!isCompactPanels) return;
+    if (leftExpanded && rightOpen) {
+      // Compact mode allows one expanded rail at a time to preserve main content width.
+      closeAiPanel();
+    }
+  }, [isCompactPanels, leftExpanded, rightOpen, closeAiPanel]);
 
   useLayoutEffect(() => {
     const root = wrapperRef.current;
@@ -364,10 +453,14 @@ export function PanelWrapLayout({
     content = (
       <PanelDualSidebarScrollBridge
         leftOpen={leftExpanded}
+        leftPanelOpen={leftOpen}
         leftSidebarWidth={leftExpandedSidebarWidth}
         onLeftOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
+            if (isCompactPanels && rightOpen) {
+              toggleRight();
+            }
             openAiPanel();
             return;
           }
@@ -375,6 +468,9 @@ export function PanelWrapLayout({
         }}
         rightOpen={rightOpen}
         onRightOpenChange={(open) => {
+          if (open && isCompactPanels && leftExpanded) {
+            closeAiPanel();
+          }
           if (open !== rightOpen) toggleRight();
         }}
         rightSidebarWidth={rightSidebarWidth}
@@ -390,6 +486,9 @@ export function PanelWrapLayout({
         defaultOpen={false}
         open={rightOpen}
         onOpenChange={(open) => {
+          if (open && isCompactPanels && leftExpanded) {
+            closeAiPanel();
+          }
           if (open !== rightOpen) toggleRight();
         }}
         style={
@@ -405,6 +504,7 @@ export function PanelWrapLayout({
           side="right"
           variant="sidebar"
           collapsible="offcanvas"
+          mobileWidth="100vw"
           className="z-[50]"
         >
           <SidebarResizeHandle />
@@ -420,6 +520,9 @@ export function PanelWrapLayout({
         onOpenChange={(open) => {
           if (open === leftExpanded) return;
           if (open) {
+            if (isCompactPanels && rightOpen) {
+              toggleRight();
+            }
             openAiPanel();
             return;
           }
@@ -436,6 +539,7 @@ export function PanelWrapLayout({
           side="left"
           variant="sidebar"
           collapsible="icon"
+          mobileWidth={leftOpen ? '100vw' : undefined}
           className="z-[50] overflow-visible"
         >
           {effectiveLeft.content}

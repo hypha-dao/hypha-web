@@ -25,6 +25,7 @@ export {
   PanelProviders,
   PanelWrapLayout,
   AiSidebarTrigger,
+  AiPanelTrigger,
   HumanSidebarTrigger,
 } from './panel-wrap-layout';
 export { useAiPanel } from './human-chat-panel-context';

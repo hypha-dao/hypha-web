@@ -621,7 +621,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   authTokenRef.current = authToken;
   const updateSpaceBySlugRef = useRef(updateSpaceBySlug);
   updateSpaceBySlugRef.current = updateSpaceBySlug;
-  const { open: sidebarOpen } = useSidebar();
+  const updateCoherenceBySlugRef = useRef(updateCoherenceBySlug);
+  updateCoherenceBySlugRef.current = updateCoherenceBySlug;
+  const { open: sidebarOpen, isMobile: isSidebarMobile } = useSidebar();
   const {
     isAuthenticated,
     isLoading: isAuthLoading,
@@ -808,6 +810,46 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
   const showAuthedUi = !isAuthLoading && isAuthenticated;
   const showAuthPrompt = !isAuthLoading && !isAuthenticated;
+  const sidebarContentRef = useRef<HTMLDivElement | null>(null);
+  const sidebarWidthBeforeAuthPromptRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const contentEl = sidebarContentRef.current;
+    if (!contentEl) return;
+    const providerEl = contentEl.closest(
+      '[data-sidebar="wrapper"]',
+    ) as HTMLElement | null;
+    if (!providerEl) return;
+    const restoreSidebarWidth = () => {
+      if (sidebarWidthBeforeAuthPromptRef.current != null) {
+        const previous = sidebarWidthBeforeAuthPromptRef.current;
+        if (previous) {
+          providerEl.style.setProperty('--sidebar-width', previous);
+        } else {
+          providerEl.style.removeProperty('--sidebar-width');
+        }
+        sidebarWidthBeforeAuthPromptRef.current = null;
+      }
+    };
+
+    // Keep mobile behavior untouched; only normalize desktop unauthenticated width.
+    if (isSidebarMobile || !sidebarOpen) {
+      restoreSidebarWidth();
+      return;
+    }
+
+    if (showAuthPrompt) {
+      if (sidebarWidthBeforeAuthPromptRef.current == null) {
+        sidebarWidthBeforeAuthPromptRef.current =
+          providerEl.style.getPropertyValue('--sidebar-width') || '';
+      }
+      providerEl.style.setProperty('--sidebar-width', '320px');
+      return restoreSidebarWidth;
+    }
+
+    restoreSidebarWidth();
+    return restoreSidebarWidth;
+  }, [isSidebarMobile, showAuthPrompt, sidebarOpen]);
 
   /** Distinct Matrix users in the room call besides the current user (not device count). */
   const spaceCallOtherMemberCount = useMemo(
@@ -1354,12 +1396,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   // Track previous sidebar open state to detect close events
   const prevSidebarOpenRef = useRef(sidebarOpen);
+  const hasLoadedCoherenceMessagesRef = useRef(false);
   useEffect(() => {
     if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
       closeCoherenceChat();
     }
     prevSidebarOpenRef.current = sidebarOpen;
   }, [sidebarOpen, mode, closeCoherenceChat]);
+
+  useEffect(() => {
+    hasLoadedCoherenceMessagesRef.current = false;
+  }, [coherenceSlug, mode]);
 
   // Reset chat state when space changes
   useEffect(() => {
@@ -1788,6 +1835,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!roomId) return;
     writePersistedChatHistory(roomId, messages);
   }, [roomId, messages]);
+
+  useEffect(() => {
+    if (mode !== 'coherence') return;
+    if (!isMatrixAvailable || !coherenceSlug || !roomId || isJoining) return;
+    // Avoid clobbering persisted counts with transient empty timeline snapshots.
+    if (!hasLoadedCoherenceMessagesRef.current && messages.length === 0) return;
+    hasLoadedCoherenceMessagesRef.current = true;
+    updateCoherenceBySlugRef
+      .current({
+        slug: coherenceSlug,
+        messages: messages.length,
+      })
+      .catch((error) => {
+        console.warn(
+          '[HumanRightPanel] Failed to persist coherence message count:',
+          error,
+        );
+      });
+  }, [
+    mode,
+    isMatrixAvailable,
+    coherenceSlug,
+    roomId,
+    isJoining,
+    messages.length,
+  ]);
 
   // Keep message ids in sync when the SDK replaces provisional ~… ids with $… after send
   useEffect(() => {
@@ -2577,7 +2650,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           )}
       </SidebarHeader>
       {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
-      <SidebarContent className="flex min-h-0 flex-col overflow-hidden bg-background-2">
+      <SidebarContent
+        ref={sidebarContentRef}
+        className="flex min-h-0 flex-col overflow-hidden bg-background-2"
+      >
         {isAuthLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <div className="text-sm text-muted-foreground">{t('loading')}</div>

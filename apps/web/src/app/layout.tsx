@@ -290,30 +290,58 @@ export default async function RootLayout({
                               <HumanSidebarTrigger />
                             ) : undefined
                           }
+                          mobileAction={
+                            <ConnectedButtonProfile
+                              useAuthentication={useAuthentication}
+                              useMe={useMe}
+                              newUserRedirectPath="/profile/signup"
+                              baseRedirectPath="/my-spaces"
+                              navItems={[
+                                {
+                                  label: navMySpacesLabel,
+                                  href: `/${locale}/my-spaces`,
+                                },
+                                {
+                                  label: navNetworkLabel,
+                                  href: `/${locale}/network`,
+                                },
+                              ]}
+                              trailingBeforeProfile={
+                                isLanguageSelectVisible ? (
+                                  <ConnectedLanguageSelect
+                                    selectLanguageLabel={navSelectLanguageLabel}
+                                  />
+                                ) : undefined
+                              }
+                              compact
+                            />
+                          }
                         >
-                          <ConnectedButtonProfile
-                            useAuthentication={useAuthentication}
-                            useMe={useMe}
-                            newUserRedirectPath="/profile/signup"
-                            baseRedirectPath="/my-spaces"
-                            navItems={[
-                              {
-                                label: navMySpacesLabel,
-                                href: `/${locale}/my-spaces`,
-                              },
-                              {
-                                label: navNetworkLabel,
-                                href: `/${locale}/network`,
-                              },
-                            ]}
-                            trailingBeforeProfile={
-                              isLanguageSelectVisible ? (
-                                <ConnectedLanguageSelect
-                                  selectLanguageLabel={navSelectLanguageLabel}
-                                />
-                              ) : undefined
-                            }
-                          />
+                          <div className="flex max-md:pointer-events-none max-md:opacity-0">
+                            <ConnectedButtonProfile
+                              useAuthentication={useAuthentication}
+                              useMe={useMe}
+                              newUserRedirectPath="/profile/signup"
+                              baseRedirectPath="/my-spaces"
+                              navItems={[
+                                {
+                                  label: navMySpacesLabel,
+                                  href: `/${locale}/my-spaces`,
+                                },
+                                {
+                                  label: navNetworkLabel,
+                                  href: `/${locale}/network`,
+                                },
+                              ]}
+                              trailingBeforeProfile={
+                                isLanguageSelectVisible ? (
+                                  <ConnectedLanguageSelect
+                                    selectLanguageLabel={navSelectLanguageLabel}
+                                  />
+                                ) : undefined
+                              }
+                            />
+                          </div>
                         </ConnectedMenuTop>
                       </div>
                       {/* Scrollable content area */}
