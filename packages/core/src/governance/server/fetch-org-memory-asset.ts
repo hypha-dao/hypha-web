@@ -688,7 +688,7 @@ export async function fetchOrgMemoryAsset(
         'text/plain',
         text,
         truncated,
-        textPayload.length,
+        Buffer.byteLength(textPayload, 'utf8'),
       ),
     };
   } else if (key.k === 'ds') {
@@ -722,7 +722,7 @@ export async function fetchOrgMemoryAsset(
         'text/markdown',
         text,
         truncated,
-        body.length,
+        Buffer.byteLength(body, 'utf8'),
       ),
     };
   }

@@ -1,7 +1,12 @@
 'use client';
 
 import React from 'react';
-import { RoomStateEvent } from 'matrix-js-sdk';
+import {
+  RoomStateEvent,
+  type MatrixEvent,
+  type RoomMember,
+  type RoomState,
+} from 'matrix-js-sdk';
 import {
   useCoherenceMutationsWeb2Rsc,
   useJwt,
@@ -149,8 +154,11 @@ export const ChatMessageInput = ({
     const room = client.getRoom(roomId);
     if (!room) return;
 
-    const bumpMembership = (...args: unknown[]) => {
-      const state = args[1] as { roomId?: string } | undefined;
+    const bumpMembership = (
+      _event: MatrixEvent,
+      state: RoomState,
+      _member: RoomMember,
+    ) => {
       if (state?.roomId !== roomId) return;
       setMentionMembershipEpoch((n) => n + 1);
     };
@@ -213,10 +221,9 @@ export const ChatMessageInput = ({
           variant="outline"
           colorVariant="accent"
           className="grow"
-          onClick={() => {
-            console.log('Propose Agreement clicked');
-            //TODO
-          }}
+          onClick={() => {}}
+          disabled
+          title="Coming soon"
         >
           Propose Agreement
         </Button>

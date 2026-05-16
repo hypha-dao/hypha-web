@@ -40,7 +40,7 @@ export function createChatTools(
       authToken,
       requestUrlForSessionMatrix,
     ),
-    ingest_space_call_artifacts: createIngestSpaceCallArtifactsTool(),
+    ingest_space_call_artifacts: createIngestSpaceCallArtifactsTool(authToken),
     web_search: webSearchTool,
   } as unknown as Record<string, ChatRouteTool>;
 }

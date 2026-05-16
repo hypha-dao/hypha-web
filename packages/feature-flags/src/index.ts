@@ -59,6 +59,8 @@ export const flagDefinitionsForDiscovery = {
   enableSpaceMemory: {
     key: 'enable-space-memory',
     defaultValue:
+      // Intentional mature-feature default: space memory has production ops checks and
+      // can be rolled back immediately via NEXT_PUBLIC_ENABLE_SPACE_MEMORY=false.
       parseBoolean(process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY) ?? true,
     description:
       'Space Memory on Coherence tab. Opt in: HYPHA_ENABLE_SPACE_MEMORY cookie or NEXT_PUBLIC_ENABLE_SPACE_MEMORY=true',

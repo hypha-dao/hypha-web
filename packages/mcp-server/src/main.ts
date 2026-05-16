@@ -142,6 +142,31 @@ server.registerTool(
         isError: true,
       };
     }
+    const host = await findSpaceBySlug(
+      { slug: parsed.data.space_slug },
+      { db },
+    );
+    if (!host) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `No space found for slug "${parsed.data.space_slug}".`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    const access = await checkSpaceAccessForSpace(
+      host,
+      process.env.HYPHA_MCP_AUTH_TOKEN,
+    );
+    if (!access.hasAccess) {
+      return {
+        content: [{ type: 'text', text: access.message }],
+        isError: true,
+      };
+    }
     const result = await ingestSpaceCallArtifacts(
       {
         spaceSlug: parsed.data.space_slug,

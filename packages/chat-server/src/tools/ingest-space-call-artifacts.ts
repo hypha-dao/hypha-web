@@ -1,10 +1,14 @@
 import { z } from 'zod';
-import { ingestSpaceCallArtifacts } from '@hypha-platform/core/server';
+import {
+  checkSpaceAccessForSpace,
+  findSpaceBySlug,
+  ingestSpaceCallArtifacts,
+} from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
 
-export function createIngestSpaceCallArtifactsTool() {
+export function createIngestSpaceCallArtifactsTool(authToken: string) {
   const inputSchema = z.object({
     space_slug: z.string().trim().min(1),
     call_session_id: z.string().trim().min(1),
@@ -43,6 +47,10 @@ export function createIngestSpaceCallArtifactsTool() {
       }
       const safe = sanitizeSlug(parsed.data.space_slug);
       if (!safe) return { ok: false, error: 'Invalid space slug format' };
+      const targetSpace = await findSpaceBySlug({ slug: safe }, { db });
+      if (!targetSpace) return { ok: false, error: 'Space not found' };
+      const access = await checkSpaceAccessForSpace(targetSpace, authToken);
+      if (!access.hasAccess) return { ok: false, error: access.message };
 
       const result = await ingestSpaceCallArtifacts(
         {

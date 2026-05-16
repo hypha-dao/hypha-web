@@ -51,6 +51,12 @@ export function withOrgMemoryAssetKeys<T extends OrgMemoryAssetLike>(
       a.discussion_summary_id != null
     ) {
       payload = { k: 'ds', i: a.discussion_summary_id };
+    } else if (
+      a.source === 'call_recording' ||
+      a.source === 'call_transcript' ||
+      a.source === 'discussion_summary'
+    ) {
+      throw new Error(`Missing artifact id for source "${a.source}"`);
     } else {
       payload = { k: 'p', d: a.document_id ?? 0, u: a.app_url?.trim() ?? '' };
     }

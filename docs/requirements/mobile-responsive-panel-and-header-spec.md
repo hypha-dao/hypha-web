@@ -107,7 +107,7 @@ Behavior:
 - apply hysteresis.
 - note: hysteresis prevents toggle flicker but does not limit callback frequency.
 
-#### SSR and Hydration Handling
+### SSR and Hydration Handling
 
 - server-rendered initial state: `isCompactHeader = true` (conservative fallback to avoid overlap before measurement).
 - initialize `ResizeObserver` and window resize listeners inside `useEffect` only; do not evaluate layout metrics on the server.

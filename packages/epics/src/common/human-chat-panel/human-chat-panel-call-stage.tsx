@@ -364,6 +364,11 @@ export function HumanChatPanelCallStage({
   } = model;
 
   const isFull = layout === 'fullView';
+  const isLiveAndUnmuted = useCallback((feed: CallFeed): boolean => {
+    const track = feed.stream.getVideoTracks()[0];
+    if (!track || track.readyState !== 'live') return false;
+    return !feed.isVideoMuted();
+  }, []);
   /**
    * Suppress only local browser-tab captures in self preview to avoid recursive
    * "window-in-window" feedback. Keep monitor/window local shares visible.
@@ -371,26 +376,17 @@ export function HumanChatPanelCallStage({
    * in a split state with no usable share frame rendered.
    */
   const previewShareFeeds = rawShareFeeds.filter((feed) => {
-    const track = feed.stream.getVideoTracks()[0];
-    if (!track || track.readyState !== 'live') return false;
-    if (feed.isVideoMuted()) return false;
+    if (!isLiveAndUnmuted(feed)) return false;
     if (!feed.isLocal()) return true;
+    const track = feed.stream.getVideoTracks()[0];
     const displaySurface = track?.getSettings?.().displaySurface;
     return displaySurface !== 'browser';
   });
   const shareFeeds =
     layout === 'panel'
       ? previewShareFeeds
-      : rawShareFeeds.filter((feed) => {
-          const track = feed.stream.getVideoTracks()[0];
-          if (!track || track.readyState !== 'live') return false;
-          return !feed.isVideoMuted();
-        });
-  const hasRenderableRawShare = rawShareFeeds.some((feed) => {
-    const track = feed.stream.getVideoTracks()[0];
-    if (!track || track.readyState !== 'live') return false;
-    return !feed.isVideoMuted();
-  });
+      : rawShareFeeds.filter(isLiveAndUnmuted);
+  const hasRenderableRawShare = rawShareFeeds.some(isLiveAndUnmuted);
   const hasRemotesOrShare =
     remoteUserMedia.length > 0 ||
     missingRemoteUserIds.length > 0 ||

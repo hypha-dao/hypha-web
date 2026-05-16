@@ -19,7 +19,13 @@ export async function POST(
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
-    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+    if (space.web3SpaceId != null) {
+      if (!canConvertToBigInt(space.web3SpaceId)) {
+        return NextResponse.json(
+          { error: 'Space has an invalid on-chain space id' },
+          { status: 403 },
+        );
+      }
       const { hasAccess, response } = await checkSpaceAccess(
         request,
         space.web3SpaceId as number,

@@ -223,19 +223,18 @@ async function fetchRoomDiscussionMessages(
   for (let i = 0; i < maxPages; i++) {
     const params = new URLSearchParams({ dir: 'b', limit: '100' });
     if (fromToken) params.set('from', fromToken);
-    let url = `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
+    const url = `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
       roomId,
     )}/messages?${params.toString()}`;
-    let res = await fetch(url, {
+    const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
       signal: AbortSignal.timeout(15_000),
     });
     if (res.status === 401) {
-      params.set('access_token', accessToken);
-      url = `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
-        roomId,
-      )}/messages?${params.toString()}`;
-      res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+      console.warn(
+        '[call-artifacts] Matrix 401 on Bearer auth; skipping query-param token fallback',
+      );
+      break;
     }
     if (!res.ok) break;
     const body = (await res.json()) as MatrixChunkResponse;
@@ -289,6 +288,8 @@ export async function createSpaceDiscussionSummary(
     return { ok: false, error: 'No chat messages available for summary' };
   }
   const { summary, bullets } = summarizeDiscussion(messages);
+  // Intentionally append-only snapshots: each refresh preserves a point-in-time
+  // summary instead of overwriting previous runs for the same room.
   const [inserted] = await db
     .insert(spaceDiscussionSummaries)
     .values({

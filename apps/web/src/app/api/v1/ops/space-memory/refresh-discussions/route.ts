@@ -8,12 +8,16 @@ import {
 import { db, spaces } from '@hypha-platform/storage-postgres';
 import { readOpsSecret } from '../../_lib/ops-auth';
 
+export const maxDuration = 300;
+
 const refreshPayloadSchema = z.object({
   space_slugs: z.array(z.string().trim().min(1)).optional(),
   limit: z.number().int().min(1).max(500).optional().default(100),
   include_archived: z.boolean().optional().default(false),
   dry_run: z.boolean().optional().default(false),
 });
+const SUMMARY_CONCURRENCY = 6;
+const SUMMARY_TIMEOUT_MS = 45_000;
 
 async function readPayload(request: NextRequest) {
   try {
@@ -21,6 +25,22 @@ async function readPayload(request: NextRequest) {
     return refreshPayloadSchema.safeParse(body ?? {});
   } catch {
     return refreshPayloadSchema.safeParse({});
+  }
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string,
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 }
 
@@ -97,34 +117,51 @@ export async function POST(request: NextRequest) {
     error?: string;
   }> = [];
 
-  for (const spaceSlug of targetSlugs) {
-    const result = await createSpaceDiscussionSummary(
-      { spaceSlug, source: 'cron' },
-      { db },
-    );
-    if (result.ok) {
-      await enqueueSignalEvaluationFromMemory(
-        {
-          spaceSlug,
-          triggerKind: 'ops_refresh',
-        },
-        { db },
-      );
-      summaries.push({
-        space_slug: spaceSlug,
-        ok: true,
-        summary_id: result.summaryId,
-        message_count: result.messageCount,
-        participant_count: result.participantCount,
-      });
-      continue;
+  const queue = [...targetSlugs];
+  const workers = Array.from({
+    length: Math.min(SUMMARY_CONCURRENCY, targetSlugs.length),
+  }).map(async () => {
+    while (true) {
+      const spaceSlug = queue.shift();
+      if (!spaceSlug) return;
+      try {
+        const result = await withTimeout(
+          createSpaceDiscussionSummary({ spaceSlug, source: 'cron' }, { db }),
+          SUMMARY_TIMEOUT_MS,
+          'Summary generation timed out',
+        );
+        if (result.ok) {
+          await enqueueSignalEvaluationFromMemory(
+            {
+              spaceSlug,
+              triggerKind: 'ops_refresh',
+            },
+            { db },
+          );
+          summaries.push({
+            space_slug: spaceSlug,
+            ok: true,
+            summary_id: result.summaryId,
+            message_count: result.messageCount,
+            participant_count: result.participantCount,
+          });
+          continue;
+        }
+        summaries.push({
+          space_slug: spaceSlug,
+          ok: false,
+          error: result.error,
+        });
+      } catch (error) {
+        summaries.push({
+          space_slug: spaceSlug,
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
-    summaries.push({
-      space_slug: spaceSlug,
-      ok: false,
-      error: result.error,
-    });
-  }
+  });
+  await Promise.allSettled(workers);
 
   const success_count = summaries.filter((s) => s.ok).length;
   const failure_count = summaries.length - success_count;
