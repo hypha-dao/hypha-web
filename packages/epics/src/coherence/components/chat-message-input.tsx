@@ -223,7 +223,7 @@ export const ChatMessageInput = ({
           className="grow"
           onClick={() => {}}
           disabled
-          title="Coming soon"
+          title={t('comingSoon')}
         >
           Propose Agreement
         </Button>
