@@ -221,6 +221,7 @@ File: `packages/epics/src/common/panel-wrap-layout.tsx` (`HumanSidebarTrigger`, 
 
 1. Manual viewport tests:
    - 375x812, 390x844, 768x1024, 820x1180, 1024x768.
+   - For each size, also run the swapped-dimension landscape variant (812x375, 844x390, 1024x768, 1180x820, 768x1024) and verify compact-mode threshold behavior.
 2. Manual interaction:
    - open/close left panel, right panel, profile menu in each viewport.
 3. Add/update Playwright spec:
