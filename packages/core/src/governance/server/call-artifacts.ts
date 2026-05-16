@@ -52,6 +52,19 @@ function summarizeTranscriptText(text: string): string {
   return (stop > 120 ? cut.slice(0, stop + 1) : `${cut}...`).trim();
 }
 
+function normalizeRecordingMediaUri(value: string): string | null {
+  const mediaUri = value.trim();
+  if (!mediaUri) return null;
+  if (mediaUri.startsWith('mxc://')) return mediaUri;
+  try {
+    const parsed = new URL(mediaUri);
+    if (parsed.protocol !== 'https:') return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 export async function ingestSpaceCallArtifacts(
   input: IngestSpaceCallArtifactsInput,
   { db }: DbConfig,
@@ -72,9 +85,13 @@ export async function ingestSpaceCallArtifacts(
   if (!host) return { ok: false, error: 'Space not found' };
 
   if (input.recording) {
-    const mediaUri = input.recording.mediaUri.trim();
-    if (!mediaUri)
-      return { ok: false, error: 'recording.mediaUri is required' };
+    const mediaUri = normalizeRecordingMediaUri(input.recording.mediaUri);
+    if (!mediaUri) {
+      return {
+        ok: false,
+        error: 'recording.mediaUri must be an mxc:// URI or https URL',
+      };
+    }
     await db
       .insert(spaceCallRecordings)
       .values({
