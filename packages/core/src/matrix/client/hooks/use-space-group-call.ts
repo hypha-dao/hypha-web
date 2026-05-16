@@ -287,6 +287,7 @@ export function useSpaceGroupCall(
     stopTranscript: () => string;
     mimeType: string;
     startedAt: string;
+    recordedRoomId: string;
   } | null>(null);
   const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
@@ -341,7 +342,7 @@ export function useSpaceGroupCall(
       const runtime = recordingRuntimeRef.current;
       const token = authToken?.trim();
       const slug = spaceSlug?.trim();
-      const activeRoomId = roomId?.trim();
+      const activeRoomId = runtime?.recordedRoomId?.trim() || roomId?.trim();
       if (!runtime || !token || !slug || !activeRoomId) {
         recordingRuntimeRef.current = null;
         setRecordingStatus('idle');
@@ -1474,6 +1475,7 @@ export function useSpaceGroupCall(
       stopTranscript: transcript.stop,
       mimeType: recorder.mimeType,
       startedAt: new Date().toISOString(),
+      recordedRoomId: activeRoom,
     };
     setRecordingStatus('recording');
     setRecordingError(null);
