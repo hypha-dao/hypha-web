@@ -209,13 +209,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: ingestResult.error }, { status: 400 });
   }
 
-  await enqueueSignalEvaluationFromMemory(
-    {
+  try {
+    await enqueueSignalEvaluationFromMemory(
+      {
+        spaceSlug,
+        triggerKind: 'memory_ingest',
+      },
+      { db },
+    );
+  } catch (error) {
+    console.error('[matrix.call-artifacts.upload] enqueue failed', {
       spaceSlug,
       triggerKind: 'memory_ingest',
-    },
-    { db },
-  );
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   const transcriptJob = await triggerTranscriptJob({
     spaceSlug,
