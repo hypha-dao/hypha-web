@@ -169,14 +169,6 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     return filterSpaceMemoryItems(byFilter, searchTerm);
   }, [activeFilter, isAiChatItem, items, searchTerm]);
 
-  const showAiChatTab = counts['ai-chat'] > 0;
-
-  React.useEffect(() => {
-    if (!showAiChatTab && activeFilter === 'ai-chat') {
-      setActiveFilter('general');
-    }
-  }, [activeFilter, showAiChatTab]);
-
   const newMemoryHref = `/${lang}/dho/${id}/memory/new-memory`;
 
   return (
@@ -204,42 +196,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         onSearchChange={setSearchTerm}
         newMemoryHref={newMemoryHref}
         counts={counts}
-        showAiChatTab={showAiChatTab}
       />
-      <div className="grid w-full grid-cols-2 gap-2 md:grid-cols-4">
-        <div className="rounded-md border border-border bg-card px-3 py-2">
-          <p className="text-1 text-muted-foreground">
-            {t('spaceMemoryGeneral')}
-          </p>
-          <p className="text-3 font-semibold text-card-foreground">
-            {counts.general}
-          </p>
-        </div>
-        <div className="rounded-md border border-border bg-card px-3 py-2">
-          <p className="text-1 text-muted-foreground">
-            {t('spaceMemoryProposals')}
-          </p>
-          <p className="text-3 font-semibold text-card-foreground">
-            {counts.proposals}
-          </p>
-        </div>
-        <div className="rounded-md border border-border bg-card px-3 py-2">
-          <p className="text-1 text-muted-foreground">
-            {t('spaceMemoryConversations')}
-          </p>
-          <p className="text-3 font-semibold text-card-foreground">
-            {counts.conversations}
-          </p>
-        </div>
-        <div className="rounded-md border border-border bg-card px-3 py-2">
-          <p className="text-1 text-muted-foreground">
-            {t('spaceMemoryAiChat')}
-          </p>
-          <p className="text-3 font-semibold text-card-foreground">
-            {counts['ai-chat']}
-          </p>
-        </div>
-      </div>
 
       {error ? (
         <div className="flex flex-col items-center gap-2 w-full px-4">
