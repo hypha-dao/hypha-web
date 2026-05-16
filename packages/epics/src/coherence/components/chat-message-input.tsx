@@ -9,6 +9,7 @@ import {
 } from '@hypha-platform/core/client';
 import { Button, ConfirmDialog } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   HumanChatPanelChatBar,
   type ChatMentionCandidate,
@@ -64,6 +65,7 @@ export const ChatMessageInput = ({
   coherenceSlug: string;
   closeUrl: string;
 }) => {
+  const t = useTranslations('CoherenceTab');
   const { client, sendMessage: sendMatrixMessage } = useMatrix();
   const [input, setInput] = React.useState('');
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = React.useState(0);
@@ -224,7 +226,7 @@ export const ChatMessageInput = ({
           value={input}
           onChange={setInput}
           onSend={sendMessage}
-          placeholder="Say something..."
+          placeholder={t('saySomething')}
           mentionCandidates={mentionCandidates}
           mentionPickerEnabled={mentionPickerEnabled}
           getMentionComposerLabel={getMentionComposerLabel}
