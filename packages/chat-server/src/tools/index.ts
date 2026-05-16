@@ -6,6 +6,7 @@ import { createFetchOrgMemoryAssetTool } from './fetch-org-memory-asset';
 import { createGetDocumentsBySpaceSlugTool } from './get-documents-by-space-slug';
 import { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion';
 import { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
+import { webSearchTool } from './web-search';
 
 /**
  * All AI SDK tools exposed by the chat route. Add new tools here and in the
@@ -32,6 +33,7 @@ export function createChatTools(
       requestUrlForSessionMatrix,
     ),
     ingest_space_call_artifacts: createIngestSpaceCallArtifactsTool(),
+    web_search: webSearchTool,
   } as unknown as Record<string, ChatRouteTool>;
 }
 
@@ -42,4 +44,5 @@ export { createGetDocumentsBySpaceSlugTool } from './get-documents-by-space-slug
 export { createFetchOrgMemoryAssetTool } from './fetch-org-memory-asset';
 export { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion';
 export { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
+export { webSearchTool } from './web-search';
 export type { ChatRouteTool } from './types';
