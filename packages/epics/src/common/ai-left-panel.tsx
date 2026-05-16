@@ -520,7 +520,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       new DefaultChatTransport({
         api: '/api/chat',
         headers: async (): Promise<Record<string, string>> => {
-          const token = await getAccessToken?.();
+          let token: string | undefined;
+          try {
+            token = (await getAccessToken?.()) ?? undefined;
+          } catch (error) {
+            console.error('[AiLeftPanel] getAccessToken failed for transport', {
+              error,
+            });
+          }
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
         body: { ...(spaceSlug && { spaceSlug }) },
@@ -528,14 +535,21 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [getAccessToken, spaceSlug],
   );
 
-  const { messages, sendMessage, stop, status, error } = useChat({
+  const { messages, sendMessage, stop, status, error, clearError } = useChat({
     transport,
   });
 
   const isStreaming = status === 'streaming' || status === 'submitted';
 
   const buildMessageOptions = useCallback(async () => {
-    const token = await getAccessToken?.();
+    let token: string | undefined;
+    try {
+      token = (await getAccessToken?.()) ?? undefined;
+    } catch (error) {
+      console.error('[AiLeftPanel] getAccessToken failed for message options', {
+        error,
+      });
+    }
     const hdrs: Record<string, string> = {};
     if (token) hdrs['Authorization'] = `Bearer ${token}`;
     return {
@@ -551,6 +565,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     setInput('');
     setDraftAttachments([]);
     try {
+      clearError();
       const options = await buildMessageOptions();
       const fileParts =
         attachments.length > 0 ? await convertFilesToParts(attachments) : [];
@@ -570,7 +585,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       setInput(text);
       setDraftAttachments(attachments);
     }
-  }, [input, draftAttachments, isStreaming, sendMessage, buildMessageOptions]);
+  }, [
+    input,
+    draftAttachments,
+    isStreaming,
+    sendMessage,
+    buildMessageOptions,
+    clearError,
+  ]);
 
   const handleStop = useCallback(() => {
     void stop();
@@ -579,6 +601,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const handleSuggestionSelect = useCallback(
     async (text: string) => {
       try {
+        clearError();
         const options = await buildMessageOptions();
         if (DEBUG)
           console.log('[AiLeftPanel] suggestion selected', { text, spaceSlug });
@@ -590,7 +613,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         console.error('[AiLeftPanel] suggestion sendMessage error:', err);
       }
     },
-    [sendMessage, buildMessageOptions],
+    [sendMessage, buildMessageOptions, clearError],
   );
 
   const handleTriggerClick = useCallback(() => {
