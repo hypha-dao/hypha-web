@@ -1501,6 +1501,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setRoomId(targetRoomId);
         await matrixRef.current.loadRoomHistory(targetRoomId);
         if (cancelled) return;
+        hasLoadedCoherenceMessagesRef.current = true;
         const existing = matrixRef.current.getRoomMessages(targetRoomId);
         if (existing) {
           setMessages(
@@ -1655,9 +1656,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (mode !== 'coherence') return;
     if (!isMatrixAvailable || !coherenceSlug || !roomId || isJoining) return;
-    // Avoid clobbering persisted counts with transient empty timeline snapshots.
-    if (!hasLoadedCoherenceMessagesRef.current && messages.length === 0) return;
-    hasLoadedCoherenceMessagesRef.current = true;
+    if (!hasLoadedCoherenceMessagesRef.current) return;
     updateCoherenceBySlugRef
       .current({
         slug: coherenceSlug,
