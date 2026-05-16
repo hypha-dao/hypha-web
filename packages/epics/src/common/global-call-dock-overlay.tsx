@@ -216,6 +216,8 @@ export function GlobalCallDockOverlay() {
     thumbnail: null,
     expanded: null,
   });
+  const persistTimeoutRef = React.useRef<number | null>(null);
+  const latestGeometryRef = React.useRef<DockGeometry>(geometry);
   const dragRef = React.useRef<{
     pointerId: number;
     startX: number;
@@ -271,8 +273,47 @@ export function GlobalCallDockOverlay() {
 
   React.useEffect(() => {
     if (!dockStorageHydrated) return;
-    persistDockGeometry(clampDockGeometry(geometry));
+    const clamped = clampDockGeometry(geometry);
+    latestGeometryRef.current = clamped;
+    if (persistTimeoutRef.current != null) {
+      window.clearTimeout(persistTimeoutRef.current);
+    }
+    persistTimeoutRef.current = window.setTimeout(() => {
+      persistDockGeometry(clamped);
+      persistTimeoutRef.current = null;
+    }, 180);
+    return () => {
+      if (persistTimeoutRef.current != null) {
+        window.clearTimeout(persistTimeoutRef.current);
+        persistTimeoutRef.current = null;
+      }
+    };
   }, [dockStorageHydrated, geometry]);
+
+  React.useEffect(() => {
+    return () => {
+      persistDockGeometry(clampDockGeometry(latestGeometryRef.current));
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const el = dockRef.current;
+    if (!el || dockMode === 'fullscreen') return;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const rect = entry.contentRect;
+      setGeometry((prev) =>
+        clampDockGeometry({
+          ...prev,
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+        }),
+      );
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [dockMode]);
 
   React.useEffect(() => {
     if (dockMode === 'fullscreen') return;
