@@ -103,7 +103,9 @@ Inputs:
 Behavior:
 
 - evaluate in `ResizeObserver` + window resize,
+- debounce or throttle both callbacks (target around `~150ms`) to reduce CPU churn on active resize/orientation changes,
 - apply hysteresis.
+- note: hysteresis prevents toggle flicker but does not limit callback frequency.
 
 #### SSR and Hydration Handling
 
@@ -214,6 +216,8 @@ File: `packages/epics/src/common/panel-wrap-layout.tsx` (`HumanSidebarTrigger`, 
 4. Accessibility smoke:
    - keyboard navigation across header controls,
    - axe scan for duplicate-label or contrast regressions.
+5. Performance smoke on mobile:
+   - validate resize/orientation handling with the chosen debounce/throttle value (`~150ms` target) to ensure no visible lag or jitter.
 
 ## Rollout Notes
 
