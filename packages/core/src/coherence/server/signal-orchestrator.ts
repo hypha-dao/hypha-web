@@ -365,51 +365,60 @@ export async function enqueueSignalEvaluationFromMemory(
   if (!host) return { ok: false as const, error: 'Space not found' };
   const dueAt = new Date(Date.now() + Math.max(5, WINDOW_MINUTES) * 60 * 1000);
 
-  const pending = await db.query.signalOrchestratorQueue.findFirst({
-    where: (q, { and, eq }) =>
-      and(eq(q.spaceId, host.id), eq(q.state, 'pending')),
-  });
-
   const payload: Record<string, unknown> = {
     trigger_kind: input.triggerKind,
     source_asset_keys: input.sourceAssetKeys ?? [],
     metadata: input.metadata ?? {},
   };
-  if (pending) {
-    const prevKeys = Array.isArray(pending.payload?.source_asset_keys)
-      ? (pending.payload.source_asset_keys as string[])
-      : [];
-    await db
-      .update(signalOrchestratorQueue)
-      .set({
-        eventCount: pending.eventCount + 1,
-        dueAt,
-        triggerKind: input.triggerKind,
-        payload: {
-          ...pending.payload,
-          ...payload,
-          source_asset_keys: Array.from(
-            new Set([...(input.sourceAssetKeys ?? []), ...prevKeys]),
-          ).slice(0, 30),
-        },
-        updatedAt: new Date(),
-      })
-      .where(eq(signalOrchestratorQueue.id, pending.id));
-    return { ok: true as const, queueId: pending.id, deduped: true };
-  }
+  return db.transaction(async (tx) => {
+    // Serialize enqueue per space to avoid duplicate pending rows under contention.
+    await tx.execute(sql`select pg_advisory_xact_lock(${host.id})`);
 
-  const [inserted] = await db
-    .insert(signalOrchestratorQueue)
-    .values({
-      spaceId: host.id,
-      state: 'pending',
-      triggerKind: input.triggerKind,
-      eventCount: 1,
-      dueAt,
-      payload,
-    })
-    .returning();
-  return { ok: true as const, queueId: inserted?.id ?? null, deduped: false };
+    const pending = await tx.query.signalOrchestratorQueue.findFirst({
+      where: (q, { and, eq }) =>
+        and(eq(q.spaceId, host.id), eq(q.state, 'pending')),
+    });
+
+    if (pending) {
+      const prevKeys = Array.isArray(pending.payload?.source_asset_keys)
+        ? (pending.payload.source_asset_keys as string[])
+        : [];
+      await tx
+        .update(signalOrchestratorQueue)
+        .set({
+          eventCount: pending.eventCount + 1,
+          dueAt,
+          triggerKind: input.triggerKind,
+          payload: {
+            ...pending.payload,
+            ...payload,
+            source_asset_keys: Array.from(
+              new Set([...(input.sourceAssetKeys ?? []), ...prevKeys]),
+            ).slice(0, 30),
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(signalOrchestratorQueue.id, pending.id));
+      return { ok: true as const, queueId: pending.id, deduped: true };
+    }
+
+    const [inserted] = await tx
+      .insert(signalOrchestratorQueue)
+      .values({
+        spaceId: host.id,
+        state: 'pending',
+        triggerKind: input.triggerKind,
+        eventCount: 1,
+        dueAt,
+        payload,
+      })
+      .returning();
+    return {
+      ok: true as const,
+      queueId: inserted?.id ?? null,
+      deduped: false,
+    };
+  });
 }
 
 export async function processSignalOrchestratorBatch(
