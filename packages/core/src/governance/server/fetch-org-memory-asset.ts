@@ -680,6 +680,17 @@ export async function fetchOrgMemoryAsset(
       };
     }
     const textPayload = transcript.text;
+    const byteLength = Buffer.byteLength(textPayload, 'utf8');
+    if (byteLength > max_bytes) {
+      return {
+        access: 'ok',
+        result: {
+          ok: false,
+          error: `Response size ${byteLength} exceeds max_bytes`,
+          code: 'too_large',
+        },
+      };
+    }
     const { text, truncated } = truncateText(textPayload, MAX_TEXT_CHARS);
     return {
       access: 'ok',
@@ -688,7 +699,7 @@ export async function fetchOrgMemoryAsset(
         'text/plain',
         text,
         truncated,
-        Buffer.byteLength(textPayload, 'utf8'),
+        byteLength,
       ),
     };
   } else if (key.k === 'ds') {
@@ -714,6 +725,17 @@ export async function fetchOrgMemoryAsset(
     const body = [summary.summary, ...bullets.map((b) => `- ${b}`)]
       .join('\n')
       .trim();
+    const byteLength = Buffer.byteLength(body, 'utf8');
+    if (byteLength > max_bytes) {
+      return {
+        access: 'ok',
+        result: {
+          ok: false,
+          error: `Response size ${byteLength} exceeds max_bytes`,
+          code: 'too_large',
+        },
+      };
+    }
     const { text, truncated } = truncateText(body, MAX_TEXT_CHARS);
     return {
       access: 'ok',
@@ -722,7 +744,7 @@ export async function fetchOrgMemoryAsset(
         'text/markdown',
         text,
         truncated,
-        Buffer.byteLength(body, 'utf8'),
+        byteLength,
       ),
     };
   }
