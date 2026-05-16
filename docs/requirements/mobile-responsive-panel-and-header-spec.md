@@ -105,6 +105,15 @@ Behavior:
 - evaluate in `ResizeObserver` + window resize,
 - apply hysteresis.
 
+#### SSR and Hydration Handling
+
+- server-rendered initial state: `isCompactHeader = true` (conservative fallback to avoid overlap before measurement).
+- initialize `ResizeObserver` and window resize listeners inside `useEffect` only; do not evaluate layout metrics on the server.
+- treat `headerMetrics` as hydration-time values; apply hysteresis after first client measurement.
+- avoid hydration/visual mismatch by either:
+  - rendering the conservative compact layout in SSR markup, or
+  - temporarily suppressing visible transition until measured (for example via short-lived `visibility`/`opacity` guard).
+
 ## B. Refactor `MenuTop` to be Controlled
 
 File: `packages/ui/src/organisms/menu-top.tsx`
