@@ -78,7 +78,8 @@ Replace hard-only `max-width: 767px` top-bar switching with a collision-aware th
   - profile avatar touch target: `44px`
   - inter-control spacing: `8-16px`
   - safety margin for intermediate controls, padding, and rounding: `128-136px`
-  - total: `44 + 44 + (8-16) + (128-136) = 232px`
+  - total range: `44 + 44 + (8-16) + (128-136) = 224-240px`
+  - selected conservative threshold: `232px` (center of the range)
 - If `freeSpacePx < safeThresholdPx`, compact mode = `true`.
 - Add 24px hysteresis to avoid flicker:
   - enter compact below `232`
