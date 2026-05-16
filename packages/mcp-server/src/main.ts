@@ -7,6 +7,8 @@ import {
   checkSpaceAccessForSpace,
   findSpaceBySlug,
   getAllOrganizationSpacesForNodeById,
+  createAiSignalForSpaceBySlug,
+  relayAiSignalToEcosystemSpace,
   getTokenHoldingsBySpaceSlug,
   getDocumentsBySpaceSlug,
   getOrgMemoryBySpaceSlug,
@@ -16,6 +18,14 @@ import {
   getSpaceMembersRoster,
   serializeSpaceMembersRosterDatesForJson,
 } from '@hypha-platform/core/server';
+import {
+  createSpaceSignalBySlugInputSchema,
+  createSpaceSignalBySlugOutputSchema,
+} from './create-space-signal-by-slug-schema.js';
+import {
+  relayEcosystemSignalInputSchema,
+  relayEcosystemSignalOutputSchema,
+} from './relay-ecosystem-signal-schema.js';
 import {
   getEcosystemBySpaceSlugInputSchema,
   getEcosystemBySpaceSlugOutputSchema,
@@ -57,7 +67,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); create signals in space; relay summarized ecosystem signals between connected spaces; token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
   },
 );
 
@@ -179,6 +189,128 @@ server.registerTool(
       ],
       structuredContent: out,
       ...(result.ok ? {} : { isError: true }),
+    };
+  },
+);
+
+server.registerTool(
+  'create_space_signal_by_slug',
+  {
+    description:
+      'Write: create a signal in a space. Intended for evidence-based AI recommendations. Limited to active paid spaces.',
+    inputSchema: createSpaceSignalBySlugInputSchema,
+    outputSchema: createSpaceSignalBySlugOutputSchema,
+  },
+  async (args) => {
+    const parsed = createSpaceSignalBySlugInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    const result = await createAiSignalForSpaceBySlug(
+      {
+        spaceSlug: parsed.data.space_slug,
+        authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        type: parsed.data.type,
+        priority: parsed.data.priority,
+        tags: parsed.data.tags,
+      },
+      { db },
+    );
+    const out = createSpaceSignalBySlugOutputSchema.safeParse(result);
+    if (!out.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${out.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    return {
+      content: [
+        {
+          type: 'text',
+          text: out.data.ok
+            ? `Created signal ${out.data.signalSlug ?? ''} in ${
+                out.data.spaceSlug
+              }.`
+            : `Failed to create signal: ${out.data.error}`,
+        },
+      ],
+      structuredContent: out.data,
+      ...(out.data.ok ? {} : { isError: true }),
+    };
+  },
+);
+
+server.registerTool(
+  'relay_ecosystem_signal',
+  {
+    description:
+      'Write: relay a summarized/recomposed signal from one space to another ecosystem space for action. Limited to interconnected active paid spaces.',
+    inputSchema: relayEcosystemSignalInputSchema,
+    outputSchema: relayEcosystemSignalOutputSchema,
+  },
+  async (args) => {
+    const parsed = relayEcosystemSignalInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    const result = await relayAiSignalToEcosystemSpace(
+      {
+        sourceSpaceSlug: parsed.data.source_space_slug,
+        targetSpaceSlug: parsed.data.target_space_slug,
+        authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        title: parsed.data.title,
+        summary: parsed.data.summary,
+        recommendedAction: parsed.data.recommended_action,
+        relevanceRationale: parsed.data.relevance_rationale,
+        type: parsed.data.type,
+        priority: parsed.data.priority,
+        tags: parsed.data.tags,
+        sourceAssetKeys: parsed.data.source_asset_keys,
+      },
+      { db },
+    );
+    const out = relayEcosystemSignalOutputSchema.safeParse(result);
+    if (!out.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${out.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    return {
+      content: [
+        {
+          type: 'text',
+          text: out.data.ok
+            ? `Relayed signal to ${out.data.targetSpaceSlug} from ${out.data.sourceSpaceSlug}.`
+            : `Failed to relay signal: ${out.data.error}`,
+        },
+      ],
+      structuredContent: out.data,
+      ...(out.data.ok ? {} : { isError: true }),
     };
   },
 );

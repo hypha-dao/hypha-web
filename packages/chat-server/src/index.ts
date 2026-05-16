@@ -15,6 +15,8 @@ export {
   createGetEcosystemBySpaceSlugTool,
   createGetPeopleBySpaceSlugTool,
   createGetSignalsBySpaceSlugTool,
+  createCreateSpaceSignalBySlugTool,
+  createRelayEcosystemSignalTool,
   createGetOrgMemoryBySpaceSlugTool,
   createSummarizeSpaceDiscussionTool,
   createIngestSpaceCallArtifactsTool,
