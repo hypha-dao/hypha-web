@@ -181,7 +181,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
           {t('spaceMemory')}
           {typeof totalCount === 'number' ? (
             <span className="ml-2 text-5 font-medium text-muted-foreground">
-              | {Intl.NumberFormat().format(totalCount)}
+              | {Intl.NumberFormat(lang).format(totalCount)}
             </span>
           ) : null}
         </h1>
