@@ -25,38 +25,64 @@ import {
   type SignalType,
 } from './ai-signal-actions';
 
-const WINDOW_MINUTES = Number(
-  process.env.HYPHA_SIGNAL_ORCHESTRATOR_WINDOW_MINUTES ?? '20',
+function parseEnvNumber(
+  value: string | undefined,
+  fallback: number,
+  options?: { int?: boolean },
+): number {
+  const raw = Number(value ?? '');
+  if (!Number.isFinite(raw)) return fallback;
+  if (options?.int) return Math.trunc(raw);
+  return raw;
+}
+
+const WINDOW_MINUTES = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_WINDOW_MINUTES,
+  20,
+  { int: true },
 );
-const MAX_ATTEMPTS = Number(
-  process.env.HYPHA_SIGNAL_ORCHESTRATOR_MAX_ATTEMPTS ?? '5',
+const MAX_ATTEMPTS = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_MAX_ATTEMPTS,
+  5,
+  { int: true },
 );
-const MIN_RELEVANCE = Number(
-  process.env.HYPHA_SIGNAL_ORCHESTRATOR_MIN_RELEVANCE ?? '68',
+const MIN_RELEVANCE = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_MIN_RELEVANCE,
+  68,
 );
-const MIN_CONFIDENCE = Number(
-  process.env.HYPHA_SIGNAL_ORCHESTRATOR_MIN_CONFIDENCE ?? '66',
+const MIN_CONFIDENCE = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_MIN_CONFIDENCE,
+  66,
 );
-const MIN_NOVELTY = Number(
-  process.env.HYPHA_SIGNAL_ORCHESTRATOR_MIN_NOVELTY ?? '45',
+const MIN_NOVELTY = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_MIN_NOVELTY,
+  45,
 );
-const RELAY_MIN_RELEVANCE = Number(
-  process.env.HYPHA_SIGNAL_ORCHESTRATOR_RELAY_MIN_RELEVANCE ?? '78',
+const RELAY_MIN_RELEVANCE = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_RELAY_MIN_RELEVANCE,
+  78,
 );
-const RELAY_MIN_CONFIDENCE = Number(
-  process.env.HYPHA_SIGNAL_ORCHESTRATOR_RELAY_MIN_CONFIDENCE ?? '76',
+const RELAY_MIN_CONFIDENCE = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_RELAY_MIN_CONFIDENCE,
+  76,
 );
-const DAILY_SPACE_LIMIT = Number(
-  process.env.HYPHA_SIGNAL_ORCHESTRATOR_SPACE_DAILY_LIMIT ?? '3',
+const DAILY_SPACE_LIMIT = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_SPACE_DAILY_LIMIT,
+  3,
+  { int: true },
 );
-const DAILY_RELAY_LIMIT = Number(
-  process.env.HYPHA_SIGNAL_ORCHESTRATOR_RELAY_DAILY_LIMIT ?? '2',
+const DAILY_RELAY_LIMIT = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_RELAY_DAILY_LIMIT,
+  2,
+  { int: true },
 );
-const TAG_COOLDOWN_HOURS = Number(
-  process.env.HYPHA_SIGNAL_ORCHESTRATOR_TAG_COOLDOWN_HOURS ?? '18',
+const TAG_COOLDOWN_HOURS = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_TAG_COOLDOWN_HOURS,
+  18,
 );
-const SPACE_COOLDOWN_HOURS = Number(
-  process.env.HYPHA_SIGNAL_ORCHESTRATOR_SPACE_COOLDOWN_HOURS ?? '6',
+const SPACE_COOLDOWN_HOURS = parseEnvNumber(
+  process.env.HYPHA_SIGNAL_ORCHESTRATOR_SPACE_COOLDOWN_HOURS,
+  6,
 );
 
 const SOURCE_TO_TAGS: Record<string, string[]> = {
