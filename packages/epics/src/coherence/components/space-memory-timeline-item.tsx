@@ -36,20 +36,99 @@ function PdfPreview({
   src: string;
   fallbackLabel: string;
 }) {
-  return (
-    <object
-      data={src}
-      type="application/pdf"
-      className="h-full w-full"
-      aria-label={fallbackLabel}
-    >
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+  const [renderState, setRenderState] = React.useState<
+    'loading' | 'ready' | 'error'
+  >('loading');
+
+  React.useEffect(() => {
+    let cancelled = false;
+    let loadingTask: { destroy?: () => void } | null = null;
+
+    async function renderFirstPage(): Promise<void> {
+      try {
+        setRenderState('loading');
+        const pdfJs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+        const task = pdfJs.getDocument({
+          url: src,
+          disableWorker: true,
+          verbosity: 0,
+        } as any);
+        loadingTask = task;
+        const pdf = await task.promise;
+        const page = await pdf.getPage(1);
+
+        const baseViewport = page.getViewport({ scale: 1 });
+        const scale = Math.min(2, Math.max(0.6, 900 / baseViewport.width));
+        const viewport = page.getViewport({ scale });
+        const pixelRatio = window.devicePixelRatio || 1;
+        const canvas = canvasRef.current;
+        const context = canvas?.getContext('2d');
+
+        if (!canvas || !context || cancelled) {
+          await pdf.destroy();
+          return;
+        }
+
+        canvas.width = Math.max(1, Math.floor(viewport.width * pixelRatio));
+        canvas.height = Math.max(1, Math.floor(viewport.height * pixelRatio));
+        canvas.style.width = `${Math.max(1, Math.floor(viewport.width))}px`;
+        canvas.style.height = `${Math.max(1, Math.floor(viewport.height))}px`;
+        context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+        await page.render({ canvas, canvasContext: context, viewport }).promise;
+        await pdf.destroy();
+
+        if (!cancelled) {
+          setRenderState('ready');
+        }
+      } catch {
+        if (!cancelled) {
+          setRenderState('error');
+        }
+      }
+    }
+
+    void renderFirstPage();
+    return () => {
+      cancelled = true;
+      loadingTask?.destroy?.();
+    };
+  }, [src]);
+
+  if (renderState === 'error') {
+    return (
       <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
         <FileIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
         <span className="line-clamp-2 text-center text-[10px]">
           {fallbackLabel}
         </span>
       </div>
-    </object>
+    );
+  }
+
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+      <canvas
+        ref={canvasRef}
+        aria-label={fallbackLabel}
+        className={cn(
+          'max-h-full max-w-full object-contain',
+          renderState === 'ready' ? 'opacity-100' : 'opacity-0',
+        )}
+      />
+      {renderState === 'loading' ? (
+        <div className="absolute inset-0 flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
+          <FileIcon
+            className="h-8 w-8 animate-pulse opacity-70"
+            strokeWidth={1.25}
+          />
+          <span className="line-clamp-2 text-center text-[10px]">
+            {fallbackLabel}
+          </span>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
