@@ -14,5 +14,7 @@ export {
   getSpaceBySlugTool,
   createGetPeopleBySpaceSlugTool,
   createGetOrgMemoryBySpaceSlugTool,
+  createSummarizeSpaceDiscussionTool,
+  createIngestSpaceCallArtifactsTool,
 } from './tools/index';
 export type { ChatRouteTool } from './tools/types';
