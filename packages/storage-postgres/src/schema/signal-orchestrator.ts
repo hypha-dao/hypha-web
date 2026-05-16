@@ -61,10 +61,6 @@ export const signalOrchestratorCooldowns = pgTable(
       table.spaceId,
       table.key,
     ),
-    index('signal_orchestrator_cooldowns_space_key_idx').on(
-      table.spaceId,
-      table.key,
-    ),
     index('signal_orchestrator_cooldowns_until_idx').on(table.cooldownUntil),
   ],
 );
