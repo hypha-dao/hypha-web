@@ -96,13 +96,21 @@ export async function POST(
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    await enqueueSignalEvaluationFromMemory(
-      {
+    try {
+      await enqueueSignalEvaluationFromMemory(
+        {
+          spaceSlug,
+          triggerKind: 'memory_ingest',
+        },
+        { db },
+      );
+    } catch (error) {
+      console.error('[call-artifacts] Failed to enqueue signal evaluation', {
         spaceSlug,
         triggerKind: 'memory_ingest',
-      },
-      { db },
-    );
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
 
     return NextResponse.json(result);
   } catch (error) {
