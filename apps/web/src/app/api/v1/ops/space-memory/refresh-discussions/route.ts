@@ -20,12 +20,8 @@ const SUMMARY_CONCURRENCY = 6;
 const SUMMARY_TIMEOUT_MS = 45_000;
 
 async function readPayload(request: NextRequest) {
-  try {
-    const body = await request.json();
-    return refreshPayloadSchema.safeParse(body ?? {});
-  } catch {
-    return refreshPayloadSchema.safeParse({});
-  }
+  const body = await request.json();
+  return refreshPayloadSchema.safeParse(body ?? {});
 }
 
 async function withTimeout<T>(
@@ -57,7 +53,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const parsedPayload = await readPayload(request);
+  let parsedPayload: ReturnType<typeof refreshPayloadSchema.safeParse>;
+  try {
+    parsedPayload = await readPayload(request);
+  } catch {
+    return NextResponse.json(
+      { error: 'Malformed JSON payload' },
+      { status: 400 },
+    );
+  }
   if (!parsedPayload.success) {
     return NextResponse.json(
       { error: 'Invalid payload', details: parsedPayload.error.flatten() },
