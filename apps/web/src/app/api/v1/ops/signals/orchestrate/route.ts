@@ -10,12 +10,8 @@ const orchestratePayloadSchema = z.object({
 });
 
 async function readPayload(request: NextRequest) {
-  try {
-    const body = await request.json();
-    return orchestratePayloadSchema.safeParse(body ?? {});
-  } catch {
-    return orchestratePayloadSchema.safeParse({});
-  }
+  const body = await request.json();
+  return orchestratePayloadSchema.safeParse(body ?? {});
 }
 
 export async function POST(request: NextRequest) {
@@ -31,7 +27,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const parsedPayload = await readPayload(request);
+  let parsedPayload: ReturnType<typeof orchestratePayloadSchema.safeParse>;
+  try {
+    parsedPayload = await readPayload(request);
+  } catch {
+    return NextResponse.json(
+      { error: 'Malformed JSON payload' },
+      { status: 400 },
+    );
+  }
   if (!parsedPayload.success) {
     return NextResponse.json(
       { error: 'Invalid payload', details: parsedPayload.error.flatten() },
