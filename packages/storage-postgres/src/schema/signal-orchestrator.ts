@@ -99,8 +99,12 @@ export const signalOrchestratorDispatches = pgTable(
     ...commonDateFields,
   },
   (table) => [
+    index('signal_orchestrator_dispatches_queue_idx').on(table.queueId),
     index('signal_orchestrator_dispatches_source_idx').on(table.sourceSpaceId),
     index('signal_orchestrator_dispatches_target_idx').on(table.targetSpaceId),
+    index('signal_orchestrator_dispatches_emitted_signal_idx').on(
+      table.emittedSignalId,
+    ),
     index('signal_orchestrator_dispatches_mode_decision_idx').on(
       table.mode,
       table.decision,

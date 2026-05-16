@@ -64,9 +64,13 @@ CREATE UNIQUE INDEX "signal_orchestrator_cooldowns_space_key_unique" ON "signal_
 --> statement-breakpoint
 CREATE INDEX "signal_orchestrator_cooldowns_until_idx" ON "signal_orchestrator_cooldowns" USING btree ("cooldown_until");
 --> statement-breakpoint
+CREATE INDEX "signal_orchestrator_dispatches_queue_idx" ON "signal_orchestrator_dispatches" USING btree ("queue_id");
+--> statement-breakpoint
 CREATE INDEX "signal_orchestrator_dispatches_source_idx" ON "signal_orchestrator_dispatches" USING btree ("source_space_id");
 --> statement-breakpoint
 CREATE INDEX "signal_orchestrator_dispatches_target_idx" ON "signal_orchestrator_dispatches" USING btree ("target_space_id");
+--> statement-breakpoint
+CREATE INDEX "signal_orchestrator_dispatches_emitted_signal_idx" ON "signal_orchestrator_dispatches" USING btree ("emitted_signal_id");
 --> statement-breakpoint
 CREATE INDEX "signal_orchestrator_dispatches_mode_decision_idx" ON "signal_orchestrator_dispatches" USING btree ("mode","decision");
 --> statement-breakpoint
