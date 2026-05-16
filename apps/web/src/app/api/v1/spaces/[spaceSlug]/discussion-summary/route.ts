@@ -26,11 +26,19 @@ export async function POST(
           { status: 403 },
         );
       }
-      const { hasAccess, response } = await checkSpaceAccess(
-        request,
-        space.web3SpaceId as number,
-      );
-      if (!hasAccess && response) return response;
+      const spaceId = Number(space.web3SpaceId);
+      if (!Number.isFinite(spaceId)) {
+        return NextResponse.json(
+          { error: 'Space has an invalid on-chain space id' },
+          { status: 403 },
+        );
+      }
+      const { hasAccess, response } = await checkSpaceAccess(request, spaceId);
+      if (!hasAccess) {
+        return (
+          response ?? NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        );
+      }
     }
 
     const authHeader = request.headers.get('authorization');
