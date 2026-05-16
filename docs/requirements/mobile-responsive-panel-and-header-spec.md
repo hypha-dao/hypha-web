@@ -148,6 +148,15 @@ Changes:
 
 Move mobile navigation links currently exposed by `MenuTop` fullscreen menu into `ConnectedButtonProfile.navItems` (already present) and verify parity.
 
+- Canonical links to preserve (from `app/layout` navItems):
+  1. `My Spaces` (`/${lang}/my-spaces`)
+  2. `Network` (`/${lang}/network`)
+- Target location/order: keep both entries in `ConnectedButtonProfile.navItems` in the same order as above unless product explicitly reprioritizes.
+- Keep profile-account actions (`Settings`, `Sign out`, etc.) in the profile surface; they must not require the `MenuTop` fullscreen menu path.
+- Reference implementation surfaces:
+  - `packages/ui/src/organisms/menu-top.tsx` (mobile fullscreen container)
+  - `apps/web/src/app/layout.tsx` (`ConnectedButtonProfile.navItems` source)
+
 ## D. Panel Trigger and Sidebar Coordination
 
 File: `packages/epics/src/common/panel-wrap-layout.tsx`
@@ -192,6 +201,10 @@ File: `packages/epics/src/common/panel-wrap-layout.tsx` (`HumanSidebarTrigger`, 
 - Only one hamburger/menu affordance exists in compact header.
 - Profile avatar remains visible at all compact widths.
 - When right panel opens in compact mode, header remains non-overlapping and usable.
+- Mobile navigation parity after migration:
+  - labels remain `My Spaces` and `Network`,
+  - routes/handlers match previous behavior,
+  - keyboard/tab order and ARIA labels remain valid.
 
 ### Adaptive Threshold
 
