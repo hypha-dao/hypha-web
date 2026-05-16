@@ -12,16 +12,16 @@ import { DbConfig } from '../../server';
 
 const PAYMENT_CHAIN_ID = 8453 as const;
 
-type SignalType =
+export type SignalType =
   | 'Opportunity'
   | 'Risk'
   | 'Tension'
   | 'Insight'
   | 'Trend'
   | 'Proposal';
-type SignalPriority = 'critical' | 'high' | 'medium' | 'low';
+export type SignalPriority = 'critical' | 'high' | 'medium' | 'low';
 
-type PaymentEligibility = {
+export type PaymentEligibility = {
   eligible: boolean;
   hasSpacePaid: boolean;
   daysLeft: number;
@@ -58,7 +58,9 @@ function normalizeTags(tags: string[] | undefined): string[] {
     .filter((tag, index, arr) => tag.length > 0 && arr.indexOf(tag) === index);
 }
 
-function toPaymentReason(status: PaymentEligibility): string | undefined {
+export function toPaymentReason(
+  status: PaymentEligibility,
+): string | undefined {
   if (status.eligible) return undefined;
   if (!status.hasSpacePaid) {
     return 'AI signal actions are limited to active paid spaces.';
@@ -69,7 +71,7 @@ function toPaymentReason(status: PaymentEligibility): string | undefined {
   return status.reason ?? 'Space is not eligible for AI signal actions.';
 }
 
-async function getSpacePaymentEligibility(
+export async function getSpacePaymentEligibility(
   web3SpaceId?: number | null,
 ): Promise<PaymentEligibility> {
   if (typeof web3SpaceId !== 'number' || !Number.isFinite(web3SpaceId)) {
@@ -110,6 +112,13 @@ async function getSpacePaymentEligibility(
     hasSpacePaid: Boolean(hasSpacePaid),
     daysLeft,
   };
+}
+
+export async function resolveSignalActorId(authToken: string | undefined) {
+  if (!authToken) return null;
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  return self?.id ?? null;
 }
 
 async function createSignalInSpace(
@@ -177,9 +186,8 @@ export async function createAiSignalForSpaceBySlug(
     return { ok: false as const, error: paymentReason };
   }
 
-  const authDb = getDb({ authToken });
-  const self = await findSelf({ db: authDb });
-  if (!self?.id) {
+  const actorId = await resolveSignalActorId(authToken);
+  if (!actorId) {
     return {
       ok: false as const,
       error: 'Could not resolve authenticated user.',
@@ -189,7 +197,7 @@ export async function createAiSignalForSpaceBySlug(
   const created = await createSignalInSpace(
     {
       host,
-      creatorId: self.id,
+      creatorId: actorId,
       title,
       description,
       type,
@@ -204,7 +212,7 @@ export async function createAiSignalForSpaceBySlug(
     signalId: created.id,
     signalSlug: created.slug,
     spaceSlug: host.slug,
-    creatorId: self.id,
+    creatorId: actorId,
   };
 }
 
@@ -268,9 +276,8 @@ export async function relayAiSignalToEcosystemSpace(
     };
   }
 
-  const authDb = getDb({ authToken });
-  const self = await findSelf({ db: authDb });
-  if (!self?.id) {
+  const actorId = await resolveSignalActorId(authToken);
+  if (!actorId) {
     return {
       ok: false as const,
       error: 'Could not resolve authenticated user.',
@@ -294,7 +301,7 @@ export async function relayAiSignalToEcosystemSpace(
   const created = await createSignalInSpace(
     {
       host: target,
-      creatorId: self.id,
+      creatorId: actorId,
       title,
       description: composedDescription,
       type,
@@ -310,6 +317,6 @@ export async function relayAiSignalToEcosystemSpace(
     signalSlug: created.slug,
     sourceSpaceSlug: source.slug,
     targetSpaceSlug: target.slug,
-    creatorId: self.id,
+    creatorId: actorId,
   };
 }

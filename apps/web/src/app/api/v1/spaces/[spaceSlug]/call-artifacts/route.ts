@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { ingestSpaceCallArtifacts } from '@hypha-platform/core/server';
+import {
+  enqueueSignalEvaluationFromMemory,
+  ingestSpaceCallArtifacts,
+} from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
 const callArtifactIngestSchema = z.object({
@@ -92,6 +95,14 @@ export async function POST(
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
+
+    await enqueueSignalEvaluationFromMemory(
+      {
+        spaceSlug,
+        triggerKind: 'memory_ingest',
+      },
+      { db },
+    );
 
     return NextResponse.json(result);
   } catch (error) {

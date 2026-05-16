@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import {
   createSpaceDiscussionSummary,
+  enqueueSignalEvaluationFromMemory,
   findSpaceBySlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -41,6 +42,13 @@ export async function POST(
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
+    await enqueueSignalEvaluationFromMemory(
+      {
+        spaceSlug,
+        triggerKind: 'discussion_summary',
+      },
+      { db },
+    );
     return NextResponse.json(result);
   } catch (error) {
     console.error(

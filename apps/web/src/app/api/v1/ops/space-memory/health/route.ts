@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { and, eq, gte, isNotNull, sql } from 'drizzle-orm';
+import { getSignalOrchestratorMetrics } from '@hypha-platform/core/server';
 import {
   db,
   spaceCallRecordings,
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
     transcripts24h,
     recordings24h,
     summaries7d,
+    signalMetrics,
   ] = await Promise.all([
     db
       .select({ count: sql<number>`count(*)` })
@@ -69,6 +71,7 @@ export async function GET(request: NextRequest) {
       .select({ count: sql<number>`count(*)` })
       .from(spaceDiscussionSummaries)
       .where(gte(spaceDiscussionSummaries.createdAt, since7d)),
+    getSignalOrchestratorMetrics({ db }),
   ]);
 
   const summaries_total = Number(summaryTotalRow[0]?.count ?? 0);
@@ -138,6 +141,13 @@ export async function GET(request: NextRequest) {
         'No discussion summaries were generated in the last 7 days for spaces with chat rooms.',
     });
   }
+  if (signalMetrics.queue_failed > 0) {
+    alerts.push({
+      level: 'warn',
+      code: 'signal_orchestrator_failed_jobs',
+      message: `Signal orchestrator has ${signalMetrics.queue_failed} failed queue items.`,
+    });
+  }
 
   const status = alerts.some((a) => a.level === 'critical')
     ? 'critical'
@@ -157,7 +167,12 @@ export async function GET(request: NextRequest) {
       summaries_last_24h,
       transcripts_last_24h,
       recordings_last_24h,
+      signal_orchestrator_queue_pending: signalMetrics.queue_pending,
+      signal_orchestrator_queue_failed: signalMetrics.queue_failed,
+      signals_emitted_last_24h: signalMetrics.signals_emitted_last_24h,
+      relays_emitted_last_24h: signalMetrics.relays_emitted_last_24h,
     },
+    signal_orchestrator: signalMetrics,
     alerts,
   });
 }

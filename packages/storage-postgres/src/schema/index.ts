@@ -18,6 +18,11 @@ import {
   spaceCallTranscripts,
   spaceDiscussionSummaries,
 } from './call-artifacts';
+import {
+  signalOrchestratorCooldowns,
+  signalOrchestratorDispatches,
+  signalOrchestratorQueue,
+} from './signal-orchestrator';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -35,6 +40,7 @@ export * from './coherence';
 export * from './matrix-user-link';
 export * from './token-updates';
 export * from './call-artifacts';
+export * from './signal-orchestrator';
 
 export const schema = {
   documents,
@@ -57,4 +63,7 @@ export const schema = {
   spaceCallRecordings,
   spaceCallTranscripts,
   spaceDiscussionSummaries,
+  signalOrchestratorQueue,
+  signalOrchestratorCooldowns,
+  signalOrchestratorDispatches,
 };

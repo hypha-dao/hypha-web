@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { and, desc, eq, isNotNull } from 'drizzle-orm';
 import { z } from 'zod';
-import { createSpaceDiscussionSummary } from '@hypha-platform/core/server';
+import {
+  createSpaceDiscussionSummary,
+  enqueueSignalEvaluationFromMemory,
+} from '@hypha-platform/core/server';
 import { db, spaces } from '@hypha-platform/storage-postgres';
 
 const refreshPayloadSchema = z.object({
@@ -99,6 +102,13 @@ export async function POST(request: NextRequest) {
       { db },
     );
     if (result.ok) {
+      await enqueueSignalEvaluationFromMemory(
+        {
+          spaceSlug,
+          triggerKind: 'ops_refresh',
+        },
+        { db },
+      );
       summaries.push({
         space_slug: spaceSlug,
         ok: true,
