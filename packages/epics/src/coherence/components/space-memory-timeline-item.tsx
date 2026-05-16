@@ -8,9 +8,9 @@ import { formatDate } from '@hypha-platform/ui-utils';
 import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 
-/** Matches Human Chat image slot: `rounded-lg border border-border bg-muted/30` + object-contain preview */
+/** Matches Human Chat image slot: rounded shell with safe media preview. */
 const THUMB_SHELL =
-  'relative flex h-44 w-44 max-w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/30';
+  'relative flex min-h-[160px] w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/30';
 
 function isSafeAssetUrl(url: string): boolean {
   try {
@@ -272,25 +272,40 @@ export function SpaceMemoryTimelineItem({
   const linkClass =
     'group flex flex-col gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
   const filenameRowClass =
-    'inline-flex items-start gap-1 text-xs font-medium leading-snug text-foreground underline-offset-2 group-hover:text-primary group-hover:underline';
+    'inline-flex items-start gap-1 text-sm font-medium leading-snug text-foreground underline-offset-2 group-hover:text-primary group-hover:underline';
+
+  const sourceLabel = (() => {
+    if (item.source === 'proposal_upload') return t('spaceMemoryProposals');
+    if (item.source === 'matrix_chat') return t('spaceMemoryConversations');
+    if (item.source === 'call_transcript')
+      return t('spaceMemoryCallTranscriptExcerpt');
+    if (item.source === 'call_recording')
+      return t('spaceMemoryContextCallRecording');
+    if (item.source === 'discussion_summary') return item.name;
+    return t('spaceMemory');
+  })();
 
   return (
-    <li className="flex w-44 shrink-0 flex-col items-stretch">
-      <span
-        className="mb-1.5 h-2 w-2 shrink-0 self-center rounded-full border-2 border-background bg-accent-9 shadow-sm ring-1 ring-border"
-        aria-hidden
-      />
-      <time
-        dateTime={item.uploadedAt}
-        className="text-center text-[10px] font-medium leading-tight text-muted-foreground"
-      >
-        {uploaded}
-      </time>
-      <p className="mt-0.5 line-clamp-2 text-center text-[10px] leading-tight text-muted-foreground">
+    <li className="flex h-full w-full flex-col rounded-lg border border-border bg-card p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="inline-flex items-center rounded-md bg-accent-2 px-2 py-0.5 text-[10px] font-medium text-accent-11">
+          {sourceLabel}
+        </span>
+        <time
+          dateTime={item.uploadedAt}
+          className="text-[10px] font-medium leading-tight text-muted-foreground"
+        >
+          {uploaded}
+        </time>
+      </div>
+      <p className="line-clamp-2 text-xs leading-tight text-muted-foreground">
         {contextLine}
       </p>
+      <p className="mt-1 line-clamp-2 text-sm font-medium text-card-foreground">
+        {item.name}
+      </p>
 
-      <div className="mt-2 flex flex-col gap-2">
+      <div className="mt-3 flex flex-1 flex-col gap-2">
         {canOpen ? (
           <a
             href={openHref!}
@@ -299,7 +314,7 @@ export function SpaceMemoryTimelineItem({
             className={linkClass}
             aria-label={openLabel}
           >
-            <div className={cn(THUMB_SHELL, 'min-h-[120px]')}>
+            <div className={cn(THUMB_SHELL, 'aspect-[16/10]')}>
               {thumbPreview}
             </div>
             <span className={filenameRowClass}>
@@ -312,7 +327,7 @@ export function SpaceMemoryTimelineItem({
             className="flex flex-col gap-2 rounded-lg"
             title={mxc && !canOpen ? t('spaceMemoryMatrixOpenHint') : undefined}
           >
-            <div className={cn(THUMB_SHELL, 'min-h-[120px]')}>
+            <div className={cn(THUMB_SHELL, 'aspect-[16/10]')}>
               {thumbPreview}
             </div>
             <span className="line-clamp-3 break-words text-xs font-medium text-foreground">

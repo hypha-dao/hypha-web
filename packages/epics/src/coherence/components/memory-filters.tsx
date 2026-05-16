@@ -42,15 +42,23 @@ export function MemoryFilters({
   ];
 
   return (
-    <div className="flex w-full flex-col gap-3">
+    <div className="sticky top-0 z-10 flex w-full flex-col gap-3 rounded-lg border border-border bg-background/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <Tabs
         value={activeFilter}
         onValueChange={(value) => onFilterChange(value as MemoryFilterValue)}
-        className="w-full lg:w-auto"
+        className="w-full"
       >
-        <TabsList triggerVariant="switch" className="w-fit">
+        <TabsList
+          triggerVariant="switch"
+          className="grid w-full grid-cols-2 gap-1 md:flex md:w-fit md:flex-wrap"
+        >
           {tabItems.map((item) => (
-            <TabsTrigger key={item.value} variant="switch" value={item.value}>
+            <TabsTrigger
+              key={item.value}
+              variant="switch"
+              value={item.value}
+              className="justify-center"
+            >
               <span className="inline-flex items-center gap-1">
                 <span>{item.label}</span>
                 <span className="text-xs text-muted-foreground">

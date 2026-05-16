@@ -10,6 +10,7 @@ import {
   DocumentState,
   EventType,
   RoomEvent,
+  SpaceMemoryItem,
   filterSpaceMemoryItems,
   useMatrix,
   useSpaceBySlug,
@@ -107,6 +108,28 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         | 'documentStates.agreement',
     );
 
+  const contextLineForItem = React.useCallback(
+    (row: SpaceMemoryItem) => {
+      if (row.source === 'matrix_chat') {
+        return t('spaceMemoryContextMatrix');
+      }
+      if (row.source === 'call_transcript') {
+        return t('spaceMemoryContextCallTranscript');
+      }
+      if (row.source === 'call_recording') {
+        return t('spaceMemoryContextCallRecording');
+      }
+      if (row.source === 'discussion_summary') {
+        return row.name;
+      }
+      return t('spaceMemoryContext', {
+        title: row.context.documentTitle || t('untitledDocument'),
+        state: stateLabel(row.context.documentState),
+      });
+    },
+    [stateLabel, t],
+  );
+
   const counts = React.useMemo(
     () =>
       ({
@@ -161,14 +184,19 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       className="flex w-full flex-col gap-4 py-2"
       aria-label={t('spaceMemory')}
     >
-      <h1 className="text-7 font-semibold tracking-tight text-foreground">
-        {t('spaceMemory')}
-        {typeof totalCount === 'number' ? (
-          <span className="ml-2 text-5 font-medium text-muted-foreground">
-            | {Intl.NumberFormat().format(totalCount)}
-          </span>
-        ) : null}
-      </h1>
+      <header className="flex flex-wrap items-end justify-between gap-2">
+        <h1 className="text-7 font-semibold tracking-tight text-foreground">
+          {t('spaceMemory')}
+          {typeof totalCount === 'number' ? (
+            <span className="ml-2 text-5 font-medium text-muted-foreground">
+              | {Intl.NumberFormat().format(totalCount)}
+            </span>
+          ) : null}
+        </h1>
+        <p className="text-2 text-muted-foreground">
+          {t('spaceMemoryTimelineLabel')}
+        </p>
+      </header>
       <MemoryFilters
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
@@ -178,6 +206,40 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         counts={counts}
         showAiChatTab={showAiChatTab}
       />
+      <div className="grid w-full grid-cols-2 gap-2 md:grid-cols-4">
+        <div className="rounded-md border border-border bg-card px-3 py-2">
+          <p className="text-1 text-muted-foreground">
+            {t('spaceMemoryGeneral')}
+          </p>
+          <p className="text-3 font-semibold text-card-foreground">
+            {counts.general}
+          </p>
+        </div>
+        <div className="rounded-md border border-border bg-card px-3 py-2">
+          <p className="text-1 text-muted-foreground">
+            {t('spaceMemoryProposals')}
+          </p>
+          <p className="text-3 font-semibold text-card-foreground">
+            {counts.proposals}
+          </p>
+        </div>
+        <div className="rounded-md border border-border bg-card px-3 py-2">
+          <p className="text-1 text-muted-foreground">
+            {t('spaceMemoryConversations')}
+          </p>
+          <p className="text-3 font-semibold text-card-foreground">
+            {counts.conversations}
+          </p>
+        </div>
+        <div className="rounded-md border border-border bg-card px-3 py-2">
+          <p className="text-1 text-muted-foreground">
+            {t('spaceMemoryAiChat')}
+          </p>
+          <p className="text-3 font-semibold text-card-foreground">
+            {counts['ai-chat']}
+          </p>
+        </div>
+      </div>
 
       {error ? (
         <div className="flex flex-col items-center gap-2 w-full px-4">
@@ -210,22 +272,14 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       ) : (
         <>
           <ul
-            className="m-0 flex w-full list-none flex-wrap justify-start gap-x-6 gap-y-10 p-0"
+            className="m-0 grid w-full list-none grid-cols-1 gap-4 p-0 md:grid-cols-2 xl:grid-cols-3"
             aria-label={t('spaceMemoryTimelineLabel')}
           >
             {filteredItems.map((row) => (
               <SpaceMemoryTimelineItem
                 key={row.id}
                 item={row}
-                contextLine={
-                  row.source === 'matrix_chat'
-                    ? t('spaceMemoryContextMatrix')
-                    : t('spaceMemoryContext', {
-                        title:
-                          row.context.documentTitle || t('untitledDocument'),
-                        state: stateLabel(row.context.documentState),
-                      })
-                }
+                contextLine={contextLineForItem(row)}
                 openLabel={t('spaceMemoryOpenAsset', { name: row.name })}
               />
             ))}
