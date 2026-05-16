@@ -2157,7 +2157,14 @@
     "callLeftBannerDismiss": "Cerrar",
     "callPaneResizeSharePeople": "Redimensionar pantalla y personas",
     "callPaneResizeShareStrip": "Redimensionar pantalla y tira de vídeo",
-    "callPaneResizeSpeakerShare": "Redimensionar orador y pantalla"
+    "callPaneResizeSpeakerShare": "Redimensionar orador y pantalla",
+    "callDockTitleWithMembers": "Llamada - {count, plural, one {# miembro} other {# miembros}}",
+    "callDockOpenCallSpace": "Abrir espacio de llamada",
+    "callDockSpaceLabel": "Espacio",
+    "callDockMinimize": "Minimizar llamada",
+    "callDockExpand": "Expandir llamada",
+    "callDockFullscreen": "Pantalla completa",
+    "callDockExitFullscreen": "Salir de pantalla completa"
   },
   "CoherenceTab": {
     "signals": "Señales",

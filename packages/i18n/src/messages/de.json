@@ -2165,7 +2165,14 @@
     "callLeftBannerDismiss": "Schließen",
     "callPaneResizeSharePeople": "Bildschirmfreigabe und Personen skalieren",
     "callPaneResizeShareStrip": "Bildschirmfreigabe und Filmstreifen skalieren",
-    "callPaneResizeSpeakerShare": "Sprecher*in und Bildschirmfreigabe skalieren"
+    "callPaneResizeSpeakerShare": "Sprecher*in und Bildschirmfreigabe skalieren",
+    "callDockTitleWithMembers": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",
+    "callDockOpenCallSpace": "Anrufraum öffnen",
+    "callDockSpaceLabel": "Space",
+    "callDockMinimize": "Anruf minimieren",
+    "callDockExpand": "Anruf erweitern",
+    "callDockFullscreen": "Vollbild",
+    "callDockExitFullscreen": "Vollbild beenden"
   },
   "CoherenceTab": {
     "signals": "Signale",

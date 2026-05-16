@@ -2164,7 +2164,14 @@
     "callLeftBannerDismiss": "Dismiss",
     "callPaneResizeSharePeople": "Resize screen share and people",
     "callPaneResizeShareStrip": "Resize screen share and filmstrip",
-    "callPaneResizeSpeakerShare": "Resize speaker and screen share"
+    "callPaneResizeSpeakerShare": "Resize speaker and screen share",
+    "callDockTitleWithMembers": "Call - {count, plural, one {# member} other {# members}}",
+    "callDockOpenCallSpace": "Open call space",
+    "callDockSpaceLabel": "Space",
+    "callDockMinimize": "Minimize call",
+    "callDockExpand": "Expand call",
+    "callDockFullscreen": "Fullscreen",
+    "callDockExitFullscreen": "Exit fullscreen"
   },
   "CoherenceTab": {
     "signals": "Signals",
