@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { createUIMessageStream, createUIMessageStreamResponse } from 'ai';
 import {
   chatRequestSchema,
   type ChatRequestPayload,
@@ -11,6 +11,31 @@ import {
 
 export const maxDuration = 300;
 
+function createChatFailureStreamResponse({
+  debugRequestId,
+  message,
+}: {
+  debugRequestId: string;
+  message: string;
+}) {
+  const textPartId = `text-${debugRequestId}`;
+  return createUIMessageStreamResponse({
+    status: 200,
+    headers: {
+      'x-hypha-chat-debug-id': debugRequestId,
+    },
+    stream: createUIMessageStream({
+      execute: ({ writer }) => {
+        writer.write({ type: 'start' });
+        writer.write({ type: 'text-start', id: textPartId });
+        writer.write({ type: 'text-delta', id: textPartId, delta: message });
+        writer.write({ type: 'text-end', id: textPartId });
+        writer.write({ type: 'finish', finishReason: 'error' });
+      },
+    }),
+  });
+}
+
 export async function POST(req: Request) {
   const debugRequestId = `chat-${Date.now().toString(36)}-${Math.random()
     .toString(36)
@@ -19,30 +44,37 @@ export async function POST(req: Request) {
   const headersList = await headers();
   const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return createChatFailureStreamResponse({
+      debugRequestId,
+      message: 'Authentication is required. Please sign in again and retry.',
+    });
   }
 
   const authResult = await verifyPrivyAuthToken(authToken);
   if (!authResult.valid) {
-    return NextResponse.json(
-      { error: 'Unauthorized', reason: authResult.reason },
-      { status: 401 },
-    );
+    return createChatFailureStreamResponse({
+      debugRequestId,
+      message: `Authentication failed: ${authResult.reason}. Please sign in again and retry.`,
+    });
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return createChatFailureStreamResponse({
+      debugRequestId,
+      message: 'Invalid chat request payload. Please retry your message.',
+    });
   }
 
   const parsed = chatRequestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Invalid request payload', details: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return createChatFailureStreamResponse({
+      debugRequestId,
+      message:
+        'The chat request format is invalid for this session. Please retry.',
+    });
   }
 
   const messages: ChatRequestPayload['messages'] = parsed.data.messages;
@@ -61,15 +93,11 @@ export async function POST(req: Request) {
       ...(OPENROUTER_DEBUG && { error }),
     });
 
-    return NextResponse.json(
-      { error: 'STREAM_ERROR' },
-      {
-        status: 502,
-        headers: {
-          'x-hypha-chat-debug-id': debugRequestId,
-        },
-      },
-    );
+    return createChatFailureStreamResponse({
+      debugRequestId,
+      message:
+        'I hit an issue while starting the response. Please retry in a few seconds.',
+    });
   }
 
   return result.toUIMessageStreamResponse({
