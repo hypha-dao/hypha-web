@@ -8,17 +8,7 @@ import {
   spaceDiscussionSummaries,
   spaces,
 } from '@hypha-platform/storage-postgres';
-
-function readOpsSecret(request: NextRequest): string {
-  return (
-    request.headers.get('x-hypha-ops-secret')?.trim() ??
-    request.headers
-      .get('authorization')
-      ?.replace(/^Bearer\s+/i, '')
-      .trim() ??
-    ''
-  );
-}
+import { readOpsSecret } from '../../_lib/ops-auth';
 
 export async function GET(request: NextRequest) {
   const configuredSecret =

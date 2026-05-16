@@ -6,6 +6,7 @@ import {
   enqueueSignalEvaluationFromMemory,
 } from '@hypha-platform/core/server';
 import { db, spaces } from '@hypha-platform/storage-postgres';
+import { readOpsSecret } from '../../_lib/ops-auth';
 
 const refreshPayloadSchema = z.object({
   space_slugs: z.array(z.string().trim().min(1)).optional(),
@@ -13,17 +14,6 @@ const refreshPayloadSchema = z.object({
   include_archived: z.boolean().optional().default(false),
   dry_run: z.boolean().optional().default(false),
 });
-
-function readOpsSecret(request: NextRequest): string {
-  return (
-    request.headers.get('x-hypha-ops-secret')?.trim() ??
-    request.headers
-      .get('authorization')
-      ?.replace(/^Bearer\s+/i, '')
-      .trim() ??
-    ''
-  );
-}
 
 async function readPayload(request: NextRequest) {
   try {

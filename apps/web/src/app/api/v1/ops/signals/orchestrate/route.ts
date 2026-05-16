@@ -2,22 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { processSignalOrchestratorBatch } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
+import { readOpsSecret } from '../../_lib/ops-auth';
 
 const orchestratePayloadSchema = z.object({
   limit: z.number().int().min(1).max(200).optional().default(40),
   dry_run: z.boolean().optional().default(false),
 });
-
-function readOpsSecret(request: NextRequest): string {
-  return (
-    request.headers.get('x-hypha-ops-secret')?.trim() ??
-    request.headers
-      .get('authorization')
-      ?.replace(/^Bearer\s+/i, '')
-      .trim() ??
-    ''
-  );
-}
 
 async function readPayload(request: NextRequest) {
   try {
