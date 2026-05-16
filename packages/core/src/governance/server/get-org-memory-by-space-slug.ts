@@ -589,6 +589,96 @@ function filterAssetsBySearch(
   );
 }
 
+function inferAssetKindForSignal(asset: OrgMemoryAsset) {
+  const name = asset.filename.toLowerCase();
+  const target = `${asset.filename} ${
+    asset.app_url ?? asset.mxc_uri ?? ''
+  }`.toLowerCase();
+  if (/\.(png|jpe?g|gif|webp|svg|avif)(\?|#|$)/i.test(target)) return 'image';
+  if (/\.(mp4|webm|mov|mkv|m4v)(\?|#|$)/i.test(target)) return 'video';
+  if (/\.(pdf|doc|docx|txt|md|csv|xls|xlsx|ppt|pptx|zip)(\?|#|$)/i.test(target))
+    return 'document';
+  if ((asset.mime ?? '').toLowerCase().startsWith('image/')) return 'image';
+  if ((asset.mime ?? '').toLowerCase().startsWith('video/')) return 'video';
+  if (
+    name.endsWith('.pdf') ||
+    name.endsWith('.doc') ||
+    name.endsWith('.docx') ||
+    name.endsWith('.txt') ||
+    name.endsWith('.md')
+  ) {
+    return 'document';
+  }
+  return 'other';
+}
+
+function looksOpaqueNoiseFilename(filename: string): boolean {
+  const raw = filename.trim();
+  if (!raw) return true;
+  const lower = raw.toLowerCase();
+  const hasExtension = /\.[a-z0-9]{2,5}(\?|#|$)/i.test(raw);
+  const alphaNumOnly = /^[a-z0-9_-]+$/i.test(raw);
+  const hashLike = alphaNumOnly && raw.length >= 28 && !hasExtension;
+  const uuidLike =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      raw,
+    );
+  const genericScreenshot =
+    /(screenshot|screen shot|image)[\s_-]*\d*/i.test(lower) &&
+    !/(architecture|roadmap|proposal|budget|decision|minutes|plan|spec)/i.test(
+      lower,
+    );
+  return hashLike || uuidLike || genericScreenshot;
+}
+
+function compactOrgMemoryAssetsForSignal(
+  assets: OrgMemoryAsset[],
+): OrgMemoryAsset[] {
+  const dedupeKeys = new Set<string>();
+  const imageQuotaByDocument = new Map<number, number>();
+  const compacted: OrgMemoryAsset[] = [];
+
+  for (const asset of assets) {
+    const uniqueLocator =
+      asset.app_url ??
+      asset.mxc_uri ??
+      (asset.call_recording_id != null
+        ? `call-recording:${asset.call_recording_id}`
+        : null) ??
+      (asset.call_transcript_id != null
+        ? `call-transcript:${asset.call_transcript_id}`
+        : null) ??
+      (asset.discussion_summary_id != null
+        ? `discussion-summary:${asset.discussion_summary_id}`
+        : null) ??
+      `${asset.filename}:${asset.occurred_at}`;
+    const dedupeKey = `${asset.source}:${uniqueLocator}`;
+    if (dedupeKeys.has(dedupeKey)) continue;
+    dedupeKeys.add(dedupeKey);
+
+    const kind = inferAssetKindForSignal(asset);
+    const lowSignalName = looksOpaqueNoiseFilename(asset.filename);
+
+    if (asset.source === 'proposal_upload') {
+      if (kind === 'other' && lowSignalName) {
+        continue;
+      }
+      if (kind === 'image' && lowSignalName) {
+        continue;
+      }
+      if (kind === 'image' && asset.document_id != null) {
+        const used = imageQuotaByDocument.get(asset.document_id) ?? 0;
+        if (used >= 1) continue;
+        imageQuotaByDocument.set(asset.document_id, used + 1);
+      }
+    }
+
+    compacted.push(asset);
+  }
+
+  return compacted;
+}
+
 /**
  * Organisation memory for a space: member roster (same as `getSpaceMembersRoster`)
  * plus `org_memory_assets` from proposal document attachments/lead images and,
@@ -780,6 +870,7 @@ export async function getOrgMemoryBySpaceSlug(
   ].sort((a, b) =>
     a.occurred_at < b.occurred_at ? 1 : a.occurred_at > b.occurred_at ? -1 : 0,
   );
+  combined = compactOrgMemoryAssetsForSignal(combined);
   combined = filterAssetsBySearch(combined, assetsSearch);
 
   const total = combined.length;
