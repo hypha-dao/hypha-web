@@ -25,6 +25,45 @@ export type ChatStreamCallbacks = {
   requestUrlForSessionMatrix?: string;
 };
 
+function sanitizeMessagesToTextOnly(
+  messages: ChatRequestPayload['messages'],
+): UIMessage[] {
+  return messages.map((message) => {
+    const textParts = (message.parts ?? [])
+      .filter(
+        (part): part is { type: 'text'; text: string } =>
+          part != null &&
+          typeof part === 'object' &&
+          part.type === 'text' &&
+          typeof (part as { text?: unknown }).text === 'string',
+      )
+      .map((part) => ({ type: 'text' as const, text: part.text }));
+
+    return {
+      id: message.id,
+      role: message.role as UIMessage['role'],
+      parts: textParts,
+    };
+  });
+}
+
+async function convertMessagesSafely(
+  messages: ChatRequestPayload['messages'],
+  debugRequestId: string,
+): Promise<Awaited<ReturnType<typeof convertToModelMessages>>> {
+  try {
+    // Cast: request schema validates the runtime shape of UI messages from `useChat`.
+    return await convertToModelMessages(messages as UIMessage[]);
+  } catch (error) {
+    console.error('[chat][convert-messages][fallback-to-text-only]', {
+      debugRequestId,
+      message: error instanceof Error ? error.message : String(error),
+      ...(OPENROUTER_DEBUG && { error }),
+    });
+    return convertToModelMessages(sanitizeMessagesToTextOnly(messages));
+  }
+}
+
 export async function createChatStreamResult(
   messages: ChatRequestPayload['messages'],
   spaceSlug: string | null | undefined,
@@ -32,6 +71,7 @@ export async function createChatStreamResult(
   { debugRequestId, requestUrlForSessionMatrix }: ChatStreamCallbacks,
 ): Promise<ReturnType<typeof streamText>> {
   const tools = createChatTools(authToken, requestUrlForSessionMatrix);
+  const modelMessages = await convertMessagesSafely(messages, debugRequestId);
 
   if (OPENROUTER_DEBUG) {
     console.log('[chat][openrouter][start]', {
@@ -45,8 +85,7 @@ export async function createChatStreamResult(
   return streamText({
     model: openrouter('openrouter/auto'),
     system: buildSystemPrompt(spaceSlug),
-    // Cast: chatRequestSchema already validated UIMessage shape; Zod inference differs from ai's UIMessage type.
-    messages: await convertToModelMessages(messages as UIMessage[]),
+    messages: modelMessages,
 
     // Cast: ChatRouteTool's generic Zod input doesn't satisfy ai's CoreTool typing, but is structurally compatible at runtime.
     tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
