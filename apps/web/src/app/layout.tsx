@@ -285,7 +285,9 @@ export default async function RootLayout({
                             leadingAction={
                               aiChatEnabled ? (
                                 <div className="flex items-center gap-2">
-                                  <AiSidebarTrigger />
+                                  <div className="md:hidden">
+                                    <AiSidebarTrigger />
+                                  </div>
                                   <AiPanelTrigger />
                                 </div>
                               ) : undefined
