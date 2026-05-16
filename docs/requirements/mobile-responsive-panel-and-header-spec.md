@@ -73,7 +73,12 @@ Replace hard-only `max-width: 767px` top-bar switching with a collision-aware th
 
 #### Safe threshold definition
 
-- `safeThresholdPx = 232` minimum (chat trigger + profile + spacing + tolerance).
+- `safeThresholdPx = 232` minimum, with explicit breakdown:
+  - chat trigger touch target: `44px`
+  - profile avatar touch target: `44px`
+  - inter-control spacing: `8-16px`
+  - safety margin for intermediate controls, padding, and rounding: `128-136px`
+  - total: `44 + 44 + (8-16) + (128-136) = 232px`
 - If `freeSpacePx < safeThresholdPx`, compact mode = `true`.
 - Add 24px hysteresis to avoid flicker:
   - enter compact below `232`
