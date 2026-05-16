@@ -4,7 +4,6 @@ import {
   chatRequestSchema,
   type ChatRequestPayload,
   createChatStreamResult,
-  isAbortLikeError,
   OPENROUTER_DEBUG,
   verifyPrivyAuthToken,
 } from '@hypha-platform/chat-server';
@@ -31,6 +30,53 @@ function createChatFailureStreamResponse({
         writer.write({ type: 'text-delta', id: textPartId, delta: message });
         writer.write({ type: 'text-end', id: textPartId });
         writer.write({ type: 'finish', finishReason: 'error' });
+      },
+    }),
+  });
+}
+
+function createChatTextOnlyStreamResponse({
+  result,
+  debugRequestId,
+}: {
+  result: Awaited<ReturnType<typeof createChatStreamResult>>;
+  debugRequestId: string;
+}) {
+  const textPartId = `text-${debugRequestId}`;
+  return createUIMessageStreamResponse({
+    status: 200,
+    headers: {
+      'x-hypha-chat-debug-id': debugRequestId,
+    },
+    stream: createUIMessageStream({
+      execute: async ({ writer }) => {
+        let sawStreamError = false;
+        writer.write({ type: 'start' });
+        writer.write({ type: 'text-start', id: textPartId });
+        try {
+          for await (const delta of result.textStream) {
+            if (!delta) continue;
+            writer.write({ type: 'text-delta', id: textPartId, delta });
+          }
+        } catch (error) {
+          sawStreamError = true;
+          console.error('[chat][ui-stream][text-forward-error]', {
+            debugRequestId,
+            message: error instanceof Error ? error.message : String(error),
+            ...(OPENROUTER_DEBUG && { error }),
+          });
+          writer.write({
+            type: 'text-delta',
+            id: textPartId,
+            delta:
+              'I ran into an issue while generating the response. Please retry in a few seconds.',
+          });
+        }
+        writer.write({ type: 'text-end', id: textPartId });
+        writer.write({
+          type: 'finish',
+          finishReason: sawStreamError ? 'error' : 'stop',
+        });
       },
     }),
   });
@@ -100,25 +146,5 @@ export async function POST(req: Request) {
     });
   }
 
-  return result.toUIMessageStreamResponse({
-    headers: {
-      'x-hypha-chat-debug-id': debugRequestId,
-    },
-    onError: (error) => {
-      if (isAbortLikeError(error)) {
-        if (OPENROUTER_DEBUG) {
-          console.warn('[chat][ui-stream][abort]', { debugRequestId });
-        }
-        return '';
-      }
-      console.error('[chat][ui-stream][error]', {
-        debugRequestId,
-        message: error instanceof Error ? error.message : String(error),
-        ...(OPENROUTER_DEBUG && { error }),
-      });
-      // Non-locale API route — return a generic error code the client can map to a translation.
-      // The client-side AiPanel component handles localized display via the 'streamError' i18n key.
-      return 'STREAM_ERROR';
-    },
-  });
+  return createChatTextOnlyStreamResponse({ result, debugRequestId });
 }
