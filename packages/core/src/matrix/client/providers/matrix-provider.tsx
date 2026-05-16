@@ -1306,6 +1306,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const maxBatches = Math.max(1, options?.maxBatches ?? 8);
       const loadPromise = (async () => {
         let rateLimitRetries = 0;
+        let hadSuccessfulScrollback = false;
         for (let i = 0; i < maxBatches; i++) {
           const beforeCount = room.getLiveTimeline().getEvents().length;
           try {
@@ -1313,6 +1314,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               await delay(MATRIX_HISTORY_BATCH_DELAY_MS);
             }
             await client.scrollback(room, pageSize);
+            hadSuccessfulScrollback = true;
           } catch (error) {
             if (
               isMatrixRateLimitedError(error) &&
@@ -1342,7 +1344,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             break;
           }
         }
-        roomHistoryLastLoadedAtRef.current.set(roomId, Date.now());
+        if (hadSuccessfulScrollback) {
+          roomHistoryLastLoadedAtRef.current.set(roomId, Date.now());
+        }
       })();
 
       roomHistoryLoadRef.current.set(roomId, loadPromise);
