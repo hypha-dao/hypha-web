@@ -13,6 +13,7 @@ export {
   createChatTools,
   getSpaceBySlugTool,
   createGetPeopleBySpaceSlugTool,
+  createGetSignalsBySpaceSlugTool,
   createGetOrgMemoryBySpaceSlugTool,
   createSummarizeSpaceDiscussionTool,
   createIngestSpaceCallArtifactsTool,
