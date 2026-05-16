@@ -27,6 +27,69 @@ export async function GET(request: NextRequest) {
   const since24h = new Date(now - 24 * 60 * 60 * 1000);
   const since7d = new Date(now - 7 * 24 * 60 * 60 * 1000);
 
+  let queried:
+    | [
+        Array<{ count: number }>,
+        Array<{ count: number }>,
+        Array<{ count: number }>,
+        Array<{ count: number }>,
+        Array<{ count: number }>,
+        Array<{ count: number }>,
+        Array<{ count: number }>,
+        Array<{ count: number }>,
+        Awaited<ReturnType<typeof getSignalOrchestratorMetrics>>,
+      ]
+    | null = null;
+  try {
+    queried = await Promise.all([
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaces)
+        .where(and(isNotNull(spaces.chatRoomId), eq(spaces.isArchived, false))),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceDiscussionSummaries),
+      db.select({ count: sql<number>`count(*)` }).from(spaceCallTranscripts),
+      db.select({ count: sql<number>`count(*)` }).from(spaceCallRecordings),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceDiscussionSummaries)
+        .where(gte(spaceDiscussionSummaries.createdAt, since24h)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceCallTranscripts)
+        .where(gte(spaceCallTranscripts.createdAt, since24h)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceCallRecordings)
+        .where(gte(spaceCallRecordings.createdAt, since24h)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceDiscussionSummaries)
+        .where(gte(spaceDiscussionSummaries.createdAt, since7d)),
+      getSignalOrchestratorMetrics({ db }),
+    ]);
+  } catch (error) {
+    console.error('[space-memory.health] Failed to read health metrics', error);
+    return NextResponse.json(
+      {
+        status: 'critical',
+        generated_at: new Date().toISOString(),
+        error: 'Failed to read health metrics',
+      },
+      { status: 503 },
+    );
+  }
+  if (!queried) {
+    return NextResponse.json(
+      {
+        status: 'critical',
+        generated_at: new Date().toISOString(),
+        error: 'Health metrics unavailable',
+      },
+      { status: 503 },
+    );
+  }
   const [
     spacesWithChatRow,
     summaryTotalRow,
@@ -37,32 +100,7 @@ export async function GET(request: NextRequest) {
     recordings24h,
     summaries7d,
     signalMetrics,
-  ] = await Promise.all([
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(spaces)
-      .where(and(isNotNull(spaces.chatRoomId), eq(spaces.isArchived, false))),
-    db.select({ count: sql<number>`count(*)` }).from(spaceDiscussionSummaries),
-    db.select({ count: sql<number>`count(*)` }).from(spaceCallTranscripts),
-    db.select({ count: sql<number>`count(*)` }).from(spaceCallRecordings),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(spaceDiscussionSummaries)
-      .where(gte(spaceDiscussionSummaries.createdAt, since24h)),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(spaceCallTranscripts)
-      .where(gte(spaceCallTranscripts.createdAt, since24h)),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(spaceCallRecordings)
-      .where(gte(spaceCallRecordings.createdAt, since24h)),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(spaceDiscussionSummaries)
-      .where(gte(spaceDiscussionSummaries.createdAt, since7d)),
-    getSignalOrchestratorMetrics({ db }),
-  ]);
+  ] = queried;
 
   const summaries_total = Number(summaryTotalRow[0]?.count ?? 0);
   const transcripts_total = Number(transcriptTotalRow[0]?.count ?? 0);
