@@ -43,6 +43,7 @@ export function startBrowserCallTranscription(options?: {
   recognition.onresult = (event) => {
     try {
       const e = event as {
+        resultIndex?: number;
         results?: ArrayLike<{
           0?: { transcript?: string };
           isFinal?: boolean;
@@ -50,7 +51,11 @@ export function startBrowserCallTranscription(options?: {
       };
       const list = e.results;
       if (!list) return;
-      for (let i = 0; i < list.length; i += 1) {
+      const start =
+        typeof e.resultIndex === 'number' && e.resultIndex >= 0
+          ? e.resultIndex
+          : 0;
+      for (let i = start; i < list.length; i += 1) {
         const result = list[i];
         if (!result?.isFinal) continue;
         const transcript = result[0]?.transcript?.trim();
