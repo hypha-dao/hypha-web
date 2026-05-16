@@ -161,6 +161,22 @@ export async function GET(request: NextRequest) {
         'HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN is missing; cron-style summary refresh may fail without user session tokens.',
     });
   }
+  if (!readiness.mcp_auth_token_configured) {
+    alerts.push({
+      level: 'warn',
+      code: 'missing_mcp_auth_token',
+      message:
+        'MCP auth token missing — set HYPHA_MCP_AUTH_TOKEN to allow MCP org-memory reads in authenticated contexts.',
+    });
+  }
+  if (!readiness.mcp_matrix_request_url_configured) {
+    alerts.push({
+      level: 'warn',
+      code: 'missing_mcp_matrix_request_url',
+      message:
+        'MCP request URL missing — set HYPHA_MCP_MATRIX_REQUEST_URL or ensure VERCEL_URL is available.',
+    });
+  }
   if (spaces_with_chat > 0 && summaries_last_7d === 0) {
     alerts.push({
       level: 'warn',
