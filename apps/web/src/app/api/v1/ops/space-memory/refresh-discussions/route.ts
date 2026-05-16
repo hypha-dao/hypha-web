@@ -46,27 +46,38 @@ export async function POST(request: NextRequest) {
   }
   const payload = parsedPayload.data;
 
-  const targetSlugs = payload.space_slugs?.length
-    ? Array.from(
-        new Set(payload.space_slugs.map((slug) => slug.trim()).filter(Boolean)),
-      )
-    : (
-        await db
-          .select({ slug: spaces.slug, chatRoomId: spaces.chatRoomId })
-          .from(spaces)
-          .where(
-            and(
-              isNotNull(spaces.chatRoomId),
-              payload.include_archived
-                ? undefined
-                : eq(spaces.isArchived, false),
-            ),
-          )
-          .orderBy(desc(spaces.updatedAt))
-          .limit(payload.limit)
-      )
+  let targetSlugs: string[];
+  if (payload.space_slugs?.length) {
+    targetSlugs = Array.from(
+      new Set(payload.space_slugs.map((slug) => slug.trim()).filter(Boolean)),
+    );
+  } else {
+    try {
+      const rows = await db
+        .select({ slug: spaces.slug, chatRoomId: spaces.chatRoomId })
+        .from(spaces)
+        .where(
+          and(
+            isNotNull(spaces.chatRoomId),
+            payload.include_archived ? undefined : eq(spaces.isArchived, false),
+          ),
+        )
+        .orderBy(desc(spaces.updatedAt))
+        .limit(payload.limit);
+      targetSlugs = rows
         .filter((row) => Boolean(row.chatRoomId?.trim()))
         .map((row) => row.slug);
+    } catch (error) {
+      console.error(
+        '[space-memory.refresh-discussions] Failed to resolve target spaces',
+        error,
+      );
+      return NextResponse.json(
+        { error: 'Failed to resolve target spaces' },
+        { status: 503 },
+      );
+    }
+  }
 
   if (payload.dry_run) {
     return NextResponse.json({
