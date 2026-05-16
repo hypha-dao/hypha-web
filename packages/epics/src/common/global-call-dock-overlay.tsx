@@ -12,7 +12,6 @@ import {
 import { useMatrix, useMe } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import {
   DEFAULT_CALL_FULL_VIEW_LAYOUT,
   HumanChatPanelCallBanner,
@@ -153,7 +152,6 @@ export function GlobalCallDockOverlay() {
   const t = useTranslations('GlobalCallDock');
   const router = useRouter();
   const pathname = usePathname() ?? '';
-  const t = useTranslations('HumanChatPanel');
   const { client } = useMatrix();
   const { person: me } = useMe();
   const {
