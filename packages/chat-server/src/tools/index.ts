@@ -4,6 +4,8 @@ import { createGetPeopleBySpaceSlugTool } from './get-people-by-space-slug';
 import { createGetOrgMemoryBySpaceSlugTool } from './get-org-memory-by-space-slug';
 import { createFetchOrgMemoryAssetTool } from './fetch-org-memory-asset';
 import { createGetDocumentsBySpaceSlugTool } from './get-documents-by-space-slug';
+import { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion';
+import { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
 
 /**
  * All AI SDK tools exposed by the chat route. Add new tools here and in the
@@ -25,6 +27,11 @@ export function createChatTools(
       requestUrlForSessionMatrix,
     ),
     get_documents_by_space_slug: createGetDocumentsBySpaceSlugTool(authToken),
+    summarize_space_discussion_by_slug: createSummarizeSpaceDiscussionTool(
+      authToken,
+      requestUrlForSessionMatrix,
+    ),
+    ingest_space_call_artifacts: createIngestSpaceCallArtifactsTool(),
   } as unknown as Record<string, ChatRouteTool>;
 }
 
@@ -33,4 +40,6 @@ export { createGetPeopleBySpaceSlugTool } from './get-people-by-space-slug';
 export { createGetOrgMemoryBySpaceSlugTool } from './get-org-memory-by-space-slug';
 export { createGetDocumentsBySpaceSlugTool } from './get-documents-by-space-slug';
 export { createFetchOrgMemoryAssetTool } from './fetch-org-memory-asset';
+export { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion';
+export { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
 export type { ChatRouteTool } from './types';

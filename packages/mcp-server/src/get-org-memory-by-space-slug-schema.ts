@@ -17,7 +17,13 @@ export type GetOrgMemoryBySpaceSlugInput = z.infer<
 >;
 
 const orgMemoryAssetSchema = z.object({
-  source: z.enum(['proposal_upload', 'matrix_chat']),
+  source: z.enum([
+    'proposal_upload',
+    'matrix_chat',
+    'call_recording',
+    'call_transcript',
+    'discussion_summary',
+  ]),
   filename: z.string(),
   asset_key: z.string().optional(),
   mime: z.string().optional(),
@@ -30,6 +36,11 @@ const orgMemoryAssetSchema = z.object({
   document_state: z.string().optional(),
   document_slug: z.string().optional(),
   document_label: z.string().optional(),
+  call_session_id: z.string().optional(),
+  call_recording_id: z.number().optional(),
+  call_transcript_id: z.number().optional(),
+  discussion_summary_id: z.number().optional(),
+  text_excerpt: z.string().optional(),
   occurred_at: z.string(),
 });
 

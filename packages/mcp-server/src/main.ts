@@ -10,6 +10,8 @@ import {
   getDocumentsBySpaceSlug,
   getOrgMemoryBySpaceSlug,
   fetchOrgMemoryAsset,
+  ingestSpaceCallArtifacts,
+  createSpaceDiscussionSummary,
   getSpaceMembersRoster,
   serializeSpaceMembersRosterDatesForJson,
 } from '@hypha-platform/core/server';
@@ -33,6 +35,14 @@ import {
   fetchOrgMemoryAssetInputSchema,
   fetchOrgMemoryAssetOutputSchema,
 } from './fetch-org-memory-asset-schema.js';
+import {
+  summarizeSpaceDiscussionInputSchema,
+  summarizeSpaceDiscussionOutputSchema,
+} from './summarize-space-discussion-schema.js';
+import {
+  ingestSpaceCallArtifactsInputSchema,
+  ingestSpaceCallArtifactsOutputSchema,
+} from './ingest-space-call-artifacts-schema.js';
 import { buildMatrixDiagnosticHint } from './build-matrix-diagnostic-hint.js';
 
 const server = new McpServer(
@@ -42,7 +52,129 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha read-only tools: token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug.',
+      'Hypha tools: token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+  },
+);
+
+server.registerTool(
+  'summarize_space_discussion_by_slug',
+  {
+    description:
+      'Create and persist a summary of recent matrix chat discussion for a space slug. Stores output in space discussion summaries so it appears in org memory.',
+    inputSchema: summarizeSpaceDiscussionInputSchema,
+    outputSchema: summarizeSpaceDiscussionOutputSchema,
+  },
+  async (args) => {
+    const parsed = summarizeSpaceDiscussionInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+    const result = await createSpaceDiscussionSummary(
+      {
+        spaceSlug: parsed.data.space_slug,
+        authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+        requestUrlForSessionMatrix:
+          process.env.HYPHA_MCP_MATRIX_REQUEST_URL?.trim() ||
+          (process.env.VERCEL_URL?.trim()
+            ? `https://${process.env.VERCEL_URL.trim()}`
+            : undefined),
+      },
+      { db },
+    );
+    const out = result.ok
+      ? {
+          ok: true,
+          summaryId: result.summaryId,
+          messageCount: result.messageCount,
+          participantCount: result.participantCount,
+        }
+      : { ok: false, error: result.error };
+    return {
+      content: [
+        {
+          type: 'text',
+          text: result.ok
+            ? `Stored discussion summary #${result.summaryId} from ${result.messageCount} messages.`
+            : `Failed to summarize discussion: ${result.error}`,
+        },
+      ],
+      structuredContent: out,
+      ...(result.ok ? {} : { isError: true }),
+    };
+  },
+);
+
+server.registerTool(
+  'ingest_space_call_artifacts',
+  {
+    description:
+      'Persist call recording and/or transcript metadata for a space and call session. Use this when external workers produce recording URLs or STT results.',
+    inputSchema: ingestSpaceCallArtifactsInputSchema,
+    outputSchema: ingestSpaceCallArtifactsOutputSchema,
+  },
+  async (args) => {
+    const parsed = ingestSpaceCallArtifactsInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+    const result = await ingestSpaceCallArtifacts(
+      {
+        spaceSlug: parsed.data.space_slug,
+        callSessionId: parsed.data.call_session_id,
+        recording: parsed.data.recording
+          ? {
+              mediaUri: parsed.data.recording.media_uri,
+              mimeType: parsed.data.recording.mime_type,
+              durationSeconds: parsed.data.recording.duration_seconds,
+              startedAt: parsed.data.recording.started_at,
+              endedAt: parsed.data.recording.ended_at,
+              storageKey: parsed.data.recording.storage_key,
+              source: parsed.data.recording.source,
+              metadata: parsed.data.recording.metadata,
+            }
+          : undefined,
+        transcript: parsed.data.transcript
+          ? {
+              language: parsed.data.transcript.language,
+              text: parsed.data.transcript.text,
+              summary: parsed.data.transcript.summary,
+              source: parsed.data.transcript.source,
+              segments: parsed.data.transcript.segments,
+              metadata: parsed.data.transcript.metadata,
+            }
+          : undefined,
+      },
+      { db },
+    );
+    const out = result.ok
+      ? {
+          ok: true,
+          spaceId: result.spaceId,
+          callSessionId: result.callSessionId,
+        }
+      : { ok: false, error: result.error };
+    return {
+      content: [
+        {
+          type: 'text',
+          text: result.ok
+            ? `Ingested call artifacts for session ${result.callSessionId}.`
+            : `Failed to ingest call artifacts: ${result.error}`,
+        },
+      ],
+      structuredContent: out,
+      ...(result.ok ? {} : { isError: true }),
+    };
   },
 );
 
@@ -272,7 +404,7 @@ server.registerTool(
   'fetch_org_memory_asset',
   {
     description:
-      'Read-only: fetch content for one org-memory asset after listing with get_org_memory_by_space_slug. Input: space_slug + asset_key from org_memory_assets[]. Proposal files: HTTPS fetch with same access as org memory. Matrix: server-side media download with HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN or session Matrix (HYPHA_MCP_AUTH_TOKEN + HYPHA_MCP_MATRIX_REQUEST_URL). return_mode auto: UTF-8 text + PDF text extraction + image/* as base64; text_only skips images; binary_as_base64 returns raw base64 for images and PDF. max_bytes caps download (default 2 MiB, max 4 MiB).',
+      'Read-only: fetch content for one org-memory asset after listing with get_org_memory_by_space_slug. Input: space_slug + asset_key from org_memory_assets[]. Supports proposal files (HTTPS), matrix media (server-side download), call transcripts, and discussion summaries. return_mode auto: UTF-8 text + PDF text extraction + image/* as base64; text_only skips binary; binary_as_base64 returns raw base64 for image/video/pdf/office. max_bytes caps download (default 2 MiB, max 4 MiB).',
     inputSchema: fetchOrgMemoryAssetInputSchema,
     outputSchema: fetchOrgMemoryAssetOutputSchema,
     annotations: {

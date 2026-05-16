@@ -20,10 +20,16 @@ import {
   type HyphaMediaBundleItemWire,
 } from '../../matrix/rich-reply';
 import { withOrgMemoryAssetKeys } from '../../org-memory/with-org-memory-asset-keys';
+import { listSpaceCallArtifactsBySpaceId } from './call-artifacts';
 
 /** Aligned with MCP §8.1 / architecture org memory rows. */
 export type OrgMemoryAsset = {
-  source: 'proposal_upload' | 'matrix_chat';
+  source:
+    | 'proposal_upload'
+    | 'matrix_chat'
+    | 'call_recording'
+    | 'call_transcript'
+    | 'discussion_summary';
   filename: string;
   /** Opaque key for `fetch_org_memory_asset` (MCP / Chat). */
   asset_key?: string;
@@ -38,6 +44,11 @@ export type OrgMemoryAsset = {
   document_state?: Document['state'];
   document_slug?: string;
   document_label?: string;
+  call_session_id?: string;
+  call_recording_id?: number;
+  call_transcript_id?: number;
+  discussion_summary_id?: number;
+  text_excerpt?: string;
   occurred_at: string;
 };
 
@@ -572,6 +583,7 @@ function filterAssetsBySearch(
   return assets.filter(
     (a) =>
       a.filename.toLowerCase().includes(q) ||
+      (a.text_excerpt?.toLowerCase().includes(q) ?? false) ||
       (a.app_url?.toLowerCase().includes(q) ?? false) ||
       (a.mxc_uri?.toLowerCase().includes(q) ?? false),
   );
@@ -723,7 +735,49 @@ export async function getOrgMemoryBySpaceSlug(
           } satisfies MatrixOrgMemoryFetchMeta,
         };
 
-  let combined = [...proposalAssets, ...matrixAssets].sort((a, b) =>
+  const callArtifacts = await listSpaceCallArtifactsBySpaceId(host.id, { db });
+  const recordingAssets: OrgMemoryAsset[] = callArtifacts.recordings.map(
+    (r) => ({
+      source: 'call_recording',
+      filename:
+        r.mediaUri.split('/').pop()?.trim() ||
+        `call-recording-${r.callSessionId}.webm`,
+      app_url: r.mediaUri,
+      mime: r.mimeType,
+      occurred_at: r.createdAt.toISOString(),
+      call_session_id: r.callSessionId,
+      call_recording_id: r.id,
+    }),
+  );
+  const transcriptAssets: OrgMemoryAsset[] = callArtifacts.transcripts.map(
+    (t) => ({
+      source: 'call_transcript',
+      filename: `call-transcript-${t.callSessionId}.txt`,
+      mime: 'text/plain',
+      occurred_at: t.createdAt.toISOString(),
+      call_session_id: t.callSessionId,
+      call_transcript_id: t.id,
+      text_excerpt: t.summary ?? t.text.slice(0, 240),
+    }),
+  );
+  const discussionSummaryAssets: OrgMemoryAsset[] = callArtifacts.summaries.map(
+    (s) => ({
+      source: 'discussion_summary',
+      filename: `discussion-summary-${s.id}.md`,
+      mime: 'text/markdown',
+      occurred_at: s.createdAt.toISOString(),
+      discussion_summary_id: s.id,
+      text_excerpt: s.summary,
+    }),
+  );
+
+  let combined = [
+    ...proposalAssets,
+    ...matrixAssets,
+    ...recordingAssets,
+    ...transcriptAssets,
+    ...discussionSummaryAssets,
+  ].sort((a, b) =>
     a.occurred_at < b.occurred_at ? 1 : a.occurred_at > b.occurred_at ? -1 : 0,
   );
   combined = filterAssetsBySearch(combined, assetsSearch);
