@@ -106,6 +106,12 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(
+        { error: 'Malformed JSON payload' },
+        { status: 400 },
+      );
+    }
     console.error('[call-artifacts] Failed to ingest call artifacts:', error);
     return NextResponse.json(
       { error: 'Failed to ingest call artifacts' },
