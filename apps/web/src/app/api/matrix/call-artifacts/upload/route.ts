@@ -18,6 +18,8 @@ type MatrixMediaUploadResponse = {
   content_uri?: string;
 };
 
+const MAX_RECORDING_UPLOAD_BYTES = 100 * 1024 * 1024;
+
 async function triggerTranscriptJob(payload: {
   spaceSlug: string;
   roomId: string;
@@ -94,6 +96,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: 'room_id and non-empty recording blob are required' },
       { status: 400 },
+    );
+  }
+  if (recording.size > MAX_RECORDING_UPLOAD_BYTES) {
+    return NextResponse.json(
+      {
+        error: `Recording exceeds max upload size (${MAX_RECORDING_UPLOAD_BYTES} bytes)`,
+      },
+      { status: 413 },
     );
   }
 
