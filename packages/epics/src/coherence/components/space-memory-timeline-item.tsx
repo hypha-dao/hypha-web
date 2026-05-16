@@ -29,6 +29,30 @@ function looksLikePdf(name: string, url: string): boolean {
   return /\.pdf(\?|#|$)/i.test(name) || /\.pdf(\?|#|$)/i.test(url);
 }
 
+function PdfPreview({
+  src,
+  fallbackLabel,
+}: {
+  src: string;
+  fallbackLabel: string;
+}) {
+  return (
+    <object
+      data={src}
+      type="application/pdf"
+      className="h-full w-full"
+      aria-label={fallbackLabel}
+    >
+      <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
+        <FileIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
+        <span className="line-clamp-2 text-center text-[10px]">
+          {fallbackLabel}
+        </span>
+      </div>
+    </object>
+  );
+}
+
 type MatrixClientLike = NonNullable<ReturnType<typeof useMatrix>['client']>;
 
 function resolveMxcUrls(
@@ -101,18 +125,19 @@ export function SpaceMemoryTimelineItem({
         : mxcDownload
       : null;
   const videoSrcForMatrix = item.kind === 'video' ? mxcDownload : null;
+  const pdfSrc =
+    looksLikePdf(item.name, item.url) && (mxc ? mxcDownload : httpSafe)
+      ? mxc
+        ? mxcDownload
+        : item.url
+      : null;
   const openHref = mxc ? mxcDownload : item.url;
   const canOpen = Boolean(openHref && isSafeAssetUrl(openHref));
 
   const thumbPreview = (() => {
     if (mxc) {
-      if (looksLikePdf(item.name, item.url)) {
-        return (
-          <FileIcon
-            className="h-12 w-12 text-muted-foreground"
-            strokeWidth={1.25}
-          />
-        );
+      if (looksLikePdf(item.name, item.url) && pdfSrc) {
+        return <PdfPreview src={pdfSrc} fallbackLabel={item.name} />;
       }
       if (!isMatrixAvailable || !client) {
         return (
@@ -213,7 +238,9 @@ export function SpaceMemoryTimelineItem({
     }
     if (item.kind === 'image' && !imageFailed) {
       if (looksLikePdf(item.name, item.url)) {
-        return (
+        return pdfSrc ? (
+          <PdfPreview src={pdfSrc} fallbackLabel={item.name} />
+        ) : (
           <FileIcon
             className="h-12 w-12 text-muted-foreground"
             strokeWidth={1.25}
@@ -254,7 +281,9 @@ export function SpaceMemoryTimelineItem({
       );
     }
     if (item.kind === 'document' && looksLikePdf(item.name, item.url)) {
-      return (
+      return pdfSrc ? (
+        <PdfPreview src={pdfSrc} fallbackLabel={item.name} />
+      ) : (
         <FileIcon
           className="h-12 w-12 text-muted-foreground"
           strokeWidth={1.25}
