@@ -29,7 +29,14 @@ function sanitizeMessagesToTextOnly(
   messages: ChatRequestPayload['messages'],
 ): UIMessage[] {
   return messages.map((message) => {
-    const textParts = (message.parts ?? [])
+    const safeRole: UIMessage['role'] =
+      message.role === 'system' ||
+      message.role === 'user' ||
+      message.role === 'assistant'
+        ? message.role
+        : 'user';
+
+    const explicitTextParts = (message.parts ?? [])
       .filter(
         (part): part is { type: 'text'; text: string } =>
           part != null &&
@@ -39,10 +46,18 @@ function sanitizeMessagesToTextOnly(
       )
       .map((part) => ({ type: 'text' as const, text: part.text }));
 
+    const fallbackTextParts =
+      explicitTextParts.length > 0
+        ? explicitTextParts
+        : typeof message.content === 'string' &&
+          message.content.trim().length > 0
+        ? [{ type: 'text' as const, text: message.content }]
+        : [];
+
     return {
       id: message.id,
-      role: message.role as UIMessage['role'],
-      parts: textParts,
+      role: safeRole,
+      parts: fallbackTextParts,
     };
   });
 }
