@@ -6,6 +6,7 @@ import { db } from '@hypha-platform/storage-postgres';
 import {
   checkSpaceAccessForSpace,
   findSpaceBySlug,
+  getAllOrganizationSpacesForNodeById,
   getTokenHoldingsBySpaceSlug,
   getDocumentsBySpaceSlug,
   getOrgMemoryBySpaceSlug,
@@ -15,6 +16,10 @@ import {
   getSpaceMembersRoster,
   serializeSpaceMembersRosterDatesForJson,
 } from '@hypha-platform/core/server';
+import {
+  getEcosystemBySpaceSlugInputSchema,
+  getEcosystemBySpaceSlugOutputSchema,
+} from './get-ecosystem-by-space-slug-schema.js';
 import {
   getPeopleBySpaceSlugInputSchema,
   getPeopleBySpaceSlugOutputSchema,
@@ -52,7 +57,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha tools: token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
+      'Hypha tools: ecosystem context by space slug (interconnected spaces graph); token holdings by space slug; space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug; summarize_space_discussion_by_slug for matrix chat summaries; ingest_space_call_artifacts to persist recording/transcript artifacts.',
   },
 );
 
@@ -174,6 +179,131 @@ server.registerTool(
       ],
       structuredContent: out,
       ...(result.ok ? {} : { isError: true }),
+    };
+  },
+);
+
+server.registerTool(
+  'get_ecosystem_by_space_slug',
+  {
+    description:
+      'Read-only: return the interconnected ecosystem for a space (root + connected spaces, parent-child links, and summary counts).',
+    inputSchema: getEcosystemBySpaceSlugInputSchema,
+    outputSchema: getEcosystemBySpaceSlugOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = getEcosystemBySpaceSlugInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Invalid input: ${parsed.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const { space_slug, include_archived } = parsed.data;
+    const host = await findSpaceBySlug({ slug: space_slug }, { db });
+    if (!host) {
+      return {
+        content: [
+          { type: 'text', text: `No space found for slug "${space_slug}".` },
+        ],
+        structuredContent: {
+          found: false,
+          space_slug,
+          error: 'Space not found',
+        },
+      };
+    }
+
+    const authToken = process.env.HYPHA_MCP_AUTH_TOKEN;
+    const access = await checkSpaceAccessForSpace(host, authToken);
+    if (!access.hasAccess) {
+      return {
+        content: [{ type: 'text', text: access.message }],
+        isError: true,
+      };
+    }
+
+    const organisationSpaces = await getAllOrganizationSpacesForNodeById({
+      id: host.id,
+    });
+    const spaces = organisationSpaces.filter((space) =>
+      include_archived ? true : !space.flags?.includes('archived'),
+    );
+    const byId = new Map(spaces.map((space) => [space.id, space]));
+    const root = spaces.find((space) => space.parentId == null) ?? host;
+    const childrenMap = new Map<number, number[]>();
+
+    for (const space of spaces) {
+      if (space.parentId == null || !byId.has(space.parentId)) continue;
+      const children = childrenMap.get(space.parentId) ?? [];
+      children.push(space.id);
+      childrenMap.set(space.parentId, children);
+    }
+
+    const structured = {
+      found: true,
+      space_slug,
+      root_space_slug: root.slug,
+      root_space_id: root.id,
+      ecosystem: {
+        space_count: spaces.length,
+        edge_count: [...childrenMap.values()].reduce(
+          (acc, ids) => acc + ids.length,
+          0,
+        ),
+      },
+      spaces: spaces.map((space) => ({
+        id: space.id,
+        slug: space.slug,
+        title: space.title,
+        description: space.description ?? null,
+        parent_id: space.parentId ?? null,
+        web3_space_id: space.web3SpaceId ?? null,
+        member_count: space.memberCount ?? 0,
+        document_count: space.documentCount ?? 0,
+        is_archived: space.flags?.includes('archived') === true,
+        flags: Array.isArray(space.flags) ? space.flags : [],
+        created_at: new Date(space.createdAt).toISOString(),
+        updated_at: new Date(space.updatedAt).toISOString(),
+        child_space_ids: childrenMap.get(space.id) ?? [],
+      })),
+    };
+
+    const out = getEcosystemBySpaceSlugOutputSchema.safeParse(structured);
+    if (!out.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${out.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Ecosystem for "${space_slug}": ${
+            out.data.ecosystem?.space_count ?? 0
+          } spaces and ${
+            out.data.ecosystem?.edge_count ?? 0
+          } parent-child links.`,
+        },
+      ],
+      structuredContent: out.data,
     };
   },
 );

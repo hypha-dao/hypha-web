@@ -12,6 +12,7 @@ export { buildSystemPrompt, sanitizeSlug } from './system-prompt';
 export {
   createChatTools,
   getSpaceBySlugTool,
+  createGetEcosystemBySpaceSlugTool,
   createGetPeopleBySpaceSlugTool,
   createGetSignalsBySpaceSlugTool,
   createGetOrgMemoryBySpaceSlugTool,
