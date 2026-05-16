@@ -9,7 +9,7 @@ import {
   verifyPrivyAuthToken,
 } from '@hypha-platform/chat-server';
 
-export const maxDuration = 30;
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   const debugRequestId = `chat-${Date.now().toString(36)}-${Math.random()

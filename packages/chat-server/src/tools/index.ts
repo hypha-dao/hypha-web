@@ -12,6 +12,27 @@ import { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion
 import { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
 import { webSearchTool } from './web-search';
 
+function safeTool(toolName: string, tool: any): any {
+  const originalExecute = tool.execute;
+  return {
+    ...tool,
+    execute: async (...args: unknown[]) => {
+      try {
+        return await (originalExecute as (...a: unknown[]) => Promise<unknown>)(
+          ...args,
+        );
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Unexpected tool error';
+        return {
+          ok: false,
+          error: `Tool "${toolName}" failed: ${message}`,
+        };
+      }
+    },
+  };
+}
+
 /**
  * All AI SDK tools exposed by the chat route. Add new tools here and in the
  * system prompt so the model stays aligned with available capabilities.
@@ -21,27 +42,48 @@ export function createChatTools(
   requestUrlForSessionMatrix?: string,
 ): Record<string, ChatRouteTool> {
   return {
-    get_space_by_slug: getSpaceBySlugTool,
-    get_ecosystem_by_space_slug: createGetEcosystemBySpaceSlugTool(authToken),
-    get_people_by_space_slug: createGetPeopleBySpaceSlugTool(authToken),
-    get_signals_by_space_slug: createGetSignalsBySpaceSlugTool(authToken),
-    create_space_signal_by_slug: createCreateSpaceSignalBySlugTool(authToken),
-    relay_ecosystem_signal: createRelayEcosystemSignalTool(authToken),
-    get_org_memory_by_space_slug: createGetOrgMemoryBySpaceSlugTool(
-      authToken,
-      requestUrlForSessionMatrix,
+    get_space_by_slug: safeTool('get_space_by_slug', getSpaceBySlugTool),
+    get_ecosystem_by_space_slug: safeTool(
+      'get_ecosystem_by_space_slug',
+      createGetEcosystemBySpaceSlugTool(authToken),
     ),
-    fetch_org_memory_asset: createFetchOrgMemoryAssetTool(
-      authToken,
-      requestUrlForSessionMatrix,
+    get_people_by_space_slug: safeTool(
+      'get_people_by_space_slug',
+      createGetPeopleBySpaceSlugTool(authToken),
     ),
-    get_documents_by_space_slug: createGetDocumentsBySpaceSlugTool(authToken),
-    summarize_space_discussion_by_slug: createSummarizeSpaceDiscussionTool(
-      authToken,
-      requestUrlForSessionMatrix,
+    get_signals_by_space_slug: safeTool(
+      'get_signals_by_space_slug',
+      createGetSignalsBySpaceSlugTool(authToken),
     ),
-    ingest_space_call_artifacts: createIngestSpaceCallArtifactsTool(authToken),
-    web_search: webSearchTool,
+    create_space_signal_by_slug: safeTool(
+      'create_space_signal_by_slug',
+      createCreateSpaceSignalBySlugTool(authToken),
+    ),
+    relay_ecosystem_signal: safeTool(
+      'relay_ecosystem_signal',
+      createRelayEcosystemSignalTool(authToken),
+    ),
+    get_org_memory_by_space_slug: safeTool(
+      'get_org_memory_by_space_slug',
+      createGetOrgMemoryBySpaceSlugTool(authToken, requestUrlForSessionMatrix),
+    ),
+    fetch_org_memory_asset: safeTool(
+      'fetch_org_memory_asset',
+      createFetchOrgMemoryAssetTool(authToken, requestUrlForSessionMatrix),
+    ),
+    get_documents_by_space_slug: safeTool(
+      'get_documents_by_space_slug',
+      createGetDocumentsBySpaceSlugTool(authToken),
+    ),
+    summarize_space_discussion_by_slug: safeTool(
+      'summarize_space_discussion_by_slug',
+      createSummarizeSpaceDiscussionTool(authToken, requestUrlForSessionMatrix),
+    ),
+    ingest_space_call_artifacts: safeTool(
+      'ingest_space_call_artifacts',
+      createIngestSpaceCallArtifactsTool(authToken),
+    ),
+    web_search: safeTool('web_search', webSearchTool),
   } as unknown as Record<string, ChatRouteTool>;
 }
 
