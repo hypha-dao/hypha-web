@@ -370,7 +370,7 @@ export function HumanChatPanelCallStage({
    * Also ignore stale/non-live share tracks — those can leave fullscreen layouts
    * in a split state with no usable share frame rendered.
    */
-  const shareFeeds = rawShareFeeds.filter((feed) => {
+  const previewShareFeeds = rawShareFeeds.filter((feed) => {
     const track = feed.stream.getVideoTracks()[0];
     if (!track || track.readyState !== 'live') return false;
     if (feed.isVideoMuted()) return false;
@@ -378,10 +378,23 @@ export function HumanChatPanelCallStage({
     const displaySurface = track?.getSettings?.().displaySurface;
     return displaySurface !== 'browser';
   });
+  const shareFeeds =
+    layout === 'panel'
+      ? previewShareFeeds
+      : rawShareFeeds.filter((feed) => {
+          const track = feed.stream.getVideoTracks()[0];
+          if (!track || track.readyState !== 'live') return false;
+          return !feed.isVideoMuted();
+        });
+  const hasRenderableRawShare = rawShareFeeds.some((feed) => {
+    const track = feed.stream.getVideoTracks()[0];
+    if (!track || track.readyState !== 'live') return false;
+    return !feed.isVideoMuted();
+  });
   const hasRemotesOrShare =
     remoteUserMedia.length > 0 ||
     missingRemoteUserIds.length > 0 ||
-    shareFeeds.length > 0;
+    hasRenderableRawShare;
   const showLocalInMainGrid =
     rawShowLocalInMainGrid || (!hasRemotesOrShare && localUserMedia.length > 0);
   const showLocalPip = rawShowLocalPip && hasRemotesOrShare;
