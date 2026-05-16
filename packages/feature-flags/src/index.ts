@@ -16,7 +16,7 @@ const parseBoolean = (value: string | undefined): boolean | undefined => {
  * - Language select: on
  * - AI panel: on
  * - Coherence/signals: on
- * - Space memory: off
+ * - Space memory: on
  * - Human chat: on
  *
  * Toolbar overrides and `NEXT_PUBLIC_*` env values still take precedence.
@@ -59,7 +59,7 @@ export const flagDefinitionsForDiscovery = {
   enableSpaceMemory: {
     key: 'enable-space-memory',
     defaultValue:
-      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY) ?? false,
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY) ?? true,
     description:
       'Space Memory on Coherence tab. Opt in: HYPHA_ENABLE_SPACE_MEMORY cookie or NEXT_PUBLIC_ENABLE_SPACE_MEMORY=true',
     origin: 'hypha' as const,
@@ -140,6 +140,6 @@ export async function getEnableSpaceMemory(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-space-memory',
     process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY,
-    false,
+    true,
   );
 }
