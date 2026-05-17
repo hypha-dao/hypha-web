@@ -79,6 +79,31 @@ export const flagDefinitionsForDiscovery = {
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
+  enableOnboardingAiHero: {
+    key: 'enable-onboarding-ai-hero',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_AI_HERO) ?? true,
+    description: 'Enable AI hero input on onboarding page',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
+  enableOnboardingWriteTools: {
+    key: 'enable-onboarding-write-tools',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_WRITE_TOOLS) ??
+      true,
+    description: 'Enable onboarding AI write tools for space setup actions',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
+  enableEcosystemAutomation: {
+    key: 'enable-ecosystem-automation',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ECOSYSTEM_AUTOMATION) ?? true,
+    description: 'Enable ecosystem blueprint automation tools',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
 };
 
 export async function getShowLanguageSelect(): Promise<boolean> {
@@ -142,6 +167,30 @@ export async function getEnableSpaceMemory(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-space-memory',
     process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY,
+    true,
+  );
+}
+
+export async function getEnableOnboardingAiHero(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-onboarding-ai-hero',
+    process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_AI_HERO,
+    true,
+  );
+}
+
+export async function getEnableOnboardingWriteTools(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-onboarding-write-tools',
+    process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_WRITE_TOOLS,
+    true,
+  );
+}
+
+export async function getEnableEcosystemAutomation(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-ecosystem-automation',
+    process.env.NEXT_PUBLIC_ENABLE_ECOSYSTEM_AUTOMATION,
     true,
   );
 }

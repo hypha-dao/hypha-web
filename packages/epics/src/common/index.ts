@@ -22,6 +22,14 @@ export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';
 export { AiLeftPanelLayout } from './ai-left-panel-layout';
 export {
+  AI_ONBOARDING_SEED_EVENT,
+  ONBOARDING_SETUP_MODE,
+  clearOnboardingConversationContext,
+  dispatchAiOnboardingSeed,
+  readOnboardingConversationContext,
+  saveOnboardingConversationContext,
+} from './ai-onboarding-context';
+export {
   PanelProviders,
   PanelWrapLayout,
   AiSidebarTrigger,

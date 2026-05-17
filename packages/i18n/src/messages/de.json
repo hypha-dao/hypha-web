@@ -99,6 +99,15 @@
   "OnboardingAdventure": {
     "title": "Dein Abenteuer beginnt hier.",
     "subtitle": "Wähle deinen nächsten Schritt.",
+    "aiHero": {
+      "title": "Beschreibe den Space, den du erstellen möchtest",
+      "description": "Sag Hypha AI, was du aufbauen willst, und sie führt dich Schritt für Schritt durch das Setup.",
+      "placeholder": "Beschreibe deine Community, Mission, gewünschte Space-Struktur und Governance-Präferenzen...",
+      "cta": "Mit AI starten",
+      "helper": "Die AI schlägt jede Aktion vor und fragt vor Erstellung oder Änderung immer nach Bestätigung.",
+      "unavailable": "AI-Onboarding ist in dieser Bereitstellung derzeit nicht verfügbar.",
+      "ariaLabel": "AI-Onboarding-Prompt"
+    },
     "spacePlaceholder": "Space auswählen",
     "spaceSearchPlaceholder": "Spaces suchen...",
     "searchToSeeSpaces": "Beginne zu tippen, um passende Spaces zu sehen.",

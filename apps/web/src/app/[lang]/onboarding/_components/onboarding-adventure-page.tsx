@@ -26,6 +26,12 @@ import {
 } from 'lucide-react';
 import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space } from '@hypha-platform/core/client';
+import {
+  ONBOARDING_SETUP_MODE,
+  dispatchAiOnboardingSeed,
+  saveOnboardingConversationContext,
+  useAiPanel,
+} from '@hypha-platform/epics';
 
 const getSpacePath = (lang: string, spaceSlug: string) =>
   `/${lang}/dho/${spaceSlug}/agreements`;
@@ -164,11 +170,19 @@ function SelectorCard({
   );
 }
 
-export function OnboardingAdventurePage() {
+export function OnboardingAdventurePage({
+  aiChatEnabled = true,
+  onboardingHeroEnabled = true,
+}: {
+  aiChatEnabled?: boolean;
+  onboardingHeroEnabled?: boolean;
+}) {
   const t = useTranslations('OnboardingAdventure');
   const locale = useLocale();
   const router = useRouter();
   const { spaces, isLoading, error: spacesError } = useAllSpaces();
+  const { openAiPanel, setAiOverlayVisible } = useAiPanel();
+  const [aiPrompt, setAiPrompt] = useState('');
 
   const [joinSpaceSlug, setJoinSpaceSlug] = useState('');
   const [joinQuery, setJoinQuery] = useState('');
@@ -241,6 +255,22 @@ export function OnboardingAdventurePage() {
     setCopiedAddress(false);
   };
 
+  const handleStartAiOnboarding = () => {
+    const prompt = aiPrompt.trim();
+    if (!prompt) return;
+    const context = {
+      mode: ONBOARDING_SETUP_MODE,
+      source: 'onboarding_hero' as const,
+      locale,
+      createdAt: new Date().toISOString(),
+    };
+    saveOnboardingConversationContext(context);
+    dispatchAiOnboardingSeed({ prompt, context });
+    openAiPanel();
+    setAiOverlayVisible(false);
+    setAiPrompt('');
+  };
+
   return (
     <Container className="flex flex-col gap-9 py-9">
       <header className="space-y-4">
@@ -255,6 +285,43 @@ export function OnboardingAdventurePage() {
           <span>{t('subtitle')}</span>
         </Heading>
       </header>
+
+      {onboardingHeroEnabled ? (
+        <Card className="border-border/70 bg-card/100 shadow-sm">
+          <CardHeader className="space-y-2 pb-2">
+            <CardTitle className="text-6">{t('aiHero.title')}</CardTitle>
+            <CardDescription className="text-2">
+              {t('aiHero.description')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <textarea
+              value={aiPrompt}
+              onChange={(event) => setAiPrompt(event.target.value)}
+              placeholder={t('aiHero.placeholder')}
+              aria-label={t('aiHero.ariaLabel')}
+              rows={4}
+              className="min-h-[132px] w-full resize-y rounded-lg border border-border bg-background px-4 py-3 text-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
+            />
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={handleStartAiOnboarding}
+                disabled={!aiPrompt.trim() || !aiChatEnabled}
+                className="min-h-11 px-6"
+              >
+                {t('aiHero.cta')}
+              </Button>
+            </div>
+            {!aiChatEnabled ? (
+              <p className="text-1 text-muted-foreground">
+                {t('aiHero.unavailable')}
+              </p>
+            ) : null}
+            <p className="text-1 text-muted-foreground">{t('aiHero.helper')}</p>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card className={onboardingCardClass}>
