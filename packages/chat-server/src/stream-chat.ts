@@ -260,7 +260,8 @@ type DeterministicFallbackContext = {
     | 'ecosystem'
     | 'tokens'
     | 'discussions'
-    | 'signal_recommendation';
+    | 'signal_recommendation'
+    | 'blindspot';
 };
 
 type SpaceOverviewIntent =
@@ -283,8 +284,10 @@ function getSpaceOverviewIntent(text: string): SpaceOverviewIntent | null {
   if (
     t.includes('how many documents') ||
     t.includes('how many agreements') ||
+    t.includes('how many proposals') ||
     t.includes('document count') ||
-    t.includes('agreement count')
+    t.includes('agreement count') ||
+    t.includes('proposal count')
   ) {
     return 'document_count';
   }
@@ -368,6 +371,19 @@ function isSignalRecommendationQuestion(text: string): boolean {
   );
 }
 
+function isBlindspotQuestion(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return (
+    t.includes('blindspot') ||
+    t.includes('blind spot') ||
+    t.includes('biggest gap') ||
+    t.includes('main gap') ||
+    t.includes('weakest area') ||
+    t.includes('weak spot')
+  );
+}
+
 async function buildDeterministicSpaceFallback({
   lastUserText,
   spaceSlug,
@@ -385,6 +401,79 @@ async function buildDeterministicSpaceFallback({
   if (!safe) return null;
 
   try {
+    if (isBlindspotQuestion(lastUserText)) {
+      const signalsTool = createGetSignalsBySpaceSlugTool(authToken);
+      const signalsResult = await signalsTool.execute({
+        space_slug: safe,
+        include_archived: false,
+        order_by: 'mostrecent',
+        limit: 100,
+      });
+
+      if (
+        signalsResult &&
+        typeof signalsResult === 'object' &&
+        'found' in signalsResult &&
+        signalsResult.found === true &&
+        'summary' in signalsResult &&
+        signalsResult.summary &&
+        typeof signalsResult.summary === 'object' &&
+        'signal_taxonomy' in signalsResult &&
+        signalsResult.signal_taxonomy &&
+        typeof signalsResult.signal_taxonomy === 'object'
+      ) {
+        const summary = signalsResult.summary as Record<string, unknown>;
+        const taxonomy = signalsResult.signal_taxonomy as Record<
+          string,
+          unknown
+        >;
+        const byType =
+          'by_type' in summary &&
+          summary.by_type &&
+          typeof summary.by_type === 'object'
+            ? (summary.by_type as Record<string, unknown>)
+            : {};
+        const allowedTypes = Array.isArray(taxonomy.allowed_types)
+          ? (taxonomy.allowed_types as string[])
+          : [];
+        const topTags = Array.isArray(summary.top_tags)
+          ? (summary.top_tags as Array<Record<string, unknown>>)
+          : [];
+
+        const leastCoveredType =
+          allowedTypes
+            .map((type) => ({
+              type,
+              count:
+                typeof byType[type] === 'number' ? Number(byType[type]) : 0,
+            }))
+            .sort((a, b) => a.count - b.count)[0]?.type ?? 'opportunity';
+
+        const leadingTag =
+          topTags.find(
+            (entry) =>
+              typeof entry.tag === 'string' &&
+              String(entry.tag).trim().length > 0,
+          )?.tag ?? 'coordination';
+
+        const text = [
+          `Main blindspot for "${safe}": coverage is thinnest in **${leastCoveredType}** signals.`,
+          '',
+          `Why: this type appears underrepresented relative to others, while current discussion energy clusters around **${String(
+            leadingTag,
+          )}**.`,
+          '',
+          `Practical next move: create one ${leastCoveredType} signal tied to ${String(
+            leadingTag,
+          )} with a clear 2-week measurable outcome and owner.`,
+          '',
+          'I used deterministic signal-board data because the external model provider is currently unavailable.',
+        ].join('\n');
+
+        return { kind: 'blindspot', text };
+      }
+    }
+
     if (isSignalRecommendationQuestion(lastUserText)) {
       const signalsTool = createGetSignalsBySpaceSlugTool(authToken);
       const signalsResult = await signalsTool.execute({
