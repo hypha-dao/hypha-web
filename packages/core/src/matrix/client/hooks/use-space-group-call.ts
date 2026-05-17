@@ -281,8 +281,11 @@ export function useSpaceGroupCall(
   const remoteMediaRecoverRequestedRef = useRef(false);
   const remoteMediaRecoverAttemptedRef = useRef(false);
   const remoteMediaRecoverInFlightRef = useRef(false);
+  const recordingGenerationRef = useRef(0);
   const recordingFinalizeInFlightRef = useRef(false);
+  const recordingFinalizeGenerationRef = useRef<number | null>(null);
   const recordingRuntimeRef = useRef<{
+    generation: number;
     stopRecorder: () => Promise<Blob>;
     stopTranscript: () => string;
     mimeType: string;
@@ -338,50 +341,66 @@ export function useSpaceGroupCall(
   }, []);
 
   const runCleanup = useCallback(() => {
-    if (!recordingFinalizeInFlightRef.current) {
-      const runtime = recordingRuntimeRef.current;
-      const token = authToken?.trim();
-      const slug = spaceSlug?.trim();
-      const activeRoomId = runtime?.recordedRoomId?.trim() || roomId?.trim();
-      if (!runtime || !token || !slug || !activeRoomId) {
-        recordingRuntimeRef.current = null;
-        setRecordingStatus('idle');
-      } else {
-        recordingFinalizeInFlightRef.current = true;
-        recordingRuntimeRef.current = null;
-        setRecordingStatus('uploading');
-        void (async () => {
-          try {
-            const endedAt = new Date().toISOString();
-            const blob = await runtime.stopRecorder();
-            const transcriptText = runtime.stopTranscript();
-            if (blob.size === 0) {
-              throw new Error('recording blob is empty');
-            }
-            const sessionId = callSessionId ?? newCallSessionId();
-            await uploadRecordedCallArtifact({
-              authToken: token,
-              spaceSlug: slug,
-              roomId: activeRoomId,
-              callSessionId: sessionId,
-              blob,
-              mimeType: runtime.mimeType,
-              transcriptText,
-              startedAt: runtime.startedAt,
-              endedAt,
-            });
+    const runtime = recordingRuntimeRef.current;
+    const runtimeGeneration = runtime?.generation ?? null;
+    if (
+      recordingFinalizeInFlightRef.current &&
+      runtimeGeneration != null &&
+      recordingFinalizeGenerationRef.current === runtimeGeneration
+    ) {
+      return;
+    }
+
+    const token = authToken?.trim();
+    const slug = spaceSlug?.trim();
+    const activeRoomId = runtime?.recordedRoomId?.trim() || roomId?.trim();
+    if (!runtime || !token || !slug || !activeRoomId) {
+      recordingRuntimeRef.current = null;
+      setRecordingStatus('idle');
+    } else {
+      const cleanupGeneration = runtime.generation;
+      recordingFinalizeInFlightRef.current = true;
+      recordingFinalizeGenerationRef.current = cleanupGeneration;
+      recordingRuntimeRef.current = null;
+      setRecordingStatus('uploading');
+      void (async () => {
+        try {
+          const endedAt = new Date().toISOString();
+          const blob = await runtime.stopRecorder();
+          const transcriptText = runtime.stopTranscript();
+          if (blob.size === 0) {
+            throw new Error('recording blob is empty');
+          }
+          const sessionId = callSessionId ?? newCallSessionId();
+          await uploadRecordedCallArtifact({
+            authToken: token,
+            spaceSlug: slug,
+            roomId: activeRoomId,
+            callSessionId: sessionId,
+            blob,
+            mimeType: runtime.mimeType,
+            transcriptText,
+            startedAt: runtime.startedAt,
+            endedAt,
+          });
+          if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
             setRecordingStatus('idle');
             setRecordingError(null);
-          } catch (error) {
+          }
+        } catch (error) {
+          if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
             setRecordingStatus('error');
             setRecordingError(
               error instanceof Error ? error.message : String(error),
             );
-          } finally {
-            recordingFinalizeInFlightRef.current = false;
           }
-        })();
-      }
+        } finally {
+          if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
+            recordingFinalizeInFlightRef.current = false;
+            recordingFinalizeGenerationRef.current = null;
+          }
+        }
+      })();
     }
 
     clearConnectingStallTimer();
@@ -1470,7 +1489,10 @@ export function useSpaceGroupCall(
         // recording continues even if speech recognition fails
       },
     });
+    const generation = recordingGenerationRef.current + 1;
+    recordingGenerationRef.current = generation;
     recordingRuntimeRef.current = {
+      generation,
       stopRecorder: recorder.stop,
       stopTranscript: transcript.stop,
       mimeType: recorder.mimeType,
