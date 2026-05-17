@@ -38,16 +38,13 @@ export function MemoryFilters({
   ];
 
   return (
-    <div className="sticky top-0 z-10 flex w-full flex-col gap-3 rounded-lg border border-border bg-background/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div className="flex w-full flex-col gap-4">
       <Tabs
         value={activeFilter}
         onValueChange={(value) => onFilterChange(value as MemoryFilterValue)}
         className="w-full"
       >
-        <TabsList
-          triggerVariant="switch"
-          className="grid w-full grid-cols-2 gap-1 md:flex md:w-fit md:flex-wrap"
-        >
+        <TabsList triggerVariant="switch" className="w-fit">
           {tabItems.map((item) => (
             <TabsTrigger
               key={item.value}
@@ -76,16 +73,13 @@ export function MemoryFilters({
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
           className="w-full"
         />
-        <Button
-          asChild
-          variant="default"
-          colorVariant="accent"
-          className="w-full lg:w-auto"
-        >
-          <Link href={newMemoryHref} scroll={false}>
-            {t('newMemory')}
-          </Link>
-        </Button>
+        <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
+          <Button asChild variant="default" colorVariant="accent">
+            <Link href={newMemoryHref} scroll={false}>
+              {t('newMemory')}
+            </Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
