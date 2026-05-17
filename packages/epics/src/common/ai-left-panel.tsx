@@ -71,6 +71,13 @@ import {
   syncRecentSpacesForActiveSlug,
 } from './recent-space-history';
 import { recordMobilizedAiAgentsForQuestion } from './ai-agent-competencies';
+import {
+  AI_ONBOARDING_SEED_EVENT,
+  ONBOARDING_SETUP_MODE,
+  readOnboardingConversationContext,
+  saveOnboardingConversationContext,
+  type OnboardingConversationContext,
+} from './ai-onboarding-context';
 
 type ChatUIMessage = {
   id: string;
@@ -158,7 +165,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const {
     open: isAiOpen,
     overlayVisible,
+    openAiPanel,
     closeAiPanel,
+    setAiOverlayVisible,
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
@@ -181,6 +190,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
     readRecentSpaceSlugs(),
   );
+  const [onboardingContext, setOnboardingContext] = useState<
+    OnboardingConversationContext | undefined
+  >(() => readOnboardingConversationContext());
   const recentSpaceLookupSlugs = useMemo(
     () =>
       recentSpaceSlugs
@@ -549,9 +561,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           }
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: { ...(spaceSlug && { spaceSlug }) },
+        body: {
+          ...(spaceSlug && { spaceSlug }),
+          ...(onboardingContext
+            ? { conversationContext: onboardingContext }
+            : {}),
+        },
       }),
-    [getAccessToken, spaceSlug],
+    [getAccessToken, onboardingContext, spaceSlug],
   );
 
   const { messages, sendMessage, stop, status, error, clearError } = useChat({
@@ -574,11 +591,36 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     }
     const hdrs: Record<string, string> = {};
     if (token) hdrs['Authorization'] = `Bearer ${token}`;
-    return {
-      body: { ...(spaceSlug && { spaceSlug }) },
-      headers: hdrs,
+    const body: Record<string, unknown> = {
+      ...(spaceSlug && { spaceSlug }),
+      ...(onboardingContext ? { conversationContext: onboardingContext } : {}),
     };
-  }, [getAccessToken, spaceSlug]);
+    return { body, headers: hdrs };
+  }, [getAccessToken, onboardingContext, spaceSlug]);
+
+  useEffect(() => {
+    const onSeed = (event: Event) => {
+      if (!(event instanceof CustomEvent)) return;
+      const detail = event.detail as
+        | { prompt?: string; context?: OnboardingConversationContext }
+        | undefined;
+      const prompt = detail?.prompt?.trim();
+      const context = detail?.context;
+      if (!prompt || !context || context.mode !== ONBOARDING_SETUP_MODE) return;
+
+      setOnboardingContext(context);
+      setInput(prompt);
+      openAiPanel();
+      setAiOverlayVisible(false);
+    };
+    window.addEventListener(AI_ONBOARDING_SEED_EVENT, onSeed as EventListener);
+    return () => {
+      window.removeEventListener(
+        AI_ONBOARDING_SEED_EVENT,
+        onSeed as EventListener,
+      );
+    };
+  }, [openAiPanel, setAiOverlayVisible]);
 
   useEffect(() => {
     if (!error || status !== 'error' || autoRetryingRef.current) return;
@@ -661,6 +703,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         );
       }
       const textParts = text.trim() ? [{ type: 'text' as const, text }] : [];
+      if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
+        const nextContext: OnboardingConversationContext = {
+          ...onboardingContext,
+          lastUserText: text.trim(),
+          setupPhase:
+            onboardingContext.setupPhase === 'discover'
+              ? 'draft'
+              : onboardingContext.setupPhase,
+        };
+        setOnboardingContext(nextContext);
+        saveOnboardingConversationContext(nextContext);
+      }
       if (spaceSlug && text.trim()) {
         recordMobilizedAiAgentsForQuestion(spaceSlug, text.trim());
       }
@@ -699,6 +753,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     clearError,
     activeSpaceChatRoomId,
     matrix,
+    onboardingContext,
   ]);
 
   const handleStop = useCallback(() => {
@@ -722,6 +777,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         if (spaceSlug && text.trim()) {
           recordMobilizedAiAgentsForQuestion(spaceSlug, text.trim());
         }
+        if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
+          const nextContext: OnboardingConversationContext = {
+            ...onboardingContext,
+            lastUserText: text.trim(),
+            setupPhase:
+              onboardingContext.setupPhase === 'discover'
+                ? 'draft'
+                : onboardingContext.setupPhase,
+          };
+          setOnboardingContext(nextContext);
+          saveOnboardingConversationContext(nextContext);
+        }
         const options = await buildMessageOptions();
         if (DEBUG)
           console.log('[AiLeftPanel] suggestion selected', { text, spaceSlug });
@@ -733,7 +800,38 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         console.error('[AiLeftPanel] suggestion sendMessage error:', err);
       }
     },
-    [sendMessage, buildMessageOptions, clearError, spaceSlug],
+    [
+      sendMessage,
+      buildMessageOptions,
+      clearError,
+      onboardingContext,
+      spaceSlug,
+    ],
+  );
+
+  const handleActionReplySelect = useCallback(
+    async (text: string) => {
+      try {
+        clearError();
+        if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
+          const nextContext: OnboardingConversationContext = {
+            ...onboardingContext,
+            lastUserText: text.trim(),
+            setupPhase: 'confirm',
+          };
+          setOnboardingContext(nextContext);
+          saveOnboardingConversationContext(nextContext);
+        }
+        const options = await buildMessageOptions();
+        await sendMessage(
+          { role: 'user', parts: [{ type: 'text', text }] },
+          options,
+        );
+      } catch (err) {
+        console.error('[AiLeftPanel] action reply sendMessage error:', err);
+      }
+    },
+    [buildMessageOptions, clearError, onboardingContext, sendMessage],
   );
 
   const handleTriggerClick = useCallback(() => {
@@ -932,6 +1030,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           suggestions={suggestions}
           showSuggestions={true}
           onSuggestionSelect={handleSuggestionSelect}
+          onActionReplySelect={handleActionReplySelect}
           activeSpaceName={activeSpaceName}
           isStreaming={isStreaming}
         />

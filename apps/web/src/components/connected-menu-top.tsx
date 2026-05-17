@@ -104,21 +104,22 @@ export function ConnectedMenuTop({
   }, [activeSpace, activeSpaceSlug, organisationSpaces]);
   const rootSpaceHref =
     rootSpace?.slug != null
-      ? `/${lang}/dho/${rootSpace.slug}/agreements`
+      ? `/${lang}/dho/${rootSpace.slug}/agreements/space-configuration`
       : logoHref;
   useEffect(() => {
     if (!rootSpaceHref || rootSpaceHref === '#') return;
     router.prefetch(rootSpaceHref);
   }, [rootSpaceHref, router]);
+  const rootPrimaryLogo = rootSpace?.logoUrl?.trim() || '';
   const rootLogoLight = rootSpace?.ecosystemLogoUrlLight?.trim() || '';
   const rootLogoDark = rootSpace?.ecosystemLogoUrlDark?.trim() || '';
   const preferredThemeLogo =
     resolvedTheme === 'dark' ? rootLogoDark : rootLogoLight;
   const fallbackThemeLogo =
     resolvedTheme === 'dark' ? rootLogoLight : rootLogoDark;
-  const rootLogoUrl = [preferredThemeLogo, fallbackThemeLogo].find(
-    (candidate) => candidate && isSafeImageUrl(candidate),
-  );
+  const rootLogoUrl = [rootPrimaryLogo, preferredThemeLogo, fallbackThemeLogo]
+    .map((candidate) => candidate.trim())
+    .find((candidate) => candidate && isSafeImageUrl(candidate));
   const rootTitle = rootSpace?.title?.trim() || '';
   const rootHasCustomLogo = hasCustomRootLogo(rootLogoUrl ?? '');
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
@@ -141,7 +142,7 @@ export function ConnectedMenuTop({
             src={rootLogoUrl}
             alt={rootTitle || tNavigation('ecosystemLogo')}
             loading="eager"
-            className="max-h-8 w-auto object-contain"
+            className="max-h-8 w-auto bg-transparent object-contain"
           />
           <span className="pointer-events-none absolute bottom-0.5 right-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
             <Pencil className="h-2.5 w-2.5" />

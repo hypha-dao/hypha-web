@@ -6,6 +6,15 @@ import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
 
+type ConfirmationActionResult = {
+  ok?: boolean;
+  dry_run?: boolean;
+  requires_confirmation?: boolean;
+  confirmation_token?: string;
+  next_step?: string;
+  preview?: Record<string, unknown>;
+};
+
 type ToolPart = {
   type: `tool-${string}`;
   toolCallId: string;
@@ -32,11 +41,13 @@ type AiPanelMessageBubbleProps = {
     parts?: UIMessagePart[];
   };
   isStreaming?: boolean;
+  onActionReplySelect?: (text: string) => void;
 };
 
 export function AiPanelMessageBubble({
   message,
   isStreaming,
+  onActionReplySelect,
 }: AiPanelMessageBubbleProps) {
   const t = useTranslations('AiPanel');
   const [copied, setCopied] = useState(false);
@@ -99,14 +110,71 @@ export function AiPanelMessageBubble({
     }
   }, [textContent]);
 
+  const renderConfirmationCard = useCallback(
+    (output: unknown) => {
+      if (!output || typeof output !== 'object') return null;
+      const value = output as ConfirmationActionResult;
+      if (!value.dry_run && !value.requires_confirmation) return null;
+      const entries = value.preview ? Object.entries(value.preview) : [];
+      return (
+        <div className="rounded-lg border border-accent-7/60 bg-accent-3/40 px-2 py-2 text-xs">
+          <div className="font-semibold text-accent-11">Pending action</div>
+          {entries.length > 0 ? (
+            <div className="mt-1 space-y-1">
+              {entries.slice(0, 8).map(([key, raw]) => (
+                <div key={key} className="text-muted-foreground">
+                  <span className="font-medium text-foreground">{key}:</span>{' '}
+                  {typeof raw === 'string' || typeof raw === 'number'
+                    ? String(raw)
+                    : JSON.stringify(raw)}
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {value.confirmation_token ? (
+            <div className="mt-1 text-muted-foreground">
+              Confirm with:{' '}
+              <span className="font-semibold">{value.confirmation_token}</span>
+            </div>
+          ) : null}
+          {value.next_step ? (
+            <div className="mt-1 text-muted-foreground">{value.next_step}</div>
+          ) : null}
+          {value.confirmation_token && onActionReplySelect ? (
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  onActionReplySelect(`confirm ${value.confirmation_token}`)
+                }
+                className="rounded border border-success-8/60 bg-success-3 px-2 py-1 text-[11px] font-semibold text-success-11"
+              >
+                Confirm
+              </button>
+              <button
+                type="button"
+                onClick={() => onActionReplySelect('cancel this action')}
+                className="rounded border border-border bg-muted px-2 py-1 text-[11px] font-semibold text-muted-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : null}
+        </div>
+      );
+    },
+    [onActionReplySelect],
+  );
+
   const renderToolOutput = useCallback(
     (output: unknown) => {
+      const confirmationCard = renderConfirmationCard(output);
+      if (confirmationCard) return confirmationCard;
       if (!output || typeof output !== 'object') {
         return (
           <span className="text-muted-foreground">{t('toolCompleted')}</span>
         );
       }
-
       const value = output as {
         found?: boolean;
         slug?: string;
@@ -118,8 +186,6 @@ export function AiPanelMessageBubble({
         spaceFound?: boolean;
         tokens?: unknown[];
       };
-
-      // get_space_by_slug tool output
       if ('found' in value) {
         if (value.found && value.space) {
           return (
@@ -139,8 +205,6 @@ export function AiPanelMessageBubble({
           </span>
         );
       }
-
-      // get_tokens tool output
       if ('spaceFound' in value) {
         if (!value.spaceFound) {
           return (
@@ -161,12 +225,11 @@ export function AiPanelMessageBubble({
           </span>
         );
       }
-
       return (
         <span className="text-muted-foreground">{t('toolCompleted')}</span>
       );
     },
-    [t],
+    [renderConfirmationCard, t],
   );
 
   return (
