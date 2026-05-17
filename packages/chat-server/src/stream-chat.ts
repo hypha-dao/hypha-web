@@ -144,6 +144,12 @@ function createResilientOpenRouterFetch(baseFetch: typeof fetch): typeof fetch {
 
         if (response.status === 401 || response.status === 403) {
           recordOpenRouterFailure();
+          console.error('[chat][openrouter][auth-rejected]', {
+            status: response.status,
+            hasKey: Boolean(process.env.OPENROUTER_API_KEY?.trim()),
+            referer: buildOpenRouterAppHeaders()['HTTP-Referer'],
+            title: buildOpenRouterAppHeaders()['X-Title'],
+          });
         } else if (
           isRetryableStatus(response.status) &&
           attempt >= OPENROUTER_MAX_ATTEMPTS
@@ -206,6 +212,7 @@ function buildOpenRouterAppHeaders(): Record<string, string> {
  * The package default export omits Referer/title and can trigger 401 "User not found".
  */
 const openrouterWithHyphaHeaders = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY?.trim() || undefined,
   compatibility: 'strict',
   headers: buildOpenRouterAppHeaders(),
   fetch: createResilientOpenRouterFetch(fetch),
@@ -247,8 +254,18 @@ function messageFromUnknownError(error: unknown): string {
   }
 }
 
-const OPENROUTER_AUTH_FAILURE_REPLY =
-  'OpenRouter could not run this chat (often 401). Check OPENROUTER_API_KEY on the server. Hypha sends HTTP-Referer and X-Title automatically; override with OPENROUTER_HTTP_REFERER / OPENROUTER_APP_TITLE if needed.';
+const OPENROUTER_AUTH_FAILURE_REPLY = [
+  'Hypha AI provider is currently unavailable (OpenRouter authorization issue).',
+  '',
+  'I can still answer these from deterministic space data:',
+  '1. Member / document / proposal / subspace counts',
+  '2. Main discussions/signals',
+  '3. Documents/agreements list',
+  '4. Token/treasury holdings',
+  '5. A recommended next signal',
+  '',
+  'Try asking one of the above while provider access is being restored.',
+].join('\n');
 const OPENROUTER_TEMP_UNAVAILABLE_REPLY =
   'Hypha AI provider is temporarily unavailable. Please retry in a few seconds.';
 
