@@ -2229,7 +2229,6 @@
     "spaceMemoryLoadMoreError": "Weitere Einträge konnten nicht geladen werden. Bitte erneut versuchen.",
     "spaceMemoryRetry": "Erneut versuchen",
     "spaceMemoryRefresh": "Aktualisieren",
-    "spaceMemoryTimelineLabel": "Space-Memory-Verlauf",
     "spaceMemoryContext": "Aus «{title}» · {state}",
     "spaceMemoryContextMatrix": "Aus Matrix-Chat",
     "spaceMemoryMatrixPreviewNeedsChat": "Vorschau braucht Human Chat (Matrix)",

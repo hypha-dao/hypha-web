@@ -2221,7 +2221,6 @@
     "spaceMemoryLoadMoreError": "No se pudieron cargar más elementos. Inténtalo de nuevo.",
     "spaceMemoryRetry": "Reintentar",
     "spaceMemoryRefresh": "Actualizar",
-    "spaceMemoryTimelineLabel": "Historial de memoria del espacio",
     "spaceMemoryContext": "De «{title}» · {state}",
     "spaceMemoryContextMatrix": "Del chat de Matrix",
     "spaceMemoryMatrixPreviewNeedsChat": "La vista previa requiere Human Chat (Matrix)",

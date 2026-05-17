@@ -2228,7 +2228,6 @@
     "spaceMemoryLoadMoreError": "Could not load more items. Try again.",
     "spaceMemoryRetry": "Retry",
     "spaceMemoryRefresh": "Refresh",
-    "spaceMemoryTimelineLabel": "Space memory history",
     "spaceMemoryContext": "From «{title}» · {state}",
     "spaceMemoryContextMatrix": "From Matrix chat",
     "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)",

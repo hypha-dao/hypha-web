@@ -2221,7 +2221,6 @@
     "spaceMemoryLoadMoreError": "Impossible de charger d'autres éléments. Veuillez réessayer.",
     "spaceMemoryRetry": "Réessayer",
     "spaceMemoryRefresh": "Actualiser",
-    "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace",
     "spaceMemoryContext": "Depuis «{title}» · {state}",
     "spaceMemoryContextMatrix": "Depuis le chat Matrix",
     "spaceMemoryContextCallTranscript": "Transcription d'appel (mémoire organisationnelle)",
