@@ -326,7 +326,7 @@ export default async function RootLayout({
                               />
                             }
                           >
-                            <div className="flex max-md:pointer-events-none max-md:opacity-0">
+                            <div className="hidden md:flex">
                               <ConnectedButtonProfile
                                 useAuthentication={useAuthentication}
                                 useMe={useMe}

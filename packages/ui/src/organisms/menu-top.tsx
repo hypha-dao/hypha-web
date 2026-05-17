@@ -251,11 +251,14 @@ export const MenuTop = ({
           </div>
         )}
 
-        {/* Compact action group (right side): chat, profile, optional hamburger */}
+        {/* Compact action group (right side): chat, profile, optional hamburger.
+            Always show below `md` so auth (e.g. Sign in) stays visible whenever the
+            desktop action row is hidden by the app layout; `isCompact` still controls
+            md+ when the desktop group is collapsed into this column. */}
         <div
           className={clsx(
-            'ml-auto items-center gap-2',
-            isCompact ? 'flex' : 'hidden',
+            'ml-auto items-center gap-2 max-md:flex',
+            isCompact ? 'md:flex' : 'md:hidden',
           )}
         >
           {trailingAction ? (
