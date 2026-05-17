@@ -12,15 +12,15 @@ import { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion
 import { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
 import { webSearchTool } from './web-search';
 
-function safeTool(toolName: string, tool: any): any {
-  const originalExecute = tool.execute;
+function safeTool(toolName: string, tool: ChatRouteTool): ChatRouteTool {
+  const originalExecute = tool.execute as (
+    ...args: unknown[]
+  ) => Promise<unknown>;
   return {
     ...tool,
     execute: async (...args: unknown[]) => {
       try {
-        return await (originalExecute as (...a: unknown[]) => Promise<unknown>)(
-          ...args,
-        );
+        return await originalExecute(...args);
       } catch (error) {
         const message =
           error instanceof Error ? error.message : 'Unexpected tool error';
@@ -41,7 +41,7 @@ export function createChatTools(
   authToken: string,
   requestUrlForSessionMatrix?: string,
 ): Record<string, ChatRouteTool> {
-  return {
+  const tools: Record<string, ChatRouteTool> = {
     get_space_by_slug: safeTool('get_space_by_slug', getSpaceBySlugTool),
     get_ecosystem_by_space_slug: safeTool(
       'get_ecosystem_by_space_slug',
@@ -84,7 +84,8 @@ export function createChatTools(
       createIngestSpaceCallArtifactsTool(authToken),
     ),
     web_search: safeTool('web_search', webSearchTool),
-  } as unknown as Record<string, ChatRouteTool>;
+  };
+  return tools;
 }
 
 export { getSpaceBySlugTool } from './get-space-by-slug';
