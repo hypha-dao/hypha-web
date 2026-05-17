@@ -78,7 +78,7 @@ async function convertMessagesSafely(
       message: error instanceof Error ? error.message : String(error),
       ...(OPENROUTER_DEBUG && { error }),
     });
-    throw error;
+    return [];
   }
 }
 
