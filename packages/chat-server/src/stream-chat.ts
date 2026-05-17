@@ -28,6 +28,154 @@ export const MISSING_OPENROUTER_KEY_MESSAGE =
   'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
 
 const DEFAULT_OPENROUTER_CHAT_MODEL = 'openai/gpt-4o-mini';
+const OPENROUTER_REQUEST_TIMEOUT_MS = Number(
+  process.env.OPENROUTER_REQUEST_TIMEOUT_MS ?? 20_000,
+);
+const OPENROUTER_MAX_ATTEMPTS = Math.max(
+  1,
+  Number(process.env.OPENROUTER_MAX_ATTEMPTS ?? 2),
+);
+const OPENROUTER_CIRCUIT_FAILURE_THRESHOLD = Math.max(
+  1,
+  Number(process.env.OPENROUTER_CIRCUIT_FAILURE_THRESHOLD ?? 3),
+);
+const OPENROUTER_CIRCUIT_COOLDOWN_MS = Math.max(
+  1_000,
+  Number(process.env.OPENROUTER_CIRCUIT_COOLDOWN_MS ?? 30_000),
+);
+
+let openRouterConsecutiveFailures = 0;
+let openRouterCircuitOpenedAt = 0;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function anySignal(
+  signals: Array<AbortSignal | null | undefined>,
+): AbortSignal | undefined {
+  const active = signals.filter(Boolean) as AbortSignal[];
+  if (active.length === 0) return undefined;
+  if (active.length === 1) return active[0];
+  const controller = new AbortController();
+  for (const signal of active) {
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+      return controller.signal;
+    }
+    signal.addEventListener('abort', () => controller.abort(signal.reason), {
+      once: true,
+    });
+  }
+  return controller.signal;
+}
+
+function isRetryableStatus(status: number): boolean {
+  return (
+    status === 408 ||
+    status === 409 ||
+    status === 425 ||
+    status === 429 ||
+    status >= 500
+  );
+}
+
+function recordOpenRouterSuccess() {
+  openRouterConsecutiveFailures = 0;
+  openRouterCircuitOpenedAt = 0;
+}
+
+function recordOpenRouterFailure() {
+  openRouterConsecutiveFailures += 1;
+  if (openRouterConsecutiveFailures >= OPENROUTER_CIRCUIT_FAILURE_THRESHOLD) {
+    if (openRouterCircuitOpenedAt === 0) {
+      openRouterCircuitOpenedAt = Date.now();
+      console.error('[chat][openrouter][circuit-opened]', {
+        failures: openRouterConsecutiveFailures,
+        cooldownMs: OPENROUTER_CIRCUIT_COOLDOWN_MS,
+      });
+    }
+  }
+}
+
+function isOpenRouterCircuitOpen(): boolean {
+  if (openRouterCircuitOpenedAt === 0) return false;
+  const elapsed = Date.now() - openRouterCircuitOpenedAt;
+  if (elapsed >= OPENROUTER_CIRCUIT_COOLDOWN_MS) {
+    openRouterCircuitOpenedAt = 0;
+    openRouterConsecutiveFailures = 0;
+    return false;
+  }
+  return true;
+}
+
+function createResilientOpenRouterFetch(baseFetch: typeof fetch): typeof fetch {
+  return async (
+    input: Parameters<typeof fetch>[0],
+    init?: Parameters<typeof fetch>[1],
+  ) => {
+    if (isOpenRouterCircuitOpen()) {
+      throw new Error('OpenRouter circuit open');
+    }
+
+    let attempt = 0;
+    while (attempt < OPENROUTER_MAX_ATTEMPTS) {
+      attempt += 1;
+      const timeoutController = new AbortController();
+      const timeout = setTimeout(
+        () => timeoutController.abort('OpenRouter request timeout'),
+        OPENROUTER_REQUEST_TIMEOUT_MS,
+      );
+      try {
+        const response = await baseFetch(input, {
+          ...(init ?? {}),
+          signal: anySignal([init?.signal, timeoutController.signal]),
+        });
+        if (response.ok) {
+          recordOpenRouterSuccess();
+          return response;
+        }
+
+        if (response.status === 401 || response.status === 403) {
+          recordOpenRouterFailure();
+        } else if (
+          isRetryableStatus(response.status) &&
+          attempt >= OPENROUTER_MAX_ATTEMPTS
+        ) {
+          recordOpenRouterFailure();
+        }
+
+        if (
+          !isRetryableStatus(response.status) ||
+          attempt >= OPENROUTER_MAX_ATTEMPTS
+        ) {
+          return response;
+        }
+
+        await sleep(150 * attempt);
+      } catch (error) {
+        const message = messageFromUnknownError(error).toLowerCase();
+        const retryable =
+          message.includes('fetch failed') ||
+          message.includes('timeout') ||
+          message.includes('network') ||
+          message.includes('socket') ||
+          message.includes('aborted');
+
+        if (!retryable || attempt >= OPENROUTER_MAX_ATTEMPTS) {
+          recordOpenRouterFailure();
+          throw error;
+        }
+        await sleep(150 * attempt);
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    recordOpenRouterFailure();
+    throw new Error('OpenRouter request failed after retries');
+  };
+}
 
 /** @see https://openrouter.ai/docs/api/reference/authorization — Referer + title are required for many keys. */
 function buildOpenRouterAppHeaders(): Record<string, string> {
@@ -54,6 +202,7 @@ function buildOpenRouterAppHeaders(): Record<string, string> {
 const openrouterWithHyphaHeaders = createOpenRouter({
   compatibility: 'strict',
   headers: buildOpenRouterAppHeaders(),
+  fetch: createResilientOpenRouterFetch(fetch),
 });
 
 /**
@@ -94,6 +243,8 @@ function messageFromUnknownError(error: unknown): string {
 
 const OPENROUTER_AUTH_FAILURE_REPLY =
   'OpenRouter could not run this chat (often 401). Check OPENROUTER_API_KEY on the server. Hypha sends HTTP-Referer and X-Title automatically; override with OPENROUTER_HTTP_REFERER / OPENROUTER_APP_TITLE if needed.';
+const OPENROUTER_TEMP_UNAVAILABLE_REPLY =
+  'Hypha AI provider is temporarily unavailable. Please retry in a few seconds.';
 
 type DeterministicFallbackContext = {
   text: string;
@@ -393,8 +544,23 @@ function createOpenRouterAuthRecoveryTransform(
         const looksLikeUserNotFound = lower.includes('user not found');
         const openRouter401 =
           APICallError.isInstance(err) && err.statusCode === 401;
+        const retryableApiError =
+          APICallError.isInstance(err) &&
+          typeof err.statusCode === 'number' &&
+          isRetryableStatus(err.statusCode);
+        const looksLikeTransient =
+          lower.includes('fetch failed') ||
+          lower.includes('timeout') ||
+          lower.includes('network') ||
+          lower.includes('socket') ||
+          lower.includes('circuit open');
 
-        if (looksLikeUserNotFound || openRouter401) {
+        if (
+          looksLikeUserNotFound ||
+          openRouter401 ||
+          retryableApiError ||
+          looksLikeTransient
+        ) {
           console.error('[chat][openrouter][stream-auth-failure]', {
             debugRequestId,
             message,
@@ -407,7 +573,11 @@ function createOpenRouterAuthRecoveryTransform(
           controller.enqueue({
             type: 'text-delta',
             id,
-            text: deterministicFallback?.text ?? OPENROUTER_AUTH_FAILURE_REPLY,
+            text:
+              deterministicFallback?.text ??
+              (openRouter401 || looksLikeUserNotFound
+                ? OPENROUTER_AUTH_FAILURE_REPLY
+                : OPENROUTER_TEMP_UNAVAILABLE_REPLY),
           });
           controller.enqueue({ type: 'text-end', id });
           return;
