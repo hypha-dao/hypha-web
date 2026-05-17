@@ -47,9 +47,29 @@ function sanitizeMessagesToTextOnly(
         )
         .map((part) => ({ type: 'text' as const, text: part.text }));
 
+      const hasFileParts = (message.parts ?? []).some(
+        (part) =>
+          part != null &&
+          typeof part === 'object' &&
+          (part as { type?: string }).type === 'file',
+      );
+
+      /** File-only turns were dropped entirely → empty prompt and no assistant text. */
+      const fileOnlySynthetic =
+        explicitTextParts.length === 0 && hasFileParts
+          ? [
+              {
+                type: 'text' as const,
+                text: '[User attached file(s) with no text. Use tools (org memory, documents, etc.) as needed; if context is insufficient, ask a short clarifying question.]',
+              },
+            ]
+          : [];
+
       const fallbackTextParts =
         explicitTextParts.length > 0
           ? explicitTextParts
+          : fileOnlySynthetic.length > 0
+          ? fileOnlySynthetic
           : typeof message.content === 'string' &&
             message.content.trim().length > 0
           ? [{ type: 'text' as const, text: message.content }]
@@ -131,6 +151,14 @@ export async function createChatStreamResult(
   const tools = createChatTools(authToken, requestUrlForSessionMatrix);
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
 
+  if (modelMessages.length === 0) {
+    console.warn('[chat][empty-model-messages]', {
+      debugRequestId,
+      spaceSlug: spaceSlug ?? null,
+      rawMessageCount: messages.length,
+    });
+  }
+
   if (OPENROUTER_DEBUG) {
     console.log('[chat][openrouter][start]', {
       debugRequestId,
@@ -143,7 +171,16 @@ export async function createChatStreamResult(
   return streamText({
     model: openrouter('openrouter/auto'),
     system: buildSystemPrompt(spaceSlug),
-    messages: modelMessages,
+    messages:
+      modelMessages.length > 0
+        ? modelMessages
+        : [
+            {
+              role: 'user',
+              content:
+                'The latest user message had no readable text (for example, only unsupported attachment parts). Briefly ask the user to type their question in words, or confirm what they need.',
+            },
+          ],
 
     // Cast: ChatRouteTool's generic Zod input doesn't satisfy ai's CoreTool typing, but is structurally compatible at runtime.
     tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],

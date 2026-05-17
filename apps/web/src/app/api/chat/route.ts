@@ -72,50 +72,70 @@ function createChatTextOnlyStreamResponse({
           writer.write({ type: 'text-delta', id: textPartId, delta });
         };
 
-        const tryWriteUnknownText = (value: unknown) => {
-          if (typeof value === 'string') {
-            writeDelta(value);
-          }
+        /** AI SDK v6+ uses `text` on text-delta; some paths use `delta` or `textDelta` (see ai/dist StreamText fullStream). */
+        const writeTextFromChunk = (chunk: Record<string, unknown>) => {
+          const fromText = chunk.text;
+          const fromDelta = chunk.delta;
+          const fromTextDelta = chunk.textDelta;
+          const s =
+            typeof fromText === 'string'
+              ? fromText
+              : typeof fromDelta === 'string'
+              ? fromDelta
+              : typeof fromTextDelta === 'string'
+              ? fromTextDelta
+              : '';
+          if (s) writeDelta(s);
         };
 
         try {
           if (fullStream) {
             for await (const chunk of fullStream) {
               if (!chunk || typeof chunk !== 'object') continue;
-              const typed = chunk as {
-                type?: string;
-                delta?: unknown;
-                text?: unknown;
-                output?: unknown;
-                toolName?: unknown;
-              };
+              const typed = chunk as Record<string, unknown>;
+              const chunkType = typed.type;
+
               if (
-                typed.type === 'text-delta' &&
-                typeof typed.delta === 'string'
+                chunkType === 'text-delta' ||
+                chunkType === 'reasoning-delta'
               ) {
-                writeDelta(typed.delta);
+                writeTextFromChunk(typed);
                 continue;
               }
-              if (typed.type === 'text' && typeof typed.text === 'string') {
+              if (chunkType === 'text' && typeof typed.text === 'string') {
                 writeDelta(typed.text);
                 continue;
               }
-              // Tolerate SDK/provider shape drift for text chunks.
-              tryWriteUnknownText(typed.delta);
-              tryWriteUnknownText(typed.text);
+              // Legacy/alternate shapes
+              writeTextFromChunk(typed);
               if ('value' in typed) {
-                tryWriteUnknownText((typed as { value?: unknown }).value);
+                const v = typed.value;
+                if (typeof v === 'string') writeDelta(v);
               }
               if ('content' in typed) {
-                tryWriteUnknownText((typed as { content?: unknown }).content);
+                const c = typed.content;
+                if (typeof c === 'string') writeDelta(c);
               }
-              if (typed.type === 'tool-result') {
+              if (chunkType === 'tool-result') {
                 toolOutputs.push({
                   toolName:
                     typeof typed.toolName === 'string'
                       ? typed.toolName
                       : 'tool',
                   output: typed.output,
+                });
+              }
+              if (chunkType === 'error' && 'error' in typed) {
+                const err = typed.error;
+                const msg =
+                  err instanceof Error
+                    ? err.message
+                    : typeof err === 'string'
+                    ? err
+                    : JSON.stringify(err);
+                console.error('[chat][ui-stream][chunk-error]', {
+                  debugRequestId,
+                  message: msg,
                 });
               }
             }
