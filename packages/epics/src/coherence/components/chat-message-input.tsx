@@ -56,7 +56,10 @@ function disambiguatedMentionTokenKey(
   const stem = shortenMatrixIdForDisplay(userId).replace(/^@/, '').trim();
   const short =
     stem.length <= 26 ? stem : `${stem.slice(0, 12)}...${stem.slice(-8)}`;
-  key = sanitizeMentionDisplayLabel(`${displayLabel} (${short})`);
+  const stableSuffix = userId.replace(/^@/, '').trim().slice(-10);
+  key = sanitizeMentionDisplayLabel(
+    `${displayLabel} (${short}-${stableSuffix})`,
+  );
   if (!key) return sanitizeMentionDisplayLabel(userId);
   return key;
 }
