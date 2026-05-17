@@ -5,6 +5,7 @@ import {
   useCallback,
   useMemo,
   useEffect,
+  useRef,
   type ElementType,
 } from 'react';
 import { useChat } from '@ai-sdk/react';
@@ -159,6 +160,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
   const [input, setInput] = useState('');
   const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
+  const autoRetryingRef = useRef(false);
+  const lastAutoRetriedMessageIdRef = useRef<string | null>(null);
   const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
     readRecentSpaceSlugs(),
   );
@@ -557,6 +560,39 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       headers: hdrs,
     };
   }, [getAccessToken, spaceSlug]);
+
+  useEffect(() => {
+    if (!error || status !== 'error' || autoRetryingRef.current) return;
+
+    const errorMessage =
+      error instanceof Error ? error.message.toLowerCase() : String(error);
+    const looksLikeTransientNetworkError =
+      errorMessage.includes('network') ||
+      errorMessage.includes('fetch failed') ||
+      errorMessage.includes('err_network_changed');
+    if (!looksLikeTransientNetworkError) return;
+
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((message) => message.role === 'user');
+    const retryKey = lastUserMessage?.id ?? `fallback-${messages.length}`;
+
+    if (lastAutoRetriedMessageIdRef.current === retryKey) return;
+    lastAutoRetriedMessageIdRef.current = retryKey;
+    autoRetryingRef.current = true;
+
+    void (async () => {
+      try {
+        clearError();
+        const options = await buildMessageOptions();
+        await sendMessage(undefined, options);
+      } catch (retryError) {
+        console.error('[AiLeftPanel] automatic chat retry failed:', retryError);
+      } finally {
+        autoRetryingRef.current = false;
+      }
+    })();
+  }, [buildMessageOptions, clearError, error, messages, sendMessage, status]);
 
   const handleSend = useCallback(async () => {
     if ((!input.trim() && draftAttachments.length === 0) || isStreaming) return;
