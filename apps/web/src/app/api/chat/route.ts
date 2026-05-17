@@ -12,11 +12,18 @@ export const maxDuration = 300;
 
 function createChatFailureStreamResponse({
   debugRequestId,
+  errorType,
   message,
 }: {
   debugRequestId: string;
+  errorType: string;
   message: string;
 }) {
+  console.error('[chat][failure-stream]', {
+    debugRequestId,
+    errorType,
+    message,
+  });
   const textPartId = `text-${debugRequestId}`;
   return createUIMessageStreamResponse({
     status: 200,
@@ -107,6 +114,7 @@ export async function POST(req: Request) {
   if (!authToken) {
     return createChatFailureStreamResponse({
       debugRequestId,
+      errorType: 'auth_missing',
       message: 'Authentication is required. Please sign in again and retry.',
     });
   }
@@ -115,6 +123,7 @@ export async function POST(req: Request) {
   if (!authResult.valid) {
     return createChatFailureStreamResponse({
       debugRequestId,
+      errorType: 'auth_failed',
       message: `Authentication failed: ${authResult.reason}. Please sign in again and retry.`,
     });
   }
@@ -125,6 +134,7 @@ export async function POST(req: Request) {
   } catch {
     return createChatFailureStreamResponse({
       debugRequestId,
+      errorType: 'invalid_json',
       message: 'Invalid chat request payload. Please retry your message.',
     });
   }
@@ -133,6 +143,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return createChatFailureStreamResponse({
       debugRequestId,
+      errorType: 'validation_failed',
       message:
         'The chat request format is invalid for this session. Please retry.',
     });
@@ -156,6 +167,7 @@ export async function POST(req: Request) {
 
     return createChatFailureStreamResponse({
       debugRequestId,
+      errorType: 'stream_init_error',
       message:
         'I hit an issue while starting the response. Please retry in a few seconds.',
     });
