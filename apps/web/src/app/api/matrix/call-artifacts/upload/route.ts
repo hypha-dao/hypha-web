@@ -7,6 +7,7 @@ import {
   determineEnvironment,
   enqueueSignalEvaluationFromMemory,
   findSpaceHostFieldsBySlug,
+  getSpaceCallRecordingBySessionId,
   ingestSpaceCallArtifacts,
 } from '@hypha-platform/core/server';
 import {
@@ -119,6 +120,25 @@ export async function POST(request: NextRequest) {
   const access = await checkSpaceAccessForSpace(space, authToken);
   if (!access.hasAccess) {
     return NextResponse.json({ error: access.message }, { status: 403 });
+  }
+
+  const existingRecording = await getSpaceCallRecordingBySessionId(
+    { spaceId: space.id, callSessionId },
+    { db },
+  );
+  if (existingRecording?.mediaUri?.trim()) {
+    return NextResponse.json({
+      ok: true,
+      media_uri: existingRecording.mediaUri,
+      call_session_id: callSessionId,
+      transcript_stored: false,
+      transcript_job: {
+        attempted: false,
+        ok: false,
+        status: null,
+      },
+      deduped: true,
+    });
   }
 
   const environment = determineEnvironment(request.url);

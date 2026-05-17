@@ -380,6 +380,29 @@ export async function listSpaceCallArtifactsBySpaceId(
   return { recordings, transcripts, summaries };
 }
 
+export async function getSpaceCallRecordingBySessionId(
+  {
+    spaceId,
+    callSessionId,
+  }: {
+    spaceId: number;
+    callSessionId: string;
+  },
+  { db }: DbConfig,
+): Promise<SpaceCallRecordingRow | null> {
+  const [row] = await db
+    .select()
+    .from(spaceCallRecordings)
+    .where(
+      and(
+        eq(spaceCallRecordings.spaceId, spaceId),
+        eq(spaceCallRecordings.callSessionId, callSessionId.trim()),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
 export async function getSpaceCallArtifactById(
   {
     kind,
