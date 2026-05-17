@@ -391,7 +391,12 @@ export async function getSpaceCallArtifactById(
     spaceId: number;
   },
   { db }: DbConfig,
-) {
+): Promise<
+  | SpaceCallRecordingRow
+  | SpaceCallTranscriptRow
+  | SpaceDiscussionSummaryRow
+  | null
+> {
   if (kind === 'recording') {
     const [row] = await db
       .select()
