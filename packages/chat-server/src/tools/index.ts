@@ -32,6 +32,20 @@ function inferSetupPhase(context: unknown): SetupPhase {
     : 'discover';
 }
 
+function withInjectedOnboardingLastUserText<T extends Record<string, unknown>>(
+  payload: T,
+  setupPhase: SetupPhase,
+  onboardingLastUserText?: string,
+): T & { onboarding_last_user_text?: string } {
+  if (setupPhase === 'confirm' || setupPhase === 'execute') {
+    return {
+      ...payload,
+      onboarding_last_user_text: onboardingLastUserText,
+    };
+  }
+  return payload;
+}
+
 function safeTool(toolName: string, tool: ChatRouteTool): ChatRouteTool {
   const originalExecute = tool.execute as (
     ...args: unknown[]
@@ -75,11 +89,6 @@ export function createChatTools(
       'string'
       ? (conversationContext as { lastUserText: string }).lastUserText
       : undefined;
-
-  const maybeInjectConfirmation = (payload: Record<string, unknown>) =>
-    setupPhase === 'confirm' || setupPhase === 'execute'
-      ? { ...payload, onboarding_last_user_text: onboardingLastUserText }
-      : payload;
 
   const createSpaceFromOnboardingTool =
     createCreateSpaceFromOnboardingTool(authToken);
@@ -147,7 +156,11 @@ export function createChatTools(
         ...createSpaceFromOnboardingTool,
         execute: async (args) =>
           createSpaceFromOnboardingTool.execute(
-            maybeInjectConfirmation(args as Record<string, unknown>),
+            withInjectedOnboardingLastUserText(
+              args,
+              setupPhase,
+              onboardingLastUserText,
+            ),
           ),
       },
     );
@@ -155,7 +168,11 @@ export function createChatTools(
       ...updateSpaceSettingsTool,
       execute: async (args) =>
         updateSpaceSettingsTool.execute(
-          maybeInjectConfirmation(args as Record<string, unknown>),
+          withInjectedOnboardingLastUserText(
+            args,
+            setupPhase,
+            onboardingLastUserText,
+          ),
         ),
     });
     tools.create_space_setup_proposal = safeTool(
@@ -164,7 +181,11 @@ export function createChatTools(
         ...createSpaceSetupProposalTool,
         execute: async (args) =>
           createSpaceSetupProposalTool.execute(
-            maybeInjectConfirmation(args as Record<string, unknown>),
+            withInjectedOnboardingLastUserText(
+              args,
+              setupPhase,
+              onboardingLastUserText,
+            ),
           ),
       },
     );
@@ -178,7 +199,11 @@ export function createChatTools(
       ...createEcosystemSpaceTool,
       execute: async (args) =>
         createEcosystemSpaceTool.execute(
-          maybeInjectConfirmation(args as Record<string, unknown>),
+          withInjectedOnboardingLastUserText(
+            args,
+            setupPhase,
+            onboardingLastUserText,
+          ),
         ),
     });
   }

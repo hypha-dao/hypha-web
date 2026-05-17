@@ -12,10 +12,6 @@ import type {
   UIMessage,
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import {
-  getEnableEcosystemAutomation,
-  getEnableOnboardingWriteTools,
-} from '@hypha-platform/feature-flags';
 import type { ChatRequestPayload } from './request-schema';
 import {
   buildQuestionCompetencyDirective,
@@ -943,6 +939,8 @@ export type ChatStreamCallbacks = {
   /** Lets org memory resolve the viewer's Matrix token (same as Space Memory API). */
   requestUrlForSessionMatrix?: string;
   conversationContext?: ChatRequestPayload['conversationContext'];
+  onboardingWriteToolsEnabled?: boolean;
+  ecosystemAutomationEnabled?: boolean;
 };
 
 function sanitizeMessagesToTextOnly(
@@ -1092,13 +1090,10 @@ export async function createChatStreamResult(
     debugRequestId,
     requestUrlForSessionMatrix,
     conversationContext,
+    onboardingWriteToolsEnabled,
+    ecosystemAutomationEnabled,
   }: ChatStreamCallbacks,
 ): Promise<ReturnType<typeof streamText>> {
-  const [onboardingWriteToolsEnabled, ecosystemAutomationEnabled] =
-    await Promise.all([
-      getEnableOnboardingWriteTools(),
-      getEnableEcosystemAutomation(),
-    ]);
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
   const lastUserText = extractLastUserText(messages);
   const normalizedConversationContext = normalizeConversationContext(
@@ -1110,8 +1105,8 @@ export async function createChatStreamResult(
     requestUrlForSessionMatrix,
     normalizedConversationContext,
     {
-      onboardingWriteToolsEnabled,
-      ecosystemAutomationEnabled,
+      onboardingWriteToolsEnabled: onboardingWriteToolsEnabled !== false,
+      ecosystemAutomationEnabled: ecosystemAutomationEnabled !== false,
     },
   );
   const deterministicFallback = await buildDeterministicSpaceFallback({

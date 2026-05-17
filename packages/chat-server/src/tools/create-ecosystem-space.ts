@@ -6,7 +6,6 @@ import {
   checkSpaceAccessForSpace,
   createSpace,
   findSpaceBySlug,
-  updateSpaceBySlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import type { ChatRouteTool } from './types';
@@ -206,15 +205,6 @@ export function createCreateEcosystemSpaceTool(authToken: string) {
       );
 
       const createdSlug = sanitizeSlug(created.slug) ?? created.slug;
-      await updateSpaceBySlug(
-        {
-          slug: createdSlug,
-          links: data.links,
-          categories: data.categories as Category[],
-          flags: data.flags as SpaceFlags[],
-        },
-        { db },
-      );
 
       logOnboardingToolEvent({
         tool: 'create_ecosystem_space',

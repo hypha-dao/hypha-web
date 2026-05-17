@@ -13,6 +13,10 @@ import {
   OPENROUTER_DEBUG,
   verifyPrivyAuthToken,
 } from '@hypha-platform/chat-server';
+import {
+  getEnableEcosystemAutomation,
+  getEnableOnboardingWriteTools,
+} from '@hypha-platform/feature-flags';
 
 export const maxDuration = 300;
 
@@ -96,6 +100,11 @@ export async function POST(req: Request) {
   const messages: ChatRequestPayload['messages'] = parsed.data.messages;
   const spaceSlug = parsed.data.spaceSlug;
   const conversationContext = parsed.data.conversationContext;
+  const [onboardingWriteToolsEnabled, ecosystemAutomationEnabled] =
+    await Promise.all([
+      getEnableOnboardingWriteTools(),
+      getEnableEcosystemAutomation(),
+    ]);
 
   let result: Awaited<ReturnType<typeof createChatStreamResult>>;
   try {
@@ -103,6 +112,8 @@ export async function POST(req: Request) {
       debugRequestId,
       requestUrlForSessionMatrix: req.url,
       conversationContext,
+      onboardingWriteToolsEnabled,
+      ecosystemAutomationEnabled,
     });
   } catch (error) {
     console.error('[chat][route][stream-init-error]', {

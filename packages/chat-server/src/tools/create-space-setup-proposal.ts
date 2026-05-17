@@ -90,7 +90,6 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
         {
           title: data.title,
           description: data.description,
-          state: 'proposal',
           spaceId: host.id,
           creatorId: person.id,
           label: data.label ?? 'space setup',
