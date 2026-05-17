@@ -36,6 +36,10 @@ export type SpaceCallArtifactIngestResult =
   | { ok: true; spaceId: number; callSessionId: string }
   | { ok: false; error: string };
 
+type SpaceCallRecordingRow = typeof spaceCallRecordings.$inferSelect;
+type SpaceCallTranscriptRow = typeof spaceCallTranscripts.$inferSelect;
+type SpaceDiscussionSummaryRow = typeof spaceDiscussionSummaries.$inferSelect;
+
 type MatrixTimelineEvent = {
   type?: string;
   sender?: string;
@@ -348,7 +352,11 @@ export async function createSpaceDiscussionSummary(
 export async function listSpaceCallArtifactsBySpaceId(
   spaceId: number,
   { db }: DbConfig,
-) {
+): Promise<{
+  recordings: SpaceCallRecordingRow[];
+  transcripts: SpaceCallTranscriptRow[];
+  summaries: SpaceDiscussionSummaryRow[];
+}> {
   const [recordings, transcripts, summaries] = await Promise.all([
     db
       .select()
