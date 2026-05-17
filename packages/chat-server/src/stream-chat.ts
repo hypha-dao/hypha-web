@@ -11,7 +11,7 @@ import type {
   ToolSet,
   UIMessage,
 } from 'ai';
-import { openrouter } from '@openrouter/ai-sdk-provider';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
 import { buildSystemPrompt } from './system-prompt';
 import { createChatTools } from './tools/index';
@@ -23,6 +23,33 @@ export const MISSING_OPENROUTER_KEY_MESSAGE =
   'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
 
 const DEFAULT_OPENROUTER_CHAT_MODEL = 'openai/gpt-4o-mini';
+
+/** @see https://openrouter.ai/docs/api/reference/authorization — Referer + title are required for many keys. */
+function buildOpenRouterAppHeaders(): Record<string, string> {
+  const referer =
+    process.env.OPENROUTER_HTTP_REFERER?.trim() ||
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    (process.env.VERCEL_URL?.trim()
+      ? `https://${process.env.VERCEL_URL.replace(/^https?:\/\//, '')}`
+      : '') ||
+    'https://hypha.earth';
+
+  const title = process.env.OPENROUTER_APP_TITLE?.trim() || 'Hypha Platform';
+
+  return {
+    'HTTP-Referer': referer,
+    'X-Title': title,
+  };
+}
+
+/**
+ * Provider with strict OpenRouter compatibility plus required attribution headers.
+ * The package default export omits Referer/title and can trigger 401 "User not found".
+ */
+const openrouterWithHyphaHeaders = createOpenRouter({
+  compatibility: 'strict',
+  headers: buildOpenRouterAppHeaders(),
+});
 
 /**
  * OpenRouter model id for Hypha chat.
@@ -61,9 +88,7 @@ function messageFromUnknownError(error: unknown): string {
 }
 
 const OPENROUTER_AUTH_FAILURE_REPLY =
-  'Hypha could not reach the OpenRouter API for this request (often a 401 or "User not found" from the router). ' +
-  'This is usually an OpenRouter key or model configuration issue on the deployment, not your Hypha profile. ' +
-  'Ask an admin to verify OPENROUTER_API_KEY, unset OPENROUTER_CHAT_MODEL=openrouter/auto if set, and confirm the key at openrouter.ai.';
+  'OpenRouter could not run this chat (often 401). Check OPENROUTER_API_KEY on the server. Hypha sends HTTP-Referer and X-Title automatically; override with OPENROUTER_HTTP_REFERER / OPENROUTER_APP_TITLE if needed.';
 
 /**
  * Maps common OpenRouter auth / auto-router failures to visible assistant text so the
@@ -284,7 +309,7 @@ export async function createChatStreamResult(
   }
 
   return streamText({
-    model: openrouter(openRouterModelId),
+    model: openrouterWithHyphaHeaders(openRouterModelId),
     system: buildSystemPrompt(spaceSlug),
     messages:
       modelMessages.length > 0
