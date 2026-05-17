@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useRef, useEffect } from 'react';
+import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Copy, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -40,6 +40,7 @@ export function AiPanelMessageBubble({
 }: AiPanelMessageBubbleProps) {
   const t = useTranslations('AiPanel');
   const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -55,6 +56,21 @@ export function AiPanelMessageBubble({
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
   const normalizedTextContent = textContent.trim();
+  const textLines = useMemo(
+    () => textContent.split('\n').filter((line) => line.trim().length > 0),
+    [textContent],
+  );
+  const isLikelyList = useMemo(
+    () =>
+      textLines.some((line) => /^\s*(?:\d+\.|-|\*)\s+/.test(line)) &&
+      textLines.length >= 4,
+    [textLines],
+  );
+  const showExpandToggle =
+    !isUser &&
+    !isStreaming &&
+    (textContent.length > 520 || textLines.length > 9);
+
   const hasVisibleText =
     normalizedTextContent.length > 0 && normalizedTextContent !== '(no text)';
   const fileParts =
@@ -171,7 +187,33 @@ export function AiPanelMessageBubble({
               : 'rounded-tl-sm border border-border bg-muted text-foreground',
           )}
         >
-          {hasVisibleText && <span>{textContent}</span>}
+          {hasVisibleText && (
+            <div className="flex flex-col gap-2">
+              <div
+                className={cn(
+                  'whitespace-pre-wrap break-words',
+                  showExpandToggle && !expanded && 'line-clamp-8',
+                )}
+              >
+                {isLikelyList ? (
+                  textLines.map((line, index) => (
+                    <div key={`${message.id}-line-${index}`}>{line}</div>
+                  ))
+                ) : (
+                  <span>{textContent}</span>
+                )}
+              </div>
+              {showExpandToggle && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((v) => !v)}
+                  className="self-start text-xs font-medium text-accent-11 underline-offset-2 hover:underline"
+                >
+                  {expanded ? 'Show less' : 'Show more'}
+                </button>
+              )}
+            </div>
+          )}
           {fileParts.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {fileParts.map((part, i) =>

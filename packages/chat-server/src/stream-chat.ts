@@ -546,6 +546,7 @@ async function buildDeterministicSpaceFallback({
           const bits = [priority, messages].filter(Boolean).join(', ');
           lines.push(`${idx + 1}. ${title}${bits ? ` (${bits})` : ''}`);
         });
+        lines.push('');
         lines.push(
           'I used deterministic discussions data because the external model provider is currently unavailable.',
         );
