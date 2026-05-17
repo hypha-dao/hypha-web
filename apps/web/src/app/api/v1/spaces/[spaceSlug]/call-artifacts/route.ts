@@ -45,7 +45,13 @@ export async function POST(
       ?.replace(/^Bearer\s+/i, '')
       .trim() ??
     '';
-  if (!ingestSecret || suppliedSecret !== ingestSecret) {
+  if (!ingestSecret) {
+    return NextResponse.json(
+      { error: 'Ingest secret not configured' },
+      { status: 503 },
+    );
+  }
+  if (suppliedSecret !== ingestSecret) {
     return NextResponse.json(
       { error: 'Unauthorized ingest request' },
       { status: 401 },
