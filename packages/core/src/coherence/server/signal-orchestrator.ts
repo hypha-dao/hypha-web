@@ -147,6 +147,14 @@ function overlap(a: Set<string>, b: Set<string>): number {
   return c / Math.max(1, Math.min(a.size, b.size));
 }
 
+function extractSourceAssetKeys(
+  payload: Record<string, unknown> | null | undefined,
+): string[] {
+  const value = payload?.source_asset_keys;
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string');
+}
+
 function summarizeSources(assets: OrgMemoryAsset[]) {
   const map = new Map<string, number>();
   for (const a of assets) map.set(a.source, (map.get(a.source) ?? 0) + 1);
@@ -380,9 +388,7 @@ export async function enqueueSignalEvaluationFromMemory(
     });
 
     if (pending) {
-      const prevKeys = Array.isArray(pending.payload?.source_asset_keys)
-        ? (pending.payload.source_asset_keys as string[])
-        : [];
+      const prevKeys = extractSourceAssetKeys(pending.payload);
       await tx
         .update(signalOrchestratorQueue)
         .set({
@@ -730,9 +736,7 @@ export async function processSignalOrchestratorBatch(
                 type: candidate.type,
                 priority: candidate.priority,
                 tags: candidate.tags,
-                sourceAssetKeys:
-                  (lock.payload?.source_asset_keys as string[] | undefined) ??
-                  [],
+                sourceAssetKeys: extractSourceAssetKeys(lock.payload),
               },
               { db },
             );
