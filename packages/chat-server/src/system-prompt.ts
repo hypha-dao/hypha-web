@@ -3,10 +3,185 @@ const BASE_SYSTEM_PROMPT =
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+type CompetencyProfile = {
+  tagGroup: string;
+  role: string;
+  focus: string;
+};
+
+const COMPETENCY_PROFILES: CompetencyProfile[] = [
+  {
+    tagGroup: 'purpose',
+    role: 'Senior Strategist',
+    focus:
+      'clarify purpose, strategic alignment, north-star metrics, and long-term direction',
+  },
+  {
+    tagGroup: 'governance',
+    role: 'Governance Architect',
+    focus:
+      'decision rights, accountability, proposal flow, and collective coordination mechanisms',
+  },
+  {
+    tagGroup: 'operations',
+    role: 'Operations Lead',
+    focus:
+      'execution plans, delivery cadence, dependencies, and practical implementation details',
+  },
+  {
+    tagGroup: 'community',
+    role: 'Community Builder',
+    focus:
+      'member engagement, participation quality, onboarding, and contributor health',
+  },
+  {
+    tagGroup: 'finance',
+    role: 'Treasury and Token Analyst',
+    focus:
+      'token/treasury implications, distribution effects, sustainability, and financial trade-offs',
+  },
+  {
+    tagGroup: 'product',
+    role: 'Product Strategist',
+    focus:
+      'user impact, product priorities, experimentation, and measurable adoption outcomes',
+  },
+  {
+    tagGroup: 'risk',
+    role: 'Risk and Compliance Advisor',
+    focus:
+      'failure modes, downside scenarios, mitigations, and policy/compliance considerations',
+  },
+];
+
+const COMPETENCY_KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
+  {
+    tagGroup: 'purpose',
+    keywords: [
+      'purpose',
+      'mission',
+      'vision',
+      'north star',
+      'strategy',
+      'strategic',
+      'long term',
+      'direction',
+    ],
+  },
+  {
+    tagGroup: 'governance',
+    keywords: [
+      'governance',
+      'proposal',
+      'vote',
+      'voting',
+      'decision',
+      'decision-making',
+      'accountability',
+      'policy',
+    ],
+  },
+  {
+    tagGroup: 'operations',
+    keywords: [
+      'operation',
+      'execution',
+      'roadmap',
+      'deliver',
+      'delivery',
+      'timeline',
+      'milestone',
+      'process',
+    ],
+  },
+  {
+    tagGroup: 'community',
+    keywords: [
+      'community',
+      'member',
+      'members',
+      'engagement',
+      'onboarding',
+      'contributors',
+      'participation',
+    ],
+  },
+  {
+    tagGroup: 'finance',
+    keywords: [
+      'token',
+      'treasury',
+      'budget',
+      'funding',
+      'finance',
+      'holdings',
+      'distribution',
+      'economics',
+    ],
+  },
+  {
+    tagGroup: 'product',
+    keywords: [
+      'product',
+      'feature',
+      'user',
+      'adoption',
+      'ux',
+      'experience',
+      'interface',
+      'funnel',
+    ],
+  },
+  {
+    tagGroup: 'risk',
+    keywords: [
+      'risk',
+      'secure',
+      'security',
+      'compliance',
+      'legal',
+      'incident',
+      'failure',
+      'threat',
+    ],
+  },
+];
+
 export function sanitizeSlug(slug: string): string | null {
   const trimmed = slug.trim().toLowerCase();
   if (!SLUG_PATTERN.test(trimmed) || trimmed.length > 128) return null;
   return trimmed;
+}
+
+export function buildQuestionCompetencyDirective(
+  question: string | null | undefined,
+): string {
+  const q = question?.trim().toLowerCase();
+  if (!q) return '';
+
+  const matchedGroups = new Set<string>();
+  for (const entry of COMPETENCY_KEYWORDS) {
+    if (entry.keywords.some((keyword) => q.includes(keyword))) {
+      matchedGroups.add(entry.tagGroup);
+    }
+  }
+
+  if (matchedGroups.size === 0) return '';
+
+  const matchedProfiles = COMPETENCY_PROFILES.filter((profile) =>
+    matchedGroups.has(profile.tagGroup),
+  );
+  if (matchedProfiles.length === 0) return '';
+
+  const profileLines = matchedProfiles.map(
+    (profile) => `- ${profile.tagGroup}: ${profile.role} (${profile.focus})`,
+  );
+
+  return [
+    'Role routing for this user question:',
+    ...profileLines,
+    'Respond like an experienced human advisor for the matched competencies. Be concrete, balanced, and action-oriented.',
+  ].join('\n');
 }
 
 export function buildSystemPrompt(spaceSlug?: string | null): string {

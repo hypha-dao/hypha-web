@@ -13,7 +13,11 @@ import type {
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
-import { buildSystemPrompt, sanitizeSlug } from './system-prompt';
+import {
+  buildQuestionCompetencyDirective,
+  buildSystemPrompt,
+  sanitizeSlug,
+} from './system-prompt';
 import {
   createChatTools,
   createGetDocumentsBySpaceSlugTool,
@@ -914,6 +918,16 @@ function extractLastUserText(
   return null;
 }
 
+function buildEffectiveSystemPrompt(
+  spaceSlug: string | null | undefined,
+  lastUserText: string | null,
+): string {
+  const basePrompt = buildSystemPrompt(spaceSlug);
+  const competencyDirective = buildQuestionCompetencyDirective(lastUserText);
+  if (!competencyDirective) return basePrompt;
+  return `${basePrompt}\n\n${competencyDirective}`;
+}
+
 async function convertMessagesSafely(
   messages: ChatRequestPayload['messages'],
   debugRequestId: string,
@@ -954,12 +968,17 @@ export async function createChatStreamResult(
 ): Promise<ReturnType<typeof streamText>> {
   const tools = createChatTools(authToken, requestUrlForSessionMatrix);
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
+  const lastUserText = extractLastUserText(messages);
   const deterministicFallback = await buildDeterministicSpaceFallback({
-    lastUserText: extractLastUserText(messages),
+    lastUserText,
     spaceSlug,
     authToken,
     debugRequestId,
   });
+  const effectiveSystemPrompt = buildEffectiveSystemPrompt(
+    spaceSlug,
+    lastUserText,
+  );
 
   if (modelMessages.length === 0) {
     console.warn('[chat][empty-model-messages]', {
@@ -986,7 +1005,7 @@ export async function createChatStreamResult(
 
   return streamText({
     model: openrouterWithHyphaHeaders(openRouterModelId),
-    system: buildSystemPrompt(spaceSlug),
+    system: effectiveSystemPrompt,
     messages:
       modelMessages.length > 0
         ? modelMessages
