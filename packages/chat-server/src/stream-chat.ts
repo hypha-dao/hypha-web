@@ -250,7 +250,13 @@ const OPENROUTER_TEMP_UNAVAILABLE_REPLY =
 
 type DeterministicFallbackContext = {
   text: string;
-  kind: 'space_overview' | 'documents' | 'ecosystem' | 'tokens' | 'discussions';
+  kind:
+    | 'space_overview'
+    | 'documents'
+    | 'ecosystem'
+    | 'tokens'
+    | 'discussions'
+    | 'signal_recommendation';
 };
 
 type SpaceOverviewIntent =
@@ -346,6 +352,18 @@ function isDiscussionQuestion(text: string): boolean {
   );
 }
 
+function isSignalRecommendationQuestion(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return (
+    t.includes('good signal to create') ||
+    t.includes('what signal should') ||
+    t.includes('which signal should') ||
+    t.includes('signal should i create') ||
+    t.includes('what would be a good signal')
+  );
+}
+
 async function buildDeterministicSpaceFallback({
   lastUserText,
   spaceSlug,
@@ -363,6 +381,78 @@ async function buildDeterministicSpaceFallback({
   if (!safe) return null;
 
   try {
+    if (isSignalRecommendationQuestion(lastUserText)) {
+      const signalsTool = createGetSignalsBySpaceSlugTool(authToken);
+      const signalsResult = await signalsTool.execute({
+        space_slug: safe,
+        include_archived: false,
+        order_by: 'mostrecent',
+        limit: 100,
+      });
+
+      if (
+        signalsResult &&
+        typeof signalsResult === 'object' &&
+        'found' in signalsResult &&
+        signalsResult.found === true &&
+        'summary' in signalsResult &&
+        signalsResult.summary &&
+        typeof signalsResult.summary === 'object' &&
+        'signal_taxonomy' in signalsResult &&
+        signalsResult.signal_taxonomy &&
+        typeof signalsResult.signal_taxonomy === 'object'
+      ) {
+        const summary = signalsResult.summary as Record<string, unknown>;
+        const taxonomy = signalsResult.signal_taxonomy as Record<
+          string,
+          unknown
+        >;
+        const byType =
+          'by_type' in summary &&
+          summary.by_type &&
+          typeof summary.by_type === 'object'
+            ? (summary.by_type as Record<string, unknown>)
+            : {};
+        const allowedTypes = Array.isArray(taxonomy.allowed_types)
+          ? (taxonomy.allowed_types as string[])
+          : [];
+        const topTags = Array.isArray(summary.top_tags)
+          ? (summary.top_tags as Array<Record<string, unknown>>)
+          : [];
+
+        const leastCoveredType =
+          allowedTypes
+            .map((type) => ({
+              type,
+              count:
+                typeof byType[type] === 'number' ? Number(byType[type]) : 0,
+            }))
+            .sort((a, b) => a.count - b.count)[0]?.type ?? 'opportunity';
+
+        const suggestedTag =
+          topTags.find(
+            (t) => typeof t.tag === 'string' && String(t.tag).trim().length > 0,
+          )?.tag ?? 'coordination';
+
+        const recommendation = [
+          `A strong next signal to create in "${safe}" is a **${leastCoveredType}** signal focused on **${String(
+            suggestedTag,
+          )}**.`,
+          '',
+          'Suggested draft:',
+          `- Title: Improve ${String(suggestedTag)} execution loop`,
+          `- Type: ${leastCoveredType}`,
+          '- Priority: medium',
+          '- Why now: this appears underrepresented vs other signal types, so adding one can balance the signal portfolio.',
+          '- First step: define one measurable outcome for the next 2 weeks and assign an owner.',
+          '',
+          'I used deterministic signal-board data because the external model provider is currently unavailable.',
+        ].join('\n');
+
+        return { kind: 'signal_recommendation', text: recommendation };
+      }
+    }
+
     if (isTokenQuestion(lastUserText)) {
       const tokenTool = createGetTokenHoldingsBySpaceSlugTool(authToken);
       const tokenResult = await tokenTool.execute({
