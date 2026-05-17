@@ -43,17 +43,18 @@ function PdfPreview({
 
   React.useEffect(() => {
     let cancelled = false;
-    let loadingTask: { destroy?: () => void } | null = null;
+    let loadingTask: { destroy: () => void } | null = null;
 
     async function renderFirstPage(): Promise<void> {
       try {
         setRenderState('loading');
         const pdfJs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-        const task = pdfJs.getDocument({
+        const request: Parameters<typeof pdfJs.getDocument>[0] = {
           url: src,
           disableWorker: true,
           verbosity: 0,
-        } as any);
+        };
+        const task = pdfJs.getDocument(request);
         loadingTask = task;
         const pdf = await task.promise;
         const page = await pdf.getPage(1);
