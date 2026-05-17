@@ -28,38 +28,40 @@ export type ChatStreamCallbacks = {
 function sanitizeMessagesToTextOnly(
   messages: ChatRequestPayload['messages'],
 ): UIMessage[] {
-  return messages.map((message) => {
-    const safeRole: UIMessage['role'] =
-      message.role === 'system' ||
-      message.role === 'user' ||
-      message.role === 'assistant'
-        ? message.role
-        : 'user';
+  return messages
+    .map((message) => {
+      const safeRole: UIMessage['role'] =
+        message.role === 'system' ||
+        message.role === 'user' ||
+        message.role === 'assistant'
+          ? message.role
+          : 'user';
 
-    const explicitTextParts = (message.parts ?? [])
-      .filter(
-        (part): part is { type: 'text'; text: string } =>
-          part != null &&
-          typeof part === 'object' &&
-          part.type === 'text' &&
-          typeof (part as { text?: unknown }).text === 'string',
-      )
-      .map((part) => ({ type: 'text' as const, text: part.text }));
+      const explicitTextParts = (message.parts ?? [])
+        .filter(
+          (part): part is { type: 'text'; text: string } =>
+            part != null &&
+            typeof part === 'object' &&
+            part.type === 'text' &&
+            typeof (part as { text?: unknown }).text === 'string',
+        )
+        .map((part) => ({ type: 'text' as const, text: part.text }));
 
-    const fallbackTextParts =
-      explicitTextParts.length > 0
-        ? explicitTextParts
-        : typeof message.content === 'string' &&
-          message.content.trim().length > 0
-        ? [{ type: 'text' as const, text: message.content }]
-        : [];
+      const fallbackTextParts =
+        explicitTextParts.length > 0
+          ? explicitTextParts
+          : typeof message.content === 'string' &&
+            message.content.trim().length > 0
+          ? [{ type: 'text' as const, text: message.content }]
+          : [];
 
-    return {
-      id: message.id,
-      role: safeRole,
-      parts: fallbackTextParts,
-    };
-  });
+      return {
+        id: message.id,
+        role: safeRole,
+        parts: fallbackTextParts,
+      };
+    })
+    .filter((message) => message.parts.length > 0);
 }
 
 async function convertMessagesSafely(
