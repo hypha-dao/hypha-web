@@ -625,6 +625,11 @@ export function CreateAgreementBaseFields({
 
                 return (
                   <FormItem className="mb-6">
+                    <FormLabel className="mb-2 block text-sm font-medium text-foreground">
+                      {tCoherence.has('newMemoryUploadDocumentsTitle')
+                        ? tCoherence('newMemoryUploadDocumentsTitle')
+                        : 'Upload Documents'}
+                    </FormLabel>
                     <FormControl>
                       <AddAttachment
                         label={attachmentLabel}

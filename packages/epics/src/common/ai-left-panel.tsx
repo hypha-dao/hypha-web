@@ -28,7 +28,11 @@ import {
   Sparkles,
   UsersRound,
 } from 'lucide-react';
-import { Space, useSpacesBySlugs } from '@hypha-platform/core/client';
+import {
+  Space,
+  useMatrix,
+  useSpacesBySlugs,
+} from '@hypha-platform/core/client';
 import {
   SidebarHeader,
   SidebarContent,
@@ -42,7 +46,12 @@ import {
   Button,
 } from '@hypha-platform/ui';
 
-import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
+import {
+  AiPanelHeader,
+  AiPanelMessages,
+  AiPanelChatBar,
+  type AiPanelDraftAttachment,
+} from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
@@ -124,6 +133,7 @@ type NavItem = {
 export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const { isAuthenticated, isLoading, login, getAccessToken } =
     useAuthentication();
+  const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
   const spaceSlugFromPath = useMemo(
@@ -158,8 +168,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
+  const activeSpaceChatRoomId = activeSpaces?.[0]?.chatRoomId?.trim() || null;
   const [input, setInput] = useState('');
-  const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
+  const [draftAttachments, setDraftAttachments] = useState<
+    AiPanelDraftAttachment[]
+  >([]);
+  const draftAttachmentsRef = useRef<AiPanelDraftAttachment[]>([]);
+  draftAttachmentsRef.current = draftAttachments;
   const autoRetryingRef = useRef(false);
   const lastAutoRetriedMessageIdRef = useRef<string | null>(null);
   const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
@@ -603,19 +618,66 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     try {
       clearError();
       const options = await buildMessageOptions();
-      const fileParts =
-        attachments.length > 0 ? await convertFilesToParts(attachments) : [];
+      let attachmentParts: Array<
+        | { type: 'text'; text: string }
+        | { type: 'file'; mediaType: string; url: string }
+      > = [];
+      if (
+        attachments.length > 0 &&
+        activeSpaceChatRoomId &&
+        matrix.isMatrixAvailable &&
+        matrix.isAuthenticated
+      ) {
+        const joinedRoomId = await matrix.joinRoom(activeSpaceChatRoomId);
+        await matrix.sendMessage({
+          roomId: joinedRoomId,
+          message: text.trim(),
+          attachments: attachments.map((att) => ({
+            file: att.file,
+            kind:
+              att.kind === 'image'
+                ? 'image'
+                : att.kind === 'audio'
+                ? 'audio'
+                : 'file',
+            spoiler: att.spoiler,
+          })),
+        });
+        attachmentParts = [
+          {
+            type: 'text',
+            text: `Uploaded files: ${attachments
+              .map((att) => att.file.name)
+              .join(', ')}`,
+          },
+        ];
+      } else if (attachments.length > 0) {
+        attachmentParts = await convertFilesToParts(
+          attachments.map((att) => att.file),
+        );
+      }
       const textParts = text.trim() ? [{ type: 'text' as const, text }] : [];
       if (DEBUG)
         console.log('[AiLeftPanel] sendMessage', {
           text,
-          attachmentCount: fileParts.length,
+          attachmentCount: attachments.length,
           spaceSlug,
+          persistedToMatrix: Boolean(
+            attachments.length &&
+              activeSpaceChatRoomId &&
+              matrix.isMatrixAvailable &&
+              matrix.isAuthenticated,
+          ),
         });
       await sendMessage(
-        { role: 'user', parts: [...textParts, ...fileParts] },
+        { role: 'user', parts: [...textParts, ...attachmentParts] },
         options,
       );
+      for (const att of attachments) {
+        if (att.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(att.previewUrl);
+        }
+      }
     } catch (err) {
       console.error('[AiLeftPanel] sendMessage error:', err);
       setInput(text);
@@ -628,11 +690,23 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     sendMessage,
     buildMessageOptions,
     clearError,
+    activeSpaceChatRoomId,
+    matrix,
   ]);
 
   const handleStop = useCallback(() => {
     void stop();
   }, [stop]);
+
+  useEffect(() => {
+    return () => {
+      for (const att of draftAttachmentsRef.current) {
+        if (att.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(att.previewUrl);
+        }
+      }
+    };
+  }, []);
 
   const handleSuggestionSelect = useCallback(
     async (text: string) => {

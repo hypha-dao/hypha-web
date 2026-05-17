@@ -29,6 +29,17 @@ function looksLikePdf(name: string, url: string): boolean {
   return /\.pdf(\?|#|$)/i.test(name) || /\.pdf(\?|#|$)/i.test(url);
 }
 
+export function humanizeAssetName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return name;
+  const sanitized = trimmed
+    .replace(/[_-]+/g, ' ')
+    .replace(/[^\p{L}\p{N}\s.()]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return sanitized || name;
+}
+
 function PdfPreview({
   src,
   fallbackLabel,
@@ -38,7 +49,7 @@ function PdfPreview({
 }) {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const [renderState, setRenderState] = React.useState<
-    'loading' | 'ready' | 'error'
+    'loading' | 'ready' | 'iframe' | 'error'
   >('loading');
 
   React.useEffect(() => {
@@ -85,7 +96,8 @@ function PdfPreview({
         }
       } catch {
         if (!cancelled) {
-          setRenderState('error');
+          // Fallback to browser PDF renderer if canvas pipeline fails.
+          setRenderState('iframe');
         }
       }
     }
@@ -97,12 +109,23 @@ function PdfPreview({
     };
   }, [src]);
 
+  if (renderState === 'iframe') {
+    return (
+      <iframe
+        src={src}
+        title={fallbackLabel}
+        className="h-full w-full border-0"
+        loading="lazy"
+      />
+    );
+  }
+
   if (renderState === 'error') {
     return (
       <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
         <FileIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
         <span className="line-clamp-2 text-center text-[10px]">
-          {fallbackLabel}
+          PDF preview unavailable
         </span>
       </div>
     );
@@ -175,6 +198,7 @@ export function SpaceMemoryTimelineItem({
   const t = useTranslations('CoherenceTab');
   const { client, isMatrixAvailable } = useMatrix();
   const uploaded = formatDate(new Date(item.uploadedAt), true);
+  const displayName = useMemo(() => humanizeAssetName(item.name), [item.name]);
   const [imageFailed, setImageFailed] = React.useState(false);
   /** After a scaled thumbnail fails, retry full media (Synapse sometimes fails thumbnailing only). */
   const [matrixImagePhase, setMatrixImagePhase] = React.useState<
@@ -217,7 +241,7 @@ export function SpaceMemoryTimelineItem({
   const thumbPreview = (() => {
     if (mxc) {
       if (looksLikePdf(item.name, item.url) && pdfSrc) {
-        return <PdfPreview src={pdfSrc} fallbackLabel={item.name} />;
+        return <PdfPreview src={pdfSrc} fallbackLabel={displayName} />;
       }
       if (!isMatrixAvailable || !client) {
         return (
@@ -265,7 +289,7 @@ export function SpaceMemoryTimelineItem({
           <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
             <ImageIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
             <span className="line-clamp-2 text-center text-[10px]">
-              {item.name}
+              {displayName}
             </span>
           </div>
         );
@@ -319,7 +343,7 @@ export function SpaceMemoryTimelineItem({
     if (item.kind === 'image' && !imageFailed) {
       if (looksLikePdf(item.name, item.url)) {
         return pdfSrc ? (
-          <PdfPreview src={pdfSrc} fallbackLabel={item.name} />
+          <PdfPreview src={pdfSrc} fallbackLabel={displayName} />
         ) : (
           <FileIcon
             className="h-12 w-12 text-muted-foreground"
@@ -342,7 +366,7 @@ export function SpaceMemoryTimelineItem({
         <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
           <ImageIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
           <span className="line-clamp-2 text-center text-[10px]">
-            {item.name}
+            {displayName}
           </span>
         </div>
       );
@@ -362,7 +386,7 @@ export function SpaceMemoryTimelineItem({
     }
     if (item.kind === 'document' && looksLikePdf(item.name, item.url)) {
       return pdfSrc ? (
-        <PdfPreview src={pdfSrc} fallbackLabel={item.name} />
+        <PdfPreview src={pdfSrc} fallbackLabel={displayName} />
       ) : (
         <FileIcon
           className="h-12 w-12 text-muted-foreground"
@@ -381,7 +405,7 @@ export function SpaceMemoryTimelineItem({
   const linkClass =
     'group flex flex-col gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
   const filenameRowClass =
-    'inline-flex items-start gap-1 text-sm font-medium leading-snug text-foreground underline-offset-2 group-hover:text-primary group-hover:underline';
+    'inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground underline-offset-2 group-hover:text-primary group-hover:underline';
 
   const sourceLabel = (() => {
     if (item.source === 'proposal_upload') return t('spaceMemoryProposals');
@@ -390,14 +414,14 @@ export function SpaceMemoryTimelineItem({
       return t('spaceMemoryCallTranscriptExcerpt');
     if (item.source === 'call_recording')
       return t('spaceMemoryContextCallRecording');
-    if (item.source === 'discussion_summary') return item.name;
+    if (item.source === 'discussion_summary') return displayName;
     return t('spaceMemory');
   })();
 
   return (
     <li className="flex h-full w-full flex-col rounded-lg border border-border bg-card p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="inline-flex items-center rounded-md bg-accent-2 px-2 py-0.5 text-[10px] font-medium text-accent-11">
+        <span className="inline-flex items-center rounded-md bg-accent-9 px-2 py-0.5 text-[11px] font-semibold text-accent-contrast">
           {sourceLabel}
         </span>
         <time
@@ -410,8 +434,8 @@ export function SpaceMemoryTimelineItem({
       <p className="line-clamp-2 text-xs leading-tight text-muted-foreground">
         {contextLine}
       </p>
-      <p className="mt-1 line-clamp-2 text-sm font-medium text-card-foreground">
-        {item.name}
+      <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-card-foreground">
+        {displayName}
       </p>
 
       <div className="mt-3 flex flex-1 flex-col gap-2">
@@ -427,7 +451,7 @@ export function SpaceMemoryTimelineItem({
               {thumbPreview}
             </div>
             <span className={filenameRowClass}>
-              <span className="line-clamp-3 break-words">{item.name}</span>
+              <span>Open document</span>
               <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 opacity-60" />
             </span>
           </a>
@@ -439,9 +463,6 @@ export function SpaceMemoryTimelineItem({
             <div className={cn(THUMB_SHELL, 'aspect-[16/10]')}>
               {thumbPreview}
             </div>
-            <span className="line-clamp-3 break-words text-xs font-medium text-foreground">
-              {item.name}
-            </span>
           </div>
         )}
       </div>

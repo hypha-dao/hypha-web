@@ -59,13 +59,56 @@ function createChatTextOnlyStreamResponse({
       execute: async ({ writer }) => {
         let sawStreamError = false;
         let accumulatedText = '';
+        const toolOutputs: Array<{ toolName: string; output: unknown }> = [];
         writer.write({ type: 'start' });
         writer.write({ type: 'text-start', id: textPartId });
+
+        const fullStream = (result as { fullStream?: AsyncIterable<unknown> })
+          .fullStream;
+
+        const writeDelta = (delta: string) => {
+          if (!delta) return;
+          accumulatedText += delta;
+          writer.write({ type: 'text-delta', id: textPartId, delta });
+        };
+
         try {
-          for await (const delta of result.textStream) {
-            if (!delta) continue;
-            accumulatedText += delta;
-            writer.write({ type: 'text-delta', id: textPartId, delta });
+          if (fullStream) {
+            for await (const chunk of fullStream) {
+              if (!chunk || typeof chunk !== 'object') continue;
+              const typed = chunk as {
+                type?: string;
+                delta?: unknown;
+                text?: unknown;
+                output?: unknown;
+                toolName?: unknown;
+              };
+              if (
+                typed.type === 'text-delta' &&
+                typeof typed.delta === 'string'
+              ) {
+                writeDelta(typed.delta);
+                continue;
+              }
+              if (typed.type === 'text' && typeof typed.text === 'string') {
+                writeDelta(typed.text);
+                continue;
+              }
+              if (typed.type === 'tool-result') {
+                toolOutputs.push({
+                  toolName:
+                    typeof typed.toolName === 'string'
+                      ? typed.toolName
+                      : 'tool',
+                  output: typed.output,
+                });
+              }
+            }
+          } else {
+            for await (const delta of result.textStream) {
+              if (!delta) continue;
+              writeDelta(delta);
+            }
           }
         } catch (error) {
           sawStreamError = true;
@@ -83,6 +126,31 @@ function createChatTextOnlyStreamResponse({
           accumulatedText +=
             'I ran into an issue while generating the response. Please retry in a few seconds.';
         }
+
+        if (!accumulatedText.trim()) {
+          if (toolOutputs.length > 0) {
+            const latest = toolOutputs[toolOutputs.length - 1];
+            let renderedOutput = '';
+            try {
+              renderedOutput =
+                typeof latest.output === 'string'
+                  ? latest.output
+                  : JSON.stringify(latest.output);
+            } catch {
+              renderedOutput = String(latest.output);
+            }
+            const toolSummary = renderedOutput.trim()
+              ? `I gathered context via \`${latest.toolName}\`, but no narrative text was produced. Here is the latest result:\n\n${renderedOutput}`
+              : `I gathered context via \`${latest.toolName}\`, but no narrative text was produced. Please retry and I will continue from that result.`;
+            writer.write({
+              type: 'text-delta',
+              id: textPartId,
+              delta: toolSummary,
+            });
+            accumulatedText += toolSummary;
+          }
+        }
+
         if (!accumulatedText.trim()) {
           console.warn('[chat][ui-stream][empty-text-fallback]', {
             debugRequestId,

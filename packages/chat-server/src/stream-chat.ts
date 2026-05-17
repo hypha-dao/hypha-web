@@ -64,6 +64,30 @@ function sanitizeMessagesToTextOnly(
     .filter((message) => message.parts.length > 0);
 }
 
+function extractLastUserText(
+  messages: ChatRequestPayload['messages'],
+): string | null {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    const parts = message.parts ?? [];
+    for (const part of parts) {
+      if (
+        part &&
+        typeof part === 'object' &&
+        part.type === 'text' &&
+        typeof (part as { text?: unknown }).text === 'string'
+      ) {
+        const text = (part as { text: string }).text.trim();
+        if (text) return text;
+      }
+    }
+    if (typeof message.content === 'string' && message.content.trim()) {
+      return message.content.trim();
+    }
+  }
+  return null;
+}
+
 async function convertMessagesSafely(
   messages: ChatRequestPayload['messages'],
   debugRequestId: string,
@@ -71,7 +95,22 @@ async function convertMessagesSafely(
   try {
     // Always normalize to explicit text parts first. Some clients send `content`
     // with empty `parts`; relying on raw conversion can silently yield empty prompts.
-    return await convertToModelMessages(sanitizeMessagesToTextOnly(messages));
+    const sanitized = sanitizeMessagesToTextOnly(messages);
+    if (sanitized.length > 0) {
+      return await convertToModelMessages(sanitized);
+    }
+
+    const lastUserText = extractLastUserText(messages);
+    if (lastUserText) {
+      return convertToModelMessages([
+        {
+          id: 'fallback-user-text',
+          role: 'user',
+          parts: [{ type: 'text', text: lastUserText }],
+        },
+      ]);
+    }
+    return [];
   } catch (error) {
     console.error('[chat][convert-messages][failed]', {
       debugRequestId,

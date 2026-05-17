@@ -41,6 +41,7 @@ Signal recommendation quality bar:
 - Before calling write tools, gather evidence with get_org_memory_by_space_slug, get_signals_by_space_slug, and get_ecosystem_by_space_slug as needed.
 - Relay to another space only when there is explicit cross-space relevance (shared purpose, dependency, or actionable impact), and include concise rationale.
 - If evidence is weak or missing, state uncertainty clearly and request the exact missing data.
+- Always produce a final user-facing text answer after tool usage. Never stop at tool output alone.
 
 If the user asks about ecosystem relationships or cross-space coordination, use get_ecosystem_by_space_slug first. If the user asks about members in an org-memory or space-memory context, prefer get_org_memory_by_space_slug; for a plain roster question, get_people_by_space_slug is equivalent for the members slice in v1. If they ask about members as people or a list without that framing, you may call get_people_by_space_slug. If they ask for document/proposal lists or document details from the catalogue, use get_documents_by_space_slug, not get_space_by_slug. For members, never use get_space_by_slug alone. If the user asks to list every member in an org-memory context, paginate get_org_memory_by_space_slug until has_next_page is false, same as for documents. For external/world knowledge outside Hypha data, use web_search and cite returned sources.`;
   }

@@ -17,7 +17,10 @@ import {
 } from '@hypha-platform/core/client';
 import type { MatrixEvent, Room } from 'matrix-js-sdk';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
-import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
+import {
+  SpaceMemoryTimelineItem,
+  humanizeAssetName,
+} from './space-memory-timeline-item';
 import { MemoryFilterValue, MemoryFilters } from './memory-filters';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
@@ -120,7 +123,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         return t('spaceMemoryContextCallRecording');
       }
       if (row.source === 'discussion_summary') {
-        return row.name;
+        return humanizeAssetName(row.name);
       }
       return t('spaceMemoryContext', {
         title: row.context.documentTitle || t('untitledDocument'),
@@ -185,9 +188,6 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
             </span>
           ) : null}
         </h1>
-        <p className="text-2 text-muted-foreground">
-          {t('spaceMemoryTimelineLabel')}
-        </p>
       </header>
       <MemoryFilters
         activeFilter={activeFilter}
@@ -237,7 +237,9 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                 key={row.id}
                 item={row}
                 contextLine={contextLineForItem(row)}
-                openLabel={t('spaceMemoryOpenAsset', { name: row.name })}
+                openLabel={t('spaceMemoryOpenAsset', {
+                  name: humanizeAssetName(row.name),
+                })}
               />
             ))}
           </ul>
