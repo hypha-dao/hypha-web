@@ -1,5 +1,16 @@
-import { convertToModelMessages, stepCountIs, streamText } from 'ai';
-import type { UIMessage } from 'ai';
+import {
+  APICallError,
+  convertToModelMessages,
+  createIdGenerator,
+  stepCountIs,
+  streamText,
+} from 'ai';
+import type {
+  StreamTextTransform,
+  TextStreamPart,
+  ToolSet,
+  UIMessage,
+} from 'ai';
 import { openrouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
 import { buildSystemPrompt } from './system-prompt';
@@ -11,17 +22,98 @@ export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 export const MISSING_OPENROUTER_KEY_MESSAGE =
   'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
 
+const DEFAULT_OPENROUTER_CHAT_MODEL = 'openai/gpt-4o-mini';
+
 /**
  * OpenRouter model id for Hypha chat.
  *
- * Avoid defaulting to `openrouter/auto`: several stacks hit misleading 401 "User not
- * found" from the auto-router even when the API key works for concrete models
- * (OpenRouter + AI SDK integrations). Override with `OPENROUTER_CHAT_MODEL`.
+ * Avoid `openrouter/auto` (and env overrides that point at it): multiple stacks see
+ * spurious 401 "User not found" from the auto-router even when the same API key works
+ * for concrete models. Use `OPENROUTER_CHAT_MODEL` for a stable id.
  */
 function resolveOpenRouterChatModelId(): string {
   const fromEnv = process.env.OPENROUTER_CHAT_MODEL?.trim();
-  if (fromEnv) return fromEnv;
-  return 'openai/gpt-4o-mini';
+  if (!fromEnv) return DEFAULT_OPENROUTER_CHAT_MODEL;
+
+  const normalizedForCompare = fromEnv.toLowerCase();
+  if (
+    normalizedForCompare === 'openrouter/auto' ||
+    normalizedForCompare.endsWith('/openrouter/auto')
+  ) {
+    console.warn(
+      '[chat][openrouter][model-env-ignored] OPENROUTER_CHAT_MODEL is set to the auto router; using a concrete model instead.',
+      { requested: fromEnv, using: DEFAULT_OPENROUTER_CHAT_MODEL },
+    );
+    return DEFAULT_OPENROUTER_CHAT_MODEL;
+  }
+
+  return fromEnv;
+}
+
+function messageFromUnknownError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'Unknown error';
+  }
+}
+
+const OPENROUTER_AUTH_FAILURE_REPLY =
+  'Hypha could not reach the OpenRouter API for this request (often a 401 or "User not found" from the router). ' +
+  'This is usually an OpenRouter key or model configuration issue on the deployment, not your Hypha profile. ' +
+  'Ask an admin to verify OPENROUTER_API_KEY, unset OPENROUTER_CHAT_MODEL=openrouter/auto if set, and confirm the key at openrouter.ai.';
+
+/**
+ * Maps common OpenRouter auth / auto-router failures to visible assistant text so the
+ * UI stream does not emit a fatal `error` chunk (which becomes `useChat` Error: User not found).
+ */
+function createOpenRouterAuthRecoveryTransform(
+  debugRequestId: string,
+): StreamTextTransform<ToolSet> {
+  return () => {
+    const nextTextId = createIdGenerator({ prefix: 't', size: 12 });
+    return new TransformStream<
+      TextStreamPart<ToolSet>,
+      TextStreamPart<ToolSet>
+    >({
+      transform(chunk, controller) {
+        if (chunk.type !== 'error') {
+          controller.enqueue(chunk);
+          return;
+        }
+
+        const err = chunk.error;
+        const message = messageFromUnknownError(err);
+        const lower = message.toLowerCase();
+        const looksLikeUserNotFound = lower.includes('user not found');
+        const openRouter401 =
+          APICallError.isInstance(err) && err.statusCode === 401;
+
+        if (looksLikeUserNotFound || openRouter401) {
+          console.error('[chat][openrouter][stream-auth-failure]', {
+            debugRequestId,
+            message,
+            ...(APICallError.isInstance(err)
+              ? { statusCode: err.statusCode, url: err.url }
+              : {}),
+          });
+          const id = nextTextId();
+          controller.enqueue({ type: 'text-start', id });
+          controller.enqueue({
+            type: 'text-delta',
+            id,
+            text: OPENROUTER_AUTH_FAILURE_REPLY,
+          });
+          controller.enqueue({ type: 'text-end', id });
+          return;
+        }
+
+        controller.enqueue(chunk);
+      },
+    });
+  };
 }
 
 /** Narrowed shape when `isAbortLikeError` returns true (abort-like DOM/undici errors). */
@@ -253,11 +345,18 @@ export async function createChatStreamResult(
         }
         return;
       }
-      console.error('[chat][openrouter][error]', {
+      const base = {
         debugRequestId,
         message: error instanceof Error ? error.message : String(error),
+        ...(APICallError.isInstance(error)
+          ? { statusCode: error.statusCode, url: error.url }
+          : {}),
         ...(OPENROUTER_DEBUG && { error }),
-      });
+      };
+      console.error('[chat][openrouter][error]', base);
     },
+
+    experimental_transform:
+      createOpenRouterAuthRecoveryTransform(debugRequestId),
   });
 }
