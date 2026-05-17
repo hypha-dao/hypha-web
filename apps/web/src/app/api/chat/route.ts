@@ -51,11 +51,13 @@ function createChatTextOnlyStreamResponse({
     stream: createUIMessageStream({
       execute: async ({ writer }) => {
         let sawStreamError = false;
+        let accumulatedText = '';
         writer.write({ type: 'start' });
         writer.write({ type: 'text-start', id: textPartId });
         try {
           for await (const delta of result.textStream) {
             if (!delta) continue;
+            accumulatedText += delta;
             writer.write({ type: 'text-delta', id: textPartId, delta });
           }
         } catch (error) {
@@ -70,6 +72,19 @@ function createChatTextOnlyStreamResponse({
             id: textPartId,
             delta:
               'I ran into an issue while generating the response. Please retry in a few seconds.',
+          });
+          accumulatedText +=
+            'I ran into an issue while generating the response. Please retry in a few seconds.';
+        }
+        if (!accumulatedText.trim()) {
+          console.warn('[chat][ui-stream][empty-text-fallback]', {
+            debugRequestId,
+          });
+          writer.write({
+            type: 'text-delta',
+            id: textPartId,
+            delta:
+              'I could not produce a visible answer for that request. Please try again or rephrase the question.',
           });
         }
         writer.write({ type: 'text-end', id: textPartId });
