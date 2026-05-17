@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { setupPhaseSchema, setupPlanSchema } from './onboarding-setup-state';
 
 /** Minimal shape for UI message parts sent by @ai-sdk/react useChat. */
 const chatUiMessagePartSchema = z.object({ type: z.string() }).passthrough();
@@ -14,9 +15,20 @@ export const chatUiMessageSchema = z.object({
   content: z.string().optional(),
 });
 
+const onboardingConversationContextSchema = z.object({
+  mode: z.literal('onboarding_setup'),
+  source: z.literal('onboarding_hero').optional(),
+  setupPhase: setupPhaseSchema.optional(),
+  setupPlan: setupPlanSchema.optional(),
+  lastUserText: z.string().optional(),
+  locale: z.string().trim().min(2).max(16).optional(),
+  createdAt: z.string().optional(),
+});
+
 export const chatRequestSchema = z.object({
   messages: z.array(chatUiMessageSchema),
   spaceSlug: z.string().nullish(),
+  conversationContext: onboardingConversationContextSchema.optional(),
 });
 
 export type ChatRequestPayload = z.infer<typeof chatRequestSchema>;

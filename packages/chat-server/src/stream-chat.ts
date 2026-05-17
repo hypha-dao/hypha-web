@@ -12,6 +12,10 @@ import type {
   UIMessage,
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import {
+  getEnableEcosystemAutomation,
+  getEnableOnboardingWriteTools,
+} from '@hypha-platform/feature-flags';
 import type { ChatRequestPayload } from './request-schema';
 import {
   buildQuestionCompetencyDirective,
@@ -938,6 +942,7 @@ export type ChatStreamCallbacks = {
   debugRequestId: string;
   /** Lets org memory resolve the viewer's Matrix token (same as Space Memory API). */
   requestUrlForSessionMatrix?: string;
+  conversationContext?: ChatRequestPayload['conversationContext'];
 };
 
 function sanitizeMessagesToTextOnly(
@@ -1025,6 +1030,18 @@ function extractLastUserText(
   return null;
 }
 
+function normalizeConversationContext(
+  context: ChatRequestPayload['conversationContext'],
+  lastUserText: string | null,
+): ChatRequestPayload['conversationContext'] {
+  if (!context || context.mode !== 'onboarding_setup') return context;
+  return {
+    ...context,
+    setupPhase: context.setupPhase ?? (lastUserText ? 'draft' : 'discover'),
+    ...(lastUserText ? { lastUserText } : {}),
+  };
+}
+
 function buildEffectiveSystemPrompt(
   spaceSlug: string | null | undefined,
   lastUserText: string | null,
@@ -1071,11 +1088,32 @@ export async function createChatStreamResult(
   messages: ChatRequestPayload['messages'],
   spaceSlug: string | null | undefined,
   authToken: string,
-  { debugRequestId, requestUrlForSessionMatrix }: ChatStreamCallbacks,
+  {
+    debugRequestId,
+    requestUrlForSessionMatrix,
+    conversationContext,
+  }: ChatStreamCallbacks,
 ): Promise<ReturnType<typeof streamText>> {
-  const tools = createChatTools(authToken, requestUrlForSessionMatrix);
+  const [onboardingWriteToolsEnabled, ecosystemAutomationEnabled] =
+    await Promise.all([
+      getEnableOnboardingWriteTools(),
+      getEnableEcosystemAutomation(),
+    ]);
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
   const lastUserText = extractLastUserText(messages);
+  const normalizedConversationContext = normalizeConversationContext(
+    conversationContext,
+    lastUserText,
+  );
+  const tools = createChatTools(
+    authToken,
+    requestUrlForSessionMatrix,
+    normalizedConversationContext,
+    {
+      onboardingWriteToolsEnabled,
+      ecosystemAutomationEnabled,
+    },
+  );
   const deterministicFallback = await buildDeterministicSpaceFallback({
     lastUserText,
     spaceSlug,
@@ -1086,6 +1124,12 @@ export async function createChatStreamResult(
     spaceSlug,
     lastUserText,
   );
+  const systemPrompt =
+    normalizedConversationContext?.mode === 'onboarding_setup'
+      ? `${effectiveSystemPrompt}\n\nOnboarding setup mode is active.\n- Act as a setup architect for creating and configuring a first space.\n- Before any write action, present a concise action plan and request explicit confirmation.\n- Prefer structured, step-by-step guidance with clear defaults and trade-offs.\n- Keep track of setup state (discover -> draft -> confirm -> execute -> verify) in your responses.\n- Current setup phase: ${
+          normalizedConversationContext.setupPhase ?? 'discover'
+        }.`
+      : effectiveSystemPrompt;
 
   if (modelMessages.length === 0) {
     console.warn('[chat][empty-model-messages]', {
@@ -1112,7 +1156,7 @@ export async function createChatStreamResult(
 
   return streamText({
     model: openrouterWithHyphaHeaders(openRouterModelId),
-    system: effectiveSystemPrompt,
+    system: systemPrompt,
     messages:
       modelMessages.length > 0
         ? modelMessages

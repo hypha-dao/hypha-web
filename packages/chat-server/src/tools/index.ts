@@ -12,6 +12,25 @@ import { createGetTokenHoldingsBySpaceSlugTool } from './get-token-holdings-by-s
 import { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion';
 import { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
 import { webSearchTool } from './web-search';
+import { createCreateSpaceFromOnboardingTool } from './create-space-from-onboarding';
+import { createUpdateSpaceSettingsTool } from './update-space-settings';
+import { createCreateSpaceSetupProposalTool } from './create-space-setup-proposal';
+import { createCreateEcosystemSpaceTool } from './create-ecosystem-space';
+import { createGenerateEcosystemBlueprintTool } from './generate-ecosystem-blueprint';
+
+type SetupPhase = 'discover' | 'draft' | 'confirm' | 'execute' | 'verify';
+
+function inferSetupPhase(context: unknown): SetupPhase {
+  if (!context || typeof context !== 'object') return 'discover';
+  const phase = (context as { setupPhase?: unknown }).setupPhase;
+  return phase === 'discover' ||
+    phase === 'draft' ||
+    phase === 'confirm' ||
+    phase === 'execute' ||
+    phase === 'verify'
+    ? phase
+    : 'discover';
+}
 
 function safeTool(toolName: string, tool: ChatRouteTool): ChatRouteTool {
   const originalExecute = tool.execute as (
@@ -41,7 +60,35 @@ function safeTool(toolName: string, tool: ChatRouteTool): ChatRouteTool {
 export function createChatTools(
   authToken: string,
   requestUrlForSessionMatrix?: string,
+  conversationContext?: unknown,
+  featureGates?: {
+    onboardingWriteToolsEnabled?: boolean;
+    ecosystemAutomationEnabled?: boolean;
+  },
 ): Record<string, ChatRouteTool> {
+  const setupPhase = inferSetupPhase(conversationContext);
+  const onboardingLastUserText =
+    conversationContext &&
+    typeof conversationContext === 'object' &&
+    'lastUserText' in conversationContext &&
+    typeof (conversationContext as { lastUserText?: unknown }).lastUserText ===
+      'string'
+      ? (conversationContext as { lastUserText: string }).lastUserText
+      : undefined;
+
+  const maybeInjectConfirmation = (payload: Record<string, unknown>) =>
+    setupPhase === 'confirm' || setupPhase === 'execute'
+      ? { ...payload, onboarding_last_user_text: onboardingLastUserText }
+      : payload;
+
+  const createSpaceFromOnboardingTool =
+    createCreateSpaceFromOnboardingTool(authToken);
+  const updateSpaceSettingsTool = createUpdateSpaceSettingsTool(authToken);
+  const createSpaceSetupProposalTool =
+    createCreateSpaceSetupProposalTool(authToken);
+  const createEcosystemSpaceTool = createCreateEcosystemSpaceTool(authToken);
+  const generateEcosystemBlueprintTool = createGenerateEcosystemBlueprintTool();
+
   const tools: Record<string, ChatRouteTool> = {
     get_space_by_slug: safeTool('get_space_by_slug', getSpaceBySlugTool),
     get_ecosystem_by_space_slug: safeTool(
@@ -93,6 +140,48 @@ export function createChatTools(
     ),
     web_search: safeTool('web_search', webSearchTool),
   };
+  if (featureGates?.onboardingWriteToolsEnabled !== false) {
+    tools.create_space_from_onboarding = safeTool(
+      'create_space_from_onboarding',
+      {
+        ...createSpaceFromOnboardingTool,
+        execute: async (args) =>
+          createSpaceFromOnboardingTool.execute(
+            maybeInjectConfirmation(args as Record<string, unknown>),
+          ),
+      },
+    );
+    tools.update_space_settings = safeTool('update_space_settings', {
+      ...updateSpaceSettingsTool,
+      execute: async (args) =>
+        updateSpaceSettingsTool.execute(
+          maybeInjectConfirmation(args as Record<string, unknown>),
+        ),
+    });
+    tools.create_space_setup_proposal = safeTool(
+      'create_space_setup_proposal',
+      {
+        ...createSpaceSetupProposalTool,
+        execute: async (args) =>
+          createSpaceSetupProposalTool.execute(
+            maybeInjectConfirmation(args as Record<string, unknown>),
+          ),
+      },
+    );
+  }
+  if (featureGates?.ecosystemAutomationEnabled !== false) {
+    tools.generate_ecosystem_blueprint = safeTool(
+      'generate_ecosystem_blueprint',
+      generateEcosystemBlueprintTool,
+    );
+    tools.create_ecosystem_space = safeTool('create_ecosystem_space', {
+      ...createEcosystemSpaceTool,
+      execute: async (args) =>
+        createEcosystemSpaceTool.execute(
+          maybeInjectConfirmation(args as Record<string, unknown>),
+        ),
+    });
+  }
   return tools;
 }
 
@@ -108,5 +197,10 @@ export { createGetTokenHoldingsBySpaceSlugTool } from './get-token-holdings-by-s
 export { createFetchOrgMemoryAssetTool } from './fetch-org-memory-asset';
 export { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion';
 export { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
+export { createCreateSpaceFromOnboardingTool } from './create-space-from-onboarding';
+export { createUpdateSpaceSettingsTool } from './update-space-settings';
+export { createCreateSpaceSetupProposalTool } from './create-space-setup-proposal';
+export { createCreateEcosystemSpaceTool } from './create-ecosystem-space';
+export { createGenerateEcosystemBlueprintTool } from './generate-ecosystem-blueprint';
 export { webSearchTool } from './web-search';
 export type { ChatRouteTool } from './types';
