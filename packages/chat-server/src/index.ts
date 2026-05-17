@@ -6,6 +6,7 @@ export { verifyPrivyAuthToken } from './privy-auth';
 export {
   createChatStreamResult,
   isAbortLikeError,
+  MISSING_OPENROUTER_KEY_MESSAGE,
   OPENROUTER_DEBUG,
 } from './stream-chat';
 export { buildSystemPrompt, sanitizeSlug } from './system-prompt';

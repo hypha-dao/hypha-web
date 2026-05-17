@@ -9,6 +9,7 @@ import {
   chatRequestSchema,
   type ChatRequestPayload,
   createChatStreamResult,
+  MISSING_OPENROUTER_KEY_MESSAGE,
   OPENROUTER_DEBUG,
   verifyPrivyAuthToken,
 } from '@hypha-platform/chat-server';
@@ -108,11 +109,15 @@ export async function POST(req: Request) {
       ...(OPENROUTER_DEBUG && { error }),
     });
 
+    const message =
+      error instanceof Error && error.message === MISSING_OPENROUTER_KEY_MESSAGE
+        ? 'Hypha AI is not available on this deployment because the assistant API is not configured (missing OpenRouter credentials). Contact your team or administrator.'
+        : 'I hit an issue while starting the response. Please retry in a few seconds.';
+
     return createChatFailureStreamResponse({
       debugRequestId,
       errorType: 'stream_init_error',
-      message:
-        'I hit an issue while starting the response. Please retry in a few seconds.',
+      message,
     });
   }
 

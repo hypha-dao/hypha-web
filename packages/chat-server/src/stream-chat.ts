@@ -1,11 +1,93 @@
-import { convertToModelMessages, stepCountIs, streamText } from 'ai';
+import {
+  convertToModelMessages,
+  createIdGenerator,
+  stepCountIs,
+  streamText,
+} from 'ai';
+import type {
+  StreamTextTransform,
+  TextStreamPart,
+  ToolSet,
+  UIMessage,
+} from 'ai';
 import { openrouter } from '@openrouter/ai-sdk-provider';
-import type { UIMessage } from 'ai';
 import type { ChatRequestPayload } from './request-schema';
 import { buildSystemPrompt } from './system-prompt';
 import { createChatTools } from './tools/index';
 
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
+
+/** Thrown before `streamText` when deployment is missing OpenRouter credentials (matches provider default env). */
+export const MISSING_OPENROUTER_KEY_MESSAGE =
+  'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
+
+function messageFromUnknownError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'Unknown error';
+  }
+}
+
+/**
+ * OpenRouter and related services sometimes emit an opaque "User not found." stream error.
+ * That propagates to the UI as a fatal AI SDK error chunk — replace it with visible assistant text.
+ */
+function isUserNotFoundStreamMessage(message: string): boolean {
+  const normalized = message.trim().toLowerCase();
+  return (
+    normalized === 'user not found' ||
+    normalized === 'user not found.' ||
+    normalized.includes('user not found')
+  );
+}
+
+const USER_NOT_FOUND_ASSISTANT_REPLY =
+  'Your session is signed in, but Hypha could not match you to a profile in this environment yet. ' +
+  'Finish onboarding or profile setup in the app, refresh the page, then try again. ' +
+  'If you are on a preview deployment, your account data may differ from production.';
+
+function createStreamErrorRecoveryTransform(
+  debugRequestId: string,
+): StreamTextTransform<ToolSet> {
+  return () => {
+    const nextTextId = createIdGenerator({ prefix: 't', size: 12 });
+    return new TransformStream<
+      TextStreamPart<ToolSet>,
+      TextStreamPart<ToolSet>
+    >({
+      transform(chunk, controller) {
+        if (chunk.type !== 'error') {
+          controller.enqueue(chunk);
+          return;
+        }
+
+        const raw = messageFromUnknownError(chunk.error);
+        if (isUserNotFoundStreamMessage(raw)) {
+          if (OPENROUTER_DEBUG) {
+            console.warn('[chat][stream][recovered-user-not-found]', {
+              debugRequestId,
+              raw,
+            });
+          }
+          const id = nextTextId();
+          controller.enqueue({ type: 'text-start', id });
+          controller.enqueue({
+            type: 'text-delta',
+            id,
+            text: USER_NOT_FOUND_ASSISTANT_REPLY,
+          });
+          controller.enqueue({ type: 'text-end', id });
+          return;
+        }
+
+        controller.enqueue(chunk);
+      },
+    });
+  };
+}
 
 /** Narrowed shape when `isAbortLikeError` returns true (abort-like DOM/undici errors). */
 export type AbortLikeCandidate = { name?: string; message?: string };
@@ -168,6 +250,10 @@ export async function createChatStreamResult(
     });
   }
 
+  if (!process.env.OPENROUTER_API_KEY?.trim()) {
+    throw new Error(MISSING_OPENROUTER_KEY_MESSAGE);
+  }
+
   return streamText({
     model: openrouter('openrouter/auto'),
     system: buildSystemPrompt(spaceSlug),
@@ -236,5 +322,8 @@ export async function createChatStreamResult(
         ...(OPENROUTER_DEBUG && { error }),
       });
     },
+
+    // Turn selected provider error chunks into assistant text so the UI stream does not fail closed.
+    experimental_transform: createStreamErrorRecoveryTransform(debugRequestId),
   });
 }
