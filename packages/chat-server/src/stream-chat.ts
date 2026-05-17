@@ -67,15 +67,16 @@ async function convertMessagesSafely(
   debugRequestId: string,
 ): Promise<Awaited<ReturnType<typeof convertToModelMessages>>> {
   try {
-    // Cast: request schema validates the runtime shape of UI messages from `useChat`.
-    return await convertToModelMessages(messages as UIMessage[]);
+    // Always normalize to explicit text parts first. Some clients send `content`
+    // with empty `parts`; relying on raw conversion can silently yield empty prompts.
+    return await convertToModelMessages(sanitizeMessagesToTextOnly(messages));
   } catch (error) {
-    console.error('[chat][convert-messages][fallback-to-text-only]', {
+    console.error('[chat][convert-messages][failed]', {
       debugRequestId,
       message: error instanceof Error ? error.message : String(error),
       ...(OPENROUTER_DEBUG && { error }),
     });
-    return convertToModelMessages(sanitizeMessagesToTextOnly(messages));
+    throw error;
   }
 }
 
