@@ -13,8 +13,8 @@ import type {
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
-import { buildSystemPrompt } from './system-prompt';
-import { createChatTools } from './tools/index';
+import { buildSystemPrompt, sanitizeSlug } from './system-prompt';
+import { createChatTools, getSpaceBySlugTool } from './tools/index';
 
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 
@@ -90,12 +90,100 @@ function messageFromUnknownError(error: unknown): string {
 const OPENROUTER_AUTH_FAILURE_REPLY =
   'OpenRouter could not run this chat (often 401). Check OPENROUTER_API_KEY on the server. Hypha sends HTTP-Referer and X-Title automatically; override with OPENROUTER_HTTP_REFERER / OPENROUTER_APP_TITLE if needed.';
 
+function isSpaceOverviewQuestion(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return (
+    t.includes('tell me about this space') ||
+    t.includes('about this space') ||
+    t.includes('describe this space') ||
+    t.includes('space overview') ||
+    t.includes('how many members') ||
+    t.includes('member count')
+  );
+}
+
+async function buildDeterministicSpaceFallback({
+  lastUserText,
+  spaceSlug,
+  debugRequestId,
+}: {
+  lastUserText: string | null;
+  spaceSlug: string | null | undefined;
+  debugRequestId: string;
+}): Promise<string | null> {
+  if (!lastUserText || !isSpaceOverviewQuestion(lastUserText)) return null;
+
+  const safe = spaceSlug ? sanitizeSlug(spaceSlug) : null;
+  if (!safe) return null;
+
+  try {
+    const result = await getSpaceBySlugTool.execute({ slug: safe });
+    if (!result || typeof result !== 'object') return null;
+
+    const found =
+      'found' in result && typeof result.found === 'boolean'
+        ? result.found
+        : false;
+    if (!found) return null;
+
+    const space =
+      'space' in result &&
+      result.space &&
+      typeof result.space === 'object' &&
+      !Array.isArray(result.space)
+        ? result.space
+        : null;
+    if (!space) return null;
+
+    const title =
+      'title' in space && typeof space.title === 'string' ? space.title : safe;
+    const description =
+      'description' in space && typeof space.description === 'string'
+        ? space.description.trim()
+        : '';
+    const memberCount =
+      'memberCount' in space && typeof space.memberCount === 'number'
+        ? space.memberCount
+        : null;
+    const documentCount =
+      'documentCount' in space && typeof space.documentCount === 'number'
+        ? space.documentCount
+        : null;
+    const subspaceCount =
+      'subspaceCount' in space && typeof space.subspaceCount === 'number'
+        ? space.subspaceCount
+        : null;
+
+    const lines = [`${title}`];
+    if (description) lines.push(description);
+    const statBits = [
+      memberCount != null ? `${memberCount} members` : null,
+      documentCount != null ? `${documentCount} documents` : null,
+      subspaceCount != null ? `${subspaceCount} subspaces` : null,
+    ].filter(Boolean);
+    if (statBits.length > 0) lines.push(`Quick stats: ${statBits.join(', ')}.`);
+
+    lines.push(
+      'I used cached Hypha space data because the external model provider is currently unavailable.',
+    );
+    return lines.join('\n\n');
+  } catch (error) {
+    console.error('[chat][fallback][space-overview][failed]', {
+      debugRequestId,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
+
 /**
  * Maps common OpenRouter auth / auto-router failures to visible assistant text so the
  * UI stream does not emit a fatal `error` chunk (which becomes `useChat` Error: User not found).
  */
 function createOpenRouterAuthRecoveryTransform(
   debugRequestId: string,
+  deterministicFallbackText: string | null,
 ): StreamTextTransform<ToolSet> {
   return () => {
     const nextTextId = createIdGenerator({ prefix: 't', size: 12 });
@@ -129,7 +217,7 @@ function createOpenRouterAuthRecoveryTransform(
           controller.enqueue({
             type: 'text-delta',
             id,
-            text: OPENROUTER_AUTH_FAILURE_REPLY,
+            text: deterministicFallbackText ?? OPENROUTER_AUTH_FAILURE_REPLY,
           });
           controller.enqueue({ type: 'text-end', id });
           return;
@@ -284,6 +372,11 @@ export async function createChatStreamResult(
 ): Promise<ReturnType<typeof streamText>> {
   const tools = createChatTools(authToken, requestUrlForSessionMatrix);
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
+  const deterministicFallbackText = await buildDeterministicSpaceFallback({
+    lastUserText: extractLastUserText(messages),
+    spaceSlug,
+    debugRequestId,
+  });
 
   if (modelMessages.length === 0) {
     console.warn('[chat][empty-model-messages]', {
@@ -381,7 +474,9 @@ export async function createChatStreamResult(
       console.error('[chat][openrouter][error]', base);
     },
 
-    experimental_transform:
-      createOpenRouterAuthRecoveryTransform(debugRequestId),
+    experimental_transform: createOpenRouterAuthRecoveryTransform(
+      debugRequestId,
+      deterministicFallbackText,
+    ),
   });
 }
