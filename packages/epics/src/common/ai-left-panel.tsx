@@ -70,6 +70,7 @@ import {
   subscribeRecentSpaceSlugs,
   syncRecentSpacesForActiveSlug,
 } from './recent-space-history';
+import { recordMobilizedAiAgentsForQuestion } from './ai-agent-competencies';
 
 type ChatUIMessage = {
   id: string;
@@ -660,6 +661,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         );
       }
       const textParts = text.trim() ? [{ type: 'text' as const, text }] : [];
+      if (spaceSlug && text.trim()) {
+        recordMobilizedAiAgentsForQuestion(spaceSlug, text.trim());
+      }
       if (DEBUG)
         console.log('[AiLeftPanel] sendMessage', {
           text,
@@ -715,6 +719,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     async (text: string) => {
       try {
         clearError();
+        if (spaceSlug && text.trim()) {
+          recordMobilizedAiAgentsForQuestion(spaceSlug, text.trim());
+        }
         const options = await buildMessageOptions();
         if (DEBUG)
           console.log('[AiLeftPanel] suggestion selected', { text, spaceSlug });
@@ -726,7 +733,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         console.error('[AiLeftPanel] suggestion sendMessage error:', err);
       }
     },
-    [sendMessage, buildMessageOptions, clearError],
+    [sendMessage, buildMessageOptions, clearError, spaceSlug],
   );
 
   const handleTriggerClick = useCallback(() => {
