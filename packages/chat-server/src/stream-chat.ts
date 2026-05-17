@@ -18,6 +18,8 @@ import {
   createChatTools,
   createGetDocumentsBySpaceSlugTool,
   createGetEcosystemBySpaceSlugTool,
+  createGetSignalsBySpaceSlugTool,
+  createGetTokenHoldingsBySpaceSlugTool,
   getSpaceBySlugTool,
 } from './tools/index';
 
@@ -248,7 +250,7 @@ const OPENROUTER_TEMP_UNAVAILABLE_REPLY =
 
 type DeterministicFallbackContext = {
   text: string;
-  kind: 'space_overview' | 'documents' | 'ecosystem';
+  kind: 'space_overview' | 'documents' | 'ecosystem' | 'tokens' | 'discussions';
 };
 
 function isSpaceOverviewQuestion(text: string): boolean {
@@ -293,6 +295,27 @@ function isEcosystemQuestion(text: string): boolean {
   );
 }
 
+function isTokenQuestion(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return (
+    t.includes('token') || t.includes('treasury') || t.includes('holdings')
+  );
+}
+
+function isDiscussionQuestion(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return (
+    t.includes('main discussion') ||
+    t.includes('main discussions') ||
+    t.includes('what are the discussions') ||
+    t.includes('key discussion') ||
+    t.includes('top discussion') ||
+    t.includes('signals')
+  );
+}
+
 async function buildDeterministicSpaceFallback({
   lastUserText,
   spaceSlug,
@@ -310,60 +333,100 @@ async function buildDeterministicSpaceFallback({
   if (!safe) return null;
 
   try {
-    if (isSpaceOverviewQuestion(lastUserText)) {
-      const result = await getSpaceBySlugTool.execute({ slug: safe });
-      if (!result || typeof result !== 'object') return null;
+    if (isTokenQuestion(lastUserText)) {
+      const tokenTool = createGetTokenHoldingsBySpaceSlugTool(authToken);
+      const tokenResult = await tokenTool.execute({
+        space_slug: safe,
+        include_zero_balances: false,
+        include_treasury: true,
+      });
+      if (
+        tokenResult &&
+        typeof tokenResult === 'object' &&
+        'found' in tokenResult &&
+        tokenResult.found === true &&
+        'holdings' in tokenResult &&
+        Array.isArray(tokenResult.holdings)
+      ) {
+        const holdings = tokenResult.holdings as Array<Record<string, unknown>>;
+        if (holdings.length === 0) {
+          return {
+            kind: 'tokens',
+            text: `No token holdings were found for "${safe}" in the current space snapshot.`,
+          };
+        }
 
-      const found =
-        'found' in result && typeof result.found === 'boolean'
-          ? result.found
-          : false;
-      if (!found) return null;
+        const lines = [
+          `Token holdings for "${safe}" (${holdings.length} tokens):`,
+        ];
+        holdings.slice(0, 8).forEach((h, idx) => {
+          const symbol =
+            typeof h.symbol === 'string' && h.symbol.trim()
+              ? h.symbol.trim()
+              : typeof h.token_symbol === 'string'
+              ? String(h.token_symbol)
+              : 'TOKEN';
+          const treasuryPct =
+            typeof h.treasury_percentage === 'number'
+              ? `${h.treasury_percentage.toFixed(2)}% treasury`
+              : null;
+          const holderCount =
+            typeof h.holder_count === 'number'
+              ? `${h.holder_count} holders`
+              : null;
+          const bits = [treasuryPct, holderCount].filter(Boolean).join(', ');
+          lines.push(`${idx + 1}. ${symbol}${bits ? ` (${bits})` : ''}`);
+        });
+        lines.push(
+          'I used deterministic token holdings data because the external model provider is currently unavailable.',
+        );
+        return { kind: 'tokens', text: lines.join('\n') };
+      }
+    }
 
-      const space =
-        'space' in result &&
-        result.space &&
-        typeof result.space === 'object' &&
-        !Array.isArray(result.space)
-          ? result.space
-          : null;
-      if (!space) return null;
-
-      const title =
-        'title' in space && typeof space.title === 'string'
-          ? space.title
-          : safe;
-      const description =
-        'description' in space && typeof space.description === 'string'
-          ? space.description.trim()
-          : '';
-      const memberCount =
-        'memberCount' in space && typeof space.memberCount === 'number'
-          ? space.memberCount
-          : null;
-      const documentCount =
-        'documentCount' in space && typeof space.documentCount === 'number'
-          ? space.documentCount
-          : null;
-      const subspaceCount =
-        'subspaceCount' in space && typeof space.subspaceCount === 'number'
-          ? space.subspaceCount
-          : null;
-
-      const lines = [`${title}`];
-      if (description) lines.push(description);
-      const statBits = [
-        memberCount != null ? `${memberCount} members` : null,
-        documentCount != null ? `${documentCount} documents` : null,
-        subspaceCount != null ? `${subspaceCount} subspaces` : null,
-      ].filter(Boolean);
-      if (statBits.length > 0)
-        lines.push(`Quick stats: ${statBits.join(', ')}.`);
-
-      lines.push(
-        'I used cached Hypha space data because the external model provider is currently unavailable.',
-      );
-      return { kind: 'space_overview', text: lines.join('\n\n') };
+    if (isDiscussionQuestion(lastUserText)) {
+      const signalsTool = createGetSignalsBySpaceSlugTool(authToken);
+      const signalsResult = await signalsTool.execute({
+        space_slug: safe,
+        include_archived: false,
+        order_by: 'mostmessages',
+        limit: 8,
+      });
+      if (
+        signalsResult &&
+        typeof signalsResult === 'object' &&
+        'found' in signalsResult &&
+        signalsResult.found === true &&
+        'signals' in signalsResult &&
+        Array.isArray(signalsResult.signals)
+      ) {
+        const signals = signalsResult.signals as Array<Record<string, unknown>>;
+        if (signals.length === 0) {
+          return {
+            kind: 'discussions',
+            text: `No active discussions/signals were found for "${safe}".`,
+          };
+        }
+        const lines = [`Main discussions/signals for "${safe}":`];
+        signals.slice(0, 8).forEach((s, idx) => {
+          const title =
+            typeof s.title === 'string' && s.title.trim()
+              ? s.title.trim()
+              : '(untitled signal)';
+          const priority =
+            typeof s.priority === 'string' && s.priority.trim()
+              ? `priority: ${s.priority.trim()}`
+              : null;
+          const messages =
+            typeof s.messages === 'number' ? `${s.messages} messages` : null;
+          const bits = [priority, messages].filter(Boolean).join(', ');
+          lines.push(`${idx + 1}. ${title}${bits ? ` (${bits})` : ''}`);
+        });
+        lines.push(
+          'I used deterministic discussions data because the external model provider is currently unavailable.',
+        );
+        return { kind: 'discussions', text: lines.join('\n') };
+      }
     }
 
     if (isDocumentsQuestion(lastUserText)) {
@@ -459,56 +522,64 @@ async function buildDeterministicSpaceFallback({
       }
     }
 
-    const result = await getSpaceBySlugTool.execute({ slug: safe });
-    if (!result || typeof result !== 'object') return null;
+    if (isSpaceOverviewQuestion(lastUserText)) {
+      const result = await getSpaceBySlugTool.execute({ slug: safe });
+      if (!result || typeof result !== 'object') return null;
 
-    const found =
-      'found' in result && typeof result.found === 'boolean'
-        ? result.found
-        : false;
-    if (!found) return null;
+      const found =
+        'found' in result && typeof result.found === 'boolean'
+          ? result.found
+          : false;
+      if (!found) return null;
 
-    const space =
-      'space' in result &&
-      result.space &&
-      typeof result.space === 'object' &&
-      !Array.isArray(result.space)
-        ? result.space
-        : null;
-    if (!space) return null;
+      const space =
+        'space' in result &&
+        result.space &&
+        typeof result.space === 'object' &&
+        !Array.isArray(result.space)
+          ? result.space
+          : null;
+      if (!space) return null;
 
-    const title =
-      'title' in space && typeof space.title === 'string' ? space.title : safe;
-    const description =
-      'description' in space && typeof space.description === 'string'
-        ? space.description.trim()
-        : '';
-    const memberCount =
-      'memberCount' in space && typeof space.memberCount === 'number'
-        ? space.memberCount
-        : null;
-    const documentCount =
-      'documentCount' in space && typeof space.documentCount === 'number'
-        ? space.documentCount
-        : null;
-    const subspaceCount =
-      'subspaceCount' in space && typeof space.subspaceCount === 'number'
-        ? space.subspaceCount
-        : null;
+      const title =
+        'title' in space && typeof space.title === 'string'
+          ? space.title
+          : safe;
+      const description =
+        'description' in space && typeof space.description === 'string'
+          ? space.description.trim()
+          : '';
+      const memberCount =
+        'memberCount' in space && typeof space.memberCount === 'number'
+          ? space.memberCount
+          : null;
+      const documentCount =
+        'documentCount' in space && typeof space.documentCount === 'number'
+          ? space.documentCount
+          : null;
+      const subspaceCount =
+        'subspaceCount' in space && typeof space.subspaceCount === 'number'
+          ? space.subspaceCount
+          : null;
 
-    const lines = [`${title}`];
-    if (description) lines.push(description);
-    const statBits = [
-      memberCount != null ? `${memberCount} members` : null,
-      documentCount != null ? `${documentCount} documents` : null,
-      subspaceCount != null ? `${subspaceCount} subspaces` : null,
-    ].filter(Boolean);
-    if (statBits.length > 0) lines.push(`Quick stats: ${statBits.join(', ')}.`);
+      const lines = [`${title}`];
+      if (description) lines.push(description);
+      const statBits = [
+        memberCount != null ? `${memberCount} members` : null,
+        documentCount != null ? `${documentCount} documents` : null,
+        subspaceCount != null ? `${subspaceCount} subspaces` : null,
+      ].filter(Boolean);
+      if (statBits.length > 0)
+        lines.push(`Quick stats: ${statBits.join(', ')}.`);
 
-    lines.push(
-      'I used cached Hypha space data because the external model provider is currently unavailable.',
-    );
-    return { kind: 'space_overview', text: lines.join('\n\n') };
+      lines.push(
+        'I used cached Hypha space data because the external model provider is currently unavailable.',
+      );
+      return { kind: 'space_overview', text: lines.join('\n\n') };
+    }
+
+    // No deterministic intent match -> do not return stale generic overview.
+    return null;
   } catch (error) {
     console.error('[chat][fallback][space-overview][failed]', {
       debugRequestId,
