@@ -556,6 +556,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     client.stopClient();
     registeredRoomListenersRef.current = [];
     setRegisteredRoomListeners([]);
+    roomHistoryLoadRef.current.clear();
+    roomHistoryLastLoadedAtRef.current.clear();
     setClient(null);
     setActiveMatrixUserId(null);
     setIsAuthenticated(false);
@@ -591,6 +593,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const matrixClient = client as MatrixSdk.MatrixClient;
         matrixClient.setPresence({ presence: 'offline' });
         matrixClient.stopClient();
+        roomHistoryLoadRef.current.clear();
+        roomHistoryLastLoadedAtRef.current.clear();
         setClient(null);
       }
     };
