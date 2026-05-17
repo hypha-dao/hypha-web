@@ -253,17 +253,47 @@ type DeterministicFallbackContext = {
   kind: 'space_overview' | 'documents' | 'ecosystem' | 'tokens' | 'discussions';
 };
 
-function isSpaceOverviewQuestion(text: string): boolean {
+type SpaceOverviewIntent =
+  | 'full_overview'
+  | 'member_count'
+  | 'document_count'
+  | 'subspace_count';
+
+function getSpaceOverviewIntent(text: string): SpaceOverviewIntent | null {
   const t = text.trim().toLowerCase();
-  if (!t) return false;
-  return (
+  if (!t) return null;
+
+  if (
+    t.includes('how many members') ||
+    t.includes('member count') ||
+    t.includes('members does this space have')
+  ) {
+    return 'member_count';
+  }
+  if (
+    t.includes('how many documents') ||
+    t.includes('how many agreements') ||
+    t.includes('document count') ||
+    t.includes('agreement count')
+  ) {
+    return 'document_count';
+  }
+  if (
+    t.includes('how many subspaces') ||
+    t.includes('subspace count') ||
+    t.includes('child spaces')
+  ) {
+    return 'subspace_count';
+  }
+  if (
     t.includes('tell me about this space') ||
     t.includes('about this space') ||
     t.includes('describe this space') ||
-    t.includes('space overview') ||
-    t.includes('how many members') ||
-    t.includes('member count')
-  );
+    t.includes('space overview')
+  ) {
+    return 'full_overview';
+  }
+  return null;
 }
 
 function isDocumentsQuestion(text: string): boolean {
@@ -522,7 +552,8 @@ async function buildDeterministicSpaceFallback({
       }
     }
 
-    if (isSpaceOverviewQuestion(lastUserText)) {
+    const overviewIntent = getSpaceOverviewIntent(lastUserText);
+    if (overviewIntent) {
       const result = await getSpaceBySlugTool.execute({ slug: safe });
       if (!result || typeof result !== 'object') return null;
 
@@ -562,6 +593,36 @@ async function buildDeterministicSpaceFallback({
           ? space.subspaceCount
           : null;
 
+      if (overviewIntent === 'member_count') {
+        return {
+          kind: 'space_overview',
+          text:
+            memberCount != null
+              ? `This space currently has ${memberCount} members.\n\nI used cached Hypha space data because the external model provider is currently unavailable.`
+              : 'I could not determine the current member count from cached data.',
+        };
+      }
+
+      if (overviewIntent === 'document_count') {
+        return {
+          kind: 'space_overview',
+          text:
+            documentCount != null
+              ? `This space currently has ${documentCount} documents/agreements.\n\nI used cached Hypha space data because the external model provider is currently unavailable.`
+              : 'I could not determine the current document count from cached data.',
+        };
+      }
+
+      if (overviewIntent === 'subspace_count') {
+        return {
+          kind: 'space_overview',
+          text:
+            subspaceCount != null
+              ? `This space currently has ${subspaceCount} subspaces.\n\nI used cached Hypha space data because the external model provider is currently unavailable.`
+              : 'I could not determine the current subspace count from cached data.',
+        };
+      }
+
       const lines = [`${title}`];
       if (description) lines.push(description);
       const statBits = [
@@ -569,9 +630,9 @@ async function buildDeterministicSpaceFallback({
         documentCount != null ? `${documentCount} documents` : null,
         subspaceCount != null ? `${subspaceCount} subspaces` : null,
       ].filter(Boolean);
-      if (statBits.length > 0)
+      if (statBits.length > 0) {
         lines.push(`Quick stats: ${statBits.join(', ')}.`);
-
+      }
       lines.push(
         'I used cached Hypha space data because the external model provider is currently unavailable.',
       );
