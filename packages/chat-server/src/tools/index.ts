@@ -8,6 +8,7 @@ import { createRelayEcosystemSignalTool } from './relay-ecosystem-signal';
 import { createGetOrgMemoryBySpaceSlugTool } from './get-org-memory-by-space-slug';
 import { createFetchOrgMemoryAssetTool } from './fetch-org-memory-asset';
 import { createGetDocumentsBySpaceSlugTool } from './get-documents-by-space-slug';
+import { createGetTokenHoldingsBySpaceSlugTool } from './get-token-holdings-by-space-slug';
 import { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion';
 import { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';
 import { webSearchTool } from './web-search';
@@ -78,6 +79,10 @@ export function createChatTools(
       'get_documents_by_space_slug',
       createGetDocumentsBySpaceSlugTool(authToken),
     ),
+    get_token_holdings_by_space_slug: safeTool(
+      'get_token_holdings_by_space_slug',
+      createGetTokenHoldingsBySpaceSlugTool(authToken),
+    ),
     summarize_space_discussion_by_slug: safeTool(
       'summarize_space_discussion_by_slug',
       createSummarizeSpaceDiscussionTool(authToken, requestUrlForSessionMatrix),
@@ -99,6 +104,7 @@ export { createCreateSpaceSignalBySlugTool } from './create-space-signal-by-slug
 export { createRelayEcosystemSignalTool } from './relay-ecosystem-signal';
 export { createGetOrgMemoryBySpaceSlugTool } from './get-org-memory-by-space-slug';
 export { createGetDocumentsBySpaceSlugTool } from './get-documents-by-space-slug';
+export { createGetTokenHoldingsBySpaceSlugTool } from './get-token-holdings-by-space-slug';
 export { createFetchOrgMemoryAssetTool } from './fetch-org-memory-asset';
 export { createSummarizeSpaceDiscussionTool } from './summarize-space-discussion';
 export { createIngestSpaceCallArtifactsTool } from './ingest-space-call-artifacts';

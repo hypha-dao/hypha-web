@@ -29,6 +29,25 @@ function looksLikePdf(name: string, url: string): boolean {
   return /\.pdf(\?|#|$)/i.test(name) || /\.pdf(\?|#|$)/i.test(url);
 }
 
+let didConfigurePdfWorker = false;
+
+async function loadPdfJsWithWorker() {
+  const pdfJs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  if (!didConfigurePdfWorker) {
+    try {
+      const workerUrl = new URL(
+        'pdfjs-dist/legacy/build/pdf.worker.mjs',
+        import.meta.url,
+      ).toString();
+      pdfJs.GlobalWorkerOptions.workerSrc = workerUrl;
+    } catch {
+      // Keep default worker resolution if URL construction fails.
+    }
+    didConfigurePdfWorker = true;
+  }
+  return pdfJs;
+}
+
 export function humanizeAssetName(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) return name;
@@ -49,7 +68,7 @@ function PdfPreview({
 }) {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const [renderState, setRenderState] = React.useState<
-    'loading' | 'ready' | 'iframe' | 'error'
+    'loading' | 'ready' | 'embed' | 'error'
   >('loading');
 
   React.useEffect(() => {
@@ -59,7 +78,7 @@ function PdfPreview({
     async function renderFirstPage(): Promise<void> {
       try {
         setRenderState('loading');
-        const pdfJs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+        const pdfJs = await loadPdfJsWithWorker();
         const request: Parameters<typeof pdfJs.getDocument>[0] = {
           url: src,
           verbosity: 0,
@@ -95,8 +114,8 @@ function PdfPreview({
         }
       } catch {
         if (!cancelled) {
-          // Fallback to browser PDF renderer if canvas pipeline fails.
-          setRenderState('iframe');
+          // Fallback to native PDF embed if canvas pipeline fails.
+          setRenderState('embed');
         }
       }
     }
@@ -108,14 +127,21 @@ function PdfPreview({
     };
   }, [src]);
 
-  if (renderState === 'iframe') {
+  if (renderState === 'embed') {
     return (
-      <iframe
-        src={src}
-        title={fallbackLabel}
-        className="h-full w-full border-0"
-        loading="lazy"
-      />
+      <object
+        data={src}
+        type="application/pdf"
+        aria-label={fallbackLabel}
+        className="h-full w-full"
+      >
+        <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
+          <FileIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
+          <span className="line-clamp-2 text-center text-[10px]">
+            PDF preview unavailable
+          </span>
+        </div>
+      </object>
     );
   }
 

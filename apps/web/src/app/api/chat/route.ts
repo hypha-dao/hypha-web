@@ -72,6 +72,12 @@ function createChatTextOnlyStreamResponse({
           writer.write({ type: 'text-delta', id: textPartId, delta });
         };
 
+        const tryWriteUnknownText = (value: unknown) => {
+          if (typeof value === 'string') {
+            writeDelta(value);
+          }
+        };
+
         try {
           if (fullStream) {
             for await (const chunk of fullStream) {
@@ -93,6 +99,15 @@ function createChatTextOnlyStreamResponse({
               if (typed.type === 'text' && typeof typed.text === 'string') {
                 writeDelta(typed.text);
                 continue;
+              }
+              // Tolerate SDK/provider shape drift for text chunks.
+              tryWriteUnknownText(typed.delta);
+              tryWriteUnknownText(typed.text);
+              if ('value' in typed) {
+                tryWriteUnknownText((typed as { value?: unknown }).value);
+              }
+              if ('content' in typed) {
+                tryWriteUnknownText((typed as { content?: unknown }).content);
               }
               if (typed.type === 'tool-result') {
                 toolOutputs.push({
@@ -125,6 +140,26 @@ function createChatTextOnlyStreamResponse({
           });
           accumulatedText +=
             'I ran into an issue while generating the response. Please retry in a few seconds.';
+        }
+
+        if (!accumulatedText.trim()) {
+          // Secondary fallback: some SDK/provider paths accumulate only in `result.text`.
+          try {
+            const textResult = (
+              result as unknown as {
+                text?: string | PromiseLike<string | undefined>;
+              }
+            ).text;
+            const resolvedText =
+              typeof textResult === 'string'
+                ? textResult
+                : await Promise.resolve(textResult).catch(() => undefined);
+            if (typeof resolvedText === 'string' && resolvedText.trim()) {
+              writeDelta(resolvedText);
+            }
+          } catch {
+            // Ignore and continue to tool/empty fallbacks below.
+          }
         }
 
         if (!accumulatedText.trim()) {
