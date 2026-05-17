@@ -14,7 +14,12 @@ import type {
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ChatRequestPayload } from './request-schema';
 import { buildSystemPrompt, sanitizeSlug } from './system-prompt';
-import { createChatTools, getSpaceBySlugTool } from './tools/index';
+import {
+  createChatTools,
+  createGetDocumentsBySpaceSlugTool,
+  createGetEcosystemBySpaceSlugTool,
+  getSpaceBySlugTool,
+} from './tools/index';
 
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 
@@ -90,6 +95,11 @@ function messageFromUnknownError(error: unknown): string {
 const OPENROUTER_AUTH_FAILURE_REPLY =
   'OpenRouter could not run this chat (often 401). Check OPENROUTER_API_KEY on the server. Hypha sends HTTP-Referer and X-Title automatically; override with OPENROUTER_HTTP_REFERER / OPENROUTER_APP_TITLE if needed.';
 
+type DeterministicFallbackContext = {
+  text: string;
+  kind: 'space_overview' | 'documents' | 'ecosystem';
+};
+
 function isSpaceOverviewQuestion(text: string): boolean {
   const t = text.trim().toLowerCase();
   if (!t) return false;
@@ -103,21 +113,201 @@ function isSpaceOverviewQuestion(text: string): boolean {
   );
 }
 
+function isDocumentsQuestion(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return (
+    t.includes('what agreements') ||
+    t.includes('what documents') ||
+    t.includes('list agreements') ||
+    t.includes('list documents') ||
+    t.includes('which agreements') ||
+    t.includes('which documents') ||
+    t.includes('documents exist') ||
+    t.includes('agreements exist')
+  );
+}
+
+function isEcosystemQuestion(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return (
+    t.includes('describe structure') ||
+    t.includes('space structure') ||
+    t.includes('ecosystem') ||
+    t.includes('interconnected') ||
+    t.includes('subspace') ||
+    t.includes('subspaces') ||
+    t.includes('parent space')
+  );
+}
+
 async function buildDeterministicSpaceFallback({
   lastUserText,
   spaceSlug,
+  authToken,
   debugRequestId,
 }: {
   lastUserText: string | null;
   spaceSlug: string | null | undefined;
+  authToken: string;
   debugRequestId: string;
-}): Promise<string | null> {
-  if (!lastUserText || !isSpaceOverviewQuestion(lastUserText)) return null;
+}): Promise<DeterministicFallbackContext | null> {
+  if (!lastUserText) return null;
 
   const safe = spaceSlug ? sanitizeSlug(spaceSlug) : null;
   if (!safe) return null;
 
   try {
+    if (isSpaceOverviewQuestion(lastUserText)) {
+      const result = await getSpaceBySlugTool.execute({ slug: safe });
+      if (!result || typeof result !== 'object') return null;
+
+      const found =
+        'found' in result && typeof result.found === 'boolean'
+          ? result.found
+          : false;
+      if (!found) return null;
+
+      const space =
+        'space' in result &&
+        result.space &&
+        typeof result.space === 'object' &&
+        !Array.isArray(result.space)
+          ? result.space
+          : null;
+      if (!space) return null;
+
+      const title =
+        'title' in space && typeof space.title === 'string'
+          ? space.title
+          : safe;
+      const description =
+        'description' in space && typeof space.description === 'string'
+          ? space.description.trim()
+          : '';
+      const memberCount =
+        'memberCount' in space && typeof space.memberCount === 'number'
+          ? space.memberCount
+          : null;
+      const documentCount =
+        'documentCount' in space && typeof space.documentCount === 'number'
+          ? space.documentCount
+          : null;
+      const subspaceCount =
+        'subspaceCount' in space && typeof space.subspaceCount === 'number'
+          ? space.subspaceCount
+          : null;
+
+      const lines = [`${title}`];
+      if (description) lines.push(description);
+      const statBits = [
+        memberCount != null ? `${memberCount} members` : null,
+        documentCount != null ? `${documentCount} documents` : null,
+        subspaceCount != null ? `${subspaceCount} subspaces` : null,
+      ].filter(Boolean);
+      if (statBits.length > 0)
+        lines.push(`Quick stats: ${statBits.join(', ')}.`);
+
+      lines.push(
+        'I used cached Hypha space data because the external model provider is currently unavailable.',
+      );
+      return { kind: 'space_overview', text: lines.join('\n\n') };
+    }
+
+    if (isDocumentsQuestion(lastUserText)) {
+      const docsTool = createGetDocumentsBySpaceSlugTool(authToken);
+      const docsResult = await docsTool.execute({
+        space_slug: safe,
+        page: 1,
+        page_size: 8,
+      });
+      if (
+        docsResult &&
+        typeof docsResult === 'object' &&
+        'found' in docsResult &&
+        docsResult.found === true &&
+        'documents' in docsResult &&
+        Array.isArray(docsResult.documents)
+      ) {
+        const docs = docsResult.documents as Array<Record<string, unknown>>;
+        const summary: string[] = [];
+        summary.push(`Documents for "${safe}" (${docs.length} shown):`);
+        docs.slice(0, 8).forEach((doc, idx) => {
+          const title =
+            typeof doc.title === 'string' && doc.title.trim()
+              ? doc.title.trim()
+              : '(untitled)';
+          const state =
+            typeof doc.state === 'string' && doc.state.trim()
+              ? doc.state.trim()
+              : 'unknown';
+          const status =
+            typeof doc.status === 'string' && doc.status.trim()
+              ? `, status: ${doc.status.trim()}`
+              : '';
+          summary.push(`${idx + 1}. ${title} (${state}${status})`);
+        });
+        summary.push(
+          'I used deterministic space documents data because the external model provider is currently unavailable.',
+        );
+        return { kind: 'documents', text: summary.join('\n') };
+      }
+    }
+
+    if (isEcosystemQuestion(lastUserText)) {
+      const ecosystemTool = createGetEcosystemBySpaceSlugTool(authToken);
+      const ecosystemResult = await ecosystemTool.execute({
+        space_slug: safe,
+        include_archived: false,
+      });
+      if (
+        ecosystemResult &&
+        typeof ecosystemResult === 'object' &&
+        'found' in ecosystemResult &&
+        ecosystemResult.found === true &&
+        'ecosystem' in ecosystemResult &&
+        ecosystemResult.ecosystem &&
+        typeof ecosystemResult.ecosystem === 'object' &&
+        'spaces' in ecosystemResult &&
+        Array.isArray(ecosystemResult.spaces)
+      ) {
+        const eco = ecosystemResult.ecosystem as Record<string, unknown>;
+        const spaces = ecosystemResult.spaces as Array<Record<string, unknown>>;
+        const rootSlug =
+          'root_space_slug' in ecosystemResult &&
+          typeof ecosystemResult.root_space_slug === 'string'
+            ? ecosystemResult.root_space_slug
+            : safe;
+
+        const top = spaces.slice(0, 8).map((s) => {
+          const title =
+            typeof s.title === 'string' && s.title.trim()
+              ? s.title.trim()
+              : typeof s.slug === 'string'
+              ? s.slug
+              : 'space';
+          const children = Array.isArray(s.child_space_ids)
+            ? s.child_space_ids.length
+            : 0;
+          return `- ${title} (${children} direct subspaces)`;
+        });
+
+        const lines = [
+          `Ecosystem structure for "${safe}"`,
+          `Root: ${rootSlug}`,
+          `Total spaces: ${
+            typeof eco.space_count === 'number'
+              ? eco.space_count
+              : spaces.length
+          }`,
+          ...top,
+          'I used deterministic ecosystem data because the external model provider is currently unavailable.',
+        ];
+        return { kind: 'ecosystem', text: lines.join('\n') };
+      }
+    }
+
     const result = await getSpaceBySlugTool.execute({ slug: safe });
     if (!result || typeof result !== 'object') return null;
 
@@ -167,7 +357,7 @@ async function buildDeterministicSpaceFallback({
     lines.push(
       'I used cached Hypha space data because the external model provider is currently unavailable.',
     );
-    return lines.join('\n\n');
+    return { kind: 'space_overview', text: lines.join('\n\n') };
   } catch (error) {
     console.error('[chat][fallback][space-overview][failed]', {
       debugRequestId,
@@ -183,7 +373,7 @@ async function buildDeterministicSpaceFallback({
  */
 function createOpenRouterAuthRecoveryTransform(
   debugRequestId: string,
-  deterministicFallbackText: string | null,
+  deterministicFallback: DeterministicFallbackContext | null,
 ): StreamTextTransform<ToolSet> {
   return () => {
     const nextTextId = createIdGenerator({ prefix: 't', size: 12 });
@@ -217,7 +407,7 @@ function createOpenRouterAuthRecoveryTransform(
           controller.enqueue({
             type: 'text-delta',
             id,
-            text: deterministicFallbackText ?? OPENROUTER_AUTH_FAILURE_REPLY,
+            text: deterministicFallback?.text ?? OPENROUTER_AUTH_FAILURE_REPLY,
           });
           controller.enqueue({ type: 'text-end', id });
           return;
@@ -372,9 +562,10 @@ export async function createChatStreamResult(
 ): Promise<ReturnType<typeof streamText>> {
   const tools = createChatTools(authToken, requestUrlForSessionMatrix);
   const modelMessages = await convertMessagesSafely(messages, debugRequestId);
-  const deterministicFallbackText = await buildDeterministicSpaceFallback({
+  const deterministicFallback = await buildDeterministicSpaceFallback({
     lastUserText: extractLastUserText(messages),
     spaceSlug,
+    authToken,
     debugRequestId,
   });
 
@@ -476,7 +667,7 @@ export async function createChatStreamResult(
 
     experimental_transform: createOpenRouterAuthRecoveryTransform(
       debugRequestId,
-      deterministicFallbackText,
+      deterministicFallback,
     ),
   });
 }
