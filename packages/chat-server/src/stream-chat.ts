@@ -69,15 +69,17 @@ function extractLastUserText(
 ): string | null {
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i];
+    if (!message) continue;
     const parts = message.parts ?? [];
     for (const part of parts) {
       if (
         part &&
         typeof part === 'object' &&
         part.type === 'text' &&
-        typeof (part as { text?: unknown }).text === 'string'
+        'text' in part &&
+        typeof part.text === 'string'
       ) {
-        const text = (part as { text: string }).text.trim();
+        const text = part.text.trim();
         if (text) return text;
       }
     }
@@ -104,7 +106,6 @@ async function convertMessagesSafely(
     if (lastUserText) {
       return convertToModelMessages([
         {
-          id: 'fallback-user-text',
           role: 'user',
           parts: [{ type: 'text', text: lastUserText }],
         },

@@ -69,7 +69,10 @@ export function createChatTools(
     ),
     fetch_org_memory_asset: safeTool(
       'fetch_org_memory_asset',
-      createFetchOrgMemoryAssetTool(authToken, requestUrlForSessionMatrix),
+      createFetchOrgMemoryAssetTool(
+        authToken,
+        requestUrlForSessionMatrix,
+      ) as unknown as ChatRouteTool,
     ),
     get_documents_by_space_slug: safeTool(
       'get_documents_by_space_slug',

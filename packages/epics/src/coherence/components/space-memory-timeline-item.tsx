@@ -62,7 +62,6 @@ function PdfPreview({
         const pdfJs = await import('pdfjs-dist/legacy/build/pdf.mjs');
         const request: Parameters<typeof pdfJs.getDocument>[0] = {
           url: src,
-          disableWorker: true,
           verbosity: 0,
         };
         const task = pdfJs.getDocument(request);

@@ -129,25 +129,27 @@ function createChatTextOnlyStreamResponse({
 
         if (!accumulatedText.trim()) {
           if (toolOutputs.length > 0) {
-            const latest = toolOutputs[toolOutputs.length - 1];
-            let renderedOutput = '';
-            try {
-              renderedOutput =
-                typeof latest.output === 'string'
-                  ? latest.output
-                  : JSON.stringify(latest.output);
-            } catch {
-              renderedOutput = String(latest.output);
+            const latest = toolOutputs.at(-1);
+            if (latest) {
+              let renderedOutput = '';
+              try {
+                renderedOutput =
+                  typeof latest.output === 'string'
+                    ? latest.output
+                    : JSON.stringify(latest.output);
+              } catch {
+                renderedOutput = String(latest.output);
+              }
+              const toolSummary = renderedOutput.trim()
+                ? `I gathered context via \`${latest.toolName}\`, but no narrative text was produced. Here is the latest result:\n\n${renderedOutput}`
+                : `I gathered context via \`${latest.toolName}\`, but no narrative text was produced. Please retry and I will continue from that result.`;
+              writer.write({
+                type: 'text-delta',
+                id: textPartId,
+                delta: toolSummary,
+              });
+              accumulatedText += toolSummary;
             }
-            const toolSummary = renderedOutput.trim()
-              ? `I gathered context via \`${latest.toolName}\`, but no narrative text was produced. Here is the latest result:\n\n${renderedOutput}`
-              : `I gathered context via \`${latest.toolName}\`, but no narrative text was produced. Please retry and I will continue from that result.`;
-            writer.write({
-              type: 'text-delta',
-              id: textPartId,
-              delta: toolSummary,
-            });
-            accumulatedText += toolSummary;
           }
         }
 
