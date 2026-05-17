@@ -1,5 +1,10 @@
 import { headers } from 'next/headers';
-import { createUIMessageStream, createUIMessageStreamResponse } from 'ai';
+import {
+  createIdGenerator,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  type UIMessage,
+} from 'ai';
 import {
   chatRequestSchema,
   type ChatRequestPayload,
@@ -112,10 +117,13 @@ export async function POST(req: Request) {
   }
 
   // Native UI stream: forwards tool rounds, text/reasoning deltas, and errors per AI SDK v6.
-  // Manual fullStream bridging missed some chunk shapes and produced empty assistant text.
+  // Pass through the client message list + stable IDs so the stream `start` chunk includes
+  // `messageId` (useChat / DefaultChatTransport expect this for assistant message correlation).
   return result.toUIMessageStreamResponse({
     headers: {
       'x-hypha-chat-debug-id': debugRequestId,
     },
+    originalMessages: messages as UIMessage[],
+    generateMessageId: createIdGenerator({ prefix: 'msg', size: 12 }),
   });
 }

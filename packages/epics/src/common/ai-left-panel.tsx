@@ -555,6 +555,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const { messages, sendMessage, stop, status, error, clearError } = useChat({
     transport,
+    onError: (chatError) => {
+      console.error('[AiLeftPanel][useChat]', chatError);
+    },
   });
 
   const isStreaming = status === 'streaming' || status === 'submitted';
@@ -909,7 +912,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             role="alert"
             className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
           >
-            {t('streamError')}
+            <div>{t('streamError')}</div>
+            {error instanceof Error && error.message ? (
+              <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs opacity-90">
+                {error.message}
+              </div>
+            ) : null}
           </div>
         )}
         <AiPanelMessages
