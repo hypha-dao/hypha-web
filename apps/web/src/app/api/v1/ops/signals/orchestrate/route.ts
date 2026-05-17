@@ -43,23 +43,35 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const result = await processSignalOrchestratorBatch(
-    {
-      limit: parsedPayload.data.limit,
-      dryRun: parsedPayload.data.dry_run,
-      requestUrlForSessionMatrix:
-        process.env.HYPHA_MCP_MATRIX_REQUEST_URL?.trim() ||
-        (process.env.VERCEL_URL?.trim()
-          ? `https://${process.env.VERCEL_URL.trim()}`
-          : undefined),
-    },
-    { db },
-  );
+  try {
+    const result = await processSignalOrchestratorBatch(
+      {
+        limit: parsedPayload.data.limit,
+        dryRun: parsedPayload.data.dry_run,
+        requestUrlForSessionMatrix:
+          process.env.HYPHA_MCP_MATRIX_REQUEST_URL?.trim() ||
+          (process.env.VERCEL_URL?.trim()
+            ? `https://${process.env.VERCEL_URL.trim()}`
+            : undefined),
+      },
+      { db },
+    );
 
-  const status =
-    result.results.some((row) => row.status === 'error') ||
-    result.results.some((row) => row.status === 'discarded')
-      ? 207
-      : 200;
-  return NextResponse.json(result, { status });
+    const status =
+      result.results.some((row) => row.status === 'error') ||
+      result.results.some((row) => row.status === 'discarded')
+        ? 207
+        : 200;
+    return NextResponse.json(result, { status });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: 'Failed to orchestrate signals',
+        code: 'SIGNAL_ORCHESTRATE_FAILED',
+        detail: error instanceof Error ? error.message : String(error),
+        context: { limit: parsedPayload.data.limit },
+      },
+      { status: 500 },
+    );
+  }
 }
