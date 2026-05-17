@@ -11,7 +11,7 @@ import { readOpsSecret } from '../../_lib/ops-auth';
 export const maxDuration = 300;
 
 const refreshPayloadSchema = z.object({
-  space_slugs: z.array(z.string().trim().min(1)).optional(),
+  space_slugs: z.array(z.string().trim().min(1)).max(500).optional(),
   limit: z.number().int().min(1).max(500).optional().default(100),
   include_archived: z.boolean().optional().default(false),
   dry_run: z.boolean().optional().default(false),
@@ -75,6 +75,14 @@ export async function POST(request: NextRequest) {
     targetSlugs = Array.from(
       new Set(payload.space_slugs.map((slug) => slug.trim()).filter(Boolean)),
     );
+    if (targetSlugs.length > 500) {
+      return NextResponse.json(
+        {
+          error: 'space_slugs exceeds supported batch size (500)',
+        },
+        { status: 400 },
+      );
+    }
   } else {
     try {
       const rows = await db
