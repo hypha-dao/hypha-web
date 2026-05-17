@@ -56,13 +56,24 @@ export async function POST(
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
-    await enqueueSignalEvaluationFromMemory(
-      {
+    try {
+      await enqueueSignalEvaluationFromMemory(
+        {
+          spaceSlug,
+          triggerKind: 'discussion_summary',
+        },
+        { db },
+      );
+    } catch (enqueueError) {
+      console.error('[discussion-summary] enqueue failed:', {
         spaceSlug,
         triggerKind: 'discussion_summary',
-      },
-      { db },
-    );
+        error:
+          enqueueError instanceof Error
+            ? enqueueError.message
+            : String(enqueueError),
+      });
+    }
     return NextResponse.json(result);
   } catch (error) {
     console.error(
