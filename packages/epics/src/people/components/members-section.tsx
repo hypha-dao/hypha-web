@@ -24,6 +24,33 @@ import {
   subscribeMobilizedAiAgents,
 } from '../../common/ai-agent-competencies';
 
+function tagGroupAccentClass(tagGroup: string): string {
+  switch (tagGroup) {
+    case 'purpose':
+      return 'bg-accent-3 text-accent-12 border-accent-6';
+    case 'governance':
+      return 'bg-info-3 text-info-12 border-info-6';
+    case 'operations':
+      return 'bg-success-3 text-success-12 border-success-6';
+    case 'community':
+      return 'bg-neutral-3 text-neutral-12 border-neutral-6';
+    case 'finance':
+      return 'bg-warning-3 text-warning-12 border-warning-6';
+    case 'product':
+      return 'bg-accent-2 text-accent-11 border-accent-6';
+    case 'risk':
+      return 'bg-error-3 text-error-12 border-error-6';
+    case 'ecosystem':
+      return 'bg-info-2 text-info-11 border-info-6';
+    case 'learning':
+      return 'bg-success-2 text-success-11 border-success-6';
+    case 'reputation':
+      return 'bg-warning-2 text-warning-11 border-warning-6';
+    default:
+      return 'bg-muted text-foreground border-border';
+  }
+}
+
 type MemberSectionProps = {
   basePath: string;
   useMembers: UseMembers;
@@ -174,14 +201,36 @@ export const MembersSection: FC<MemberSectionProps> = ({
                 key={agent.id}
                 className="rounded-xl border border-border bg-background-2 p-4"
               >
-                <div className="mb-1 text-sm font-semibold text-foreground">
-                  {agent.role}
-                </div>
-                <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-                  {agent.tagGroup}
+                <div className="mb-3 flex items-start gap-3">
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${tagGroupAccentClass(
+                      agent.tagGroup,
+                    )}`}
+                    aria-hidden="true"
+                  >
+                    {agent.avatarLabel}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="mb-1 text-sm font-semibold text-foreground">
+                      {agent.role}
+                    </div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {agent.tagGroup}
+                    </div>
+                  </div>
                 </div>
                 <p className="text-sm text-muted-foreground">{agent.focus}</p>
-                <div className="mt-3 text-xs text-muted-foreground">
+                <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                  {agent.roleDefinition.map((line, index) => (
+                    <li
+                      key={`${agent.id}-def-${index}`}
+                      className="leading-relaxed"
+                    >
+                      {index + 1}. {line}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 text-xs text-muted-foreground">
                   Mobilized {agent.mobilizedCount} time
                   {agent.mobilizedCount === 1 ? '' : 's'}
                 </div>
