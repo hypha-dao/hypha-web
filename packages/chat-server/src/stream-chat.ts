@@ -375,11 +375,11 @@ async function buildDeterministicSpaceFallback({
         typeof tokenResult === 'object' &&
         'found' in tokenResult &&
         tokenResult.found === true &&
-        'holdings' in tokenResult &&
-        Array.isArray(tokenResult.holdings)
+        'tokens' in tokenResult &&
+        Array.isArray(tokenResult.tokens)
       ) {
-        const holdings = tokenResult.holdings as Array<Record<string, unknown>>;
-        if (holdings.length === 0) {
+        const tokens = tokenResult.tokens as Array<Record<string, unknown>>;
+        if (tokens.length === 0) {
           return {
             kind: 'tokens',
             text: `No token holdings were found for "${safe}" in the current space snapshot.`,
@@ -387,9 +387,9 @@ async function buildDeterministicSpaceFallback({
         }
 
         const lines = [
-          `Token holdings for "${safe}" (${holdings.length} tokens):`,
+          `Token holdings for "${safe}" (${tokens.length} tokens):`,
         ];
-        holdings.slice(0, 8).forEach((h, idx) => {
+        tokens.slice(0, 8).forEach((h, idx) => {
           const symbol =
             typeof h.symbol === 'string' && h.symbol.trim()
               ? h.symbol.trim()
@@ -397,14 +397,14 @@ async function buildDeterministicSpaceFallback({
               ? String(h.token_symbol)
               : 'TOKEN';
           const treasuryPct =
-            typeof h.treasury_percentage === 'number'
-              ? `${h.treasury_percentage.toFixed(2)}% treasury`
+            typeof h.treasury_balance === 'string' && h.treasury_balance.trim()
+              ? `treasury: ${h.treasury_balance.trim()}`
               : null;
-          const holderCount =
-            typeof h.holder_count === 'number'
-              ? `${h.holder_count} holders`
+          const totalSupply =
+            typeof h.total_supply === 'string' && h.total_supply.trim()
+              ? `supply: ${h.total_supply.trim()}`
               : null;
-          const bits = [treasuryPct, holderCount].filter(Boolean).join(', ');
+          const bits = [treasuryPct, totalSupply].filter(Boolean).join(', ');
           lines.push(`${idx + 1}. ${symbol}${bits ? ` (${bits})` : ''}`);
         });
         lines.push(
