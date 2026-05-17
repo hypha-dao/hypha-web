@@ -254,8 +254,21 @@ async function fetchRoomDiscussionMessages(
       break;
     }
     if (!res.ok) break;
-    const body = (await res.json()) as MatrixChunkResponse;
-    const chunk = body.chunk ?? [];
+    let body: MatrixChunkResponse;
+    try {
+      const parsed = await res.json();
+      if (!parsed || typeof parsed !== 'object') {
+        console.warn(
+          '[call-artifacts] Matrix returned malformed payload shape',
+        );
+        break;
+      }
+      body = parsed as MatrixChunkResponse;
+    } catch {
+      console.warn('[call-artifacts] Matrix returned non-JSON response');
+      break;
+    }
+    const chunk = Array.isArray(body.chunk) ? body.chunk : [];
     for (const ev of chunk) {
       if (ev.sender) senders.add(ev.sender);
       const text = extractPlainMessageText(ev.content);
