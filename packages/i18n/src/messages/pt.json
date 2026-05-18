@@ -1191,7 +1191,10 @@
         "selectMember": "Selecione um membro",
         "selectSpace": "Selecione um espaço"
       }
-    }
+    },
+    "aiAgents": "AI Agents",
+    "aiAgentsEmptyState": "No AI agents mobilized yet. Ask strategic questions to activate them.",
+    "aiAgentsMobilizedCount": "Mobilized {count, plural, one {# time} other {# times}}"
   },
   "TreasuryTab": {
     "balance": "Equilíbrio",

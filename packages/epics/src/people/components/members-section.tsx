@@ -144,7 +144,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
             </TabsTrigger>
             <TabsTrigger value="ai" variant="switch">
               <span className="inline-flex items-center gap-1">
-                <span>AI Agents</span>
+                <span>{tMembers('aiAgents')}</span>
                 <span className="text-xs text-muted-foreground">
                   ({Intl.NumberFormat().format(aiAgentCount)})
                 </span>
@@ -190,10 +190,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
       {entityFilter === 'ai' ? (
         aiAgents.length === 0 ? (
           <Empty>
-            <p>
-              No AI agents mobilized yet. Ask strategic questions to activate
-              them.
-            </p>
+            <p>{tMembers('aiAgentsEmptyState')}</p>
           </Empty>
         ) : (
           <div className="member-list grid w-full grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
@@ -234,8 +231,9 @@ export const MembersSection: FC<MemberSectionProps> = ({
                   ))}
                 </ul>
                 <div className="mt-4 text-xs text-muted-foreground">
-                  Mobilized {agent.mobilizedCount} time
-                  {agent.mobilizedCount === 1 ? '' : 's'}
+                  {tMembers('aiAgentsMobilizedCount', {
+                    count: agent.mobilizedCount,
+                  })}
                 </div>
               </div>
             ))}
