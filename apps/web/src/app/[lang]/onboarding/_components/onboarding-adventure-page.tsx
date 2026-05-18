@@ -59,6 +59,8 @@ const getNetworkPath = (lang: string) => `/${lang}/network`;
 const getCreateSpacePath = (lang: string) => `/${lang}/my-spaces/create`;
 const onboardingCardClass =
   'group h-full rounded-[1.5rem] border border-border/65 bg-background/75 shadow-[0_16px_48px_-34px_rgba(0,0,0,0.65)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-8/35 hover:shadow-[0_20px_56px_-34px_rgba(0,0,0,0.75)]';
+const primaryCtaClass =
+  'h-10 w-full rounded-xl border border-accent-8/45 bg-gradient-to-r from-accent-9 to-accent-10 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] transition-all hover:brightness-105 hover:shadow-[0_12px_28px_-14px_oklch(0.62_0.19_278)]';
 const exchangeButtonBaseClass =
   'inline-flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const EXCHANGE_LINKS = [
@@ -204,7 +206,7 @@ function SelectorCard({
 
         <Button
           type="button"
-          className="h-10 w-full rounded-xl bg-accent-9 text-accent-contrast shadow-[0_8px_22px_-14px_oklch(0.62_0.19_278)] hover:bg-accent-10"
+          className={primaryCtaClass}
           onClick={onAction}
           disabled={disabled || !value}
         >
@@ -519,8 +521,8 @@ export function OnboardingAdventurePage({
   };
 
   return (
-    <Container className="flex flex-col gap-12 py-8 md:py-10">
-      <header className="space-y-2 text-center">
+    <Container className="flex flex-col gap-14 py-10 md:py-12">
+      <header className="space-y-3 pt-3 text-center md:pt-4">
         <Heading
           size="9"
           color="secondary"
@@ -532,7 +534,9 @@ export function OnboardingAdventurePage({
             {t('title')}
           </span>
         </Heading>
-        <p className="text-2 text-muted-foreground/90">{t('subtitle')}</p>
+        <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-accent-11 shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
+          {t('subtitle')}
+        </p>
       </header>
 
       {onboardingHeroEnabled ? (
@@ -712,7 +716,7 @@ export function OnboardingAdventurePage({
                     !aiChatEnabled ||
                     isStartingAi
                   }
-                  className="h-8 w-8 rounded-full bg-accent-9 p-0 text-accent-contrast shadow-[0_6px_24px_-10px_oklch(0.62_0.19_278)] hover:bg-accent-10"
+                  className="h-8 w-8 rounded-full border border-accent-8/45 bg-gradient-to-r from-accent-9 to-accent-10 p-0 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] transition-all hover:brightness-105"
                   aria-label={
                     isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
                   }
@@ -777,7 +781,7 @@ export function OnboardingAdventurePage({
         </section>
       ) : null}
 
-      <section className="mt-2 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <section className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className={onboardingCardClass}>
           <CardHeader className="space-y-2">
             <CardTitle className="flex items-center gap-2 text-5">
@@ -791,7 +795,7 @@ export function OnboardingAdventurePage({
           <CardContent className="pt-1">
             <Button
               type="button"
-              className="h-10 w-full rounded-xl bg-accent-9 text-accent-contrast shadow-[0_8px_22px_-14px_oklch(0.62_0.19_278)] hover:bg-accent-10"
+              className={primaryCtaClass}
               onClick={() => router.push(getNetworkPath(locale))}
             >
               {t('explore.cta')}
@@ -812,7 +816,7 @@ export function OnboardingAdventurePage({
           <CardContent className="pt-1">
             <Button
               type="button"
-              className="h-10 w-full rounded-xl bg-accent-9 text-accent-contrast shadow-[0_8px_22px_-14px_oklch(0.62_0.19_278)] hover:bg-accent-10"
+              className={primaryCtaClass}
               onClick={() => router.push(getCreateSpacePath(locale))}
             >
               {t('create.cta')}
