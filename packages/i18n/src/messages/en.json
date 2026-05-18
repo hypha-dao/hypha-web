@@ -105,6 +105,11 @@
       "placeholder": "Describe your community, mission, desired space structure, and governance preferences...",
       "cta": "Start with AI",
       "starting": "Starting...",
+      "openingAi": "Opening AI panel...",
+      "sending": "Sending your prompt to AI...",
+      "handoffFailed": "Could not start AI conversation. Please try again.",
+      "handoffTimeout": "AI handoff is taking longer than expected. Please try again.",
+      "sendFailed": "Prompt could not be sent to AI. Please retry.",
       "helper": "AI will propose each action and ask for confirmation before creating or updating anything.",
       "unavailable": "AI onboarding is temporarily unavailable on this deployment.",
       "ariaLabel": "AI onboarding prompt"

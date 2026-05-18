@@ -612,6 +612,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       const context = detail?.context;
       if (!prompt || !context || context.mode !== ONBOARDING_SETUP_MODE) return;
 
+      dispatchAiOnboardingSeedAck({ stage: 'received' });
       setOnboardingContext(context);
       setInput(prompt);
       pendingSeedPromptRef.current = prompt;
@@ -629,7 +630,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   useEffect(() => {
     if (pendingSeedPromptRef.current == null) return;
-    if (!isAiOpen) return;
     if (isStreaming) return;
     if (!pendingSeedPromptRef.current.trim()) {
       pendingSeedPromptRef.current = null;
@@ -641,6 +641,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
     void (async () => {
       try {
+        dispatchAiOnboardingSeedAck({ stage: 'sending' });
         clearError();
         const options = await buildMessageOptions();
         await sendMessage(
@@ -648,17 +649,18 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           options,
         );
         setInput('');
-        dispatchAiOnboardingSeedAck({ ok: true });
+        dispatchAiOnboardingSeedAck({ ok: true, stage: 'sent' });
       } catch (seedError) {
         console.error('[AiLeftPanel] onboarding seed send failed:', seedError);
         setInput(seededPrompt);
         dispatchAiOnboardingSeedAck({
           ok: false,
+          stage: 'error',
           reason: 'send_failed',
         });
       }
     })();
-  }, [buildMessageOptions, clearError, isAiOpen, isStreaming, sendMessage]);
+  }, [buildMessageOptions, clearError, isStreaming, sendMessage]);
 
   useEffect(() => {
     if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;

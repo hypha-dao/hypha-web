@@ -105,6 +105,11 @@
       "placeholder": "Décrivez votre communauté, votre mission, la structure d’espaces souhaitée et vos préférences de gouvernance...",
       "cta": "Commencer avec l’AI",
       "starting": "Démarrage...",
+      "openingAi": "Ouverture du panneau AI...",
+      "sending": "Envoi de votre prompt à l’AI...",
+      "handoffFailed": "Impossible de démarrer la conversation AI. Veuillez réessayer.",
+      "handoffTimeout": "Le transfert AI prend plus de temps que prévu. Veuillez réessayer.",
+      "sendFailed": "Le prompt n’a pas pu être envoyé à l’AI. Veuillez réessayer.",
       "helper": "L’AI proposera chaque action et demandera une confirmation avant toute création ou modification.",
       "unavailable": "L’onboarding AI est temporairement indisponible sur ce déploiement.",
       "ariaLabel": "Invite d’onboarding AI"

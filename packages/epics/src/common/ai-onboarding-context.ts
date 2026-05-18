@@ -44,7 +44,8 @@ type SeedEventDetail = {
   context: OnboardingConversationContext;
 };
 type SeedAckEventDetail = {
-  ok: boolean;
+  ok?: boolean;
+  stage?: 'received' | 'sending' | 'sent' | 'error';
   reason?: string;
 };
 

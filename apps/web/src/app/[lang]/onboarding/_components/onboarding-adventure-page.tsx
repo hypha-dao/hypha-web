@@ -19,9 +19,11 @@ import { copyToClipboard } from '@hypha-platform/ui-utils';
 import {
   ArrowUp,
   AlertTriangle,
+  CheckCircle2,
   Compass,
   Copy,
   Handshake,
+  Loader2,
   Mic,
   PlusCircle,
   Square,
@@ -221,6 +223,11 @@ export function OnboardingAdventurePage({
   const [isDictating, setIsDictating] = useState(false);
   const [dictationError, setDictationError] = useState<string | null>(null);
   const [isStartingAi, setIsStartingAi] = useState(false);
+  const [aiStartStatus, setAiStartStatus] = useState<
+    'idle' | 'opening' | 'sending' | 'failed'
+  >('idle');
+  const [aiStartError, setAiStartError] = useState<string | null>(null);
+  const aiStartTimeoutRef = useRef<number | null>(null);
 
   const [joinSpaceSlug, setJoinSpaceSlug] = useState('');
   const [joinQuery, setJoinQuery] = useState('');
@@ -270,6 +277,9 @@ export function OnboardingAdventurePage({
     () => () => {
       if (copyTimeoutRef.current !== null) {
         window.clearTimeout(copyTimeoutRef.current);
+      }
+      if (aiStartTimeoutRef.current !== null) {
+        window.clearTimeout(aiStartTimeoutRef.current);
       }
     },
     [],
@@ -416,6 +426,16 @@ export function OnboardingAdventurePage({
     saveOnboardingConversationContext(context);
     dispatchAiOnboardingSeed({ prompt, context });
     setIsStartingAi(true);
+    setAiStartStatus('opening');
+    setAiStartError(null);
+    if (aiStartTimeoutRef.current !== null) {
+      window.clearTimeout(aiStartTimeoutRef.current);
+    }
+    aiStartTimeoutRef.current = window.setTimeout(() => {
+      setIsStartingAi(false);
+      setAiStartStatus('failed');
+      setAiStartError(t('aiHero.handoffTimeout'));
+    }, 12000);
     openAiPanel();
     setAiOverlayVisible(false);
   };
@@ -423,11 +443,41 @@ export function OnboardingAdventurePage({
   useEffect(() => {
     const onSeedAck = (event: Event) => {
       if (!(event instanceof CustomEvent)) return;
-      const detail = event.detail as { ok?: boolean } | undefined;
-      setIsStartingAi(false);
-      if (detail?.ok) {
-        setAiPrompt('');
+      const detail = event.detail as
+        | {
+            ok?: boolean;
+            stage?: 'received' | 'sending' | 'sent' | 'error';
+            reason?: string;
+          }
+        | undefined;
+      if (detail?.stage === 'received') {
+        setAiStartStatus('opening');
+        setAiStartError(null);
+        return;
       }
+      if (detail?.stage === 'sending') {
+        setAiStartStatus('sending');
+        setAiStartError(null);
+        return;
+      }
+      if (aiStartTimeoutRef.current !== null) {
+        window.clearTimeout(aiStartTimeoutRef.current);
+        aiStartTimeoutRef.current = null;
+      }
+      if (detail?.ok) {
+        setIsStartingAi(false);
+        setAiStartStatus('idle');
+        setAiStartError(null);
+        setAiPrompt('');
+        return;
+      }
+      setIsStartingAi(false);
+      setAiStartStatus('failed');
+      setAiStartError(
+        detail?.reason === 'send_failed'
+          ? t('aiHero.sendFailed')
+          : t('aiHero.handoffFailed'),
+      );
     };
     window.addEventListener(
       AI_ONBOARDING_SEED_ACK_EVENT,
@@ -442,45 +492,57 @@ export function OnboardingAdventurePage({
   }, []);
 
   return (
-    <Container className="flex flex-col gap-9 py-9">
-      <header className="space-y-4">
+    <Container className="flex flex-col gap-10 py-8 md:py-10">
+      <header className="space-y-3 text-center">
+        <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/50 bg-accent-3/40 px-3 py-1 text-1 font-medium text-accent-11">
+          {t('subtitle')}
+        </p>
         <Heading
           size="9"
           color="secondary"
           weight="medium"
           align="center"
-          className="flex flex-col"
+          className="mx-auto max-w-4xl"
         >
-          <span>{t('title')}</span>
-          <span>{t('subtitle')}</span>
+          <span className="bg-gradient-to-r from-foreground via-accent-11 to-foreground bg-clip-text text-transparent">
+            {t('title')}
+          </span>
         </Heading>
       </header>
 
       {onboardingHeroEnabled ? (
-        <section className="mx-auto w-full max-w-5xl space-y-3">
-          <div className="space-y-1 text-center">
-            <h2 className="text-7 font-semibold tracking-tight text-foreground">
-              {t('aiHero.title')}
-            </h2>
-            <p className="mx-auto max-w-3xl text-2 text-muted-foreground">
-              {t('aiHero.description')}
-            </p>
-          </div>
-          <div className="rounded-[2rem] border border-border/70 bg-card/90 p-3 shadow-sm backdrop-blur">
+        <section className="relative mx-auto w-full max-w-6xl">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-8 -top-8 h-48 rounded-full bg-[radial-gradient(ellipse_at_center,oklch(0.63_0.19_300_/_0.34),transparent_72%)] blur-2xl"
+          />
+          <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-background/80 p-4 shadow-[0_18px_80px_-36px_rgba(0,0,0,0.75)] backdrop-blur-sm md:p-6">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,oklch(0.72_0.13_278_/_0.18),transparent_42%),radial-gradient(circle_at_85%_18%,oklch(0.75_0.12_330_/_0.15),transparent_35%)]"
+            />
+            <div className="relative space-y-3 text-center">
+              <h2 className="text-7 font-semibold tracking-tight text-foreground md:text-8">
+                {t('aiHero.title')}
+              </h2>
+              <p className="mx-auto max-w-3xl text-2 text-muted-foreground md:text-3">
+                {t('aiHero.description')}
+              </p>
+            </div>
             <textarea
               value={aiPrompt}
               onChange={(event) => setAiPrompt(event.target.value)}
               placeholder={t('aiHero.placeholder')}
               aria-label={t('aiHero.ariaLabel')}
               rows={4}
-              className="min-h-[152px] w-full resize-y bg-transparent px-4 py-3 text-3 text-foreground outline-none placeholder:text-muted-foreground"
+              className="relative mt-5 min-h-[182px] w-full resize-y rounded-[1.5rem] border border-border/65 bg-background/70 px-5 py-4 text-3 text-foreground shadow-inner outline-none transition-colors placeholder:text-muted-foreground focus:border-accent-8/65 md:min-h-[210px]"
             />
-            <div className="flex items-center justify-between gap-3 px-2 pb-1 pt-2">
+            <div className="relative mt-3 flex items-center justify-between gap-3 px-2 pb-1">
               <button
                 type="button"
                 onClick={toggleDictation}
                 disabled={!aiChatEnabled}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-border/80 bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-border/80 bg-background text-muted-foreground transition-all hover:border-accent-8/50 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label={
                   isDictating
                     ? tHuman('composerStopDictation')
@@ -502,15 +564,57 @@ export function OnboardingAdventurePage({
                 type="button"
                 onClick={handleStartAiOnboarding}
                 disabled={!aiPrompt.trim() || !aiChatEnabled || isStartingAi}
-                className="min-h-11 rounded-full px-5"
+                className="min-h-11 rounded-full bg-accent-9 px-6 text-accent-contrast shadow-[0_6px_24px_-10px_oklch(0.62_0.19_278)] hover:bg-accent-10"
               >
                 <span className="inline-flex items-center gap-2">
                   {isStartingAi ? t('aiHero.starting') : t('aiHero.cta')}
-                  <ArrowUp className="size-4" aria-hidden />
+                  {isStartingAi ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                  ) : (
+                    <ArrowUp className="size-4" aria-hidden />
+                  )}
                 </span>
               </Button>
             </div>
           </div>
+          {isStartingAi || aiStartStatus === 'failed' ? (
+            <div
+              className="mt-2 flex items-center justify-center gap-2 text-1"
+              role={aiStartStatus === 'failed' ? 'alert' : 'status'}
+            >
+              {aiStartStatus === 'failed' ? (
+                <>
+                  <AlertTriangle
+                    className="size-3.5 text-warning-10"
+                    aria-hidden
+                  />
+                  <span className="text-warning-11">
+                    {aiStartError ?? t('aiHero.handoffFailed')}
+                  </span>
+                </>
+              ) : aiStartStatus === 'sending' ? (
+                <>
+                  <Loader2
+                    className="size-3.5 animate-spin text-accent-11"
+                    aria-hidden
+                  />
+                  <span className="text-muted-foreground">
+                    {t('aiHero.sending')}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2
+                    className="size-3.5 text-accent-11"
+                    aria-hidden
+                  />
+                  <span className="text-muted-foreground">
+                    {t('aiHero.openingAi')}
+                  </span>
+                </>
+              )}
+            </div>
+          ) : null}
           {dictationError ? (
             <p role="alert" className="text-center text-1 text-destructive">
               {dictationError}
@@ -521,7 +625,7 @@ export function OnboardingAdventurePage({
               {t('aiHero.unavailable')}
             </p>
           ) : null}
-          <p className="text-center text-1 text-muted-foreground">
+          <p className="text-center text-1 text-muted-foreground/90">
             {t('aiHero.helper')}
           </p>
         </section>
