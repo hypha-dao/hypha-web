@@ -109,7 +109,7 @@ export const ButtonProfile = ({
               'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
               'shadow-sm transition-colors duration-150',
               'hover:text-foreground',
-              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              'focus-visible:ring-1 focus-visible:ring-ring/40',
             )}
             aria-label={t('openProfileMenu')}
             aria-haspopup="dialog"
@@ -442,7 +442,7 @@ export const ButtonProfile = ({
                     'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
                     'shadow-sm transition-colors duration-150',
                     'hover:text-foreground',
-                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                    'focus-visible:ring-1 focus-visible:ring-ring/40',
                     'data-[state=open]:shadow-md',
                   )}
                   aria-label={t('openProfileMenu')}
