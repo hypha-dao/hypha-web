@@ -50,6 +50,43 @@ type MarkdownBlock =
   | { type: 'ul'; items: string[] }
   | { type: 'ol'; items: string[] };
 
+function parseHeadingLine(
+  line: string,
+): { level: 1 | 2 | 3 | 4; text: string } | null {
+  let idx = 0;
+  while (idx < line.length && line[idx] === '#') idx += 1;
+  if (idx === 0 || idx > 4) return null;
+  if (line[idx] !== ' ') return null;
+  const text = line.slice(idx + 1).trim();
+  if (!text) return null;
+  return { level: idx as 1 | 2 | 3 | 4, text };
+}
+
+function parseUnorderedListItem(line: string): string | null {
+  if (line.length < 3) return null;
+  const bullet = line[0];
+  if (bullet !== '-' && bullet !== '*') return null;
+  if (line[1] !== ' ') return null;
+  const text = line.slice(2).trim();
+  return text || null;
+}
+
+function parseOrderedListItem(line: string): string | null {
+  if (line.length < 4) return null;
+  let idx = 0;
+  while (idx < line.length) {
+    const ch = line.charAt(idx);
+    if (ch < '0' || ch > '9') break;
+    idx += 1;
+  }
+  if (idx === 0 || idx >= line.length) return null;
+  const marker = line.charAt(idx);
+  if (marker !== '.' && marker !== ')') return null;
+  if (line.charAt(idx + 1) !== ' ') return null;
+  const text = line.slice(idx + 2).trim();
+  return text || null;
+}
+
 function renderInlineMarkdown(text: string): React.ReactNode {
   const nodes: React.ReactNode[] = [];
   const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
@@ -103,18 +140,12 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
       continue;
     }
 
-    const headingMatch = current.match(/^(#{1,4})\s+(.+)$/);
-    if (headingMatch) {
-      const headingHashes = headingMatch[1];
-      const headingText = headingMatch[2];
-      if (!headingHashes || !headingText) {
-        i += 1;
-        continue;
-      }
+    const heading = parseHeadingLine(current);
+    if (heading) {
       blocks.push({
         type: 'heading',
-        level: headingHashes.length as 1 | 2 | 3 | 4,
-        text: headingText.trim(),
+        level: heading.level,
+        text: heading.text,
       });
       i += 1;
       continue;
@@ -123,11 +154,9 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
     const ulItems: string[] = [];
     while (i < lines.length) {
       const line = lines[i]?.trim() ?? '';
-      const m = line.match(/^[-*]\s+(.+)$/);
-      if (!m) break;
-      const item = m[1];
+      const item = parseUnorderedListItem(line);
       if (!item) break;
-      ulItems.push(item.trim());
+      ulItems.push(item);
       i += 1;
     }
     if (ulItems.length > 0) {
@@ -138,11 +167,9 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
     const olItems: string[] = [];
     while (i < lines.length) {
       const line = lines[i]?.trim() ?? '';
-      const m = line.match(/^\d+[.)]\s+(.+)$/);
-      if (!m) break;
-      const item = m[1];
+      const item = parseOrderedListItem(line);
       if (!item) break;
-      olItems.push(item.trim());
+      olItems.push(item);
       i += 1;
     }
     if (olItems.length > 0) {
@@ -155,9 +182,9 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
       const line = lines[i]?.trim() ?? '';
       if (!line) break;
       if (
-        /^(#{1,4})\s+/.test(line) ||
-        /^[-*]\s+/.test(line) ||
-        /^\d+[.)]\s+/.test(line)
+        parseHeadingLine(line) ||
+        parseUnorderedListItem(line) ||
+        parseOrderedListItem(line)
       ) {
         break;
       }
