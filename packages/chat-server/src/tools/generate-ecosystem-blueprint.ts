@@ -9,6 +9,7 @@ const inputSchema = z.object({
   include_governance_space: z.boolean().optional().default(true),
   custom_functional_domains: z
     .array(z.string().trim().min(2))
+    .max(20)
     .optional()
     .default([]),
 });
