@@ -317,13 +317,31 @@ export function readMobilizedAiAgents(
       )
       .map((item) => {
         const catalog = catalogById.get(item.id);
-        if (!catalog) return item;
+        if (!catalog) {
+          return {
+            id: item.id,
+            role: item.role,
+            focus: item.focus,
+            tagGroup: item.tagGroup,
+            avatarLabel:
+              typeof item.avatarLabel === 'string' ? item.avatarLabel : '',
+            roleDefinition: Array.isArray(item.roleDefinition)
+              ? item.roleDefinition.filter(
+                  (entry): entry is string => typeof entry === 'string',
+                )
+              : [],
+            mobilizedCount: item.mobilizedCount,
+            lastMobilizedAt: item.lastMobilizedAt,
+          };
+        }
         return {
           ...catalog,
           ...item,
           role: catalog.role,
           focus: catalog.focus,
           tagGroup: catalog.tagGroup,
+          avatarLabel: catalog.avatarLabel,
+          roleDefinition: catalog.roleDefinition,
         };
       });
   } catch {
