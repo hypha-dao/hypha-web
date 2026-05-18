@@ -794,6 +794,7 @@
       "description": "Diga ao Hypha AI o que você quer construir e ele vai guiar a configuração passo a passo.",
       "placeholder": "Descreva sua comunidade, missão, estrutura de espaços desejada e preferências de governança...",
       "cta": "Começar com AI",
+      "starting": "Iniciando...",
       "helper": "A AI vai propor cada ação e pedir confirmação antes de criar ou atualizar qualquer coisa.",
       "unavailable": "O onboarding com AI está temporariamente indisponível nesta implantação.",
       "ariaLabel": "Prompt de onboarding com AI"

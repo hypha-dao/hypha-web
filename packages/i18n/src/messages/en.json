@@ -104,6 +104,7 @@
       "description": "Tell Hypha AI what you want to build, and it will guide setup step by step.",
       "placeholder": "Describe your community, mission, desired space structure, and governance preferences...",
       "cta": "Start with AI",
+      "starting": "Starting...",
       "helper": "AI will propose each action and ask for confirmation before creating or updating anything.",
       "unavailable": "AI onboarding is temporarily unavailable on this deployment.",
       "ariaLabel": "AI onboarding prompt"

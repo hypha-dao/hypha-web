@@ -22,10 +22,12 @@ export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';
 export { AiLeftPanelLayout } from './ai-left-panel-layout';
 export {
+  AI_ONBOARDING_SEED_ACK_EVENT,
   AI_ONBOARDING_SEED_EVENT,
   ONBOARDING_SETUP_MODE,
   clearOnboardingConversationContext,
   dispatchAiOnboardingSeed,
+  dispatchAiOnboardingSeedAck,
   readOnboardingConversationContext,
   saveOnboardingConversationContext,
 } from './ai-onboarding-context';

@@ -2,6 +2,7 @@
 
 export const ONBOARDING_SETUP_MODE = 'onboarding_setup' as const;
 export const AI_ONBOARDING_SEED_EVENT = 'hypha:ai-onboarding-seed';
+export const AI_ONBOARDING_SEED_ACK_EVENT = 'hypha:ai-onboarding-seed-ack';
 
 export type OnboardingConversationContext = {
   mode: typeof ONBOARDING_SETUP_MODE;
@@ -41,6 +42,10 @@ export type OnboardingConversationContext = {
 type SeedEventDetail = {
   prompt: string;
   context: OnboardingConversationContext;
+};
+type SeedAckEventDetail = {
+  ok: boolean;
+  reason?: string;
 };
 
 const ONBOARDING_CONTEXT_STORAGE_KEY = 'hypha:ai-onboarding-context:v1';
@@ -107,6 +112,15 @@ export function dispatchAiOnboardingSeed(detail: SeedEventDetail): void {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(
     new CustomEvent<SeedEventDetail>(AI_ONBOARDING_SEED_EVENT, {
+      detail,
+    }),
+  );
+}
+
+export function dispatchAiOnboardingSeedAck(detail: SeedAckEventDetail): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent<SeedAckEventDetail>(AI_ONBOARDING_SEED_ACK_EVENT, {
       detail,
     }),
   );

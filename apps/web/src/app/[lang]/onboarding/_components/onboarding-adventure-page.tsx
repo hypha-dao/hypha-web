@@ -30,6 +30,7 @@ import {
 import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space } from '@hypha-platform/core/client';
 import {
+  AI_ONBOARDING_SEED_ACK_EVENT,
   ONBOARDING_SETUP_MODE,
   dispatchAiOnboardingSeed,
   saveOnboardingConversationContext,
@@ -219,6 +220,7 @@ export function OnboardingAdventurePage({
   const dictationSessionFinalizedRef = useRef(false);
   const [isDictating, setIsDictating] = useState(false);
   const [dictationError, setDictationError] = useState<string | null>(null);
+  const [isStartingAi, setIsStartingAi] = useState(false);
 
   const [joinSpaceSlug, setJoinSpaceSlug] = useState('');
   const [joinQuery, setJoinQuery] = useState('');
@@ -413,10 +415,31 @@ export function OnboardingAdventurePage({
     };
     saveOnboardingConversationContext(context);
     dispatchAiOnboardingSeed({ prompt, context });
+    setIsStartingAi(true);
     openAiPanel();
     setAiOverlayVisible(false);
-    setAiPrompt('');
   };
+
+  useEffect(() => {
+    const onSeedAck = (event: Event) => {
+      if (!(event instanceof CustomEvent)) return;
+      const detail = event.detail as { ok?: boolean } | undefined;
+      setIsStartingAi(false);
+      if (detail?.ok) {
+        setAiPrompt('');
+      }
+    };
+    window.addEventListener(
+      AI_ONBOARDING_SEED_ACK_EVENT,
+      onSeedAck as EventListener,
+    );
+    return () => {
+      window.removeEventListener(
+        AI_ONBOARDING_SEED_ACK_EVENT,
+        onSeedAck as EventListener,
+      );
+    };
+  }, []);
 
   return (
     <Container className="flex flex-col gap-9 py-9">
@@ -478,11 +501,11 @@ export function OnboardingAdventurePage({
               <Button
                 type="button"
                 onClick={handleStartAiOnboarding}
-                disabled={!aiPrompt.trim() || !aiChatEnabled}
+                disabled={!aiPrompt.trim() || !aiChatEnabled || isStartingAi}
                 className="min-h-11 rounded-full px-5"
               >
                 <span className="inline-flex items-center gap-2">
-                  {t('aiHero.cta')}
+                  {isStartingAi ? t('aiHero.starting') : t('aiHero.cta')}
                   <ArrowUp className="size-4" aria-hidden />
                 </span>
               </Button>

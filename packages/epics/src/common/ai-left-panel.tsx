@@ -11,7 +11,7 @@ import {
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
@@ -74,6 +74,7 @@ import { recordMobilizedAiAgentsForQuestion } from './ai-agent-competencies';
 import {
   AI_ONBOARDING_SEED_EVENT,
   ONBOARDING_SETUP_MODE,
+  dispatchAiOnboardingSeedAck,
   readOnboardingConversationContext,
   saveOnboardingConversationContext,
   type OnboardingConversationContext,
@@ -157,6 +158,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tSelectNavigation = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
   const tSpaces = useTranslations('Spaces');
+  const router = useRouter();
   const { resolvedTheme } = useTheme();
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const isCompactHeader = useCompactHeaderMode();
@@ -193,6 +195,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const [onboardingContext, setOnboardingContext] = useState<
     OnboardingConversationContext | undefined
   >(() => readOnboardingConversationContext());
+  const pendingSeedPromptRef = useRef<string | null>(null);
+  const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
   const recentSpaceLookupSlugs = useMemo(
     () =>
       recentSpaceSlugs
@@ -610,6 +614,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
       setOnboardingContext(context);
       setInput(prompt);
+      pendingSeedPromptRef.current = prompt;
       openAiPanel();
       setAiOverlayVisible(false);
     };
@@ -621,6 +626,90 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       );
     };
   }, [openAiPanel, setAiOverlayVisible]);
+
+  useEffect(() => {
+    if (pendingSeedPromptRef.current == null) return;
+    if (!isAiOpen) return;
+    if (isStreaming) return;
+    if (!pendingSeedPromptRef.current.trim()) {
+      pendingSeedPromptRef.current = null;
+      return;
+    }
+
+    const seededPrompt = pendingSeedPromptRef.current;
+    pendingSeedPromptRef.current = null;
+
+    void (async () => {
+      try {
+        clearError();
+        const options = await buildMessageOptions();
+        await sendMessage(
+          { role: 'user', parts: [{ type: 'text', text: seededPrompt }] },
+          options,
+        );
+        setInput('');
+        dispatchAiOnboardingSeedAck({ ok: true });
+      } catch (seedError) {
+        console.error('[AiLeftPanel] onboarding seed send failed:', seedError);
+        setInput(seededPrompt);
+        dispatchAiOnboardingSeedAck({
+          ok: false,
+          reason: 'send_failed',
+        });
+      }
+    })();
+  }, [buildMessageOptions, clearError, isAiOpen, isStreaming, sendMessage]);
+
+  useEffect(() => {
+    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
+    if (!pathname.includes('/onboarding')) return;
+
+    const latestCreatedSpaceSlug = [...messages]
+      .reverse()
+      .flatMap((message) => message.parts ?? [])
+      .find((part) => {
+        if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) {
+          return false;
+        }
+        const toolPart = part as {
+          state?: string;
+          output?: { ok?: boolean; space?: { slug?: string } };
+        };
+        return (
+          toolPart.state === 'output-available' &&
+          toolPart.output?.ok === true &&
+          typeof toolPart.output?.space?.slug === 'string' &&
+          toolPart.output.space.slug.length > 0
+        );
+      }) as
+      | {
+          output?: { space?: { slug?: string } };
+        }
+      | undefined;
+
+    const createdSlug = latestCreatedSpaceSlug?.output?.space?.slug?.trim();
+    if (!createdSlug) return;
+    if (lastAutoTransitionSpaceSlugRef.current === createdSlug) return;
+    lastAutoTransitionSpaceSlugRef.current = createdSlug;
+
+    const nextContext: OnboardingConversationContext = {
+      ...onboardingContext,
+      setupPhase: 'verify',
+    };
+    setOnboardingContext(nextContext);
+    saveOnboardingConversationContext(nextContext);
+    openAiPanel();
+    setAiOverlayVisible(false);
+    router.push(`/${lang}/dho/${createdSlug}/agreements/space-configuration`);
+  }, [
+    lang,
+    messages,
+    onboardingContext,
+    openAiPanel,
+    pathname,
+    router,
+    setAiOverlayVisible,
+  ]);
 
   useEffect(() => {
     if (!error || status !== 'error' || autoRetryingRef.current) return;

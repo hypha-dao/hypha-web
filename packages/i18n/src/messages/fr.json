@@ -104,6 +104,7 @@
       "description": "Expliquez à Hypha AI ce que vous voulez construire, et elle vous guidera étape par étape.",
       "placeholder": "Décrivez votre communauté, votre mission, la structure d’espaces souhaitée et vos préférences de gouvernance...",
       "cta": "Commencer avec l’AI",
+      "starting": "Démarrage...",
       "helper": "L’AI proposera chaque action et demandera une confirmation avant toute création ou modification.",
       "unavailable": "L’onboarding AI est temporairement indisponible sur ce déploiement.",
       "ariaLabel": "Invite d’onboarding AI"

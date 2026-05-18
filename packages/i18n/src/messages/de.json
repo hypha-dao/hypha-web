@@ -104,6 +104,7 @@
       "description": "Sag Hypha AI, was du aufbauen willst, und sie führt dich Schritt für Schritt durch das Setup.",
       "placeholder": "Beschreibe deine Community, Mission, gewünschte Space-Struktur und Governance-Präferenzen...",
       "cta": "Mit AI starten",
+      "starting": "Wird gestartet...",
       "helper": "Die AI schlägt jede Aktion vor und fragt vor Erstellung oder Änderung immer nach Bestätigung.",
       "unavailable": "AI-Onboarding ist in dieser Bereitstellung derzeit nicht verfügbar.",
       "ariaLabel": "AI-Onboarding-Prompt"
