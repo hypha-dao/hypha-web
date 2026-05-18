@@ -92,7 +92,10 @@ export function createChatTools(
 
   const createSpaceFromOnboardingTool =
     createCreateSpaceFromOnboardingTool(authToken);
-  const updateSpaceSettingsTool = createUpdateSpaceSettingsTool(authToken);
+  const updateSpaceSettingsTool = createUpdateSpaceSettingsTool(
+    authToken,
+    onboardingLastUserText,
+  );
   const createSpaceSetupProposalTool =
     createCreateSpaceSetupProposalTool(authToken);
   const createEcosystemSpaceTool = createCreateEcosystemSpaceTool(authToken);

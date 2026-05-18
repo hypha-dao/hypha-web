@@ -20,7 +20,6 @@ const inputSchema = z.object({
   description: z.string().trim().min(10).max(2000).optional(),
   links: z.array(z.string().url()).optional(),
   flags: z.array(z.enum(['sandbox', 'demo', 'archived'])).optional(),
-  onboarding_last_user_text: z.string().optional(),
   require_confirmation_token: z
     .string()
     .trim()
@@ -30,7 +29,10 @@ const inputSchema = z.object({
   dry_run: z.boolean().optional().default(false),
 });
 
-export function createUpdateSpaceSettingsTool(authToken: string) {
+export function createUpdateSpaceSettingsTool(
+  authToken: string,
+  trustedLastUserText?: string,
+) {
   return {
     description:
       'Write: update top-level space settings (title, description, links, flags) for onboarding setup. Requires explicit user confirmation token in the latest user turn.',
@@ -63,7 +65,7 @@ export function createUpdateSpaceSettingsTool(authToken: string) {
       const confirmationToken =
         data.require_confirmation_token ?? 'confirm-update';
       const confirmed = hasExplicitConfirmation(
-        data.onboarding_last_user_text,
+        trustedLastUserText,
         confirmationToken,
       );
 
