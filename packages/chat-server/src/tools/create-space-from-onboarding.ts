@@ -53,6 +53,12 @@ const allowedCategories = [
 ] as const;
 const spaceFlagSchema = z.enum(allowedSpaceFlags);
 const categorySchema = z.enum(allowedCategories);
+const httpUrlSchema = z
+  .string()
+  .url()
+  .refine((value) => /^https?:\/\//i.test(value), {
+    message: 'Only http/https URLs are allowed.',
+  });
 
 const inputSchema = z.object({
   title: z.string().trim().min(3).max(120),
@@ -60,12 +66,12 @@ const inputSchema = z.object({
   slug: z.string().trim().min(1).max(128).optional(),
   parent_space_slug: z.string().trim().min(1).max(128).optional(),
   flags: z.array(spaceFlagSchema).optional().default([]),
-  links: z.array(z.string().url()).optional().default([]),
+  links: z.array(httpUrlSchema).optional().default([]),
   categories: z.array(categorySchema).optional().default([]),
-  lead_image_url: z.string().url().optional(),
-  logo_url: z.string().url().optional(),
-  ecosystem_logo_light_url: z.string().url().optional(),
-  ecosystem_logo_dark_url: z.string().url().optional(),
+  lead_image_url: httpUrlSchema.optional(),
+  logo_url: httpUrlSchema.optional(),
+  ecosystem_logo_light_url: httpUrlSchema.optional(),
+  ecosystem_logo_dark_url: httpUrlSchema.optional(),
   onboarding_last_user_text: z.string().optional(),
   dry_run: z.boolean().optional().default(false),
 });
