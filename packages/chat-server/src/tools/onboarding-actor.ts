@@ -35,8 +35,10 @@ export function hasExplicitConfirmation(
   token: string,
 ): boolean {
   if (!lastUserText) return false;
-  const normalized = lastUserText.toLowerCase();
-  return (
-    normalized.includes('confirm') && normalized.includes(token.toLowerCase())
-  );
+  const normalized = lastUserText.trim().toLowerCase();
+  const normalizedToken = token.trim().toLowerCase();
+  if (!normalizedToken) return false;
+  const escapedToken = normalizedToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const confirmationPattern = new RegExp(`^confirm\\s+${escapedToken}$`, 'i');
+  return confirmationPattern.test(normalized);
 }
