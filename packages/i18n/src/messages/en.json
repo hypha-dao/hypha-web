@@ -2256,6 +2256,7 @@
     "spaceMemoryProposals": "Proposals",
     "spaceMemoryConversations": "Conversations",
     "spaceMemoryAiChat": "AI Chat",
+    "newMemoryUploadDocumentsTitle": "Upload Documents",
     "newMemory": "New memory",
     "spaceMemoryEmptyTab": "No items found in this view.",
     "spaceMemoryAiChatEmpty": "AI chat memories are not available yet.",
