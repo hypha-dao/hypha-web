@@ -60,7 +60,7 @@ const getCreateSpacePath = (lang: string) => `/${lang}/my-spaces/create`;
 const onboardingCardClass =
   'group h-full rounded-[1.5rem] border border-border/65 bg-background/75 shadow-[0_16px_48px_-34px_rgba(0,0,0,0.65)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-8/35 hover:shadow-[0_20px_56px_-34px_rgba(0,0,0,0.75)]';
 const primaryCtaClass =
-  'h-10 w-full rounded-xl border border-accent-8/45 bg-gradient-to-r from-accent-9 to-accent-10 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] transition-all hover:brightness-105 hover:shadow-[0_12px_28px_-14px_oklch(0.62_0.19_278)]';
+  'h-10 w-full rounded-xl border border-accent-8/45 bg-gradient-to-r from-accent-9 to-accent-10 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] transition-all hover:brightness-105';
 const exchangeButtonBaseClass =
   'inline-flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const EXCHANGE_LINKS = [
@@ -542,12 +542,15 @@ export function OnboardingAdventurePage({
     setHeroAttachments((prev) => [...prev, ...Array.from(files)]);
   };
   const adventureTitle = hasVisitedAdventure
-    ? tCommon('continueAdventure')
+    ? t('continueAdventure')
     : t('title');
 
   return (
     <Container className="flex flex-col gap-14 py-10 md:py-12">
       <header className="space-y-3 pt-3 text-center md:pt-4">
+        <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-accent-11 shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
+          {t('subtitle')}
+        </p>
         <Heading
           size="9"
           color="secondary"
@@ -559,9 +562,6 @@ export function OnboardingAdventurePage({
             {adventureTitle}
           </span>
         </Heading>
-        <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-accent-11 shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
-          {t('subtitle')}
-        </p>
       </header>
 
       {onboardingHeroEnabled ? (
@@ -741,7 +741,7 @@ export function OnboardingAdventurePage({
                     !aiChatEnabled ||
                     isStartingAi
                   }
-                  className="h-8 w-8 rounded-full border border-accent-8/45 bg-gradient-to-r from-accent-9 to-accent-10 p-0 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] transition-all hover:brightness-105"
+                  className="h-10 w-10 rounded-xl border border-accent-8/45 bg-gradient-to-r from-accent-9 to-accent-10 p-0 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] transition-all hover:brightness-105"
                   aria-label={
                     isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
                   }
