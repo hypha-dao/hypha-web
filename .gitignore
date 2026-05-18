@@ -63,3 +63,4 @@ vitest.config.*.timestamp*
 test-results/
 playwright-report/
 .tmp_pr*_threads_now.json
+.tmp_pr*_unresolved_slim.json
