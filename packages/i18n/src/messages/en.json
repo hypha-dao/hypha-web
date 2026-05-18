@@ -974,6 +974,8 @@
     "rootSpaceDescription": "Marking this space as a Root Space will make it independent. It will no longer be linked to the current organisation, and all of its linked spaces will move with it.",
     "uploadEcosystemLogoLight": "Upload Ecosystem Logo (Light)",
     "uploadEcosystemLogoDark": "Upload Ecosystem Logo (Dark)",
+    "ecosystemLogoPlaceholder": "Upload {spaceName} ecosystem logo",
+    "ecosystemLogoPlaceholderFallback": "this space",
     "ecosystemLogoLightDescription": "Upload a light-mode logo for your ecosystem (PNG, JPG, GIF, or WEBP).",
     "ecosystemLogoDarkDescription": "Upload a dark-mode logo for your ecosystem (PNG, JPG, GIF, or WEBP).",
     "search": "Search...",

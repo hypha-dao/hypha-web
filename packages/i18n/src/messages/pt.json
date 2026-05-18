@@ -1665,6 +1665,8 @@
     "rootSpaceDescription": "Marcar este espaço como Root Space o tornará independente. Não estará mais vinculado à organização atual e todos os seus espaços vinculados se moverão com ele.",
     "uploadEcosystemLogoLight": "Enviar logo do ecossistema (claro)",
     "uploadEcosystemLogoDark": "Enviar logo do ecossistema (escuro)",
+    "ecosystemLogoPlaceholder": "Enviar logo do ecossistema de {spaceName}",
+    "ecosystemLogoPlaceholderFallback": "este espaço",
     "ecosystemLogoLightDescription": "Envie um logo em modo claro para o seu ecossistema (PNG, JPG, GIF ou WEBP).",
     "ecosystemLogoDarkDescription": "Envie um logo em modo escuro para o seu ecossistema (PNG, JPG, GIF ou WEBP).",
     "search": "Procurar...",

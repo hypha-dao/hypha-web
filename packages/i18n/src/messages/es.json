@@ -1665,6 +1665,8 @@
     "rootSpaceDescription": "Marcar este espacio como Espacio Raíz lo hará independiente. Ya no estará vinculado a la organización actual y todos sus espacios vinculados se trasladarán con ella.",
     "uploadEcosystemLogoLight": "Subir logo del ecosistema (claro)",
     "uploadEcosystemLogoDark": "Subir logo del ecosistema (oscuro)",
+    "ecosystemLogoPlaceholder": "Subir logo del ecosistema de {spaceName}",
+    "ecosystemLogoPlaceholderFallback": "este espacio",
     "ecosystemLogoLightDescription": "Sube un logo en modo claro para tu ecosistema (PNG, JPG, GIF o WEBP).",
     "ecosystemLogoDarkDescription": "Sube un logo en modo oscuro para tu ecosistema (PNG, JPG, GIF o WEBP).",
     "search": "Buscar...",
