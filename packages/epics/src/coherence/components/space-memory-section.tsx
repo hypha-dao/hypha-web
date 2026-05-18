@@ -103,13 +103,16 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     };
   }, [space?.chatRoomId, client, isMatrixAvailable, refresh]);
 
-  const stateLabel = (state: DocumentState) =>
-    t(
-      `documentStates.${state}` as
-        | 'documentStates.discussion'
-        | 'documentStates.proposal'
-        | 'documentStates.agreement',
-    );
+  const stateLabel = React.useCallback(
+    (state: DocumentState) =>
+      t(
+        `documentStates.${state}` as
+          | 'documentStates.discussion'
+          | 'documentStates.proposal'
+          | 'documentStates.agreement',
+      ),
+    [t],
+  );
 
   const contextLineForItem = React.useCallback(
     (row: SpaceMemoryItem) => {
