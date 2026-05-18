@@ -584,26 +584,37 @@ export async function processSignalOrchestratorBatch(
         cooldownSet.size > 0;
 
       if (suppress || dryRun) {
-        await saveDispatch(
-          {
-            queueId: lock.id,
-            sourceSpaceId: host.id,
-            candidate,
-            mode: 'space',
-            decision: 'suppressed',
-            rationale: `${candidate.rationale}${dryRun ? ' | dry_run' : ''}`,
-            metadata: {
-              dry_run: dryRun,
-              active_cooldowns: [...cooldownSet],
-              recent_space_signals: recentSpaceSignals,
+        if (dryRun) {
+          await db
+            .update(signalOrchestratorQueue)
+            .set({
+              state: 'pending',
+              processingStartedAt: null,
+              updatedAt: new Date(),
+            })
+            .where(eq(signalOrchestratorQueue.id, lock.id));
+        } else {
+          await saveDispatch(
+            {
+              queueId: lock.id,
+              sourceSpaceId: host.id,
+              candidate,
+              mode: 'space',
+              decision: 'suppressed',
+              rationale: candidate.rationale,
+              metadata: {
+                dry_run: false,
+                active_cooldowns: [...cooldownSet],
+                recent_space_signals: recentSpaceSignals,
+              },
             },
-          },
-          { db },
-        );
-        await db
-          .update(signalOrchestratorQueue)
-          .set({ state: 'done', lastError: null, updatedAt: new Date() })
-          .where(eq(signalOrchestratorQueue.id, lock.id));
+            { db },
+          );
+          await db
+            .update(signalOrchestratorQueue)
+            .set({ state: 'done', lastError: null, updatedAt: new Date() })
+            .where(eq(signalOrchestratorQueue.id, lock.id));
+        }
         results.push({
           queue_id: lock.id,
           status: 'suppressed',
