@@ -7,11 +7,36 @@ import type { Space } from '../../types';
 
 async function loadGetSpaceMembersRoster() {
   // Module import path touches storage-postgres env invariants.
-  if (!process.env.DEFAULT_DB_URL) {
+  const originalDefaultDbUrl = process.env.DEFAULT_DB_URL;
+  if (!originalDefaultDbUrl) {
     process.env.DEFAULT_DB_URL = 'postgres://local:test@localhost:5432/test';
   }
-  const mod = await import('../get-space-members-roster');
-  return mod.getSpaceMembersRoster;
+  try {
+    const mod = await import('../get-space-members-roster');
+    const getSpaceMembersRoster = mod.getSpaceMembersRoster;
+    return (async (...args: Parameters<typeof getSpaceMembersRoster>) => {
+      const runtimeDefaultDbUrl = process.env.DEFAULT_DB_URL;
+      if (!runtimeDefaultDbUrl) {
+        process.env.DEFAULT_DB_URL =
+          'postgres://local:test@localhost:5432/test';
+      }
+      try {
+        return await getSpaceMembersRoster(...args);
+      } finally {
+        if (runtimeDefaultDbUrl === undefined) {
+          delete process.env.DEFAULT_DB_URL;
+        } else {
+          process.env.DEFAULT_DB_URL = runtimeDefaultDbUrl;
+        }
+      }
+    }) as typeof getSpaceMembersRoster;
+  } finally {
+    if (originalDefaultDbUrl === undefined) {
+      delete process.env.DEFAULT_DB_URL;
+    } else {
+      process.env.DEFAULT_DB_URL = originalDefaultDbUrl;
+    }
+  }
 }
 
 function makePerson(id: number, name: string): RosterPerson {
