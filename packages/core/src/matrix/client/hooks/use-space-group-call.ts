@@ -354,9 +354,27 @@ export function useSpaceGroupCall(
     const token = authToken?.trim();
     const slug = spaceSlug?.trim();
     const activeRoomId = runtime?.recordedRoomId?.trim() || roomId?.trim();
-    if (!runtime || !token || !slug || !activeRoomId) {
+    if (!runtime) {
       recordingRuntimeRef.current = null;
       setRecordingStatus('idle');
+    } else if (!token || !slug || !activeRoomId) {
+      recordingRuntimeRef.current = null;
+      void (async () => {
+        try {
+          await runtime.stopRecorder();
+        } catch {
+          // ignore recorder stop errors during teardown-only cleanup
+        }
+        try {
+          await runtime.stopTranscript();
+        } catch {
+          // ignore transcript stop errors during teardown-only cleanup
+        }
+        if (!recordingFinalizeInFlightRef.current) {
+          setRecordingStatus('idle');
+          setRecordingError(null);
+        }
+      })();
     } else {
       const cleanupGeneration = runtime.generation;
       recordingFinalizeInFlightRef.current = true;
