@@ -17,11 +17,14 @@ import {
 } from '@hypha-platform/ui';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
 import {
+  ArrowUp,
   AlertTriangle,
   Compass,
   Copy,
   Handshake,
+  Mic,
   PlusCircle,
+  Square,
   Wallet,
 } from 'lucide-react';
 import { useAllSpaces } from '@web/hooks/use-all-spaces';
@@ -59,6 +62,32 @@ const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
 
 const normalizeEvmAddress = (value: string | null | undefined) =>
   (value ?? '').replace(/\s+/g, '').trim();
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((ev: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((ev: { error?: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+};
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>;
+};
+
+function joinWithSingleSpace(a: string, b: string): string {
+  const left = a.trimEnd();
+  const right = b.trimStart();
+  if (!left) return right;
+  if (!right) return left;
+  if (/\s$/.test(left) || /^\s/.test(right)) return left + right;
+  return `${left} ${right}`;
+}
 
 type SelectorOption = { value: string; label: string; searchText?: string };
 
@@ -178,11 +207,18 @@ export function OnboardingAdventurePage({
   onboardingHeroEnabled?: boolean;
 }) {
   const t = useTranslations('OnboardingAdventure');
+  const tHuman = useTranslations('HumanChatPanel');
   const locale = useLocale();
   const router = useRouter();
   const { spaces, isLoading, error: spacesError } = useAllSpaces();
   const { openAiPanel, setAiOverlayVisible } = useAiPanel();
   const [aiPrompt, setAiPrompt] = useState('');
+  const aiPromptRef = useRef(aiPrompt);
+  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const dictationPrefixRef = useRef('');
+  const dictationSessionFinalizedRef = useRef(false);
+  const [isDictating, setIsDictating] = useState(false);
+  const [dictationError, setDictationError] = useState<string | null>(null);
 
   const [joinSpaceSlug, setJoinSpaceSlug] = useState('');
   const [joinQuery, setJoinQuery] = useState('');
@@ -237,6 +273,116 @@ export function OnboardingAdventurePage({
     [],
   );
 
+  useEffect(() => {
+    aiPromptRef.current = aiPrompt;
+  }, [aiPrompt]);
+
+  const stopDictation = () => {
+    const recognition = speechRecognitionRef.current;
+    if (recognition) {
+      try {
+        recognition.abort();
+      } catch {
+        try {
+          recognition.stop();
+        } catch {
+          // ignore stop errors from browser implementation differences
+        }
+      }
+      speechRecognitionRef.current = null;
+    }
+    dictationPrefixRef.current = '';
+    setIsDictating(false);
+  };
+
+  const toggleDictation = () => {
+    setDictationError(null);
+    const SR =
+      (globalThis as unknown as { SpeechRecognition?: SpeechRecognitionCtor })
+        .SpeechRecognition ??
+      (
+        globalThis as unknown as {
+          webkitSpeechRecognition?: SpeechRecognitionCtor;
+        }
+      ).webkitSpeechRecognition;
+
+    if (!SR) {
+      setDictationError(tHuman('dictationNotSupported'));
+      return;
+    }
+    if (isDictating) {
+      stopDictation();
+      return;
+    }
+
+    dictationSessionFinalizedRef.current = false;
+    dictationPrefixRef.current = aiPromptRef.current.trimEnd();
+    const recognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = document.documentElement.lang || 'en';
+    recognition.onresult = (event) => {
+      let committed = '';
+      let interim = '';
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (!result?.[0]) continue;
+        if (result.isFinal) {
+          committed = joinWithSingleSpace(
+            committed,
+            result[0].transcript.trim(),
+          );
+        } else {
+          interim = joinWithSingleSpace(interim, result[0].transcript);
+        }
+      }
+      const dictated = joinWithSingleSpace(committed, interim.trim());
+      const nextPrompt = joinWithSingleSpace(
+        dictationPrefixRef.current,
+        dictated,
+      );
+      aiPromptRef.current = nextPrompt;
+      setAiPrompt(nextPrompt);
+    };
+    const finalizeDictation = (showError: boolean) => {
+      if (dictationSessionFinalizedRef.current) return;
+      dictationSessionFinalizedRef.current = true;
+      speechRecognitionRef.current = null;
+      dictationPrefixRef.current = '';
+      setIsDictating(false);
+      if (showError) {
+        setDictationError(tHuman('dictationError'));
+      }
+    };
+    recognition.onerror = (event) => {
+      finalizeDictation(event.error !== 'aborted');
+    };
+    recognition.onend = () => {
+      finalizeDictation(false);
+    };
+    speechRecognitionRef.current = recognition;
+    try {
+      recognition.start();
+      setIsDictating(true);
+    } catch {
+      speechRecognitionRef.current = null;
+      setDictationError(tHuman('dictationNotSupported'));
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      const recognition = speechRecognitionRef.current;
+      if (!recognition) return;
+      try {
+        recognition.abort();
+      } catch {
+        // ignore
+      }
+      speechRecognitionRef.current = null;
+    };
+  }, []);
+
   const handleCopyAddress = (address: string) => {
     copyToClipboard(address);
     setCopiedAddress(true);
@@ -258,6 +404,7 @@ export function OnboardingAdventurePage({
   const handleStartAiOnboarding = () => {
     const prompt = aiPrompt.trim();
     if (!prompt) return;
+    stopDictation();
     const context = {
       mode: ONBOARDING_SETUP_MODE,
       source: 'onboarding_hero' as const,
@@ -287,40 +434,74 @@ export function OnboardingAdventurePage({
       </header>
 
       {onboardingHeroEnabled ? (
-        <Card className="border-border/70 bg-card/100 shadow-sm">
-          <CardHeader className="space-y-2 pb-2">
-            <CardTitle className="text-6">{t('aiHero.title')}</CardTitle>
-            <CardDescription className="text-2">
+        <section className="mx-auto w-full max-w-5xl space-y-3">
+          <div className="space-y-1 text-center">
+            <h2 className="text-7 font-semibold tracking-tight text-foreground">
+              {t('aiHero.title')}
+            </h2>
+            <p className="mx-auto max-w-3xl text-2 text-muted-foreground">
               {t('aiHero.description')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+            </p>
+          </div>
+          <div className="rounded-[2rem] border border-border/70 bg-card/90 p-3 shadow-sm backdrop-blur">
             <textarea
               value={aiPrompt}
               onChange={(event) => setAiPrompt(event.target.value)}
               placeholder={t('aiHero.placeholder')}
               aria-label={t('aiHero.ariaLabel')}
               rows={4}
-              className="min-h-[132px] w-full resize-y rounded-lg border border-border bg-background px-4 py-3 text-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
+              className="min-h-[152px] w-full resize-y bg-transparent px-4 py-3 text-3 text-foreground outline-none placeholder:text-muted-foreground"
             />
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-3 px-2 pb-1 pt-2">
+              <button
+                type="button"
+                onClick={toggleDictation}
+                disabled={!aiChatEnabled}
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-border/80 bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label={
+                  isDictating
+                    ? tHuman('composerStopDictation')
+                    : tHuman('composerDictateMessage')
+                }
+                title={
+                  isDictating
+                    ? tHuman('composerStopDictation')
+                    : tHuman('composerDictateMessage')
+                }
+              >
+                {isDictating ? (
+                  <Square className="size-4" aria-hidden />
+                ) : (
+                  <Mic className="size-4" aria-hidden />
+                )}
+              </button>
               <Button
                 type="button"
                 onClick={handleStartAiOnboarding}
                 disabled={!aiPrompt.trim() || !aiChatEnabled}
-                className="min-h-11 px-6"
+                className="min-h-11 rounded-full px-5"
               >
-                {t('aiHero.cta')}
+                <span className="inline-flex items-center gap-2">
+                  {t('aiHero.cta')}
+                  <ArrowUp className="size-4" aria-hidden />
+                </span>
               </Button>
             </div>
-            {!aiChatEnabled ? (
-              <p className="text-1 text-muted-foreground">
-                {t('aiHero.unavailable')}
-              </p>
-            ) : null}
-            <p className="text-1 text-muted-foreground">{t('aiHero.helper')}</p>
-          </CardContent>
-        </Card>
+          </div>
+          {dictationError ? (
+            <p role="alert" className="text-center text-1 text-destructive">
+              {dictationError}
+            </p>
+          ) : null}
+          {!aiChatEnabled ? (
+            <p className="text-center text-1 text-muted-foreground">
+              {t('aiHero.unavailable')}
+            </p>
+          ) : null}
+          <p className="text-center text-1 text-muted-foreground">
+            {t('aiHero.helper')}
+          </p>
+        </section>
       ) : null}
 
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">

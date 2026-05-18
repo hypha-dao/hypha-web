@@ -5,9 +5,7 @@ test.describe('Onboarding AI Hero', () => {
     await page.goto('/en/onboarding');
 
     await expect(
-      page.getByRole('heading', {
-        name: 'Describe the space you want to create',
-      }),
+      page.getByText('Describe the space you want to create'),
     ).toBeVisible();
     await expect(page.getByLabel('AI onboarding prompt')).toBeVisible();
 
