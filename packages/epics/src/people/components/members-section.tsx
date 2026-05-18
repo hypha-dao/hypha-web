@@ -66,6 +66,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
 }) => {
   const tCommon = useTranslations('Common');
   const tMembers = useTranslations('MembersTab');
+  const tCoherence = useTranslations('CoherenceTab');
   const [entityFilter, setEntityFilter] = useState<'member' | 'space' | 'ai'>(
     'member',
   );
@@ -212,21 +213,23 @@ export const MembersSection: FC<MemberSectionProps> = ({
                   </div>
                   <div className="min-w-0">
                     <div className="mb-1 text-sm font-semibold text-foreground">
-                      {agent.role}
+                      {tCoherence(agent.role)}
                     </div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">
                       {agent.tagGroup}
                     </div>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">{agent.focus}</p>
+                <p className="text-sm text-muted-foreground">
+                  {tCoherence(agent.focus)}
+                </p>
                 <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
                   {agent.roleDefinition.map((line, index) => (
                     <li
                       key={`${agent.id}-def-${index}`}
                       className="leading-relaxed"
                     >
-                      {index + 1}. {line}
+                      {index + 1}. {tCoherence(line)}
                     </li>
                   ))}
                 </ul>
