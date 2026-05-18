@@ -91,13 +91,56 @@ export function startBrowserCallTranscription(options?: {
 
   return {
     supported: true as const,
-    stop: () => {
+    stop: async () => {
       stopped = true;
       try {
         recognition.stop();
       } catch {
         // ignore stop races
       }
+      await new Promise<void>((resolve) => {
+        let settled = false;
+        const finalize = () => {
+          if (settled) return;
+          settled = true;
+          if (recognition.onresult === onResult) recognition.onresult = null;
+          if (recognition.onend === onEnd) recognition.onend = null;
+          resolve();
+        };
+        const onResult: NonNullable<SpeechRecognitionInstance['onresult']> = (
+          event,
+        ) => {
+          try {
+            const e = event as {
+              resultIndex?: number;
+              results?: ArrayLike<{
+                0?: { transcript?: string };
+                isFinal?: boolean;
+              }>;
+            };
+            const list = e.results;
+            if (!list) return;
+            const start =
+              typeof e.resultIndex === 'number' && e.resultIndex >= 0
+                ? e.resultIndex
+                : 0;
+            for (let i = start; i < list.length; i += 1) {
+              const result = list[i];
+              if (!result?.isFinal) continue;
+              const transcript = result[0]?.transcript?.trim();
+              if (transcript) chunks.push(transcript);
+            }
+          } catch {
+            // ignore malformed browser event payloads
+          }
+        };
+        const onEnd: NonNullable<SpeechRecognitionInstance['onend']> = () => {
+          finalize();
+        };
+        recognition.onresult = onResult;
+        recognition.onend = onEnd;
+        setTimeout(finalize, 1500);
+      });
       return chunks.join(' ').trim();
     },
   };

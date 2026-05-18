@@ -287,7 +287,7 @@ export function useSpaceGroupCall(
   const recordingRuntimeRef = useRef<{
     generation: number;
     stopRecorder: () => Promise<Blob>;
-    stopTranscript: () => string;
+    stopTranscript: () => Promise<string> | string;
     mimeType: string;
     startedAt: string;
     recordedRoomId: string;
@@ -367,7 +367,7 @@ export function useSpaceGroupCall(
         try {
           const endedAt = new Date().toISOString();
           const blob = await runtime.stopRecorder();
-          const transcriptText = runtime.stopTranscript();
+          const transcriptText = await runtime.stopTranscript();
           if (blob.size === 0) {
             throw new Error('recording blob is empty');
           }
