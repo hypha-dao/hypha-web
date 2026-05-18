@@ -58,7 +58,7 @@ const getSpacePath = (lang: string, spaceSlug: string) =>
 const getNetworkPath = (lang: string) => `/${lang}/network`;
 const getCreateSpacePath = (lang: string) => `/${lang}/my-spaces/create`;
 const onboardingCardClass =
-  'group h-full border-border/70 bg-card/100 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md';
+  'group h-full rounded-[1.5rem] border border-border/65 bg-background/75 shadow-[0_16px_48px_-34px_rgba(0,0,0,0.65)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-8/35 hover:shadow-[0_20px_56px_-34px_rgba(0,0,0,0.75)]';
 const exchangeButtonBaseClass =
   'inline-flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const EXCHANGE_LINKS = [
@@ -151,20 +151,23 @@ function SelectorCard({
 
   return (
     <Card className={onboardingCardClass}>
-      <CardHeader className="space-y-2">
+      <CardHeader className="space-y-2 pb-3">
         <CardTitle className="flex items-center gap-2 text-5">
           <span className="text-accent-11">{icon}</span>
           {title}
         </CardTitle>
-        <CardDescription className="text-2">{description}</CardDescription>
+        <CardDescription className="text-2 text-muted-foreground/90">
+          {description}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 pt-1">
+      <CardContent className="space-y-3 pt-0">
         <Input
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder={t('spaceSearchPlaceholder')}
           aria-label={title}
           disabled={disabled}
+          className="h-10 rounded-xl border-border/70 bg-background/80"
         />
 
         {!disabled && !query.trim() ? (
@@ -178,7 +181,7 @@ function SelectorCard({
         ) : null}
 
         {!disabled && filteredOptions.length > 0 ? (
-          <div className="max-h-44 space-y-1 overflow-auto rounded-md border border-border/60 p-1">
+          <div className="max-h-44 space-y-1 overflow-auto rounded-xl border border-border/70 bg-background/65 p-1.5">
             {filteredOptions.map((option) => (
               <button
                 key={option.value}
@@ -186,7 +189,7 @@ function SelectorCard({
                 onClick={() => {
                   onChange(option.value);
                 }}
-                className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-2 text-foreground transition-colors hover:bg-muted"
+                className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-2 text-foreground transition-colors hover:bg-muted"
               >
                 <span>{option.label}</span>
                 {value === option.value ? (
@@ -201,7 +204,7 @@ function SelectorCard({
 
         <Button
           type="button"
-          className="w-full"
+          className="h-10 w-full rounded-xl bg-accent-9 text-accent-contrast shadow-[0_8px_22px_-14px_oklch(0.62_0.19_278)] hover:bg-accent-10"
           onClick={onAction}
           disabled={disabled || !value}
         >
@@ -516,7 +519,7 @@ export function OnboardingAdventurePage({
   };
 
   return (
-    <Container className="flex flex-col gap-10 py-8 md:py-10">
+    <Container className="flex flex-col gap-12 py-8 md:py-10">
       <header className="space-y-2 text-center">
         <Heading
           size="9"
@@ -529,6 +532,7 @@ export function OnboardingAdventurePage({
             {t('title')}
           </span>
         </Heading>
+        <p className="text-2 text-muted-foreground/90">{t('subtitle')}</p>
       </header>
 
       {onboardingHeroEnabled ? (
@@ -773,21 +777,21 @@ export function OnboardingAdventurePage({
         </section>
       ) : null}
 
-      <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <section className="mt-2 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className={onboardingCardClass}>
           <CardHeader className="space-y-2">
             <CardTitle className="flex items-center gap-2 text-5">
               <Compass className="size-5 text-accent-11" aria-hidden />
               {t('explore.title')}
             </CardTitle>
-            <CardDescription className="text-2">
+            <CardDescription className="text-2 text-muted-foreground/90">
               {t('explore.description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-1">
             <Button
               type="button"
-              className="w-full"
+              className="h-10 w-full rounded-xl bg-accent-9 text-accent-contrast shadow-[0_8px_22px_-14px_oklch(0.62_0.19_278)] hover:bg-accent-10"
               onClick={() => router.push(getNetworkPath(locale))}
             >
               {t('explore.cta')}
@@ -801,14 +805,14 @@ export function OnboardingAdventurePage({
               <PlusCircle className="size-5 text-accent-11" aria-hidden />
               {t('create.title')}
             </CardTitle>
-            <CardDescription className="text-2">
+            <CardDescription className="text-2 text-muted-foreground/90">
               {t('create.description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-1">
             <Button
               type="button"
-              className="w-full"
+              className="h-10 w-full rounded-xl bg-accent-9 text-accent-contrast shadow-[0_8px_22px_-14px_oklch(0.62_0.19_278)] hover:bg-accent-10"
               onClick={() => router.push(getCreateSpacePath(locale))}
             >
               {t('create.cta')}
