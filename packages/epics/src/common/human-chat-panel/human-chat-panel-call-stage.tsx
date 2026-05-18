@@ -325,6 +325,11 @@ export function HumanChatPanelCallStage({
     () => buildRemoteUserTiles(rmuForTiles, missForTiles),
     [rmuForTiles, missForTiles],
   );
+  const isLiveAndUnmuted = useCallback((feed: CallFeed): boolean => {
+    const track = feed.stream.getVideoTracks()[0];
+    if (!track || track.readyState !== 'live') return false;
+    return !feed.isVideoMuted();
+  }, []);
 
   if (!model) {
     return null;
@@ -364,11 +369,6 @@ export function HumanChatPanelCallStage({
   } = model;
 
   const isFull = layout === 'fullView';
-  const isLiveAndUnmuted = useCallback((feed: CallFeed): boolean => {
-    const track = feed.stream.getVideoTracks()[0];
-    if (!track || track.readyState !== 'live') return false;
-    return !feed.isVideoMuted();
-  }, []);
   /**
    * Suppress only local browser-tab captures in self preview to avoid recursive
    * "window-in-window" feedback. Keep monitor/window local shares visible.
