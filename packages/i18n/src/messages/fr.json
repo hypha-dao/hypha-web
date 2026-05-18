@@ -2243,6 +2243,8 @@
     "spaceMemoryMatrixPreviewNeedsChat": "L’aperçu nécessite Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Ouvrez Human Chat pour connecter Matrix, puis actualisez la mémoire d’espace pour ouvrir ce fichier.",
     "spaceMemoryMatrixVideoPlayHint": "Appuyez pour lire l’aperçu",
+    "spaceMemoryPdfPreviewUnavailable": "Aperçu PDF indisponible",
+    "spaceMemoryOpenDocument": "Ouvrir le document",
     "spaceMemoryOpenAsset": "Ouvrir {name}",
     "untitledDocument": "Document sans titre",
     "spaceMemoryGeneral": "Général",

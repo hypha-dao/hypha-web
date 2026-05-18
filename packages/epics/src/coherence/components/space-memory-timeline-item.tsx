@@ -62,9 +62,11 @@ export function humanizeAssetName(name: string): string {
 function PdfPreview({
   src,
   fallbackLabel,
+  unavailableLabel,
 }: {
   src: string;
   fallbackLabel: string;
+  unavailableLabel: string;
 }) {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const [renderState, setRenderState] = React.useState<
@@ -138,7 +140,7 @@ function PdfPreview({
         <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
           <FileIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
           <span className="line-clamp-2 text-center text-[10px]">
-            PDF preview unavailable
+            {unavailableLabel}
           </span>
         </div>
       </object>
@@ -150,7 +152,7 @@ function PdfPreview({
       <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
         <FileIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
         <span className="line-clamp-2 text-center text-[10px]">
-          PDF preview unavailable
+          {unavailableLabel}
         </span>
       </div>
     );
@@ -266,7 +268,13 @@ export function SpaceMemoryTimelineItem({
   const thumbPreview = (() => {
     if (mxc) {
       if (looksLikePdf(item.name, item.url) && pdfSrc) {
-        return <PdfPreview src={pdfSrc} fallbackLabel={displayName} />;
+        return (
+          <PdfPreview
+            src={pdfSrc}
+            fallbackLabel={displayName}
+            unavailableLabel={t('spaceMemoryPdfPreviewUnavailable')}
+          />
+        );
       }
       if (!isMatrixAvailable || !client) {
         return (
@@ -368,7 +376,11 @@ export function SpaceMemoryTimelineItem({
     if (item.kind === 'image' && !imageFailed) {
       if (looksLikePdf(item.name, item.url)) {
         return pdfSrc ? (
-          <PdfPreview src={pdfSrc} fallbackLabel={displayName} />
+          <PdfPreview
+            src={pdfSrc}
+            fallbackLabel={displayName}
+            unavailableLabel={t('spaceMemoryPdfPreviewUnavailable')}
+          />
         ) : (
           <FileIcon
             className="h-12 w-12 text-muted-foreground"
@@ -411,7 +423,11 @@ export function SpaceMemoryTimelineItem({
     }
     if (item.kind === 'document' && looksLikePdf(item.name, item.url)) {
       return pdfSrc ? (
-        <PdfPreview src={pdfSrc} fallbackLabel={displayName} />
+        <PdfPreview
+          src={pdfSrc}
+          fallbackLabel={displayName}
+          unavailableLabel={t('spaceMemoryPdfPreviewUnavailable')}
+        />
       ) : (
         <FileIcon
           className="h-12 w-12 text-muted-foreground"
@@ -476,7 +492,7 @@ export function SpaceMemoryTimelineItem({
               {thumbPreview}
             </div>
             <span className={filenameRowClass}>
-              <span>Open document</span>
+              <span>{t('spaceMemoryOpenDocument')}</span>
               <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 opacity-60" />
             </span>
           </a>

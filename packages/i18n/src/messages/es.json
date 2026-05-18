@@ -2238,6 +2238,8 @@
     "spaceMemoryMatrixPreviewNeedsChat": "La vista previa requiere Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Abre Human Chat para conectar Matrix y actualiza Space Memory para abrir este archivo.",
     "spaceMemoryMatrixVideoPlayHint": "Toca para ver la vista previa",
+    "spaceMemoryPdfPreviewUnavailable": "Vista previa de PDF no disponible",
+    "spaceMemoryOpenDocument": "Abrir documento",
     "spaceMemoryOpenAsset": "Abrir {name}",
     "untitledDocument": "Documento sin título",
     "spaceMemoryGeneral": "General",

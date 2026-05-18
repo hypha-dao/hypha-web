@@ -2250,6 +2250,8 @@
     "spaceMemoryMatrixPreviewNeedsChat": "Preview needs Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Open Human Chat to connect Matrix, then refresh Space Memory to open this file.",
     "spaceMemoryMatrixVideoPlayHint": "Tap to play preview",
+    "spaceMemoryPdfPreviewUnavailable": "PDF preview unavailable",
+    "spaceMemoryOpenDocument": "Open document",
     "spaceMemoryOpenAsset": "Open {name}",
     "untitledDocument": "Untitled document",
     "spaceMemoryGeneral": "General",
