@@ -81,7 +81,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       `media-src ${mediaSrc}`,
       "font-src 'self' https://fonts.gstatic.com https://vercel.live",
       // Allow PDF previews for Space Memory (UploadThing URLs); 'none' blocks <object> and triggers console CSP noise.
-      `object-src 'self' blob: data: ${UPLOADTHING_UFS_HOST}`,
+      `object-src 'self' blob: ${UPLOADTHING_UFS_HOST}`,
       "base-uri 'self'",
       "form-action 'self' https://auth.privy.io https://privy.hypha.earth https://accounts.google.com",
       "frame-ancestors 'none'",
