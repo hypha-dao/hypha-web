@@ -687,9 +687,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           { role: 'user', parts: [...textParts, ...attachmentParts] },
           options,
         );
+        // Handoff is successful once the request is accepted/submitted.
+        // Do not block onboarding hero feedback on full model completion.
+        dispatchAiOnboardingSeedAck({ ok: true, stage: 'sent' });
         setInput('');
         setDraftAttachments([]);
-        dispatchAiOnboardingSeedAck({ ok: true, stage: 'sent' });
       } catch (seedError) {
         console.error('[AiLeftPanel] onboarding seed send failed:', seedError);
         setInput(seededPrompt);

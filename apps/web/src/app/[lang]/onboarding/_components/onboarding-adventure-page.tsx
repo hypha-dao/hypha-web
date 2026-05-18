@@ -489,20 +489,26 @@ export function OnboardingAdventurePage({
             reason?: string;
           }
         | undefined;
+      const clearHandoffTimeout = () => {
+        if (aiStartTimeoutRef.current !== null) {
+          window.clearTimeout(aiStartTimeoutRef.current);
+          aiStartTimeoutRef.current = null;
+        }
+      };
       if (detail?.stage === 'received') {
+        clearHandoffTimeout();
         setAiStartStatus('opening');
         setAiStartError(null);
         return;
       }
       if (detail?.stage === 'sending') {
+        clearHandoffTimeout();
+        setIsStartingAi(false);
         setAiStartStatus('sending');
         setAiStartError(null);
         return;
       }
-      if (aiStartTimeoutRef.current !== null) {
-        window.clearTimeout(aiStartTimeoutRef.current);
-        aiStartTimeoutRef.current = null;
-      }
+      clearHandoffTimeout();
       if (detail?.ok) {
         setIsStartingAi(false);
         setAiStartStatus('idle');
