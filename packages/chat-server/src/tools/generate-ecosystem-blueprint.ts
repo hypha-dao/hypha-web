@@ -62,8 +62,21 @@ export function createGenerateEcosystemBlueprintTool() {
           ? data.custom_functional_domains
           : ['Finance', 'Operations', 'Growth'];
       for (const domain of domains) {
+        const rawKey = `${rootSlug}-${domain}`;
+        const sanitizedKey = sanitizeSlug(rawKey);
         const key =
-          sanitizeSlug(`${rootSlug}-${domain}`) ?? `${rootSlug}-${domain}`;
+          sanitizedKey ??
+          rawKey
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+        if (!key) {
+          return {
+            ok: false,
+            error: `Could not generate a valid key for domain "${domain}".`,
+          };
+        }
         nodes.push({
           key,
           role: 'functional_domain',
