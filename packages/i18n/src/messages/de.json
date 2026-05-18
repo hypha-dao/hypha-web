@@ -1946,7 +1946,11 @@
     "toolTokens": "{count} Token(s) für Space \"{slug}\" abgerufen.",
     "toolError": "Fehler: {message}",
     "streamError": "Beim Generieren der Antwort ist ein Fehler aufgetreten.",
-    "attachment": "Anhang"
+    "attachment": "Anhang",
+    "pendingAction": "Pending action",
+    "confirmWith": "Confirm with:",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
   },
   "HumanChatPanel": {
     "title": "Chat",

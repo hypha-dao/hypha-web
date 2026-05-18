@@ -1938,7 +1938,11 @@
     "toolTokens": "{count} token(s) obtenido(s) para el espacio \"{slug}\".",
     "toolError": "Error: {message}",
     "streamError": "Ocurrió un error al generar la respuesta.",
-    "attachment": "Adjunto"
+    "attachment": "Adjunto",
+    "pendingAction": "Pending action",
+    "confirmWith": "Confirm with:",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
   },
   "HumanChatPanel": {
     "title": "Chat",

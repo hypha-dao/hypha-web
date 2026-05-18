@@ -118,7 +118,9 @@ export function AiPanelMessageBubble({
       const entries = value.preview ? Object.entries(value.preview) : [];
       return (
         <div className="rounded-lg border border-accent-7/60 bg-accent-3/40 px-2 py-2 text-xs">
-          <div className="font-semibold text-accent-11">Pending action</div>
+          <div className="font-semibold text-accent-11">
+            {t('pendingAction')}
+          </div>
           {entries.length > 0 ? (
             <div className="mt-1 space-y-1">
               {entries.slice(0, 8).map(([key, raw]) => (
@@ -133,7 +135,7 @@ export function AiPanelMessageBubble({
           ) : null}
           {value.confirmation_token ? (
             <div className="mt-1 text-muted-foreground">
-              Confirm with:{' '}
+              {t('confirmWith')}{' '}
               <span className="font-semibold">{value.confirmation_token}</span>
             </div>
           ) : null}
@@ -149,14 +151,14 @@ export function AiPanelMessageBubble({
                 }
                 className="rounded border border-success-8/60 bg-success-3 px-2 py-1 text-[11px] font-semibold text-success-11"
               >
-                Confirm
+                {t('confirm')}
               </button>
               <button
                 type="button"
                 onClick={() => onActionReplySelect('cancel this action')}
                 className="rounded border border-border bg-muted px-2 py-1 text-[11px] font-semibold text-muted-foreground"
               >
-                Cancel
+                {t('cancel')}
               </button>
             </div>
           ) : null}
@@ -272,7 +274,7 @@ export function AiPanelMessageBubble({
                   onClick={() => setExpanded((v) => !v)}
                   className="self-start text-xs font-medium text-accent-11 underline-offset-2 hover:underline"
                 >
-                  {expanded ? 'Show less' : 'Show more'}
+                  {expanded ? t('showLess') : t('showMore')}
                 </button>
               )}
             </div>

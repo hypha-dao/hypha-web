@@ -1938,7 +1938,11 @@
     "toolTokens": "{count} jeton(s) récupéré(s) pour l'espace \"{slug}\".",
     "toolError": "Erreur : {message}",
     "streamError": "Une erreur est survenue lors de la génération de la réponse.",
-    "attachment": "Pièce jointe"
+    "attachment": "Pièce jointe",
+    "pendingAction": "Pending action",
+    "confirmWith": "Confirm with:",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
   },
   "HumanChatPanel": {
     "title": "Chat",
