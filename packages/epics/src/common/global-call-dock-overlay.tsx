@@ -77,14 +77,18 @@ function clampDockGeometry(next: DockGeometry): DockGeometry {
       : Math.max(180, window.innerHeight - 2 * DOCK_MARGIN_PX);
   const minWidth = Math.min(DOCK_MIN_WIDTH, maxWidth);
   const minHeight = Math.min(DOCK_MIN_HEIGHT, maxHeight);
-  const width = Math.min(Math.max(next.width, minWidth), maxWidth);
-  const height = Math.min(Math.max(next.height, minHeight), maxHeight);
+  const safeWidth = Number.isFinite(next.width) ? next.width : minWidth;
+  const safeHeight = Number.isFinite(next.height) ? next.height : minHeight;
+  const safeX = Number.isFinite(next.x) ? next.x : 0;
+  const safeY = Number.isFinite(next.y) ? next.y : 0;
+  const width = Math.min(Math.max(safeWidth, minWidth), maxWidth);
+  const height = Math.min(Math.max(safeHeight, minHeight), maxHeight);
   const bounds = getDockOffsetBounds(width, height);
   return {
     width,
     height,
-    x: Math.min(Math.max(next.x, bounds.minX), bounds.maxX),
-    y: Math.min(Math.max(next.y, bounds.minY), bounds.maxY),
+    x: Math.min(Math.max(safeX, bounds.minX), bounds.maxX),
+    y: Math.min(Math.max(safeY, bounds.minY), bounds.maxY),
   };
 }
 
@@ -547,20 +551,26 @@ export function GlobalCallDockOverlay() {
           <div
             data-no-dock-drag
             onPointerDown={onResizeStart('top-right')}
-            className="absolute -top-2 -right-2 z-[3] flex h-6 w-6 cursor-nesw-resize touch-none items-center justify-center rounded-full border border-border/70 bg-background/95 shadow-sm"
-            aria-label={t('resizeTopRightLabel')}
-            title={t('resizeTopRightLabel')}
+            className="absolute -top-1 -right-1 z-[3] flex h-5 w-5 cursor-nesw-resize touch-none items-center justify-center"
+            aria-label="Resize call window"
+            title="Resize call window"
           >
-            <div className="pointer-events-none h-3 w-3 rotate-45 border-r-2 border-t-2 border-foreground/75" />
+            <div className="pointer-events-none relative h-3 w-3">
+              <span className="absolute right-0 top-[1px] block h-[1.5px] w-2 rotate-45 rounded bg-foreground/70" />
+              <span className="absolute right-[2px] top-[4px] block h-[1.5px] w-2 rotate-45 rounded bg-foreground/70" />
+            </div>
           </div>
           <div
             data-no-dock-drag
             onPointerDown={onResizeStart('bottom-left')}
-            className="absolute -bottom-2 -left-2 z-[3] flex h-6 w-6 cursor-nesw-resize touch-none items-center justify-center rounded-full border border-border/70 bg-background/95 shadow-sm"
-            aria-label={t('resizeBottomLeftLabel')}
-            title={t('resizeBottomLeftLabel')}
+            className="absolute -bottom-1 -left-1 z-[3] flex h-5 w-5 cursor-nesw-resize touch-none items-center justify-center"
+            aria-label="Resize call window"
+            title="Resize call window"
           >
-            <div className="pointer-events-none h-3 w-3 rotate-45 border-b-2 border-l-2 border-foreground/75" />
+            <div className="pointer-events-none relative h-3 w-3">
+              <span className="absolute left-0 top-[6px] block h-[1.5px] w-2 -rotate-[135deg] rounded bg-foreground/70" />
+              <span className="absolute left-[2px] top-[3px] block h-[1.5px] w-2 -rotate-[135deg] rounded bg-foreground/70" />
+            </div>
           </div>
         </>
       )}
