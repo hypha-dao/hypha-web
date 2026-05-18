@@ -143,13 +143,26 @@ export async function POST(request: NextRequest) {
           'Summary generation timed out',
         );
         if (result.ok) {
-          await enqueueSignalEvaluationFromMemory(
-            {
-              spaceSlug,
-              triggerKind: 'ops_refresh',
-            },
-            { db },
-          );
+          try {
+            await enqueueSignalEvaluationFromMemory(
+              {
+                spaceSlug,
+                triggerKind: 'ops_refresh',
+              },
+              { db },
+            );
+          } catch (enqueueError) {
+            console.error(
+              '[space-memory.refresh-discussions] Failed to enqueue signal evaluation',
+              {
+                spaceSlug,
+                error:
+                  enqueueError instanceof Error
+                    ? enqueueError.message
+                    : String(enqueueError),
+              },
+            );
+          }
           summaries.push({
             space_slug: spaceSlug,
             ok: true,
