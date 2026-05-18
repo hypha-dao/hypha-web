@@ -545,17 +545,16 @@ async function buildDeterministicSpaceFallback({
           )?.tag ?? 'coordination';
 
         const recommendation = [
-          `A strong next signal to create in "${safe}" is a **${leastCoveredType}** signal focused on **${String(
+          `Recommendation for "${safe}":`,
+          `- Action: Create one ${leastCoveredType} signal on ${String(
             suggestedTag,
-          )}**.`,
-          '',
-          'Suggested draft:',
-          `- Title: Improve ${String(suggestedTag)} execution loop`,
-          `- Type: ${leastCoveredType}`,
-          '- Priority: medium',
-          '- Why now: this appears underrepresented vs other signal types, so adding one can balance the signal portfolio.',
-          '- First step: define one measurable outcome for the next 2 weeks and assign an owner.',
-          '',
+          )}.`,
+          `- Why now: ${leastCoveredType} is underrepresented in the current signal mix.`,
+          '- Expected impact: better portfolio balance and clearer execution focus.',
+          `- First step: draft "Improve ${String(
+            suggestedTag,
+          )} execution loop", set one 2-week KPI, assign one owner.`,
+          '- Confidence: 0.74',
           'I used deterministic signal-board data because the external model provider is currently unavailable.',
         ].join('\n');
 

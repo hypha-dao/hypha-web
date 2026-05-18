@@ -22,12 +22,19 @@ import {
   CheckCircle2,
   Compass,
   Copy,
+  FileIcon,
   Handshake,
+  ImageIcon,
   Loader2,
   Mic,
+  Paperclip,
+  Plus,
   PlusCircle,
+  Send,
   Square,
+  Video,
   Wallet,
+  X,
 } from 'lucide-react';
 import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space } from '@hypha-platform/core/client';
@@ -38,6 +45,12 @@ import {
   saveOnboardingConversationContext,
   useAiPanel,
 } from '@hypha-platform/epics';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@hypha-platform/ui';
 
 const getSpacePath = (lang: string, spaceSlug: string) =>
   `/${lang}/dho/${spaceSlug}/agreements`;
@@ -217,6 +230,11 @@ export function OnboardingAdventurePage({
   const { openAiPanel, setAiOverlayVisible } = useAiPanel();
   const [aiPrompt, setAiPrompt] = useState('');
   const aiPromptRef = useRef(aiPrompt);
+  const heroFileInputRef = useRef<HTMLInputElement>(null);
+  const heroImageInputRef = useRef<HTMLInputElement>(null);
+  const heroVideoInputRef = useRef<HTMLInputElement>(null);
+  const [heroAttachments, setHeroAttachments] = useState<File[]>([]);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const dictationPrefixRef = useRef('');
   const dictationSessionFinalizedRef = useRef(false);
@@ -415,7 +433,7 @@ export function OnboardingAdventurePage({
 
   const handleStartAiOnboarding = () => {
     const prompt = aiPrompt.trim();
-    if (!prompt) return;
+    if (!prompt && heroAttachments.length === 0) return;
     stopDictation();
     const context = {
       mode: ONBOARDING_SETUP_MODE,
@@ -424,7 +442,7 @@ export function OnboardingAdventurePage({
       createdAt: new Date().toISOString(),
     };
     saveOnboardingConversationContext(context);
-    dispatchAiOnboardingSeed({ prompt, context });
+    dispatchAiOnboardingSeed({ prompt, context, attachments: heroAttachments });
     setIsStartingAi(true);
     setAiStartStatus('opening');
     setAiStartError(null);
@@ -469,6 +487,7 @@ export function OnboardingAdventurePage({
         setAiStartStatus('idle');
         setAiStartError(null);
         setAiPrompt('');
+        setHeroAttachments([]);
         return;
       }
       setIsStartingAi(false);
@@ -491,12 +510,14 @@ export function OnboardingAdventurePage({
     };
   }, []);
 
+  const pushHeroAttachments = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setHeroAttachments((prev) => [...prev, ...Array.from(files)]);
+  };
+
   return (
     <Container className="flex flex-col gap-10 py-8 md:py-10">
-      <header className="space-y-3 text-center">
-        <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/50 bg-accent-3/40 px-3 py-1 text-1 font-medium text-accent-11">
-          {t('subtitle')}
-        </p>
+      <header className="space-y-2 text-center">
         <Heading
           size="9"
           color="secondary"
@@ -511,70 +532,194 @@ export function OnboardingAdventurePage({
       </header>
 
       {onboardingHeroEnabled ? (
-        <section className="relative mx-auto w-full max-w-6xl">
+        <section className="relative mx-auto w-full max-w-5xl">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-8 -top-8 h-48 rounded-full bg-[radial-gradient(ellipse_at_center,oklch(0.63_0.19_300_/_0.34),transparent_72%)] blur-2xl"
           />
-          <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-background/80 p-4 shadow-[0_18px_80px_-36px_rgba(0,0,0,0.75)] backdrop-blur-sm md:p-6">
+          <div className="relative p-1 md:p-2">
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,oklch(0.72_0.13_278_/_0.18),transparent_42%),radial-gradient(circle_at_85%_18%,oklch(0.75_0.12_330_/_0.15),transparent_35%)]"
             />
-            <div className="relative space-y-3 text-center">
-              <h2 className="text-7 font-semibold tracking-tight text-foreground md:text-8">
+            <div className="relative space-y-1 text-center">
+              <h2 className="text-7 font-semibold tracking-tight text-foreground">
                 {t('aiHero.title')}
               </h2>
-              <p className="mx-auto max-w-3xl text-2 text-muted-foreground md:text-3">
-                {t('aiHero.description')}
-              </p>
             </div>
-            <textarea
-              value={aiPrompt}
-              onChange={(event) => setAiPrompt(event.target.value)}
-              placeholder={t('aiHero.placeholder')}
-              aria-label={t('aiHero.ariaLabel')}
-              rows={4}
-              className="relative mt-5 min-h-[182px] w-full resize-y rounded-[1.5rem] border border-border/65 bg-background/70 px-5 py-4 text-3 text-foreground shadow-inner outline-none transition-colors placeholder:text-muted-foreground focus:border-accent-8/65 md:min-h-[210px]"
-            />
-            <div className="relative mt-3 flex items-center justify-between gap-3 px-2 pb-1">
-              <button
-                type="button"
-                onClick={toggleDictation}
-                disabled={!aiChatEnabled}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-border/80 bg-background text-muted-foreground transition-all hover:border-accent-8/50 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label={
-                  isDictating
-                    ? tHuman('composerStopDictation')
-                    : tHuman('composerDictateMessage')
-                }
-                title={
-                  isDictating
-                    ? tHuman('composerStopDictation')
-                    : tHuman('composerDictateMessage')
-                }
-              >
-                {isDictating ? (
-                  <Square className="size-4" aria-hidden />
-                ) : (
-                  <Mic className="size-4" aria-hidden />
-                )}
-              </button>
-              <Button
-                type="button"
-                onClick={handleStartAiOnboarding}
-                disabled={!aiPrompt.trim() || !aiChatEnabled || isStartingAi}
-                className="min-h-11 rounded-full bg-accent-9 px-6 text-accent-contrast shadow-[0_6px_24px_-10px_oklch(0.62_0.19_278)] hover:bg-accent-10"
-              >
-                <span className="inline-flex items-center gap-2">
-                  {isStartingAi ? t('aiHero.starting') : t('aiHero.cta')}
+            <div className="relative mt-3 rounded-[1.5rem] border border-border/70 bg-background/75 shadow-inner">
+              {heroAttachments.length > 0 ? (
+                <div className="narrow-scrollbar max-h-24 overflow-x-auto overflow-y-hidden border-b border-border/65 px-3 py-2">
+                  <div className="flex w-max gap-2">
+                    {heroAttachments.map((file, index) => (
+                      <div
+                        key={`${file.name}-${file.lastModified}-${index}`}
+                        className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-1 text-foreground"
+                      >
+                        {file.type.startsWith('image/') ? (
+                          <ImageIcon className="size-3.5 text-muted-foreground" />
+                        ) : file.type.startsWith('video/') ? (
+                          <Video className="size-3.5 text-muted-foreground" />
+                        ) : (
+                          <FileIcon className="size-3.5 text-muted-foreground" />
+                        )}
+                        <span className="max-w-44 truncate">{file.name}</span>
+                        <button
+                          type="button"
+                          className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          aria-label={tHuman('attachmentRemove')}
+                          onClick={() =>
+                            setHeroAttachments((prev) =>
+                              prev.filter((_, i) => i !== index),
+                            )
+                          }
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <textarea
+                value={aiPrompt}
+                onChange={(event) => setAiPrompt(event.target.value)}
+                placeholder={t('aiHero.placeholder')}
+                aria-label={t('aiHero.ariaLabel')}
+                rows={3}
+                className="relative min-h-[120px] w-full resize-none overflow-y-auto bg-transparent px-4 py-3 text-3 text-foreground outline-none placeholder:text-muted-foreground"
+              />
+              <input
+                ref={heroFileInputRef}
+                type="file"
+                className="sr-only"
+                multiple
+                onChange={(e) => {
+                  pushHeroAttachments(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+              <input
+                ref={heroImageInputRef}
+                type="file"
+                className="sr-only"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  pushHeroAttachments(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+              <input
+                ref={heroVideoInputRef}
+                type="file"
+                className="sr-only"
+                accept="video/*"
+                multiple
+                onChange={(e) => {
+                  pushHeroAttachments(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+              <div className="flex items-center justify-between gap-2 px-3 pb-2.5">
+                <div className="flex items-center gap-1">
+                  <DropdownMenu
+                    modal={false}
+                    open={attachMenuOpen}
+                    onOpenChange={setAttachMenuOpen}
+                  >
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
+                        aria-label={tHuman('composerAttachMenu')}
+                        title={tHuman('composerAttachMenu')}
+                      >
+                        <Plus className="size-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="min-w-[200px]"
+                    >
+                      <DropdownMenuItem
+                        className="cursor-pointer gap-2"
+                        onSelect={() =>
+                          requestAnimationFrame(() =>
+                            heroImageInputRef.current?.click(),
+                          )
+                        }
+                      >
+                        <ImageIcon className="size-4" aria-hidden />
+                        <span>{tHuman('composerAttachImage')}</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer gap-2"
+                        onSelect={() =>
+                          requestAnimationFrame(() =>
+                            heroVideoInputRef.current?.click(),
+                          )
+                        }
+                      >
+                        <Video className="size-4" aria-hidden />
+                        <span>{tHuman('composerAttachVideo')}</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer gap-2"
+                        onSelect={() =>
+                          requestAnimationFrame(() =>
+                            heroFileInputRef.current?.click(),
+                          )
+                        }
+                      >
+                        <Paperclip className="size-4" aria-hidden />
+                        <span>{tHuman('composerAttachFile')}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <button
+                    type="button"
+                    onClick={toggleDictation}
+                    disabled={!aiChatEnabled}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={
+                      isDictating
+                        ? tHuman('composerStopDictation')
+                        : tHuman('composerDictateMessage')
+                    }
+                    title={
+                      isDictating
+                        ? tHuman('composerStopDictation')
+                        : tHuman('composerDictateMessage')
+                    }
+                  >
+                    {isDictating ? (
+                      <Square className="size-3.5" aria-hidden />
+                    ) : (
+                      <Mic className="size-4" aria-hidden />
+                    )}
+                  </button>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleStartAiOnboarding}
+                  disabled={
+                    (!aiPrompt.trim() && heroAttachments.length === 0) ||
+                    !aiChatEnabled ||
+                    isStartingAi
+                  }
+                  className="h-8 w-8 rounded-full bg-accent-9 p-0 text-accent-contrast shadow-[0_6px_24px_-10px_oklch(0.62_0.19_278)] hover:bg-accent-10"
+                  aria-label={
+                    isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
+                  }
+                >
                   {isStartingAi ? (
                     <Loader2 className="size-4 animate-spin" aria-hidden />
                   ) : (
-                    <ArrowUp className="size-4" aria-hidden />
+                    <Send className="size-4" aria-hidden />
                   )}
-                </span>
-              </Button>
+                </Button>
+              </div>
             </div>
           </div>
           {isStartingAi || aiStartStatus === 'failed' ? (
@@ -625,9 +770,6 @@ export function OnboardingAdventurePage({
               {t('aiHero.unavailable')}
             </p>
           ) : null}
-          <p className="text-center text-1 text-muted-foreground/90">
-            {t('aiHero.helper')}
-          </p>
         </section>
       ) : null}
 

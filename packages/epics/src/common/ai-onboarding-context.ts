@@ -42,6 +42,7 @@ export type OnboardingConversationContext = {
 type SeedEventDetail = {
   prompt: string;
   context: OnboardingConversationContext;
+  attachments?: File[];
 };
 type SeedAckEventDetail = {
   ok?: boolean;

@@ -196,6 +196,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     OnboardingConversationContext | undefined
   >(() => readOnboardingConversationContext());
   const pendingSeedPromptRef = useRef<string | null>(null);
+  const pendingSeedAttachmentsRef = useRef<File[]>([]);
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
   const recentSpaceLookupSlugs = useMemo(
     () =>
@@ -606,16 +607,45 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const onSeed = (event: Event) => {
       if (!(event instanceof CustomEvent)) return;
       const detail = event.detail as
-        | { prompt?: string; context?: OnboardingConversationContext }
+        | {
+            prompt?: string;
+            context?: OnboardingConversationContext;
+            attachments?: File[];
+          }
         | undefined;
       const prompt = detail?.prompt?.trim();
       const context = detail?.context;
-      if (!prompt || !context || context.mode !== ONBOARDING_SETUP_MODE) return;
+      if (!context || context.mode !== ONBOARDING_SETUP_MODE) return;
+      const attachments = Array.isArray(detail?.attachments)
+        ? detail.attachments.filter(
+            (file): file is File => file instanceof File,
+          )
+        : [];
+      if (!prompt && attachments.length === 0) return;
 
       dispatchAiOnboardingSeedAck({ stage: 'received' });
       setOnboardingContext(context);
-      setInput(prompt);
-      pendingSeedPromptRef.current = prompt;
+      setInput(prompt ?? '');
+      setDraftAttachments(
+        attachments.map((file) => ({
+          id:
+            typeof globalThis.crypto?.randomUUID === 'function'
+              ? globalThis.crypto.randomUUID()
+              : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          file,
+          kind: file.type.startsWith('image/')
+            ? 'image'
+            : file.type.startsWith('video/')
+            ? 'video'
+            : file.type.startsWith('audio/')
+            ? 'audio'
+            : 'file',
+          previewUrl: URL.createObjectURL(file),
+          spoiler: false,
+        })),
+      );
+      pendingSeedPromptRef.current = prompt ?? null;
+      pendingSeedAttachmentsRef.current = attachments;
       openAiPanel();
       setAiOverlayVisible(false);
     };
@@ -631,28 +661,56 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   useEffect(() => {
     if (pendingSeedPromptRef.current == null) return;
     if (isStreaming) return;
-    if (!pendingSeedPromptRef.current.trim()) {
+    const seededPrompt = pendingSeedPromptRef.current ?? '';
+    const seededAttachments = pendingSeedAttachmentsRef.current;
+    if (!seededPrompt.trim() && seededAttachments.length === 0) {
       pendingSeedPromptRef.current = null;
+      pendingSeedAttachmentsRef.current = [];
       return;
     }
-
-    const seededPrompt = pendingSeedPromptRef.current;
     pendingSeedPromptRef.current = null;
+    pendingSeedAttachmentsRef.current = [];
 
     void (async () => {
       try {
         dispatchAiOnboardingSeedAck({ stage: 'sending' });
         clearError();
         const options = await buildMessageOptions();
+        const attachmentParts =
+          seededAttachments.length > 0
+            ? await convertFilesToParts(seededAttachments)
+            : [];
+        const textParts = seededPrompt.trim()
+          ? [{ type: 'text' as const, text: seededPrompt }]
+          : [];
         await sendMessage(
-          { role: 'user', parts: [{ type: 'text', text: seededPrompt }] },
+          { role: 'user', parts: [...textParts, ...attachmentParts] },
           options,
         );
         setInput('');
+        setDraftAttachments([]);
         dispatchAiOnboardingSeedAck({ ok: true, stage: 'sent' });
       } catch (seedError) {
         console.error('[AiLeftPanel] onboarding seed send failed:', seedError);
         setInput(seededPrompt);
+        setDraftAttachments(
+          seededAttachments.map((file) => ({
+            id:
+              typeof globalThis.crypto?.randomUUID === 'function'
+                ? globalThis.crypto.randomUUID()
+                : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            file,
+            kind: file.type.startsWith('image/')
+              ? 'image'
+              : file.type.startsWith('video/')
+              ? 'video'
+              : file.type.startsWith('audio/')
+              ? 'audio'
+              : 'file',
+            previewUrl: URL.createObjectURL(file),
+            spoiler: false,
+          })),
+        );
         dispatchAiOnboardingSeedAck({
           ok: false,
           stage: 'error',

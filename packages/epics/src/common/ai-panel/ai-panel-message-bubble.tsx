@@ -247,9 +247,7 @@ export function AiPanelMessageBubble({
       (p): p is ToolPart =>
         typeof p.type === 'string' && p.type.startsWith('tool-'),
     ) ?? [];
-  const visibleToolParts = toolParts.filter(
-    (part) => part.state !== 'output-available' || !hasVisibleText,
-  );
+  const visibleToolParts = toolParts;
 
   const handleCopy = useCallback(async () => {
     if (!textContent) return;
@@ -399,7 +397,7 @@ export function AiPanelMessageBubble({
       >
         <div
           className={cn(
-            'flex flex-col gap-2 rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
+            'flex flex-col gap-1.5 rounded-2xl px-3 py-2 text-sm leading-snug',
             isUser
               ? 'rounded-tr-sm border border-primary/20 bg-primary/10 text-foreground'
               : 'rounded-tl-sm bg-transparent px-0 py-0 text-foreground',
@@ -409,7 +407,7 @@ export function AiPanelMessageBubble({
             <div className="flex flex-col gap-2">
               <div
                 className={cn(
-                  'space-y-3 break-words text-[15px] leading-7',
+                  'space-y-1.5 break-words text-[14px] leading-6',
                   showExpandToggle && !expanded && 'line-clamp-8',
                 )}
               >
@@ -434,7 +432,7 @@ export function AiPanelMessageBubble({
                     return (
                       <ul
                         key={`${message.id}-ul-${index}`}
-                        className="space-y-1.5 pl-5 text-foreground"
+                        className="space-y-0.5 pl-4 text-foreground"
                       >
                         {block.items.map((item, itemIndex) => (
                           <li
@@ -451,7 +449,7 @@ export function AiPanelMessageBubble({
                     return (
                       <ol
                         key={`${message.id}-ol-${index}`}
-                        className="space-y-2 pl-5 text-foreground"
+                        className="space-y-0.5 pl-4 text-foreground"
                       >
                         {block.items.map((item, itemIndex) => (
                           <li
