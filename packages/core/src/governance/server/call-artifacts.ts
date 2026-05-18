@@ -88,6 +88,11 @@ export async function ingestSpaceCallArtifacts(
   const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
   if (!host) return { ok: false, error: 'Space not found' };
 
+  const transcriptText = input.transcript?.text.trim();
+  if (input.transcript && !transcriptText) {
+    return { ok: false, error: 'transcript.text is required' };
+  }
+
   if (input.recording) {
     const mediaUri = normalizeRecordingMediaUri(input.recording.mediaUri);
     if (!mediaUri) {
@@ -129,11 +134,7 @@ export async function ingestSpaceCallArtifacts(
       });
   }
 
-  if (input.transcript) {
-    const transcriptText = input.transcript.text.trim();
-    if (!transcriptText) {
-      return { ok: false, error: 'transcript.text is required' };
-    }
+  if (input.transcript && transcriptText) {
     await db
       .insert(spaceCallTranscripts)
       .values({
