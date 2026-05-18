@@ -657,6 +657,7 @@ export const SpaceForm = ({
                       {...field}
                       maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                       aspectRatio={12 / 3}
+                      outputMimeType="image/png"
                       enableImageResizer
                       cropDialogLabels={{
                         title: tCommon('uploadLeadImage.cropTitle'),
@@ -716,6 +717,7 @@ export const SpaceForm = ({
                       {...field}
                       maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                       aspectRatio={12 / 3}
+                      outputMimeType="image/png"
                       enableImageResizer
                       cropDialogLabels={{
                         title: tCommon('uploadLeadImage.cropTitle'),
