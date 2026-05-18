@@ -56,7 +56,9 @@ test.describe('Panels visible on space pages', () => {
     await gotoApp(page, '/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
 
-    const ecosystemLogoLink = page.locator('a[aria-label="Ecosystem Logo"]');
+    const ecosystemLogoLink = page.getByRole('link', {
+      name: 'Ecosystem Logo',
+    });
     await expect(ecosystemLogoLink).toBeVisible();
     await expect(ecosystemLogoLink).toHaveAttribute(
       'href',
