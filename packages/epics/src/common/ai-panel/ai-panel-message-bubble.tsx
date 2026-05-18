@@ -44,6 +44,137 @@ type AiPanelMessageBubbleProps = {
   onActionReplySelect?: (text: string) => void;
 };
 
+type MarkdownBlock =
+  | { type: 'heading'; level: 1 | 2 | 3 | 4; text: string }
+  | { type: 'paragraph'; lines: string[] }
+  | { type: 'ul'; items: string[] }
+  | { type: 'ol'; items: string[] };
+
+function renderInlineMarkdown(text: string): React.ReactNode {
+  const nodes: React.ReactNode[] = [];
+  const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  let lastIndex = 0;
+  let partIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tokenRegex.exec(text)) !== null) {
+    const token = match[0];
+    const start = match.index;
+    if (start > lastIndex) {
+      nodes.push(text.slice(lastIndex, start));
+    }
+    if (token.startsWith('**') && token.endsWith('**')) {
+      nodes.push(
+        <strong key={`md-inline-${partIndex++}`} className="font-semibold">
+          {token.slice(2, -2)}
+        </strong>,
+      );
+    } else if (token.startsWith('`') && token.endsWith('`')) {
+      nodes.push(
+        <code
+          key={`md-inline-${partIndex++}`}
+          className="rounded bg-muted px-1.5 py-0.5 text-[0.8em] text-foreground"
+        >
+          {token.slice(1, -1)}
+        </code>,
+      );
+    } else {
+      nodes.push(token);
+    }
+    lastIndex = tokenRegex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes.length > 0 ? nodes : text;
+}
+
+function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
+  const lines = raw.split('\n');
+  const blocks: MarkdownBlock[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const current = lines[i]?.trim() ?? '';
+    if (!current) {
+      i += 1;
+      continue;
+    }
+
+    const headingMatch = current.match(/^(#{1,4})\s+(.+)$/);
+    if (headingMatch) {
+      const headingHashes = headingMatch[1];
+      const headingText = headingMatch[2];
+      if (!headingHashes || !headingText) {
+        i += 1;
+        continue;
+      }
+      blocks.push({
+        type: 'heading',
+        level: headingHashes.length as 1 | 2 | 3 | 4,
+        text: headingText.trim(),
+      });
+      i += 1;
+      continue;
+    }
+
+    const ulItems: string[] = [];
+    while (i < lines.length) {
+      const line = lines[i]?.trim() ?? '';
+      const m = line.match(/^[-*]\s+(.+)$/);
+      if (!m) break;
+      const item = m[1];
+      if (!item) break;
+      ulItems.push(item.trim());
+      i += 1;
+    }
+    if (ulItems.length > 0) {
+      blocks.push({ type: 'ul', items: ulItems });
+      continue;
+    }
+
+    const olItems: string[] = [];
+    while (i < lines.length) {
+      const line = lines[i]?.trim() ?? '';
+      const m = line.match(/^\d+[.)]\s+(.+)$/);
+      if (!m) break;
+      const item = m[1];
+      if (!item) break;
+      olItems.push(item.trim());
+      i += 1;
+    }
+    if (olItems.length > 0) {
+      blocks.push({ type: 'ol', items: olItems });
+      continue;
+    }
+
+    const paragraphLines: string[] = [];
+    while (i < lines.length) {
+      const line = lines[i]?.trim() ?? '';
+      if (!line) break;
+      if (
+        /^(#{1,4})\s+/.test(line) ||
+        /^[-*]\s+/.test(line) ||
+        /^\d+[.)]\s+/.test(line)
+      ) {
+        break;
+      }
+      paragraphLines.push(line);
+      i += 1;
+    }
+    if (paragraphLines.length > 0) {
+      blocks.push({ type: 'paragraph', lines: paragraphLines });
+      continue;
+    }
+
+    i += 1;
+  }
+
+  return blocks;
+}
+
 export function AiPanelMessageBubble({
   message,
   isStreaming,
@@ -67,20 +198,15 @@ export function AiPanelMessageBubble({
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
   const normalizedTextContent = textContent.trim();
-  const textLines = useMemo(
-    () => textContent.split('\n').filter((line) => line.trim().length > 0),
+  const textLines = useMemo(() => textContent.split('\n'), [textContent]);
+  const markdownBlocks = useMemo(
+    () => parseMarkdownBlocks(textContent),
     [textContent],
-  );
-  const isLikelyList = useMemo(
-    () =>
-      textLines.some((line) => /^\s*(?:\d+\.|-|\*)\s+/.test(line)) &&
-      textLines.length >= 4,
-    [textLines],
   );
   const showExpandToggle =
     !isUser &&
     !isStreaming &&
-    (textContent.length > 520 || textLines.length > 9);
+    (textContent.length > 560 || textLines.length > 11);
 
   const hasVisibleText =
     normalizedTextContent.length > 0 && normalizedTextContent !== '(no text)';
@@ -249,24 +375,77 @@ export function AiPanelMessageBubble({
             'flex flex-col gap-2 rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
             isUser
               ? 'rounded-tr-sm border border-primary/20 bg-primary/10 text-foreground'
-              : 'rounded-tl-sm border border-border bg-muted text-foreground',
+              : 'rounded-tl-sm bg-transparent px-0 py-0 text-foreground',
           )}
         >
           {hasVisibleText && (
             <div className="flex flex-col gap-2">
               <div
                 className={cn(
-                  'whitespace-pre-wrap break-words',
+                  'space-y-3 break-words text-[15px] leading-7',
                   showExpandToggle && !expanded && 'line-clamp-8',
                 )}
               >
-                {isLikelyList ? (
-                  textLines.map((line, index) => (
-                    <div key={`${message.id}-line-${index}`}>{line}</div>
-                  ))
-                ) : (
-                  <span>{textContent}</span>
-                )}
+                {markdownBlocks.map((block, index) => {
+                  if (block.type === 'heading') {
+                    return (
+                      <div
+                        key={`${message.id}-heading-${index}`}
+                        className={cn(
+                          'font-semibold tracking-tight text-foreground',
+                          block.level === 1 && 'text-lg',
+                          block.level === 2 && 'text-base',
+                          block.level >= 3 &&
+                            'text-sm uppercase text-muted-foreground',
+                        )}
+                      >
+                        {renderInlineMarkdown(block.text)}
+                      </div>
+                    );
+                  }
+                  if (block.type === 'ul') {
+                    return (
+                      <ul
+                        key={`${message.id}-ul-${index}`}
+                        className="space-y-1.5 pl-5 text-foreground"
+                      >
+                        {block.items.map((item, itemIndex) => (
+                          <li
+                            key={`${message.id}-ul-item-${index}-${itemIndex}`}
+                            className="list-disc"
+                          >
+                            {renderInlineMarkdown(item)}
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  }
+                  if (block.type === 'ol') {
+                    return (
+                      <ol
+                        key={`${message.id}-ol-${index}`}
+                        className="space-y-2 pl-5 text-foreground"
+                      >
+                        {block.items.map((item, itemIndex) => (
+                          <li
+                            key={`${message.id}-ol-item-${index}-${itemIndex}`}
+                            className="list-decimal"
+                          >
+                            {renderInlineMarkdown(item)}
+                          </li>
+                        ))}
+                      </ol>
+                    );
+                  }
+                  return (
+                    <p
+                      key={`${message.id}-p-${index}`}
+                      className="text-foreground/95"
+                    >
+                      {renderInlineMarkdown(block.lines.join(' '))}
+                    </p>
+                  );
+                })}
               </div>
               {showExpandToggle && (
                 <button
@@ -308,7 +487,7 @@ export function AiPanelMessageBubble({
               {visibleToolParts.map((part) => (
                 <div
                   key={part.toolCallId}
-                  className="rounded-lg border border-border bg-muted/50 px-2 py-1.5 text-xs"
+                  className="rounded-xl border border-border/70 bg-background px-3 py-2 text-xs shadow-sm"
                 >
                   {part.state === 'input-streaming' && (
                     <span className="text-muted-foreground">
