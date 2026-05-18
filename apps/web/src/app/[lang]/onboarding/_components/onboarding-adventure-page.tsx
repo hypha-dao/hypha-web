@@ -228,6 +228,7 @@ export function OnboardingAdventurePage({
   onboardingHeroEnabled?: boolean;
 }) {
   const t = useTranslations('OnboardingAdventure');
+  const tCommon = useTranslations('Common');
   const tHuman = useTranslations('HumanChatPanel');
   const locale = useLocale();
   const router = useRouter();
@@ -259,6 +260,7 @@ export function OnboardingAdventurePage({
   const [depositDetailsSpaceSlug, setDepositDetailsSpaceSlug] = useState('');
   const [copiedAddress, setCopiedAddress] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
+  const [hasVisitedAdventure, setHasVisitedAdventure] = useState(false);
 
   const spaceOptions = useMemo(
     () =>
@@ -307,6 +309,20 @@ export function OnboardingAdventurePage({
     },
     [],
   );
+
+  useEffect(() => {
+    const storageKey = 'hypha:onboarding-adventure:visited:v1';
+    try {
+      const alreadyVisited = window.localStorage.getItem(storageKey) === 'true';
+      if (alreadyVisited) {
+        setHasVisitedAdventure(true);
+      } else {
+        window.localStorage.setItem(storageKey, 'true');
+      }
+    } catch {
+      // localStorage unavailable; keep first-visit title fallback
+    }
+  }, []);
 
   useEffect(() => {
     aiPromptRef.current = aiPrompt;
@@ -519,6 +535,9 @@ export function OnboardingAdventurePage({
     if (!files || files.length === 0) return;
     setHeroAttachments((prev) => [...prev, ...Array.from(files)]);
   };
+  const adventureTitle = hasVisitedAdventure
+    ? tCommon('continueAdventure')
+    : t('title');
 
   return (
     <Container className="flex flex-col gap-14 py-10 md:py-12">
@@ -531,7 +550,7 @@ export function OnboardingAdventurePage({
           className="mx-auto max-w-4xl"
         >
           <span className="bg-gradient-to-r from-foreground via-accent-11 to-foreground bg-clip-text text-transparent">
-            {t('title')}
+            {adventureTitle}
           </span>
         </Heading>
         <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-accent-11 shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
