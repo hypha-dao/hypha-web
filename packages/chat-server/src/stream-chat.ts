@@ -964,16 +964,25 @@ function sanitizeMessagesToTextOnly(
         )
         .map((part) => ({ type: 'text' as const, text: part.text }));
 
-      const hasFileParts = (message.parts ?? []).some(
-        (part) =>
-          part != null &&
-          typeof part === 'object' &&
-          (part as { type?: string }).type === 'file',
-      );
+      const fileParts = (message.parts ?? []).flatMap((part) => {
+        if (part == null || typeof part !== 'object') return [];
+        const candidate = part as Record<string, unknown>;
+        if (candidate.type !== 'file') return [];
+        const rawUrl = typeof candidate.url === 'string' ? candidate.url : '';
+        const url = rawUrl.trim();
+        if (!url) return [];
+        const mediaType =
+          typeof candidate.mediaType === 'string' && candidate.mediaType.trim()
+            ? candidate.mediaType
+            : 'application/octet-stream';
+        return [{ type: 'file' as const, mediaType, url }];
+      });
 
-      /** File-only turns were dropped entirely → empty prompt and no assistant text. */
+      const hasFileParts = fileParts.length > 0;
+
+      /** Keep a short hint only when files exist but could not be normalized. */
       const fileOnlySynthetic =
-        explicitTextParts.length === 0 && hasFileParts
+        explicitTextParts.length === 0 && !hasFileParts
           ? [
               {
                 type: 'text' as const,
@@ -991,11 +1000,12 @@ function sanitizeMessagesToTextOnly(
             message.content.trim().length > 0
           ? [{ type: 'text' as const, text: message.content }]
           : [];
+      const normalizedParts = [...fallbackTextParts, ...fileParts];
 
       return {
         id: message.id,
         role: safeRole,
-        parts: fallbackTextParts,
+        parts: normalizedParts,
       };
     })
     .filter((message) => message.parts.length > 0);

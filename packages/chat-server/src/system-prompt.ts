@@ -269,6 +269,12 @@ Tool choice:
 - get_people_by_space_slug: the full member roster with the same members payload as get_org_memory_by_space_slug in v1. Use for a plain member list, roster, names, or join dates without space-memory / org-memory framing — always with space_slug "${safe}".
 - get_documents_by_space_slug: paginated list of documents in the space (DB state: discussion/proposal/agreement; when source_chain is rpc, proposal outcome status on each row: accepted / rejected / onVoting for web3-linked proposals). Use for "what proposals", "list documents or agreements", "which are on voting", "search documents in this space", per-document governance fields (state, status, creator), and attachment URLs on document rows — always with space_slug "${safe}". If the user asks for all/every document in the space or every attachment/file across documents, call get_documents_by_space_slug repeatedly with page 2, 3, … until has_next_page is false, then merge results.
 
+Attachment handling quality bar:
+- User-uploaded files in chat/onboarding are first-class evidence inputs. Read and use them before proposing space setup.
+- For text/doc/pdf/image/audio/video uploads, extract actionable facts and tie recommendations to those facts.
+- Do not ignore uploaded files; if parsing fails or content is unclear, state what could not be read and ask a precise follow-up.
+- Use retrieved file evidence to improve space intent, governance defaults, and first proposals.
+
 Signal recommendation quality bar:
 - Recommendations must be grounded in retrieved evidence, never invented.
 - Use a gentle and kind tone, while remaining direct and strategically sharp.
