@@ -39,15 +39,16 @@ type ResizeCorner = 'top-right' | 'bottom-left';
 const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v1';
 const DOCK_MARGIN_PX = 16;
 const SNAP_EDGE_PX = 24;
-const DOCK_MIN_WIDTH = 420;
-const DOCK_MIN_HEIGHT = 280;
+// Minimum dock size (thumbnail mode baseline); resize can never go below this.
+const DOCK_MIN_WIDTH = 360;
+const DOCK_MIN_HEIGHT = 240;
 const THUMBNAIL_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
-  width: 480,
-  height: 320,
+  width: DOCK_MIN_WIDTH,
+  height: DOCK_MIN_HEIGHT,
 };
 const EXPANDED_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
-  width: 760,
-  height: 560,
+  width: 640,
+  height: 420,
 };
 const DEFAULT_PANE_SPLIT: Record<CallFullViewPaneSplit, number> = {
   sideBySide: 0.68,
@@ -299,25 +300,6 @@ export function GlobalCallDockOverlay() {
       persistDockGeometry(clampDockGeometry(latestGeometryRef.current));
     };
   }, []);
-
-  React.useEffect(() => {
-    const el = dockRef.current;
-    if (!el || dockMode === 'fullscreen') return;
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      const rect = entry.contentRect;
-      setGeometry((prev) =>
-        clampDockGeometry({
-          ...prev,
-          width: Math.round(rect.width),
-          height: Math.round(rect.height),
-        }),
-      );
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [dockMode]);
 
   React.useEffect(() => {
     if (dockMode === 'fullscreen') return;
