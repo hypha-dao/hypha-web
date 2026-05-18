@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -8,7 +8,7 @@ import {
   http,
   isAddress,
 } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
+import { nonceManager, privateKeyToAccount } from 'viem/accounts';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,6 +16,7 @@ export const maxDuration = 60;
 
 const regularSpaceTokenAddress = '0x0692C428864A3e2775C4d4Db3a84124435C7913D';
 const maxBatchSize = 100;
+const signerQueues = new Map<string, Promise<void>>();
 
 const baseChain = defineChain({
   id: 8453,
@@ -62,6 +63,21 @@ const requestSchema = z
         message: 'accounts and allowed must have the same length',
       });
     }
+
+    const seenAccounts = new Set<string>();
+    accounts.forEach((account, index) => {
+      const normalizedAccount = account.toLowerCase();
+      if (seenAccounts.has(normalizedAccount)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['accounts', index],
+          message: 'duplicate account in request',
+        });
+        return;
+      }
+
+      seenAccounts.add(normalizedAccount);
+    });
   });
 
 function unauthorized() {
@@ -76,10 +92,14 @@ function getBearerToken(request: Request) {
 }
 
 function secureEquals(a: string, b: string) {
-  const aHash = createHash('sha256').update(a).digest();
-  const bHash = createHash('sha256').update(b).digest();
+  const aBuffer = Buffer.from(a);
+  const bBuffer = Buffer.from(b);
 
-  return timingSafeEqual(aHash, bHash);
+  if (aBuffer.length !== bBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(aBuffer, bBuffer);
 }
 
 function verifyApiKey(request: Request) {
@@ -124,6 +144,30 @@ function getSignerPrivateKey() {
   return (value.startsWith('0x') ? value : `0x${value}`) as `0x${string}`;
 }
 
+async function withSignerQueue<T>(
+  signerAddress: string,
+  task: () => Promise<T>,
+) {
+  const previousTask = signerQueues.get(signerAddress) ?? Promise.resolve();
+  let release!: () => void;
+  const currentTask = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const queuedTask = previousTask.then(() => currentTask);
+
+  signerQueues.set(signerAddress, queuedTask);
+
+  try {
+    await previousTask;
+    return await task();
+  } finally {
+    release();
+    if (signerQueues.get(signerAddress) === queuedTask) {
+      signerQueues.delete(signerAddress);
+    }
+  }
+}
+
 export async function POST(request: Request) {
   if (!verifyApiKey(request)) {
     return unauthorized();
@@ -146,7 +190,9 @@ export async function POST(request: Request) {
 
   try {
     const rpcUrl = getRpcUrl();
-    const account = privateKeyToAccount(getSignerPrivateKey());
+    const account = privateKeyToAccount(getSignerPrivateKey(), {
+      nonceManager,
+    });
     const transport = http(rpcUrl);
     const publicClient = createPublicClient({
       chain: baseChain,
@@ -158,14 +204,17 @@ export async function POST(request: Request) {
       transport,
     });
 
-    const { request: contractRequest } = await publicClient.simulateContract({
-      account,
-      address: regularSpaceTokenAddress,
-      abi: creditWhitelistAbi,
-      functionName: 'batchSetCreditWhitelistAddresses',
-      args: [parsed.data.accounts, parsed.data.allowed],
+    const transactionHash = await withSignerQueue(account.address, async () => {
+      const { request: contractRequest } = await publicClient.simulateContract({
+        account,
+        address: regularSpaceTokenAddress,
+        abi: creditWhitelistAbi,
+        functionName: 'batchSetCreditWhitelistAddresses',
+        args: [parsed.data.accounts, parsed.data.allowed],
+      });
+
+      return await walletClient.writeContract(contractRequest);
     });
-    const transactionHash = await walletClient.writeContract(contractRequest);
 
     return NextResponse.json({
       transactionHash,
