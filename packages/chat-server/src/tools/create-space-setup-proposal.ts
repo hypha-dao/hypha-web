@@ -48,8 +48,7 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
       if (!access.hasAccess) return { ok: false, error: access.message };
 
       const { person, privyUserId } = await resolveActorPerson(authToken);
-      const confirmationToken =
-        data.require_confirmation_token ?? 'confirm-proposal';
+      const confirmationToken = data.require_confirmation_token;
       const confirmed = hasExplicitConfirmation(
         data.onboarding_last_user_text,
         confirmationToken,
