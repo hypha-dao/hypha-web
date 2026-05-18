@@ -492,7 +492,7 @@ export function SpaceMemoryTimelineItem({
               {thumbPreview}
             </div>
             <span className={filenameRowClass}>
-              <span>{t('spaceMemoryOpenDocument')}</span>
+              <span>{t('openDocument')}</span>
               <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 opacity-60" />
             </span>
           </a>
