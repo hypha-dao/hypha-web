@@ -92,12 +92,6 @@ export function startBrowserCallTranscription(options?: {
   return {
     supported: true as const,
     stop: async () => {
-      stopped = true;
-      try {
-        recognition.stop();
-      } catch {
-        // ignore stop races
-      }
       await new Promise<void>((resolve) => {
         let settled = false;
         const finalize = () => {
@@ -139,6 +133,13 @@ export function startBrowserCallTranscription(options?: {
         };
         recognition.onresult = onResult;
         recognition.onend = onEnd;
+        stopped = true;
+        try {
+          recognition.stop();
+        } catch {
+          finalize();
+          return;
+        }
         setTimeout(finalize, 1500);
       });
       return chunks.join(' ').trim();
