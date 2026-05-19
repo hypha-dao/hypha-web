@@ -82,7 +82,7 @@ export const flagDefinitionsForDiscovery = {
   enableOnboardingAiHero: {
     key: 'enable-onboarding-ai-hero',
     defaultValue:
-      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_AI_HERO) ?? false,
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_AI_HERO) ?? true,
     description: 'Enable AI hero input on onboarding page',
     origin: 'hypha' as const,
     options: undefined as undefined,
@@ -176,7 +176,7 @@ export async function getEnableOnboardingAiHero(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-onboarding-ai-hero',
     process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_AI_HERO,
-    false,
+    true,
   );
 }
 

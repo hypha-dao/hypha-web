@@ -386,7 +386,7 @@ export function AiPanelMessageBubble({
   );
 
   return (
-    <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
+    <div className={cn('flex gap-2', isUser && 'flex-row-reverse')}>
       {!isUser && (
         <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary">
           <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
@@ -397,17 +397,17 @@ export function AiPanelMessageBubble({
       >
         <div
           className={cn(
-            'flex flex-col gap-1.5 rounded-2xl px-3 py-2 text-sm leading-snug',
+            'flex flex-col gap-1 rounded-2xl px-3 py-2 text-sm leading-snug',
             isUser
               ? 'rounded-tr-sm border border-primary/20 bg-primary/10 text-foreground'
               : 'rounded-tl-sm bg-transparent px-0 py-0 text-foreground',
           )}
         >
           {hasVisibleText && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               <div
                 className={cn(
-                  'space-y-1.5 break-words text-[14px] leading-6',
+                  'space-y-0.5 break-words text-[14px] leading-5',
                   showExpandToggle && !expanded && 'line-clamp-8',
                 )}
               >
