@@ -1271,7 +1271,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         coherenceSlug: coherenceSlug?.trim() || null,
         memberMatrixUserIds: deduped,
         updatedAt: new Date().toISOString(),
-      });
+      } as any);
       setSignalTeamMemberIds(deduped);
       setSignalTeamPendingRequesterIds((prev) =>
         prev.filter((id) => !deduped.includes(id)),
@@ -1291,7 +1291,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         requesterMatrixUserId: currentUserId,
         status: 'pending',
         updatedAt: new Date().toISOString(),
-      });
+      } as any);
       setSignalTeamPendingRequesterIds((prev) =>
         prev.includes(currentUserId) ? prev : [...prev, currentUserId],
       );
@@ -1319,14 +1319,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             requesterMatrixUserId: requesterId,
             status: 'approved',
             updatedAt: new Date().toISOString(),
-          }),
+          } as any),
           client.sendEvent(roomId, EventType.RoomMessage, {
             msgtype: MsgType.Notice,
             body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
             coherenceSlug: coherenceSlug?.trim() || null,
             memberMatrixUserIds: nextMembers,
             updatedAt: new Date().toISOString(),
-          }),
+          } as any),
         ]);
         setSignalTeamMemberIds(nextMembers);
         setSignalTeamPendingRequesterIds((prev) =>
