@@ -74,6 +74,35 @@ const exchangeBrandStyles = {
     'border border-transparent bg-[#6C3BFF] text-white hover:bg-[#5a30d6]',
 } as const;
 const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
+const HERO_TITLE_ROTATING_WORDS = [
+  'Anything',
+  'Projects',
+  'Start-ups',
+  'Ventures',
+  'Companies',
+  'Studios',
+  'Games',
+  'Clubs',
+  'Guilds',
+  'Associations',
+  'Schools',
+  'Cooperatives',
+  'Collectives',
+  'Communities',
+  'Networks',
+  'Hubs',
+  'Coalitions',
+  'Movements',
+  'Ecosystems',
+  'DAOs',
+  'NGOs',
+  'Funds',
+  'Villages',
+  'Farms',
+  'Festivals',
+  'Solidarity',
+  'Livelihoods',
+] as const;
 
 const normalizeEvmAddress = (value: string | null | undefined) =>
   (value ?? '').replace(/\s+/g, '').trim();
@@ -266,6 +295,7 @@ export function OnboardingAdventurePage({
   const copyTimeoutRef = useRef<number | null>(null);
   const [hasVisitedAdventure, setHasVisitedAdventure] = useState(false);
   const [heroPlaceholderIndex, setHeroPlaceholderIndex] = useState(0);
+  const [heroTitleWordIndex, setHeroTitleWordIndex] = useState(0);
 
   const firstName = useMemo(() => {
     const rawName = person?.name?.trim();
@@ -366,6 +396,16 @@ export function OnboardingAdventurePage({
     }, 2600);
     return () => window.clearInterval(intervalId);
   }, [rotatingHeroPrompts]);
+
+  useEffect(() => {
+    if (HERO_TITLE_ROTATING_WORDS.length < 2) return;
+    const intervalId = window.setInterval(() => {
+      setHeroTitleWordIndex((current) =>
+        current + 1 >= HERO_TITLE_ROTATING_WORDS.length ? 0 : current + 1,
+      );
+    }, 2500);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const stopDictation = () => {
     const recognition = speechRecognitionRef.current;
@@ -545,8 +585,15 @@ export function OnboardingAdventurePage({
           align="center"
           className="mx-auto max-w-4xl"
         >
-          <span className="bg-gradient-to-r from-foreground via-accent-11 to-foreground bg-clip-text text-transparent">
-            {t('aiHero.title')}
+          <span className="text-foreground">
+            Build{' '}
+            <span
+              key={HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
+              className="inline-block text-accent-11 transition-all duration-300"
+            >
+              {HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
+            </span>
+            , Together.
           </span>
         </Heading>
       </header>
