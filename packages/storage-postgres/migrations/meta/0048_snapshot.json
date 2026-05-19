@@ -1,6 +1,6 @@
 {
-  "id": "896b7c1a-1fdc-4b98-8287-0c2a4cbf127d",
-  "prevId": "d66b4696-2b41-46f4-92f0-cdd7fcaa1b0d",
+  "id": "a4b3c2d1-e5f6-4789-a0bc-1d2e3f4a5b6c",
+  "prevId": "2cf72e9c-79f1-4b88-8b4f-3c61c44575ec",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -407,6 +407,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "ecosystem_logo_url_light": {
+          "name": "ecosystem_logo_url_light",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ecosystem_logo_url_dark": {
+          "name": "ecosystem_logo_url_dark",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "lead_image": {
           "name": "lead_image",
           "type": "text",
@@ -477,6 +489,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'[]'::jsonb"
+        },
+        "chat_room_id": {
+          "name": "chat_room_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -645,6 +663,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "archived": {
+          "name": "archived",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {},
@@ -972,8 +997,8 @@
           "method": "btree",
           "with": {}
         },
-        "search_slug": {
-          "name": "search_slug",
+        "unique_slug": {
+          "name": "unique_slug",
           "columns": [
             {
               "expression": "slug",
@@ -982,7 +1007,7 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1059,11 +1084,24 @@
           ],
           "isUnique": false,
           "concurrently": false,
-          "method": "btree",
+          "method": "gin",
           "with": {}
         }
       },
       "foreignKeys": {
+        "coherences_creator_id_people_id_fk": {
+          "name": "coherences_creator_id_people_id_fk",
+          "tableFrom": "coherences",
+          "tableTo": "people",
+          "columnsFrom": [
+            "creator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "coherences_space_id_spaces_id_fk": {
           "name": "coherences_space_id_spaces_id_fk",
           "tableFrom": "coherences",
@@ -1074,7 +1112,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1096,7 +1134,8 @@
         },
         "environment": {
           "name": "environment",
-          "type": "text",
+          "type": "matrix_environment",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1138,8 +1177,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "refresh_token": {
-          "name": "refresh_token",
+        "encrypted_refresh_token": {
+          "name": "encrypted_refresh_token",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1152,24 +1191,15 @@
         }
       },
       "indexes": {
-        "search_environment": {
-          "name": "search_environment",
+        "matrix_user_links_env_privy_unique": {
+          "name": "matrix_user_links_env_privy_unique",
           "columns": [
             {
               "expression": "environment",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "search_privy_user_id": {
-          "name": "search_privy_user_id",
-          "columns": [
+            },
             {
               "expression": "privy_user_id",
               "isExpression": false,
@@ -1177,14 +1207,20 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
         },
-        "search_matrix_user_id": {
-          "name": "search_matrix_user_id",
+        "matrix_user_links_env_matrix_unique": {
+          "name": "matrix_user_links_env_matrix_unique",
           "columns": [
+            {
+              "expression": "environment",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "matrix_user_id",
               "isExpression": false,
@@ -1192,67 +1228,7 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "search_encrypted_access_token": {
-          "name": "search_encrypted_access_token",
-          "columns": [
-            {
-              "expression": "encrypted_access_token",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "search_device_id": {
-          "name": "search_device_id",
-          "columns": [
-            {
-              "expression": "device_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "search_refresh_token": {
-          "name": "search_refresh_token",
-          "columns": [
-            {
-              "expression": "refresh_token",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "search_token_expires_at": {
-          "name": "search_token_expires_at",
-          "columns": [
-            {
-              "expression": "token_expires_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1264,9 +1240,107 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.token_updates": {
+      "name": "token_updates",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "document_id": {
+          "name": "document_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_address": {
+          "name": "token_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "token_updates_document_id_idx": {
+          "name": "token_updates_document_id_idx",
+          "columns": [
+            {
+              "expression": "document_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "token_updates_token_address_idx": {
+          "name": "token_updates_token_address_idx",
+          "columns": [
+            {
+              "expression": "token_address",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "token_updates_document_id_documents_id_fk": {
+          "name": "token_updates_document_id_documents_id_fk",
+          "tableFrom": "token_updates",
+          "tableTo": "documents",
+          "columnsFrom": [
+            "document_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
+    "public.matrix_environment": {
+      "name": "matrix_environment",
+      "schema": "public",
+      "values": [
+        "development",
+        "preview",
+        "production"
+      ]
+    },
     "public.document_state": {
       "name": "document_state",
       "schema": "public",
