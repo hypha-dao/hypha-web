@@ -213,7 +213,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
                       {tCoherence(agent.role)}
                     </div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                      {agent.tagGroup}
+                      {tCoherence(`tagGroup.${agent.tagGroup}`)}
                     </div>
                   </div>
                 </div>
