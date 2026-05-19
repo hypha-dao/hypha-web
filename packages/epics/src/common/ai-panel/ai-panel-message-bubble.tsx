@@ -50,6 +50,40 @@ type MarkdownBlock =
   | { type: 'ul'; items: string[] }
   | { type: 'ol'; items: string[] };
 
+const confirmationPreviewLabels: Record<string, string> = {
+  title: 'Space name',
+  description: 'Purpose',
+  slug: 'Space URL name',
+  parent_space_name: 'Parent space',
+  parent_space_slug: 'Parent space',
+  links: 'Links',
+  categories: 'Categories',
+  flags: 'Labels',
+};
+
+function formatConfirmationPreviewValue(raw: unknown): string | null {
+  if (raw == null) return null;
+  if (typeof raw === 'string') {
+    const value = raw.trim();
+    return value.length > 0 ? value : null;
+  }
+  if (typeof raw === 'number' || typeof raw === 'boolean') return String(raw);
+  if (Array.isArray(raw)) {
+    if (raw.length === 0) return null;
+    const normalized = raw
+      .map((item) =>
+        typeof item === 'string' || typeof item === 'number'
+          ? String(item).trim()
+          : '',
+      )
+      .filter(Boolean);
+    return normalized.length > 0
+      ? normalized.join(', ')
+      : `${raw.length} item(s)`;
+  }
+  return null;
+}
+
 function parseHeadingLine(
   line: string,
 ): { level: 1 | 2 | 3 | 4; text: string } | null {
@@ -272,48 +306,67 @@ export function AiPanelMessageBubble({
       if (!output || typeof output !== 'object') return null;
       const value = output as ConfirmationActionResult;
       if (!value.dry_run && !value.requires_confirmation) return null;
-      const entries = value.preview ? Object.entries(value.preview) : [];
+      const entries = value.preview
+        ? Object.entries(value.preview)
+            .map(([key, raw]) => {
+              const displayValue = formatConfirmationPreviewValue(raw);
+              if (!displayValue) return null;
+              return {
+                key,
+                label:
+                  confirmationPreviewLabels[key] ?? key.replaceAll('_', ' '),
+                value: displayValue,
+              };
+            })
+            .filter(
+              (item): item is { key: string; label: string; value: string } =>
+                item !== null,
+            )
+        : [];
+      const confirmationToken = value.confirmation_token?.trim();
+      const hasQuickActions =
+        Boolean(confirmationToken) && Boolean(onActionReplySelect);
       return (
-        <div className="rounded-lg border border-accent-7/60 bg-accent-3/40 px-2 py-2 text-xs">
+        <div className="rounded-xl border border-accent-8/55 bg-accent-3/30 px-3 py-3 text-xs shadow-[0_8px_22px_-18px_rgba(0,0,0,0.7)]">
           <div className="font-semibold text-accent-11">
             {t('pendingAction')}
           </div>
           {entries.length > 0 ? (
-            <div className="mt-1 space-y-1">
-              {entries.slice(0, 8).map(([key, raw]) => (
-                <div key={key} className="text-muted-foreground">
-                  <span className="font-medium text-foreground">{key}:</span>{' '}
-                  {typeof raw === 'string' || typeof raw === 'number'
-                    ? String(raw)
-                    : JSON.stringify(raw)}
+            <div className="mt-2 space-y-1.5">
+              {entries.slice(0, 6).map((entry) => (
+                <div key={entry.key} className="text-muted-foreground">
+                  <span className="font-medium text-foreground">
+                    {entry.label}:
+                  </span>{' '}
+                  {entry.value}
                 </div>
               ))}
             </div>
           ) : null}
-          {value.confirmation_token ? (
+          {!hasQuickActions && confirmationToken ? (
             <div className="mt-1 text-muted-foreground">
               {t('confirmWith')}{' '}
-              <span className="font-semibold">{value.confirmation_token}</span>
+              <span className="font-semibold">{confirmationToken}</span>
             </div>
           ) : null}
           {value.next_step ? (
             <div className="mt-1 text-muted-foreground">{value.next_step}</div>
           ) : null}
-          {value.confirmation_token && onActionReplySelect ? (
-            <div className="mt-2 flex gap-2">
+          {hasQuickActions ? (
+            <div className="mt-3 flex gap-2">
               <button
                 type="button"
                 onClick={() =>
-                  onActionReplySelect(`confirm ${value.confirmation_token}`)
+                  onActionReplySelect?.(`confirm ${confirmationToken}`)
                 }
-                className="rounded border border-success-8/60 bg-success-3 px-2 py-1 text-[11px] font-semibold text-success-11"
+                className="rounded-md border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 px-3 py-1.5 text-[11px] font-semibold text-accent-contrast shadow-[0_10px_20px_-16px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22"
               >
                 {t('confirm')}
               </button>
               <button
                 type="button"
-                onClick={() => onActionReplySelect('cancel this action')}
-                className="rounded border border-border bg-muted px-2 py-1 text-[11px] font-semibold text-muted-foreground"
+                onClick={() => onActionReplySelect?.('cancel this action')}
+                className="rounded-md border border-border/70 bg-background px-3 py-1.5 text-[11px] font-semibold text-foreground transition-colors hover:bg-muted"
               >
                 {t('cancel')}
               </button>

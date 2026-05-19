@@ -366,6 +366,36 @@ export function OnboardingAiFullPage({
     sendMessage,
   ]);
 
+  const handleActionReplySelect = useCallback(
+    async (text: string) => {
+      const normalized = text.trim();
+      if (!normalized || isStreaming) return;
+      setInput('');
+      setDraftAttachments([]);
+      try {
+        clearError();
+        const options = await buildMessageOptions();
+        setOnboardingContext((previous) => ({
+          ...previous,
+          lastUserText: normalized,
+          setupPhase:
+            previous.setupPhase === 'discover' ? 'draft' : previous.setupPhase,
+        }));
+        await sendMessage(
+          { role: 'user', parts: [{ type: 'text', text: normalized }] },
+          options,
+        );
+      } catch (sendError) {
+        console.error(
+          '[OnboardingAiFullPage] quick reply send failed:',
+          sendError,
+        );
+        setInput(text);
+      }
+    },
+    [buildMessageOptions, clearError, isStreaming, sendMessage],
+  );
+
   const suggestions = [
     t('aiHero.rotating.createSpace'),
     t('aiHero.rotating.governance'),
@@ -402,6 +432,7 @@ export function OnboardingAiFullPage({
             showSuggestions={!isStreaming}
             onSuggestionSelect={(text) => setInput(text)}
             isStreaming={isStreaming || isCreatingSpaceWithWalletFlow}
+            onActionReplySelect={handleActionReplySelect}
           />
           <AiPanelChatBar
             value={input}
