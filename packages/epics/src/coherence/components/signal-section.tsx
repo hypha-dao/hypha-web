@@ -557,7 +557,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           {toolbarLeft}
           {activeBoards.length > 0 ? (
-            <>
+            <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto">
               <span className="text-1 font-medium text-muted-foreground">
                 {t.has('boardFilters' as never)
                   ? t('boardFilters' as never)
@@ -622,7 +622,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
                   </Button>
                 </div>
               ) : null}
-            </>
+            </div>
           ) : null}
         </div>
       ) : null}
