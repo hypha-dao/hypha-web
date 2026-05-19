@@ -26,6 +26,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import {
   useMatrix,
   useCoherenceMutationsWeb2Rsc,
+  useHookRegistry,
   useJwt,
   useMatrixUserIdsByPrivySubs,
   useMe,
@@ -579,6 +580,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     openHumanChatPanel,
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyChatMention } = useSendNotifications({ authToken });
   const { person: me } = useMe();
   const { persons: spaceMembersResult } = useMembers({
     spaceSlug,
@@ -2274,7 +2277,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           });
         }
       } else {
-        await matrixRef.current.sendMessage({
+        const sendResult = await matrixRef.current.sendMessage({
           roomId,
           message: wirePlain,
           mentionUserIds,
@@ -2305,6 +2308,41 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               }
             : {}),
         });
+        const mentionTargets = mentionUserIds.filter(
+          (matrixId) => matrixId !== currentUserIdRef.current,
+        );
+        if (
+          mentionTargets.length > 0 &&
+          sendResult.eventId &&
+          mode === 'space'
+        ) {
+          const params = new URLSearchParams(
+            searchParams?.toString() ?? undefined,
+          );
+          params.set('msg', sendResult.eventId);
+          params.set('chat', roomId);
+          const query = params.toString();
+          const deepLink =
+            typeof window !== 'undefined'
+              ? `${window.location.origin}${pathname}${query ? `?${query}` : ''}`
+              : pathname;
+          const actorDisplayName =
+            [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
+            me?.nickname?.trim() ||
+            t('you');
+          void notifyChatMention({
+            actorSlug: me?.slug,
+            actorDisplayName,
+            mentionMatrixUserIds: mentionTargets,
+            messagePreview: wirePlain.trim().slice(0, 220),
+            url: deepLink,
+          }).catch((notifyErr) => {
+            console.warn(
+              '[HumanRightPanel] Mention notification dispatch failed:',
+              notifyErr,
+            );
+          });
+        }
       }
       setSendingPending(null);
       disposeDraftAttachmentUrls(savedAttachments);
@@ -2374,6 +2412,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     editDraft,
     draftAttachments,
     mentionSanitizedLabelToUserId,
+    mode,
+    searchParams,
+    pathname,
+    me?.name,
+    me?.surname,
+    me?.nickname,
+    me?.slug,
+    notifyChatMention,
     t,
   ]);
 
