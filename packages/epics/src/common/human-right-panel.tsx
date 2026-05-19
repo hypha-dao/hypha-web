@@ -980,7 +980,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (currentUserId && userId === currentUserId) continue;
         byUserId.set(userId, {
           displayLabel: matrixMemberDisplayLabel(member, userId),
-          avatarUrl: matrixMemberAvatarSquare(client, candidateRoomId, userId, 64),
+          avatarUrl: matrixMemberAvatarSquare(
+            client,
+            candidateRoomId,
+            userId,
+            64,
+          ),
         });
       }
     }
