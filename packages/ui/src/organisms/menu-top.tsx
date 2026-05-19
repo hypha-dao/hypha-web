@@ -283,7 +283,7 @@ export const MenuTop = ({
         </div>
 
         {/* Mobile Full Screen Menu */}
-        {showMobileHamburger && isCompact && isMobileMenuOpen && (
+        {showMobileHamburger && isMobileMenuOpen && (
           <div
             id="mobile-menu"
             className="fixed inset-x-0 bottom-0 z-40 flex flex-col items-center overflow-y-auto bg-background-2 p-4"
