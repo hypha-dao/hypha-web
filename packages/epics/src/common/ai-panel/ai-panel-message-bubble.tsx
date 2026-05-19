@@ -316,7 +316,7 @@ export function AiPanelMessageBubble({
         </div>
       );
     },
-    [onActionReplySelect],
+    [onActionReplySelect, t],
   );
 
   const renderToolOutput = useCallback(
