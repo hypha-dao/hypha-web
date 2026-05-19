@@ -74,32 +74,51 @@ export function toPaymentReason(
 export async function getSpacePaymentEligibility(
   web3SpaceId?: number | null,
 ): Promise<PaymentEligibility> {
-  if (typeof web3SpaceId !== 'number' || !Number.isFinite(web3SpaceId)) {
+  if (
+    typeof web3SpaceId !== 'number' ||
+    !Number.isFinite(web3SpaceId) ||
+    !Number.isInteger(web3SpaceId) ||
+    web3SpaceId <= 0
+  ) {
     return {
       eligible: false,
       hasSpacePaid: false,
       daysLeft: 0,
-      reason: 'Space has no valid web3 id for payment checks.',
+      reason: 'Space has no valid positive integer web3 id for payment checks.',
     };
   }
 
   const contractAddress = spacePaymentTrackerAddress[PAYMENT_CHAIN_ID];
   const spaceId = BigInt(web3SpaceId);
 
-  const [hasSpacePaid, payments] = await Promise.all([
-    web3Client.readContract({
-      address: contractAddress,
-      abi: spacePaymentTrackerAbi,
-      functionName: 'hasSpacePaid',
-      args: [spaceId],
-    }),
-    web3Client.readContract({
-      address: contractAddress,
-      abi: spacePaymentTrackerAbi,
-      functionName: 'spacePayments',
-      args: [spaceId],
-    }),
-  ]);
+  let hasSpacePaid: unknown;
+  let payments: unknown;
+  try {
+    [hasSpacePaid, payments] = await Promise.all([
+      web3Client.readContract({
+        address: contractAddress,
+        abi: spacePaymentTrackerAbi,
+        functionName: 'hasSpacePaid',
+        args: [spaceId],
+      }),
+      web3Client.readContract({
+        address: contractAddress,
+        abi: spacePaymentTrackerAbi,
+        functionName: 'spacePayments',
+        args: [spaceId],
+      }),
+    ]);
+  } catch (error) {
+    return {
+      eligible: false,
+      hasSpacePaid: false,
+      daysLeft: 0,
+      reason:
+        error instanceof Error
+          ? `rpc_error: ${error.message}`
+          : 'rpc_error: unknown_error',
+    };
+  }
 
   const [expiryTime] = payments as readonly [bigint, boolean];
   const expiryMs = Number(expiryTime) * 1000;
