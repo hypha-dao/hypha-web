@@ -76,6 +76,7 @@ function PdfPreview({
   React.useEffect(() => {
     let cancelled = false;
     let loadingTask: { destroy: () => void } | null = null;
+    let pdf: { destroy: () => Promise<void> } | null = null;
 
     async function renderFirstPage(): Promise<void> {
       try {
@@ -87,7 +88,7 @@ function PdfPreview({
         };
         const task = pdfJs.getDocument(request);
         loadingTask = task;
-        const pdf = await task.promise;
+        pdf = await task.promise;
         const page = await pdf.getPage(1);
 
         const baseViewport = page.getViewport({ scale: 1 });
@@ -97,10 +98,7 @@ function PdfPreview({
         const canvas = canvasRef.current;
         const context = canvas?.getContext('2d');
 
-        if (!canvas || !context || cancelled) {
-          await pdf.destroy();
-          return;
-        }
+        if (!canvas || !context || cancelled) return;
 
         canvas.width = Math.max(1, Math.floor(viewport.width * pixelRatio));
         canvas.height = Math.max(1, Math.floor(viewport.height * pixelRatio));
@@ -109,7 +107,6 @@ function PdfPreview({
         context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
         await page.render({ canvas, canvasContext: context, viewport }).promise;
-        await pdf.destroy();
 
         if (!cancelled) {
           setRenderState('ready');
@@ -119,6 +116,8 @@ function PdfPreview({
           // Fallback to native PDF embed if canvas pipeline fails.
           setRenderState('embed');
         }
+      } finally {
+        await pdf?.destroy().catch(() => undefined);
       }
     }
 
