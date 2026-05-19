@@ -29,7 +29,11 @@ import {
   UsersRound,
 } from 'lucide-react';
 import {
+  Category,
   Space,
+  SpaceFlags,
+  useCreateSpaceOrchestrator,
+  useJwt,
   useMatrix,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
@@ -56,6 +60,7 @@ import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 import { useCompactHeaderMode } from '@hypha-platform/ui';
+import { useConfig } from 'wagmi';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { Empty } from './empty';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
@@ -159,7 +164,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tTreasury = useTranslations('TreasuryTab');
   const tSpaces = useTranslations('Spaces');
   const router = useRouter();
+  const config = useConfig();
   const { resolvedTheme } = useTheme();
+  const { jwt } = useJwt();
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const isCompactHeader = useCompactHeaderMode();
   const { userState: userSpaceState, isLoading: isUserSpaceStateLoading } =
@@ -182,6 +189,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
   const activeSpaceChatRoomId = activeSpaces?.[0]?.chatRoomId?.trim() || null;
   const [input, setInput] = useState('');
+  const aiWalletCreateInFlightRef = useRef(false);
   const [draftAttachments, setDraftAttachments] = useState<
     AiPanelDraftAttachment[]
   >([]);
@@ -198,6 +206,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const pendingSeedPromptRef = useRef<string | null>(null);
   const pendingSeedAttachmentsRef = useRef<File[]>([]);
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
+  const {
+    createSpace: createSpaceWithWalletFlow,
+    isPending: isCreatingSpaceWithWalletFlow,
+    isError: isCreateSpaceWithWalletFlowError,
+    errors: createSpaceWithWalletFlowErrors,
+  } = useCreateSpaceOrchestrator({ authToken: jwt, config });
   const recentSpaceLookupSlugs = useMemo(
     () =>
       recentSpaceSlugs
@@ -774,6 +788,98 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   ]);
 
   useEffect(() => {
+    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
+    if (!pathname.includes('/onboarding')) return;
+    if (aiWalletCreateInFlightRef.current) return;
+
+    const latestWalletCreatePayload = [...messages]
+      .reverse()
+      .flatMap((message) => message.parts ?? [])
+      .find((part) => {
+        if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) {
+          return false;
+        }
+        const toolPart = part as {
+          state?: string;
+          output?: {
+            ok?: boolean;
+            requires_wallet_signature?: boolean;
+            create_payload?: Record<string, unknown>;
+          };
+        };
+        return (
+          toolPart.state === 'output-available' &&
+          toolPart.output?.ok === true &&
+          toolPart.output?.requires_wallet_signature === true &&
+          typeof toolPart.output?.create_payload === 'object'
+        );
+      }) as
+      | {
+          output?: {
+            create_payload?: {
+              title?: string;
+              description?: string;
+              slug?: string;
+              parent_id?: number | null;
+              flags?: string[];
+              links?: string[];
+              categories?: string[];
+              lead_image_url?: string | null;
+              logo_url?: string | null;
+              ecosystem_logo_light_url?: string | null;
+              ecosystem_logo_dark_url?: string | null;
+            };
+          };
+        }
+      | undefined;
+
+    const payload = latestWalletCreatePayload?.output?.create_payload;
+    if (!payload?.title || !payload.description) return;
+    const normalizedTitle =
+      typeof payload.title === 'string' ? payload.title.trim() : '';
+    const normalizedDescription =
+      typeof payload.description === 'string' ? payload.description.trim() : '';
+    if (!normalizedTitle || !normalizedDescription) return;
+    const normalizedFlags: SpaceFlags[] = Array.isArray(payload.flags)
+      ? (payload.flags as SpaceFlags[])
+      : [];
+    const normalizedCategories: Category[] = Array.isArray(payload.categories)
+      ? (payload.categories as Category[])
+      : [];
+
+    aiWalletCreateInFlightRef.current = true;
+    void (async () => {
+      try {
+        await createSpaceWithWalletFlow({
+          title: normalizedTitle,
+          description: normalizedDescription,
+          slug: payload.slug ?? '',
+          parentId:
+            typeof payload.parent_id === 'number' ? payload.parent_id : null,
+          flags: normalizedFlags,
+          links: Array.isArray(payload.links) ? payload.links : [],
+          categories: normalizedCategories,
+          logoUrl: payload.logo_url ?? '',
+          leadImage: payload.lead_image_url ?? '',
+          ...(payload.ecosystem_logo_light_url
+            ? { ecosystemLogoUrlLight: payload.ecosystem_logo_light_url }
+            : {}),
+          ...(payload.ecosystem_logo_dark_url
+            ? { ecosystemLogoUrlDark: payload.ecosystem_logo_dark_url }
+            : {}),
+        });
+      } catch (walletFlowError) {
+        console.error(
+          '[AiLeftPanel] wallet-based onboarding space creation failed:',
+          walletFlowError,
+        );
+      } finally {
+        aiWalletCreateInFlightRef.current = false;
+      }
+    })();
+  }, [createSpaceWithWalletFlow, messages, onboardingContext, pathname]);
+
+  useEffect(() => {
     if (!error || status !== 'error' || autoRetryingRef.current) return;
 
     const errorMessage =
@@ -1176,6 +1282,23 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             ) : null}
           </div>
         )}
+        {isCreateSpaceWithWalletFlowError ? (
+          <div
+            role="alert"
+            className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            <div>{t('streamError')}</div>
+            {createSpaceWithWalletFlowErrors.length > 0 ? (
+              <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs opacity-90">
+                {createSpaceWithWalletFlowErrors
+                  .map((item) =>
+                    item instanceof Error ? item.message : String(item),
+                  )
+                  .join('\n')}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <AiPanelMessages
           messages={messages as ChatUIMessage[]}
           suggestions={suggestions}
@@ -1194,7 +1317,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           draftAttachments={draftAttachments}
           onDraftAttachmentsChange={setDraftAttachments}
           onStop={handleStop}
-          isStreaming={isStreaming}
+          isStreaming={isStreaming || isCreatingSpaceWithWalletFlow}
         />
       </SidebarFooter>
     </>

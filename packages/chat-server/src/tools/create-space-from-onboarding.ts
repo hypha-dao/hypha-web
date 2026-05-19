@@ -4,7 +4,6 @@ import {
   type Category,
   type SpaceFlags,
   checkSpaceAccessForSpace,
-  createSpace,
   findSpaceBySlug,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -176,55 +175,30 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
         dedupeKey: `create_space:${normalizedSlug}`,
       });
 
-      const created = await createSpace(
-        {
+      return {
+        ok: true,
+        requires_wallet_signature: true,
+        create_payload: {
           title: data.title,
           description: data.description,
           slug: normalizedSlug,
-          parentId: parentSpace?.id ?? null,
+          parent_id: parentSpace?.id ?? null,
+          parent_space_slug: safeParentSlug ?? null,
           flags: data.flags as SpaceFlags[],
           links: data.links,
           categories: data.categories as Category[],
-          leadImage: data.lead_image_url,
-          logoUrl: data.logo_url,
-          ecosystemLogoUrlLight: data.ecosystem_logo_light_url,
-          ecosystemLogoUrlDark: data.ecosystem_logo_dark_url,
+          lead_image_url: data.lead_image_url ?? null,
+          logo_url: data.logo_url ?? null,
+          ecosystem_logo_light_url: data.ecosystem_logo_light_url ?? null,
+          ecosystem_logo_dark_url: data.ecosystem_logo_dark_url ?? null,
         },
-        { db },
-      );
-
-      if (!created.slug) {
-        return {
-          ok: false,
-          error: 'Space was created but slug resolution failed.',
-        };
-      }
-
-      const createdSlug = sanitizeSlug(created.slug) ?? created.slug;
-
-      logOnboardingToolEvent({
-        tool: 'create_space_from_onboarding',
-        status: 'executed',
-        actorSub: privyUserId,
-        spaceSlug: createdSlug,
-        dedupeKey: `create_space:${createdSlug}`,
-        details: { parentSpaceSlug: safeParentSlug ?? null },
-      });
-
-      return {
-        ok: true,
-        space: {
-          id: created.id,
-          slug: createdSlug,
-          title: created.title,
-          parent_id: created.parentId ?? null,
-        },
+        next_step:
+          'Ask the user to sign the on-chain space creation transaction. After wallet confirmation and receipt, persist the space in DB.',
         audit: {
           actor_person_id: creator.id,
           actor_sub: privyUserId,
-          action: 'create_space_from_onboarding',
+          action: 'create_space_from_onboarding_handoff',
           confirmed: true,
-          rollback_hint: `Delete space "${createdSlug}" if this was created by mistake.`,
         },
       };
     },
