@@ -204,6 +204,8 @@ type EditDraft = {
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
 
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
+const SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX = 'hypha-room-to-coherence-slug-';
+const SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX = 'hypha-room-to-coherence-title-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
 const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
@@ -371,6 +373,49 @@ function rememberRoomToSpaceSlugSession(roomId: string, slug: string): void {
     );
   } catch {
     // ignore
+  }
+}
+
+function rememberRoomToCoherenceSession(
+  roomId: string,
+  slug: string,
+  title?: string | null,
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(
+      `${SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX}${roomId}`,
+      slug,
+    );
+    if (title?.trim()) {
+      window.sessionStorage.setItem(
+        `${SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX}${roomId}`,
+        title.trim(),
+      );
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function readRoomToCoherenceSession(roomId: string): {
+  slug: string | null;
+  title: string | null;
+} {
+  if (typeof window === 'undefined') return { slug: null, title: null };
+  try {
+    const slug = window.sessionStorage
+      .getItem(`${SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX}${roomId}`)
+      ?.trim();
+    const title = window.sessionStorage
+      .getItem(`${SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX}${roomId}`)
+      ?.trim();
+    return {
+      slug: slug || null,
+      title: title || null,
+    };
+  } catch {
+    return { slug: null, title: null };
   }
 }
 
@@ -2216,6 +2261,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           setActiveTab('chat');
           return;
         }
+
+        const coherence = readRoomToCoherenceSession(targetRoom);
+        if (coherence.slug) {
+          openCoherenceChat(
+            targetRoom,
+            coherence.title || 'Conversation',
+            coherence.slug,
+          );
+          openHumanChatPanel();
+          setActiveTab('chat');
+          setScrollToEventId(eventId);
+          return;
+        }
         setMentionNavigationNotice(t('mentionOpenFallbackRoom'));
       }
 
@@ -2226,6 +2284,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       roomId,
       pathname,
       router,
+      openCoherenceChat,
       openHumanChatPanel,
       space?.chatRoomId,
       spaceSlug,
@@ -2310,6 +2369,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       rememberRoomToSpaceSlugSession(rid, pathSlug);
     }
   }, [pathname, roomId, mode]);
+
+  useEffect(() => {
+    const rid = roomId?.trim() ?? null;
+    const slug = coherenceSlug?.trim() ?? null;
+    if (!rid || !slug || mode !== 'coherence' || typeof window === 'undefined') {
+      return;
+    }
+    rememberRoomToCoherenceSession(rid, slug, coherenceTitle);
+  }, [roomId, coherenceSlug, coherenceTitle, mode]);
 
   /**
    * Global mention badge: avoid listening to `ClientEvent.Room` — it fires on almost every
