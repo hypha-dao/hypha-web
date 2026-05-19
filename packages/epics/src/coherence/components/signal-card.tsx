@@ -19,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   BadgeItem,
-  Badge,
   BadgesList,
   Button,
   Card,
@@ -42,7 +41,7 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { Archive, Pencil, Users } from 'lucide-react';
+import { Archive, Pencil } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -144,14 +143,16 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     const parsed = new Date(createdAt);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }, [createdAt]);
-  const normalizedMessagesCount = React.useMemo(() => {
-    const parsed =
-      typeof messages === 'number'
-        ? messages
-        : Number.parseFloat(`${messages}`);
-    if (!Number.isFinite(parsed) || parsed < 0) return 0;
-    return Math.trunc(parsed);
-  }, [messages]);
+  const createdAtRelative = React.useMemo(
+    () =>
+      createdAtDate
+        ? formatDistanceToNowStrict(createdAtDate, {
+            addSuffix: true,
+            locale: dateFnsLocale,
+          })
+        : '',
+    [createdAtDate, dateFnsLocale],
+  );
 
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -203,7 +204,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       label: typeLabel,
       variant: 'surface',
       colorVariant: typeColorVariant,
-      className: 'rounded-md border-none shadow-none',
+      className: 'rounded-md border-none shadow-none font-medium text-foreground',
     };
     if (!priorityMeta) return [typeBadge];
     const priorityKey = `priorities.${priorityMeta.priority}`;
@@ -214,7 +215,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       label: priorityLabel,
       variant: 'surface',
       colorVariant: priorityColorVariant,
-      className: 'rounded-md border-none shadow-none',
+      className: 'rounded-md border-none shadow-none font-medium text-foreground',
     };
     return [typeBadge, priorityBadge];
   }, [priorityMeta, t, typeLabel, typeColorVariant, priorityColorVariant]);
@@ -372,11 +373,30 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 aria-hidden
               />
               <div
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/20 to-transparent"
+                className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-black/45 to-transparent"
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/55 to-transparent"
                 aria-hidden
               />
             </div>
           </div>
+          {createdAtRelative ? (
+            <div className="pointer-events-none absolute right-2 top-2 z-10 inline-flex max-w-[55%] items-center gap-1 rounded-md bg-black/45 px-2 py-0.5 text-[11px] font-medium text-white/90 backdrop-blur-sm">
+              <ClockIcon className="h-3 w-3 shrink-0" aria-hidden />
+              <span className="truncate">{createdAtRelative}</span>
+            </div>
+          ) : null}
+          {metaBadges.length > 0 ? (
+            <div className="pointer-events-none absolute bottom-2 left-2 z-10 max-w-[80%]">
+              <BadgesList
+                isLoading={isLoading}
+                badges={metaBadges}
+                className="gap-1"
+              />
+            </div>
+          ) : null}
         </Skeleton>
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
@@ -424,13 +444,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </Button>
           </div>
         ) : null}
-        <div className="relative flex min-h-0 flex-1 flex-col gap-2 px-3 pb-2.5 pt-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5 pr-16 text-1 text-muted-foreground">
-            {metaBadges.length > 0 ? (
-              <BadgesList isLoading={isLoading} badges={metaBadges} />
-            ) : null}
-          </div>
-
+        <div className="relative flex min-h-0 flex-1 flex-col gap-2.5 px-3 pb-2.5 pt-3">
           <div className="min-w-0">
             <Skeleton
               className="min-w-0"
@@ -438,26 +452,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               height="20px"
               loading={isLoading}
             >
-              <CardTitle className="line-clamp-2 text-sm font-semibold leading-snug">
+              <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
                 {title}
               </CardTitle>
             </Skeleton>
-          </div>
-
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-1 text-muted-foreground">
-            <span className="inline-flex min-w-0 items-center gap-1">
-              <ClockIcon className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
-              {createdAtDate
-                ? formatDistanceToNowStrict(createdAtDate, {
-                    addSuffix: true,
-                    locale: dateFnsLocale,
-                  })
-                : ''}
-            </span>
-            <span className="inline-flex items-center gap-1 text-muted-foreground">
-              <Users size={12} aria-hidden className="opacity-70" />
-              {t('messageCount', { count: normalizedMessagesCount })}
-            </span>
           </div>
 
           <Skeleton
@@ -469,7 +467,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <div className="flex flex-col gap-1">
               <p
                 ref={descriptionClampRef}
-                className="text-1 leading-snug text-neutral-11 line-clamp-1"
+                className="text-2 leading-snug text-neutral-11 line-clamp-2"
               >
                 {plainDescription}
               </p>

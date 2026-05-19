@@ -188,7 +188,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const { person } = useMe();
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
   const [boards, setBoards] = React.useState<SignalBoard[]>([]);
-  const [activeBoardId, setActiveBoardId] = React.useState<string>('all');
+  const [activeBoardId, setActiveBoardId] = React.useState<string>('');
   const [createBoardOpen, setCreateBoardOpen] = React.useState(false);
   const [newBoardName, setNewBoardName] = React.useState('');
   const [newBoardFilterKind, setNewBoardFilterKind] =
@@ -384,11 +384,11 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }, [boardStorageKey, boards]);
 
   React.useEffect(() => {
-    if (activeBoardId === 'all') return;
+    if (!activeBoardId) return;
     if (
       !boards.some((board) => board.id === activeBoardId && !board.archived)
     ) {
-      setActiveBoardId('all');
+      setActiveBoardId('');
     }
   }, [activeBoardId, boards]);
 
@@ -494,7 +494,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         ),
       );
       if (activeBoardId === boardId) {
-        setActiveBoardId('all');
+        setActiveBoardId('');
       }
     },
     [activeBoardId],
@@ -515,7 +515,53 @@ export const SignalSection: FC<SignalSectionProps> = ({
 
   return (
     <div className="flex w-full flex-col gap-4">
-      {toolbarLeft ? <div>{toolbarLeft}</div> : null}
+      {toolbarLeft || activeBoards.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {toolbarLeft}
+          {activeBoards.length > 0 ? (
+            <>
+              <span className="text-1 font-medium text-muted-foreground">
+                {t.has('boardFilters' as never)
+                  ? t('boardFilters' as never)
+                  : 'Boards'}
+              </span>
+              <Tabs value={activeBoardId} onValueChange={setActiveBoardId}>
+                <TabsList triggerVariant="switch" className="w-fit">
+                  {activeBoards.map((board) => (
+                    <TabsTrigger key={board.id} value={board.id} variant="switch">
+                      {board.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+              {activeBoard &&
+              activeBoard.createdByPersonId != null &&
+              person?.id === activeBoard.createdByPersonId ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => handleArchiveBoard(activeBoard.id)}
+                  aria-label={
+                    t.has('boardArchive' as never)
+                      ? t('boardArchive' as never)
+                      : 'Archive board'
+                  }
+                  title={
+                    t.has('boardArchive' as never)
+                      ? t('boardArchive' as never)
+                      : 'Archive board'
+                  }
+                >
+                  <Archive className="h-3.5 w-3.5" aria-hidden />
+                </Button>
+              ) : null}
+            </>
+          ) : null}
+        </div>
+      ) : null}
       <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
         <Input
           type="search"
@@ -523,10 +569,10 @@ export const SignalSection: FC<SignalSectionProps> = ({
           aria-label={t('searchSignals')}
           onChange={(event) => onUpdateSearch(event.target.value)}
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-          className="w-full lg:min-w-0 lg:max-w-2xl"
+          className="w-full lg:min-w-0 lg:flex-1"
         />
         <div className="flex w-full items-center justify-end lg:w-auto lg:shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 whitespace-nowrap">
             <div className="flex flex-row gap-2 h-full">
               <Checkbox
                 id="hideArchivedSignalsCheckbox"
@@ -717,51 +763,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {activeBoards.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          <div className="text-1 font-medium text-muted-foreground">
-            {t.has('boardFilters' as never)
-              ? t('boardFilters' as never)
-              : 'Boards'}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Tabs value={activeBoardId} onValueChange={setActiveBoardId}>
-              <TabsList triggerVariant="switch" className="w-fit">
-                <TabsTrigger value="all" variant="switch">
-                  {t('boardAll')}
-                </TabsTrigger>
-                {activeBoards.map((board) => (
-                  <TabsTrigger key={board.id} value={board.id} variant="switch">
-                    {board.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-            {activeBoard &&
-            activeBoard.createdByPersonId != null &&
-            person?.id === activeBoard.createdByPersonId ? (
-              <Button
-                type="button"
-                variant="outline"
-                colorVariant="neutral"
-                size="sm"
-                className="h-8"
-                onClick={() => handleArchiveBoard(activeBoard.id)}
-                title={
-                  t.has('boardArchive' as never)
-                    ? t('boardArchive' as never)
-                    : 'Archive board'
-                }
-              >
-                <Archive className="h-3.5 w-3.5" aria-hidden />
-                {t.has('boardArchive' as never)
-                  ? t('boardArchive' as never)
-                  : 'Archive board'}
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
       {provisioningNoticeLines.length > 0 ? (
         <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
       ) : null}
