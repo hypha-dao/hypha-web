@@ -861,7 +861,8 @@ export const MultiSelect = React.forwardRef<
                           setShowAllTagsOnEmptySearch(true);
                         }}
                         onKeyDown={(event) => {
-                          if (event.key !== 'Enter' && event.key !== ' ') return;
+                          if (event.key !== 'Enter' && event.key !== ' ')
+                            return;
                           event.preventDefault();
                           setShowAllTagsOnEmptySearch(true);
                         }}

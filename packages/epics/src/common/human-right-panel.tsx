@@ -266,7 +266,7 @@ type SignalTeamTimelineState = {
 };
 
 type SignalTeamEventContent = {
-  msgtype: MsgType.Notice;
+  msgtype: 'm.notice';
   body: string;
   coherenceSlug: string | null;
   memberMatrixUserIds?: string[];
@@ -334,10 +334,10 @@ function deriveSignalTeamStateFromEvents(
     const senderId = ev.getSender()?.trim() || null;
     const isKnownTrustedSender = Boolean(
       senderId &&
-        (senderId === ownerMatrixUserId || memberMatrixUserIds.includes(senderId)),
+        (senderId === ownerMatrixUserId ||
+          memberMatrixUserIds.includes(senderId)),
     );
-    const hasElevatedRoomPower =
-      roomPowerLevelForUser(room, senderId) >= 50;
+    const hasElevatedRoomPower = roomPowerLevelForUser(room, senderId) >= 50;
     const isTrustedActor = isKnownTrustedSender || hasElevatedRoomPower;
 
     if (eventKind === SIGNAL_TEAM_EVENT_KIND) {
@@ -1535,7 +1535,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           options?.removedMemberMatrixUserIds,
         );
         const addedLabels = added.map((id) => resolveMentionMemberLabel(id));
-        const removedLabels = removed.map((id) => resolveMentionMemberLabel(id));
+        const removedLabels = removed.map((id) =>
+          resolveMentionMemberLabel(id),
+        );
         const summaryParts: string[] = [];
         if (addedLabels.length > 0) {
           summaryParts.push(`added ${addedLabels.join(', ')}`);
@@ -1731,7 +1733,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     const applyFromTimeline = () => {
       const timeline = room.getLiveTimeline().getEvents();
-      const next = deriveSignalTeamStateFromEvents(timeline, coherenceSlug, room);
+      const next = deriveSignalTeamStateFromEvents(
+        timeline,
+        coherenceSlug,
+        room,
+      );
       setSignalTeamMemberIds(next.memberMatrixUserIds);
       setSignalTeamOwnerId(next.ownerMatrixUserId);
       setSignalTeamPendingRequesterIds(next.pendingRequesterIds);
@@ -3448,7 +3454,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                             return;
                           }
                           setSignalTeamDraftMemberIds(
-                            normalizeMatrixUserIds(effectiveSignalTeamMemberIds),
+                            normalizeMatrixUserIds(
+                              effectiveSignalTeamMemberIds,
+                            ),
                           );
                           setSignalTeamPanelOpen(true);
                         }}
@@ -3465,8 +3473,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         </p>
                         <div className="grid gap-1">
                           {signalTeamSelectableMembers.map((member) => {
-                            const selected =
-                              signalTeamEditorMemberIds.includes(member.userId);
+                            const selected = signalTeamEditorMemberIds.includes(
+                              member.userId,
+                            );
                             const isCurrentUser =
                               member.userId === currentUserId;
                             const isOwner = member.userId === signalTeamOwnerId;
