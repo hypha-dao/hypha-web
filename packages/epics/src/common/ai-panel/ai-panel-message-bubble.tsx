@@ -378,6 +378,38 @@ export function AiPanelMessageBubble({
           </span>
         );
       }
+      if (
+        'navigation' in value &&
+        value.navigation &&
+        typeof value.navigation === 'object'
+      ) {
+        const nav = value.navigation as {
+          href?: unknown;
+          label?: unknown;
+          open_in_new_tab?: unknown;
+        };
+        const href = typeof nav.href === 'string' ? nav.href : null;
+        if (!href) {
+          return (
+            <span className="text-muted-foreground">{t('toolCompleted')}</span>
+          );
+        }
+        const label =
+          typeof nav.label === 'string' && nav.label.trim().length > 0
+            ? nav.label
+            : 'Open destination';
+        const newTab = nav.open_in_new_tab === true;
+        return (
+          <a
+            href={href}
+            target={newTab ? '_blank' : undefined}
+            rel={newTab ? 'noopener noreferrer' : undefined}
+            className="inline-flex items-center rounded-md border border-border bg-muted/40 px-2 py-1 font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            {label}
+          </a>
+        );
+      }
       return (
         <span className="text-muted-foreground">{t('toolCompleted')}</span>
       );

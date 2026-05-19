@@ -271,6 +271,7 @@ Tool choice:
 - summarize_space_discussion_by_slug: create and persist a new discussion summary from recent Matrix chat messages for the space. Use when the user asks to summarize discussion, generate meeting/chat recap, or refresh memory summary.
 - ingest_space_call_artifacts: persist call recording and transcript artifacts into space memory for a call session. Use for ingestion workflows when recording URL and/or transcript payload is provided.
 - web_search: search the public web for external/world knowledge. Use for questions not answerable from Hypha tools alone (news, standards, third-party docs, global facts). Prefer Hypha tools for space-specific data; use web_search when the user asks for broader internet knowledge or Hypha data is insufficient.
+- mcp_navigation: route users to the right destination. Supports: entire space, specific screen inside a space, global app screens (outside space context), and external websites. Use this when the user asks "take me to", "open", "where do I go", or needs exact navigation CTA.
 - get_people_by_space_slug: the full member roster with the same members payload as get_org_memory_by_space_slug in v1. Use for a plain member list, roster, names, or join dates without space-memory / org-memory framing — always with space_slug "${safe}".
 - get_documents_by_space_slug: paginated list of documents in the space (DB state: discussion/proposal/agreement; when source_chain is rpc, proposal outcome status on each row: accepted / rejected / onVoting for web3-linked proposals). Use for "what proposals", "list documents or agreements", "which are on voting", "search documents in this space", per-document governance fields (state, status, creator), and attachment URLs on document rows — always with space_slug "${safe}". If the user asks for all/every document in the space or every attachment/file across documents, call get_documents_by_space_slug repeatedly with page 2, 3, … until has_next_page is false, then merge results.
 
@@ -302,5 +303,8 @@ Signal recommendation quality bar:
 
 If the user asks about ecosystem relationships or cross-space coordination, use get_ecosystem_by_space_slug first. If the user asks about members in an org-memory or space-memory context, prefer get_org_memory_by_space_slug; for a plain roster question, get_people_by_space_slug is equivalent for the members slice in v1. If they ask about members as people or a list without that framing, you may call get_people_by_space_slug. If they ask for document/proposal lists or document details from the catalogue, use get_documents_by_space_slug, not get_space_by_slug. For members, never use get_space_by_slug alone. If the user asks to list every member in an org-memory context, paginate get_org_memory_by_space_slug until has_next_page is false, same as for documents. For external/world knowledge outside Hypha data, use web_search and cite returned sources.`;
   }
-  return BASE_SYSTEM_PROMPT;
+  return `${BASE_SYSTEM_PROMPT}
+
+Navigation:
+- mcp_navigation: route users to the right destination in or outside space context. Supports: space, space screen, app screen, and external website. Use when user asks to navigate/open/go to a location or asks where a feature lives.`;
 }
