@@ -22,13 +22,14 @@ describe('sanitizeMentionIds', () => {
 describe('buildMentionEmailBody', () => {
   it('escapes html-sensitive content', () => {
     const html = buildMentionEmailBody({
-      actorDisplayName: 'Alice <script>',
-      messagePreview: 'Hello <b>team</b>',
+      actorDisplayName: 'Alice <script> "x"',
+      messagePreview: "Hello <b>team</b> & 'all'",
       url: 'https://app.hypha.earth/en/dho/test?msg=1',
     });
 
     expect(html).toContain('Alice &lt;script&gt;');
-    expect(html).toContain('Hello &lt;b&gt;team&lt;/b&gt;');
+    expect(html).toContain('&quot;x&quot;');
+    expect(html).toContain('Hello &lt;b&gt;team&lt;/b&gt; &amp; &#39;all&#39;');
     expect(html).not.toContain('<script>');
   });
 
@@ -40,5 +41,15 @@ describe('buildMentionEmailBody', () => {
     });
 
     expect(html).toContain('Open chat to view the message.');
+  });
+
+  it('uses safe fallback link for non-http protocols', () => {
+    const html = buildMentionEmailBody({
+      actorDisplayName: 'Alice',
+      messagePreview: 'hello',
+      url: 'javascript:alert(1)',
+    });
+
+    expect(html).toContain('<a href="#">Open mention</a>');
   });
 });
