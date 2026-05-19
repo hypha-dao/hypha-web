@@ -546,7 +546,7 @@ export function OnboardingAdventurePage({
           className="mx-auto max-w-4xl"
         >
           <span className="bg-gradient-to-r from-foreground via-accent-11 to-foreground bg-clip-text text-transparent">
-            {adventureTitle}
+            {t('aiHero.title')}
           </span>
         </Heading>
       </header>
@@ -563,8 +563,8 @@ export function OnboardingAdventurePage({
               className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,oklch(0.72_0.12_278_/_0.12),transparent_42%),radial-gradient(circle_at_85%_18%,oklch(0.64_0.11_292_/_0.09),transparent_38%)]"
             />
             <div className="relative space-y-1 text-center">
-              <h2 className="text-7 font-semibold tracking-tight text-foreground">
-                {t('aiHero.title')}
+              <h2 className="text-4 font-medium tracking-tight text-muted-foreground">
+                {adventureTitle}
               </h2>
             </div>
             <div className="relative mt-3 rounded-[1.5rem] border border-border/70 bg-background/75 shadow-inner">
