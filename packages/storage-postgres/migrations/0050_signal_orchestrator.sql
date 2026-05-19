@@ -13,6 +13,12 @@ CREATE TABLE "signal_orchestrator_queue" (
   "updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "signal_orchestrator_queue"
+  ADD CONSTRAINT "signal_orchestrator_queue_event_count_non_negative"
+    CHECK ("event_count" >= 0),
+  ADD CONSTRAINT "signal_orchestrator_queue_attempts_non_negative"
+    CHECK ("attempts" >= 0);
+--> statement-breakpoint
 CREATE TABLE "signal_orchestrator_cooldowns" (
   "id" serial PRIMARY KEY NOT NULL,
   "space_id" integer NOT NULL,
