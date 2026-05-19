@@ -175,6 +175,10 @@ Then both paths return consistent allow/deny decisions for organisation-level ac
 When an organisation-eligible user views network/explore surfaces,  
 Then the target space appears in discoverability lists.
 
+**AC-7b** Given a user is logged in but is NOT a member/delegate in any sibling spaces of the target organisation,  
+When discoverability level is `Organisation`,  
+Then the target space does NOT appear in network/explore discoverability lists (activity access denial remains covered by AC-5).
+
 **AC-8** Given a user is member in one or several sibling spaces of the same organisation but not in the target space,  
 When the user attempts to create a proposal in the target space,  
 Then proposal creation is blocked until target-space membership is obtained.
