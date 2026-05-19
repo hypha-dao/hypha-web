@@ -142,6 +142,10 @@ export const MATRIX_UPLOAD_TIMEOUT_MS = 120_000;
 const MATRIX_UPLOAD_STAGGER_MS = 400;
 
 const MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS = 4;
+const MATRIX_HISTORY_BATCH_DELAY_MS = 220;
+const MATRIX_HISTORY_RATE_LIMIT_MAX_RETRIES = 3;
+const MATRIX_HISTORY_RECENT_LOAD_COOLDOWN_MS = 45_000;
+const MATRIX_HISTORY_TARGET_EVENTS = 220;
 const MATRIX_GROUP_CALL_EVENT_TYPE = 'org.matrix.msc3401.call';
 const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
 const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
@@ -486,6 +490,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [],
   );
   const roomHistoryLoadRef = React.useRef<Map<string, Promise<void>>>(
+    new Map(),
+  );
+  const roomHistoryLastLoadedAtRef = React.useRef<Map<string, number>>(
     new Map(),
   );
   const [registeredRoomListeners, setRegisteredRoomListeners] = React.useState<
@@ -1283,25 +1290,59 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return;
       }
 
-      const pageSize = Math.max(10, options?.pageSize ?? 50);
-      const maxBatches = Math.max(1, options?.maxBatches ?? 40);
+      const now = Date.now();
+      const lastLoadedAt = roomHistoryLastLoadedAtRef.current.get(roomId) ?? 0;
+      const hasRecentLoad =
+        now - lastLoadedAt < MATRIX_HISTORY_RECENT_LOAD_COOLDOWN_MS;
+      const existingEventsCount = room.getLiveTimeline().getEvents().length;
+      if (
+        hasRecentLoad ||
+        existingEventsCount >= MATRIX_HISTORY_TARGET_EVENTS
+      ) {
+        return;
+      }
+
+      const pageSize = Math.max(10, options?.pageSize ?? 25);
+      const maxBatches = Math.max(1, options?.maxBatches ?? 8);
       const loadPromise = (async () => {
+        let rateLimitRetries = 0;
         for (let i = 0; i < maxBatches; i++) {
           const beforeCount = room.getLiveTimeline().getEvents().length;
           try {
+            if (i > 0) {
+              await delay(MATRIX_HISTORY_BATCH_DELAY_MS);
+            }
             await client.scrollback(room, pageSize);
           } catch (error) {
+            if (
+              isMatrixRateLimitedError(error) &&
+              rateLimitRetries < MATRIX_HISTORY_RATE_LIMIT_MAX_RETRIES
+            ) {
+              const backoffMs = matrixRateLimitBackoffMs(
+                error,
+                rateLimitRetries,
+              );
+              rateLimitRetries += 1;
+              await delay(backoffMs);
+              i -= 1;
+              continue;
+            }
             console.warn(
               '[MatrixProvider] Failed while loading room history:',
               error,
             );
             break;
           }
+          rateLimitRetries = 0;
           const afterCount = room.getLiveTimeline().getEvents().length;
           if (afterCount <= beforeCount) {
             break;
           }
+          if (afterCount >= MATRIX_HISTORY_TARGET_EVENTS) {
+            break;
+          }
         }
+        roomHistoryLastLoadedAtRef.current.set(roomId, Date.now());
       })();
 
       roomHistoryLoadRef.current.set(roomId, loadPromise);
