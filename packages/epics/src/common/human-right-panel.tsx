@@ -1303,10 +1303,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setSignalTeamPendingRequesterIds((prev) =>
         prev.includes(currentUserId) ? prev : [...prev, currentUserId],
       );
+    } catch (error) {
+      console.error('[HumanRightPanel] requestSignalTeamAccess failed', error);
+      setComposerError(t('sendFailed'));
     } finally {
       setSignalTeamBusy(false);
     }
-  }, [client, roomId, isSignalThread, currentUserId, coherenceSlug]);
+  }, [client, roomId, isSignalThread, currentUserId, coherenceSlug, t]);
 
   const approveSignalTeamRequester = useCallback(
     async (requesterMatrixUserId: string) => {
