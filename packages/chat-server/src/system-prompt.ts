@@ -271,6 +271,7 @@ Tool choice:
 - summarize_space_discussion_by_slug: create and persist a new discussion summary from recent Matrix chat messages for the space. Use when the user asks to summarize discussion, generate meeting/chat recap, or refresh memory summary.
 - ingest_space_call_artifacts: persist call recording and transcript artifacts into space memory for a call session. Use for ingestion workflows when recording URL and/or transcript payload is provided.
 - web_search: search the public web for external/world knowledge. Use for questions not answerable from Hypha tools alone (news, standards, third-party docs, global facts). Prefer Hypha tools for space-specific data; use web_search when the user asks for broader internet knowledge or Hypha data is insufficient.
+- onboarding_guidance: read-only process guide for onboarding. Returns required discovery questions, validation/signature steps, and suggested tools for a process (create space, configure space, join space, deposit, navigate, explore). Use this first in onboarding discover phase before any write/navigation action.
 - mcp_navigation: route users to the right destination. Supports: entire space, specific screen inside a space, global app screens (outside space context), and external websites. Use this when the user asks "take me to", "open", "where do I go", or needs exact navigation CTA.
 - get_people_by_space_slug: the full member roster with the same members payload as get_org_memory_by_space_slug in v1. Use for a plain member list, roster, names, or join dates without space-memory / org-memory framing — always with space_slug "${safe}".
 - get_documents_by_space_slug: paginated list of documents in the space (DB state: discussion/proposal/agreement; when source_chain is rpc, proposal outcome status on each row: accepted / rejected / onVoting for web3-linked proposals). Use for "what proposals", "list documents or agreements", "which are on voting", "search documents in this space", per-document governance fields (state, status, creator), and attachment URLs on document rows — always with space_slug "${safe}". If the user asks for all/every document in the space or every attachment/file across documents, call get_documents_by_space_slug repeatedly with page 2, 3, … until has_next_page is false, then merge results.
@@ -293,6 +294,8 @@ Signal recommendation quality bar:
 - If evidence is weak or missing, state uncertainty clearly and request the exact missing data.
 - Always produce a final user-facing text answer after tool usage. Never stop at tool output alone.
 - For onboarding setup mode, strictly follow: discover -> draft -> confirm -> execute -> verify.
+- During discover in onboarding setup mode, call onboarding_guidance first and ask only the minimum questions required to complete the chosen process.
+- Keep onboarding validation steps to 1-2 max whenever possible; only request additional validation when strictly required by permissions or wallet signing.
 - Never execute onboarding write tools unless the user explicitly confirms the exact action in plain language.
 - When the user asks for recommendations/recos, do NOT recap known context unless explicitly requested.
 - Recommendation answers must be concise and action-driven, defaulting to 3 options max.
@@ -306,5 +309,6 @@ If the user asks about ecosystem relationships or cross-space coordination, use 
   return `${BASE_SYSTEM_PROMPT}
 
 Navigation:
+- onboarding_guidance: process question planner for onboarding; use before proposing write or navigation actions.
 - mcp_navigation: route users to the right destination in or outside space context. Supports: space, space screen, app screen, and external website. Use when user asks to navigate/open/go to a location or asks where a feature lives.`;
 }

@@ -207,6 +207,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const pendingSeedPromptRef = useRef<string | null>(null);
   const pendingSeedAttachmentsRef = useRef<File[]>([]);
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
+  const lastAutoNavigationKeyRef = useRef<string | null>(null);
   const {
     createSpace: createSpaceWithWalletFlow,
     isPending: isCreatingSpaceWithWalletFlow,
@@ -661,10 +662,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       );
       pendingSeedPromptRef.current = prompt ?? null;
       pendingSeedAttachmentsRef.current = attachments;
-      if (!isOnboardingPath) {
-        openAiPanel();
-        setAiOverlayVisible(false);
-      }
+      openAiPanel();
+      setAiOverlayVisible(false);
     };
     window.addEventListener(AI_ONBOARDING_SEED_EVENT, onSeed as EventListener);
     return () => {
@@ -673,7 +672,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         onSeed as EventListener,
       );
     };
-  }, [isOnboardingPath, openAiPanel, setAiOverlayVisible]);
+  }, [openAiPanel, setAiOverlayVisible]);
 
   useEffect(() => {
     if (pendingSeedPromptRef.current == null) return;
@@ -789,6 +788,64 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     router,
     setAiOverlayVisible,
   ]);
+
+  useEffect(() => {
+    if (!isOnboardingPath) return;
+    const latestNavigationOutput = [...messages]
+      .reverse()
+      .flatMap((message) =>
+        (message.parts ?? []).map((part, partIndex) => ({
+          messageId: message.id,
+          partIndex,
+          part,
+        })),
+      )
+      .find(({ part }) => {
+        if (part.type !== 'tool-mcp_navigation') return false;
+        const toolPart = part as {
+          state?: string;
+          output?: {
+            ok?: boolean;
+            navigation?: {
+              href?: string;
+              open_in_new_tab?: boolean;
+            };
+          };
+        };
+        return (
+          toolPart.state === 'output-available' &&
+          toolPart.output?.ok === true &&
+          typeof toolPart.output?.navigation?.href === 'string' &&
+          toolPart.output.navigation.href.length > 0
+        );
+      });
+
+    const navPart = latestNavigationOutput?.part as
+      | {
+          output?: {
+            navigation?: {
+              href?: string;
+              open_in_new_tab?: boolean;
+            };
+          };
+        }
+      | undefined;
+    const href = navPart?.output?.navigation?.href?.trim();
+    if (!href) return;
+    const navigationKey = `${latestNavigationOutput?.messageId ?? 'unknown'}:${
+      latestNavigationOutput?.partIndex ?? 0
+    }:${href}`;
+    if (lastAutoNavigationKeyRef.current === navigationKey) return;
+    lastAutoNavigationKeyRef.current = navigationKey;
+
+    const openInNewTab = navPart?.output?.navigation?.open_in_new_tab === true;
+    const isExternal = /^https?:\/\//i.test(href);
+    if (openInNewTab || isExternal) {
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    router.push(href);
+  }, [isOnboardingPath, messages, router]);
 
   useEffect(() => {
     if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;

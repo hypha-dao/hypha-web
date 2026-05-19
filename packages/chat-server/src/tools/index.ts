@@ -18,6 +18,7 @@ import { createCreateSpaceSetupProposalTool } from './create-space-setup-proposa
 import { createCreateEcosystemSpaceTool } from './create-ecosystem-space';
 import { createGenerateEcosystemBlueprintTool } from './generate-ecosystem-blueprint';
 import { createMcpNavigationTool } from './mcp-navigation';
+import { createOnboardingGuidanceTool } from './onboarding-guidance';
 
 type SetupPhase = 'discover' | 'draft' | 'confirm' | 'execute' | 'verify';
 
@@ -152,6 +153,10 @@ export function createChatTools(
       createIngestSpaceCallArtifactsTool(authToken),
     ),
     web_search: safeTool('web_search', webSearchTool),
+    onboarding_guidance: safeTool(
+      'onboarding_guidance',
+      createOnboardingGuidanceTool(),
+    ),
     mcp_navigation: safeTool(
       'mcp_navigation',
       createMcpNavigationTool(authToken),
@@ -236,5 +241,6 @@ export { createCreateSpaceSetupProposalTool } from './create-space-setup-proposa
 export { createCreateEcosystemSpaceTool } from './create-ecosystem-space';
 export { createGenerateEcosystemBlueprintTool } from './generate-ecosystem-blueprint';
 export { createMcpNavigationTool } from './mcp-navigation';
+export { createOnboardingGuidanceTool } from './onboarding-guidance';
 export { webSearchTool } from './web-search';
 export type { ChatRouteTool } from './types';

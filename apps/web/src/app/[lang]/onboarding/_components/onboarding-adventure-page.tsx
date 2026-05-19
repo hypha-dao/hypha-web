@@ -42,6 +42,7 @@ import {
   ONBOARDING_SETUP_MODE,
   dispatchAiOnboardingSeed,
   saveOnboardingConversationContext,
+  useAiPanel,
 } from '@hypha-platform/epics';
 import {
   DropdownMenu,
@@ -231,6 +232,7 @@ export function OnboardingAdventurePage({
   const locale = useLocale();
   const router = useRouter();
   const { person } = useMe();
+  const { openAiPanel, setAiOverlayVisible } = useAiPanel();
   const { spaces, isLoading, error: spacesError } = useAllSpaces();
   const [aiPrompt, setAiPrompt] = useState('');
   const aiPromptRef = useRef(aiPrompt);
@@ -249,12 +251,7 @@ export function OnboardingAdventurePage({
     'idle' | 'opening' | 'sending' | 'failed'
   >('idle');
   const [aiStartError, setAiStartError] = useState<string | null>(null);
-  const [aiFlowScreenVisible, setAiFlowScreenVisible] = useState(false);
-  const [aiFlowStep, setAiFlowStep] = useState<
-    'reviewing' | 'confirming' | 'executing' | 'routing'
-  >('reviewing');
   const aiStartTimeoutRef = useRef<number | null>(null);
-  const aiFlowDismissTimeoutRef = useRef<number | null>(null);
   const seedDispatchRetryTimeoutsRef = useRef<number[]>([]);
   const seedDispatchRetryIntervalRef = useRef<number | null>(null);
   const seedAckReceivedRef = useRef(false);
@@ -329,9 +326,6 @@ export function OnboardingAdventurePage({
       }
       if (aiStartTimeoutRef.current !== null) {
         window.clearTimeout(aiStartTimeoutRef.current);
-      }
-      if (aiFlowDismissTimeoutRef.current !== null) {
-        window.clearTimeout(aiFlowDismissTimeoutRef.current);
       }
       if (seedDispatchRetryTimeoutsRef.current.length > 0) {
         for (const timeoutId of seedDispatchRetryTimeoutsRef.current) {
@@ -539,12 +533,6 @@ export function OnboardingAdventurePage({
     setIsStartingAi(true);
     setAiStartStatus('opening');
     setAiStartError(null);
-    setAiFlowScreenVisible(true);
-    setAiFlowStep('reviewing');
-    if (aiFlowDismissTimeoutRef.current !== null) {
-      window.clearTimeout(aiFlowDismissTimeoutRef.current);
-      aiFlowDismissTimeoutRef.current = null;
-    }
     if (aiStartTimeoutRef.current !== null) {
       window.clearTimeout(aiStartTimeoutRef.current);
     }
@@ -552,8 +540,9 @@ export function OnboardingAdventurePage({
       setIsStartingAi(false);
       setAiStartStatus('failed');
       setAiStartError(t('aiHero.handoffTimeout'));
-      setAiFlowScreenVisible(false);
     }, 20000);
+    openAiPanel();
+    setAiOverlayVisible(false);
     const seedPayload = { prompt, context, attachments: heroAttachments };
     // Dispatch immediately, then retry briefly to avoid lost event races
     // while the AI panel is mounting/opening.
@@ -610,35 +599,28 @@ export function OnboardingAdventurePage({
       clearSeedDispatchRetries();
       if (detail?.stage === 'received') {
         clearHandoffTimeout();
-        setAiFlowStep('confirming');
         setAiStartStatus('opening');
         setAiStartError(null);
         return;
       }
       if (detail?.stage === 'sending') {
         clearHandoffTimeout();
-        setAiFlowStep('executing');
+        setIsStartingAi(false);
         setAiStartStatus('sending');
         setAiStartError(null);
         return;
       }
       clearHandoffTimeout();
       if (detail?.ok) {
-        setAiFlowStep('routing');
         setIsStartingAi(false);
         setAiStartStatus('idle');
         setAiStartError(null);
         setAiPrompt('');
         setHeroAttachments([]);
-        aiFlowDismissTimeoutRef.current = window.setTimeout(() => {
-          setAiFlowScreenVisible(false);
-          aiFlowDismissTimeoutRef.current = null;
-        }, 12000);
         return;
       }
       setIsStartingAi(false);
       setAiStartStatus('failed');
-      setAiFlowScreenVisible(false);
       setAiStartError(
         detail?.reason === 'send_failed'
           ? t('aiHero.sendFailed')
@@ -664,45 +646,8 @@ export function OnboardingAdventurePage({
   const adventureTitle = hasVisitedAdventure
     ? t('continueAdventure')
     : t('title');
-  const aiFlowTitleByStep: Record<typeof aiFlowStep, string> = {
-    reviewing: t('aiHero.flow.reviewingTitle'),
-    confirming: t('aiHero.flow.confirmingTitle'),
-    executing: t('aiHero.flow.executingTitle'),
-    routing: t('aiHero.flow.routingTitle'),
-  };
-  const aiFlowDescriptionByStep: Record<typeof aiFlowStep, string> = {
-    reviewing: firstName
-      ? t('aiHero.flow.reviewingDescriptionPersonalized', { firstName })
-      : t('aiHero.flow.reviewingDescription'),
-    confirming: t('aiHero.flow.confirmingDescription'),
-    executing: t('aiHero.flow.executingDescription'),
-    routing: t('aiHero.flow.routingDescription'),
-  };
-
   return (
     <Container className="flex flex-col gap-14 py-10 md:py-12">
-      {aiFlowScreenVisible && aiChatEnabled ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-background/95 px-4 py-6 backdrop-blur-sm">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,oklch(0.69_0.14_256_/_0.34),transparent_40%),radial-gradient(circle_at_80%_85%,oklch(0.69_0.16_322_/_0.2),transparent_42%)]" />
-          <div className="relative w-full max-w-4xl rounded-[2rem] border border-border/65 bg-background/80 p-6 shadow-[0_40px_120px_-60px_rgba(0,0,0,0.8)] md:p-8">
-            <div className="mx-auto mb-5 w-fit rounded-full border border-accent-8/45 bg-accent-3/30 px-4 py-1 text-1.5 font-medium text-accent-11">
-              {t('aiHero.flow.badge')}
-            </div>
-            <h3 className="text-center text-8 font-semibold tracking-tight text-foreground">
-              {aiFlowTitleByStep[aiFlowStep]}
-            </h3>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-2.5 text-muted-foreground">
-              {aiFlowDescriptionByStep[aiFlowStep]}
-            </p>
-            <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-accent-8/35 bg-accent-3/20 px-4 py-3 text-2 text-accent-11">
-              {t('aiHero.flow.confirmationHint')}
-            </div>
-            <div className="mt-6 flex justify-center">
-              <Loader2 className="size-5 animate-spin text-accent-11" />
-            </div>
-          </div>
-        </div>
-      ) : null}
       <header className="space-y-3 pt-3 text-center md:pt-4">
         <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-accent-11 shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
           {t('subtitle')}

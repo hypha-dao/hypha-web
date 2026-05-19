@@ -316,10 +316,14 @@ export function PanelWrapLayout({
   );
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const leftExpanded = isOnboarding
-    ? false
-    : Boolean(leftOpen || leftOverlayVisible);
-  const leftFootprintPx = leftExpanded ? 320 : isSpace ? 72 : 0;
+  const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
+  const leftFootprintPx = isOnboarding
+    ? 0
+    : leftExpanded
+    ? 320
+    : isSpace
+    ? 72
+    : 0;
   const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
   const forceCompactPanels =
     Boolean(effectiveLeft && effectiveRight) &&
@@ -333,9 +337,13 @@ export function PanelWrapLayout({
       ? RIGHT_SIDEBAR_WIDTH_COMPACT
       : RIGHT_SIDEBAR_WIDTH
     : RIGHT_SIDEBAR_WIDTH;
-  const leftExpandedSidebarWidth = LEFT_SIDEBAR_EXPANDED_WIDTH;
+  const leftExpandedSidebarWidth = isOnboarding
+    ? '100vw'
+    : LEFT_SIDEBAR_EXPANDED_WIDTH;
   const fallbackSidebarLeftPx = effectiveLeft
-    ? leftExpanded
+    ? isOnboarding
+      ? '0px'
+      : leftExpanded
       ? leftExpandedSidebarWidth
       : isSpace
       ? LEFT_SIDEBAR_ICON_WIDTH
@@ -402,8 +410,11 @@ export function PanelWrapLayout({
         nextLeft = Math.max(nextLeft, width);
       });
 
-      const resolvedLeft =
-        effectiveLeft && nextLeft > 0 ? `${nextLeft}px` : fallbackSidebarLeftPx;
+      const resolvedLeft = isOnboarding
+        ? '0px'
+        : effectiveLeft && nextLeft > 0
+        ? `${nextLeft}px`
+        : fallbackSidebarLeftPx;
       const resolvedRight =
         effectiveRight && nextRight > 0
           ? `${nextRight}px`
@@ -444,6 +455,7 @@ export function PanelWrapLayout({
     effectiveRight,
     fallbackSidebarLeftPx,
     fallbackSidebarRightPx,
+    isOnboarding,
   ]);
 
   /** Radix portaled dialogs sit under `body` and do not inherit vars from this div — mirror to `:root`. */
@@ -553,7 +565,7 @@ export function PanelWrapLayout({
           className="z-[50] overflow-visible"
         >
           {effectiveLeft.content}
-          <SidebarResizeHandle />
+          {!isOnboarding ? <SidebarResizeHandle /> : null}
         </Sidebar>
         <PanelScrollInset className="overflow-y-auto">
           {content}
