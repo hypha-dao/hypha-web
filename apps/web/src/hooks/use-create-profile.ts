@@ -89,6 +89,14 @@ export const useCreateProfile = (
 
         const lang = params?.lang;
         const onboardingPath = lang ? `/${lang}/onboarding` : '/en/profile';
+        try {
+          window.sessionStorage.setItem(
+            'hypha:onboarding-adventure:just-signed-up:v1',
+            'true',
+          );
+        } catch {
+          // Ignore storage failures; onboarding falls back to existing logic.
+        }
         router.replace(onboardingPath);
         return createdProfile;
       } catch (err) {

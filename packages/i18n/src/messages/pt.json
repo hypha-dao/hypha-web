@@ -784,11 +784,11 @@
     "signIn": "Entrar",
     "getStarted": "Comece",
     "ecosystemLogo": "Logo do ecossistema",
-    "continueAdventure": "Continuar sua aventura"
+    "continueAdventure": "Sua aventura continua aqui"
   },
   "OnboardingAdventure": {
     "title": "Sua aventura começa aqui.",
-    "continueAdventure": "Continuar sua aventura",
+    "continueAdventure": "Sua aventura continua aqui",
     "subtitle": "Escolha seu próximo passo.",
     "aiHero": {
       "title": "Descreva o espaço que você quer criar",

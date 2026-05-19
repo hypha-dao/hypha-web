@@ -312,7 +312,17 @@ export function OnboardingAdventurePage({
 
   useEffect(() => {
     const storageKey = 'hypha:onboarding-adventure:visited:v1';
+    const justSignedUpKey = 'hypha:onboarding-adventure:just-signed-up:v1';
     try {
+      const justSignedUp =
+        window.sessionStorage.getItem(justSignedUpKey) === 'true';
+      if (justSignedUp) {
+        setHasVisitedAdventure(false);
+        window.sessionStorage.removeItem(justSignedUpKey);
+        window.localStorage.setItem(storageKey, 'true');
+        return;
+      }
+
       const alreadyVisited = window.localStorage.getItem(storageKey) === 'true';
       if (alreadyVisited) {
         setHasVisitedAdventure(true);
@@ -568,12 +578,12 @@ export function OnboardingAdventurePage({
         <section className="relative mx-auto w-full max-w-5xl">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-8 -top-8 h-48 rounded-full bg-[radial-gradient(ellipse_at_center,oklch(0.63_0.19_300_/_0.34),transparent_72%)] blur-2xl"
+            className="pointer-events-none absolute inset-x-8 -top-8 h-48 rounded-full bg-[radial-gradient(ellipse_at_center,oklch(0.62_0.14_290_/_0.14),transparent_72%)] blur-2xl"
           />
           <div className="relative p-1 md:p-2">
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,oklch(0.72_0.13_278_/_0.18),transparent_42%),radial-gradient(circle_at_85%_18%,oklch(0.75_0.12_330_/_0.15),transparent_35%)]"
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,oklch(0.72_0.12_278_/_0.12),transparent_42%),radial-gradient(circle_at_85%_18%,oklch(0.64_0.11_292_/_0.09),transparent_38%)]"
             />
             <div className="relative space-y-1 text-center">
               <h2 className="text-7 font-semibold tracking-tight text-foreground">

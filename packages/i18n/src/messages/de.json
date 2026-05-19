@@ -94,11 +94,11 @@
     "signIn": "Anmelden",
     "getStarted": "Loslegen",
     "ecosystemLogo": "Ökosystem-Logo",
-    "continueAdventure": "Abenteuer fortsetzen"
+    "continueAdventure": "Dein Abenteuer geht hier weiter"
   },
   "OnboardingAdventure": {
     "title": "Dein Abenteuer beginnt hier.",
-    "continueAdventure": "Abenteuer fortsetzen",
+    "continueAdventure": "Dein Abenteuer geht hier weiter",
     "subtitle": "Wähle deinen nächsten Schritt.",
     "aiHero": {
       "title": "Beschreibe den Space, den du erstellen möchtest",
