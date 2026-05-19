@@ -45,6 +45,7 @@ This creates inconsistent behavior between matrix intent, UI affordances, and se
 - **Space activity access:** Whether a user can view protected space activity data (tabs/content guarded by transparency access checks).
 - **Organisation member (for target space):** A user who is a member or valid delegate in at least one **sibling space** within the same organisation grouping as the target space.
 - **Membership CTA:** The actionable control to enter the membership flow for a denied user (`Become member` for open join, `Request Invite` for invite-only).
+- **Proposal authoring permission:** Ability to create governance proposals in a space. This permission is stricter than organisation-level visibility/activity and requires target-space membership (or equivalent target-space governance entitlement).
 
 ---
 
@@ -102,6 +103,7 @@ To make this spec execution-ready, the following defaults are fixed:
 - **D-2 (CTA fallback):** If web3 space identity is known and DB `space.id` is unavailable, UI SHALL still render an actionable membership CTA using a web3-first join path.
 - **D-3 (Parity source):** Server-side authorisation is the final authority for protected data access; frontend checks SHALL mirror, not redefine, server outcomes.
 - **D-4 (No behavior broadening):** `Space` activity level remains strict target-space membership/delegate only.
+- **D-5 (Proposal creation boundary):** Being a member of one or several sibling spaces in the same organisation does not grant proposal creation rights in the target space; target-space membership is still required.
 
 ---
 
@@ -122,6 +124,10 @@ To make this spec execution-ready, the following defaults are fixed:
 **FR-6** The system SHALL keep frontend and backend access outcomes consistent for organisation-level access checks (no frontend-allowed/backend-denied mismatch for equivalent identity/context).
 
 **FR-7** The system SHALL preserve denial behavior for users outside organisation scope when activity level is `Organisation`.
+
+**FR-8** The system SHALL require target-space membership (or equivalent target-space governance entitlement) for proposal creation, even when organisation-level activity visibility is granted.
+
+**PAR-1** The system SHALL preserve existing governance boundary semantics: organisation-level membership broadens visibility/activity access only and SHALL NOT auto-grant target-space proposal authoring rights.
 
 ---
 
@@ -168,6 +174,14 @@ Then both paths return consistent allow/deny decisions for organisation-level ac
 **AC-7** Given discoverability level is `Organisation`,  
 When an organisation-eligible user views network/explore surfaces,  
 Then the target space appears in discoverability lists.
+
+**AC-8** Given a user is member in one or several sibling spaces of the same organisation but not in the target space,  
+When the user attempts to create a proposal in the target space,  
+Then proposal creation is blocked until target-space membership is obtained.
+
+**AC-9** Given the same user is denied proposal creation due to missing target-space membership,  
+When the denied/join affordance is rendered,  
+Then `Request Invite` or `Become member` is visible and actionable according to join method.
 
 ---
 
