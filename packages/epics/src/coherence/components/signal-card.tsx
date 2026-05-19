@@ -34,6 +34,7 @@ import {
   DialogTitle,
   Image,
   Skeleton,
+  type LucideReactIcon,
 } from '@hypha-platform/ui';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -211,6 +212,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
   const metaBadges: BadgeItem[] = React.useMemo(() => {
     const typeBadge: BadgeItem = {
+      icon: (coherenceType?.icon ?? 'ArrowUpRight') as LucideReactIcon,
       label: typeLabel,
       variant: 'surface',
       colorVariant: typeColorVariant,
@@ -223,6 +225,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       ? t(priorityKey as never)
       : priorityMeta.priority;
     const priorityBadge: BadgeItem = {
+      icon: (priorityMeta.icon ?? 'CircleDot') as LucideReactIcon,
       label: priorityLabel,
       variant: 'surface',
       colorVariant: priorityColorVariant,
@@ -230,7 +233,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         'rounded-md border-none shadow-none font-medium text-foreground',
     };
     return [typeBadge, priorityBadge];
-  }, [priorityMeta, t, typeLabel, typeColorVariant, priorityColorVariant]);
+  }, [
+    coherenceType?.icon,
+    priorityMeta,
+    priorityColorVariant,
+    t,
+    typeLabel,
+    typeColorVariant,
+  ]);
 
   const tagList: BadgeItem[] = tags.map((tag) => {
     const translationKey = `tagLabels.${tag}`;
