@@ -204,7 +204,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       label: typeLabel,
       variant: 'surface',
       colorVariant: typeColorVariant,
-      className: 'rounded-md border-none shadow-none font-medium text-foreground',
+      className:
+        'rounded-md border-none shadow-none font-medium text-foreground',
     };
     if (!priorityMeta) return [typeBadge];
     const priorityKey = `priorities.${priorityMeta.priority}`;
@@ -215,7 +216,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       label: priorityLabel,
       variant: 'surface',
       colorVariant: priorityColorVariant,
-      className: 'rounded-md border-none shadow-none font-medium text-foreground',
+      className:
+        'rounded-md border-none shadow-none font-medium text-foreground',
     };
     return [typeBadge, priorityBadge];
   }, [priorityMeta, t, typeLabel, typeColorVariant, priorityColorVariant]);

@@ -3228,7 +3228,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="border-border bg-background text-foreground hover:bg-muted"
+                          className="h-8 min-h-8 border-[color:var(--space-accent)] bg-background px-3 text-[color:var(--space-accent)] hover:bg-accent-3 disabled:border-[color:var(--space-accent)]/45 disabled:text-[color:var(--space-accent)]/55 disabled:opacity-100"
                           disabled={
                             currentUserPendingSignalTeamRequest ||
                             signalTeamBusy
@@ -3259,9 +3259,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                               <SignalTeamResolvedMemberLabel
                                 candidate={{
                                   userId: requesterId,
-                                  displayLabel: resolveMentionMemberLabel(
-                                    requesterId,
-                                  ),
+                                  displayLabel:
+                                    resolveMentionMemberLabel(requesterId),
                                 }}
                                 fallbackLabel={resolveMentionMemberLabel(
                                   requesterId,
@@ -3294,8 +3293,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         type="button"
                         size="sm"
                         variant="outline"
-                        colorVariant="neutral"
-                        className="h-8"
+                        colorVariant="accent"
+                        className="h-8 min-h-8 border-[color:var(--space-accent)] px-3 text-[color:var(--space-accent)] hover:bg-accent-3"
                         onClick={() => setSignalTeamPanelOpen((prev) => !prev)}
                       >
                         {signalTeamPanelOpen
@@ -3323,8 +3322,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                                 type="button"
                                 className={`flex items-center justify-between rounded-md px-2 py-1 text-left text-sm ${
                                   selected
-                                    ? 'bg-accent-3/70 ring-1 ring-accent-7'
-                                    : 'hover:bg-muted'
+                                    ? 'border border-accent-8/55 bg-accent-3/28 ring-1 ring-accent-8/35'
+                                    : 'border border-transparent hover:bg-muted/70'
                                 }`}
                                 disabled={signalTeamBusy}
                                 onClick={() => {
@@ -3344,8 +3343,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                                 <SignalTeamResolvedMemberLabel
                                   candidate={{
                                     userId: member.userId,
-                                    displayLabel:
-                                      resolveMentionMemberLabel(member.userId),
+                                    displayLabel: resolveMentionMemberLabel(
+                                      member.userId,
+                                    ),
                                     privySub: member.privySub,
                                   }}
                                   fallbackLabel={resolveMentionMemberLabel(

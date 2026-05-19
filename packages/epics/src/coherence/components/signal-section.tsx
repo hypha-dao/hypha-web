@@ -190,7 +190,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const [boards, setBoards] = React.useState<SignalBoard[]>([]);
   const [activeBoardId, setActiveBoardId] = React.useState<string>('');
   const [createBoardOpen, setCreateBoardOpen] = React.useState(false);
-  const [editingBoardId, setEditingBoardId] = React.useState<string | null>(null);
+  const [editingBoardId, setEditingBoardId] = React.useState<string | null>(
+    null,
+  );
   const [newBoardName, setNewBoardName] = React.useState('');
   const [newBoardFilterKind, setNewBoardFilterKind] =
     React.useState<BoardFilterKind>('category');
@@ -564,7 +566,11 @@ export const SignalSection: FC<SignalSectionProps> = ({
               <Tabs value={activeBoardId} onValueChange={setActiveBoardId}>
                 <TabsList triggerVariant="switch" className="w-fit">
                   {activeBoards.map((board) => (
-                    <TabsTrigger key={board.id} value={board.id} variant="switch">
+                    <TabsTrigger
+                      key={board.id}
+                      value={board.id}
+                      variant="switch"
+                    >
                       {board.name}
                     </TabsTrigger>
                   ))}
@@ -634,7 +640,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
             <div className="flex flex-row gap-2 h-full">
               <Checkbox
                 id="hideArchivedSignalsCheckbox"
-                className="self-center"
+                className="self-center border-accent-8/80 data-[state=checked]:border-accent-9 data-[state=checked]:bg-accent-9 data-[state=checked]:text-accent-contrast focus-visible:ring-accent-8"
                 checked={hideArchived}
                 onCheckedChange={(value) => {
                   setHideArchived(value === true);
@@ -650,7 +656,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
             </div>
             <Button
               variant="outline"
-              colorVariant="neutral"
+              colorVariant="accent"
               className="w-auto"
               onClick={() => {
                 resetBoardForm();
