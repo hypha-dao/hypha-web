@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, eq, gt, gte, inArray, lte, sql } from 'drizzle-orm';
+import { and, eq, gt, gte, inArray, lt, lte, sql } from 'drizzle-orm';
 import {
   signalOrchestratorCooldowns,
   signalOrchestratorDispatches,
@@ -28,61 +28,70 @@ import {
 function parseEnvNumber(
   value: string | undefined,
   fallback: number,
-  options?: { int?: boolean },
+  options?: { int?: boolean; min?: number; max?: number },
 ): number {
   const raw = Number(value ?? '');
-  if (!Number.isFinite(raw)) return fallback;
-  if (options?.int) return Math.trunc(raw);
-  return raw;
+  let parsed = Number.isFinite(raw) ? raw : fallback;
+  if (options?.int) parsed = Math.trunc(parsed);
+  if (typeof options?.min === 'number') parsed = Math.max(options.min, parsed);
+  if (typeof options?.max === 'number') parsed = Math.min(options.max, parsed);
+  return parsed;
 }
 
 const WINDOW_MINUTES = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_WINDOW_MINUTES,
   20,
-  { int: true },
+  { int: true, min: 1, max: 240 },
 );
 const MAX_ATTEMPTS = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_MAX_ATTEMPTS,
   5,
-  { int: true },
+  { int: true, min: 1, max: 20 },
 );
 const MIN_RELEVANCE = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_MIN_RELEVANCE,
   68,
+  { min: 0, max: 100 },
 );
 const MIN_CONFIDENCE = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_MIN_CONFIDENCE,
   66,
+  { min: 0, max: 100 },
 );
 const MIN_NOVELTY = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_MIN_NOVELTY,
   45,
+  { min: 0, max: 100 },
 );
 const RELAY_MIN_RELEVANCE = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_RELAY_MIN_RELEVANCE,
   78,
+  { min: 0, max: 100 },
 );
 const RELAY_MIN_CONFIDENCE = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_RELAY_MIN_CONFIDENCE,
   76,
+  { min: 0, max: 100 },
 );
 const DAILY_SPACE_LIMIT = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_SPACE_DAILY_LIMIT,
   3,
-  { int: true },
+  { int: true, min: 1, max: 100 },
 );
 const DAILY_RELAY_LIMIT = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_RELAY_DAILY_LIMIT,
   2,
-  { int: true },
+  { int: true, min: 1, max: 100 },
 );
 const TAG_COOLDOWN_HOURS = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_TAG_COOLDOWN_HOURS,
   18,
+  { min: 1, max: 168 },
 );
 const SPACE_COOLDOWN_HOURS = parseEnvNumber(
   process.env.HYPHA_SIGNAL_ORCHESTRATOR_SPACE_COOLDOWN_HOURS,
   6,
+  { min: 1, max: 168 },
 );
 
 const SOURCE_TO_TAGS: Record<string, string[]> = {
@@ -850,5 +859,156 @@ export async function getSignalOrchestratorMetrics({ db }: DbConfig) {
       error: row.lastError,
       updated_at: row.updatedAt.toISOString(),
     })),
+  };
+}
+
+function clampRetentionDays(
+  value: number | undefined,
+  fallback: number,
+): number {
+  const n = Math.trunc(Number(value));
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(1, Math.min(3650, n));
+}
+
+export async function cleanupSignalOrchestratorRetention(
+  {
+    dryRun = true,
+    queueTerminalRetentionDays = 30,
+    queueFailedRetentionDays = 45,
+    dispatchRetentionDays = 90,
+    cooldownGraceDays = 7,
+  }: {
+    dryRun?: boolean;
+    queueTerminalRetentionDays?: number;
+    queueFailedRetentionDays?: number;
+    dispatchRetentionDays?: number;
+    cooldownGraceDays?: number;
+  },
+  { db }: DbConfig,
+) {
+  const now = Date.now();
+  const effectiveQueueTerminalDays = clampRetentionDays(
+    queueTerminalRetentionDays,
+    30,
+  );
+  const effectiveQueueFailedDays = clampRetentionDays(
+    queueFailedRetentionDays,
+    45,
+  );
+  const effectiveDispatchDays = clampRetentionDays(dispatchRetentionDays, 90);
+  const effectiveCooldownGraceDays = clampRetentionDays(cooldownGraceDays, 7);
+
+  const queueTerminalCutoff = new Date(
+    now - effectiveQueueTerminalDays * 24 * 60 * 60 * 1000,
+  );
+  const queueFailedCutoff = new Date(
+    now - effectiveQueueFailedDays * 24 * 60 * 60 * 1000,
+  );
+  const dispatchCutoff = new Date(
+    now - effectiveDispatchDays * 24 * 60 * 60 * 1000,
+  );
+  const cooldownCutoff = new Date(
+    now - effectiveCooldownGraceDays * 24 * 60 * 60 * 1000,
+  );
+
+  if (dryRun) {
+    const [queueTerminal, queueFailed, dispatches, cooldowns] =
+      await Promise.all([
+        db
+          .select({ count: sql<number>`count(*)` })
+          .from(signalOrchestratorQueue)
+          .where(
+            and(
+              inArray(signalOrchestratorQueue.state, ['done', 'discarded']),
+              lt(signalOrchestratorQueue.updatedAt, queueTerminalCutoff),
+            ),
+          ),
+        db
+          .select({ count: sql<number>`count(*)` })
+          .from(signalOrchestratorQueue)
+          .where(
+            and(
+              eq(signalOrchestratorQueue.state, 'failed'),
+              lt(signalOrchestratorQueue.updatedAt, queueFailedCutoff),
+            ),
+          ),
+        db
+          .select({ count: sql<number>`count(*)` })
+          .from(signalOrchestratorDispatches)
+          .where(lt(signalOrchestratorDispatches.createdAt, dispatchCutoff)),
+        db
+          .select({ count: sql<number>`count(*)` })
+          .from(signalOrchestratorCooldowns)
+          .where(lt(signalOrchestratorCooldowns.cooldownUntil, cooldownCutoff)),
+      ]);
+
+    return {
+      ok: true as const,
+      dry_run: true,
+      cutoffs: {
+        queue_terminal_before: queueTerminalCutoff.toISOString(),
+        queue_failed_before: queueFailedCutoff.toISOString(),
+        dispatches_before: dispatchCutoff.toISOString(),
+        cooldowns_before: cooldownCutoff.toISOString(),
+      },
+      counts: {
+        queue_terminal: Number(queueTerminal[0]?.count ?? 0),
+        queue_failed: Number(queueFailed[0]?.count ?? 0),
+        dispatches: Number(dispatches[0]?.count ?? 0),
+        cooldowns: Number(cooldowns[0]?.count ?? 0),
+      },
+    };
+  }
+
+  const [
+    queueTerminalDeleted,
+    queueFailedDeleted,
+    dispatchDeleted,
+    cooldownDeleted,
+  ] = await Promise.all([
+    db
+      .delete(signalOrchestratorQueue)
+      .where(
+        and(
+          inArray(signalOrchestratorQueue.state, ['done', 'discarded']),
+          lt(signalOrchestratorQueue.updatedAt, queueTerminalCutoff),
+        ),
+      )
+      .returning({ id: signalOrchestratorQueue.id }),
+    db
+      .delete(signalOrchestratorQueue)
+      .where(
+        and(
+          eq(signalOrchestratorQueue.state, 'failed'),
+          lt(signalOrchestratorQueue.updatedAt, queueFailedCutoff),
+        ),
+      )
+      .returning({ id: signalOrchestratorQueue.id }),
+    db
+      .delete(signalOrchestratorDispatches)
+      .where(lt(signalOrchestratorDispatches.createdAt, dispatchCutoff))
+      .returning({ id: signalOrchestratorDispatches.id }),
+    db
+      .delete(signalOrchestratorCooldowns)
+      .where(lt(signalOrchestratorCooldowns.cooldownUntil, cooldownCutoff))
+      .returning({ id: signalOrchestratorCooldowns.id }),
+  ]);
+
+  return {
+    ok: true as const,
+    dry_run: false,
+    cutoffs: {
+      queue_terminal_before: queueTerminalCutoff.toISOString(),
+      queue_failed_before: queueFailedCutoff.toISOString(),
+      dispatches_before: dispatchCutoff.toISOString(),
+      cooldowns_before: cooldownCutoff.toISOString(),
+    },
+    deleted: {
+      queue_terminal: queueTerminalDeleted.length,
+      queue_failed: queueFailedDeleted.length,
+      dispatches: dispatchDeleted.length,
+      cooldowns: cooldownDeleted.length,
+    },
   };
 }

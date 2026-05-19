@@ -19,6 +19,10 @@ ALTER TABLE "signal_orchestrator_queue"
   ADD CONSTRAINT "signal_orchestrator_queue_attempts_non_negative"
     CHECK ("attempts" >= 0);
 --> statement-breakpoint
+ALTER TABLE "signal_orchestrator_queue"
+  ADD CONSTRAINT "signal_orchestrator_queue_state_check"
+    CHECK ("state" IN ('pending', 'processing', 'done', 'failed', 'discarded'));
+--> statement-breakpoint
 CREATE TABLE "signal_orchestrator_cooldowns" (
   "id" serial PRIMARY KEY NOT NULL,
   "space_id" integer NOT NULL,
@@ -48,6 +52,12 @@ CREATE TABLE "signal_orchestrator_dispatches" (
   "updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "signal_orchestrator_dispatches"
+  ADD CONSTRAINT "signal_orchestrator_dispatches_mode_check"
+    CHECK ("mode" IN ('space', 'relay')),
+  ADD CONSTRAINT "signal_orchestrator_dispatches_decision_check"
+    CHECK ("decision" IN ('emitted', 'suppressed', 'error', 'discarded'));
+--> statement-breakpoint
 ALTER TABLE "signal_orchestrator_queue" ADD CONSTRAINT "signal_orchestrator_queue_space_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;
 --> statement-breakpoint
 ALTER TABLE "signal_orchestrator_cooldowns" ADD CONSTRAINT "signal_orchestrator_cooldowns_space_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;
@@ -65,6 +75,8 @@ CREATE INDEX "signal_orchestrator_queue_space_idx" ON "signal_orchestrator_queue
 CREATE INDEX "signal_orchestrator_queue_state_due_idx" ON "signal_orchestrator_queue" USING btree ("state","due_at");
 --> statement-breakpoint
 CREATE INDEX "signal_orchestrator_queue_created_idx" ON "signal_orchestrator_queue" USING btree ("created_at");
+--> statement-breakpoint
+CREATE UNIQUE INDEX "signal_orchestrator_queue_space_pending_unique" ON "signal_orchestrator_queue" USING btree ("space_id") WHERE "state" = 'pending';
 --> statement-breakpoint
 CREATE UNIQUE INDEX "signal_orchestrator_cooldowns_space_key_unique" ON "signal_orchestrator_cooldowns" USING btree ("space_id","key");
 --> statement-breakpoint

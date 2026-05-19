@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, lt, sql } from 'drizzle-orm';
 import {
   spaceCallRecordings,
   spaceCallTranscripts,
@@ -201,6 +201,37 @@ type MatrixChunkResponse = {
   end?: string;
 };
 
+function createTimeoutSignal(
+  timeoutMs: number,
+  parentSignal?: AbortSignal,
+): { signal: AbortSignal; clear: () => void } {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort(new Error('Matrix request timed out'));
+  }, timeoutMs);
+
+  const onParentAbort = () => {
+    controller.abort(parentSignal?.reason);
+  };
+  if (parentSignal) {
+    if (parentSignal.aborted) {
+      controller.abort(parentSignal.reason);
+    } else {
+      parentSignal.addEventListener('abort', onParentAbort, { once: true });
+    }
+  }
+
+  return {
+    signal: controller.signal,
+    clear: () => {
+      clearTimeout(timeoutId);
+      if (parentSignal) {
+        parentSignal.removeEventListener('abort', onParentAbort);
+      }
+    },
+  };
+}
+
 async function resolveMatrixAccessToken(
   authToken: string | undefined,
   requestUrlForSessionMatrix: string | undefined,
@@ -225,6 +256,7 @@ async function fetchRoomDiscussionMessages(
   roomId: string,
   authToken: string | undefined,
   requestUrlForSessionMatrix: string | undefined,
+  signal?: AbortSignal,
   maxPages = 5,
 ): Promise<{ messages: string[]; participantCount: number }> {
   const homeserver = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.replace(
@@ -243,15 +275,23 @@ async function fetchRoomDiscussionMessages(
   let fromToken: string | undefined;
 
   for (let i = 0; i < maxPages; i++) {
+    if (signal?.aborted) {
+      throw new Error(
+        signal.reason instanceof Error
+          ? signal.reason.message
+          : 'Summary generation aborted',
+      );
+    }
     const params = new URLSearchParams({ dir: 'b', limit: '100' });
     if (fromToken) params.set('from', fromToken);
     const url = `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(
       roomId,
     )}/messages?${params.toString()}`;
+    const requestSignal = createTimeoutSignal(15_000, signal);
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
-      signal: AbortSignal.timeout(15_000),
-    });
+      signal: requestSignal.signal,
+    }).finally(requestSignal.clear);
     if (res.status === 401) {
       console.warn(
         '[call-artifacts] Matrix 401 on Bearer auth; skipping query-param token fallback',
@@ -293,11 +333,13 @@ export async function createSpaceDiscussionSummary(
     source = 'heuristic',
     authToken,
     requestUrlForSessionMatrix,
+    signal,
   }: {
     spaceSlug: string;
     source?: string;
     authToken?: string;
     requestUrlForSessionMatrix?: string;
+    signal?: AbortSignal;
   },
   { db }: DbConfig,
 ): Promise<
@@ -318,6 +360,7 @@ export async function createSpaceDiscussionSummary(
     roomId,
     authToken,
     requestUrlForSessionMatrix,
+    signal,
   );
   if (messages.length === 0) {
     return { ok: false, error: 'No chat messages available for summary' };
@@ -458,4 +501,54 @@ export async function getSpaceCallArtifactById(
     )
     .limit(1);
   return row ?? null;
+}
+
+function clampRetentionDays(
+  value: number | undefined,
+  fallback: number,
+): number {
+  const n = Math.trunc(Number(value));
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(1, Math.min(3650, n));
+}
+
+export async function cleanupSpaceDiscussionSummariesRetention(
+  {
+    dryRun = true,
+    retentionDays = 120,
+  }: {
+    dryRun?: boolean;
+    retentionDays?: number;
+  },
+  { db }: DbConfig,
+) {
+  const effectiveRetentionDays = clampRetentionDays(retentionDays, 120);
+  const cutoff = new Date(
+    Date.now() - effectiveRetentionDays * 24 * 60 * 60 * 1000,
+  );
+
+  if (dryRun) {
+    const [count] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(spaceDiscussionSummaries)
+      .where(lt(spaceDiscussionSummaries.createdAt, cutoff));
+    return {
+      ok: true as const,
+      dry_run: true,
+      cutoff_before: cutoff.toISOString(),
+      count: Number(count?.count ?? 0),
+    };
+  }
+
+  const deleted = await db
+    .delete(spaceDiscussionSummaries)
+    .where(lt(spaceDiscussionSummaries.createdAt, cutoff))
+    .returning({ id: spaceDiscussionSummaries.id });
+
+  return {
+    ok: true as const,
+    dry_run: false,
+    cutoff_before: cutoff.toISOString(),
+    deleted: deleted.length,
+  };
 }

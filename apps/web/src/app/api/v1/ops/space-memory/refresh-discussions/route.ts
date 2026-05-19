@@ -25,18 +25,24 @@ async function readPayload(request: NextRequest) {
 }
 
 async function withTimeout<T>(
-  promise: Promise<T>,
+  task: (signal: AbortSignal) => Promise<T>,
   timeoutMs: number,
   timeoutMessage: string,
 ): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(new Error(timeoutMessage)),
+    timeoutMs,
+  );
   try {
-    return await Promise.race([promise, timeoutPromise]);
+    return await task(controller.signal);
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error(timeoutMessage);
+    }
+    throw error;
   } finally {
-    if (timeoutId) clearTimeout(timeoutId);
+    clearTimeout(timeoutId);
   }
 }
 
@@ -138,7 +144,11 @@ export async function POST(request: NextRequest) {
       if (!spaceSlug) return;
       try {
         const result = await withTimeout(
-          createSpaceDiscussionSummary({ spaceSlug, source: 'cron' }, { db }),
+          (signal) =>
+            createSpaceDiscussionSummary(
+              { spaceSlug, source: 'cron', signal },
+              { db },
+            ),
           SUMMARY_TIMEOUT_MS,
           'Summary generation timed out',
         );
