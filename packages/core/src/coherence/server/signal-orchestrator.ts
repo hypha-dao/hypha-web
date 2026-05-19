@@ -975,7 +975,7 @@ export async function cleanupSignalOrchestratorRetention(
           lt(signalOrchestratorQueue.updatedAt, queueTerminalCutoff),
         ),
       )
-      .returning({ id: signalOrchestratorQueue.id }),
+      .returning(),
     db
       .delete(signalOrchestratorQueue)
       .where(
@@ -984,15 +984,15 @@ export async function cleanupSignalOrchestratorRetention(
           lt(signalOrchestratorQueue.updatedAt, queueFailedCutoff),
         ),
       )
-      .returning({ id: signalOrchestratorQueue.id }),
+      .returning(),
     db
       .delete(signalOrchestratorDispatches)
       .where(lt(signalOrchestratorDispatches.createdAt, dispatchCutoff))
-      .returning({ id: signalOrchestratorDispatches.id }),
+      .returning(),
     db
       .delete(signalOrchestratorCooldowns)
       .where(lt(signalOrchestratorCooldowns.cooldownUntil, cooldownCutoff))
-      .returning({ id: signalOrchestratorCooldowns.id }),
+      .returning(),
   ]);
 
   return {

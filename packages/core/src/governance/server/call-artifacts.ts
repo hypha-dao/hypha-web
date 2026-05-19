@@ -543,7 +543,7 @@ export async function cleanupSpaceDiscussionSummariesRetention(
   const deleted = await db
     .delete(spaceDiscussionSummaries)
     .where(lt(spaceDiscussionSummaries.createdAt, cutoff))
-    .returning({ id: spaceDiscussionSummaries.id });
+    .returning();
 
   return {
     ok: true as const,
