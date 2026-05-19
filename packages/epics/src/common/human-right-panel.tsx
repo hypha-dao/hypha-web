@@ -1076,6 +1076,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return m;
   }, [spaceMembers, subToMatrixUserId, t]);
 
+  /** Fallback roster lookup using Matrix localpart == Privy sub (same `useMembers` roster source as chat Members tab). */
+  const personLabelByPrivySub = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of spaceMembers) {
+      const sub = p.sub?.trim();
+      if (!sub) continue;
+      m.set(sub, personRosterLabel(p, t('unknownMember')));
+    }
+    return m;
+  }, [spaceMembers, t]);
+
+  const matrixLocalpartToPrivySub = useCallback((userId: string): string | null => {
+    const trimmed = userId.trim();
+    if (!trimmed.startsWith('@')) return null;
+    const colonIndex = trimmed.indexOf(':');
+    if (colonIndex <= 1) return null;
+    const localpart = trimmed.slice(1, colonIndex).trim();
+    if (!localpart) return null;
+    return localpart;
+  }, []);
+
   const resolveMemberLabel = useCallback(
     (userId: string | undefined) => {
       if (!userId) return t('unknownMember');
@@ -1085,6 +1106,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       const rosterLabel = matrixUserIdToPersonLabel.get(userId)?.trim();
       if (rosterLabel) return rosterLabel;
+      const localpartSub = matrixLocalpartToPrivySub(userId);
+      if (localpartSub) {
+        const rosterBySub = personLabelByPrivySub.get(localpartSub)?.trim();
+        if (rosterBySub) return rosterBySub;
+      }
       const profileLabel = matrixProfileLabelByUserId[userId]?.trim();
       if (profileLabel) return profileLabel;
       if (roomId && client) {
@@ -1102,10 +1128,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [
       client,
       currentUserId,
+      matrixLocalpartToPrivySub,
       matrixProfileLabelByUserId,
       matrixUserIdToPersonLabel,
       me?.name,
       me?.surname,
+      personLabelByPrivySub,
       roomId,
       t,
     ],
