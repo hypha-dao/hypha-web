@@ -1992,6 +1992,8 @@
     "mentionInboxNotificationSettings": "Configurações de notificação",
     "mentionInboxEmpty": "Ainda não há menções neste chat.",
     "mentionInboxNoPreview": "(sem pré-visualização)",
+    "mentionOpenFallbackRoom": "Não foi possível resolver essa sala no seu contexto local. Abra o espaço relacionado e tente novamente.",
+    "mentionOpenFallbackMissingMessage": "Essa mensagem de menção ainda não está disponível na linha do tempo carregada. Tente novamente em instantes.",
     "mentionInboxBellAria": "{count, plural, one {# menção não lida} other {# menções não lidas}}",
     "mentionInboxBellAriaCapped": "99 ou mais menções não lidas",
     "mentionInboxBellAriaEmpty": "Abrir menções",

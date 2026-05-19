@@ -2000,6 +2000,8 @@
     "mentionInboxNotificationSettings": "Notification settings",
     "mentionInboxEmpty": "No mentions in this chat yet.",
     "mentionInboxNoPreview": "(no preview)",
+    "mentionOpenFallbackRoom": "We could not resolve that room from your local context. Open the related space and try again.",
+    "mentionOpenFallbackMissingMessage": "That mention message is not available in the loaded timeline yet. Try again in a moment.",
     "mentionInboxBellAria": "{count, plural, one {# unread mention} other {# unread mentions}}",
     "mentionInboxBellAriaCapped": "99 or more unread mentions",
     "mentionInboxBellAriaEmpty": "Open mentions",

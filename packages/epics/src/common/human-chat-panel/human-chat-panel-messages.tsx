@@ -157,6 +157,7 @@ type HumanChatPanelMessagesProps = {
   /** Scroll this Matrix event id into view when set (e.g. mention inbox). */
   scrollTargetEventId?: string | null;
   onConsumedScrollTarget?: () => void;
+  onScrollTargetNotFound?: (eventId: string) => void;
 };
 
 export function HumanChatPanelMessages({
@@ -180,6 +181,7 @@ export function HumanChatPanelMessages({
   onMarkAsReadFromBanner,
   scrollTargetEventId,
   onConsumedScrollTarget,
+  onScrollTargetNotFound,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
   const formatter = useFormatter();
@@ -200,6 +202,9 @@ export function HumanChatPanelMessages({
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
   /** Avoid calling onConsumedScrollTarget repeatedly while scrollTargetEventId is unchanged. */
   const scrollTargetConsumedRef = useRef<string | null>(null);
+  /** Retry deep-link target lookup across timeline growth before falling back. */
+  const scrollTargetMissCountRef = useRef(0);
+  const scrollTargetMissHandledRef = useRef<string | null>(null);
 
   /** At most one floating action bar: pointer hover, or locked while that row's hover emoji picker is open. */
   const [hoverActionMessageId, setHoverActionMessageId] = useState<
@@ -271,6 +276,13 @@ export function HumanChatPanelMessages({
   useEffect(() => {
     if (!scrollTargetEventId) {
       scrollTargetConsumedRef.current = null;
+      scrollTargetMissCountRef.current = 0;
+      scrollTargetMissHandledRef.current = null;
+      return;
+    }
+    if (scrollTargetMissHandledRef.current !== scrollTargetEventId) {
+      scrollTargetMissCountRef.current = 0;
+      scrollTargetMissHandledRef.current = null;
     }
   }, [scrollTargetEventId]);
 
@@ -330,9 +342,26 @@ export function HumanChatPanelMessages({
       row.scrollIntoView({ block: 'center', behavior: 'smooth' });
       stickToBottomRef.current = false;
       scrollTargetConsumedRef.current = scrollTargetEventId;
+      scrollTargetMissCountRef.current = 0;
+      scrollTargetMissHandledRef.current = null;
       onConsumedScrollTarget?.();
+      return;
     }
-  }, [scrollTargetEventId, onConsumedScrollTarget, timelineRows.length]);
+
+    scrollTargetMissCountRef.current += 1;
+    if (
+      scrollTargetMissCountRef.current >= 12 &&
+      scrollTargetMissHandledRef.current !== scrollTargetEventId
+    ) {
+      scrollTargetMissHandledRef.current = scrollTargetEventId;
+      onScrollTargetNotFound?.(scrollTargetEventId);
+    }
+  }, [
+    scrollTargetEventId,
+    onConsumedScrollTarget,
+    onScrollTargetNotFound,
+    timelineRows.length,
+  ]);
 
   useEffect(() => {
     const root = containerRef.current;

@@ -1992,6 +1992,8 @@
     "mentionInboxNotificationSettings": "Paramètres de notification",
     "mentionInboxEmpty": "Aucune mention dans ce chat pour l’instant.",
     "mentionInboxNoPreview": "(aucun aperçu)",
+    "mentionOpenFallbackRoom": "Impossible de résoudre ce salon depuis votre contexte local. Ouvrez l'espace concerné puis réessayez.",
+    "mentionOpenFallbackMissingMessage": "Ce message de mention n'est pas encore disponible dans la chronologie chargée. Réessayez dans un instant.",
     "mentionInboxBellAria": "{count, plural, one {# mention non lue} other {# mentions non lues}}",
     "mentionInboxBellAriaCapped": "99 mentions non lues ou plus",
     "mentionInboxBellAriaEmpty": "Ouvrir les mentions",

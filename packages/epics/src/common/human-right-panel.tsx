@@ -659,6 +659,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
   const [scrollToEventId, setScrollToEventId] = useState<string | null>(null);
+  const [mentionNavigationNotice, setMentionNavigationNotice] = useState<
+    string | null
+  >(null);
   /** Shown in timeline after a short delay while large attachment sends run. */
   const [sendingPending, setSendingPending] = useState<null | {
     id: string;
@@ -1765,6 +1768,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const handleSelectMentionFromInbox = useCallback(
     (eventId: string, fromRoomId?: string) => {
+      setMentionNavigationNotice(null);
       const targetRoom = fromRoomId?.trim();
       const current = roomId?.trim();
       const langMatch = pathname.match(/^\/([^/]+)\//);
@@ -1794,6 +1798,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           setActiveTab('chat');
           return;
         }
+        setMentionNavigationNotice(t('mentionOpenFallbackRoom'));
       }
 
       setActiveTab('chat');
@@ -1806,12 +1811,21 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       openHumanChatPanel,
       space?.chatRoomId,
       spaceSlug,
+      t,
     ],
   );
 
   const handleConsumedScrollTarget = useCallback(() => {
     setScrollToEventId(null);
   }, []);
+
+  const handleScrollTargetNotFound = useCallback(
+    (_eventId: string) => {
+      setMentionNavigationNotice(t('mentionOpenFallbackMissingMessage'));
+      setScrollToEventId(null);
+    },
+    [t],
+  );
 
   const mergedMessages = useMemo(() => {
     if (!sendingPending) return messages;
@@ -2592,6 +2606,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     {composerError}
                   </div>
                 )}
+                {mentionNavigationNotice && (
+                  <div
+                    role="status"
+                    className="mx-3 mt-2 rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300"
+                  >
+                    {mentionNavigationNotice}
+                  </div>
+                )}
                 {reactionError && (
                   <div
                     role="alert"
@@ -2639,6 +2661,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
                     scrollTargetEventId={scrollToEventId}
                     onConsumedScrollTarget={handleConsumedScrollTarget}
+                    onScrollTargetNotFound={handleScrollTargetNotFound}
                   />
                 )}
               </div>

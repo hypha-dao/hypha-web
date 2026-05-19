@@ -2000,6 +2000,8 @@
     "mentionInboxNotificationSettings": "Benachrichtigungseinstellungen",
     "mentionInboxEmpty": "Noch keine Erwähnungen in diesem Chat.",
     "mentionInboxNoPreview": "(keine Vorschau)",
+    "mentionOpenFallbackRoom": "Dieser Raum konnte im lokalen Kontext nicht aufgelöst werden. Öffnen Sie den zugehörigen Space und versuchen Sie es erneut.",
+    "mentionOpenFallbackMissingMessage": "Diese Erwähnung ist in der geladenen Timeline noch nicht verfügbar. Bitte versuchen Sie es gleich noch einmal.",
     "mentionInboxBellAria": "{count, plural, one {# ungelesene Erwähnung} other {# ungelesene Erwähnungen}}",
     "mentionInboxBellAriaCapped": "99 oder mehr ungelesene Erwähnungen",
     "mentionInboxBellAriaEmpty": "Erwähnungen öffnen",
