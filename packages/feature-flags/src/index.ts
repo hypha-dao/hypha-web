@@ -91,7 +91,7 @@ export const flagDefinitionsForDiscovery = {
     key: 'enable-onboarding-write-tools',
     defaultValue:
       parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_WRITE_TOOLS) ??
-      false,
+      true,
     description: 'Enable onboarding AI write tools for space setup actions',
     origin: 'hypha' as const,
     options: undefined as undefined,
@@ -184,7 +184,7 @@ export async function getEnableOnboardingWriteTools(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-onboarding-write-tools',
     process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_WRITE_TOOLS,
-    false,
+    true,
   );
 }
 

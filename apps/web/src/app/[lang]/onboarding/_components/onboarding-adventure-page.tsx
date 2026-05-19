@@ -253,6 +253,7 @@ export function OnboardingAdventurePage({
   const [aiStartError, setAiStartError] = useState<string | null>(null);
   const aiStartTimeoutRef = useRef<number | null>(null);
   const seedDispatchRetryTimeoutsRef = useRef<number[]>([]);
+  const seedDispatchRetryIntervalRef = useRef<number | null>(null);
   const seedAckReceivedRef = useRef(false);
 
   const [joinSpaceSlug, setJoinSpaceSlug] = useState('');
@@ -313,6 +314,10 @@ export function OnboardingAdventurePage({
           window.clearTimeout(timeoutId);
         }
         seedDispatchRetryTimeoutsRef.current = [];
+      }
+      if (seedDispatchRetryIntervalRef.current !== null) {
+        window.clearInterval(seedDispatchRetryIntervalRef.current);
+        seedDispatchRetryIntervalRef.current = null;
       }
     },
     [],
@@ -481,11 +486,16 @@ export function OnboardingAdventurePage({
       createdAt: new Date().toISOString(),
     };
     const clearSeedDispatchRetries = () => {
-      if (seedDispatchRetryTimeoutsRef.current.length === 0) return;
-      for (const timeoutId of seedDispatchRetryTimeoutsRef.current) {
-        window.clearTimeout(timeoutId);
+      if (seedDispatchRetryTimeoutsRef.current.length > 0) {
+        for (const timeoutId of seedDispatchRetryTimeoutsRef.current) {
+          window.clearTimeout(timeoutId);
+        }
+        seedDispatchRetryTimeoutsRef.current = [];
       }
-      seedDispatchRetryTimeoutsRef.current = [];
+      if (seedDispatchRetryIntervalRef.current !== null) {
+        window.clearInterval(seedDispatchRetryIntervalRef.current);
+        seedDispatchRetryIntervalRef.current = null;
+      }
     };
 
     seedAckReceivedRef.current = false;
@@ -520,6 +530,17 @@ export function OnboardingAdventurePage({
         }
       }, 1500),
     ];
+    // Keep retrying while the panel hydrates/mounts to avoid dropped events.
+    seedDispatchRetryIntervalRef.current = window.setInterval(() => {
+      if (seedAckReceivedRef.current) {
+        if (seedDispatchRetryIntervalRef.current !== null) {
+          window.clearInterval(seedDispatchRetryIntervalRef.current);
+          seedDispatchRetryIntervalRef.current = null;
+        }
+        return;
+      }
+      dispatchAiOnboardingSeed(seedPayload);
+    }, 800);
   };
 
   useEffect(() => {
