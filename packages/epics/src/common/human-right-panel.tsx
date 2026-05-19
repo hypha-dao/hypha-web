@@ -1343,6 +1343,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setSignalTeamPendingRequesterIds((prev) =>
           prev.filter((id) => id !== requesterId),
         );
+      } catch (error) {
+        console.error(
+          '[HumanRightPanel] approveSignalTeamRequester failed',
+          error,
+        );
+        setComposerError(t('sendFailed'));
       } finally {
         setSignalTeamBusy(false);
       }
@@ -1353,6 +1359,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       isSignalThread,
       coherenceSlug,
       effectiveSignalTeamMemberIds,
+      t,
     ],
   );
 
