@@ -270,9 +270,30 @@ function normalizeMatrixUserIds(ids: unknown): string[] {
   return [...new Set(ids.map((id) => String(id).trim()).filter(Boolean))];
 }
 
+function roomPowerLevelForUser(
+  room: Room | undefined,
+  userId: string | null,
+): number {
+  if (!room || !userId) return 0;
+  const powerLevels = room.currentState.getStateEvents(
+    EventType.RoomPowerLevels,
+    '',
+  );
+  const content = (powerLevels?.getContent() ?? {}) as {
+    users?: Record<string, number>;
+    users_default?: number;
+  };
+  const perUser = content.users?.[userId];
+  if (typeof perUser === 'number') return perUser;
+  const fromMember = room.getMember(userId)?.powerLevel;
+  if (typeof fromMember === 'number') return fromMember;
+  return typeof content.users_default === 'number' ? content.users_default : 0;
+}
+
 function deriveSignalTeamStateFromEvents(
   events: MatrixEvent[],
   coherenceSlug?: string | null,
+  room?: Room,
 ): SignalTeamTimelineState {
   let memberMatrixUserIds: string[] = [];
   const pending = new Set<string>();
@@ -297,13 +318,25 @@ function deriveSignalTeamStateFromEvents(
         ? content.coherenceSlug.trim()
         : '';
     if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
+    const senderId = ev.getSender()?.trim() || null;
+    const isKnownTrustedSender = Boolean(
+      senderId &&
+        (senderId === ownerMatrixUserId || memberMatrixUserIds.includes(senderId)),
+    );
+    const hasElevatedRoomPower =
+      roomPowerLevelForUser(room, senderId) >= 50;
+    const isTrustedActor = isKnownTrustedSender || hasElevatedRoomPower;
 
     if (eventKind === SIGNAL_TEAM_EVENT_KIND) {
-      if (!ownerMatrixUserId) {
-        const sender = ev.getSender()?.trim();
-        if (sender) ownerMatrixUserId = sender;
-      }
+      if (!isTrustedActor) continue;
       memberMatrixUserIds = normalizeMatrixUserIds(content.memberMatrixUserIds);
+      const nextOwnerId =
+        typeof content.ownerMatrixUserId === 'string'
+          ? content.ownerMatrixUserId.trim()
+          : '';
+      if (nextOwnerId) {
+        ownerMatrixUserId = nextOwnerId;
+      }
       continue;
     }
 
@@ -315,6 +348,8 @@ function deriveSignalTeamStateFromEvents(
     if (!requesterId) continue;
     const status =
       typeof content.status === 'string' ? content.status.trim() : 'pending';
+    const requesterIsSender = senderId === requesterId;
+    if (!requesterIsSender && !isTrustedActor) continue;
     if (status === 'pending') {
       pending.add(requesterId);
     } else {
@@ -1502,6 +1537,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team updated${summaryText}`,
           coherenceSlug: coherenceSlug?.trim() || null,
           memberMatrixUserIds: deduped,
+          ownerMatrixUserId: ownerId,
           addedMemberMatrixUserIds: added,
           removedMemberMatrixUserIds: removed,
           updatedAt: new Date().toISOString(),
@@ -1618,6 +1654,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
             coherenceSlug: coherenceSlug?.trim() || null,
             memberMatrixUserIds: nextMembers,
+            ownerMatrixUserId: ownerId,
             updatedAt: new Date().toISOString(),
           } as any),
         ]);
@@ -1681,7 +1718,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     const applyFromTimeline = () => {
       const timeline = room.getLiveTimeline().getEvents();
-      const next = deriveSignalTeamStateFromEvents(timeline, coherenceSlug);
+      const next = deriveSignalTeamStateFromEvents(timeline, coherenceSlug, room);
       setSignalTeamMemberIds(next.memberMatrixUserIds);
       setSignalTeamOwnerId(next.ownerMatrixUserId);
       setSignalTeamPendingRequesterIds(next.pendingRequesterIds);
