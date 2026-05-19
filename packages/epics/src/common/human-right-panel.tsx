@@ -74,6 +74,10 @@ import {
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
 } from './human-chat-panel';
+import {
+  type MentionPickCandidate,
+  useResolvedMentionCandidateLabel,
+} from './human-chat-panel/use-resolved-mention-candidate-label';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import {
@@ -109,6 +113,25 @@ function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
       URL.revokeObjectURL(a.previewUrl);
     }
   }
+}
+
+function SignalTeamResolvedMemberLabel({
+  candidate,
+  fallbackLabel,
+  isOwner = false,
+}: {
+  candidate: MentionPickCandidate;
+  fallbackLabel: string;
+  isOwner?: boolean;
+}) {
+  const { resolvedLabel } = useResolvedMentionCandidateLabel(candidate);
+  const finalLabel = resolvedLabel?.trim() || fallbackLabel;
+  return (
+    <span className="truncate">
+      {finalLabel}
+      {isOwner ? ' 👑' : ''}
+    </span>
+  );
 }
 
 /** Sanitized labels shared by multiple members need a disambiguated composer token + map key. */
@@ -3233,7 +3256,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                             className="flex items-center justify-between gap-2"
                           >
                             <span className="truncate text-xs text-muted-foreground">
-                              {resolveMentionMemberLabel(requesterId)}
+                              <SignalTeamResolvedMemberLabel
+                                candidate={{
+                                  userId: requesterId,
+                                  displayLabel: resolveMentionMemberLabel(
+                                    requesterId,
+                                  ),
+                                }}
+                                fallbackLabel={resolveMentionMemberLabel(
+                                  requesterId,
+                                )}
+                              />
                             </span>
                             <Button
                               type="button"
@@ -3308,10 +3341,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                                   void publishSignalTeamMembers(next);
                                 }}
                               >
-                                <span className="truncate">
-                                  {resolveMentionMemberLabel(member.userId)}
-                                  {isOwner ? ' 👑' : ''}
-                                </span>
+                                <SignalTeamResolvedMemberLabel
+                                  candidate={{
+                                    userId: member.userId,
+                                    displayLabel:
+                                      resolveMentionMemberLabel(member.userId),
+                                    privySub: member.privySub,
+                                  }}
+                                  fallbackLabel={resolveMentionMemberLabel(
+                                    member.userId,
+                                  )}
+                                  isOwner={isOwner}
+                                />
                                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                                   {isOwner ? null : selected ? (
                                     <Check className="h-3.5 w-3.5 text-accent-11" />

@@ -1997,7 +1997,7 @@
     "mentionListLabel": "Mention someone",
     "composerLockedPlaceholder": "Only selected team members can interact in this thread.",
     "signalTeamInteractionRestricted": "Only selected team members can send messages and mentions in this thread.",
-    "signalTeamBannerReadOnly": "This thread is team-scoped. You can read updates, but only selected team members can interact.",
+    "signalTeamBannerReadOnly": "This is a dedicated Signal team channel. Only selected team members can reply to keep it focused.",
     "signalTeamRequestAccess": "Request to be included",
     "signalTeamRequestPending": "Request pending",
     "signalTeamManageTitle": "Signal Team",
