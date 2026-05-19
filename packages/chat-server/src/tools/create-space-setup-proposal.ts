@@ -64,16 +64,15 @@ export function createCreateSpaceSetupProposalTool(authToken: string) {
         });
         return {
           ok: true,
-          dry_run: true,
           requires_confirmation: true,
           confirmation_token: confirmationToken,
           preview: {
-            space_slug: safe,
             title: data.title,
             label: data.label ?? 'space setup',
             description: data.description,
           },
-          next_step: `Ask the user to reply with "${confirmationToken}" to create this proposal.`,
+          next_step:
+            'Please confirm once more and I will create this proposal for you.',
         };
       }
 

@@ -160,19 +160,17 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
         });
         return {
           ok: true,
-          dry_run: true,
           requires_confirmation: true,
           confirmation_token: 'confirm-create-space',
           preview: {
             title: data.title,
-            slug: normalizedSlug,
-            parent_space_slug: safeParentSlug ?? null,
             parent_space_name: data.parent_space_name ?? null,
             flags: data.flags,
             links: data.links,
             categories: data.categories,
           },
-          next_step: 'Confirm to create this space.',
+          next_step:
+            'I need one more confirmation from you before the signing step. Press Confirm and then sign in your wallet to create this space.',
         };
       }
 

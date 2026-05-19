@@ -116,7 +116,6 @@ export function createGenerateEcosystemBlueprintTool() {
 
       return {
         ok: true,
-        dry_run: true,
         requires_confirmation: true,
         confirmation_token: 'confirm-ecosystem-blueprint',
         blueprint: {

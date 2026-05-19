@@ -165,20 +165,18 @@ export function createCreateEcosystemSpaceTool(authToken: string) {
         });
         return {
           ok: true,
-          dry_run: true,
           requires_confirmation: true,
           confirmation_token: confirmationToken,
           preview: {
-            parent_space_slug: safeParent,
             title: data.title,
-            slug: normalizedSlug,
             role_in_ecosystem: data.role_in_ecosystem,
             role_label: roleLabels[data.role_in_ecosystem],
             links: data.links,
             categories: data.categories,
             flags: data.flags,
           },
-          next_step: `Ask the user to reply with "${confirmationToken}" to create this ecosystem space.`,
+          next_step:
+            'Please confirm once more and I will create this ecosystem space.',
         };
       }
 

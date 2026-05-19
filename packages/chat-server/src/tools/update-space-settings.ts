@@ -78,17 +78,16 @@ export function createUpdateSpaceSettingsTool(
         });
         return {
           ok: true,
-          dry_run: true,
           requires_confirmation: true,
           confirmation_token: confirmationToken,
           preview: {
-            space_slug: safe,
             title: data.title ?? host.title,
             description: data.description ?? host.description,
             links: data.links ?? host.links ?? [],
             flags: data.flags ?? host.flags ?? [],
           },
-          next_step: `Ask the user to reply with "${confirmationToken}" to apply these settings.`,
+          next_step:
+            'Please confirm once more so I can apply these updates safely.',
         };
       }
 
