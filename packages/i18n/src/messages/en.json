@@ -160,6 +160,7 @@
       "emailNotifications": "Email Notifications",
       "toEmail": "to {email}",
       "browserNotifications": "Browser Notifications (formerly \"Desktop Pop-up Notifications\")",
+      "mentionConsent": "Mention Notifications Consent",
       "yes": "Yes",
       "no": "No",
       "emailNotificationsWithEmail": "Email Notifications ({email})"

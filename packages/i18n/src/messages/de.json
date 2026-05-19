@@ -161,6 +161,7 @@
       "emailNotifications": "E-Mail-Benachrichtigungen",
       "toEmail": "an {email}",
       "browserNotifications": "Browser-Benachrichtigungen (früher „Desktop-Pop-up-Benachrichtigungen“)",
+      "mentionConsent": "Einwilligung für Erwähnungsbenachrichtigungen",
       "yes": "Ja",
       "no": "Nein",
       "emailNotificationsWithEmail": "E-Mail-Benachrichtigungen ({email})"

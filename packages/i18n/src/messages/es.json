@@ -851,6 +851,7 @@
       "emailNotifications": "Notificaciones por correo electrónico",
       "toEmail": "a {email}",
       "browserNotifications": "Notificaciones del navegador (anteriormente \"Notificaciones emergentes de escritorio\")",
+      "mentionConsent": "Consentimiento para notificaciones de menciones",
       "yes": "Sí",
       "no": "No",
       "emailNotificationsWithEmail": "Notificaciones por correo electrónico ({email})"

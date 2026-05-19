@@ -851,6 +851,7 @@
       "emailNotifications": "Notificações por e-mail",
       "toEmail": "para {email}",
       "browserNotifications": "Notificações do navegador (anteriormente \"Notificações pop-up na área de trabalho\")",
+      "mentionConsent": "Consentimento para notificações de menções",
       "yes": "Sim",
       "no": "Não",
       "emailNotificationsWithEmail": "Notificações por e-mail ({email})"

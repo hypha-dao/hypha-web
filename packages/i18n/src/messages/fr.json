@@ -161,6 +161,7 @@
       "emailNotifications": "Notifications par e-mail",
       "toEmail": "à {email}",
       "browserNotifications": "Notifications du navigateur (anciennement « Notifications pop-up bureau »)",
+      "mentionConsent": "Consentement aux notifications de mention",
       "yes": "Oui",
       "no": "Non",
       "emailNotificationsWithEmail": "Notifications par e-mail ({email})"

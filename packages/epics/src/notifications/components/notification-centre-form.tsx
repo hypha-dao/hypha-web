@@ -90,6 +90,9 @@ export const NotificationCentreForm = ({
       browserNotifications: configuration
         ? getSwitch(configuration.browserNotifications)
         : 'yes',
+      mentionNotificationsConsent: configuration
+        ? getSwitch(configuration.mentionNotificationsConsent)
+        : 'yes',
       subscriptions: NOTIFICATION_SUBSCRIPTIONS,
     },
     mode: 'onChange',
@@ -103,6 +106,9 @@ export const NotificationCentreForm = ({
     const modified = {
       browserNotifications: getSwitch(configuration.browserNotifications),
       emailNotifications: getSwitch(configuration.emailNotifications),
+      mentionNotificationsConsent: getSwitch(
+        configuration.mentionNotificationsConsent,
+      ),
       subscriptions: NOTIFICATION_SUBSCRIPTIONS.map((subscription) => {
         const sub = configuration.subscriptions?.find(
           (s) => s.name === subscription.tagName,
@@ -124,6 +130,9 @@ export const NotificationCentreForm = ({
       await saveConfigurations({
         browserNotifications: parseSwitch(values.browserNotifications),
         emailNotifications: parseSwitch(values.emailNotifications),
+        mentionNotificationsConsent: parseSwitch(
+          values.mentionNotificationsConsent,
+        ),
         subscriptions: values.subscriptions.map((subscription) => {
           return {
             name: subscription.tagName,
@@ -284,6 +293,43 @@ export const NotificationCentreForm = ({
                     <RadioGroupItem id="browserNotificationYes" value="yes" />
                     <Label htmlFor="browserNotificationNo">{noLabel}</Label>
                     <RadioGroupItem id="browserNotificationNo" value="no" />
+                  </RadioGroup>
+                )}
+              />
+            </span>
+            <span className="text-2 text-neutral-11 flex flex-row justify-between">
+              <FormLabel>
+                {tNotificationCentre.has('channels.mentionConsent')
+                  ? tNotificationCentre('channels.mentionConsent')
+                  : 'Mention Notifications Consent'}
+              </FormLabel>
+              <FormField
+                control={form.control}
+                name="mentionNotificationsConsent"
+                render={({ field }) => (
+                  <RadioGroup
+                    className="flex flex-row justify-end"
+                    name="mentionNotificationsConsent"
+                    orientation="horizontal"
+                    value={field.value}
+                    onValueChange={(value: string) => {
+                      form.setValue(field.name, parseYesNoValue(value, 'yes'));
+                    }}
+                  >
+                    <Label htmlFor="mentionNotificationsConsentYes">
+                      {yesLabel}
+                    </Label>
+                    <RadioGroupItem
+                      id="mentionNotificationsConsentYes"
+                      value="yes"
+                    />
+                    <Label htmlFor="mentionNotificationsConsentNo">
+                      {noLabel}
+                    </Label>
+                    <RadioGroupItem
+                      id="mentionNotificationsConsentNo"
+                      value="no"
+                    />
                   </RadioGroup>
                 )}
               />
