@@ -13,6 +13,7 @@ import { transfers } from './transfers';
 import { coherences } from './coherence';
 import { matrixUserLinks } from './matrix-user-link';
 import { tokenUpdates, tokenUpdateRelations } from './token-updates';
+import { bankCustomers } from './bank-customer';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -29,6 +30,7 @@ export * from './transfers';
 export * from './coherence';
 export * from './matrix-user-link';
 export * from './token-updates';
+export * from './bank-customer';
 
 export const schema = {
   documents,
@@ -48,4 +50,5 @@ export const schema = {
   matrixUserLinks,
   tokenUpdates,
   tokenUpdateRelations,
+  bankCustomers,
 };
