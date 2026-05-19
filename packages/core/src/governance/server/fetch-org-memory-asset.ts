@@ -663,7 +663,45 @@ export async function fetchOrgMemoryAsset(
     filename =
       recording.mediaUri.split('/').pop()?.trim() ||
       `recording-${recording.callSessionId}.webm`;
-    fetchUrl = recording.mediaUri;
+    const mxcParsed = parseMxc(recording.mediaUri);
+    if (mxcParsed) {
+      const homeserver = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.replace(
+        /\/?$/,
+        '',
+      );
+      if (!homeserver) {
+        return {
+          access: 'ok',
+          result: {
+            ok: false,
+            error: 'Matrix homeserver not configured',
+            code: 'matrix_auth',
+          },
+        };
+      }
+      const tokenPack = await resolveMatrixAccessToken(
+        authToken,
+        requestUrlForSessionMatrix,
+      );
+      if (!tokenPack) {
+        return {
+          access: 'ok',
+          result: {
+            ok: false,
+            error: 'No Matrix access token available for recording fetch',
+            code: 'matrix_auth',
+          },
+        };
+      }
+      fetchUrl = matrixMediaDownloadPath(
+        homeserver,
+        mxcParsed.serverName,
+        mxcParsed.mediaId,
+      );
+      matrixAccessToken = tokenPack.token;
+    } else {
+      fetchUrl = recording.mediaUri;
+    }
   } else if (key.k === 'ct') {
     const transcript = (await getSpaceCallArtifactById(
       { kind: 'transcript', id: key.i, spaceId: host.id },
