@@ -248,6 +248,12 @@ export function AiPanelMessageBubble({
         typeof p.type === 'string' && p.type.startsWith('tool-'),
     ) ?? [];
   const visibleToolParts = toolParts;
+  const shouldHideToolPart = (part: ToolPart) =>
+    part.type === 'tool-onboarding_guidance' &&
+    part.state === 'output-available';
+  const renderedToolParts = visibleToolParts.filter(
+    (part) => !shouldHideToolPart(part),
+  );
 
   const handleCopy = useCallback(async () => {
     if (!textContent) return;
@@ -507,9 +513,9 @@ export function AiPanelMessageBubble({
               )}
             </div>
           )}
-          {visibleToolParts.length > 0 && (
+          {renderedToolParts.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              {visibleToolParts.map((part) => (
+              {renderedToolParts.map((part) => (
                 <div
                   key={part.toolCallId}
                   className="rounded-xl border border-border/70 bg-background px-3 py-2 text-xs shadow-sm"

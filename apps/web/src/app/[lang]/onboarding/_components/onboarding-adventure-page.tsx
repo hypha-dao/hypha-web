@@ -38,11 +38,8 @@ import {
 import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space, useMe } from '@hypha-platform/core/client';
 import {
-  AI_ONBOARDING_SEED_ACK_EVENT,
   ONBOARDING_SETUP_MODE,
-  dispatchAiOnboardingSeed,
   saveOnboardingConversationContext,
-  useAiPanel,
 } from '@hypha-platform/epics';
 import {
   DropdownMenu,
@@ -50,6 +47,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@hypha-platform/ui';
+import { OnboardingAiFullPage } from './onboarding-ai-full-page';
 
 const getSpacePath = (lang: string, spaceSlug: string) =>
   `/${lang}/dho/${spaceSlug}/agreements`;
@@ -232,7 +230,6 @@ export function OnboardingAdventurePage({
   const locale = useLocale();
   const router = useRouter();
   const { person } = useMe();
-  const { openAiPanel, setAiOverlayVisible } = useAiPanel();
   const { spaces, isLoading, error: spacesError } = useAllSpaces();
   const [aiPrompt, setAiPrompt] = useState('');
   const aiPromptRef = useRef(aiPrompt);
@@ -247,14 +244,18 @@ export function OnboardingAdventurePage({
   const [isDictating, setIsDictating] = useState(false);
   const [dictationError, setDictationError] = useState<string | null>(null);
   const [isStartingAi, setIsStartingAi] = useState(false);
-  const [aiStartStatus, setAiStartStatus] = useState<
-    'idle' | 'opening' | 'sending' | 'failed'
-  >('idle');
   const [aiStartError, setAiStartError] = useState<string | null>(null);
-  const aiStartTimeoutRef = useRef<number | null>(null);
-  const seedDispatchRetryTimeoutsRef = useRef<number[]>([]);
-  const seedDispatchRetryIntervalRef = useRef<number | null>(null);
-  const seedAckReceivedRef = useRef(false);
+  const [onboardingAiConversation, setOnboardingAiConversation] = useState<{
+    prompt: string;
+    attachments: File[];
+    context: {
+      mode: typeof ONBOARDING_SETUP_MODE;
+      source: 'onboarding_hero';
+      firstName?: string;
+      locale: string;
+      createdAt: string;
+    };
+  } | null>(null);
 
   const [joinSpaceSlug, setJoinSpaceSlug] = useState('');
   const [joinQuery, setJoinQuery] = useState('');
@@ -323,19 +324,6 @@ export function OnboardingAdventurePage({
     () => () => {
       if (copyTimeoutRef.current !== null) {
         window.clearTimeout(copyTimeoutRef.current);
-      }
-      if (aiStartTimeoutRef.current !== null) {
-        window.clearTimeout(aiStartTimeoutRef.current);
-      }
-      if (seedDispatchRetryTimeoutsRef.current.length > 0) {
-        for (const timeoutId of seedDispatchRetryTimeoutsRef.current) {
-          window.clearTimeout(timeoutId);
-        }
-        seedDispatchRetryTimeoutsRef.current = [];
-      }
-      if (seedDispatchRetryIntervalRef.current !== null) {
-        window.clearInterval(seedDispatchRetryIntervalRef.current);
-        seedDispatchRetryIntervalRef.current = null;
       }
     },
     [],
@@ -514,130 +502,18 @@ export function OnboardingAdventurePage({
       locale,
       createdAt: new Date().toISOString(),
     };
-    const clearSeedDispatchRetries = () => {
-      if (seedDispatchRetryTimeoutsRef.current.length > 0) {
-        for (const timeoutId of seedDispatchRetryTimeoutsRef.current) {
-          window.clearTimeout(timeoutId);
-        }
-        seedDispatchRetryTimeoutsRef.current = [];
-      }
-      if (seedDispatchRetryIntervalRef.current !== null) {
-        window.clearInterval(seedDispatchRetryIntervalRef.current);
-        seedDispatchRetryIntervalRef.current = null;
-      }
-    };
-
-    seedAckReceivedRef.current = false;
-    clearSeedDispatchRetries();
     saveOnboardingConversationContext(context);
     setIsStartingAi(true);
-    setAiStartStatus('opening');
     setAiStartError(null);
-    if (aiStartTimeoutRef.current !== null) {
-      window.clearTimeout(aiStartTimeoutRef.current);
-    }
-    aiStartTimeoutRef.current = window.setTimeout(() => {
-      setIsStartingAi(false);
-      setAiStartStatus('failed');
-      setAiStartError(t('aiHero.handoffTimeout'));
-    }, 20000);
-    openAiPanel();
-    setAiOverlayVisible(false);
-    const seedPayload = { prompt, context, attachments: heroAttachments };
-    // Dispatch immediately, then retry briefly to avoid lost event races
-    // while the AI panel is mounting/opening.
-    dispatchAiOnboardingSeed(seedPayload);
-    seedDispatchRetryTimeoutsRef.current = [
-      window.setTimeout(() => {
-        if (!seedAckReceivedRef.current) {
-          dispatchAiOnboardingSeed(seedPayload);
-        }
-      }, 500),
-      window.setTimeout(() => {
-        if (!seedAckReceivedRef.current) {
-          dispatchAiOnboardingSeed(seedPayload);
-        }
-      }, 1500),
-    ];
-    // Keep retrying while the panel hydrates/mounts to avoid dropped events.
-    seedDispatchRetryIntervalRef.current = window.setInterval(() => {
-      if (seedAckReceivedRef.current) {
-        if (seedDispatchRetryIntervalRef.current !== null) {
-          window.clearInterval(seedDispatchRetryIntervalRef.current);
-          seedDispatchRetryIntervalRef.current = null;
-        }
-        return;
-      }
-      dispatchAiOnboardingSeed(seedPayload);
-    }, 800);
+    setOnboardingAiConversation({
+      prompt,
+      attachments: heroAttachments,
+      context,
+    });
+    setAiPrompt('');
+    setHeroAttachments([]);
+    setIsStartingAi(false);
   };
-
-  useEffect(() => {
-    const onSeedAck = (event: Event) => {
-      if (!(event instanceof CustomEvent)) return;
-      seedAckReceivedRef.current = true;
-      const detail = event.detail as
-        | {
-            ok?: boolean;
-            stage?: 'received' | 'sending' | 'sent' | 'error';
-            reason?: string;
-          }
-        | undefined;
-      const clearHandoffTimeout = () => {
-        if (aiStartTimeoutRef.current !== null) {
-          window.clearTimeout(aiStartTimeoutRef.current);
-          aiStartTimeoutRef.current = null;
-        }
-      };
-      const clearSeedDispatchRetries = () => {
-        if (seedDispatchRetryTimeoutsRef.current.length === 0) return;
-        for (const timeoutId of seedDispatchRetryTimeoutsRef.current) {
-          window.clearTimeout(timeoutId);
-        }
-        seedDispatchRetryTimeoutsRef.current = [];
-      };
-      clearSeedDispatchRetries();
-      if (detail?.stage === 'received') {
-        clearHandoffTimeout();
-        setAiStartStatus('opening');
-        setAiStartError(null);
-        return;
-      }
-      if (detail?.stage === 'sending') {
-        clearHandoffTimeout();
-        setIsStartingAi(false);
-        setAiStartStatus('sending');
-        setAiStartError(null);
-        return;
-      }
-      clearHandoffTimeout();
-      if (detail?.ok) {
-        setIsStartingAi(false);
-        setAiStartStatus('idle');
-        setAiStartError(null);
-        setAiPrompt('');
-        setHeroAttachments([]);
-        return;
-      }
-      setIsStartingAi(false);
-      setAiStartStatus('failed');
-      setAiStartError(
-        detail?.reason === 'send_failed'
-          ? t('aiHero.sendFailed')
-          : t('aiHero.handoffFailed'),
-      );
-    };
-    window.addEventListener(
-      AI_ONBOARDING_SEED_ACK_EVENT,
-      onSeedAck as EventListener,
-    );
-    return () => {
-      window.removeEventListener(
-        AI_ONBOARDING_SEED_ACK_EVENT,
-        onSeedAck as EventListener,
-      );
-    };
-  }, []);
 
   const pushHeroAttachments = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -646,6 +522,16 @@ export function OnboardingAdventurePage({
   const adventureTitle = hasVisitedAdventure
     ? t('continueAdventure')
     : t('title');
+  if (onboardingAiConversation) {
+    return (
+      <OnboardingAiFullPage
+        seedPrompt={onboardingAiConversation.prompt}
+        seedAttachments={onboardingAiConversation.attachments}
+        context={onboardingAiConversation.context}
+        onExit={() => setOnboardingAiConversation(null)}
+      />
+    );
+  }
   return (
     <Container className="flex flex-col gap-14 py-10 md:py-12">
       <header className="space-y-3 pt-3 text-center md:pt-4">
@@ -859,15 +745,13 @@ export function OnboardingAdventurePage({
               </div>
             </div>
           </div>
-          {aiStartStatus === 'failed' ? (
+          {aiStartError ? (
             <div
               className="mt-2 flex items-center justify-center gap-2 text-1"
               role="alert"
             >
               <AlertTriangle className="size-3.5 text-warning-10" aria-hidden />
-              <span className="text-warning-11">
-                {aiStartError ?? t('aiHero.handoffFailed')}
-              </span>
+              <span className="text-warning-11">{aiStartError}</span>
             </div>
           ) : null}
           {dictationError ? (

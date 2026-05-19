@@ -307,8 +307,7 @@ export function PanelWrapLayout({
   const isOnboarding = pathname.includes('/onboarding');
   const isCompactUi = useCompactHeaderMode();
 
-  // Left AI panel stays mounted for onboarding handoff events.
-  const effectiveLeft = isSpace || isOnboarding ? left : undefined;
+  const effectiveLeft = isSpace ? left : undefined;
   // Right human panel remains space-context only.
   const effectiveRight = isSpace ? right : undefined;
   const [viewportWidth, setViewportWidth] = useState<number>(

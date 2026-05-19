@@ -64,6 +64,7 @@ const inputSchema = z.object({
   description: z.string().trim().min(10).max(2000),
   slug: z.string().trim().min(1).max(128).optional(),
   parent_space_slug: z.string().trim().min(1).max(128).optional(),
+  parent_space_name: z.string().trim().min(1).max(180).optional(),
   flags: z.array(spaceFlagSchema).optional().default([]),
   links: z.array(httpUrlSchema).optional().default([]),
   categories: z.array(categorySchema).optional().default([]),
@@ -111,11 +112,15 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
         };
       }
 
-      const safeParentSlug = data.parent_space_slug
-        ? sanitizeSlug(data.parent_space_slug)
+      const parentSlugFromName = data.parent_space_name
+        ? sanitizeSlug(slugify(data.parent_space_name, { lower: true }))
         : null;
-      if (data.parent_space_slug && !safeParentSlug) {
-        return { ok: false, error: 'Invalid parent space slug format.' };
+      const requestedParentSlug = data.parent_space_slug ?? parentSlugFromName;
+      const safeParentSlug = requestedParentSlug
+        ? sanitizeSlug(requestedParentSlug)
+        : null;
+      if (requestedParentSlug && !safeParentSlug) {
+        return { ok: false, error: 'Invalid parent space reference.' };
       }
 
       const parentSpace = safeParentSlug
@@ -124,7 +129,10 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
       if (safeParentSlug && !parentSpace) {
         return {
           ok: false,
-          error: `Parent space "${safeParentSlug}" was not found.`,
+          error:
+            data.parent_space_name && !data.parent_space_slug
+              ? `Could not find a parent space matching "${data.parent_space_name}". Please share the exact parent space name.`
+              : `Parent space "${safeParentSlug}" was not found.`,
         };
       }
       if (parentSpace) {
@@ -159,6 +167,7 @@ export function createCreateSpaceFromOnboardingTool(authToken: string) {
             title: data.title,
             slug: normalizedSlug,
             parent_space_slug: safeParentSlug ?? null,
+            parent_space_name: data.parent_space_name ?? null,
             flags: data.flags,
             links: data.links,
             categories: data.categories,
