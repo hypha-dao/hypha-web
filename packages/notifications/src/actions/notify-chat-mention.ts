@@ -58,7 +58,7 @@ export async function notifyChatMentionAction(
     [TAG_MENTION_CONSENT]: 'true',
   };
 
-  await Promise.allSettled([
+  const results = await Promise.allSettled([
     sendPushNotifications({
       contents,
       headings,
@@ -77,4 +77,18 @@ export async function notifyChatMentionAction(
       requiredTags,
     }),
   ]);
+
+  const rejected = results.filter(
+    (result): result is PromiseRejectedResult => result.status === 'rejected',
+  );
+
+  if (rejected.length > 0) {
+    console.error(
+      '[notifyChatMentionAction] Notification delivery failed',
+      rejected.map((r) => r.reason),
+    );
+    if (rejected.length === results.length) {
+      throw new Error('Failed to deliver mention notification on all channels');
+    }
+  }
 }
