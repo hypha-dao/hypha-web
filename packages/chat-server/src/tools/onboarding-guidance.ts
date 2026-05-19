@@ -30,6 +30,33 @@ type GuidanceDefinition = {
   suggested_tools: string[];
 };
 
+function normalizeChoice(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase();
+}
+
+function wantsGeneratedPlaceholders(value: unknown): boolean {
+  const normalized = normalizeChoice(value);
+  return (
+    normalized.includes('placeholder') ||
+    normalized.includes('generate') ||
+    normalized.includes('create for me') ||
+    normalized === 'no' ||
+    normalized === 'no assets'
+  );
+}
+
+function hasOwnAssets(value: unknown): boolean {
+  const normalized = normalizeChoice(value);
+  return (
+    normalized.includes('i have') ||
+    normalized.includes('upload') ||
+    normalized.includes('use mine') ||
+    normalized === 'yes'
+  );
+}
+
 function getGuidanceDefinition(
   process: z.infer<typeof processSchema>,
 ): GuidanceDefinition {
@@ -55,6 +82,24 @@ function getGuidanceDefinition(
             String(answers.link_parent_ecosystem ?? '')
               .toLowerCase()
               .trim() === 'yes',
+        },
+        {
+          field: 'visual_assets_choice',
+          question:
+            'Do you already have an icon, logo, and banner image, or should I generate placeholders for you?',
+        },
+        {
+          field: 'visual_assets_links',
+          question:
+            'Great. Please share the icon/logo/banner image links now, or upload the files here and I will use them.',
+          requiredWhen: (answers) => hasOwnAssets(answers.visual_assets_choice),
+        },
+        {
+          field: 'visual_vibe',
+          question:
+            'Perfect. What emotion or vibe should the placeholders express? For example: bold, calm, playful, visionary.',
+          requiredWhen: (answers) =>
+            wantsGeneratedPlaceholders(answers.visual_assets_choice),
         },
       ],
       validation_steps: [

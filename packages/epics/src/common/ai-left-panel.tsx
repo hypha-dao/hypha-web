@@ -209,6 +209,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const pendingSeedAttachmentsRef = useRef<File[]>([]);
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
   const lastAutoNavigationKeyRef = useRef<string | null>(null);
+  const lastChatSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
   const {
     createSpace: createSpaceWithWalletFlow,
     space: walletCreatedSpace,
@@ -593,7 +594,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     [getAccessToken, onboardingContext, spaceSlug],
   );
 
-  const { messages, sendMessage, stop, status, error, clearError } = useChat({
+  const {
+    messages,
+    sendMessage,
+    stop,
+    status,
+    error,
+    clearError,
+    setMessages,
+  } = useChat({
     transport,
     onError: (chatError) => {
       console.error('[AiLeftPanel][useChat]', chatError);
@@ -601,6 +610,25 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   });
 
   const isStreaming = status === 'streaming' || status === 'submitted';
+
+  useEffect(() => {
+    const nextSlug = spaceSlug?.trim() || null;
+    const previousSlug = lastChatSpaceSlugRef.current;
+    if (previousSlug === nextSlug) return;
+    lastChatSpaceSlugRef.current = nextSlug;
+
+    // Keep AI context aligned with the currently selected space.
+    // Without this, the conversation history can bias responses to the prior space.
+    if (status === 'streaming' || status === 'submitted') {
+      void stop();
+    }
+    clearError();
+    setMessages([]);
+    setInput('');
+    setDraftAttachments([]);
+    autoRetryingRef.current = false;
+    lastAutoRetriedMessageIdRef.current = null;
+  }, [clearError, setMessages, spaceSlug, status, stop]);
 
   const buildMessageOptions = useCallback(async () => {
     let token: string | undefined;
@@ -779,7 +807,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     saveOnboardingConversationContext(nextContext);
     openAiPanel();
     setAiOverlayVisible(false);
-    router.push(`/${lang}/dho/${createdSlug}/agreements/space-configuration`);
+    router.push(`/${lang}/dho/${createdSlug}/agreements`);
   }, [
     lang,
     messages,
@@ -865,7 +893,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     saveOnboardingConversationContext(nextContext);
     openAiPanel();
     setAiOverlayVisible(false);
-    router.push(`/${lang}/dho/${slug}/agreements/space-configuration`);
+    router.push(`/${lang}/dho/${slug}/agreements`);
   }, [
     lang,
     onboardingContext,

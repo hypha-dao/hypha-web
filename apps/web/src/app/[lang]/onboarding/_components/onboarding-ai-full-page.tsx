@@ -229,9 +229,7 @@ export function OnboardingAiFullPage({
     if (!slug) return;
     if (createdSpaceRef.current === slug) return;
     createdSpaceRef.current = slug;
-    router.push(
-      `/${context.locale ?? 'en'}/dho/${slug}/agreements/space-configuration`,
-    );
+    router.push(`/${context.locale ?? 'en'}/dho/${slug}/agreements`);
   }, [context.locale, messages, router]);
 
   useEffect(() => {
@@ -242,9 +240,7 @@ export function OnboardingAiFullPage({
     if (!slug) return;
     if (createdSpaceRef.current === slug) return;
     createdSpaceRef.current = slug;
-    router.push(
-      `/${context.locale ?? 'en'}/dho/${slug}/agreements/space-configuration`,
-    );
+    router.push(`/${context.locale ?? 'en'}/dho/${slug}/agreements`);
   }, [context.locale, router, walletCreatedSpace?.slug]);
 
   useEffect(() => {

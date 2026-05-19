@@ -286,9 +286,15 @@ export function AiPanelMessageBubble({
     () => parseMarkdownBlocks(textContent),
     [textContent],
   );
+  const showMoreLabel = t('showMore');
+  const showLessLabel = t('showLess');
+  const hasExpandTranslations =
+    showMoreLabel !== 'AiPanel.showMore' &&
+    showLessLabel !== 'AiPanel.showLess';
   const showExpandToggle =
     !isUser &&
     !isStreaming &&
+    hasExpandTranslations &&
     (textContent.length > 560 || textLines.length > 11);
 
   const hasVisibleText =
@@ -445,60 +451,6 @@ export function AiPanelMessageBubble({
     [onActionReplySelect, t],
   );
 
-  const renderToolOutput = useCallback(
-    (output: unknown) => {
-      const confirmationCard = renderConfirmationCard(output);
-      if (confirmationCard) return confirmationCard;
-      if (!output || typeof output !== 'object') {
-        return (
-          <span className="text-muted-foreground">{t('toolCompleted')}</span>
-        );
-      }
-      const value = output as {
-        found?: boolean;
-        slug?: string;
-        space?: {
-          title?: string;
-          memberCount?: number;
-          documentCount?: number;
-        };
-        spaceFound?: boolean;
-        tokens?: unknown[];
-      };
-      if ('found' in value) {
-        if (value.found && value.space) {
-          return (
-            <span>
-              Found {value.space.title ?? 'space'} with{' '}
-              {value.space.memberCount ?? 0} members and{' '}
-              {value.space.documentCount ?? 0} documents.
-            </span>
-          );
-        }
-        return <span className="text-muted-foreground">Space not found.</span>;
-      }
-      if ('spaceFound' in value) {
-        if (!value.spaceFound) {
-          return (
-            <span className="text-muted-foreground">Space not found.</span>
-          );
-        }
-        const tokenCount = Array.isArray(value.tokens)
-          ? value.tokens.length
-          : 0;
-        return (
-          <span className="text-muted-foreground">
-            Found {tokenCount} token entries.
-          </span>
-        );
-      }
-      return (
-        <span className="text-muted-foreground">{t('toolCompleted')}</span>
-      );
-    },
-    [renderConfirmationCard, t],
-  );
-
   return (
     <div
       className={cn(
@@ -644,32 +596,7 @@ export function AiPanelMessageBubble({
                 if (confirmationCard) {
                   return <div key={part.toolCallId}>{confirmationCard}</div>;
                 }
-                return (
-                  <div
-                    key={part.toolCallId}
-                    className="rounded-xl border border-border/70 bg-background px-3 py-2 text-xs shadow-sm"
-                  >
-                    {part.state === 'input-streaming' && (
-                      <span className="text-muted-foreground">
-                        {t('toolLookingUp')}
-                      </span>
-                    )}
-                    {part.state === 'input-available' && (
-                      <span className="text-muted-foreground">
-                        {t('toolLookingUp')}
-                      </span>
-                    )}
-                    {part.state === 'output-available' &&
-                      renderToolOutput(part.output)}
-                    {part.state === 'output-error' && (
-                      <span className="text-destructive">
-                        {t('toolError', {
-                          message: part.errorText ?? 'Unknown error',
-                        })}
-                      </span>
-                    )}
-                  </div>
-                );
+                return null;
               })}
             </div>
           )}
