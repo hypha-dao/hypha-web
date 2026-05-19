@@ -47,7 +47,7 @@ function getGuidanceDefinition(
             'Should this be linked to a parent ecosystem space? (yes/no)',
         },
         {
-          field: 'parent_space_slug',
+          field: 'parent_space_name',
           question:
             'What is the parent space name? If you are unsure, share what you remember and I will help identify it.',
           requiredWhen: (answers) =>
@@ -68,12 +68,12 @@ function getGuidanceDefinition(
       steps: [
         { field: 'target_space', question: 'Which space should be updated?' },
         {
-          field: 'fields_to_change',
-          question: 'Which fields should be changed?',
+          field: 'first_change',
+          question: 'What should we change first in that space?',
         },
         {
-          field: 'new_values',
-          question: 'What exact new values should be applied?',
+          field: 'desired_result',
+          question: 'How would you like it to look after this change?',
         },
       ],
       validation_steps: ['Confirm the exact diff before updates.'],
@@ -181,13 +181,14 @@ export function createOnboardingGuidanceTool() {
         user_goal: user_goal ?? null,
         space_slug: space_slug ?? null,
         question_mode: 'single_step',
+        assistant_instruction:
+          'Ask only the next_question as a single natural-language question. Do not provide a checklist, field list, or form labels.',
         progress: {
           answered: collected,
           total,
           remaining: Math.max(total - collected, 0),
         },
         next_question: nextStep?.question ?? null,
-        next_field: nextStep?.field ?? null,
         ready_for_validation: readyForValidation,
         validation_steps: readyForValidation ? guidance.validation_steps : [],
         suggested_tools: guidance.suggested_tools,

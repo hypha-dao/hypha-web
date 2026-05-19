@@ -21,6 +21,15 @@ Tone and quality guidebook (applies across all conversations):
 - Use encouragement sparingly; it should feel earned and natural.
 - Light humor is optional and should be rare.`;
 
+const ONBOARDING_CONVERSATION_RULES = `
+Onboarding conversation behavior:
+- Ask exactly one question at a time.
+- Never send a checklist, numbered steps, or multiple questions in one message.
+- Use only human-friendly language; never expose form field labels.
+- Never ask users for a slug. Ask for a space name and resolve technical identifiers internally.
+- Keep discover-phase replies to one short lead-in plus one clear question, then wait.
+- If onboarding_guidance returns next_question, ask only that question and nothing else.`;
+
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 type CompetencyProfile = {
@@ -271,6 +280,7 @@ export function buildSystemPrompt(spaceSlug?: string | null): string {
     const safe = sanitizeSlug(spaceSlug);
     if (!safe) return BASE_SYSTEM_PROMPT;
     return `${BASE_SYSTEM_PROMPT}
+${ONBOARDING_CONVERSATION_RULES}
 
 The user is currently viewing the space with slug "${safe}".
 
@@ -337,6 +347,7 @@ Signal recommendation quality bar:
 If the user asks about ecosystem relationships or cross-space coordination, use get_ecosystem_by_space_slug first. If the user asks about members in an org-memory or space-memory context, prefer get_org_memory_by_space_slug; for a plain roster question, get_people_by_space_slug is equivalent for the members slice in v1. If they ask about members as people or a list without that framing, you may call get_people_by_space_slug. If they ask for document/proposal lists or document details from the catalogue, use get_documents_by_space_slug, not get_space_by_slug. For members, never use get_space_by_slug alone. If the user asks to list every member in an org-memory context, paginate get_org_memory_by_space_slug until has_next_page is false, same as for documents. For external/world knowledge outside Hypha data, use web_search and cite returned sources.`;
   }
   return `${BASE_SYSTEM_PROMPT}
+${ONBOARDING_CONVERSATION_RULES}
 
 Navigation:
 - onboarding_guidance: process question planner for onboarding; use before proposing write or navigation actions.

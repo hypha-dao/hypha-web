@@ -403,53 +403,55 @@ export function OnboardingAiFullPage({
   ] as const;
 
   return (
-    <div className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden rounded-[2rem] border border-border/60 bg-background/85 p-4 shadow-[0_40px_120px_-70px_rgba(0,0,0,0.75)] md:p-6">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,oklch(0.7_0.12_255_/_0.2),transparent_45%),radial-gradient(circle_at_80%_85%,oklch(0.7_0.14_330_/_0.14),transparent_42%)]"
-      />
-      <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-        <div className="mb-4 flex items-center justify-between gap-3 px-2">
-          <div>
-            <p className="text-1 text-muted-foreground">
-              {t('aiHero.flow.badge')}
-            </p>
-            <h2 className="text-7 font-semibold tracking-tight text-foreground">
-              {t('aiHero.title')}
-            </h2>
+    <div className="mx-auto w-full max-w-6xl px-4 md:px-8 lg:px-12">
+      <div className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden rounded-[2rem] border border-border/60 bg-background/85 p-4 shadow-[0_40px_120px_-70px_rgba(0,0,0,0.75)] md:p-6">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,oklch(0.7_0.12_255_/_0.2),transparent_45%),radial-gradient(circle_at_80%_85%,oklch(0.7_0.14_330_/_0.14),transparent_42%)]"
+        />
+        <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+          <div className="mb-4 flex items-center justify-between gap-3 px-2 md:px-4">
+            <div>
+              <p className="text-1 text-muted-foreground">
+                {t('aiHero.flow.badge')}
+              </p>
+              <h2 className="text-7 font-semibold tracking-tight text-foreground">
+                {t('aiHero.title')}
+              </h2>
+            </div>
+            <Button
+              onClick={onExit}
+              className="h-10 rounded-lg border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 px-4 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22"
+            >
+              {t('explore.cta')}
+            </Button>
           </div>
-          <Button
-            onClick={onExit}
-            className="h-10 rounded-lg border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 px-4 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22"
-          >
-            {t('explore.cta')}
-          </Button>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background/70">
+            <AiPanelMessages
+              messages={messages as ChatMessage[]}
+              suggestions={suggestions}
+              showSuggestions={!isStreaming}
+              onSuggestionSelect={(text) => setInput(text)}
+              isStreaming={isStreaming || isCreatingSpaceWithWalletFlow}
+              onActionReplySelect={handleActionReplySelect}
+            />
+            <AiPanelChatBar
+              value={input}
+              onChange={setInput}
+              onSend={handleSend}
+              onStop={() => void stop()}
+              isStreaming={isStreaming || isCreatingSpaceWithWalletFlow}
+              draftAttachments={draftAttachments}
+              onDraftAttachmentsChange={setDraftAttachments}
+              placeholder={t('aiHero.placeholder')}
+            />
+          </div>
+          {error ? (
+            <p className="mt-2 px-2 text-1 text-destructive">
+              {String(error.message || error)}
+            </p>
+          ) : null}
         </div>
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background/70">
-          <AiPanelMessages
-            messages={messages as ChatMessage[]}
-            suggestions={suggestions}
-            showSuggestions={!isStreaming}
-            onSuggestionSelect={(text) => setInput(text)}
-            isStreaming={isStreaming || isCreatingSpaceWithWalletFlow}
-            onActionReplySelect={handleActionReplySelect}
-          />
-          <AiPanelChatBar
-            value={input}
-            onChange={setInput}
-            onSend={handleSend}
-            onStop={() => void stop()}
-            isStreaming={isStreaming || isCreatingSpaceWithWalletFlow}
-            draftAttachments={draftAttachments}
-            onDraftAttachmentsChange={setDraftAttachments}
-            placeholder={t('aiHero.placeholder')}
-          />
-        </div>
-        {error ? (
-          <p className="mt-2 px-2 text-1 text-destructive">
-            {String(error.message || error)}
-          </p>
-        ) : null}
       </div>
     </div>
   );
