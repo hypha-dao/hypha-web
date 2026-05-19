@@ -14,6 +14,7 @@ import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
+import { useSpaceMember } from '../../spaces/hooks/use-space-member';
 import {
   SIGNAL_PROVISIONING_NOTICE_EVENT,
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
@@ -23,6 +24,7 @@ const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
 
 type SignalSectionProps = {
   basePath: string;
+  web3SpaceId: number;
   signals: Coherence[];
   leadImage?: string;
   toolbarLeft?: ReactNode;
@@ -36,6 +38,7 @@ type SignalSectionProps = {
 
 export const SignalSection: FC<SignalSectionProps> = ({
   basePath,
+  web3SpaceId,
   signals,
   leadImage,
   toolbarLeft,
@@ -105,6 +108,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }, [provisioningNoticeLines]);
 
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
+  const { isMember, isMemberLoading } = useSpaceMember({
+    spaceId: web3SpaceId,
+  });
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -119,18 +125,29 @@ export const SignalSection: FC<SignalSectionProps> = ({
           className="w-full"
         />
         <div className="flex w-full items-center justify-end lg:w-auto">
-          <Button
-            asChild
-            variant="default"
-            colorVariant="accent"
-            disabled={isLoading}
-            className="w-auto"
-          >
-            <Link href={createSignalHref}>
+          {!isMemberLoading && isMember ? (
+            <Button
+              asChild
+              variant="default"
+              colorVariant="accent"
+              className="w-auto"
+            >
+              <Link href={createSignalHref}>
+                <PlusIcon />
+                {t('newSignal')}
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              colorVariant="accent"
+              disabled
+              className="w-auto"
+            >
               <PlusIcon />
               {t('newSignal')}
-            </Link>
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
       {provisioningNoticeLines.length > 0 ? (

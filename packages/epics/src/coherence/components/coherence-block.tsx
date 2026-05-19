@@ -196,6 +196,7 @@ export function CoherenceBlock({
           <SignalSection
             toolbarLeft={priorityTabs}
             basePath={chatBasePath}
+            web3SpaceId={space?.web3SpaceId ?? 0}
             signals={filteredSignals}
             leadImage={space?.leadImage ?? undefined}
             isLoading={isSpaceLoading || isSignalsLoading}

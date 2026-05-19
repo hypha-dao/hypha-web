@@ -22,6 +22,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
+import { SpaceMembershipCtaUnderHero } from './_components/space-membership-cta-under-hero';
 
 async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
   /** null when enrichment failed — do not treat as “zero members” */
@@ -183,6 +184,13 @@ export default async function DhoLayout({
                 spaceSlug={daoSlug}
                 lang={lang}
               />
+              {web3SpaceId !== undefined ? (
+                <SpaceMembershipCtaUnderHero
+                  spaceId={spaceFromDb.id}
+                  web3SpaceId={web3SpaceId}
+                  spaceSlug={daoSlug}
+                />
+              ) : null}
             </div>
             {tab}
             {children}
