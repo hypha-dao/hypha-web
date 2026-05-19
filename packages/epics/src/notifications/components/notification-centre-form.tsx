@@ -315,7 +315,7 @@ export const NotificationCentreForm = ({
                   <FormItem>
                     <FormControl>
                       <div className="flex flex-col gap-2">
-                        <span className="text-2 text-neutral-11 justify-between">
+                        <div className="text-2 text-neutral-11 justify-between">
                           <div className="flex flex-row gap-2">
                             <Checkbox
                               id={checkboxId}
@@ -333,7 +333,7 @@ export const NotificationCentreForm = ({
                               )}
                             </FormLabel>
                           </div>
-                        </span>
+                        </div>
                         <span className="text-2 text-neutral-11">
                           {tNotificationCentre(
                             'subscriptions.mentionOnChatMessage.description',
