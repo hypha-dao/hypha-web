@@ -34,6 +34,7 @@ Onboarding conversation behavior:
 - Use only human-friendly language; never expose form field labels.
 - Never use the word "slug" with users. Ask for a space name (or space link name) and resolve technical identifiers internally.
 - Keep discover-phase replies to one short lead-in plus one clear question, then wait.
+- If the user already confirmed in plain language (for example: "yes", "yep", "ready", "go ahead"), do not ask for the same confirmation again. Proceed to the next step.
 - If onboarding_guidance returns next_question, ask only that question and nothing else.`;
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -288,7 +289,8 @@ export function buildSystemPrompt(spaceSlug?: string | null): string {
     return `${BASE_SYSTEM_PROMPT}
 ${ONBOARDING_CONVERSATION_RULES}
 
-The user is currently viewing the space with slug "${safe}".
+Internal context only: the user is currently in space "${safe}".
+Do not expose this internal identifier wording in user-facing text.
 
 Tool choice:
 - get_space_by_slug: space profile and aggregate numbers only (title, description, member count, document count, subspace count). Use for "tell me about this space", stats, or overview — not for listing people or individual documents.

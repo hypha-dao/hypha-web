@@ -210,7 +210,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const lastAutoNavigationKeyRef = useRef<string | null>(null);
   const {
     createSpace: createSpaceWithWalletFlow,
-    isPending: isCreatingSpaceWithWalletFlow,
     isError: isCreateSpaceWithWalletFlowError,
     errors: createSpaceWithWalletFlowErrors,
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
@@ -1376,7 +1375,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           draftAttachments={draftAttachments}
           onDraftAttachmentsChange={setDraftAttachments}
           onStop={handleStop}
-          isStreaming={isStreaming || isCreatingSpaceWithWalletFlow}
+          isStreaming={isStreaming}
         />
       </SidebarFooter>
     </>

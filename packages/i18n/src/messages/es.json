@@ -812,7 +812,7 @@
       "unavailable": "El onboarding con AI no está disponible temporalmente en este despliegue.",
       "ariaLabel": "Prompt de onboarding con AI",
       "flow": {
-        "badge": "Hypha AI está guiando tu configuración",
+        "badge": "Simple. Powerful. By design.",
         "reviewingTitle": "Revisando tu solicitud",
         "reviewingDescription": "La AI está trazando la mejor ruta para tu objetivo.",
         "reviewingDescriptionPersonalized": "{firstName}, la AI está trazando la mejor ruta para tu objetivo.",

@@ -50,12 +50,34 @@ type MarkdownBlock =
   | { type: 'ul'; items: string[] }
   | { type: 'ol'; items: string[] };
 
+function joinTextPartsWithSpacing(parts: Array<{ text: string }>): string {
+  if (parts.length === 0) return '';
+  let joined = '';
+  for (const part of parts) {
+    const next = part.text ?? '';
+    if (!next) continue;
+    if (!joined) {
+      joined = next;
+      continue;
+    }
+    const prevChar = joined.charAt(joined.length - 1);
+    const nextChar = next.charAt(0);
+    const needsSpacer =
+      prevChar.length > 0 &&
+      nextChar.length > 0 &&
+      !/\s/.test(prevChar) &&
+      !/\s/.test(nextChar) &&
+      /[A-Za-z0-9)\]]/.test(prevChar) &&
+      /[A-Za-z0-9(\[]/.test(nextChar);
+    joined += needsSpacer ? ` ${next}` : next;
+  }
+  return joined;
+}
+
 const confirmationPreviewLabels: Record<string, string> = {
   title: 'Space name',
   description: 'Purpose',
-  slug: 'Space URL name',
   parent_space_name: 'Parent space',
-  parent_space_slug: 'Parent space',
   links: 'Links',
   categories: 'Categories',
   flags: 'Labels',
@@ -257,7 +279,7 @@ export function AiPanelMessageBubble({
     message.parts?.filter(
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
-  const textContent = textParts.map((p) => p.text).join('');
+  const textContent = joinTextPartsWithSpacing(textParts);
   const normalizedTextContent = textContent.trim();
   const textLines = useMemo(() => textContent.split('\n'), [textContent]);
   const markdownBlocks = useMemo(
@@ -282,12 +304,35 @@ export function AiPanelMessageBubble({
         typeof p.type === 'string' && p.type.startsWith('tool-'),
     ) ?? [];
   const visibleToolParts = toolParts;
-  const shouldHideToolPart = (part: ToolPart) =>
-    part.type === 'tool-onboarding_guidance' &&
-    part.state === 'output-available';
+  const shouldHideToolPart = (part: ToolPart) => {
+    if (
+      part.type === 'tool-onboarding_guidance' &&
+      part.state === 'output-available'
+    ) {
+      return true;
+    }
+    if (
+      part.type === 'tool-create_space_from_onboarding' &&
+      part.state === 'output-available'
+    ) {
+      const output = part.output as
+        | { ok?: boolean; requires_wallet_signature?: boolean }
+        | undefined;
+      if (output?.ok === true && output?.requires_wallet_signature === true) {
+        return true;
+      }
+    }
+    return false;
+  };
   const renderedToolParts = visibleToolParts.filter(
     (part) => !shouldHideToolPart(part),
   );
+  const isTypingOnly =
+    !isUser &&
+    isStreaming &&
+    !hasVisibleText &&
+    fileParts.length === 0 &&
+    renderedToolParts.length === 0;
 
   const handleCopy = useCallback(async () => {
     if (!textContent) return;
@@ -309,6 +354,7 @@ export function AiPanelMessageBubble({
       const entries = value.preview
         ? Object.entries(value.preview)
             .map(([key, raw]) => {
+              if (key.includes('slug')) return null;
               const displayValue = formatConfirmationPreviewValue(raw);
               if (!displayValue) return null;
               return {
@@ -356,9 +402,7 @@ export function AiPanelMessageBubble({
             <div className="mt-3 flex gap-2">
               <button
                 type="button"
-                onClick={() =>
-                  onActionReplySelect?.(`confirm ${confirmationToken}`)
-                }
+                onClick={() => onActionReplySelect?.('yes, proceed')}
                 className="rounded-md border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 px-3 py-1.5 text-[11px] font-semibold text-accent-contrast shadow-[0_10px_20px_-16px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22"
               >
                 {t('confirm')}
@@ -402,27 +446,18 @@ export function AiPanelMessageBubble({
         if (value.found && value.space) {
           return (
             <span>
-              {t('toolFoundSpace', {
-                title: value.space.title ?? value.slug ?? 'space',
-                slug: value.slug ?? 'unknown',
-                memberCount: value.space.memberCount ?? 0,
-                documentCount: value.space.documentCount ?? 0,
-              })}
+              Found {value.space.title ?? 'space'} with{' '}
+              {value.space.memberCount ?? 0} members and{' '}
+              {value.space.documentCount ?? 0} documents.
             </span>
           );
         }
-        return (
-          <span className="text-muted-foreground">
-            {t('toolNoSpace', { slug: value.slug ?? 'unknown' })}
-          </span>
-        );
+        return <span className="text-muted-foreground">Space not found.</span>;
       }
       if ('spaceFound' in value) {
         if (!value.spaceFound) {
           return (
-            <span className="text-muted-foreground">
-              {t('toolNoSpace', { slug: value.slug ?? 'unknown' })}
-            </span>
+            <span className="text-muted-foreground">Space not found.</span>
           );
         }
         const tokenCount = Array.isArray(value.tokens)
@@ -430,10 +465,7 @@ export function AiPanelMessageBubble({
           : 0;
         return (
           <span className="text-muted-foreground">
-            {t('toolTokens', {
-              count: tokenCount,
-              slug: value.slug ?? 'unknown',
-            })}
+            Found {tokenCount} token entries.
           </span>
         );
       }
@@ -459,6 +491,8 @@ export function AiPanelMessageBubble({
             'flex flex-col gap-1 rounded-2xl px-3 py-2 text-sm leading-snug',
             isUser
               ? 'rounded-tr-sm border border-primary/20 bg-primary/10 text-foreground'
+              : isTypingOnly
+              ? 'rounded-tl-sm border border-border/70 bg-background/70 px-3 py-2 text-foreground shadow-sm'
               : 'rounded-tl-sm bg-transparent px-0 py-0 text-foreground',
           )}
         >
@@ -588,9 +622,7 @@ export function AiPanelMessageBubble({
                     )}
                     {part.state === 'input-available' && (
                       <span className="text-muted-foreground">
-                        {part.input?.slug
-                          ? t('toolLookingUpSlug', { slug: part.input.slug })
-                          : t('toolLookingUp')}
+                        {t('toolLookingUp')}
                       </span>
                     )}
                     {part.state === 'output-available' &&
@@ -608,10 +640,16 @@ export function AiPanelMessageBubble({
             </div>
           )}
           {isStreaming && (
-            <span className="ml-1 inline-flex items-center gap-0.5">
-              <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary" />
-              <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.2s]" />
-              <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.4s]" />
+            <span
+              className={cn(
+                'inline-flex items-center gap-0.5',
+                isTypingOnly && 'rounded-full bg-muted/70 px-2 py-1',
+                !isTypingOnly && 'ml-1',
+              )}
+            >
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary [animation-delay:0.2s]" />
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary [animation-delay:0.4s]" />
             </span>
           )}
         </div>

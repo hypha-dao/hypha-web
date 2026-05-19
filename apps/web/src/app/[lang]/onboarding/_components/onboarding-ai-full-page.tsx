@@ -89,10 +89,9 @@ export function OnboardingAiFullPage({
   const navigatedHrefRef = useRef<string | null>(null);
   const createdSpaceRef = useRef<string | null>(null);
 
-  const {
-    createSpace: createSpaceWithWalletFlow,
-    isPending: isCreatingSpaceWithWalletFlow,
-  } = useCreateSpaceOrchestrator({ authToken: jwt, config });
+  const { createSpace: createSpaceWithWalletFlow } = useCreateSpaceOrchestrator(
+    { authToken: jwt, config },
+  );
 
   const transport = useMemo(
     () =>
@@ -453,7 +452,7 @@ export function OnboardingAiFullPage({
               suggestions={suggestions}
               showSuggestions={!isStreaming}
               onSuggestionSelect={(text) => setInput(text)}
-              isStreaming={isStreaming || isCreatingSpaceWithWalletFlow}
+              isStreaming={isStreaming}
               onActionReplySelect={handleActionReplySelect}
             />
             <AiPanelChatBar
@@ -461,7 +460,7 @@ export function OnboardingAiFullPage({
               onChange={setInput}
               onSend={handleSend}
               onStop={() => void stop()}
-              isStreaming={isStreaming || isCreatingSpaceWithWalletFlow}
+              isStreaming={isStreaming}
               draftAttachments={draftAttachments}
               onDraftAttachmentsChange={setDraftAttachments}
               placeholder={t('aiHero.placeholder')}

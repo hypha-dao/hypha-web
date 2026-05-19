@@ -122,7 +122,7 @@
       "unavailable": "L’onboarding AI est temporairement indisponible sur ce déploiement.",
       "ariaLabel": "Invite d’onboarding AI",
       "flow": {
-        "badge": "Hypha AI guide votre configuration",
+        "badge": "Simple. Powerful. By design.",
         "reviewingTitle": "Analyse de votre demande",
         "reviewingDescription": "L’AI prépare le meilleur parcours pour votre objectif.",
         "reviewingDescriptionPersonalized": "{firstName}, l’AI prépare le meilleur parcours pour votre objectif.",

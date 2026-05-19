@@ -4,7 +4,6 @@ import {
   Coherence,
   COHERENCE_PRIORITY_OPTIONS,
   COHERENCE_TAGS,
-  COHERENCE_TYPE_OPTIONS,
   DEFAULT_SPACE_LEAD_IMAGE,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
@@ -31,7 +30,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DynamicIcon,
   Image,
+  type LucideReactIcon,
   Skeleton,
 } from '@hypha-platform/ui';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
@@ -67,6 +68,15 @@ const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
 };
 
 type SignalColorVariant = NonNullable<BadgeProps['colorVariant']>;
+
+const SIGNAL_TYPE_ICON_MAP: Record<string, LucideReactIcon> = {
+  Opportunity: 'ArrowUpRight',
+  Risk: 'TriangleAlert',
+  Tension: 'Flame',
+  Insight: 'Lightbulb',
+  Trend: 'TrendingUp',
+  Proposal: 'FileText',
+};
 
 const HERO_PRIORITY_WASH_CLASS_MAP: Record<SignalColorVariant, string> = {
   accent: 'bg-accent-9/18',
@@ -163,11 +173,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
   const isCreator = person?.id === creatorId;
 
-  const coherenceType = React.useMemo(
-    () => COHERENCE_TYPE_OPTIONS.find((option) => option.type === type),
-    [type],
-  );
-
   const typeLabel = t(
     `types.${type}` as
       | 'types.Opportunity'
@@ -182,27 +187,30 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     () => COHERENCE_PRIORITY_OPTIONS.find((o) => o.priority === priority),
     [priority],
   );
+  const priorityLabel = React.useMemo(() => {
+    if (!priorityMeta) return null;
+    const priorityKey = `priorities.${priorityMeta.priority}`;
+    return t.has(priorityKey as never)
+      ? t(priorityKey as never)
+      : priorityMeta.priority;
+  }, [priorityMeta, t]);
 
-  const typeColorVariant = React.useMemo<SignalColorVariant>(
-    () =>
-      BADGE_COLOR_VARIANT_MAP[coherenceType?.colorVariant ?? 'accent'] ??
-      'accent',
-    [coherenceType?.colorVariant],
-  );
   const priorityColorVariant = React.useMemo<SignalColorVariant>(
     () =>
       BADGE_COLOR_VARIANT_MAP[priorityMeta?.colorVariant ?? 'neutral'] ??
       'neutral',
     [priorityMeta?.colorVariant],
   );
+  const typeIconName = React.useMemo<LucideReactIcon>(
+    () => SIGNAL_TYPE_ICON_MAP[type] ?? 'ArrowUpRight',
+    [type],
+  );
+  const priorityIconName = React.useMemo<LucideReactIcon>(
+    () => (priorityMeta?.icon ?? 'CircleDot') as LucideReactIcon,
+    [priorityMeta?.icon],
+  );
 
   const metaBadges: BadgeItem[] = React.useMemo(() => {
-    const typeBadge: BadgeItem = {
-      label: typeLabel,
-      variant: 'surface',
-      colorVariant: typeColorVariant,
-      className: 'rounded-md border-none shadow-none',
-    };
     const archivedBadge: BadgeItem[] = archived
       ? [
           {
@@ -213,26 +221,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           },
         ]
       : [];
-    if (!priorityMeta) return [typeBadge, ...archivedBadge];
-    const priorityKey = `priorities.${priorityMeta.priority}`;
-    const priorityLabel = t.has(priorityKey as never)
-      ? t(priorityKey as never)
-      : priorityMeta.priority;
-    const priorityBadge: BadgeItem = {
-      label: priorityLabel,
-      variant: 'surface',
-      colorVariant: priorityColorVariant,
-      className: 'rounded-md border-none shadow-none',
-    };
-    return [typeBadge, priorityBadge, ...archivedBadge];
-  }, [
-    archived,
-    priorityMeta,
-    t,
-    typeLabel,
-    typeColorVariant,
-    priorityColorVariant,
-  ]);
+    return [...archivedBadge];
+  }, [archived, t]);
 
   const tagList: BadgeItem[] = tags.map((tag) => {
     const translationKey = `tagLabels.${tag}`;
@@ -344,7 +334,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               <Image
                 width={640}
                 height={104}
-                className="h-full w-full object-cover"
+                className="block h-full w-full object-cover"
                 src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                 alt=""
               />
@@ -380,6 +370,28 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/20 to-transparent"
                 aria-hidden
               />
+            </div>
+            <div className="pointer-events-none absolute inset-x-3 bottom-2 z-10 flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/35 bg-black/35 px-2 py-0.5 text-[11px] font-medium text-white/95 shadow-sm backdrop-blur-sm">
+                <DynamicIcon
+                  name={typeIconName}
+                  size={12}
+                  className="opacity-90"
+                  aria-hidden
+                />
+                {typeLabel}
+              </span>
+              {priorityLabel ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/35 bg-black/35 px-2 py-0.5 text-[11px] font-medium text-white/95 shadow-sm backdrop-blur-sm">
+                  <DynamicIcon
+                    name={priorityIconName}
+                    size={12}
+                    className="opacity-90"
+                    aria-hidden
+                  />
+                  {priorityLabel}
+                </span>
+              ) : null}
             </div>
           </div>
         </Skeleton>

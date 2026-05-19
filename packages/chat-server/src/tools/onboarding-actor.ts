@@ -40,5 +40,25 @@ export function hasExplicitConfirmation(
   if (!normalizedToken) return false;
   const escapedToken = normalizedToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const confirmationPattern = new RegExp(`^confirm\\s+${escapedToken}$`, 'i');
-  return confirmationPattern.test(normalized);
+  if (confirmationPattern.test(normalized)) return true;
+
+  // Accept natural-language confirmations to avoid repetitive loops
+  // when users reply with plain confirmations like "yes" or "yep".
+  const plainAffirmatives = new Set([
+    'yes',
+    'y',
+    'yep',
+    'yeah',
+    'sure',
+    'ok',
+    'okay',
+    'confirm',
+    'confirmed',
+    'ready',
+    'go ahead',
+    'proceed',
+    'do it',
+    'sounds good',
+  ]);
+  return plainAffirmatives.has(normalized);
 }

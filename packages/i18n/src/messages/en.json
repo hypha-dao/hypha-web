@@ -122,7 +122,7 @@
       "unavailable": "AI onboarding is temporarily unavailable on this deployment.",
       "ariaLabel": "AI onboarding prompt",
       "flow": {
-        "badge": "Hypha AI is guiding your setup",
+        "badge": "Simple. Powerful. By design.",
         "reviewingTitle": "Reviewing your request",
         "reviewingDescription": "AI is mapping the best path for your goal.",
         "reviewingDescriptionPersonalized": "{firstName}, AI is mapping the best path for your goal.",
