@@ -34,20 +34,31 @@ export const MISSING_OPENROUTER_KEY_MESSAGE =
   'Hypha AI is not configured: OPENROUTER_API_KEY is missing.';
 
 const DEFAULT_OPENROUTER_CHAT_MODEL = 'openai/gpt-4o-mini';
-const OPENROUTER_REQUEST_TIMEOUT_MS = Number(
-  process.env.OPENROUTER_REQUEST_TIMEOUT_MS ?? 20_000,
+function parseEnvNumber(
+  value: string | undefined,
+  fallback: number,
+  min: number,
+): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, parsed);
+}
+const OPENROUTER_REQUEST_TIMEOUT_MS = parseEnvNumber(
+  process.env.OPENROUTER_REQUEST_TIMEOUT_MS,
+  20_000,
+  1_000,
 );
 const OPENROUTER_MAX_ATTEMPTS = Math.max(
   1,
-  Number(process.env.OPENROUTER_MAX_ATTEMPTS ?? 2),
+  parseEnvNumber(process.env.OPENROUTER_MAX_ATTEMPTS, 2, 1),
 );
 const OPENROUTER_CIRCUIT_FAILURE_THRESHOLD = Math.max(
   1,
-  Number(process.env.OPENROUTER_CIRCUIT_FAILURE_THRESHOLD ?? 3),
+  parseEnvNumber(process.env.OPENROUTER_CIRCUIT_FAILURE_THRESHOLD, 3, 1),
 );
 const OPENROUTER_CIRCUIT_COOLDOWN_MS = Math.max(
   1_000,
-  Number(process.env.OPENROUTER_CIRCUIT_COOLDOWN_MS ?? 30_000),
+  parseEnvNumber(process.env.OPENROUTER_CIRCUIT_COOLDOWN_MS, 30_000, 1_000),
 );
 
 let openRouterConsecutiveFailures = 0;
@@ -978,11 +989,18 @@ function sanitizeMessagesToTextOnly(
         return [{ type: 'file' as const, mediaType, url }];
       });
 
+      const hadFileCandidates = (message.parts ?? []).some((part) => {
+        if (part == null || typeof part !== 'object') return false;
+        const candidate = part as Record<string, unknown>;
+        if (candidate.type === 'file') return true;
+        const rawUrl = typeof candidate.url === 'string' ? candidate.url : '';
+        return rawUrl.trim().length > 0;
+      });
       const hasFileParts = fileParts.length > 0;
 
       /** Keep a short hint only when files exist but could not be normalized. */
       const fileOnlySynthetic =
-        explicitTextParts.length === 0 && !hasFileParts
+        explicitTextParts.length === 0 && hadFileCandidates && !hasFileParts
           ? [
               {
                 type: 'text' as const,
@@ -1017,6 +1035,7 @@ function extractLastUserText(
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i];
     if (!message) continue;
+    if (message.role !== 'user') continue;
     const parts = message.parts ?? [];
     for (const part of parts) {
       if (
