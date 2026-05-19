@@ -1,6 +1,6 @@
 # Space transparency matrix — organisation visibility & activity access
 
-**Status:** Analysis complete (spec only, no implementation)  
+**Status:** Ready for implementation  
 **Traceability**
 
 | Item | Value |
@@ -9,7 +9,7 @@
 | Scope | Discoverability + space activity access behavior and transparency matrix parity across UI and API guards |
 | Primary surfaces | Space tab access gates, access-denied CTA, network discoverability filters, server access helper |
 
-**Note:** This document captures current-state analysis and requirement deltas only. It does **not** implement code changes.
+**Delivery mode:** This specification is implementation-ready and includes execution steps, file-level scope, and QA gates.
 
 ---
 
@@ -32,10 +32,10 @@ This creates inconsistent behavior between matrix intent, UI affordances, and se
 - Identify and formalize current behavior gaps in organisation-level scenarios.
 - Define testable acceptance criteria for UI and server parity.
 
-**Non-goals**
+**Non-goals (this increment)**
 
-- Implementing code fixes in this work item.
 - Redesigning transparency settings UI copy (except where wording is required for unambiguous behavior).
+- Refactoring unrelated space list, card, or governance flows beyond transparency access parity.
 
 ---
 
@@ -94,7 +94,18 @@ Discoverability filtering for network/explore includes dedicated organisation-gr
 
 ---
 
-## 6. Functional requirements
+## 6. Implementation decisions (locked for this release)
+
+To make this spec execution-ready, the following defaults are fixed:
+
+- **D-1 (Organisation eligibility):** Delegate-in-sibling-space counts as organisation eligibility, matching member/delegate semantics already used for target-space checks.
+- **D-2 (CTA fallback):** If web3 space identity is known and DB `space.id` is unavailable, UI SHALL still render an actionable membership CTA using a web3-first join path.
+- **D-3 (Parity source):** Server-side authorisation is the final authority for protected data access; frontend checks SHALL mirror, not redefine, server outcomes.
+- **D-4 (No behavior broadening):** `Space` activity level remains strict target-space membership/delegate only.
+
+---
+
+## 7. Functional requirements
 
 **FR-1** The system SHALL apply the transparency matrix in §4 uniformly across discoverability and activity access decisions for all space surfaces.
 
@@ -114,7 +125,7 @@ Discoverability filtering for network/explore includes dedicated organisation-gr
 
 ---
 
-## 7. Non-functional requirements
+## 8. Non-functional requirements
 
 **NFR-1** Matrix decisions SHALL be deterministic and side-effect free for a given `(user identity, target space, visibility config)` input tuple.
 
@@ -128,7 +139,7 @@ Discoverability filtering for network/explore includes dedicated organisation-gr
 
 ---
 
-## 8. Acceptance criteria
+## 9. Acceptance criteria
 
 **AC-1** Given a user is logged in and is a member in a sibling space of the same organisation,  
 When the target space activity level is `Organisation`,  
@@ -160,7 +171,103 @@ Then the target space appears in discoverability lists.
 
 ---
 
-## 9. QA strategy
+## 10. Implementation steps (phased)
+
+### Phase 1 — Canonical access evaluator (shared domain logic)
+
+**Objective:** Avoid drift by centralizing matrix evaluation semantics.
+
+1. Create a shared evaluator module for organisation eligibility + matrix checks in a reusable package path.
+2. Define explicit input contract:
+   - user auth state
+   - target-space membership/delegate flags
+   - sibling-space membership/delegate flags
+   - discoverability level
+   - activity access level
+3. Export pure functions for:
+   - discoverability decision
+   - activity access decision
+   - denied-state CTA affordance (`canShowMembershipCta`, `ctaMode`)
+4. Migrate existing frontend helper usage to the shared evaluator with parity assertions.
+
+**Primary touchpoints**
+- `packages/epics/src/spaces/utils/transparency-access.ts`
+- `packages/epics/src/spaces/hooks/use-user-space-state.ts`
+- (new shared evaluator module under `packages/core` or `packages/epics` domain utils)
+
+### Phase 2 — Denied-state CTA reliability
+
+**Objective:** Ensure denied users always receive an actionable membership path.
+
+1. Update denied-state rendering so CTA does not hard-depend on DB `space.id` when web3 identity is known.
+2. Ensure CTA mode maps correctly:
+   - invite-only -> `Request Invite`
+   - open/token -> `Become member`
+3. Add safe loading/fallback handling to prevent silent CTA disappearance.
+
+**Primary touchpoints**
+- `packages/epics/src/spaces/components/space-access-denied.tsx`
+- `packages/epics/src/spaces/components/join-space.tsx`
+
+### Phase 3 — Server-side organisation parity
+
+**Objective:** Align backend authorization with organisation-level matrix semantics.
+
+1. Extend organisation access path to evaluate sibling-space eligibility before returning 403.
+2. Keep response semantics explicit:
+   - unauthenticated -> 401
+   - authenticated but not org-eligible -> 403
+3. Add structured logging fields for access decisions (reason code) for debugging parity issues.
+
+**Primary touchpoints**
+- `apps/web/src/utils/check-space-access.ts`
+
+### Phase 4 — Surface parity validation
+
+**Objective:** Confirm list discoverability and tab/activity access stay consistent.
+
+1. Verify organisation filtering logic in network/explore remains aligned with shared evaluator.
+2. Add contract tests to guarantee discoverability/access matrix consistency.
+
+**Primary touchpoints**
+- `packages/epics/src/spaces/hooks/use-spaces-discoverability-batch.ts`
+- `packages/epics/src/spaces/components/space-tab-access-wrapper.tsx`
+
+---
+
+## 11. Implementation tickets (ready-to-execute)
+
+### TICKET-1: Shared transparency evaluator
+
+- **Scope:** Introduce pure matrix evaluator and migrate existing utility calls.
+- **Dependencies:** none
+- **Acceptance mapping:** FR-1, FR-2, FR-6, NFR-1
+- **Done when:** frontend transparency decisions consume shared evaluator paths.
+
+### TICKET-2: Denied-state membership CTA fix
+
+- **Scope:** Remove fragile DB-id dependency for CTA visibility where web3 identity exists.
+- **Dependencies:** TICKET-1 (recommended), but can proceed in parallel with adapter.
+- **Acceptance mapping:** FR-4, FR-5, AC-2, AC-3, AC-4
+- **Done when:** denied states consistently render actionable CTA for eligible non-members.
+
+### TICKET-3: Backend organisation access parity
+
+- **Scope:** Extend server helper to evaluate sibling-space organisation eligibility.
+- **Dependencies:** TICKET-1 (or equivalent shared semantics)
+- **Acceptance mapping:** FR-3, FR-6, FR-7, AC-1, AC-5, AC-6
+- **Done when:** organisation-eligible users are allowed server-side, outsiders denied.
+
+### TICKET-4: Regression tests (E2E + integration + contracts)
+
+- **Scope:** Add matrix fixtures and parity assertions across frontend/backend.
+- **Dependencies:** TICKET-2 and TICKET-3
+- **Acceptance mapping:** AC-1..AC-7, NFR-2, NFR-3
+- **Done when:** tests fail on parity drift and pass on fixed behavior.
+
+---
+
+## 12. QA strategy
 
 ### 9.1 Priority scenarios
 
@@ -169,7 +276,7 @@ Then the target space appears in discoverability lists.
 3. **High:** Backend parity for organisation-level access.
 4. **Medium:** Discoverability and activity consistency across tabs/lists.
 
-### 9.2 Recommended automated coverage
+### 12.2 Recommended automated coverage
 
 - **E2E (Playwright):**
   - seed users across 3 states: outsider, sibling-org-member, target-member
@@ -182,17 +289,18 @@ Then the target space appears in discoverability lists.
 
 ---
 
-## 10. Open questions
+## 13. Release gates
 
-| ID | Question | Owner | Status |
-|----|----------|-------|--------|
-| OQ-1 | Is delegate-in-sibling-space sufficient for organisation eligibility in all product contexts, or only for activity access? | Product + Governance | Open |
-| OQ-2 | Should denied CTA fallback support web3-only mode when DB `space.id` is unavailable, or should the view block until DB identity resolves? | Engineering | Open |
+- [ ] AC-1..AC-7 validated in CI.
+- [ ] No frontend/backend parity mismatch in organisation scenarios.
+- [ ] Denied-state CTA never disappears for authenticated non-members with known target web3 identity.
+- [ ] Product sign-off on invite/open CTA wording and flow behavior.
 
 ---
 
-## 11. Revision history
+## 14. Revision history
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.0 | 2026-05-19 | Requirements + Fullstack + QA (agent) | Promoted to ready-for-implementation spec with locked decisions, phased execution steps, ticket decomposition, and release gates. |
 | 0.1 | 2026-05-19 | Requirements + QA (agent) | Initial analysis spec for organisation visibility/transparency matrix gaps (no implementation). |
