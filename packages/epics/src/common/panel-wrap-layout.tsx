@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { Menu, MessageCircle, PanelLeftClose, Sparkles } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -294,6 +295,7 @@ export function PanelWrapLayout({
   left,
   right,
 }: PanelWrapLayoutProps) {
+  const pathname = usePathname();
   const {
     open: leftOpen,
     overlayVisible: leftOverlayVisible,
@@ -302,10 +304,12 @@ export function PanelWrapLayout({
   } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const isOnboarding = pathname.includes('/onboarding');
   const isCompactUi = useCompactHeaderMode();
 
-  // Panels are only available within a space context (/[lang]/dho/[id]/...)
-  const effectiveLeft = isSpace ? left : undefined;
+  // Left AI panel is available in space context and onboarding handoff flow.
+  const effectiveLeft = isSpace || isOnboarding ? left : undefined;
+  // Right human panel remains space-context only.
   const effectiveRight = isSpace ? right : undefined;
   const [viewportWidth, setViewportWidth] = useState<number>(
     DUAL_PANEL_MIN_VIEWPORT_PX,
