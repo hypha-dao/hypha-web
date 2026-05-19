@@ -1,0 +1,28 @@
+---
+description: Package dependency direction and server/client boundary rules for the hypha-web monorepo
+alwaysApply: true
+---
+
+## Package dependency direction
+
+```
+apps/web → epics → core → storage-postgres
+         → ui
+         → authentication → evm
+         → i18n
+         → feature-flags
+         → notifications → core
+         → chat-server → core
+```
+
+Never reverse this direction. Circular deps are a build failure.
+
+## Server / client boundary
+
+- Server-only code: `'use server'` directive, or imported from a `./server` export path (e.g. `@hypha-platform/core/server`)
+- Client-only code: `'use client'` directive, or `@hypha-platform/core/client`
+- Never import `./server` paths from a client component
+
+## Database injection
+
+Always pass `db` as a config argument: `queryFn({ db })`. Never import `db` directly inside query/mutation functions.

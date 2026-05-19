@@ -62,3 +62,6 @@ vitest.config.*.timestamp*
 .playwright-cli/
 test-results/
 playwright-report/
+
+# Local Claude Code overrides (contributor-specific, not shared)
+**/CLAUDE.local.md

@@ -1,0 +1,28 @@
+---
+description: Drizzle schema and migration conventions for packages/storage-postgres
+globs: ["packages/storage-postgres/**"]
+alwaysApply: false
+---
+
+## Adding a new table
+
+1. Create `packages/storage-postgres/src/schema/<name>.ts` with `pgTable` + `commonDateFields`
+2. Export from `packages/storage-postgres/src/schema/index.ts`
+3. Add queries to `packages/core/src/[domain]/server/queries.ts`, mutations to `mutations.ts`
+4. Export from the domain's `server/index.ts` and from `packages/core/src/server.ts`
+5. Run `pnpm --filter @hypha-platform/storage-postgres run generate` — review the SQL output
+6. Run `pnpm --filter @hypha-platform/storage-postgres run migrate` to apply locally
+
+## One migration per ticket intent
+
+Do not bundle unrelated schema changes into one migration. Each PR should have at most one logical migration intent.
+
+## meta/ snapshots
+
+The `migrations/meta/` directory is internal bookkeeping for `drizzle-kit generate` only. Never edit snapshot files manually. `drizzle-kit migrate` (used in CI/CD) never reads them — it only reads `_journal.json` + the `.sql` files.
+
+## Never
+
+- Edit `migrations/meta/*.json` or `_journal.json` by hand (except to repair a chain collision)
+- Commit a generated migration without reviewing its SQL content
+- Add a NOT NULL column without a default to a table that has existing rows
