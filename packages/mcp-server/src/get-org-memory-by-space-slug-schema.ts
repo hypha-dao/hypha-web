@@ -37,9 +37,9 @@ const orgMemoryAssetSchema = z.object({
   document_slug: z.string().optional(),
   document_label: z.string().optional(),
   call_session_id: z.string().optional(),
-  call_recording_id: z.number().optional(),
-  call_transcript_id: z.number().optional(),
-  discussion_summary_id: z.number().optional(),
+  call_recording_id: z.number().int().optional(),
+  call_transcript_id: z.number().int().optional(),
+  discussion_summary_id: z.number().int().optional(),
   text_excerpt: z.string().optional(),
   occurred_at: z.string(),
 });
