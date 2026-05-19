@@ -122,6 +122,10 @@ export function ConnectedMenuTop({
     .map((candidate) => candidate.trim())
     .find((candidate) => candidate && isSafeImageUrl(candidate));
   const rootTitle = rootSpace?.title?.trim() || '';
+  const ecosystemLogoLabel = tNavigation('ecosystemLogo');
+  const logoA11yLabel = rootTitle
+    ? `${rootTitle} ${ecosystemLogoLabel}`
+    : ecosystemLogoLabel;
   const rootHasCustomLogo = hasCustomRootLogo(rootLogoUrl ?? '');
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
 
@@ -135,12 +139,8 @@ export function ConnectedMenuTop({
           href={rootSpaceHref ?? '#'}
           prefetch={true}
           className="group relative -ml-0.5 inline-flex h-9 max-w-[12rem] items-center justify-start overflow-hidden rounded-md px-0.5 transition-colors hover:bg-muted/40"
-          aria-label={`${
-            rootTitle || tNavigation('ecosystemLogo')
-          } ${tNavigation('ecosystemLogo')}`}
-          title={`${rootTitle || tNavigation('ecosystemLogo')} ${tNavigation(
-            'ecosystemLogo',
-          )}`}
+          aria-label={logoA11yLabel}
+          title={logoA11yLabel}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -158,12 +158,8 @@ export function ConnectedMenuTop({
           href={rootSpaceHref ?? '#'}
           prefetch={true}
           className="group relative -ml-0.5 inline-flex h-9 max-w-[13.5rem] items-center justify-center overflow-hidden rounded-md border border-border/70 bg-background px-3.5 text-sm font-semibold text-muted-foreground shadow-sm transition-[background-color,border-color,box-shadow,color] duration-200 hover:border-border hover:bg-muted/40 hover:text-foreground hover:shadow-md"
-          aria-label={`${
-            rootTitle || tNavigation('ecosystemLogo')
-          } ${tNavigation('ecosystemLogo')}`}
-          title={`${rootTitle || tNavigation('ecosystemLogo')} ${tNavigation(
-            'ecosystemLogo',
-          )}`}
+          aria-label={logoA11yLabel}
+          title={logoA11yLabel}
         >
           <span className="relative truncate">
             {rootTitle
