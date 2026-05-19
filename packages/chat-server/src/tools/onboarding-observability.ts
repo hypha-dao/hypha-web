@@ -14,14 +14,21 @@ type OnboardingToolEvent = {
   error?: string;
 };
 
+const ONBOARDING_TOOL_LOG_SCOPE = '[chat][onboarding-tool]';
+
 export function logOnboardingToolEvent(event: OnboardingToolEvent): void {
+  const normalizedEvent =
+    event.status === 'failed' && !event.error?.trim()
+      ? { ...event, error: 'unknown_failure' }
+      : event;
   const payload = {
-    ...event,
+    scope: ONBOARDING_TOOL_LOG_SCOPE,
+    ...normalizedEvent,
     timestamp: new Date().toISOString(),
   };
-  if (event.status === 'failed') {
-    console.error('[chat][onboarding-tool]', payload);
+  if (payload.status === 'failed') {
+    console.error(payload);
     return;
   }
-  console.log('[chat][onboarding-tool]', payload);
+  console.info(payload);
 }
