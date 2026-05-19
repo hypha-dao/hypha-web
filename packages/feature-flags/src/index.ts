@@ -82,7 +82,7 @@ export const flagDefinitionsForDiscovery = {
   enableOnboardingAiHero: {
     key: 'enable-onboarding-ai-hero',
     defaultValue:
-      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_AI_HERO) ?? true,
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_AI_HERO) ?? false,
     description: 'Enable AI hero input on onboarding page',
     origin: 'hypha' as const,
     options: undefined as undefined,
@@ -91,7 +91,7 @@ export const flagDefinitionsForDiscovery = {
     key: 'enable-onboarding-write-tools',
     defaultValue:
       parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_WRITE_TOOLS) ??
-      true,
+      false,
     description: 'Enable onboarding AI write tools for space setup actions',
     origin: 'hypha' as const,
     options: undefined as undefined,
@@ -99,7 +99,8 @@ export const flagDefinitionsForDiscovery = {
   enableEcosystemAutomation: {
     key: 'enable-ecosystem-automation',
     defaultValue:
-      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ECOSYSTEM_AUTOMATION) ?? true,
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ECOSYSTEM_AUTOMATION) ??
+      false,
     description: 'Enable ecosystem blueprint automation tools',
     origin: 'hypha' as const,
     options: undefined as undefined,
@@ -175,7 +176,7 @@ export async function getEnableOnboardingAiHero(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-onboarding-ai-hero',
     process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_AI_HERO,
-    true,
+    false,
   );
 }
 
@@ -183,7 +184,7 @@ export async function getEnableOnboardingWriteTools(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-onboarding-write-tools',
     process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_WRITE_TOOLS,
-    true,
+    false,
   );
 }
 
@@ -191,6 +192,6 @@ export async function getEnableEcosystemAutomation(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-ecosystem-automation',
     process.env.NEXT_PUBLIC_ENABLE_ECOSYSTEM_AUTOMATION,
-    true,
+    false,
   );
 }
