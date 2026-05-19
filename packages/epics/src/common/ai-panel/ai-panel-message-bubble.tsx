@@ -568,34 +568,43 @@ export function AiPanelMessageBubble({
           )}
           {renderedToolParts.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              {renderedToolParts.map((part) => (
-                <div
-                  key={part.toolCallId}
-                  className="rounded-xl border border-border/70 bg-background px-3 py-2 text-xs shadow-sm"
-                >
-                  {part.state === 'input-streaming' && (
-                    <span className="text-muted-foreground">
-                      {t('toolLookingUp')}
-                    </span>
-                  )}
-                  {part.state === 'input-available' && (
-                    <span className="text-muted-foreground">
-                      {part.input?.slug
-                        ? t('toolLookingUpSlug', { slug: part.input.slug })
-                        : t('toolLookingUp')}
-                    </span>
-                  )}
-                  {part.state === 'output-available' &&
-                    renderToolOutput(part.output)}
-                  {part.state === 'output-error' && (
-                    <span className="text-destructive">
-                      {t('toolError', {
-                        message: part.errorText ?? 'Unknown error',
-                      })}
-                    </span>
-                  )}
-                </div>
-              ))}
+              {renderedToolParts.map((part) => {
+                const confirmationCard =
+                  part.state === 'output-available'
+                    ? renderConfirmationCard(part.output)
+                    : null;
+                if (confirmationCard) {
+                  return <div key={part.toolCallId}>{confirmationCard}</div>;
+                }
+                return (
+                  <div
+                    key={part.toolCallId}
+                    className="rounded-xl border border-border/70 bg-background px-3 py-2 text-xs shadow-sm"
+                  >
+                    {part.state === 'input-streaming' && (
+                      <span className="text-muted-foreground">
+                        {t('toolLookingUp')}
+                      </span>
+                    )}
+                    {part.state === 'input-available' && (
+                      <span className="text-muted-foreground">
+                        {part.input?.slug
+                          ? t('toolLookingUpSlug', { slug: part.input.slug })
+                          : t('toolLookingUp')}
+                      </span>
+                    )}
+                    {part.state === 'output-available' &&
+                      renderToolOutput(part.output)}
+                    {part.state === 'output-error' && (
+                      <span className="text-destructive">
+                        {t('toolError', {
+                          message: part.errorText ?? 'Unknown error',
+                        })}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
           {isStreaming && (
