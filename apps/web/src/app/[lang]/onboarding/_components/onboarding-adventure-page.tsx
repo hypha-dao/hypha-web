@@ -294,6 +294,7 @@ export function OnboardingAdventurePage({
   const [copiedAddress, setCopiedAddress] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
   const [hasVisitedAdventure, setHasVisitedAdventure] = useState(false);
+  const [heroPlaceholderIndex, setHeroPlaceholderIndex] = useState(0);
   const [heroTitleWordIndex, setHeroTitleWordIndex] = useState(0);
 
   const firstName = useMemo(() => {
@@ -338,6 +339,16 @@ export function OnboardingAdventurePage({
 
   const hasJoinChoices = spaceOptions.length > 0;
   const hasDepositChoices = depositOptions.length > 0;
+  const rotatingHeroPrompts = useMemo(
+    () => [
+      t('aiHero.rotating.createSpace'),
+      t('aiHero.rotating.governance'),
+      t('aiHero.rotating.joinSpace'),
+      t('aiHero.rotating.treasury'),
+      t('aiHero.rotating.explore'),
+    ],
+    [t],
+  );
   useEffect(
     () => () => {
       if (copyTimeoutRef.current !== null) {
@@ -374,6 +385,16 @@ export function OnboardingAdventurePage({
   useEffect(() => {
     aiPromptRef.current = aiPrompt;
   }, [aiPrompt]);
+
+  useEffect(() => {
+    if (rotatingHeroPrompts.length < 2) return;
+    const intervalId = window.setInterval(() => {
+      setHeroPlaceholderIndex((current) =>
+        current + 1 >= rotatingHeroPrompts.length ? 0 : current + 1,
+      );
+    }, 2600);
+    return () => window.clearInterval(intervalId);
+  }, [rotatingHeroPrompts]);
 
   useEffect(() => {
     if (HERO_TITLE_ROTATING_WORDS.length < 2) return;
@@ -553,6 +574,16 @@ export function OnboardingAdventurePage({
   return (
     <Container className="flex flex-col gap-14 py-10 md:py-12">
       <header className="space-y-3 pt-3 text-center md:pt-4">
+        <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-accent-11 shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
+          Build{' '}
+          <span
+            key={HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
+            className="inline-block text-accent-11 transition-all duration-300"
+          >
+            {HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
+          </span>
+          , Together.
+        </p>
         <Heading
           size="9"
           color="secondary"
@@ -560,17 +591,13 @@ export function OnboardingAdventurePage({
           align="center"
           className="mx-auto max-w-4xl"
         >
-          <span className="text-foreground">
-            Build{' '}
-            <span
-              key={HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
-              className="inline-block text-accent-11 transition-all duration-300"
-            >
-              {HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
-            </span>
-            , Together.
+          <span className="bg-gradient-to-r from-foreground via-accent-11 to-foreground bg-clip-text text-transparent">
+            {adventureTitle}
           </span>
         </Heading>
+        <p className="text-4 font-medium tracking-tight text-muted-foreground">
+          {t('subtitle')}
+        </p>
       </header>
 
       {onboardingHeroEnabled ? (
@@ -584,11 +611,6 @@ export function OnboardingAdventurePage({
               aria-hidden
               className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,oklch(0.72_0.12_278_/_0.12),transparent_42%),radial-gradient(circle_at_85%_18%,oklch(0.64_0.11_292_/_0.09),transparent_38%)]"
             />
-            <div className="relative space-y-1 text-center">
-              <h2 className="text-4 font-medium tracking-tight text-muted-foreground">
-                {adventureTitle}
-              </h2>
-            </div>
             <div className="relative mt-3 rounded-[1.5rem] border border-border/70 bg-background/75 shadow-inner">
               {heroAttachments.length > 0 ? (
                 <div className="narrow-scrollbar max-h-24 overflow-x-auto overflow-y-hidden border-b border-border/65 px-3 py-2">
@@ -626,7 +648,10 @@ export function OnboardingAdventurePage({
               <textarea
                 value={aiPrompt}
                 onChange={(event) => setAiPrompt(event.target.value)}
-                placeholder={t('subtitle')}
+                placeholder={
+                  rotatingHeroPrompts[heroPlaceholderIndex] ??
+                  t('aiHero.placeholder')
+                }
                 aria-label={t('aiHero.ariaLabel')}
                 rows={3}
                 className="relative min-h-[120px] w-full resize-none overflow-y-auto bg-transparent px-4 py-3 text-3 text-foreground outline-none placeholder:text-muted-foreground"
