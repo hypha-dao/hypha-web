@@ -204,8 +204,8 @@ const ROOM_STORAGE_KEY = 'hypha-chat-room-';
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
-const SIGNAL_TEAM_EVENT_TYPE = 'io.hypha.signal.team.v1';
-const SIGNAL_TEAM_REQUEST_EVENT_TYPE = 'io.hypha.signal.team.request.v1';
+const SIGNAL_TEAM_MSGTYPE = 'io.hypha.signal.team.v1';
+const SIGNAL_TEAM_REQUEST_MSGTYPE = 'io.hypha.signal.team.request.v1';
 
 type PersistedUIMessage = Omit<UIMessage, 'timestamp'> & {
   timestamp?: string;
@@ -231,20 +231,23 @@ function deriveSignalTeamStateFromEvents(
 
   for (const ev of events) {
     const eventType = ev.getType();
+    if (eventType !== EventType.RoomMessage) continue;
     const content = ev.getContent() as Record<string, unknown> | null;
     if (!content || typeof content !== 'object') continue;
+    const msgtype =
+      typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
     const eventSlug =
       typeof content.coherenceSlug === 'string'
         ? content.coherenceSlug.trim()
         : '';
     if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
 
-    if (eventType === SIGNAL_TEAM_EVENT_TYPE) {
+    if (msgtype === SIGNAL_TEAM_MSGTYPE) {
       memberMatrixUserIds = normalizeMatrixUserIds(content.memberMatrixUserIds);
       continue;
     }
 
-    if (eventType !== SIGNAL_TEAM_REQUEST_EVENT_TYPE) continue;
+    if (msgtype !== SIGNAL_TEAM_REQUEST_MSGTYPE) continue;
     const requesterId =
       typeof content.requesterMatrixUserId === 'string'
         ? content.requesterMatrixUserId.trim()
@@ -1253,7 +1256,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     async (nextMemberIds: string[]) => {
       if (!client || !roomId || !isSignalThread) return;
       const deduped = normalizeMatrixUserIds(nextMemberIds);
-      await client.sendEvent(roomId, SIGNAL_TEAM_EVENT_TYPE, {
+      await client.sendEvent(roomId, EventType.RoomMessage, {
+        msgtype: SIGNAL_TEAM_MSGTYPE,
+        body: 'signal team members updated',
         coherenceSlug: coherenceSlug?.trim() || null,
         memberMatrixUserIds: deduped,
         updatedAt: new Date().toISOString(),
@@ -1270,7 +1275,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!client || !roomId || !isSignalThread || !currentUserId) return;
     setSignalTeamBusy(true);
     try {
-      await client.sendEvent(roomId, SIGNAL_TEAM_REQUEST_EVENT_TYPE, {
+      await client.sendEvent(roomId, EventType.RoomMessage, {
+        msgtype: SIGNAL_TEAM_REQUEST_MSGTYPE,
+        body: 'signal team access requested',
         coherenceSlug: coherenceSlug?.trim() || null,
         requesterMatrixUserId: currentUserId,
         status: 'pending',
@@ -1296,13 +1303,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           requesterId,
         ]);
         await Promise.all([
-          client.sendEvent(roomId, SIGNAL_TEAM_REQUEST_EVENT_TYPE, {
+          client.sendEvent(roomId, EventType.RoomMessage, {
+            msgtype: SIGNAL_TEAM_REQUEST_MSGTYPE,
+            body: 'signal team access approved',
             coherenceSlug: coherenceSlug?.trim() || null,
             requesterMatrixUserId: requesterId,
             status: 'approved',
             updatedAt: new Date().toISOString(),
           }),
-          client.sendEvent(roomId, SIGNAL_TEAM_EVENT_TYPE, {
+          client.sendEvent(roomId, EventType.RoomMessage, {
+            msgtype: SIGNAL_TEAM_MSGTYPE,
+            body: 'signal team members updated',
             coherenceSlug: coherenceSlug?.trim() || null,
             memberMatrixUserIds: nextMembers,
             updatedAt: new Date().toISOString(),
@@ -1366,9 +1377,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const onTimeline = (event: MatrixEvent, eventRoom?: Room) => {
       if (eventRoom?.roomId !== roomId) return;
       const eventType = event.getType();
+      if (eventType !== EventType.RoomMessage) return;
+      const content = event.getContent() as Record<string, unknown> | null;
+      const msgtype =
+        content && typeof content.msgtype === 'string'
+          ? content.msgtype.trim()
+          : '';
       if (
-        eventType !== SIGNAL_TEAM_EVENT_TYPE &&
-        eventType !== SIGNAL_TEAM_REQUEST_EVENT_TYPE
+        msgtype !== SIGNAL_TEAM_MSGTYPE &&
+        msgtype !== SIGNAL_TEAM_REQUEST_MSGTYPE
       )
         return;
       applyFromTimeline();
