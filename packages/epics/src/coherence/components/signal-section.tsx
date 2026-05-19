@@ -745,7 +745,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
                   setNewBoardFilterKind(value as BoardFilterKind)
                 }
               >
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-10 min-h-10 py-1.5">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -765,7 +765,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
                   value={newBoardCategory}
                   onValueChange={setNewBoardCategory}
                 >
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-10 min-h-10 py-1.5">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
