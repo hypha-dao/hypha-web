@@ -320,11 +320,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         className,
       )}
     >
-      <CardHeader className="relative h-[84px] shrink-0 overflow-hidden p-0 isolate">
+      <CardHeader className="relative h-[78px] shrink-0 overflow-hidden p-0 isolate">
         <Skeleton
           className="h-full min-w-full"
           width="100%"
-          height="84px"
+          height="78px"
           loading={isLoading}
         >
           <div className="absolute inset-0 overflow-hidden">
@@ -338,7 +338,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             >
               <Image
                 width={640}
-                height={84}
+                height={78}
                 className="h-full w-full object-cover"
                 src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                 alt=""
