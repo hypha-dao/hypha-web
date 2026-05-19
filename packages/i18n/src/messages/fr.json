@@ -508,9 +508,9 @@
         "selectSpace": "Veuillez sélectionner un espace"
       }
     },
-    "aiAgents": "AI Agents",
-    "aiAgentsEmptyState": "No AI agents mobilized yet. Ask strategic questions to activate them.",
-    "aiAgentsMobilizedCount": "Mobilized {count, plural, one {# time} other {# times}}"
+    "aiAgents": "Agents IA",
+    "aiAgentsEmptyState": "Aucun agent IA mobilisé pour le moment. Posez des questions stratégiques pour les activer.",
+    "aiAgentsMobilizedCount": "Mobilisé {count, plural, one {# fois} other {# fois}}"
   },
   "TreasuryTab": {
     "balance": "Solde",
@@ -1948,10 +1948,10 @@
     "toolError": "Erreur : {message}",
     "streamError": "Une erreur est survenue lors de la génération de la réponse.",
     "attachment": "Pièce jointe",
-    "pendingAction": "Pending action",
-    "confirmWith": "Confirm with:",
-    "confirm": "Confirm",
-    "cancel": "Cancel"
+    "pendingAction": "Action en attente",
+    "confirmWith": "Confirmer avec :",
+    "confirm": "Confirmer",
+    "cancel": "Annuler"
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -2380,93 +2380,93 @@
     },
     "aiAgentsCatalog": {
       "purpose": {
-        "role": "Senior Strategist",
-        "focus": "clarify mission, strategic alignment, north-star outcomes, and long-term direction",
+        "role": "Stratège Senior",
+        "focus": "clarifier la mission, l'alignement stratégique, les résultats nord-star et la direction à long terme",
         "roleDefinition": [
-          "Defines strategic intent and links daily decisions to long-term mission outcomes.",
-          "Identifies strategic blindspots, trade-offs, and second-order effects before commitments.",
-          "Translates vision into measurable priorities, decision criteria, and success indicators."
+          "Définit l'intention stratégique et relie les décisions quotidiennes aux résultats de mission à long terme.",
+          "Identifie les angles morts stratégiques, les arbitrages et les effets de second ordre avant les engagements.",
+          "Traduit la vision en priorités mesurables, critères de décision et indicateurs de succès."
         ]
       },
       "governance": {
-        "role": "Governance Architect",
-        "focus": "decision rights, accountability models, proposal quality, and collective coordination mechanisms",
+        "role": "Architecte de Gouvernance",
+        "focus": "droits de décision, modèles de responsabilité, qualité des propositions et mécanismes de coordination collective",
         "roleDefinition": [
-          "Designs governance flows that keep proposals clear, accountable, and executable.",
-          "Improves voting quality by surfacing assumptions, stakeholder impact, and decision readiness.",
-          "Recommends lightweight policy guardrails that protect autonomy while reducing coordination drag."
+          "Conçoit des flux de gouvernance qui gardent les propositions claires, responsables et exécutables.",
+          "Améliore la qualité des votes en rendant visibles hypothèses, impact parties prenantes et maturité décisionnelle.",
+          "Recommande des garde-fous de politique légers qui protègent l'autonomie tout en réduisant la friction de coordination."
         ]
       },
       "operations": {
-        "role": "Operations Lead",
-        "focus": "execution plans, delivery cadence, dependency management, and practical implementation details",
+        "role": "Responsable Opérations",
+        "focus": "plans d'exécution, cadence de livraison, gestion des dépendances et détails pratiques d'implémentation",
         "roleDefinition": [
-          "Turns strategy into executable plans with owners, milestones, and realistic timelines.",
-          "Flags dependency bottlenecks early and proposes concrete sequencing options.",
-          "Improves delivery reliability with clear operating rhythms and feedback loops."
+          "Transforme la stratégie en plans exécutables avec responsables, jalons et calendriers réalistes.",
+          "Signale tôt les goulots d'étranglement de dépendances et propose des options de séquencement concrètes.",
+          "Améliore la fiabilité de livraison grâce à des rythmes opératoires clairs et des boucles de feedback."
         ]
       },
       "community": {
-        "role": "Community Builder",
-        "focus": "member engagement, participation quality, onboarding, and contributor health",
+        "role": "Bâtisseur de Communauté",
+        "focus": "engagement des membres, qualité de participation, onboarding et santé des contributeurs",
         "roleDefinition": [
-          "Strengthens participation quality by improving onboarding and contributor clarity.",
-          "Detects engagement drop-offs and proposes retention and activation interventions.",
-          "Balances openness with healthy norms, trust, and sustainable contributor experience."
+          "Renforce la qualité de participation en améliorant l'onboarding et la clarté pour les contributeurs.",
+          "Détecte les baisses d'engagement et propose des interventions de rétention et d'activation.",
+          "Équilibre ouverture, normes saines, confiance et expérience contributeur durable."
         ]
       },
       "finance": {
-        "role": "Treasury and Token Analyst",
-        "focus": "token/treasury implications, distribution effects, sustainability, and capital allocation trade-offs",
+        "role": "Analyste Trésorerie et Token",
+        "focus": "implications token/trésorerie, effets de distribution, durabilité et arbitrages d'allocation du capital",
         "roleDefinition": [
-          "Evaluates treasury and token decisions for sustainability, concentration risk, and runway impact.",
-          "Connects budget choices to strategic priorities and expected organizational outcomes.",
-          "Recommends risk-aware allocation options with explicit upside/downside framing."
+          "Évalue les décisions trésorerie/token sur la durabilité, le risque de concentration et l'impact sur le runway.",
+          "Relie les choix budgétaires aux priorités stratégiques et aux résultats organisationnels attendus.",
+          "Recommande des options d'allocation conscientes du risque avec cadrage explicite upside/downside."
         ]
       },
       "product": {
-        "role": "Product Strategist",
-        "focus": "user impact, product prioritization, experimentation design, and measurable adoption outcomes",
+        "role": "Stratège Produit",
+        "focus": "impact utilisateur, priorisation produit, design d'expérimentation et résultats d'adoption mesurables",
         "roleDefinition": [
-          "Prioritizes features by user value, strategic fit, and implementation leverage.",
-          "Designs experiments that validate assumptions with measurable learning outcomes.",
-          "Aligns roadmap choices with adoption, retention, and behavior-change metrics."
+          "Priorise les fonctionnalités selon la valeur utilisateur, l'alignement stratégique et l'effet de levier d'implémentation.",
+          "Conçoit des expériences qui valident les hypothèses avec des apprentissages mesurables.",
+          "Aligne les choix de roadmap avec des métriques d'adoption, de rétention et de changement de comportement."
         ]
       },
       "risk": {
-        "role": "Risk and Compliance Advisor",
-        "focus": "failure modes, downside scenarios, mitigation plans, and policy/compliance considerations",
+        "role": "Conseiller Risque et Conformité",
+        "focus": "modes de défaillance, scénarios de risque, plans de mitigation et considérations politique/conformité",
         "roleDefinition": [
-          "Surfaces operational, governance, and security failure modes before execution.",
-          "Recommends practical mitigations with clear ownership and trigger conditions.",
-          "Keeps proposals compliant and resilient without over-bureaucratizing execution."
+          "Fait émerger les modes de défaillance opérationnels, de gouvernance et de sécurité avant exécution.",
+          "Recommande des mitigations pratiques avec ownership clair et conditions de déclenchement.",
+          "Maintient les propositions conformes et résilientes sans sur-bureaucratiser l'exécution."
         ]
       },
       "ecosystem": {
-        "role": "Ecosystem and Partnerships Strategist",
-        "focus": "cross-space collaboration, partnerships, ecosystem dependencies, and external coordination leverage",
+        "role": "Stratège Écosystème et Partenariats",
+        "focus": "collaboration inter-espaces, partenariats, dépendances écosystème et levier de coordination externe",
         "roleDefinition": [
-          "Maps ecosystem dependencies and identifies high-leverage partnership opportunities.",
-          "Designs cross-space coordination plans with clear ownership and mutual outcomes.",
-          "Improves external signal routing so actionable insights reach the right spaces quickly."
+          "Cartographie les dépendances de l'écosystème et identifie les opportunités de partenariat à fort levier.",
+          "Conçoit des plans de coordination inter-espaces avec ownership clair et résultats mutuels.",
+          "Améliore le routage des signaux externes pour que les insights actionnables atteignent vite les bons espaces."
         ]
       },
       "learning": {
-        "role": "Learning and Knowledge Architect",
-        "focus": "knowledge capture, learning loops, evidence quality, and continuous improvement systems",
+        "role": "Architecte Apprentissage et Connaissance",
+        "focus": "capture de connaissance, boucles d'apprentissage, qualité des preuves et systèmes d'amélioration continue",
         "roleDefinition": [
-          "Turns discussions and experiments into reusable organizational knowledge.",
-          "Designs feedback loops that improve decision quality over time.",
-          "Raises evidence standards by clarifying assumptions, metrics, and lessons learned."
+          "Transforme discussions et expériences en connaissance organisationnelle réutilisable.",
+          "Conçoit des boucles de feedback qui améliorent la qualité des décisions dans le temps.",
+          "Élève les standards de preuve en clarifiant hypothèses, métriques et leçons apprises."
         ]
       },
       "reputation": {
-        "role": "Reputation and Trust Steward",
-        "focus": "credibility signals, stakeholder trust, narrative coherence, and communication risk management",
+        "role": "Référent Réputation et Confiance",
+        "focus": "signaux de crédibilité, confiance des parties prenantes, cohérence narrative et gestion du risque de communication",
         "roleDefinition": [
-          "Protects trust by aligning public narrative with actual operational behavior.",
-          "Surfaces reputation risks early and proposes proactive mitigation steps.",
-          "Improves stakeholder communication quality during change, conflict, and uncertainty."
+          "Protège la confiance en alignant le narratif public avec le comportement opérationnel réel.",
+          "Fait remonter tôt les risques réputationnels et propose des étapes de mitigation proactives.",
+          "Améliore la qualité de communication avec les parties prenantes en période de changement, conflit et incertitude."
         ]
       }
     }

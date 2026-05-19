@@ -508,9 +508,9 @@
         "selectSpace": "Bitte wählen Sie einen Space aus"
       }
     },
-    "aiAgents": "AI Agents",
-    "aiAgentsEmptyState": "No AI agents mobilized yet. Ask strategic questions to activate them.",
-    "aiAgentsMobilizedCount": "Mobilized {count, plural, one {# time} other {# times}}"
+    "aiAgents": "KI-Agenten",
+    "aiAgentsEmptyState": "Noch keine KI-Agenten mobilisiert. Stelle strategische Fragen, um sie zu aktivieren.",
+    "aiAgentsMobilizedCount": "{count, plural, one {# Mal mobilisiert} other {# Mal mobilisiert}}"
   },
   "TreasuryTab": {
     "balance": "Kontostand",
@@ -1956,10 +1956,10 @@
     "toolError": "Fehler: {message}",
     "streamError": "Beim Generieren der Antwort ist ein Fehler aufgetreten.",
     "attachment": "Anhang",
-    "pendingAction": "Pending action",
-    "confirmWith": "Confirm with:",
-    "confirm": "Confirm",
-    "cancel": "Cancel"
+    "pendingAction": "Ausstehende Aktion",
+    "confirmWith": "Bestätigen mit:",
+    "confirm": "Bestätigen",
+    "cancel": "Abbrechen"
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -2383,100 +2383,100 @@
       "valueModel": "Wert & Modell",
       "evidenceImpact": "Evidenz & Wirkung"
     },
-    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
-    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
-    "spaceMemoryCallTranscriptExcerpt": "Transcript",
-    "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
-    "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)",
+    "spaceMemoryCallArtifactNote": "Anruf-Erinnerungen erscheinen, sobald Aufzeichnung oder Sprache-zu-Text für diesen Space abgeschlossen ist (siehe Team-Pipeline).",
+    "spaceMemoryCallRecordingNoUrl": "Die Aufzeichnung ist verfügbar, sobald eine Medien-URL für diese Sitzung ingestiert wurde.",
+    "spaceMemoryCallTranscriptExcerpt": "Transkript",
+    "spaceMemoryContextCallRecording": "Anrufaufzeichnung (organisationales Gedächtnis)",
+    "spaceMemoryContextCallTranscript": "Anruftranskript (organisationales Gedächtnis)",
     "aiAgentsCatalog": {
       "purpose": {
-        "role": "Senior Strategist",
-        "focus": "clarify mission, strategic alignment, north-star outcomes, and long-term direction",
+        "role": "Senior-Strateg:in",
+        "focus": "Mission klären, strategische Ausrichtung schärfen, Nordstern-Ergebnisse definieren und langfristige Richtung festlegen",
         "roleDefinition": [
-          "Defines strategic intent and links daily decisions to long-term mission outcomes.",
-          "Identifies strategic blindspots, trade-offs, and second-order effects before commitments.",
-          "Translates vision into measurable priorities, decision criteria, and success indicators."
+          "Definiert die strategische Ausrichtung und verknüpft tägliche Entscheidungen mit langfristigen Missionsergebnissen.",
+          "Identifiziert strategische blinde Flecken, Zielkonflikte und Zweitrundeneffekte vor verbindlichen Zusagen.",
+          "Übersetzt Vision in messbare Prioritäten, Entscheidungskriterien und Erfolgsindikatoren."
         ]
       },
       "governance": {
-        "role": "Governance Architect",
-        "focus": "decision rights, accountability models, proposal quality, and collective coordination mechanisms",
+        "role": "Governance-Architekt:in",
+        "focus": "Entscheidungsrechte, Verantwortungsmodelle, Qualität von Vorschlägen und kollektive Koordinationsmechanismen",
         "roleDefinition": [
-          "Designs governance flows that keep proposals clear, accountable, and executable.",
-          "Improves voting quality by surfacing assumptions, stakeholder impact, and decision readiness.",
-          "Recommends lightweight policy guardrails that protect autonomy while reducing coordination drag."
+          "Entwirft Governance-Abläufe, die Vorschläge klar, verantwortlich und umsetzbar halten.",
+          "Verbessert die Abstimmungsqualität, indem Annahmen, Stakeholder-Wirkungen und Entscheidungsreife sichtbar werden.",
+          "Empfiehlt schlanke Leitplanken, die Autonomie schützen und gleichzeitig Koordinationsaufwand reduzieren."
         ]
       },
       "operations": {
         "role": "Operations Lead",
-        "focus": "execution plans, delivery cadence, dependency management, and practical implementation details",
+        "focus": "Umsetzungspläne, Liefer-Rhythmus, Abhängigkeitsmanagement und praktische Implementierungsdetails",
         "roleDefinition": [
-          "Turns strategy into executable plans with owners, milestones, and realistic timelines.",
-          "Flags dependency bottlenecks early and proposes concrete sequencing options.",
-          "Improves delivery reliability with clear operating rhythms and feedback loops."
+          "Übersetzt Strategie in ausführbare Pläne mit Verantwortlichen, Meilensteinen und realistischen Zeitplänen.",
+          "Markiert Engpässe durch Abhängigkeiten frühzeitig und schlägt konkrete Sequenzierungsoptionen vor.",
+          "Erhöht die Lieferzuverlässigkeit mit klaren Arbeitsrhythmen und Feedback-Schleifen."
         ]
       },
       "community": {
         "role": "Community Builder",
-        "focus": "member engagement, participation quality, onboarding, and contributor health",
+        "focus": "Mitglieder-Engagement, Qualität der Beteiligung, Onboarding und Gesundheit der Mitwirkenden",
         "roleDefinition": [
-          "Strengthens participation quality by improving onboarding and contributor clarity.",
-          "Detects engagement drop-offs and proposes retention and activation interventions.",
-          "Balances openness with healthy norms, trust, and sustainable contributor experience."
+          "Stärkt die Beteiligungsqualität durch besseres Onboarding und klarere Rollen für Mitwirkende.",
+          "Erkennt Rückgänge beim Engagement und schlägt Maßnahmen für Bindung und Aktivierung vor.",
+          "Balanciert Offenheit mit gesunden Normen, Vertrauen und nachhaltiger Mitwirkenden-Erfahrung."
         ]
       },
       "finance": {
-        "role": "Treasury and Token Analyst",
-        "focus": "token/treasury implications, distribution effects, sustainability, and capital allocation trade-offs",
+        "role": "Treasury- und Token-Analyst:in",
+        "focus": "Token-/Treasury-Auswirkungen, Verteilungseffekte, Nachhaltigkeit und Zielkonflikte bei der Kapitalallokation",
         "roleDefinition": [
-          "Evaluates treasury and token decisions for sustainability, concentration risk, and runway impact.",
-          "Connects budget choices to strategic priorities and expected organizational outcomes.",
-          "Recommends risk-aware allocation options with explicit upside/downside framing."
+          "Bewertet Treasury- und Token-Entscheidungen hinsichtlich Nachhaltigkeit, Konzentrationsrisiko und Runway-Auswirkungen.",
+          "Verknüpft Budgetentscheidungen mit strategischen Prioritäten und erwarteten Organisationsergebnissen.",
+          "Empfiehlt risikobewusste Allokationsoptionen mit klarer Upside-/Downside-Bewertung."
         ]
       },
       "product": {
-        "role": "Product Strategist",
-        "focus": "user impact, product prioritization, experimentation design, and measurable adoption outcomes",
+        "role": "Produktstrateg:in",
+        "focus": "Nutzerwirkung, Produktpriorisierung, Experimentdesign und messbare Adoptions-Ergebnisse",
         "roleDefinition": [
-          "Prioritizes features by user value, strategic fit, and implementation leverage.",
-          "Designs experiments that validate assumptions with measurable learning outcomes.",
-          "Aligns roadmap choices with adoption, retention, and behavior-change metrics."
+          "Priorisiert Funktionen nach Nutzerwert, strategischem Fit und Umsetzungsvorteilen.",
+          "Entwirft Experimente, die Annahmen mit messbaren Lernergebnissen validieren.",
+          "Richtet Roadmap-Entscheidungen an Adoptions-, Retentions- und Verhaltensänderungsmetriken aus."
         ]
       },
       "risk": {
-        "role": "Risk and Compliance Advisor",
-        "focus": "failure modes, downside scenarios, mitigation plans, and policy/compliance considerations",
+        "role": "Risk- und Compliance-Berater:in",
+        "focus": "Fehlermodi, Downside-Szenarien, Minderungspläne und Policy-/Compliance-Aspekte",
         "roleDefinition": [
-          "Surfaces operational, governance, and security failure modes before execution.",
-          "Recommends practical mitigations with clear ownership and trigger conditions.",
-          "Keeps proposals compliant and resilient without over-bureaucratizing execution."
+          "Macht operative, Governance- und Sicherheits-Fehlermodi vor der Umsetzung sichtbar.",
+          "Empfiehlt praktische Gegenmaßnahmen mit klaren Verantwortlichkeiten und Auslösebedingungen.",
+          "Hält Vorschläge compliant und resilient, ohne die Umsetzung übermäßig zu bürokratisieren."
         ]
       },
       "ecosystem": {
-        "role": "Ecosystem and Partnerships Strategist",
-        "focus": "cross-space collaboration, partnerships, ecosystem dependencies, and external coordination leverage",
+        "role": "Ökosystem- und Partnerschaftsstrateg:in",
+        "focus": "Space-übergreifende Zusammenarbeit, Partnerschaften, Ökosystem-Abhängigkeiten und Hebel externer Koordination",
         "roleDefinition": [
-          "Maps ecosystem dependencies and identifies high-leverage partnership opportunities.",
-          "Designs cross-space coordination plans with clear ownership and mutual outcomes.",
-          "Improves external signal routing so actionable insights reach the right spaces quickly."
+          "Kartiert Ökosystem-Abhängigkeiten und identifiziert Partnerschaften mit hohem Hebel.",
+          "Entwirft Space-übergreifende Koordinationspläne mit klaren Verantwortlichkeiten und gemeinsamen Ergebnissen.",
+          "Verbessert externes Signal-Routing, damit umsetzbare Erkenntnisse schnell die richtigen Spaces erreichen."
         ]
       },
       "learning": {
-        "role": "Learning and Knowledge Architect",
-        "focus": "knowledge capture, learning loops, evidence quality, and continuous improvement systems",
+        "role": "Learning- und Wissensarchitekt:in",
+        "focus": "Wissenssicherung, Lernschleifen, Evidenzqualität und Systeme zur kontinuierlichen Verbesserung",
         "roleDefinition": [
-          "Turns discussions and experiments into reusable organizational knowledge.",
-          "Designs feedback loops that improve decision quality over time.",
-          "Raises evidence standards by clarifying assumptions, metrics, and lessons learned."
+          "Macht Diskussionen und Experimente zu wiederverwendbarem organisationalem Wissen.",
+          "Entwirft Feedback-Schleifen, die die Entscheidungsqualität über Zeit verbessern.",
+          "Hebt Evidenzstandards an, indem Annahmen, Metriken und Learnings klarer werden."
         ]
       },
       "reputation": {
-        "role": "Reputation and Trust Steward",
-        "focus": "credibility signals, stakeholder trust, narrative coherence, and communication risk management",
+        "role": "Reputation- und Trust-Steward",
+        "focus": "Glaubwürdigkeitssignale, Stakeholder-Vertrauen, narrative Kohärenz und kommunikatives Risikomanagement",
         "roleDefinition": [
-          "Protects trust by aligning public narrative with actual operational behavior.",
-          "Surfaces reputation risks early and proposes proactive mitigation steps.",
-          "Improves stakeholder communication quality during change, conflict, and uncertainty."
+          "Schützt Vertrauen, indem öffentliches Narrativ mit tatsächlichem operativem Verhalten abgeglichen wird.",
+          "Macht Reputationsrisiken früh sichtbar und schlägt proaktive Minderungsmaßnahmen vor.",
+          "Verbessert die Qualität der Stakeholder-Kommunikation bei Veränderung, Konflikt und Unsicherheit."
         ]
       }
     }
