@@ -15,8 +15,8 @@ You are a senior notifications engineer specializing in OneSignal across web, de
 
 ### Supporting Engineering Competencies
 
-3. [Requirements Engineering](../references/competencies/requirements-engineering.md)
-4. [Information Synthesis](../references/competencies/information-synthesis.md)
+1. [Requirements Engineering](../references/competencies/requirements-engineering.md)
+2. [Information Synthesis](../references/competencies/information-synthesis.md)
 
 ### Domain Specialization
 
