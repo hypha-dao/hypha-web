@@ -408,62 +408,64 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         </Skeleton>
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
-        {isCreator && slug ? (
-          <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5">
-            <Button
-              type="button"
-              variant="ghost"
-              colorVariant="neutral"
-              size="sm"
-              className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              disabled={isLoading}
-              aria-label={tSignalCard('editMenu')}
-              title={tSignalCard('editMenu')}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!params.lang || !params.id || !slug) return;
-                const tab = params.tab ?? 'coherence';
-                router.push(
-                  `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
-                );
-              }}
-              onKeyDown={stopCardActivationKey}
-            >
-              <Pencil className="h-3.5 w-3.5" aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              colorVariant="neutral"
-              size="sm"
-              className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              disabled={isLoading}
-              aria-label={t('archiveConversation')}
-              title={t('archiveConversation')}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setDeleteOpen(true);
-              }}
-              onKeyDown={stopCardActivationKey}
-            >
-              <Archive className="h-3.5 w-3.5" aria-hidden />
-            </Button>
-          </div>
-        ) : null}
         <div className="relative flex min-h-0 flex-1 flex-col gap-2.5 px-3 pb-2.5 pt-3">
-          <div className="min-w-0">
-            <Skeleton
-              className="min-w-0"
-              width="100%"
-              height="20px"
-              loading={isLoading}
-            >
-              <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
-                {title}
-              </CardTitle>
-            </Skeleton>
+          <div className="flex min-w-0 items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <Skeleton
+                className="min-w-0"
+                width="100%"
+                height="20px"
+                loading={isLoading}
+              >
+                <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
+                  {title}
+                </CardTitle>
+              </Skeleton>
+            </div>
+            {isCreator && slug ? (
+              <div className="flex shrink-0 items-center gap-0.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  size="sm"
+                  className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  disabled={isLoading}
+                  aria-label={tSignalCard('editMenu')}
+                  title={tSignalCard('editMenu')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!params.lang || !params.id || !slug) return;
+                    const tab = params.tab ?? 'coherence';
+                    router.push(
+                      `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
+                    );
+                  }}
+                  onKeyDown={stopCardActivationKey}
+                >
+                  <Pencil className="h-3.5 w-3.5" aria-hidden />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  size="sm"
+                  className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  disabled={isLoading}
+                  aria-label={t('archiveConversation')}
+                  title={t('archiveConversation')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDeleteOpen(true);
+                  }}
+                  onKeyDown={stopCardActivationKey}
+                >
+                  <Archive className="h-3.5 w-3.5" aria-hidden />
+                </Button>
+              </div>
+            ) : null}
           </div>
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-1 text-muted-foreground">
