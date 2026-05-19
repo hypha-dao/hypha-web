@@ -3,7 +3,13 @@
 import { FC, ReactNode } from 'react';
 import { Text } from '@radix-ui/themes';
 import { useSignalsSection } from '../hooks';
-import { Button, ErrorAlert, Input, SectionLoadMore } from '@hypha-platform/ui';
+import {
+  Button,
+  Checkbox,
+  ErrorAlert,
+  Input,
+  SectionLoadMore,
+} from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import { SignalGridContainer } from './signal-grid.container';
 import { Coherence, DirectionType } from '@hypha-platform/core/client';
@@ -31,6 +37,8 @@ type SignalSectionProps = {
   isLoading: boolean;
   firstPageSize?: number;
   pageSize?: number;
+  hideArchived: boolean;
+  setHideArchived: (checked: boolean) => void;
   order?: string;
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
@@ -45,6 +53,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
   isLoading,
   firstPageSize = 4,
   pageSize = 4,
+  hideArchived,
+  setHideArchived,
   refresh,
   onSignalClick,
 }) => {
@@ -125,29 +135,48 @@ export const SignalSection: FC<SignalSectionProps> = ({
           className="w-full"
         />
         <div className="flex w-full items-center justify-end lg:w-auto">
-          {!isMemberLoading && isMember ? (
-            <Button
-              asChild
-              variant="default"
-              colorVariant="accent"
-              className="w-auto"
-            >
-              <Link href={createSignalHref}>
+          <div className="flex items-center gap-3">
+            <div className="flex flex-row gap-2 h-full">
+              <Checkbox
+                id="hideArchivedSignalsCheckbox"
+                className="self-center"
+                checked={hideArchived}
+                onCheckedChange={(value) => {
+                  setHideArchived(value === true);
+                }}
+                disabled={isLoading}
+              />
+              <label
+                className="text-[14px] self-center"
+                htmlFor="hideArchivedSignalsCheckbox"
+              >
+                {t('hideArchived')}
+              </label>
+            </div>
+            {!isMemberLoading && isMember ? (
+              <Button
+                asChild
+                variant="default"
+                colorVariant="accent"
+                className="w-auto"
+              >
+                <Link href={createSignalHref}>
+                  <PlusIcon />
+                  {t('newSignal')}
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                variant="default"
+                colorVariant="accent"
+                disabled
+                className="w-auto"
+              >
                 <PlusIcon />
                 {t('newSignal')}
-              </Link>
-            </Button>
-          ) : (
-            <Button
-              variant="default"
-              colorVariant="accent"
-              disabled
-              className="w-auto"
-            >
-              <PlusIcon />
-              {t('newSignal')}
-            </Button>
-          )}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
       {provisioningNoticeLines.length > 0 ? (

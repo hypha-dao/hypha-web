@@ -42,7 +42,7 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { Pencil, Trash2, Users } from 'lucide-react';
+import { Archive, Pencil, Users } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -127,8 +127,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 }) => {
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
-  const { updateCoherenceBySlug, deleteCoherenceBySlug } =
-    useCoherenceMutationsWeb2Rsc(authToken);
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
   const tCommon = useTranslations('Common');
@@ -276,26 +275,26 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     }
   }, [slug, refresh, updateCoherenceBySlug]);
 
-  const handleDelete = React.useCallback(async (): Promise<boolean> => {
+  const handleArchive = React.useCallback(async (): Promise<boolean> => {
     if (!slug || isDeleting) return false;
     setDeleteError(null);
     setIsDeleting(true);
     try {
-      await deleteCoherenceBySlug({ slug });
+      await updateCoherenceBySlug({ slug, archived: true });
       try {
         await refresh();
       } catch (refreshErr) {
-        console.warn('Signal deleted but list refresh failed:', refreshErr);
+        console.warn('Signal archived but list refresh failed:', refreshErr);
       }
       return true;
     } catch (error) {
-      console.warn('Could not delete signal:', error);
-      setDeleteError(tSignalCard('deleteFailed'));
+      console.warn('Could not archive signal:', error);
+      setDeleteError(t('errorOhSnap'));
       return false;
     } finally {
       setIsDeleting(false);
     }
-  }, [slug, isDeleting, deleteCoherenceBySlug, refresh, tSignalCard]);
+  }, [slug, isDeleting, refresh, t, updateCoherenceBySlug]);
 
   const stopCardActivationKey = React.useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
@@ -410,8 +409,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               size="sm"
               className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               disabled={isLoading}
-              aria-label={tSignalCard('deleteMenu')}
-              title={tSignalCard('deleteMenu')}
+              aria-label={t('archiveConversation')}
+              title={t('archiveConversation')}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -419,7 +418,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               }}
               onKeyDown={stopCardActivationKey}
             >
-              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+              <Archive className="h-3.5 w-3.5" aria-hidden />
             </Button>
           </div>
         ) : null}
@@ -615,9 +614,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <AlertDialogHeader>
-              <AlertDialogTitle>{tSignalCard('deleteSignal')}</AlertDialogTitle>
+              <AlertDialogTitle>{t('archiveConversation')}</AlertDialogTitle>
               <AlertDialogDescription>
-                {tSignalCard('deleteConfirm')}
+                {t('archiveConfirm')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             {deleteError ? (
@@ -645,12 +644,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 disabled={isDeleting}
                 onClick={async (e) => {
                   e.stopPropagation();
-                  const deleted = await handleDelete();
-                  if (deleted) setDeleteOpen(false);
+                  const archived = await handleArchive();
+                  if (archived) setDeleteOpen(false);
                 }}
                 onKeyDown={stopCardActivationKey}
               >
-                {tSignalCard('deleteConfirmAction')}
+                {t('yesArchive')}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

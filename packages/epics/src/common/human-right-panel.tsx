@@ -8,6 +8,7 @@ import {
   type MatrixEvent,
   type Room,
 } from 'matrix-js-sdk';
+import { Check, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   useParams,
@@ -210,6 +211,25 @@ const SIGNAL_TEAM_REQUEST_EVENT_KIND = 'io.hypha.signal.team.request.v1';
 const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
 const SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER = '[hypha:signal-team-request]';
 
+function toUserFriendlySignalSystemBody(body: string): string {
+  const trimmed = body.trim();
+  const withoutMarker = trimmed
+    .replace(SIGNAL_TEAM_EVENT_BODY_MARKER, '')
+    .replace(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER, '')
+    .trim();
+  if (!withoutMarker) return 'Signal team updated';
+  if (withoutMarker === 'signal team members updated') {
+    return 'Signal team updated';
+  }
+  if (withoutMarker === 'signal team access requested') {
+    return 'Signal team access requested';
+  }
+  if (withoutMarker === 'signal team access approved') {
+    return 'Signal team access approved';
+  }
+  return withoutMarker;
+}
+
 type PersistedUIMessage = Omit<UIMessage, 'timestamp'> & {
   timestamp?: string;
 };
@@ -217,6 +237,7 @@ type PersistedUIMessage = Omit<UIMessage, 'timestamp'> & {
 type SignalTeamTimelineState = {
   memberMatrixUserIds: string[];
   pendingRequesterIds: string[];
+  ownerMatrixUserId: string | null;
 };
 
 function normalizeMatrixUserIds(ids: unknown): string[] {
@@ -230,6 +251,7 @@ function deriveSignalTeamStateFromEvents(
 ): SignalTeamTimelineState {
   let memberMatrixUserIds: string[] = [];
   const pending = new Set<string>();
+  let ownerMatrixUserId: string | null = null;
   const targetSlug = coherenceSlug?.trim() || null;
 
   for (const ev of events) {
@@ -252,6 +274,10 @@ function deriveSignalTeamStateFromEvents(
     if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
 
     if (eventKind === SIGNAL_TEAM_EVENT_KIND) {
+      if (!ownerMatrixUserId) {
+        const sender = ev.getSender()?.trim();
+        if (sender) ownerMatrixUserId = sender;
+      }
       memberMatrixUserIds = normalizeMatrixUserIds(content.memberMatrixUserIds);
       continue;
     }
@@ -274,6 +300,7 @@ function deriveSignalTeamStateFromEvents(
   return {
     memberMatrixUserIds,
     pendingRequesterIds: [...pending],
+    ownerMatrixUserId,
   };
 }
 
@@ -496,6 +523,9 @@ function toUIMessage(
       : undefined;
 
   const media = mediaSingle;
+  const normalizedTextContent = isMedia
+    ? msg.content
+    : toUserFriendlySignalSystemBody(msg.content);
 
   const memberAvatar =
     !isCurrentUser && msg.sender ? resolveAvatarForUser(msg.sender) : undefined;
@@ -508,7 +538,7 @@ function toUIMessage(
       ? captionForMedia
         ? [{ type: 'text', text: captionForMedia }]
         : []
-      : [{ type: 'text', text: msg.content }],
+      : [{ type: 'text', text: normalizedTextContent }],
     media,
     mediaSlots,
     formattedContentHtml:
@@ -748,6 +778,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
   const [signalTeamMemberIds, setSignalTeamMemberIds] = useState<string[]>([]);
+  const [signalTeamOwnerId, setSignalTeamOwnerId] = useState<string | null>(
+    null,
+  );
   const [signalTeamPendingRequesterIds, setSignalTeamPendingRequesterIds] =
     useState<string[]>([]);
   const [signalTeamPanelOpen, setSignalTeamPanelOpen] = useState(false);
@@ -1314,7 +1347,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     async (nextMemberIds: string[]) => {
       if (!client || !roomId || !isSignalThread) return;
       try {
-        const deduped = normalizeMatrixUserIds(nextMemberIds);
+        const ownerId =
+          signalTeamOwnerId?.trim() || currentUserId?.trim() || null;
+        const actorId = currentUserId?.trim() || null;
+        const deduped = normalizeMatrixUserIds(
+          [...nextMemberIds, ...(ownerId ? [ownerId] : []), ...(actorId ? [actorId] : [])],
+        );
         await client.sendEvent(roomId, EventType.RoomMessage, {
           msgtype: MsgType.Notice,
           body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
@@ -1323,6 +1361,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           updatedAt: new Date().toISOString(),
         } as any);
         setSignalTeamMemberIds(deduped);
+        if (ownerId && !signalTeamOwnerId) {
+          setSignalTeamOwnerId(ownerId);
+        }
         setSignalTeamPendingRequesterIds((prev) =>
           prev.filter((id) => !deduped.includes(id)),
         );
@@ -1334,7 +1375,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setComposerError(t('sendFailed'));
       }
     },
-    [client, roomId, isSignalThread, coherenceSlug, t],
+    [
+      client,
+      roomId,
+      isSignalThread,
+      coherenceSlug,
+      currentUserId,
+      signalTeamOwnerId,
+      t,
+    ],
   );
 
   const requestSignalTeamAccess = useCallback(async () => {
@@ -1367,9 +1416,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (!requesterId) return;
       setSignalTeamBusy(true);
       try {
+        const ownerId =
+          signalTeamOwnerId?.trim() || currentUserId?.trim() || null;
+        const actorId = currentUserId?.trim() || null;
         const nextMembers = normalizeMatrixUserIds([
           ...effectiveSignalTeamMemberIds,
           requesterId,
+          ...(ownerId ? [ownerId] : []),
+          ...(actorId ? [actorId] : []),
         ]);
         await Promise.all([
           client.sendEvent(roomId, EventType.RoomMessage, {
@@ -1408,6 +1462,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       isSignalThread,
       coherenceSlug,
       effectiveSignalTeamMemberIds,
+      currentUserId,
+      signalTeamOwnerId,
       t,
     ],
   );
@@ -1435,6 +1491,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (!client || !roomId || !isSignalThread) {
       setSignalTeamMemberIds([]);
+      setSignalTeamOwnerId(null);
       setSignalTeamPendingRequesterIds([]);
       return;
     }
@@ -1445,6 +1502,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const timeline = room.getLiveTimeline().getEvents();
       const next = deriveSignalTeamStateFromEvents(timeline, coherenceSlug);
       setSignalTeamMemberIds(next.memberMatrixUserIds);
+      setSignalTeamOwnerId(next.ownerMatrixUserId);
       setSignalTeamPendingRequesterIds(next.pendingRequesterIds);
     };
 
@@ -3023,13 +3081,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {isSignalThread &&
                   hasSignalTeamPolicy &&
                   !canInteractWithSignalThread && (
-                    <div className="mt-0 w-full border-y border-info-7 bg-info-3 px-3 py-2 text-sm text-info-11">
+                    <div className="mt-0 w-full border-y border-accent-7 bg-accent-3 px-3 py-2 text-sm text-accent-11">
                       <p>{t('signalTeamBannerReadOnly')}</p>
                       <div className="mt-2 flex items-center gap-2">
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
+                          className="border-border bg-background text-foreground hover:bg-muted"
                           disabled={
                             currentUserPendingSignalTeamRequest ||
                             signalTeamBusy
@@ -3105,13 +3164,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                               );
                             const isCurrentUser =
                               member.userId === currentUserId;
+                            const isOwner = member.userId === signalTeamOwnerId;
                             return (
                               <button
                                 key={member.userId}
                                 type="button"
-                                className="flex items-center justify-between rounded-md px-2 py-1 text-left text-sm hover:bg-muted"
+                                className={`flex items-center justify-between rounded-md px-2 py-1 text-left text-sm ${
+                                  selected
+                                    ? 'bg-accent-3/70 ring-1 ring-accent-7'
+                                    : 'hover:bg-muted'
+                                }`}
                                 disabled={signalTeamBusy}
                                 onClick={() => {
+                                  if (isCurrentUser && selected) return;
+                                  if (isOwner && selected) return;
                                   const next = selected
                                     ? effectiveSignalTeamMemberIds.filter(
                                         (id) => id !== member.userId,
@@ -3120,20 +3186,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                                         ...effectiveSignalTeamMemberIds,
                                         member.userId,
                                       ];
-                                  if (
-                                    isCurrentUser &&
-                                    selected &&
-                                    next.length === 0
-                                  )
-                                    return;
                                   void publishSignalTeamMembers(next);
                                 }}
                               >
                                 <span className="truncate">
                                   {resolveMentionMemberLabel(member.userId)}
+                                  {isOwner ? ' 👑' : ''}
                                 </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {selected
+                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                  {isOwner ? null : selected ? (
+                                    <Check className="h-3.5 w-3.5 text-accent-11" />
+                                  ) : (
+                                    <Plus className="h-3.5 w-3.5" />
+                                  )}
+                                  {isOwner
+                                    ? 'Owner'
+                                    : selected
                                     ? t('signalTeamRemoveMember')
                                     : t('signalTeamAddMember')}
                                 </span>
