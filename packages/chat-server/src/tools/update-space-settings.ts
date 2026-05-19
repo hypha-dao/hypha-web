@@ -62,8 +62,7 @@ export function createUpdateSpaceSettingsTool(
         return { ok: false, error: 'No settings provided to update.' };
       }
 
-      const confirmationToken =
-        data.require_confirmation_token ?? 'confirm-update';
+      const confirmationToken = data.require_confirmation_token;
       const confirmed = hasExplicitConfirmation(
         trustedLastUserText,
         confirmationToken,
