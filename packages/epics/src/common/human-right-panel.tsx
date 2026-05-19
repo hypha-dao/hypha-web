@@ -839,18 +839,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const callUiEnabled = useMemo(
     () =>
-      mode === 'space' &&
       Boolean(roomId) &&
       isMatrixAvailable &&
       isMatrixAuthenticated &&
       hasSpaceChatAccess,
-    [
-      mode,
-      roomId,
-      isMatrixAvailable,
-      isMatrixAuthenticated,
-      hasSpaceChatAccess,
-    ],
+    [roomId, isMatrixAvailable, isMatrixAuthenticated, hasSpaceChatAccess],
   );
 
   const inSpaceCall =
@@ -1135,13 +1128,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const canInteractWithSignalThread =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
+  const canJoinSignalThreadCall =
+    !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
 
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
-    if (!hasSignalTeamPolicy) return rawMentionCandidates;
+    if (!isSignalThread) return rawMentionCandidates;
     return rawMentionCandidates.filter((candidate) =>
       signalTeamMemberIdSet.has(candidate.userId),
     );
-  }, [hasSignalTeamPolicy, rawMentionCandidates, signalTeamMemberIdSet]);
+  }, [isSignalThread, rawMentionCandidates, signalTeamMemberIdSet]);
 
   const mentionLabelByUserId = useMemo(
     () =>
@@ -1150,11 +1145,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           const o = mentionDisplayOverride[candidate.userId];
           return [
             candidate.userId,
-            o?.trim() ? o : candidate.displayLabel,
+            o?.trim() ? o : resolveMemberLabel(candidate.userId),
           ] as const;
         }),
       ),
-    [mentionCandidates, mentionDisplayOverride],
+    [mentionCandidates, mentionDisplayOverride, resolveMemberLabel],
   );
 
   const duplicateSanitizedDisplayKeys = useMemo(
@@ -1235,9 +1230,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }
     }
     return [...byUserId.values()].sort((a, b) =>
-      a.displayLabel.localeCompare(b.displayLabel, undefined, {
-        sensitivity: 'base',
-      }),
+      resolveMentionMemberLabel(a.userId).localeCompare(
+        resolveMentionMemberLabel(b.userId),
+        undefined,
+        {
+          sensitivity: 'base',
+        },
+      ),
     );
   }, [
     rawMentionCandidates,
@@ -1246,14 +1245,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     me?.surname,
     me?.nickname,
     me?.avatarUrl,
+    resolveMentionMemberLabel,
     t,
   ]);
   const effectiveSignalTeamMemberIds = useMemo(
     () =>
-      hasSignalTeamPolicy
+      isSignalThread
         ? signalTeamMemberIds
         : signalTeamSelectableMembers.map((member) => member.userId),
-    [hasSignalTeamPolicy, signalTeamMemberIds, signalTeamSelectableMembers],
+    [isSignalThread, signalTeamMemberIds, signalTeamSelectableMembers],
   );
   const canManageSignalTeam =
     isSignalThread && (!hasSignalTeamPolicy || isCurrentUserSignalTeamMember);
@@ -2797,8 +2797,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 onlyLocalInRoomCall={
                   spaceCallShowJoinStrip && spaceCallOtherMemberCount === 0
                 }
-                onAudio={handleCallAudio}
-                onVideo={handleCallVideo}
+                onAudio={() => {
+                  if (!canJoinSignalThreadCall && isSignalThread) {
+                    void requestSignalTeamAccess();
+                    return;
+                  }
+                  handleCallAudio();
+                }}
+                onVideo={() => {
+                  if (!canJoinSignalThreadCall && isSignalThread) {
+                    void requestSignalTeamAccess();
+                    return;
+                  }
+                  handleCallVideo();
+                }}
               />
             ) : null
           }
@@ -2811,8 +2823,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               deviceCount={spaceCallRoomGroupDeviceCount}
               disabled={!callUiEnabled}
               busy={spaceCallBusyJoining}
-              onJoinAudio={handleCallAudio}
-              onJoinVideo={handleCallVideo}
+              onJoinAudio={() => {
+                if (!canJoinSignalThreadCall && isSignalThread) {
+                  void requestSignalTeamAccess();
+                  return;
+                }
+                handleCallAudio();
+              }}
+              onJoinVideo={() => {
+                if (!canJoinSignalThreadCall && isSignalThread) {
+                  void requestSignalTeamAccess();
+                  return;
+                }
+                handleCallVideo();
+              }}
             />
           )}
         {callUiEnabled &&
@@ -2907,7 +2931,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {error && (
                   <div
                     role="alert"
-                    className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    className="mt-0 w-full border-y border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
                     {error}
                   </div>
@@ -2915,7 +2939,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {composerError && (
                   <div
                     role="alert"
-                    className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    className="mt-0 w-full border-y border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
                     {composerError}
                   </div>
@@ -2923,7 +2947,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {mentionNavigationNotice && (
                   <div
                     role="status"
-                    className="mx-3 mt-2 rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300"
+                    className="mt-0 w-full border-y border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300"
                   >
                     {mentionNavigationNotice}
                   </div>
@@ -2931,7 +2955,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {isSignalThread &&
                   hasSignalTeamPolicy &&
                   !canInteractWithSignalThread && (
-                    <div className="mx-3 mt-2 rounded-md border border-info-7 bg-info-3 px-3 py-2 text-sm text-info-11">
+                    <div className="mt-0 w-full border-y border-info-7 bg-info-3 px-3 py-2 text-sm text-info-11">
                       <p>{t('signalTeamBannerReadOnly')}</p>
                       <div className="mt-2 flex items-center gap-2">
                         <Button
@@ -2951,8 +2975,40 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       </div>
                     </div>
                   )}
+                {isSignalThread &&
+                  canManageSignalTeam &&
+                  signalTeamPendingRequesterIds.length > 0 && (
+                    <div className="mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2">
+                      <p className="text-xs font-medium text-foreground">
+                        {t('signalTeamPendingRequests')}
+                      </p>
+                      <div className="mt-2 space-y-1">
+                        {signalTeamPendingRequesterIds.map((requesterId) => (
+                          <div
+                            key={requesterId}
+                            className="flex items-center justify-between gap-2"
+                          >
+                            <span className="truncate text-xs text-muted-foreground">
+                              {resolveMentionMemberLabel(requesterId)}
+                            </span>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={signalTeamBusy}
+                              onClick={() =>
+                                void approveSignalTeamRequester(requesterId)
+                              }
+                            >
+                              {t('signalTeamApproveRequester')}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 {isSignalThread && canManageSignalTeam && (
-                  <div className="mx-3 mt-2 rounded-md border border-border/70 bg-muted/40 px-3 py-2">
+                  <div className="mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-foreground">
                         {t('signalTeamManageTitle')}
@@ -3005,7 +3061,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                                   void publishSignalTeamMembers(next);
                                 }}
                               >
-                                <span>{member.displayLabel}</span>
+                                <span className="truncate">
+                                  {resolveMentionMemberLabel(member.userId)}
+                                </span>
                                 <span className="text-xs text-muted-foreground">
                                   {selected
                                     ? t('signalTeamRemoveMember')
@@ -3015,38 +3073,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                             );
                           })}
                         </div>
-                        {signalTeamPendingRequesterIds.length > 0 && (
-                          <div className="space-y-1 rounded-md border border-border/60 bg-background px-2 py-2">
-                            <p className="text-xs font-medium text-foreground">
-                              {t('signalTeamPendingRequests')}
-                            </p>
-                            {signalTeamPendingRequesterIds.map(
-                              (requesterId) => (
-                                <div
-                                  key={requesterId}
-                                  className="flex items-center justify-between gap-2"
-                                >
-                                  <span className="truncate text-xs text-muted-foreground">
-                                    {resolveMemberLabel(requesterId)}
-                                  </span>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    disabled={signalTeamBusy}
-                                    onClick={() =>
-                                      void approveSignalTeamRequester(
-                                        requesterId,
-                                      )
-                                    }
-                                  >
-                                    {t('signalTeamApproveRequester')}
-                                  </Button>
-                                </div>
-                              ),
-                            )}
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -3054,7 +3080,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {reactionError && (
                   <div
                     role="alert"
-                    className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    className="mt-0 w-full border-y border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
                     {reactionError}
                   </div>
@@ -3062,7 +3088,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {deleteError && (
                   <div
                     role="alert"
-                    className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    className="mt-0 w-full border-y border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
                     {deleteError}
                   </div>
