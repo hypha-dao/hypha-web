@@ -956,22 +956,33 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
     if (!client || !roomId) return [];
-    const room = client.getRoom(roomId);
-    if (!room) return [];
+
+    /**
+     * In coherence/signal threads, thread room membership can be sparse (or only self).
+     * Fall back to the parent space chat room members so @ mentions stay usable.
+     */
+    const candidateRoomIds = new Set<string>([roomId]);
+    if (mode === 'coherence' && space?.chatRoomId?.trim()) {
+      candidateRoomIds.add(space.chatRoomId.trim());
+    }
 
     const byUserId = new Map<
       string,
       { displayLabel: string; avatarUrl?: string; privySub?: string }
     >();
 
-    for (const member of room.getJoinedMembers()) {
-      const userId = member.userId;
-      if (!userId) continue;
-      if (currentUserId && userId === currentUserId) continue;
-      byUserId.set(userId, {
-        displayLabel: matrixMemberDisplayLabel(member, userId),
-        avatarUrl: matrixMemberAvatarSquare(client, roomId, userId, 64),
-      });
+    for (const candidateRoomId of candidateRoomIds) {
+      const room = client.getRoom(candidateRoomId);
+      if (!room) continue;
+      for (const member of room.getJoinedMembers()) {
+        const userId = member.userId;
+        if (!userId) continue;
+        if (currentUserId && userId === currentUserId) continue;
+        byUserId.set(userId, {
+          displayLabel: matrixMemberDisplayLabel(member, userId),
+          avatarUrl: matrixMemberAvatarSquare(client, candidateRoomId, userId, 64),
+        });
+      }
     }
 
     /** Same names as Members tab — overrides Matrix-only technical displaynames. */
@@ -1008,6 +1019,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     client,
     roomId,
+    mode,
+    space?.chatRoomId,
     currentUserId,
     spaceMembers,
     subToMatrixUserId,
