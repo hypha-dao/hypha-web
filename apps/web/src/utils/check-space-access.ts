@@ -7,7 +7,12 @@ import {
   getDelegatesForSpace,
   getDelegators,
 } from '@hypha-platform/core/client';
-import { findSelf, getDb } from '@hypha-platform/core/server';
+import {
+  findSelf,
+  getDb,
+  findSpaceByWeb3Id,
+  findAllOrganizationSpacesForNodeById,
+} from '@hypha-platform/core/server';
 
 export enum TransparencyLevel {
   PUBLIC = 0,
@@ -134,6 +139,83 @@ export async function checkSpaceAccess(
     }
 
     if (accessLevel === TransparencyLevel.ORGANISATION) {
+      const targetSpace = await findSpaceByWeb3Id(
+        { id: Number(spaceIdBigInt) },
+        { db },
+      );
+      if (targetSpace?.id) {
+        const organisationSpaces = await findAllOrganizationSpacesForNodeById(
+          { id: targetSpace.id },
+          { db },
+        );
+        const siblingWeb3Ids = organisationSpaces
+          .map((orgSpace) => orgSpace.web3SpaceId)
+          .filter(
+            (orgSpaceId): orgSpaceId is number =>
+              typeof orgSpaceId === 'number' &&
+              Number.isSafeInteger(orgSpaceId) &&
+              orgSpaceId > 0 &&
+              orgSpaceId !== Number(spaceIdBigInt),
+          );
+
+        if (siblingWeb3Ids.length > 0) {
+          const siblingChecks = await Promise.all(
+            siblingWeb3Ids.map(async (siblingId) => {
+              try {
+                const siblingBigInt = BigInt(siblingId);
+                const siblingMember = await publicClient.readContract(
+                  isMemberConfig({
+                    spaceId: siblingBigInt,
+                    memberAddress: userAddress,
+                  }),
+                );
+                if (siblingMember) {
+                  return true;
+                }
+
+                const siblingDelegates = await publicClient.readContract(
+                  getDelegatesForSpace({ spaceId: siblingBigInt }),
+                );
+                const isSiblingDelegate = siblingDelegates.some(
+                  (delegate) =>
+                    delegate.toLowerCase() === userAddress.toLowerCase(),
+                );
+                if (!isSiblingDelegate) {
+                  return false;
+                }
+
+                const siblingDetails = await publicClient.readContract(
+                  getSpaceDetails({ spaceId: siblingBigInt }),
+                );
+                const [, , , , siblingMembers] = siblingDetails;
+                const siblingDelegators = await publicClient.readContract(
+                  getDelegators({
+                    user: userAddress,
+                    spaceId: siblingBigInt,
+                  }),
+                );
+                const siblingMembersLower = siblingMembers.map(
+                  (member: string) => member?.toLowerCase(),
+                );
+                return siblingDelegators.some((delegator: `0x${string}`) =>
+                  siblingMembersLower.includes(delegator?.toLowerCase()),
+                );
+              } catch (error) {
+                console.error(
+                  `Error checking sibling org membership for space ${siblingId}:`,
+                  error,
+                );
+                return false;
+              }
+            }),
+          );
+
+          if (siblingChecks.some(Boolean)) {
+            return { hasAccess: true, userAddress, authToken };
+          }
+        }
+      }
+
       return {
         hasAccess: false,
         response: NextResponse.json(

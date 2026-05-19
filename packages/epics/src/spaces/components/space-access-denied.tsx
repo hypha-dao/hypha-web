@@ -4,7 +4,7 @@ import { Button } from '@hypha-platform/ui';
 import { Empty } from '../../common/empty';
 import { UserSpaceState } from '../hooks/use-user-space-state';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
+import { useSpaceDetailsWeb3Rpc, useSpacesByWeb3Ids } from '@hypha-platform/core/client';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 import { JoinSpace } from './join-space';
@@ -24,6 +24,11 @@ export function SpaceAccessDenied({
   const { login } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug || '');
   const effectiveSpaceId = spaceId || space?.web3SpaceId;
+  const { spaces: spacesByWeb3Id } = useSpacesByWeb3Ids(
+    effectiveSpaceId ? [BigInt(effectiveSpaceId)] : [],
+    false,
+  );
+  const resolvedSpaceId = space?.id ?? spacesByWeb3Id[0]?.id;
 
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: effectiveSpaceId as number,
@@ -55,10 +60,10 @@ export function SpaceAccessDenied({
       <Empty>
         <div className="flex flex-col gap-7">
           <p>{t('accessDeniedNotMember')}</p>
-          {space?.id && effectiveSpaceId ? (
+          {resolvedSpaceId && effectiveSpaceId ? (
             <div className="flex items-center justify-center">
               <JoinSpace
-                spaceId={space.id}
+                spaceId={resolvedSpaceId}
                 web3SpaceId={effectiveSpaceId}
                 hideWhenMember
               />

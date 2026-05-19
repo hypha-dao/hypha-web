@@ -1,6 +1,10 @@
 import { publicClient } from '../../common/web3/public-client';
 import { findSelf } from '../../people/server/queries';
 import { getDb } from '../../common/server/get-db';
+import {
+  findAllOrganizationSpacesForNodeById,
+  findSpaceByWeb3Id,
+} from './queries';
 import { getSpaceDetails } from '../shared/web3/get-space-details';
 import { getSpaceVisibility } from '../client/web3/dao-space-factory/get-space-visibility';
 import { getDelegatesForSpace } from '../client/web3/dao-space-factory/get-delegates-for-space';
@@ -119,6 +123,84 @@ export async function checkSpaceAccessForSpace(
     }
 
     if (accessLevel === SpaceTransparencyLevel.ORGANISATION) {
+      const targetSpace = await findSpaceByWeb3Id(
+        { id: Number(spaceIdBigInt) },
+        { db },
+      );
+
+      if (targetSpace?.id) {
+        const organisationSpaces = await findAllOrganizationSpacesForNodeById(
+          { id: targetSpace.id },
+          { db },
+        );
+        const siblingWeb3Ids = organisationSpaces
+          .map((orgSpace) => orgSpace.web3SpaceId)
+          .filter(
+            (orgSpaceId): orgSpaceId is number =>
+              typeof orgSpaceId === 'number' &&
+              Number.isSafeInteger(orgSpaceId) &&
+              orgSpaceId > 0 &&
+              orgSpaceId !== Number(spaceIdBigInt),
+          );
+
+        if (siblingWeb3Ids.length > 0) {
+          const siblingChecks = await Promise.all(
+            siblingWeb3Ids.map(async (siblingId) => {
+              try {
+                const siblingBigInt = BigInt(siblingId);
+                const siblingMember = await publicClient.readContract(
+                  isMemberConfig({
+                    spaceId: siblingBigInt,
+                    memberAddress: userAddress,
+                  }),
+                );
+                if (siblingMember) {
+                  return true;
+                }
+
+                const siblingDelegates = await publicClient.readContract(
+                  getDelegatesForSpace({ spaceId: siblingBigInt }),
+                );
+                const isSiblingDelegate = siblingDelegates.some(
+                  (delegate) =>
+                    delegate.toLowerCase() === userAddress.toLowerCase(),
+                );
+                if (!isSiblingDelegate) {
+                  return false;
+                }
+
+                const siblingDetails = await publicClient.readContract(
+                  getSpaceDetails({ spaceId: siblingBigInt }),
+                );
+                const [, , , , siblingMembers] = siblingDetails;
+                const siblingDelegators = await publicClient.readContract(
+                  getDelegators({
+                    user: userAddress,
+                    spaceId: siblingBigInt,
+                  }),
+                );
+                const siblingMembersLower = siblingMembers.map(
+                  (member: string) => member?.toLowerCase(),
+                );
+                return siblingDelegators.some((delegator: `0x${string}`) =>
+                  siblingMembersLower.includes(delegator?.toLowerCase()),
+                );
+              } catch (error) {
+                console.error(
+                  `checkSpaceAccessForSpace sibling org membership check failed for ${siblingId}:`,
+                  error,
+                );
+                return false;
+              }
+            }),
+          );
+
+          if (siblingChecks.some(Boolean)) {
+            return { hasAccess: true };
+          }
+        }
+      }
+
       return {
         hasAccess: false,
         message:
