@@ -2763,6 +2763,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     me?.surname,
     me?.nickname,
     me?.slug,
+    spaceSlug,
     notifyChatMention,
     hasSignalTeamPolicy,
     signalTeamMemberIdSet,
