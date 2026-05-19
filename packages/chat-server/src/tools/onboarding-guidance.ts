@@ -35,10 +35,11 @@ function getGuidanceDefinition(
   if (process === 'create_space') {
     return {
       steps: [
-        { field: 'space_name', question: 'What should the space name be?' },
+        { field: 'space_name', question: 'What should we call your space?' },
         {
           field: 'space_purpose',
-          question: 'What is the purpose/description of this space?',
+          question:
+            'What is the purpose of this space? If helpful, I can suggest a few examples.',
         },
         {
           field: 'link_parent_ecosystem',

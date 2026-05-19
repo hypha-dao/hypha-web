@@ -388,7 +388,10 @@ export function OnboardingAiFullPage({
               {t('aiHero.title')}
             </h2>
           </div>
-          <Button variant="outline" colorVariant="neutral" onClick={onExit}>
+          <Button
+            onClick={onExit}
+            className="h-10 rounded-lg border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 px-4 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22"
+          >
             {t('explore.cta')}
           </Button>
         </div>
