@@ -183,3 +183,173 @@ Push/email payload SHALL include:
 4. Add notification sound controls and quiet hours by timezone.
 5. Add trust indicators: “delivered”, “opened”, and “last notified” for debugging silent failures.
 6. Add anti-spam controls: suppress repeated mention bursts from same actor within short windows.
+
+## 11. Signal team-scoped collaboration (ready-to-implement extension)
+
+### 11.1 Capability decision (Matrix + Hypha)
+
+Matrix threading is relation-based (`m.thread`) inside a room and does not provide native per-thread membership ACLs separate from room membership. Therefore, this feature SHALL be implemented as a Hypha authorization layer over Matrix:
+
+- Thread visibility remains room-wide (everyone can read).
+- Interaction rights (send message, mention, start call, receive call mention fanout) are enforced by Hypha team membership for the signal thread.
+- Matrix remains the transport; Hypha backend and UI enforce policy.
+
+### 11.2 Additional user stories
+
+6. As a signal owner/editor, I can select a relevant team from active room members and space members.
+7. As a selected team member, I can edit the signal and interact in the thread.
+8. As a non-team member, I can read the thread but cannot post, mention, or start thread calls.
+9. As a non-team member, I can request inclusion, and team members can approve and add me.
+10. As a team member, I only receive thread-call notifications for threads where I am in the selected team.
+
+### 11.3 Functional requirements (team-scoped thread policy)
+
+**FR-22** The system SHALL provide a "Team" selector on a signal, sourcing candidates from:
+
+- active members in the thread/room context, and
+- members in the parent space roster.
+
+**FR-23** Team selection SHALL support multi-select add/remove and SHALL persist per signal thread.
+
+**FR-24** When a user is included in the signal team, the signal edit action (pen) SHALL be enabled for that user, subject to existing higher-level space auth constraints.
+
+**FR-25** Users not included in the signal team SHALL still be able to view the signal thread timeline.
+
+**FR-26** Users not included in the signal team SHALL NOT be able to:
+
+- send thread messages,
+- send thread mentions, or
+- start thread calls.
+
+**FR-27** Mention picker results in team-scoped threads SHALL only include signal team members for sending/targeting mentions.
+
+**FR-28** Mention notification fanout for thread mentions SHALL be restricted to users currently in the signal team and still subject to mention consent and channel preferences.
+
+**FR-29** Starting a call from a thread SHALL notify only signal team members for that thread.
+
+**FR-30** Non-team viewers SHALL see an in-thread informational banner explaining that only selected team members can interact.
+
+**FR-31** The banner SHALL include a "Request to be included" action for non-team users.
+
+**FR-32** Join requests SHALL be visible to current team members in-thread and actionable with approve/deny controls.
+
+**FR-33** Any current team member SHALL be able to approve a join request and add the requester to the team.
+
+**FR-34** Team membership changes SHALL take effect immediately for UI controls and server authorization checks (no page reload required).
+
+**FR-35** Team membership changes SHALL be auditable (actor, action, target user, signal/thread id, timestamp).
+
+### 11.4 Non-functional requirements (team-scoped behavior)
+
+**NFR-6 (Authorization Integrity)** Server-side authorization SHALL be the source of truth; UI-only gating is insufficient.
+
+**NFR-7 (Consistency)** Membership update propagation to thread interaction controls SHALL converge within 5 seconds in active sessions.
+
+**NFR-8 (Observability)** Denied interaction attempts by non-team members SHALL be logged with structured reason codes.
+
+**NFR-9 (UX Clarity)** Non-team restriction and request status (none/pending/approved/denied) SHALL be clearly communicated and accessible.
+
+### 11.5 Data model and integration contract
+
+#### 11.5.1 Signal team membership record
+
+Each signal thread SHALL have a persisted team set:
+
+- `signalId`
+- `roomId`
+- `threadRootEventId` (or canonical signal-thread identifier used in current model)
+- `memberMatrixUserId`
+- `role` (`member`, optional future `lead`)
+- `addedByMatrixUserId`
+- `addedAt`
+- `removedAt` (nullable)
+
+#### 11.5.2 Team join request record
+
+- `requestId`
+- `signalId`
+- `requesterMatrixUserId`
+- `status` (`pending`, `approved`, `denied`, `cancelled`)
+- `requestedAt`
+- `resolvedAt` (nullable)
+- `resolvedByMatrixUserId` (nullable)
+- `resolutionNote` (nullable)
+
+#### 11.5.3 Authorization checkpoints
+
+The following write paths SHALL enforce signal-team authorization:
+
+- thread message send action/path,
+- thread mention send action/path,
+- thread call start action/path,
+- signal edit action/path.
+
+### 11.6 UI specification (implementation-ready)
+
+#### 11.6.1 Signal Team Selector
+
+- Placement: signal header/actions area near edit controls.
+- Control: searchable multi-select with avatars and display names.
+- Candidate groups:
+  - "Active in thread"
+  - "Members in this space"
+- Row states:
+  - selectable,
+  - already in team,
+  - pending request.
+- Team chips include remove affordance for users with permission.
+
+#### 11.6.2 Non-team thread banner
+
+- Shown when user can read thread but lacks interaction rights.
+- Contains:
+  - explanation text,
+  - request button (or request status badge),
+  - optional link to team list.
+- Visual style: `bg-info-3`, `text-info-11`, `border-info-7` tokens (map to existing semantic token set in implementation).
+
+#### 11.6.3 Composer and mention behavior
+
+- Composer disabled for non-team users with explanatory placeholder.
+- `@` button disabled for non-team users.
+- Mention picker (for team users) filters to team members only.
+
+#### 11.6.4 Thread call behavior
+
+- "Start call" entry point hidden or disabled for non-team users.
+- Team users can start calls.
+- Call notification payload includes signal-thread identifier and team-scoped recipient set.
+
+### 11.7 Implementation decomposition (extension slices)
+
+9. **Team data layer**
+   - Add persistence for signal team membership and join requests.
+   - Add query helpers for eligibility checks and candidate lists.
+10. **Authorization middleware/hooks**
+   - Add server-side checks for message, mention, call start, and signal edit.
+11. **Signal team UI**
+   - Build team selector and management flow in signal UI.
+12. **Restricted interaction UX**
+   - Add non-team banner and disabled composer/mention/call states.
+13. **Request-to-join workflow**
+   - Add create request, team approval/denial, live status updates.
+14. **Notification and call fanout**
+   - Scope thread mention and call notifications to signal team recipients.
+15. **Audit + telemetry**
+   - Log membership changes, denied actions, request lifecycle metrics.
+
+### 11.8 Acceptance criteria (team-scoped extension)
+
+**AC-8** Given a signal with configured team members, when a non-team user opens the thread, then they can read messages but cannot send, mention, or start calls.
+
+**AC-9** Given a team member opens the signal, when they view actions, then the signal edit pen is available.
+
+**AC-10** Given team selection is updated, when the change is saved, then permissions update for affected users without manual refresh.
+
+**AC-11** Given a thread call is started, when notifications are sent, then only current team members receive call notifications.
+
+**AC-12** Given a non-team user requests inclusion, when a team member approves, then requester becomes interactive in the thread and can mention/send.
+
+**AC-13** Given a non-team user attempts a direct API/message write, when request reaches backend, then server rejects it with authorization error and logs a denial event.
+
+**AC-14** Given a team-scoped thread mention, when fanout executes, then only team members with consent-enabled preferences receive mention notifications.
