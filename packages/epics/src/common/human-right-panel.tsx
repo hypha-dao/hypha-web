@@ -265,6 +265,19 @@ type SignalTeamTimelineState = {
   ownerMatrixUserId: string | null;
 };
 
+type SignalTeamEventContent = {
+  msgtype: MsgType.Notice;
+  body: string;
+  coherenceSlug: string | null;
+  memberMatrixUserIds?: string[];
+  ownerMatrixUserId?: string | null;
+  requesterMatrixUserId?: string;
+  status?: 'pending' | 'approved';
+  addedMemberMatrixUserIds?: string[];
+  removedMemberMatrixUserIds?: string[];
+  updatedAt: string;
+};
+
 function normalizeMatrixUserIds(ids: unknown): string[] {
   if (!Array.isArray(ids)) return [];
   return [...new Set(ids.map((id) => String(id).trim()).filter(Boolean))];
@@ -1541,7 +1554,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           addedMemberMatrixUserIds: added,
           removedMemberMatrixUserIds: removed,
           updatedAt: new Date().toISOString(),
-        } as any);
+        } as SignalTeamEventContent);
         setSignalTeamMemberIds(deduped);
         if (ownerId && !signalTeamOwnerId) {
           setSignalTeamOwnerId(ownerId);
@@ -1612,7 +1625,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         requesterMatrixUserId: currentUserId,
         status: 'pending',
         updatedAt: new Date().toISOString(),
-      } as any);
+      } as SignalTeamEventContent);
       setSignalTeamPendingRequesterIds((prev) =>
         prev.includes(currentUserId) ? prev : [...prev, currentUserId],
       );
@@ -1648,7 +1661,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             requesterMatrixUserId: requesterId,
             status: 'approved',
             updatedAt: new Date().toISOString(),
-          } as any),
+          } as SignalTeamEventContent),
           client.sendEvent(roomId, EventType.RoomMessage, {
             msgtype: MsgType.Notice,
             body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
@@ -1656,7 +1669,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             memberMatrixUserIds: nextMembers,
             ownerMatrixUserId: ownerId,
             updatedAt: new Date().toISOString(),
-          } as any),
+          } as SignalTeamEventContent),
         ]);
         setSignalTeamMemberIds(nextMembers);
         setSignalTeamPendingRequesterIds((prev) =>
