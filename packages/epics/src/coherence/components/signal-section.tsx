@@ -324,12 +324,16 @@ export const SignalSection: FC<SignalSectionProps> = ({
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return;
       const next = parsed.filter(
-        (item): item is {
+        (
+          item,
+        ): item is {
           id: string;
           name: string;
           filterKind: BoardFilterKind;
           filterValues?: unknown;
           filterValue?: unknown;
+          createdByPersonId?: unknown;
+          archived?: unknown;
         } =>
           typeof item?.id === 'string' &&
           typeof item?.name === 'string' &&
@@ -357,12 +361,10 @@ export const SignalSection: FC<SignalSectionProps> = ({
             filterKind: item.filterKind,
             filterValues: values,
             createdByPersonId:
-              typeof (item as { createdByPersonId?: unknown }).createdByPersonId ===
-              'number'
-                ? (item as { createdByPersonId: number }).createdByPersonId
+              typeof item.createdByPersonId === 'number'
+                ? item.createdByPersonId
                 : null,
-            archived:
-              (item as { archived?: unknown }).archived === true ? true : false,
+            archived: item.archived === true,
           } as SignalBoard;
         })
         .filter((item): item is SignalBoard => item !== null);
@@ -383,7 +385,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
 
   React.useEffect(() => {
     if (activeBoardId === 'all') return;
-    if (!boards.some((board) => board.id === activeBoardId && !board.archived)) {
+    if (
+      !boards.some((board) => board.id === activeBoardId && !board.archived)
+    ) {
       setActiveBoardId('all');
     }
   }, [activeBoardId, boards]);
@@ -430,9 +434,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
         (signal.tags ?? []).some((tag) => selectedTagSet.has(tag)),
       );
     }
-    const categoryTags = activeBoard.filterValues.flatMap(
-      (categoryKey) => [...(categoryByKey.get(categoryKey)?.tags ?? [])],
-    );
+    const categoryTags = activeBoard.filterValues.flatMap((categoryKey) => [
+      ...(categoryByKey.get(categoryKey)?.tags ?? []),
+    ]);
     if (!categoryTags.length) return signals;
     const categoryTagSet = new Set(categoryTags);
     return signals.filter((signal) =>
@@ -716,7 +720,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
       {activeBoards.length > 0 ? (
         <div className="flex flex-col gap-2">
           <div className="text-1 font-medium text-muted-foreground">
-            {t.has('boardFilters' as never) ? t('boardFilters' as never) : 'Boards'}
+            {t.has('boardFilters' as never)
+              ? t('boardFilters' as never)
+              : 'Boards'}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Tabs value={activeBoardId} onValueChange={setActiveBoardId}>

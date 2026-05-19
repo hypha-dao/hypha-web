@@ -804,7 +804,9 @@ export const CreateSignalForm = ({
                 name="tags"
                 render={({ field }) => (
                   <FormItem className="mt-6">
-                    <FormLabel className="text-foreground">{t('tags')}</FormLabel>
+                    <FormLabel className="text-foreground">
+                      {t('tags')}
+                    </FormLabel>
                     <FormControl>
                       <MultiSelect
                         placeholder={t('selectOneOrMore')}

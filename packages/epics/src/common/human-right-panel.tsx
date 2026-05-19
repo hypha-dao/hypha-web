@@ -1087,15 +1087,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return m;
   }, [spaceMembers, t]);
 
-  const matrixLocalpartToPrivySub = useCallback((userId: string): string | null => {
-    const trimmed = userId.trim();
-    if (!trimmed.startsWith('@')) return null;
-    const colonIndex = trimmed.indexOf(':');
-    if (colonIndex <= 1) return null;
-    const localpart = trimmed.slice(1, colonIndex).trim();
-    if (!localpart) return null;
-    return localpart;
-  }, []);
+  const matrixLocalpartToPrivySub = useCallback(
+    (userId: string): string | null => {
+      const trimmed = userId.trim();
+      if (!trimmed.startsWith('@')) return null;
+      const colonIndex = trimmed.indexOf(':');
+      if (colonIndex <= 1) return null;
+      const localpart = trimmed.slice(1, colonIndex).trim();
+      if (!localpart) return null;
+      return localpart;
+    },
+    [],
+  );
 
   const resolveMemberLabel = useCallback(
     (userId: string | undefined) => {
