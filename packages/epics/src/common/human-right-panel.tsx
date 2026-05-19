@@ -1028,24 +1028,26 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     ],
   );
 
-  const rawMentionCandidates = useMemo((): ChatMentionCandidate[] => {
-    if (!client || !roomId) return [];
-
-    /**
-     * In coherence/signal threads, thread room membership can be sparse (or only self).
-     * Fall back to the parent space chat room members so @ mentions stay usable.
-     */
-    const candidateRoomIds = new Set<string>([roomId]);
-    if (mode === 'coherence' && space?.chatRoomId?.trim()) {
-      candidateRoomIds.add(space.chatRoomId.trim());
+  const mentionCandidateRoomIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (roomId?.trim()) {
+      ids.add(roomId.trim());
     }
+    if (mode === 'coherence' && space?.chatRoomId?.trim()) {
+      ids.add(space.chatRoomId.trim());
+    }
+    return [...ids];
+  }, [roomId, mode, space?.chatRoomId]);
+
+  const rawMentionCandidates = useMemo((): ChatMentionCandidate[] => {
+    if (!client || mentionCandidateRoomIds.length === 0) return [];
 
     const byUserId = new Map<
       string,
       { displayLabel: string; avatarUrl?: string; privySub?: string }
     >();
 
-    for (const candidateRoomId of candidateRoomIds) {
+    for (const candidateRoomId of mentionCandidateRoomIds) {
       const room = client.getRoom(candidateRoomId);
       if (!room) continue;
       for (const member of room.getJoinedMembers()) {
@@ -1097,9 +1099,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return list;
   }, [
     client,
-    roomId,
-    mode,
-    space?.chatRoomId,
+    mentionCandidateRoomIds,
     currentUserId,
     spaceMembers,
     subToMatrixUserId,
@@ -1345,13 +1345,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   useEffect(() => {
-    if (!client || !roomId) return;
-    const room = client.getRoom(roomId);
-    if (!room) return;
+    if (!client || mentionCandidateRoomIds.length === 0) return;
+    const candidateRoomIdSet = new Set(mentionCandidateRoomIds);
 
     const bumpMembership = (...args: unknown[]) => {
       const state = args[1] as { roomId?: string } | undefined;
-      if (state?.roomId !== roomId) return;
+      const eventRoomId = state?.roomId?.trim();
+      if (!eventRoomId || !candidateRoomIdSet.has(eventRoomId)) return;
       setMentionMembershipEpoch((n) => n + 1);
     };
 
@@ -1362,7 +1362,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       client.off(RoomStateEvent.Members, bumpMembership);
       client.off(RoomStateEvent.NewMember, bumpMembership);
     };
-  }, [client, roomId]);
+  }, [client, mentionCandidateRoomIds]);
 
   useEffect(() => {
     if (!client || !roomId || !isSignalThread) {
