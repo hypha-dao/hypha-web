@@ -2631,12 +2631,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           params.set('msg', sendResult.eventId);
           params.set('chat', roomId);
           const query = params.toString();
+          const lang = getLocaleFromPath(pathname);
+          const mappedSpaceSlug = roomId
+            ? window.sessionStorage
+                .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${roomId}`)
+                ?.trim() || readRoomIdToSpaceSlugFromStorage().get(roomId)
+            : null;
+          const canonicalSpaceSlug = spaceSlug?.trim() || mappedSpaceSlug;
+          const canonicalPath = canonicalSpaceSlug
+            ? `/${lang}/dho/${canonicalSpaceSlug}`
+            : pathname;
           const deepLink =
             typeof window !== 'undefined'
-              ? `${window.location.origin}${pathname}${
+              ? `${window.location.origin}${canonicalPath}${
                   query ? `?${query}` : ''
                 }`
-              : pathname;
+              : canonicalPath;
           const actorDisplayName =
             [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
             me?.nickname?.trim() ||
