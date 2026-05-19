@@ -4,7 +4,10 @@ import { Button } from '@hypha-platform/ui';
 import { Empty } from '../../common/empty';
 import { UserSpaceState } from '../hooks/use-user-space-state';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useSpaceDetailsWeb3Rpc, useSpacesByWeb3Ids } from '@hypha-platform/core/client';
+import {
+  useSpaceDetailsWeb3Rpc,
+  useSpacesByWeb3Ids,
+} from '@hypha-platform/core/client';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 import { JoinSpace } from './join-space';
