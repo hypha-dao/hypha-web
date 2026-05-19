@@ -131,16 +131,12 @@ function getGuidanceDefinition(
     steps: [
       {
         field: 'explore_scope',
-        question: 'What do you want to explore in the network?',
-      },
-      {
-        field: 'redirect_after_discovery',
         question:
-          'After discovery, should I route you to a specific destination? (yes/no)',
+          'What topic should I search for in the network? For example: bioregions, ocean, education, or governance.',
       },
     ],
-    validation_steps: ['Confirm destination scope before navigation.'],
-    suggested_tools: ['mcp_navigation'],
+    validation_steps: ['Run space search and return the best matches now.'],
+    suggested_tools: ['search_spaces', 'mcp_navigation'],
   };
 }
 
@@ -161,7 +157,15 @@ export function createOnboardingGuidanceTool() {
       if (!parsed.success) return { ok: false, error: parsed.error.message };
 
       const { process, user_goal, space_slug, known_answers } = parsed.data;
-      const answers = known_answers ?? {};
+      const answers = { ...(known_answers ?? {}) } as Record<string, unknown>;
+      if (
+        process === 'explore_network' &&
+        !isFilled(answers.explore_scope) &&
+        typeof user_goal === 'string' &&
+        user_goal.trim().length > 0
+      ) {
+        answers.explore_scope = user_goal.trim();
+      }
       const guidance = getGuidanceDefinition(process);
       const activeSteps = guidance.steps.filter((step) =>
         step.requiredWhen ? step.requiredWhen(answers) : true,
@@ -175,20 +179,24 @@ export function createOnboardingGuidanceTool() {
       const total = activeSteps.length;
       const readyForValidation = !nextStep;
 
+      const exploreReady =
+        process === 'explore_network' && isFilled(answers.explore_scope);
       return {
         ok: true,
         process,
         user_goal: user_goal ?? null,
         space_slug: space_slug ?? null,
         question_mode: 'single_step',
-        assistant_instruction:
-          'Ask only the next_question as a single natural-language question. Do not provide a checklist, field list, or form labels.',
+        assistant_instruction: exploreReady
+          ? 'Use search_spaces immediately with the discovered topic and return concrete space matches in this same reply. Do not ask another discovery question first.'
+          : 'Ask only the next_question as a single natural-language question. Do not provide a checklist, field list, or form labels.',
         progress: {
           answered: collected,
           total,
           remaining: Math.max(total - collected, 0),
         },
         next_question: nextStep?.question ?? null,
+        ready_for_search: exploreReady,
         ready_for_validation: readyForValidation,
         validation_steps: readyForValidation ? guidance.validation_steps : [],
         suggested_tools: guidance.suggested_tools,
