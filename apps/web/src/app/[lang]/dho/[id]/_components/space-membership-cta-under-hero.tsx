@@ -27,7 +27,7 @@ export function SpaceMembershipCtaUnderHero({
   }
 
   return (
-    <div className="flex items-center justify-center py-2">
+    <div className="flex w-full items-center justify-end py-2">
       <JoinSpace spaceId={spaceId} web3SpaceId={web3SpaceId} hideWhenMember />
     </div>
   );
