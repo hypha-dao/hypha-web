@@ -956,6 +956,7 @@ export function HumanChatPanelChatBar({
 
   const pushDrafts = useCallback(
     (files: FileList | File[], kind: 'file' | 'image') => {
+      if (composerLocked) return;
       if (!onDraftAttachmentsChange) return;
       const arr = Array.from(files);
       const next: ChatDraftAttachment[] = [...draftAttachments];
@@ -988,7 +989,7 @@ export function HumanChatPanelChatBar({
       }
       onDraftAttachmentsChange(next);
     },
-    [draftAttachments, onDraftAttachmentsChange],
+    [composerLocked, draftAttachments, onDraftAttachmentsChange],
   );
 
   const removeDraft = useCallback(
@@ -1539,6 +1540,7 @@ export function HumanChatPanelChatBar({
           e.dataTransfer.dropEffect = 'copy';
         }}
         onDrop={(e) => {
+          if (composerLocked) return;
           if (!e.dataTransfer?.types.includes('Files')) {
             return;
           }
