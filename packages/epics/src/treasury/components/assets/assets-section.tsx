@@ -84,16 +84,23 @@ export const AssetsSection: FC<AssetSectionProps> = ({
           />
           <span>{tTreasury('hideSmall')}</span>
         </label>
-        <Link
-          href={`${basePath}/create/issue-new-token?hideBack=true`}
-          scroll={false}
-          title={tooltipMessage || ''}
-        >
-          <Button colorVariant="accent" variant="outline">
+        {isDisabled ? (
+          <Button colorVariant="accent" variant="outline" disabled>
             <RadiobuttonIcon />
             {tTreasury('newToken')}
           </Button>
-        </Link>
+        ) : (
+          <Link
+            href={`${basePath}/create/issue-new-token?hideBack=true`}
+            scroll={false}
+            title={tooltipMessage || ''}
+          >
+            <Button colorVariant="accent" variant="outline">
+              <RadiobuttonIcon />
+              {tTreasury('newToken')}
+            </Button>
+          </Link>
+        )}
 
         <Button
           className={cn(isDisabled && 'cursor-not-allowed')}

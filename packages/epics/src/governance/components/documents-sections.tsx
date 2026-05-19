@@ -8,6 +8,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Button } from '@hypha-platform/ui';
+import { useSpaceMember } from '../../spaces/hooks/use-space-member';
 
 type DocumentsSectionsProps = {
   lang: string;
@@ -30,17 +31,23 @@ export function DocumentsSections({
     spaceSlug,
     order,
   });
+  const { isMember, isMemberLoading } = useSpaceMember({
+    spaceId: web3SpaceId,
+  });
   const onVotingCount = documents.onVoting.length;
   const acceptedCount = documents.accepted.length;
   const rejectedCount = documents.rejected.length;
 
   const basePath = `/${lang}/dho/${spaceSlug}/agreements`;
   const createProposalPath = `${basePath}/select-create-action`;
-  const createProposalButton = (
-    <Button asChild>
-      <Link href={createProposalPath}>{t('newProposal')}</Link>
-    </Button>
-  );
+  const createProposalButton =
+    !isMemberLoading && isMember ? (
+      <Button asChild>
+        <Link href={createProposalPath}>{t('newProposal')}</Link>
+      </Button>
+    ) : (
+      <Button disabled>{t('newProposal')}</Button>
+    );
 
   return (
     <Tabs
