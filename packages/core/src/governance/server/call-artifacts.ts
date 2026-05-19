@@ -93,35 +93,24 @@ export async function ingestSpaceCallArtifacts(
     return { ok: false, error: 'transcript.text is required' };
   }
 
-  if (input.recording) {
-    const mediaUri = normalizeRecordingMediaUri(input.recording.mediaUri);
-    if (!mediaUri) {
-      return {
-        ok: false,
-        error: 'recording.mediaUri must be an mxc:// URI or https URL',
-      };
-    }
-    await db
-      .insert(spaceCallRecordings)
-      .values({
-        spaceId: host.id,
-        callSessionId,
-        mediaUri,
-        storageKey: input.recording.storageKey?.trim() || null,
-        mimeType: input.recording.mimeType?.trim() || 'video/webm',
-        durationSeconds: input.recording.durationSeconds ?? null,
-        startedAt: input.recording.startedAt?.trim() || null,
-        endedAt: input.recording.endedAt?.trim() || null,
-        source: input.recording.source?.trim() || 'ingest',
-        metadata: input.recording.metadata ?? {},
-      })
-      .onConflictDoUpdate({
-        target: [
-          spaceCallRecordings.spaceId,
-          spaceCallRecordings.callSessionId,
-        ],
-        set: {
-          mediaUri,
+  const recordingMediaUri = input.recording
+    ? normalizeRecordingMediaUri(input.recording.mediaUri)
+    : null;
+  if (input.recording && !recordingMediaUri) {
+    return {
+      ok: false,
+      error: 'recording.mediaUri must be an mxc:// URI or https URL',
+    };
+  }
+
+  await db.transaction(async (tx) => {
+    if (input.recording && recordingMediaUri) {
+      await tx
+        .insert(spaceCallRecordings)
+        .values({
+          spaceId: host.id,
+          callSessionId,
+          mediaUri: recordingMediaUri,
           storageKey: input.recording.storageKey?.trim() || null,
           mimeType: input.recording.mimeType?.trim() || 'video/webm',
           durationSeconds: input.recording.durationSeconds ?? null,
@@ -129,32 +118,32 @@ export async function ingestSpaceCallArtifacts(
           endedAt: input.recording.endedAt?.trim() || null,
           source: input.recording.source?.trim() || 'ingest',
           metadata: input.recording.metadata ?? {},
-          updatedAt: new Date(),
-        },
-      });
-  }
+        })
+        .onConflictDoUpdate({
+          target: [
+            spaceCallRecordings.spaceId,
+            spaceCallRecordings.callSessionId,
+          ],
+          set: {
+            mediaUri: recordingMediaUri,
+            storageKey: input.recording.storageKey?.trim() || null,
+            mimeType: input.recording.mimeType?.trim() || 'video/webm',
+            durationSeconds: input.recording.durationSeconds ?? null,
+            startedAt: input.recording.startedAt?.trim() || null,
+            endedAt: input.recording.endedAt?.trim() || null,
+            source: input.recording.source?.trim() || 'ingest',
+            metadata: input.recording.metadata ?? {},
+            updatedAt: new Date(),
+          },
+        });
+    }
 
-  if (input.transcript && transcriptText) {
-    await db
-      .insert(spaceCallTranscripts)
-      .values({
-        spaceId: host.id,
-        callSessionId,
-        language: input.transcript.language?.trim() || 'und',
-        text: transcriptText,
-        summary:
-          input.transcript.summary?.trim() ||
-          summarizeTranscriptText(transcriptText),
-        source: input.transcript.source?.trim() || 'stt',
-        segments: input.transcript.segments ?? [],
-        metadata: input.transcript.metadata ?? {},
-      })
-      .onConflictDoUpdate({
-        target: [
-          spaceCallTranscripts.spaceId,
-          spaceCallTranscripts.callSessionId,
-        ],
-        set: {
+    if (input.transcript && transcriptText) {
+      await tx
+        .insert(spaceCallTranscripts)
+        .values({
+          spaceId: host.id,
+          callSessionId,
           language: input.transcript.language?.trim() || 'und',
           text: transcriptText,
           summary:
@@ -163,10 +152,26 @@ export async function ingestSpaceCallArtifacts(
           source: input.transcript.source?.trim() || 'stt',
           segments: input.transcript.segments ?? [],
           metadata: input.transcript.metadata ?? {},
-          updatedAt: new Date(),
-        },
-      });
-  }
+        })
+        .onConflictDoUpdate({
+          target: [
+            spaceCallTranscripts.spaceId,
+            spaceCallTranscripts.callSessionId,
+          ],
+          set: {
+            language: input.transcript.language?.trim() || 'und',
+            text: transcriptText,
+            summary:
+              input.transcript.summary?.trim() ||
+              summarizeTranscriptText(transcriptText),
+            source: input.transcript.source?.trim() || 'stt',
+            segments: input.transcript.segments ?? [],
+            metadata: input.transcript.metadata ?? {},
+            updatedAt: new Date(),
+          },
+        });
+    }
+  });
 
   return { ok: true, spaceId: host.id, callSessionId };
 }
