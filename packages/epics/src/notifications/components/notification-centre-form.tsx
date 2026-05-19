@@ -91,7 +91,9 @@ export const NotificationCentreForm = ({
         ? getSwitch(configuration.browserNotifications)
         : 'yes',
       mentionNotificationsConsent: configuration
-        ? getSwitch(configuration.mentionNotificationsConsent)
+        ? typeof configuration.mentionNotificationsConsent === 'boolean'
+          ? getSwitch(configuration.mentionNotificationsConsent)
+          : 'yes'
         : 'yes',
       subscriptions: NOTIFICATION_SUBSCRIPTIONS,
     },
@@ -106,9 +108,10 @@ export const NotificationCentreForm = ({
     const modified = {
       browserNotifications: getSwitch(configuration.browserNotifications),
       emailNotifications: getSwitch(configuration.emailNotifications),
-      mentionNotificationsConsent: getSwitch(
-        configuration.mentionNotificationsConsent,
-      ),
+      mentionNotificationsConsent:
+        typeof configuration.mentionNotificationsConsent === 'boolean'
+          ? getSwitch(configuration.mentionNotificationsConsent)
+          : 'yes',
       subscriptions: NOTIFICATION_SUBSCRIPTIONS.map((subscription) => {
         const sub = configuration.subscriptions?.find(
           (s) => s.name === subscription.tagName,
