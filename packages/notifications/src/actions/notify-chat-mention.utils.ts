@@ -11,7 +11,9 @@ export function buildMentionEmailBody({
   messagePreview: string;
   url: string;
 }): string {
-  const escapedActor = actorDisplayName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const escapedActor = actorDisplayName
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
   const escapedPreview = messagePreview
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');

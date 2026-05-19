@@ -1,16 +1,9 @@
 'use server';
 
 import { eq, inArray } from 'drizzle-orm';
-import {
-  matrixUserLinks,
-  people,
-  db,
-} from '@hypha-platform/storage-postgres';
+import { matrixUserLinks, people, db } from '@hypha-platform/storage-postgres';
 import { NotifyChatMentionInput } from '@hypha-platform/core/client';
-import {
-  sendEmailNotifications,
-  sendPushNotifications,
-} from '../mutations';
+import { sendEmailNotifications, sendPushNotifications } from '../mutations';
 import { TAG_MENTION_CONSENT } from '../constants';
 import {
   buildMentionEmailBody,

@@ -2338,7 +2338,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           const query = params.toString();
           const deepLink =
             typeof window !== 'undefined'
-              ? `${window.location.origin}${pathname}${query ? `?${query}` : ''}`
+              ? `${window.location.origin}${pathname}${
+                  query ? `?${query}` : ''
+                }`
               : pathname;
           const actorDisplayName =
             [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
