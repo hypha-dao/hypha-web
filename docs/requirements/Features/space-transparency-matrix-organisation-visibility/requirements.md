@@ -287,7 +287,7 @@ Then `Request Invite` or `Become member` is visible and actionable according to 
 
 ## 12. QA strategy
 
-### 9.1 Priority scenarios
+### 12.1 Priority scenarios
 
 1. **High:** Organisation member from sibling space accesses target activity (allow path).
 2. **High:** Denied state still shows correct CTA for invite/open join methods.
