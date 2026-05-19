@@ -88,11 +88,13 @@ const HERO_PRIORITY_SPOTLIGHT_CLASS_MAP: Record<SignalColorVariant, string> = {
 };
 
 const HERO_PRIORITY_VIGNETTE_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-gradient-to-t from-black/22 via-black/8 to-accent-10/14',
-  error: 'bg-gradient-to-t from-black/24 via-black/10 to-error-10/16',
-  warn: 'bg-gradient-to-t from-black/24 via-black/10 to-warning-10/16',
-  success: 'bg-gradient-to-t from-black/22 via-black/8 to-success-10/14',
-  neutral: 'bg-gradient-to-t from-black/22 via-black/8 to-neutral-10/12',
+  accent: 'bg-gradient-to-t from-accent-10/22 via-accent-9/12 to-transparent',
+  error: 'bg-gradient-to-t from-error-10/24 via-error-9/12 to-transparent',
+  warn: 'bg-gradient-to-t from-warning-10/24 via-warning-9/12 to-transparent',
+  success:
+    'bg-gradient-to-t from-success-10/22 via-success-9/12 to-transparent',
+  neutral:
+    'bg-gradient-to-t from-neutral-10/20 via-neutral-9/10 to-transparent',
 };
 
 const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
@@ -331,11 +333,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         className,
       )}
     >
-      <CardHeader className="relative h-[78px] shrink-0 overflow-hidden p-0 isolate">
+      <CardHeader className="relative h-[88px] shrink-0 overflow-hidden p-0 isolate">
         <Skeleton
           className="h-full min-w-full"
           width="100%"
-          height="78px"
+          height="88px"
           loading={isLoading}
         >
           <div className="absolute inset-0 overflow-hidden">
@@ -349,7 +351,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             >
               <Image
                 width={640}
-                height={78}
+                height={88}
                 className="h-full w-full object-cover"
                 src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                 alt=""
@@ -377,17 +379,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               />
               <div
                 className={cn(
-                  'pointer-events-none absolute inset-x-0 bottom-0 h-20',
+                  'pointer-events-none absolute inset-0',
                   HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP[priorityColorVariant],
                 )}
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-black/45 to-transparent"
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/55 to-transparent"
                 aria-hidden
               />
             </div>

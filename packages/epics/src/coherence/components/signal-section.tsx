@@ -26,7 +26,7 @@ import {
   TabsTrigger,
 } from '@hypha-platform/ui';
 import { Empty } from '../../common';
-import { SignalGridContainer } from './signal-grid.container';
+import { SignalGrid } from './signal-grid';
 import {
   COHERENCE_TAGS,
   Coherence,
@@ -550,6 +550,11 @@ export const SignalSection: FC<SignalSectionProps> = ({
     firstPageSize,
     pageSize,
   });
+  const visibleSignals = React.useMemo(() => {
+    const visibleCount =
+      pages <= 1 ? firstPageSize : firstPageSize + (pages - 1) * pageSize;
+    return filteredSignals.slice(0, visibleCount);
+  }, [filteredSignals, firstPageSize, pageSize, pages]);
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -855,30 +860,14 @@ export const SignalSection: FC<SignalSectionProps> = ({
           <p>{t('listIsEmpty')}</p>
         </Empty>
       ) : (
-        <div className="w-full space-y-2">
-          {Array.from({ length: pages }).map((_, index) => (
-            <SignalGridContainer
-              key={`signal-container-${index}`}
-              basePath={basePath}
-              leadImage={leadImage}
-              pagination={{
-                page: index + 1,
-                firstPageSize,
-                pageSize,
-                searchTerm,
-                order: [
-                  {
-                    dir: DirectionType.DESC,
-                    name: 'id',
-                  },
-                ],
-              }}
-              signals={filteredSignals}
-              refresh={refresh}
-              onSignalClick={onSignalClick}
-            />
-          ))}
-        </div>
+        <SignalGrid
+          isLoading={false}
+          basePath={basePath}
+          leadImage={leadImage}
+          signals={visibleSignals}
+          refresh={refresh}
+          onSignalClick={onSignalClick}
+        />
       )}
       {pagination?.totalPages === 0 ? null : (
         <SectionLoadMore
