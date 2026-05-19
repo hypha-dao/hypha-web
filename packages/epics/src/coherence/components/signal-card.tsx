@@ -570,10 +570,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 onAcceptClicked={handleUnarchive}
               >
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   colorVariant="accent"
                   size="sm"
-                  className="h-8 w-full hover:bg-accent-3"
+                  className="h-8 w-full bg-transparent hover:bg-accent-3/30"
                 >
                   {t('unarchive')}
                 </Button>
@@ -581,10 +581,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </div>
           ) : (
             <Button
-              variant="ghost"
+              variant="outline"
               colorVariant="accent"
               size="sm"
-              className="h-8 w-full hover:bg-accent-3"
+              className="h-8 w-full bg-transparent hover:bg-accent-3/30"
               disabled={isLoading || !roomId}
               onClick={(e) => {
                 if (onOpenConversation) {
