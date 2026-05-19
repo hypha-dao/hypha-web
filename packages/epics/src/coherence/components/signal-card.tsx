@@ -19,14 +19,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   BadgeItem,
-  Badge,
   BadgesList,
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  ConfirmDialog,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -42,7 +40,7 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { Pencil, Trash2, Users } from 'lucide-react';
+import { Archive, Pencil, Users } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -127,8 +125,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 }) => {
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
-  const { updateCoherenceBySlug, deleteCoherenceBySlug } =
-    useCoherenceMutationsWeb2Rsc(authToken);
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
   const tCommon = useTranslations('Common');
@@ -154,9 +151,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     return Math.trunc(parsed);
   }, [messages]);
 
-  const [deleteOpen, setDeleteOpen] = React.useState(false);
-  const [isDeleting, setIsDeleting] = React.useState(false);
-  const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [archiveOpen, setArchiveOpen] = React.useState(false);
+  const [isArchivePending, setIsArchivePending] = React.useState(false);
+  const [archiveError, setArchiveError] = React.useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const { reduceMotion, parallaxY } = useScrollParallax({
     rate: 0.12,
@@ -204,19 +201,38 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       label: typeLabel,
       variant: 'surface',
       colorVariant: typeColorVariant,
+      className: 'rounded-md border-none shadow-none',
     };
-    if (!priorityMeta) return [typeBadge];
+    const archivedBadge: BadgeItem[] = archived
+      ? [
+          {
+            label: t('archived'),
+            variant: 'surface',
+            colorVariant: 'neutral',
+            className: 'rounded-md border-none shadow-none',
+          },
+        ]
+      : [];
+    if (!priorityMeta) return [typeBadge, ...archivedBadge];
     const priorityKey = `priorities.${priorityMeta.priority}`;
     const priorityLabel = t.has(priorityKey as never)
       ? t(priorityKey as never)
       : priorityMeta.priority;
     const priorityBadge: BadgeItem = {
       label: priorityLabel,
-      variant: 'outline',
+      variant: 'surface',
       colorVariant: priorityColorVariant,
+      className: 'rounded-md border-none shadow-none',
     };
-    return [typeBadge, priorityBadge];
-  }, [priorityMeta, t, typeLabel, typeColorVariant, priorityColorVariant]);
+    return [typeBadge, priorityBadge, ...archivedBadge];
+  }, [
+    archived,
+    priorityMeta,
+    t,
+    typeLabel,
+    typeColorVariant,
+    priorityColorVariant,
+  ]);
 
   const tagList: BadgeItem[] = tags.map((tag) => {
     const translationKey = `tagLabels.${tag}`;
@@ -266,36 +282,26 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     return () => ro.disconnect();
   }, [plainDescription, isLoading]);
 
-  const handleUnarchive = React.useCallback(async () => {
-    if (!slug) return;
+  const handleToggleArchive = React.useCallback(async (): Promise<boolean> => {
+    if (!slug || isArchivePending) return false;
+    setArchiveError(null);
+    setIsArchivePending(true);
     try {
-      await updateCoherenceBySlug({ slug, archived: false });
-      await refresh();
-    } catch (error) {
-      console.warn('Could not unarchive conversation:', error);
-    }
-  }, [slug, refresh, updateCoherenceBySlug]);
-
-  const handleDelete = React.useCallback(async (): Promise<boolean> => {
-    if (!slug || isDeleting) return false;
-    setDeleteError(null);
-    setIsDeleting(true);
-    try {
-      await deleteCoherenceBySlug({ slug });
+      await updateCoherenceBySlug({ slug, archived: !archived });
       try {
         await refresh();
       } catch (refreshErr) {
-        console.warn('Signal deleted but list refresh failed:', refreshErr);
+        console.warn('Signal updated but list refresh failed:', refreshErr);
       }
       return true;
     } catch (error) {
-      console.warn('Could not delete signal:', error);
-      setDeleteError(tSignalCard('deleteFailed'));
+      console.warn('Could not update signal archive state:', error);
+      setArchiveError(t('errorOhSnap'));
       return false;
     } finally {
-      setIsDeleting(false);
+      setIsArchivePending(false);
     }
-  }, [slug, isDeleting, deleteCoherenceBySlug, refresh, tSignalCard]);
+  }, [slug, isArchivePending, updateCoherenceBySlug, archived, refresh, t]);
 
   const stopCardActivationKey = React.useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
@@ -410,16 +416,20 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               size="sm"
               className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               disabled={isLoading}
-              aria-label={tSignalCard('deleteMenu')}
-              title={tSignalCard('deleteMenu')}
+              aria-label={
+                archived ? t('unarchiveConversation') : t('archiveConversation')
+              }
+              title={
+                archived ? t('unarchiveConversation') : t('archiveConversation')
+              }
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setDeleteOpen(true);
+                setArchiveOpen(true);
               }}
               onKeyDown={stopCardActivationKey}
             >
-              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+              <Archive className="h-3.5 w-3.5" aria-hidden />
             </Button>
           </div>
         ) : null}
@@ -456,17 +466,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   })
                 : ''}
             </span>
-            <Badge
-              isLoading={isLoading}
-              variant="outline"
-              colorVariant="neutral"
-              className="gap-1.5"
-            >
-              <Users size={12} aria-hidden />
-              <span>
-                {t('messageCount', { count: normalizedMessagesCount })}
-              </span>
-            </Badge>
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
+              <Users size={12} aria-hidden className="opacity-70" />
+              {t('messageCount', { count: normalizedMessagesCount })}
+            </span>
           </div>
 
           <Skeleton
@@ -555,56 +558,31 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           ) : null}
         </div>
 
-        <div className="mt-auto flex min-h-[3.5rem] shrink-0 flex-col justify-center border-t border-border px-4 py-2">
-          {archived ? (
-            <div
-              onClick={(e) => {
+        <div className="mt-auto flex min-h-[3.5rem] shrink-0 flex-col justify-center bg-muted/10 px-4 py-2">
+          <Button
+            variant="ghost"
+            colorVariant="accent"
+            className="w-full hover:bg-accent-3"
+            disabled={isLoading || !roomId}
+            onClick={(e) => {
+              if (onOpenConversation) {
                 e.stopPropagation();
                 e.preventDefault();
-              }}
-            >
-              <ConfirmDialog
-                title={t('unarchiveConversation')}
-                description={t('unarchiveConfirm')}
-                customAcceptButtonText={t('yesUnarchive')}
-                customRejectButtonText={t('noLeave')}
-                onAcceptClicked={handleUnarchive}
-              >
-                <Button
-                  variant="outline"
-                  colorVariant="accent"
-                  className="w-full"
-                >
-                  {t('unarchive')}
-                </Button>
-              </ConfirmDialog>
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              colorVariant="accent"
-              className="w-full"
-              disabled={isLoading || !roomId}
-              onClick={(e) => {
-                if (onOpenConversation) {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  onOpenConversation();
-                }
-              }}
-              title={!roomId ? tSignalCard('noConversationRoom') : undefined}
-            >
-              <ChatBubbleIcon />
-              {t('openConversation')}
-            </Button>
-          )}
+                onOpenConversation();
+              }
+            }}
+            title={!roomId ? tSignalCard('noConversationRoom') : undefined}
+          >
+            <ChatBubbleIcon />
+            {t('openConversation')}
+          </Button>
         </div>
         <AlertDialog
-          open={deleteOpen}
+          open={archiveOpen}
           onOpenChange={(open) => {
-            if (isDeleting) return;
-            setDeleteOpen(open);
-            if (!open) setDeleteError(null);
+            if (isArchivePending) return;
+            setArchiveOpen(open);
+            if (!open) setArchiveError(null);
           }}
         >
           <AlertDialogContent
@@ -615,17 +593,21 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <AlertDialogHeader>
-              <AlertDialogTitle>{tSignalCard('deleteSignal')}</AlertDialogTitle>
+              <AlertDialogTitle>
+                {archived
+                  ? t('unarchiveConversation')
+                  : t('archiveConversation')}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                {tSignalCard('deleteConfirm')}
+                {archived ? t('unarchiveConfirm') : t('archiveConfirm')}
               </AlertDialogDescription>
             </AlertDialogHeader>
-            {deleteError ? (
+            {archiveError ? (
               <p
                 role="alert"
                 className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
               >
-                {deleteError}
+                {archiveError}
               </p>
             ) : null}
             <AlertDialogFooter>
@@ -633,7 +615,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 <Button
                   variant="outline"
                   colorVariant="neutral"
-                  disabled={isDeleting}
+                  disabled={isArchivePending}
                   onKeyDown={stopCardActivationKey}
                 >
                   {t('noLeave')}
@@ -642,15 +624,15 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               <Button
                 type="button"
                 colorVariant="accent"
-                disabled={isDeleting}
+                disabled={isArchivePending}
                 onClick={async (e) => {
                   e.stopPropagation();
-                  const deleted = await handleDelete();
-                  if (deleted) setDeleteOpen(false);
+                  const updated = await handleToggleArchive();
+                  if (updated) setArchiveOpen(false);
                 }}
                 onKeyDown={stopCardActivationKey}
               >
-                {tSignalCard('deleteConfirmAction')}
+                {archived ? t('yesUnarchive') : t('yesArchive')}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

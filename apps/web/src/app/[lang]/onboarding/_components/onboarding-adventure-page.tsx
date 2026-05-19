@@ -574,11 +574,11 @@ export function OnboardingAdventurePage({
   return (
     <Container className="flex flex-col gap-14 py-10 md:py-12">
       <header className="space-y-3 pt-3 text-center md:pt-4">
-        <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-accent-11 shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
-          Build{' '}
+        <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-foreground shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
+          Build
           <span
             key={HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
-            className="inline-block text-accent-11 transition-all duration-300"
+            className="ml-1 inline-block font-semibold text-accent-10 transition-all duration-300"
           >
             {HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
           </span>
@@ -611,7 +611,7 @@ export function OnboardingAdventurePage({
               aria-hidden
               className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,oklch(0.72_0.12_278_/_0.12),transparent_42%),radial-gradient(circle_at_85%_18%,oklch(0.64_0.11_292_/_0.09),transparent_38%)]"
             />
-            <div className="relative mt-3 rounded-[1.5rem] border border-border/70 bg-background/75 shadow-inner">
+            <div className="relative mt-1 rounded-[1.5rem] border border-border/70 bg-background/75 shadow-inner">
               {heroAttachments.length > 0 ? (
                 <div className="narrow-scrollbar max-h-24 overflow-x-auto overflow-y-hidden border-b border-border/65 px-3 py-2">
                   <div className="flex w-max gap-2">
