@@ -196,11 +196,11 @@ Matrix threading is relation-based (`m.thread`) inside a room and does not provi
 
 ### 11.2 Additional user stories
 
-6. As a signal owner/editor, I can select a relevant team from active room members and space members.
-7. As a selected team member, I can edit the signal and interact in the thread.
-8. As a non-team member, I can read the thread but cannot post, mention, or start thread calls.
-9. As a non-team member, I can request inclusion, and team members can approve and add me.
-10. As a team member, I only receive thread-call notifications for threads where I am in the selected team.
+1. As a signal owner/editor, I can select a relevant team from active room members and space members.
+2. As a selected team member, I can edit the signal and interact in the thread.
+3. As a non-team member, I can read the thread but cannot post, mention, or start thread calls.
+4. As a non-team member, I can request inclusion, and team members can approve and add me.
+5. As a team member, I only receive thread-call notifications for threads where I am in the selected team.
 
 ### 11.3 Functional requirements (team-scoped thread policy)
 
@@ -322,20 +322,20 @@ The following write paths SHALL enforce signal-team authorization:
 
 ### 11.7 Implementation decomposition (extension slices)
 
-9. **Team data layer**
+1. **Team data layer**
    - Add persistence for signal team membership and join requests.
    - Add query helpers for eligibility checks and candidate lists.
-10. **Authorization middleware/hooks**
+2. **Authorization middleware/hooks**
    - Add server-side checks for message, mention, call start, and signal edit.
-11. **Signal team UI**
+3. **Signal team UI**
    - Build team selector and management flow in signal UI.
-12. **Restricted interaction UX**
+4. **Restricted interaction UX**
    - Add non-team banner and disabled composer/mention/call states.
-13. **Request-to-join workflow**
+5. **Request-to-join workflow**
    - Add create request, team approval/denial, live status updates.
-14. **Notification and call fanout**
+6. **Notification and call fanout**
    - Scope thread mention and call notifications to signal team recipients.
-15. **Audit + telemetry**
+7. **Audit + telemetry**
    - Log membership changes, denied actions, request lifecycle metrics.
 
 ### 11.8 Acceptance criteria (team-scoped extension)
