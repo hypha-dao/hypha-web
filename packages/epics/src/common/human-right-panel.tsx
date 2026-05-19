@@ -204,10 +204,66 @@ const ROOM_STORAGE_KEY = 'hypha-chat-room-';
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
+const SIGNAL_TEAM_EVENT_TYPE = 'io.hypha.signal.team.v1';
+const SIGNAL_TEAM_REQUEST_EVENT_TYPE = 'io.hypha.signal.team.request.v1';
 
 type PersistedUIMessage = Omit<UIMessage, 'timestamp'> & {
   timestamp?: string;
 };
+
+type SignalTeamTimelineState = {
+  memberMatrixUserIds: string[];
+  pendingRequesterIds: string[];
+};
+
+function normalizeMatrixUserIds(ids: unknown): string[] {
+  if (!Array.isArray(ids)) return [];
+  return [...new Set(ids.map((id) => String(id).trim()).filter(Boolean))];
+}
+
+function deriveSignalTeamStateFromEvents(
+  events: MatrixEvent[],
+  coherenceSlug?: string | null,
+): SignalTeamTimelineState {
+  let memberMatrixUserIds: string[] = [];
+  const pending = new Set<string>();
+  const targetSlug = coherenceSlug?.trim() || null;
+
+  for (const ev of events) {
+    const eventType = ev.getType();
+    const content = ev.getContent() as Record<string, unknown> | null;
+    if (!content || typeof content !== 'object') continue;
+    const eventSlug =
+      typeof content.coherenceSlug === 'string'
+        ? content.coherenceSlug.trim()
+        : '';
+    if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
+
+    if (eventType === SIGNAL_TEAM_EVENT_TYPE) {
+      memberMatrixUserIds = normalizeMatrixUserIds(content.memberMatrixUserIds);
+      continue;
+    }
+
+    if (eventType !== SIGNAL_TEAM_REQUEST_EVENT_TYPE) continue;
+    const requesterId =
+      typeof content.requesterMatrixUserId === 'string'
+        ? content.requesterMatrixUserId.trim()
+        : '';
+    if (!requesterId) continue;
+    const status =
+      typeof content.status === 'string' ? content.status.trim() : 'pending';
+    if (status === 'pending') {
+      pending.add(requesterId);
+    } else {
+      pending.delete(requesterId);
+    }
+  }
+
+  return {
+    memberMatrixUserIds,
+    pendingRequesterIds: [...pending],
+  };
+}
 
 function readPersistedChatHistory(roomId: string): UIMessage[] {
   if (typeof window === 'undefined') return [];
@@ -652,6 +708,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setMentionDisplayOverride({});
   }, [roomId]);
 
+  useEffect(() => {
+    if (mode !== 'coherence') {
+      setSignalTeamPanelOpen(false);
+    }
+  }, [mode]);
+
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState<string | null>(null);
@@ -673,6 +735,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [unreadBump, setUnreadBump] = useState(0);
   const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
+  const [signalTeamMemberIds, setSignalTeamMemberIds] = useState<string[]>([]);
+  const [signalTeamPendingRequesterIds, setSignalTeamPendingRequesterIds] =
+    useState<string[]>([]);
+  const [signalTeamPanelOpen, setSignalTeamPanelOpen] = useState(false);
+  const [signalTeamBusy, setSignalTeamBusy] = useState(false);
 
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
@@ -954,7 +1021,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     ],
   );
 
-  const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
+  const rawMentionCandidates = useMemo((): ChatMentionCandidate[] => {
     if (!client || !roomId) return [];
 
     /**
@@ -1045,6 +1112,25 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [],
   );
 
+  const isSignalThread = mode === 'coherence' && Boolean(coherenceSlug?.trim());
+  const hasSignalTeamPolicy = isSignalThread && signalTeamMemberIds.length > 0;
+  const signalTeamMemberIdSet = useMemo(
+    () => new Set(signalTeamMemberIds),
+    [signalTeamMemberIds],
+  );
+  const isCurrentUserSignalTeamMember = Boolean(
+    currentUserId && signalTeamMemberIdSet.has(currentUserId),
+  );
+  const canInteractWithSignalThread =
+    !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
+
+  const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
+    if (!hasSignalTeamPolicy) return rawMentionCandidates;
+    return rawMentionCandidates.filter((candidate) =>
+      signalTeamMemberIdSet.has(candidate.userId),
+    );
+  }, [hasSignalTeamPolicy, rawMentionCandidates, signalTeamMemberIdSet]);
+
   const mentionLabelByUserId = useMemo(
     () =>
       new Map(
@@ -1116,7 +1202,128 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
-  const mentionPickerEnabled = mentionCandidates.length > 0;
+  const mentionPickerEnabled =
+    canInteractWithSignalThread && mentionCandidates.length > 0;
+  const signalTeamSelectableMembers = useMemo((): ChatMentionCandidate[] => {
+    const byUserId = new Map<string, ChatMentionCandidate>();
+    for (const member of rawMentionCandidates) {
+      byUserId.set(member.userId, member);
+    }
+    if (currentUserId) {
+      const currentUserLabel =
+        [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
+        me?.nickname?.trim() ||
+        t('you');
+      if (!byUserId.has(currentUserId)) {
+        byUserId.set(currentUserId, {
+          userId: currentUserId,
+          displayLabel: currentUserLabel,
+          avatarUrl: me?.avatarUrl,
+        });
+      }
+    }
+    return [...byUserId.values()].sort((a, b) =>
+      a.displayLabel.localeCompare(b.displayLabel, undefined, {
+        sensitivity: 'base',
+      }),
+    );
+  }, [
+    rawMentionCandidates,
+    currentUserId,
+    me?.name,
+    me?.surname,
+    me?.nickname,
+    me?.avatarUrl,
+    t,
+  ]);
+  const effectiveSignalTeamMemberIds = useMemo(
+    () =>
+      hasSignalTeamPolicy
+        ? signalTeamMemberIds
+        : signalTeamSelectableMembers.map((member) => member.userId),
+    [hasSignalTeamPolicy, signalTeamMemberIds, signalTeamSelectableMembers],
+  );
+  const canManageSignalTeam =
+    isSignalThread && (!hasSignalTeamPolicy || isCurrentUserSignalTeamMember);
+  const currentUserPendingSignalTeamRequest = Boolean(
+    currentUserId && signalTeamPendingRequesterIds.includes(currentUserId),
+  );
+
+  const publishSignalTeamMembers = useCallback(
+    async (nextMemberIds: string[]) => {
+      if (!client || !roomId || !isSignalThread) return;
+      const deduped = normalizeMatrixUserIds(nextMemberIds);
+      await client.sendEvent(roomId, SIGNAL_TEAM_EVENT_TYPE, {
+        coherenceSlug: coherenceSlug?.trim() || null,
+        memberMatrixUserIds: deduped,
+        updatedAt: new Date().toISOString(),
+      });
+      setSignalTeamMemberIds(deduped);
+      setSignalTeamPendingRequesterIds((prev) =>
+        prev.filter((id) => !deduped.includes(id)),
+      );
+    },
+    [client, roomId, isSignalThread, coherenceSlug],
+  );
+
+  const requestSignalTeamAccess = useCallback(async () => {
+    if (!client || !roomId || !isSignalThread || !currentUserId) return;
+    setSignalTeamBusy(true);
+    try {
+      await client.sendEvent(roomId, SIGNAL_TEAM_REQUEST_EVENT_TYPE, {
+        coherenceSlug: coherenceSlug?.trim() || null,
+        requesterMatrixUserId: currentUserId,
+        status: 'pending',
+        updatedAt: new Date().toISOString(),
+      });
+      setSignalTeamPendingRequesterIds((prev) =>
+        prev.includes(currentUserId) ? prev : [...prev, currentUserId],
+      );
+    } finally {
+      setSignalTeamBusy(false);
+    }
+  }, [client, roomId, isSignalThread, currentUserId, coherenceSlug]);
+
+  const approveSignalTeamRequester = useCallback(
+    async (requesterMatrixUserId: string) => {
+      if (!client || !roomId || !isSignalThread) return;
+      const requesterId = requesterMatrixUserId.trim();
+      if (!requesterId) return;
+      setSignalTeamBusy(true);
+      try {
+        const nextMembers = normalizeMatrixUserIds([
+          ...effectiveSignalTeamMemberIds,
+          requesterId,
+        ]);
+        await Promise.all([
+          client.sendEvent(roomId, SIGNAL_TEAM_REQUEST_EVENT_TYPE, {
+            coherenceSlug: coherenceSlug?.trim() || null,
+            requesterMatrixUserId: requesterId,
+            status: 'approved',
+            updatedAt: new Date().toISOString(),
+          }),
+          client.sendEvent(roomId, SIGNAL_TEAM_EVENT_TYPE, {
+            coherenceSlug: coherenceSlug?.trim() || null,
+            memberMatrixUserIds: nextMembers,
+            updatedAt: new Date().toISOString(),
+          }),
+        ]);
+        setSignalTeamMemberIds(nextMembers);
+        setSignalTeamPendingRequesterIds((prev) =>
+          prev.filter((id) => id !== requesterId),
+        );
+      } finally {
+        setSignalTeamBusy(false);
+      }
+    },
+    [
+      client,
+      roomId,
+      isSignalThread,
+      coherenceSlug,
+      effectiveSignalTeamMemberIds,
+    ],
+  );
 
   useEffect(() => {
     if (!client || !roomId) return;
@@ -1137,6 +1344,41 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       client.off(RoomStateEvent.NewMember, bumpMembership);
     };
   }, [client, roomId]);
+
+  useEffect(() => {
+    if (!client || !roomId || !isSignalThread) {
+      setSignalTeamMemberIds([]);
+      setSignalTeamPendingRequesterIds([]);
+      return;
+    }
+    const room = client.getRoom(roomId);
+    if (!room) return;
+
+    const applyFromTimeline = () => {
+      const timeline = room.getLiveTimeline().getEvents();
+      const next = deriveSignalTeamStateFromEvents(timeline, coherenceSlug);
+      setSignalTeamMemberIds(next.memberMatrixUserIds);
+      setSignalTeamPendingRequesterIds(next.pendingRequesterIds);
+    };
+
+    applyFromTimeline();
+
+    const onTimeline = (event: MatrixEvent, eventRoom?: Room) => {
+      if (eventRoom?.roomId !== roomId) return;
+      const eventType = event.getType();
+      if (
+        eventType !== SIGNAL_TEAM_EVENT_TYPE &&
+        eventType !== SIGNAL_TEAM_REQUEST_EVENT_TYPE
+      )
+        return;
+      applyFromTimeline();
+    };
+
+    room.on(RoomEvent.Timeline, onTimeline);
+    return () => {
+      room.off(RoomEvent.Timeline, onTimeline);
+    };
+  }, [client, roomId, isSignalThread, coherenceSlug]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
@@ -2234,6 +2476,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const handleSend = useCallback(async () => {
     if (!roomId) return;
+    if (!canInteractWithSignalThread) {
+      setComposerError(t('signalTeamInteractionRestricted'));
+      return;
+    }
     const trimmed = input.trim();
     if (!trimmed && draftAttachments.length === 0) return;
     const text = input;
@@ -2340,9 +2586,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               }
             : {}),
         });
-        const mentionTargets = mentionUserIds.filter(
-          (matrixId) => matrixId !== currentUserIdRef.current,
-        );
+        const mentionTargets = mentionUserIds.filter((matrixId) => {
+          if (matrixId === currentUserIdRef.current) return false;
+          if (!hasSignalTeamPolicy) return true;
+          return signalTeamMemberIdSet.has(matrixId);
+        });
         if (
           mentionTargets.length > 0 &&
           sendResult.eventId &&
@@ -2442,6 +2690,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     input,
     roomId,
+    canInteractWithSignalThread,
     replyDraft,
     editDraft,
     draftAttachments,
@@ -2454,6 +2703,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     me?.nickname,
     me?.slug,
     notifyChatMention,
+    hasSignalTeamPolicy,
+    signalTeamMemberIdSet,
     t,
   ]);
 
@@ -2634,6 +2885,129 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     {mentionNavigationNotice}
                   </div>
                 )}
+                {isSignalThread &&
+                  hasSignalTeamPolicy &&
+                  !canInteractWithSignalThread && (
+                    <div className="mx-3 mt-2 rounded-md border border-info-7 bg-info-3 px-3 py-2 text-sm text-info-11">
+                      <p>{t('signalTeamBannerReadOnly')}</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            currentUserPendingSignalTeamRequest ||
+                            signalTeamBusy
+                          }
+                          onClick={() => void requestSignalTeamAccess()}
+                        >
+                          {currentUserPendingSignalTeamRequest
+                            ? t('signalTeamRequestPending')
+                            : t('signalTeamRequestAccess')}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                {isSignalThread && canManageSignalTeam && (
+                  <div className="mx-3 mt-2 rounded-md border border-border/70 bg-muted/40 px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-foreground">
+                        {t('signalTeamManageTitle')}
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSignalTeamPanelOpen((prev) => !prev)}
+                      >
+                        {signalTeamPanelOpen
+                          ? t('signalTeamManageClose')
+                          : t('signalTeamManageOpen')}
+                      </Button>
+                    </div>
+                    {signalTeamPanelOpen && (
+                      <div className="mt-2 space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          {t('signalTeamMemberListHint')}
+                        </p>
+                        <div className="grid gap-1">
+                          {signalTeamSelectableMembers.map((member) => {
+                            const selected =
+                              effectiveSignalTeamMemberIds.includes(
+                                member.userId,
+                              );
+                            const isCurrentUser =
+                              member.userId === currentUserId;
+                            return (
+                              <button
+                                key={member.userId}
+                                type="button"
+                                className="flex items-center justify-between rounded-md px-2 py-1 text-left text-sm hover:bg-muted"
+                                disabled={signalTeamBusy}
+                                onClick={() => {
+                                  const next = selected
+                                    ? effectiveSignalTeamMemberIds.filter(
+                                        (id) => id !== member.userId,
+                                      )
+                                    : [
+                                        ...effectiveSignalTeamMemberIds,
+                                        member.userId,
+                                      ];
+                                  if (
+                                    isCurrentUser &&
+                                    selected &&
+                                    next.length === 0
+                                  )
+                                    return;
+                                  void publishSignalTeamMembers(next);
+                                }}
+                              >
+                                <span>{member.displayLabel}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {selected
+                                    ? t('signalTeamRemoveMember')
+                                    : t('signalTeamAddMember')}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {signalTeamPendingRequesterIds.length > 0 && (
+                          <div className="space-y-1 rounded-md border border-border/60 bg-background px-2 py-2">
+                            <p className="text-xs font-medium text-foreground">
+                              {t('signalTeamPendingRequests')}
+                            </p>
+                            {signalTeamPendingRequesterIds.map(
+                              (requesterId) => (
+                                <div
+                                  key={requesterId}
+                                  className="flex items-center justify-between gap-2"
+                                >
+                                  <span className="truncate text-xs text-muted-foreground">
+                                    {resolveMemberLabel(requesterId)}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={signalTeamBusy}
+                                    onClick={() =>
+                                      void approveSignalTeamRequester(
+                                        requesterId,
+                                      )
+                                    }
+                                  >
+                                    {t('signalTeamApproveRequester')}
+                                  </Button>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {reactionError && (
                   <div
                     role="alert"
@@ -2734,6 +3108,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onSend={handleSend}
               mentionCandidates={mentionCandidates}
               mentionPickerEnabled={mentionPickerEnabled}
+              composerLocked={!canInteractWithSignalThread}
+              composerLockedMessage={t('signalTeamInteractionRestricted')}
               getMentionComposerLabel={getMentionComposerLabel}
               onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
               draftAttachments={draftAttachments}

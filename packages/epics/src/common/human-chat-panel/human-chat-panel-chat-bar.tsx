@@ -195,6 +195,10 @@ type HumanChatPanelChatBarProps = {
     member: ChatMentionCandidate,
     resolvedComposerLabel?: string,
   ) => string;
+  /** Lock composer interactions for read-only participants. */
+  composerLocked?: boolean;
+  /** Placeholder shown while composer is locked. */
+  composerLockedMessage?: string;
 };
 
 /** Blinking REC dot (“on-air”) for active voice recording / dictation controls. */
@@ -477,11 +481,13 @@ export function HumanChatPanelChatBar({
   mentionPickerEnabled,
   onMergeMentionDisplayLabel,
   getMentionComposerLabel,
+  composerLocked = false,
+  composerLockedMessage,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
 
   const atMentionInteractable =
-    mentionPickerEnabled ?? mentionCandidates.length > 0;
+    !composerLocked && (mentionPickerEnabled ?? mentionCandidates.length > 0);
   const fileInputId = useId();
   const imageInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -913,6 +919,7 @@ export function HumanChatPanelChatBar({
   );
 
   const canSend =
+    !composerLocked &&
     (value.trim().length > 0 || draftAttachments.length > 0) &&
     (!editMediaMode || draftAttachments.length > 0);
 
@@ -941,7 +948,9 @@ export function HumanChatPanelChatBar({
     }
   }, [draftAttachments.length, focusComposerTextarea]);
 
-  const defaultPlaceholder = channelName
+  const defaultPlaceholder = composerLocked
+    ? composerLockedMessage || t('composerLockedPlaceholder')
+    : channelName
     ? t('placeholderChannel', { channel: channelName })
     : t('placeholder');
 
@@ -1922,6 +1931,7 @@ export function HumanChatPanelChatBar({
           <textarea
             ref={textareaRef}
             value={value}
+            disabled={composerLocked}
             onScroll={(e) => {
               const bd = composerBackdropRef.current;
               if (bd) bd.scrollTop = e.currentTarget.scrollTop;
@@ -1976,6 +1986,7 @@ export function HumanChatPanelChatBar({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
+                    disabled={composerLocked}
                     className={iconButtonClass}
                     aria-label={t('composerAttachMenu')}
                     title={t('composerAttachMenu')}
@@ -2028,6 +2039,7 @@ export function HumanChatPanelChatBar({
               >
                 <button
                   type="button"
+                  disabled={composerLocked}
                   className={iconButtonClass}
                   aria-label={t('emoji')}
                   title={t('emoji')}
@@ -2065,10 +2077,14 @@ export function HumanChatPanelChatBar({
               ) : (
                 <button
                   type="button"
-                  disabled={isDictating || !onDraftAttachmentsChange}
+                  disabled={
+                    composerLocked || isDictating || !onDraftAttachmentsChange
+                  }
                   className={cn(
                     iconButtonClass,
-                    (!onDraftAttachmentsChange || isDictating) &&
+                    (composerLocked ||
+                      !onDraftAttachmentsChange ||
+                      isDictating) &&
                       'cursor-not-allowed opacity-50',
                   )}
                   aria-label={t('composerSendAudioMessage')}
@@ -2095,10 +2111,11 @@ export function HumanChatPanelChatBar({
               ) : (
                 <button
                   type="button"
-                  disabled={isVoiceRecording}
+                  disabled={composerLocked || isVoiceRecording}
                   className={cn(
                     iconButtonClass,
-                    isVoiceRecording && 'cursor-not-allowed opacity-50',
+                    (composerLocked || isVoiceRecording) &&
+                      'cursor-not-allowed opacity-50',
                   )}
                   aria-label={t('composerDictateMessage')}
                   title={t('composerDictateMessage')}
