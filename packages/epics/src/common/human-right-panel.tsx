@@ -968,6 +968,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
+  const [matrixProfileLabelByUserId, setMatrixProfileLabelByUserId] = useState<
+    Record<string, string>
+  >({});
+  const profileLookupInFlightRef = useRef<Set<string>>(new Set());
 
   const rosterSubs = useMemo(
     () =>
@@ -1003,6 +1007,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       const rosterLabel = matrixUserIdToPersonLabel.get(userId)?.trim();
       if (rosterLabel) return rosterLabel;
+      const profileLabel = matrixProfileLabelByUserId[userId]?.trim();
+      if (profileLabel) return profileLabel;
       if (roomId && client) {
         const room = client.getRoom(roomId);
         const member = room?.getMember(userId);
@@ -1018,6 +1024,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [
       client,
       currentUserId,
+      matrixProfileLabelByUserId,
       matrixUserIdToPersonLabel,
       me?.name,
       me?.surname,
@@ -1104,6 +1111,48 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     t,
     mentionMembershipEpoch,
   ]);
+
+  useEffect(() => {
+    if (!client || rawMentionCandidates.length === 0) return;
+    const unresolved = rawMentionCandidates.filter((candidate) => {
+      if (matrixProfileLabelByUserId[candidate.userId]) return false;
+      return looksLikeTechnicalMatrixDisplayName(
+        candidate.displayLabel,
+        candidate.userId,
+      );
+    });
+    if (unresolved.length === 0) return;
+
+    for (const candidate of unresolved) {
+      const userId = candidate.userId;
+      if (profileLookupInFlightRef.current.has(userId)) continue;
+      profileLookupInFlightRef.current.add(userId);
+      void client
+        .getProfileInfo(userId)
+        .then((profile) => {
+          const displayName =
+            typeof profile?.displayname === 'string'
+              ? profile.displayname.trim()
+              : '';
+          if (
+            !displayName ||
+            looksLikeTechnicalMatrixDisplayName(displayName, userId)
+          ) {
+            return;
+          }
+          setMatrixProfileLabelByUserId((prev) => {
+            if (prev[userId] === displayName) return prev;
+            return { ...prev, [userId]: displayName };
+          });
+        })
+        .catch(() => {
+          // Best-effort lookup; keep existing fallback when unavailable.
+        })
+        .finally(() => {
+          profileLookupInFlightRef.current.delete(userId);
+        });
+    }
+  }, [client, rawMentionCandidates, matrixProfileLabelByUserId]);
 
   const mergeMentionDisplayLabel = useCallback(
     (userId: string, displayLabel: string) => {
