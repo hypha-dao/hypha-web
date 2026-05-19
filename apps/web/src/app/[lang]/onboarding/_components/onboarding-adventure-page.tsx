@@ -858,7 +858,7 @@ export function OnboardingAdventurePage({
         </section>
       ) : null}
 
-      <section className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className={onboardingCardClass}>
           <CardHeader className="space-y-2">
             <CardTitle className="flex items-center gap-2 text-5">
