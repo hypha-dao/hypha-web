@@ -114,16 +114,36 @@ export function OnboardingAiFullPage({
   });
   const isStreaming = status === 'streaming' || status === 'submitted';
 
-  const buildMessageOptions = useCallback(async () => {
-    const token = (await getAccessToken?.()) ?? undefined;
-    const headers: Record<string, string> = token
-      ? { Authorization: `Bearer ${token}` }
-      : {};
-    return {
-      headers,
-      body: { conversationContext: onboardingContext },
-    };
-  }, [getAccessToken, onboardingContext]);
+  const buildMessageOptions = useCallback(
+    async (contextOverride?: OnboardingContext) => {
+      const token = (await getAccessToken?.()) ?? undefined;
+      const headers: Record<string, string> = token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
+      return {
+        headers,
+        body: { conversationContext: contextOverride ?? onboardingContext },
+      };
+    },
+    [getAccessToken, onboardingContext],
+  );
+
+  const applyOnboardingContextForUserText = useCallback(
+    (text: string): OnboardingContext => {
+      const normalized = text.trim();
+      const isExplicitConfirmation = /^confirm\b/i.test(normalized);
+      return {
+        ...onboardingContext,
+        lastUserText: normalized,
+        setupPhase: isExplicitConfirmation
+          ? 'confirm'
+          : onboardingContext.setupPhase === 'discover'
+          ? 'draft'
+          : onboardingContext.setupPhase,
+      };
+    },
+    [onboardingContext],
+  );
 
   useEffect(() => {
     if (seededRef.current) return;
@@ -328,7 +348,13 @@ export function OnboardingAiFullPage({
     setDraftAttachments([]);
     try {
       clearError();
-      const options = await buildMessageOptions();
+      const nextContext = text.trim()
+        ? applyOnboardingContextForUserText(text)
+        : onboardingContext;
+      if (text.trim()) {
+        setOnboardingContext(nextContext);
+      }
+      const options = await buildMessageOptions(nextContext);
       const attachmentParts =
         attachments.length > 0
           ? await Promise.all(
@@ -336,14 +362,6 @@ export function OnboardingAiFullPage({
             )
           : [];
       const textParts = text.trim() ? [{ type: 'text' as const, text }] : [];
-      if (text.trim()) {
-        setOnboardingContext((previous) => ({
-          ...previous,
-          lastUserText: text.trim(),
-          setupPhase:
-            previous.setupPhase === 'discover' ? 'draft' : previous.setupPhase,
-        }));
-      }
       await sendMessage(
         { role: 'user', parts: [...textParts, ...attachmentParts] },
         options,
@@ -374,13 +392,9 @@ export function OnboardingAiFullPage({
       setDraftAttachments([]);
       try {
         clearError();
-        const options = await buildMessageOptions();
-        setOnboardingContext((previous) => ({
-          ...previous,
-          lastUserText: normalized,
-          setupPhase:
-            previous.setupPhase === 'discover' ? 'draft' : previous.setupPhase,
-        }));
+        const nextContext = applyOnboardingContextForUserText(normalized);
+        setOnboardingContext(nextContext);
+        const options = await buildMessageOptions(nextContext);
         await sendMessage(
           { role: 'user', parts: [{ type: 'text', text: normalized }] },
           options,
@@ -393,7 +407,13 @@ export function OnboardingAiFullPage({
         setInput(text);
       }
     },
-    [buildMessageOptions, clearError, isStreaming, sendMessage],
+    [
+      applyOnboardingContextForUserText,
+      buildMessageOptions,
+      clearError,
+      isStreaming,
+      sendMessage,
+    ],
   );
 
   const suggestions = [
