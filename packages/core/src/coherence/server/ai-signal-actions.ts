@@ -52,10 +52,25 @@ type RelayAiSignalInput = {
   sourceAssetKeys?: string[];
 };
 
+const AI_SIGNAL_TAG = 'AI Signal';
+
 function normalizeTags(tags: string[] | undefined): string[] {
-  return (tags ?? [])
+  const uniqueTags = (tags ?? [])
     .map((tag) => tag.trim())
-    .filter((tag, index, arr) => tag.length > 0 && arr.indexOf(tag) === index);
+    .filter(
+      (tag, index, arr) =>
+        tag.length > 0 &&
+        arr.findIndex(
+          (candidate) =>
+            candidate.trim().toLowerCase() === tag.trim().toLowerCase(),
+        ) === index,
+    );
+
+  if (!uniqueTags.some((tag) => tag.trim().toLowerCase() === 'ai signal')) {
+    uniqueTags.push(AI_SIGNAL_TAG);
+  }
+
+  return uniqueTags;
 }
 
 export function toPaymentReason(

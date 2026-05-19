@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   checkSpaceAccessForSpace,
   findSpaceBySlug,
+  getAllOrganizationSpacesForNodeById,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import type { ChatRouteTool } from './types';
@@ -10,6 +11,7 @@ import { sanitizeSlug } from '../system-prompt';
 const destinationTypeSchema = z.enum([
   'space',
   'space_screen',
+  'ecosystem_space',
   'app_screen',
   'website',
 ]);
@@ -51,6 +53,9 @@ const inputSchema = z
   .object({
     destination_type: destinationTypeSchema,
     space_slug: z.string().trim().min(1).max(128).optional(),
+    source_space_slug: z.string().trim().min(1).max(128).optional(),
+    target_space_query: z.string().trim().min(1).max(180).optional(),
+    context_hint: z.string().trim().min(1).max(500).optional(),
     space_screen: spaceScreenSchema.optional(),
     app_screen: appScreenSchema.optional(),
     website_url: httpUrlSchema.optional(),
@@ -88,6 +93,25 @@ const inputSchema = z
       }
       return;
     }
+    if (value.destination_type === 'ecosystem_space') {
+      if (!value.source_space_slug) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['source_space_slug'],
+          message:
+            'source_space_slug is required when destination_type is "ecosystem_space".',
+        });
+      }
+      if (!value.target_space_query) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['target_space_query'],
+          message:
+            'target_space_query is required when destination_type is "ecosystem_space".',
+        });
+      }
+      return;
+    }
     if (value.destination_type === 'app_screen') {
       if (!value.app_screen) {
         ctx.addIssue({
@@ -107,6 +131,88 @@ const inputSchema = z
       });
     }
   });
+
+function normalizeForMatch(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ');
+}
+
+function scoreSpaceMatch(
+  targetQuery: string,
+  title: string,
+  slug: string,
+): number {
+  const q = normalizeForMatch(targetQuery);
+  const t = normalizeForMatch(title);
+  const s = normalizeForMatch(slug);
+  if (!q) return 0;
+  if (q === s) return 200;
+  if (q === t) return 180;
+  let score = 0;
+  if (t.includes(q)) score += 80;
+  if (s.includes(q)) score += 70;
+  const queryTokens = q.split(' ').filter(Boolean);
+  const titleTokens = new Set(t.split(' ').filter(Boolean));
+  const slugTokens = new Set(s.split(' ').filter(Boolean));
+  for (const token of queryTokens) {
+    if (titleTokens.has(token)) score += 14;
+    if (slugTokens.has(token)) score += 12;
+  }
+  return score;
+}
+
+function inferScreenFromIntent(
+  intentText: string | undefined,
+): z.infer<typeof spaceScreenSchema> | null {
+  const normalized = (intentText ?? '').trim().toLowerCase();
+  if (!normalized) return null;
+  if (
+    /\b(signal|signals|coherence|alert|alerts|issue|issues|blind spot|priority)\b/.test(
+      normalized,
+    )
+  ) {
+    return 'signals';
+  }
+  if (
+    /\b(treasury|token|tokens|vault|fund|funds|payment|payments|payout|payouts|finance)\b/.test(
+      normalized,
+    )
+  ) {
+    return 'treasury';
+  }
+  if (
+    /\b(member|members|people|team|teams|contributor|contributors)\b/.test(
+      normalized,
+    )
+  ) {
+    return 'members';
+  }
+  if (/\b(reward|rewards|incentive|incentives)\b/.test(normalized)) {
+    return 'rewards';
+  }
+  if (/\b(memory|knowledge|transcript|recording|notes)\b/.test(normalized)) {
+    return 'memory';
+  }
+  if (/\b(config|configuration|settings|set up|setup)\b/.test(normalized)) {
+    return 'space_configuration';
+  }
+  if (
+    /\b(proposal|proposals|agreement|agreements|vote|voting|governance|document|documents)\b/.test(
+      normalized,
+    )
+  ) {
+    return 'agreements';
+  }
+  if (/\b(ecosystem|network|subspace|subspaces)\b/.test(normalized)) {
+    return 'ecosystem_navigation';
+  }
+  if (/\b(overview|home|summary|dashboard)\b/.test(normalized)) {
+    return 'overview';
+  }
+  return null;
+}
 
 function resolveSpaceScreenPath(
   lang: string,
@@ -181,6 +287,104 @@ export function createMcpNavigationTool(authToken: string) {
         };
       }
 
+      if (data.destination_type === 'ecosystem_space') {
+        const safeSourceSlug = sanitizeSlug(data.source_space_slug ?? '');
+        if (!safeSourceSlug) {
+          return { ok: false, error: 'Invalid or missing source_space_slug.' };
+        }
+        const sourceSpace = await findSpaceBySlug(
+          { slug: safeSourceSlug },
+          { db },
+        );
+        if (!sourceSpace) {
+          return {
+            ok: false,
+            error: `Space "${safeSourceSlug}" was not found.`,
+          };
+        }
+        const sourceAccess = await checkSpaceAccessForSpace(
+          sourceSpace,
+          authToken,
+        );
+        if (!sourceAccess.hasAccess) {
+          return { ok: false, error: sourceAccess.message };
+        }
+
+        const rawTargetQuery = data.target_space_query?.trim() ?? '';
+        if (!rawTargetQuery) {
+          return { ok: false, error: 'Missing target space query.' };
+        }
+
+        const ecosystemSpaces = (
+          await getAllOrganizationSpacesForNodeById({ id: sourceSpace.id })
+        ).filter((space) => !space.flags?.includes('archived'));
+
+        const ranked = ecosystemSpaces
+          .map((space) => ({
+            space,
+            score: scoreSpaceMatch(rawTargetQuery, space.title, space.slug),
+          }))
+          .filter((row) => row.score > 0)
+          .sort(
+            (a, b) =>
+              b.score - a.score || a.space.title.localeCompare(b.space.title),
+          );
+
+        if (ranked.length === 0) {
+          return {
+            ok: false,
+            error:
+              'No matching space was found in this ecosystem. Ask the user for the exact space name.',
+          };
+        }
+
+        const destinationSpace = ranked[0]!.space;
+        const destinationAccess = await checkSpaceAccessForSpace(
+          destinationSpace,
+          authToken,
+        );
+        if (!destinationAccess.hasAccess) {
+          return { ok: false, error: destinationAccess.message };
+        }
+
+        const inferredScreen = inferScreenFromIntent(
+          [data.context_hint, rawTargetQuery, data.label]
+            .filter(Boolean)
+            .join(' '),
+        );
+        const screen = data.space_screen ?? inferredScreen;
+        const href = screen
+          ? resolveSpaceScreenPath(lang, destinationSpace.slug, screen)
+          : `/${lang}/dho/${destinationSpace.slug}/agreements`;
+
+        return {
+          ok: true,
+          destination_type: 'ecosystem_space',
+          source_space_slug: safeSourceSlug,
+          navigation: {
+            kind: 'internal',
+            href,
+            space_slug: destinationSpace.slug,
+            screen: screen ?? 'agreements',
+            label:
+              customLabel ??
+              `Open ${destinationSpace.title}${
+                screen ? ` (${screen.replace(/_/g, ' ')})` : ''
+              }`,
+            open_in_new_tab: data.open_in_new_tab ?? false,
+          },
+          matched_space: {
+            slug: destinationSpace.slug,
+            title: destinationSpace.title,
+          },
+          alternatives: ranked.slice(1, 4).map((row) => ({
+            slug: row.space.slug,
+            title: row.space.title,
+          })),
+          message: `Navigate to "${destinationSpace.title}" within this ecosystem.`,
+        };
+      }
+
       const safeSlug = sanitizeSlug(data.space_slug ?? '');
       if (!safeSlug) {
         return { ok: false, error: 'Invalid or missing space_slug.' };
@@ -196,7 +400,13 @@ export function createMcpNavigationTool(authToken: string) {
       }
 
       if (data.destination_type === 'space') {
-        const href = `/${lang}/dho/${safeSlug}/agreements`;
+        const inferredScreen = inferScreenFromIntent(
+          [data.context_hint, data.label].filter(Boolean).join(' '),
+        );
+        const targetScreen = data.space_screen ?? inferredScreen;
+        const href = targetScreen
+          ? resolveSpaceScreenPath(lang, safeSlug, targetScreen)
+          : `/${lang}/dho/${safeSlug}/agreements`;
         return {
           ok: true,
           destination_type: 'space',
@@ -204,6 +414,7 @@ export function createMcpNavigationTool(authToken: string) {
             kind: 'internal',
             href,
             space_slug: safeSlug,
+            ...(targetScreen ? { screen: targetScreen } : {}),
             label: customLabel ?? `Open ${host.title}`,
             open_in_new_tab: data.open_in_new_tab ?? false,
           },
