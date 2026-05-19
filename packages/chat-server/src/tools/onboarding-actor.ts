@@ -36,11 +36,20 @@ export function hasExplicitConfirmation(
 ): boolean {
   if (!lastUserText) return false;
   const normalized = lastUserText.trim().toLowerCase();
+  const normalizedCompact = normalized
+    .replace(/[.,!?;:]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   const normalizedToken = token.trim().toLowerCase();
   if (!normalizedToken) return false;
   const escapedToken = normalizedToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const confirmationPattern = new RegExp(`^confirm\\s+${escapedToken}$`, 'i');
-  if (confirmationPattern.test(normalized)) return true;
+  if (
+    confirmationPattern.test(normalized) ||
+    confirmationPattern.test(normalizedCompact)
+  ) {
+    return true;
+  }
 
   // Accept natural-language confirmations to avoid repetitive loops
   // when users reply with plain confirmations like "yes" or "yep".
@@ -57,8 +66,12 @@ export function hasExplicitConfirmation(
     'ready',
     'go ahead',
     'proceed',
+    'yes proceed',
     'do it',
     'sounds good',
   ]);
-  return plainAffirmatives.has(normalized);
+  return (
+    plainAffirmatives.has(normalized) ||
+    plainAffirmatives.has(normalizedCompact)
+  );
 }

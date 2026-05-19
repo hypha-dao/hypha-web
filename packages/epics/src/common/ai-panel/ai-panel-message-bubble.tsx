@@ -305,6 +305,19 @@ export function AiPanelMessageBubble({
     ) ?? [];
   const visibleToolParts = toolParts;
   const shouldHideToolPart = (part: ToolPart) => {
+    // Keep tool cards only for actionable confirmation steps.
+    if (part.state === 'output-available') {
+      const output = part.output as ConfirmationActionResult | undefined;
+      const isActionableConfirmation =
+        output?.requires_confirmation === true || output?.dry_run === true;
+      if (!isActionableConfirmation) return true;
+    }
+    // Never surface raw tool errors in chat cards.
+    if (part.state === 'output-error') return true;
+    // Hide low-level tool state cards from the conversation flow.
+    if (part.state === 'input-streaming' || part.state === 'input-available') {
+      return true;
+    }
     if (
       part.type === 'tool-onboarding_guidance' &&
       part.state === 'output-available'
@@ -342,7 +355,7 @@ export function AiPanelMessageBubble({
     markdownBlocks.length === 1 &&
     markdownBlocks[0]?.type === 'paragraph' &&
     markdownBlocks[0].lines.length === 1 &&
-    markdownBlocks[0].lines[0].length <= 110;
+    (markdownBlocks[0].lines[0]?.length ?? 0) <= 110;
 
   const handleCopy = useCallback(async () => {
     if (!textContent) return;

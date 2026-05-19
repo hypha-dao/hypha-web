@@ -66,6 +66,34 @@ async function fileToPart(
   };
 }
 
+function isPlainConfirmationReply(text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+  const normalizedCompact = normalized
+    .replace(/[.,!?;:]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!normalized) return false;
+  if (/^confirm\b/.test(normalized) || /^confirm\b/.test(normalizedCompact))
+    return true;
+  const affirmatives = new Set([
+    'yes',
+    'y',
+    'yep',
+    'yeah',
+    'sure',
+    'ok',
+    'okay',
+    'ready',
+    'go ahead',
+    'proceed',
+    'do it',
+    'yes, proceed',
+    'yes proceed',
+    'sounds good',
+  ]);
+  return affirmatives.has(normalized) || affirmatives.has(normalizedCompact);
+}
+
 export function OnboardingAiFullPage({
   seedPrompt,
   seedAttachments,
@@ -131,7 +159,7 @@ export function OnboardingAiFullPage({
   const applyOnboardingContextForUserText = useCallback(
     (text: string): OnboardingContext => {
       const normalized = text.trim();
-      const isExplicitConfirmation = /^confirm\b/i.test(normalized);
+      const isExplicitConfirmation = isPlainConfirmationReply(normalized);
       return {
         ...onboardingContext,
         lastUserText: normalized,
