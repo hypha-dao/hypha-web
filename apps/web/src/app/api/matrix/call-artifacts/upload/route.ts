@@ -127,11 +127,34 @@ export async function POST(request: NextRequest) {
     { db },
   );
   if (existingRecording?.mediaUri?.trim()) {
+    if (transcriptText) {
+      const transcriptResult = await ingestSpaceCallArtifacts(
+        {
+          spaceSlug,
+          callSessionId,
+          transcript: {
+            text: transcriptText,
+            source: 'browser_speech_recognition',
+            metadata: {
+              capture: 'automatic_in_call',
+            },
+          },
+        },
+        { db },
+      );
+      if (!transcriptResult.ok) {
+        return NextResponse.json(
+          { error: transcriptResult.error },
+          { status: 400 },
+        );
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       media_uri: existingRecording.mediaUri,
       call_session_id: callSessionId,
-      transcript_stored: false,
+      transcript_stored: Boolean(transcriptText),
       transcript_job: {
         attempted: false,
         ok: false,
