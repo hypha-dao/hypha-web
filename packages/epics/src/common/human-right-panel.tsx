@@ -37,6 +37,7 @@ import {
   stripMatrixReplyFallback,
   RoomEvent,
   EventType,
+  MsgType,
   MatrixUploadTimeoutError,
   SendMessageCancelledError,
   SendMessagePartialFailureError,
@@ -1261,7 +1262,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (!client || !roomId || !isSignalThread) return;
       const deduped = normalizeMatrixUserIds(nextMemberIds);
       await client.sendEvent(roomId, EventType.RoomMessage, {
-        msgtype: 'm.notice',
+        msgtype: MsgType.Notice,
         hyphaSignalEventType: SIGNAL_TEAM_EVENT_KIND,
         body: 'signal team members updated',
         coherenceSlug: coherenceSlug?.trim() || null,
@@ -1281,7 +1282,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setSignalTeamBusy(true);
     try {
       await client.sendEvent(roomId, EventType.RoomMessage, {
-        msgtype: 'm.notice',
+        msgtype: MsgType.Notice,
         hyphaSignalEventType: SIGNAL_TEAM_REQUEST_EVENT_KIND,
         body: 'signal team access requested',
         coherenceSlug: coherenceSlug?.trim() || null,
@@ -1310,7 +1311,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         ]);
         await Promise.all([
           client.sendEvent(roomId, EventType.RoomMessage, {
-            msgtype: 'm.notice',
+            msgtype: MsgType.Notice,
             hyphaSignalEventType: SIGNAL_TEAM_REQUEST_EVENT_KIND,
             body: 'signal team access approved',
             coherenceSlug: coherenceSlug?.trim() || null,
@@ -1319,7 +1320,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             updatedAt: new Date().toISOString(),
           }),
           client.sendEvent(roomId, EventType.RoomMessage, {
-            msgtype: 'm.notice',
+            msgtype: MsgType.Notice,
             hyphaSignalEventType: SIGNAL_TEAM_EVENT_KIND,
             body: 'signal team members updated',
             coherenceSlug: coherenceSlug?.trim() || null,
