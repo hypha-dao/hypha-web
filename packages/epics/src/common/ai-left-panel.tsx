@@ -790,7 +790,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   ]);
 
   useEffect(() => {
-    if (!isOnboardingPath) return;
     const latestNavigationOutput = [...messages]
       .reverse()
       .flatMap((message) =>
@@ -845,7 +844,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       return;
     }
     router.push(href);
-  }, [isOnboardingPath, messages, router]);
+  }, [messages, router]);
 
   useEffect(() => {
     if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
