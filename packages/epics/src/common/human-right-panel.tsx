@@ -1351,7 +1351,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     (userId: string | undefined) => {
       const id = userId?.trim();
       if (!id) return t('unknownMember');
-      return mentionLabelByUserId.get(id) ?? resolveMemberLabel(id);
+      const mentionLabel = mentionLabelByUserId.get(id)?.trim();
+      const resolved = resolveMemberLabel(id);
+      if (
+        mentionLabel &&
+        !looksLikeTechnicalMatrixDisplayName(mentionLabel, id)
+      ) {
+        return mentionLabel;
+      }
+      if (!looksLikeTechnicalMatrixDisplayName(resolved, id)) {
+        return resolved;
+      }
+      return mentionLabel || resolved;
     },
     [mentionLabelByUserId, resolveMemberLabel, t],
   );
@@ -3187,7 +3198,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {isSignalThread &&
                   hasSignalTeamPolicy &&
                   !canInteractWithSignalThread && (
-                    <div className="mt-0 w-full border-y border-accent-7 bg-accent-3 px-3 py-2 text-sm text-accent-11">
+                    <div className="mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2 text-sm text-foreground">
                       <p>{t('signalTeamBannerReadOnly')}</p>
                       <div className="mt-2 flex items-center gap-2">
                         <Button
@@ -3249,7 +3260,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       <Button
                         type="button"
                         size="sm"
-                        variant="ghost"
+                        variant="outline"
+                        colorVariant="neutral"
+                        className="h-8"
                         onClick={() => setSignalTeamPanelOpen((prev) => !prev)}
                       >
                         {signalTeamPanelOpen
