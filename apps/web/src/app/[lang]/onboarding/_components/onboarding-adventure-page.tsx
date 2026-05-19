@@ -252,6 +252,8 @@ export function OnboardingAdventurePage({
   >('idle');
   const [aiStartError, setAiStartError] = useState<string | null>(null);
   const aiStartTimeoutRef = useRef<number | null>(null);
+  const seedDispatchRetryTimeoutsRef = useRef<number[]>([]);
+  const seedAckReceivedRef = useRef(false);
 
   const [joinSpaceSlug, setJoinSpaceSlug] = useState('');
   const [joinQuery, setJoinQuery] = useState('');
@@ -305,6 +307,12 @@ export function OnboardingAdventurePage({
       }
       if (aiStartTimeoutRef.current !== null) {
         window.clearTimeout(aiStartTimeoutRef.current);
+      }
+      if (seedDispatchRetryTimeoutsRef.current.length > 0) {
+        for (const timeoutId of seedDispatchRetryTimeoutsRef.current) {
+          window.clearTimeout(timeoutId);
+        }
+        seedDispatchRetryTimeoutsRef.current = [];
       }
     },
     [],
@@ -472,8 +480,17 @@ export function OnboardingAdventurePage({
       locale,
       createdAt: new Date().toISOString(),
     };
+    const clearSeedDispatchRetries = () => {
+      if (seedDispatchRetryTimeoutsRef.current.length === 0) return;
+      for (const timeoutId of seedDispatchRetryTimeoutsRef.current) {
+        window.clearTimeout(timeoutId);
+      }
+      seedDispatchRetryTimeoutsRef.current = [];
+    };
+
+    seedAckReceivedRef.current = false;
+    clearSeedDispatchRetries();
     saveOnboardingConversationContext(context);
-    dispatchAiOnboardingSeed({ prompt, context, attachments: heroAttachments });
     setIsStartingAi(true);
     setAiStartStatus('opening');
     setAiStartError(null);
@@ -487,11 +504,28 @@ export function OnboardingAdventurePage({
     }, 12000);
     openAiPanel();
     setAiOverlayVisible(false);
+    const seedPayload = { prompt, context, attachments: heroAttachments };
+    // Dispatch immediately, then retry briefly to avoid lost event races
+    // while the AI panel is mounting/opening.
+    dispatchAiOnboardingSeed(seedPayload);
+    seedDispatchRetryTimeoutsRef.current = [
+      window.setTimeout(() => {
+        if (!seedAckReceivedRef.current) {
+          dispatchAiOnboardingSeed(seedPayload);
+        }
+      }, 500),
+      window.setTimeout(() => {
+        if (!seedAckReceivedRef.current) {
+          dispatchAiOnboardingSeed(seedPayload);
+        }
+      }, 1500),
+    ];
   };
 
   useEffect(() => {
     const onSeedAck = (event: Event) => {
       if (!(event instanceof CustomEvent)) return;
+      seedAckReceivedRef.current = true;
       const detail = event.detail as
         | {
             ok?: boolean;
@@ -505,6 +539,14 @@ export function OnboardingAdventurePage({
           aiStartTimeoutRef.current = null;
         }
       };
+      const clearSeedDispatchRetries = () => {
+        if (seedDispatchRetryTimeoutsRef.current.length === 0) return;
+        for (const timeoutId of seedDispatchRetryTimeoutsRef.current) {
+          window.clearTimeout(timeoutId);
+        }
+        seedDispatchRetryTimeoutsRef.current = [];
+      };
+      clearSeedDispatchRetries();
       if (detail?.stage === 'received') {
         clearHandoffTimeout();
         setAiStartStatus('opening');
