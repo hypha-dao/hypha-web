@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   checkSpaceAccessForSpace,
+  findAllSpaces,
   findSpaceBySlug,
   getAllOrganizationSpacesForNodeById,
 } from '@hypha-platform/core/server';
@@ -94,14 +95,6 @@ const inputSchema = z
       return;
     }
     if (value.destination_type === 'ecosystem_space') {
-      if (!value.source_space_slug) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['source_space_slug'],
-          message:
-            'source_space_slug is required when destination_type is "ecosystem_space".',
-        });
-      }
       if (!value.target_space_query) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -288,38 +281,66 @@ export function createMcpNavigationTool(authToken: string) {
       }
 
       if (data.destination_type === 'ecosystem_space') {
-        const safeSourceSlug = sanitizeSlug(data.source_space_slug ?? '');
-        if (!safeSourceSlug) {
-          return { ok: false, error: 'Invalid or missing source_space_slug.' };
-        }
-        const sourceSpace = await findSpaceBySlug(
-          { slug: safeSourceSlug },
-          { db },
-        );
-        if (!sourceSpace) {
-          return {
-            ok: false,
-            error: `Space "${safeSourceSlug}" was not found.`,
-          };
-        }
-        const sourceAccess = await checkSpaceAccessForSpace(
-          sourceSpace,
-          authToken,
-        );
-        if (!sourceAccess.hasAccess) {
-          return { ok: false, error: sourceAccess.message };
-        }
-
         const rawTargetQuery = data.target_space_query?.trim() ?? '';
         if (!rawTargetQuery) {
           return { ok: false, error: 'Missing target space query.' };
         }
 
-        const ecosystemSpaces = (
-          await getAllOrganizationSpacesForNodeById({ id: sourceSpace.id })
-        ).filter((space) => !space.flags?.includes('archived'));
+        const safeSourceSlug = sanitizeSlug(data.source_space_slug ?? '');
+        const sourceSpace =
+          safeSourceSlug && safeSourceSlug.length > 0
+            ? await findSpaceBySlug({ slug: safeSourceSlug }, { db })
+            : null;
+        const sourceAccessible =
+          sourceSpace != null
+            ? await checkSpaceAccessForSpace(sourceSpace, authToken)
+            : null;
+        const ecosystemSpaces =
+          sourceSpace && sourceAccessible?.hasAccess
+            ? (
+                await getAllOrganizationSpacesForNodeById({
+                  id: sourceSpace.id,
+                })
+              ).filter((space) => !space.flags?.includes('archived'))
+            : [];
 
-        const ranked = ecosystemSpaces
+        const globalMatches = await findAllSpaces(
+          { db },
+          {
+            search: rawTargetQuery,
+            parentOnly: false,
+            omitSandbox: false,
+            omitArchived: true,
+          },
+        );
+
+        type NavigationCandidate = {
+          id: number;
+          slug: string;
+          title: string;
+          web3SpaceId?: number | null;
+          flags?: string[] | null;
+        };
+        const uniqueCandidates = new Map<number, NavigationCandidate>();
+        for (const space of [...ecosystemSpaces, ...globalMatches]) {
+          if (!space?.id || typeof space.slug !== 'string') continue;
+          if (!uniqueCandidates.has(space.id)) {
+            uniqueCandidates.set(space.id, {
+              id: space.id,
+              slug: space.slug,
+              title: space.title,
+              web3SpaceId:
+                typeof space.web3SpaceId === 'number'
+                  ? space.web3SpaceId
+                  : null,
+              flags: Array.isArray(space.flags)
+                ? space.flags.map((flag) => String(flag))
+                : null,
+            });
+          }
+        }
+
+        const ranked = [...uniqueCandidates.values()]
           .map((space) => ({
             space,
             score: scoreSpaceMatch(rawTargetQuery, space.title, space.slug),
@@ -334,17 +355,23 @@ export function createMcpNavigationTool(authToken: string) {
           return {
             ok: false,
             error:
-              'No matching space was found in this ecosystem. Ask the user for the exact space name.',
+              'No matching space was found. Ask the user for the exact space name.',
           };
         }
 
-        const destinationSpace = ranked[0]!.space;
-        const destinationAccess = await checkSpaceAccessForSpace(
-          destinationSpace,
-          authToken,
-        );
-        if (!destinationAccess.hasAccess) {
-          return { ok: false, error: destinationAccess.message };
+        let destinationSpace: (typeof ranked)[number]['space'] | null = null;
+        for (const row of ranked) {
+          const access = await checkSpaceAccessForSpace(row.space, authToken);
+          if (access.hasAccess) {
+            destinationSpace = row.space;
+            break;
+          }
+        }
+        if (!destinationSpace) {
+          return {
+            ok: false,
+            error: 'No accessible matching space was found for this user.',
+          };
         }
 
         const inferredScreen = inferScreenFromIntent(
@@ -360,7 +387,7 @@ export function createMcpNavigationTool(authToken: string) {
         return {
           ok: true,
           destination_type: 'ecosystem_space',
-          source_space_slug: safeSourceSlug,
+          source_space_slug: safeSourceSlug || null,
           navigation: {
             kind: 'internal',
             href,
