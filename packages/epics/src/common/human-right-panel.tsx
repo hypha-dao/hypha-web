@@ -1264,20 +1264,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const publishSignalTeamMembers = useCallback(
     async (nextMemberIds: string[]) => {
       if (!client || !roomId || !isSignalThread) return;
-      const deduped = normalizeMatrixUserIds(nextMemberIds);
-      await client.sendEvent(roomId, EventType.RoomMessage, {
-        msgtype: MsgType.Notice,
-        body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
-        coherenceSlug: coherenceSlug?.trim() || null,
-        memberMatrixUserIds: deduped,
-        updatedAt: new Date().toISOString(),
-      } as any);
-      setSignalTeamMemberIds(deduped);
-      setSignalTeamPendingRequesterIds((prev) =>
-        prev.filter((id) => !deduped.includes(id)),
-      );
+      try {
+        const deduped = normalizeMatrixUserIds(nextMemberIds);
+        await client.sendEvent(roomId, EventType.RoomMessage, {
+          msgtype: MsgType.Notice,
+          body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
+          coherenceSlug: coherenceSlug?.trim() || null,
+          memberMatrixUserIds: deduped,
+          updatedAt: new Date().toISOString(),
+        } as any);
+        setSignalTeamMemberIds(deduped);
+        setSignalTeamPendingRequesterIds((prev) =>
+          prev.filter((id) => !deduped.includes(id)),
+        );
+      } catch (error) {
+        console.error(
+          '[HumanRightPanel] publishSignalTeamMembers failed',
+          error,
+        );
+        setComposerError(t('sendFailed'));
+      }
     },
-    [client, roomId, isSignalThread, coherenceSlug],
+    [client, roomId, isSignalThread, coherenceSlug, t],
   );
 
   const requestSignalTeamAccess = useCallback(async () => {
