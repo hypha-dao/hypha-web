@@ -8,6 +8,7 @@ import {
   type MatrixEvent,
   type Room,
 } from 'matrix-js-sdk';
+import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { Check, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -266,8 +267,8 @@ type SignalTeamTimelineState = {
 };
 
 type SignalTeamEventContent = {
-  msgtype: 'm.notice';
-  body: string;
+  msgtype: RoomMessageEventContent['msgtype'];
+  body: RoomMessageEventContent['body'];
   coherenceSlug: string | null;
   memberMatrixUserIds?: string[];
   ownerMatrixUserId?: string | null;
@@ -276,7 +277,7 @@ type SignalTeamEventContent = {
   addedMemberMatrixUserIds?: string[];
   removedMemberMatrixUserIds?: string[];
   updatedAt: string;
-};
+} & RoomMessageEventContent;
 
 function normalizeMatrixUserIds(ids: unknown): string[] {
   if (!Array.isArray(ids)) return [];
