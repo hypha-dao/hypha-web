@@ -486,8 +486,14 @@ export function HumanChatPanelChatBar({
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
 
-  const atMentionInteractable =
-    !composerLocked && (mentionPickerEnabled ?? mentionCandidates.length > 0);
+  const membershipAvailable =
+    mentionPickerEnabled ?? mentionCandidates.length > 0;
+  const atMentionInteractable = !composerLocked && membershipAvailable;
+  const mentionButtonTitle = composerLocked
+    ? composerLockedMessage || t('signalTeamInteractionRestricted')
+    : !membershipAvailable
+    ? t('mentionNoMembers')
+    : t('mention');
   const fileInputId = useId();
   const imageInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -2058,9 +2064,7 @@ export function HumanChatPanelChatBar({
                   !atMentionInteractable && 'cursor-not-allowed opacity-50',
                 )}
                 aria-label={t('mention')}
-                title={
-                  !atMentionInteractable ? t('mentionNoMembers') : t('mention')
-                }
+                title={mentionButtonTitle}
                 onClick={() => openMentionPicker()}
               >
                 <AtSign className="h-4 w-4" aria-hidden />
