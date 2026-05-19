@@ -101,9 +101,16 @@
     "continueAdventure": "Votre aventure continue ici",
     "subtitle": "Choisissez votre prochaine étape.",
     "aiHero": {
-      "title": "Décrivez l’espace que vous souhaitez créer",
+      "title": "Build Anything, Together",
       "description": "Expliquez à Hypha AI ce que vous voulez construire, et elle vous guidera étape par étape.",
-      "placeholder": "Décrivez votre communauté, votre mission, la structure d’espaces souhaitée et vos préférences de gouvernance...",
+      "placeholder": "Créer un espace, rejoindre un espace existant, explorer le réseau ou financer une trésorerie - décrivez votre objectif et l’AI vous guide.",
+      "rotating": {
+        "createSpace": "Demandez à Hypha AI de créer un espace pour votre mission...",
+        "governance": "Demandez à Hypha AI de proposer une gouvernance pour votre communauté...",
+        "joinSpace": "Demandez à Hypha AI de vous aider à rejoindre le bon espace...",
+        "treasury": "Demandez à Hypha AI de préparer un espace prêt pour la trésorerie...",
+        "explore": "Demandez à Hypha AI d’identifier des opportunités dans le réseau..."
+      },
       "cta": "Commencer avec l’AI",
       "starting": "Démarrage...",
       "openingAi": "Ouverture du panneau AI...",
@@ -113,7 +120,20 @@
       "sendFailed": "Le prompt n’a pas pu être envoyé à l’AI. Veuillez réessayer.",
       "helper": "L’AI proposera chaque action et demandera une confirmation avant toute création ou modification.",
       "unavailable": "L’onboarding AI est temporairement indisponible sur ce déploiement.",
-      "ariaLabel": "Invite d’onboarding AI"
+      "ariaLabel": "Invite d’onboarding AI",
+      "flow": {
+        "badge": "Hypha AI guide votre configuration",
+        "reviewingTitle": "Analyse de votre demande",
+        "reviewingDescription": "L’AI prépare le meilleur parcours pour votre objectif.",
+        "reviewingDescriptionPersonalized": "{firstName}, l’AI prépare le meilleur parcours pour votre objectif.",
+        "confirmingTitle": "Préparation d’une confirmation claire",
+        "confirmingDescription": "Vous verrez un choix ciblé avant toute action d’écriture.",
+        "executingTitle": "Exécution de l’action choisie",
+        "executingDescription": "L’AI crée, oriente ou rejoint selon votre choix.",
+        "routingTitle": "Navigation vers la bonne destination",
+        "routingDescription": "Finalisation de la navigation vers votre espace ou l’écran ciblé.",
+        "confirmationHint": "Vous gardez le contrôle : l’AI demande une confirmation avant toute création ou mise à jour."
+      }
     },
     "spacePlaceholder": "Sélectionner un espace",
     "spaceSearchPlaceholder": "Rechercher des espaces...",
@@ -2007,6 +2027,7 @@
     "mentionNotAvailable": "Mentions (bientôt)",
     "mentionNoMembers": "Membres pas encore chargés — réessayez dans un instant",
     "mentionListLabel": "Mentionner quelqu’un",
+    "mentionListHintIncludesParentSpaceMembers": "Choisissez un membre à mentionner. Cette liste peut aussi inclure des membres de l’espace parent.",
     "mentionInboxTitle": "Mentions",
     "mentionInboxBellCallRingHint": "Cliquez sur la cloche pour couper ou réactiver le son d’appel. Ouvrez l’onglet Mentions pour voir les @mentions.",
     "callJoinCallAlertsMutedShort": "Muet",

@@ -7,6 +7,7 @@ export const AI_ONBOARDING_SEED_ACK_EVENT = 'hypha:ai-onboarding-seed-ack';
 export type OnboardingConversationContext = {
   mode: typeof ONBOARDING_SETUP_MODE;
   source: 'onboarding_hero';
+  firstName?: string;
   setupPhase?: 'discover' | 'draft' | 'confirm' | 'execute' | 'verify';
   setupPlan?: {
     spaceIntent?: {
@@ -71,6 +72,8 @@ export function readOnboardingConversationContext():
     return {
       mode: ONBOARDING_SETUP_MODE,
       source: 'onboarding_hero',
+      firstName:
+        typeof parsed.firstName === 'string' ? parsed.firstName : undefined,
       setupPhase:
         parsed.setupPhase === 'discover' ||
         parsed.setupPhase === 'draft' ||

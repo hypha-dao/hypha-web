@@ -307,7 +307,7 @@ export function PanelWrapLayout({
   const isOnboarding = pathname.includes('/onboarding');
   const isCompactUi = useCompactHeaderMode();
 
-  // Left AI panel is available in space context and onboarding handoff flow.
+  // Left AI panel stays mounted for onboarding handoff events.
   const effectiveLeft = isSpace || isOnboarding ? left : undefined;
   // Right human panel remains space-context only.
   const effectiveRight = isSpace ? right : undefined;
@@ -316,8 +316,10 @@ export function PanelWrapLayout({
   );
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
-  const leftFootprintPx = leftExpanded ? 320 : 72;
+  const leftExpanded = isOnboarding
+    ? false
+    : Boolean(leftOpen || leftOverlayVisible);
+  const leftFootprintPx = leftExpanded ? 320 : isSpace ? 72 : 0;
   const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
   const forceCompactPanels =
     Boolean(effectiveLeft && effectiveRight) &&
@@ -335,7 +337,9 @@ export function PanelWrapLayout({
   const fallbackSidebarLeftPx = effectiveLeft
     ? leftExpanded
       ? leftExpandedSidebarWidth
-      : LEFT_SIDEBAR_ICON_WIDTH
+      : isSpace
+      ? LEFT_SIDEBAR_ICON_WIDTH
+      : '0px'
     : '0px';
   const fallbackSidebarRightPx =
     rightOpen && effectiveRight ? rightSidebarWidth : '0px';
@@ -517,6 +521,8 @@ export function PanelWrapLayout({
       </SidebarProvider>
     );
   } else if (effectiveLeft) {
+    const leftCollapsibleMode = isOnboarding ? 'offcanvas' : 'icon';
+    const leftIconWidth = isOnboarding ? '0px' : LEFT_SIDEBAR_ICON_WIDTH;
     content = (
       <SidebarProvider
         defaultOpen={false}
@@ -535,15 +541,15 @@ export function PanelWrapLayout({
         style={
           {
             '--sidebar-width': leftExpandedSidebarWidth,
-            '--sidebar-width-icon': LEFT_SIDEBAR_ICON_WIDTH,
+            '--sidebar-width-icon': leftIconWidth,
           } as React.CSSProperties
         }
       >
         <Sidebar
           side="left"
           variant="sidebar"
-          collapsible="icon"
-          mobileWidth={leftOpen ? '100vw' : undefined}
+          collapsible={leftCollapsibleMode}
+          mobileWidth={leftOpen || isOnboarding ? '100vw' : undefined}
           className="z-[50] overflow-visible"
         >
           {effectiveLeft.content}

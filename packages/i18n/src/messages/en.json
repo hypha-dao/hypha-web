@@ -101,9 +101,16 @@
     "continueAdventure": "Your adventure continues here",
     "subtitle": "Pick your next move.",
     "aiHero": {
-      "title": "Describe the space you want to create",
+      "title": "Build Anything, Together",
       "description": "Tell Hypha AI what you want to build, and it will guide setup step by step.",
-      "placeholder": "Describe your community, mission, desired space structure, and governance preferences...",
+      "placeholder": "Create a space, join an existing one, explore the network, or fund a treasury - describe your goal and AI will guide you.",
+      "rotating": {
+        "createSpace": "Ask Hypha AI to create a space for your mission...",
+        "governance": "Ask Hypha AI to draft governance for your community...",
+        "joinSpace": "Ask Hypha AI to help you join the right space...",
+        "treasury": "Ask Hypha AI to set up a treasury-ready space...",
+        "explore": "Ask Hypha AI to find opportunities across the network..."
+      },
       "cta": "Start with AI",
       "starting": "Starting...",
       "openingAi": "Opening AI panel...",
@@ -113,7 +120,20 @@
       "sendFailed": "Prompt could not be sent to AI. Please retry.",
       "helper": "AI will propose each action and ask for confirmation before creating or updating anything.",
       "unavailable": "AI onboarding is temporarily unavailable on this deployment.",
-      "ariaLabel": "AI onboarding prompt"
+      "ariaLabel": "AI onboarding prompt",
+      "flow": {
+        "badge": "Hypha AI is guiding your setup",
+        "reviewingTitle": "Reviewing your request",
+        "reviewingDescription": "AI is mapping the best path for your goal.",
+        "reviewingDescriptionPersonalized": "{firstName}, AI is mapping the best path for your goal.",
+        "confirmingTitle": "Preparing one clear confirmation",
+        "confirmingDescription": "You will get a focused choice before any write action.",
+        "executingTitle": "Executing the selected action",
+        "executingDescription": "AI is now creating, joining, or routing based on your choice.",
+        "routingTitle": "Taking you to the right destination",
+        "routingDescription": "Finalizing navigation to your space or selected screen.",
+        "confirmationHint": "You stay in control: AI asks for confirmation before any create or update action."
+      }
     },
     "spacePlaceholder": "Select a space",
     "spaceSearchPlaceholder": "Search spaces...",
@@ -2015,6 +2035,7 @@
     "mentionNotAvailable": "Mentions (coming soon)",
     "mentionNoMembers": "No members loaded yet — try again in a moment",
     "mentionListLabel": "Mention someone",
+    "mentionListHintIncludesParentSpaceMembers": "Choose a member to mention. This list may include members from the parent space.",
     "mentionInboxTitle": "Mentions",
     "mentionInboxBellCallRingHint": "Click the bell to mute or unmute call ring alerts. Open the Mentions tab to see @ mentions.",
     "callJoinCallAlertsMutedShort": "Muted",

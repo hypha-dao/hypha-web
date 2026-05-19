@@ -950,22 +950,38 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
     if (!client || !roomId) return [];
-    const room = client.getRoom(roomId);
-    if (!room) return [];
+
+    /**
+     * In coherence/signal threads, thread room membership can be sparse.
+     * Include parent space room members so users can still pick who to @mention.
+     */
+    const candidateRoomIds = new Set<string>([roomId]);
+    if (mode === 'coherence' && space?.chatRoomId?.trim()) {
+      candidateRoomIds.add(space.chatRoomId.trim());
+    }
 
     const byUserId = new Map<
       string,
       { displayLabel: string; avatarUrl?: string; privySub?: string }
     >();
 
-    for (const member of room.getJoinedMembers()) {
-      const userId = member.userId;
-      if (!userId) continue;
-      if (currentUserId && userId === currentUserId) continue;
-      byUserId.set(userId, {
-        displayLabel: matrixMemberDisplayLabel(member, userId),
-        avatarUrl: matrixMemberAvatarSquare(client, roomId, userId, 64),
-      });
+    for (const candidateRoomId of candidateRoomIds) {
+      const room = client.getRoom(candidateRoomId);
+      if (!room) continue;
+      for (const member of room.getJoinedMembers()) {
+        const userId = member.userId;
+        if (!userId) continue;
+        if (currentUserId && userId === currentUserId) continue;
+        byUserId.set(userId, {
+          displayLabel: matrixMemberDisplayLabel(member, userId),
+          avatarUrl: matrixMemberAvatarSquare(
+            client,
+            candidateRoomId,
+            userId,
+            64,
+          ),
+        });
+      }
     }
 
     /** Same names as Members tab — overrides Matrix-only technical displaynames. */
@@ -1002,6 +1018,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     client,
     roomId,
+    mode,
+    space?.chatRoomId,
     currentUserId,
     spaceMembers,
     subToMatrixUserId,
@@ -1093,6 +1111,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
   const mentionPickerEnabled = mentionCandidates.length > 0;
+  const mentionPickerHint =
+    mode === 'coherence' && space?.chatRoomId?.trim()
+      ? t('mentionListHintIncludesParentSpaceMembers')
+      : undefined;
 
   useEffect(() => {
     if (!client || !roomId) return;
@@ -2644,6 +2666,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onSend={handleSend}
               mentionCandidates={mentionCandidates}
               mentionPickerEnabled={mentionPickerEnabled}
+              mentionPickerHint={mentionPickerHint}
               getMentionComposerLabel={getMentionComposerLabel}
               onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
               draftAttachments={draftAttachments}

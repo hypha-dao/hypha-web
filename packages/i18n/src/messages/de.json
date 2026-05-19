@@ -101,9 +101,16 @@
     "continueAdventure": "Dein Abenteuer geht hier weiter",
     "subtitle": "Wähle deinen nächsten Schritt.",
     "aiHero": {
-      "title": "Beschreibe den Space, den du erstellen möchtest",
+      "title": "Build Anything, Together",
       "description": "Sag Hypha AI, was du aufbauen willst, und sie führt dich Schritt für Schritt durch das Setup.",
-      "placeholder": "Beschreibe deine Community, Mission, gewünschte Space-Struktur und Governance-Präferenzen...",
+      "placeholder": "Space erstellen, bestehendem Space beitreten, Netzwerk erkunden oder Treasury finanzieren - beschreibe dein Ziel, und AI führt dich.",
+      "rotating": {
+        "createSpace": "Frag Hypha AI, einen Space für deine Mission zu erstellen...",
+        "governance": "Frag Hypha AI, Governance für deine Community zu entwerfen...",
+        "joinSpace": "Frag Hypha AI, dir beim Beitritt zum passenden Space zu helfen...",
+        "treasury": "Frag Hypha AI, einen treasury-fähigen Space einzurichten...",
+        "explore": "Frag Hypha AI, Chancen im Netzwerk zu finden..."
+      },
       "cta": "Mit AI starten",
       "starting": "Wird gestartet...",
       "openingAi": "AI-Panel wird geöffnet...",
@@ -113,7 +120,20 @@
       "sendFailed": "Prompt konnte nicht an die AI gesendet werden. Bitte erneut versuchen.",
       "helper": "Die AI schlägt jede Aktion vor und fragt vor Erstellung oder Änderung immer nach Bestätigung.",
       "unavailable": "AI-Onboarding ist in dieser Bereitstellung derzeit nicht verfügbar.",
-      "ariaLabel": "AI-Onboarding-Prompt"
+      "ariaLabel": "AI-Onboarding-Prompt",
+      "flow": {
+        "badge": "Hypha AI begleitet dein Setup",
+        "reviewingTitle": "Deine Anfrage wird analysiert",
+        "reviewingDescription": "Die AI plant gerade den besten Weg für dein Ziel.",
+        "reviewingDescriptionPersonalized": "{firstName}, die AI plant gerade den besten Weg für dein Ziel.",
+        "confirmingTitle": "Eine klare Bestätigung wird vorbereitet",
+        "confirmingDescription": "Vor jeder Schreibaktion bekommst du eine fokussierte Auswahl.",
+        "executingTitle": "Die gewählte Aktion wird ausgeführt",
+        "executingDescription": "Die AI erstellt, verbindet oder navigiert jetzt basierend auf deiner Wahl.",
+        "routingTitle": "Du wirst zum richtigen Ziel geführt",
+        "routingDescription": "Navigation zu deinem Space oder der gewählten Ansicht wird abgeschlossen.",
+        "confirmationHint": "Du behältst die Kontrolle: Vor jedem Erstellen oder Aktualisieren fragt die AI nach Bestätigung."
+      }
     },
     "spacePlaceholder": "Space auswählen",
     "spaceSearchPlaceholder": "Spaces suchen...",
@@ -2015,6 +2035,7 @@
     "mentionNotAvailable": "Erwähnungen (demnächst)",
     "mentionNoMembers": "Noch keine Mitglieder geladen — kurz später erneut versuchen",
     "mentionListLabel": "Jemanden erwähnen",
+    "mentionListHintIncludesParentSpaceMembers": "Wähle ein Mitglied aus, das du erwähnen möchtest. Diese Liste kann auch Mitglieder aus dem übergeordneten Space enthalten.",
     "mentionInboxTitle": "Erwähnungen",
     "mentionInboxBellCallRingHint": "Klicke die Glocke, um Anruf-Töne stumm oder laut zu schalten. Den Menüpunkt „Erwähnungen“ öffnen, um @-Erwähnungen zu sehen.",
     "callJoinCallAlertsMutedShort": "Stumm",

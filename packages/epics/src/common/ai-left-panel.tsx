@@ -150,6 +150,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
+  const isOnboardingPath = pathname.includes('/onboarding');
   const spaceSlugFromPath = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
@@ -660,8 +661,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       );
       pendingSeedPromptRef.current = prompt ?? null;
       pendingSeedAttachmentsRef.current = attachments;
-      openAiPanel();
-      setAiOverlayVisible(false);
+      if (!isOnboardingPath) {
+        openAiPanel();
+        setAiOverlayVisible(false);
+      }
     };
     window.addEventListener(AI_ONBOARDING_SEED_EVENT, onSeed as EventListener);
     return () => {
@@ -670,7 +673,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         onSeed as EventListener,
       );
     };
-  }, [openAiPanel, setAiOverlayVisible]);
+  }, [isOnboardingPath, openAiPanel, setAiOverlayVisible]);
 
   useEffect(() => {
     if (pendingSeedPromptRef.current == null) return;
