@@ -217,8 +217,13 @@ export function buildQuestionCompetencyDirective(
   if (!q) return '';
 
   const matchedGroups = new Set<string>();
+  const words = new Set(q.split(/[^a-z0-9]+/).filter(Boolean));
   for (const entry of COMPETENCY_KEYWORDS) {
-    if (entry.keywords.some((keyword) => q.includes(keyword))) {
+    if (
+      entry.keywords.some((keyword) =>
+        keyword.includes(' ') ? q.includes(keyword) : words.has(keyword),
+      )
+    ) {
       matchedGroups.add(entry.tagGroup);
     }
   }
