@@ -71,42 +71,41 @@ const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
 type SignalColorVariant = NonNullable<BadgeProps['colorVariant']>;
 
 const HERO_PRIORITY_WASH_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-accent-9/18',
-  error: 'bg-error-9/20',
-  warn: 'bg-warning-9/19',
-  success: 'bg-success-9/18',
-  neutral: 'bg-neutral-9/16',
+  accent: 'bg-accent-9/12',
+  error: 'bg-error-9/14',
+  warn: 'bg-warning-9/13',
+  success: 'bg-success-9/12',
+  neutral: 'bg-neutral-9/10',
 };
 
 const HERO_PRIORITY_SPOTLIGHT_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-gradient-to-br from-accent-9/34 via-accent-8/16 to-transparent',
-  error: 'bg-gradient-to-br from-error-9/36 via-error-8/18 to-transparent',
-  warn: 'bg-gradient-to-br from-warning-9/36 via-warning-8/18 to-transparent',
+  accent: 'bg-gradient-to-br from-accent-9/24 via-accent-8/11 to-transparent',
+  error: 'bg-gradient-to-br from-error-9/26 via-error-8/12 to-transparent',
+  warn: 'bg-gradient-to-br from-warning-9/26 via-warning-8/12 to-transparent',
   success:
-    'bg-gradient-to-br from-success-9/34 via-success-8/16 to-transparent',
+    'bg-gradient-to-br from-success-9/24 via-success-8/11 to-transparent',
   neutral:
-    'bg-gradient-to-br from-neutral-9/30 via-neutral-8/14 to-transparent',
+    'bg-gradient-to-br from-neutral-9/22 via-neutral-8/10 to-transparent',
 };
 
 const HERO_PRIORITY_VIGNETTE_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-gradient-to-t from-accent-10/22 via-accent-9/12 to-transparent',
-  error: 'bg-gradient-to-t from-error-10/24 via-error-9/12 to-transparent',
-  warn: 'bg-gradient-to-t from-warning-10/24 via-warning-9/12 to-transparent',
+  accent: 'bg-gradient-to-t from-accent-10/20 via-accent-9/10 to-transparent',
+  error: 'bg-gradient-to-t from-error-10/22 via-error-9/10 to-transparent',
+  warn: 'bg-gradient-to-t from-warning-10/22 via-warning-9/10 to-transparent',
   success:
-    'bg-gradient-to-t from-success-10/22 via-success-9/12 to-transparent',
-  neutral:
-    'bg-gradient-to-t from-neutral-10/20 via-neutral-9/10 to-transparent',
+    'bg-gradient-to-t from-success-10/20 via-success-9/10 to-transparent',
+  neutral: 'bg-gradient-to-t from-neutral-10/16 via-neutral-9/8 to-transparent',
 };
 
 const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
   {
-    accent: 'bg-gradient-to-t from-accent-10/30 via-accent-9/14 to-transparent',
-    error: 'bg-gradient-to-t from-error-10/34 via-error-9/16 to-transparent',
-    warn: 'bg-gradient-to-t from-warning-10/34 via-warning-9/16 to-transparent',
+    accent: 'bg-gradient-to-t from-accent-10/24 via-accent-9/10 to-transparent',
+    error: 'bg-gradient-to-t from-error-10/26 via-error-9/11 to-transparent',
+    warn: 'bg-gradient-to-t from-warning-10/26 via-warning-9/11 to-transparent',
     success:
-      'bg-gradient-to-t from-success-10/30 via-success-9/14 to-transparent',
+      'bg-gradient-to-t from-success-10/24 via-success-9/10 to-transparent',
     neutral:
-      'bg-gradient-to-t from-neutral-10/24 via-neutral-9/12 to-transparent',
+      'bg-gradient-to-t from-neutral-10/18 via-neutral-9/9 to-transparent',
   };
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
@@ -216,8 +215,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       label: typeLabel,
       variant: 'surface',
       colorVariant: typeColorVariant,
-      className:
-        'rounded-md border-none shadow-none font-medium text-foreground',
+      className: 'rounded-md border-none shadow-none font-medium',
     };
     if (!priorityMeta) return [typeBadge];
     const priorityKey = `priorities.${priorityMeta.priority}`;
@@ -229,8 +227,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       label: priorityLabel,
       variant: 'surface',
       colorVariant: priorityColorVariant,
-      className:
-        'rounded-md border-none shadow-none font-medium text-foreground',
+      className: 'rounded-md border-none shadow-none font-medium',
     };
     return [typeBadge, priorityBadge];
   }, [
@@ -343,11 +340,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         className,
       )}
     >
-      <CardHeader className="relative h-[88px] shrink-0 overflow-hidden p-0 isolate">
+      <CardHeader className="relative h-[96px] shrink-0 overflow-hidden p-0 isolate">
         <Skeleton
           className="h-full min-w-full"
           width="100%"
-          height="88px"
+          height="96px"
           loading={isLoading}
         >
           <div className="absolute inset-0 overflow-hidden">
@@ -361,8 +358,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             >
               <Image
                 width={640}
-                height={88}
-                className="h-full w-full object-cover"
+                height={96}
+                className="block h-full w-full object-cover"
                 src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                 alt=""
               />
@@ -444,11 +441,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
         ) : null}
         <div className="relative flex min-h-0 flex-1 flex-col gap-2.5 px-3 pb-2.5 pt-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-1 text-muted-foreground">
-            {metaBadges.length > 0 ? (
-              <BadgesList isLoading={isLoading} badges={metaBadges} />
-            ) : null}
-          </div>
           <div className="min-w-0">
             <Skeleton
               className="min-w-0"
@@ -461,21 +453,32 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               </CardTitle>
             </Skeleton>
           </div>
-          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-1 text-muted-foreground">
-            <span className="inline-flex min-w-0 items-center gap-1">
-              <ClockIcon
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                aria-hidden
-              />
-              {createdAtRelative}
-            </span>
-            <span className="inline-flex items-center gap-1 text-muted-foreground">
-              <ChatBubbleIcon
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                aria-hidden
-              />
-              <span className="tabular-nums">{normalizedMessagesCount}</span>
-            </span>
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-1 text-muted-foreground">
+              <span className="inline-flex min-w-0 items-center gap-1">
+                <ClockIcon
+                  className="h-3.5 w-3.5 shrink-0 text-neutral-10"
+                  aria-hidden
+                />
+                {createdAtRelative}
+              </span>
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <ChatBubbleIcon
+                  className="h-3.5 w-3.5 shrink-0 text-accent-10"
+                  aria-hidden
+                />
+                <span className="tabular-nums">{normalizedMessagesCount}</span>
+              </span>
+            </div>
+            {metaBadges.length > 0 ? (
+              <div className="ml-auto flex shrink-0 items-center">
+                <BadgesList
+                  isLoading={isLoading}
+                  badges={metaBadges}
+                  className="gap-1"
+                />
+              </div>
+            ) : null}
           </div>
 
           <Skeleton
