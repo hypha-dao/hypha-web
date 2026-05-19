@@ -25,14 +25,25 @@ export function createSummarizeSpaceDiscussionTool(
       if (!safe) {
         return { ok: false, error: 'Invalid space slug format' };
       }
-      const result = await createSpaceDiscussionSummary(
-        {
-          spaceSlug: safe,
-          authToken,
-          requestUrlForSessionMatrix,
-        },
-        { db },
-      );
+      let result: Awaited<ReturnType<typeof createSpaceDiscussionSummary>>;
+      try {
+        result = await createSpaceDiscussionSummary(
+          {
+            spaceSlug: safe,
+            authToken,
+            requestUrlForSessionMatrix,
+          },
+          { db },
+        );
+      } catch (error) {
+        return {
+          ok: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Failed to summarize discussion',
+        };
+      }
       if (!result.ok) return { ok: false, error: result.error };
       return {
         ok: true,
