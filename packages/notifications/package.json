@@ -8,6 +8,7 @@
   "dependencies": {
     "@hypha-platform/core": "workspace:*",
     "@hypha-platform/storage-postgres": "workspace:*",
+    "@privy-io/node": "^0.18.0",
     "@onesignal/node-onesignal": "5.3.1-beta1",
     "react": "^19.1.2",
     "react-onesignal": "^3.4.0"

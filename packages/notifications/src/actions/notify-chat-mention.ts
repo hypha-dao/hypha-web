@@ -3,12 +3,41 @@
 import { eq, inArray } from 'drizzle-orm';
 import { matrixUserLinks, people, db } from '@hypha-platform/storage-postgres';
 import { NotifyChatMentionInput } from '@hypha-platform/core/client';
+import { PrivyClient } from '@privy-io/node';
 import { sendEmailNotifications, sendPushNotifications } from '../mutations';
 import { TAG_MENTION_CONSENT } from '../constants';
 import {
   buildMentionEmailBody,
   sanitizeMentionIds,
 } from './notify-chat-mention.utils';
+
+let privyClientSingleton: PrivyClient | null = null;
+
+function getPrivyClient(): PrivyClient {
+  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+  const appSecret = process.env.PRIVY_APP_SECRET;
+  if (!appId || !appSecret) {
+    throw new Error(
+      'Missing Privy configuration for auth token validation in mention notifications',
+    );
+  }
+  if (!privyClientSingleton) {
+    privyClientSingleton = new PrivyClient({ appId, appSecret });
+  }
+  return privyClientSingleton;
+}
+
+async function assertValidAuthToken(authToken: string): Promise<void> {
+  try {
+    await getPrivyClient().utils().auth().verifyAuthToken(authToken);
+  } catch (error) {
+    console.error(
+      '[notifyChatMentionAction] Invalid auth token while sending mention notifications',
+      error,
+    );
+    throw new Error('Invalid auth token for mention notifications');
+  }
+}
 
 export async function notifyChatMentionAction(
   {
@@ -23,6 +52,7 @@ export async function notifyChatMentionAction(
   if (!authToken) {
     throw new Error('authToken is required to send mention notifications');
   }
+  await assertValidAuthToken(authToken);
   const matrixIds = sanitizeMentionIds(mentionMatrixUserIds);
   if (matrixIds.length === 0) return;
 

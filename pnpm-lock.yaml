@@ -1145,6 +1145,9 @@ importers:
       '@onesignal/node-onesignal':
         specifier: 5.3.1-beta1
         version: 5.3.1-beta1
+      '@privy-io/node':
+        specifier: ^0.18.0
+        version: 0.18.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       react:
         specifier: ^19.1.2
         version: 19.1.2
@@ -5740,6 +5743,26 @@ packages:
 
   '@privy-io/node@0.12.0':
     resolution: {integrity: sha512-s+zIXGQoaAahevWb5xj8NoFwfGJL2/N0rVaSoDTpSWfbzHNS8akZfkqE6iQME6yKCA4vaPZjy+TaGq8w7JaRLg==}
+    peerDependencies:
+      '@solana/kit': ^5.1.0
+      '@x402/evm': ^2.3.0
+      '@x402/fetch': ^2.3.0
+      '@x402/svm': ^2.3.0
+      viem: ^2.24.1
+    peerDependenciesMeta:
+      '@solana/kit':
+        optional: true
+      '@x402/evm':
+        optional: true
+      '@x402/fetch':
+        optional: true
+      '@x402/svm':
+        optional: true
+      viem:
+        optional: true
+
+  '@privy-io/node@0.18.0':
+    resolution: {integrity: sha512-DA+/f+nqJGB3lJ6b2qpan0OWIyAhoSXd/Cfo40Ww9fSXC3KKQ6eVHnOKiEO6KQ1DpVdswkkuBoG9uK9YHUST9w==}
     peerDependencies:
       '@solana/kit': ^5.1.0
       '@x402/evm': ^2.3.0
@@ -26814,6 +26837,20 @@ snapshots:
       - utf-8-validate
 
   '@privy-io/node@0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
+    dependencies:
+      '@hpke/chacha20poly1305': 1.8.0
+      '@hpke/core': 1.9.0
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
+      '@scure/base': 1.2.6
+      canonicalize: 2.1.0
+      jose: 6.2.2
+      lru-cache: 11.2.2
+      svix: 1.89.0
+    optionalDependencies:
+      viem: 2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+
+  '@privy-io/node@0.18.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
     dependencies:
       '@hpke/chacha20poly1305': 1.8.0
       '@hpke/core': 1.9.0
