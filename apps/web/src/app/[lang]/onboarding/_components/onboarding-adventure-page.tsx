@@ -60,7 +60,7 @@ const getCreateSpacePath = (lang: string) => `/${lang}/my-spaces/create`;
 const onboardingCardClass =
   'group h-full rounded-[1.5rem] border border-border/65 bg-background/75 shadow-[0_16px_48px_-34px_rgba(0,0,0,0.65)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-8/35 hover:shadow-[0_20px_56px_-34px_rgba(0,0,0,0.75)]';
 const primaryCtaClass =
-  'h-10 w-full rounded-xl border border-accent-8/45 bg-gradient-to-r from-accent-9 to-accent-10 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] transition-all hover:brightness-105';
+  'h-10 w-full rounded-lg border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22';
 const exchangeButtonBaseClass =
   'inline-flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const EXCHANGE_LINKS = [
@@ -741,7 +741,7 @@ export function OnboardingAdventurePage({
                     !aiChatEnabled ||
                     isStartingAi
                   }
-                  className="h-10 w-10 rounded-xl border border-accent-8/45 bg-gradient-to-r from-accent-9 to-accent-10 p-0 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] transition-all hover:brightness-105"
+                  className="h-10 w-10 rounded-full border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 p-0 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22"
                   aria-label={
                     isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
                   }

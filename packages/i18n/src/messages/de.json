@@ -98,6 +98,7 @@
   },
   "OnboardingAdventure": {
     "title": "Dein Abenteuer beginnt hier.",
+    "continueAdventure": "Abenteuer fortsetzen",
     "subtitle": "Wähle deinen nächsten Schritt.",
     "aiHero": {
       "title": "Beschreibe den Space, den du erstellen möchtest",

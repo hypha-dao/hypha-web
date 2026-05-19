@@ -98,6 +98,7 @@
   },
   "OnboardingAdventure": {
     "title": "Your Adventure starts here.",
+    "continueAdventure": "Continue your adventure",
     "subtitle": "Pick your next move.",
     "aiHero": {
       "title": "Describe the space you want to create",
