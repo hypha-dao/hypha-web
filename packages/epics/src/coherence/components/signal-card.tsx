@@ -153,6 +153,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         : '',
     [createdAtDate, dateFnsLocale],
   );
+  const normalizedMessagesCount = React.useMemo(() => {
+    const parsed =
+      typeof messages === 'number'
+        ? messages
+        : Number.parseFloat(`${messages}`);
+    if (!Number.isFinite(parsed) || parsed < 0) return 0;
+    return Math.trunc(parsed);
+  }, [messages]);
 
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -384,21 +392,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               />
             </div>
           </div>
-          {createdAtRelative ? (
-            <div className="pointer-events-none absolute right-2 top-2 z-10 inline-flex max-w-[55%] items-center gap-1 rounded-md bg-black/45 px-2 py-0.5 text-[11px] font-medium text-white/90 backdrop-blur-sm">
-              <ClockIcon className="h-3 w-3 shrink-0" aria-hidden />
-              <span className="truncate">{createdAtRelative}</span>
-            </div>
-          ) : null}
-          {metaBadges.length > 0 ? (
-            <div className="pointer-events-none absolute bottom-2 left-2 z-10 max-w-[80%]">
-              <BadgesList
-                isLoading={isLoading}
-                badges={metaBadges}
-                className="gap-1"
-              />
-            </div>
-          ) : null}
         </Skeleton>
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
@@ -447,6 +440,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
         ) : null}
         <div className="relative flex min-h-0 flex-1 flex-col gap-2.5 px-3 pb-2.5 pt-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-1 text-muted-foreground">
+            {metaBadges.length > 0 ? (
+              <BadgesList isLoading={isLoading} badges={metaBadges} />
+            ) : null}
+          </div>
           <div className="min-w-0">
             <Skeleton
               className="min-w-0"
@@ -458,6 +456,22 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 {title}
               </CardTitle>
             </Skeleton>
+          </div>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-1 text-muted-foreground">
+            <span className="inline-flex min-w-0 items-center gap-1">
+              <ClockIcon
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                aria-hidden
+              />
+              {createdAtRelative}
+            </span>
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
+              <ChatBubbleIcon
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                aria-hidden
+              />
+              <span className="tabular-nums">{normalizedMessagesCount}</span>
+            </span>
           </div>
 
           <Skeleton
