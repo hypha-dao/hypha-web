@@ -9,6 +9,8 @@ import {
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMe,
+  usePersonById,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
   AlertDialog,
@@ -42,12 +44,13 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { Archive, Pencil } from 'lucide-react';
+import { Archive, Pencil, Sparkles, Workflow } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { useScrollParallax } from '../../common/use-scroll-parallax';
 import { useParams, useRouter } from 'next/navigation';
+import { PersonAvatar } from '../../people/components/person-avatar';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -136,6 +139,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 }) => {
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
+  const { person: creatorPerson, isLoading: isCreatorPersonLoading } =
+    usePersonById({ id: creatorId });
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
@@ -171,6 +176,45 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     if (!Number.isFinite(parsed) || parsed < 0) return 0;
     return Math.trunc(parsed);
   }, [messages]);
+  const hasAiSignalTag = React.useMemo(
+    () => tags.some((tag) => tag.trim().toLowerCase() === 'ai signal'),
+    [tags],
+  );
+  const relaySourceSpaceSlug = React.useMemo(() => {
+    const match = description.match(
+      /Relayed from ecosystem space:\s*([a-z0-9-]+)/i,
+    );
+    return match?.[1] ?? null;
+  }, [description]);
+  const { space: relaySourceSpace, isLoading: isRelaySourceSpaceLoading } =
+    useSpaceBySlug(relaySourceSpaceSlug ?? '');
+  const isBackgroundJobSignal = React.useMemo(
+    () =>
+      /recent space-memory activity indicates a coordination opportunity/i.test(
+        description,
+      ) || /high-signal .* update/i.test(title),
+    [description, title],
+  );
+  const creatorKind = React.useMemo<
+    'person' | 'aiRole' | 'backgroundJob' | 'relay'
+  >(() => {
+    if (relaySourceSpaceSlug) return 'relay';
+    if (isBackgroundJobSignal) return 'backgroundJob';
+    if (hasAiSignalTag) return 'aiRole';
+    return 'person';
+  }, [relaySourceSpaceSlug, isBackgroundJobSignal, hasAiSignalTag]);
+  const creatorLabel = React.useMemo(() => {
+    if (creatorKind === 'relay') {
+      return relaySourceSpace?.title || relaySourceSpaceSlug || 'Relay space';
+    }
+    if (creatorKind === 'backgroundJob') return 'Background job';
+    if (creatorKind === 'aiRole') return 'AI role';
+    return (
+      creatorPerson?.nickname ||
+      [creatorPerson?.name, creatorPerson?.surname].filter(Boolean).join(' ') ||
+      'Member'
+    );
+  }, [creatorKind, creatorPerson, relaySourceSpace, relaySourceSpaceSlug]);
 
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -469,6 +513,36 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-1 text-muted-foreground">
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                {creatorKind === 'person' || creatorKind === 'relay' ? (
+                  <PersonAvatar
+                    size="sm"
+                    shape="circle"
+                    avatarSrc={
+                      creatorKind === 'person'
+                        ? creatorPerson?.avatarUrl ?? undefined
+                        : relaySourceSpace?.logoUrl ?? undefined
+                    }
+                    userName={creatorLabel}
+                    isLoading={
+                      creatorKind === 'person'
+                        ? isCreatorPersonLoading
+                        : isRelaySourceSpaceLoading
+                    }
+                  />
+                ) : (
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-accent-8/70 bg-accent-3/25 text-accent-11">
+                    {creatorKind === 'backgroundJob' ? (
+                      <Workflow className="h-3.5 w-3.5" aria-hidden />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                    )}
+                  </span>
+                )}
+                <span className="max-w-[11rem] truncate text-neutral-10">
+                  {creatorLabel}
+                </span>
+              </span>
               <span className="inline-flex min-w-0 items-center gap-1">
                 <ClockIcon
                   className="h-3.5 w-3.5 shrink-0 text-neutral-10"

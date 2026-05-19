@@ -853,6 +853,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     useState<string[]>([]);
   const [signalTeamPanelOpen, setSignalTeamPanelOpen] = useState(false);
   const [signalTeamBusy, setSignalTeamBusy] = useState(false);
+  const signalTeamAutoSeededRoomIdsRef = useRef<Set<string>>(new Set());
 
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
@@ -1605,6 +1606,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setSignalTeamMemberIds([]);
       setSignalTeamOwnerId(null);
       setSignalTeamPendingRequesterIds([]);
+      signalTeamAutoSeededRoomIdsRef.current.clear();
       return;
     }
     const room = client.getRoom(roomId);
@@ -1649,6 +1651,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       room.off(RoomEvent.Timeline, onTimeline);
     };
   }, [client, roomId, isSignalThread, coherenceSlug]);
+
+  useEffect(() => {
+    if (!roomId || !isSignalThread) return;
+    if (!hasLoadedCoherenceMessagesRef.current) return;
+    if (hasSignalTeamPolicy) return;
+    if (!canManageSignalTeam) return;
+    if (signalTeamBusy) return;
+    if (signalTeamAutoSeededRoomIdsRef.current.has(roomId)) return;
+
+    const defaultMemberIds = normalizeMatrixUserIds(
+      signalTeamSelectableMembers.map((member) => member.userId),
+    );
+    if (defaultMemberIds.length === 0) return;
+
+    signalTeamAutoSeededRoomIdsRef.current.add(roomId);
+    void publishSignalTeamMembers(defaultMemberIds);
+  }, [
+    roomId,
+    isSignalThread,
+    hasSignalTeamPolicy,
+    canManageSignalTeam,
+    signalTeamBusy,
+    signalTeamSelectableMembers,
+    publishSignalTeamMembers,
+  ]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
