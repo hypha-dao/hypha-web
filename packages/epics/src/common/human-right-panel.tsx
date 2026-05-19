@@ -1395,9 +1395,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const ownerId =
           signalTeamOwnerId?.trim() || currentUserId?.trim() || null;
         const actorId = currentUserId?.trim() || null;
-        const deduped = normalizeMatrixUserIds(
-          [...nextMemberIds, ...(ownerId ? [ownerId] : []), ...(actorId ? [actorId] : [])],
-        );
+        const deduped = normalizeMatrixUserIds([
+          ...nextMemberIds,
+          ...(ownerId ? [ownerId] : []),
+          ...(actorId ? [actorId] : []),
+        ]);
         await client.sendEvent(roomId, EventType.RoomMessage, {
           msgtype: MsgType.Notice,
           body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
@@ -2373,7 +2375,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     const rid = roomId?.trim() ?? null;
     const slug = coherenceSlug?.trim() ?? null;
-    if (!rid || !slug || mode !== 'coherence' || typeof window === 'undefined') {
+    if (
+      !rid ||
+      !slug ||
+      mode !== 'coherence' ||
+      typeof window === 'undefined'
+    ) {
       return;
     }
     rememberRoomToCoherenceSession(rid, slug, coherenceTitle);

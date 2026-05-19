@@ -40,7 +40,9 @@ export default async function NewSignalPage({
         backUrl={successfulUrl}
         spaceId={spaceFromDb.id}
         initialValues={
-          inheritedBoardTags.length > 0 ? { tags: inheritedBoardTags } : undefined
+          inheritedBoardTags.length > 0
+            ? { tags: inheritedBoardTags }
+            : undefined
         }
       />
     </ProposalOverlayShell>

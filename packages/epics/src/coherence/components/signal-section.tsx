@@ -89,7 +89,14 @@ const SIGNAL_TAG_CATEGORIES: readonly SignalTagCategory[] = [
   {
     key: 'peopleRoles',
     fallbackLabel: 'People & Roles',
-    tags: ['Project', 'Quest', 'Job', 'Skill', 'Advisory Support', 'Volunteering'],
+    tags: [
+      'Project',
+      'Quest',
+      'Job',
+      'Skill',
+      'Advisory Support',
+      'Volunteering',
+    ],
   },
   {
     key: 'ecosystemMapping',
@@ -106,7 +113,13 @@ const SIGNAL_TAG_CATEGORIES: readonly SignalTagCategory[] = [
   {
     key: 'operatingCoherence',
     fallbackLabel: 'Operating Coherence',
-    tags: ['Governance', 'Processes', 'Structure', 'Rhythms', 'Support Systems'],
+    tags: [
+      'Governance',
+      'Processes',
+      'Structure',
+      'Rhythms',
+      'Support Systems',
+    ],
   },
   {
     key: 'needsResources',
@@ -175,7 +188,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const [newBoardCategory, setNewBoardCategory] = React.useState(
     SIGNAL_TAG_CATEGORIES[0]?.key ?? '',
   );
-  const [newBoardTag, setNewBoardTag] = React.useState(
+  const [newBoardTag, setNewBoardTag] = React.useState<string>(
     COHERENCE_TAGS[0] ?? '',
   );
   const [provisioningNoticeLines, setProvisioningNoticeLines] = React.useState<
@@ -348,7 +361,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
     const value =
       newBoardFilterKind === 'category' ? newBoardCategory : newBoardTag;
     if (!value) return;
-    const idValue = `board-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const idValue = `board-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
     setBoards((prev) => [
       ...prev,
       {
@@ -461,7 +476,10 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </DialogHeader>
           <div className="grid gap-3 py-1">
             <div className="grid gap-1.5">
-              <label className="text-2 text-muted-foreground" htmlFor="boardNameInput">
+              <label
+                className="text-2 text-muted-foreground"
+                htmlFor="boardNameInput"
+              >
                 {t('boardName')}
               </label>
               <Input
@@ -472,7 +490,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
               />
             </div>
             <div className="grid gap-1.5">
-              <label className="text-2 text-muted-foreground">{t('boardFilterBy')}</label>
+              <label className="text-2 text-muted-foreground">
+                {t('boardFilterBy')}
+              </label>
               <Select
                 value={newBoardFilterKind}
                 onValueChange={(value) =>
@@ -483,7 +503,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="category">{t('boardFilterCategory')}</SelectItem>
+                  <SelectItem value="category">
+                    {t('boardFilterCategory')}
+                  </SelectItem>
                   <SelectItem value="tag">{t('boardFilterTag')}</SelectItem>
                 </SelectContent>
               </Select>
@@ -493,7 +515,10 @@ export const SignalSection: FC<SignalSectionProps> = ({
                 <label className="text-2 text-muted-foreground">
                   {t('boardSelectCategory')}
                 </label>
-                <Select value={newBoardCategory} onValueChange={setNewBoardCategory}>
+                <Select
+                  value={newBoardCategory}
+                  onValueChange={setNewBoardCategory}
+                >
                   <SelectTrigger className="h-9">
                     <SelectValue />
                   </SelectTrigger>
@@ -508,7 +533,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
               </div>
             ) : (
               <div className="grid gap-1.5">
-                <label className="text-2 text-muted-foreground">{t('boardSelectTag')}</label>
+                <label className="text-2 text-muted-foreground">
+                  {t('boardSelectTag')}
+                </label>
                 <Select value={newBoardTag} onValueChange={setNewBoardTag}>
                   <SelectTrigger className="h-9">
                     <SelectValue />
@@ -578,7 +605,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
                 aria-label={t('boardDelete', { boardName: board.name })}
                 title={t('boardDelete', { boardName: board.name })}
                 onClick={() =>
-                  setBoards((prev) => prev.filter((entry) => entry.id !== board.id))
+                  setBoards((prev) =>
+                    prev.filter((entry) => entry.id !== board.id),
+                  )
                 }
               >
                 <X className="h-3.5 w-3.5" aria-hidden />

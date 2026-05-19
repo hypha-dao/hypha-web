@@ -444,10 +444,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-1 text-muted-foreground">
             <span className="inline-flex min-w-0 items-center gap-1">
-              <ClockIcon
-                className="h-3 w-3 shrink-0 opacity-70"
-                aria-hidden
-              />
+              <ClockIcon className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
               {createdAtDate
                 ? formatDistanceToNowStrict(createdAtDate, {
                     addSuffix: true,

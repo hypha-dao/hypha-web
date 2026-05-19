@@ -2101,7 +2101,11 @@ export function HumanChatPanelChatBar({
                 <button
                   type="button"
                   disabled={composerLocked}
-                  className={composerLocked ? disabledIconButtonClass : recordingStopButtonClass}
+                  className={
+                    composerLocked
+                      ? disabledIconButtonClass
+                      : recordingStopButtonClass
+                  }
                   aria-label={t('composerStopRecording')}
                   title={t('composerStopRecording')}
                   onClick={() => stopVoiceRecording()}
@@ -2136,7 +2140,11 @@ export function HumanChatPanelChatBar({
                 <button
                   type="button"
                   disabled={composerLocked}
-                  className={composerLocked ? disabledIconButtonClass : recordingStopButtonClass}
+                  className={
+                    composerLocked
+                      ? disabledIconButtonClass
+                      : recordingStopButtonClass
+                  }
                   aria-label={t('composerStopDictation')}
                   title={t('composerStopDictation')}
                   onClick={() => stopDictation()}
