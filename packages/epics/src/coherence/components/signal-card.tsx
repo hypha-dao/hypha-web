@@ -108,6 +108,14 @@ const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
       'bg-gradient-to-t from-neutral-10/18 via-neutral-9/9 to-transparent',
   };
 
+const BADGE_ICON_COLOR_CLASS_MAP: Record<SignalColorVariant, string> = {
+  accent: 'text-accent-10',
+  error: 'text-error-10',
+  warn: 'text-warning-10',
+  success: 'text-success-10',
+  neutral: 'text-neutral-11',
+};
+
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isLoading,
   title,
@@ -212,10 +220,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const metaBadges: BadgeItem[] = React.useMemo(() => {
     const typeBadge: BadgeItem = {
       icon: (coherenceType?.icon ?? 'ArrowUpRight') as LucideReactIcon,
+      iconClassName: BADGE_ICON_COLOR_CLASS_MAP[typeColorVariant],
       label: typeLabel,
       variant: 'surface',
       colorVariant: typeColorVariant,
-      className: 'rounded-md border-none shadow-none font-medium',
+      className:
+        'rounded-md border-none shadow-none font-medium text-foreground',
     };
     if (!priorityMeta) return [typeBadge];
     const priorityKey = `priorities.${priorityMeta.priority}`;
@@ -224,10 +234,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       : priorityMeta.priority;
     const priorityBadge: BadgeItem = {
       icon: (priorityMeta.icon ?? 'CircleDot') as LucideReactIcon,
+      iconClassName: BADGE_ICON_COLOR_CLASS_MAP[priorityColorVariant],
       label: priorityLabel,
       variant: 'surface',
       colorVariant: priorityColorVariant,
-      className: 'rounded-md border-none shadow-none font-medium',
+      className:
+        'rounded-md border-none shadow-none font-medium text-foreground',
     };
     return [typeBadge, priorityBadge];
   }, [
