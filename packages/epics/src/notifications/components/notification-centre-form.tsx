@@ -299,9 +299,7 @@ export const NotificationCentreForm = ({
             </span>
             <span className="text-2 text-neutral-11 flex flex-row justify-between">
               <FormLabel>
-                {tNotificationCentre.has('channels.mentionConsent')
-                  ? tNotificationCentre('channels.mentionConsent')
-                  : 'Mention Notifications Consent'}
+                {tNotificationCentre('channels.mentionConsent')}
               </FormLabel>
               <FormField
                 control={form.control}
