@@ -294,7 +294,6 @@ export function OnboardingAdventurePage({
   const [copiedAddress, setCopiedAddress] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
   const [hasVisitedAdventure, setHasVisitedAdventure] = useState(false);
-  const [heroPlaceholderIndex, setHeroPlaceholderIndex] = useState(0);
   const [heroTitleWordIndex, setHeroTitleWordIndex] = useState(0);
 
   const firstName = useMemo(() => {
@@ -339,17 +338,6 @@ export function OnboardingAdventurePage({
 
   const hasJoinChoices = spaceOptions.length > 0;
   const hasDepositChoices = depositOptions.length > 0;
-  const rotatingHeroPrompts = useMemo(
-    () => [
-      t('aiHero.rotating.createSpace'),
-      t('aiHero.rotating.governance'),
-      t('aiHero.rotating.joinSpace'),
-      t('aiHero.rotating.treasury'),
-      t('aiHero.rotating.explore'),
-    ],
-    [t],
-  );
-
   useEffect(
     () => () => {
       if (copyTimeoutRef.current !== null) {
@@ -386,16 +374,6 @@ export function OnboardingAdventurePage({
   useEffect(() => {
     aiPromptRef.current = aiPrompt;
   }, [aiPrompt]);
-
-  useEffect(() => {
-    if (rotatingHeroPrompts.length < 2) return;
-    const intervalId = window.setInterval(() => {
-      setHeroPlaceholderIndex((current) =>
-        current + 1 >= rotatingHeroPrompts.length ? 0 : current + 1,
-      );
-    }, 2600);
-    return () => window.clearInterval(intervalId);
-  }, [rotatingHeroPrompts]);
 
   useEffect(() => {
     if (HERO_TITLE_ROTATING_WORDS.length < 2) return;
@@ -575,9 +553,6 @@ export function OnboardingAdventurePage({
   return (
     <Container className="flex flex-col gap-14 py-10 md:py-12">
       <header className="space-y-3 pt-3 text-center md:pt-4">
-        <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-accent-11 shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
-          {t('subtitle')}
-        </p>
         <Heading
           size="9"
           color="secondary"
@@ -651,10 +626,7 @@ export function OnboardingAdventurePage({
               <textarea
                 value={aiPrompt}
                 onChange={(event) => setAiPrompt(event.target.value)}
-                placeholder={
-                  rotatingHeroPrompts[heroPlaceholderIndex] ??
-                  t('aiHero.placeholder')
-                }
+                placeholder={t('subtitle')}
                 aria-label={t('aiHero.ariaLabel')}
                 rows={3}
                 className="relative min-h-[120px] w-full resize-none overflow-y-auto bg-transparent px-4 py-3 text-3 text-foreground outline-none placeholder:text-muted-foreground"
