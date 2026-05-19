@@ -203,6 +203,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       label: typeLabel,
       variant: 'surface',
       colorVariant: typeColorVariant,
+      className: 'rounded-md border-none shadow-none',
     };
     if (!priorityMeta) return [typeBadge];
     const priorityKey = `priorities.${priorityMeta.priority}`;
@@ -211,8 +212,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       : priorityMeta.priority;
     const priorityBadge: BadgeItem = {
       label: priorityLabel,
-      variant: 'outline',
+      variant: 'surface',
       colorVariant: priorityColorVariant,
+      className: 'rounded-md border-none shadow-none',
     };
     return [typeBadge, priorityBadge];
   }, [priorityMeta, t, typeLabel, typeColorVariant, priorityColorVariant]);
@@ -452,17 +454,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   })
                 : ''}
             </span>
-            <Badge
-              isLoading={isLoading}
-              variant="outline"
-              colorVariant="neutral"
-              className="h-7 gap-1.5 px-2"
-            >
-              <Users size={12} aria-hidden />
-              <span>
-                {t('messageCount', { count: normalizedMessagesCount })}
-              </span>
-            </Badge>
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
+              <Users size={12} aria-hidden className="opacity-70" />
+              {t('messageCount', { count: normalizedMessagesCount })}
+            </span>
           </div>
 
           <Skeleton
@@ -551,7 +546,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           ) : null}
         </div>
 
-        <div className="mt-auto flex min-h-[2.75rem] shrink-0 flex-col justify-center border-t border-border px-3 py-1.5">
+        <div className="mt-auto flex min-h-[2.75rem] shrink-0 flex-col justify-center bg-muted/10 px-3 py-1.5">
           {archived ? (
             <div
               onClick={(e) => {
@@ -567,10 +562,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 onAcceptClicked={handleUnarchive}
               >
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   colorVariant="accent"
                   size="sm"
-                  className="h-8 w-full"
+                  className="h-8 w-full hover:bg-accent-3"
                 >
                   {t('unarchive')}
                 </Button>
@@ -578,10 +573,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </div>
           ) : (
             <Button
-              variant="outline"
+              variant="ghost"
               colorVariant="accent"
               size="sm"
-              className="h-8 w-full"
+              className="h-8 w-full hover:bg-accent-3"
               disabled={isLoading || !roomId}
               onClick={(e) => {
                 if (onOpenConversation) {
