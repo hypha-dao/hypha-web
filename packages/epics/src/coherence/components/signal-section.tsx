@@ -39,7 +39,7 @@ import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { Archive, SearchIcon } from 'lucide-react';
+import { Archive, Pencil, SearchIcon } from 'lucide-react';
 import { useSpaceMember } from '../../spaces/hooks/use-space-member';
 import {
   SIGNAL_PROVISIONING_NOTICE_EVENT,
@@ -190,6 +190,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const [boards, setBoards] = React.useState<SignalBoard[]>([]);
   const [activeBoardId, setActiveBoardId] = React.useState<string>('');
   const [createBoardOpen, setCreateBoardOpen] = React.useState(false);
+  const [editingBoardId, setEditingBoardId] = React.useState<string | null>(null);
   const [newBoardName, setNewBoardName] = React.useState('');
   const [newBoardFilterKind, setNewBoardFilterKind] =
     React.useState<BoardFilterKind>('category');
@@ -445,13 +446,14 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }, [activeBoard, categoryByKey, signals]);
 
   const resetBoardForm = React.useCallback(() => {
+    setEditingBoardId(null);
     setNewBoardName('');
     setNewBoardFilterKind('category');
     setNewBoardCategory(SIGNAL_TAG_CATEGORIES[0]?.key ?? '');
     setNewBoardTag([]);
   }, []);
 
-  const handleCreateBoard = React.useCallback(() => {
+  const handleSaveBoard = React.useCallback(() => {
     const name = newBoardName.trim();
     if (!name) return;
     const values =
@@ -460,6 +462,24 @@ export const SignalSection: FC<SignalSectionProps> = ({
       new Set(values.map((value) => value.trim()).filter(Boolean)),
     );
     if (normalizedValues.length === 0) return;
+    if (editingBoardId) {
+      setBoards((prev) =>
+        prev.map((board) =>
+          board.id === editingBoardId
+            ? {
+                ...board,
+                name,
+                filterKind: newBoardFilterKind,
+                filterValues: normalizedValues,
+              }
+            : board,
+        ),
+      );
+      setActiveBoardId(editingBoardId);
+      setCreateBoardOpen(false);
+      resetBoardForm();
+      return;
+    }
     const idValue = `board-${Date.now()}-${Math.random()
       .toString(36)
       .slice(2, 8)}`;
@@ -478,6 +498,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
     setCreateBoardOpen(false);
     resetBoardForm();
   }, [
+    editingBoardId,
     newBoardCategory,
     newBoardFilterKind,
     newBoardName,
@@ -485,6 +506,21 @@ export const SignalSection: FC<SignalSectionProps> = ({
     person?.id,
     resetBoardForm,
   ]);
+
+  const handleEditBoard = React.useCallback((board: SignalBoard) => {
+    setEditingBoardId(board.id);
+    setNewBoardName(board.name);
+    setNewBoardFilterKind(board.filterKind);
+    if (board.filterKind === 'category') {
+      setNewBoardCategory(
+        board.filterValues[0] ?? SIGNAL_TAG_CATEGORIES[0]?.key ?? '',
+      );
+      setNewBoardTag([]);
+    } else {
+      setNewBoardTag([...board.filterValues]);
+    }
+    setCreateBoardOpen(true);
+  }, []);
 
   const handleArchiveBoard = React.useCallback(
     (boardId: string) => {
@@ -537,26 +573,48 @@ export const SignalSection: FC<SignalSectionProps> = ({
               {activeBoard &&
               activeBoard.createdByPersonId != null &&
               person?.id === activeBoard.createdByPersonId ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  colorVariant="neutral"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => handleArchiveBoard(activeBoard.id)}
-                  aria-label={
-                    t.has('boardArchive' as never)
-                      ? t('boardArchive' as never)
-                      : 'Archive board'
-                  }
-                  title={
-                    t.has('boardArchive' as never)
-                      ? t('boardArchive' as never)
-                      : 'Archive board'
-                  }
-                >
-                  <Archive className="h-3.5 w-3.5" aria-hidden />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => handleEditBoard(activeBoard)}
+                    aria-label={
+                      t.has('saveChanges' as never)
+                        ? t('saveChanges' as never)
+                        : 'Edit board'
+                    }
+                    title={
+                      t.has('saveChanges' as never)
+                        ? t('saveChanges' as never)
+                        : 'Edit board'
+                    }
+                  >
+                    <Pencil className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => handleArchiveBoard(activeBoard.id)}
+                    aria-label={
+                      t.has('boardArchive' as never)
+                        ? t('boardArchive' as never)
+                        : 'Archive board'
+                    }
+                    title={
+                      t.has('boardArchive' as never)
+                        ? t('boardArchive' as never)
+                        : 'Archive board'
+                    }
+                  >
+                    <Archive className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                </div>
               ) : null}
             </>
           ) : null}
@@ -594,7 +652,10 @@ export const SignalSection: FC<SignalSectionProps> = ({
               variant="outline"
               colorVariant="neutral"
               className="w-auto"
-              onClick={() => setCreateBoardOpen(true)}
+              onClick={() => {
+                resetBoardForm();
+                setCreateBoardOpen(true);
+              }}
             >
               {t('createBoard')}
             </Button>
@@ -633,8 +694,20 @@ export const SignalSection: FC<SignalSectionProps> = ({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t('createBoard')}</DialogTitle>
-            <DialogDescription>{t('createBoardDescription')}</DialogDescription>
+            <DialogTitle>
+              {editingBoardId
+                ? t.has('saveChanges' as never)
+                  ? t('saveChanges' as never)
+                  : 'Edit board'
+                : t('createBoard')}
+            </DialogTitle>
+            <DialogDescription>
+              {editingBoardId
+                ? t.has('createBoardDescription' as never)
+                  ? t('createBoardDescription' as never)
+                  : 'Update this board filter.'
+                : t('createBoardDescription')}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-1">
             <div className="grid gap-1.5">
@@ -752,13 +825,17 @@ export const SignalSection: FC<SignalSectionProps> = ({
             <Button
               type="button"
               colorVariant="accent"
-              onClick={handleCreateBoard}
+              onClick={handleSaveBoard}
               disabled={
                 !newBoardName.trim() ||
                 (newBoardFilterKind === 'tag' && newBoardTag.length === 0)
               }
             >
-              {t('boardCreateAction')}
+              {editingBoardId
+                ? t.has('saveChanges' as never)
+                  ? t('saveChanges' as never)
+                  : 'Save changes'
+                : t('boardCreateAction')}
             </Button>
           </DialogFooter>
         </DialogContent>
