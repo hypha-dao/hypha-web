@@ -333,6 +333,16 @@ export function AiPanelMessageBubble({
     !hasVisibleText &&
     fileParts.length === 0 &&
     renderedToolParts.length === 0;
+  const isSingleLineAssistantText =
+    !isUser &&
+    !isStreaming &&
+    hasVisibleText &&
+    fileParts.length === 0 &&
+    renderedToolParts.length === 0 &&
+    markdownBlocks.length === 1 &&
+    markdownBlocks[0]?.type === 'paragraph' &&
+    markdownBlocks[0].lines.length === 1 &&
+    markdownBlocks[0].lines[0].length <= 110;
 
   const handleCopy = useCallback(async () => {
     if (!textContent) return;
@@ -477,9 +487,20 @@ export function AiPanelMessageBubble({
   );
 
   return (
-    <div className={cn('flex gap-2', isUser && 'flex-row-reverse')}>
+    <div
+      className={cn(
+        'flex gap-2',
+        isUser && 'flex-row-reverse',
+        isSingleLineAssistantText && 'items-center',
+      )}
+    >
       {!isUser && (
-        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary">
+        <div
+          className={cn(
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary',
+            isSingleLineAssistantText ? 'mt-0' : 'mt-0.5',
+          )}
+        >
           <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
         </div>
       )}

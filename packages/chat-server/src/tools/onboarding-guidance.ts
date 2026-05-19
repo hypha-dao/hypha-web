@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { ChatRouteTool } from './types';
+import { createSearchSpacesTool } from './search-spaces';
 
 const processSchema = z.enum([
   'create_space',
@@ -148,6 +149,7 @@ function isFilled(value: unknown): boolean {
 }
 
 export function createOnboardingGuidanceTool() {
+  const searchSpacesTool = createSearchSpacesTool();
   return {
     description:
       'Guided onboarding helper. Returns one next question at a time plus progress and validation steps.',
@@ -181,6 +183,17 @@ export function createOnboardingGuidanceTool() {
 
       const exploreReady =
         process === 'explore_network' && isFilled(answers.explore_scope);
+      const exploreScope =
+        typeof answers.explore_scope === 'string'
+          ? answers.explore_scope.trim()
+          : '';
+      const searchResults =
+        exploreReady && exploreScope
+          ? await searchSpacesTool.execute({
+              query: exploreScope,
+              limit: 8,
+            })
+          : null;
       return {
         ok: true,
         process,
@@ -188,7 +201,7 @@ export function createOnboardingGuidanceTool() {
         space_slug: space_slug ?? null,
         question_mode: 'single_step',
         assistant_instruction: exploreReady
-          ? 'Use search_spaces immediately with the discovered topic and return concrete space matches in this same reply. Do not ask another discovery question first.'
+          ? 'Return concrete space matches now in this same reply. If search_results has entries, list the best 3-5 with clear names and short reasons. If none are found, say that clearly and suggest the next best step. Do not ask another discovery question first.'
           : 'Ask only the next_question as a single natural-language question. Do not provide a checklist, field list, or form labels.',
         progress: {
           answered: collected,
@@ -197,6 +210,7 @@ export function createOnboardingGuidanceTool() {
         },
         next_question: nextStep?.question ?? null,
         ready_for_search: exploreReady,
+        search_results: searchResults,
         ready_for_validation: readyForValidation,
         validation_steps: readyForValidation ? guidance.validation_steps : [],
         suggested_tools: guidance.suggested_tools,

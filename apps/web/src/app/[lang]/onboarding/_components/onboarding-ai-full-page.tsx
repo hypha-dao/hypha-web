@@ -86,12 +86,12 @@ export function OnboardingAiFullPage({
     useState<OnboardingContext>(context);
   const seededRef = useRef(false);
   const walletCreateInFlightRef = useRef(false);
+  const handledWalletPayloadKeyRef = useRef<string | null>(null);
   const navigatedHrefRef = useRef<string | null>(null);
   const createdSpaceRef = useRef<string | null>(null);
 
-  const { createSpace: createSpaceWithWalletFlow } = useCreateSpaceOrchestrator(
-    { authToken: jwt, config },
-  );
+  const { createSpace: createSpaceWithWalletFlow, space: walletCreatedSpace } =
+    useCreateSpaceOrchestrator({ authToken: jwt, config });
 
   const transport = useMemo(
     () =>
@@ -207,6 +207,19 @@ export function OnboardingAiFullPage({
   }, [context.locale, messages, router]);
 
   useEffect(() => {
+    const slug =
+      typeof walletCreatedSpace?.slug === 'string'
+        ? walletCreatedSpace.slug.trim()
+        : '';
+    if (!slug) return;
+    if (createdSpaceRef.current === slug) return;
+    createdSpaceRef.current = slug;
+    router.push(
+      `/${context.locale ?? 'en'}/dho/${slug}/agreements/space-configuration`,
+    );
+  }, [context.locale, router, walletCreatedSpace?.slug]);
+
+  useEffect(() => {
     const navOutput = [...messages]
       .reverse()
       .flatMap((message) =>
@@ -257,10 +270,16 @@ export function OnboardingAiFullPage({
 
   useEffect(() => {
     if (walletCreateInFlightRef.current) return;
-    const payloadPart = [...messages]
+    const payloadResult = [...messages]
       .reverse()
-      .flatMap((message) => message.parts ?? [])
-      .find((part) => {
+      .flatMap((message) =>
+        (message.parts ?? []).map((part, index) => ({
+          messageId: message.id,
+          index,
+          part,
+        })),
+      )
+      .find(({ part }) => {
         if (typeof part.type !== 'string' || !part.type.startsWith('tool-'))
           return false;
         const toolPart = part as {
@@ -279,26 +298,35 @@ export function OnboardingAiFullPage({
         );
       }) as
       | {
-          output?: {
-            create_payload?: {
-              title?: string;
-              description?: string;
-              slug?: string;
-              parent_id?: number | null;
-              flags?: string[];
-              links?: string[];
-              categories?: string[];
-              lead_image_url?: string | null;
-              logo_url?: string | null;
-              ecosystem_logo_light_url?: string | null;
-              ecosystem_logo_dark_url?: string | null;
+          messageId?: string;
+          index?: number;
+          part?: {
+            output?: {
+              create_payload?: {
+                title?: string;
+                description?: string;
+                slug?: string;
+                parent_id?: number | null;
+                flags?: string[];
+                links?: string[];
+                categories?: string[];
+                lead_image_url?: string | null;
+                logo_url?: string | null;
+                ecosystem_logo_light_url?: string | null;
+                ecosystem_logo_dark_url?: string | null;
+              };
             };
           };
         }
       | undefined;
 
-    const payload = payloadPart?.output?.create_payload;
+    const payloadKey = payloadResult
+      ? `${payloadResult.messageId ?? 'm'}:${payloadResult.index ?? 0}`
+      : null;
+    if (payloadKey && handledWalletPayloadKeyRef.current === payloadKey) return;
+    const payload = payloadResult?.part?.output?.create_payload;
     if (!payload?.title || !payload.description) return;
+    if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
     const normalizedTitle =
       typeof payload.title === 'string' ? payload.title.trim() : '';
     const normalizedDescription =

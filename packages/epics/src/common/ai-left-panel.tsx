@@ -191,6 +191,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const activeSpaceChatRoomId = activeSpaces?.[0]?.chatRoomId?.trim() || null;
   const [input, setInput] = useState('');
   const aiWalletCreateInFlightRef = useRef(false);
+  const handledWalletPayloadKeyRef = useRef<string | null>(null);
   const [draftAttachments, setDraftAttachments] = useState<
     AiPanelDraftAttachment[]
   >([]);
@@ -210,6 +211,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const lastAutoNavigationKeyRef = useRef<string | null>(null);
   const {
     createSpace: createSpaceWithWalletFlow,
+    space: walletCreatedSpace,
     isError: isCreateSpaceWithWalletFlowError,
     errors: createSpaceWithWalletFlowErrors,
   } = useCreateSpaceOrchestrator({ authToken: jwt, config });
@@ -848,12 +850,47 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   useEffect(() => {
     if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
     if (!pathname.includes('/onboarding')) return;
+    const slug =
+      typeof walletCreatedSpace?.slug === 'string'
+        ? walletCreatedSpace.slug.trim()
+        : '';
+    if (!slug) return;
+    if (lastAutoTransitionSpaceSlugRef.current === slug) return;
+    lastAutoTransitionSpaceSlugRef.current = slug;
+    const nextContext: OnboardingConversationContext = {
+      ...onboardingContext,
+      setupPhase: 'verify',
+    };
+    setOnboardingContext(nextContext);
+    saveOnboardingConversationContext(nextContext);
+    openAiPanel();
+    setAiOverlayVisible(false);
+    router.push(`/${lang}/dho/${slug}/agreements/space-configuration`);
+  }, [
+    lang,
+    onboardingContext,
+    openAiPanel,
+    pathname,
+    router,
+    setAiOverlayVisible,
+    walletCreatedSpace?.slug,
+  ]);
+
+  useEffect(() => {
+    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
+    if (!pathname.includes('/onboarding')) return;
     if (aiWalletCreateInFlightRef.current) return;
 
     const latestWalletCreatePayload = [...messages]
       .reverse()
-      .flatMap((message) => message.parts ?? [])
-      .find((part) => {
+      .flatMap((message) =>
+        (message.parts ?? []).map((part, index) => ({
+          messageId: message.id,
+          index,
+          part,
+        })),
+      )
+      .find(({ part }) => {
         if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) {
           return false;
         }
@@ -873,26 +910,37 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         );
       }) as
       | {
-          output?: {
-            create_payload?: {
-              title?: string;
-              description?: string;
-              slug?: string;
-              parent_id?: number | null;
-              flags?: string[];
-              links?: string[];
-              categories?: string[];
-              lead_image_url?: string | null;
-              logo_url?: string | null;
-              ecosystem_logo_light_url?: string | null;
-              ecosystem_logo_dark_url?: string | null;
+          messageId?: string;
+          index?: number;
+          part?: {
+            output?: {
+              create_payload?: {
+                title?: string;
+                description?: string;
+                slug?: string;
+                parent_id?: number | null;
+                flags?: string[];
+                links?: string[];
+                categories?: string[];
+                lead_image_url?: string | null;
+                logo_url?: string | null;
+                ecosystem_logo_light_url?: string | null;
+                ecosystem_logo_dark_url?: string | null;
+              };
             };
           };
         }
       | undefined;
 
-    const payload = latestWalletCreatePayload?.output?.create_payload;
+    const payloadKey = latestWalletCreatePayload
+      ? `${latestWalletCreatePayload.messageId ?? 'm'}:${
+          latestWalletCreatePayload.index ?? 0
+        }`
+      : null;
+    if (payloadKey && handledWalletPayloadKeyRef.current === payloadKey) return;
+    const payload = latestWalletCreatePayload?.part?.output?.create_payload;
     if (!payload?.title || !payload.description) return;
+    if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
     const normalizedTitle =
       typeof payload.title === 'string' ? payload.title.trim() : '';
     const normalizedDescription =
