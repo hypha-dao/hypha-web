@@ -88,8 +88,9 @@ function PdfPreview({
         };
         const task = pdfJs.getDocument(request);
         loadingTask = task;
-        pdf = await task.promise;
-        const page = await pdf.getPage(1);
+        const loadedPdf = await task.promise;
+        pdf = loadedPdf;
+        const page = await loadedPdf.getPage(1);
 
         const baseViewport = page.getViewport({ scale: 1 });
         const scale = Math.min(2, Math.max(0.6, 900 / baseViewport.width));
