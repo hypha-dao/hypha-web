@@ -519,9 +519,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
           aria-label={t('searchSignals')}
           onChange={(event) => onUpdateSearch(event.target.value)}
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
-          className="w-full"
+          className="w-full lg:min-w-0 lg:max-w-2xl"
         />
-        <div className="flex w-full items-center justify-end lg:w-auto">
+        <div className="flex w-full items-center justify-end lg:w-auto lg:shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex flex-row gap-2 h-full">
               <Checkbox
@@ -534,7 +534,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
                 disabled={isLoading}
               />
               <label
-                className="text-[14px] self-center"
+                className="text-[14px] self-center whitespace-nowrap"
                 htmlFor="hideArchivedSignalsCheckbox"
               >
                 {t('hideArchived')}
