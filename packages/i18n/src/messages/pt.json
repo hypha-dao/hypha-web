@@ -867,6 +867,10 @@
         "title": "Uma proposta é aprovada ou rejeitada",
         "description": "Em qualquer um dos espaços dos quais você é membro."
       },
+      "mentionOnChatMessage": {
+        "title": "Você foi mencionado em uma mensagem de chat",
+        "description": "Em qualquer thread ou chat em que as menções estejam habilitadas para você."
+      },
       "labelWithComingSoon": "{title} ({comingSoon})"
     },
     "actions": {

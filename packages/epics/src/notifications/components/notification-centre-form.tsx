@@ -297,47 +297,52 @@ export const NotificationCentreForm = ({
                 )}
               />
             </span>
-            <span className="text-2 text-neutral-11 flex flex-row justify-between">
-              <FormLabel>
-                {tNotificationCentre('channels.mentionConsent')}
-              </FormLabel>
-              <FormField
-                control={form.control}
-                name="mentionNotificationsConsent"
-                render={({ field }) => (
-                  <RadioGroup
-                    className="flex flex-row justify-end"
-                    name="mentionNotificationsConsent"
-                    orientation="horizontal"
-                    value={field.value}
-                    onValueChange={(value: string) => {
-                      form.setValue(field.name, parseYesNoValue(value, 'yes'));
-                    }}
-                  >
-                    <Label htmlFor="mentionNotificationsConsentYes">
-                      {yesLabel}
-                    </Label>
-                    <RadioGroupItem
-                      id="mentionNotificationsConsentYes"
-                      value="yes"
-                    />
-                    <Label htmlFor="mentionNotificationsConsentNo">
-                      {noLabel}
-                    </Label>
-                    <RadioGroupItem
-                      id="mentionNotificationsConsentNo"
-                      value="no"
-                    />
-                  </RadioGroup>
-                )}
-              />
-            </span>
             <Separator />
             <div className="flex gap-5 justify-between">
               <h3 className="text-3 font-medium text-neutral-11">
                 {tNotificationCentre('subscriptions.title')}
               </h3>
             </div>
+            <FormField
+              control={form.control}
+              name="mentionNotificationsConsent"
+              render={({ field }) => {
+                const checkboxId = 'mentionNotificationsConsentChecked';
+                return (
+                  <FormItem>
+                    <FormControl>
+                      <div className="flex flex-col gap-2">
+                        <span className="text-2 text-neutral-11 justify-between">
+                          <div className="flex flex-row gap-2">
+                            <Checkbox
+                              id={checkboxId}
+                              checked={parseSwitch(field.value)}
+                              onCheckedChange={(value) => {
+                                form.setValue(
+                                  field.name,
+                                  value === true ? 'yes' : 'no',
+                                );
+                              }}
+                            />
+                            <FormLabel htmlFor={checkboxId}>
+                              {tNotificationCentre(
+                                'subscriptions.mentionOnChatMessage.title',
+                              )}
+                            </FormLabel>
+                          </div>
+                        </span>
+                        <span className="text-2 text-neutral-11">
+                          {tNotificationCentre(
+                            'subscriptions.mentionOnChatMessage.description',
+                          )}
+                        </span>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
             {subscriptions.map((field, index) => (
               <div key={field.id}>
                 <FormField

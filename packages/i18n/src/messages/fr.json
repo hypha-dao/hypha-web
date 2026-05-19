@@ -177,6 +177,10 @@
         "title": "Une proposition est approuvée ou rejetée",
         "description": "Dans n’importe lequel des espaces dont vous êtes membre."
       },
+      "mentionOnChatMessage": {
+        "title": "Vous êtes mentionné dans un message du chat",
+        "description": "Dans tout fil ou chat où les mentions sont activées pour vous."
+      },
       "labelWithComingSoon": "{title} ({comingSoon})"
     },
     "actions": {

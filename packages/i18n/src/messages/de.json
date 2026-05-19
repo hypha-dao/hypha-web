@@ -177,6 +177,10 @@
         "title": "Ein Vorschlag wird angenommen oder abgelehnt",
         "description": "In allen Spaces, in denen Sie Mitglied sind."
       },
+      "mentionOnChatMessage": {
+        "title": "Sie werden in einer Chat-Nachricht erwähnt",
+        "description": "In jedem Thread oder Chat, in dem Erwähnungen für Sie aktiviert sind."
+      },
       "labelWithComingSoon": "{title} ({comingSoon})"
     },
     "actions": {
