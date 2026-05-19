@@ -852,6 +852,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [signalTeamPendingRequesterIds, setSignalTeamPendingRequesterIds] =
     useState<string[]>([]);
   const [signalTeamPanelOpen, setSignalTeamPanelOpen] = useState(false);
+  const [signalTeamDraftMemberIds, setSignalTeamDraftMemberIds] = useState<
+    string[] | null
+  >(null);
   const [signalTeamBusy, setSignalTeamBusy] = useState(false);
   const signalTeamAutoSeededRoomIdsRef = useRef<Set<string>>(new Set());
 
@@ -1448,6 +1451,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         : signalTeamSelectableMembers.map((member) => member.userId),
     [isSignalThread, signalTeamMemberIds, signalTeamSelectableMembers],
   );
+  const signalTeamEditorMemberIds = useMemo(
+    () =>
+      signalTeamDraftMemberIds != null
+        ? signalTeamDraftMemberIds
+        : effectiveSignalTeamMemberIds,
+    [signalTeamDraftMemberIds, effectiveSignalTeamMemberIds],
+  );
   const canManageSignalTeam =
     isSignalThread && (!hasSignalTeamPolicy || isCurrentUserSignalTeamMember);
   const currentUserPendingSignalTeamRequest = Boolean(
@@ -1455,7 +1465,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const publishSignalTeamMembers = useCallback(
-    async (nextMemberIds: string[]) => {
+    async (
+      nextMemberIds: string[],
+      options?: {
+        addedMemberMatrixUserIds?: string[];
+        removedMemberMatrixUserIds?: string[];
+      },
+    ) => {
       if (!client || !roomId || !isSignalThread) return;
       try {
         const ownerId =
@@ -1466,11 +1482,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           ...(ownerId ? [ownerId] : []),
           ...(actorId ? [actorId] : []),
         ]);
+        const added = normalizeMatrixUserIds(options?.addedMemberMatrixUserIds);
+        const removed = normalizeMatrixUserIds(
+          options?.removedMemberMatrixUserIds,
+        );
+        const addedLabels = added.map((id) => resolveMentionMemberLabel(id));
+        const removedLabels = removed.map((id) => resolveMentionMemberLabel(id));
+        const summaryParts: string[] = [];
+        if (addedLabels.length > 0) {
+          summaryParts.push(`added ${addedLabels.join(', ')}`);
+        }
+        if (removedLabels.length > 0) {
+          summaryParts.push(`removed ${removedLabels.join(', ')}`);
+        }
+        const summaryText =
+          summaryParts.length > 0 ? `: ${summaryParts.join('; ')}` : '';
         await client.sendEvent(roomId, EventType.RoomMessage, {
           msgtype: MsgType.Notice,
-          body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
+          body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team updated${summaryText}`,
           coherenceSlug: coherenceSlug?.trim() || null,
           memberMatrixUserIds: deduped,
+          addedMemberMatrixUserIds: added,
+          removedMemberMatrixUserIds: removed,
           updatedAt: new Date().toISOString(),
         } as any);
         setSignalTeamMemberIds(deduped);
@@ -1495,9 +1528,42 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       coherenceSlug,
       currentUserId,
       signalTeamOwnerId,
+      resolveMentionMemberLabel,
       t,
     ],
   );
+
+  const commitSignalTeamDraft = useCallback(async () => {
+    if (!signalTeamPanelOpen) return;
+    const draftIds = signalTeamDraftMemberIds;
+    setSignalTeamPanelOpen(false);
+    if (!draftIds) return;
+
+    const currentIds = normalizeMatrixUserIds(effectiveSignalTeamMemberIds);
+    const nextIds = normalizeMatrixUserIds(draftIds);
+    const addedMemberMatrixUserIds = nextIds.filter(
+      (id) => !currentIds.includes(id),
+    );
+    const removedMemberMatrixUserIds = currentIds.filter(
+      (id) => !nextIds.includes(id),
+    );
+    setSignalTeamDraftMemberIds(null);
+    if (
+      addedMemberMatrixUserIds.length === 0 &&
+      removedMemberMatrixUserIds.length === 0
+    ) {
+      return;
+    }
+    await publishSignalTeamMembers(nextIds, {
+      addedMemberMatrixUserIds,
+      removedMemberMatrixUserIds,
+    });
+  }, [
+    signalTeamPanelOpen,
+    signalTeamDraftMemberIds,
+    effectiveSignalTeamMemberIds,
+    publishSignalTeamMembers,
+  ]);
 
   const requestSignalTeamAccess = useCallback(async () => {
     if (!client || !roomId || !isSignalThread || !currentUserId) return;
@@ -1606,6 +1672,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setSignalTeamMemberIds([]);
       setSignalTeamOwnerId(null);
       setSignalTeamPendingRequesterIds([]);
+      setSignalTeamDraftMemberIds(null);
       signalTeamAutoSeededRoomIdsRef.current.clear();
       return;
     }
@@ -1618,6 +1685,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setSignalTeamMemberIds(next.memberMatrixUserIds);
       setSignalTeamOwnerId(next.ownerMatrixUserId);
       setSignalTeamPendingRequesterIds(next.pendingRequesterIds);
+      if (!signalTeamPanelOpen) {
+        setSignalTeamDraftMemberIds(null);
+      }
     };
 
     applyFromTimeline();
@@ -1650,7 +1720,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return () => {
       room.off(RoomEvent.Timeline, onTimeline);
     };
-  }, [client, roomId, isSignalThread, coherenceSlug]);
+  }, [client, roomId, isSignalThread, coherenceSlug, signalTeamPanelOpen]);
 
   useEffect(() => {
     if (!roomId || !isSignalThread) return;
@@ -3322,7 +3392,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         variant="outline"
                         colorVariant="accent"
                         className="h-8 min-h-8 border-[color:var(--space-accent)] px-3 text-[color:var(--space-accent)] hover:bg-accent-3"
-                        onClick={() => setSignalTeamPanelOpen((prev) => !prev)}
+                        onClick={() => {
+                          if (signalTeamPanelOpen) {
+                            void commitSignalTeamDraft();
+                            return;
+                          }
+                          setSignalTeamDraftMemberIds(
+                            normalizeMatrixUserIds(effectiveSignalTeamMemberIds),
+                          );
+                          setSignalTeamPanelOpen(true);
+                        }}
                       >
                         {signalTeamPanelOpen
                           ? t('signalTeamManageClose')
@@ -3337,9 +3416,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         <div className="grid gap-1">
                           {signalTeamSelectableMembers.map((member) => {
                             const selected =
-                              effectiveSignalTeamMemberIds.includes(
-                                member.userId,
-                              );
+                              signalTeamEditorMemberIds.includes(member.userId);
                             const isCurrentUser =
                               member.userId === currentUserId;
                             const isOwner = member.userId === signalTeamOwnerId;
@@ -3357,14 +3434,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                                   if (isCurrentUser && selected) return;
                                   if (isOwner && selected) return;
                                   const next = selected
-                                    ? effectiveSignalTeamMemberIds.filter(
+                                    ? signalTeamEditorMemberIds.filter(
                                         (id) => id !== member.userId,
                                       )
                                     : [
-                                        ...effectiveSignalTeamMemberIds,
+                                        ...signalTeamEditorMemberIds,
                                         member.userId,
                                       ];
-                                  void publishSignalTeamMembers(next);
+                                  setSignalTeamDraftMemberIds(
+                                    normalizeMatrixUserIds(next),
+                                  );
                                 }}
                               >
                                 <SignalTeamResolvedMemberLabel
