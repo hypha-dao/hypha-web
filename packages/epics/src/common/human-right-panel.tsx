@@ -207,6 +207,8 @@ const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
 const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
 const SIGNAL_TEAM_REQUEST_EVENT_KIND = 'io.hypha.signal.team.request.v1';
+const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
+const SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER = '[hypha:signal-team-request]';
 
 type PersistedUIMessage = Omit<UIMessage, 'timestamp'> & {
   timestamp?: string;
@@ -237,10 +239,12 @@ function deriveSignalTeamStateFromEvents(
     if (!content || typeof content !== 'object') continue;
     const msgtype =
       typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
-    const eventKind =
-      typeof content.hyphaSignalEventType === 'string'
-        ? content.hyphaSignalEventType.trim()
-        : msgtype;
+    const body = typeof content.body === 'string' ? content.body.trim() : '';
+    const eventKind = body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
+      ? SIGNAL_TEAM_EVENT_KIND
+      : body.startsWith(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER)
+      ? SIGNAL_TEAM_REQUEST_EVENT_KIND
+      : msgtype;
     const eventSlug =
       typeof content.coherenceSlug === 'string'
         ? content.coherenceSlug.trim()
@@ -1263,8 +1267,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const deduped = normalizeMatrixUserIds(nextMemberIds);
       await client.sendEvent(roomId, EventType.RoomMessage, {
         msgtype: MsgType.Notice,
-        hyphaSignalEventType: SIGNAL_TEAM_EVENT_KIND,
-        body: 'signal team members updated',
+        body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
         coherenceSlug: coherenceSlug?.trim() || null,
         memberMatrixUserIds: deduped,
         updatedAt: new Date().toISOString(),
@@ -1283,8 +1286,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     try {
       await client.sendEvent(roomId, EventType.RoomMessage, {
         msgtype: MsgType.Notice,
-        hyphaSignalEventType: SIGNAL_TEAM_REQUEST_EVENT_KIND,
-        body: 'signal team access requested',
+        body: `${SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER} signal team access requested`,
         coherenceSlug: coherenceSlug?.trim() || null,
         requesterMatrixUserId: currentUserId,
         status: 'pending',
@@ -1312,8 +1314,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         await Promise.all([
           client.sendEvent(roomId, EventType.RoomMessage, {
             msgtype: MsgType.Notice,
-            hyphaSignalEventType: SIGNAL_TEAM_REQUEST_EVENT_KIND,
-            body: 'signal team access approved',
+            body: `${SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER} signal team access approved`,
             coherenceSlug: coherenceSlug?.trim() || null,
             requesterMatrixUserId: requesterId,
             status: 'approved',
@@ -1321,8 +1322,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }),
           client.sendEvent(roomId, EventType.RoomMessage, {
             msgtype: MsgType.Notice,
-            hyphaSignalEventType: SIGNAL_TEAM_EVENT_KIND,
-            body: 'signal team members updated',
+            body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
             coherenceSlug: coherenceSlug?.trim() || null,
             memberMatrixUserIds: nextMembers,
             updatedAt: new Date().toISOString(),
@@ -1392,10 +1392,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         content && typeof content.msgtype === 'string'
           ? content.msgtype.trim()
           : '';
-      const eventKind =
-        content && typeof content.hyphaSignalEventType === 'string'
-          ? content.hyphaSignalEventType.trim()
-          : msgtype;
+      const body =
+        content && typeof content.body === 'string' ? content.body.trim() : '';
+      const eventKind = body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
+        ? SIGNAL_TEAM_EVENT_KIND
+        : body.startsWith(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER)
+        ? SIGNAL_TEAM_REQUEST_EVENT_KIND
+        : msgtype;
       if (
         eventKind !== SIGNAL_TEAM_EVENT_KIND &&
         eventKind !== SIGNAL_TEAM_REQUEST_EVENT_KIND
