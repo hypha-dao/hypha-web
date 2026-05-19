@@ -311,18 +311,18 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   return (
     <Card
       className={cn(
-        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 bg-card pt-0 shadow-sm',
+        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-xl border-border/70 bg-card pt-0 shadow-sm',
         'transition-[border-color,box-shadow] duration-200 ease-out',
         'hover:border-accent-8/75 hover:shadow-md',
         'focus-within:border-accent-8/75 focus-within:shadow-md',
         className,
       )}
     >
-      <CardHeader className="relative h-[104px] shrink-0 overflow-hidden p-0 isolate">
+      <CardHeader className="relative h-[84px] shrink-0 overflow-hidden p-0 isolate">
         <Skeleton
           className="h-full min-w-full"
           width="100%"
-          height="104px"
+          height="84px"
           loading={isLoading}
         >
           <div className="absolute inset-0 overflow-hidden">
@@ -336,7 +336,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             >
               <Image
                 width={640}
-                height={104}
+                height={84}
                 className="h-full w-full object-cover"
                 src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                 alt=""
@@ -379,13 +379,13 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
         {isCreator && slug ? (
-          <div className="absolute right-3 top-3 z-10 flex items-center gap-0.5">
+          <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5">
             <Button
               type="button"
               variant="ghost"
               colorVariant="neutral"
               size="sm"
-              className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               disabled={isLoading}
               aria-label={tSignalCard('editMenu')}
               title={tSignalCard('editMenu')}
@@ -407,7 +407,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               variant="ghost"
               colorVariant="neutral"
               size="sm"
-              className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               disabled={isLoading}
               aria-label={t('archiveConversation')}
               title={t('archiveConversation')}
@@ -422,8 +422,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </Button>
           </div>
         ) : null}
-        <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
-          <div className="flex min-w-0 flex-wrap items-center gap-2 pr-20 text-1 text-muted-foreground">
+        <div className="relative flex min-h-0 flex-1 flex-col gap-2 px-3 pb-2.5 pt-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5 pr-16 text-1 text-muted-foreground">
             {metaBadges.length > 0 ? (
               <BadgesList isLoading={isLoading} badges={metaBadges} />
             ) : null}
@@ -433,19 +433,19 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <Skeleton
               className="min-w-0"
               width="100%"
-              height="22px"
+              height="20px"
               loading={isLoading}
             >
-              <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
+              <CardTitle className="line-clamp-2 text-sm font-semibold leading-snug">
                 {title}
               </CardTitle>
             </Skeleton>
           </div>
 
-          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-1 text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-1 text-muted-foreground">
             <span className="inline-flex min-w-0 items-center gap-1">
               <ClockIcon
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                className="h-3 w-3 shrink-0 opacity-70"
                 aria-hidden
               />
               {createdAtDate
@@ -459,7 +459,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               isLoading={isLoading}
               variant="outline"
               colorVariant="neutral"
-              className="gap-1.5"
+              className="h-7 gap-1.5 px-2"
             >
               <Users size={12} aria-hidden />
               <span>
@@ -477,7 +477,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <div className="flex flex-col gap-1">
               <p
                 ref={descriptionClampRef}
-                className="text-1 leading-snug text-neutral-11 line-clamp-2"
+                className="text-1 leading-snug text-neutral-11 line-clamp-1"
               >
                 {plainDescription}
               </p>
@@ -544,7 +544,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </Dialog>
 
           {tagList?.length > 0 ? (
-            <div className="mt-auto pt-1">
+            <div className="mt-auto pt-0.5">
               <BadgesList
                 isLoading={isLoading}
                 badges={tagList ?? []}
@@ -554,7 +554,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           ) : null}
         </div>
 
-        <div className="mt-auto flex min-h-[3.5rem] shrink-0 flex-col justify-center border-t border-border px-4 py-2">
+        <div className="mt-auto flex min-h-[2.75rem] shrink-0 flex-col justify-center border-t border-border px-3 py-1.5">
           {archived ? (
             <div
               onClick={(e) => {
@@ -572,7 +572,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 <Button
                   variant="outline"
                   colorVariant="accent"
-                  className="w-full"
+                  size="sm"
+                  className="h-8 w-full"
                 >
                   {t('unarchive')}
                 </Button>
@@ -582,7 +583,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <Button
               variant="outline"
               colorVariant="accent"
-              className="w-full"
+              size="sm"
+              className="h-8 w-full"
               disabled={isLoading || !roomId}
               onClick={(e) => {
                 if (onOpenConversation) {

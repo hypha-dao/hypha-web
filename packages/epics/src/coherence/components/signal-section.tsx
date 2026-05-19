@@ -6,20 +6,35 @@ import { useSignalsSection } from '../hooks';
 import {
   Button,
   Checkbox,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   ErrorAlert,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   SectionLoadMore,
 } from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import { SignalGridContainer } from './signal-grid.container';
-import { Coherence, DirectionType } from '@hypha-platform/core/client';
+import {
+  COHERENCE_TAGS,
+  Coherence,
+  DirectionType,
+} from '@hypha-platform/core/client';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { SearchIcon } from 'lucide-react';
+import { SearchIcon, X } from 'lucide-react';
 import { useSpaceMember } from '../../spaces/hooks/use-space-member';
 import {
   SIGNAL_PROVISIONING_NOTICE_EVENT,
@@ -27,6 +42,97 @@ import {
 } from '../constants';
 
 const SIGNAL_PROVISIONING_NOTICE_AUTO_DISMISS_MS = 8000;
+const SIGNAL_BOARDS_STORAGE_KEY_PREFIX = 'hypha-signal-boards-v1-';
+
+type BoardFilterKind = 'category' | 'tag';
+
+type SignalBoard = {
+  id: string;
+  name: string;
+  filterKind: BoardFilterKind;
+  filterValue: string;
+};
+
+type SignalTagCategory = {
+  key: string;
+  fallbackLabel: string;
+  tags: readonly string[];
+};
+
+const SIGNAL_TAG_CATEGORIES: readonly SignalTagCategory[] = [
+  {
+    key: 'purposeDirection',
+    fallbackLabel: 'Purpose & Direction',
+    tags: [
+      'Purpose',
+      'North Star',
+      'Vision',
+      'Strategy',
+      'Values',
+      'Principles',
+      'Milestones',
+      'Impact Goals',
+    ],
+  },
+  {
+    key: 'broaderContext',
+    fallbackLabel: 'Broader Context',
+    tags: [
+      'Trend',
+      'Social Conditions',
+      'Planetary Boundaries',
+      'Policy',
+      'Regulation',
+      'Emergency Response',
+    ],
+  },
+  {
+    key: 'peopleRoles',
+    fallbackLabel: 'People & Roles',
+    tags: ['Project', 'Quest', 'Job', 'Skill', 'Advisory Support', 'Volunteering'],
+  },
+  {
+    key: 'ecosystemMapping',
+    fallbackLabel: 'Ecosystem Mapping',
+    tags: [
+      'Serving Audience',
+      'Customers',
+      'Users',
+      'Communities',
+      'Beneficiaries',
+      'Partners',
+    ],
+  },
+  {
+    key: 'operatingCoherence',
+    fallbackLabel: 'Operating Coherence',
+    tags: ['Governance', 'Processes', 'Structure', 'Rhythms', 'Support Systems'],
+  },
+  {
+    key: 'needsResources',
+    fallbackLabel: 'Needs & Resources',
+    tags: ['Needs', 'Resources', 'Fundraising', 'Matchmaking'],
+  },
+  {
+    key: 'valueModel',
+    fallbackLabel: 'Value & Model',
+    tags: [
+      'Innovation',
+      'Products',
+      'Services',
+      'Product-Market Fit',
+      'Business Model',
+      'Data',
+      'Knowledge',
+      'Intellectual Property',
+    ],
+  },
+  {
+    key: 'evidenceImpact',
+    fallbackLabel: 'Evidence & Impact',
+    tags: ['Proof of Action', 'Proof of Impact', 'Learning', 'Feedback Loop'],
+  },
+];
 
 type SignalSectionProps = {
   basePath: string;
@@ -60,18 +166,18 @@ export const SignalSection: FC<SignalSectionProps> = ({
 }) => {
   const t = useTranslations('CoherenceTab');
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
-  const {
-    pages,
-    loadMore,
-    pagination,
-    onUpdateSearch,
-    searchTerm,
-    filteredSignals,
-  } = useSignalsSection({
-    signals,
-    firstPageSize,
-    pageSize,
-  });
+  const [boards, setBoards] = React.useState<SignalBoard[]>([]);
+  const [activeBoardId, setActiveBoardId] = React.useState<string>('all');
+  const [createBoardOpen, setCreateBoardOpen] = React.useState(false);
+  const [newBoardName, setNewBoardName] = React.useState('');
+  const [newBoardFilterKind, setNewBoardFilterKind] =
+    React.useState<BoardFilterKind>('category');
+  const [newBoardCategory, setNewBoardCategory] = React.useState(
+    SIGNAL_TAG_CATEGORIES[0]?.key ?? '',
+  );
+  const [newBoardTag, setNewBoardTag] = React.useState(
+    COHERENCE_TAGS[0] ?? '',
+  );
   const [provisioningNoticeLines, setProvisioningNoticeLines] = React.useState<
     string[]
   >([]);
@@ -121,6 +227,160 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const { isMember, isMemberLoading } = useSpaceMember({
     spaceId: web3SpaceId,
   });
+  const boardStorageKey = React.useMemo(
+    () => `${SIGNAL_BOARDS_STORAGE_KEY_PREFIX}${id}`,
+    [id],
+  );
+
+  const tagLabelFor = React.useCallback(
+    (tag: string) =>
+      t.has(`tagLabels.${tag}` as never) ? t(`tagLabels.${tag}` as never) : tag,
+    [t],
+  );
+
+  const categoryOptions = React.useMemo(
+    () =>
+      SIGNAL_TAG_CATEGORIES.map((category) => ({
+        value: category.key,
+        label: t.has(`tagCategories.${category.key}` as never)
+          ? t(`tagCategories.${category.key}` as never)
+          : category.fallbackLabel,
+      })),
+    [t],
+  );
+
+  const categoryByKey = React.useMemo(
+    () =>
+      new Map<string, SignalTagCategory>(
+        SIGNAL_TAG_CATEGORIES.map((category) => [category.key, category]),
+      ),
+    [],
+  );
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(boardStorageKey);
+      if (!raw) {
+        setBoards([]);
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      const next = parsed.filter(
+        (item): item is SignalBoard =>
+          typeof item?.id === 'string' &&
+          typeof item?.name === 'string' &&
+          (item?.filterKind === 'category' || item?.filterKind === 'tag') &&
+          typeof item?.filterValue === 'string',
+      );
+      setBoards(next);
+    } catch (error) {
+      console.warn('Failed to load saved signal boards:', error);
+    }
+  }, [boardStorageKey]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(boardStorageKey, JSON.stringify(boards));
+    } catch (error) {
+      console.warn('Failed to persist saved signal boards:', error);
+    }
+  }, [boardStorageKey, boards]);
+
+  React.useEffect(() => {
+    if (activeBoardId === 'all') return;
+    if (!boards.some((board) => board.id === activeBoardId)) {
+      setActiveBoardId('all');
+    }
+  }, [activeBoardId, boards]);
+
+  const activeBoard = React.useMemo(
+    () => boards.find((board) => board.id === activeBoardId),
+    [activeBoardId, boards],
+  );
+
+  const activeBoardTags = React.useMemo(() => {
+    if (!activeBoard) return [] as string[];
+    if (activeBoard.filterKind === 'tag') return [activeBoard.filterValue];
+    return [...(categoryByKey.get(activeBoard.filterValue)?.tags ?? [])];
+  }, [activeBoard, categoryByKey]);
+
+  const createSignalHrefWithBoard = React.useMemo(() => {
+    if (!activeBoard || activeBoardTags.length === 0) {
+      return createSignalHref;
+    }
+    const params = new URLSearchParams();
+    params.set('fromBoardId', activeBoard.id);
+    for (const tag of activeBoardTags) {
+      params.append('boardTag', tag);
+    }
+    return `${createSignalHref}?${params.toString()}`;
+  }, [activeBoard, activeBoardTags, createSignalHref]);
+
+  const boardFilteredSignals = React.useMemo(() => {
+    if (!activeBoard) return signals;
+    if (activeBoard.filterKind === 'tag') {
+      return signals.filter((signal) =>
+        (signal.tags ?? []).includes(activeBoard.filterValue),
+      );
+    }
+    const categoryTags =
+      categoryByKey.get(activeBoard.filterValue)?.tags ?? ([] as string[]);
+    if (!categoryTags.length) return signals;
+    const categoryTagSet = new Set(categoryTags);
+    return signals.filter((signal) =>
+      (signal.tags ?? []).some((tag) => categoryTagSet.has(tag)),
+    );
+  }, [activeBoard, categoryByKey, signals]);
+
+  const resetBoardForm = React.useCallback(() => {
+    setNewBoardName('');
+    setNewBoardFilterKind('category');
+    setNewBoardCategory(SIGNAL_TAG_CATEGORIES[0]?.key ?? '');
+    setNewBoardTag(COHERENCE_TAGS[0] ?? '');
+  }, []);
+
+  const handleCreateBoard = React.useCallback(() => {
+    const name = newBoardName.trim();
+    if (!name) return;
+    const value =
+      newBoardFilterKind === 'category' ? newBoardCategory : newBoardTag;
+    if (!value) return;
+    const idValue = `board-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setBoards((prev) => [
+      ...prev,
+      {
+        id: idValue,
+        name,
+        filterKind: newBoardFilterKind,
+        filterValue: value,
+      },
+    ]);
+    setActiveBoardId(idValue);
+    setCreateBoardOpen(false);
+    resetBoardForm();
+  }, [
+    newBoardCategory,
+    newBoardFilterKind,
+    newBoardName,
+    newBoardTag,
+    resetBoardForm,
+  ]);
+
+  const {
+    pages,
+    loadMore,
+    pagination,
+    onUpdateSearch,
+    searchTerm,
+    filteredSignals,
+  } = useSignalsSection({
+    signals: boardFilteredSignals,
+    firstPageSize,
+    pageSize,
+  });
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -153,6 +413,14 @@ export const SignalSection: FC<SignalSectionProps> = ({
                 {t('hideArchived')}
               </label>
             </div>
+            <Button
+              variant="outline"
+              colorVariant="neutral"
+              className="w-auto"
+              onClick={() => setCreateBoardOpen(true)}
+            >
+              {t('createBoard')}
+            </Button>
             {!isMemberLoading && isMember ? (
               <Button
                 asChild
@@ -160,7 +428,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
                 colorVariant="accent"
                 className="w-auto"
               >
-                <Link href={createSignalHref}>
+                <Link href={createSignalHrefWithBoard}>
                   <PlusIcon />
                   {t('newSignal')}
                 </Link>
@@ -179,6 +447,146 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </div>
         </div>
       </div>
+      <Dialog
+        open={createBoardOpen}
+        onOpenChange={(open) => {
+          setCreateBoardOpen(open);
+          if (!open) resetBoardForm();
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('createBoard')}</DialogTitle>
+            <DialogDescription>{t('createBoardDescription')}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-1">
+            <div className="grid gap-1.5">
+              <label className="text-2 text-muted-foreground" htmlFor="boardNameInput">
+                {t('boardName')}
+              </label>
+              <Input
+                id="boardNameInput"
+                value={newBoardName}
+                onChange={(event) => setNewBoardName(event.target.value)}
+                placeholder={t('boardNamePlaceholder')}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <label className="text-2 text-muted-foreground">{t('boardFilterBy')}</label>
+              <Select
+                value={newBoardFilterKind}
+                onValueChange={(value) =>
+                  setNewBoardFilterKind(value as BoardFilterKind)
+                }
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="category">{t('boardFilterCategory')}</SelectItem>
+                  <SelectItem value="tag">{t('boardFilterTag')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {newBoardFilterKind === 'category' ? (
+              <div className="grid gap-1.5">
+                <label className="text-2 text-muted-foreground">
+                  {t('boardSelectCategory')}
+                </label>
+                <Select value={newBoardCategory} onValueChange={setNewBoardCategory}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="grid gap-1.5">
+                <label className="text-2 text-muted-foreground">{t('boardSelectTag')}</label>
+                <Select value={newBoardTag} onValueChange={setNewBoardTag}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COHERENCE_TAGS.map((tag) => (
+                      <SelectItem key={tag} value={tag}>
+                        {tagLabelFor(tag)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              onClick={() => setCreateBoardOpen(false)}
+            >
+              {t('boardCancelAction')}
+            </Button>
+            <Button
+              type="button"
+              colorVariant="accent"
+              onClick={handleCreateBoard}
+              disabled={!newBoardName.trim()}
+            >
+              {t('boardCreateAction')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {boards.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant={activeBoardId === 'all' ? 'default' : 'outline'}
+            colorVariant={activeBoardId === 'all' ? 'accent' : 'neutral'}
+            size="sm"
+            className="h-8 px-3"
+            onClick={() => setActiveBoardId('all')}
+          >
+            {t('boardAll')}
+          </Button>
+          {boards.map((board) => (
+            <div
+              key={board.id}
+              className="inline-flex items-center overflow-hidden rounded-md border border-border/70 bg-muted/30"
+            >
+              <button
+                type="button"
+                className={`h-8 px-3 text-2 transition-colors ${
+                  activeBoardId === board.id
+                    ? 'bg-accent-3 text-accent-11'
+                    : 'text-foreground hover:bg-muted'
+                }`}
+                onClick={() => setActiveBoardId(board.id)}
+              >
+                {board.name}
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 items-center justify-center border-l border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label={t('boardDelete', { boardName: board.name })}
+                title={t('boardDelete', { boardName: board.name })}
+                onClick={() =>
+                  setBoards((prev) => prev.filter((entry) => entry.id !== board.id))
+                }
+              >
+                <X className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
       {provisioningNoticeLines.length > 0 ? (
         <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
       ) : null}
