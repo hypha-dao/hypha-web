@@ -177,7 +177,7 @@
         "description": "In any of the spaces you're a member of."
       },
       "mentionOnChatMessage": {
-        "title": "You are mentioned on a chat message",
+        "title": "You are mentioned in a chat message",
         "description": "In any thread or chat where mentions are enabled for you."
       },
       "labelWithComingSoon": "{title} ({comingSoon})"
