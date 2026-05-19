@@ -373,12 +373,12 @@ export function OnboardingAiFullPage({
   ] as const;
 
   return (
-    <div className="relative min-h-[calc(100vh-5rem)] overflow-hidden rounded-[2rem] border border-border/60 bg-background/85 p-4 shadow-[0_40px_120px_-70px_rgba(0,0,0,0.75)] md:p-6">
+    <div className="relative h-[calc(100dvh-5rem)] max-h-[calc(100dvh-5rem)] overflow-hidden rounded-[2rem] border border-border/60 bg-background/85 p-4 shadow-[0_40px_120px_-70px_rgba(0,0,0,0.75)] md:p-6">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,oklch(0.7_0.12_255_/_0.2),transparent_45%),radial-gradient(circle_at_80%_85%,oklch(0.7_0.14_330_/_0.14),transparent_42%)]"
       />
-      <div className="relative flex h-full min-h-[calc(100vh-8rem)] flex-col">
+      <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
         <div className="mb-4 flex items-center justify-between gap-3 px-2">
           <div>
             <p className="text-1 text-muted-foreground">
