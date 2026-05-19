@@ -3,6 +3,8 @@
 import {
   JoinSpace,
   UserSpaceState,
+  checkAccess,
+  useSpaceDiscoverability,
   useUserSpaceState,
 } from '@hypha-platform/epics';
 
@@ -21,8 +23,18 @@ export function SpaceMembershipCtaUnderHero({
     spaceId: web3SpaceId,
     spaceSlug,
   });
+  const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
+    spaceId: BigInt(web3SpaceId),
+  });
 
-  if (isLoading || userState !== UserSpaceState.LOGGED_IN_ORG) {
+  const hasActivityAccess = checkAccess(access, userState);
+
+  if (
+    isLoading ||
+    isAccessLoading ||
+    userState !== UserSpaceState.LOGGED_IN_ORG ||
+    !hasActivityAccess
+  ) {
     return null;
   }
 
