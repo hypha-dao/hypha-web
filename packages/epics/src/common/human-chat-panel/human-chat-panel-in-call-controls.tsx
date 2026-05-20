@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
+  CircleDot,
   Check,
   ChevronDown,
   FileText,
@@ -9,7 +10,6 @@ import {
   MicOff,
   Monitor,
   MonitorOff,
-  Radio,
   Slash,
   Video,
   VideoOff,
@@ -269,7 +269,7 @@ export function HumanChatPanelInCallControls({
         ) : captureMode === 'transcript_only' ? (
           <FileText className={captureIconClass} />
         ) : (
-          <Radio className={captureIconClass} />
+          <CircleDot className={captureIconClass} />
         )}
         <span
           className={cn(
@@ -329,7 +329,7 @@ export function HumanChatPanelInCallControls({
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
           >
             <span className="inline-flex items-center gap-2">
-              <Radio className="h-4 w-4" />
+              <CircleDot className="h-4 w-4" />
               {t('callCaptureModeRecordingWithTranscript')}
             </span>
             {captureMode === 'recording_with_transcript' ? (
