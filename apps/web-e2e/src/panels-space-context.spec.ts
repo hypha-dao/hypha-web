@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { gotoApp } from './utils/nav-url';
 
 /**
@@ -55,6 +56,8 @@ test.describe('Panels visible on space pages', () => {
   }) => {
     await gotoApp(page, '/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
+    const a11y = await new AxeBuilder({ page }).analyze();
+    expect(a11y.violations).toEqual([]);
 
     const ecosystemLogoLink = page.getByRole('link', {
       name: 'Ecosystem Logo',
