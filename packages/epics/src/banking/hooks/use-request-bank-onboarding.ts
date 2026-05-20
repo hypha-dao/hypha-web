@@ -32,7 +32,9 @@ export const useRequestBankOnboarding = ({
   const [error, setError] = React.useState<string | null>(null);
 
   const requestOnboarding = React.useCallback(
-    async (input: BankOnboardingRequestInput): Promise<BankOnboardingRequestResult> => {
+    async (
+      input: BankOnboardingRequestInput,
+    ): Promise<BankOnboardingRequestResult> => {
       setIsSubmitting(true);
       setError(null);
 
@@ -69,7 +71,9 @@ export const useRequestBankOnboarding = ({
         return result;
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : 'Failed to start bank onboarding';
+          err instanceof Error
+            ? err.message
+            : 'Failed to start bank onboarding';
         setError(message);
         throw err;
       } finally {

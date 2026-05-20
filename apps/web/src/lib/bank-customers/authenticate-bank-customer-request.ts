@@ -43,7 +43,10 @@ export async function authenticateBankCustomerRequest(
   if (!space) {
     return {
       ok: false,
-      response: NextResponse.json({ error: 'Space not found' }, { status: 404 }),
+      response: NextResponse.json(
+        { error: 'Space not found' },
+        { status: 404 },
+      ),
     };
   }
 

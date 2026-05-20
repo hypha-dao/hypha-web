@@ -2,10 +2,7 @@ import type { BankProvider } from '../../types';
 import type { BankKycProvider } from './types';
 import { createBridgeKycProvider } from './bridge/adapter';
 
-const providerFactories: Record<
-  BankProvider,
-  () => BankKycProvider
-> = {
+const providerFactories: Record<BankProvider, () => BankKycProvider> = {
   bridge: createBridgeKycProvider,
 };
 

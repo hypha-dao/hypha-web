@@ -14,7 +14,8 @@ export default async function BankingPage(props: PageProps) {
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
   const web3SpaceId =
-    spaceFromDb?.web3SpaceId != null && canConvertToBigInt(spaceFromDb.web3SpaceId)
+    spaceFromDb?.web3SpaceId != null &&
+    canConvertToBigInt(spaceFromDb.web3SpaceId)
       ? Number(spaceFromDb.web3SpaceId)
       : undefined;
 

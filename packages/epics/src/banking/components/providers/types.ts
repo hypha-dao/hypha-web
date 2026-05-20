@@ -11,7 +11,10 @@ export type ProviderOnboardingFormProps = {
 
 export type ProviderOnboardingFormComponent = FC<ProviderOnboardingFormProps>;
 
-export type ProviderFormRegistry = Record<BankProvider, ProviderOnboardingFormComponent>;
+export type ProviderFormRegistry = Record<
+  BankProvider,
+  ProviderOnboardingFormComponent
+>;
 
 /** Must match `DEFAULT_BANK_PROVIDER` in `@hypha-platform/core` banking constants. */
 export const DEFAULT_BANK_PROVIDER: BankProvider = 'bridge';

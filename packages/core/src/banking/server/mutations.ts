@@ -1,6 +1,9 @@
 import type { DbConfig } from '../../common/server/types';
 import type { BankEntityType, BankProvider } from '../types';
-import { bankCustomers, type BankCustomer } from '@hypha-platform/storage-postgres';
+import {
+  bankCustomers,
+  type BankCustomer,
+} from '@hypha-platform/storage-postgres';
 
 export type InsertBankCustomerInput = {
   spaceId: number;

@@ -15,7 +15,11 @@ import { Button } from '@hypha-platform/ui';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 
 import { useSpaceMember } from '../../spaces';
-import { BANK_KYC_STATUSES, type BankKycStatus, useBankCustomerStatus } from '../hooks';
+import {
+  BANK_KYC_STATUSES,
+  type BankKycStatus,
+  useBankCustomerStatus,
+} from '../hooks';
 import { BankOnboardingDialog } from './bank-onboarding-dialog';
 
 type BankingSectionProps = {
@@ -74,17 +78,20 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const hasOnChainSpace = resolvedWeb3SpaceId != null;
   const hasTreasuryAddress = Boolean(spaceDetails?.executor);
   const canManage =
-    isAuthenticated && (isMember || isDelegate) && hasOnChainSpace && hasTreasuryAddress;
+    isAuthenticated &&
+    (isMember || isDelegate) &&
+    hasOnChainSpace &&
+    hasTreasuryAddress;
 
   const blockerMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember && !isDelegate
-      ? tCommon('joinSpaceToUse')
-      : !hasOnChainSpace
-        ? t('blockers.notOnChain')
-        : !hasTreasuryAddress
-          ? t('blockers.noTreasury')
-          : null;
+    ? tCommon('joinSpaceToUse')
+    : !hasOnChainSpace
+    ? t('blockers.notOnChain')
+    : !hasTreasuryAddress
+    ? t('blockers.noTreasury')
+    : null;
 
   useEffect(() => {
     if (variant === 'return') {
@@ -139,7 +146,12 @@ export const BankingSection: FC<BankingSectionProps> = ({
               {t('notStarted.enableCta')}
             </Button>
           ) : (
-            <Button colorVariant="accent" className="w-fit" disabled title={blockerMessage ?? ''}>
+            <Button
+              colorVariant="accent"
+              className="w-fit"
+              disabled
+              title={blockerMessage ?? ''}
+            >
               {t('notStarted.enableCta')}
             </Button>
           )}
@@ -217,7 +229,11 @@ export const BankingSection: FC<BankingSectionProps> = ({
       {error ? (
         <div className="flex flex-col gap-2">
           <p className="text-sm text-destructive">{t('errorLoad')}</p>
-          <Button variant="outline" className="w-fit" onClick={() => void refresh()}>
+          <Button
+            variant="outline"
+            className="w-fit"
+            onClick={() => void refresh()}
+          >
             {t('actions.refreshStatus')}
           </Button>
         </div>
@@ -227,7 +243,9 @@ export const BankingSection: FC<BankingSectionProps> = ({
         <p className="text-sm text-muted-foreground">{blockerMessage}</p>
       ) : null}
 
-      <div className="rounded-lg border border-border bg-card p-4">{renderStatusBody()}</div>
+      <div className="rounded-lg border border-border bg-card p-4">
+        {renderStatusBody()}
+      </div>
 
       <BankOnboardingDialog
         spaceSlug={spaceSlug}

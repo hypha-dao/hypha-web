@@ -37,35 +37,37 @@ export const useBankCustomerStatus = ({
   );
 
   const swrKey = React.useMemo(
-    () => (endpoint && isAuthenticated ? [endpoint, 'bank-customer-status'] : null),
+    () =>
+      endpoint && isAuthenticated ? [endpoint, 'bank-customer-status'] : null,
     [endpoint, isAuthenticated],
   );
 
-  const { data, error, isLoading, mutate } = useSWR<BankCustomerPublicStatus | null>(
-    swrKey,
-    async ([url]) => {
-      const token = await getAccessToken();
-      if (!token) {
-        throw new Error('Unauthorized');
-      }
+  const { data, error, isLoading, mutate } =
+    useSWR<BankCustomerPublicStatus | null>(
+      swrKey,
+      async ([url]) => {
+        const token = await getAccessToken();
+        if (!token) {
+          throw new Error('Unauthorized');
+        }
 
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      if (!res.ok) {
-        throw new Error('Failed to fetch bank customer status');
-      }
+        if (!res.ok) {
+          throw new Error('Failed to fetch bank customer status');
+        }
 
-      return (await res.json()) as BankCustomerPublicStatus | null;
-    },
-    {
-      refreshInterval: (latest) =>
-        shouldPollBankKycStatus(latest) ? POLL_INTERVAL_MS : 0,
-    },
-  );
+        return (await res.json()) as BankCustomerPublicStatus | null;
+      },
+      {
+        refreshInterval: (latest) =>
+          shouldPollBankKycStatus(latest) ? POLL_INTERVAL_MS : 0,
+      },
+    );
 
   const refresh = React.useCallback(() => mutate(), [mutate]);
 

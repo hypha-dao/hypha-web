@@ -50,13 +50,7 @@ export async function requestSpaceBankOnboarding(
   { db }: { db: DatabaseInstance },
   options?: RequestSpaceBankOnboardingOptions,
 ): Promise<BankOnboardingResult> {
-  const {
-    spaceSlug,
-    authToken,
-    legalName,
-    contactEmail,
-    endorsements,
-  } = input;
+  const { spaceSlug, authToken, legalName, contactEmail, endorsements } = input;
 
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!space) {

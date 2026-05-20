@@ -106,7 +106,8 @@ describe('requestSpaceBankOnboarding', () => {
     authorizeSpaceBankOnboarding.mockResolvedValue({
       authorized: false,
       httpStatus: 403,
-      message: 'You must be a space member or delegate to enable bank accounts.',
+      message:
+        'You must be a space member or delegate to enable bank accounts.',
     });
 
     await expect(
@@ -117,7 +118,8 @@ describe('requestSpaceBankOnboarding', () => {
       ),
     ).rejects.toMatchObject({
       status: 403,
-      message: 'You must be a space member or delegate to enable bank accounts.',
+      message:
+        'You must be a space member or delegate to enable bank accounts.',
     });
 
     expect(mockProvider.createKycLink).not.toHaveBeenCalled();

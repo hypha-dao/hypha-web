@@ -61,7 +61,11 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
   };
 
   return (
-    <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-4 py-4">
+    <form
+      id={formId}
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 py-4"
+    >
       <div className="flex flex-col gap-2">
         <Label htmlFor="bank-legal-name">{t('legalName')}</Label>
         <Input
@@ -85,7 +89,9 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
         />
       </div>
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium">{t('endorsementsLabel')}</legend>
+        <legend className="text-sm font-medium">
+          {t('endorsementsLabel')}
+        </legend>
         <p className="text-sm text-muted-foreground">{t('endorsementsHint')}</p>
         <div className="flex flex-col gap-2">
           {BRIDGE_ENDORSEMENT_OPTIONS.map((option) => {

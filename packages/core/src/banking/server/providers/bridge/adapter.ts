@@ -32,7 +32,9 @@ function toBridgeCreateKycLinkBody(
 export function createBridgeKycProvider(): BankKycProvider {
   return {
     provider: 'bridge',
-    async createKycLink(input: CreateKycLinkInput): Promise<CreateKycLinkResult> {
+    async createKycLink(
+      input: CreateKycLinkInput,
+    ): Promise<CreateKycLinkResult> {
       const response = await bridgeCreateKycLink(
         toBridgeCreateKycLinkBody(input),
         input.idempotencyKey,

@@ -24,7 +24,10 @@ export async function GET(
   const { spaceSlug } = await params;
 
   try {
-    const authResult = await authenticateBankCustomerRequest(request, spaceSlug);
+    const authResult = await authenticateBankCustomerRequest(
+      request,
+      spaceSlug,
+    );
     if (!authResult.ok) {
       return authResult.response;
     }
@@ -55,10 +58,7 @@ export async function POST(
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: 'Invalid JSON body' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
   const parsed = schemaSpaceBankCustomerOnboarding.safeParse(body);
@@ -98,7 +98,10 @@ export async function POST(
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof BankOnboardingError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
     }
 
     console.error('banking/bank-customers onboarding failed:', error);
