@@ -210,16 +210,16 @@ export const CreateSignalForm = ({
     }
     return getSignalTeamMembersFromRoom({
       room: matrixClient?.getRoom(signalRoomId.trim()) ?? null,
-      coherenceSlug: signalSlug,
+      coherenceSlug: signalSlug ?? undefined,
     });
   }, [matrixClient, mode, signalRoomId, signalSlug]);
   const isSignalCreator =
     signalCreatorId != null &&
     person?.id != null &&
     person.id === signalCreatorId;
-  const isSignalTeamMember =
-    Boolean(currentUserMatrixId) &&
-    signalTeamAccess.memberMatrixUserIds.includes(currentUserMatrixId);
+  const isSignalTeamMember = currentUserMatrixId
+    ? signalTeamAccess.memberMatrixUserIds.includes(currentUserMatrixId)
+    : false;
   const isEditAuthorized =
     mode !== 'edit' ||
     isSignalCreator ||
