@@ -733,6 +733,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setScreensharingEnabled: setSpaceCallScreensharing,
     voiceProcessingPreset: spaceCallVoiceProcessingPreset,
     setVoiceProcessingPreset: setSpaceCallVoiceProcessingPreset,
+    captureMode: spaceCallCaptureMode,
+    setCaptureMode: setSpaceCallCaptureMode,
+    recordingStatus: spaceCallRecordingStatus,
+    recordingError: spaceCallRecordingError,
     tabBackgroundWhileInCall: spaceCallTabBackground,
     retryFromError: retrySpaceCall,
     dismissCallError: dismissSpaceCallError,
@@ -882,6 +886,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       void setSpaceCallVoiceProcessingPreset(preset);
     },
     [setSpaceCallVoiceProcessingPreset],
+  );
+  const handleCallCaptureModeChange = useCallback(
+    (mode: 'none' | 'transcript_only' | 'recording_with_transcript') => {
+      setSpaceCallCaptureMode(mode);
+    },
+    [setSpaceCallCaptureMode],
   );
 
   const handleRetrySpaceCall = useCallback(() => {
@@ -2487,6 +2497,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onVoiceProcessingPresetChange={
                 handleCallVoiceProcessingPresetChange
               }
+              captureMode={spaceCallCaptureMode}
+              onCaptureModeChange={handleCallCaptureModeChange}
+              recordingStatus={spaceCallRecordingStatus}
+              recordingError={spaceCallRecordingError}
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
               onRetryCall={handleRetrySpaceCall}
               onDismissCallError={dismissSpaceCallError}

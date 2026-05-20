@@ -329,3 +329,52 @@ export async function uploadRecordedCallArtifact({
     transcript_stored: boolean;
   };
 }
+
+export async function uploadTranscriptCallArtifact({
+  authToken,
+  spaceSlug,
+  roomId,
+  callSessionId,
+  transcriptText,
+  startedAt,
+  endedAt,
+}: {
+  authToken: string;
+  spaceSlug: string;
+  roomId: string;
+  callSessionId: string;
+  transcriptText: string;
+  startedAt?: string;
+  endedAt?: string;
+}) {
+  const form = new FormData();
+  form.set('room_id', roomId);
+  form.set('call_session_id', callSessionId);
+  form.set('transcript_text', transcriptText.trim());
+  if (startedAt) form.set('started_at', startedAt);
+  if (endedAt) form.set('ended_at', endedAt);
+
+  const response = await fetch(
+    `/api/matrix/call-artifacts/upload?spaceSlug=${encodeURIComponent(
+      spaceSlug,
+    )}`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: form,
+    },
+  );
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(
+      text || `transcript upload failed with status ${response.status}`,
+    );
+  }
+  return (await response.json()) as {
+    ok: true;
+    call_session_id: string;
+    transcript_stored: boolean;
+  };
+}

@@ -93,13 +93,20 @@ export async function POST(request: NextRequest) {
   const startedAt = String(form?.get('started_at') ?? '').trim();
   const endedAt = String(form?.get('ended_at') ?? '').trim();
 
-  if (!roomId || !(recording instanceof Blob) || recording.size === 0) {
+  if (!roomId) {
+    return NextResponse.json({ error: 'room_id is required' }, { status: 400 });
+  }
+  const hasRecording = recording instanceof Blob && recording.size > 0;
+  const hasTranscript = transcriptText.length > 0;
+  if (!hasRecording && !hasTranscript) {
     return NextResponse.json(
-      { error: 'room_id and non-empty recording blob are required' },
+      {
+        error: 'Provide a non-empty recording blob, transcript_text, or both',
+      },
       { status: 400 },
     );
   }
-  if (recording.size > MAX_RECORDING_UPLOAD_BYTES) {
+  if (hasRecording && recording.size > MAX_RECORDING_UPLOAD_BYTES) {
     return NextResponse.json(
       {
         error: `Recording exceeds max upload size (${MAX_RECORDING_UPLOAD_BYTES} bytes)`,
@@ -127,7 +134,7 @@ export async function POST(request: NextRequest) {
     { db },
   );
   if (existingRecording?.mediaUri?.trim()) {
-    if (transcriptText) {
+    if (hasTranscript) {
       const transcriptResult = await ingestSpaceCallArtifacts(
         {
           spaceSlug,
@@ -164,6 +171,61 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  if (!hasRecording) {
+    const transcriptResult = await ingestSpaceCallArtifacts(
+      {
+        spaceSlug,
+        callSessionId,
+        transcript: {
+          text: transcriptText,
+          source: 'browser_speech_recognition',
+          metadata: {
+            capture: 'automatic_in_call_transcript_only',
+            room_id: roomId,
+            started_at: startedAt || undefined,
+            ended_at: endedAt || undefined,
+          },
+        },
+      },
+      { db },
+    );
+    if (!transcriptResult.ok) {
+      return NextResponse.json(
+        { error: transcriptResult.error },
+        { status: 400 },
+      );
+    }
+
+    try {
+      await enqueueSignalEvaluationFromMemory(
+        {
+          spaceSlug,
+          triggerKind: 'memory_ingest',
+        },
+        { db },
+      );
+    } catch (error) {
+      console.error('[matrix.call-artifacts.upload] enqueue failed', {
+        spaceSlug,
+        triggerKind: 'memory_ingest',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      call_session_id: callSessionId,
+      transcript_stored: true,
+      transcript_job: {
+        attempted: false,
+        ok: false,
+        status: null,
+      },
+      deduped: false,
+    });
+  }
+  const recordingBlob = recording as Blob;
+
   const environment = determineEnvironment(request.url);
   const matrix = await resolveMatrixAccessToken(environment, privyUserId);
   if (!matrix) {
@@ -184,7 +246,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const buffer = Buffer.from(await recording.arrayBuffer());
+  const buffer = Buffer.from(await recordingBlob.arrayBuffer());
   const uploadUrl = `${homeserver}/_matrix/media/v3/upload?filename=${encodeURIComponent(
     `${callSessionId}.webm`,
   )}`;
