@@ -484,11 +484,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         className,
       )}
     >
-      <CardHeader className="relative h-[96px] shrink-0 overflow-hidden p-0 isolate">
+      <CardHeader className="relative h-[98px] shrink-0 overflow-hidden p-0 isolate">
         <Skeleton
           className="h-full min-w-full"
           width="100%"
-          height="96px"
+          height="98px"
           loading={isLoading}
         >
           <div className="absolute inset-0 overflow-hidden">
@@ -502,7 +502,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             >
               <Image
                 width={640}
-                height={96}
+                height={98}
                 className="block h-full w-full object-cover"
                 src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                 alt=""
@@ -536,12 +536,19 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 aria-hidden
               />
             </div>
+            <div
+              className={cn(
+                'pointer-events-none absolute inset-0',
+                HERO_PRIORITY_WASH_CLASS_MAP[priorityColorVariant],
+              )}
+              aria-hidden
+            />
           </div>
         </Skeleton>
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
         <div className="relative flex min-h-0 flex-1 flex-col gap-2.5 px-3 pb-2.5 pt-3">
-          <div className="flex min-w-0 items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center justify-between gap-2">
             <div className="min-w-0 flex-1">
               <Skeleton
                 className="min-w-0"
@@ -599,6 +606,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               </div>
             ) : null}
           </div>
+          {metaBadges.length > 0 ? (
+            <BadgesList isLoading={isLoading} badges={metaBadges} />
+          ) : null}
 
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-1 text-muted-foreground">
             {creatorDisplayName ? (
@@ -631,9 +641,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 {normalizedMessagesCount}
               </span>
             </span>
-            {metaBadges.length > 0 ? (
-              <BadgesList isLoading={isLoading} badges={metaBadges} />
-            ) : null}
           </div>
 
           <Skeleton
