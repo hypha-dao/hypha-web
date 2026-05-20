@@ -789,6 +789,41 @@
   "OnboardingAdventure": {
     "title": "Sua aventura começa aqui.",
     "subtitle": "Você tem uma visão poderosa para o mundo; nós damos a você as ferramentas para colocá-la em ação.",
+    "aiHero": {
+      "title": "Construa qualquer coisa, juntos",
+      "description": "Diga ao Hypha AI o que você quer construir e ele vai guiar a configuração passo a passo.",
+      "placeholder": "Criar um espaço, entrar em um espaço existente, explorar a rede ou financiar uma tesouraria - descreva seu objetivo e a AI guia você.",
+      "rotating": {
+        "createSpace": "Peça ao Hypha AI para criar um espaço para sua missão...",
+        "governance": "Peça ao Hypha AI para desenhar a governança da sua comunidade...",
+        "joinSpace": "Peça ao Hypha AI para ajudar você a entrar no espaço certo...",
+        "treasury": "Peça ao Hypha AI para preparar um espaço pronto para tesouraria...",
+        "explore": "Peça ao Hypha AI para encontrar oportunidades na rede..."
+      },
+      "cta": "Começar com AI",
+      "starting": "Iniciando...",
+      "openingAi": "Abrindo o painel de AI...",
+      "sending": "Enviando seu prompt para a AI...",
+      "handoffFailed": "Não foi possível iniciar a conversa com a AI. Tente novamente.",
+      "handoffTimeout": "A transferência para a AI está demorando mais do que o esperado. Tente novamente.",
+      "sendFailed": "Não foi possível enviar o prompt para a AI. Tente novamente.",
+      "helper": "A AI vai propor cada ação e pedir confirmação antes de criar ou atualizar qualquer coisa.",
+      "unavailable": "O onboarding com AI está temporariamente indisponível nesta implantação.",
+      "ariaLabel": "Prompt de onboarding com AI",
+      "flow": {
+        "badge": "Simples. Poderoso. Feito por design.",
+        "reviewingTitle": "Analisando sua solicitação",
+        "reviewingDescription": "A AI está mapeando o melhor caminho para o seu objetivo.",
+        "reviewingDescriptionPersonalized": "{firstName}, a AI está mapeando o melhor caminho para o seu objetivo.",
+        "confirmingTitle": "Preparando uma confirmação clara",
+        "confirmingDescription": "Você verá uma escolha objetiva antes de qualquer ação de escrita.",
+        "executingTitle": "Executando a ação selecionada",
+        "executingDescription": "A AI agora cria, direciona ou conecta você com base na sua escolha.",
+        "routingTitle": "Levando você ao destino certo",
+        "routingDescription": "Finalizando a navegação para seu espaço ou tela selecionada.",
+        "confirmationHint": "Você mantém o controle: a AI pede confirmação antes de criar ou atualizar."
+      }
+    },
     "spacePlaceholder": "Selecionar espaço",
     "spaceSearchPlaceholder": "Buscar espaços...",
     "searchToSeeSpaces": "Comece a digitar para ver espaços correspondentes.",
