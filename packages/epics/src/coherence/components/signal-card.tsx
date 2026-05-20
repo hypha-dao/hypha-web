@@ -111,6 +111,7 @@ const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
     neutral:
       'bg-gradient-to-t from-neutral-10/18 via-neutral-9/9 to-transparent',
   };
+const MAX_VISIBLE_SIGNAL_TAGS = 3;
 
 const BADGE_ICON_COLOR_CLASS_MAP: Record<SignalColorVariant, string> = {
   accent: 'text-accent-10',
@@ -434,6 +435,19 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       },
     };
   });
+  const compactTagList: BadgeItem[] = React.useMemo(() => {
+    if (tagList.length <= MAX_VISIBLE_SIGNAL_TAGS) return tagList;
+    return [
+      ...tagList.slice(0, MAX_VISIBLE_SIGNAL_TAGS),
+      {
+        label: `+${tagList.length - MAX_VISIBLE_SIGNAL_TAGS}`,
+        variant: 'outline',
+        colorVariant: 'neutral',
+        className:
+          'rounded-full border-border/60 bg-transparent text-muted-foreground',
+      },
+    ];
+  }, [tagList]);
 
   const plainDescription = React.useMemo(
     () =>
@@ -577,7 +591,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         </Skeleton>
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
-        <div className="relative flex min-h-0 flex-1 flex-col gap-2.5 px-3 pb-2.5 pt-3">
+        <div className="relative flex min-h-0 flex-1 flex-col gap-2 px-3 pb-2 pt-2.5">
           <div className="flex min-w-0 flex-col gap-1.5">
             <div className="flex min-w-0 items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
@@ -755,7 +769,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <div className="mt-auto pt-0.5">
               <BadgesList
                 isLoading={isLoading}
-                badges={tagList ?? []}
+                badges={compactTagList}
                 className="content-start"
               />
             </div>
