@@ -60,7 +60,68 @@ interface CreateSignalFormProps {
   backUrl?: string;
   mode?: 'create' | 'edit';
   signalSlug?: string;
+  signalRoomId?: string | null;
   initialValues?: Partial<FormValues>;
+}
+
+const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
+const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
+
+function normalizeMatrixUserIds(ids: unknown): string[] {
+  if (!Array.isArray(ids)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of ids) {
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    out.push(trimmed);
+  }
+  return out;
+}
+
+function getSignalTeamMembersFromRoom(options: {
+  room: {
+    getLiveTimeline: () => {
+      getEvents: () => Array<{
+        getType: () => string;
+        getContent: () => Record<string, unknown> | null;
+      }>;
+    };
+  } | null;
+  coherenceSlug?: string;
+}): { hasPolicy: boolean; memberMatrixUserIds: string[] } {
+  const { room, coherenceSlug } = options;
+  if (!room) return { hasPolicy: false, memberMatrixUserIds: [] };
+  const targetSlug = coherenceSlug?.trim() || null;
+  let hasPolicy = false;
+  let members: string[] = [];
+  for (const event of room.getLiveTimeline().getEvents()) {
+    if (event.getType() !== 'm.room.message') continue;
+    const content = event.getContent();
+    if (!content || typeof content !== 'object') continue;
+    const msgtype =
+      typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
+    const body = typeof content.body === 'string' ? content.body.trim() : '';
+    const eventKind =
+      msgtype === SIGNAL_TEAM_EVENT_KIND ||
+      body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
+        ? SIGNAL_TEAM_EVENT_KIND
+        : null;
+    if (!eventKind) continue;
+    const eventSlug =
+      typeof content.coherenceSlug === 'string'
+        ? content.coherenceSlug.trim()
+        : '';
+    if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
+    const nextMembers = normalizeMatrixUserIds(content.memberMatrixUserIds);
+    if (nextMembers.length > 0) {
+      members = nextMembers;
+      hasPolicy = true;
+    }
+  }
+  return { hasPolicy, memberMatrixUserIds: members };
 }
 
 function normalizeSignalDescriptionForChat(
@@ -92,6 +153,7 @@ export const CreateSignalForm = ({
   backUrl,
   mode = 'create',
   signalSlug,
+  signalRoomId,
   initialValues,
 }: CreateSignalFormProps) => {
   const t = useTranslations('CoherenceTab');
@@ -114,6 +176,10 @@ export const CreateSignalForm = ({
   const { person } = useMe();
   const { jwt: authToken } = useJwt();
   const router = useRouter();
+  const signalCreatorId =
+    mode === 'edit' && typeof initialValues?.creatorId === 'number'
+      ? initialValues.creatorId
+      : null;
 
   const {
     createCoherence,
@@ -128,6 +194,7 @@ export const CreateSignalForm = ({
     isDeletingCoherence,
   } = useCoherenceMutationsWeb2Rsc(authToken);
   const {
+    client: matrixClient,
     isMatrixAvailable,
     createRoom,
     joinRoom,
@@ -136,6 +203,27 @@ export const CreateSignalForm = ({
     getRoomMessages,
     editRoomMessage,
   } = useMatrix();
+  const currentUserMatrixId = matrixClient?.getUserId?.()?.trim() || null;
+  const signalTeamAccess = React.useMemo(() => {
+    if (mode !== 'edit' || !signalRoomId?.trim()) {
+      return { hasPolicy: false, memberMatrixUserIds: [] };
+    }
+    return getSignalTeamMembersFromRoom({
+      room: matrixClient?.getRoom(signalRoomId.trim()) ?? null,
+      coherenceSlug: signalSlug,
+    });
+  }, [matrixClient, mode, signalRoomId, signalSlug]);
+  const isSignalCreator =
+    signalCreatorId != null &&
+    person?.id != null &&
+    person.id === signalCreatorId;
+  const isSignalTeamMember =
+    Boolean(currentUserMatrixId) &&
+    signalTeamAccess.memberMatrixUserIds.includes(currentUserMatrixId);
+  const isEditAuthorized =
+    mode !== 'edit' ||
+    isSignalCreator ||
+    (signalTeamAccess.hasPolicy && isSignalTeamMember);
 
   const upsertSignalDescriptionMessage = React.useCallback(
     async ({
@@ -441,12 +529,30 @@ export const CreateSignalForm = ({
     async (data: FormValues) => {
       form.clearErrors('root');
       if (mode === 'edit') {
+        if (!authToken?.trim()) {
+          form.setError('root', {
+            type: 'manual',
+            message: t.has('editSignalMissingAuth')
+              ? t('editSignalMissingAuth')
+              : 'Your session expired. Please sign in again before saving.',
+          });
+          return;
+        }
         if (!signalSlug) {
           form.setError('root', {
             type: 'manual',
             message: t.has('editSignalMissingSlug')
               ? t('editSignalMissingSlug')
               : 'Signal identifier is missing. Please close and reopen the edit form.',
+          });
+          return;
+        }
+        if (!isEditAuthorized) {
+          form.setError('root', {
+            type: 'manual',
+            message: t.has('editSignalNoPermission')
+              ? t('editSignalNoPermission')
+              : 'Only signal team members can edit this signal.',
           });
           return;
         }
@@ -474,12 +580,32 @@ export const CreateSignalForm = ({
           }
           router.push(successfulUrl);
         } catch (error) {
-          const message =
+          const rawMessage =
             error instanceof Error && error.message.trim().length > 0
               ? error.message
-              : t.has('editSignalSaveFailed')
-              ? t('editSignalSaveFailed')
-              : 'Could not save signal changes. Please try again.';
+              : '';
+          const isSanitizedServerError =
+            rawMessage.includes(
+              'An error occurred in the Server Components render',
+            ) || rawMessage.toLowerCase().includes('digest');
+          const isPermissionError =
+            rawMessage.includes('can edit this coherence') ||
+            rawMessage.includes('can delete this coherence');
+          const isAuthError = rawMessage.includes('authToken is required');
+          const genericSaveError = t.has('editSignalSaveFailed')
+            ? t('editSignalSaveFailed')
+            : 'Could not save signal changes. Please try again.';
+          const message = isPermissionError
+            ? t.has('editSignalNoPermission')
+              ? t('editSignalNoPermission')
+              : 'Only signal team members can edit this signal.'
+            : isAuthError
+            ? t.has('editSignalMissingAuth')
+              ? t('editSignalMissingAuth')
+              : 'Your session expired. Please sign in again before saving.'
+            : isSanitizedServerError
+            ? genericSaveError
+            : rawMessage || genericSaveError;
           form.setError('root', {
             type: 'manual',
             message,
@@ -557,8 +683,10 @@ export const CreateSignalForm = ({
       }
     },
     [
+      authToken,
       createCoherence,
       createRoom,
+      isEditAuthorized,
       updateCoherenceBySlug,
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
@@ -881,6 +1009,24 @@ export const CreateSignalForm = ({
                   customRejectButtonText={t('noLeave')}
                   onAcceptClicked={async () => {
                     form.clearErrors('root');
+                    if (!authToken?.trim()) {
+                      form.setError('root', {
+                        type: 'manual',
+                        message: t.has('editSignalMissingAuth')
+                          ? t('editSignalMissingAuth')
+                          : 'Your session expired. Please sign in again before deleting.',
+                      });
+                      return;
+                    }
+                    if (!isEditAuthorized) {
+                      form.setError('root', {
+                        type: 'manual',
+                        message: t.has('editSignalNoPermission')
+                          ? t('editSignalNoPermission')
+                          : 'Only signal team members can edit this signal.',
+                      });
+                      return;
+                    }
                     try {
                       await deleteCoherenceBySlug({ slug: signalSlug });
                       router.push(successfulUrl);
@@ -903,13 +1049,15 @@ export const CreateSignalForm = ({
                     type="button"
                     variant="outline"
                     colorVariant="neutral"
-                    disabled={isDeletingCoherence || isMutating}
+                    disabled={
+                      isDeletingCoherence || isMutating || !isEditAuthorized
+                    }
                   >
                     {t.has('deleteAction') ? t('deleteAction') : 'Delete'}
                   </Button>
                 </ConfirmDialog>
               ) : null}
-              <Button type="submit" disabled={isMutating}>
+              <Button type="submit" disabled={isMutating || !isEditAuthorized}>
                 {mode === 'edit'
                   ? t.has('saveChanges')
                     ? t('saveChanges')
