@@ -1130,10 +1130,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!client || !roomId) return;
     const room = client.getRoom(roomId);
     if (!room) return;
+    const parentRoomId =
+      mode === 'coherence' ? space?.chatRoomId?.trim() : undefined;
 
     const bumpMembership = (...args: unknown[]) => {
       const state = args[1] as { roomId?: string } | undefined;
-      if (state?.roomId !== roomId) return;
+      const changedRoomId = state?.roomId?.trim();
+      if (!changedRoomId) return;
+      if (changedRoomId !== roomId && changedRoomId !== parentRoomId) return;
       setMentionMembershipEpoch((n) => n + 1);
     };
 
@@ -1144,7 +1148,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       client.off(RoomStateEvent.Members, bumpMembership);
       client.off(RoomStateEvent.NewMember, bumpMembership);
     };
-  }, [client, roomId]);
+  }, [client, mode, roomId, space?.chatRoomId]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
