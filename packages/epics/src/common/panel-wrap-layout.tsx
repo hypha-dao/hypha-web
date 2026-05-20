@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { Menu, MessageCircle, PanelLeftClose, Sparkles } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -294,6 +295,7 @@ export function PanelWrapLayout({
   left,
   right,
 }: PanelWrapLayoutProps) {
+  const pathname = usePathname();
   const {
     open: leftOpen,
     overlayVisible: leftOverlayVisible,
@@ -302,10 +304,11 @@ export function PanelWrapLayout({
   } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
   const isSpace = useIsSpaceContext();
+  const isOnboarding = pathname.includes('/onboarding');
   const isCompactUi = useCompactHeaderMode();
 
-  // Panels are only available within a space context (/[lang]/dho/[id]/...)
   const effectiveLeft = isSpace ? left : undefined;
+  // Right human panel remains space-context only.
   const effectiveRight = isSpace ? right : undefined;
   const [viewportWidth, setViewportWidth] = useState<number>(
     DUAL_PANEL_MIN_VIEWPORT_PX,
@@ -313,7 +316,13 @@ export function PanelWrapLayout({
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const leftExpanded = Boolean(leftOpen || leftOverlayVisible);
-  const leftFootprintPx = leftExpanded ? 320 : 72;
+  const leftFootprintPx = isOnboarding
+    ? 0
+    : leftExpanded
+    ? 320
+    : isSpace
+    ? 72
+    : 0;
   const rightFootprintPx = rightOpen && effectiveRight ? 320 : 0;
   const forceCompactPanels =
     Boolean(effectiveLeft && effectiveRight) &&
@@ -327,11 +336,17 @@ export function PanelWrapLayout({
       ? RIGHT_SIDEBAR_WIDTH_COMPACT
       : RIGHT_SIDEBAR_WIDTH
     : RIGHT_SIDEBAR_WIDTH;
-  const leftExpandedSidebarWidth = LEFT_SIDEBAR_EXPANDED_WIDTH;
+  const leftExpandedSidebarWidth = isOnboarding
+    ? '100vw'
+    : LEFT_SIDEBAR_EXPANDED_WIDTH;
   const fallbackSidebarLeftPx = effectiveLeft
-    ? leftExpanded
+    ? isOnboarding
+      ? '0px'
+      : leftExpanded
       ? leftExpandedSidebarWidth
-      : LEFT_SIDEBAR_ICON_WIDTH
+      : isSpace
+      ? LEFT_SIDEBAR_ICON_WIDTH
+      : '0px'
     : '0px';
   const fallbackSidebarRightPx =
     rightOpen && effectiveRight ? rightSidebarWidth : '0px';
@@ -394,8 +409,11 @@ export function PanelWrapLayout({
         nextLeft = Math.max(nextLeft, width);
       });
 
-      const resolvedLeft =
-        effectiveLeft && nextLeft > 0 ? `${nextLeft}px` : fallbackSidebarLeftPx;
+      const resolvedLeft = isOnboarding
+        ? '0px'
+        : effectiveLeft && nextLeft > 0
+        ? `${nextLeft}px`
+        : fallbackSidebarLeftPx;
       const resolvedRight =
         effectiveRight && nextRight > 0
           ? `${nextRight}px`
@@ -436,6 +454,7 @@ export function PanelWrapLayout({
     effectiveRight,
     fallbackSidebarLeftPx,
     fallbackSidebarRightPx,
+    isOnboarding,
   ]);
 
   /** Radix portaled dialogs sit under `body` and do not inherit vars from this div — mirror to `:root`. */
@@ -513,6 +532,8 @@ export function PanelWrapLayout({
       </SidebarProvider>
     );
   } else if (effectiveLeft) {
+    const leftCollapsibleMode = isOnboarding ? 'offcanvas' : 'icon';
+    const leftIconWidth = isOnboarding ? '0px' : LEFT_SIDEBAR_ICON_WIDTH;
     content = (
       <SidebarProvider
         defaultOpen={false}
@@ -531,19 +552,19 @@ export function PanelWrapLayout({
         style={
           {
             '--sidebar-width': leftExpandedSidebarWidth,
-            '--sidebar-width-icon': LEFT_SIDEBAR_ICON_WIDTH,
+            '--sidebar-width-icon': leftIconWidth,
           } as React.CSSProperties
         }
       >
         <Sidebar
           side="left"
           variant="sidebar"
-          collapsible="icon"
-          mobileWidth={leftOpen ? '100vw' : undefined}
+          collapsible={leftCollapsibleMode}
+          mobileWidth={leftOpen || isOnboarding ? '100vw' : undefined}
           className="z-[50] overflow-visible"
         >
           {effectiveLeft.content}
-          <SidebarResizeHandle />
+          {!isOnboarding ? <SidebarResizeHandle /> : null}
         </Sidebar>
         <PanelScrollInset className="overflow-y-auto">
           {content}

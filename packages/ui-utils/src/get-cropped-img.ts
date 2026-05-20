@@ -3,6 +3,7 @@ type CropRect = { x: number; y: number; width: number; height: number };
 export async function getCroppedImg(
   imageSrc: string,
   crop: CropRect,
+  outputMimeType: 'image/jpeg' | 'image/png' = 'image/jpeg',
 ): Promise<string> {
   const image: HTMLImageElement = await new Promise((resolve, reject) => {
     const img = new Image();
@@ -33,5 +34,5 @@ export async function getCroppedImg(
     crop.height,
   );
 
-  return canvas.toDataURL('image/jpeg');
+  return canvas.toDataURL(outputMimeType);
 }
