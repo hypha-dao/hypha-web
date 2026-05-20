@@ -616,19 +616,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const previousSlug = lastChatSpaceSlugRef.current;
     if (previousSlug === nextSlug) return;
     lastChatSpaceSlugRef.current = nextSlug;
-
-    // Keep AI context aligned with the currently selected space.
-    // Without this, the conversation history can bias responses to the prior space.
-    if (status === 'streaming' || status === 'submitted') {
-      void stop();
-    }
-    clearError();
-    setMessages([]);
-    setInput('');
-    setDraftAttachments([]);
-    autoRetryingRef.current = false;
-    lastAutoRetriedMessageIdRef.current = null;
-  }, [clearError, setMessages, spaceSlug, status, stop]);
+    // Preserve conversation when navigating across spaces (including AI-driven
+    // navigation). The current space context is still sent per request via
+    // buildMessageOptions/transport body, so context can update without reset.
+  }, [spaceSlug]);
 
   const buildMessageOptions = useCallback(async () => {
     let token: string | undefined;

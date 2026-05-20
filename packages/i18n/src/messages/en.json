@@ -2233,6 +2233,8 @@
     "callCaptureStatusCapturing": "Capturing",
     "callCaptureStatusSaving": "Saving",
     "callCaptureStatusError": "Capture error",
+    "messageReadMore": "Read more",
+    "messageShowLess": "Show less",
     "callCaptureOffHint": "Capture is off. No recording or transcript will be saved for this call.",
     "callCaptureLeaveWarning": "Capture is off. Press Leave again to confirm leaving without a recording.",
     "composerLockedPlaceholder": "Only selected team members can interact in this thread.",
