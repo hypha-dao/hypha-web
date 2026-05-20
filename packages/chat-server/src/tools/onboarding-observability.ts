@@ -19,10 +19,21 @@ type OnboardingToolLogPayload = OnboardingToolEvent & {
   scope: string;
   timestamp: string;
 };
+type SanitizedOnboardingToolLogPayload = {
+  scope: string;
+  timestamp: string;
+  tool: string;
+  status: OnboardingToolEventStatus;
+  spaceSlug?: string;
+  dedupeKey?: string;
+  hasActorSub: boolean;
+  hasDetails: boolean;
+  hasError: boolean;
+};
 
 function emitStructuredLog(
   level: 'info' | 'error',
-  payload: OnboardingToolLogPayload,
+  payload: SanitizedOnboardingToolLogPayload,
 ): void {
   const line = JSON.stringify(payload);
   if (level === 'error') {
@@ -44,9 +55,20 @@ export function logOnboardingToolEvent(event: OnboardingToolEvent): void {
     ...normalizedEvent,
     timestamp: new Date().toISOString(),
   };
+  const sanitizedPayload: SanitizedOnboardingToolLogPayload = {
+    scope: payload.scope,
+    timestamp: payload.timestamp,
+    tool: payload.tool,
+    status: payload.status,
+    spaceSlug: payload.spaceSlug,
+    dedupeKey: payload.dedupeKey,
+    hasActorSub: Boolean(payload.actorSub?.trim()),
+    hasDetails: Boolean(payload.details),
+    hasError: Boolean(payload.error?.trim()),
+  };
   if (payload.status === 'failed') {
-    emitStructuredLog('error', payload);
+    emitStructuredLog('error', sanitizedPayload);
     return;
   }
-  emitStructuredLog('info', payload);
+  emitStructuredLog('info', sanitizedPayload);
 }
