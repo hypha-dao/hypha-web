@@ -3378,10 +3378,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       </p>
                       <Button
                         type="button"
-                        size="sm"
                         variant="outline"
                         colorVariant="accent"
-                        className="h-9 min-h-9 border-[color:var(--space-accent)] px-3 py-0 text-sm leading-none whitespace-nowrap text-[color:var(--space-accent)] hover:bg-accent-3"
+                        className="h-8 min-h-8 self-center border-[color:var(--space-accent)] px-2.5 py-0 text-xs font-semibold leading-none whitespace-nowrap text-[color:var(--space-accent)] hover:bg-accent-3"
                         onClick={() => {
                           if (signalTeamPanelOpen) {
                             void commitSignalTeamDraft();
