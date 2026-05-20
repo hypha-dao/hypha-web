@@ -21,14 +21,16 @@ export function SignalGrid({
   onSignalClick,
 }: SignalGridProps) {
   return (
-    <div className="grid w-full grid-cols-1 items-start gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+    // Board-style density: keep card width steady and let column count adapt
+    // to available container width (including side panels opening/closing).
+    <div className="grid w-full grid-cols-[repeat(auto-fill,minmax(min(100%,15.75rem),1fr))] items-start justify-items-start gap-2.5">
       {signals.map((signal) =>
         signal.archived ? (
           <SignalCard
             key={signal.id}
             {...signal}
             leadImage={leadImage}
-            className="w-full min-h-0"
+            className="w-full min-h-0 max-w-[18rem]"
             isLoading={isLoading}
             refresh={refresh}
           />
@@ -38,7 +40,7 @@ export function SignalGrid({
             role="button"
             tabIndex={0}
             className={cn(
-              'flex min-h-0 w-full cursor-pointer rounded-xl text-left outline-none',
+              'flex min-h-0 w-full max-w-[18rem] cursor-pointer rounded-xl text-left outline-none',
               'focus-visible:ring-2 focus-visible:ring-accent-9/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             )}
             onClick={() => onSignalClick(signal)}
@@ -52,7 +54,7 @@ export function SignalGrid({
             <SignalCard
               {...signal}
               leadImage={leadImage}
-              className="w-full min-h-0"
+              className="w-full min-h-0 max-w-[18rem]"
               isLoading={isLoading}
               refresh={refresh}
               onOpenConversation={() => onSignalClick(signal)}
@@ -62,12 +64,12 @@ export function SignalGrid({
           <Link
             key={signal.id}
             href={`${basePath}/${signal.slug}`}
-            className="flex min-h-0 w-full"
+            className="flex min-h-0 w-full max-w-[18rem]"
           >
             <SignalCard
               {...signal}
               leadImage={leadImage}
-              className="w-full min-h-0"
+              className="w-full min-h-0 max-w-[18rem]"
               isLoading={isLoading}
               refresh={refresh}
             />
