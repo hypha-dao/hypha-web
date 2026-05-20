@@ -39,6 +39,7 @@
     "errorLoadMembersTab": "Oops, something went wrong. Couldn't load members tab.",
     "errorLoadAgreementsTab": "Oops, something went wrong. Couldn't load agreements tab.",
     "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab.",
+    "errorLoadBankingTab": "Oops, something went wrong. Couldn't load bank deposits.",
     "publish": "Publish",
     "invalidTransactions": "Invalid transactions",
     "Coherence": "Signals",
@@ -492,7 +493,93 @@
       }
     }
   },
+  "BankingTab": {
+    "title": "Bank deposits",
+    "subtitle": "Accept wire transfers from any bank. Funds arrive as USDC in your space treasury.",
+    "loading": "Loading bank deposit status…",
+    "returnBanner": "You have returned from verification. Your status is updated below.",
+    "errorLoad": "Could not load bank deposit status.",
+    "notStarted": {
+      "description": "Enable bank deposits to start business verification for this space. Once approved, donors can wire fiat from any bank.",
+      "enableCta": "Enable bank deposits"
+    },
+    "blockers": {
+      "notOnChain": "This space must be deployed on-chain before bank deposits can be enabled.",
+      "noTreasury": "This space must have an on-chain treasury address before bank deposits can be enabled."
+    },
+    "verificationInProgress": "Verification is in progress. This typically takes a few hours to a few days. If you need to take action, use the link below.",
+    "actions": {
+      "openVerificationForm": "Open verification form",
+      "viewTerms": "View terms of service",
+      "refreshStatus": "Refresh status"
+    },
+    "endorsements": {
+      "base": "Base",
+      "cards": "Cards",
+      "cop": "Bre-B (COP)",
+      "faster_payments": "Faster Payments (GBP)",
+      "pix": "PIX (BRL)",
+      "sepa": "SEPA (EUR)",
+      "spei": "SPEI (MXN)"
+    },
+    "onboardingDialog": {
+      "title": "Enable bank deposits",
+      "description": "We will use this information to start business verification for your space.",
+      "legalName": "Legal entity name",
+      "contactEmail": "Contact email",
+      "endorsementsLabel": "Payment rails",
+      "endorsementsHint": "Select at least one rail your organization needs to receive bank deposits.",
+      "endorsementsRequired": "Select at least one payment rail.",
+      "submit": "Start verification",
+      "submitting": "Starting…"
+    },
+    "status": {
+      "not_started": {
+        "title": "Verification not started",
+        "description": "Open the verification link to provide your organization details."
+      },
+      "incomplete": {
+        "title": "Verification incomplete",
+        "description": "Your verification form has not been submitted yet."
+      },
+      "awaiting_questionnaire": {
+        "title": "Additional information required",
+        "description": "Please complete the additional questionnaire to continue verification."
+      },
+      "awaiting_ubo": {
+        "title": "Beneficial owners required",
+        "description": "Please provide information about individuals who own or control 25% or more of the organization."
+      },
+      "under_review": {
+        "title": "Under review",
+        "description": "Your verification has been submitted and is being reviewed. This can take from a few hours to several days."
+      },
+      "approved": {
+        "title": "Verification approved",
+        "description": "Your organization has been verified. Bank deposit details will be available here soon.",
+        "depositPlaceholderTitle": "Deposit instructions",
+        "depositPlaceholderDescription": "Deposit instructions will appear here once your bank account is provisioned."
+      },
+      "rejected": {
+        "title": "Verification declined",
+        "description": "Your organization could not be verified. Contact support if you believe this is an error."
+      },
+      "paused": {
+        "title": "Verification paused",
+        "description": "Verification is temporarily paused. Contact support for assistance."
+      },
+      "offboarded": {
+        "title": "Bank deposits unavailable",
+        "description": "Bank deposits are no longer available for this space. Contact support for assistance."
+      },
+      "unknown": {
+        "title": "Status unavailable",
+        "description": "We could not determine the current verification status. Try refreshing."
+      }
+    }
+  },
   "TreasuryTab": {
+    "bankDeposits": "Bank deposits",
     "balance": "Balance",
     "wallet": "Wallet",
     "searchTokens": "Search tokens",

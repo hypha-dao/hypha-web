@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import {
   AssetsSection,
+  BankingSection,
   TransactionsSection,
   VaultsSection,
   useAssets,
@@ -69,6 +70,9 @@ export function TreasuryTabs({
                 </span>
               </span>
             </TabsTrigger>
+            <TabsTrigger value="bank-deposits" variant="switch">
+              {tTreasury('bankDeposits')}
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -82,6 +86,10 @@ export function TreasuryTabs({
 
         <TabsContent value="vaults" className="mt-0">
           <VaultsSection />
+        </TabsContent>
+
+        <TabsContent value="bank-deposits" className="mt-0">
+          <BankingSection spaceSlug={spaceSlug} web3SpaceId={web3SpaceId} />
         </TabsContent>
       </Tabs>
     </div>

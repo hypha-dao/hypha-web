@@ -53,6 +53,7 @@ const mockProvider: BankKycProvider = {
     providerCustomerId: 'cust_1',
     providerKycLinkId: 'link_1',
     kycStatus: 'not_started',
+    isApproved: false,
     tosStatus: 'pending',
     kycLink: 'https://bridge.example/kyc',
     tosLink: 'https://bridge.example/tos',
@@ -82,6 +83,44 @@ describe('requestSpaceBankOnboarding', () => {
       contactEmail: onboardingInput.contactEmail,
       endorsements: ['base', 'sepa'],
     });
+  });
+
+  it('throws BankOnboardingError 404 when space is not found', async () => {
+    findSpaceBySlug.mockResolvedValue(null);
+
+    await expect(
+      requestSpaceBankOnboarding(
+        { ...onboardingInput, endorsements: [...onboardingInput.endorsements] },
+        { db: mockDb },
+        { kycProvider: mockProvider },
+      ),
+    ).rejects.toMatchObject({
+      status: 404,
+      message: 'Space not found',
+    });
+
+    expect(authorizeSpaceBankOnboarding).not.toHaveBeenCalled();
+  });
+
+  it('throws BankOnboardingError when authorization fails', async () => {
+    authorizeSpaceBankOnboarding.mockResolvedValue({
+      authorized: false,
+      httpStatus: 403,
+      message: 'You must be a space member or delegate to enable bank accounts.',
+    });
+
+    await expect(
+      requestSpaceBankOnboarding(
+        { ...onboardingInput, endorsements: [...onboardingInput.endorsements] },
+        { db: mockDb },
+        { kycProvider: mockProvider },
+      ),
+    ).rejects.toMatchObject({
+      status: 403,
+      message: 'You must be a space member or delegate to enable bank accounts.',
+    });
+
+    expect(mockProvider.createKycLink).not.toHaveBeenCalled();
   });
 
   it('returns existing customer without calling provider (idempotent)', async () => {

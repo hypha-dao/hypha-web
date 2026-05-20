@@ -42,6 +42,7 @@ export function createBridgeKycProvider(): BankKycProvider {
         providerCustomerId: response.customer_id ?? null,
         providerKycLinkId: response.id,
         kycStatus: response.kyc_status,
+        isApproved: response.kyc_status === 'approved',
         tosStatus: response.tos_status ?? null,
         kycLink: response.kyc_link,
         tosLink: response.tos_link ?? null,

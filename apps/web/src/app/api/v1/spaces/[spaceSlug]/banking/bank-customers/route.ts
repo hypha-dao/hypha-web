@@ -1,30 +1,53 @@
 import {
   BankOnboardingError,
+  getSpaceBankCustomerPublicStatus,
   requestSpaceBankOnboarding,
   schemaSpaceBankCustomerOnboarding,
-  verifyPrivyAuthToken,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { NextRequest, NextResponse } from 'next/server';
 
+import {
+  authenticateBankCustomerRequest,
+  extractBearerToken,
+} from '@web/lib/bank-customers/authenticate-bank-customer-request';
 import { sendBankOnboardingEmail } from '@web/lib/bank-customers/send-onboarding-email';
 
 type Params = { spaceSlug: string };
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<Params> },
+) {
+  const { spaceSlug } = await params;
+
+  try {
+    const authResult = await authenticateBankCustomerRequest(request, spaceSlug);
+    if (!authResult.ok) {
+      return authResult.response;
+    }
+
+    const status = await getSpaceBankCustomerPublicStatus(authResult.space, {
+      db,
+    });
+    return NextResponse.json(status);
+  } catch (error) {
+    console.error('banking/bank-customers GET failed:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch bank customer status' },
+      { status: 500 },
+    );
+  }
+}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<Params> },
 ) {
-  const authHeader = request.headers.get('Authorization');
-  const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
-  const authToken = bearerMatch?.[1]?.trim();
-
+  const authToken = extractBearerToken(request);
   if (!authToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const auth = await verifyPrivyAuthToken(authToken);
-  if (!auth.ok) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

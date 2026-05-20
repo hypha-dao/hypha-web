@@ -13,6 +13,7 @@ export type CreateKycLinkResult = {
   providerCustomerId: string | null;
   providerKycLinkId: string;
   kycStatus: string;
+  isApproved: boolean;
   tosStatus: string | null;
   kycLink: string;
   tosLink: string | null;

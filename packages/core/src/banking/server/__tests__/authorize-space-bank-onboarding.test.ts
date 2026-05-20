@@ -58,6 +58,53 @@ describe('authorizeSpaceBankOnboarding', () => {
     expect(findSelf).not.toHaveBeenCalled();
   });
 
+  it('returns 403 when findSelf returns person without wallet address', async () => {
+    findSelf.mockResolvedValue({
+      id: 10,
+      slug: 'alice',
+      address: null,
+    });
+
+    const result = await authorizeSpaceBankOnboarding({
+      space: {
+        web3SpaceId: 42,
+        address: '0xtreasury000000000000000000000000000001',
+      },
+      authToken: 'token',
+    });
+
+    expect(result).toEqual({
+      authorized: false,
+      httpStatus: 403,
+      message:
+        'Could not verify your wallet address. Connect a wallet to enable bank accounts for this space.',
+    });
+    expect(isOnChainMemberOrDelegate).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 when isOnChainMemberOrDelegate throws', async () => {
+    findSelf.mockResolvedValue({
+      id: 10,
+      slug: 'alice',
+      address: '0x1234567890123456789012345678901234567890',
+    });
+    isOnChainMemberOrDelegate.mockRejectedValue(new Error('rpc down'));
+
+    const result = await authorizeSpaceBankOnboarding({
+      space: {
+        web3SpaceId: 42,
+        address: '0xtreasury000000000000000000000000000001',
+      },
+      authToken: 'token',
+    });
+
+    expect(result).toEqual({
+      authorized: false,
+      httpStatus: 500,
+      message: 'An error occurred while checking your permissions.',
+    });
+  });
+
   it('returns 401 when findSelf returns null', async () => {
     findSelf.mockResolvedValue(null);
 

@@ -152,4 +152,37 @@ describe('createBridgeKycProvider', () => {
 
     expect(result.tosLink).toBeNull();
   });
+
+  it('sets isApproved true when kyc_status is approved', async () => {
+    bridgeCreateKycLink.mockResolvedValueOnce({
+      id: 'kyc_link_1',
+      customer_id: 'cust_1',
+      kyc_link: 'https://bridge.example/kyc',
+      kyc_status: 'approved',
+      tos_status: 'approved',
+      created_at: '2026-05-18T00:00:00Z',
+    });
+
+    const provider = createBridgeKycProvider();
+    const result = await provider.createKycLink({
+      entityType: 'business',
+      legalName: 'Acme Foundation Ltd.',
+      contactEmail: 'compliance@acme.org',
+      idempotencyKey: '550e8400-e29b-41d4-a716-446655440000',
+    });
+
+    expect(result.isApproved).toBe(true);
+  });
+
+  it('sets isApproved false when kyc_status is not approved', async () => {
+    const provider = createBridgeKycProvider();
+    const result = await provider.createKycLink({
+      entityType: 'business',
+      legalName: 'Acme Foundation Ltd.',
+      contactEmail: 'compliance@acme.org',
+      idempotencyKey: '550e8400-e29b-41d4-a716-446655440000',
+    });
+
+    expect(result.isApproved).toBe(false);
+  });
 });
