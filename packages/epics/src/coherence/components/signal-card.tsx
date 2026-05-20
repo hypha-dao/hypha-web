@@ -44,7 +44,7 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { Archive, Pencil, Sparkles, Workflow } from 'lucide-react';
+import { Archive, Pencil, Sparkles, UserCircle2, Workflow } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
@@ -227,6 +227,17 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
   const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
   const isCreator = person?.id === creatorId;
+  const creatorDisplayName = React.useMemo(() => {
+    const raw = `${creatorId ?? ''}`.trim();
+    if (!raw) return '';
+    if (isCreator) return person?.name?.trim() || 'You';
+    if (raw.startsWith('@')) {
+      const [localpart] = raw.slice(1).split(':');
+      return localpart?.trim() || raw;
+    }
+    const [left] = raw.split(':');
+    return left?.trim() || raw;
+  }, [creatorId, isCreator, person?.name]);
 
   const coherenceType = React.useMemo(
     () => COHERENCE_TYPE_OPTIONS.find((option) => option.type === type),
@@ -513,6 +524,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-1 text-muted-foreground">
+            {creatorDisplayName ? (
+              <span className="inline-flex min-w-0 items-center gap-1 truncate">
+                <UserCircle2 className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                <span className="truncate">{creatorDisplayName}</span>
+              </span>
+            ) : null}
             <span className="inline-flex min-w-0 items-center gap-1">
               <ClockIcon
                 className="h-3.5 w-3.5 shrink-0 opacity-70"
@@ -537,6 +554,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 {normalizedMessagesCount}
               </span>
             </span>
+            {metaBadges.length > 0 ? (
+              <BadgesList isLoading={isLoading} badges={metaBadges} />
+            ) : null}
           </div>
 
           <Skeleton
