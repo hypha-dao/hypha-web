@@ -62,6 +62,10 @@ export interface SendMessageInput {
   signal?: AbortSignal;
 }
 
+export interface SendMessageResult {
+  eventId?: string;
+}
+
 /** Existing attachment slot when editing a media `m.room.message` (mxc stays on server). */
 export type EditRoomMessageExistingSlot = {
   mxcUrl: string;
@@ -142,10 +146,6 @@ export const MATRIX_UPLOAD_TIMEOUT_MS = 120_000;
 const MATRIX_UPLOAD_STAGGER_MS = 400;
 
 const MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS = 4;
-const MATRIX_HISTORY_BATCH_DELAY_MS = 220;
-const MATRIX_HISTORY_RATE_LIMIT_MAX_RETRIES = 3;
-const MATRIX_HISTORY_RECENT_LOAD_COOLDOWN_MS = 45_000;
-const MATRIX_HISTORY_TARGET_EVENTS = 220;
 const MATRIX_GROUP_CALL_EVENT_TYPE = 'org.matrix.msc3401.call';
 const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
 const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
@@ -258,9 +258,10 @@ function delay(ms: number): Promise<void> {
   });
 }
 
-function matrixSessionKey(token: MatrixTokenData | null | undefined): string {
-  if (!token) return '';
-  return [token.userId, token.deviceId ?? '', token.accessToken].join('|');
+function getEventIdFromSendResponse(response: unknown): string | undefined {
+  if (!response || typeof response !== 'object') return undefined;
+  const eventId = (response as { event_id?: unknown }).event_id;
+  return typeof eventId === 'string' && eventId.trim() ? eventId : undefined;
 }
 
 /** True when the homeserver rejected the request for rate limiting (HTTP 429 / M_LIMIT_EXCEEDED). */
@@ -278,19 +279,6 @@ export function isMatrixRateLimitedError(err: unknown): boolean {
   if (e.data?.errcode === 'M_LIMIT_EXCEEDED') return true;
   if (/too many requests/i.test(msg)) return true;
   return false;
-}
-
-function isMatrixUnknownTokenError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const e = err as Error & {
-    httpStatus?: number;
-    errcode?: string;
-    data?: { errcode?: string };
-  };
-  if (e.httpStatus === 401) return true;
-  if (e.errcode === 'M_UNKNOWN_TOKEN') return true;
-  if (e.data?.errcode === 'M_UNKNOWN_TOKEN') return true;
-  return /\bM_UNKNOWN_TOKEN\b/i.test(e.message);
 }
 
 function matrixRateLimitBackoffMs(
@@ -460,7 +448,7 @@ interface MatrixContextType {
   isMatrixAvailable: boolean;
   isAuthenticated: boolean;
   createRoom: (title: string) => Promise<{ roomId: string }>;
-  sendMessage: (params: SendMessageInput) => Promise<void>;
+  sendMessage: (params: SendMessageInput) => Promise<SendMessageResult>;
   editRoomMessage: (params: EditRoomMessageInput) => Promise<void>;
   redactRoomEvent: (params: RedactRoomEventInput) => Promise<void>;
   toggleReaction: (params: ToggleReactionInput) => Promise<void>;
@@ -504,16 +492,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const [activeMatrixUserId, setActiveMatrixUserId] = React.useState<
     string | null
   >(null);
-  const [activeMatrixSessionKey, setActiveMatrixSessionKey] = React.useState<
-    string | null
-  >(null);
   const registeredRoomListenersRef = React.useRef<RoomMessageListenerRecord[]>(
     [],
   );
   const roomHistoryLoadRef = React.useRef<Map<string, Promise<void>>>(
-    new Map(),
-  );
-  const roomHistoryLastLoadedAtRef = React.useRef<Map<string, number>>(
     new Map(),
   );
   const [registeredRoomListeners, setRegisteredRoomListeners] = React.useState<
@@ -523,12 +505,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     matrixToken,
     isLoading: isMatrixTokenLoading,
     error: matrixTokenError,
-    refreshMatrixToken,
   } = useMatrixToken();
-  const clientRef = React.useRef<MatrixSdk.MatrixClient | null>(null);
-  clientRef.current = client;
-  const activeMatrixSessionKeyRef = React.useRef<string | null>(null);
-  activeMatrixSessionKeyRef.current = activeMatrixSessionKey;
 
   const initializeMatrixClient = React.useCallback(
     async (matrixToken: MatrixTokenData) => {
@@ -561,7 +538,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
         setClient(matrixClient);
         setActiveMatrixUserId(userId);
-        setActiveMatrixSessionKey(matrixSessionKey(matrixToken));
         setIsMatrixAvailable(matrixClient !== null);
         setIsAuthenticated(true);
       } catch (error) {
@@ -576,25 +552,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     if (!client) {
       return;
     }
-    if (
-      matrixToken &&
-      activeMatrixUserId === matrixToken.userId &&
-      activeMatrixSessionKey === matrixSessionKey(matrixToken)
-    ) {
+    if (matrixToken && activeMatrixUserId === matrixToken.userId) {
       return;
     }
 
     client.stopClient();
     registeredRoomListenersRef.current = [];
     setRegisteredRoomListeners([]);
-    roomHistoryLoadRef.current.clear();
-    roomHistoryLastLoadedAtRef.current.clear();
     setClient(null);
     setActiveMatrixUserId(null);
-    setActiveMatrixSessionKey(null);
     setIsAuthenticated(false);
     setIsMatrixAvailable(false);
-  }, [activeMatrixSessionKey, activeMatrixUserId, client, matrixToken]);
+  }, [activeMatrixUserId, client, matrixToken]);
 
   React.useEffect(() => {
     if (client) {
@@ -625,95 +594,25 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const matrixClient = client as MatrixSdk.MatrixClient;
         matrixClient.setPresence({ presence: 'offline' });
         matrixClient.stopClient();
-        roomHistoryLoadRef.current.clear();
-        roomHistoryLastLoadedAtRef.current.clear();
         setClient(null);
       }
     };
   }, [client]);
-
-  const recoverFromUnknownToken =
-    React.useCallback(async (): Promise<boolean> => {
-      const beforeSessionKey = activeMatrixSessionKeyRef.current;
-      try {
-        await refreshMatrixToken();
-      } catch (error) {
-        console.warn(
-          '[MatrixProvider] Failed to refresh Matrix token after M_UNKNOWN_TOKEN:',
-          error,
-        );
-        return false;
-      }
-      const deadline = Date.now() + 7000;
-      while (Date.now() < deadline) {
-        const hasClient = Boolean(clientRef.current);
-        const afterSessionKey = activeMatrixSessionKeyRef.current;
-        if (
-          hasClient &&
-          afterSessionKey &&
-          afterSessionKey !== beforeSessionKey
-        ) {
-          return true;
-        }
-        await delay(80);
-      }
-      return false;
-    }, [refreshMatrixToken]);
-
-  const sendEventWithUnknownTokenRetry = React.useCallback(
-    async <K extends keyof MatrixSdk.TimelineEvents>(
-      roomId: string,
-      eventType: K,
-      content: MatrixSdk.TimelineEvents[K],
-    ) => {
-      const matrixClient = clientRef.current;
-      if (!matrixClient) {
-        throw new Error('Client should be specified');
-      }
-      try {
-        return await matrixClient.sendEvent(roomId, eventType, content);
-      } catch (error) {
-        if (!isMatrixUnknownTokenError(error)) throw error;
-        const recovered = await recoverFromUnknownToken();
-        if (!recovered) throw error;
-        const retryClient = clientRef.current;
-        if (!retryClient) throw error;
-        return await retryClient.sendEvent(roomId, eventType, content);
-      }
-    },
-    [recoverFromUnknownToken],
-  );
 
   const createRoom = React.useCallback(
     async (title: string) => {
       if (!client) {
         throw new Error('Client should be specified');
       }
-      let roomId: string;
-      try {
-        const created = await client.createRoom({
-          preset: RoomPreset.PublicChat,
-          name: title,
-          topic: title,
-        });
-        roomId = created.room_id;
-      } catch (error) {
-        if (!isMatrixUnknownTokenError(error)) throw error;
-        const recovered = await recoverFromUnknownToken();
-        if (!recovered) throw error;
-        const retryClient = clientRef.current;
-        if (!retryClient) throw error;
-        const created = await retryClient.createRoom({
-          preset: RoomPreset.PublicChat,
-          name: title,
-          topic: title,
-        });
-        roomId = created.room_id;
-      }
-      await ensureRoomCallPowerLevels(clientRef.current ?? client, roomId);
+      const { room_id: roomId } = await client.createRoom({
+        preset: RoomPreset.PublicChat,
+        name: title,
+        topic: title,
+      });
+      await ensureRoomCallPowerLevels(client, roomId);
       return { roomId };
     },
-    [client, recoverFromUnknownToken],
+    [client],
   );
 
   const toggleReaction = React.useCallback(
@@ -760,19 +659,15 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return;
       }
 
-      await sendEventWithUnknownTokenRetry(
-        roomId,
-        MatrixSdk.EventType.Reaction,
-        {
-          'm.relates_to': {
-            event_id: targetEventId,
-            key,
-            rel_type: MatrixSdk.RelationType.Annotation,
-          },
+      await client.sendEvent(roomId, MatrixSdk.EventType.Reaction, {
+        'm.relates_to': {
+          event_id: targetEventId,
+          key,
+          rel_type: MatrixSdk.RelationType.Annotation,
         },
-      );
+      });
     },
-    [client, sendEventWithUnknownTokenRetry],
+    [client],
   );
 
   const sendMessage = React.useCallback(
@@ -784,19 +679,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       attachments,
       onUploadProgress,
       signal,
-    }: SendMessageInput) => {
+    }: SendMessageInput): Promise<SendMessageResult> => {
       if (!client) {
         throw new Error('Client should be specified');
       }
       if (!roomId?.trim()) {
-        return;
+        return {};
       }
 
       const trimmed = message.trim();
       const list = attachments?.length ? attachments : [];
       const hasAttachments = list.length > 0;
       if (!trimmed && !hasAttachments) {
-        return;
+        return {};
       }
 
       const mentionIds = resolveMentionUserIdsForSend(trimmed, mentionUserIds);
@@ -905,7 +800,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                 }
               : base;
             throwIfAborted(signal);
-            await sendEventWithUnknownTokenRetry(
+            const sendResult = await client.sendEvent(
               roomId,
               EventType.RoomMessage,
               mergeMatrixMentionsIntoContent(
@@ -914,6 +809,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               ) as RoomMessageEventContent,
             );
             sentMediaCount = 1;
+            return { eventId: getEventIdFromSendResponse(sendResult) };
           } else if (mediaPayloads.length > 1) {
             const [first, ...rest] = mediaPayloads;
             const bundleItems: HyphaMediaBundleItemWire[] = rest.map((item) => {
@@ -944,7 +840,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                 }
               : combined;
             throwIfAborted(signal);
-            await sendEventWithUnknownTokenRetry(
+            const sendResult = await client.sendEvent(
               roomId,
               EventType.RoomMessage,
               mergeMatrixMentionsIntoContent(
@@ -953,6 +849,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               ) as RoomMessageEventContent,
             );
             sentMediaCount = list.length;
+            return { eventId: getEventIdFromSendResponse(sendResult) };
           }
         } catch (mediaErr) {
           throw new SendMessagePartialFailureError(
@@ -963,11 +860,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             true,
           );
         }
-        return;
+        return {};
       }
 
       if (!trimmed) {
-        return;
+        return {};
       }
 
       throwIfAborted(signal);
@@ -980,7 +877,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             message,
           );
           throwIfAborted(signal);
-          await sendEventWithUnknownTokenRetry(
+          const sendResult = await client.sendEvent(
             roomId,
             EventType.RoomMessage,
             mergeMatrixMentionsIntoContent(
@@ -996,14 +893,14 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               mentionIds,
             ),
           );
-          return;
+          return { eventId: getEventIdFromSendResponse(sendResult) };
         }
 
         if (replyContext && hasAttachments) {
           const textPayload =
             matrixTextEventContentWithOptionalFormatting(message);
           throwIfAborted(signal);
-          await sendEventWithUnknownTokenRetry(
+          const sendResult = await client.sendEvent(
             roomId,
             EventType.RoomMessage,
             mergeMatrixMentionsIntoContent(
@@ -1019,13 +916,13 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               mentionIds,
             ),
           );
-          return;
+          return { eventId: getEventIdFromSendResponse(sendResult) };
         }
 
         const textPayload =
           matrixTextEventContentWithOptionalFormatting(message);
         throwIfAborted(signal);
-        await sendEventWithUnknownTokenRetry(
+        const sendResult = await client.sendEvent(
           roomId,
           EventType.RoomMessage,
           mergeMatrixMentionsIntoContent(
@@ -1036,6 +933,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             mentionIds,
           ),
         );
+        return { eventId: getEventIdFromSendResponse(sendResult) };
       } catch (textErr) {
         throw new SendMessagePartialFailureError(
           textErr instanceof Error
@@ -1046,7 +944,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         );
       }
     },
-    [client, sendEventWithUnknownTokenRetry],
+    [client],
   );
 
   const editRoomMessage = React.useCallback(
@@ -1218,7 +1116,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
         throwIfAborted(signal);
 
-        await sendEventWithUnknownTokenRetry(roomId, EventType.RoomMessage, {
+        await client.sendEvent(roomId, EventType.RoomMessage, {
           ...combined,
           body: fallbackBody,
           'm.new_content': combined,
@@ -1276,7 +1174,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         'body' in newContentPayload ? newContentPayload.body : message;
       const fallbackBody = `* ${newBody}`;
 
-      await sendEventWithUnknownTokenRetry(roomId, EventType.RoomMessage, {
+      await client.sendEvent(roomId, EventType.RoomMessage, {
         ...newContentPayload,
         body: fallbackBody,
         'm.new_content': newContentPayload,
@@ -1286,7 +1184,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         },
       } as RoomMessageEventContent);
     },
-    [client, sendEventWithUnknownTokenRetry],
+    [client],
   );
 
   const redactRoomEvent = React.useCallback(
@@ -1398,62 +1296,24 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return;
       }
 
-      const now = Date.now();
-      const lastLoadedAt = roomHistoryLastLoadedAtRef.current.get(roomId) ?? 0;
-      const hasRecentLoad =
-        now - lastLoadedAt < MATRIX_HISTORY_RECENT_LOAD_COOLDOWN_MS;
-      const existingEventsCount = room.getLiveTimeline().getEvents().length;
-      if (
-        hasRecentLoad ||
-        existingEventsCount >= MATRIX_HISTORY_TARGET_EVENTS
-      ) {
-        return;
-      }
-
-      const pageSize = Math.max(10, options?.pageSize ?? 25);
-      const maxBatches = Math.max(1, options?.maxBatches ?? 8);
+      const pageSize = Math.max(10, options?.pageSize ?? 50);
+      const maxBatches = Math.max(1, options?.maxBatches ?? 40);
       const loadPromise = (async () => {
-        let rateLimitRetries = 0;
-        let hadSuccessfulScrollback = false;
         for (let i = 0; i < maxBatches; i++) {
           const beforeCount = room.getLiveTimeline().getEvents().length;
           try {
-            if (i > 0) {
-              await delay(MATRIX_HISTORY_BATCH_DELAY_MS);
-            }
             await client.scrollback(room, pageSize);
-            hadSuccessfulScrollback = true;
           } catch (error) {
-            if (
-              isMatrixRateLimitedError(error) &&
-              rateLimitRetries < MATRIX_HISTORY_RATE_LIMIT_MAX_RETRIES
-            ) {
-              const backoffMs = matrixRateLimitBackoffMs(
-                error,
-                rateLimitRetries,
-              );
-              rateLimitRetries += 1;
-              await delay(backoffMs);
-              i -= 1;
-              continue;
-            }
             console.warn(
               '[MatrixProvider] Failed while loading room history:',
               error,
             );
             break;
           }
-          rateLimitRetries = 0;
           const afterCount = room.getLiveTimeline().getEvents().length;
           if (afterCount <= beforeCount) {
             break;
           }
-          if (afterCount >= MATRIX_HISTORY_TARGET_EVENTS) {
-            break;
-          }
-        }
-        if (hadSuccessfulScrollback) {
-          roomHistoryLastLoadedAtRef.current.set(roomId, Date.now());
         }
       })();
 
@@ -1531,30 +1391,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
 
       try {
-        let matrixClient = client;
-        let joined;
-        try {
-          joined = await matrixClient.joinRoom(roomIdOrAlias);
-        } catch (error) {
-          if (!isMatrixUnknownTokenError(error)) throw error;
-          const recovered = await recoverFromUnknownToken();
-          if (!recovered) throw error;
-          const recoveredClient = clientRef.current;
-          if (!recoveredClient) throw error;
-          matrixClient = recoveredClient;
-          joined = await matrixClient.joinRoom(roomIdOrAlias);
-        }
+        const joined = await client.joinRoom(roomIdOrAlias);
         const resolvedId = joined.roomId;
-        await ensureRoomCallPowerLevels(matrixClient, resolvedId);
+        await ensureRoomCallPowerLevels(client, resolvedId);
         // `joinRoom` resolves before the lazy room store always exposes `getRoom`
         // (race with sync / canonical id). Wait briefly for `getRoom` parity with listeners.
         for (let i = 0; i < 40; i++) {
-          if (matrixClient.getRoom(resolvedId)) {
+          if (client.getRoom(resolvedId)) {
             return resolvedId;
           }
           await new Promise((r) => setTimeout(r, 50));
         }
-        if (!matrixClient.getRoom(resolvedId)) {
+        if (!client.getRoom(resolvedId)) {
           throw new Error('Room not available in Matrix client after join');
         }
         return resolvedId;
@@ -1563,7 +1411,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw error;
       }
     },
-    [client, recoverFromUnknownToken],
+    [client],
   );
 
   const unregisterRoomListener = React.useCallback(

@@ -784,14 +784,14 @@
     "signIn": "Entrar",
     "getStarted": "Comece",
     "ecosystemLogo": "Logo do ecossistema",
-    "continueAdventure": "Sua aventura continua aqui"
+    "continueAdventure": "Continuar sua aventura"
   },
   "OnboardingAdventure": {
     "title": "Sua aventura começa aqui.",
     "continueAdventure": "Sua aventura continua aqui",
     "subtitle": "Você tem uma visão poderosa para o mundo; nós damos a você as ferramentas para colocá-la em ação.",
     "aiHero": {
-      "title": "Build Anything, Together",
+      "title": "Construa qualquer coisa, juntos",
       "description": "Diga ao Hypha AI o que você quer construir e ele vai guiar a configuração passo a passo.",
       "placeholder": "Criar um espaço, entrar em um espaço existente, explorar a rede ou financiar uma tesouraria - descreva seu objetivo e a AI guia você.",
       "rotating": {
@@ -812,7 +812,7 @@
       "unavailable": "O onboarding com AI está temporariamente indisponível nesta implantação.",
       "ariaLabel": "Prompt de onboarding com AI",
       "flow": {
-        "badge": "Simple. Powerful. By design.",
+        "badge": "Simples. Poderoso. Feito por design.",
         "reviewingTitle": "Analisando sua solicitação",
         "reviewingDescription": "A AI está mapeando o melhor caminho para o seu objetivo.",
         "reviewingDescriptionPersonalized": "{firstName}, a AI está mapeando o melhor caminho para o seu objetivo.",
@@ -889,7 +889,8 @@
       "browserNotifications": "Notificações do navegador (anteriormente \"Notificações pop-up na área de trabalho\")",
       "yes": "Sim",
       "no": "Não",
-      "emailNotificationsWithEmail": "Notificações por e-mail ({email})"
+      "emailNotificationsWithEmail": "Notificações por e-mail ({email})",
+      "mentionConsent": "Consentimento para notificações de menções"
     },
     "subscriptions": {
       "title": "Seja notificado quando...",
@@ -902,7 +903,11 @@
         "title": "Uma proposta é aprovada ou rejeitada",
         "description": "Em qualquer um dos espaços dos quais você é membro."
       },
-      "labelWithComingSoon": "{title} ({comingSoon})"
+      "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentionOnChatMessage": {
+        "title": "Você foi mencionado em uma mensagem de chat",
+        "description": "Em qualquer thread ou chat em que as menções estejam habilitadas para você."
+      }
     },
     "actions": {
       "retry": "Tentar novamente",
@@ -2210,7 +2215,22 @@
     "callDockMinimize": "Minimizar chamada",
     "callDockExpand": "Expandir chamada",
     "callDockFullscreen": "Ecrã inteiro",
-    "callDockExitFullscreen": "Sair do ecrã inteiro"
+    "callDockExitFullscreen": "Sair do ecrã inteiro",
+    "composerLockedPlaceholder": "Apenas os membros selecionados da equipe podem interagir nesta thread.",
+    "signalTeamInteractionRestricted": "Apenas os membros selecionados da equipe podem enviar mensagens e menções nesta thread.",
+    "signalTeamBannerReadOnly": "Esta thread é restrita à equipe. Você pode ler as atualizações, mas apenas os membros selecionados da equipe podem interagir.",
+    "signalTeamRequestAccess": "Solicitar inclusão",
+    "signalTeamRequestPending": "Solicitação pendente",
+    "signalTeamManageTitle": "Equipe do Signal",
+    "signalTeamManageOpen": "Gerenciar",
+    "signalTeamManageClose": "Concluir",
+    "signalTeamMemberListHint": "Selecione os membros que podem enviar mensagens, mencionar e participar de chamadas da thread.",
+    "signalTeamAddMember": "Adicionar",
+    "signalTeamRemoveMember": "Remover",
+    "signalTeamPendingRequests": "Solicitações pendentes",
+    "signalTeamApproveRequester": "Adicionar à equipe",
+    "mentionOpenFallbackRoom": "Não foi possível resolver essa sala no seu contexto local. Abra o espaço relacionado e tente novamente.",
+    "mentionOpenFallbackMissingMessage": "Essa mensagem de menção ainda não está disponível na linha do tempo carregada. Tente novamente em instantes."
   },
   "CoherenceTab": {
     "signals": "Sinais",
@@ -2394,11 +2414,11 @@
       "valueModel": "Valor e modelo",
       "evidenceImpact": "Evidências e impacto"
     },
-    "spaceMemoryCallArtifactNote": "As memórias de chamada aparecem quando a gravação ou o speech-to-text é concluído para este espaço (ver pipeline da equipa).",
-    "spaceMemoryCallRecordingNoUrl": "A gravação ficará disponível quando uma URL de média for ingerida para esta sessão.",
-    "spaceMemoryCallTranscriptExcerpt": "Transcrição",
-    "spaceMemoryContextCallRecording": "Gravação de chamada (memória organizacional)",
-    "spaceMemoryContextCallTranscript": "Transcrição de chamada (memória organizacional)",
+    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
+    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
+    "spaceMemoryCallTranscriptExcerpt": "Transcript",
+    "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
+    "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)",
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Estratega Sénior",
@@ -2490,7 +2510,21 @@
           "Melhora a qualidade de comunicação com stakeholders durante mudança, conflito e incerteza."
         ]
       }
-    }
+    },
+    "createBoard": "Criar quadro",
+    "createBoardDescription": "Salve um filtro de quadro por categoria de tag ou tag individual.",
+    "boardName": "Nome do quadro",
+    "boardNamePlaceholder": "ex. Quadro de impacto",
+    "boardFilterBy": "Filtrar por",
+    "boardFilterCategory": "Categoria de tag",
+    "boardFilterTag": "Tag individual",
+    "boardSelectCategory": "Categoria",
+    "boardSelectTag": "Tag",
+    "boardCreateAction": "Criar quadro",
+    "boardCancelAction": "Cancelar",
+    "boardAll": "Todos os sinais",
+    "boardDelete": "Excluir quadro {boardName}",
+    "spaceMemoryTimelineLabel": "Histórico da memória do espaço"
   },
   "GlobalCallDock": {
     "callTitle": "Chamada - {count, plural, one {# membro} other {# membros}}",

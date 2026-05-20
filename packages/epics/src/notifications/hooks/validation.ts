@@ -14,6 +14,7 @@ export const notificationSubscriptionSchema = z.object({
 export const schemaNotificationCentreForm = z.object({
   emailNotifications: yesNoEnum.default('no'),
   browserNotifications: yesNoEnum.default('no'),
+  mentionNotificationsConsent: yesNoEnum.default('yes'),
   subscriptions: z.array(notificationSubscriptionSchema),
 });
 

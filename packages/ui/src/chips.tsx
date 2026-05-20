@@ -846,7 +846,26 @@ export const MultiSelect = React.forwardRef<
                       <button
                         type="button"
                         className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/85 transition-colors hover:bg-muted/70 hover:text-foreground"
-                        onClick={() => setShowAllTagsOnEmptySearch(true)}
+                        onPointerDown={(event) => {
+                          // Keep popover open inside focus-trapped dialogs and apply immediately.
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setShowAllTagsOnEmptySearch(true);
+                        }}
+                        onMouseDown={(event) => {
+                          // Keep popover focus state stable in nested dialogs/modals.
+                          event.preventDefault();
+                          event.stopPropagation();
+                        }}
+                        onClick={(event) => {
+                          setShowAllTagsOnEmptySearch(true);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key !== 'Enter' && event.key !== ' ')
+                            return;
+                          event.preventDefault();
+                          setShowAllTagsOnEmptySearch(true);
+                        }}
                       >
                         <List className="h-3.5 w-3.5" />
                         <span>{resolvedLabels.allTags}</span>
