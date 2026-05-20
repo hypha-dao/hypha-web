@@ -21,7 +21,7 @@ export function SignalGrid({
   onSignalClick,
 }: SignalGridProps) {
   return (
-    <div className="grid w-full grid-cols-1 items-start gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+    <div className="grid w-full grid-cols-1 items-start gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {signals.map((signal) =>
         signal.archived ? (
           <SignalCard
@@ -38,7 +38,7 @@ export function SignalGrid({
             role="button"
             tabIndex={0}
             className={cn(
-              'flex min-h-0 w-full cursor-pointer rounded-2xl text-left outline-none',
+              'flex min-h-0 w-full cursor-pointer rounded-xl text-left outline-none',
               'focus-visible:ring-2 focus-visible:ring-accent-9/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             )}
             onClick={() => onSignalClick(signal)}

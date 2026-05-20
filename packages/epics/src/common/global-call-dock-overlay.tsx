@@ -506,7 +506,7 @@ export function GlobalCallDockOverlay() {
           <div
             data-no-dock-drag
             onPointerDown={onResizeStart('top-right')}
-            className="absolute -top-1 -right-1 z-[2] h-4 w-4 cursor-nesw-resize touch-none"
+            className="absolute -top-1 -right-1 z-[3] flex h-5 w-5 cursor-nesw-resize touch-none items-center justify-center"
             aria-label={t('resizeTopRightLabel')}
             title={t('resizeTopRightLabel')}
           >
@@ -515,7 +515,7 @@ export function GlobalCallDockOverlay() {
           <div
             data-no-dock-drag
             onPointerDown={onResizeStart('bottom-left')}
-            className="absolute -bottom-1 -left-1 z-[2] h-4 w-4 cursor-nesw-resize touch-none"
+            className="absolute -bottom-1 -left-1 z-[3] flex h-5 w-5 cursor-nesw-resize touch-none items-center justify-center"
             aria-label={t('resizeBottomLeftLabel')}
             title={t('resizeBottomLeftLabel')}
           >
