@@ -255,17 +255,25 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
           type: recorder.mimeType || mimeType || 'video/webm',
         });
       const result = await new Promise<Blob>((resolve) => {
-        recorder.onstop = () => {
+        let settled = false;
+        const finalize = () => {
+          if (settled) return;
+          settled = true;
           resolve(buildBlob());
         };
+        recorder.onstop = () => {
+          finalize();
+        };
         if (recorder.state === 'inactive') {
-          resolve(buildBlob());
+          window.setTimeout(() => {
+            finalize();
+          }, 400);
           return;
         }
         try {
           recorder.stop();
         } catch {
-          resolve(buildBlob());
+          finalize();
         }
       });
       output.getTracks().forEach((track) => track.stop());
