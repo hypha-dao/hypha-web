@@ -286,7 +286,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     maxShiftPx: 20,
   });
   const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
+  const metaBadgesRef = React.useRef<HTMLDivElement>(null);
+  const metaDetailsRef = React.useRef<HTMLDivElement>(null);
   const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
+  const [metaDetailsShouldLeftAlign, setMetaDetailsShouldLeftAlign] =
+    React.useState(false);
   const isCreator = person?.id === creatorId;
   const currentUserMatrixId = matrixClient?.getUserId?.()?.trim() || null;
   const signalTeamAccess = React.useMemo(() => {
@@ -471,6 +475,31 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     return () => ro.disconnect();
   }, [plainDescription, isLoading]);
 
+  React.useLayoutEffect(() => {
+    const detailsEl = metaDetailsRef.current;
+    if (!detailsEl) {
+      setMetaDetailsShouldLeftAlign(false);
+      return;
+    }
+    const measure = () => {
+      const badgesTop = metaBadgesRef.current?.offsetTop ?? detailsEl.offsetTop;
+      const movedToNextLine = detailsEl.offsetTop > badgesTop + 1;
+      const children = Array.from(detailsEl.children) as HTMLElement[];
+      const firstChildTop = children[0]?.offsetTop ?? 0;
+      const childrenWrapped = children.some(
+        (child) => child.offsetTop > firstChildTop + 1,
+      );
+      setMetaDetailsShouldLeftAlign(movedToNextLine || childrenWrapped);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(detailsEl);
+    if (metaBadgesRef.current) {
+      ro.observe(metaBadgesRef.current);
+    }
+    return () => ro.disconnect();
+  }, [creatorDisplayName, createdAtDate, normalizedMessagesCount, metaBadges]);
+
   const handleUnarchive = React.useCallback(async () => {
     if (!slug) return;
     try {
@@ -648,10 +677,20 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               ) : null}
             </div>
             <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
-              {metaBadges.length > 0 ? (
-                <BadgesList isLoading={isLoading} badges={metaBadges} />
-              ) : null}
-              <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-1 text-muted-foreground">
+              <div ref={metaBadgesRef} className="min-w-0">
+                {metaBadges.length > 0 ? (
+                  <BadgesList isLoading={isLoading} badges={metaBadges} />
+                ) : null}
+              </div>
+              <div
+                ref={metaDetailsRef}
+                className={cn(
+                  'flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-1 text-muted-foreground',
+                  metaDetailsShouldLeftAlign
+                    ? 'w-full justify-start'
+                    : 'ml-auto justify-end',
+                )}
+              >
                 {creatorDisplayName ? (
                   <span className="inline-flex min-w-0 items-center gap-1 truncate">
                     <UserCircle2 className="h-3.5 w-3.5 shrink-0 opacity-70" />
