@@ -168,7 +168,6 @@ export function OnboardingAiFullPage({
     if (seededRef.current) return;
     if (isStreaming) return;
     if (!seedPrompt.trim() && seedAttachments.length === 0) return;
-    seededRef.current = true;
     void (async () => {
       try {
         clearError();
@@ -184,6 +183,7 @@ export function OnboardingAiFullPage({
           { role: 'user', parts: [...textParts, ...attachmentParts] },
           options,
         );
+        seededRef.current = true;
       } catch (seedError) {
         console.error('[OnboardingAiFullPage] seed send failed:', seedError);
       }
