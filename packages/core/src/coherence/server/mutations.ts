@@ -6,7 +6,7 @@ import {
   UpdateCoherenceInput,
   UpdateCoherenceSignalInput,
 } from '../types';
-import { coherences } from '@hypha-platform/storage-postgres';
+import { coherences, memberships } from '@hypha-platform/storage-postgres';
 import { and, eq } from 'drizzle-orm';
 
 export const createCoherence = async (
@@ -86,15 +86,46 @@ export const updateCoherenceSignalBySlug = async (
   { db }: { db: DatabaseInstance },
 ) => {
   const { type, priority, title, description, tags } = rest;
+  const existing = await db
+    .select({
+      id: coherences.id,
+      creatorId: coherences.creatorId,
+      spaceId: coherences.spaceId,
+    })
+    .from(coherences)
+    .where(eq(coherences.slug, slug));
+  if (existing.length === 0) {
+    throw new Error(`Coherence not found for slug="${slug}"`);
+  }
+  if (existing.length > 1) {
+    throw new Error(
+      `Multiple coherences found for slug="${slug}", expected exactly one`,
+    );
+  }
+  const row = existing[0]!;
+  let canEdit = row.creatorId === requesterPersonId;
+  if (!canEdit && row.spaceId != null) {
+    const membership = await db
+      .select({ id: memberships.id })
+      .from(memberships)
+      .where(
+        and(
+          eq(memberships.spaceId, row.spaceId),
+          eq(memberships.personId, requesterPersonId),
+        ),
+      )
+      .limit(1);
+    canEdit = membership.length > 0;
+  }
+  if (!canEdit) {
+    throw new Error(
+      'Only the signal creator or a space member can edit this coherence',
+    );
+  }
   const updated = await db
     .update(coherences)
     .set({ type, priority, title, description, tags })
-    .where(
-      and(
-        eq(coherences.slug, slug),
-        eq(coherences.creatorId, requesterPersonId),
-      ),
-    )
+    .where(eq(coherences.id, row.id))
     .returning();
 
   if (updated.length === 1) {
@@ -107,22 +138,6 @@ export const updateCoherenceSignalBySlug = async (
     );
   }
 
-  const existing = await db
-    .select({ id: coherences.id, creatorId: coherences.creatorId })
-    .from(coherences)
-    .where(eq(coherences.slug, slug));
-  if (existing.length === 0) {
-    throw new Error(`Coherence not found for slug="${slug}"`);
-  }
-  if (existing.length > 1) {
-    throw new Error(
-      `Multiple coherences found for slug="${slug}", expected exactly one`,
-    );
-  }
-  if (existing[0]!.creatorId !== requesterPersonId) {
-    throw new Error('Only the signal creator can edit this coherence');
-  }
-
   throw new Error(`Failed to update coherence for slug="${slug}"`);
 };
 
@@ -131,7 +146,11 @@ export const deleteCoherenceBySlug = async (
   { db }: { db: DatabaseInstance },
 ) => {
   const existing = await db
-    .select({ id: coherences.id, creatorId: coherences.creatorId })
+    .select({
+      id: coherences.id,
+      creatorId: coherences.creatorId,
+      spaceId: coherences.spaceId,
+    })
     .from(coherences)
     .where(eq(coherences.slug, slug));
   if (existing.length === 0) {
@@ -143,8 +162,24 @@ export const deleteCoherenceBySlug = async (
     );
   }
   const row = existing[0]!;
-  if (row.creatorId !== requesterPersonId) {
-    throw new Error('Only the signal creator can delete this coherence');
+  let canDelete = row.creatorId === requesterPersonId;
+  if (!canDelete && row.spaceId != null) {
+    const membership = await db
+      .select({ id: memberships.id })
+      .from(memberships)
+      .where(
+        and(
+          eq(memberships.spaceId, row.spaceId),
+          eq(memberships.personId, requesterPersonId),
+        ),
+      )
+      .limit(1);
+    canDelete = membership.length > 0;
+  }
+  if (!canDelete) {
+    throw new Error(
+      'Only the signal creator or a space member can delete this coherence',
+    );
   }
   const deleted = await db
     .delete(coherences)
