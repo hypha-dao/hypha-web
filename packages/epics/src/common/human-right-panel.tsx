@@ -1701,13 +1701,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   useEffect(() => {
-    if (!client || mentionCandidateRoomIds.length === 0) return;
-    const candidateRoomIdSet = new Set(mentionCandidateRoomIds);
+    if (!client || !roomId) return;
+    const room = client.getRoom(roomId);
+    if (!room) return;
+    const parentRoomId =
+      mode === 'coherence' ? space?.chatRoomId?.trim() : undefined;
 
     const bumpMembership = (...args: unknown[]) => {
       const state = args[1] as { roomId?: string } | undefined;
-      const eventRoomId = state?.roomId?.trim();
-      if (!eventRoomId || !candidateRoomIdSet.has(eventRoomId)) return;
+      const changedRoomId = state?.roomId?.trim();
+      if (!changedRoomId) return;
+      if (changedRoomId !== roomId && changedRoomId !== parentRoomId) return;
       setMentionMembershipEpoch((n) => n + 1);
     };
 
@@ -1718,91 +1722,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       client.off(RoomStateEvent.Members, bumpMembership);
       client.off(RoomStateEvent.NewMember, bumpMembership);
     };
-  }, [client, mentionCandidateRoomIds]);
-
-  useEffect(() => {
-    if (!client || !roomId || !isSignalThread) {
-      setSignalTeamMemberIds([]);
-      setSignalTeamOwnerId(null);
-      setSignalTeamPendingRequesterIds([]);
-      setSignalTeamDraftMemberIds(null);
-      signalTeamAutoSeededRoomIdsRef.current.clear();
-      return;
-    }
-    const room = client.getRoom(roomId);
-    if (!room) return;
-
-    const applyFromTimeline = () => {
-      const timeline = room.getLiveTimeline().getEvents();
-      const next = deriveSignalTeamStateFromEvents(
-        timeline,
-        coherenceSlug,
-        room,
-      );
-      setSignalTeamMemberIds(next.memberMatrixUserIds);
-      setSignalTeamOwnerId(next.ownerMatrixUserId);
-      setSignalTeamPendingRequesterIds(next.pendingRequesterIds);
-      if (!signalTeamPanelOpen) {
-        setSignalTeamDraftMemberIds(null);
-      }
-    };
-
-    applyFromTimeline();
-
-    const onTimeline = (event: MatrixEvent, eventRoom?: Room) => {
-      if (eventRoom?.roomId !== roomId) return;
-      const eventType = event.getType();
-      if (eventType !== EventType.RoomMessage) return;
-      const content = event.getContent() as Record<string, unknown> | null;
-      const msgtype =
-        content && typeof content.msgtype === 'string'
-          ? content.msgtype.trim()
-          : '';
-      const body =
-        content && typeof content.body === 'string' ? content.body.trim() : '';
-      const eventKind = body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
-        ? SIGNAL_TEAM_EVENT_KIND
-        : body.startsWith(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER)
-        ? SIGNAL_TEAM_REQUEST_EVENT_KIND
-        : msgtype;
-      if (
-        eventKind !== SIGNAL_TEAM_EVENT_KIND &&
-        eventKind !== SIGNAL_TEAM_REQUEST_EVENT_KIND
-      )
-        return;
-      applyFromTimeline();
-    };
-
-    room.on(RoomEvent.Timeline, onTimeline);
-    return () => {
-      room.off(RoomEvent.Timeline, onTimeline);
-    };
-  }, [client, roomId, isSignalThread, coherenceSlug, signalTeamPanelOpen]);
-
-  useEffect(() => {
-    if (!roomId || !isSignalThread) return;
-    if (!hasLoadedCoherenceMessagesRef.current) return;
-    if (hasSignalTeamPolicy) return;
-    if (!canManageSignalTeam) return;
-    if (signalTeamBusy) return;
-    if (signalTeamAutoSeededRoomIdsRef.current.has(roomId)) return;
-
-    const defaultMemberIds = normalizeMatrixUserIds(
-      signalTeamSelectableMembers.map((member) => member.userId),
-    );
-    if (defaultMemberIds.length === 0) return;
-
-    signalTeamAutoSeededRoomIdsRef.current.add(roomId);
-    void publishSignalTeamMembers(defaultMemberIds);
-  }, [
-    roomId,
-    isSignalThread,
-    hasSignalTeamPolicy,
-    canManageSignalTeam,
-    signalTeamBusy,
-    signalTeamSelectableMembers,
-    publishSignalTeamMembers,
-  ]);
+  }, [client, mode, roomId, space?.chatRoomId]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
