@@ -31,6 +31,7 @@ export {
   readOnboardingConversationContext,
   saveOnboardingConversationContext,
 } from './ai-onboarding-context';
+export type { OnboardingConversationContext } from './ai-onboarding-context';
 export {
   PanelProviders,
   PanelWrapLayout,

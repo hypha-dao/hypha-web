@@ -11,6 +11,7 @@ import {
   AiPanelChatBar,
   AiPanelMessages,
   type AiPanelDraftAttachment,
+  type OnboardingConversationContext,
 } from '@hypha-platform/epics';
 import {
   Category,
@@ -20,20 +21,10 @@ import {
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 
-type OnboardingContext = {
-  mode: 'onboarding_setup';
-  source: 'onboarding_hero';
-  firstName?: string;
-  locale?: string;
-  createdAt: string;
-  setupPhase?: 'discover' | 'draft' | 'confirm' | 'execute' | 'verify';
-  lastUserText?: string;
-};
-
 type OnboardingAiFullPageProps = {
   seedPrompt: string;
   seedAttachments: File[];
-  context: OnboardingContext;
+  context: OnboardingConversationContext;
   onExit: () => void;
 };
 
@@ -111,7 +102,7 @@ export function OnboardingAiFullPage({
     AiPanelDraftAttachment[]
   >([]);
   const [onboardingContext, setOnboardingContext] =
-    useState<OnboardingContext>(context);
+    useState<OnboardingConversationContext>(context);
   const seededRef = useRef(false);
   const walletCreateInFlightRef = useRef(false);
   const handledWalletPayloadKeyRef = useRef<string | null>(null);
@@ -143,7 +134,7 @@ export function OnboardingAiFullPage({
   const isStreaming = status === 'streaming' || status === 'submitted';
 
   const buildMessageOptions = useCallback(
-    async (contextOverride?: OnboardingContext) => {
+    async (contextOverride?: OnboardingConversationContext) => {
       const token = (await getAccessToken?.()) ?? undefined;
       const headers: Record<string, string> = token
         ? { Authorization: `Bearer ${token}` }
@@ -157,7 +148,7 @@ export function OnboardingAiFullPage({
   );
 
   const applyOnboardingContextForUserText = useCallback(
-    (text: string): OnboardingContext => {
+    (text: string): OnboardingConversationContext => {
       const normalized = text.trim();
       const isExplicitConfirmation = isPlainConfirmationReply(normalized);
       return {
