@@ -47,7 +47,7 @@ export async function deleteCoherenceBySlugAction(
   }
   return deleteCoherenceBySlug(
     { slug: data.slug, requesterPersonId: self.id },
-    { db: authDb },
+    { db },
   );
 }
 
@@ -66,6 +66,6 @@ export async function updateCoherenceSignalBySlugAction(
   }
   return updateCoherenceSignalBySlug(
     { ...validated, requesterPersonId: self.id },
-    { db: authDb },
+    { db },
   );
 }
