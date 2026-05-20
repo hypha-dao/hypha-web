@@ -104,22 +104,28 @@ export function ConnectedMenuTop({
   }, [activeSpace, activeSpaceSlug, organisationSpaces]);
   const rootSpaceHref =
     rootSpace?.slug != null
-      ? `/${lang}/dho/${rootSpace.slug}/agreements`
+      ? `/${lang}/dho/${rootSpace.slug}/agreements/space-configuration`
       : logoHref;
   useEffect(() => {
     if (!rootSpaceHref || rootSpaceHref === '#') return;
     router.prefetch(rootSpaceHref);
   }, [rootSpaceHref, router]);
+  const rootPrimaryLogo = rootSpace?.logoUrl?.trim() || '';
   const rootLogoLight = rootSpace?.ecosystemLogoUrlLight?.trim() || '';
   const rootLogoDark = rootSpace?.ecosystemLogoUrlDark?.trim() || '';
   const preferredThemeLogo =
     resolvedTheme === 'dark' ? rootLogoDark : rootLogoLight;
   const fallbackThemeLogo =
     resolvedTheme === 'dark' ? rootLogoLight : rootLogoDark;
-  const rootLogoUrl = [preferredThemeLogo, fallbackThemeLogo].find(
-    (candidate) => candidate && isSafeImageUrl(candidate),
-  );
+  // Prefer ecosystem logos so new uploads immediately replace generic placeholders.
+  const rootLogoUrl = [preferredThemeLogo, fallbackThemeLogo, rootPrimaryLogo]
+    .map((candidate) => candidate.trim())
+    .find((candidate) => candidate && isSafeImageUrl(candidate));
   const rootTitle = rootSpace?.title?.trim() || '';
+  const ecosystemLogoLabel = tNavigation('ecosystemLogo');
+  const logoA11yLabel = rootTitle
+    ? `${rootTitle} ${ecosystemLogoLabel}`
+    : ecosystemLogoLabel;
   const rootHasCustomLogo = hasCustomRootLogo(rootLogoUrl ?? '');
   const suppressDefaultLogo = aiChatEnabled && isSpaceRoute;
 
@@ -133,15 +139,15 @@ export function ConnectedMenuTop({
           href={rootSpaceHref ?? '#'}
           prefetch={true}
           className="group relative -ml-0.5 inline-flex h-9 max-w-[12rem] items-center justify-start overflow-hidden rounded-md px-0.5 transition-colors hover:bg-muted/40"
-          aria-label={tNavigation('ecosystemLogo')}
-          title={tNavigation('ecosystemLogo')}
+          aria-label={logoA11yLabel}
+          title={logoA11yLabel}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={rootLogoUrl}
             alt={rootTitle || tNavigation('ecosystemLogo')}
             loading="eager"
-            className="max-h-8 w-auto object-contain"
+            className="max-h-8 w-auto bg-transparent object-contain"
           />
           <span className="pointer-events-none absolute bottom-0.5 right-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
             <Pencil className="h-2.5 w-2.5" />
@@ -152,11 +158,13 @@ export function ConnectedMenuTop({
           href={rootSpaceHref ?? '#'}
           prefetch={true}
           className="group relative -ml-0.5 inline-flex h-9 max-w-[13.5rem] items-center justify-center overflow-hidden rounded-md border border-border/70 bg-background px-3.5 text-sm font-semibold text-muted-foreground shadow-sm transition-[background-color,border-color,box-shadow,color] duration-200 hover:border-border hover:bg-muted/40 hover:text-foreground hover:shadow-md"
-          aria-label={tNavigation('ecosystemLogo')}
-          title={tNavigation('ecosystemLogo')}
+          aria-label={logoA11yLabel}
+          title={logoA11yLabel}
         >
           <span className="relative truncate">
-            {tNavigation('ecosystemLogo')}
+            {rootTitle
+              ? `${rootTitle} · ${tNavigation('ecosystemLogo')}`
+              : tNavigation('ecosystemLogo')}
           </span>
           <span className="pointer-events-none absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-border/70 bg-background/85 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
             <Pencil className="h-2.5 w-2.5" />

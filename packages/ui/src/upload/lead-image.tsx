@@ -51,6 +51,7 @@ export type UploadLeadImageProps = {
     fileTooLarge?: string;
     uploadFailed?: string;
   };
+  outputMimeType?: 'image/jpeg' | 'image/png';
 };
 
 function dataURLtoFile(dataUrl: string, filename: string) {
@@ -78,6 +79,7 @@ export const UploadLeadImage = ({
   imageClassName,
   cropDialogLabels,
   messages: messagesProp,
+  outputMimeType = 'image/jpeg',
 }: UploadLeadImageProps) => {
   const maxMb = React.useMemo(
     () => Math.max(0.1, Math.round((maxFileSize / (1024 * 1024)) * 10) / 10),
@@ -197,10 +199,15 @@ export const UploadLeadImage = ({
 
   const confirmCrop = React.useCallback(async () => {
     if (!imageSrc || !croppedAreaPixels) return;
-    const croppedImageUrl = await getCroppedImg(imageSrc, croppedAreaPixels);
+    const croppedImageUrl = await getCroppedImg(
+      imageSrc,
+      croppedAreaPixels,
+      outputMimeType,
+    );
     setPreview(croppedImageUrl);
 
-    const file = dataURLtoFile(croppedImageUrl, 'cropped.jpg');
+    const fileExtension = outputMimeType === 'image/png' ? 'png' : 'jpg';
+    const file = dataURLtoFile(croppedImageUrl, `cropped.${fileExtension}`);
     onChange(file);
 
     setImageSrc(null);

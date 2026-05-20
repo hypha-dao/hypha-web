@@ -49,6 +49,22 @@ test.describe('Panels visible on space pages', () => {
 
     await expect(page.getByRole('button', { name: AI_TRIGGER })).toBeVisible();
   });
+
+  test('ecosystem logo should link to root space configuration', async ({
+    page,
+  }) => {
+    await gotoApp(page, '/en/dho/hypha/agreements');
+    await page.waitForLoadState('domcontentloaded');
+
+    const ecosystemLogoLink = page.getByRole('link', {
+      name: 'Ecosystem Logo',
+    });
+    await expect(ecosystemLogoLink).toBeVisible();
+    await expect(ecosystemLogoLink).toHaveAttribute(
+      'href',
+      /\/en\/dho\/[^/]+\/agreements\/space-configuration$/,
+    );
+  });
 });
 
 test.describe('Panels hidden on non-space pages', () => {

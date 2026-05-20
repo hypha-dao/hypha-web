@@ -1,8 +1,14 @@
 import { z } from 'zod';
-import { slugSchema } from './common-schemas.js';
-
 export const getPeopleBySpaceSlugInputSchema = z.object({
-  space_slug: slugSchema,
+  space_slug: z
+    .string()
+    .trim()
+    .min(1)
+    .max(128)
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      'space_slug must use lowercase letters, numbers, and hyphens',
+    ),
   page: z.number().int().min(1).optional().default(1),
   page_size: z.number().int().min(1).max(100).optional().default(20),
   searchTerm: z.string().optional(),
@@ -16,8 +22,8 @@ const membershipSnakeSchema = z.object({
   id: z.number(),
   person_id: z.number(),
   space_id: z.number(),
-  created_at: z.string(),
-  updated_at: z.string(),
+  created_at: z.string().datetime(),
+  updated_at: z.string().datetime(),
 });
 
 const personPublicSchema = z.object({
@@ -32,15 +38,15 @@ const personPublicSchema = z.object({
   nickname: z.string().optional(),
   address: z.string().optional(),
   links: z.array(z.string()),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 const rosterPersonSchema = z.object({
   member_kind: z.literal('person'),
   membership: membershipSnakeSchema.nullable(),
   join_source: z.enum(['membership', 'event', 'unknown']),
-  joined_at: z.string().nullable(),
+  joined_at: z.string().datetime().nullable(),
   person: personPublicSchema,
 });
 
@@ -59,15 +65,15 @@ const spaceMemberSpaceSchema = z.object({
   address: z.string().nullable().optional(),
   isArchived: z.boolean().optional(),
   flags: z.array(z.string()),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 const rosterSpaceSchema = z.object({
   member_kind: z.literal('space'),
   membership: z.null(),
   join_source: z.enum(['event', 'unknown']),
-  joined_at: z.string().nullable(),
+  joined_at: z.string().datetime().nullable(),
   space: spaceMemberSpaceSchema,
 });
 
@@ -85,7 +91,7 @@ export const getPeopleBySpaceSlugOutputSchema = z.object({
     .nullable(),
   source: z.literal('db'),
   source_chain: z.enum(['rpc']).nullable(),
-  asOf: z.string(),
+  asOf: z.string().datetime(),
   members: z.array(
     z.discriminatedUnion('member_kind', [
       rosterPersonSchema,

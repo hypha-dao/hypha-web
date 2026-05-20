@@ -195,6 +195,8 @@ type HumanChatPanelChatBarProps = {
     member: ChatMentionCandidate,
     resolvedComposerLabel?: string,
   ) => string;
+  /** Optional helper text shown at the top of the `@` picker. */
+  mentionPickerHint?: string;
 };
 
 /** Blinking REC dot (“on-air”) for active voice recording / dictation controls. */
@@ -477,6 +479,7 @@ export function HumanChatPanelChatBar({
   mentionPickerEnabled,
   onMergeMentionDisplayLabel,
   getMentionComposerLabel,
+  mentionPickerHint,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
 
@@ -1862,6 +1865,11 @@ export function HumanChatPanelChatBar({
             aria-label={t('mentionListLabel')}
             className="absolute bottom-full left-2 right-2 z-50 mb-1 max-h-52 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
           >
+            {mentionPickerHint?.trim() ? (
+              <p className="px-2 py-1 text-xs text-muted-foreground">
+                {mentionPickerHint}
+              </p>
+            ) : null}
             {atSuggestions.map((m, idx) => (
               <HumanChatMentionCandidateRow
                 key={m.userId}
