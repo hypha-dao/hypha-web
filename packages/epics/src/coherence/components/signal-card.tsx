@@ -305,18 +305,19 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     isCreator || (signalTeamAccess.hasPolicy && isSignalTeamMember);
   const creatorDisplayName = React.useMemo(() => {
     if (isCreator) {
-      const currentUserName =
-        [person?.name, person?.surname].filter(Boolean).join(' ').trim();
+      const currentUserName = [person?.name, person?.surname]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
       return currentUserName || 'You';
     }
 
     if (creatorKind !== 'person') return creatorLabel;
 
-    const resolvedPersonName =
-      [creatorPerson?.name, creatorPerson?.surname]
-        .filter(Boolean)
-        .join(' ')
-        .trim();
+    const resolvedPersonName = [creatorPerson?.name, creatorPerson?.surname]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
     if (resolvedPersonName) return resolvedPersonName;
 
     const raw = `${creatorId ?? ''}`.trim();
