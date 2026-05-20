@@ -20,15 +20,16 @@ export const useMatrixToken = () => {
   const { jwt, isLoadingJwt } = useJwt();
 
   const endpoint = isLoadingJwt ? null : '/api/matrix/token';
+  const swrKey =
+    endpoint && jwt ? ([endpoint, jwt, 'getMatrixToken'] as const) : null;
 
   const {
     data: matrixToken,
     isLoading,
     mutate: mutateMatrixToken,
   } = useSWR(
-    [endpoint, jwt ?? null, 'getMatrixToken'],
-    async ([endpoint]) => {
-      const authToken = jwt;
+    swrKey,
+    async ([endpoint, authToken]) => {
       if (!endpoint || !authToken) {
         return undefined;
       }
@@ -72,7 +73,6 @@ export const useMatrixToken = () => {
     },
     {
       errorRetryInterval: 2000,
-      refreshInterval: 5 * 60 * 1000,
       onSuccess: () => {
         setError(null);
       },
@@ -86,6 +86,5 @@ export const useMatrixToken = () => {
     isLoading: isLoading || isLoadingJwt,
     matrixToken,
     error,
-    refreshMatrixToken: mutateMatrixToken,
   };
 };

@@ -94,7 +94,7 @@
     "signIn": "Anmelden",
     "getStarted": "Loslegen",
     "ecosystemLogo": "Ökosystem-Logo",
-    "continueAdventure": "Dein Abenteuer geht hier weiter"
+    "continueAdventure": "Abenteuer fortsetzen"
   },
   "OnboardingAdventure": {
     "title": "Dein Abenteuer beginnt hier.",
@@ -199,7 +199,8 @@
       "browserNotifications": "Browser-Benachrichtigungen (früher „Desktop-Pop-up-Benachrichtigungen“)",
       "yes": "Ja",
       "no": "Nein",
-      "emailNotificationsWithEmail": "E-Mail-Benachrichtigungen ({email})"
+      "emailNotificationsWithEmail": "E-Mail-Benachrichtigungen ({email})",
+      "mentionConsent": "Einwilligung für Erwähnungsbenachrichtigungen"
     },
     "subscriptions": {
       "title": "Benachrichtigen, wenn...",
@@ -212,7 +213,11 @@
         "title": "Ein Vorschlag wird angenommen oder abgelehnt",
         "description": "In allen Spaces, in denen Sie Mitglied sind."
       },
-      "labelWithComingSoon": "{title} ({comingSoon})"
+      "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentionOnChatMessage": {
+        "title": "Sie werden in einer Chat-Nachricht erwähnt",
+        "description": "In jedem Thread oder Chat, in dem Erwähnungen für Sie aktiviert sind."
+      }
     },
     "actions": {
       "retry": "Erneut versuchen",
@@ -2218,7 +2223,22 @@
     "callDockMinimize": "Anruf minimieren",
     "callDockExpand": "Anruf erweitern",
     "callDockFullscreen": "Vollbild",
-    "callDockExitFullscreen": "Vollbild beenden"
+    "callDockExitFullscreen": "Vollbild beenden",
+    "composerLockedPlaceholder": "Nur ausgewählte Teammitglieder können in diesem Thread interagieren.",
+    "signalTeamInteractionRestricted": "Nur ausgewählte Teammitglieder können in diesem Thread Nachrichten senden und Erwähnungen nutzen.",
+    "signalTeamBannerReadOnly": "Dieser Thread ist teambezogen. Du kannst Updates lesen, aber nur ausgewählte Teammitglieder können interagieren.",
+    "signalTeamRequestAccess": "Anfrage zur Aufnahme",
+    "signalTeamRequestPending": "Anfrage ausstehend",
+    "signalTeamManageTitle": "Signal-Team",
+    "signalTeamManageOpen": "Verwalten",
+    "signalTeamManageClose": "Fertig",
+    "signalTeamMemberListHint": "Wähle Mitglieder aus, die Nachrichten senden, erwähnen und an Thread-Anrufen teilnehmen können.",
+    "signalTeamAddMember": "Hinzufügen",
+    "signalTeamRemoveMember": "Entfernen",
+    "signalTeamPendingRequests": "Ausstehende Anfragen",
+    "signalTeamApproveRequester": "Zum Team hinzufügen",
+    "mentionOpenFallbackRoom": "Dieser Raum konnte im lokalen Kontext nicht aufgelöst werden. Öffnen Sie den zugehörigen Space und versuchen Sie es erneut.",
+    "mentionOpenFallbackMissingMessage": "Diese Erwähnung ist in der geladenen Timeline noch nicht verfügbar. Bitte versuchen Sie es gleich noch einmal."
   },
   "CoherenceTab": {
     "signals": "Signale",
@@ -2404,11 +2424,11 @@
       "valueModel": "Wert & Modell",
       "evidenceImpact": "Evidenz & Wirkung"
     },
-    "spaceMemoryCallArtifactNote": "Anruf-Erinnerungen erscheinen, sobald Aufzeichnung oder Sprache-zu-Text für diesen Space abgeschlossen ist (siehe Team-Pipeline).",
-    "spaceMemoryCallRecordingNoUrl": "Die Aufzeichnung ist verfügbar, sobald eine Medien-URL für diese Sitzung ingestiert wurde.",
-    "spaceMemoryCallTranscriptExcerpt": "Transkript",
-    "spaceMemoryContextCallRecording": "Anrufaufzeichnung (organisationales Gedächtnis)",
-    "spaceMemoryContextCallTranscript": "Anruftranskript (organisationales Gedächtnis)",
+    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
+    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
+    "spaceMemoryCallTranscriptExcerpt": "Transcript",
+    "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
+    "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)",
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Senior-Strateg:in",
@@ -2500,7 +2520,21 @@
           "Verbessert die Qualität der Stakeholder-Kommunikation bei Veränderung, Konflikt und Unsicherheit."
         ]
       }
-    }
+    },
+    "createBoard": "Board erstellen",
+    "createBoardDescription": "Speichere einen Board-Filter nach Tag-Kategorie oder einzelnem Tag.",
+    "boardName": "Board-Name",
+    "boardNamePlaceholder": "z. B. Impact-Board",
+    "boardFilterBy": "Filtern nach",
+    "boardFilterCategory": "Tag-Kategorie",
+    "boardFilterTag": "Einzelner Tag",
+    "boardSelectCategory": "Kategorie",
+    "boardSelectTag": "Tag",
+    "boardCreateAction": "Board erstellen",
+    "boardCancelAction": "Abbrechen",
+    "boardAll": "Alle Signale",
+    "boardDelete": "Board {boardName} löschen",
+    "spaceMemoryTimelineLabel": "Space-Memory-Verlauf"
   },
   "GlobalCallDock": {
     "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",

@@ -202,6 +202,8 @@ export function CoherenceBlock({
             isLoading={isSpaceLoading || isSignalsLoading}
             firstPageSize={4}
             pageSize={4}
+            hideArchived={hideArchived}
+            setHideArchived={setHideArchived}
             refresh={refresh}
             onSignalClick={onSignalClick}
           />
