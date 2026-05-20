@@ -967,6 +967,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     groupCall: spaceGroupCall,
     feedVersion: spaceCallFeedVersion,
     screenshareErrorCode: spaceCallScreenshareError,
+    captureMode: spaceCallCaptureMode,
+    setCaptureMode: setSpaceCallCaptureMode,
+    recordingStatus: spaceCallRecordingStatus,
+    recordingError: spaceCallRecordingError,
     dismissScreenshareError: dismissSpaceCallScreenshareError,
     activeSpeakerKey: spaceCallActiveSpeakerKey,
     setScreensharingEnabled: setSpaceCallScreensharing,
@@ -3209,6 +3213,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onVoiceProcessingPresetChange={
                 handleCallVoiceProcessingPresetChange
               }
+              captureMode={spaceCallCaptureMode}
+              onCaptureModeChange={setSpaceCallCaptureMode}
+              recordingStatus={spaceCallRecordingStatus}
+              recordingError={spaceCallRecordingError}
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
               onRetryCall={handleRetrySpaceCall}
               onDismissCallError={dismissSpaceCallError}

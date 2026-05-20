@@ -68,6 +68,10 @@ export type SpaceGroupCallRecordingStatus =
   | 'recording'
   | 'uploading'
   | 'error';
+export type SpaceGroupCallCaptureMode =
+  | 'none'
+  | 'transcript_only'
+  | 'recording_with_transcript';
 
 type AudioProcessingConstraints = {
   autoGainControl: boolean;
@@ -238,6 +242,9 @@ export function useSpaceGroupCall(
   const [recordingStatus, setRecordingStatus] =
     useState<SpaceGroupCallRecordingStatus>('idle');
   const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [captureMode, setCaptureMode] = useState<SpaceGroupCallCaptureMode>(
+    'recording_with_transcript',
+  );
 
   const groupCallRef = useRef<MatrixSdk.GroupCall | null>(null);
   /**
@@ -288,9 +295,10 @@ export function useSpaceGroupCall(
   const recordingFinalizeGenerationRef = useRef<number | null>(null);
   const recordingRuntimeRef = useRef<{
     generation: number;
-    stopRecorder: () => Promise<Blob>;
+    mode: SpaceGroupCallCaptureMode;
+    stopRecorder?: () => Promise<Blob>;
     stopTranscript: () => Promise<string> | string;
-    mimeType: string;
+    mimeType?: string;
     startedAt: string;
     recordedRoomId: string;
   } | null>(null);
@@ -371,7 +379,9 @@ export function useSpaceGroupCall(
       recordingRuntimeRef.current = null;
       void (async () => {
         try {
-          await runtime.stopRecorder();
+          if (runtime.stopRecorder) {
+            await runtime.stopRecorder();
+          }
         } catch {
           // ignore recorder stop errors during teardown-only cleanup
         }
@@ -400,7 +410,9 @@ export function useSpaceGroupCall(
       recordingRuntimeRef.current = null;
       void (async () => {
         try {
-          await runtime.stopRecorder();
+          if (runtime.stopRecorder) {
+            await runtime.stopRecorder();
+          }
         } catch {
           // ignore recorder stop errors during teardown-only cleanup
         }
@@ -429,23 +441,35 @@ export function useSpaceGroupCall(
       void (async () => {
         try {
           const endedAt = new Date().toISOString();
-          const blob = await runtime.stopRecorder();
           const transcriptText = await runtime.stopTranscript();
-          if (blob.size === 0) {
-            throw new Error('recording blob is empty');
-          }
           const sessionId = callSessionId ?? newCallSessionId();
-          await uploadRecordedCallArtifact({
-            authToken: token,
-            spaceSlug: slug,
-            roomId: activeRoomId,
-            callSessionId: sessionId,
-            blob,
-            mimeType: runtime.mimeType,
-            transcriptText,
-            startedAt: runtime.startedAt,
-            endedAt,
-          });
+          if (runtime.mode === 'transcript_only') {
+            console.warn(
+              '[hypha.group_call] transcript-only capture does not persist artifacts yet',
+              { roomId: activeRoomId, callSessionId: sessionId },
+            );
+          } else if (runtime.mode === 'recording_with_transcript') {
+            if (!runtime.stopRecorder || !runtime.mimeType) {
+              throw new Error(
+                'recording runtime missing recorder for recording mode',
+              );
+            }
+            const blob = await runtime.stopRecorder();
+            if (blob.size === 0) {
+              throw new Error('recording blob is empty');
+            }
+            await uploadRecordedCallArtifact({
+              authToken: token,
+              spaceSlug: slug,
+              roomId: activeRoomId,
+              callSessionId: sessionId,
+              blob,
+              mimeType: runtime.mimeType,
+              transcriptText,
+              startedAt: runtime.startedAt,
+              endedAt,
+            });
+          }
           if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
             setRecordingStatus('idle');
             setRecordingError(null);
@@ -1532,36 +1556,54 @@ export function useSpaceGroupCall(
   useEffect(() => {
     if (callState !== 'connected') return;
     if (recordingRuntimeRef.current) return;
+    if (captureMode === 'none') {
+      setRecordingStatus('idle');
+      setRecordingError(null);
+      return;
+    }
     const gc = groupCallRef.current;
     const sessionId = callSessionId?.trim();
     const token = latestAuthTokenRef.current;
     const activeRoom = roomId?.trim();
     if (!gc || !sessionId || !token || !activeRoom) return;
 
-    const recorder = startGroupCallRecording(gc);
-    if (!recorder) {
-      setRecordingStatus('error');
-      setRecordingError('recording not supported by this browser');
-      return;
-    }
     const transcript = startBrowserCallTranscription({
       onError: () => {
         // recording continues even if speech recognition fails
       },
     });
+    let recorder: ReturnType<typeof startGroupCallRecording> | null = null;
+    if (captureMode === 'recording_with_transcript') {
+      recorder = startGroupCallRecording(gc);
+      if (!recorder) {
+        void transcript.stop();
+        setRecordingStatus('error');
+        setRecordingError('recording not supported by this browser');
+        return;
+      }
+    }
     const generation = recordingGenerationRef.current + 1;
     recordingGenerationRef.current = generation;
     recordingRuntimeRef.current = {
       generation,
-      stopRecorder: recorder.stop,
+      mode: captureMode,
+      stopRecorder: recorder?.stop,
       stopTranscript: transcript.stop,
-      mimeType: recorder.mimeType,
+      mimeType: recorder?.mimeType,
       startedAt: new Date().toISOString(),
       recordedRoomId: activeRoom,
     };
     setRecordingStatus('recording');
     setRecordingError(null);
-  }, [authToken, callSessionId, callState, roomId]);
+  }, [authToken, callSessionId, callState, captureMode, roomId]);
+
+  useEffect(() => {
+    if (callState !== 'connected') return;
+    const runtime = recordingRuntimeRef.current;
+    if (!runtime) return;
+    if (runtime.mode === captureMode) return;
+    runCleanup();
+  }, [callState, captureMode, runCleanup]);
 
   useEffect(() => {
     if (!groupCallRef.current) return;
@@ -1891,6 +1933,8 @@ export function useSpaceGroupCall(
     screenshareErrorCode,
     recordingStatus,
     recordingError,
+    captureMode,
+    setCaptureMode,
     dismissScreenshareError,
     dismissCallError,
     retryFromError,
