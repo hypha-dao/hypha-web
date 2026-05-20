@@ -206,6 +206,8 @@ export function useSpaceGroupCall(
 ) {
   const { client } = useMatrix();
   const { authToken = null, spaceSlug = null } = options;
+  const latestAuthTokenRef = useRef<string | null>(authToken?.trim() || null);
+  const latestSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
 
   const [callState, setCallState] = useState<SpaceGroupCallState>('idle');
   const [errorCode, setErrorCode] = useState<SpaceGroupCallErrorCode | null>(
@@ -309,6 +311,14 @@ export function useSpaceGroupCall(
   const [idleRoomParticipantCount, setIdleRoomParticipantCount] = useState(0);
   const [idleInCallUserIds, setIdleInCallUserIds] = useState<string[]>([]);
 
+  useEffect(() => {
+    latestAuthTokenRef.current = authToken?.trim() || null;
+  }, [authToken]);
+
+  useEffect(() => {
+    latestSpaceSlugRef.current = spaceSlug?.trim() || null;
+  }, [spaceSlug]);
+
   const setActiveKeyFromGroupCall = useCallback((gc: MatrixSdk.GroupCall) => {
     const f = gc.activeSpeaker;
     setActiveSpeakerKey(f ? `${f.userId}::${f.deviceId ?? ''}` : null);
@@ -351,13 +361,13 @@ export function useSpaceGroupCall(
       return;
     }
 
-    const token = authToken?.trim();
-    const slug = spaceSlug?.trim();
+    const token = latestAuthTokenRef.current;
+    const slug = latestSpaceSlugRef.current;
     const activeRoomId = runtime?.recordedRoomId?.trim() || roomId?.trim();
     if (!runtime) {
       recordingRuntimeRef.current = null;
       setRecordingStatus('idle');
-    } else if (!token || !slug || !activeRoomId) {
+    } else if (!token || !activeRoomId) {
       recordingRuntimeRef.current = null;
       void (async () => {
         try {
@@ -371,8 +381,43 @@ export function useSpaceGroupCall(
           // ignore transcript stop errors during teardown-only cleanup
         }
         if (!recordingFinalizeInFlightRef.current) {
-          setRecordingStatus('idle');
-          setRecordingError(null);
+          setRecordingStatus('error');
+          setRecordingError(
+            !token
+              ? 'recording upload skipped: missing auth token'
+              : 'recording upload skipped: missing room context',
+          );
+          console.warn(
+            '[hypha.group_call] Recording upload skipped due to missing auth token or room context',
+            {
+              hasAuthToken: Boolean(token),
+              hasRoomId: Boolean(activeRoomId),
+            },
+          );
+        }
+      })();
+    } else if (!slug) {
+      recordingRuntimeRef.current = null;
+      void (async () => {
+        try {
+          await runtime.stopRecorder();
+        } catch {
+          // ignore recorder stop errors during teardown-only cleanup
+        }
+        try {
+          await runtime.stopTranscript();
+        } catch {
+          // ignore transcript stop errors during teardown-only cleanup
+        }
+        if (!recordingFinalizeInFlightRef.current) {
+          setRecordingStatus('error');
+          setRecordingError('recording upload skipped: missing space slug');
+          console.warn(
+            '[hypha.group_call] Recording upload skipped due to missing space slug',
+            {
+              roomId: activeRoomId,
+            },
+          );
         }
       })();
     } else {
@@ -501,12 +546,10 @@ export function useSpaceGroupCall(
     loggedStatsForGroupCallIdRef.current = null;
     lastRoomIdForTelemetryRef.current = null;
   }, [
-    authToken,
     callSessionId,
     clearConnectingStallTimer,
     clearMediaDebugInterval,
     roomId,
-    spaceSlug,
   ]);
 
   const refreshLocalPreview = useCallback(() => {
@@ -1491,10 +1534,9 @@ export function useSpaceGroupCall(
     if (recordingRuntimeRef.current) return;
     const gc = groupCallRef.current;
     const sessionId = callSessionId?.trim();
-    const token = authToken?.trim();
-    const slug = spaceSlug?.trim();
+    const token = latestAuthTokenRef.current;
     const activeRoom = roomId?.trim();
-    if (!gc || !sessionId || !token || !slug || !activeRoom) return;
+    if (!gc || !sessionId || !token || !activeRoom) return;
 
     const recorder = startGroupCallRecording(gc);
     if (!recorder) {
@@ -1519,7 +1561,7 @@ export function useSpaceGroupCall(
     };
     setRecordingStatus('recording');
     setRecordingError(null);
-  }, [authToken, callSessionId, callState, roomId, spaceSlug]);
+  }, [authToken, callSessionId, callState, roomId]);
 
   useEffect(() => {
     if (!groupCallRef.current) return;

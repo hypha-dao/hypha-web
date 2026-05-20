@@ -981,15 +981,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   } = useGlobalCallDock();
 
   useEffect(() => {
-    if (mode === 'space') {
-      bindRoomContext(roomId, spaceSlug ?? null, authToken ?? null);
+    const activeRoomId = roomId?.trim() || null;
+    const activeSpaceSlug = spaceSlug?.trim() || null;
+    const activeAuthToken = authToken?.trim() || null;
+
+    if (activeRoomId) {
+      bindRoomContext(activeRoomId, activeSpaceSlug, activeAuthToken);
     } else {
-      bindRoomContext(null, null);
+      bindRoomContext(null, null, null);
     }
+
     return () => {
-      bindRoomContext(null, null);
+      bindRoomContext(null, null, null);
     };
-  }, [authToken, bindRoomContext, mode, roomId, spaceSlug]);
+  }, [authToken, bindRoomContext, roomId, spaceSlug]);
 
   const callUiEnabled = useMemo(
     () =>
