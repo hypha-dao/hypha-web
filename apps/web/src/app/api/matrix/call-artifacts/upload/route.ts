@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getEnableHumanChat } from '@hypha-platform/feature-flags';
 import { db } from '@hypha-platform/storage-postgres';
@@ -85,8 +84,7 @@ export async function POST(request: NextRequest) {
 
   const form = await request.formData().catch(() => null);
   const roomId = String(form?.get('room_id') ?? '').trim();
-  const callSessionId =
-    String(form?.get('call_session_id') ?? '').trim() || randomUUID();
+  const callSessionId = String(form?.get('call_session_id') ?? '').trim();
   const recording = form?.get('recording');
   const transcriptText = String(form?.get('transcript_text') ?? '').trim();
   const mimeType = String(form?.get('mime_type') ?? '').trim() || 'video/webm';
@@ -95,6 +93,12 @@ export async function POST(request: NextRequest) {
 
   if (!roomId) {
     return NextResponse.json({ error: 'room_id is required' }, { status: 400 });
+  }
+  if (!callSessionId) {
+    return NextResponse.json(
+      { error: 'call_session_id is required' },
+      { status: 400 },
+    );
   }
   const hasRecording = recording instanceof Blob && recording.size > 0;
   const hasTranscript = transcriptText.length > 0;
