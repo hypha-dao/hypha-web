@@ -201,8 +201,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
   const { client: matrixClient } = useMatrix();
-  const { person: creatorPerson, isLoading: isCreatorPersonLoading } =
-    usePersonById({ id: creatorId });
+  const { person: creatorPerson } = usePersonById({ id: creatorId });
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
@@ -305,16 +304,47 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const canManageSignal =
     isCreator || (signalTeamAccess.hasPolicy && isSignalTeamMember);
   const creatorDisplayName = React.useMemo(() => {
+    if (isCreator) {
+      const currentUserName =
+        person?.nickname?.trim() ||
+        [person?.name, person?.surname].filter(Boolean).join(' ').trim();
+      return currentUserName || 'You';
+    }
+
+    if (creatorKind !== 'person') return creatorLabel;
+
+    const resolvedPersonName =
+      creatorPerson?.nickname?.trim() ||
+      [creatorPerson?.name, creatorPerson?.surname]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+    if (resolvedPersonName) return resolvedPersonName;
+
     const raw = `${creatorId ?? ''}`.trim();
-    if (!raw) return '';
-    if (isCreator) return person?.name?.trim() || 'You';
+    if (!raw) return creatorLabel;
+
     if (raw.startsWith('@')) {
       const [localpart] = raw.slice(1).split(':');
-      return localpart?.trim() || raw;
+      return localpart?.trim() || creatorLabel;
     }
+
     const [left] = raw.split(':');
-    return left?.trim() || raw;
-  }, [creatorId, isCreator, person?.name]);
+    const fallback = left?.trim() || raw;
+    if (/^\d+$/.test(fallback)) return creatorLabel;
+    return fallback;
+  }, [
+    creatorId,
+    creatorKind,
+    creatorLabel,
+    creatorPerson?.name,
+    creatorPerson?.nickname,
+    creatorPerson?.surname,
+    isCreator,
+    person?.name,
+    person?.nickname,
+    person?.surname,
+  ]);
 
   const coherenceType = React.useMemo(
     () => COHERENCE_TYPE_OPTIONS.find((option) => option.type === type),
@@ -357,7 +387,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       variant: 'outline',
       colorVariant: 'neutral',
       className:
-        'rounded-md border-border/60 bg-transparent shadow-none font-medium text-foreground',
+        'rounded-md border-transparent bg-transparent px-0 py-0 shadow-none ring-0 font-medium text-foreground hover:border-transparent hover:bg-transparent hover:ring-transparent',
     };
     if (!priorityMeta) return [typeBadge];
     const priorityKey = `priorities.${priorityMeta.priority}`;
@@ -371,7 +401,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       variant: 'outline',
       colorVariant: 'neutral',
       className:
-        'rounded-md border-border/60 bg-transparent shadow-none font-medium text-foreground',
+        'rounded-md border-transparent bg-transparent px-0 py-0 shadow-none ring-0 font-medium text-foreground hover:border-transparent hover:bg-transparent hover:ring-transparent',
     };
     return [typeBadge, priorityBadge];
   }, [
@@ -607,42 +637,43 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 </div>
               ) : null}
             </div>
-            {metaBadges.length > 0 ? (
-              <BadgesList isLoading={isLoading} badges={metaBadges} />
-            ) : null}
-          </div>
-
-          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-1 text-muted-foreground">
-            {creatorDisplayName ? (
-              <span className="inline-flex min-w-0 items-center gap-1 truncate">
-                <UserCircle2 className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                <span className="truncate">{creatorDisplayName}</span>
-              </span>
-            ) : null}
-            <span className="inline-flex min-w-0 items-center gap-1">
-              <ClockIcon
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                aria-hidden
-              />
-              {createdAtDate
-                ? formatDistanceToNowStrict(createdAtDate, {
-                    addSuffix: true,
-                    locale: dateFnsLocale,
-                  })
-                : ''}
-            </span>
-            <span
-              className="inline-flex items-center gap-1 text-muted-foreground"
-              aria-label={t('messageCount', { count: normalizedMessagesCount })}
-            >
-              <ChatBubbleIcon
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                aria-hidden
-              />
-              <span className="tabular-nums" aria-hidden>
-                {normalizedMessagesCount}
-              </span>
-            </span>
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              {metaBadges.length > 0 ? (
+                <BadgesList isLoading={isLoading} badges={metaBadges} />
+              ) : null}
+              <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-1 text-muted-foreground">
+                {creatorDisplayName ? (
+                  <span className="inline-flex min-w-0 items-center gap-1 truncate">
+                    <UserCircle2 className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                    <span className="truncate">{creatorDisplayName}</span>
+                  </span>
+                ) : null}
+                <span className="inline-flex min-w-0 items-center gap-1">
+                  <ClockIcon
+                    className="h-3.5 w-3.5 shrink-0 opacity-70"
+                    aria-hidden
+                  />
+                  {createdAtDate
+                    ? formatDistanceToNowStrict(createdAtDate, {
+                        addSuffix: true,
+                        locale: dateFnsLocale,
+                      })
+                    : ''}
+                </span>
+                <span
+                  className="inline-flex items-center gap-1 text-muted-foreground"
+                  aria-label={t('messageCount', { count: normalizedMessagesCount })}
+                >
+                  <ChatBubbleIcon
+                    className="h-3.5 w-3.5 shrink-0 opacity-70"
+                    aria-hidden
+                  />
+                  <span className="tabular-nums" aria-hidden>
+                    {normalizedMessagesCount}
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
 
           <Skeleton
