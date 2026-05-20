@@ -50,7 +50,6 @@ const exchangeBrandStyles = {
     'border border-transparent bg-[#6C3BFF] text-white hover:bg-[#5a30d6]',
 } as const;
 const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
-
 const normalizeEvmAddress = (value: string | null | undefined) =>
   (value ?? '').replace(/\s+/g, '').trim();
 
@@ -177,6 +176,15 @@ export function OnboardingAdventurePage() {
   const [depositDetailsSpaceSlug, setDepositDetailsSpaceSlug] = useState('');
   const [copiedAddress, setCopiedAddress] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
+  const [hasVisitedAdventure, setHasVisitedAdventure] = useState(false);
+  const [heroPlaceholderIndex, setHeroPlaceholderIndex] = useState(0);
+
+  const firstName = useMemo(() => {
+    const rawName = person?.name?.trim();
+    if (!rawName) return undefined;
+    const [candidate] = rawName.split(/\s+/);
+    return candidate?.trim() || undefined;
+  }, [person?.name]);
 
   const spaceOptions = useMemo(
     () =>
@@ -223,6 +231,150 @@ export function OnboardingAdventurePage() {
     [],
   );
 
+  useEffect(() => {
+    const storageKey = 'hypha:onboarding-adventure:visited:v1';
+    const justSignedUpKey = 'hypha:onboarding-adventure:just-signed-up:v1';
+    try {
+      const justSignedUp =
+        window.sessionStorage.getItem(justSignedUpKey) === 'true';
+      if (justSignedUp) {
+        setHasVisitedAdventure(false);
+        window.sessionStorage.removeItem(justSignedUpKey);
+        window.localStorage.setItem(storageKey, 'true');
+        return;
+      }
+
+      const alreadyVisited = window.localStorage.getItem(storageKey) === 'true';
+      if (alreadyVisited) {
+        setHasVisitedAdventure(true);
+      } else {
+        window.localStorage.setItem(storageKey, 'true');
+      }
+    } catch {
+      // localStorage unavailable; keep first-visit title fallback
+    }
+  }, []);
+
+  useEffect(() => {
+    aiPromptRef.current = aiPrompt;
+  }, [aiPrompt]);
+
+  useEffect(() => {
+    if (rotatingHeroPrompts.length < 2) return;
+    const intervalId = window.setInterval(() => {
+      setHeroPlaceholderIndex((current) =>
+        current + 1 >= rotatingHeroPrompts.length ? 0 : current + 1,
+      );
+    }, 2600);
+    return () => window.clearInterval(intervalId);
+  }, [rotatingHeroPrompts]);
+
+  const stopDictation = () => {
+    const recognition = speechRecognitionRef.current;
+    if (recognition) {
+      try {
+        recognition.abort();
+      } catch {
+        try {
+          recognition.stop();
+        } catch {
+          // ignore stop errors from browser implementation differences
+        }
+      }
+      speechRecognitionRef.current = null;
+    }
+    dictationPrefixRef.current = '';
+    setIsDictating(false);
+  };
+
+  const toggleDictation = () => {
+    setDictationError(null);
+    const SR =
+      (globalThis as unknown as { SpeechRecognition?: SpeechRecognitionCtor })
+        .SpeechRecognition ??
+      (
+        globalThis as unknown as {
+          webkitSpeechRecognition?: SpeechRecognitionCtor;
+        }
+      ).webkitSpeechRecognition;
+
+    if (!SR) {
+      setDictationError(tHuman('dictationNotSupported'));
+      return;
+    }
+    if (isDictating) {
+      stopDictation();
+      return;
+    }
+
+    dictationSessionFinalizedRef.current = false;
+    dictationPrefixRef.current = aiPromptRef.current.trimEnd();
+    const recognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = document.documentElement.lang || 'en';
+    recognition.onresult = (event) => {
+      let committed = '';
+      let interim = '';
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (!result?.[0]) continue;
+        if (result.isFinal) {
+          committed = joinWithSingleSpace(
+            committed,
+            result[0].transcript.trim(),
+          );
+        } else {
+          interim = joinWithSingleSpace(interim, result[0].transcript);
+        }
+      }
+      const dictated = joinWithSingleSpace(committed, interim.trim());
+      const nextPrompt = joinWithSingleSpace(
+        dictationPrefixRef.current,
+        dictated,
+      );
+      aiPromptRef.current = nextPrompt;
+      setAiPrompt(nextPrompt);
+    };
+    const finalizeDictation = (showError: boolean) => {
+      if (dictationSessionFinalizedRef.current) return;
+      dictationSessionFinalizedRef.current = true;
+      speechRecognitionRef.current = null;
+      dictationPrefixRef.current = '';
+      setIsDictating(false);
+      if (showError) {
+        setDictationError(tHuman('dictationError'));
+      }
+    };
+    recognition.onerror = (event) => {
+      finalizeDictation(event.error !== 'aborted');
+    };
+    recognition.onend = () => {
+      finalizeDictation(false);
+    };
+    speechRecognitionRef.current = recognition;
+    try {
+      recognition.start();
+      setIsDictating(true);
+    } catch {
+      speechRecognitionRef.current = null;
+      setDictationError(tHuman('dictationNotSupported'));
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      const recognition = speechRecognitionRef.current;
+      if (!recognition) return;
+      try {
+        recognition.abort();
+      } catch {
+        // ignore
+      }
+      speechRecognitionRef.current = null;
+    };
+  }, []);
+
   const handleCopyAddress = (address: string) => {
     copyToClipboard(address);
     setCopiedAddress(true);
@@ -242,8 +394,11 @@ export function OnboardingAdventurePage() {
   };
 
   return (
-    <Container className="flex flex-col gap-9 py-9">
-      <header className="space-y-4">
+    <Container className="flex flex-col gap-14 py-10 md:py-12">
+      <header className="space-y-3 pt-3 text-center md:pt-4">
+        <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-foreground shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
+          {t('aiHero.title')}
+        </p>
         <Heading
           size="9"
           color="secondary"
