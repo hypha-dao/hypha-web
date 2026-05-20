@@ -511,62 +511,32 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               </div>
             ) : null}
           </div>
-          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-1 text-muted-foreground">
-              <span className="inline-flex min-w-0 items-center gap-1.5">
-                {creatorKind === 'person' || creatorKind === 'relay' ? (
-                  <PersonAvatar
-                    size="sm"
-                    shape="circle"
-                    avatarSrc={
-                      creatorKind === 'person'
-                        ? creatorPerson?.avatarUrl ?? undefined
-                        : relaySourceSpace?.logoUrl ?? undefined
-                    }
-                    userName={creatorLabel}
-                    isLoading={
-                      creatorKind === 'person'
-                        ? isCreatorPersonLoading
-                        : isRelaySourceSpaceLoading
-                    }
-                  />
-                ) : (
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-accent-8/70 bg-accent-3/25 text-accent-11">
-                    {creatorKind === 'backgroundJob' ? (
-                      <Workflow className="h-3.5 w-3.5" aria-hidden />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" aria-hidden />
-                    )}
-                  </span>
-                )}
-                <span className="max-w-[11rem] truncate text-neutral-10">
-                  {creatorLabel}
-                </span>
+
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-1 text-muted-foreground">
+            <span className="inline-flex min-w-0 items-center gap-1">
+              <ClockIcon
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                aria-hidden
+              />
+              {createdAtDate
+                ? formatDistanceToNowStrict(createdAtDate, {
+                    addSuffix: true,
+                    locale: dateFnsLocale,
+                  })
+                : ''}
+            </span>
+            <span
+              className="inline-flex items-center gap-1 text-muted-foreground"
+              aria-label={t('messageCount', { count: normalizedMessagesCount })}
+            >
+              <ChatBubbleIcon
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                aria-hidden
+              />
+              <span className="tabular-nums" aria-hidden>
+                {normalizedMessagesCount}
               </span>
-              <span className="inline-flex min-w-0 items-center gap-1">
-                <ClockIcon
-                  className="h-3.5 w-3.5 shrink-0 text-neutral-10"
-                  aria-hidden
-                />
-                {createdAtRelative}
-              </span>
-              <span className="inline-flex items-center gap-1 text-muted-foreground">
-                <ChatBubbleIcon
-                  className="h-3.5 w-3.5 shrink-0 text-accent-10"
-                  aria-hidden
-                />
-                <span className="tabular-nums">{normalizedMessagesCount}</span>
-              </span>
-            </div>
-            {metaBadges.length > 0 ? (
-              <div className="ml-auto flex shrink-0 items-center">
-                <BadgesList
-                  isLoading={isLoading}
-                  badges={metaBadges}
-                  className="gap-1"
-                />
-              </div>
-            ) : null}
+            </span>
           </div>
 
           <Skeleton
