@@ -2232,6 +2232,8 @@
     "callCaptureStatusCapturing": "Aufnahme läuft",
     "callCaptureStatusSaving": "Wird gespeichert",
     "callCaptureStatusError": "Aufzeichnungsfehler",
+    "callCaptureOffHint": "Aufzeichnung ist aus. Für diesen Anruf werden weder Aufnahme noch Transkript gespeichert.",
+    "callCaptureLeaveWarning": "Aufzeichnung ist aus. Zum Bestätigen erneut auf Verlassen klicken.",
     "composerLockedPlaceholder": "Nur ausgewählte Teammitglieder können in diesem Thread interagieren.",
     "signalTeamInteractionRestricted": "Nur ausgewählte Teammitglieder können in diesem Thread Nachrichten senden und Erwähnungen nutzen.",
     "signalTeamBannerReadOnly": "Dieser Thread ist teambezogen. Du kannst Updates lesen, aber nur ausgewählte Teammitglieder können interagieren.",

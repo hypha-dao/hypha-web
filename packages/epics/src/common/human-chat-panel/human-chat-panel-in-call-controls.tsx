@@ -76,6 +76,11 @@ export function HumanChatPanelInCallControls({
   const audioMenuRef = useRef<HTMLDivElement | null>(null);
   const [isCaptureMenuOpen, setIsCaptureMenuOpen] = useState(false);
   const captureMenuRef = useRef<HTMLDivElement | null>(null);
+  const leaveWarningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const [leaveWithoutCaptureArmed, setLeaveWithoutCaptureArmed] =
+    useState(false);
   const isFull = variant === 'fullView';
   const isCenteredInBanner = !isFull && inBannerLayout === 'centered';
   /**
@@ -142,6 +147,7 @@ export function HumanChatPanelInCallControls({
       : recordingStatus === 'error'
       ? 'bg-destructive'
       : 'bg-muted-foreground/40';
+  const captureOff = captureMode === 'none';
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
@@ -170,6 +176,20 @@ export function HumanChatPanelInCallControls({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isAudioMenuOpen, isCaptureMenuOpen]);
 
+  useEffect(() => {
+    if (!captureOff && leaveWithoutCaptureArmed) {
+      setLeaveWithoutCaptureArmed(false);
+    }
+  }, [captureOff, leaveWithoutCaptureArmed]);
+
+  useEffect(() => {
+    return () => {
+      if (leaveWarningTimeoutRef.current) {
+        clearTimeout(leaveWarningTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const selectVoicePreset = (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => {
@@ -179,6 +199,29 @@ export function HumanChatPanelInCallControls({
   const selectCaptureMode = (mode: SpaceGroupCallCaptureMode) => {
     onCaptureModeChange(mode);
     setIsCaptureMenuOpen(false);
+  };
+  const handleLeaveWithCaptureGuard = () => {
+    if (!captureOff) {
+      onLeave();
+      return;
+    }
+    if (!leaveWithoutCaptureArmed) {
+      setLeaveWithoutCaptureArmed(true);
+      if (leaveWarningTimeoutRef.current) {
+        clearTimeout(leaveWarningTimeoutRef.current);
+      }
+      leaveWarningTimeoutRef.current = setTimeout(() => {
+        setLeaveWithoutCaptureArmed(false);
+        leaveWarningTimeoutRef.current = null;
+      }, 4000);
+      return;
+    }
+    setLeaveWithoutCaptureArmed(false);
+    if (leaveWarningTimeoutRef.current) {
+      clearTimeout(leaveWarningTimeoutRef.current);
+      leaveWarningTimeoutRef.current = null;
+    }
+    onLeave();
   };
   const captureModeLabel =
     captureMode === 'transcript_only'
@@ -454,7 +497,7 @@ export function HumanChatPanelInCallControls({
           </button>
           <button
             type="button"
-            onClick={onLeave}
+            onClick={handleLeaveWithCaptureGuard}
             disabled={callState === 'disconnecting'}
             className={cn(
               leaveBtn,
@@ -476,6 +519,13 @@ export function HumanChatPanelInCallControls({
           </div>
         ) : null}
       </div>
+      {captureOff ? (
+        <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
+          {leaveWithoutCaptureArmed
+            ? t('callCaptureLeaveWarning')
+            : t('callCaptureOffHint')}
+        </p>
+      ) : null}
       {recordingStatus === 'error' && recordingError?.trim() ? (
         <p className={cn('mt-1 text-[11px] text-destructive')}>
           {recordingError}
