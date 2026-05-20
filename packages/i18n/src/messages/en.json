@@ -2233,6 +2233,8 @@
     "callCaptureStatusCapturing": "Capturing",
     "callCaptureStatusSaving": "Saving",
     "callCaptureStatusError": "Capture error",
+    "callCaptureOffHint": "Capture is off. No recording or transcript will be saved for this call.",
+    "callCaptureLeaveWarning": "Capture is off. Press Leave again to confirm leaving without a recording.",
     "composerLockedPlaceholder": "Only selected team members can interact in this thread.",
     "signalTeamInteractionRestricted": "Only selected team members can send messages and mentions in this thread.",
     "signalTeamBannerReadOnly": "This is a dedicated Signal team channel. Only selected team members can reply to keep it focused.",
