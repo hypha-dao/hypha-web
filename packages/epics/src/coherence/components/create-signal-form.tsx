@@ -695,156 +695,164 @@ export const CreateSignalForm = ({
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col gap-6 px-0 pt-5">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex w-full flex-col gap-3">
-                    <FormLabel className="text-foreground">
-                      {t('type')} <RequirementMark />
-                    </FormLabel>
-                    <FormControl>
-                      <span className="grid w-full grid-cols-2 gap-2">
-                        {typeOptions.map((option) => (
-                          <CoherenceTypeButton
-                            key={`type-option-${option.type}`}
-                            icon={option.icon}
-                            title={option.title}
-                            description={option.description}
-                            colorVariant={option.colorVariant}
-                            selected={field.value === option.type}
-                            onClick={() => {
-                              form.setValue(
-                                'type',
-                                option.type as FormValues['type'],
-                                {
-                                  shouldDirty: true,
-                                },
-                              );
-                            }}
-                          />
-                        ))}
-                      </span>
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="priority"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex w-full flex-col gap-3">
-                    <FormLabel className="text-foreground">
-                      {t('priority')} <RequirementMark />
-                    </FormLabel>
-                    <FormControl>
-                      <span className="flex w-full flex-row gap-2">
-                        {priorityOptions.map((option) => (
-                          <CoherencePriorityButton
-                            key={`priority-option-${option.priority}`}
-                            className="w-full"
-                            icon={option.icon}
-                            title={option.title}
-                            description={option.description}
-                            colorVariant={option.colorVariant}
-                            iconColorVariant={option.iconColorVariant}
-                            selected={field.value === option.priority}
-                            onClick={() => {
-                              form.setValue('priority', option.priority, {
-                                shouldDirty: true,
-                              });
-                            }}
-                          />
-                        ))}
-                      </span>
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => {
-                const descriptionValue = field.value || '';
-                return (
+            <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="gap-1 text-foreground">
-                      {t('description')} <RequirementMark />
-                    </FormLabel>
-                    <FormControl>
-                      <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
-                        <RichTextEditor
-                          editorRef={null}
-                          markdown={descriptionValue}
-                          translation={translateEditor}
-                          placeholder={t('descriptionPlaceholder')}
-                          onChange={(markdown) => field.onChange(markdown)}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormDescription />
+                    <div className="flex w-full flex-col gap-3">
+                      <FormLabel className="text-foreground">
+                        {t('type')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <span className="grid w-full grid-cols-2 gap-2">
+                          {typeOptions.map((option) => (
+                            <CoherenceTypeButton
+                              key={`type-option-${option.type}`}
+                              icon={option.icon}
+                              title={option.title}
+                              description={option.description}
+                              colorVariant={option.colorVariant}
+                              selected={field.value === option.type}
+                              onClick={() => {
+                                form.setValue(
+                                  'type',
+                                  option.type as FormValues['type'],
+                                  {
+                                    shouldDirty: true,
+                                  },
+                                );
+                              }}
+                            />
+                          ))}
+                        </span>
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
-                );
-              }}
-            />
-            <FormField
-              control={form.control}
-              name="tags"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-foreground">{t('tags')}</FormLabel>
-                  <FormControl>
-                    <MultiSelect
-                      placeholder={t('selectOneOrMore')}
-                      searchPlaceholder={
-                        t.has('searchOrCreateTag')
-                          ? t('searchOrCreateTag')
-                          : 'Type to search or create a tag'
-                      }
-                      options={tagOptions}
-                      value={field.value}
-                      allowToggleAll={false}
-                      allowCreate={true}
-                      uiStyle="tag-picker"
-                      labels={{
-                        more: (count) =>
-                          t.has('tagsMore' as never)
-                            ? `${t('tagsMore' as never)} ${count}`
-                            : `+ ${count} more`,
-                        noRecentTags: t.has('noRecentTags' as never)
-                          ? t('noRecentTags' as never)
-                          : 'No recent tags yet. Start typing to search tags.',
-                        noResults: t.has('noResults' as never)
-                          ? t('noResults' as never)
-                          : 'No results found.',
-                        mostUsed: t.has('mostUsedTagsHeading' as never)
-                          ? t('mostUsedTagsHeading' as never)
-                          : '--- Most used tags ---',
-                        create: (term) =>
-                          t.has('createTag' as never)
-                            ? `${t('createTag' as never)} "${term}"`
-                            : `Create "${term}"`,
-                        clear: t.has('clear' as never)
-                          ? t('clear' as never)
-                          : 'Clear',
-                        close: t.has('close' as never)
-                          ? t('close' as never)
-                          : 'Close',
-                      }}
-                      onValueChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                )}
+              />
+            </section>
+            <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex w-full flex-col gap-3">
+                      <FormLabel className="text-foreground">
+                        {t('priority')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <span className="flex w-full flex-row gap-2">
+                          {priorityOptions.map((option) => (
+                            <CoherencePriorityButton
+                              key={`priority-option-${option.priority}`}
+                              className="w-full"
+                              icon={option.icon}
+                              title={option.title}
+                              description={option.description}
+                              colorVariant={option.colorVariant}
+                              iconColorVariant={option.iconColorVariant}
+                              selected={field.value === option.priority}
+                              onClick={() => {
+                                form.setValue('priority', option.priority, {
+                                  shouldDirty: true,
+                                });
+                              }}
+                            />
+                          ))}
+                        </span>
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </section>
+            <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => {
+                  const descriptionValue = field.value || '';
+                  return (
+                    <FormItem>
+                      <FormLabel className="gap-1 text-foreground">
+                        {t('description')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
+                          <RichTextEditor
+                            editorRef={null}
+                            markdown={descriptionValue}
+                            translation={translateEditor}
+                            placeholder={t('descriptionPlaceholder')}
+                            onChange={(markdown) => field.onChange(markdown)}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormDescription />
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem className="mt-6">
+                    <FormLabel className="text-foreground">
+                      {t('tags')}
+                    </FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        placeholder={t('selectOneOrMore')}
+                        searchPlaceholder={
+                          t.has('searchOrCreateTag')
+                            ? t('searchOrCreateTag')
+                            : 'Type to search or create a tag'
+                        }
+                        options={tagOptions}
+                        value={field.value}
+                        allowToggleAll={false}
+                        allowCreate={true}
+                        uiStyle="tag-picker"
+                        labels={{
+                          more: (count) =>
+                            t.has('tagsMore' as never)
+                              ? `${t('tagsMore' as never)} ${count}`
+                              : `+ ${count} more`,
+                          noRecentTags: t.has('noRecentTags' as never)
+                            ? t('noRecentTags' as never)
+                            : 'No recent tags yet. Start typing to search tags.',
+                          noResults: t.has('noResults' as never)
+                            ? t('noResults' as never)
+                            : 'No results found.',
+                          mostUsed: t.has('mostUsedTagsHeading' as never)
+                            ? t('mostUsedTagsHeading' as never)
+                            : '--- Most used tags ---',
+                          create: (term) =>
+                            t.has('createTag' as never)
+                              ? `${t('createTag' as never)} "${term}"`
+                              : `Create "${term}"`,
+                          clear: t.has('clear' as never)
+                            ? t('clear' as never)
+                            : 'Clear',
+                          close: t.has('close' as never)
+                            ? t('close' as never)
+                            : 'Close',
+                        }}
+                        onValueChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </section>
 
             <div className="flex w-full justify-end gap-2">
               {form.formState.errors.root?.message ? (

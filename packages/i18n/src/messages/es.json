@@ -786,7 +786,7 @@
     "signIn": "Iniciar sesión",
     "getStarted": "Empezar",
     "ecosystemLogo": "Logo del ecosistema",
-    "continueAdventure": "Tu aventura continúa aquí"
+    "continueAdventure": "Continuar tu aventura"
   },
   "OnboardingAdventure": {
     "title": "Tu aventura empieza aquí.",
@@ -891,7 +891,8 @@
       "browserNotifications": "Notificaciones del navegador (anteriormente \"Notificaciones emergentes de escritorio\")",
       "yes": "Sí",
       "no": "No",
-      "emailNotificationsWithEmail": "Notificaciones por correo electrónico ({email})"
+      "emailNotificationsWithEmail": "Notificaciones por correo electrónico ({email})",
+      "mentionConsent": "Consentimiento para notificaciones de menciones"
     },
     "subscriptions": {
       "title": "Recibe una notificación cuando...",
@@ -904,7 +905,11 @@
         "title": "Una propuesta es aprobada o rechazada.",
         "description": "En cualquiera de los espacios de los que eres miembro."
       },
-      "labelWithComingSoon": "{title} ({comingSoon})"
+      "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentionOnChatMessage": {
+        "title": "Se te menciona en un mensaje de chat",
+        "description": "En cualquier hilo o chat donde las menciones estén habilitadas para ti."
+      }
     },
     "actions": {
       "retry": "Reintentar",
@@ -2212,7 +2217,22 @@
     "callDockMinimize": "Minimizar llamada",
     "callDockExpand": "Expandir llamada",
     "callDockFullscreen": "Pantalla completa",
-    "callDockExitFullscreen": "Salir de pantalla completa"
+    "callDockExitFullscreen": "Salir de pantalla completa",
+    "composerLockedPlaceholder": "Solo los miembros seleccionados del equipo pueden participar en este hilo.",
+    "signalTeamInteractionRestricted": "Solo los miembros seleccionados del equipo pueden enviar mensajes y menciones en este hilo.",
+    "signalTeamBannerReadOnly": "Este hilo está restringido al equipo. Puedes leer las actualizaciones, pero solo los miembros seleccionados del equipo pueden interactuar.",
+    "signalTeamRequestAccess": "Solicitar inclusión",
+    "signalTeamRequestPending": "Solicitud pendiente",
+    "signalTeamManageTitle": "Equipo de Signal",
+    "signalTeamManageOpen": "Gestionar",
+    "signalTeamManageClose": "Listo",
+    "signalTeamMemberListHint": "Selecciona los miembros que pueden enviar mensajes, mencionar y unirse a llamadas del hilo.",
+    "signalTeamAddMember": "Añadir",
+    "signalTeamRemoveMember": "Quitar",
+    "signalTeamPendingRequests": "Solicitudes pendientes",
+    "signalTeamApproveRequester": "Añadir al equipo",
+    "mentionOpenFallbackRoom": "No pudimos resolver esa sala desde tu contexto local. Abre el espacio correspondiente e inténtalo de nuevo.",
+    "mentionOpenFallbackMissingMessage": "Ese mensaje de mención aún no está disponible en la cronología cargada. Vuelve a intentarlo en un momento."
   },
   "CoherenceTab": {
     "signals": "Señales",
@@ -2398,9 +2418,9 @@
       "valueModel": "Valor y modelo",
       "evidenceImpact": "Evidencia e impacto"
     },
-    "spaceMemoryCallArtifactNote": "Los recuerdos de llamada aparecen cuando se completa la grabación o el reconocimiento de voz a texto para este espacio (ver pipeline del equipo).",
-    "spaceMemoryCallRecordingNoUrl": "La grabación estará disponible cuando se ingeste una URL de medios para esta sesión.",
-    "spaceMemoryCallTranscriptExcerpt": "Transcripción",
+    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
+    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
+    "spaceMemoryCallTranscriptExcerpt": "Transcript",
     "spaceMemoryContextCallRecording": "Grabación de llamada (memoria organizacional)",
     "spaceMemoryContextCallTranscript": "Transcripción de llamada (memoria organizacional)",
     "aiAgentsCatalog": {
@@ -2494,7 +2514,21 @@
           "Mejora la calidad de comunicación con stakeholders durante cambio, conflicto e incertidumbre."
         ]
       }
-    }
+    },
+    "createBoard": "Crear tablero",
+    "createBoardDescription": "Guarda un filtro de tablero por categoría de etiqueta o etiqueta individual.",
+    "boardName": "Nombre del tablero",
+    "boardNamePlaceholder": "p. ej. Tablero de impacto",
+    "boardFilterBy": "Filtrar por",
+    "boardFilterCategory": "Categoría de etiqueta",
+    "boardFilterTag": "Etiqueta individual",
+    "boardSelectCategory": "Categoría",
+    "boardSelectTag": "Etiqueta",
+    "boardCreateAction": "Crear tablero",
+    "boardCancelAction": "Cancelar",
+    "boardAll": "Todas las señales",
+    "boardDelete": "Eliminar tablero {boardName}",
+    "spaceMemoryTimelineLabel": "Historial de memoria del espacio"
   },
   "GlobalCallDock": {
     "callTitle": "Llamada - {count, plural, one {# miembro} other {# miembros}}",

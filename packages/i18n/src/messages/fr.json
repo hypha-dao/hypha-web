@@ -96,7 +96,7 @@
     "signIn": "Se connecter",
     "getStarted": "Commencer",
     "ecosystemLogo": "Logo de l’écosystème",
-    "continueAdventure": "Votre aventure continue ici"
+    "continueAdventure": "Continuer votre aventure"
   },
   "OnboardingAdventure": {
     "title": "Votre aventure commence ici.",
@@ -201,7 +201,8 @@
       "browserNotifications": "Notifications du navigateur (anciennement « Notifications pop-up bureau »)",
       "yes": "Oui",
       "no": "Non",
-      "emailNotificationsWithEmail": "Notifications par e-mail ({email})"
+      "emailNotificationsWithEmail": "Notifications par e-mail ({email})",
+      "mentionConsent": "Consentement aux notifications de mention"
     },
     "subscriptions": {
       "title": "Être notifié quand...",
@@ -214,7 +215,11 @@
         "title": "Une proposition est approuvée ou rejetée",
         "description": "Dans n’importe lequel des espaces dont vous êtes membre."
       },
-      "labelWithComingSoon": "{title} ({comingSoon})"
+      "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentionOnChatMessage": {
+        "title": "Vous êtes mentionné dans un message du chat",
+        "description": "Dans tout fil ou chat où les mentions sont activées pour vous."
+      }
     },
     "actions": {
       "retry": "Réessayer",
@@ -2212,7 +2217,22 @@
     "callDockMinimize": "Réduire l’appel",
     "callDockExpand": "Agrandir l’appel",
     "callDockFullscreen": "Plein écran",
-    "callDockExitFullscreen": "Quitter le plein écran"
+    "callDockExitFullscreen": "Quitter le plein écran",
+    "composerLockedPlaceholder": "Seuls les membres sélectionnés de l’équipe peuvent interagir dans ce fil.",
+    "signalTeamInteractionRestricted": "Seuls les membres sélectionnés de l’équipe peuvent envoyer des messages et des mentions dans ce fil.",
+    "signalTeamBannerReadOnly": "Ce fil est limité à l’équipe. Vous pouvez lire les mises à jour, mais seuls les membres sélectionnés peuvent interagir.",
+    "signalTeamRequestAccess": "Demander à être inclus",
+    "signalTeamRequestPending": "Demande en attente",
+    "signalTeamManageTitle": "Équipe Signal",
+    "signalTeamManageOpen": "Gérer",
+    "signalTeamManageClose": "Terminé",
+    "signalTeamMemberListHint": "Sélectionnez les membres qui peuvent envoyer des messages, mentionner et rejoindre les appels du fil.",
+    "signalTeamAddMember": "Ajouter",
+    "signalTeamRemoveMember": "Retirer",
+    "signalTeamPendingRequests": "Demandes en attente",
+    "signalTeamApproveRequester": "Ajouter à l’équipe",
+    "mentionOpenFallbackRoom": "Impossible de résoudre ce salon depuis votre contexte local. Ouvrez l'espace concerné puis réessayez.",
+    "mentionOpenFallbackMissingMessage": "Ce message de mention n'est pas encore disponible dans la chronologie chargée. Réessayez dans un instant."
   },
   "CoherenceTab": {
     "signals": "Signaux",
@@ -2492,7 +2512,21 @@
           "Améliore la qualité de communication avec les parties prenantes en période de changement, conflit et incertitude."
         ]
       }
-    }
+    },
+    "createBoard": "Créer un tableau",
+    "createBoardDescription": "Enregistrez un filtre de tableau par catégorie de tag ou tag individuel.",
+    "boardName": "Nom du tableau",
+    "boardNamePlaceholder": "ex. Tableau d'impact",
+    "boardFilterBy": "Filtrer par",
+    "boardFilterCategory": "Catégorie de tag",
+    "boardFilterTag": "Tag individuel",
+    "boardSelectCategory": "Catégorie",
+    "boardSelectTag": "Tag",
+    "boardCreateAction": "Créer un tableau",
+    "boardCancelAction": "Annuler",
+    "boardAll": "Tous les signaux",
+    "boardDelete": "Supprimer le tableau {boardName}",
+    "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace"
   },
   "GlobalCallDock": {
     "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",
