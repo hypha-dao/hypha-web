@@ -15,20 +15,38 @@ type OnboardingToolEvent = {
 };
 
 const ONBOARDING_TOOL_LOG_SCOPE = '[chat][onboarding-tool]';
+type OnboardingToolLogPayload = OnboardingToolEvent & {
+  scope: string;
+  timestamp: string;
+};
+
+function emitStructuredLog(
+  level: 'info' | 'error',
+  payload: OnboardingToolLogPayload,
+): void {
+  const line = JSON.stringify(payload);
+  if (level === 'error') {
+    console.error(line);
+    return;
+  }
+  console.info(line);
+}
 
 export function logOnboardingToolEvent(event: OnboardingToolEvent): void {
-  const normalizedEvent =
-    event.status === 'failed' && !event.error?.trim()
-      ? { ...event, error: 'unknown_failure' }
-      : event;
+  const normalizedEvent = {
+    ...event,
+    ...(event.status === 'failed' && !event.error?.trim()
+      ? { error: 'unknown_failure' }
+      : {}),
+  };
   const payload = {
     scope: ONBOARDING_TOOL_LOG_SCOPE,
     ...normalizedEvent,
     timestamp: new Date().toISOString(),
   };
   if (payload.status === 'failed') {
-    console.error(payload);
+    emitStructuredLog('error', payload);
     return;
   }
-  console.info(payload);
+  emitStructuredLog('info', payload);
 }
