@@ -791,7 +791,7 @@
     "continueAdventure": "Sua aventura continua aqui",
     "subtitle": "Você tem uma visão poderosa para o mundo; nós damos a você as ferramentas para colocá-la em ação.",
     "aiHero": {
-      "title": "Construa qualquer coisa, juntos",
+      "title": "Build Anything, Together",
       "description": "Diga ao Hypha AI o que você quer construir e ele vai guiar a configuração passo a passo.",
       "placeholder": "Criar um espaço, entrar em um espaço existente, explorar a rede ou financiar uma tesouraria - descreva seu objetivo e a AI guia você.",
       "rotating": {
@@ -812,7 +812,7 @@
       "unavailable": "O onboarding com AI está temporariamente indisponível nesta implantação.",
       "ariaLabel": "Prompt de onboarding com AI",
       "flow": {
-        "badge": "Simples. Poderoso. Feito por design.",
+        "badge": "Simple. Powerful. By design.",
         "reviewingTitle": "Analisando sua solicitação",
         "reviewingDescription": "A AI está mapeando o melhor caminho para o seu objetivo.",
         "reviewingDescriptionPersonalized": "{firstName}, a AI está mapeando o melhor caminho para o seu objetivo.",
@@ -2164,14 +2164,6 @@
     "callVoiceProcessingStandard": "Fala",
     "callVoiceProcessingIsolation": "Isolamento",
     "callVoiceProcessingMusic": "Música",
-    "callCaptureLabel": "Captura",
-    "callCaptureModeNone": "Sem captura",
-    "callCaptureModeTranscriptOnly": "Só transcrição",
-    "callCaptureModeRecordingWithTranscript": "Gravação + transcrição",
-    "callCaptureStatusIdle": "Captura desligada",
-    "callCaptureStatusCapturing": "A capturar artefatos da chamada",
-    "callCaptureStatusSaving": "A guardar artefatos da chamada",
-    "callCaptureStatusError": "Falha na captura",
     "callCameraOn": "Ligar câmara",
     "callCameraOff": "Desligar câmara",
     "callErrorPermission": "Acesso à câmara ou microfone recusado. Verifique o navegador.",

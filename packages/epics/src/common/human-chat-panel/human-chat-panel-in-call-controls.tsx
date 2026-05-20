@@ -17,8 +17,6 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import {
   getCallControlsPhase,
-  type SpaceGroupCallCaptureMode,
-  type SpaceGroupCallRecordingStatus,
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
 
@@ -34,10 +32,6 @@ type HumanChatPanelInCallControlsProps = {
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
-  captureMode: SpaceGroupCallCaptureMode;
-  onCaptureModeChange: (mode: SpaceGroupCallCaptureMode) => void;
-  recordingStatus: SpaceGroupCallRecordingStatus;
-  recordingError: string | null;
   onLeave: () => void;
   /** In header strip: compact buttons; in full view: larger, high-contrast on video. */
   variant?: 'inBanner' | 'fullView';
@@ -59,10 +53,6 @@ export function HumanChatPanelInCallControls({
   onToggleScreenshare,
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
-  captureMode,
-  onCaptureModeChange,
-  recordingStatus,
-  recordingError,
   onLeave,
   variant = 'inBanner',
   inBannerLayout = 'inline',
@@ -113,17 +103,6 @@ export function HumanChatPanelInCallControls({
     : 'h-4 w-4 text-foreground';
   const useSideAudioSettings =
     isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered';
-  const captureSelectClass = isFull
-    ? 'h-10 rounded-full border border-zinc-600/80 bg-zinc-900/90 px-3 text-xs text-white shadow-sm backdrop-blur-sm focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
-    : 'h-8 rounded-full border border-border/60 bg-background px-2.5 text-xs text-foreground shadow-sm focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
-  const captureStatusText =
-    recordingStatus === 'recording'
-      ? t('callCaptureStatusCapturing')
-      : recordingStatus === 'uploading'
-      ? t('callCaptureStatusSaving')
-      : recordingStatus === 'error'
-      ? t('callCaptureStatusError')
-      : t('callCaptureStatusIdle');
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
@@ -345,74 +324,12 @@ export function HumanChatPanelInCallControls({
           >
             <CallHangUpIcon className={leaveIcon} />
           </button>
-          {!useSideAudioSettings ? (
-            <>
-              <label className="sr-only" htmlFor="call-capture-mode-inline">
-                {t('callCaptureLabel')}
-              </label>
-              <select
-                id="call-capture-mode-inline"
-                className={captureSelectClass}
-                value={captureMode}
-                onChange={(event) =>
-                  onCaptureModeChange(
-                    event.target.value as SpaceGroupCallCaptureMode,
-                  )
-                }
-                aria-label={t('callCaptureLabel')}
-              >
-                <option value="none">{t('callCaptureModeNone')}</option>
-                <option value="transcript_only">
-                  {t('callCaptureModeTranscriptOnly')}
-                </option>
-                <option value="recording_with_transcript">
-                  {t('callCaptureModeRecordingWithTranscript')}
-                </option>
-              </select>
-            </>
-          ) : null}
           {!useSideAudioSettings ? renderAudioSettingsMenu : null}
         </div>
         {useSideAudioSettings ? (
-          <div className="justify-self-end flex items-center gap-2">
-            <label className="sr-only" htmlFor="call-capture-mode">
-              {t('callCaptureLabel')}
-            </label>
-            <select
-              id="call-capture-mode"
-              className={captureSelectClass}
-              value={captureMode}
-              onChange={(event) =>
-                onCaptureModeChange(
-                  event.target.value as SpaceGroupCallCaptureMode,
-                )
-              }
-              aria-label={t('callCaptureLabel')}
-            >
-              <option value="none">{t('callCaptureModeNone')}</option>
-              <option value="transcript_only">
-                {t('callCaptureModeTranscriptOnly')}
-              </option>
-              <option value="recording_with_transcript">
-                {t('callCaptureModeRecordingWithTranscript')}
-              </option>
-            </select>
-            {renderAudioSettingsMenu}
-          </div>
+          <div className="justify-self-end">{renderAudioSettingsMenu}</div>
         ) : null}
       </div>
-      <p
-        className={cn(
-          'mt-1 text-[11px] text-muted-foreground',
-          isFull && 'text-zinc-300',
-          recordingStatus === 'error' && 'text-destructive',
-        )}
-      >
-        {captureStatusText}
-        {recordingStatus === 'error' && recordingError?.trim()
-          ? ` - ${recordingError}`
-          : ''}
-      </p>
     </div>
   );
 }

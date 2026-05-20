@@ -189,10 +189,6 @@ export function GlobalCallDockOverlay() {
     setScreensharingEnabled,
     voiceProcessingPreset,
     setVoiceProcessingPreset,
-    captureMode,
-    setCaptureMode,
-    recordingStatus,
-    recordingError,
     leave,
   } = useGlobalCallDock();
 
@@ -538,8 +534,8 @@ export function GlobalCallDockOverlay() {
             data-no-dock-drag
             onPointerDown={onResizeStart('top-right')}
             className="absolute -top-1 -right-1 z-[3] flex h-5 w-5 cursor-nesw-resize touch-none items-center justify-center"
-            aria-label={t('resizeTopRightLabel')}
-            title={t('resizeTopRightLabel')}
+            aria-label="Resize call window"
+            title="Resize call window"
           >
             <div className="pointer-events-none relative h-3 w-3">
               <span className="absolute right-0 top-[1px] block h-[1.5px] w-2 rotate-45 rounded bg-foreground/70" />
@@ -550,8 +546,8 @@ export function GlobalCallDockOverlay() {
             data-no-dock-drag
             onPointerDown={onResizeStart('bottom-left')}
             className="absolute -bottom-1 -left-1 z-[3] flex h-5 w-5 cursor-nesw-resize touch-none items-center justify-center"
-            aria-label={t('resizeBottomLeftLabel')}
-            title={t('resizeBottomLeftLabel')}
+            aria-label="Resize call window"
+            title="Resize call window"
           >
             <div className="pointer-events-none relative h-3 w-3">
               <span className="absolute left-0 top-[6px] block h-[1.5px] w-2 -rotate-[135deg] rounded bg-foreground/70" />
@@ -686,10 +682,6 @@ export function GlobalCallDockOverlay() {
             onToggleScreenshare={onToggleScreenshare}
             voiceProcessingPreset={voiceProcessingPreset}
             onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
-            captureMode={captureMode}
-            onCaptureModeChange={setCaptureMode}
-            recordingStatus={recordingStatus}
-            recordingError={recordingError}
             onDismissScreenshareError={dismissScreenshareError}
             onRetryCall={retryFromError}
             onDismissCallError={dismissCallError}
@@ -705,10 +697,6 @@ export function GlobalCallDockOverlay() {
             onToggleScreenshare={onToggleScreenshare}
             voiceProcessingPreset={voiceProcessingPreset}
             onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
-            captureMode={captureMode}
-            onCaptureModeChange={setCaptureMode}
-            recordingStatus={recordingStatus}
-            recordingError={recordingError}
             onLeave={() => {
               void leave();
             }}

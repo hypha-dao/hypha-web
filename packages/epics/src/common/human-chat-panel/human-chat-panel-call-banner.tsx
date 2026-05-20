@@ -4,9 +4,7 @@ import { Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   getCallControlsPhase,
-  type SpaceGroupCallCaptureMode,
   type SpaceGroupCallErrorCode,
-  type SpaceGroupCallRecordingStatus,
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
 import { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
@@ -38,10 +36,6 @@ type HumanChatPanelCallBannerProps = {
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
-  captureMode: SpaceGroupCallCaptureMode;
-  onCaptureModeChange: (mode: SpaceGroupCallCaptureMode) => void;
-  recordingStatus: SpaceGroupCallRecordingStatus;
-  recordingError: string | null;
   onDismissScreenshareError: () => void;
   /** Reconnect after a recoverable call error. */
   onRetryCall: () => void;
@@ -92,10 +86,6 @@ export function HumanChatPanelCallBanner({
   onToggleScreenshare,
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
-  captureMode,
-  onCaptureModeChange,
-  recordingStatus,
-  recordingError,
   onDismissScreenshareError,
   tabBackgroundWhileInCall,
   onRetryCall,
@@ -277,10 +267,6 @@ export function HumanChatPanelCallBanner({
             onToggleScreenshare={onToggleScreenshare}
             voiceProcessingPreset={voiceProcessingPreset}
             onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
-            captureMode={captureMode}
-            onCaptureModeChange={onCaptureModeChange}
-            recordingStatus={recordingStatus}
-            recordingError={recordingError}
             onLeave={onLeave}
             variant="inBanner"
           />

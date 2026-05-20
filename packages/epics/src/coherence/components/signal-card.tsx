@@ -388,78 +388,72 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         </Skeleton>
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
+        {isCreator && slug ? (
+          <div className="absolute right-3 top-3 z-10 flex items-center gap-0.5">
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              size="sm"
+              className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              disabled={isLoading}
+              aria-label={tSignalCard('editMenu')}
+              title={tSignalCard('editMenu')}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!params.lang || !params.id || !slug) return;
+                const tab = params.tab ?? 'coherence';
+                router.push(
+                  `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
+                );
+              }}
+              onKeyDown={stopCardActivationKey}
+            >
+              <Pencil className="h-3.5 w-3.5" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              size="sm"
+              className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              disabled={isLoading}
+              aria-label={
+                archived ? t('unarchiveConversation') : t('archiveConversation')
+              }
+              title={
+                archived ? t('unarchiveConversation') : t('archiveConversation')
+              }
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setArchiveOpen(true);
+              }}
+              onKeyDown={stopCardActivationKey}
+            >
+              <Archive className="h-3.5 w-3.5" aria-hidden />
+            </Button>
+          </div>
+        ) : null}
         <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
-          <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 pr-20 text-1 text-muted-foreground">
             {metaBadges.length > 0 ? (
               <BadgesList isLoading={isLoading} badges={metaBadges} />
             ) : null}
           </div>
 
-          <div className="flex min-w-0 items-start gap-2">
-            <div className="min-w-0 flex-1">
-              <Skeleton
-                className="min-w-0"
-                width="100%"
-                height="22px"
-                loading={isLoading}
-              >
-                <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
-                  {title}
-                </CardTitle>
-              </Skeleton>
-            </div>
-            {isCreator && slug ? (
-              <div className="flex shrink-0 items-center gap-0.5 self-start">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  colorVariant="neutral"
-                  size="sm"
-                  className="h-6 w-6 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                  disabled={isLoading}
-                  aria-label={tSignalCard('editMenu')}
-                  title={tSignalCard('editMenu')}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!params.lang || !params.id || !slug) return;
-                    const tab = params.tab ?? 'coherence';
-                    router.push(
-                      `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
-                    );
-                  }}
-                  onKeyDown={stopCardActivationKey}
-                >
-                  <Pencil className="h-3 w-3" aria-hidden />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  colorVariant="neutral"
-                  size="sm"
-                  className="h-6 w-6 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                  disabled={isLoading}
-                  aria-label={
-                    archived
-                      ? t('unarchiveConversation')
-                      : t('archiveConversation')
-                  }
-                  title={
-                    archived
-                      ? t('unarchiveConversation')
-                      : t('archiveConversation')
-                  }
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setArchiveOpen(true);
-                  }}
-                  onKeyDown={stopCardActivationKey}
-                >
-                  <Archive className="h-3 w-3" aria-hidden />
-                </Button>
-              </div>
-            ) : null}
+          <div className="min-w-0">
+            <Skeleton
+              className="min-w-0"
+              width="100%"
+              height="22px"
+              loading={isLoading}
+            >
+              <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
+                {title}
+              </CardTitle>
+            </Skeleton>
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-1 text-muted-foreground">
@@ -475,17 +469,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   })
                 : ''}
             </span>
-            <span
-              className="inline-flex items-center gap-1 text-muted-foreground"
-              aria-label={t('messageCount', { count: normalizedMessagesCount })}
-            >
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
               <ChatBubbleIcon
                 className="h-3.5 w-3.5 shrink-0 opacity-70"
                 aria-hidden
               />
-              <span className="tabular-nums" aria-hidden>
-                {normalizedMessagesCount}
-              </span>
+              <span className="tabular-nums">{normalizedMessagesCount}</span>
             </span>
           </div>
 

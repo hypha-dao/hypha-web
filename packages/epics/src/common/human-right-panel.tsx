@@ -733,10 +733,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setScreensharingEnabled: setSpaceCallScreensharing,
     voiceProcessingPreset: spaceCallVoiceProcessingPreset,
     setVoiceProcessingPreset: setSpaceCallVoiceProcessingPreset,
-    captureMode: spaceCallCaptureMode,
-    setCaptureMode: setSpaceCallCaptureMode,
-    recordingStatus: spaceCallRecordingStatus,
-    recordingError: spaceCallRecordingError,
     tabBackgroundWhileInCall: spaceCallTabBackground,
     retryFromError: retrySpaceCall,
     dismissCallError: dismissSpaceCallError,
@@ -886,12 +882,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       void setSpaceCallVoiceProcessingPreset(preset);
     },
     [setSpaceCallVoiceProcessingPreset],
-  );
-  const handleCallCaptureModeChange = useCallback(
-    (mode: 'none' | 'transcript_only' | 'recording_with_transcript') => {
-      setSpaceCallCaptureMode(mode);
-    },
-    [setSpaceCallCaptureMode],
   );
 
   const handleRetrySpaceCall = useCallback(() => {
@@ -1130,14 +1120,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!client || !roomId) return;
     const room = client.getRoom(roomId);
     if (!room) return;
-    const parentRoomId =
-      mode === 'coherence' ? space?.chatRoomId?.trim() : undefined;
 
     const bumpMembership = (...args: unknown[]) => {
       const state = args[1] as { roomId?: string } | undefined;
-      const changedRoomId = state?.roomId?.trim();
-      if (!changedRoomId) return;
-      if (changedRoomId !== roomId && changedRoomId !== parentRoomId) return;
+      if (state?.roomId !== roomId) return;
       setMentionMembershipEpoch((n) => n + 1);
     };
 
@@ -1148,7 +1134,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       client.off(RoomStateEvent.Members, bumpMembership);
       client.off(RoomStateEvent.NewMember, bumpMembership);
     };
-  }, [client, mode, roomId, space?.chatRoomId]);
+  }, [client, roomId]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
@@ -2501,10 +2487,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onVoiceProcessingPresetChange={
                 handleCallVoiceProcessingPresetChange
               }
-              captureMode={spaceCallCaptureMode}
-              onCaptureModeChange={handleCallCaptureModeChange}
-              recordingStatus={spaceCallRecordingStatus}
-              recordingError={spaceCallRecordingError}
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
               onRetryCall={handleRetrySpaceCall}
               onDismissCallError={dismissSpaceCallError}

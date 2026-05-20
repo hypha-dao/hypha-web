@@ -11,7 +11,6 @@ import {
   AiPanelChatBar,
   AiPanelMessages,
   type AiPanelDraftAttachment,
-  type OnboardingConversationContext,
 } from '@hypha-platform/epics';
 import {
   Category,
@@ -21,10 +20,20 @@ import {
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 
+type OnboardingContext = {
+  mode: 'onboarding_setup';
+  source: 'onboarding_hero';
+  firstName?: string;
+  locale?: string;
+  createdAt: string;
+  setupPhase?: 'discover' | 'draft' | 'confirm' | 'execute' | 'verify';
+  lastUserText?: string;
+};
+
 type OnboardingAiFullPageProps = {
   seedPrompt: string;
   seedAttachments: File[];
-  context: OnboardingConversationContext;
+  context: OnboardingContext;
   onExit: () => void;
 };
 
@@ -102,7 +111,7 @@ export function OnboardingAiFullPage({
     AiPanelDraftAttachment[]
   >([]);
   const [onboardingContext, setOnboardingContext] =
-    useState<OnboardingConversationContext>(context);
+    useState<OnboardingContext>(context);
   const seededRef = useRef(false);
   const walletCreateInFlightRef = useRef(false);
   const handledWalletPayloadKeyRef = useRef<string | null>(null);
@@ -134,7 +143,7 @@ export function OnboardingAiFullPage({
   const isStreaming = status === 'streaming' || status === 'submitted';
 
   const buildMessageOptions = useCallback(
-    async (contextOverride?: OnboardingConversationContext) => {
+    async (contextOverride?: OnboardingContext) => {
       const token = (await getAccessToken?.()) ?? undefined;
       const headers: Record<string, string> = token
         ? { Authorization: `Bearer ${token}` }
@@ -148,7 +157,7 @@ export function OnboardingAiFullPage({
   );
 
   const applyOnboardingContextForUserText = useCallback(
-    (text: string): OnboardingConversationContext => {
+    (text: string): OnboardingContext => {
       const normalized = text.trim();
       const isExplicitConfirmation = isPlainConfirmationReply(normalized);
       return {
@@ -168,6 +177,7 @@ export function OnboardingAiFullPage({
     if (seededRef.current) return;
     if (isStreaming) return;
     if (!seedPrompt.trim() && seedAttachments.length === 0) return;
+    seededRef.current = true;
     void (async () => {
       try {
         clearError();
@@ -183,7 +193,6 @@ export function OnboardingAiFullPage({
           { role: 'user', parts: [...textParts, ...attachmentParts] },
           options,
         );
-        seededRef.current = true;
       } catch (seedError) {
         console.error('[OnboardingAiFullPage] seed send failed:', seedError);
       }
