@@ -269,10 +269,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     if (creatorKind === 'relay') {
       return relaySourceSpace?.title || relaySourceSpaceSlug || 'Relay space';
     }
-    if (creatorKind === 'backgroundJob') return 'Background job';
-    if (creatorKind === 'aiRole') return 'AI role';
+    if (creatorKind === 'backgroundJob') return 'AI Agent';
+    if (creatorKind === 'aiRole') return 'AI Agent';
     return (
-      creatorPerson?.nickname ||
       [creatorPerson?.name, creatorPerson?.surname].filter(Boolean).join(' ') ||
       'Member'
     );
@@ -307,7 +306,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const creatorDisplayName = React.useMemo(() => {
     if (isCreator) {
       const currentUserName =
-        person?.nickname?.trim() ||
         [person?.name, person?.surname].filter(Boolean).join(' ').trim();
       return currentUserName || 'You';
     }
@@ -315,7 +313,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     if (creatorKind !== 'person') return creatorLabel;
 
     const resolvedPersonName =
-      creatorPerson?.nickname?.trim() ||
       [creatorPerson?.name, creatorPerson?.surname]
         .filter(Boolean)
         .join(' ')
@@ -339,11 +336,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     creatorKind,
     creatorLabel,
     creatorPerson?.name,
-    creatorPerson?.nickname,
     creatorPerson?.surname,
     isCreator,
     person?.name,
-    person?.nickname,
     person?.surname,
   ]);
 
