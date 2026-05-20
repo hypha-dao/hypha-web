@@ -296,12 +296,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     }
     return getSignalTeamMembersFromRoom({
       room: matrixClient?.getRoom(roomId.trim()) ?? null,
-      coherenceSlug: slug,
+      coherenceSlug: slug ?? undefined,
     });
   }, [matrixClient, roomId, slug]);
-  const isSignalTeamMember =
-    Boolean(currentUserMatrixId) &&
-    signalTeamAccess.memberMatrixUserIds.includes(currentUserMatrixId);
+  const isSignalTeamMember = currentUserMatrixId
+    ? signalTeamAccess.memberMatrixUserIds.includes(currentUserMatrixId)
+    : false;
   const canManageSignal =
     isCreator || (signalTeamAccess.hasPolicy && isSignalTeamMember);
   const creatorDisplayName = React.useMemo(() => {
