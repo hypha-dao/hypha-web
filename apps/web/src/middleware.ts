@@ -5,8 +5,13 @@ const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const CONNECT_SOURCES =
   process.env.NEXT_PUBLIC_CONNECT_SOURCES?.split(', ') ?? [];
 
-/** UploadThing / Vercel Blob file hosts (Space Memory PDF previews use iframes). */
-const UPLOADTHING_FRAME_HOST = 'https://*.ufs.sh';
+/**
+ * UploadThing file CDN (subdomain per app, e.g. `*.ufs.sh`).
+ * - frame-src / child-src: embedded viewers
+ * - connect-src: PDF.js `getDocument({ url })` fetch, UploadThing client XHR/fetch
+ * - object-src: `<object type="application/pdf">` fallback when canvas render fails
+ */
+const UPLOADTHING_UFS_HOST = 'https://*.ufs.sh';
 
 /** Origin of `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` for CSP (timeline MXC → HTTP). */
 function matrixHomeserverImgSrc(): string {
@@ -33,6 +38,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   const imageSrc = [
     'data:',
     'blob:',
+    UPLOADTHING_UFS_HOST,
     ...(matrixImg ? [matrixImg] : []),
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
@@ -41,6 +47,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     "'self'",
     'data:',
     'blob:',
+    UPLOADTHING_UFS_HOST,
     ...(matrixImg ? [matrixImg] : []),
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
@@ -56,6 +63,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
 
   const connectSrc = [
     ...CONNECT_SOURCES,
+    UPLOADTHING_UFS_HOST,
     process.env.NEXT_PUBLIC_RPC_URL ?? '',
     process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL ?? '',
     localChainRpc,
@@ -72,14 +80,16 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       `img-src 'self' ${imageSrc}`,
       `media-src ${mediaSrc}`,
       "font-src 'self' https://fonts.gstatic.com https://vercel.live",
-      "object-src 'none'",
+      // Allow PDF previews for Space Memory (UploadThing URLs); 'none' blocks <object> and triggers console CSP noise.
+      `object-src 'self' blob: ${UPLOADTHING_UFS_HOST}`,
       "base-uri 'self'",
       "form-action 'self' https://auth.privy.io https://privy.hypha.earth https://accounts.google.com",
       "frame-ancestors 'none'",
-      `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${UPLOADTHING_FRAME_HOST}`,
-      `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live ${UPLOADTHING_FRAME_HOST}`,
+      `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${UPLOADTHING_UFS_HOST}`,
+      `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live ${UPLOADTHING_UFS_HOST}`,
       `connect-src 'self' ${connectSrc}`,
-      "worker-src 'self'",
+      // pdf.js may spawn workers from blob URLs in some builds
+      "worker-src 'self' blob:",
       "manifest-src 'self'",
     ].join(';') + ';';
 

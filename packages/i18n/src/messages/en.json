@@ -94,11 +94,47 @@
     "signIn": "Sign in",
     "getStarted": "Get started",
     "ecosystemLogo": "Ecosystem Logo",
-    "continueAdventure": "Continue your adventure"
+    "continueAdventure": "Your adventure continues here"
   },
   "OnboardingAdventure": {
     "title": "Your Adventure starts here.",
-    "subtitle": "Pick your next move.",
+    "continueAdventure": "Your adventure continues here",
+    "subtitle": "You have a powerful vision for the world, we give you the tools to action it.",
+    "aiHero": {
+      "title": "Build Anything, Together",
+      "description": "Tell Hypha AI what you want to build, and it will guide setup step by step.",
+      "placeholder": "Create a space, join an existing one, explore the network, or fund a treasury - describe your goal and AI will guide you.",
+      "rotating": {
+        "createSpace": "Ask Hypha AI to create a space for your mission...",
+        "governance": "Ask Hypha AI to draft governance for your community...",
+        "joinSpace": "Ask Hypha AI to help you join the right space...",
+        "treasury": "Ask Hypha AI to set up a treasury-ready space...",
+        "explore": "Ask Hypha AI to find opportunities across the network..."
+      },
+      "cta": "Start with AI",
+      "starting": "Starting...",
+      "openingAi": "Opening AI panel...",
+      "sending": "Sending your prompt to AI...",
+      "handoffFailed": "Could not start AI conversation. Please try again.",
+      "handoffTimeout": "AI handoff is taking longer than expected. Please try again.",
+      "sendFailed": "Prompt could not be sent to AI. Please retry.",
+      "helper": "AI will propose each action and ask for confirmation before creating or updating anything.",
+      "unavailable": "AI onboarding is temporarily unavailable on this deployment.",
+      "ariaLabel": "AI onboarding prompt",
+      "flow": {
+        "badge": "Simple. Powerful. By design.",
+        "reviewingTitle": "Reviewing your request",
+        "reviewingDescription": "AI is mapping the best path for your goal.",
+        "reviewingDescriptionPersonalized": "{firstName}, AI is mapping the best path for your goal.",
+        "confirmingTitle": "Preparing one clear confirmation",
+        "confirmingDescription": "You will get a focused choice before any write action.",
+        "executingTitle": "Executing the selected action",
+        "executingDescription": "AI is now creating, joining, or routing based on your choice.",
+        "routingTitle": "Taking you to the right destination",
+        "routingDescription": "Finalizing navigation to your space or selected screen.",
+        "confirmationHint": "You stay in control: AI asks for confirmation before any create or update action."
+      }
+    },
     "spacePlaceholder": "Select a space",
     "spaceSearchPlaceholder": "Search spaces...",
     "searchToSeeSpaces": "Start typing to see matching spaces.",
@@ -490,7 +526,10 @@
         "selectMember": "Please select a member",
         "selectSpace": "Please select a space"
       }
-    }
+    },
+    "aiAgents": "AI Agents",
+    "aiAgentsEmptyState": "No AI agents mobilized yet. Ask strategic questions to activate them.",
+    "aiAgentsMobilizedCount": "Mobilized {count, plural, one {# time} other {# times}}"
   },
   "TreasuryTab": {
     "balance": "Balance",
@@ -965,6 +1004,8 @@
     "rootSpaceDescription": "Marking this space as a Root Space will make it independent. It will no longer be linked to the current organisation, and all of its linked spaces will move with it.",
     "uploadEcosystemLogoLight": "Upload Ecosystem Logo (Light)",
     "uploadEcosystemLogoDark": "Upload Ecosystem Logo (Dark)",
+    "ecosystemLogoPlaceholder": "Upload {spaceName} ecosystem logo",
+    "ecosystemLogoPlaceholderFallback": "this space",
     "ecosystemLogoLightDescription": "Upload a light-mode logo for your ecosystem (PNG, JPG, GIF, or WEBP).",
     "ecosystemLogoDarkDescription": "Upload a dark-mode logo for your ecosystem (PNG, JPG, GIF, or WEBP).",
     "search": "Search...",
@@ -1932,6 +1973,10 @@
     "toolNoSpace": "No space found for slug \"{slug}\"",
     "toolTokens": "Retrieved {count} token(s) for space \"{slug}\".",
     "toolError": "Error: {message}",
+    "pendingAction": "Pending action",
+    "confirmWith": "Confirm with:",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
     "streamError": "An error occurred while generating the response.",
     "attachment": "Attachment"
   },
@@ -1990,6 +2035,7 @@
     "mentionNotAvailable": "Mentions (coming soon)",
     "mentionNoMembers": "No members loaded yet — try again in a moment",
     "mentionListLabel": "Mention someone",
+    "mentionListHintIncludesParentSpaceMembers": "Choose a member to mention. This list may include members from the parent space.",
     "mentionInboxTitle": "Mentions",
     "mentionInboxBellCallRingHint": "Click the bell to mute or unmute call ring alerts. Open the Mentions tab to see @ mentions.",
     "callJoinCallAlertsMutedShort": "Muted",
@@ -2164,7 +2210,14 @@
     "callLeftBannerDismiss": "Dismiss",
     "callPaneResizeSharePeople": "Resize screen share and people",
     "callPaneResizeShareStrip": "Resize screen share and filmstrip",
-    "callPaneResizeSpeakerShare": "Resize speaker and screen share"
+    "callPaneResizeSpeakerShare": "Resize speaker and screen share",
+    "callDockTitleWithMembers": "Call - {count, plural, one {# member} other {# members}}",
+    "callDockOpenCallSpace": "Open call space",
+    "callDockSpaceLabel": "Space",
+    "callDockMinimize": "Minimize call",
+    "callDockExpand": "Expand call",
+    "callDockFullscreen": "Fullscreen",
+    "callDockExitFullscreen": "Exit fullscreen"
   },
   "CoherenceTab": {
     "signals": "Signals",
@@ -2192,6 +2245,7 @@
     "openConversation": "Open conversation",
     "saySomething": "Say something...",
     "proposeAgreement": "Propose Agreement",
+    "comingSoon": "Coming soon",
     "errorOhSnap": "Oh snap! There was an error",
     "reset": "Reset",
     "creatingNewSignal": "Creating new signal",
@@ -2220,7 +2274,7 @@
     "spaceMemoryLoadMoreError": "Could not load more items. Try again.",
     "spaceMemoryRetry": "Retry",
     "spaceMemoryRefresh": "Refresh",
-    "spaceMemoryTimelineLabel": "Space memory history",
+    "openDocument": "Open document",
     "spaceMemoryContext": "From «{title}» · {state}",
     "spaceMemoryContextMatrix": "From Matrix chat",
     "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)",
@@ -2231,13 +2285,107 @@
     "spaceMemoryMatrixPreviewNeedsChat": "Preview needs Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Open Human Chat to connect Matrix, then refresh Space Memory to open this file.",
     "spaceMemoryMatrixVideoPlayHint": "Tap to play preview",
+    "spaceMemoryPdfPreviewUnavailable": "PDF preview unavailable",
     "spaceMemoryOpenAsset": "Open {name}",
     "untitledDocument": "Untitled document",
     "spaceMemoryGeneral": "General",
     "spaceMemoryProposals": "Proposals",
     "spaceMemoryConversations": "Conversations",
     "spaceMemoryAiChat": "AI Chat",
+    "newMemoryUploadDocumentsTitle": "Upload Documents",
     "newMemory": "New memory",
+    "aiAgentsCatalog": {
+      "purpose": {
+        "role": "Senior Strategist",
+        "focus": "clarify mission, strategic alignment, north-star outcomes, and long-term direction",
+        "roleDefinition": [
+          "Defines strategic intent and links daily decisions to long-term mission outcomes.",
+          "Identifies strategic blindspots, trade-offs, and second-order effects before commitments.",
+          "Translates vision into measurable priorities, decision criteria, and success indicators."
+        ]
+      },
+      "governance": {
+        "role": "Governance Architect",
+        "focus": "decision rights, accountability models, proposal quality, and collective coordination mechanisms",
+        "roleDefinition": [
+          "Designs governance flows that keep proposals clear, accountable, and executable.",
+          "Improves voting quality by surfacing assumptions, stakeholder impact, and decision readiness.",
+          "Recommends lightweight policy guardrails that protect autonomy while reducing coordination drag."
+        ]
+      },
+      "operations": {
+        "role": "Operations Lead",
+        "focus": "execution plans, delivery cadence, dependency management, and practical implementation details",
+        "roleDefinition": [
+          "Turns strategy into executable plans with owners, milestones, and realistic timelines.",
+          "Flags dependency bottlenecks early and proposes concrete sequencing options.",
+          "Improves delivery reliability with clear operating rhythms and feedback loops."
+        ]
+      },
+      "community": {
+        "role": "Community Builder",
+        "focus": "member engagement, participation quality, onboarding, and contributor health",
+        "roleDefinition": [
+          "Strengthens participation quality by improving onboarding and contributor clarity.",
+          "Detects engagement drop-offs and proposes retention and activation interventions.",
+          "Balances openness with healthy norms, trust, and sustainable contributor experience."
+        ]
+      },
+      "finance": {
+        "role": "Treasury and Token Analyst",
+        "focus": "token/treasury implications, distribution effects, sustainability, and capital allocation trade-offs",
+        "roleDefinition": [
+          "Evaluates treasury and token decisions for sustainability, concentration risk, and runway impact.",
+          "Connects budget choices to strategic priorities and expected organizational outcomes.",
+          "Recommends risk-aware allocation options with explicit upside/downside framing."
+        ]
+      },
+      "product": {
+        "role": "Product Strategist",
+        "focus": "user impact, product prioritization, experimentation design, and measurable adoption outcomes",
+        "roleDefinition": [
+          "Prioritizes features by user value, strategic fit, and implementation leverage.",
+          "Designs experiments that validate assumptions with measurable learning outcomes.",
+          "Aligns roadmap choices with adoption, retention, and behavior-change metrics."
+        ]
+      },
+      "risk": {
+        "role": "Risk and Compliance Advisor",
+        "focus": "failure modes, downside scenarios, mitigation plans, and policy/compliance considerations",
+        "roleDefinition": [
+          "Surfaces operational, governance, and security failure modes before execution.",
+          "Recommends practical mitigations with clear ownership and trigger conditions.",
+          "Keeps proposals compliant and resilient without over-bureaucratizing execution."
+        ]
+      },
+      "ecosystem": {
+        "role": "Ecosystem and Partnerships Strategist",
+        "focus": "cross-space collaboration, partnerships, ecosystem dependencies, and external coordination leverage",
+        "roleDefinition": [
+          "Maps ecosystem dependencies and identifies high-leverage partnership opportunities.",
+          "Designs cross-space coordination plans with clear ownership and mutual outcomes.",
+          "Improves external signal routing so actionable insights reach the right spaces quickly."
+        ]
+      },
+      "learning": {
+        "role": "Learning and Knowledge Architect",
+        "focus": "knowledge capture, learning loops, evidence quality, and continuous improvement systems",
+        "roleDefinition": [
+          "Turns discussions and experiments into reusable organizational knowledge.",
+          "Designs feedback loops that improve decision quality over time.",
+          "Raises evidence standards by clarifying assumptions, metrics, and lessons learned."
+        ]
+      },
+      "reputation": {
+        "role": "Reputation and Trust Steward",
+        "focus": "credibility signals, stakeholder trust, narrative coherence, and communication risk management",
+        "roleDefinition": [
+          "Protects trust by aligning public narrative with actual operational behavior.",
+          "Surfaces reputation risks early and proposes proactive mitigation steps.",
+          "Improves stakeholder communication quality during change, conflict, and uncertainty."
+        ]
+      }
+    },
     "spaceMemoryEmptyTab": "No items found in this view.",
     "spaceMemoryAiChatEmpty": "AI chat memories are not available yet.",
     "documentStates": {

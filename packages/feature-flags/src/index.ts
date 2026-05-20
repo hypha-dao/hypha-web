@@ -16,7 +16,7 @@ const parseBoolean = (value: string | undefined): boolean | undefined => {
  * - Language select: on
  * - AI panel: on
  * - Coherence/signals: on
- * - Space memory: off
+ * - Space memory: on
  * - Human chat: on
  *
  * Toolbar overrides and `NEXT_PUBLIC_*` env values still take precedence.
@@ -59,7 +59,9 @@ export const flagDefinitionsForDiscovery = {
   enableSpaceMemory: {
     key: 'enable-space-memory',
     defaultValue:
-      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY) ?? false,
+      // Intentional mature-feature default: space memory has production ops checks and
+      // can be rolled back immediately via NEXT_PUBLIC_ENABLE_SPACE_MEMORY=false.
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY) ?? true,
     description:
       'Space Memory on Coherence tab. Opt in: HYPHA_ENABLE_SPACE_MEMORY cookie or NEXT_PUBLIC_ENABLE_SPACE_MEMORY=true',
     origin: 'hypha' as const,
@@ -74,6 +76,32 @@ export const flagDefinitionsForDiscovery = {
     key: 'enable-human-chat',
     defaultValue: true,
     description: 'Enable the Human Chat panel in space pages',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
+  enableOnboardingAiHero: {
+    key: 'enable-onboarding-ai-hero',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_AI_HERO) ?? true,
+    description: 'Enable AI hero input on onboarding page',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
+  enableOnboardingWriteTools: {
+    key: 'enable-onboarding-write-tools',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_WRITE_TOOLS) ??
+      true,
+    description: 'Enable onboarding AI write tools for space setup actions',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
+  enableEcosystemAutomation: {
+    key: 'enable-ecosystem-automation',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_ECOSYSTEM_AUTOMATION) ??
+      false,
+    description: 'Enable ecosystem blueprint automation tools',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -140,6 +168,30 @@ export async function getEnableSpaceMemory(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-space-memory',
     process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY,
+    true,
+  );
+}
+
+export async function getEnableOnboardingAiHero(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-onboarding-ai-hero',
+    process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_AI_HERO,
+    true,
+  );
+}
+
+export async function getEnableOnboardingWriteTools(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-onboarding-write-tools',
+    process.env.NEXT_PUBLIC_ENABLE_ONBOARDING_WRITE_TOOLS,
+    true,
+  );
+}
+
+export async function getEnableEcosystemAutomation(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-ecosystem-automation',
+    process.env.NEXT_PUBLIC_ENABLE_ECOSYSTEM_AUTOMATION,
     false,
   );
 }

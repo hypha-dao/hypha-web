@@ -94,11 +94,47 @@
     "signIn": "Anmelden",
     "getStarted": "Loslegen",
     "ecosystemLogo": "Ökosystem-Logo",
-    "continueAdventure": "Abenteuer fortsetzen"
+    "continueAdventure": "Dein Abenteuer geht hier weiter"
   },
   "OnboardingAdventure": {
     "title": "Dein Abenteuer beginnt hier.",
-    "subtitle": "Wähle deinen nächsten Schritt.",
+    "continueAdventure": "Dein Abenteuer geht hier weiter",
+    "subtitle": "Du hast eine kraftvolle Vision für die Welt, wir geben dir die Werkzeuge, sie umzusetzen.",
+    "aiHero": {
+      "title": "Build Anything, Together",
+      "description": "Sag Hypha AI, was du aufbauen willst, und sie führt dich Schritt für Schritt durch das Setup.",
+      "placeholder": "Space erstellen, bestehendem Space beitreten, Netzwerk erkunden oder Treasury finanzieren - beschreibe dein Ziel, und AI führt dich.",
+      "rotating": {
+        "createSpace": "Frag Hypha AI, einen Space für deine Mission zu erstellen...",
+        "governance": "Frag Hypha AI, Governance für deine Community zu entwerfen...",
+        "joinSpace": "Frag Hypha AI, dir beim Beitritt zum passenden Space zu helfen...",
+        "treasury": "Frag Hypha AI, einen treasury-fähigen Space einzurichten...",
+        "explore": "Frag Hypha AI, Chancen im Netzwerk zu finden..."
+      },
+      "cta": "Mit AI starten",
+      "starting": "Wird gestartet...",
+      "openingAi": "AI-Panel wird geöffnet...",
+      "sending": "Dein Prompt wird an die AI gesendet...",
+      "handoffFailed": "AI-Konversation konnte nicht gestartet werden. Bitte erneut versuchen.",
+      "handoffTimeout": "Die AI-Übergabe dauert länger als erwartet. Bitte erneut versuchen.",
+      "sendFailed": "Prompt konnte nicht an die AI gesendet werden. Bitte erneut versuchen.",
+      "helper": "Die AI schlägt jede Aktion vor und fragt vor Erstellung oder Änderung immer nach Bestätigung.",
+      "unavailable": "AI-Onboarding ist in dieser Bereitstellung derzeit nicht verfügbar.",
+      "ariaLabel": "AI-Onboarding-Prompt",
+      "flow": {
+        "badge": "Simple. Powerful. By design.",
+        "reviewingTitle": "Deine Anfrage wird analysiert",
+        "reviewingDescription": "Die AI plant gerade den besten Weg für dein Ziel.",
+        "reviewingDescriptionPersonalized": "{firstName}, die AI plant gerade den besten Weg für dein Ziel.",
+        "confirmingTitle": "Eine klare Bestätigung wird vorbereitet",
+        "confirmingDescription": "Vor jeder Schreibaktion bekommst du eine fokussierte Auswahl.",
+        "executingTitle": "Die gewählte Aktion wird ausgeführt",
+        "executingDescription": "Die AI erstellt, verbindet oder navigiert jetzt basierend auf deiner Wahl.",
+        "routingTitle": "Du wirst zum richtigen Ziel geführt",
+        "routingDescription": "Navigation zu deinem Space oder der gewählten Ansicht wird abgeschlossen.",
+        "confirmationHint": "Du behältst die Kontrolle: Vor jedem Erstellen oder Aktualisieren fragt die AI nach Bestätigung."
+      }
+    },
     "spacePlaceholder": "Space auswählen",
     "spaceSearchPlaceholder": "Spaces suchen...",
     "searchToSeeSpaces": "Beginne zu tippen, um passende Spaces zu sehen.",
@@ -491,7 +527,10 @@
         "selectMember": "Bitte wählen Sie ein Mitglied aus",
         "selectSpace": "Bitte wählen Sie einen Space aus"
       }
-    }
+    },
+    "aiAgents": "KI-Agenten",
+    "aiAgentsEmptyState": "Noch keine KI-Agenten mobilisiert. Stelle strategische Fragen, um sie zu aktivieren.",
+    "aiAgentsMobilizedCount": "{count, plural, one {# Mal mobilisiert} other {# Mal mobilisiert}}"
   },
   "TreasuryTab": {
     "balance": "Kontostand",
@@ -966,6 +1005,8 @@
     "rootSpaceDescription": "Wenn Sie diesen Space als Root-Space markieren, wird er unabhängig. Er ist dann nicht mehr mit der aktuellen Organisation verknüpft, und alle mit ihm verknüpften Spaces werden mitverschoben.",
     "uploadEcosystemLogoLight": "Ökosystem-Logo hochladen (hell)",
     "uploadEcosystemLogoDark": "Ökosystem-Logo hochladen (dunkel)",
+    "ecosystemLogoPlaceholder": "{spaceName}-Ökosystemlogo hochladen",
+    "ecosystemLogoPlaceholderFallback": "diesen Space",
     "ecosystemLogoLightDescription": "Laden Sie ein helles Logo für Ihr Ökosystem hoch (PNG, JPG, GIF oder WEBP).",
     "ecosystemLogoDarkDescription": "Laden Sie ein dunkles Logo für Ihr Ökosystem hoch (PNG, JPG, GIF oder WEBP).",
     "search": "Suchen...",
@@ -1934,7 +1975,11 @@
     "toolTokens": "{count} Token(s) für Space \"{slug}\" abgerufen.",
     "toolError": "Fehler: {message}",
     "streamError": "Beim Generieren der Antwort ist ein Fehler aufgetreten.",
-    "attachment": "Anhang"
+    "attachment": "Anhang",
+    "pendingAction": "Ausstehende Aktion",
+    "confirmWith": "Bestätigen mit:",
+    "confirm": "Bestätigen",
+    "cancel": "Abbrechen"
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -1990,6 +2035,7 @@
     "mentionNotAvailable": "Erwähnungen (demnächst)",
     "mentionNoMembers": "Noch keine Mitglieder geladen — kurz später erneut versuchen",
     "mentionListLabel": "Jemanden erwähnen",
+    "mentionListHintIncludesParentSpaceMembers": "Wähle ein Mitglied aus, das du erwähnen möchtest. Diese Liste kann auch Mitglieder aus dem übergeordneten Space enthalten.",
     "mentionInboxTitle": "Erwähnungen",
     "mentionInboxBellCallRingHint": "Klicke die Glocke, um Anruf-Töne stumm oder laut zu schalten. Den Menüpunkt „Erwähnungen“ öffnen, um @-Erwähnungen zu sehen.",
     "callJoinCallAlertsMutedShort": "Stumm",
@@ -2165,7 +2211,14 @@
     "callLeftBannerDismiss": "Schließen",
     "callPaneResizeSharePeople": "Bildschirmfreigabe und Personen skalieren",
     "callPaneResizeShareStrip": "Bildschirmfreigabe und Filmstreifen skalieren",
-    "callPaneResizeSpeakerShare": "Sprecher*in und Bildschirmfreigabe skalieren"
+    "callPaneResizeSpeakerShare": "Sprecher*in und Bildschirmfreigabe skalieren",
+    "callDockTitleWithMembers": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",
+    "callDockOpenCallSpace": "Anrufraum öffnen",
+    "callDockSpaceLabel": "Space",
+    "callDockMinimize": "Anruf minimieren",
+    "callDockExpand": "Anruf erweitern",
+    "callDockFullscreen": "Vollbild",
+    "callDockExitFullscreen": "Vollbild beenden"
   },
   "CoherenceTab": {
     "signals": "Signale",
@@ -2193,6 +2246,7 @@
     "openConversation": "Gespräch öffnen",
     "saySomething": "Schreiben Sie etwas...",
     "proposeAgreement": "Vereinbarung vorschlagen",
+    "comingSoon": "Demnächst verfügbar",
     "errorOhSnap": "Hoppla! Ein Fehler ist aufgetreten",
     "reset": "Zurücksetzen",
     "creatingNewSignal": "Neues Signal wird erstellt",
@@ -2221,18 +2275,20 @@
     "spaceMemoryLoadMoreError": "Weitere Einträge konnten nicht geladen werden. Bitte erneut versuchen.",
     "spaceMemoryRetry": "Erneut versuchen",
     "spaceMemoryRefresh": "Aktualisieren",
-    "spaceMemoryTimelineLabel": "Space-Memory-Verlauf",
+    "openDocument": "Dokument öffnen",
     "spaceMemoryContext": "Aus «{title}» · {state}",
     "spaceMemoryContextMatrix": "Aus Matrix-Chat",
     "spaceMemoryMatrixPreviewNeedsChat": "Vorschau braucht Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Öffnen Sie Human Chat, um Matrix zu verbinden, aktualisieren Sie dann den Space Memory, um diese Datei zu öffnen.",
     "spaceMemoryMatrixVideoPlayHint": "Tippen für Vorschau",
+    "spaceMemoryPdfPreviewUnavailable": "PDF-Vorschau nicht verfügbar",
     "spaceMemoryOpenAsset": "{name} öffnen",
     "untitledDocument": "Unbenanntes Dokument",
     "spaceMemoryGeneral": "Allgemein",
     "spaceMemoryProposals": "Vorschläge",
     "spaceMemoryConversations": "Gespräche",
     "spaceMemoryAiChat": "AI-Chat",
+    "newMemoryUploadDocumentsTitle": "Dokumente hochladen",
     "newMemory": "Neue Erinnerung",
     "spaceMemoryEmptyTab": "In dieser Ansicht wurden keine Einträge gefunden.",
     "spaceMemoryAiChatEmpty": "AI-Chat-Erinnerungen sind noch nicht verfügbar.",
@@ -2348,11 +2404,103 @@
       "valueModel": "Wert & Modell",
       "evidenceImpact": "Evidenz & Wirkung"
     },
-    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
-    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
-    "spaceMemoryCallTranscriptExcerpt": "Transcript",
-    "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
-    "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)"
+    "spaceMemoryCallArtifactNote": "Anruf-Erinnerungen erscheinen, sobald Aufzeichnung oder Sprache-zu-Text für diesen Space abgeschlossen ist (siehe Team-Pipeline).",
+    "spaceMemoryCallRecordingNoUrl": "Die Aufzeichnung ist verfügbar, sobald eine Medien-URL für diese Sitzung ingestiert wurde.",
+    "spaceMemoryCallTranscriptExcerpt": "Transkript",
+    "spaceMemoryContextCallRecording": "Anrufaufzeichnung (organisationales Gedächtnis)",
+    "spaceMemoryContextCallTranscript": "Anruftranskript (organisationales Gedächtnis)",
+    "aiAgentsCatalog": {
+      "purpose": {
+        "role": "Senior-Strateg:in",
+        "focus": "Mission klären, strategische Ausrichtung schärfen, Nordstern-Ergebnisse definieren und langfristige Richtung festlegen",
+        "roleDefinition": [
+          "Definiert die strategische Ausrichtung und verknüpft tägliche Entscheidungen mit langfristigen Missionsergebnissen.",
+          "Identifiziert strategische blinde Flecken, Zielkonflikte und Zweitrundeneffekte vor verbindlichen Zusagen.",
+          "Übersetzt Vision in messbare Prioritäten, Entscheidungskriterien und Erfolgsindikatoren."
+        ]
+      },
+      "governance": {
+        "role": "Governance-Architekt:in",
+        "focus": "Entscheidungsrechte, Verantwortungsmodelle, Qualität von Vorschlägen und kollektive Koordinationsmechanismen",
+        "roleDefinition": [
+          "Entwirft Governance-Abläufe, die Vorschläge klar, verantwortlich und umsetzbar halten.",
+          "Verbessert die Abstimmungsqualität, indem Annahmen, Stakeholder-Wirkungen und Entscheidungsreife sichtbar werden.",
+          "Empfiehlt schlanke Leitplanken, die Autonomie schützen und gleichzeitig Koordinationsaufwand reduzieren."
+        ]
+      },
+      "operations": {
+        "role": "Operations Lead",
+        "focus": "Umsetzungspläne, Liefer-Rhythmus, Abhängigkeitsmanagement und praktische Implementierungsdetails",
+        "roleDefinition": [
+          "Übersetzt Strategie in ausführbare Pläne mit Verantwortlichen, Meilensteinen und realistischen Zeitplänen.",
+          "Markiert Engpässe durch Abhängigkeiten frühzeitig und schlägt konkrete Sequenzierungsoptionen vor.",
+          "Erhöht die Lieferzuverlässigkeit mit klaren Arbeitsrhythmen und Feedback-Schleifen."
+        ]
+      },
+      "community": {
+        "role": "Community Builder",
+        "focus": "Mitglieder-Engagement, Qualität der Beteiligung, Onboarding und Gesundheit der Mitwirkenden",
+        "roleDefinition": [
+          "Stärkt die Beteiligungsqualität durch besseres Onboarding und klarere Rollen für Mitwirkende.",
+          "Erkennt Rückgänge beim Engagement und schlägt Maßnahmen für Bindung und Aktivierung vor.",
+          "Balanciert Offenheit mit gesunden Normen, Vertrauen und nachhaltiger Mitwirkenden-Erfahrung."
+        ]
+      },
+      "finance": {
+        "role": "Treasury- und Token-Analyst:in",
+        "focus": "Token-/Treasury-Auswirkungen, Verteilungseffekte, Nachhaltigkeit und Zielkonflikte bei der Kapitalallokation",
+        "roleDefinition": [
+          "Bewertet Treasury- und Token-Entscheidungen hinsichtlich Nachhaltigkeit, Konzentrationsrisiko und Runway-Auswirkungen.",
+          "Verknüpft Budgetentscheidungen mit strategischen Prioritäten und erwarteten Organisationsergebnissen.",
+          "Empfiehlt risikobewusste Allokationsoptionen mit klarer Upside-/Downside-Bewertung."
+        ]
+      },
+      "product": {
+        "role": "Produktstrateg:in",
+        "focus": "Nutzerwirkung, Produktpriorisierung, Experimentdesign und messbare Adoptions-Ergebnisse",
+        "roleDefinition": [
+          "Priorisiert Funktionen nach Nutzerwert, strategischem Fit und Umsetzungsvorteilen.",
+          "Entwirft Experimente, die Annahmen mit messbaren Lernergebnissen validieren.",
+          "Richtet Roadmap-Entscheidungen an Adoptions-, Retentions- und Verhaltensänderungsmetriken aus."
+        ]
+      },
+      "risk": {
+        "role": "Risk- und Compliance-Berater:in",
+        "focus": "Fehlermodi, Downside-Szenarien, Minderungspläne und Policy-/Compliance-Aspekte",
+        "roleDefinition": [
+          "Macht operative, Governance- und Sicherheits-Fehlermodi vor der Umsetzung sichtbar.",
+          "Empfiehlt praktische Gegenmaßnahmen mit klaren Verantwortlichkeiten und Auslösebedingungen.",
+          "Hält Vorschläge compliant und resilient, ohne die Umsetzung übermäßig zu bürokratisieren."
+        ]
+      },
+      "ecosystem": {
+        "role": "Ökosystem- und Partnerschaftsstrateg:in",
+        "focus": "Space-übergreifende Zusammenarbeit, Partnerschaften, Ökosystem-Abhängigkeiten und Hebel externer Koordination",
+        "roleDefinition": [
+          "Kartiert Ökosystem-Abhängigkeiten und identifiziert Partnerschaften mit hohem Hebel.",
+          "Entwirft Space-übergreifende Koordinationspläne mit klaren Verantwortlichkeiten und gemeinsamen Ergebnissen.",
+          "Verbessert externes Signal-Routing, damit umsetzbare Erkenntnisse schnell die richtigen Spaces erreichen."
+        ]
+      },
+      "learning": {
+        "role": "Learning- und Wissensarchitekt:in",
+        "focus": "Wissenssicherung, Lernschleifen, Evidenzqualität und Systeme zur kontinuierlichen Verbesserung",
+        "roleDefinition": [
+          "Macht Diskussionen und Experimente zu wiederverwendbarem organisationalem Wissen.",
+          "Entwirft Feedback-Schleifen, die die Entscheidungsqualität über Zeit verbessern.",
+          "Hebt Evidenzstandards an, indem Annahmen, Metriken und Learnings klarer werden."
+        ]
+      },
+      "reputation": {
+        "role": "Reputation- und Trust-Steward",
+        "focus": "Glaubwürdigkeitssignale, Stakeholder-Vertrauen, narrative Kohärenz und kommunikatives Risikomanagement",
+        "roleDefinition": [
+          "Schützt Vertrauen, indem öffentliches Narrativ mit tatsächlichem operativem Verhalten abgeglichen wird.",
+          "Macht Reputationsrisiken früh sichtbar und schlägt proaktive Minderungsmaßnahmen vor.",
+          "Verbessert die Qualität der Stakeholder-Kommunikation bei Veränderung, Konflikt und Unsicherheit."
+        ]
+      }
+    }
   },
   "GlobalCallDock": {
     "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",

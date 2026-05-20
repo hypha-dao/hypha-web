@@ -16,6 +16,7 @@ export * from './events/server';
 export * from './transaction/server';
 export * from './coherence/server';
 export * from './coherence/coherence-types';
+export * from './coherence/coherence-tags';
 export * from './coherence/types';
 export * from './matrix/server';
 export * from './matrix/types';

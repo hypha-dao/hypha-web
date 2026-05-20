@@ -1,7 +1,12 @@
 import type { Attachment, Document } from '../governance/types';
 import { DocumentState } from '../governance/types';
 
-export type SpaceMemorySource = 'proposal_upload' | 'matrix_chat';
+export type SpaceMemorySource =
+  | 'proposal_upload'
+  | 'matrix_chat'
+  | 'call_recording'
+  | 'call_transcript'
+  | 'discussion_summary';
 
 export type SpaceMemoryAssetKind = 'document' | 'image' | 'video' | 'other';
 
@@ -24,7 +29,12 @@ export type SpaceMemoryItem = {
 
 /** JSON shape of `org_memory_assets[]` from `/api/v1/spaces/.../org-memory` (dates are ISO strings). */
 export type OrgMemoryAssetWire = {
-  source: 'proposal_upload' | 'matrix_chat';
+  source:
+    | 'proposal_upload'
+    | 'matrix_chat'
+    | 'call_recording'
+    | 'call_transcript'
+    | 'discussion_summary';
   filename: string;
   asset_key?: string;
   mime?: string;
@@ -37,6 +47,9 @@ export type OrgMemoryAssetWire = {
   document_state?: string;
   document_slug?: string;
   document_label?: string;
+  call_session_id?: string;
+  discussion_summary_id?: number;
+  text_excerpt?: string;
   occurred_at: string;
 };
 
@@ -302,6 +315,51 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
           documentTitle: '',
           documentState: DocumentState.PROPOSAL,
           matrixEventId: ev || undefined,
+        },
+      });
+      continue;
+    }
+
+    if (a.source === 'call_recording') {
+      const safeUrl = a.app_url ? normalizeHttpUrl(a.app_url) : null;
+      items.push({
+        id: `call-recording:${a.call_session_id ?? a.filename}`,
+        name: a.filename?.trim() ? a.filename : 'Call recording',
+        url:
+          safeUrl ??
+          `memory://call-recording/${a.call_session_id ?? 'unknown'}`,
+        kind: inferKindFromMime(a.mime, a.filename, a.app_url ?? ''),
+        source: 'call_recording',
+        uploadedAt,
+        context: {
+          documentId: 0,
+          documentTitle: a.call_session_id ?? '',
+          documentState: DocumentState.PROPOSAL,
+        },
+      });
+      continue;
+    }
+
+    if (a.source === 'call_transcript' || a.source === 'discussion_summary') {
+      const syntheticId =
+        a.source === 'discussion_summary'
+          ? String(a.discussion_summary_id ?? a.filename)
+          : String(a.call_session_id ?? a.filename);
+      items.push({
+        id: `${a.source}:${syntheticId}`,
+        name: a.filename?.trim()
+          ? a.filename
+          : a.source === 'discussion_summary'
+          ? 'Discussion summary'
+          : 'Call transcript',
+        url: `memory://${a.source}/${syntheticId}`,
+        kind: 'document',
+        source: a.source,
+        uploadedAt,
+        context: {
+          documentId: 0,
+          documentTitle: a.text_excerpt ?? '',
+          documentState: DocumentState.PROPOSAL,
         },
       });
     }

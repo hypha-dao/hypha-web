@@ -31,6 +31,7 @@ export default async function NewMemoryPage({ params }: PageProps) {
         web3SpaceId={spaceFromDb.web3SpaceId}
         label={tCoherence('newMemory')}
         stickyHeaderTitle={tCoherence('newMemory')}
+        mode="memory"
       />
     </ProposalOverlayShell>
   );
