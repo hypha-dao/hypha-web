@@ -181,6 +181,23 @@ function useGlobalCallDockValue() {
   }, [inSession, boundAuthToken, boundRoomId, boundSpaceSlug]);
 
   React.useEffect(() => {
+    if (!activeRoomId || !boundRoomId || activeRoomId !== boundRoomId) return;
+    if (activeSpaceSlug !== boundSpaceSlug) {
+      setActiveSpaceSlug(boundSpaceSlug);
+    }
+    if (activeAuthToken !== boundAuthToken) {
+      setActiveAuthToken(boundAuthToken);
+    }
+  }, [
+    activeAuthToken,
+    activeRoomId,
+    activeSpaceSlug,
+    boundAuthToken,
+    boundRoomId,
+    boundSpaceSlug,
+  ]);
+
+  React.useEffect(() => {
     if (call.callState === 'idle') {
       setDockMode('thumbnail');
     }

@@ -1563,9 +1563,8 @@ export function useSpaceGroupCall(
     }
     const gc = groupCallRef.current;
     const sessionId = callSessionId?.trim();
-    const token = latestAuthTokenRef.current;
     const activeRoom = roomId?.trim();
-    if (!gc || !sessionId || !token || !activeRoom) return;
+    if (!gc || !sessionId || !activeRoom) return;
 
     const transcript = startBrowserCallTranscription({
       onError: () => {
