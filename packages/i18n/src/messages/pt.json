@@ -2224,6 +2224,8 @@
     "callCaptureStatusCapturing": "A capturar",
     "callCaptureStatusSaving": "A guardar",
     "callCaptureStatusError": "Erro de captura",
+    "callCaptureOffHint": "A captura está desativada. Nenhuma gravação ou transcrição será guardada para esta chamada.",
+    "callCaptureLeaveWarning": "A captura está desativada. Prima Sair novamente para confirmar que sai sem gravação.",
     "composerLockedPlaceholder": "Apenas os membros selecionados da equipe podem interagir nesta thread.",
     "signalTeamInteractionRestricted": "Apenas os membros selecionados da equipe podem enviar mensagens e menções nesta thread.",
     "signalTeamBannerReadOnly": "Esta thread é restrita à equipe. Você pode ler as atualizações, mas apenas os membros selecionados da equipe podem interagir.",
