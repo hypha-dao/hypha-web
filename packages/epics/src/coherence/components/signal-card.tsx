@@ -676,7 +676,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 </span>
                 <span
                   className="inline-flex items-center gap-1 text-muted-foreground"
-                  aria-label={t('messageCount', { count: normalizedMessagesCount })}
+                  aria-label={t('messageCount', {
+                    count: normalizedMessagesCount,
+                  })}
                 >
                   <ChatBubbleIcon
                     className="h-3.5 w-3.5 shrink-0 opacity-70"
