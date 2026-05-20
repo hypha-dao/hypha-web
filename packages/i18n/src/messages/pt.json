@@ -2224,6 +2224,8 @@
     "callCaptureStatusCapturing": "A capturar",
     "callCaptureStatusSaving": "A guardar",
     "callCaptureStatusError": "Erro de captura",
+    "messageReadMore": "Ler mais",
+    "messageShowLess": "Mostrar menos",
     "callCaptureOffHint": "A captura está desativada. Nenhuma gravação ou transcrição será guardada para esta chamada.",
     "callCaptureLeaveWarning": "A captura está desativada. Prima Sair novamente para confirmar que sai sem gravação.",
     "composerLockedPlaceholder": "Apenas os membros selecionados da equipe podem interagir nesta thread.",

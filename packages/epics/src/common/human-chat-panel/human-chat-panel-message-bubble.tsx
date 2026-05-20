@@ -1,6 +1,13 @@
 'use client';
 
-import { Fragment, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
@@ -1480,6 +1487,9 @@ export function HumanChatPanelMessageBubble({
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+  const textBodyRef = useRef<HTMLDivElement>(null);
+  const [textExpanded, setTextExpanded] = useState(false);
+  const [textCanExpand, setTextCanExpand] = useState(false);
 
   /**
    * Use **unauthenticated** v3 media URLs for `<img>` and `<a target="_blank">`.
@@ -1650,6 +1660,34 @@ export function HumanChatPanelMessageBubble({
   const messageRowRef = useRef<HTMLDivElement>(null);
   const replyAvatarMeasureRef = useRef<HTMLDivElement>(null);
   const mainAvatarMeasureRef = useRef<HTMLDivElement>(null);
+  const hasInlineMedia =
+    Boolean(message.media) ||
+    Boolean(message.mediaSlots && message.mediaSlots.length > 0);
+  const textBodyClassName = cn(
+    'text-sm leading-snug text-foreground',
+    hasInlineMedia ? 'mt-1' : 'mt-0',
+    !textExpanded && 'line-clamp-10',
+  );
+
+  useEffect(() => {
+    setTextExpanded(false);
+  }, [message.id, textContent, message.formattedContentHtml]);
+
+  useLayoutEffect(() => {
+    const el = textBodyRef.current;
+    if (!el || !textContent.trim()) {
+      setTextCanExpand(false);
+      return;
+    }
+    if (textExpanded) return;
+    const measure = () => {
+      setTextCanExpand(el.scrollHeight > el.clientHeight + 1);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [textContent, textExpanded, message.formattedContentHtml, hasInlineMedia]);
 
   const row = (moreSlot: ReactNode | null) => (
     <div
@@ -1807,15 +1845,10 @@ export function HumanChatPanelMessageBubble({
           {/* Message text above attachments (caption + media in one Matrix event) */}
           {textContent &&
             (message.formattedContentHtml ? (
-              <p
+              <div
+                ref={textBodyRef}
                 data-testid="chat-message-body"
-                className={cn(
-                  'text-sm leading-snug text-foreground',
-                  message.media ||
-                    (message.mediaSlots && message.mediaSlots.length > 0)
-                    ? 'mt-1'
-                    : 'mt-0',
-                )}
+                className={textBodyClassName}
               >
                 <ChatMessageRichText
                   html={message.formattedContentHtml}
@@ -1827,7 +1860,7 @@ export function HumanChatPanelMessageBubble({
                     )
                   }
                 />
-              </p>
+              </div>
             ) : jumboLayout.mode === 'jumbo' ? (
               <p
                 data-testid="chat-message-body"
@@ -1848,23 +1881,27 @@ export function HumanChatPanelMessageBubble({
                 ))}
               </p>
             ) : (
-              <p
+              <div
+                ref={textBodyRef}
                 data-testid="chat-message-body"
-                className={cn(
-                  'text-sm leading-snug text-foreground',
-                  message.media ||
-                    (message.mediaSlots && message.mediaSlots.length > 0)
-                    ? 'mt-1'
-                    : 'mt-0',
-                )}
+                className={textBodyClassName}
               >
                 {renderTextWithMentions(
                   textContent,
                   bodyResolveMx,
                   highlightMentionForViewer,
                 )}
-              </p>
+              </div>
             ))}
+          {textContent && textCanExpand && jumboLayout.mode !== 'jumbo' ? (
+            <button
+              type="button"
+              className="mt-1 w-fit text-xs font-medium text-accent-11 underline-offset-4 hover:underline"
+              onClick={() => setTextExpanded((v) => !v)}
+            >
+              {textExpanded ? t('messageShowLess') : t('messageReadMore')}
+            </button>
+          ) : null}
 
           {message.mediaSlots && message.mediaSlots.length > 1 && (
             <div
