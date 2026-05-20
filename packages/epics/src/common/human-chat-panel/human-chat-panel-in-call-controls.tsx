@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  CircleDot,
+  Circle,
   Check,
   ChevronDown,
   FileText,
@@ -10,7 +10,7 @@ import {
   MicOff,
   Monitor,
   MonitorOff,
-  Slash,
+  Square,
   Video,
   VideoOff,
   Volume2,
@@ -130,6 +130,10 @@ export function HumanChatPanelInCallControls({
       ? t('callCaptureStatusError')
       : t('callCaptureStatusIdle');
   const captureIconClass = isFull ? fullViewIcon : 'h-4 w-4';
+  const captureRecordingIconClass = cn(
+    captureIconClass,
+    isFull ? 'text-rose-400 stroke-rose-400' : 'text-rose-600 stroke-rose-600',
+  );
   const captureStatusDotClass =
     recordingStatus === 'recording'
       ? 'bg-emerald-500'
@@ -265,11 +269,11 @@ export function HumanChatPanelInCallControls({
         onClick={() => setIsCaptureMenuOpen((open) => !open)}
       >
         {captureMode === 'none' ? (
-          <Slash className={captureIconClass} />
+          <Square className={captureIconClass} />
         ) : captureMode === 'transcript_only' ? (
           <FileText className={captureIconClass} />
         ) : (
-          <CircleDot className={captureIconClass} />
+          <Circle className={captureRecordingIconClass} />
         )}
         <span
           className={cn(
@@ -299,7 +303,7 @@ export function HumanChatPanelInCallControls({
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
           >
             <span className="inline-flex items-center gap-2">
-              <Slash className="h-4 w-4" />
+              <Square className="h-4 w-4" />
               {t('callCaptureModeNone')}
             </span>
             {captureMode === 'none' ? (
@@ -329,7 +333,7 @@ export function HumanChatPanelInCallControls({
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
           >
             <span className="inline-flex items-center gap-2">
-              <CircleDot className="h-4 w-4" />
+              <Circle className="h-4 w-4 text-rose-600 stroke-rose-600" />
               {t('callCaptureModeRecordingWithTranscript')}
             </span>
             {captureMode === 'recording_with_transcript' ? (
