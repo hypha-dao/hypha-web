@@ -408,7 +408,7 @@ export function createMcpNavigationTool(authToken: string) {
             slug: row.space.slug,
             title: row.space.title,
           })),
-          message: `Navigate to "${destinationSpace.title}" within this ecosystem.`,
+          message: `Navigate to "${destinationSpace.title}".`,
         };
       }
 
