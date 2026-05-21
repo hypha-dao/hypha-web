@@ -22,6 +22,16 @@ type MatrixMediaUploadResponse = {
 
 const MAX_RECORDING_UPLOAD_BYTES = 100 * 1024 * 1024;
 
+function logCallArtifactsUpload(
+  event: string,
+  payload: Record<string, unknown>,
+) {
+  console.info('[matrix.call-artifacts.upload]', {
+    event,
+    ...payload,
+  });
+}
+
 async function isSpaceLinkedCallRoom(params: {
   spaceId: number;
   spaceChatRoomId: string | null | undefined;
@@ -132,6 +142,13 @@ export async function POST(request: NextRequest) {
   const startedAt = String(form?.get('started_at') ?? '').trim();
   const endedAt = String(form?.get('ended_at') ?? '').trim();
   const hasRecordingBlob = recording instanceof Blob && recording.size > 0;
+  logCallArtifactsUpload('request_received', {
+    spaceSlug,
+    roomId,
+    callSessionId,
+    hasRecordingBlob,
+    hasTranscriptText: Boolean(transcriptText),
+  });
 
   if (!roomId || (!hasRecordingBlob && !transcriptText)) {
     return NextResponse.json(
@@ -160,6 +177,13 @@ export async function POST(request: NextRequest) {
       })
     : false;
   if (!space || !linkedRoom) {
+    logCallArtifactsUpload('space_room_mismatch', {
+      spaceSlug,
+      roomId,
+      callSessionId,
+      hasSpace: Boolean(space),
+      linkedRoom,
+    });
     return NextResponse.json({ error: 'Space/room mismatch' }, { status: 404 });
   }
 
@@ -186,7 +210,12 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-
+    logCallArtifactsUpload('deduped_existing_recording', {
+      spaceSlug,
+      roomId,
+      callSessionId,
+      transcriptStored: Boolean(transcriptText),
+    });
     return NextResponse.json({
       ok: true,
       media_uri: existingRecording.mediaUri,
@@ -229,6 +258,11 @@ export async function POST(request: NextRequest) {
         error: error instanceof Error ? error.message : String(error),
       });
     }
+    logCallArtifactsUpload('transcript_only_ingested', {
+      spaceSlug,
+      roomId,
+      callSessionId,
+    });
     return NextResponse.json({
       ok: true,
       media_uri: null,
@@ -283,6 +317,12 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+    logCallArtifactsUpload('matrix_token_unavailable', {
+      spaceSlug,
+      roomId,
+      callSessionId,
+      hasTranscriptText: Boolean(transcriptText),
+    });
     return NextResponse.json(
       { error: 'Unable to resolve Matrix token' },
       { status: 403 },
@@ -324,6 +364,12 @@ export async function POST(request: NextRequest) {
         transcriptText,
       });
       if (transcriptResult.ok) {
+        logCallArtifactsUpload('recording_upload_error_transcript_fallback', {
+          spaceSlug,
+          roomId,
+          callSessionId,
+          error: uploadResponse.message,
+        });
         return NextResponse.json({
           ok: true,
           media_uri: null,
@@ -353,6 +399,12 @@ export async function POST(request: NextRequest) {
         transcriptText,
       });
       if (transcriptResult.ok) {
+        logCallArtifactsUpload('recording_upload_http_transcript_fallback', {
+          spaceSlug,
+          roomId,
+          callSessionId,
+          status: uploadResponse.status,
+        });
         return NextResponse.json({
           ok: true,
           media_uri: null,
@@ -386,6 +438,11 @@ export async function POST(request: NextRequest) {
         transcriptText,
       });
       if (transcriptResult.ok) {
+        logCallArtifactsUpload('recording_upload_no_uri_transcript_fallback', {
+          spaceSlug,
+          roomId,
+          callSessionId,
+        });
         return NextResponse.json({
           ok: true,
           media_uri: null,
@@ -433,6 +490,12 @@ export async function POST(request: NextRequest) {
   );
 
   if (!ingestResult.ok) {
+    logCallArtifactsUpload('ingest_failed', {
+      spaceSlug,
+      roomId,
+      callSessionId,
+      error: ingestResult.error,
+    });
     return NextResponse.json({ error: ingestResult.error }, { status: 400 });
   }
 
@@ -461,7 +524,15 @@ export async function POST(request: NextRequest) {
     startedAt: startedAt || undefined,
     endedAt: endedAt || undefined,
   }).catch(() => ({ attempted: true as const, ok: false as const, status: 0 }));
-
+  logCallArtifactsUpload('recording_and_transcript_ingested', {
+    spaceSlug,
+    roomId,
+    callSessionId,
+    transcriptStored: Boolean(transcriptText),
+    transcriptJobAttempted: transcriptJob.attempted,
+    transcriptJobOk: transcriptJob.ok,
+    transcriptJobStatus: transcriptJob.status,
+  });
   return NextResponse.json({
     ok: true,
     media_uri: mediaUri,
