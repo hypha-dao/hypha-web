@@ -31,7 +31,7 @@ export function mapBridgeApiError(
       detail
         ? `Bridge API key was rejected for ${operation}: ${detail}. Confirm BRIDGE_API_KEY is a sandbox scoped key with permission for this action (often Update customers or sandbox simulate).`
         : `Bridge API key was rejected for ${operation}. Confirm BRIDGE_API_KEY and BRIDGE_API_BASE_URL (https://api.sandbox.bridge.xyz) in apps/web/.env.`,
-      502,
+      500,
     );
   }
 
