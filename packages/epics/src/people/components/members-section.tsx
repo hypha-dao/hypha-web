@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { Text } from '@radix-ui/themes';
 import { SectionLoadMore } from '@hypha-platform/ui/server';
 
@@ -19,6 +19,37 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import {
+  readMobilizedAiAgents,
+  subscribeMobilizedAiAgents,
+} from '../../common/ai-agent-competencies';
+
+function tagGroupAccentClass(tagGroup: string): string {
+  switch (tagGroup) {
+    case 'purpose':
+      return 'bg-accent-3 text-accent-12 border-accent-6';
+    case 'governance':
+      return 'bg-info-3 text-info-12 border-info-6';
+    case 'operations':
+      return 'bg-success-3 text-success-12 border-success-6';
+    case 'community':
+      return 'bg-neutral-3 text-neutral-12 border-neutral-6';
+    case 'finance':
+      return 'bg-warning-3 text-warning-12 border-warning-6';
+    case 'product':
+      return 'bg-accent-2 text-accent-11 border-accent-6';
+    case 'risk':
+      return 'bg-error-3 text-error-12 border-error-6';
+    case 'ecosystem':
+      return 'bg-info-2 text-info-11 border-info-6';
+    case 'learning':
+      return 'bg-success-2 text-success-11 border-success-6';
+    case 'reputation':
+      return 'bg-warning-2 text-warning-11 border-warning-6';
+    default:
+      return 'bg-muted text-foreground border-border';
+  }
+}
 
 type MemberSectionProps = {
   basePath: string;
@@ -35,9 +66,11 @@ export const MembersSection: FC<MemberSectionProps> = ({
 }) => {
   const tCommon = useTranslations('Common');
   const tMembers = useTranslations('MembersTab');
-  const [entityFilter, setEntityFilter] = useState<'member' | 'space'>(
+  const tCoherence = useTranslations('CoherenceTab');
+  const [entityFilter, setEntityFilter] = useState<'member' | 'space' | 'ai'>(
     'member',
   );
+  const [agentRefreshEpoch, setAgentRefreshEpoch] = useState(0);
   const {
     pages,
     isLoading,
@@ -69,13 +102,27 @@ export const MembersSection: FC<MemberSectionProps> = ({
     ? tCommon('joinSpaceToUse')
     : '';
 
+  useEffect(() => {
+    const unsubscribe = subscribeMobilizedAiAgents(spaceSlug, () =>
+      setAgentRefreshEpoch((v) => v + 1),
+    );
+    return unsubscribe;
+  }, [spaceSlug]);
+
+  const aiAgents = useMemo(
+    () => readMobilizedAiAgents(spaceSlug),
+    [spaceSlug, agentRefreshEpoch],
+  );
+
+  const aiAgentCount = aiAgents.length;
+
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
       <div className="w-full">
         <Tabs
           value={entityFilter}
           onValueChange={(value) =>
-            setEntityFilter(value as 'member' | 'space')
+            setEntityFilter(value as 'member' | 'space' | 'ai')
           }
         >
           <TabsList triggerVariant="switch" className="w-fit">
@@ -95,6 +142,14 @@ export const MembersSection: FC<MemberSectionProps> = ({
                 </span>
               </span>
             </TabsTrigger>
+            <TabsTrigger value="ai" variant="switch">
+              <span className="inline-flex items-center gap-1">
+                <span>{tMembers('aiAgents')}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({Intl.NumberFormat().format(aiAgentCount)})
+                </span>
+              </span>
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -106,6 +161,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
           onChange={(event) => onUpdateSearch(event.target.value)}
           leftIcon={<SearchIcon className="text-accent-9" size="16px" />}
           className="w-full"
+          disabled={entityFilter === 'ai'}
         />
         <div className="flex w-full items-center justify-end gap-2 lg:w-auto">
           <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
@@ -131,7 +187,59 @@ export const MembersSection: FC<MemberSectionProps> = ({
           ) : null}
         </div>
       </div>
-      {pagination?.total === 0 ? (
+      {entityFilter === 'ai' ? (
+        aiAgents.length === 0 ? (
+          <Empty>
+            <p>{tMembers('aiAgentsEmptyState')}</p>
+          </Empty>
+        ) : (
+          <div className="member-list grid w-full grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+            {aiAgents.map((agent) => (
+              <div
+                key={agent.id}
+                className="rounded-xl border border-border bg-background-2 p-4"
+              >
+                <div className="mb-3 flex items-start gap-3">
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${tagGroupAccentClass(
+                      agent.tagGroup,
+                    )}`}
+                    aria-hidden="true"
+                  >
+                    {agent.avatarLabel}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="mb-1 text-sm font-semibold text-foreground">
+                      {tCoherence(agent.role)}
+                    </div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {tCoherence(`tagGroup.${agent.tagGroup}`)}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {tCoherence(agent.focus)}
+                </p>
+                <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                  {agent.roleDefinition.map((line, index) => (
+                    <li
+                      key={`${agent.id}-def-${index}`}
+                      className="leading-relaxed"
+                    >
+                      {index + 1}. {tCoherence(line)}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 text-xs text-muted-foreground">
+                  {tMembers('aiAgentsMobilizedCount', {
+                    count: agent.mobilizedCount,
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : pagination?.total === 0 ? (
         <Empty>
           <p>{tMembers('listIsEmpty')}</p>
         </Empty>
@@ -150,7 +258,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
           />
         ))
       )}
-      {pagination?.total === 0 ? null : (
+      {entityFilter === 'ai' || pagination?.total === 0 ? null : (
         <SectionLoadMore
           onClick={loadMore}
           disabled={

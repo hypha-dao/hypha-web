@@ -12,6 +12,11 @@ import {
   attachGroupCallWebRtcDiagnostics,
   probeMatrixTurnServerReadiness,
 } from './group-call-webrtc-diagnostics';
+import {
+  startBrowserCallTranscription,
+  startGroupCallRecording,
+  uploadRecordedCallArtifact,
+} from './call-recording';
 import type { SpaceGroupCallState } from './space-group-call-state';
 
 export type { SpaceGroupCallState } from './space-group-call-state';
@@ -58,6 +63,15 @@ export type SpaceGroupCallVoiceProcessingPreset =
   | 'standard'
   | 'voice_isolation'
   | 'music';
+export type SpaceGroupCallRecordingStatus =
+  | 'idle'
+  | 'recording'
+  | 'uploading'
+  | 'error';
+export type SpaceGroupCallCaptureMode =
+  | 'none'
+  | 'transcript_only'
+  | 'recording_with_transcript';
 
 type AudioProcessingConstraints = {
   autoGainControl: boolean;
@@ -196,6 +210,8 @@ export function useSpaceGroupCall(
 ) {
   const { client } = useMatrix();
   const { authToken = null, spaceSlug = null } = options;
+  const latestAuthTokenRef = useRef<string | null>(authToken?.trim() || null);
+  const latestSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
 
   const [callState, setCallState] = useState<SpaceGroupCallState>('idle');
   const [errorCode, setErrorCode] = useState<SpaceGroupCallErrorCode | null>(
@@ -223,6 +239,12 @@ export function useSpaceGroupCall(
   /** Screenshare-only failure (does not end the call). */
   const [screenshareErrorCode, setScreenshareErrorCode] =
     useState<SpaceGroupCallErrorCode | null>(null);
+  const [recordingStatus, setRecordingStatus] =
+    useState<SpaceGroupCallRecordingStatus>('idle');
+  const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [captureMode, setCaptureMode] = useState<SpaceGroupCallCaptureMode>(
+    'recording_with_transcript',
+  );
 
   const groupCallRef = useRef<MatrixSdk.GroupCall | null>(null);
   /**
@@ -268,6 +290,18 @@ export function useSpaceGroupCall(
   const remoteMediaRecoverRequestedRef = useRef(false);
   const remoteMediaRecoverAttemptedRef = useRef(false);
   const remoteMediaRecoverInFlightRef = useRef(false);
+  const recordingGenerationRef = useRef(0);
+  const recordingFinalizeInFlightRef = useRef(false);
+  const recordingFinalizeGenerationRef = useRef<number | null>(null);
+  const recordingRuntimeRef = useRef<{
+    generation: number;
+    mode: SpaceGroupCallCaptureMode;
+    stopRecorder?: () => Promise<Blob>;
+    stopTranscript: () => Promise<string> | string;
+    mimeType?: string;
+    startedAt: string;
+    recordedRoomId: string;
+  } | null>(null);
   const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
 
@@ -284,6 +318,14 @@ export function useSpaceGroupCall(
    */
   const [idleRoomParticipantCount, setIdleRoomParticipantCount] = useState(0);
   const [idleInCallUserIds, setIdleInCallUserIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    latestAuthTokenRef.current = authToken?.trim() || null;
+  }, [authToken]);
+
+  useEffect(() => {
+    latestSpaceSlugRef.current = spaceSlug?.trim() || null;
+  }, [spaceSlug]);
 
   const setActiveKeyFromGroupCall = useCallback((gc: MatrixSdk.GroupCall) => {
     const f = gc.activeSpeaker;
@@ -317,6 +359,142 @@ export function useSpaceGroupCall(
   }, []);
 
   const runCleanup = useCallback(() => {
+    const runtime = recordingRuntimeRef.current;
+    const runtimeGeneration = runtime?.generation ?? null;
+    if (
+      recordingFinalizeInFlightRef.current &&
+      runtimeGeneration != null &&
+      recordingFinalizeGenerationRef.current === runtimeGeneration
+    ) {
+      return;
+    }
+
+    const token = latestAuthTokenRef.current;
+    const slug = latestSpaceSlugRef.current;
+    const activeRoomId = runtime?.recordedRoomId?.trim() || roomId?.trim();
+    if (!runtime) {
+      recordingRuntimeRef.current = null;
+      setRecordingStatus('idle');
+    } else if (!token || !activeRoomId) {
+      recordingRuntimeRef.current = null;
+      void (async () => {
+        try {
+          if (runtime.stopRecorder) {
+            await runtime.stopRecorder();
+          }
+        } catch {
+          // ignore recorder stop errors during teardown-only cleanup
+        }
+        try {
+          await runtime.stopTranscript();
+        } catch {
+          // ignore transcript stop errors during teardown-only cleanup
+        }
+        if (!recordingFinalizeInFlightRef.current) {
+          setRecordingStatus('error');
+          setRecordingError(
+            !token
+              ? 'recording upload skipped: missing auth token'
+              : 'recording upload skipped: missing room context',
+          );
+          console.warn(
+            '[hypha.group_call] Recording upload skipped due to missing auth token or room context',
+            {
+              hasAuthToken: Boolean(token),
+              hasRoomId: Boolean(activeRoomId),
+            },
+          );
+        }
+      })();
+    } else if (!slug) {
+      recordingRuntimeRef.current = null;
+      void (async () => {
+        try {
+          if (runtime.stopRecorder) {
+            await runtime.stopRecorder();
+          }
+        } catch {
+          // ignore recorder stop errors during teardown-only cleanup
+        }
+        try {
+          await runtime.stopTranscript();
+        } catch {
+          // ignore transcript stop errors during teardown-only cleanup
+        }
+        if (!recordingFinalizeInFlightRef.current) {
+          setRecordingStatus('error');
+          setRecordingError('recording upload skipped: missing space slug');
+          console.warn(
+            '[hypha.group_call] Recording upload skipped due to missing space slug',
+            {
+              roomId: activeRoomId,
+            },
+          );
+        }
+      })();
+    } else {
+      const cleanupGeneration = runtime.generation;
+      recordingFinalizeInFlightRef.current = true;
+      recordingFinalizeGenerationRef.current = cleanupGeneration;
+      recordingRuntimeRef.current = null;
+      setRecordingStatus('uploading');
+      void (async () => {
+        try {
+          const endedAt = new Date().toISOString();
+          const transcriptText = await runtime.stopTranscript();
+          const sessionId = callSessionId ?? newCallSessionId();
+          if (runtime.mode === 'transcript_only') {
+            await uploadRecordedCallArtifact({
+              authToken: token,
+              spaceSlug: slug,
+              roomId: activeRoomId,
+              callSessionId: sessionId,
+              transcriptText,
+              startedAt: runtime.startedAt,
+              endedAt,
+            });
+          } else if (runtime.mode === 'recording_with_transcript') {
+            if (!runtime.stopRecorder || !runtime.mimeType) {
+              throw new Error(
+                'recording runtime missing recorder for recording mode',
+              );
+            }
+            const blob = await runtime.stopRecorder();
+            if (blob.size === 0) {
+              throw new Error('recording blob is empty');
+            }
+            await uploadRecordedCallArtifact({
+              authToken: token,
+              spaceSlug: slug,
+              roomId: activeRoomId,
+              callSessionId: sessionId,
+              blob,
+              mimeType: runtime.mimeType,
+              transcriptText,
+              startedAt: runtime.startedAt,
+              endedAt,
+            });
+          }
+          if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
+            setRecordingStatus('idle');
+            setRecordingError(null);
+          }
+        } catch (error) {
+          if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
+            setRecordingStatus('error');
+            setRecordingError(
+              error instanceof Error ? error.message : String(error),
+            );
+          }
+        } finally {
+          if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
+            recordingFinalizeInFlightRef.current = false;
+            recordingFinalizeGenerationRef.current = null;
+          }
+        }
+      })();
+    }
+
     clearConnectingStallTimer();
     clearMediaDebugInterval();
     if (placeOutgoingNudgeTimerRef.current != null) {
@@ -390,9 +568,18 @@ export function useSpaceGroupCall(
     setActiveSpeakerKey(null);
     setCallSessionId(null);
     setScreenshareErrorCode(null);
+    if (!recordingFinalizeInFlightRef.current) {
+      setRecordingStatus('idle');
+      setRecordingError(null);
+    }
     loggedStatsForGroupCallIdRef.current = null;
     lastRoomIdForTelemetryRef.current = null;
-  }, [clearConnectingStallTimer, clearMediaDebugInterval]);
+  }, [
+    callSessionId,
+    clearConnectingStallTimer,
+    clearMediaDebugInterval,
+    roomId,
+  ]);
 
   const refreshLocalPreview = useCallback(() => {
     const gc = groupCallRef.current;
@@ -1372,6 +1559,57 @@ export function useSpaceGroupCall(
   }, []);
 
   useEffect(() => {
+    if (callState !== 'connected') return;
+    if (recordingRuntimeRef.current) return;
+    if (captureMode === 'none') {
+      setRecordingStatus('idle');
+      setRecordingError(null);
+      return;
+    }
+    const gc = groupCallRef.current;
+    const sessionId = callSessionId?.trim();
+    const activeRoom = roomId?.trim();
+    if (!gc || !sessionId || !activeRoom) return;
+
+    const transcript = startBrowserCallTranscription({
+      onError: () => {
+        // recording continues even if speech recognition fails
+      },
+    });
+    let recorder: ReturnType<typeof startGroupCallRecording> | null = null;
+    if (captureMode === 'recording_with_transcript') {
+      recorder = startGroupCallRecording(gc);
+      if (!recorder) {
+        void transcript.stop();
+        setRecordingStatus('error');
+        setRecordingError('recording not supported by this browser');
+        return;
+      }
+    }
+    const generation = recordingGenerationRef.current + 1;
+    recordingGenerationRef.current = generation;
+    recordingRuntimeRef.current = {
+      generation,
+      mode: captureMode,
+      stopRecorder: recorder?.stop,
+      stopTranscript: transcript.stop,
+      mimeType: recorder?.mimeType,
+      startedAt: new Date().toISOString(),
+      recordedRoomId: activeRoom,
+    };
+    setRecordingStatus('recording');
+    setRecordingError(null);
+  }, [authToken, callSessionId, callState, captureMode, roomId]);
+
+  useEffect(() => {
+    if (callState !== 'connected') return;
+    const runtime = recordingRuntimeRef.current;
+    if (!runtime) return;
+    if (runtime.mode === captureMode) return;
+    runCleanup();
+  }, [callState, captureMode, runCleanup]);
+
+  useEffect(() => {
     if (!groupCallRef.current) return;
     if (activeGroupCallRoomIdRef.current === roomId) return;
     if (lastRoomIdForTelemetryRef.current) {
@@ -1697,6 +1935,10 @@ export function useSpaceGroupCall(
     callSessionId,
     errorCode,
     screenshareErrorCode,
+    recordingStatus,
+    recordingError,
+    captureMode,
+    setCaptureMode,
     dismissScreenshareError,
     dismissCallError,
     retryFromError,

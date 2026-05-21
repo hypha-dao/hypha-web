@@ -68,6 +68,34 @@ For **space-type** members (another space’s treasury address in the on-chain l
 | Include “members of **child spaces**” of the active space | **Exclude.** Roster = members **of** the active space only. |
 | Child spaces appear only via `parent_id` | Child spaces are a **hierarchy** concern; **not** the same as “Space” badge members, which are **other spaces whose address is in the on-chain member set** for the host space. |
 
+### 2.5 Activity-signal quality policy (AI context)
+
+This tool is roster-focused, but assistants often combine roster + activity context.
+For AI quality and cost control, activity context linked to members MUST be **high signal**
+and MUST exclude telemetry/debug noise.
+
+**Exclude as noise (do not model as activity facts):**
+
+- UI/session telemetry (clicks, scroll depth, panel open/close, viewport dimensions)
+- low-level delivery mechanics (typing indicators, reconnect churn, read-receipt internals)
+- transient presence chatter (heartbeat/ping noise, reconnect join/leave flaps)
+- debug/trace internals (stack traces, retry internals, verbose transport logs)
+- redundant snapshots (full-state repeats without meaningful semantic change)
+- raw binary payloads as activity records (store URI/metadata/transcript, not media bytes)
+- duplicate cross-channel copies without new context
+- non-essential PII (device IDs, IPs, user-agent strings) unless explicitly approved
+
+**Keep as required activity intelligence (when included by sibling tools):**
+
+- actor + action + timestamp + canonical reference (`space_slug`, `doc slug`, `asset_key`, `call_session_id`)
+- decision artifacts (proposal/vote/outcome/rationale)
+- conversation intelligence (summary, key quotes, participant set)
+- call intelligence (transcript, summary, action items, recording URI)
+- meaningful document deltas (semantic revision events, not keystroke logs)
+- task lifecycle transitions (opened/assigned/completed/blocked)
+
+Rule: if a record cannot help answer **what happened, why, and what changed**, it is out of scope for AI memory context.
+
 ---
 
 ## 3) Functional requirements
@@ -85,6 +113,7 @@ For **space-type** members (another space’s treasury address in the on-chain l
 | **FR-9** | The tool SHALL include **`asOf`** (ISO-8601 UTC timestamp of the read). |
 | **FR-10** | When the slug does not match a space, the tool SHALL return a **not-found** result; structured payload MUST match the convention used by `get_spaces`. |
 | **FR-11** | Invalid slug input SHALL fail validation **before** database or RPC access (same slug validation pattern as `get_spaces` / chat tools). |
+| **FR-12** | Any optional member-activity metadata exposed by this tool or adjacent aggregators SHALL follow §2.5 signal policy: include only semantic activity events and exclude telemetry/debug noise. |
 
 ---
 
@@ -215,6 +244,7 @@ The org-memory umbrella tool (**v1**) returns the **same `members` + `pagination
 | **NFR-1** | Deterministic date serialization: UTC ISO-8601 strings. |
 | **NFR-2** | Bounded `page_size`. |
 | **NFR-3** | No secrets in structured output. |
+| **NFR-4** | Activity context quality: semantic, deduplicated, retrieval-ready references only; no telemetry/debug noise (§2.5). |
 
 ---
 
@@ -225,6 +255,7 @@ The org-memory umbrella tool (**v1**) returns the **same `members` + `pagination
 - [ ] Each space entry includes full **space** profile fields for the member space.
 - [ ] `structuredContent` validates against the output schema.
 - [ ] Automated tests cover mixed rosters and pagination.
+- [ ] Any activity context attached to members excludes noise classes in §2.5 and preserves canonical retrieval IDs.
 
 ---
 

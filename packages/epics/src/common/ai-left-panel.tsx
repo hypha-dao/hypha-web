@@ -5,12 +5,13 @@ import {
   useCallback,
   useMemo,
   useEffect,
+  useRef,
   type ElementType,
 } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
@@ -27,7 +28,15 @@ import {
   Sparkles,
   UsersRound,
 } from 'lucide-react';
-import { Space, useSpacesBySlugs } from '@hypha-platform/core/client';
+import {
+  Category,
+  Space,
+  SpaceFlags,
+  useCreateSpaceOrchestrator,
+  useJwt,
+  useMatrix,
+  useSpacesBySlugs,
+} from '@hypha-platform/core/client';
 import {
   SidebarHeader,
   SidebarContent,
@@ -41,11 +50,17 @@ import {
   Button,
 } from '@hypha-platform/ui';
 
-import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
+import {
+  AiPanelHeader,
+  AiPanelMessages,
+  AiPanelChatBar,
+  type AiPanelDraftAttachment,
+} from './ai-panel';
 import { getDhoSpaceContextPath } from './get-dho-space-context-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { useAiPanel, useHumanChatPanel } from './human-chat-panel-context';
 import { useCompactHeaderMode } from '@hypha-platform/ui';
+import { useConfig } from 'wagmi';
 import { convertFilesToParts } from './ai-panel/convert-files-to-parts';
 import { Empty } from './empty';
 import { resolveSpaceDisplayLogoUrl } from '../spaces/utils/resolve-space-display-logo-url';
@@ -60,6 +75,15 @@ import {
   subscribeRecentSpaceSlugs,
   syncRecentSpacesForActiveSlug,
 } from './recent-space-history';
+import { recordMobilizedAiAgentsForQuestion } from './ai-agent-competencies';
+import {
+  AI_ONBOARDING_SEED_EVENT,
+  ONBOARDING_SETUP_MODE,
+  dispatchAiOnboardingSeedAck,
+  readOnboardingConversationContext,
+  saveOnboardingConversationContext,
+  type OnboardingConversationContext,
+} from './ai-onboarding-context';
 
 type ChatUIMessage = {
   id: string;
@@ -123,8 +147,10 @@ type NavItem = {
 export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const { isAuthenticated, isLoading, login, getAccessToken } =
     useAuthentication();
+  const matrix = useMatrix();
   const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
+  const isOnboardingPath = pathname.includes('/onboarding');
   const spaceSlugFromPath = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
     [pathname],
@@ -138,7 +164,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const tSelectNavigation = useTranslations('SelectNavigationAction');
   const tTreasury = useTranslations('TreasuryTab');
   const tSpaces = useTranslations('Spaces');
+  const router = useRouter();
+  const config = useConfig();
   const { resolvedTheme } = useTheme();
+  const { jwt } = useJwt();
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const isCompactHeader = useCompactHeaderMode();
   const { userState: userSpaceState, isLoading: isUserSpaceStateLoading } =
@@ -146,7 +175,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const {
     open: isAiOpen,
     overlayVisible,
+    openAiPanel,
     closeAiPanel,
+    setAiOverlayVisible,
     showAiOverlay,
     hideAiOverlay,
   } = useAiPanel();
@@ -157,11 +188,34 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   );
   const activeSpaceName =
     activeSpaces?.[0]?.title?.trim() || spaceSlug?.trim() || undefined;
+  const activeSpaceChatRoomId = activeSpaces?.[0]?.chatRoomId?.trim() || null;
   const [input, setInput] = useState('');
-  const [draftAttachments, setDraftAttachments] = useState<File[]>([]);
+  const aiWalletCreateInFlightRef = useRef(false);
+  const handledWalletPayloadKeyRef = useRef<string | null>(null);
+  const [draftAttachments, setDraftAttachments] = useState<
+    AiPanelDraftAttachment[]
+  >([]);
+  const draftAttachmentsRef = useRef<AiPanelDraftAttachment[]>([]);
+  draftAttachmentsRef.current = draftAttachments;
+  const autoRetryingRef = useRef(false);
+  const lastAutoRetriedMessageIdRef = useRef<string | null>(null);
   const [recentSpaceSlugs, setRecentSpaceSlugs] = useState<string[]>(() =>
     readRecentSpaceSlugs(),
   );
+  const [onboardingContext, setOnboardingContext] = useState<
+    OnboardingConversationContext | undefined
+  >(() => readOnboardingConversationContext());
+  const pendingSeedPromptRef = useRef<string | null>(null);
+  const pendingSeedAttachmentsRef = useRef<File[]>([]);
+  const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
+  const lastAutoNavigationKeyRef = useRef<string | null>(null);
+  const lastChatSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
+  const {
+    createSpace: createSpaceWithWalletFlow,
+    space: walletCreatedSpace,
+    isError: isCreateSpaceWithWalletFlowError,
+    errors: createSpaceWithWalletFlowErrors,
+  } = useCreateSpaceOrchestrator({ authToken: jwt, config });
   const recentSpaceLookupSlugs = useMemo(
     () =>
       recentSpaceSlugs
@@ -520,29 +574,468 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       new DefaultChatTransport({
         api: '/api/chat',
         headers: async (): Promise<Record<string, string>> => {
-          const token = await getAccessToken?.();
+          let token: string | undefined;
+          try {
+            token = (await getAccessToken?.()) ?? undefined;
+          } catch (error) {
+            console.error('[AiLeftPanel] getAccessToken failed for transport', {
+              error,
+            });
+          }
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        body: { ...(spaceSlug && { spaceSlug }) },
+        body: {
+          ...(spaceSlug && { spaceSlug }),
+          ...(onboardingContext
+            ? { conversationContext: onboardingContext }
+            : {}),
+        },
       }),
-    [getAccessToken, spaceSlug],
+    [getAccessToken, onboardingContext, spaceSlug],
   );
 
-  const { messages, sendMessage, stop, status, error } = useChat({
+  const {
+    messages,
+    sendMessage,
+    stop,
+    status,
+    error,
+    clearError,
+    setMessages,
+  } = useChat({
     transport,
+    onError: (chatError) => {
+      console.error('[AiLeftPanel][useChat]', chatError);
+    },
   });
 
   const isStreaming = status === 'streaming' || status === 'submitted';
 
+  useEffect(() => {
+    const nextSlug = spaceSlug?.trim() || null;
+    const previousSlug = lastChatSpaceSlugRef.current;
+    if (previousSlug === nextSlug) return;
+    lastChatSpaceSlugRef.current = nextSlug;
+    // Preserve conversation when navigating across spaces (including AI-driven
+    // navigation). The current space context is still sent per request via
+    // buildMessageOptions/transport body, so context can update without reset.
+  }, [spaceSlug]);
+
   const buildMessageOptions = useCallback(async () => {
-    const token = await getAccessToken?.();
+    let token: string | undefined;
+    try {
+      token = (await getAccessToken?.()) ?? undefined;
+    } catch (error) {
+      console.error('[AiLeftPanel] getAccessToken failed for message options', {
+        error,
+      });
+    }
     const hdrs: Record<string, string> = {};
     if (token) hdrs['Authorization'] = `Bearer ${token}`;
-    return {
-      body: { ...(spaceSlug && { spaceSlug }) },
-      headers: hdrs,
+    const body: Record<string, unknown> = {
+      ...(spaceSlug && { spaceSlug }),
+      ...(onboardingContext ? { conversationContext: onboardingContext } : {}),
     };
-  }, [getAccessToken, spaceSlug]);
+    return { body, headers: hdrs };
+  }, [getAccessToken, onboardingContext, spaceSlug]);
+
+  useEffect(() => {
+    const onSeed = (event: Event) => {
+      if (!(event instanceof CustomEvent)) return;
+      const detail = event.detail as
+        | {
+            prompt?: string;
+            context?: OnboardingConversationContext;
+            attachments?: File[];
+          }
+        | undefined;
+      const prompt = detail?.prompt?.trim();
+      const context = detail?.context;
+      if (!context || context.mode !== ONBOARDING_SETUP_MODE) return;
+      const attachments = Array.isArray(detail?.attachments)
+        ? detail.attachments.filter(
+            (file): file is File => file instanceof File,
+          )
+        : [];
+      if (!prompt && attachments.length === 0) return;
+
+      dispatchAiOnboardingSeedAck({ stage: 'received' });
+      setOnboardingContext(context);
+      setInput(prompt ?? '');
+      setDraftAttachments(
+        attachments.map((file) => ({
+          id:
+            typeof globalThis.crypto?.randomUUID === 'function'
+              ? globalThis.crypto.randomUUID()
+              : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          file,
+          kind: file.type.startsWith('image/')
+            ? 'image'
+            : file.type.startsWith('video/')
+            ? 'video'
+            : file.type.startsWith('audio/')
+            ? 'audio'
+            : 'file',
+          previewUrl: URL.createObjectURL(file),
+          spoiler: false,
+        })),
+      );
+      pendingSeedPromptRef.current = prompt ?? null;
+      pendingSeedAttachmentsRef.current = attachments;
+      openAiPanel();
+      setAiOverlayVisible(false);
+    };
+    window.addEventListener(AI_ONBOARDING_SEED_EVENT, onSeed as EventListener);
+    return () => {
+      window.removeEventListener(
+        AI_ONBOARDING_SEED_EVENT,
+        onSeed as EventListener,
+      );
+    };
+  }, [openAiPanel, setAiOverlayVisible]);
+
+  useEffect(() => {
+    if (pendingSeedPromptRef.current == null) return;
+    if (isStreaming) return;
+    const seededPrompt = pendingSeedPromptRef.current ?? '';
+    const seededAttachments = pendingSeedAttachmentsRef.current;
+    if (!seededPrompt.trim() && seededAttachments.length === 0) {
+      pendingSeedPromptRef.current = null;
+      pendingSeedAttachmentsRef.current = [];
+      return;
+    }
+    pendingSeedPromptRef.current = null;
+    pendingSeedAttachmentsRef.current = [];
+
+    void (async () => {
+      try {
+        dispatchAiOnboardingSeedAck({ stage: 'sending' });
+        clearError();
+        const options = await buildMessageOptions();
+        const attachmentParts =
+          seededAttachments.length > 0
+            ? await convertFilesToParts(seededAttachments)
+            : [];
+        const textParts = seededPrompt.trim()
+          ? [{ type: 'text' as const, text: seededPrompt }]
+          : [];
+        await sendMessage(
+          { role: 'user', parts: [...textParts, ...attachmentParts] },
+          options,
+        );
+        // Handoff is successful once the request is accepted/submitted.
+        // Do not block onboarding hero feedback on full model completion.
+        dispatchAiOnboardingSeedAck({ ok: true, stage: 'sent' });
+        setInput('');
+        setDraftAttachments([]);
+      } catch (seedError) {
+        console.error('[AiLeftPanel] onboarding seed send failed:', seedError);
+        setInput(seededPrompt);
+        setDraftAttachments(
+          seededAttachments.map((file) => ({
+            id:
+              typeof globalThis.crypto?.randomUUID === 'function'
+                ? globalThis.crypto.randomUUID()
+                : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            file,
+            kind: file.type.startsWith('image/')
+              ? 'image'
+              : file.type.startsWith('video/')
+              ? 'video'
+              : file.type.startsWith('audio/')
+              ? 'audio'
+              : 'file',
+            previewUrl: URL.createObjectURL(file),
+            spoiler: false,
+          })),
+        );
+        dispatchAiOnboardingSeedAck({
+          ok: false,
+          stage: 'error',
+          reason: 'send_failed',
+        });
+      }
+    })();
+  }, [buildMessageOptions, clearError, isStreaming, sendMessage]);
+
+  useEffect(() => {
+    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
+    if (!pathname.includes('/onboarding')) return;
+
+    const latestCreatedSpaceSlug = [...messages]
+      .reverse()
+      .flatMap((message) => message.parts ?? [])
+      .find((part) => {
+        if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) {
+          return false;
+        }
+        const toolPart = part as {
+          state?: string;
+          output?: { ok?: boolean; space?: { slug?: string } };
+        };
+        return (
+          toolPart.state === 'output-available' &&
+          toolPart.output?.ok === true &&
+          typeof toolPart.output?.space?.slug === 'string' &&
+          toolPart.output.space.slug.length > 0
+        );
+      }) as
+      | {
+          output?: { space?: { slug?: string } };
+        }
+      | undefined;
+
+    const createdSlug = latestCreatedSpaceSlug?.output?.space?.slug?.trim();
+    if (!createdSlug) return;
+    if (lastAutoTransitionSpaceSlugRef.current === createdSlug) return;
+    lastAutoTransitionSpaceSlugRef.current = createdSlug;
+
+    const nextContext: OnboardingConversationContext = {
+      ...onboardingContext,
+      setupPhase: 'verify',
+    };
+    setOnboardingContext(nextContext);
+    saveOnboardingConversationContext(nextContext);
+    openAiPanel();
+    setAiOverlayVisible(false);
+    router.push(`/${lang}/dho/${createdSlug}/agreements`);
+  }, [
+    lang,
+    messages,
+    onboardingContext,
+    openAiPanel,
+    pathname,
+    router,
+    setAiOverlayVisible,
+  ]);
+
+  useEffect(() => {
+    const latestNavigationOutput = [...messages]
+      .reverse()
+      .flatMap((message) =>
+        (message.parts ?? []).map((part, partIndex) => ({
+          messageId: message.id,
+          partIndex,
+          part,
+        })),
+      )
+      .find(({ part }) => {
+        if (part.type !== 'tool-mcp_navigation') return false;
+        const toolPart = part as {
+          state?: string;
+          output?: {
+            ok?: boolean;
+            navigation?: {
+              href?: string;
+              open_in_new_tab?: boolean;
+            };
+          };
+        };
+        return (
+          toolPart.state === 'output-available' &&
+          toolPart.output?.ok === true &&
+          typeof toolPart.output?.navigation?.href === 'string' &&
+          toolPart.output.navigation.href.length > 0
+        );
+      });
+
+    const navPart = latestNavigationOutput?.part as
+      | {
+          output?: {
+            navigation?: {
+              href?: string;
+              open_in_new_tab?: boolean;
+            };
+          };
+        }
+      | undefined;
+    const href = navPart?.output?.navigation?.href?.trim();
+    if (!href) return;
+    const navigationKey = `${latestNavigationOutput?.messageId ?? 'unknown'}:${
+      latestNavigationOutput?.partIndex ?? 0
+    }:${href}`;
+    if (lastAutoNavigationKeyRef.current === navigationKey) return;
+    lastAutoNavigationKeyRef.current = navigationKey;
+
+    const openInNewTab = navPart?.output?.navigation?.open_in_new_tab === true;
+    const isExternal = /^https?:\/\//i.test(href);
+    if (openInNewTab || isExternal) {
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    router.push(href);
+  }, [messages, router]);
+
+  useEffect(() => {
+    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
+    if (!pathname.includes('/onboarding')) return;
+    const slug =
+      typeof walletCreatedSpace?.slug === 'string'
+        ? walletCreatedSpace.slug.trim()
+        : '';
+    if (!slug) return;
+    if (lastAutoTransitionSpaceSlugRef.current === slug) return;
+    lastAutoTransitionSpaceSlugRef.current = slug;
+    const nextContext: OnboardingConversationContext = {
+      ...onboardingContext,
+      setupPhase: 'verify',
+    };
+    setOnboardingContext(nextContext);
+    saveOnboardingConversationContext(nextContext);
+    openAiPanel();
+    setAiOverlayVisible(false);
+    router.push(`/${lang}/dho/${slug}/agreements`);
+  }, [
+    lang,
+    onboardingContext,
+    openAiPanel,
+    pathname,
+    router,
+    setAiOverlayVisible,
+    walletCreatedSpace?.slug,
+  ]);
+
+  useEffect(() => {
+    if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
+    if (!pathname.includes('/onboarding')) return;
+    if (aiWalletCreateInFlightRef.current) return;
+
+    const latestWalletCreatePayload = [...messages]
+      .reverse()
+      .flatMap((message) =>
+        (message.parts ?? []).map((part, index) => ({
+          messageId: message.id,
+          index,
+          part,
+        })),
+      )
+      .find(({ part }) => {
+        if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) {
+          return false;
+        }
+        const toolPart = part as {
+          state?: string;
+          output?: {
+            ok?: boolean;
+            requires_wallet_signature?: boolean;
+            create_payload?: Record<string, unknown>;
+          };
+        };
+        return (
+          toolPart.state === 'output-available' &&
+          toolPart.output?.ok === true &&
+          toolPart.output?.requires_wallet_signature === true &&
+          typeof toolPart.output?.create_payload === 'object'
+        );
+      }) as
+      | {
+          messageId?: string;
+          index?: number;
+          part?: {
+            output?: {
+              create_payload?: {
+                title?: string;
+                description?: string;
+                slug?: string;
+                parent_id?: number | null;
+                flags?: string[];
+                links?: string[];
+                categories?: string[];
+                lead_image_url?: string | null;
+                logo_url?: string | null;
+                ecosystem_logo_light_url?: string | null;
+                ecosystem_logo_dark_url?: string | null;
+              };
+            };
+          };
+        }
+      | undefined;
+
+    const payloadKey = latestWalletCreatePayload
+      ? `${latestWalletCreatePayload.messageId ?? 'm'}:${
+          latestWalletCreatePayload.index ?? 0
+        }`
+      : null;
+    if (payloadKey && handledWalletPayloadKeyRef.current === payloadKey) return;
+    const payload = latestWalletCreatePayload?.part?.output?.create_payload;
+    if (!payload?.title || !payload.description) return;
+    if (payloadKey) handledWalletPayloadKeyRef.current = payloadKey;
+    const normalizedTitle =
+      typeof payload.title === 'string' ? payload.title.trim() : '';
+    const normalizedDescription =
+      typeof payload.description === 'string' ? payload.description.trim() : '';
+    if (!normalizedTitle || !normalizedDescription) return;
+    const normalizedFlags: SpaceFlags[] = Array.isArray(payload.flags)
+      ? (payload.flags as SpaceFlags[])
+      : [];
+    const normalizedCategories: Category[] = Array.isArray(payload.categories)
+      ? (payload.categories as Category[])
+      : [];
+
+    aiWalletCreateInFlightRef.current = true;
+    void (async () => {
+      try {
+        await createSpaceWithWalletFlow({
+          title: normalizedTitle,
+          description: normalizedDescription,
+          slug: payload.slug ?? '',
+          parentId:
+            typeof payload.parent_id === 'number' ? payload.parent_id : null,
+          flags: normalizedFlags,
+          links: Array.isArray(payload.links) ? payload.links : [],
+          categories: normalizedCategories,
+          logoUrl: payload.logo_url ?? '',
+          leadImage: payload.lead_image_url ?? '',
+          ...(payload.ecosystem_logo_light_url
+            ? { ecosystemLogoUrlLight: payload.ecosystem_logo_light_url }
+            : {}),
+          ...(payload.ecosystem_logo_dark_url
+            ? { ecosystemLogoUrlDark: payload.ecosystem_logo_dark_url }
+            : {}),
+        });
+      } catch (walletFlowError) {
+        console.error(
+          '[AiLeftPanel] wallet-based onboarding space creation failed:',
+          walletFlowError,
+        );
+      } finally {
+        aiWalletCreateInFlightRef.current = false;
+      }
+    })();
+  }, [createSpaceWithWalletFlow, messages, onboardingContext, pathname]);
+
+  useEffect(() => {
+    if (!error || status !== 'error' || autoRetryingRef.current) return;
+
+    const errorMessage =
+      error instanceof Error ? error.message.toLowerCase() : String(error);
+    const looksLikeTransientNetworkError =
+      errorMessage.includes('network') ||
+      errorMessage.includes('fetch failed') ||
+      errorMessage.includes('err_network_changed');
+    if (!looksLikeTransientNetworkError) return;
+
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((message) => message.role === 'user');
+    const retryKey = lastUserMessage?.id ?? `fallback-${messages.length}`;
+
+    if (lastAutoRetriedMessageIdRef.current === retryKey) return;
+    lastAutoRetriedMessageIdRef.current = retryKey;
+    autoRetryingRef.current = true;
+
+    void (async () => {
+      try {
+        clearError();
+        const options = await buildMessageOptions();
+        await sendMessage(undefined, options);
+      } catch (retryError) {
+        console.error('[AiLeftPanel] automatic chat retry failed:', retryError);
+      } finally {
+        autoRetryingRef.current = false;
+      }
+    })();
+  }, [buildMessageOptions, clearError, error, messages, sendMessage, status]);
 
   const handleSend = useCallback(async () => {
     if ((!input.trim() && draftAttachments.length === 0) || isStreaming) return;
@@ -551,34 +1044,133 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     setInput('');
     setDraftAttachments([]);
     try {
+      clearError();
       const options = await buildMessageOptions();
-      const fileParts =
-        attachments.length > 0 ? await convertFilesToParts(attachments) : [];
+      let attachmentParts: Array<
+        | { type: 'text'; text: string }
+        | { type: 'file'; mediaType: string; url: string }
+      > = [];
+      if (
+        attachments.length > 0 &&
+        activeSpaceChatRoomId &&
+        matrix.isMatrixAvailable &&
+        matrix.isAuthenticated
+      ) {
+        const joinedRoomId = await matrix.joinRoom(activeSpaceChatRoomId);
+        await matrix.sendMessage({
+          roomId: joinedRoomId,
+          message: text.trim(),
+          attachments: attachments.map((att) => ({
+            file: att.file,
+            kind:
+              att.kind === 'image'
+                ? 'image'
+                : att.kind === 'audio'
+                ? 'audio'
+                : 'file',
+            spoiler: att.spoiler,
+          })),
+        });
+        attachmentParts = [
+          {
+            type: 'text',
+            text: `Uploaded files: ${attachments
+              .map((att) => att.file.name)
+              .join(', ')}`,
+          },
+        ];
+      } else if (attachments.length > 0) {
+        attachmentParts = await convertFilesToParts(
+          attachments.map((att) => att.file),
+        );
+      }
       const textParts = text.trim() ? [{ type: 'text' as const, text }] : [];
+      if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
+        const nextContext: OnboardingConversationContext = {
+          ...onboardingContext,
+          lastUserText: text.trim(),
+          setupPhase:
+            onboardingContext.setupPhase === 'discover'
+              ? 'draft'
+              : onboardingContext.setupPhase,
+        };
+        setOnboardingContext(nextContext);
+        saveOnboardingConversationContext(nextContext);
+      }
+      if (spaceSlug && text.trim()) {
+        recordMobilizedAiAgentsForQuestion(spaceSlug, text.trim());
+      }
       if (DEBUG)
         console.log('[AiLeftPanel] sendMessage', {
           text,
-          attachmentCount: fileParts.length,
+          attachmentCount: attachments.length,
           spaceSlug,
+          persistedToMatrix: Boolean(
+            attachments.length &&
+              activeSpaceChatRoomId &&
+              matrix.isMatrixAvailable &&
+              matrix.isAuthenticated,
+          ),
         });
       await sendMessage(
-        { role: 'user', parts: [...textParts, ...fileParts] },
+        { role: 'user', parts: [...textParts, ...attachmentParts] },
         options,
       );
+      for (const att of attachments) {
+        if (att.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(att.previewUrl);
+        }
+      }
     } catch (err) {
       console.error('[AiLeftPanel] sendMessage error:', err);
       setInput(text);
       setDraftAttachments(attachments);
     }
-  }, [input, draftAttachments, isStreaming, sendMessage, buildMessageOptions]);
+  }, [
+    input,
+    draftAttachments,
+    isStreaming,
+    sendMessage,
+    buildMessageOptions,
+    clearError,
+    activeSpaceChatRoomId,
+    matrix,
+    onboardingContext,
+  ]);
 
   const handleStop = useCallback(() => {
     void stop();
   }, [stop]);
 
+  useEffect(() => {
+    return () => {
+      for (const att of draftAttachmentsRef.current) {
+        if (att.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(att.previewUrl);
+        }
+      }
+    };
+  }, []);
+
   const handleSuggestionSelect = useCallback(
     async (text: string) => {
       try {
+        clearError();
+        if (spaceSlug && text.trim()) {
+          recordMobilizedAiAgentsForQuestion(spaceSlug, text.trim());
+        }
+        if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
+          const nextContext: OnboardingConversationContext = {
+            ...onboardingContext,
+            lastUserText: text.trim(),
+            setupPhase:
+              onboardingContext.setupPhase === 'discover'
+                ? 'draft'
+                : onboardingContext.setupPhase,
+          };
+          setOnboardingContext(nextContext);
+          saveOnboardingConversationContext(nextContext);
+        }
         const options = await buildMessageOptions();
         if (DEBUG)
           console.log('[AiLeftPanel] suggestion selected', { text, spaceSlug });
@@ -590,7 +1182,38 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         console.error('[AiLeftPanel] suggestion sendMessage error:', err);
       }
     },
-    [sendMessage, buildMessageOptions],
+    [
+      sendMessage,
+      buildMessageOptions,
+      clearError,
+      onboardingContext,
+      spaceSlug,
+    ],
+  );
+
+  const handleActionReplySelect = useCallback(
+    async (text: string) => {
+      try {
+        clearError();
+        if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
+          const nextContext: OnboardingConversationContext = {
+            ...onboardingContext,
+            lastUserText: text.trim(),
+            setupPhase: 'confirm',
+          };
+          setOnboardingContext(nextContext);
+          saveOnboardingConversationContext(nextContext);
+        }
+        const options = await buildMessageOptions();
+        await sendMessage(
+          { role: 'user', parts: [{ type: 'text', text }] },
+          options,
+        );
+      } catch (err) {
+        console.error('[AiLeftPanel] action reply sendMessage error:', err);
+      }
+    },
+    [buildMessageOptions, clearError, onboardingContext, sendMessage],
   );
 
   const handleTriggerClick = useCallback(() => {
@@ -776,14 +1399,37 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
             role="alert"
             className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
           >
-            {t('streamError')}
+            <div>{t('streamError')}</div>
+            {error instanceof Error && error.message ? (
+              <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs opacity-90">
+                {error.message}
+              </div>
+            ) : null}
           </div>
         )}
+        {isCreateSpaceWithWalletFlowError ? (
+          <div
+            role="alert"
+            className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            <div>{t('streamError')}</div>
+            {createSpaceWithWalletFlowErrors.length > 0 ? (
+              <div className="mt-1 whitespace-pre-wrap break-words font-mono text-xs opacity-90">
+                {createSpaceWithWalletFlowErrors
+                  .map((item) =>
+                    item instanceof Error ? item.message : String(item),
+                  )
+                  .join('\n')}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <AiPanelMessages
           messages={messages as ChatUIMessage[]}
           suggestions={suggestions}
           showSuggestions={true}
           onSuggestionSelect={handleSuggestionSelect}
+          onActionReplySelect={handleActionReplySelect}
           activeSpaceName={activeSpaceName}
           isStreaming={isStreaming}
         />
