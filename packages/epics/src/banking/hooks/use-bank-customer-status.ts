@@ -40,7 +40,7 @@ export const useBankCustomerStatus = ({
   const { data, error, isLoading, mutate } =
     useSWR<BankCustomerPublicStatus | null>(
       swrKey,
-      async ([url]) => {
+      async ([url]: [string, string]) => {
         const token = await getAccessToken();
         if (!token) {
           throw new Error('Unauthorized');
