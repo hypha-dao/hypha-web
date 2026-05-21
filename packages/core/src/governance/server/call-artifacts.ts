@@ -2,6 +2,7 @@ import 'server-only';
 
 import { and, desc, eq, lt, sql } from 'drizzle-orm';
 import {
+  coherences,
   spaceCallRecordings,
   spaceCallTranscripts,
   spaceDiscussionSummaries,
@@ -263,17 +264,17 @@ async function fetchRoomDiscussionMessages(
   requestUrlForSessionMatrix: string | undefined,
   signal?: AbortSignal,
   maxPages = 5,
-): Promise<{ messages: string[]; participantCount: number }> {
+): Promise<{ messages: string[]; participantIds: string[] }> {
   const homeserver = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.replace(
     /\/?$/,
     '',
   );
-  if (!homeserver) return { messages: [], participantCount: 0 };
+  if (!homeserver) return { messages: [], participantIds: [] };
   const accessToken = await resolveMatrixAccessToken(
     authToken,
     requestUrlForSessionMatrix,
   );
-  if (!accessToken) return { messages: [], participantCount: 0 };
+  if (!accessToken) return { messages: [], participantIds: [] };
 
   const senders = new Set<string>();
   const messages: string[] = [];
@@ -329,7 +330,35 @@ async function fetchRoomDiscussionMessages(
     fromToken = next;
   }
 
-  return { messages: messages.reverse(), participantCount: senders.size };
+  return { messages: messages.reverse(), participantIds: [...senders] };
+}
+
+async function listSpaceDiscussionRoomIds(
+  spaceId: number,
+  primaryRoomId: string,
+  { db }: DbConfig,
+): Promise<string[]> {
+  const coherenceRows = await db
+    .select({ roomId: coherences.roomId })
+    .from(coherences)
+    .where(and(eq(coherences.spaceId, spaceId), eq(coherences.archived, false)))
+    .orderBy(desc(coherences.updatedAt))
+    .limit(200);
+
+  const seen = new Set<string>();
+  const roomIds: string[] = [];
+  const pushUnique = (value: string | null | undefined) => {
+    const trimmed = value?.trim();
+    if (!trimmed || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    roomIds.push(trimmed);
+  };
+
+  pushUnique(primaryRoomId);
+  for (const row of coherenceRows) {
+    pushUnique(row.roomId);
+  }
+  return roomIds;
 }
 
 export async function createSpaceDiscussionSummary(
@@ -358,15 +387,34 @@ export async function createSpaceDiscussionSummary(
 > {
   const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
   if (!host) return { ok: false, error: 'Space not found' };
-  const roomId = host.chatRoomId?.trim();
-  if (!roomId) return { ok: false, error: 'Space has no chat room' };
+  const primaryRoomId = host.chatRoomId?.trim();
+  if (!primaryRoomId) return { ok: false, error: 'Space has no chat room' };
+  const roomIds = await listSpaceDiscussionRoomIds(host.id, primaryRoomId, {
+    db,
+  });
+  if (roomIds.length === 0) {
+    return { ok: false, error: 'No eligible discussion rooms found' };
+  }
 
-  const { messages, participantCount } = await fetchRoomDiscussionMessages(
-    roomId,
-    authToken,
-    requestUrlForSessionMatrix,
-    signal,
-  );
+  const allMessages: string[] = [];
+  const participantIds = new Set<string>();
+  for (const roomId of roomIds) {
+    const result = await fetchRoomDiscussionMessages(
+      roomId,
+      authToken,
+      requestUrlForSessionMatrix,
+      signal,
+    );
+    for (const participantId of result.participantIds) {
+      if (participantId.trim()) participantIds.add(participantId.trim());
+    }
+    if (result.messages.length > 0) {
+      allMessages.push(...result.messages);
+    }
+  }
+
+  const messages = allMessages;
+  const participantCount = participantIds.size;
   if (messages.length === 0) {
     return { ok: false, error: 'No chat messages available for summary' };
   }
@@ -377,13 +425,15 @@ export async function createSpaceDiscussionSummary(
     .insert(spaceDiscussionSummaries)
     .values({
       spaceId: host.id,
-      matrixRoomId: roomId,
+      matrixRoomId: primaryRoomId,
       summary,
       bullets,
       messageCount: messages.length,
       participantCount,
       source,
-      metadata: {},
+      metadata: {
+        includedRoomIds: roomIds,
+      },
       windowStart: null,
       windowEnd: null,
     })
