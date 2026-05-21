@@ -826,8 +826,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         const message = messages[messageIndex];
         if (!message) continue;
 
-        const toolInvocations = Array.isArray(message.toolInvocations)
-          ? message.toolInvocations
+        const messageWithToolInvocations = message as {
+          toolInvocations?: unknown;
+        };
+        const toolInvocations = Array.isArray(
+          messageWithToolInvocations.toolInvocations,
+        )
+          ? messageWithToolInvocations.toolInvocations
           : [];
         for (
           let invocationIndex = toolInvocations.length - 1;
