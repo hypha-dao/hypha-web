@@ -1984,6 +1984,8 @@
     "confirmWith": "Confirm with:",
     "confirm": "Confirm",
     "cancel": "Cancel",
+    "showMore": "Read more",
+    "showLess": "Show less",
     "streamError": "An error occurred while generating the response.",
     "attachment": "Attachment"
   },

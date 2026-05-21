@@ -1986,7 +1986,9 @@
     "pendingAction": "Ausstehende Aktion",
     "confirmWith": "Bestätigen mit:",
     "confirm": "Bestätigen",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "showMore": "Mehr anzeigen",
+    "showLess": "Weniger anzeigen"
   },
   "HumanChatPanel": {
     "title": "Chat",
