@@ -248,6 +248,45 @@ describe('createBridgeKycProvider', () => {
       });
     });
 
+    it('maps sandbox response with currency on source_deposit_instructions only', async () => {
+      bridgeCreateVirtualAccount.mockResolvedValueOnce({
+        id: '5132d8b5-02c3-4436-8290-835b8157d180',
+        status: 'activated',
+        customer_id: 'cust_1',
+        source_deposit_instructions: {
+          currency: 'eur',
+          iban: 'LU204080000025759864',
+          bic: 'BCIRLULL',
+          bank_name: 'Banking Circle S.A.',
+          payment_rails: ['sepa'],
+        },
+        destination: {
+          currency: 'usdc',
+          payment_rail: 'base',
+          address: '0xtreasury',
+        },
+      });
+
+      const provider = createBridgeKycProvider();
+      const result = await provider.provisionVirtualAccount({
+        customerId: 'cust_1',
+        currency: 'eur',
+        destinationAddress: '0xtreasury',
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440004',
+      });
+
+      expect(result).toEqual({
+        providerVirtualAccountId: '5132d8b5-02c3-4436-8290-835b8157d180',
+        currency: 'eur',
+        paymentRail: 'sepa',
+        depositInstructions: expect.objectContaining({
+          iban: 'LU204080000025759864',
+          payment_rails: ['sepa'],
+        }),
+        status: 'activated',
+      });
+    });
+
     it('falls back to currency map when payment_rail is absent on response', async () => {
       bridgeCreateVirtualAccount.mockResolvedValueOnce({
         id: 'va_2',

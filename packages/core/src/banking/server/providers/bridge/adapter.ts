@@ -75,13 +75,25 @@ export function createBridgeKycProvider(): BankKycProvider {
         input.idempotencyKey,
       );
 
-      const responseRail = response.source.payment_rail ?? paymentRail;
+      const instructions = response.source_deposit_instructions;
+      const currency =
+        response.source?.currency ??
+        (typeof instructions.currency === 'string'
+          ? instructions.currency
+          : input.currency);
+
+      const paymentRails = instructions.payment_rails;
+      const responseRail =
+        response.source?.payment_rail ??
+        (Array.isArray(paymentRails) && typeof paymentRails[0] === 'string'
+          ? paymentRails[0]
+          : paymentRail);
 
       return {
         providerVirtualAccountId: response.id,
-        currency: response.source.currency,
+        currency,
         paymentRail: responseRail,
-        depositInstructions: response.source_deposit_instructions,
+        depositInstructions: instructions,
         status: response.status,
       };
     },

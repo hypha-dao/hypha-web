@@ -35,7 +35,8 @@ export type BridgeCreateVirtualAccountRequest = {
 export type BridgeCreateVirtualAccountResponse = {
   id: string;
   status: string;
-  source: { currency: string; payment_rail?: string };
+  /** Legacy/alternate shape; sandbox often omits this. */
+  source?: { currency?: string; payment_rail?: string };
   source_deposit_instructions: Record<string, unknown>;
 };
 
@@ -188,6 +189,26 @@ async function bridgeRequest(
   return parsed;
 }
 
+function getVirtualAccountCurrency(record: Record<string, unknown>): string | null {
+  const source = record.source;
+  if (typeof source === 'object' && source !== null) {
+    const currency = (source as Record<string, unknown>).currency;
+    if (typeof currency === 'string') {
+      return currency;
+    }
+  }
+
+  const instructions = record.source_deposit_instructions;
+  if (typeof instructions === 'object' && instructions !== null) {
+    const currency = (instructions as Record<string, unknown>).currency;
+    if (typeof currency === 'string') {
+      return currency;
+    }
+  }
+
+  return null;
+}
+
 function isBridgeVirtualAccountRecord(
   value: unknown,
 ): value is BridgeCreateVirtualAccountResponse {
@@ -196,15 +217,12 @@ function isBridgeVirtualAccountRecord(
   }
 
   const record = value as Record<string, unknown>;
-  const source = record.source;
   return (
     typeof record.id === 'string' &&
     typeof record.status === 'string' &&
-    typeof source === 'object' &&
-    source !== null &&
-    typeof (source as Record<string, unknown>).currency === 'string' &&
     typeof record.source_deposit_instructions === 'object' &&
-    record.source_deposit_instructions !== null
+    record.source_deposit_instructions !== null &&
+    getVirtualAccountCurrency(record) !== null
   );
 }
 

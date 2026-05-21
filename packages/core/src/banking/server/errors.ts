@@ -1,4 +1,4 @@
-export type BankOnboardingHttpStatus = 400 | 401 | 403 | 404 | 422 | 500;
+export type BankOnboardingHttpStatus = 400 | 401 | 403 | 404 | 422 | 500 | 502;
 
 export class BankOnboardingError extends Error {
   readonly status: BankOnboardingHttpStatus;
