@@ -159,8 +159,16 @@ export const SpaceForm = ({
   useScrollToErrors(form, formRef);
 
   const parentSpaceId = form.watch('parentId');
+  const watchedSpaceTitle = form.watch('title');
   const slug = form.watch('slug');
   const isRootConfiguration = label === 'configure' && parentSpaceId === null;
+  const spaceTitleForPlaceholder = React.useMemo(() => {
+    const currentTitle = watchedSpaceTitle?.trim();
+    if (currentTitle) return currentTitle;
+    const valuesTitle = values?.title?.trim();
+    if (valuesTitle) return valuesTitle;
+    return tSpaces('ecosystemLogoPlaceholderFallback');
+  }, [tSpaces, values?.title, watchedSpaceTitle]);
 
   const {
     exists: slugExists,
@@ -649,6 +657,7 @@ export const SpaceForm = ({
                       {...field}
                       maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                       aspectRatio={12 / 3}
+                      outputMimeType="image/png"
                       enableImageResizer
                       cropDialogLabels={{
                         title: tCommon('uploadLeadImage.cropTitle'),
@@ -679,6 +688,13 @@ export const SpaceForm = ({
                           ? defaultValues?.ecosystemLogoUrlLight
                           : undefined
                       }
+                      uploadText={
+                        <span className="text-1 text-muted-foreground">
+                          {tSpaces('ecosystemLogoPlaceholder', {
+                            spaceName: spaceTitleForPlaceholder,
+                          })}
+                        </span>
+                      }
                     />
                   </FormControl>
                   <p className="text-1 text-neutral-11">
@@ -701,6 +717,7 @@ export const SpaceForm = ({
                       {...field}
                       maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                       aspectRatio={12 / 3}
+                      outputMimeType="image/png"
                       enableImageResizer
                       cropDialogLabels={{
                         title: tCommon('uploadLeadImage.cropTitle'),
@@ -730,6 +747,13 @@ export const SpaceForm = ({
                             'string'
                           ? defaultValues?.ecosystemLogoUrlDark
                           : undefined
+                      }
+                      uploadText={
+                        <span className="text-1 text-muted-foreground">
+                          {tSpaces('ecosystemLogoPlaceholder', {
+                            spaceName: spaceTitleForPlaceholder,
+                          })}
+                        </span>
                       }
                     />
                   </FormControl>

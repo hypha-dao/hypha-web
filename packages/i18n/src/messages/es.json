@@ -784,11 +784,47 @@
     "signIn": "Iniciar sesión",
     "getStarted": "Empezar",
     "ecosystemLogo": "Logo del ecosistema",
-    "continueAdventure": "Continuar tu aventura"
+    "continueAdventure": "Tu aventura continúa aquí"
   },
   "OnboardingAdventure": {
     "title": "Tu aventura empieza aquí.",
-    "subtitle": "Elige tu próximo paso.",
+    "continueAdventure": "Tu aventura continúa aquí",
+    "subtitle": "Tienes una visión poderosa para el mundo; nosotros te damos las herramientas para hacerla realidad.",
+    "aiHero": {
+      "title": "Build Anything, Together",
+      "description": "Cuéntale a Hypha AI lo que quieres construir y te guiará paso a paso en la configuración.",
+      "placeholder": "Crear un espacio, unirte a uno existente, explorar la red o financiar una tesorería: describe tu objetivo y la AI te guía.",
+      "rotating": {
+        "createSpace": "Pídele a Hypha AI crear un espacio para tu misión...",
+        "governance": "Pídele a Hypha AI diseñar la gobernanza de tu comunidad...",
+        "joinSpace": "Pídele a Hypha AI ayudarte a unirte al espacio correcto...",
+        "treasury": "Pídele a Hypha AI preparar un espacio listo para tesorería...",
+        "explore": "Pídele a Hypha AI encontrar oportunidades en la red..."
+      },
+      "cta": "Empezar con AI",
+      "starting": "Iniciando...",
+      "openingAi": "Abriendo el panel de AI...",
+      "sending": "Enviando tu prompt a la AI...",
+      "handoffFailed": "No se pudo iniciar la conversación con la AI. Inténtalo de nuevo.",
+      "handoffTimeout": "El traspaso a la AI tarda más de lo esperado. Inténtalo de nuevo.",
+      "sendFailed": "No se pudo enviar el prompt a la AI. Reintenta.",
+      "helper": "La AI propondrá cada acción y pedirá confirmación antes de crear o actualizar cualquier cosa.",
+      "unavailable": "El onboarding con AI no está disponible temporalmente en este despliegue.",
+      "ariaLabel": "Prompt de onboarding con AI",
+      "flow": {
+        "badge": "Simple. Powerful. By design.",
+        "reviewingTitle": "Revisando tu solicitud",
+        "reviewingDescription": "La AI está trazando la mejor ruta para tu objetivo.",
+        "reviewingDescriptionPersonalized": "{firstName}, la AI está trazando la mejor ruta para tu objetivo.",
+        "confirmingTitle": "Preparando una confirmación clara",
+        "confirmingDescription": "Verás una sola decisión enfocada antes de cualquier acción de escritura.",
+        "executingTitle": "Ejecutando la acción seleccionada",
+        "executingDescription": "La AI ahora crea, te dirige o te une según tu elección.",
+        "routingTitle": "Llevándote al destino correcto",
+        "routingDescription": "Finalizando la navegación hacia tu espacio o pantalla elegida.",
+        "confirmationHint": "Tú mantienes el control: la AI pide confirmación antes de crear o actualizar."
+      }
+    },
     "spacePlaceholder": "Seleccionar espacio",
     "spaceSearchPlaceholder": "Buscar espacios...",
     "searchToSeeSpaces": "Empieza a escribir para ver espacios coincidentes.",
@@ -1181,7 +1217,10 @@
         "selectMember": "Selecciona un miembro",
         "selectSpace": "Selecciona un espacio"
       }
-    }
+    },
+    "aiAgents": "Agentes de IA",
+    "aiAgentsEmptyState": "Aún no hay agentes de IA movilizados. Haz preguntas estratégicas para activarlos.",
+    "aiAgentsMobilizedCount": "Movilizado {count, plural, one {# vez} other {# veces}}"
   },
   "TreasuryTab": {
     "balance": "Balance",
@@ -1656,6 +1695,8 @@
     "rootSpaceDescription": "Marcar este espacio como Espacio Raíz lo hará independiente. Ya no estará vinculado a la organización actual y todos sus espacios vinculados se trasladarán con ella.",
     "uploadEcosystemLogoLight": "Subir logo del ecosistema (claro)",
     "uploadEcosystemLogoDark": "Subir logo del ecosistema (oscuro)",
+    "ecosystemLogoPlaceholder": "Subir logo del ecosistema de {spaceName}",
+    "ecosystemLogoPlaceholderFallback": "este espacio",
     "ecosystemLogoLightDescription": "Sube un logo en modo claro para tu ecosistema (PNG, JPG, GIF o WEBP).",
     "ecosystemLogoDarkDescription": "Sube un logo en modo oscuro para tu ecosistema (PNG, JPG, GIF o WEBP).",
     "search": "Buscar...",
@@ -1926,7 +1967,11 @@
     "toolTokens": "{count} token(s) obtenido(s) para el espacio \"{slug}\".",
     "toolError": "Error: {message}",
     "streamError": "Ocurrió un error al generar la respuesta.",
-    "attachment": "Adjunto"
+    "attachment": "Adjunto",
+    "pendingAction": "Acción pendiente",
+    "confirmWith": "Confirmar con:",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar"
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -1982,6 +2027,7 @@
     "mentionNotAvailable": "Menciones (próximamente)",
     "mentionNoMembers": "Aún no hay miembros cargados — inténtalo en un momento",
     "mentionListLabel": "Mencionar a alguien",
+    "mentionListHintIncludesParentSpaceMembers": "Elige a quién mencionar. Esta lista puede incluir miembros del espacio principal.",
     "mentionInboxTitle": "Menciones",
     "mentionInboxBellCallRingHint": "Haz clic en la campana para silenciar o activar el tono de llamada. Abre la pestaña Menciones para ver las @menciones.",
     "callJoinCallAlertsMutedShort": "Silenciado",
@@ -2157,7 +2203,14 @@
     "callLeftBannerDismiss": "Cerrar",
     "callPaneResizeSharePeople": "Redimensionar pantalla y personas",
     "callPaneResizeShareStrip": "Redimensionar pantalla y tira de vídeo",
-    "callPaneResizeSpeakerShare": "Redimensionar orador y pantalla"
+    "callPaneResizeSpeakerShare": "Redimensionar orador y pantalla",
+    "callDockTitleWithMembers": "Llamada - {count, plural, one {# miembro} other {# miembros}}",
+    "callDockOpenCallSpace": "Abrir espacio de llamada",
+    "callDockSpaceLabel": "Espacio",
+    "callDockMinimize": "Minimizar llamada",
+    "callDockExpand": "Expandir llamada",
+    "callDockFullscreen": "Pantalla completa",
+    "callDockExitFullscreen": "Salir de pantalla completa"
   },
   "CoherenceTab": {
     "signals": "Señales",
@@ -2185,6 +2238,7 @@
     "openConversation": "Abrir conversación",
     "saySomething": "Diga algo...",
     "proposeAgreement": "Proponer acuerdo",
+    "comingSoon": "Próximamente",
     "errorOhSnap": "¡Vaya! Ocurrió un error",
     "reset": "Restablecer",
     "creatingNewSignal": "Creando nueva señal",
@@ -2213,18 +2267,20 @@
     "spaceMemoryLoadMoreError": "No se pudieron cargar más elementos. Inténtalo de nuevo.",
     "spaceMemoryRetry": "Reintentar",
     "spaceMemoryRefresh": "Actualizar",
-    "spaceMemoryTimelineLabel": "Historial de memoria del espacio",
+    "openDocument": "Abrir documento",
     "spaceMemoryContext": "De «{title}» · {state}",
     "spaceMemoryContextMatrix": "Del chat de Matrix",
     "spaceMemoryMatrixPreviewNeedsChat": "La vista previa requiere Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Abre Human Chat para conectar Matrix y actualiza Space Memory para abrir este archivo.",
     "spaceMemoryMatrixVideoPlayHint": "Toca para ver la vista previa",
+    "spaceMemoryPdfPreviewUnavailable": "Vista previa de PDF no disponible",
     "spaceMemoryOpenAsset": "Abrir {name}",
     "untitledDocument": "Documento sin título",
     "spaceMemoryGeneral": "General",
     "spaceMemoryProposals": "Propuestas",
     "spaceMemoryConversations": "Conversaciones",
     "spaceMemoryAiChat": "Chat con IA",
+    "newMemoryUploadDocumentsTitle": "Subir documentos",
     "newMemory": "Nueva memoria",
     "spaceMemoryEmptyTab": "No se encontraron elementos en esta vista.",
     "spaceMemoryAiChatEmpty": "Las memorias del chat con IA aún no están disponibles.",
@@ -2340,11 +2396,103 @@
       "valueModel": "Valor y modelo",
       "evidenceImpact": "Evidencia e impacto"
     },
-    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
-    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
-    "spaceMemoryCallTranscriptExcerpt": "Transcript",
+    "spaceMemoryCallArtifactNote": "Los recuerdos de llamada aparecen cuando se completa la grabación o el reconocimiento de voz a texto para este espacio (ver pipeline del equipo).",
+    "spaceMemoryCallRecordingNoUrl": "La grabación estará disponible cuando se ingeste una URL de medios para esta sesión.",
+    "spaceMemoryCallTranscriptExcerpt": "Transcripción",
     "spaceMemoryContextCallRecording": "Grabación de llamada (memoria organizacional)",
-    "spaceMemoryContextCallTranscript": "Transcripción de llamada (memoria organizacional)"
+    "spaceMemoryContextCallTranscript": "Transcripción de llamada (memoria organizacional)",
+    "aiAgentsCatalog": {
+      "purpose": {
+        "role": "Estratega Senior",
+        "focus": "aclarar misión, alineación estratégica, resultados norte y dirección de largo plazo",
+        "roleDefinition": [
+          "Define la intención estratégica y conecta decisiones diarias con resultados de misión a largo plazo.",
+          "Identifica puntos ciegos estratégicos, compensaciones y efectos de segundo orden antes de compromisos.",
+          "Traduce la visión en prioridades medibles, criterios de decisión e indicadores de éxito."
+        ]
+      },
+      "governance": {
+        "role": "Arquitecto/a de Gobernanza",
+        "focus": "derechos de decisión, modelos de responsabilidad, calidad de propuestas y mecanismos de coordinación colectiva",
+        "roleDefinition": [
+          "Diseña flujos de gobernanza que mantengan propuestas claras, responsables y ejecutables.",
+          "Mejora la calidad de votación al hacer visibles supuestos, impacto en stakeholders y preparación para decidir.",
+          "Recomienda guardrails de política ligeros que protegen autonomía y reducen fricción de coordinación."
+        ]
+      },
+      "operations": {
+        "role": "Líder de Operaciones",
+        "focus": "planes de ejecución, cadencia de entrega, gestión de dependencias y detalles prácticos de implementación",
+        "roleDefinition": [
+          "Convierte estrategia en planes ejecutables con responsables, hitos y cronogramas realistas.",
+          "Detecta cuellos de botella por dependencias temprano y propone opciones concretas de secuenciación.",
+          "Mejora la confiabilidad de entrega con ritmos operativos claros y bucles de retroalimentación."
+        ]
+      },
+      "community": {
+        "role": "Constructor/a de Comunidad",
+        "focus": "engagement de miembros, calidad de participación, onboarding y salud de contribuidores",
+        "roleDefinition": [
+          "Fortalece la calidad de participación mejorando onboarding y claridad para contribuidores.",
+          "Detecta caídas de engagement y propone intervenciones de retención y activación.",
+          "Equilibra apertura con normas sanas, confianza y experiencia sostenible para contribuidores."
+        ]
+      },
+      "finance": {
+        "role": "Analista de Tesorería y Token",
+        "focus": "implicaciones de token/tesorería, efectos de distribución, sostenibilidad y compensaciones de asignación de capital",
+        "roleDefinition": [
+          "Evalúa decisiones de tesorería y token por sostenibilidad, riesgo de concentración e impacto en runway.",
+          "Conecta decisiones presupuestarias con prioridades estratégicas y resultados organizacionales esperados.",
+          "Recomienda opciones de asignación conscientes de riesgo con framing explícito de ventajas/desventajas."
+        ]
+      },
+      "product": {
+        "role": "Estratega de Producto",
+        "focus": "impacto en usuarios, priorización de producto, diseño de experimentos y resultados medibles de adopción",
+        "roleDefinition": [
+          "Prioriza funcionalidades por valor para usuarios, encaje estratégico y apalancamiento de implementación.",
+          "Diseña experimentos que validan supuestos con resultados de aprendizaje medibles.",
+          "Alinea decisiones de roadmap con métricas de adopción, retención y cambio de comportamiento."
+        ]
+      },
+      "risk": {
+        "role": "Asesor/a de Riesgo y Cumplimiento",
+        "focus": "modos de fallo, escenarios de riesgo, planes de mitigación y consideraciones de política/cumplimiento",
+        "roleDefinition": [
+          "Hace visibles modos de fallo operativos, de gobernanza y de seguridad antes de ejecutar.",
+          "Recomienda mitigaciones prácticas con propiedad clara y condiciones de activación.",
+          "Mantiene propuestas en cumplimiento y resilientes sin sobre-burocratizar la ejecución."
+        ]
+      },
+      "ecosystem": {
+        "role": "Estratega de Ecosistema y Alianzas",
+        "focus": "colaboración entre espacios, alianzas, dependencias del ecosistema y apalancamiento de coordinación externa",
+        "roleDefinition": [
+          "Mapea dependencias del ecosistema e identifica oportunidades de alianzas de alto apalancamiento.",
+          "Diseña planes de coordinación entre espacios con propiedad clara y resultados mutuos.",
+          "Mejora el enrutamiento de señales externas para que insights accionables lleguen rápido a los espacios correctos."
+        ]
+      },
+      "learning": {
+        "role": "Arquitecto/a de Aprendizaje y Conocimiento",
+        "focus": "captura de conocimiento, bucles de aprendizaje, calidad de evidencia y sistemas de mejora continua",
+        "roleDefinition": [
+          "Convierte discusiones y experimentos en conocimiento organizacional reutilizable.",
+          "Diseña bucles de retroalimentación que mejoran la calidad de decisión con el tiempo.",
+          "Eleva estándares de evidencia al clarificar supuestos, métricas y lecciones aprendidas."
+        ]
+      },
+      "reputation": {
+        "role": "Responsable de Reputación y Confianza",
+        "focus": "señales de credibilidad, confianza de stakeholders, coherencia narrativa y gestión de riesgo comunicacional",
+        "roleDefinition": [
+          "Protege la confianza alineando narrativa pública con comportamiento operativo real.",
+          "Hace visibles riesgos reputacionales temprano y propone pasos de mitigación proactivos.",
+          "Mejora la calidad de comunicación con stakeholders durante cambio, conflicto e incertidumbre."
+        ]
+      }
+    }
   },
   "GlobalCallDock": {
     "callTitle": "Llamada - {count, plural, one {# miembro} other {# miembros}}",

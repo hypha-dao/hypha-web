@@ -59,6 +59,33 @@ Implementers SHOULD reuse the **same** roster computation and serialization as `
 - **Not** returning full governance document rows in **`get_org_memory_by_space_slug`** (use `get_documents_by_space_slug`).
 - **Not** inlining multi‑MiB binaries in **`get_org_memory_by_space_slug`** listing responses (use **`fetch_org_memory_asset`**).
 
+### 2.5 Activity-signal quality policy (AI context)
+
+Because this tool is the AI memory umbrella, activity context MUST be high-signal and
+exclude telemetry/debug noise that does not improve reasoning quality.
+
+**Exclude as noise (do not model as activity facts):**
+
+- UI/session telemetry (clicks, scroll depth, panel open/close, viewport dimensions)
+- low-level delivery mechanics (typing indicators, reconnect churn, read-receipt internals)
+- transient presence chatter (heartbeat/ping noise, reconnect join/leave flaps)
+- debug/trace internals (stack traces, retry internals, verbose transport logs)
+- redundant snapshots (full-state repeats without meaningful semantic change)
+- raw binary payloads as activity records (store URI/metadata/transcript, not media bytes)
+- duplicate cross-channel copies without new context
+- non-essential PII (device IDs, IPs, user-agent strings) unless explicitly approved
+
+**Keep as required activity intelligence:**
+
+- actor + action + timestamp + canonical reference (`space_slug`, `doc slug`, `asset_key`, `call_session_id`)
+- decision artifacts (proposal/vote/outcome/rationale)
+- conversation intelligence (summary, key quotes, participant set)
+- call intelligence (transcript, summary, action items, recording URI)
+- meaningful document deltas (semantic revision events, not keystroke logs)
+- task lifecycle transitions (opened/assigned/completed/blocked)
+
+Rule: if a record cannot help answer **what happened, why, and what changed**, it is out of scope for AI memory context.
+
 ---
 
 ## 3) Functional requirements
@@ -76,6 +103,7 @@ Implementers SHOULD reuse the **same** roster computation and serialization as `
 | **FR-9**  | Serialize all **`Date`** fields in nested objects as **ISO-8601 strings** via **`serializeSpaceMembersRosterDatesForJson`** before Zod validation.                                                                                                                                                                                                    |
 | **FR-10** | After building the payload, the server SHALL validate **`structuredContent`** with **`getOrgMemoryBySpaceSlugOutputSchema`** (including **`org_memory_assets`** items and optional **`asset_key`**).                                                                                                                                                  |
 | **FR-15** | The system SHALL expose MCP tool **`fetch_org_memory_asset`** with **`readOnlyHint`** / **`idempotentHint`**, same **`checkSpaceAccessForSpace`** rules, **`fetchOrgMemoryAssetOutputSchema`** validation, and documented **`max_bytes`** / timeout behaviour (see §2.3).                                                                             |
+| **FR-16** | Any activity metadata surfaced through `org_memory_assets` or related enrichment SHALL comply with §2.5 signal policy: include semantic activity events and exclude telemetry/debug noise.                                                                                                                                                               |
 
 ---
 
@@ -116,6 +144,7 @@ Update **`McpServer` `instructions`** string to mention the new tool.
 - **`HYPHA_MCP_AUTH_TOKEN`**: unchanged (Privy JWT).
 - **Rate limits:** same as roster (RPC for member addresses).
 - **Matrix fetch:** **`fetch_org_memory_asset`** MUST use server-side Matrix credentials for **`mxc_uri`** (never assume browser-only `mxcUrlToHttp`) — see [documents-and-media-overview §4.7](../architecture/documents-and-media-overview.md#47-mcp-and-hypha-chat-ai) and [mcp-get-documents-by-space-slug-tech-spec §8.2–8.3](./mcp-get-documents-by-space-slug-tech-spec.md#82-ai-opening-documents-images-and-video).
+- **Data minimization for AI:** enforce §2.5 by excluding telemetry/debug/PII noise from memory records and summaries.
 
 ---
 
@@ -131,6 +160,7 @@ Update **`McpServer` `instructions`** string to mention the new tool.
 | Output schema                         | Passes `getOrgMemoryBySpaceSlugOutputSchema.safeParse`                                                                                 |
 | **Step 3:** catalogue + Matrix row    | At least one **`org_memory_assets`** item with **`source: matrix_chat`** and **`mxc_uri`**; restricted space without token → `isError` |
 | **Step 3:** proposal row in catalogue | Row with **`source`** proposal/upload and **`app_url`** or **`document_id`**                                                           |
+| Activity noise policy                 | Activity records included in memory exclude noise classes in §2.5 and preserve canonical retrieval IDs                                 |
 
 ---
 

@@ -325,6 +325,11 @@ export function HumanChatPanelCallStage({
     () => buildRemoteUserTiles(rmuForTiles, missForTiles),
     [rmuForTiles, missForTiles],
   );
+  const isLiveAndUnmuted = useCallback((feed: CallFeed): boolean => {
+    const track = feed.stream.getVideoTracks()[0];
+    if (!track || track.readyState !== 'live') return false;
+    return !feed.isVideoMuted();
+  }, []);
 
   if (!model) {
     return null;
@@ -370,18 +375,22 @@ export function HumanChatPanelCallStage({
    * Also ignore stale/non-live share tracks — those can leave fullscreen layouts
    * in a split state with no usable share frame rendered.
    */
-  const shareFeeds = rawShareFeeds.filter((feed) => {
-    const track = feed.stream.getVideoTracks()[0];
-    if (!track || track.readyState !== 'live') return false;
-    if (feed.isVideoMuted()) return false;
+  const previewShareFeeds = rawShareFeeds.filter((feed) => {
+    if (!isLiveAndUnmuted(feed)) return false;
     if (!feed.isLocal()) return true;
+    const track = feed.stream.getVideoTracks()[0];
     const displaySurface = track?.getSettings?.().displaySurface;
     return displaySurface !== 'browser';
   });
+  const shareFeeds =
+    layout === 'panel'
+      ? previewShareFeeds
+      : rawShareFeeds.filter(isLiveAndUnmuted);
+  const hasRenderableRawShare = rawShareFeeds.some(isLiveAndUnmuted);
   const hasRemotesOrShare =
     remoteUserMedia.length > 0 ||
     missingRemoteUserIds.length > 0 ||
-    shareFeeds.length > 0;
+    hasRenderableRawShare;
   const showLocalInMainGrid =
     rawShowLocalInMainGrid || (!hasRemotesOrShare && localUserMedia.length > 0);
   const showLocalPip = rawShowLocalPip && hasRemotesOrShare;

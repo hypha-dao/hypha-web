@@ -20,10 +20,16 @@ import {
   type HyphaMediaBundleItemWire,
 } from '../../matrix/rich-reply';
 import { withOrgMemoryAssetKeys } from '../../org-memory/with-org-memory-asset-keys';
+import { listSpaceCallArtifactsBySpaceId } from './call-artifacts';
 
 /** Aligned with MCP §8.1 / architecture org memory rows. */
 export type OrgMemoryAsset = {
-  source: 'proposal_upload' | 'matrix_chat';
+  source:
+    | 'proposal_upload'
+    | 'matrix_chat'
+    | 'call_recording'
+    | 'call_transcript'
+    | 'discussion_summary';
   filename: string;
   /** Opaque key for `fetch_org_memory_asset` (MCP / Chat). */
   asset_key?: string;
@@ -38,6 +44,11 @@ export type OrgMemoryAsset = {
   document_state?: Document['state'];
   document_slug?: string;
   document_label?: string;
+  call_session_id?: string;
+  call_recording_id?: number;
+  call_transcript_id?: number;
+  discussion_summary_id?: number;
+  text_excerpt?: string;
   occurred_at: string;
 };
 
@@ -572,9 +583,100 @@ function filterAssetsBySearch(
   return assets.filter(
     (a) =>
       a.filename.toLowerCase().includes(q) ||
+      (a.text_excerpt?.toLowerCase().includes(q) ?? false) ||
       (a.app_url?.toLowerCase().includes(q) ?? false) ||
       (a.mxc_uri?.toLowerCase().includes(q) ?? false),
   );
+}
+
+function inferAssetKindForSignal(asset: OrgMemoryAsset) {
+  const name = asset.filename.toLowerCase();
+  const target = `${asset.filename} ${
+    asset.app_url ?? asset.mxc_uri ?? ''
+  }`.toLowerCase();
+  if (/\.(png|jpe?g|gif|webp|svg|avif)(\?|#|$)/i.test(target)) return 'image';
+  if (/\.(mp4|webm|mov|mkv|m4v)(\?|#|$)/i.test(target)) return 'video';
+  if (/\.(pdf|doc|docx|txt|md|csv|xls|xlsx|ppt|pptx|zip)(\?|#|$)/i.test(target))
+    return 'document';
+  if ((asset.mime ?? '').toLowerCase().startsWith('image/')) return 'image';
+  if ((asset.mime ?? '').toLowerCase().startsWith('video/')) return 'video';
+  if (
+    name.endsWith('.pdf') ||
+    name.endsWith('.doc') ||
+    name.endsWith('.docx') ||
+    name.endsWith('.txt') ||
+    name.endsWith('.md')
+  ) {
+    return 'document';
+  }
+  return 'other';
+}
+
+function looksOpaqueNoiseFilename(filename: string): boolean {
+  const raw = filename.trim();
+  if (!raw) return true;
+  const lower = raw.toLowerCase();
+  const hasExtension = /\.[a-z0-9]{2,5}(\?|#|$)/i.test(raw);
+  const alphaNumOnly = /^[a-z0-9_-]+$/i.test(raw);
+  const hashLike = alphaNumOnly && raw.length >= 28 && !hasExtension;
+  const uuidLike =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      raw,
+    );
+  const genericScreenshot =
+    /(screenshot|screen shot|image)[\s_-]*\d*/i.test(lower) &&
+    !/(architecture|roadmap|proposal|budget|decision|minutes|plan|spec)/i.test(
+      lower,
+    );
+  return hashLike || uuidLike || genericScreenshot;
+}
+
+function compactOrgMemoryAssetsForSignal(
+  assets: OrgMemoryAsset[],
+): OrgMemoryAsset[] {
+  const dedupeKeys = new Set<string>();
+  const imageQuotaByDocument = new Map<number, number>();
+  const compacted: OrgMemoryAsset[] = [];
+
+  for (const asset of assets) {
+    const uniqueLocator =
+      asset.app_url ??
+      asset.mxc_uri ??
+      (asset.call_recording_id != null
+        ? `call-recording:${asset.call_recording_id}`
+        : null) ??
+      (asset.call_transcript_id != null
+        ? `call-transcript:${asset.call_transcript_id}`
+        : null) ??
+      (asset.discussion_summary_id != null
+        ? `discussion-summary:${asset.discussion_summary_id}`
+        : null) ??
+      `${asset.filename}:${asset.occurred_at}`;
+    const dedupeKey = `${asset.source}:${uniqueLocator}`;
+    if (dedupeKeys.has(dedupeKey)) continue;
+    dedupeKeys.add(dedupeKey);
+
+    const kind = inferAssetKindForSignal(asset);
+    const lowSignalName = looksOpaqueNoiseFilename(asset.filename);
+
+    if (asset.source === 'proposal_upload') {
+      if (kind === 'other' && lowSignalName) {
+        continue;
+      }
+      if (kind === 'image' && lowSignalName) {
+        continue;
+      }
+      if (kind === 'image' && asset.document_id != null) {
+        const used = imageQuotaByDocument.get(asset.document_id) ?? 0;
+        if (used >= 1) continue;
+        imageQuotaByDocument.set(asset.document_id, used + 1);
+      }
+    }
+
+    compacted.push(asset);
+  }
+
+  return compacted;
 }
 
 /**
@@ -723,9 +825,52 @@ export async function getOrgMemoryBySpaceSlug(
           } satisfies MatrixOrgMemoryFetchMeta,
         };
 
-  let combined = [...proposalAssets, ...matrixAssets].sort((a, b) =>
+  const callArtifacts = await listSpaceCallArtifactsBySpaceId(host.id, { db });
+  const recordingAssets: OrgMemoryAsset[] = callArtifacts.recordings.map(
+    (r) => ({
+      source: 'call_recording',
+      filename:
+        r.mediaUri.split('/').pop()?.trim() ||
+        `call-recording-${r.callSessionId}.webm`,
+      app_url: r.mediaUri,
+      mime: r.mimeType,
+      occurred_at: r.createdAt.toISOString(),
+      call_session_id: r.callSessionId,
+      call_recording_id: r.id,
+    }),
+  );
+  const transcriptAssets: OrgMemoryAsset[] = callArtifacts.transcripts.map(
+    (t) => ({
+      source: 'call_transcript',
+      filename: `call-transcript-${t.callSessionId}.txt`,
+      mime: 'text/plain',
+      occurred_at: t.createdAt.toISOString(),
+      call_session_id: t.callSessionId,
+      call_transcript_id: t.id,
+      text_excerpt: t.summary ?? t.text.slice(0, 240),
+    }),
+  );
+  const discussionSummaryAssets: OrgMemoryAsset[] = callArtifacts.summaries.map(
+    (s) => ({
+      source: 'discussion_summary',
+      filename: `discussion-summary-${s.id}.md`,
+      mime: 'text/markdown',
+      occurred_at: s.createdAt.toISOString(),
+      discussion_summary_id: s.id,
+      text_excerpt: s.summary,
+    }),
+  );
+
+  let combined = [
+    ...proposalAssets,
+    ...matrixAssets,
+    ...recordingAssets,
+    ...transcriptAssets,
+    ...discussionSummaryAssets,
+  ].sort((a, b) =>
     a.occurred_at < b.occurred_at ? 1 : a.occurred_at > b.occurred_at ? -1 : 0,
   );
+  combined = compactOrgMemoryAssetsForSignal(combined);
   combined = filterAssetsBySearch(combined, assetsSearch);
 
   const total = combined.length;
