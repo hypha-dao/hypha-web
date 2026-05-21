@@ -46,14 +46,13 @@ export function DocumentsSections({
   const createProposalPath = `${basePath}/select-create-action`;
   const canCreateProposal =
     !isUserStateLoading && userState === UserSpaceState.LOGGED_IN_SPACE;
-  const createProposalButton =
-    canCreateProposal ? (
-      <Button asChild>
-        <Link href={createProposalPath}>{t('newProposal')}</Link>
-      </Button>
-    ) : (
-      <Button disabled>{t('newProposal')}</Button>
-    );
+  const createProposalButton = canCreateProposal ? (
+    <Button asChild>
+      <Link href={createProposalPath}>{t('newProposal')}</Link>
+    </Button>
+  ) : (
+    <Button disabled>{t('newProposal')}</Button>
+  );
 
   return (
     <Tabs
