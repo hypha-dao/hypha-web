@@ -38,6 +38,8 @@ interface CreateAgreementFormProps {
   label?: string;
   /** Optional sticky-header title when it should differ from `label`. */
   stickyHeaderTitle?: string;
+  /** Enables memory-first wording/behavior in the shared creation form. */
+  mode?: 'agreement' | 'memory';
 }
 
 export const CreateAgreementForm = ({
@@ -48,9 +50,11 @@ export const CreateAgreementForm = ({
   web3SpaceId,
   label,
   stickyHeaderTitle,
+  mode = 'agreement',
 }: CreateAgreementFormProps) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tCoherence = useTranslations('CoherenceTab');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -67,7 +71,10 @@ export const CreateAgreementForm = ({
     tAgreementFlow,
   );
   const resolvedLabel =
-    label ?? tAgreementFlow('createActionForms.defaultAgreement');
+    label ??
+    (mode === 'memory'
+      ? tCoherence('newMemory')
+      : tAgreementFlow('createActionForms.defaultAgreement'));
 
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -143,10 +150,17 @@ export const CreateAgreementForm = ({
             isLoading={false}
             label={resolvedLabel}
             stickyHeaderTitle={stickyHeaderTitle}
+            mode={mode}
             progress={progress}
           />
           <div className="flex justify-end w-full">
-            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
+            <Button type="submit">
+              {mode === 'memory'
+                ? tCoherence.has('publish')
+                  ? tCoherence('publish')
+                  : tAgreementFlow('buttons.publish')
+                : tAgreementFlow('buttons.publish')}
+            </Button>
           </div>
         </form>
       </Form>

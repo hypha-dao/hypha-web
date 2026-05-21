@@ -8,6 +8,7 @@ import { cn } from '@hypha-platform/ui-utils';
 
 export interface BadgeItem extends BadgeProps {
   icon?: LucideReactIcon;
+  iconClassName?: string;
   label: string | number;
 }
 
@@ -33,7 +34,13 @@ export const BadgesList = ({
           colorVariant={badge.colorVariant}
         >
           <span className="flex gap-1">
-            {badge.icon && <DynamicIcon name={badge.icon} size={16} />}
+            {badge.icon && (
+              <DynamicIcon
+                name={badge.icon}
+                size={16}
+                className={badge.iconClassName}
+              />
+            )}
             {badge.label}
           </span>
         </Badge>

@@ -62,6 +62,10 @@ export interface SendMessageInput {
   signal?: AbortSignal;
 }
 
+export interface SendMessageResult {
+  eventId?: string;
+}
+
 /** Existing attachment slot when editing a media `m.room.message` (mxc stays on server). */
 export type EditRoomMessageExistingSlot = {
   mxcUrl: string;
@@ -254,6 +258,12 @@ function delay(ms: number): Promise<void> {
   });
 }
 
+function getEventIdFromSendResponse(response: unknown): string | undefined {
+  if (!response || typeof response !== 'object') return undefined;
+  const eventId = (response as { event_id?: unknown }).event_id;
+  return typeof eventId === 'string' && eventId.trim() ? eventId : undefined;
+}
+
 /** True when the homeserver rejected the request for rate limiting (HTTP 429 / M_LIMIT_EXCEEDED). */
 export function isMatrixRateLimitedError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
@@ -438,7 +448,7 @@ interface MatrixContextType {
   isMatrixAvailable: boolean;
   isAuthenticated: boolean;
   createRoom: (title: string) => Promise<{ roomId: string }>;
-  sendMessage: (params: SendMessageInput) => Promise<void>;
+  sendMessage: (params: SendMessageInput) => Promise<SendMessageResult>;
   editRoomMessage: (params: EditRoomMessageInput) => Promise<void>;
   redactRoomEvent: (params: RedactRoomEventInput) => Promise<void>;
   toggleReaction: (params: ToggleReactionInput) => Promise<void>;
@@ -669,19 +679,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       attachments,
       onUploadProgress,
       signal,
-    }: SendMessageInput) => {
+    }: SendMessageInput): Promise<SendMessageResult> => {
       if (!client) {
         throw new Error('Client should be specified');
       }
       if (!roomId?.trim()) {
-        return;
+        return {};
       }
 
       const trimmed = message.trim();
       const list = attachments?.length ? attachments : [];
       const hasAttachments = list.length > 0;
       if (!trimmed && !hasAttachments) {
-        return;
+        return {};
       }
 
       const mentionIds = resolveMentionUserIdsForSend(trimmed, mentionUserIds);
@@ -790,7 +800,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                 }
               : base;
             throwIfAborted(signal);
-            await client.sendEvent(
+            const sendResult = await client.sendEvent(
               roomId,
               EventType.RoomMessage,
               mergeMatrixMentionsIntoContent(
@@ -799,6 +809,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               ) as RoomMessageEventContent,
             );
             sentMediaCount = 1;
+            return { eventId: getEventIdFromSendResponse(sendResult) };
           } else if (mediaPayloads.length > 1) {
             const [first, ...rest] = mediaPayloads;
             const bundleItems: HyphaMediaBundleItemWire[] = rest.map((item) => {
@@ -829,7 +840,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                 }
               : combined;
             throwIfAborted(signal);
-            await client.sendEvent(
+            const sendResult = await client.sendEvent(
               roomId,
               EventType.RoomMessage,
               mergeMatrixMentionsIntoContent(
@@ -838,6 +849,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               ) as RoomMessageEventContent,
             );
             sentMediaCount = list.length;
+            return { eventId: getEventIdFromSendResponse(sendResult) };
           }
         } catch (mediaErr) {
           throw new SendMessagePartialFailureError(
@@ -848,11 +860,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             true,
           );
         }
-        return;
+        return {};
       }
 
       if (!trimmed) {
-        return;
+        return {};
       }
 
       throwIfAborted(signal);
@@ -865,7 +877,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             message,
           );
           throwIfAborted(signal);
-          await client.sendEvent(
+          const sendResult = await client.sendEvent(
             roomId,
             EventType.RoomMessage,
             mergeMatrixMentionsIntoContent(
@@ -881,14 +893,14 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               mentionIds,
             ),
           );
-          return;
+          return { eventId: getEventIdFromSendResponse(sendResult) };
         }
 
         if (replyContext && hasAttachments) {
           const textPayload =
             matrixTextEventContentWithOptionalFormatting(message);
           throwIfAborted(signal);
-          await client.sendEvent(
+          const sendResult = await client.sendEvent(
             roomId,
             EventType.RoomMessage,
             mergeMatrixMentionsIntoContent(
@@ -904,13 +916,13 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               mentionIds,
             ),
           );
-          return;
+          return { eventId: getEventIdFromSendResponse(sendResult) };
         }
 
         const textPayload =
           matrixTextEventContentWithOptionalFormatting(message);
         throwIfAborted(signal);
-        await client.sendEvent(
+        const sendResult = await client.sendEvent(
           roomId,
           EventType.RoomMessage,
           mergeMatrixMentionsIntoContent(
@@ -921,6 +933,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             mentionIds,
           ),
         );
+        return { eventId: getEventIdFromSendResponse(sendResult) };
       } catch (textErr) {
         throw new SendMessagePartialFailureError(
           textErr instanceof Error

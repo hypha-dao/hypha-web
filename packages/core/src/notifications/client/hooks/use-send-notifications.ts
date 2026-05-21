@@ -11,6 +11,14 @@ export interface NotifyProposalRejectedInput {
   proposalId: bigint;
 }
 
+export interface NotifyChatMentionInput {
+  actorSlug?: string;
+  actorDisplayName?: string;
+  mentionMatrixUserIds: string[];
+  messagePreview?: string;
+  url: string;
+}
+
 export interface PostNotifyProposalCreatedInput
   extends NotifyProposalCreatedInput {
   sendNotifications?: (arg: NotifyProposalCreatedInput) => Promise<void>;
@@ -20,6 +28,7 @@ export interface UseSendNotificationsReturn {
   notifyProposalCreated: (arg: NotifyProposalCreatedInput) => Promise<void>;
   notifyProposalAccepted: (arg: NotifyProposalAcceptedInput) => Promise<void>;
   notifyProposalRejected: (arg: NotifyProposalRejectedInput) => Promise<void>;
+  notifyChatMention: (arg: NotifyChatMentionInput) => Promise<void>;
 }
 
 export interface UseSendNotificationsInput {

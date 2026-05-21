@@ -297,12 +297,16 @@ export async function getSpaceMembersRoster(
     searchTerm,
   }: GetSpaceMembersRosterInput,
   { db }: DbConfig,
+  options?: {
+    computeEntries?: typeof computeSpaceMemberEntries;
+  },
 ): Promise<SpaceMembersRosterResult> {
   const asOf = new Date().toISOString();
   const safePage = Math.max(1, page);
   const safePageSize = Math.min(100, Math.max(1, pageSize));
 
-  const computed = await computeSpaceMemberEntries(spaceSlug, { db });
+  const computeEntries = options?.computeEntries ?? computeSpaceMemberEntries;
+  const computed = await computeEntries(spaceSlug, { db });
   if (!computed.found) {
     return {
       found: false,

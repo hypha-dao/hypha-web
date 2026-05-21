@@ -21,6 +21,7 @@ type AiPanelMessagesProps = {
   onSuggestionSelect: (text: string) => void;
   activeSpaceName?: string;
   isStreaming?: boolean;
+  onActionReplySelect?: (text: string) => void;
 };
 
 export function AiPanelMessages({
@@ -30,6 +31,7 @@ export function AiPanelMessages({
   onSuggestionSelect,
   activeSpaceName,
   isStreaming = false,
+  onActionReplySelect,
 }: AiPanelMessagesProps) {
   const t = useTranslations('AiPanel');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,6 +71,7 @@ export function AiPanelMessages({
           <AiPanelMessageBubble
             key={msg.id}
             message={msg}
+            onActionReplySelect={onActionReplySelect}
             isStreaming={
               msg.role === 'assistant' &&
               isStreaming &&

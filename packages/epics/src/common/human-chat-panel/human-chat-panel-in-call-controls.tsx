@@ -2,12 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
+  Circle,
   Check,
   ChevronDown,
+  FileText,
   Mic,
   MicOff,
   Monitor,
   MonitorOff,
+  Square,
   Video,
   VideoOff,
   Volume2,
@@ -17,6 +20,8 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import {
   getCallControlsPhase,
+  type SpaceGroupCallCaptureMode,
+  type SpaceGroupCallRecordingStatus,
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
 
@@ -32,6 +37,10 @@ type HumanChatPanelInCallControlsProps = {
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
+  captureMode: SpaceGroupCallCaptureMode;
+  onCaptureModeChange: (mode: SpaceGroupCallCaptureMode) => void;
+  recordingStatus: SpaceGroupCallRecordingStatus;
+  recordingError: string | null;
   onLeave: () => void;
   /** In header strip: compact buttons; in full view: larger, high-contrast on video. */
   variant?: 'inBanner' | 'fullView';
@@ -53,6 +62,10 @@ export function HumanChatPanelInCallControls({
   onToggleScreenshare,
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
+  captureMode,
+  onCaptureModeChange,
+  recordingStatus,
+  recordingError,
   onLeave,
   variant = 'inBanner',
   inBannerLayout = 'inline',
@@ -61,6 +74,13 @@ export function HumanChatPanelInCallControls({
   const { controlsDisabled } = getCallControlsPhase(callState);
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
   const audioMenuRef = useRef<HTMLDivElement | null>(null);
+  const [isCaptureMenuOpen, setIsCaptureMenuOpen] = useState(false);
+  const captureMenuRef = useRef<HTMLDivElement | null>(null);
+  const leaveWarningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const [leaveWithoutCaptureArmed, setLeaveWithoutCaptureArmed] =
+    useState(false);
   const isFull = variant === 'fullView';
   const isCenteredInBanner = !isFull && inBannerLayout === 'centered';
   /**
@@ -103,6 +123,31 @@ export function HumanChatPanelInCallControls({
     : 'h-4 w-4 text-foreground';
   const useSideAudioSettings =
     isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered';
+  const captureSettingsBtn = isFull
+    ? 'relative inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center rounded-full border border-zinc-600/80 bg-zinc-900/90 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
+    : 'relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+  const captureStatusText =
+    recordingStatus === 'recording'
+      ? t('callCaptureStatusCapturing')
+      : recordingStatus === 'uploading'
+      ? t('callCaptureStatusSaving')
+      : recordingStatus === 'error'
+      ? t('callCaptureStatusError')
+      : t('callCaptureStatusIdle');
+  const captureIconClass = isFull ? fullViewIcon : 'h-4 w-4';
+  const captureRecordingIconClass = cn(
+    captureIconClass,
+    isFull ? 'text-rose-400 stroke-rose-400' : 'text-rose-600 stroke-rose-600',
+  );
+  const captureStatusDotClass =
+    recordingStatus === 'recording'
+      ? 'bg-emerald-500'
+      : recordingStatus === 'uploading'
+      ? 'bg-amber-500'
+      : recordingStatus === 'error'
+      ? 'bg-destructive'
+      : 'bg-muted-foreground/40';
+  const captureOff = captureMode === 'none';
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
@@ -111,21 +156,39 @@ export function HumanChatPanelInCallControls({
       if (!audioMenuRef.current?.contains(target)) {
         setIsAudioMenuOpen(false);
       }
+      if (!captureMenuRef.current?.contains(target)) {
+        setIsCaptureMenuOpen(false);
+      }
     };
     window.addEventListener('pointerdown', onPointerDown);
     return () => window.removeEventListener('pointerdown', onPointerDown);
   }, []);
 
   useEffect(() => {
-    if (!isAudioMenuOpen) return;
+    if (!isAudioMenuOpen && !isCaptureMenuOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsAudioMenuOpen(false);
+        setIsCaptureMenuOpen(false);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isAudioMenuOpen]);
+  }, [isAudioMenuOpen, isCaptureMenuOpen]);
+
+  useEffect(() => {
+    if (!captureOff && leaveWithoutCaptureArmed) {
+      setLeaveWithoutCaptureArmed(false);
+    }
+  }, [captureOff, leaveWithoutCaptureArmed]);
+
+  useEffect(() => {
+    return () => {
+      if (leaveWarningTimeoutRef.current) {
+        clearTimeout(leaveWarningTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const selectVoicePreset = (
     preset: 'standard' | 'voice_isolation' | 'music',
@@ -133,6 +196,39 @@ export function HumanChatPanelInCallControls({
     onVoiceProcessingPresetChange(preset);
     setIsAudioMenuOpen(false);
   };
+  const selectCaptureMode = (mode: SpaceGroupCallCaptureMode) => {
+    onCaptureModeChange(mode);
+    setIsCaptureMenuOpen(false);
+  };
+  const handleLeaveWithCaptureGuard = () => {
+    if (!captureOff) {
+      onLeave();
+      return;
+    }
+    if (!leaveWithoutCaptureArmed) {
+      setLeaveWithoutCaptureArmed(true);
+      if (leaveWarningTimeoutRef.current) {
+        clearTimeout(leaveWarningTimeoutRef.current);
+      }
+      leaveWarningTimeoutRef.current = setTimeout(() => {
+        setLeaveWithoutCaptureArmed(false);
+        leaveWarningTimeoutRef.current = null;
+      }, 4000);
+      return;
+    }
+    setLeaveWithoutCaptureArmed(false);
+    if (leaveWarningTimeoutRef.current) {
+      clearTimeout(leaveWarningTimeoutRef.current);
+      leaveWarningTimeoutRef.current = null;
+    }
+    onLeave();
+  };
+  const captureModeLabel =
+    captureMode === 'transcript_only'
+      ? t('callCaptureModeTranscriptOnly')
+      : captureMode === 'recording_with_transcript'
+      ? t('callCaptureModeRecordingWithTranscript')
+      : t('callCaptureModeNone');
 
   const renderAudioSettingsMenu = (
     <div className="relative" ref={audioMenuRef}>
@@ -195,6 +291,95 @@ export function HumanChatPanelInCallControls({
           >
             <span>{t('callVoiceProcessingMusic')}</span>
             {voiceProcessingPreset === 'music' ? (
+              <Check className={menuCheckIcon} />
+            ) : null}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+  const renderCaptureMenu = (
+    <div className="relative" ref={captureMenuRef}>
+      <button
+        type="button"
+        className={captureSettingsBtn}
+        title={`${t(
+          'callCaptureLabel',
+        )}: ${captureModeLabel} - ${captureStatusText}`}
+        aria-label={`${t('callCaptureLabel')}: ${captureModeLabel}`}
+        aria-haspopup="menu"
+        aria-expanded={isCaptureMenuOpen}
+        onClick={() => setIsCaptureMenuOpen((open) => !open)}
+      >
+        {captureMode === 'none' ? (
+          <Square className={captureIconClass} />
+        ) : captureMode === 'transcript_only' ? (
+          <FileText className={captureIconClass} />
+        ) : (
+          <Circle className={captureRecordingIconClass} />
+        )}
+        <span
+          className={cn(
+            'absolute -bottom-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full ring-2 ring-background',
+            isFull && 'ring-zinc-900',
+            captureStatusDotClass,
+          )}
+        />
+      </button>
+      {isCaptureMenuOpen ? (
+        <div
+          role="menu"
+          className={cn(
+            'absolute bottom-full right-0 z-[60] mb-2 min-w-52 rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            isFull && 'border-zinc-700 bg-zinc-900 text-white',
+          )}
+        >
+          <p className="px-2 py-1.5 text-sm font-semibold">
+            {t('callCaptureLabel')}
+          </p>
+          <div className="-mx-0 my-1 h-px bg-neutral-6" />
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={captureMode === 'none'}
+            onClick={() => selectCaptureMode('none')}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+          >
+            <span className="inline-flex items-center gap-2">
+              <Square className="h-4 w-4" />
+              {t('callCaptureModeNone')}
+            </span>
+            {captureMode === 'none' ? (
+              <Check className={menuCheckIcon} />
+            ) : null}
+          </button>
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={captureMode === 'transcript_only'}
+            onClick={() => selectCaptureMode('transcript_only')}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+          >
+            <span className="inline-flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              {t('callCaptureModeTranscriptOnly')}
+            </span>
+            {captureMode === 'transcript_only' ? (
+              <Check className={menuCheckIcon} />
+            ) : null}
+          </button>
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={captureMode === 'recording_with_transcript'}
+            onClick={() => selectCaptureMode('recording_with_transcript')}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+          >
+            <span className="inline-flex items-center gap-2">
+              <Circle className="h-4 w-4 text-rose-600 stroke-rose-600" />
+              {t('callCaptureModeRecordingWithTranscript')}
+            </span>
+            {captureMode === 'recording_with_transcript' ? (
               <Check className={menuCheckIcon} />
             ) : null}
           </button>
@@ -312,7 +497,7 @@ export function HumanChatPanelInCallControls({
           </button>
           <button
             type="button"
-            onClick={onLeave}
+            onClick={handleLeaveWithCaptureGuard}
             disabled={callState === 'disconnecting'}
             className={cn(
               leaveBtn,
@@ -324,12 +509,28 @@ export function HumanChatPanelInCallControls({
           >
             <CallHangUpIcon className={leaveIcon} />
           </button>
+          {!useSideAudioSettings ? renderCaptureMenu : null}
           {!useSideAudioSettings ? renderAudioSettingsMenu : null}
         </div>
         {useSideAudioSettings ? (
-          <div className="justify-self-end">{renderAudioSettingsMenu}</div>
+          <div className="justify-self-end flex items-center gap-2">
+            {renderCaptureMenu}
+            {renderAudioSettingsMenu}
+          </div>
         ) : null}
       </div>
+      {captureOff ? (
+        <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
+          {leaveWithoutCaptureArmed
+            ? t('callCaptureLeaveWarning')
+            : t('callCaptureOffHint')}
+        </p>
+      ) : null}
+      {recordingStatus === 'error' && recordingError?.trim() ? (
+        <p className={cn('mt-1 text-[11px] text-destructive')}>
+          {recordingError}
+        </p>
+      ) : null}
     </div>
   );
 }

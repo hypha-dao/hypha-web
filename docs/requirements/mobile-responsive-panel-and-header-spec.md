@@ -73,7 +73,13 @@ Replace hard-only `max-width: 767px` top-bar switching with a collision-aware th
 
 #### Safe threshold definition
 
-- `safeThresholdPx = 232` minimum (chat trigger + profile + spacing + tolerance).
+- `safeThresholdPx = 232` minimum, with explicit breakdown:
+  - chat trigger touch target: `44px`
+  - profile avatar touch target: `44px`
+  - inter-control spacing: `8-16px`
+  - safety margin for intermediate controls, padding, and rounding: `128-136px`
+  - total range: `44 + 44 + (8-16) + (128-136) = 224-240px`
+  - selected conservative threshold: `232px` (center of the range)
 - If `freeSpacePx < safeThresholdPx`, compact mode = `true`.
 - Add 24px hysteresis to avoid flicker:
   - enter compact below `232`
@@ -98,7 +104,18 @@ Inputs:
 Behavior:
 
 - evaluate in `ResizeObserver` + window resize,
+- debounce or throttle both callbacks (target around `~150ms`) to reduce CPU churn on active resize/orientation changes,
 - apply hysteresis.
+- note: hysteresis prevents toggle flicker but does not limit callback frequency.
+
+### SSR and Hydration Handling
+
+- server-rendered initial state: `isCompactHeader = true` (conservative fallback to avoid overlap before measurement).
+- initialize `ResizeObserver` and window resize listeners inside `useEffect` only; do not evaluate layout metrics on the server.
+- treat `headerMetrics` as hydration-time values; apply hysteresis after first client measurement.
+- avoid hydration/visual mismatch by either:
+  - rendering the conservative compact layout in SSR markup, or
+  - temporarily suppressing visible transition until measured (for example via short-lived `visibility`/`opacity` guard).
 
 ## B. Refactor `MenuTop` to be Controlled
 
@@ -131,6 +148,15 @@ Changes:
   2. profile avatar (`ConnectedButtonProfile`)
 
 Move mobile navigation links currently exposed by `MenuTop` fullscreen menu into `ConnectedButtonProfile.navItems` (already present) and verify parity.
+
+- Canonical links to preserve (from `app/layout` navItems):
+  1. `My Spaces` (`/${lang}/my-spaces`)
+  2. `Network` (`/${lang}/network`)
+- Target location/order: keep both entries in `ConnectedButtonProfile.navItems` in the same order as above unless product explicitly reprioritizes.
+- Keep profile-account actions (`Settings`, `Sign out`, etc.) in the profile surface; they must not require the `MenuTop` fullscreen menu path.
+- Reference implementation surfaces:
+  - `packages/ui/src/organisms/menu-top.tsx` (mobile fullscreen container)
+  - `apps/web/src/app/layout.tsx` (`ConnectedButtonProfile.navItems` source)
 
 ## D. Panel Trigger and Sidebar Coordination
 
@@ -176,6 +202,10 @@ File: `packages/epics/src/common/panel-wrap-layout.tsx` (`HumanSidebarTrigger`, 
 - Only one hamburger/menu affordance exists in compact header.
 - Profile avatar remains visible at all compact widths.
 - When right panel opens in compact mode, header remains non-overlapping and usable.
+- Mobile navigation parity after migration:
+  - labels remain `My Spaces` and `Network`,
+  - routes/handlers match previous behavior,
+  - keyboard/tab order and ARIA labels remain valid.
 
 ### Adaptive Threshold
 
@@ -192,6 +222,7 @@ File: `packages/epics/src/common/panel-wrap-layout.tsx` (`HumanSidebarTrigger`, 
 
 1. Manual viewport tests:
    - 375x812, 390x844, 768x1024, 820x1180, 1024x768.
+   - For each size, also run the swapped-dimension landscape variant (812x375, 844x390, 1024x768, 1180x820, 768x1024) and verify compact-mode threshold behavior.
 2. Manual interaction:
    - open/close left panel, right panel, profile menu in each viewport.
 3. Add/update Playwright spec:
@@ -200,6 +231,8 @@ File: `packages/epics/src/common/panel-wrap-layout.tsx` (`HumanSidebarTrigger`, 
 4. Accessibility smoke:
    - keyboard navigation across header controls,
    - axe scan for duplicate-label or contrast regressions.
+5. Performance smoke on mobile:
+   - validate resize/orientation handling with the chosen debounce/throttle value (`~150ms` target) to ensure no visible lag or jitter.
 
 ## Rollout Notes
 

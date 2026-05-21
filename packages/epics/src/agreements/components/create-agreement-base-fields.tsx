@@ -80,6 +80,7 @@ export type CreateAgreementFormProps = {
   label?: string;
   /** When set, shown in sticky header instead of `label` (web3 submission still uses `label`). */
   stickyHeaderTitle?: string;
+  mode?: 'agreement' | 'memory';
   progress: number;
 };
 
@@ -95,9 +96,11 @@ export function CreateAgreementBaseFields({
   backLabel,
   label,
   stickyHeaderTitle,
+  mode = 'agreement',
   progress,
 }: CreateAgreementFormProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tCoherence = useTranslations('CoherenceTab');
   const tCommon = useTranslations('Common');
   const translateEditor = React.useCallback(
     (
@@ -125,6 +128,30 @@ export function CreateAgreementBaseFields({
     backLabel ?? tAgreementFlow('createAgreementBaseFields.backToCreate');
   const resolvedLabel =
     label ?? tAgreementFlow('createAgreementBaseFields.agreementLabel');
+  const titlePlaceholder =
+    mode === 'memory'
+      ? tCoherence.has('newMemoryTitlePlaceholder')
+        ? tCoherence('newMemoryTitlePlaceholder')
+        : tCoherence('newMemory')
+      : tAgreementFlow('createAgreementBaseFields.proposalTitlePlaceholder');
+  const contentLabel =
+    mode === 'memory'
+      ? tCoherence.has('newMemoryContentLabel')
+        ? tCoherence('newMemoryContentLabel')
+        : tCoherence('description')
+      : tAgreementFlow('createAgreementBaseFields.proposalContent');
+  const contentPlaceholder =
+    mode === 'memory'
+      ? tCoherence.has('newMemoryContentPlaceholder')
+        ? tCoherence('newMemoryContentPlaceholder')
+        : tCoherence('descriptionPlaceholder')
+      : tAgreementFlow('createAgreementBaseFields.proposalContentPlaceholder');
+  const attachmentLabel =
+    mode === 'memory'
+      ? tCoherence.has('newMemoryAddDocumentLabel')
+        ? tCoherence('newMemoryAddDocumentLabel')
+        : tAgreementFlow('createAgreementBaseFields.addAttachmentLabel')
+      : tAgreementFlow('createAgreementBaseFields.addAttachmentLabel');
 
   if (!form) {
     return (
@@ -408,6 +435,7 @@ export function CreateAgreementBaseFields({
             ) : null}
             <ButtonClose
               closeUrl={closeUrl}
+              preferBack={mode === 'memory'}
               className="px-0 md:px-3 align-top"
             />
           </div>
@@ -444,9 +472,7 @@ export function CreateAgreementBaseFields({
                             <FormControl>
                               <Input
                                 rootClassName="!h-auto min-h-10 w-full sm:min-h-11"
-                                placeholder={tAgreementFlow(
-                                  'createAgreementBaseFields.proposalTitlePlaceholder',
-                                )}
+                                placeholder={titlePlaceholder}
                                 className="!h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:!text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:placeholder:!text-lg"
                                 disabled={isLoading}
                                 rightIcon={
@@ -463,7 +489,9 @@ export function CreateAgreementBaseFields({
                         {creator?.name} {creator?.surname}
                       </Text>
                     </div>
-                    {hasVotingDuration && durationNumber === 0 ? (
+                    {mode !== 'memory' &&
+                    hasVotingDuration &&
+                    durationNumber === 0 ? (
                       <div className="flex gap-2 h-fit items-center pr-3">
                         <Image
                           className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
@@ -491,7 +519,7 @@ export function CreateAgreementBaseFields({
                           ) : null}
                         </div>
                       </div>
-                    ) : hasVotingDuration ? (
+                    ) : mode !== 'memory' && hasVotingDuration ? (
                       <div className="flex gap-2 h-fit items-center pr-3">
                         <Image
                           className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
@@ -532,53 +560,112 @@ export function CreateAgreementBaseFields({
         <Separator />
       </div>
       <div className="flex flex-col gap-6">
-        <section className="rounded-xl border border-border/70 bg-muted/20 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/12 lg:p-6">
-          <FormField
-            control={form.control}
-            name="leadImage"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <UploadLeadImage
-                    onChange={field.onChange}
-                    maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                    enableImageResizer={true}
-                    cropDialogLabels={{
-                      title: tCommon('uploadLeadImage.cropTitle'),
-                      description: tCommon('uploadLeadImage.cropDescription'),
-                      cancel: tCommon('uploadLeadImage.cancel'),
-                      confirm: tCommon('uploadLeadImage.confirm'),
-                    }}
-                    messages={{
-                      dropHere: tCommon('uploadLeadImage.dropHere'),
-                      fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
-                      uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
-                    }}
-                    uploadText={tAgreementFlow.rich(
-                      'createAgreementBaseFields.uploadImageLabel',
-                      {
-                        accent: (chunks) => (
-                          <span className="text-accent-11">{chunks}</span>
-                        ),
-                      },
-                    )}
-                    defaultImage={
-                      typeof field.value === 'string'
-                        ? field.value.trim().length > 0
-                          ? field.value
-                          : null
-                        : resubmitFormData?.leadImage?.trim()
-                        ? resubmitFormData.leadImage
-                        : undefined
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </section>
+        {mode !== 'memory' ? (
+          <section className="rounded-xl border border-border/70 bg-muted/20 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/12 lg:p-6">
+            <FormField
+              control={form.control}
+              name="leadImage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <UploadLeadImage
+                      onChange={field.onChange}
+                      maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                      enableImageResizer={true}
+                      cropDialogLabels={{
+                        title: tCommon('uploadLeadImage.cropTitle'),
+                        description: tCommon('uploadLeadImage.cropDescription'),
+                        cancel: tCommon('uploadLeadImage.cancel'),
+                        confirm: tCommon('uploadLeadImage.confirm'),
+                      }}
+                      messages={{
+                        dropHere: tCommon('uploadLeadImage.dropHere'),
+                        fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                        uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                      }}
+                      uploadText={tAgreementFlow.rich(
+                        'createAgreementBaseFields.uploadImageLabel',
+                        {
+                          accent: (chunks) => (
+                            <span className="text-accent-11">{chunks}</span>
+                          ),
+                        },
+                      )}
+                      defaultImage={
+                        typeof field.value === 'string'
+                          ? field.value.trim().length > 0
+                            ? field.value
+                            : null
+                          : resubmitFormData?.leadImage?.trim()
+                          ? resubmitFormData.leadImage
+                          : undefined
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </section>
+        ) : null}
         <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
+          {mode === 'memory' ? (
+            <FormField
+              control={form.control}
+              name="attachments"
+              render={({ field }) => {
+                const fieldValue = field.value || [];
+                const newFiles = Array.isArray(fieldValue)
+                  ? fieldValue.filter((item) => item instanceof File)
+                  : [];
+                const mergedAttachments: AttachmentListItem[] = [
+                  ...existingAttachments,
+                  ...newFiles,
+                ];
+
+                return (
+                  <FormItem className="mb-6">
+                    <FormLabel className="mb-2 block text-sm font-medium text-foreground">
+                      {tCoherence('newMemoryUploadDocumentsTitle')}
+                    </FormLabel>
+                    <FormControl>
+                      <AddAttachment
+                        label={attachmentLabel}
+                        onChange={(files) => {
+                          field.onChange(files);
+                          form.setValue(
+                            'attachments',
+                            [...existingAttachments, ...files],
+                            { shouldValidate: false, shouldDirty: true },
+                          );
+                        }}
+                        onExistingAttachmentsChange={(updated) => {
+                          setExistingAttachments(updated);
+                          form.setValue(
+                            'attachments',
+                            [...updated, ...newFiles],
+                            { shouldValidate: false, shouldDirty: true },
+                          );
+                        }}
+                        value={
+                          mergedAttachments.length > 0
+                            ? mergedAttachments
+                            : undefined
+                        }
+                        defaultAttachments={
+                          existingAttachments.length > 0
+                            ? existingAttachments
+                            : undefined
+                        }
+                      />
+                    </FormControl>
+                    <FormDescription />
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+          ) : null}
           <FormField
             control={form.control}
             name="description"
@@ -588,10 +675,7 @@ export function CreateAgreementBaseFields({
               return (
                 <FormItem>
                   <FormLabel className="gap-1 text-foreground">
-                    {tAgreementFlow(
-                      'createAgreementBaseFields.proposalContent',
-                    )}{' '}
-                    <RequirementMark />
+                    {contentLabel} <RequirementMark />
                   </FormLabel>
                   <FormControl>
                     <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
@@ -599,9 +683,7 @@ export function CreateAgreementBaseFields({
                         editorRef={null}
                         markdown={descriptionValue}
                         translation={translateEditor}
-                        placeholder={tAgreementFlow(
-                          'createAgreementBaseFields.proposalContentPlaceholder',
-                        )}
+                        placeholder={contentPlaceholder}
                         onChange={(markdown) => field.onChange(markdown)}
                       />
                     </div>
@@ -612,60 +694,60 @@ export function CreateAgreementBaseFields({
               );
             }}
           />
-          <FormField
-            control={form.control}
-            name="attachments"
-            render={({ field }) => {
-              const fieldValue = field.value || [];
-              const newFiles = Array.isArray(fieldValue)
-                ? fieldValue.filter((item) => item instanceof File)
-                : [];
-              const mergedAttachments: AttachmentListItem[] = [
-                ...existingAttachments,
-                ...newFiles,
-              ];
+          {mode !== 'memory' ? (
+            <FormField
+              control={form.control}
+              name="attachments"
+              render={({ field }) => {
+                const fieldValue = field.value || [];
+                const newFiles = Array.isArray(fieldValue)
+                  ? fieldValue.filter((item) => item instanceof File)
+                  : [];
+                const mergedAttachments: AttachmentListItem[] = [
+                  ...existingAttachments,
+                  ...newFiles,
+                ];
 
-              return (
-                <FormItem className="mt-6">
-                  <FormControl>
-                    <AddAttachment
-                      label={tAgreementFlow(
-                        'createAgreementBaseFields.addAttachmentLabel',
-                      )}
-                      onChange={(files) => {
-                        field.onChange(files);
-                        form.setValue(
-                          'attachments',
-                          [...existingAttachments, ...files],
-                          { shouldValidate: false, shouldDirty: true },
-                        );
-                      }}
-                      onExistingAttachmentsChange={(updated) => {
-                        setExistingAttachments(updated);
-                        form.setValue(
-                          'attachments',
-                          [...updated, ...newFiles],
-                          { shouldValidate: false, shouldDirty: true },
-                        );
-                      }}
-                      value={
-                        mergedAttachments.length > 0
-                          ? mergedAttachments
-                          : undefined
-                      }
-                      defaultAttachments={
-                        existingAttachments.length > 0
-                          ? existingAttachments
-                          : undefined
-                      }
-                    />
-                  </FormControl>
-                  <FormDescription />
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
-          />
+                return (
+                  <FormItem className="mt-6">
+                    <FormControl>
+                      <AddAttachment
+                        label={attachmentLabel}
+                        onChange={(files) => {
+                          field.onChange(files);
+                          form.setValue(
+                            'attachments',
+                            [...existingAttachments, ...files],
+                            { shouldValidate: false, shouldDirty: true },
+                          );
+                        }}
+                        onExistingAttachmentsChange={(updated) => {
+                          setExistingAttachments(updated);
+                          form.setValue(
+                            'attachments',
+                            [...updated, ...newFiles],
+                            { shouldValidate: false, shouldDirty: true },
+                          );
+                        }}
+                        value={
+                          mergedAttachments.length > 0
+                            ? mergedAttachments
+                            : undefined
+                        }
+                        defaultAttachments={
+                          existingAttachments.length > 0
+                            ? existingAttachments
+                            : undefined
+                        }
+                      />
+                    </FormControl>
+                    <FormDescription />
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+          ) : null}
         </section>
       </div>
     </>
