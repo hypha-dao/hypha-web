@@ -22,6 +22,8 @@
     "by": "von",
     "copyWalletAddress": "Wallet-Adresse kopieren",
     "walletAddressCopied": "Kopiert!",
+    "receiveFundsTitle": "Geld empfangen",
+    "receiveFundsSubtitle": "Teile diesen QR-Code oder die Wallet-Adresse, um Geld in diese Wallet zu empfangen.",
     "otherMembers": "+ {count} weitere Mitglieder",
     "exploreSpaces": "Spaces erkunden",
     "findCategory": "Kategorie suchen",
