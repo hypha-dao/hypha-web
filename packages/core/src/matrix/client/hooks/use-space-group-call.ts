@@ -446,7 +446,9 @@ export function useSpaceGroupCall(
           const normalizedTranscript = transcriptText.trim();
           const uploadTranscriptOnly = async () => {
             if (!normalizedTranscript) {
-              throw new Error('recording upload failed and no transcript captured');
+              throw new Error(
+                'recording upload failed and no transcript captured',
+              );
             }
             await uploadRecordedCallArtifact({
               authToken: token,
