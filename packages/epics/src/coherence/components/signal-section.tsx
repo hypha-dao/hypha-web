@@ -405,6 +405,28 @@ export const SignalSection: FC<SignalSectionProps> = ({
     [activeBoardId, activeBoards],
   );
 
+  const filterSignalsByBoard = React.useCallback(
+    (inputSignals: Coherence[], board: SignalBoard | undefined) => {
+      if (!board) return inputSignals;
+      if (board.filterKind === 'tag') {
+        const selectedTagSet = new Set(board.filterValues);
+        if (selectedTagSet.size === 0) return inputSignals;
+        return inputSignals.filter((signal) =>
+          (signal.tags ?? []).some((tag) => selectedTagSet.has(tag)),
+        );
+      }
+      const categoryTags = board.filterValues.flatMap((categoryKey) => [
+        ...(categoryByKey.get(categoryKey)?.tags ?? []),
+      ]);
+      if (!categoryTags.length) return inputSignals;
+      const categoryTagSet = new Set(categoryTags);
+      return inputSignals.filter((signal) =>
+        (signal.tags ?? []).some((tag) => categoryTagSet.has(tag)),
+      );
+    },
+    [categoryByKey],
+  );
+
   const activeBoardTags = React.useMemo(() => {
     if (!activeBoard) return [] as string[];
     if (activeBoard.filterKind === 'tag') {
@@ -429,23 +451,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }, [activeBoard, activeBoardTags, createSignalHref]);
 
   const boardFilteredSignals = React.useMemo(() => {
-    if (!activeBoard) return signals;
-    if (activeBoard.filterKind === 'tag') {
-      const selectedTagSet = new Set(activeBoard.filterValues);
-      if (selectedTagSet.size === 0) return signals;
-      return signals.filter((signal) =>
-        (signal.tags ?? []).some((tag) => selectedTagSet.has(tag)),
-      );
-    }
-    const categoryTags = activeBoard.filterValues.flatMap((categoryKey) => [
-      ...(categoryByKey.get(categoryKey)?.tags ?? []),
-    ]);
-    if (!categoryTags.length) return signals;
-    const categoryTagSet = new Set(categoryTags);
-    return signals.filter((signal) =>
-      (signal.tags ?? []).some((tag) => categoryTagSet.has(tag)),
-    );
-  }, [activeBoard, categoryByKey, signals]);
+    return filterSignalsByBoard(signals, activeBoard);
+  }, [activeBoard, filterSignalsByBoard, signals]);
 
   const resetBoardForm = React.useCallback(() => {
     setEditingBoardId(null);
@@ -550,6 +557,25 @@ export const SignalSection: FC<SignalSectionProps> = ({
     firstPageSize,
     pageSize,
   });
+  const searchFilteredSignals = React.useMemo(() => {
+    const query = searchTerm?.trim()?.toLowerCase();
+    if (!query) return signals;
+    return signals.filter((sig) =>
+      [sig.title, sig.description].some(
+        (value) => value?.toLowerCase()?.includes(query) ?? false,
+      ),
+    );
+  }, [searchTerm, signals]);
+  const boardCountsById = React.useMemo(() => {
+    const byId = new Map<string, number>();
+    for (const board of activeBoards) {
+      byId.set(
+        board.id,
+        filterSignalsByBoard(searchFilteredSignals, board).length,
+      );
+    }
+    return byId;
+  }, [activeBoards, filterSignalsByBoard, searchFilteredSignals]);
   const visibleSignals = React.useMemo(() => {
     const visibleCount =
       pages <= 1 ? firstPageSize : firstPageSize + (pages - 1) * pageSize;
@@ -570,13 +596,16 @@ export const SignalSection: FC<SignalSectionProps> = ({
               </span>
               <Tabs value={activeBoardId} onValueChange={setActiveBoardId}>
                 <TabsList triggerVariant="switch" className="w-fit">
+                  <TabsTrigger value="" variant="switch">
+                    {`${t('boardAll')} (${searchFilteredSignals.length})`}
+                  </TabsTrigger>
                   {activeBoards.map((board) => (
                     <TabsTrigger
                       key={board.id}
                       value={board.id}
                       variant="switch"
                     >
-                      {board.name}
+                      {`${board.name} (${boardCountsById.get(board.id) ?? 0})`}
                     </TabsTrigger>
                   ))}
                 </TabsList>
