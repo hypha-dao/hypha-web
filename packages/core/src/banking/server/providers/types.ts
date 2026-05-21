@@ -19,7 +19,25 @@ export type CreateKycLinkResult = {
   tosLink: string | null;
 };
 
+export type ProvisionVirtualAccountInput = {
+  customerId: string;
+  currency: string;
+  destinationAddress: string;
+  idempotencyKey: string;
+};
+
+export type ProvisionVirtualAccountResult = {
+  providerVirtualAccountId: string;
+  currency: string;
+  paymentRail: string;
+  depositInstructions: Record<string, unknown>;
+  status: string;
+};
+
 export interface BankKycProvider {
   readonly provider: BankProvider;
   createKycLink(input: CreateKycLinkInput): Promise<CreateKycLinkResult>;
+  provisionVirtualAccount(
+    input: ProvisionVirtualAccountInput,
+  ): Promise<ProvisionVirtualAccountResult>;
 }

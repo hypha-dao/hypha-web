@@ -2,11 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-import {
-  getAbsoluteAppUrl,
-  getAppBaseUrl,
-  getSpaceBankingRedirectUrl,
-} from '../get-app-url';
+import { getAbsoluteAppUrl, getAppBaseUrl } from '../get-app-url';
 
 const originalEnv = { ...process.env };
 
@@ -31,16 +27,6 @@ describe('getAppBaseUrl', () => {
     delete process.env.NEXT_PUBLIC_APP_URL;
     delete process.env.VERCEL_URL;
     expect(getAppBaseUrl()).toBe('https://app.hypha.earth');
-  });
-});
-
-describe('getSpaceBankingRedirectUrl', () => {
-  it('builds locale-prefixed banking path on the app origin', () => {
-    expect(
-      getSpaceBankingRedirectUrl('acme', {
-        baseUrl: 'https://app.hypha.earth',
-      }),
-    ).toBe('https://app.hypha.earth/en/dho/acme/banking');
   });
 });
 

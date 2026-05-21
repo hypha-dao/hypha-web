@@ -2,6 +2,7 @@ import type { DatabaseInstance } from '../../common/server/types';
 import type { Space } from '../../space/types';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
 import { findBankCustomerBySpaceAndProvider } from './queries';
+import { syncBankCustomerKycFromBridge } from './sync-bank-customer-kyc-from-bridge';
 
 export type SpaceBankCustomerPublicStatus = {
   kycStatus: string;
@@ -23,10 +24,24 @@ export async function getSpaceBankCustomerPublicStatus(
     return null;
   }
 
+  let resolved = customer;
+
+  if (customer.kycStatus !== 'approved') {
+    try {
+      const synced = await syncBankCustomerKycFromBridge(customer, { db });
+      resolved = synced.customer;
+    } catch (error) {
+      console.error(
+        'Bridge KYC sync failed while loading bank customer status:',
+        error,
+      );
+    }
+  }
+
   return {
-    kycStatus: customer.kycStatus,
-    kycLink: customer.kycLink,
-    tosLink: customer.tosLink,
-    isApproved: customer.kycStatus === 'approved',
+    kycStatus: resolved.kycStatus,
+    kycLink: resolved.kycLink,
+    tosLink: resolved.tosLink,
+    isApproved: resolved.kycStatus === 'approved',
   };
 }

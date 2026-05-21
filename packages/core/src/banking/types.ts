@@ -22,3 +22,21 @@ export type RequestSpaceBankOnboardingInput = {
   contactEmail: string;
   endorsements?: string[];
 };
+
+export type BankVirtualAccountPublic = {
+  currency: string;
+  paymentRail: string;
+  depositInstructions: Record<string, unknown>;
+  status: string;
+};
+
+export type ProvisionSpaceBankVirtualAccountResult =
+  BankVirtualAccountPublic & {
+    created: boolean;
+  };
+
+export type RequestSpaceBankVirtualAccountInput = {
+  spaceSlug: string;
+  authToken: string;
+  currency: string;
+};

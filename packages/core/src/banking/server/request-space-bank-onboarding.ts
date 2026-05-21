@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 
-import { getSpaceBankingRedirectUrl } from '../../common/server/get-app-url';
 import type { DatabaseInstance } from '../../common/server/types';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
 import { findSpaceBySlug } from '../../space/server/queries';
@@ -13,6 +12,7 @@ import { BankOnboardingError } from './errors';
 import { insertBankCustomer } from './mutations';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
+import { resolveBridgeKycEndorsements } from './providers/bridge/endorsements';
 import { findBankCustomerBySpaceAndProvider } from './queries';
 
 function mapCustomerToResult(
@@ -84,15 +84,14 @@ export async function requestSpaceBankOnboarding(
   const kycProvider =
     options?.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER);
 
-  const redirectUri = getSpaceBankingRedirectUrl(spaceSlug);
+  const resolvedEndorsements = resolveBridgeKycEndorsements(endorsements);
 
   const kycLinkResult = await kycProvider.createKycLink({
     entityType: 'business',
     legalName,
     contactEmail,
     idempotencyKey,
-    endorsements,
-    redirectUri,
+    endorsements: resolvedEndorsements,
   });
 
   const customer = await insertBankCustomer(
@@ -105,7 +104,7 @@ export async function requestSpaceBankOnboarding(
       providerKycLinkId: kycLinkResult.providerKycLinkId,
       name: legalName,
       contactEmail,
-      endorsements: endorsements ?? [],
+      endorsements: resolvedEndorsements,
       kycStatus: kycLinkResult.kycStatus,
       tosStatus: kycLinkResult.tosStatus,
       kycLink: kycLinkResult.kycLink,

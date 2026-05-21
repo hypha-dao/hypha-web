@@ -14,6 +14,7 @@ import { coherences } from './coherence';
 import { matrixUserLinks } from './matrix-user-link';
 import { tokenUpdates, tokenUpdateRelations } from './token-updates';
 import { bankCustomers } from './bank-customer';
+import { bankVirtualAccounts } from './bank-virtual-account';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -31,6 +32,7 @@ export * from './coherence';
 export * from './matrix-user-link';
 export * from './token-updates';
 export * from './bank-customer';
+export * from './bank-virtual-account';
 
 export const schema = {
   documents,
@@ -51,4 +53,5 @@ export const schema = {
   tokenUpdates,
   tokenUpdateRelations,
   bankCustomers,
+  bankVirtualAccounts,
 };

@@ -22,11 +22,7 @@ export default async function BankingPage(props: PageProps) {
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId} spaceSlug={id}>
       <div className="flex w-full flex-col gap-4 py-4">
-        <BankingSection
-          spaceSlug={id}
-          web3SpaceId={web3SpaceId}
-          variant="return"
-        />
+        <BankingSection spaceSlug={id} web3SpaceId={web3SpaceId} />
       </div>
     </SpaceTabAccessWrapper>
   );

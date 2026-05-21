@@ -12,3 +12,6 @@ export const BRIDGE_ENDORSEMENT_OPTIONS: BridgeEndorsementOption[] = [
   { value: 'spei', labelKey: 'spei' },
   { value: 'cop', labelKey: 'cop' },
 ];
+
+/** Default selection (USD + EUR) — matches `DEFAULT_BRIDGE_KYC_ENDORSEMENTS` in core. */
+export const DEFAULT_BRIDGE_ENDORSEMENT_VALUES = ['base', 'sepa'] as const;

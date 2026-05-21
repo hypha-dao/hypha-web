@@ -2,15 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const getSpaceBankingRedirectUrl = vi.fn(
-  () => 'https://app.hypha.earth/en/dho/acme/banking',
-);
-
-vi.mock('../../../common/server/get-app-url', () => ({
-  getSpaceBankingRedirectUrl: (...args: unknown[]) =>
-    getSpaceBankingRedirectUrl(...args),
-}));
-
 import { requestSpaceBankOnboarding } from '../request-space-bank-onboarding';
 import type { BankKycProvider } from '../providers/types';
 
@@ -49,6 +40,7 @@ const onboardingInput = {
 
 const mockProvider: BankKycProvider = {
   provider: 'bridge',
+  provisionVirtualAccount: vi.fn(),
   createKycLink: vi.fn().mockResolvedValue({
     providerCustomerId: 'cust_1',
     providerKycLinkId: 'link_1',
@@ -155,17 +147,19 @@ describe('requestSpaceBankOnboarding', () => {
       { kycProvider: mockProvider },
     );
 
-    expect(getSpaceBankingRedirectUrl).toHaveBeenCalledWith('acme');
     expect(mockProvider.createKycLink).toHaveBeenCalledWith(
       expect.objectContaining({
         entityType: 'business',
         legalName: 'Acme Foundation Ltd.',
         contactEmail: 'compliance@acme.org',
         endorsements: ['base', 'sepa'],
-        redirectUri: 'https://app.hypha.earth/en/dho/acme/banking',
         idempotencyKey: expect.any(String),
       }),
     );
+    const [createBody] = mockProvider.createKycLink.mock.calls[0] as [
+      Record<string, unknown>,
+    ];
+    expect(createBody).not.toHaveProperty('redirectUri');
     expect(insertBankCustomer).toHaveBeenCalledWith(
       expect.objectContaining({
         adminPersonId: 10,

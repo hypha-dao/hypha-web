@@ -3,9 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBridgeKycProvider } from '../adapter';
 
 const bridgeCreateKycLink = vi.fn();
+const bridgeCreateVirtualAccount = vi.fn();
 
 vi.mock('../../../../../common/server/bridge-client', () => ({
   bridgeCreateKycLink: (...args: unknown[]) => bridgeCreateKycLink(...args),
+  bridgeCreateVirtualAccount: (...args: unknown[]) =>
+    bridgeCreateVirtualAccount(...args),
 }));
 
 describe('createBridgeKycProvider', () => {
@@ -45,7 +48,7 @@ describe('createBridgeKycProvider', () => {
     );
   });
 
-  it('omits endorsements from Bridge request when not provided', async () => {
+  it('sends default deposit-corridor endorsements when none provided', async () => {
     const provider = createBridgeKycProvider();
     await provider.createKycLink({
       entityType: 'business',
@@ -58,7 +61,7 @@ describe('createBridgeKycProvider', () => {
       Record<string, unknown>,
       string,
     ];
-    expect(body).not.toHaveProperty('endorsements');
+    expect(body.endorsements).toEqual(['base', 'sepa']);
     expect(body).not.toHaveProperty('redirect_uri');
   });
 
@@ -184,5 +187,102 @@ describe('createBridgeKycProvider', () => {
     });
 
     expect(result.isApproved).toBe(false);
+  });
+
+  describe('provisionVirtualAccount', () => {
+    beforeEach(() => {
+      bridgeCreateVirtualAccount.mockResolvedValue({
+        id: 'va_1',
+        status: 'activated',
+        source: { currency: 'eur', payment_rail: 'sepa' },
+        source_deposit_instructions: {
+          iban: 'DE89370400440532013000',
+          bic: 'COBADEFFXXX',
+          bank_name: 'Bridge Bank',
+        },
+      });
+    });
+
+    it('calls Bridge with source currency and Base USDC destination', async () => {
+      const provider = createBridgeKycProvider();
+      await provider.provisionVirtualAccount({
+        customerId: 'cust_1',
+        currency: 'eur',
+        destinationAddress: '0xtreasury',
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440001',
+      });
+
+      expect(bridgeCreateVirtualAccount).toHaveBeenCalledWith(
+        'cust_1',
+        {
+          source: { currency: 'eur' },
+          destination: {
+            payment_rail: 'base',
+            currency: 'usdc',
+            address: '0xtreasury',
+          },
+        },
+        '550e8400-e29b-41d4-a716-446655440001',
+      );
+    });
+
+    it('maps response to provider-agnostic result', async () => {
+      const provider = createBridgeKycProvider();
+      const result = await provider.provisionVirtualAccount({
+        customerId: 'cust_1',
+        currency: 'eur',
+        destinationAddress: '0xtreasury',
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440001',
+      });
+
+      expect(result).toEqual({
+        providerVirtualAccountId: 'va_1',
+        currency: 'eur',
+        paymentRail: 'sepa',
+        depositInstructions: {
+          iban: 'DE89370400440532013000',
+          bic: 'COBADEFFXXX',
+          bank_name: 'Bridge Bank',
+        },
+        status: 'activated',
+      });
+    });
+
+    it('falls back to currency map when payment_rail is absent on response', async () => {
+      bridgeCreateVirtualAccount.mockResolvedValueOnce({
+        id: 'va_2',
+        status: 'activated',
+        source: { currency: 'usd' },
+        source_deposit_instructions: {
+          bank_routing_number: '021000021',
+          bank_account_number: '123456789',
+        },
+      });
+
+      const provider = createBridgeKycProvider();
+      const result = await provider.provisionVirtualAccount({
+        customerId: 'cust_1',
+        currency: 'usd',
+        destinationAddress: '0xtreasury',
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440002',
+      });
+
+      expect(result.paymentRail).toBe('ach');
+    });
+
+    it('rejects unsupported currency before calling Bridge', async () => {
+      const provider = createBridgeKycProvider();
+
+      await expect(
+        provider.provisionVirtualAccount({
+          customerId: 'cust_1',
+          currency: 'kes',
+          destinationAddress: '0xtreasury',
+          idempotencyKey: '550e8400-e29b-41d4-a716-446655440003',
+        }),
+      ).rejects.toThrow(/Unsupported virtual account currency/);
+
+      expect(bridgeCreateVirtualAccount).not.toHaveBeenCalled();
+    });
   });
 });

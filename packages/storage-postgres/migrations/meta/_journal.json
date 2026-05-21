@@ -351,6 +351,13 @@
       "when": 1779214317322,
       "tag": "0049_bank_customers",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1779340443446,
+      "tag": "0050_bank_virtual_accounts",
+      "breakpoints": true
     }
   ]
 }

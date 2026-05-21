@@ -15,6 +15,7 @@ import {
 import { useMe, useSpaceBySlug } from '@hypha-platform/core/client';
 
 import { useRequestBankOnboarding } from '../hooks';
+import { DEFAULT_BRIDGE_ENDORSEMENT_VALUES } from './providers/bridge-endorsement-options';
 import {
   DEFAULT_BANK_PROVIDER,
   providerFormRegistry,
@@ -51,6 +52,7 @@ export const BankOnboardingDialog: FC<BankOnboardingDialogProps> = ({
     () => ({
       legalName: space?.title?.trim() ?? '',
       contactEmail: person?.email?.trim() ?? '',
+      endorsements: [...DEFAULT_BRIDGE_ENDORSEMENT_VALUES],
     }),
     [space?.title, person?.email],
   );
@@ -87,12 +89,15 @@ export const BankOnboardingDialog: FC<BankOnboardingDialogProps> = ({
           <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
-        <ProviderForm
-          formId={formId}
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-          initialValues={initialValues}
-        />
+        {open ? (
+          <ProviderForm
+            key={`${spaceSlug}-bank-onboarding`}
+            formId={formId}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            initialValues={initialValues}
+          />
+        ) : null}
 
         {error ? (
           <p className="text-sm text-destructive px-1" role="alert">

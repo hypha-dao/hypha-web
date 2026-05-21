@@ -36,3 +36,27 @@ export type BankOnboardingRequestResult = {
   created: boolean;
   isApproved?: boolean;
 };
+
+/** Mirrors @hypha-platform/core banking constants (client-safe duplicate). */
+export const BANK_VIRTUAL_ACCOUNT_CORRIDORS = [
+  { currency: 'eur', paymentRail: 'sepa' },
+  { currency: 'usd', paymentRail: 'ach' },
+  { currency: 'gbp', paymentRail: 'faster_payments' },
+  { currency: 'mxn', paymentRail: 'spei' },
+  { currency: 'brl', paymentRail: 'pix' },
+  { currency: 'cop', paymentRail: 'cop' },
+] as const;
+
+export type BankVirtualAccountCurrency =
+  (typeof BANK_VIRTUAL_ACCOUNT_CORRIDORS)[number]['currency'];
+
+export type BankVirtualAccountPublic = {
+  currency: string;
+  paymentRail: string;
+  depositInstructions: Record<string, unknown>;
+  status: string;
+};
+
+export type ProvisionVirtualAccountResult = BankVirtualAccountPublic & {
+  created: boolean;
+};

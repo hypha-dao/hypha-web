@@ -41,16 +41,3 @@ export function getAbsoluteAppUrl(
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${normalizedBase}${normalizedPath}`;
 }
-
-/** Bridge KYB redirect target after compliance completes hosted verification. */
-export function getSpaceBankingRedirectUrl(
-  spaceSlug: string,
-  options?: { baseUrl?: string; locale?: string },
-): string {
-  const path = getSpaceDhoPath(
-    spaceSlug,
-    'banking',
-    options?.locale ?? DEFAULT_LOCALE,
-  );
-  return getAbsoluteAppUrl(path, options?.baseUrl);
-}

@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
+import { FC, ReactNode, useCallback, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -18,14 +18,18 @@ import { useSpaceMember } from '../../spaces';
 import {
   BANK_KYC_STATUSES,
   type BankKycStatus,
+  type BankVirtualAccountCurrency,
   useBankCustomerStatus,
+  useProvisionVirtualAccount,
+  useVirtualAccounts,
 } from '../hooks';
+import { ApprovedBankingDeposits } from './approved-banking-deposits';
 import { BankOnboardingDialog } from './bank-onboarding-dialog';
+import { BankingSandboxDemoBar } from './banking-sandbox-demo-bar';
 
 type BankingSectionProps = {
   spaceSlug: string;
   web3SpaceId?: number;
-  variant?: 'default' | 'return';
 };
 
 function openVerificationLink(url: string | null | undefined) {
@@ -48,15 +52,30 @@ function getKycStatusLabel(
 export const BankingSection: FC<BankingSectionProps> = ({
   spaceSlug,
   web3SpaceId,
-  variant = 'default',
 }) => {
   const t = useTranslations('BankingTab');
   const tCommon = useTranslations('Common');
   const { isAuthenticated } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug);
-  const { status, isLoading, error, refresh } = useBankCustomerStatus({
+  const { status, isLoading, isRefreshing, error, refresh } =
+    useBankCustomerStatus({
+      spaceSlug,
+    });
+  const {
+    accounts: virtualAccounts,
+    isLoading: virtualAccountsLoading,
+    refresh: refreshVirtualAccounts,
+  } = useVirtualAccounts({
     spaceSlug,
+    enabled: Boolean(status?.isApproved),
   });
+  const {
+    provisionAccount,
+    isProvisioning,
+    provisioningCurrency,
+    error: provisionError,
+    clearError: clearProvisionError,
+  } = useProvisionVirtualAccount({ spaceSlug });
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const resolvedWeb3SpaceId =
@@ -93,11 +112,9 @@ export const BankingSection: FC<BankingSectionProps> = ({
     ? t('blockers.noTreasury')
     : null;
 
-  useEffect(() => {
-    if (variant === 'return') {
-      void refresh();
-    }
-  }, [variant, refresh]);
+  const handleRefreshStatus = useCallback(() => {
+    void refresh();
+  }, [refresh]);
 
   const handleOnboardingSuccess = useCallback(
     (result: {
@@ -111,6 +128,19 @@ export const BankingSection: FC<BankingSectionProps> = ({
       }
     },
     [refresh],
+  );
+
+  const handleProvision = useCallback(
+    (currency: BankVirtualAccountCurrency) => {
+      clearProvisionError();
+      void provisionAccount(currency)
+        .then(() => {
+          void refreshVirtualAccounts();
+          void refresh();
+        })
+        .catch(() => undefined);
+    },
+    [clearProvisionError, provisionAccount, refresh, refreshVirtualAccounts],
   );
 
   const renderStatusBody = () => {
@@ -166,14 +196,15 @@ export const BankingSection: FC<BankingSectionProps> = ({
             title={t('status.approved.title')}
             description={t('status.approved.description')}
           />
-          <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4">
-            <p className="text-3 font-medium text-foreground">
-              {t('status.approved.depositPlaceholderTitle')}
-            </p>
-            <p className="mt-1 text-2 text-muted-foreground">
-              {t('status.approved.depositPlaceholderDescription')}
-            </p>
-          </div>
+          <ApprovedBankingDeposits
+            virtualAccounts={virtualAccounts}
+            virtualAccountsLoading={virtualAccountsLoading}
+            canManage={canManage}
+            isProvisioning={isProvisioning}
+            provisioningCurrency={provisioningCurrency}
+            provisionError={provisionError}
+            onProvision={handleProvision}
+          />
         </div>
       );
     }
@@ -199,6 +230,22 @@ export const BankingSection: FC<BankingSectionProps> = ({
             {tosLink ? (
               <TosLink href={tosLink} label={t('actions.viewTerms')} />
             ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-fit"
+              disabled={isRefreshing}
+              onClick={handleRefreshStatus}
+            >
+              {isRefreshing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('actions.refreshingStatus')}
+                </>
+              ) : (
+                t('actions.refreshStatus')
+              )}
+            </Button>
           </>
         }
       />
@@ -207,12 +254,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
 
   return (
     <div className="flex w-full flex-col gap-4">
-      {variant === 'return' ? (
-        <p className="rounded-md border border-border bg-muted/20 px-4 py-3 text-2 text-muted-foreground">
-          {t('returnBanner')}
-        </p>
-      ) : null}
-
       <div className="w-full">
         <h3 className="text-4 font-semibold tracking-tight text-foreground">
           {t('title')}
@@ -242,6 +283,10 @@ export const BankingSection: FC<BankingSectionProps> = ({
       <div className="rounded-lg border border-border bg-card p-4">
         {renderStatusBody()}
       </div>
+
+      {!isLoading && status != null && !status.isApproved ? (
+        <BankingSandboxDemoBar spaceSlug={spaceSlug} canManage={canManage} />
+      ) : null}
 
       <BankOnboardingDialog
         spaceSlug={spaceSlug}

@@ -1,13 +1,17 @@
 import {
   bridgeCreateKycLink,
+  bridgeCreateVirtualAccount,
   type BridgeCreateKycLinkRequest,
 } from '../../../../common/server/bridge-client';
+import { getPaymentRailForCurrency } from '../../../constants';
 import type {
   BankKycProvider,
   CreateKycLinkInput,
   CreateKycLinkResult,
+  ProvisionVirtualAccountInput,
+  ProvisionVirtualAccountResult,
 } from '../types';
-import { parseBridgeEndorsements } from './endorsements';
+import { resolveBridgeKycEndorsements } from './endorsements';
 
 function toBridgeCreateKycLinkBody(
   input: CreateKycLinkInput,
@@ -18,9 +22,7 @@ function toBridgeCreateKycLinkBody(
     type: input.entityType,
   };
 
-  if (input.endorsements?.length) {
-    body.endorsements = parseBridgeEndorsements(input.endorsements);
-  }
+  body.endorsements = resolveBridgeKycEndorsements(input.endorsements);
 
   if (input.redirectUri) {
     body.redirect_uri = input.redirectUri;
@@ -48,6 +50,39 @@ export function createBridgeKycProvider(): BankKycProvider {
         tosStatus: response.tos_status ?? null,
         kycLink: response.kyc_link,
         tosLink: response.tos_link ?? null,
+      };
+    },
+    async provisionVirtualAccount(
+      input: ProvisionVirtualAccountInput,
+    ): Promise<ProvisionVirtualAccountResult> {
+      const paymentRail = getPaymentRailForCurrency(input.currency);
+      if (!paymentRail) {
+        throw new Error(
+          `Unsupported virtual account currency: ${input.currency}`,
+        );
+      }
+
+      const response = await bridgeCreateVirtualAccount(
+        input.customerId,
+        {
+          source: { currency: input.currency },
+          destination: {
+            payment_rail: 'base',
+            currency: 'usdc',
+            address: input.destinationAddress,
+          },
+        },
+        input.idempotencyKey,
+      );
+
+      const responseRail = response.source.payment_rail ?? paymentRail;
+
+      return {
+        providerVirtualAccountId: response.id,
+        currency: response.source.currency,
+        paymentRail: responseRail,
+        depositInstructions: response.source_deposit_instructions,
+        status: response.status,
       };
     },
   };

@@ -5,7 +5,10 @@ import { useTranslations } from 'next-intl';
 import { Checkbox, Input, Label } from '@hypha-platform/ui';
 
 import type { ProviderOnboardingFormProps } from './types';
-import { BRIDGE_ENDORSEMENT_OPTIONS } from './bridge-endorsement-options';
+import {
+  BRIDGE_ENDORSEMENT_OPTIONS,
+  DEFAULT_BRIDGE_ENDORSEMENT_VALUES,
+} from './bridge-endorsement-options';
 
 export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
   formId,
@@ -18,17 +21,19 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
 
   const [legalName, setLegalName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
-  const [endorsements, setEndorsements] = useState<string[]>([]);
+  const [endorsements, setEndorsements] = useState<string[]>([
+    ...DEFAULT_BRIDGE_ENDORSEMENT_VALUES,
+  ]);
 
   useEffect(() => {
     setLegalName(initialValues?.legalName?.trim() ?? '');
     setContactEmail(initialValues?.contactEmail?.trim() ?? '');
-    setEndorsements(initialValues?.endorsements ?? []);
-  }, [
-    initialValues?.legalName,
-    initialValues?.contactEmail,
-    initialValues?.endorsements,
-  ]);
+    const nextEndorsements =
+      initialValues?.endorsements && initialValues.endorsements.length > 0
+        ? initialValues.endorsements
+        : [...DEFAULT_BRIDGE_ENDORSEMENT_VALUES];
+    setEndorsements(nextEndorsements);
+  }, [initialValues]);
 
   const toggleEndorsement = (value: string, checked: boolean) => {
     setEndorsements((current) =>
@@ -48,7 +53,7 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
     await onSubmit({
       legalName: trimmedName,
       contactEmail: trimmedEmail,
-      endorsements: endorsements.length > 0 ? endorsements : undefined,
+      endorsements,
     });
   };
 

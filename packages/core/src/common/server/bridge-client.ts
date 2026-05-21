@@ -21,6 +21,70 @@ export type BridgeCreateKycLinkResponse = {
   created_at?: string;
 };
 
+export type BridgeGetKycLinkResponse = BridgeCreateKycLinkResponse;
+
+export type BridgeCreateVirtualAccountRequest = {
+  source: { currency: string };
+  destination: {
+    payment_rail: string;
+    currency: string;
+    address: string;
+  };
+};
+
+export type BridgeCreateVirtualAccountResponse = {
+  id: string;
+  status: string;
+  source: { currency: string; payment_rail?: string };
+  source_deposit_instructions: Record<string, unknown>;
+};
+
+export type BridgeSimulateKycApprovalResponse = {
+  success: boolean;
+  customer_id: string;
+  kyc_status: string;
+  message: string;
+};
+
+export type BridgeCustomerAddress = {
+  street_line_1: string;
+  street_line_2?: string;
+  city: string;
+  subdivision?: string;
+  postal_code?: string;
+  country: string;
+};
+
+export type BridgeGetCustomerResponse = {
+  id: string;
+  type: 'individual' | 'business';
+  physical_address?: BridgeCustomerAddress | null;
+  residential_address?: BridgeCustomerAddress | null;
+  registered_address?: BridgeCustomerAddress | null;
+};
+
+export type BridgeUpdateCustomerRequest = {
+  type: 'individual' | 'business';
+  residential_address?: BridgeCustomerAddress;
+  physical_address?: BridgeCustomerAddress;
+  registered_address?: BridgeCustomerAddress;
+  business_legal_name?: string;
+};
+
+function isBridgeCustomerRecord(
+  value: unknown,
+): value is BridgeGetCustomerResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.id === 'string' &&
+    (record.type === 'individual' || record.type === 'business')
+  );
+}
+
 function isBridgeKycLinkRecord(
   value: unknown,
 ): value is BridgeCreateKycLinkResponse {
@@ -73,6 +137,96 @@ function getBridgeConfig() {
   return { apiKey, baseUrl };
 }
 
+async function bridgeRequest(
+  path: string,
+  options: {
+    method: 'GET' | 'POST' | 'PUT';
+    body?: unknown;
+    idempotencyKey?: string;
+  },
+): Promise<unknown> {
+  const { apiKey, baseUrl } = getBridgeConfig();
+  const url = `${baseUrl.replace(/\/$/, '')}${path}`;
+
+  const headers: Record<string, string> = {
+    'Api-Key': apiKey,
+    'Content-Type': 'application/json',
+  };
+
+  if (options.idempotencyKey) {
+    headers['Idempotency-Key'] = options.idempotencyKey;
+  }
+
+  const response = await fetch(url, {
+    method: options.method,
+    headers,
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+  });
+
+  const text = await response.text();
+  let parsed: unknown;
+  try {
+    parsed = text ? JSON.parse(text) : null;
+  } catch {
+    parsed = text;
+  }
+
+  if (!response.ok) {
+    const detail =
+      typeof parsed === 'object' && parsed !== null
+        ? JSON.stringify(parsed)
+        : String(parsed);
+    const error = new Error(
+      `Bridge API error (${response.status}): ${detail.slice(0, 500)}`,
+    );
+    (error as Error & { status: number; body: unknown }).status =
+      response.status;
+    (error as Error & { status: number; body: unknown }).body = parsed;
+    throw error;
+  }
+
+  return parsed;
+}
+
+function isBridgeVirtualAccountRecord(
+  value: unknown,
+): value is BridgeCreateVirtualAccountResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  const source = record.source;
+  return (
+    typeof record.id === 'string' &&
+    typeof record.status === 'string' &&
+    typeof source === 'object' &&
+    source !== null &&
+    typeof (source as Record<string, unknown>).currency === 'string' &&
+    typeof record.source_deposit_instructions === 'object' &&
+    record.source_deposit_instructions !== null
+  );
+}
+
+export async function bridgeGetKycLink(
+  kycLinkId: string,
+): Promise<BridgeGetKycLinkResponse> {
+  const parsed = await bridgeRequest(
+    `/v0/kyc_links/${encodeURIComponent(kycLinkId)}`,
+    {
+      method: 'GET',
+    },
+  );
+
+  if (!isBridgeKycLinkRecord(parsed)) {
+    throw new Error(
+      'Bridge API returned an unexpected KYC link response shape',
+    );
+  }
+
+  return parsed;
+}
+
 export async function bridgeCreateKycLink(
   body: BridgeCreateKycLinkRequest,
   idempotencyKey: string,
@@ -118,6 +272,93 @@ export async function bridgeCreateKycLink(
   if (!isBridgeKycLinkRecord(parsed)) {
     throw new Error(
       'Bridge API returned an unexpected KYC link response shape',
+    );
+  }
+
+  return parsed;
+}
+
+export async function bridgeGetCustomer(
+  customerId: string,
+): Promise<BridgeGetCustomerResponse> {
+  const parsed = await bridgeRequest(
+    `/v0/customers/${encodeURIComponent(customerId)}`,
+    { method: 'GET' },
+  );
+
+  if (!isBridgeCustomerRecord(parsed)) {
+    throw new Error(
+      'Bridge API returned an unexpected customer response shape',
+    );
+  }
+
+  return parsed;
+}
+
+export async function bridgeUpdateCustomer(
+  customerId: string,
+  body: BridgeUpdateCustomerRequest,
+): Promise<unknown> {
+  return bridgeRequest(`/v0/customers/${encodeURIComponent(customerId)}`, {
+    method: 'PUT',
+    body,
+  });
+}
+
+export async function bridgeCreateVirtualAccount(
+  customerId: string,
+  body: BridgeCreateVirtualAccountRequest,
+  idempotencyKey: string,
+): Promise<BridgeCreateVirtualAccountResponse> {
+  const parsed = await bridgeRequest(
+    `/v0/customers/${encodeURIComponent(customerId)}/virtual_accounts`,
+    {
+      method: 'POST',
+      body,
+      idempotencyKey,
+    },
+  );
+
+  if (!isBridgeVirtualAccountRecord(parsed)) {
+    throw new Error(
+      'Bridge API returned an unexpected virtual account response shape',
+    );
+  }
+
+  return parsed;
+}
+
+function isBridgeSimulateKycApprovalRecord(
+  value: unknown,
+): value is BridgeSimulateKycApprovalResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.success === 'boolean' &&
+    typeof record.customer_id === 'string' &&
+    typeof record.kyc_status === 'string' &&
+    typeof record.message === 'string'
+  );
+}
+
+export async function bridgeSimulateKycApproval(
+  customerId: string,
+  idempotencyKey: string,
+): Promise<BridgeSimulateKycApprovalResponse> {
+  const parsed = await bridgeRequest(
+    `/v0/customers/${encodeURIComponent(customerId)}/simulate_kyc_approval`,
+    {
+      method: 'POST',
+      idempotencyKey,
+    },
+  );
+
+  if (!isBridgeSimulateKycApprovalRecord(parsed)) {
+    throw new Error(
+      'Bridge API returned an unexpected simulate KYC approval response shape',
     );
   }
 

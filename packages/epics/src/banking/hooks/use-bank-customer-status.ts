@@ -17,6 +17,7 @@ type UseBankCustomerStatusOptions = {
 type UseBankCustomerStatusReturn = {
   status: BankCustomerPublicStatus | null;
   isLoading: boolean;
+  isRefreshing: boolean;
   error: Error | undefined;
   refresh: () => Promise<BankCustomerPublicStatus | null | undefined>;
 };
@@ -37,7 +38,7 @@ export const useBankCustomerStatus = ({
     [endpoint, isAuthenticated],
   );
 
-  const { data, error, isLoading, mutate } =
+  const { data, error, isLoading, isValidating, mutate } =
     useSWR<BankCustomerPublicStatus | null>(
       swrKey,
       async ([url]: [string, string]) => {
@@ -65,6 +66,7 @@ export const useBankCustomerStatus = ({
   return {
     status: data ?? null,
     isLoading: isAuthenticated && isLoading,
+    isRefreshing: isAuthenticated && isValidating && !isLoading,
     error,
     refresh,
   };

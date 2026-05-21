@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { BANK_VIRTUAL_ACCOUNT_CURRENCIES } from './constants';
+
 export const schemaSpaceBankCustomerOnboarding = z
   .object({
     legalName: z.string().trim().min(1, 'legalName is required').max(1024),
@@ -10,4 +12,14 @@ export const schemaSpaceBankCustomerOnboarding = z
 
 export type SpaceBankCustomerOnboardingInput = z.infer<
   typeof schemaSpaceBankCustomerOnboarding
+>;
+
+export const schemaProvisionVirtualAccount = z
+  .object({
+    currency: z.enum(BANK_VIRTUAL_ACCOUNT_CURRENCIES),
+  })
+  .strict();
+
+export type ProvisionVirtualAccountBody = z.infer<
+  typeof schemaProvisionVirtualAccount
 >;

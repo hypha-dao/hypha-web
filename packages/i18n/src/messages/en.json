@@ -511,7 +511,39 @@
     "actions": {
       "openVerificationForm": "Open verification form",
       "viewTerms": "View terms of service",
-      "refreshStatus": "Refresh status"
+      "refreshStatus": "Refresh status",
+      "refreshingStatus": "Checking status…"
+    },
+    "corridors": {
+      "loading": "Loading deposit accounts…",
+      "activeTitle": "Deposit accounts",
+      "emptyAccounts": "No deposit accounts yet.",
+      "addAccountCta": "Add deposit account",
+      "addDialogTitle": "Choose a currency",
+      "addDialogDescription": "Each account is dedicated to one payment rail. Only corridors you have not set up yet are listed.",
+      "addDialogSelect": "Set up",
+      "addDisabledNotManager": "Only space members with treasury access can add deposit accounts.",
+      "provisioning": "Setting up…",
+      "allActive": "All supported deposit corridors are active."
+    },
+    "depositInstructions": {
+      "iban": "IBAN",
+      "bic": "BIC / SWIFT",
+      "routingNumber": "Routing number",
+      "accountNumber": "Account number",
+      "sortCode": "Sort code",
+      "bankName": "Bank name",
+      "activeBadge": "Active",
+      "shareHint": "Give donors these details for bank transfers into your treasury.",
+      "copy": "Copy",
+      "copied": "Copied"
+    },
+    "sandboxDemo": {
+      "title": "Sandbox / Dev — KYB simulation",
+      "description": "Unlike ToS, KYB status is not updated automatically when you complete verification in Bridge sandbox. This applies a mock US address on the Bridge customer, then simulates KYB approval. Refresh status or reload this page afterwards to sync Hypha with Bridge.",
+      "cta": "Simulate KYB approval",
+      "simulating": "Simulating…",
+      "successRefreshHint": "KYB is approved in Bridge. Use Refresh status or reload this page to sync."
     },
     "endorsements": {
       "base": "USD (ACH / wire transfer)",
@@ -527,7 +559,7 @@
       "legalName": "Legal entity name",
       "contactEmail": "Contact email",
       "endorsementsLabel": "Payment corridors",
-      "endorsementsHint": "Optional. You can add payment corridors later, but note that additional verification may be required at that point.",
+      "endorsementsHint": "These are Bridge KYB endorsements (e.g. base for USD, sepa for EUR). Each selected corridor is included in the verification link.",
       "submit": "Start verification",
       "submitting": "Starting…"
     },
@@ -554,9 +586,7 @@
       },
       "approved": {
         "title": "Verification approved",
-        "description": "Your organization has been verified. Linked bank account details will be available here soon.",
-        "depositPlaceholderTitle": "Transfer instructions",
-        "depositPlaceholderDescription": "IBAN, routing number, and other transfer details will appear here once your virtual bank account is provisioned."
+        "description": "Your organization has been verified. Activate each payment corridor below to receive deposit instructions."
       },
       "rejected": {
         "title": "Verification declined",
