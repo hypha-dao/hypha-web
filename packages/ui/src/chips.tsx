@@ -225,8 +225,6 @@ export const MultiSelect = React.forwardRef<
       React.useState<string[]>(defaultValue);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [searchValue, setSearchValue] = React.useState('');
-    const [showAllTagsOnEmptySearch, setShowAllTagsOnEmptySearch] =
-      React.useState(false);
     const [tagUsageMap, setTagUsageMap] = React.useState<
       Record<string, number>
     >({});
@@ -267,11 +265,6 @@ export const MultiSelect = React.forwardRef<
         arraysShallowEqual(prev, next) ? prev : next,
       );
     }, [value]);
-
-    React.useEffect(() => {
-      if (isPopoverOpen) return;
-      setShowAllTagsOnEmptySearch(false);
-    }, [isPopoverOpen]);
 
     React.useEffect(() => {
       if (uiStyle !== 'tag-picker') return;
@@ -489,21 +482,15 @@ export const MultiSelect = React.forwardRef<
       if (uiStyle !== 'tag-picker' || trimmedSearchValue.length > 0) return [];
       return options;
     }, [options, trimmedSearchValue, uiStyle]);
-    const shouldShowMostUsedHeading =
+    const shouldShowAllTagsHeading =
       uiStyle === 'tag-picker' &&
       trimmedSearchValue.length === 0 &&
-      !showAllTagsOnEmptySearch &&
-      filteredOptions.length > 0;
-    const shouldShowAllTagsAction =
-      uiStyle === 'tag-picker' &&
-      trimmedSearchValue.length === 0 &&
-      !showAllTagsOnEmptySearch &&
       groupedTagPickerOptions.length > 0;
     const renderedOptions =
       trimmedSearchValue.length > 0 &&
       groupedFilteredTagPickerOptions.length > 0
         ? groupedFilteredTagPickerOptions
-        : showAllTagsOnEmptySearch
+        : uiStyle === 'tag-picker' && trimmedSearchValue.length === 0
         ? groupedTagPickerOptions
         : filteredOptions;
 
@@ -832,45 +819,12 @@ export const MultiSelect = React.forwardRef<
                   : resolvedLabels.noResults}
               </CommandEmpty>
               <CommandGroup>
-                {shouldShowMostUsedHeading || shouldShowAllTagsAction ? (
-                  <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border/45 bg-popover/95 px-2 py-1.5 backdrop-blur supports-[backdrop-filter]:bg-popover/85">
-                    {shouldShowMostUsedHeading ? (
-                      <div className="min-w-0 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/60">
-                        <span className="text-muted-foreground/35">• </span>
-                        <span>{resolvedLabels.mostUsed}</span>
-                      </div>
-                    ) : (
-                      <span />
-                    )}
-                    {shouldShowAllTagsAction ? (
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/85 transition-colors hover:bg-muted/70 hover:text-foreground"
-                        onPointerDown={(event) => {
-                          // Keep popover open inside focus-trapped dialogs and apply immediately.
-                          event.preventDefault();
-                          event.stopPropagation();
-                          setShowAllTagsOnEmptySearch(true);
-                        }}
-                        onMouseDown={(event) => {
-                          // Keep popover focus state stable in nested dialogs/modals.
-                          event.preventDefault();
-                          event.stopPropagation();
-                        }}
-                        onClick={(event) => {
-                          setShowAllTagsOnEmptySearch(true);
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key !== 'Enter' && event.key !== ' ')
-                            return;
-                          event.preventDefault();
-                          setShowAllTagsOnEmptySearch(true);
-                        }}
-                      >
-                        <List className="h-3.5 w-3.5" />
-                        <span>{resolvedLabels.allTags}</span>
-                      </button>
-                    ) : null}
+                {shouldShowAllTagsHeading ? (
+                  <div className="sticky top-0 z-10 flex items-center justify-end gap-2 border-b border-border/45 bg-popover/95 px-2 py-1.5 backdrop-blur supports-[backdrop-filter]:bg-popover/85">
+                    <div className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-medium tracking-[0.06em] text-muted-foreground/85">
+                      <List className="h-3.5 w-3.5" />
+                      <span>{resolvedLabels.allTags}</span>
+                    </div>
                   </div>
                 ) : null}
                 {canCreateOption ? (
@@ -941,7 +895,7 @@ export const MultiSelect = React.forwardRef<
                   ) : (
                     <CommandItem
                       key={`${option.value}-${index}`}
-                      value={option.label}
+                      value={option.value}
                       onSelect={() => toggleOption(option.value)}
                       className={cn(
                         'cursor-pointer',
