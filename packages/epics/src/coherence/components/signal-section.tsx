@@ -14,7 +14,10 @@ import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { SearchIcon } from 'lucide-react';
-import { useSpaceMember } from '../../spaces/hooks/use-space-member';
+import {
+  UserSpaceState,
+  useUserSpaceState,
+} from '../../spaces/hooks/use-user-space-state';
 import {
   SIGNAL_PROVISIONING_NOTICE_EVENT,
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
@@ -108,9 +111,12 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }, [provisioningNoticeLines]);
 
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
-  const { isMember, isMemberLoading } = useSpaceMember({
+  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
     spaceId: web3SpaceId,
+    spaceSlug: id,
   });
+  const canCreateSignal =
+    !isUserStateLoading && userState === UserSpaceState.LOGGED_IN_SPACE;
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -125,7 +131,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           className="w-full"
         />
         <div className="flex w-full items-center justify-end lg:w-auto">
-          {!isMemberLoading && isMember ? (
+          {canCreateSignal ? (
             <Button
               asChild
               variant="default"
