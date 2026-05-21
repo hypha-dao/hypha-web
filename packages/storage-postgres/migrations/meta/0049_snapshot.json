@@ -1344,7 +1344,7 @@
           "name": "space_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "admin_person_id": {
           "name": "admin_person_id",

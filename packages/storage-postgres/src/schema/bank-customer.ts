@@ -15,7 +15,9 @@ export const bankCustomers = pgTable(
   'bank_customers',
   {
     id: serial('id').primaryKey(),
-    spaceId: integer('space_id').references(() => spaces.id),
+    spaceId: integer('space_id')
+      .notNull()
+      .references(() => spaces.id),
     adminPersonId: integer('admin_person_id')
       .notNull()
       .references(() => people.id),

@@ -1,6 +1,6 @@
 CREATE TABLE "bank_customers" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"space_id" integer,
+	"space_id" integer NOT NULL,
 	"admin_person_id" integer NOT NULL,
 	"entity_type" text NOT NULL,
 	"provider" text NOT NULL,
