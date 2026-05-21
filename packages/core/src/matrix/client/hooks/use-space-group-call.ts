@@ -443,37 +443,44 @@ export function useSpaceGroupCall(
           const endedAt = new Date().toISOString();
           const transcriptText = await runtime.stopTranscript();
           const sessionId = callSessionId ?? newCallSessionId();
-          if (runtime.mode === 'transcript_only') {
+          const normalizedTranscript = transcriptText.trim();
+          const uploadTranscriptOnly = async () => {
+            if (!normalizedTranscript) {
+              throw new Error('recording upload failed and no transcript captured');
+            }
             await uploadRecordedCallArtifact({
               authToken: token,
               spaceSlug: slug,
               roomId: activeRoomId,
               callSessionId: sessionId,
-              transcriptText,
+              transcriptText: normalizedTranscript,
               startedAt: runtime.startedAt,
               endedAt,
             });
+          };
+          if (runtime.mode === 'transcript_only') {
+            await uploadTranscriptOnly();
           } else if (runtime.mode === 'recording_with_transcript') {
             if (!runtime.stopRecorder || !runtime.mimeType) {
-              throw new Error(
-                'recording runtime missing recorder for recording mode',
-              );
+              await uploadTranscriptOnly();
+            } else {
+              const blob = await runtime.stopRecorder();
+              if (blob.size === 0) {
+                await uploadTranscriptOnly();
+              } else {
+                await uploadRecordedCallArtifact({
+                  authToken: token,
+                  spaceSlug: slug,
+                  roomId: activeRoomId,
+                  callSessionId: sessionId,
+                  blob,
+                  mimeType: runtime.mimeType,
+                  transcriptText: normalizedTranscript,
+                  startedAt: runtime.startedAt,
+                  endedAt,
+                });
+              }
             }
-            const blob = await runtime.stopRecorder();
-            if (blob.size === 0) {
-              throw new Error('recording blob is empty');
-            }
-            await uploadRecordedCallArtifact({
-              authToken: token,
-              spaceSlug: slug,
-              roomId: activeRoomId,
-              callSessionId: sessionId,
-              blob,
-              mimeType: runtime.mimeType,
-              transcriptText,
-              startedAt: runtime.startedAt,
-              endedAt,
-            });
           }
           if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
             setRecordingStatus('idle');
