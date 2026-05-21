@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { and, eq } from 'drizzle-orm';
 import { getEnableHumanChat } from '@hypha-platform/feature-flags';
-import { db } from '@hypha-platform/storage-postgres';
+import { coherences, db } from '@hypha-platform/storage-postgres';
 import {
   checkSpaceAccessForSpace,
   determineEnvironment,
@@ -20,6 +21,21 @@ type MatrixMediaUploadResponse = {
 };
 
 const MAX_RECORDING_UPLOAD_BYTES = 100 * 1024 * 1024;
+
+async function isSpaceLinkedCallRoom(params: {
+  spaceId: number;
+  spaceChatRoomId: string | null | undefined;
+  roomId: string;
+}) {
+  const { spaceId, spaceChatRoomId, roomId } = params;
+  if (spaceChatRoomId?.trim() === roomId) return true;
+  const [linkedSignal] = await db
+    .select({ id: coherences.id })
+    .from(coherences)
+    .where(and(eq(coherences.spaceId, spaceId), eq(coherences.roomId, roomId)))
+    .limit(1);
+  return Boolean(linkedSignal);
+}
 
 async function triggerTranscriptJob(payload: {
   spaceSlug: string;
@@ -109,11 +125,14 @@ export async function POST(request: NextRequest) {
   }
 
   const space = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
-  if (
-    !space ||
-    !space.chatRoomId?.trim() ||
-    space.chatRoomId.trim() !== roomId
-  ) {
+  const linkedRoom = space
+    ? await isSpaceLinkedCallRoom({
+        spaceId: space.id,
+        spaceChatRoomId: space.chatRoomId,
+        roomId,
+      })
+    : false;
+  if (!space || !linkedRoom) {
     return NextResponse.json({ error: 'Space/room mismatch' }, { status: 404 });
   }
 
