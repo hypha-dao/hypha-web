@@ -39,6 +39,7 @@
     "errorLoadMembersTab": "Ups, etwas ist schiefgelaufen. Der Mitglieder-Tab konnte nicht geladen werden.",
     "errorLoadAgreementsTab": "Ups, etwas ist schiefgelaufen. Der Vereinbarungen-Tab konnte nicht geladen werden.",
     "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden.",
+    "errorLoadBankingTab": "Ups, etwas ist schiefgelaufen. Verknüpfte Bankkonten konnten nicht geladen werden.",
     "publish": "Veröffentlichen",
     "invalidTransactions": "Ungültige Transaktionen",
     "Coherence": "Signale",
@@ -493,7 +494,91 @@
       }
     }
   },
+  "BankingTab": {
+    "title": "Bankeinzahlungen",
+    "subtitle": "Ermöglichen Sie Ihrem Space, direkte Banküberweisungen zu empfangen.",
+    "loading": "Status des verknüpften Bankkontos wird geladen…",
+    "returnBanner": "Sie sind von der Verifizierung zurückgekehrt. Ihr Status wurde unten aktualisiert.",
+    "errorLoad": "Status des verknüpften Bankkontos konnte nicht geladen werden.",
+    "notStarted": {
+      "description": "Schließen Sie eine kurze Unternehmensverifizierung ab, um Bankeinzahlungen für diesen Space zu aktivieren. Nach der Freigabe kann jeder Banküberweisungen direkt an Ihre Treasury senden.",
+      "enableCta": "Bankeinzahlungen aktivieren"
+    },
+    "blockers": {
+      "notOnChain": "Dieser Space muss on-chain bereitgestellt sein, bevor ein verknüpftes Bankkonto eingerichtet werden kann.",
+      "noTreasury": "Dieser Space benötigt eine on-chain Treasury-Adresse, bevor ein verknüpftes Bankkonto eingerichtet werden kann."
+    },
+    "verificationInProgress": "Die Verifizierung läuft. Dies dauert in der Regel von wenigen Stunden bis zu einigen Tagen. Wenn Sie handeln müssen, nutzen Sie den Link unten.",
+    "actions": {
+      "openVerificationForm": "Verifizierungsformular öffnen",
+      "viewTerms": "Nutzungsbedingungen anzeigen",
+      "refreshStatus": "Status aktualisieren"
+    },
+    "endorsements": {
+      "base": "USD (ACH / Überweisung)",
+      "cop": "COP (Bre-B, Kolumbien)",
+      "faster_payments": "GBP (Faster Payments, UK)",
+      "pix": "BRL (PIX, Brasilien)",
+      "sepa": "EUR (SEPA-Überweisung)",
+      "spei": "MXN (SPEI, Mexiko)"
+    },
+    "onboardingDialog": {
+      "title": "Bankeinzahlungen aktivieren",
+      "description": "Diese Angaben dienen der Verifizierung Ihrer Organisation. Nach der Freigabe wird Ihr Space für den Empfang von Banküberweisungen eingerichtet.",
+      "legalName": "Rechtlicher Name der Organisation",
+      "contactEmail": "Kontakt-E-Mail",
+      "endorsementsLabel": "Zahlungskorridore",
+      "endorsementsHint": "Optional. Sie können Zahlungskorridore später hinzufügen; dafür kann dann eine zusätzliche Verifizierung erforderlich sein.",
+      "submit": "Verifizierung starten",
+      "submitting": "Wird gestartet…"
+    },
+    "status": {
+      "not_started": {
+        "title": "Verifizierung nicht gestartet",
+        "description": "Öffnen Sie den Verifizierungslink, um die Angaben Ihrer Organisation zu übermitteln."
+      },
+      "incomplete": {
+        "title": "Verifizierung unvollständig",
+        "description": "Ihr Verifizierungsformular wurde noch nicht eingereicht."
+      },
+      "awaiting_questionnaire": {
+        "title": "Zusätzliche Angaben erforderlich",
+        "description": "Bitte füllen Sie den zusätzlichen Fragebogen aus, um die Verifizierung fortzusetzen."
+      },
+      "awaiting_ubo": {
+        "title": "Wirtschaftlich Berechtigte erforderlich",
+        "description": "Bitte geben Sie Informationen zu Personen an, die 25 % oder mehr der Organisation besitzen oder kontrollieren."
+      },
+      "under_review": {
+        "title": "In Prüfung",
+        "description": "Ihre Verifizierung wurde eingereicht und wird geprüft. Dies kann von wenigen Stunden bis zu mehreren Tagen dauern."
+      },
+      "approved": {
+        "title": "Verifizierung genehmigt",
+        "description": "Ihre Organisation wurde verifiziert. Details zum verknüpften Bankkonto werden in Kürze hier verfügbar sein.",
+        "depositPlaceholderTitle": "Überweisungsangaben",
+        "depositPlaceholderDescription": "IBAN, Bankleitzahl und andere Überweisungsdetails erscheinen hier, sobald Ihr virtuelles Bankkonto bereitgestellt wurde."
+      },
+      "rejected": {
+        "title": "Verifizierung abgelehnt",
+        "description": "Ihre Organisation konnte nicht verifiziert werden. Kontaktieren Sie den Support, wenn Sie glauben, dass dies ein Fehler ist."
+      },
+      "paused": {
+        "title": "Verifizierung pausiert",
+        "description": "Die Verifizierung ist vorübergehend pausiert. Kontaktieren Sie den Support."
+      },
+      "offboarded": {
+        "title": "Verknüpftes Bankkonto nicht verfügbar",
+        "description": "Verknüpfte Bankkonten sind für diesen Space nicht mehr verfügbar. Kontaktieren Sie den Support."
+      },
+      "unknown": {
+        "title": "Status unbekannt",
+        "description": "Der aktuelle Verifizierungsstatus konnte nicht ermittelt werden. Versuchen Sie zu aktualisieren."
+      }
+    }
+  },
   "TreasuryTab": {
+    "bankAccounts": "Bankeinzahlungen",
     "balance": "Kontostand",
     "wallet": "Wallet",
     "searchTokens": "Tokens suchen",
