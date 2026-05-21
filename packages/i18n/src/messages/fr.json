@@ -1976,7 +1976,9 @@
     "pendingAction": "Action en attente",
     "confirmWith": "Confirmer avec :",
     "confirm": "Confirmer",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "showMore": "Lire la suite",
+    "showLess": "Afficher moins"
   },
   "HumanChatPanel": {
     "title": "Chat",
