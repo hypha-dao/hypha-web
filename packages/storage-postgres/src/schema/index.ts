@@ -14,6 +14,7 @@ import { coherences } from './coherence';
 import { matrixUserLinks } from './matrix-user-link';
 import { tokenUpdates, tokenUpdateRelations } from './token-updates';
 import {
+  spaceCallArtifactIngestRuns,
   spaceCallRecordings,
   spaceCallTranscripts,
   spaceDiscussionSummaries,
@@ -63,6 +64,7 @@ export const schema = {
   spaceCallRecordings,
   spaceCallTranscripts,
   spaceDiscussionSummaries,
+  spaceCallArtifactIngestRuns,
   signalOrchestratorQueue,
   signalOrchestratorCooldowns,
   signalOrchestratorDispatches,

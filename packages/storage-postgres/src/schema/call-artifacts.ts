@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -98,6 +99,40 @@ export const spaceDiscussionSummaries = pgTable(
   ],
 );
 
+export const spaceCallArtifactIngestRuns = pgTable(
+  'space_call_artifact_ingest_runs',
+  {
+    id: serial('id').primaryKey(),
+    spaceId: integer('space_id')
+      .notNull()
+      .references(() => spaces.id, { onDelete: 'cascade' }),
+    callSessionId: varchar('call_session_id', { length: 128 }).notNull(),
+    state: varchar('state', { length: 32 }).notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    nextRetryAt: timestamp('next_retry_at', {
+      withTimezone: true,
+      mode: 'string',
+    }),
+    lastError: text('last_error'),
+    recordingStored: boolean('recording_stored').notNull().default(false),
+    transcriptStored: boolean('transcript_stored').notNull().default(false),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+    ...commonDateFields,
+  },
+  (table) => [
+    uniqueIndex('space_call_artifact_ingest_runs_space_session_unique').on(
+      table.spaceId,
+      table.callSessionId,
+    ),
+    index('space_call_artifact_ingest_runs_space_idx').on(table.spaceId),
+    index('space_call_artifact_ingest_runs_state_retry_idx').on(
+      table.state,
+      table.nextRetryAt,
+    ),
+    index('space_call_artifact_ingest_runs_created_idx').on(table.createdAt),
+  ],
+);
+
 export type SpaceCallRecording = InferSelectModel<typeof spaceCallRecordings>;
 export type NewSpaceCallRecording = InferInsertModel<
   typeof spaceCallRecordings
@@ -113,4 +148,11 @@ export type SpaceDiscussionSummary = InferSelectModel<
 >;
 export type NewSpaceDiscussionSummary = InferInsertModel<
   typeof spaceDiscussionSummaries
+>;
+
+export type SpaceCallArtifactIngestRun = InferSelectModel<
+  typeof spaceCallArtifactIngestRuns
+>;
+export type NewSpaceCallArtifactIngestRun = InferInsertModel<
+  typeof spaceCallArtifactIngestRuns
 >;

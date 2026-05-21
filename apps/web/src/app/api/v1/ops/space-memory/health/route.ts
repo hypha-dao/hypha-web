@@ -3,6 +3,7 @@ import { and, eq, gte, isNotNull, sql } from 'drizzle-orm';
 import { getSignalOrchestratorMetrics } from '@hypha-platform/core/server';
 import {
   db,
+  spaceCallArtifactIngestRuns,
   spaceCallRecordings,
   spaceCallTranscripts,
   spaceDiscussionSummaries,
@@ -29,6 +30,8 @@ export async function GET(request: NextRequest) {
 
   let queried:
     | [
+        Array<{ count: number }>,
+        Array<{ count: number }>,
         Array<{ count: number }>,
         Array<{ count: number }>,
         Array<{ count: number }>,
@@ -112,6 +115,11 @@ export async function GET(request: NextRequest) {
             gte(spaceDiscussionSummaries.createdAt, since24h),
           ),
         ),
+      db.select({ count: sql<number>`count(*)` }).from(spaceCallArtifactIngestRuns),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceCallArtifactIngestRuns)
+        .where(eq(spaceCallArtifactIngestRuns.state, 'retry_pending')),
       getSignalOrchestratorMetrics({ db }),
     ]);
   } catch (error) {
@@ -150,6 +158,8 @@ export async function GET(request: NextRequest) {
     recordingsMatrix24hRow,
     summariesCronTotalRow,
     summariesCron24hRow,
+    ingestRunsTotalRow,
+    ingestRunsRetryPendingRow,
     signalMetrics,
   ] = queried;
 
@@ -175,6 +185,10 @@ export async function GET(request: NextRequest) {
   );
   const summaries_cron_total = Number(summariesCronTotalRow[0]?.count ?? 0);
   const summaries_cron_last_24h = Number(summariesCron24hRow[0]?.count ?? 0);
+  const ingest_runs_total = Number(ingestRunsTotalRow[0]?.count ?? 0);
+  const ingest_runs_retry_pending = Number(
+    ingestRunsRetryPendingRow[0]?.count ?? 0,
+  );
 
   const readiness = {
     ops_secret_configured: Boolean(configuredSecret),
@@ -282,6 +296,8 @@ export async function GET(request: NextRequest) {
       recordings_matrix_live_upload_last_24h,
       summaries_cron_total,
       summaries_cron_last_24h,
+      ingest_runs_total,
+      ingest_runs_retry_pending,
       signal_orchestrator_queue_pending: signalMetrics.queue_pending,
       signal_orchestrator_queue_failed: signalMetrics.queue_failed,
       signals_emitted_last_24h: signalMetrics.signals_emitted_last_24h,

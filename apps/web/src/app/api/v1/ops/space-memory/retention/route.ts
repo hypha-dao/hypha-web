@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
+  cleanupSpaceCallArtifactsRetention,
   cleanupSignalOrchestratorRetention,
   cleanupSpaceDiscussionSummariesRetention,
 } from '@hypha-platform/core/server';
@@ -16,6 +17,27 @@ const retentionPayloadSchema = z.object({
     .max(3650)
     .optional()
     .default(120),
+  call_recording_retention_days: z
+    .number()
+    .int()
+    .min(1)
+    .max(3650)
+    .optional()
+    .default(365),
+  call_transcript_retention_days: z
+    .number()
+    .int()
+    .min(1)
+    .max(3650)
+    .optional()
+    .default(365),
+  call_ingest_run_retention_days: z
+    .number()
+    .int()
+    .min(1)
+    .max(3650)
+    .optional()
+    .default(45),
   orchestrator_dispatch_retention_days: z
     .number()
     .int()
@@ -84,11 +106,20 @@ export async function POST(request: NextRequest) {
   const payload = parsedPayload.data;
 
   try {
-    const [summaries, orchestrator] = await Promise.all([
+    const [summaries, callArtifacts, orchestrator] = await Promise.all([
       cleanupSpaceDiscussionSummariesRetention(
         {
           dryRun: payload.dry_run,
           retentionDays: payload.discussion_summary_retention_days,
+        },
+        { db },
+      ),
+      cleanupSpaceCallArtifactsRetention(
+        {
+          dryRun: payload.dry_run,
+          recordingRetentionDays: payload.call_recording_retention_days,
+          transcriptRetentionDays: payload.call_transcript_retention_days,
+          ingestRunRetentionDays: payload.call_ingest_run_retention_days,
         },
         { db },
       ),
@@ -110,6 +141,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       dry_run: payload.dry_run,
       discussion_summaries: summaries,
+      call_artifacts: callArtifacts,
       signal_orchestrator: orchestrator,
     });
   } catch (error) {

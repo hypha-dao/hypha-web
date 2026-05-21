@@ -1,8 +1,9 @@
 import 'server-only';
 
-import { and, desc, eq, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, lte, lt, or, sql } from 'drizzle-orm';
 import {
   coherences,
+  spaceCallArtifactIngestRuns,
   spaceCallRecordings,
   spaceCallTranscripts,
   spaceDiscussionSummaries,
@@ -40,6 +41,15 @@ export type SpaceCallArtifactIngestResult =
 type SpaceCallRecordingRow = typeof spaceCallRecordings.$inferSelect;
 type SpaceCallTranscriptRow = typeof spaceCallTranscripts.$inferSelect;
 type SpaceDiscussionSummaryRow = typeof spaceDiscussionSummaries.$inferSelect;
+type SpaceCallArtifactIngestRunRow =
+  typeof spaceCallArtifactIngestRuns.$inferSelect;
+
+export type SpaceCallArtifactIngestState =
+  | 'pending'
+  | 'uploading'
+  | 'ingested'
+  | 'failed'
+  | 'retry_pending';
 
 type MatrixTimelineEvent = {
   type?: string;
@@ -502,6 +512,29 @@ export async function getSpaceCallRecordingBySessionId(
   return row ?? null;
 }
 
+export async function getSpaceCallTranscriptBySessionId(
+  {
+    spaceId,
+    callSessionId,
+  }: {
+    spaceId: number;
+    callSessionId: string;
+  },
+  { db }: DbConfig,
+): Promise<SpaceCallTranscriptRow | null> {
+  const [row] = await db
+    .select()
+    .from(spaceCallTranscripts)
+    .where(
+      and(
+        eq(spaceCallTranscripts.spaceId, spaceId),
+        eq(spaceCallTranscripts.callSessionId, callSessionId.trim()),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
 export async function getSpaceCallArtifactById(
   {
     kind,
@@ -605,5 +638,202 @@ export async function cleanupSpaceDiscussionSummariesRetention(
     dry_run: false,
     cutoff_before: cutoff.toISOString(),
     deleted: deleted.length,
+  };
+}
+
+export async function recordSpaceCallArtifactIngestEvent(
+  {
+    spaceId,
+    callSessionId,
+    state,
+    incrementAttempts = false,
+    nextRetryAt,
+    lastError,
+    recordingStored,
+    transcriptStored,
+    metadata,
+  }: {
+    spaceId: number;
+    callSessionId: string;
+    state: SpaceCallArtifactIngestState;
+    incrementAttempts?: boolean;
+    nextRetryAt?: string | null;
+    lastError?: string | null;
+    recordingStored?: boolean;
+    transcriptStored?: boolean;
+    metadata?: Record<string, unknown>;
+  },
+  { db }: DbConfig,
+): Promise<SpaceCallArtifactIngestRunRow> {
+  const normalizedSession = callSessionId.trim();
+  if (!normalizedSession) {
+    throw new Error('callSessionId is required');
+  }
+  const existing = await db
+    .select()
+    .from(spaceCallArtifactIngestRuns)
+    .where(
+      and(
+        eq(spaceCallArtifactIngestRuns.spaceId, spaceId),
+        eq(spaceCallArtifactIngestRuns.callSessionId, normalizedSession),
+      ),
+    )
+    .limit(1);
+  const row = existing[0];
+  const nextAttempts = incrementAttempts
+    ? (row?.attempts ?? 0) + 1
+    : (row?.attempts ?? 0);
+  const nextRecordingStored = row
+    ? row.recordingStored || Boolean(recordingStored)
+    : Boolean(recordingStored);
+  const nextTranscriptStored = row
+    ? row.transcriptStored || Boolean(transcriptStored)
+    : Boolean(transcriptStored);
+  const nextMetadata = metadata ? { ...(row?.metadata ?? {}), ...metadata } : row?.metadata;
+
+  if (!row) {
+    const [inserted] = await db
+      .insert(spaceCallArtifactIngestRuns)
+      .values({
+        spaceId,
+        callSessionId: normalizedSession,
+        state,
+        attempts: nextAttempts,
+        nextRetryAt: nextRetryAt ?? null,
+        lastError: lastError ?? null,
+        recordingStored: nextRecordingStored,
+        transcriptStored: nextTranscriptStored,
+        metadata: nextMetadata ?? {},
+      })
+      .returning();
+    if (!inserted) {
+      throw new Error('Failed to insert space call artifact ingest run');
+    }
+    return inserted;
+  }
+
+  const [updated] = await db
+    .update(spaceCallArtifactIngestRuns)
+    .set({
+      state,
+      attempts: nextAttempts,
+      nextRetryAt: nextRetryAt ?? null,
+      lastError: lastError ?? null,
+      recordingStored: nextRecordingStored,
+      transcriptStored: nextTranscriptStored,
+      metadata: nextMetadata ?? {},
+      updatedAt: new Date(),
+    })
+    .where(eq(spaceCallArtifactIngestRuns.id, row.id))
+    .returning();
+  if (!updated) {
+    throw new Error('Failed to update space call artifact ingest run');
+  }
+  return updated;
+}
+
+export async function listSpaceCallArtifactIngestRunsForRetry(
+  {
+    spaceId,
+    limit = 50,
+  }: {
+    spaceId?: number;
+    limit?: number;
+  },
+  { db }: DbConfig,
+): Promise<SpaceCallArtifactIngestRunRow[]> {
+  const now = new Date();
+  return db
+    .select()
+    .from(spaceCallArtifactIngestRuns)
+    .where(
+      and(
+        spaceId ? eq(spaceCallArtifactIngestRuns.spaceId, spaceId) : undefined,
+        or(
+          eq(spaceCallArtifactIngestRuns.state, 'failed'),
+          eq(spaceCallArtifactIngestRuns.state, 'retry_pending'),
+        ),
+        or(
+          isNull(spaceCallArtifactIngestRuns.nextRetryAt),
+          lte(spaceCallArtifactIngestRuns.nextRetryAt, now.toISOString()),
+        ),
+      ),
+    )
+    .orderBy(desc(spaceCallArtifactIngestRuns.updatedAt))
+    .limit(Math.max(1, Math.min(500, limit)));
+}
+
+export async function cleanupSpaceCallArtifactsRetention(
+  {
+    dryRun = true,
+    recordingRetentionDays = 365,
+    transcriptRetentionDays = 365,
+    ingestRunRetentionDays = 45,
+  }: {
+    dryRun?: boolean;
+    recordingRetentionDays?: number;
+    transcriptRetentionDays?: number;
+    ingestRunRetentionDays?: number;
+  },
+  { db }: DbConfig,
+) {
+  const recordingsDays = clampRetentionDays(recordingRetentionDays, 365);
+  const transcriptsDays = clampRetentionDays(transcriptRetentionDays, 365);
+  const ingestDays = clampRetentionDays(ingestRunRetentionDays, 45);
+  const recordingCutoff = new Date(Date.now() - recordingsDays * 24 * 60 * 60 * 1000);
+  const transcriptCutoff = new Date(Date.now() - transcriptsDays * 24 * 60 * 60 * 1000);
+  const ingestCutoff = new Date(Date.now() - ingestDays * 24 * 60 * 60 * 1000);
+
+  if (dryRun) {
+    const [recordingsCount, transcriptsCount, ingestRunsCount] = await Promise.all([
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceCallRecordings)
+        .where(lt(spaceCallRecordings.createdAt, recordingCutoff)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceCallTranscripts)
+        .where(lt(spaceCallTranscripts.createdAt, transcriptCutoff)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceCallArtifactIngestRuns)
+        .where(lt(spaceCallArtifactIngestRuns.createdAt, ingestCutoff)),
+    ]);
+    return {
+      ok: true as const,
+      dry_run: true,
+      recording_cutoff_before: recordingCutoff.toISOString(),
+      transcript_cutoff_before: transcriptCutoff.toISOString(),
+      ingest_run_cutoff_before: ingestCutoff.toISOString(),
+      recordings_count: Number(recordingsCount[0]?.count ?? 0),
+      transcripts_count: Number(transcriptsCount[0]?.count ?? 0),
+      ingest_runs_count: Number(ingestRunsCount[0]?.count ?? 0),
+    };
+  }
+
+  const [deletedRecordings, deletedTranscripts, deletedIngestRuns] = await Promise.all([
+    db
+      .delete(spaceCallRecordings)
+      .where(lt(spaceCallRecordings.createdAt, recordingCutoff))
+      .returning({ id: spaceCallRecordings.id }),
+    db
+      .delete(spaceCallTranscripts)
+      .where(lt(spaceCallTranscripts.createdAt, transcriptCutoff))
+      .returning({ id: spaceCallTranscripts.id }),
+    db
+      .delete(spaceCallArtifactIngestRuns)
+      .where(lt(spaceCallArtifactIngestRuns.createdAt, ingestCutoff))
+      .returning({ id: spaceCallArtifactIngestRuns.id }),
+  ]);
+
+  return {
+    ok: true as const,
+    dry_run: false,
+    recording_cutoff_before: recordingCutoff.toISOString(),
+    transcript_cutoff_before: transcriptCutoff.toISOString(),
+    ingest_run_cutoff_before: ingestCutoff.toISOString(),
+    recordings_deleted: deletedRecordings.length,
+    transcripts_deleted: deletedTranscripts.length,
+    ingest_runs_deleted: deletedIngestRuns.length,
   };
 }

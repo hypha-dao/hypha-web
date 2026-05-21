@@ -10,6 +10,7 @@ import {
   findSpaceHostFieldsBySlug,
   getSpaceCallRecordingBySessionId,
   ingestSpaceCallArtifacts,
+  recordSpaceCallArtifactIngestEvent,
 } from '@hypha-platform/core/server';
 import {
   resolveMatrixAccessToken,
@@ -30,6 +31,54 @@ function logCallArtifactsUpload(
     event,
     ...payload,
   });
+}
+
+async function trackIngestState(
+  {
+    spaceId,
+    callSessionId,
+    state,
+    incrementAttempts = false,
+    nextRetryAt = null,
+    lastError = null,
+    recordingStored,
+    transcriptStored,
+    metadata,
+  }: {
+    spaceId: number;
+    callSessionId: string;
+    state: 'pending' | 'uploading' | 'ingested' | 'failed' | 'retry_pending';
+    incrementAttempts?: boolean;
+    nextRetryAt?: string | null;
+    lastError?: string | null;
+    recordingStored?: boolean;
+    transcriptStored?: boolean;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  try {
+    await recordSpaceCallArtifactIngestEvent(
+      {
+        spaceId,
+        callSessionId,
+        state,
+        incrementAttempts,
+        nextRetryAt,
+        lastError,
+        recordingStored,
+        transcriptStored,
+        metadata,
+      },
+      { db },
+    );
+  } catch (error) {
+    console.error('[matrix.call-artifacts.upload] ingest state tracking failed', {
+      spaceId,
+      callSessionId,
+      state,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 async function isSpaceLinkedCallRoom(params: {
@@ -186,6 +235,16 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ error: 'Space/room mismatch' }, { status: 404 });
   }
+  await trackIngestState({
+    spaceId: space.id,
+    callSessionId,
+    state: 'pending',
+    metadata: {
+      roomId,
+      hasRecordingBlob,
+      hasTranscriptText: Boolean(transcriptText),
+    },
+  });
 
   const access = await checkSpaceAccessForSpace(space, authToken);
   if (!access.hasAccess) {
@@ -215,6 +274,16 @@ export async function POST(request: NextRequest) {
       roomId,
       callSessionId,
       transcriptStored: Boolean(transcriptText),
+    });
+    await trackIngestState({
+      spaceId: space.id,
+      callSessionId,
+      state: 'ingested',
+      recordingStored: true,
+      transcriptStored: Boolean(transcriptText),
+      metadata: {
+        deduped: true,
+      },
     });
     return NextResponse.json({
       ok: true,
@@ -262,6 +331,15 @@ export async function POST(request: NextRequest) {
       spaceSlug,
       roomId,
       callSessionId,
+    });
+    await trackIngestState({
+      spaceId: space.id,
+      callSessionId,
+      state: 'ingested',
+      transcriptStored: true,
+      metadata: {
+        mode: 'transcript_only',
+      },
     });
     return NextResponse.json({
       ok: true,
@@ -323,6 +401,18 @@ export async function POST(request: NextRequest) {
       callSessionId,
       hasTranscriptText: Boolean(transcriptText),
     });
+    await trackIngestState({
+      spaceId: space.id,
+      callSessionId,
+      state: 'retry_pending',
+      incrementAttempts: true,
+      nextRetryAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      lastError: 'Unable to resolve Matrix token',
+      transcriptStored: Boolean(transcriptText),
+      metadata: {
+        fallbackTranscript: Boolean(transcriptText),
+      },
+    });
     return NextResponse.json(
       { error: 'Unable to resolve Matrix token' },
       { status: 403 },
@@ -341,6 +431,16 @@ export async function POST(request: NextRequest) {
   }
 
   const recordingBlob = recording as Blob;
+  await trackIngestState({
+    spaceId: space.id,
+    callSessionId,
+    state: 'uploading',
+    incrementAttempts: true,
+    metadata: {
+      recordingBytes: recordingBlob.size,
+      mimeType,
+    },
+  });
   const buffer = Buffer.from(await recordingBlob.arrayBuffer());
   const uploadUrl = `${homeserver}/_matrix/media/v3/upload?filename=${encodeURIComponent(
     `${callSessionId}.webm`,
@@ -385,6 +485,17 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+    await trackIngestState({
+      spaceId: space.id,
+      callSessionId,
+      state: 'retry_pending',
+      nextRetryAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      lastError: uploadResponse.message,
+      transcriptStored: Boolean(transcriptText),
+      metadata: {
+        uploadStage: 'network_error',
+      },
+    });
     return NextResponse.json(
       { error: `Matrix upload failed: ${uploadResponse.message}` },
       { status: 502 },
@@ -420,6 +531,18 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+    await trackIngestState({
+      spaceId: space.id,
+      callSessionId,
+      state: 'retry_pending',
+      nextRetryAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      lastError: `Matrix upload failed (${uploadResponse.status}) ${detail}`,
+      transcriptStored: Boolean(transcriptText),
+      metadata: {
+        uploadStage: 'http_error',
+        uploadStatus: uploadResponse.status,
+      },
+    });
     return NextResponse.json(
       { error: `Matrix upload failed (${uploadResponse.status}) ${detail}` },
       { status: 502 },
@@ -459,6 +582,17 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+    await trackIngestState({
+      spaceId: space.id,
+      callSessionId,
+      state: 'retry_pending',
+      nextRetryAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      lastError: 'Matrix upload did not return content_uri',
+      transcriptStored: Boolean(transcriptText),
+      metadata: {
+        uploadStage: 'missing_uri',
+      },
+    });
     return NextResponse.json(
       { error: 'Matrix upload did not return content_uri' },
       { status: 502 },
@@ -496,6 +630,14 @@ export async function POST(request: NextRequest) {
       callSessionId,
       error: ingestResult.error,
     });
+    await trackIngestState({
+      spaceId: space.id,
+      callSessionId,
+      state: 'failed',
+      lastError: ingestResult.error,
+      recordingStored: true,
+      transcriptStored: Boolean(transcriptText),
+    });
     return NextResponse.json({ error: ingestResult.error }, { status: 400 });
   }
 
@@ -532,6 +674,18 @@ export async function POST(request: NextRequest) {
     transcriptJobAttempted: transcriptJob.attempted,
     transcriptJobOk: transcriptJob.ok,
     transcriptJobStatus: transcriptJob.status,
+  });
+  await trackIngestState({
+    spaceId: space.id,
+    callSessionId,
+    state: 'ingested',
+    recordingStored: true,
+    transcriptStored: Boolean(transcriptText),
+    metadata: {
+      transcriptJobAttempted: transcriptJob.attempted,
+      transcriptJobOk: transcriptJob.ok,
+      transcriptJobStatus: transcriptJob.status,
+    },
   });
   return NextResponse.json({
     ok: true,
