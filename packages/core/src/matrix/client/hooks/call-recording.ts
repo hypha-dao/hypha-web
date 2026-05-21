@@ -290,8 +290,8 @@ export async function uploadRecordedCallArtifact({
   spaceSlug: string;
   roomId: string;
   callSessionId: string;
-  blob: Blob;
-  mimeType: string;
+  blob?: Blob;
+  mimeType?: string;
   transcriptText?: string;
   startedAt?: string;
   endedAt?: string;
@@ -299,8 +299,10 @@ export async function uploadRecordedCallArtifact({
   const form = new FormData();
   form.set('room_id', roomId);
   form.set('call_session_id', callSessionId);
-  form.set('recording', blob, `${callSessionId}.webm`);
-  form.set('mime_type', mimeType || 'video/webm');
+  if (blob && blob.size > 0) {
+    form.set('recording', blob, `${callSessionId}.webm`);
+    form.set('mime_type', mimeType || 'video/webm');
+  }
   if (startedAt) form.set('started_at', startedAt);
   if (endedAt) form.set('ended_at', endedAt);
   if (transcriptText?.trim())
@@ -324,8 +326,9 @@ export async function uploadRecordedCallArtifact({
   }
   return (await response.json()) as {
     ok: true;
-    media_uri: string;
+    media_uri: string | null;
     call_session_id: string;
     transcript_stored: boolean;
+    recording_stored: boolean;
   };
 }
