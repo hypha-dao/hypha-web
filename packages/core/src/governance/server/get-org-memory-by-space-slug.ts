@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { Document } from '../types';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import { and, desc, eq } from 'drizzle-orm';
 import type { DbConfig } from '../../server';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
@@ -19,6 +20,7 @@ import {
   HYPHA_MEDIA_BUNDLE_FIELD,
   type HyphaMediaBundleItemWire,
 } from '../../matrix/rich-reply';
+import { coherences } from '@hypha-platform/storage-postgres';
 import { withOrgMemoryAssetKeys } from '../../org-memory/with-org-memory-asset-keys';
 import { listSpaceCallArtifactsBySpaceId } from './call-artifacts';
 
@@ -244,6 +246,37 @@ function collectProposalAssets(
       seen.add(key);
       out.push(row);
     });
+  }
+  return out;
+}
+
+async function listSpaceMatrixRoomIds(
+  {
+    spaceId,
+    primaryRoomId,
+  }: {
+    spaceId: number;
+    primaryRoomId: string | null;
+  },
+  { db }: DbConfig,
+): Promise<string[]> {
+  const rows = await db
+    .select({ roomId: coherences.roomId })
+    .from(coherences)
+    .where(and(eq(coherences.spaceId, spaceId), eq(coherences.archived, false)))
+    .orderBy(desc(coherences.updatedAt))
+    .limit(200);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const push = (roomId: string | null | undefined) => {
+    const trimmed = roomId?.trim();
+    if (!trimmed || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    out.push(trimmed);
+  };
+  push(primaryRoomId);
+  for (const row of rows) {
+    push(row.roomId);
   }
   return out;
 }
@@ -800,30 +833,70 @@ export async function getOrgMemoryBySpaceSlug(
 
   const proposalAssets = collectProposalAssets(docsWithStatus);
 
-  const matrixRoomId = host.chatRoomId?.trim() ?? '';
-  const { assets: matrixAssets, meta: matrixFetchMeta } =
-    matrixRoomId.length > 0
-      ? await fetchMatrixChatAssets(matrixRoomId, {
-          authToken,
-          requestUrlForSessionMatrix,
-        })
-      : {
-          assets: [] as OrgMemoryAsset[],
-          meta: {
-            attempted: false,
-            skipped_reason: 'missing_chat_room_id' as const,
-            chat_room_id: null,
-            ...matrixEnvFlags(),
-            used_bot_access_token: false,
-            used_session_matrix_token: false,
-            session_matrix_token_unavailable: false,
-            http_status: null,
-            events_in_chunk: 0,
-            media_events_yielded: 0,
-            hypha_media_bundle_slots: 0,
-            error: null,
-          } satisfies MatrixOrgMemoryFetchMeta,
-        };
+  const matrixRoomIds = await listSpaceMatrixRoomIds(
+    {
+      spaceId: host.id,
+      primaryRoomId: host.chatRoomId ?? null,
+    },
+    { db },
+  );
+  const matrixResults =
+    matrixRoomIds.length > 0
+      ? await Promise.all(
+          matrixRoomIds.map((roomId) =>
+            fetchMatrixChatAssets(roomId, {
+              authToken,
+              requestUrlForSessionMatrix,
+            }),
+          ),
+        )
+      : [];
+  const matrixAssets = matrixResults.flatMap((result) => result.assets);
+  const matrixMetaFallback: MatrixOrgMemoryFetchMeta = {
+    attempted: false,
+    skipped_reason: 'missing_chat_room_id',
+    chat_room_id: null,
+    ...matrixEnvFlags(),
+    used_bot_access_token: false,
+    used_session_matrix_token: false,
+    session_matrix_token_unavailable: false,
+    http_status: null,
+    events_in_chunk: 0,
+    media_events_yielded: 0,
+    hypha_media_bundle_slots: 0,
+    error: null,
+  };
+  const matrixFetchMeta = matrixResults.reduce<MatrixOrgMemoryFetchMeta>(
+    (aggregate, current) => {
+      aggregate.attempted = aggregate.attempted || current.meta.attempted;
+      aggregate.used_bot_access_token =
+        aggregate.used_bot_access_token || current.meta.used_bot_access_token;
+      aggregate.used_session_matrix_token =
+        aggregate.used_session_matrix_token ||
+        current.meta.used_session_matrix_token;
+      aggregate.session_matrix_token_unavailable =
+        aggregate.session_matrix_token_unavailable ||
+        current.meta.session_matrix_token_unavailable;
+      aggregate.events_in_chunk += current.meta.events_in_chunk;
+      aggregate.media_events_yielded += current.meta.media_events_yielded;
+      aggregate.hypha_media_bundle_slots +=
+        current.meta.hypha_media_bundle_slots;
+      if (current.meta.http_status != null) {
+        aggregate.http_status = current.meta.http_status;
+      }
+      if (current.meta.error) {
+        aggregate.error = aggregate.error
+          ? `${aggregate.error} | ${current.meta.error}`
+          : current.meta.error;
+      }
+      return aggregate;
+    },
+    {
+      ...matrixMetaFallback,
+      chat_room_id: matrixRoomIds[0] ?? null,
+      skipped_reason: matrixRoomIds.length > 0 ? null : 'missing_chat_room_id',
+    },
+  );
 
   const callArtifacts = await listSpaceCallArtifactsBySpaceId(host.id, { db });
   const recordingAssets: OrgMemoryAsset[] = callArtifacts.recordings.map(
