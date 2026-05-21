@@ -444,10 +444,15 @@ export function useSpaceGroupCall(
           const transcriptText = await runtime.stopTranscript();
           const sessionId = callSessionId ?? newCallSessionId();
           if (runtime.mode === 'transcript_only') {
-            console.warn(
-              '[hypha.group_call] transcript-only capture does not persist artifacts yet',
-              { roomId: activeRoomId, callSessionId: sessionId },
-            );
+            await uploadRecordedCallArtifact({
+              authToken: token,
+              spaceSlug: slug,
+              roomId: activeRoomId,
+              callSessionId: sessionId,
+              transcriptText,
+              startedAt: runtime.startedAt,
+              endedAt,
+            });
           } else if (runtime.mode === 'recording_with_transcript') {
             if (!runtime.stopRecorder || !runtime.mimeType) {
               throw new Error(
