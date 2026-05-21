@@ -78,6 +78,29 @@ async function triggerTranscriptJob(payload: {
   };
 }
 
+async function persistTranscriptOnly(params: {
+  spaceSlug: string;
+  callSessionId: string;
+  transcriptText: string;
+}) {
+  const { spaceSlug, callSessionId, transcriptText } = params;
+  const transcriptResult = await ingestSpaceCallArtifacts(
+    {
+      spaceSlug,
+      callSessionId,
+      transcript: {
+        text: transcriptText,
+        source: 'browser_speech_recognition',
+        metadata: {
+          capture: 'automatic_in_call',
+        },
+      },
+    },
+    { db },
+  );
+  return transcriptResult;
+}
+
 export async function POST(request: NextRequest) {
   const humanChatEnabled = await getEnableHumanChat();
   const authHeader = request.headers.get('Authorization');
@@ -108,14 +131,18 @@ export async function POST(request: NextRequest) {
   const mimeType = String(form?.get('mime_type') ?? '').trim() || 'video/webm';
   const startedAt = String(form?.get('started_at') ?? '').trim();
   const endedAt = String(form?.get('ended_at') ?? '').trim();
+  const hasRecordingBlob = recording instanceof Blob && recording.size > 0;
 
-  if (!roomId || !(recording instanceof Blob) || recording.size === 0) {
+  if (!roomId || (!hasRecordingBlob && !transcriptText)) {
     return NextResponse.json(
-      { error: 'room_id and non-empty recording blob are required' },
+      {
+        error:
+          'room_id and either a recording blob or transcript_text are required',
+      },
       { status: 400 },
     );
   }
-  if (recording.size > MAX_RECORDING_UPLOAD_BYTES) {
+  if (hasRecordingBlob && recording.size > MAX_RECORDING_UPLOAD_BYTES) {
     return NextResponse.json(
       {
         error: `Recording exceeds max upload size (${MAX_RECORDING_UPLOAD_BYTES} bytes)`,
@@ -147,20 +174,11 @@ export async function POST(request: NextRequest) {
   );
   if (existingRecording?.mediaUri?.trim()) {
     if (transcriptText) {
-      const transcriptResult = await ingestSpaceCallArtifacts(
-        {
-          spaceSlug,
-          callSessionId,
-          transcript: {
-            text: transcriptText,
-            source: 'browser_speech_recognition',
-            metadata: {
-              capture: 'automatic_in_call',
-            },
-          },
-        },
-        { db },
-      );
+      const transcriptResult = await persistTranscriptOnly({
+        spaceSlug,
+        callSessionId,
+        transcriptText,
+      });
       if (!transcriptResult.ok) {
         return NextResponse.json(
           { error: transcriptResult.error },
@@ -173,6 +191,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       media_uri: existingRecording.mediaUri,
       call_session_id: callSessionId,
+      recording_stored: true,
       transcript_stored: Boolean(transcriptText),
       transcript_job: {
         attempted: false,
@@ -183,9 +202,87 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  if (!hasRecordingBlob) {
+    const transcriptResult = await persistTranscriptOnly({
+      spaceSlug,
+      callSessionId,
+      transcriptText,
+    });
+    if (!transcriptResult.ok) {
+      return NextResponse.json(
+        { error: transcriptResult.error },
+        { status: 400 },
+      );
+    }
+    try {
+      await enqueueSignalEvaluationFromMemory(
+        {
+          spaceSlug,
+          triggerKind: 'memory_ingest',
+        },
+        { db },
+      );
+    } catch (error) {
+      console.error('[matrix.call-artifacts.upload] enqueue failed', {
+        spaceSlug,
+        triggerKind: 'memory_ingest',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    return NextResponse.json({
+      ok: true,
+      media_uri: null,
+      call_session_id: callSessionId,
+      recording_stored: false,
+      transcript_stored: true,
+      transcript_job: {
+        attempted: false,
+        ok: false,
+        status: null,
+      },
+    });
+  }
+
   const environment = determineEnvironment(request.url);
   const matrix = await resolveMatrixAccessToken(environment, privyUserId);
   if (!matrix) {
+    if (transcriptText) {
+      const transcriptResult = await persistTranscriptOnly({
+        spaceSlug,
+        callSessionId,
+        transcriptText,
+      });
+      if (transcriptResult.ok) {
+        try {
+          await enqueueSignalEvaluationFromMemory(
+            {
+              spaceSlug,
+              triggerKind: 'memory_ingest',
+            },
+            { db },
+          );
+        } catch (error) {
+          console.error('[matrix.call-artifacts.upload] enqueue failed', {
+            spaceSlug,
+            triggerKind: 'memory_ingest',
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+        return NextResponse.json({
+          ok: true,
+          media_uri: null,
+          call_session_id: callSessionId,
+          recording_stored: false,
+          transcript_stored: true,
+          warning: 'Recording upload skipped: unable to resolve Matrix token',
+          transcript_job: {
+            attempted: false,
+            ok: false,
+            status: null,
+          },
+        });
+      }
+    }
     return NextResponse.json(
       { error: 'Unable to resolve Matrix token' },
       { status: 403 },
@@ -203,7 +300,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const buffer = Buffer.from(await recording.arrayBuffer());
+  const recordingBlob = recording as Blob;
+  const buffer = Buffer.from(await recordingBlob.arrayBuffer());
   const uploadUrl = `${homeserver}/_matrix/media/v3/upload?filename=${encodeURIComponent(
     `${callSessionId}.webm`,
   )}`;
@@ -219,6 +317,28 @@ export async function POST(request: NextRequest) {
   }).catch((error) => error);
 
   if (uploadResponse instanceof Error) {
+    if (transcriptText) {
+      const transcriptResult = await persistTranscriptOnly({
+        spaceSlug,
+        callSessionId,
+        transcriptText,
+      });
+      if (transcriptResult.ok) {
+        return NextResponse.json({
+          ok: true,
+          media_uri: null,
+          call_session_id: callSessionId,
+          recording_stored: false,
+          transcript_stored: true,
+          warning: `Recording upload skipped: ${uploadResponse.message}`,
+          transcript_job: {
+            attempted: false,
+            ok: false,
+            status: null,
+          },
+        });
+      }
+    }
     return NextResponse.json(
       { error: `Matrix upload failed: ${uploadResponse.message}` },
       { status: 502 },
@@ -226,6 +346,28 @@ export async function POST(request: NextRequest) {
   }
   if (!uploadResponse.ok) {
     const detail = await uploadResponse.text().catch(() => '');
+    if (transcriptText) {
+      const transcriptResult = await persistTranscriptOnly({
+        spaceSlug,
+        callSessionId,
+        transcriptText,
+      });
+      if (transcriptResult.ok) {
+        return NextResponse.json({
+          ok: true,
+          media_uri: null,
+          call_session_id: callSessionId,
+          recording_stored: false,
+          transcript_stored: true,
+          warning: `Recording upload skipped (${uploadResponse.status}) ${detail}`,
+          transcript_job: {
+            attempted: false,
+            ok: false,
+            status: null,
+          },
+        });
+      }
+    }
     return NextResponse.json(
       { error: `Matrix upload failed (${uploadResponse.status}) ${detail}` },
       { status: 502 },
@@ -237,6 +379,29 @@ export async function POST(request: NextRequest) {
       .catch(() => null)) as MatrixMediaUploadResponse | null) ?? null;
   const mediaUri = uploadPayload?.content_uri?.trim();
   if (!mediaUri) {
+    if (transcriptText) {
+      const transcriptResult = await persistTranscriptOnly({
+        spaceSlug,
+        callSessionId,
+        transcriptText,
+      });
+      if (transcriptResult.ok) {
+        return NextResponse.json({
+          ok: true,
+          media_uri: null,
+          call_session_id: callSessionId,
+          recording_stored: false,
+          transcript_stored: true,
+          warning:
+            'Recording upload skipped: Matrix did not return content_uri',
+          transcript_job: {
+            attempted: false,
+            ok: false,
+            status: null,
+          },
+        });
+      }
+    }
     return NextResponse.json(
       { error: 'Matrix upload did not return content_uri' },
       { status: 502 },
@@ -301,6 +466,7 @@ export async function POST(request: NextRequest) {
     ok: true,
     media_uri: mediaUri,
     call_session_id: callSessionId,
+    recording_stored: true,
     transcript_stored: Boolean(transcriptText),
     transcript_job: {
       attempted: transcriptJob.attempted,
