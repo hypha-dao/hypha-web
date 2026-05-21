@@ -37,6 +37,12 @@ export async function GET(request: NextRequest) {
         Array<{ count: number }>,
         Array<{ count: number }>,
         Array<{ count: number }>,
+        Array<{ count: number }>,
+        Array<{ count: number }>,
+        Array<{ count: number }>,
+        Array<{ count: number }>,
+        Array<{ count: number }>,
+        Array<{ count: number }>,
         Awaited<ReturnType<typeof getSignalOrchestratorMetrics>>,
       ]
     | null = null;
@@ -67,6 +73,45 @@ export async function GET(request: NextRequest) {
         .select({ count: sql<number>`count(*)` })
         .from(spaceDiscussionSummaries)
         .where(gte(spaceDiscussionSummaries.createdAt, since7d)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceCallTranscripts)
+        .where(eq(spaceCallTranscripts.source, 'browser_speech_recognition')),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceCallTranscripts)
+        .where(
+          and(
+            eq(spaceCallTranscripts.source, 'browser_speech_recognition'),
+            gte(spaceCallTranscripts.createdAt, since24h),
+          ),
+        ),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceCallRecordings)
+        .where(eq(spaceCallRecordings.source, 'matrix_live_call_upload')),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceCallRecordings)
+        .where(
+          and(
+            eq(spaceCallRecordings.source, 'matrix_live_call_upload'),
+            gte(spaceCallRecordings.createdAt, since24h),
+          ),
+        ),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceDiscussionSummaries)
+        .where(eq(spaceDiscussionSummaries.source, 'cron')),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(spaceDiscussionSummaries)
+        .where(
+          and(
+            eq(spaceDiscussionSummaries.source, 'cron'),
+            gte(spaceDiscussionSummaries.createdAt, since24h),
+          ),
+        ),
       getSignalOrchestratorMetrics({ db }),
     ]);
   } catch (error) {
@@ -99,6 +144,12 @@ export async function GET(request: NextRequest) {
     transcripts24h,
     recordings24h,
     summaries7d,
+    transcriptsBrowserTotalRow,
+    transcriptsBrowser24hRow,
+    recordingsMatrixTotalRow,
+    recordingsMatrix24hRow,
+    summariesCronTotalRow,
+    summariesCron24hRow,
     signalMetrics,
   ] = queried;
 
@@ -110,6 +161,20 @@ export async function GET(request: NextRequest) {
   const transcripts_last_24h = Number(transcripts24h[0]?.count ?? 0);
   const recordings_last_24h = Number(recordings24h[0]?.count ?? 0);
   const summaries_last_7d = Number(summaries7d[0]?.count ?? 0);
+  const transcripts_browser_speech_total = Number(
+    transcriptsBrowserTotalRow[0]?.count ?? 0,
+  );
+  const transcripts_browser_speech_last_24h = Number(
+    transcriptsBrowser24hRow[0]?.count ?? 0,
+  );
+  const recordings_matrix_live_upload_total = Number(
+    recordingsMatrixTotalRow[0]?.count ?? 0,
+  );
+  const recordings_matrix_live_upload_last_24h = Number(
+    recordingsMatrix24hRow[0]?.count ?? 0,
+  );
+  const summaries_cron_total = Number(summariesCronTotalRow[0]?.count ?? 0);
+  const summaries_cron_last_24h = Number(summariesCron24hRow[0]?.count ?? 0);
 
   const readiness = {
     ops_secret_configured: Boolean(configuredSecret),
@@ -211,6 +276,12 @@ export async function GET(request: NextRequest) {
       summaries_last_24h,
       transcripts_last_24h,
       recordings_last_24h,
+      transcripts_browser_speech_total,
+      transcripts_browser_speech_last_24h,
+      recordings_matrix_live_upload_total,
+      recordings_matrix_live_upload_last_24h,
+      summaries_cron_total,
+      summaries_cron_last_24h,
       signal_orchestrator_queue_pending: signalMetrics.queue_pending,
       signal_orchestrator_queue_failed: signalMetrics.queue_failed,
       signals_emitted_last_24h: signalMetrics.signals_emitted_last_24h,
