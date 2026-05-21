@@ -8,7 +8,10 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Button } from '@hypha-platform/ui';
-import { useSpaceMember } from '../../spaces/hooks/use-space-member';
+import {
+  UserSpaceState,
+  useUserSpaceState,
+} from '../../spaces/hooks/use-user-space-state';
 
 type DocumentsSectionsProps = {
   lang: string;
@@ -31,8 +34,9 @@ export function DocumentsSections({
     spaceSlug,
     order,
   });
-  const { isMember, isMemberLoading } = useSpaceMember({
+  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
     spaceId: web3SpaceId,
+    spaceSlug,
   });
   const onVotingCount = documents.onVoting.length;
   const acceptedCount = documents.accepted.length;
@@ -40,8 +44,10 @@ export function DocumentsSections({
 
   const basePath = `/${lang}/dho/${spaceSlug}/agreements`;
   const createProposalPath = `${basePath}/select-create-action`;
+  const canCreateProposal =
+    !isUserStateLoading && userState === UserSpaceState.LOGGED_IN_SPACE;
   const createProposalButton =
-    !isMemberLoading && isMember ? (
+    canCreateProposal ? (
       <Button asChild>
         <Link href={createProposalPath}>{t('newProposal')}</Link>
       </Button>
