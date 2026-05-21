@@ -91,6 +91,7 @@ type ChatUIMessage = {
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
+  toolInvocations?: Array<Record<string, unknown>>;
 };
 
 type MemoryIconProps = {
@@ -810,54 +811,88 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   ]);
 
   useEffect(() => {
-    const latestNavigationOutput = [...messages]
-      .reverse()
-      .flatMap((message) =>
-        (message.parts ?? []).map((part, partIndex) => ({
-          messageId: message.id,
-          partIndex,
-          part,
-        })),
-      )
-      .find(({ part }) => {
-        if (part.type !== 'tool-mcp_navigation') return false;
-        const toolPart = part as {
-          state?: string;
-          output?: {
-            ok?: boolean;
-            navigation?: {
-              href?: string;
-              open_in_new_tab?: boolean;
-            };
-          };
-        };
-        return (
-          toolPart.state === 'output-available' &&
-          toolPart.output?.ok === true &&
-          typeof toolPart.output?.navigation?.href === 'string' &&
-          toolPart.output.navigation.href.length > 0
-        );
-      });
+    const isCompletedToolState = (state: unknown) => {
+      if (typeof state !== 'string') return true;
+      return (
+        state === 'output-available' ||
+        state === 'output_available' ||
+        state === 'done' ||
+        state === 'completed'
+      );
+    };
 
-    const navPart = latestNavigationOutput?.part as
-      | {
-          output?: {
-            navigation?: {
-              href?: string;
-              open_in_new_tab?: boolean;
-            };
+    const findLatestNavigationTarget = () => {
+      for (let messageIndex = messages.length - 1; messageIndex >= 0; messageIndex -= 1) {
+        const message = messages[messageIndex];
+        if (!message) continue;
+
+        const toolInvocations = Array.isArray(message.toolInvocations)
+          ? message.toolInvocations
+          : [];
+        for (
+          let invocationIndex = toolInvocations.length - 1;
+          invocationIndex >= 0;
+          invocationIndex -= 1
+        ) {
+          const invocation = toolInvocations[invocationIndex];
+          if (!invocation || typeof invocation !== 'object') continue;
+          const toolName =
+            (typeof invocation.toolName === 'string' && invocation.toolName) ||
+            (typeof invocation.tool === 'string' && invocation.tool) ||
+            '';
+          if (toolName !== 'mcp_navigation') continue;
+          if (!isCompletedToolState(invocation.state)) continue;
+          const output =
+            (invocation.result as Record<string, unknown> | undefined) ??
+            (invocation.output as Record<string, unknown> | undefined);
+          const navigation =
+            output?.navigation as
+              | { href?: string; open_in_new_tab?: boolean }
+              | undefined;
+          const href = navigation?.href?.trim();
+          if (!href) continue;
+          return {
+            href,
+            openInNewTab: navigation?.open_in_new_tab === true,
+            key: `${message.id}:toolInvocation:${invocationIndex}:${href}`,
           };
         }
-      | undefined;
-    const href = navPart?.output?.navigation?.href?.trim();
+
+        const parts = Array.isArray(message.parts) ? message.parts : [];
+        for (let partIndex = parts.length - 1; partIndex >= 0; partIndex -= 1) {
+          const part = parts[partIndex];
+          if (!part || typeof part !== 'object') continue;
+          if (part.type !== 'tool-mcp_navigation') continue;
+          if (!isCompletedToolState((part as { state?: unknown }).state)) continue;
+          const toolPart = part as {
+            output?: {
+              ok?: boolean;
+              navigation?: {
+                href?: string;
+                open_in_new_tab?: boolean;
+              };
+            };
+          };
+          const href = toolPart.output?.navigation?.href?.trim();
+          if (!href || toolPart.output?.ok !== true) continue;
+          return {
+            href,
+            openInNewTab: toolPart.output.navigation?.open_in_new_tab === true,
+            key: `${message.id}:part:${partIndex}:${href}`,
+          };
+        }
+      }
+      return null;
+    };
+
+    const navigationTarget = findLatestNavigationTarget();
+    const href = navigationTarget?.href;
     if (!href) return;
-    const navigationKey = `${latestNavigationOutput?.messageId ?? 'unknown'}:${
-      latestNavigationOutput?.partIndex ?? 0
-    }:${href}`;
+    const navigationKey = navigationTarget?.key ?? `unknown:${href}`;
     if (lastAutoNavigationKeyRef.current === navigationKey) return;
     lastAutoNavigationKeyRef.current = navigationKey;
 
-    const openInNewTab = navPart?.output?.navigation?.open_in_new_tab === true;
+    const openInNewTab = navigationTarget?.openInNewTab === true;
     const isExternal = /^https?:\/\//i.test(href);
     if (openInNewTab || isExternal) {
       window.open(href, '_blank', 'noopener,noreferrer');
