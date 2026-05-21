@@ -1,7 +1,6 @@
-import { sendEmailNotificationsTemplate } from '@hypha-platform/notifications/server';
+import { sendEmailNotificationsTemplateToEmails } from '@hypha-platform/notifications/server';
 
 type SendBankOnboardingEmailInput = {
-  personSlug: string;
   recipientEmail: string;
   spaceTitle: string;
   legalName: string;
@@ -10,12 +9,12 @@ type SendBankOnboardingEmailInput = {
 };
 
 /**
- * Sends the banking KYB onboarding email via OneSignal template.
- * When `NEXT_PUBLIC_EMAIL_TEMPLATE_BANK_KYB_ONBOARDING` is unset, logs payload
- * and skips send (temporary until the OneSignal template is configured).
+ * Sends the banking KYB onboarding email to the contact address entered in the
+ * form (often a compliance officer or treasurer, not the Hypha member who started
+ * setup). When `EMAIL_TEMPLATE_BANK_KYB_ONBOARDING` is unset, logs the payload
+ * and skips the API call.
  */
 export async function sendBankOnboardingEmail({
-  personSlug,
   recipientEmail,
   spaceTitle,
   legalName,
@@ -23,13 +22,13 @@ export async function sendBankOnboardingEmail({
   tosLink,
 }: SendBankOnboardingEmailInput) {
   const templateId =
-    process.env.NEXT_PUBLIC_EMAIL_TEMPLATE_BANK_KYB_ONBOARDING?.trim() ?? '';
+    process.env.EMAIL_TEMPLATE_BANK_KYB_ONBOARDING?.trim() ?? '';
 
+  /** OneSignal template keys: space_title, legal_name, kyc_link, optional tos_link */
   const customData: Record<string, string> = {
     space_title: spaceTitle,
     legal_name: legalName,
     kyc_link: kycLink,
-    contact_email: recipientEmail,
   };
 
   if (tosLink) {
@@ -38,20 +37,26 @@ export async function sendBankOnboardingEmail({
 
   if (!templateId) {
     console.log(
-      '[bank-kyb] Email bypass — NEXT_PUBLIC_EMAIL_TEMPLATE_BANK_KYB_ONBOARDING is not set. Would send:',
+      '[bank-kyb] Skipping OneSignal send — EMAIL_TEMPLATE_BANK_KYB_ONBOARDING is not set. Would send:',
       {
-        personSlug,
         recipientEmail,
-        templateId: '(not configured)',
         customData,
       },
     );
     return;
   }
 
-  await sendEmailNotificationsTemplate({
+  await sendEmailNotificationsTemplateToEmails({
     templateId,
     customData,
-    usernames: [personSlug],
+    emails: [recipientEmail],
   });
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[bank-kyb] OneSignal onboarding email sent', {
+      recipientEmail,
+      templateId,
+      customData,
+    });
+  }
 }

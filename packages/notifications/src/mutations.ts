@@ -204,3 +204,31 @@ export const sendEmailNotificationsTemplate = async ({
     content: { template_id: templateId, custom_data: customData },
   });
 };
+
+/** Sends a templated email directly to addresses (no Hypha user / subscription required). */
+export const sendEmailNotificationsTemplateToEmails = async ({
+  templateId,
+  customData,
+  emails,
+}: {
+  templateId: string;
+  customData?: Record<string, string>;
+  emails: string[];
+}) => {
+  if (!ONESIGNAL_APP_ID) {
+    throw new Error('ONESIGNAL_APP_ID environment variable is not set');
+  }
+
+  const recipients = emails.map((e) => e.trim()).filter(Boolean);
+  if (recipients.length === 0) {
+    console.warn('No email recipients for templated notification');
+    return null;
+  }
+
+  console.log('Send email to addresses...');
+  return await sendEmailByAlias({
+    app_id: ONESIGNAL_APP_ID,
+    alias: { email_to: recipients },
+    content: { template_id: templateId, custom_data: customData },
+  });
+};

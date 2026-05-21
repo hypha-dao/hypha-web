@@ -15,11 +15,45 @@ export type BridgeCreateKycLinkResponse = {
   /** Present after KYC progresses; often absent on initial POST /v0/kyc_links. */
   customer_id?: string | null;
   kyc_link: string;
-  tos_link: string;
+  tos_link?: string | null;
   kyc_status: string;
-  tos_status: string;
-  created_at: string;
+  tos_status?: string | null;
+  created_at?: string;
 };
+
+function isBridgeKycLinkRecord(
+  value: unknown,
+): value is BridgeCreateKycLinkResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.id === 'string' &&
+    typeof record.kyc_link === 'string' &&
+    typeof record.kyc_status === 'string'
+  );
+}
+
+/**
+ * Bridge returns 400 with `existing_kyc_link` when the email already has an active KYC link.
+ * Treat it as success — same shape as a normal 200 response.
+ */
+function extractExistingKycLinkFromErrorBody(
+  parsed: unknown,
+): BridgeCreateKycLinkResponse | null {
+  if (typeof parsed !== 'object' || parsed === null) {
+    return null;
+  }
+
+  const existing = (parsed as Record<string, unknown>).existing_kyc_link;
+  if (!isBridgeKycLinkRecord(existing)) {
+    return null;
+  }
+
+  return existing;
+}
 
 function getBridgeConfig() {
   const apiKey = process.env.BRIDGE_API_KEY;
@@ -65,6 +99,13 @@ export async function bridgeCreateKycLink(
   }
 
   if (!response.ok) {
+    if (response.status === 400) {
+      const existing = extractExistingKycLinkFromErrorBody(parsed);
+      if (existing) {
+        return existing;
+      }
+    }
+
     const detail =
       typeof parsed === 'object' && parsed !== null
         ? JSON.stringify(parsed)
@@ -74,5 +115,11 @@ export async function bridgeCreateKycLink(
     );
   }
 
-  return parsed as BridgeCreateKycLinkResponse;
+  if (!isBridgeKycLinkRecord(parsed)) {
+    throw new Error(
+      'Bridge API returned an unexpected KYC link response shape',
+    );
+  }
+
+  return parsed;
 }

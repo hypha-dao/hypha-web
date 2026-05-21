@@ -7,6 +7,7 @@ import {
   TransactionsSection,
   VaultsSection,
   useAssets,
+  useBankCustomerStatus,
   useTransfers,
   useVaults,
 } from '@hypha-platform/epics';
@@ -32,9 +33,11 @@ export function TreasuryTabs({
   const { assets } = useAssets({});
   const { transfers } = useTransfers({ spaceSlug });
   const { vaults } = useVaults({ spaceSlug });
+  const { status: bankCustomerStatus } = useBankCustomerStatus({ spaceSlug });
   const walletCount = assets.filter((asset) => asset.value > 0).length;
   const transactionCount = transfers.length;
   const vaultCount = vaults.length;
+  const bankAccountCount = bankCustomerStatus != null ? 1 : 0;
 
   return (
     <div className="flex w-full flex-col gap-4 py-4">
@@ -70,8 +73,13 @@ export function TreasuryTabs({
                 </span>
               </span>
             </TabsTrigger>
-            <TabsTrigger value="bank-deposits" variant="switch">
-              {tTreasury('bankDeposits')}
+            <TabsTrigger value="bank-accounts" variant="switch">
+              <span className="inline-flex items-center gap-1">
+                <span>{tTreasury('bankAccounts')}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({format.number(bankAccountCount)})
+                </span>
+              </span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -88,7 +96,7 @@ export function TreasuryTabs({
           <VaultsSection />
         </TabsContent>
 
-        <TabsContent value="bank-deposits" className="mt-0">
+        <TabsContent value="bank-accounts" className="mt-0">
           <BankingSection spaceSlug={spaceSlug} web3SpaceId={web3SpaceId} />
         </TabsContent>
       </Tabs>

@@ -19,13 +19,11 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
   const [legalName, setLegalName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [endorsements, setEndorsements] = useState<string[]>([]);
-  const [endorsementError, setEndorsementError] = useState<string | null>(null);
 
   useEffect(() => {
     setLegalName(initialValues?.legalName?.trim() ?? '');
     setContactEmail(initialValues?.contactEmail?.trim() ?? '');
     setEndorsements(initialValues?.endorsements ?? []);
-    setEndorsementError(null);
   }, [
     initialValues?.legalName,
     initialValues?.contactEmail,
@@ -33,7 +31,6 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
   ]);
 
   const toggleEndorsement = (value: string, checked: boolean) => {
-    setEndorsementError(null);
     setEndorsements((current) =>
       checked ? [...current, value] : current.filter((item) => item !== value),
     );
@@ -48,15 +45,10 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
       return;
     }
 
-    if (endorsements.length === 0) {
-      setEndorsementError(t('endorsementsRequired'));
-      return;
-    }
-
     await onSubmit({
       legalName: trimmedName,
       contactEmail: trimmedEmail,
-      endorsements,
+      endorsements: endorsements.length > 0 ? endorsements : undefined,
     });
   };
 
@@ -116,11 +108,6 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
             );
           })}
         </div>
-        {endorsementError ? (
-          <p className="text-sm text-destructive" role="alert">
-            {endorsementError}
-          </p>
-        ) : null}
       </fieldset>
     </form>
   );

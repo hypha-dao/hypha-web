@@ -3,7 +3,6 @@ import { z } from 'zod';
 /** Bridge KYC link endorsement types (see Bridge API EndorsementType). */
 export const bridgeEndorsementSchema = z.enum([
   'base',
-  'cards',
   'cop',
   'faster_payments',
   'pix',

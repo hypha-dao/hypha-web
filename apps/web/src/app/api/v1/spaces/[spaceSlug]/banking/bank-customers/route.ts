@@ -84,10 +84,9 @@ export async function POST(
       { db },
     );
 
-    if (result.created && result.kycLink && result.requesterSlug) {
+    if (result.created && result.kycLink) {
       await sendBankOnboardingEmail({
-        personSlug: result.requesterSlug,
-        recipientEmail: contactEmail,
+        recipientEmail: result.contactEmail,
         spaceTitle: result.spaceTitle,
         legalName: result.legalName,
         kycLink: result.kycLink,

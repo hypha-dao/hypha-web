@@ -36,9 +36,3 @@ export type BankOnboardingRequestResult = {
   created: boolean;
   isApproved?: boolean;
 };
-
-export function shouldPollBankKycStatus(
-  status: BankCustomerPublicStatus | null | undefined,
-): boolean {
-  return status != null && !status.isApproved;
-}

@@ -494,18 +494,18 @@
     }
   },
   "BankingTab": {
-    "title": "Bank deposits",
-    "subtitle": "Accept wire transfers from any bank. Funds arrive as USDC in your space treasury.",
-    "loading": "Loading bank deposit status…",
+    "title": "Bank Deposits",
+    "subtitle": "Enable your space to receive direct bank transfers.",
+    "loading": "Loading linked bank account status…",
     "returnBanner": "You have returned from verification. Your status is updated below.",
-    "errorLoad": "Could not load bank deposit status.",
+    "errorLoad": "Could not load linked bank account status.",
     "notStarted": {
-      "description": "Enable bank deposits to start business verification for this space. Once approved, donors can wire fiat from any bank.",
+      "description": "Complete a short business verification to enable bank deposits for this space. Once approved, anyone can send bank transfers directly to your treasury.",
       "enableCta": "Enable bank deposits"
     },
     "blockers": {
-      "notOnChain": "This space must be deployed on-chain before bank deposits can be enabled.",
-      "noTreasury": "This space must have an on-chain treasury address before bank deposits can be enabled."
+      "notOnChain": "This space must be deployed on-chain before a linked bank account can be set up.",
+      "noTreasury": "This space must have an on-chain treasury address before a linked bank account can be set up."
     },
     "verificationInProgress": "Verification is in progress. This typically takes a few hours to a few days. If you need to take action, use the link below.",
     "actions": {
@@ -514,22 +514,20 @@
       "refreshStatus": "Refresh status"
     },
     "endorsements": {
-      "base": "Base",
-      "cards": "Cards",
-      "cop": "Bre-B (COP)",
-      "faster_payments": "Faster Payments (GBP)",
-      "pix": "PIX (BRL)",
-      "sepa": "SEPA (EUR)",
-      "spei": "SPEI (MXN)"
+      "base": "USD (ACH / wire transfer)",
+      "cop": "COP (Bre-B, Colombia)",
+      "faster_payments": "GBP (Faster Payments, UK)",
+      "pix": "BRL (PIX, Brazil)",
+      "sepa": "EUR (SEPA bank transfer)",
+      "spei": "MXN (SPEI, Mexico)"
     },
     "onboardingDialog": {
       "title": "Enable bank deposits",
-      "description": "We will use this information to start business verification for your space.",
+      "description": "We use this information to verify your organization. Once approved, your space will be set up to receive bank transfers.",
       "legalName": "Legal entity name",
       "contactEmail": "Contact email",
-      "endorsementsLabel": "Payment rails",
-      "endorsementsHint": "Select at least one rail your organization needs to receive bank deposits.",
-      "endorsementsRequired": "Select at least one payment rail.",
+      "endorsementsLabel": "Payment corridors",
+      "endorsementsHint": "Optional. You can add payment corridors later, but note that additional verification may be required at that point.",
       "submit": "Start verification",
       "submitting": "Starting…"
     },
@@ -556,9 +554,9 @@
       },
       "approved": {
         "title": "Verification approved",
-        "description": "Your organization has been verified. Bank deposit details will be available here soon.",
-        "depositPlaceholderTitle": "Deposit instructions",
-        "depositPlaceholderDescription": "Deposit instructions will appear here once your bank account is provisioned."
+        "description": "Your organization has been verified. Linked bank account details will be available here soon.",
+        "depositPlaceholderTitle": "Transfer instructions",
+        "depositPlaceholderDescription": "IBAN, routing number, and other transfer details will appear here once your virtual bank account is provisioned."
       },
       "rejected": {
         "title": "Verification declined",
@@ -569,8 +567,8 @@
         "description": "Verification is temporarily paused. Contact support for assistance."
       },
       "offboarded": {
-        "title": "Bank deposits unavailable",
-        "description": "Bank deposits are no longer available for this space. Contact support for assistance."
+        "title": "Linked bank account unavailable",
+        "description": "Linked bank accounts are no longer available for this space. Contact support for assistance."
       },
       "unknown": {
         "title": "Status unavailable",
@@ -579,7 +577,7 @@
     }
   },
   "TreasuryTab": {
-    "bankDeposits": "Bank deposits",
+    "bankAccounts": "Bank Deposits",
     "balance": "Balance",
     "wallet": "Wallet",
     "searchTokens": "Search tokens",

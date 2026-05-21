@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
-import { ExternalLink, Landmark, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Text } from '@radix-ui/themes';
@@ -166,13 +166,13 @@ export const BankingSection: FC<BankingSectionProps> = ({
             title={t('status.approved.title')}
             description={t('status.approved.description')}
           />
-          <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4">
-            <Text size="2" weight="medium" className="block mb-1">
+          <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4">
+            <p className="text-3 font-medium text-foreground">
               {t('status.approved.depositPlaceholderTitle')}
-            </Text>
-            <Text size="2" className="text-muted-foreground">
+            </p>
+            <p className="mt-1 text-2 text-muted-foreground">
               {t('status.approved.depositPlaceholderDescription')}
-            </Text>
+            </p>
           </div>
         </div>
       );
@@ -194,7 +194,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
                 onClick={() => openVerificationLink(kycLink)}
               >
                 {t('actions.openVerificationForm')}
-                <ExternalLink className="ml-2 h-4 w-4" />
               </Button>
             ) : null}
             {tosLink ? (
@@ -209,21 +208,18 @@ export const BankingSection: FC<BankingSectionProps> = ({
   return (
     <div className="flex w-full flex-col gap-4">
       {variant === 'return' ? (
-        <div className="rounded-lg border border-accent-6 bg-accent-2 px-4 py-3">
-          <Text size="2">{t('returnBanner')}</Text>
-        </div>
+        <p className="rounded-md border border-border bg-muted/20 px-4 py-3 text-2 text-muted-foreground">
+          {t('returnBanner')}
+        </p>
       ) : null}
 
-      <div className="flex items-start gap-3">
-        <Landmark className="mt-1 h-6 w-6 shrink-0 text-accent-9" aria-hidden />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <Text size="5" weight="medium">
-            {t('title')}
-          </Text>
-          <Text size="2" className="text-muted-foreground">
-            {t('subtitle')}
-          </Text>
-        </div>
+      <div className="w-full">
+        <h3 className="text-4 font-semibold tracking-tight text-foreground">
+          {t('title')}
+        </h3>
+        <p className="mt-1 max-w-3xl text-2 text-muted-foreground">
+          {t('subtitle')}
+        </p>
       </div>
 
       {error ? (
@@ -266,12 +262,10 @@ type StatusPanelProps = {
 function StatusPanel({ title, description, actions }: StatusPanelProps) {
   return (
     <div className="flex flex-col gap-3">
-      <Text size="3" weight="medium">
+      <h4 className="text-3 font-semibold tracking-tight text-foreground">
         {title}
-      </Text>
-      <Text size="2" className="text-muted-foreground">
-        {description}
-      </Text>
+      </h4>
+      <p className="text-2 text-muted-foreground">{description}</p>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
     </div>
   );
@@ -282,7 +276,6 @@ function TosLink({ href, label }: { href: string; label: string }) {
     <Button variant="outline" className="w-fit" asChild>
       <Link href={href} target="_blank" rel="noopener noreferrer">
         {label}
-        <ExternalLink className="ml-2 h-4 w-4" />
       </Link>
     </Button>
   );

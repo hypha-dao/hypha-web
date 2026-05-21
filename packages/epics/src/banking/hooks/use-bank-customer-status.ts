@@ -4,12 +4,7 @@ import React from 'react';
 import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 
-import {
-  type BankCustomerPublicStatus,
-  shouldPollBankKycStatus,
-} from './types';
-
-const POLL_INTERVAL_MS = 30_000;
+import type { BankCustomerPublicStatus } from './types';
 
 export function getBankCustomerStatusEndpoint(spaceSlug: string): string {
   return `/api/v1/spaces/${spaceSlug}/banking/bank-customers`;
@@ -62,10 +57,6 @@ export const useBankCustomerStatus = ({
         }
 
         return (await res.json()) as BankCustomerPublicStatus | null;
-      },
-      {
-        refreshInterval: (latest) =>
-          shouldPollBankKycStatus(latest) ? POLL_INTERVAL_MS : 0,
       },
     );
 
