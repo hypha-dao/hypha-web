@@ -112,6 +112,8 @@ const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
       'bg-gradient-to-t from-neutral-10/18 via-neutral-9/9 to-transparent',
   };
 const MAX_VISIBLE_SIGNAL_TAGS = 3;
+const SIGNAL_TAG_BADGE_CLASS =
+  'max-w-[8.5rem] overflow-hidden text-ellipsis whitespace-nowrap rounded-full';
 
 const BADGE_ICON_COLOR_CLASS_MAP: Record<SignalColorVariant, string> = {
   accent: 'text-accent-10',
@@ -425,7 +427,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       label: `#${displayLabel}`,
       variant: 'outline',
       colorVariant: 'neutral',
-      className: 'rounded-full',
+      className: SIGNAL_TAG_BADGE_CLASS,
       style: {
         borderColor:
           'color-mix(in srgb, var(--space-accent) 42%, var(--color-neutral-8) 58%)',
@@ -444,7 +446,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         variant: 'outline',
         colorVariant: 'neutral',
         className:
-          'rounded-full border-border/60 bg-transparent text-muted-foreground',
+          `${SIGNAL_TAG_BADGE_CLASS} border-border/60 bg-transparent text-muted-foreground`,
       },
     ];
   }, [tagList]);
@@ -618,7 +620,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
         <div className="relative flex min-h-0 flex-1 flex-col gap-2 px-3 pb-2 pt-2.5">
           <div className="flex min-w-0 flex-col gap-1.5">
-            <div className="flex min-w-0 items-center justify-between gap-2">
+            <div className="flex min-h-[2.75rem] min-w-0 items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <Skeleton
                   className="min-w-0"
@@ -727,33 +729,30 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </div>
           </div>
 
-          <Skeleton
-            className="min-w-full"
-            width="100%"
-            height="44px"
-            loading={isLoading}
-          >
-            <div className="flex flex-col gap-1">
+          <Skeleton className="min-w-full" width="100%" height="56px" loading={isLoading}>
+            <div className="flex min-h-[3.5rem] flex-col">
               <p
                 ref={descriptionClampRef}
                 className="text-2 leading-snug text-neutral-11 line-clamp-2"
               >
                 {plainDescription}
               </p>
-              {descriptionTruncated ? (
-                <button
-                  type="button"
-                  className="w-fit text-left text-1 font-medium text-accent-11 underline-offset-4 hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setDetailsOpen(true);
-                  }}
-                  onKeyDown={stopCardActivationKey}
-                >
-                  {tSignalCard('readFullDescription')}
-                </button>
-              ) : null}
+              <div className="min-h-[1.1rem] pt-0.5">
+                {descriptionTruncated ? (
+                  <button
+                    type="button"
+                    className="w-fit text-left text-1 font-medium text-accent-11 underline-offset-4 hover:underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDetailsOpen(true);
+                    }}
+                    onKeyDown={stopCardActivationKey}
+                  >
+                    {tSignalCard('readFullDescription')}
+                  </button>
+                ) : null}
+              </div>
             </div>
           </Skeleton>
 
@@ -802,15 +801,17 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </DialogContent>
           </Dialog>
 
-          {tagList?.length > 0 ? (
-            <div className="mt-auto pt-0.5">
+          <div className="mt-auto min-h-[1.9rem] pt-0.5">
+            {tagList?.length > 0 ? (
               <BadgesList
                 isLoading={isLoading}
                 badges={compactTagList}
-                className="content-start"
+                className="content-start flex-nowrap overflow-hidden"
               />
-            </div>
-          ) : null}
+            ) : (
+              <span className="block h-6" aria-hidden />
+            )}
+          </div>
         </div>
 
         <div className="mt-auto flex min-h-[2.75rem] shrink-0 flex-col justify-center bg-muted/10 px-3 py-1.5">
