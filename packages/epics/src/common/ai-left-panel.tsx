@@ -822,7 +822,11 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     };
 
     const findLatestNavigationTarget = () => {
-      for (let messageIndex = messages.length - 1; messageIndex >= 0; messageIndex -= 1) {
+      for (
+        let messageIndex = messages.length - 1;
+        messageIndex >= 0;
+        messageIndex -= 1
+      ) {
         const message = messages[messageIndex];
         if (!message) continue;
 
@@ -850,10 +854,9 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           const output =
             (invocation.result as Record<string, unknown> | undefined) ??
             (invocation.output as Record<string, unknown> | undefined);
-          const navigation =
-            output?.navigation as
-              | { href?: string; open_in_new_tab?: boolean }
-              | undefined;
+          const navigation = output?.navigation as
+            | { href?: string; open_in_new_tab?: boolean }
+            | undefined;
           const href = navigation?.href?.trim();
           if (!href) continue;
           return {
@@ -868,7 +871,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           const part = parts[partIndex];
           if (!part || typeof part !== 'object') continue;
           if (part.type !== 'tool-mcp_navigation') continue;
-          if (!isCompletedToolState((part as { state?: unknown }).state)) continue;
+          if (!isCompletedToolState((part as { state?: unknown }).state))
+            continue;
           const toolPart = part as {
             output?: {
               ok?: boolean;

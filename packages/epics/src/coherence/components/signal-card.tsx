@@ -445,8 +445,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         label: `+${tagList.length - MAX_VISIBLE_SIGNAL_TAGS}`,
         variant: 'outline',
         colorVariant: 'neutral',
-        className:
-          `${SIGNAL_TAG_BADGE_CLASS} border-border/60 bg-transparent text-muted-foreground`,
+        className: `${SIGNAL_TAG_BADGE_CLASS} border-border/60 bg-transparent text-muted-foreground`,
       },
     ];
   }, [tagList]);
@@ -729,7 +728,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </div>
           </div>
 
-          <Skeleton className="min-w-full" width="100%" height="56px" loading={isLoading}>
+          <Skeleton
+            className="min-w-full"
+            width="100%"
+            height="56px"
+            loading={isLoading}
+          >
             <div className="flex min-h-[3.5rem] flex-col">
               <p
                 ref={descriptionClampRef}
