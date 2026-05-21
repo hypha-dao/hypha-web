@@ -189,7 +189,9 @@ async function bridgeRequest(
   return parsed;
 }
 
-function getVirtualAccountCurrency(record: Record<string, unknown>): string | null {
+function getVirtualAccountCurrency(
+  record: Record<string, unknown>,
+): string | null {
   const source = record.source;
   if (typeof source === 'object' && source !== null) {
     const currency = (source as Record<string, unknown>).currency;
