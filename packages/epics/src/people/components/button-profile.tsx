@@ -32,8 +32,9 @@ import { Person } from '@hypha-platform/core/client';
 import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { cn } from '@hypha-platform/ui-utils';
+import { useCallback, useEffect, useState } from 'react';
+import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
+import { useFundWallet } from '../../treasury/hooks';
 
 export type ButtonProfileProps = {
   address?: string;
@@ -82,6 +83,20 @@ export const ButtonProfile = ({
   const { user } = usePrivy();
   const { showMfaEnrollmentModal } = useMfaEnrollment();
   const hasMfaMethods = user && user.mfaMethods && user.mfaMethods.length > 0;
+  const { fundWallet } = useFundWallet({
+    address: address as `0x${string}` | undefined,
+    title: tCommon('receiveFundsTitle'),
+    subtitle: tCommon('receiveFundsSubtitle'),
+  });
+
+  const handleAddressCopy = useCallback(
+    (walletAddress: string) => {
+      copyToClipboard(walletAddress);
+      setProfileMenuOpen(false);
+      void fundWallet();
+    },
+    [fundWallet],
+  );
 
   const displayName = [person?.name, person?.surname].filter(Boolean).join(' ');
   const primaryLine = displayName.trim() || person?.nickname || t('myProfile');
@@ -155,7 +170,7 @@ export const ButtonProfile = ({
                 </div>
                 {address ? (
                   <div className="mt-3 w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5 text-1 text-muted-foreground">
-                    <EthAddress address={address} />
+                    <EthAddress address={address} onClick={handleAddressCopy} />
                   </div>
                 ) : null}
               </div>
@@ -351,7 +366,7 @@ export const ButtonProfile = ({
               </div>
               {address ? (
                 <div className="w-full rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
-                  <EthAddress address={address} />
+                  <EthAddress address={address} onClick={handleAddressCopy} />
                 </div>
               ) : null}
             </div>
@@ -496,7 +511,10 @@ export const ButtonProfile = ({
                         'text-1 text-muted-foreground',
                       )}
                     >
-                      <EthAddress address={address} />
+                      <EthAddress
+                        address={address}
+                        onClick={handleAddressCopy}
+                      />
                     </div>
                   </div>
                 ) : null}
