@@ -177,8 +177,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
   leadImage,
   toolbarLeft,
   isLoading,
-  firstPageSize = 4,
-  pageSize = 4,
+  firstPageSize = 10,
+  pageSize = 10,
   hideArchived,
   setHideArchived,
   refresh,
@@ -869,7 +869,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
           onSignalClick={onSignalClick}
         />
       )}
-      {pagination?.totalPages === 0 ? null : (
+      {pagination?.totalPages === 0 ||
+      filteredSignals.length <= firstPageSize ? null : (
         <SectionLoadMore
           onClick={loadMore}
           disabled={pagination?.totalPages === pages}
