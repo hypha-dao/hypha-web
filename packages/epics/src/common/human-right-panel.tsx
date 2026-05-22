@@ -2768,7 +2768,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const authorLabel =
         target.role === 'user'
           ? t('you')
-          : target.senderName ?? resolveMemberLabel(target.senderMatrixId);
+          : target.role === 'member' && target.senderMatrixId
+          ? resolveMemberLabel(target.senderMatrixId)
+          : target.senderName ?? t('unknownMember');
       const excerpt = firstLineForReplyPreview(getMessagePlainText(target));
       setEditDraft(null);
       setReplyDraft({

@@ -132,9 +132,6 @@ export function HumanChatPanelInCallControls({
     : 'h-4 w-4 text-foreground';
   const useSideAudioSettings =
     isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered';
-  const captureSettingsBtn = isFull
-    ? 'relative inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center rounded-full border border-zinc-600/80 bg-zinc-900/90 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
-    : 'relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const captureStatusText =
     recordingStatus === 'recording'
       ? t('callCaptureStatusCapturing')
@@ -189,14 +186,10 @@ export function HumanChatPanelInCallControls({
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
   ) => {
     onCapturePreferenceChange(mode);
-    setIsCaptureMenuOpen(false);
-  };
-  const handleCaptureMainAction = () => {
-    if (captureActive) {
-      onStopCapture();
-      return;
+    if (!captureActive) {
+      onStartCapture();
     }
-    onStartCapture();
+    setIsCaptureMenuOpen(false);
   };
   const captureStopLabel = t('callCaptureStop');
   const captureModeLabel =
@@ -278,7 +271,7 @@ export function HumanChatPanelInCallControls({
     <div className="relative" ref={captureMenuRef}>
       <button
         type="button"
-        className={captureSettingsBtn}
+        className={audioSettingsBtn}
         title={`${t(
           'callCaptureLabel',
         )}: ${captureModeLabel} - ${captureStatusText}`}
@@ -287,6 +280,13 @@ export function HumanChatPanelInCallControls({
         aria-expanded={isCaptureMenuOpen}
         onClick={() => setIsCaptureMenuOpen((open) => !open)}
       >
+        {captureActive ? (
+          <Square className={captureIconClass} />
+        ) : capturePreference === 'transcript_only' ? (
+          <FileText className={captureIconClass} />
+        ) : (
+          <Circle className={captureRecordingIconClass} />
+        )}
         <ChevronDown
           className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
         />
@@ -303,6 +303,22 @@ export function HumanChatPanelInCallControls({
             {t('callCaptureLabel')}
           </p>
           <div className="-mx-0 my-1 h-px bg-neutral-6" />
+          {captureActive ? (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onStopCapture();
+                setIsCaptureMenuOpen(false);
+              }}
+              className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+            >
+              <span className="inline-flex items-center gap-2">
+                <Square className="h-4 w-4" />
+                {captureStopLabel}
+              </span>
+            </button>
+          ) : null}
           <button
             type="button"
             role="menuitemradio"
@@ -336,28 +352,6 @@ export function HumanChatPanelInCallControls({
         </div>
       ) : null}
     </div>
-  );
-  const renderCaptureAction = (
-    <button
-      type="button"
-      onClick={handleCaptureMainAction}
-      disabled={controlsDisabled || recordingStatus === 'uploading'}
-      className={cn(
-        captureSettingsBtn,
-        captureActive &&
-          'border-rose-500/45 bg-rose-600/15 text-rose-700 hover:bg-rose-600/20 dark:text-rose-300',
-      )}
-      title={captureActive ? captureStopLabel : captureModeLabel}
-      aria-label={captureActive ? captureStopLabel : captureModeLabel}
-    >
-      {captureActive ? (
-        <Square className={captureIconClass} />
-      ) : capturePreference === 'transcript_only' ? (
-        <FileText className={captureIconClass} />
-      ) : (
-        <Circle className={captureRecordingIconClass} />
-      )}
-    </button>
   );
   const renderCapturePauseResume = captureActive ? (
     <button
@@ -505,14 +499,12 @@ export function HumanChatPanelInCallControls({
           >
             <CallHangUpIcon className={leaveIcon} />
           </button>
-          {!useSideAudioSettings ? renderCaptureAction : null}
           {!useSideAudioSettings ? renderCapturePauseResume : null}
           {!useSideAudioSettings ? renderCaptureMenu : null}
           {!useSideAudioSettings ? renderAudioSettingsMenu : null}
         </div>
         {useSideAudioSettings ? (
           <div className="justify-self-end flex items-center gap-2">
-            {renderCaptureAction}
             {renderCapturePauseResume}
             {renderCaptureMenu}
             {renderAudioSettingsMenu}
