@@ -235,6 +235,21 @@ function resolveAppScreenPath(
   return `/${lang}/profile/signup`;
 }
 
+function shouldForceNetworkDiscoveryScreen(intentText: string): boolean {
+  const normalized = intentText.trim().toLowerCase();
+  if (!normalized) return false;
+  if (
+    /\b(onboarding|onboard|set up|setup|create space|new space|start space)\b/.test(
+      normalized,
+    )
+  ) {
+    return false;
+  }
+  return /\b(find|search|look up|discover|explore|join|space|spaces|hypha|network)\b/.test(
+    normalized,
+  );
+}
+
 export function createMcpNavigationTool(authToken: string) {
   return {
     description:
@@ -264,7 +279,15 @@ export function createMcpNavigationTool(authToken: string) {
       }
 
       if (data.destination_type === 'app_screen') {
-        const screen = data.app_screen as z.infer<typeof appScreenSchema>;
+        const requestedScreen = data.app_screen as z.infer<typeof appScreenSchema>;
+        const intentText = [data.context_hint, data.label]
+          .filter((value): value is string => typeof value === 'string')
+          .join(' ');
+        const screen =
+          requestedScreen === 'onboarding' &&
+          shouldForceNetworkDiscoveryScreen(intentText)
+            ? 'network'
+            : requestedScreen;
         const href = resolveAppScreenPath(lang, screen);
         return {
           ok: true,
@@ -320,30 +343,50 @@ export function createMcpNavigationTool(authToken: string) {
           title: string;
           web3SpaceId?: number | null;
           flags?: string[] | null;
+          in_source_ecosystem: boolean;
         };
+        const ecosystemCandidateIds = new Set(
+          ecosystemSpaces
+            .map((space) => space?.id)
+            .filter((value): value is number => typeof value === 'number'),
+        );
         const uniqueCandidates = new Map<number, NavigationCandidate>();
-        for (const space of [...ecosystemSpaces, ...globalMatches]) {
+        for (const space of ecosystemSpaces) {
           if (!space?.id || typeof space.slug !== 'string') continue;
-          if (!uniqueCandidates.has(space.id)) {
-            uniqueCandidates.set(space.id, {
-              id: space.id,
-              slug: space.slug,
-              title: space.title,
-              web3SpaceId:
-                typeof space.web3SpaceId === 'number'
-                  ? space.web3SpaceId
-                  : null,
-              flags: Array.isArray(space.flags)
-                ? space.flags.map((flag) => String(flag))
-                : null,
-            });
-          }
+          uniqueCandidates.set(space.id, {
+            id: space.id,
+            slug: space.slug,
+            title: space.title,
+            web3SpaceId:
+              typeof space.web3SpaceId === 'number' ? space.web3SpaceId : null,
+            flags: Array.isArray(space.flags)
+              ? space.flags.map((flag) => String(flag))
+              : null,
+            in_source_ecosystem: true,
+          });
+        }
+        for (const space of globalMatches) {
+          if (!space?.id || typeof space.slug !== 'string') continue;
+          if (uniqueCandidates.has(space.id)) continue;
+          uniqueCandidates.set(space.id, {
+            id: space.id,
+            slug: space.slug,
+            title: space.title,
+            web3SpaceId:
+              typeof space.web3SpaceId === 'number' ? space.web3SpaceId : null,
+            flags: Array.isArray(space.flags)
+              ? space.flags.map((flag) => String(flag))
+              : null,
+            in_source_ecosystem: ecosystemCandidateIds.has(space.id),
+          });
         }
 
         const ranked = [...uniqueCandidates.values()]
           .map((space) => ({
             space,
-            score: scoreSpaceMatch(rawTargetQuery, space.title, space.slug),
+            score:
+              scoreSpaceMatch(rawTargetQuery, space.title, space.slug) +
+              (space.in_source_ecosystem ? 50 : 0),
           }))
           .filter((row) => row.score > 0)
           .sort(
@@ -359,11 +402,27 @@ export function createMcpNavigationTool(authToken: string) {
           };
         }
 
-        let destinationSpace: (typeof ranked)[number]['space'] | null = null;
-        for (const row of ranked) {
+        const rankedEcosystemFirst = ranked.filter(
+          (row) => row.space.in_source_ecosystem,
+        );
+        const rankedGlobalFallback = ranked.filter(
+          (row) => !row.space.in_source_ecosystem,
+        );
+        const rankedCandidates = [
+          ...rankedEcosystemFirst,
+          ...rankedGlobalFallback,
+        ];
+
+        let destinationSpace: (typeof rankedCandidates)[number]['space'] | null =
+          null;
+        let resolvedScope: 'ecosystem' | 'network' | null = null;
+        for (const row of rankedCandidates) {
           const access = await checkSpaceAccessForSpace(row.space, authToken);
           if (access.hasAccess) {
             destinationSpace = row.space;
+            resolvedScope = row.space.in_source_ecosystem
+              ? 'ecosystem'
+              : 'network';
             break;
           }
         }
@@ -388,6 +447,7 @@ export function createMcpNavigationTool(authToken: string) {
           ok: true,
           destination_type: 'ecosystem_space',
           source_space_slug: safeSourceSlug || null,
+          resolution_scope: resolvedScope,
           navigation: {
             kind: 'internal',
             href,

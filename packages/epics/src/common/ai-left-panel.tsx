@@ -907,8 +907,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       window.open(href, '_blank', 'noopener,noreferrer');
       return;
     }
+    // Keep the AI panel expanded when MCP navigation redirects internally.
+    // This prevents perceived panel "close" regressions during route changes.
+    openAiPanel();
+    setAiOverlayVisible(false);
     router.push(href);
-  }, [messages, router]);
+  }, [messages, openAiPanel, router, setAiOverlayVisible]);
 
   useEffect(() => {
     if (onboardingContext?.mode !== ONBOARDING_SETUP_MODE) return;
