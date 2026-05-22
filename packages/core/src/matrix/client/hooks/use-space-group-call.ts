@@ -557,6 +557,7 @@ export function useSpaceGroupCall(
 
   const runCleanup = useCallback(() => {
     finalizeRecording();
+    setCaptureMode('none');
 
     clearConnectingStallTimer();
     clearMediaDebugInterval();
@@ -2054,6 +2055,15 @@ export function useSpaceGroupCall(
     }
   }, [callState, finalizeRecording]);
 
+  /** Stop capture when the call session ends with no participants left. */
+  useEffect(() => {
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    if (!recordingRuntimeRef.current) return;
+    if (participantCount > 0) return;
+    finalizeRecording();
+    setCaptureMode('none');
+  }, [callState, finalizeRecording, participantCount]);
+
   const dismissCallError = useCallback(() => {
     if (callState !== 'error') return;
     setErrorCode(null);
@@ -2066,7 +2076,6 @@ export function useSpaceGroupCall(
   const updateCapturePreference = useCallback(
     (mode: Exclude<SpaceGroupCallCaptureMode, 'none'>) => {
       setCapturePreference(mode);
-      setCapturePreferenceSelected(true);
     },
     [],
   );
