@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@hypha-platform/ui';
@@ -16,7 +15,7 @@ import {
 } from '../bank-currency-display';
 import type { BankTransferPublic } from '../hooks/types';
 import { CurrencyFlagBadge } from './currency-flag-badge';
-import { DepositInstructionsFields } from './deposit-instructions-fields';
+import { DepositInstructionsPanel } from './deposit-instructions-fields';
 
 type BankTransferDetailsDialogProps = {
   transfer: BankTransferPublic | null;
@@ -59,17 +58,14 @@ export const BankTransferDetailsDialog: FC<BankTransferDetailsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <CurrencyFlagBadge currency={currency} />
-            <div>
-              <DialogTitle>{title}</DialogTitle>
-              <DialogDescription>{t('description')}</DialogDescription>
-            </div>
+            <DialogTitle className="text-left">{title}</DialogTitle>
           </div>
         </DialogHeader>
-        <DepositInstructionsFields transfer={transfer} />
+        <DepositInstructionsPanel transfer={transfer} />
       </DialogContent>
     </Dialog>
   );

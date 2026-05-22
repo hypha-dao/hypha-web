@@ -26,7 +26,7 @@ import { CurrencyOptionRow } from './currency-option-row';
 type CreateTransferDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  showOnboardingFields: boolean;
+  customerFieldsLocked?: boolean;
   initialLegalName?: string;
   initialContactEmail?: string;
   isSubmitting: boolean;
@@ -42,7 +42,7 @@ type CreateTransferDialogProps = {
 export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
   open,
   onOpenChange,
-  showOnboardingFields,
+  customerFieldsLocked = false,
   initialLegalName = '',
   initialContactEmail = '',
   isSubmitting,
@@ -77,13 +77,14 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     await onSubmit({
-      legalName: showOnboardingFields ? legalName.trim() : undefined,
-      contactEmail: showOnboardingFields ? contactEmail.trim() : undefined,
+      legalName: customerFieldsLocked ? undefined : legalName.trim(),
+      contactEmail: customerFieldsLocked ? undefined : contactEmail.trim(),
       currency: currency as BankVirtualAccountCurrency,
-      amount:
-        useFixedAmount && amount.trim() ? amount.trim() : undefined,
+      amount: useFixedAmount && amount.trim() ? amount.trim() : undefined,
     });
   };
+
+  const showCustomerFields = !customerFieldsLocked;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -95,31 +96,31 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
-            {showOnboardingFields ? (
-              <>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="transfer-legal-name">{tOpen('legalName')}</Label>
-                  <Input
-                    id="transfer-legal-name"
-                    value={legalName}
-                    onChange={(e) => setLegalName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="transfer-contact-email">
-                    {tOpen('contactEmail')}
-                  </Label>
-                  <Input
-                    id="transfer-contact-email"
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </>
-            ) : null}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="transfer-legal-name">{tOpen('legalName')}</Label>
+              <Input
+                id="transfer-legal-name"
+                value={legalName}
+                onChange={(e) => setLegalName(e.target.value)}
+                required={showCustomerFields}
+                disabled={isSubmitting || customerFieldsLocked}
+                readOnly={customerFieldsLocked}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="transfer-contact-email">
+                {tOpen('contactEmail')}
+              </Label>
+              <Input
+                id="transfer-contact-email"
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                required={showCustomerFields}
+                disabled={isSubmitting || customerFieldsLocked}
+                readOnly={customerFieldsLocked}
+              />
+            </div>
             <div className="flex flex-col gap-2">
               <Label>{t('currencyLabel')}</Label>
               <div className="flex flex-col gap-2">
@@ -141,6 +142,7 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
                   checked={useFixedAmount}
                   onChange={(e) => setUseFixedAmount(e.target.checked)}
                   className="h-4 w-4 rounded border-border"
+                  disabled={isSubmitting}
                 />
                 {t('fixedAmountLabel')}
               </label>
@@ -151,6 +153,7 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
                   placeholder={t('amountPlaceholder')}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
+                  disabled={isSubmitting}
                 />
               ) : (
                 <p className="text-2 text-muted-foreground">
@@ -159,9 +162,7 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
               )}
             </div>
 
-            {error ? (
-              <p className="text-2 text-destructive">{error}</p>
-            ) : null}
+            {error ? <p className="text-2 text-destructive">{error}</p> : null}
           </div>
 
           <DialogFooter>
@@ -179,7 +180,7 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
               disabled={
                 isSubmitting ||
                 (useFixedAmount && !amount.trim()) ||
-                (showOnboardingFields &&
+                (showCustomerFields &&
                   (!legalName.trim() || !contactEmail.trim()))
               }
             >

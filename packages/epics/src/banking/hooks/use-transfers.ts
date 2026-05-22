@@ -34,7 +34,8 @@ export const useTransfers = ({
   );
 
   const swrKey = React.useMemo(
-    () => (endpoint && isAuthenticated && enabled ? [endpoint, 'transfers'] : null),
+    () =>
+      endpoint && isAuthenticated && enabled ? [endpoint, 'transfers'] : null,
     [endpoint, isAuthenticated, enabled],
   );
 

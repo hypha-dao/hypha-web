@@ -97,9 +97,7 @@ function getProcedureLinkHint(
     status &&
     (KYB_PROCEDURE_HINT_STATUSES as readonly string[]).includes(status)
   ) {
-    return tAdvanced(
-      `procedureHints.kyb.${status as KybProcedureHintStatus}`,
-    );
+    return tAdvanced(`procedureHints.kyb.${status as KybProcedureHintStatus}`);
   }
 
   return tAdvanced('procedureHints.fallback');
@@ -151,12 +149,7 @@ function ProcedureRow({
               {getProcedureLinkHint(kind, procedure, tAdvanced)}
             </p>
           ) : (
-            <Button
-              colorVariant="accent"
-              size="sm"
-              className="w-fit"
-              asChild
-            >
+            <Button colorVariant="accent" size="sm" className="w-fit" asChild>
               <Link
                 href={procedure.link}
                 target="_blank"
@@ -219,6 +212,16 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
           <h3 className="text-2 font-semibold text-foreground">
             {tAdvanced('providerValidationsTitle')}
           </h3>
+          <dl className="mt-3 grid gap-2 rounded-md border border-border/60 bg-background-2/40 px-3 py-3 text-2 sm:grid-cols-[auto_1fr] sm:gap-x-4">
+            <dt className="font-medium text-muted-foreground">
+              {tAdvanced('legalNameLabel')}
+            </dt>
+            <dd className="text-foreground">{status.name}</dd>
+            <dt className="font-medium text-muted-foreground">
+              {tAdvanced('contactEmailLabel')}
+            </dt>
+            <dd className="break-all text-foreground">{status.contactEmail}</dd>
+          </dl>
           <div className="mt-3 flex flex-col gap-3">
             <ProcedureRow
               kind="tos"
@@ -240,11 +243,6 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
             />
           </div>
         </section>
-        {status.isApproved && !status.approvalRegistered ? (
-          <p className="text-2 text-muted-foreground">
-            {tAdvanced('approvedOnBridgePendingRecord')}
-          </p>
-        ) : null}
       </div>
     );
   };
@@ -277,7 +275,10 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
 
           {renderBody()}
 
-          {!isLoading && status != null && !status.approvalRegistered ? (
+          {!isLoading &&
+          status != null &&
+          !status.approvalRegistered &&
+          !status.isApproved ? (
             <BankingSandboxDemoBar
               spaceSlug={spaceSlug}
               canManage={canManage}

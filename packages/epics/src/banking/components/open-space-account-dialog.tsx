@@ -28,6 +28,7 @@ type OpenSpaceAccountDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode?: OpenSpaceAccountDialogMode;
+  customerFieldsLocked?: boolean;
   availableCurrencies?: BankCurrencyCode[];
   initialLegalName?: string;
   initialContactEmail?: string;
@@ -44,6 +45,7 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
   open,
   onOpenChange,
   mode = 'full',
+  customerFieldsLocked = false,
   availableCurrencies,
   initialLegalName = '',
   initialContactEmail = '',
@@ -53,10 +55,14 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
 }) => {
   const t = useTranslations('BankingTab.openAccount');
   const isAddMode = mode === 'addCurrency';
+  const showCustomerFields = !isAddMode || customerFieldsLocked;
 
   const currencyOptions = useMemo(() => {
-    if (isAddMode && availableCurrencies && availableCurrencies.length > 0) {
+    if (availableCurrencies && availableCurrencies.length > 0) {
       return availableCurrencies;
+    }
+    if (isAddMode) {
+      return [];
     }
     return BANK_CURRENCY_METAS.map((m) => m.currency);
   }, [availableCurrencies, isAddMode]);
@@ -90,7 +96,11 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
     if (selected.length === 0) {
       return;
     }
-    if (!isAddMode && (!legalName.trim() || !contactEmail.trim())) {
+    if (
+      !customerFieldsLocked &&
+      !isAddMode &&
+      (!legalName.trim() || !contactEmail.trim())
+    ) {
       return;
     }
 
@@ -120,7 +130,7 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
           onSubmit={handleSubmit}
           className="flex flex-col gap-4"
         >
-          {!isAddMode ? (
+          {showCustomerFields ? (
             <>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="open-account-legal-name">
@@ -130,9 +140,10 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
                   id="open-account-legal-name"
                   value={legalName}
                   onChange={(e) => setLegalName(e.target.value)}
-                  required
+                  required={!customerFieldsLocked}
                   maxLength={1024}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || customerFieldsLocked}
+                  readOnly={customerFieldsLocked}
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -142,8 +153,9 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
                   type="email"
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
-                  required
-                  disabled={isSubmitting}
+                  required={!customerFieldsLocked}
+                  disabled={isSubmitting || customerFieldsLocked}
+                  readOnly={customerFieldsLocked}
                 />
               </div>
             </>
@@ -156,19 +168,25 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
             <p className="text-sm text-muted-foreground">
               {t('currenciesHint')}
             </p>
-            <div className="flex flex-col gap-2">
-              {currencyOptions.map((currency) => (
-                <CurrencyOptionRow
-                  key={currency}
-                  currency={currency}
-                  checked={selected.includes(currency)}
-                  disabled={isSubmitting}
-                  onCheckedChange={(checked) =>
-                    toggleCurrency(currency, checked)
-                  }
-                />
-              ))}
-            </div>
+            {currencyOptions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {t('noCurrenciesAvailable')}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {currencyOptions.map((currency) => (
+                  <CurrencyOptionRow
+                    key={currency}
+                    currency={currency}
+                    checked={selected.includes(currency)}
+                    disabled={isSubmitting}
+                    onCheckedChange={(checked) =>
+                      toggleCurrency(currency, checked)
+                    }
+                  />
+                ))}
+              </div>
+            )}
           </fieldset>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -179,7 +197,11 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
             type="submit"
             form={formId}
             colorVariant="accent"
-            disabled={isSubmitting || selected.length === 0}
+            disabled={
+              isSubmitting ||
+              selected.length === 0 ||
+              currencyOptions.length === 0
+            }
           >
             {isSubmitting ? (
               <>

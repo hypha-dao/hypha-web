@@ -54,8 +54,7 @@ export const BankingSandboxDemoBar: FC<BankingSandboxDemoBarProps> = ({
       .catch(() => undefined);
   };
 
-  const controlsDisabled =
-    !canManage || isSimulating || isRefreshing;
+  const controlsDisabled = !canManage || isSimulating || isRefreshing;
 
   return (
     <div
@@ -150,9 +149,7 @@ export const BankingSandboxDemoBar: FC<BankingSandboxDemoBarProps> = ({
         </div>
       </div>
 
-      {error ? (
-        <p className="mt-3 ps-8 text-2 text-error-11">{error}</p>
-      ) : null}
+      {error ? <p className="mt-3 ps-8 text-2 text-error-11">{error}</p> : null}
     </div>
   );
 };

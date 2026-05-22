@@ -32,6 +32,12 @@ export type ProvisionVirtualAccountResult = {
   paymentRail: string;
   depositInstructions: Record<string, unknown>;
   status: string;
+  developerFeePercent?: string | null;
+  destination?: {
+    currency: string;
+    paymentRail: string;
+    address: string;
+  };
 };
 
 export type CreateTransferInput = {
@@ -51,6 +57,12 @@ export type CreateTransferResult = {
   depositMessage: string;
   depositInstructions: Record<string, unknown>;
   status: string;
+  developerFeePercent?: string | null;
+  destination?: {
+    currency: string;
+    paymentRail: string;
+    address: string;
+  };
 };
 
 export interface BankKycProvider {

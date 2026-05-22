@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback, useMemo, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   useIsDelegate,
@@ -22,7 +22,13 @@ import {
   useTransfers,
   useVirtualAccounts,
 } from '../hooks';
-import { type BankCurrencyCode } from '../bank-currency-display';
+import {
+  enrichTransferWithCustomerStatus,
+  enrichVirtualAccountWithCustomerStatus,
+  getAvailableBankCurrencyCodes,
+  isBankVerificationInProgress,
+  isCustomerReadyForBankOperations,
+} from '../banking-ui';
 import { BankAccountsSection } from './bank-accounts-section';
 import { BankTransfersSection } from './bank-transfers-section';
 import { BankingToolbar } from './banking-toolbar';
@@ -95,14 +101,23 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const needsProviderStatusRefresh =
     hasCustomer && status != null && !status.approvalRegistered;
 
+  const refreshBankingState = useCallback(async () => {
+    const updated = await refresh();
+    if (isCustomerReadyForBankOperations(updated)) {
+      void refreshVirtualAccounts();
+      void refreshTransfers();
+    }
+    return updated;
+  }, [refresh, refreshTransfers, refreshVirtualAccounts]);
+
   const handleGearOpenChange = useCallback(
     (open: boolean) => {
       setGearOpen(open);
       if (open && needsProviderStatusRefresh) {
-        void refresh();
+        void refreshBankingState();
       }
     },
-    [needsProviderStatusRefresh, refresh],
+    [needsProviderStatusRefresh, refreshBankingState],
   );
 
   const resolvedWeb3SpaceId =
@@ -128,47 +143,72 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const blockerMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember && !isDelegate
-      ? tCommon('joinSpaceToUse')
-      : !hasOnChainSpace
-        ? t('blockers.notOnChain')
-        : !hasTreasuryAddress
-          ? t('blockers.noTreasury')
-          : null;
+    ? tCommon('joinSpaceToUse')
+    : !hasOnChainSpace
+    ? t('blockers.notOnChain')
+    : !hasTreasuryAddress
+    ? t('blockers.noTreasury')
+    : null;
 
-  const showOnboardingFields = !hasCustomer;
+  useEffect(() => {
+    if (hasCustomer && isCustomerReadyForBankOperations(status)) {
+      void refreshVirtualAccounts();
+      void refreshTransfers();
+    }
+  }, [
+    hasCustomer,
+    status?.isApproved,
+    status?.approvalRegistered,
+    status?.procedures.tos.isComplete,
+    status?.procedures.kyc.isComplete,
+    refreshTransfers,
+    refreshVirtualAccounts,
+  ]);
+
+  const displayVirtualAccounts = useMemo(
+    () =>
+      virtualAccounts.map((account) =>
+        enrichVirtualAccountWithCustomerStatus(account, status),
+      ),
+    [status, virtualAccounts],
+  );
+
+  const displayTransfers = useMemo(
+    () =>
+      transfers.map((transfer) =>
+        enrichTransferWithCustomerStatus(transfer, status),
+      ),
+    [status, transfers],
+  );
+
+  const verificationInProgress = isBankVerificationInProgress(status);
 
   const openVerificationGear = useCallback(() => {
     setGearOpen(true);
     if (needsProviderStatusRefresh) {
-      void refresh();
+      void refreshBankingState();
     }
-  }, [needsProviderStatusRefresh, refresh]);
+  }, [needsProviderStatusRefresh, refreshBankingState]);
 
-  const initialLegalName = space?.title?.trim() ?? '';
-  const initialContactEmail = person?.email?.trim() ?? '';
+  const fallbackLegalName = space?.title?.trim() ?? '';
+  const fallbackContactEmail = person?.email?.trim() ?? '';
+  const customerLegalName = status?.name?.trim() || fallbackLegalName;
+  const customerContactEmail =
+    status?.contactEmail?.trim() || fallbackContactEmail;
+  const customerFieldsLocked = hasCustomer;
 
-  const availableCurrencyCodes = useMemo((): BankCurrencyCode[] => {
-    const provisioned = new Set(
-      virtualAccounts
-        .filter((a) => a.lifecycle === 'active')
-        .map((a) => `${a.currency}:${a.paymentRail}`),
-    );
-    return ['eur', 'usd', 'gbp', 'mxn', 'brl', 'cop'].filter((c) => {
-      const rail =
-        c === 'eur'
-          ? 'sepa'
-          : c === 'usd'
-            ? 'ach'
-            : c === 'gbp'
-              ? 'faster_payments'
-              : c === 'mxn'
-                ? 'spei'
-                : c === 'brl'
-                  ? 'pix'
-                  : 'cop';
-      return !provisioned.has(`${c}:${rail}`);
-    }) as BankCurrencyCode[];
-  }, [virtualAccounts]);
+  const availableCurrencyCodes = useMemo(
+    () => getAvailableBankCurrencyCodes(hasCustomer ? virtualAccounts : []),
+    [hasCustomer, virtualAccounts],
+  );
+
+  const openSpaceAccountDisabled =
+    verificationInProgress || availableCurrencyCodes.length === 0;
+  const openSpaceAccountDisabledReason = verificationInProgress
+    ? 'finishVerificationFirst'
+    : availableCurrencyCodes.length === 0
+    ? 'allCurrenciesCovered'
+    : null;
 
   return (
     <div className="flex w-full flex-col gap-8">
@@ -181,7 +221,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
         blockerMessage={blockerMessage}
         gearOpen={gearOpen}
         onGearOpenChange={handleGearOpenChange}
-        onRefreshStatus={refresh}
+        onRefreshStatus={refreshBankingState}
       />
 
       {error ? (
@@ -202,7 +242,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
       ) : null}
 
       <BankTransfersSection
-        transfers={hasCustomer ? transfers : []}
+        transfers={hasCustomer ? displayTransfers : []}
         transfersLoading={hasCustomer && transfersLoading}
         canManage={canManage}
         isActivating={isActivatingTransfer}
@@ -223,19 +263,19 @@ export const BankingSection: FC<BankingSectionProps> = ({
       <BankAccountsSection
         isAuthenticated={isAuthenticated}
         canManage={canManage}
+        openSpaceAccountDisabled={openSpaceAccountDisabled}
+        openSpaceAccountDisabledReason={openSpaceAccountDisabledReason}
         onOpenSpaceAccount={
           canManage
             ? () => {
                 clearSpaceAccountError();
-                setOpenDialogMode(
-                  hasCustomer && status?.isApproved ? 'addCurrency' : 'full',
-                );
+                setOpenDialogMode(hasCustomer ? 'addCurrency' : 'full');
                 setOpenDialogOpen(true);
               }
             : undefined
         }
         depositsProps={{
-          virtualAccounts: hasCustomer ? virtualAccounts : [],
+          virtualAccounts: hasCustomer ? displayVirtualAccounts : [],
           virtualAccountsLoading: hasCustomer && virtualAccountsLoading,
           canManage,
           isActivating: isActivatingAccount,
@@ -250,9 +290,9 @@ export const BankingSection: FC<BankingSectionProps> = ({
       <CreateTransferDialog
         open={createTransferOpen}
         onOpenChange={setCreateTransferOpen}
-        showOnboardingFields={showOnboardingFields}
-        initialLegalName={initialLegalName}
-        initialContactEmail={initialContactEmail}
+        customerFieldsLocked={customerFieldsLocked}
+        initialLegalName={customerLegalName}
+        initialContactEmail={customerContactEmail}
         isSubmitting={isCreatingTransfer}
         error={createTransferError}
         onSubmit={async (input) => {
@@ -268,11 +308,10 @@ export const BankingSection: FC<BankingSectionProps> = ({
         open={openDialogOpen}
         onOpenChange={setOpenDialogOpen}
         mode={openDialogMode}
-        availableCurrencies={
-          openDialogMode === 'addCurrency' ? availableCurrencyCodes : undefined
-        }
-        initialLegalName={initialLegalName}
-        initialContactEmail={initialContactEmail}
+        customerFieldsLocked={customerFieldsLocked}
+        availableCurrencies={availableCurrencyCodes}
+        initialLegalName={customerLegalName}
+        initialContactEmail={customerContactEmail}
         isSubmitting={isRequestingSpaceAccount}
         error={spaceAccountError}
         onSubmit={async (input) => {

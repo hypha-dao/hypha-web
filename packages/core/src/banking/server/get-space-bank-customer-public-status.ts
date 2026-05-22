@@ -17,6 +17,8 @@ export type BankVerificationProcedurePublic = {
 };
 
 export type SpaceBankCustomerPublicStatus = {
+  name: string;
+  contactEmail: string;
   kycStatus: string;
   tosStatus: string | null;
   kycLink: string | null;
@@ -99,8 +101,16 @@ function buildProceduresWithLive(
   kyc: BankVerificationProcedurePublic;
 } {
   return {
-    tos: buildTosProcedure(customer.tosStatus, live.tosStatus, customer.tosLink),
-    kyc: buildKycProcedure(customer.kycStatus, live.kycStatus, customer.kycLink),
+    tos: buildTosProcedure(
+      customer.tosStatus,
+      live.tosStatus,
+      customer.tosLink,
+    ),
+    kyc: buildKycProcedure(
+      customer.kycStatus,
+      live.kycStatus,
+      customer.kycLink,
+    ),
   };
 }
 
@@ -121,6 +131,8 @@ export async function getSpaceBankCustomerPublicStatus(
 
   if (approvalRegistered) {
     return {
+      name: customer.name,
+      contactEmail: customer.contactEmail,
       kycStatus: customer.kycStatus,
       tosStatus: customer.tosStatus,
       kycLink: customer.kycLink,
@@ -135,6 +147,8 @@ export async function getSpaceBankCustomerPublicStatus(
     const live = await fetchBridgeKycLinkLive(customer);
     if (live) {
       return {
+        name: customer.name,
+        contactEmail: customer.contactEmail,
         kycStatus: customer.kycStatus,
         tosStatus: customer.tosStatus,
         kycLink: customer.kycLink,
@@ -152,6 +166,8 @@ export async function getSpaceBankCustomerPublicStatus(
   }
 
   return {
+    name: customer.name,
+    contactEmail: customer.contactEmail,
     kycStatus: customer.kycStatus,
     tosStatus: customer.tosStatus,
     kycLink: customer.kycLink,

@@ -31,7 +31,22 @@ export function resolveBankOperationLifecycle(input: {
     };
   }
 
-  if (status === BANK_OPERATION_PENDING_KYB || !isCustomerApproved) {
+  if (status === BANK_OPERATION_PENDING_KYB) {
+    if (isCustomerApproved) {
+      return {
+        lifecycle: 'pending_activation',
+        canActivate: true,
+        canContinueVerification: false,
+      };
+    }
+    return {
+      lifecycle: 'pending_kyb',
+      canActivate: false,
+      canContinueVerification: false,
+    };
+  }
+
+  if (!isCustomerApproved) {
     return {
       lifecycle: 'pending_kyb',
       canActivate: false,

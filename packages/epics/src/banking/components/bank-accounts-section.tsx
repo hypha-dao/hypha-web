@@ -8,11 +8,18 @@ import { Button } from '@hypha-platform/ui';
 import { ApprovedBankingDeposits } from './approved-banking-deposits';
 import type { ApprovedBankingDepositsProps } from './approved-banking-deposits';
 
+type OpenSpaceAccountDisabledReason =
+  | 'finishVerificationFirst'
+  | 'allCurrenciesCovered'
+  | null;
+
 type BankAccountsSectionProps = {
   isAuthenticated: boolean;
   canManage: boolean;
   depositsProps: ApprovedBankingDepositsProps;
   onOpenSpaceAccount?: () => void;
+  openSpaceAccountDisabled?: boolean;
+  openSpaceAccountDisabledReason?: OpenSpaceAccountDisabledReason;
 };
 
 export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
@@ -20,9 +27,34 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
   canManage,
   depositsProps,
   onOpenSpaceAccount,
+  openSpaceAccountDisabled = false,
+  openSpaceAccountDisabledReason = null,
 }) => {
   const t = useTranslations('BankingTab.sections.accounts');
   const tToolbar = useTranslations('BankingTab.toolbar');
+
+  const showOpenButton = canManage && onOpenSpaceAccount;
+  const buttonDisabled = openSpaceAccountDisabled;
+  const tooltipText =
+    openSpaceAccountDisabledReason === 'finishVerificationFirst'
+      ? tToolbar('finishVerificationFirst')
+      : openSpaceAccountDisabledReason === 'allCurrenciesCovered'
+      ? tToolbar('allCurrenciesCovered')
+      : null;
+
+  const openButton = (
+    <Button
+      type="button"
+      colorVariant="accent"
+      size="sm"
+      className="shrink-0 gap-1.5"
+      disabled={buttonDisabled}
+      onClick={onOpenSpaceAccount}
+    >
+      <Plus className="h-4 w-4" />
+      {tToolbar('openSpaceAccount')}
+    </Button>
+  );
 
   return (
     <section className="flex flex-col gap-4">
@@ -35,17 +67,14 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
             {t('description')}
           </p>
         </div>
-        {canManage && onOpenSpaceAccount ? (
-          <Button
-            type="button"
-            colorVariant="accent"
-            size="sm"
-            className="shrink-0 gap-1.5"
-            onClick={onOpenSpaceAccount}
-          >
-            <Plus className="h-4 w-4" />
-            {tToolbar('openSpaceAccount')}
-          </Button>
+        {showOpenButton ? (
+          tooltipText && buttonDisabled ? (
+            <span className="inline-flex shrink-0" title={tooltipText}>
+              {openButton}
+            </span>
+          ) : (
+            openButton
+          )
         ) : null}
       </div>
 

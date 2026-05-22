@@ -33,15 +33,17 @@ export type BankVirtualAccountPublic = {
   currency: string;
   paymentRail: string;
   depositInstructions: Record<string, unknown>;
+  destinationAddress: string;
   status: string;
   lifecycle: BankOperationLifecycle;
   canActivate: boolean;
   canContinueVerification: boolean;
 };
 
-export type ProvisionSpaceBankVirtualAccountResult = BankVirtualAccountPublic & {
-  created: boolean;
-};
+export type ProvisionSpaceBankVirtualAccountResult =
+  BankVirtualAccountPublic & {
+    created: boolean;
+  };
 
 export type RequestSpaceBankVirtualAccountInput = {
   spaceSlug: string;
@@ -57,6 +59,7 @@ export type BankTransferPublic = {
   depositMessage: string | null;
   status: string;
   depositInstructions: Record<string, unknown>;
+  destinationAddress: string;
   createdAt: string;
   lifecycle: BankOperationLifecycle;
   canActivate: boolean;

@@ -5,6 +5,11 @@ import { Loader2, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@hypha-platform/ui';
 
+import {
+  BANKING_EMPTY_STATE_CLASS,
+  BANKING_LOADING_STATE_CLASS,
+  TREASURY_CARD_GRID_CLASS,
+} from '../banking-ui';
 import type {
   BankTransferPublic,
   BankVirtualAccountCurrency,
@@ -68,37 +73,41 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
       </div>
 
       {transfersLoading ? (
-        <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-lg border border-border bg-background-2/50 py-10">
+        <div className={BANKING_LOADING_STATE_CLASS}>
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           <p className="text-2 text-muted-foreground">{t('loading')}</p>
         </div>
       ) : transfers.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-background-2/50 px-4 py-10 text-center">
-          <p className="text-3 font-medium text-foreground">{t('emptyTitle')}</p>
-          <p className="mx-auto mt-2 max-w-md text-2 text-muted-foreground">
+        <div className={BANKING_EMPTY_STATE_CLASS}>
+          <p className="text-3 font-medium text-foreground">
+            {t('emptyTitle')}
+          </p>
+          <p className="mx-auto max-w-md text-2 text-muted-foreground">
             {t('emptyDescription')}
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {transfers.map((transfer) => (
-            <BankTransferCard
-              key={transfer.id}
-              transfer={transfer}
-              onViewDetails={() => openDetails(transfer)}
-              onOpenVerificationDetails={
-                canManage && transfer.lifecycle === 'pending_kyb'
-                  ? onOpenVerificationDetails
-                  : undefined
-              }
-              onActivate={
-                canManage && transfer.canActivate
-                  ? () => onActivateTransfer(transfer.id)
-                  : undefined
-              }
-              isActivating={isActivating}
-            />
-          ))}
+        <div className="w-full">
+          <div className={TREASURY_CARD_GRID_CLASS}>
+            {transfers.map((transfer) => (
+              <BankTransferCard
+                key={transfer.id}
+                transfer={transfer}
+                onViewDetails={() => openDetails(transfer)}
+                onOpenVerificationDetails={
+                  canManage && transfer.lifecycle === 'pending_kyb'
+                    ? onOpenVerificationDetails
+                    : undefined
+                }
+                onActivate={
+                  canManage && transfer.canActivate
+                    ? () => onActivateTransfer(transfer.id)
+                    : undefined
+                }
+                isActivating={isActivating}
+              />
+            ))}
+          </div>
         </div>
       )}
 

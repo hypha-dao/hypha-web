@@ -99,7 +99,7 @@ export async function createSpaceBankTransfer(
       depositMessage: bridgeResult.depositMessage,
       status: bridgeResult.status,
       depositInstructions: bridgeResult.depositInstructions,
-      destinationAddress: space.address!,
+      destinationAddress: bridgeResult.destinationAddress,
     },
     { db },
   );

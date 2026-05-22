@@ -17,7 +17,7 @@ export async function resolveCustomerApprovedForOperations(
 
   try {
     const live = await fetchBridgeKycLinkLive(customer);
-    return live?.isKycApproved ?? false;
+    return Boolean(live?.isKycApproved && live?.isTosApproved);
   } catch (error) {
     console.error('Bridge KYC live check failed:', error);
     return false;

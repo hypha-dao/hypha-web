@@ -22,6 +22,7 @@ export function mapBankTransferToPublic(
     depositMessage: transfer.depositMessage,
     status: transfer.status,
     depositInstructions: transfer.depositInstructions,
+    destinationAddress: transfer.destinationAddress,
     createdAt: transfer.createdAt.toISOString(),
     lifecycle,
     canActivate,

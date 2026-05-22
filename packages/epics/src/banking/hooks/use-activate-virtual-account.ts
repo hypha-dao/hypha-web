@@ -45,7 +45,10 @@ export const useActivateVirtualAccount = ({
               : `Request failed (${res.status})`,
           );
         }
-        await mutate([getVirtualAccountsEndpoint(spaceSlug), 'virtual-accounts']);
+        await mutate([
+          getVirtualAccountsEndpoint(spaceSlug),
+          'virtual-accounts',
+        ]);
         return body as BankVirtualAccountPublic;
       } catch (err) {
         const message =
@@ -59,5 +62,10 @@ export const useActivateVirtualAccount = ({
     [getAccessToken, mutate, spaceSlug],
   );
 
-  return { activateAccount, isActivating, error, clearError: () => setError(null) };
+  return {
+    activateAccount,
+    isActivating,
+    error,
+    clearError: () => setError(null),
+  };
 };

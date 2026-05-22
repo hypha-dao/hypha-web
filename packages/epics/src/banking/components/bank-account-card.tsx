@@ -8,7 +8,9 @@ import {
   getBankCurrencyMeta,
   type BankCurrencyCode,
 } from '../bank-currency-display';
+import { getPrimaryDepositIdentifier } from '../deposit-instruction-display';
 import type { BankVirtualAccountPublic } from '../hooks/types';
+import { InlineCopyRow } from './inline-copy-row';
 import { CurrencyFlagBadge } from './currency-flag-badge';
 
 type BankAccountCardProps = {
@@ -44,6 +46,7 @@ export const BankAccountCard: FC<BankAccountCardProps> = ({
   isActivating = false,
 }) => {
   const t = useTranslations('BankingTab');
+  const tFields = useTranslations('BankingTab.depositInstructions');
   const tCurrencies = useTranslations('BankingTab.currencies');
   const tOp = useTranslations('BankingTab.operationStatus');
   const currency = accountToCurrency(account);
@@ -53,39 +56,46 @@ export const BankAccountCard: FC<BankAccountCardProps> = ({
     account.lifecycle === 'pending_kyb'
       ? tOp('pendingKyb')
       : account.lifecycle === 'pending_activation'
-        ? tOp('pendingActivation')
-        : t('depositInstructions.activeBadge');
+      ? tOp('pendingActivation')
+      : t('depositInstructions.activeBadge');
 
   const badgeClass =
     account.lifecycle === 'active'
       ? 'bg-success-9 text-white'
       : 'bg-amber-9/90 text-white';
 
-  const hint =
-    account.lifecycle === 'pending_kyb'
-      ? tOp('pendingKybHint')
-      : account.lifecycle === 'pending_activation'
-        ? tOp('pendingActivationHint')
-        : t('depositInstructions.shareHint');
-
   const isPendingKyb = account.lifecycle === 'pending_kyb';
-  const openGearFromCard =
+  const handleCardClick =
     isPendingKyb && onOpenVerificationDetails
-      ? () => onOpenVerificationDetails()
+      ? onOpenVerificationDetails
+      : !isPendingKyb
+      ? onViewDetails
       : undefined;
+
+  const primaryIdentifier =
+    account.lifecycle === 'active'
+      ? getPrimaryDepositIdentifier(
+          account.paymentRail,
+          account.depositInstructions,
+        )
+      : null;
 
   return (
     <Card
-      className={`flex h-full flex-col gap-4 p-5${openGearFromCard ? ' cursor-pointer transition-colors hover:bg-background-2/50' : ''}`}
-      role={openGearFromCard ? 'button' : undefined}
-      tabIndex={openGearFromCard ? 0 : undefined}
-      onClick={openGearFromCard}
+      className={`flex h-full flex-col gap-3 p-5${
+        handleCardClick
+          ? ' cursor-pointer transition-colors hover:bg-background-2/50'
+          : ''
+      }`}
+      role={handleCardClick ? 'button' : undefined}
+      tabIndex={handleCardClick ? 0 : undefined}
+      onClick={handleCardClick}
       onKeyDown={
-        openGearFromCard
+        handleCardClick
           ? (event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                openGearFromCard();
+                handleCardClick();
               }
             }
           : undefined
@@ -111,8 +121,18 @@ export const BankAccountCard: FC<BankAccountCardProps> = ({
           {statusLabel}
         </span>
       </div>
-      <p className="flex-1 text-2 text-muted-foreground">{hint}</p>
-      <div className="flex flex-col gap-2">
+
+      {primaryIdentifier ? (
+        <InlineCopyRow
+          className="flex-1"
+          label={tFields(primaryIdentifier.labelKey)}
+          value={primaryIdentifier.value}
+        />
+      ) : (
+        <div className="flex-1" />
+      )}
+
+      <div className="flex flex-col gap-1.5">
         {isPendingKyb ? (
           <p className="text-1 text-muted-foreground">
             {tOp('openGearForVerification')}
@@ -123,7 +143,7 @@ export const BankAccountCard: FC<BankAccountCardProps> = ({
             type="button"
             colorVariant="accent"
             size="sm"
-            className="w-fit"
+            className="h-7 min-h-7 w-fit px-3 py-0 text-xs"
             disabled={isActivating}
             onClick={(event) => {
               event.stopPropagation();

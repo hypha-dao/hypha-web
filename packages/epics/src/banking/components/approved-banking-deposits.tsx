@@ -4,6 +4,11 @@ import { FC, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
+import {
+  BANKING_EMPTY_STATE_CLASS,
+  BANKING_LOADING_STATE_CLASS,
+  TREASURY_CARD_GRID_CLASS,
+} from '../banking-ui';
 import type { BankVirtualAccountPublic } from '../hooks/types';
 import { BankAccountCard } from './bank-account-card';
 import { BankAccountDetailsDialog } from './bank-account-details-dialog';
@@ -40,7 +45,7 @@ export const ApprovedBankingDeposits: FC<ApprovedBankingDepositsProps> = ({
 
   if (virtualAccountsLoading) {
     return (
-      <div className="flex min-h-[8rem] flex-col items-center justify-center gap-2 rounded-lg border border-border bg-background-2/50 py-10">
+      <div className={BANKING_LOADING_STATE_CLASS}>
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         <p className="text-2 text-muted-foreground">
           {tAccounts('loadingAccounts')}
@@ -51,11 +56,11 @@ export const ApprovedBankingDeposits: FC<ApprovedBankingDepositsProps> = ({
 
   if (virtualAccounts.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border bg-background-2/50 px-4 py-10 text-center">
+      <div className={BANKING_EMPTY_STATE_CLASS}>
         <p className="text-3 font-medium text-foreground">
           {tAccounts('emptyTitle')}
         </p>
-        <p className="mx-auto mt-2 max-w-md text-2 text-muted-foreground">
+        <p className="mx-auto max-w-md text-2 text-muted-foreground">
           {tAccounts('emptyDescription')}
         </p>
       </div>
@@ -63,8 +68,8 @@ export const ApprovedBankingDeposits: FC<ApprovedBankingDepositsProps> = ({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="w-full">
+      <div className={TREASURY_CARD_GRID_CLASS}>
         {virtualAccounts.map((account) => (
           <BankAccountCard
             key={account.id}
@@ -86,7 +91,7 @@ export const ApprovedBankingDeposits: FC<ApprovedBankingDepositsProps> = ({
       </div>
 
       {provisionError ? (
-        <p className="rounded-md border border-error-6 bg-error-2 px-3 py-2 text-2 text-error-11">
+        <p className="mt-4 rounded-md border border-error-6 bg-error-2 px-3 py-2 text-2 text-error-11">
           {provisionError}
         </p>
       ) : null}

@@ -13,5 +13,7 @@ export function buildBankingKycRedirectUri(
       ? `https://${process.env.VERCEL_URL}`
       : 'http://localhost:3000';
 
-  return `${base}/${lang}/dho/${encodeURIComponent(spaceSlug)}/treasury?tab=bank-accounts&banking=return`;
+  return `${base}/${lang}/dho/${encodeURIComponent(
+    spaceSlug,
+  )}/treasury?tab=bank-accounts&banking=return`;
 }

@@ -503,7 +503,7 @@
     "errorLoad": "Could not load bank account status.",
     "sections": {
       "transfers": {
-        "title": "Bank Transfers",
+        "title": "One-time Bank Transfers",
         "description": "One-time payment links for donors and payers. Send a link once; funds convert to USDC in your treasury.",
         "emptyTitle": "No one-time transfers yet",
         "emptyDescription": "Create a payment link when you need a single incoming transfer without setting up a full deposit account.",
@@ -536,6 +536,7 @@
       "submit": "Open account",
       "submitAddCurrency": "Add currencies",
       "submitting": "Working…",
+      "noCurrenciesAvailable": "All supported currencies already have accounts for this space.",
       "provisioningProgress": "Creating {currency} account…",
       "redirectPendingTitle": "Continue in Bridge",
       "redirectPendingDescription": "Accept terms and complete verification to activate your selected currencies."
@@ -543,7 +544,9 @@
     "toolbar": {
       "add": "Add",
       "newPaymentLink": "New one-time payment link",
-      "openSpaceAccount": "Open a space account"
+      "openSpaceAccount": "Open a space account",
+      "finishVerificationFirst": "Finish the current verification first",
+      "allCurrenciesCovered": "All supported currencies already have accounts"
     },
     "operationStatus": {
       "pendingKyb": "Pending verification",
@@ -562,6 +565,8 @@
       "noCustomer": "No bank customer record for this space yet.",
       "approvedSummary": "Verification is approved. Manage accounts in the Bank Accounts section below.",
       "providerValidationsTitle": "Provider validations",
+      "legalNameLabel": "Legal entity name",
+      "contactEmailLabel": "Contact email",
       "stepCompleted": "Completed",
       "tosProcedure": "Terms of service",
       "kybProcedure": "Business verification (KYB)",
@@ -649,12 +654,11 @@
       "addDisabledNotManager": "Only space members with treasury access can manage bank accounts."
     },
     "accountCard": {
-      "viewDetails": "View deposit details"
+      "viewDetails": "View details"
     },
     "transferCard": {
-      "viewDetails": "View payment details",
-      "flexibleAmount": "Any amount",
-      "shareHint": "Share deposit details and the reference message with your payer."
+      "viewDetails": "View details",
+      "flexibleAmount": "Any amount"
     },
     "transferDetails": {
       "title": "One-time payment",
@@ -680,19 +684,30 @@
       "failed": "Failed",
       "returned": "Returned"
     },
-    "accountDetails": {
-      "description": "Share these details for bank transfers into your treasury."
-    },
+    "accountDetails": {},
     "depositInstructions": {
       "iban": "IBAN",
       "bic": "BIC / SWIFT",
+      "bicInternational": "BIC / SWIFT (for international transfers)",
       "routingNumber": "Routing number",
       "accountNumber": "Account number",
       "sortCode": "Sort code",
       "bankName": "Bank name",
+      "accountHolder": "Account holder name",
+      "bankNameAndAddress": "Bank name and address",
+      "beneficiaryNameAndAddress": "Beneficiary name and address",
       "activeBadge": "Active",
-      "shareHint": "Give donors these details for bank transfers into your treasury.",
       "depositMessage": "Reference message (required)",
+      "bankInstructionsSection": "Bank transfer instructions",
+      "treasurySection": "Treasury destination",
+      "destinationCurrency": "Destination currency",
+      "destinationRail": "Payment rail",
+      "destinationAddress": "Treasury address",
+      "hyphaFees": "Hypha fees",
+      "feesUnavailable": "Not specified by provider",
+      "providerFeesNote": "*The provider may charge additional fees on operations.",
+      "copyInstructions": "Copy instructions",
+      "copyInstructionsCopied": "Copied",
       "copy": "Copy",
       "copied": "Copied"
     },

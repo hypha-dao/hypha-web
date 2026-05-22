@@ -113,9 +113,9 @@ describe('simulateSpaceBankKycApproval', () => {
       { db: mockDb },
     );
 
-    expect(
-      bridgeSimulateKycApproval.mock.invocationCallOrder[0]!,
-    ).toBeLessThan(simulateBridgeKybData.mock.invocationCallOrder[0]!);
+    expect(bridgeSimulateKycApproval.mock.invocationCallOrder[0]!).toBeLessThan(
+      simulateBridgeKybData.mock.invocationCallOrder[0]!,
+    );
     expect(simulateBridgeKybData).toHaveBeenCalledWith('cust_1', {
       businessLegalName: 'Hypha Test Space',
       force: true,

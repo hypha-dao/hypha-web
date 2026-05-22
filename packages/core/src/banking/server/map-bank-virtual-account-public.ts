@@ -19,6 +19,7 @@ export function mapBankVirtualAccountToPublic(
     currency: account.currency,
     paymentRail: account.paymentRail,
     depositInstructions: account.depositInstructions,
+    destinationAddress: account.destinationAddress,
     status: account.status,
     lifecycle,
     canActivate,

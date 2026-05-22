@@ -4,13 +4,17 @@ import { isBridgeSandboxApi } from '../../common/server/bridge-sandbox';
 import type { DatabaseInstance } from '../../common/server/types';
 import type { BankCustomer } from '@hypha-platform/storage-postgres';
 import type { Space } from '../../space/types';
-import { DEFAULT_BANK_PROVIDER, getTransferSourceRailForCurrency } from '../constants';
+import {
+  DEFAULT_BANK_PROVIDER,
+  getTransferSourceRailForCurrency,
+} from '../constants';
 import { simulateBridgeKybData } from './simulate-bridge-kyb-data';
 import { BankOnboardingError } from './errors';
 import { mapBridgeApiError } from './map-bridge-api-error';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import { syncBankCustomerKycFromBridge } from './sync-bank-customer-kyc-from-bridge';
+import { enrichBridgeDepositInstructions } from './enrich-bridge-deposit-instructions';
 
 function mapBridgeTransferError(error: unknown): BankOnboardingError | null {
   if (!(error instanceof Error)) {
@@ -44,6 +48,7 @@ export type ExecuteBridgeBankTransferResult = {
   depositMessage: string;
   depositInstructions: Record<string, unknown>;
   status: string;
+  destinationAddress: string;
 };
 
 export type ExecuteBridgeBankTransferOptions = {
@@ -72,7 +77,9 @@ export async function executeBridgeBankTransfer(
   let resolvedCustomer = customer;
 
   if (resolvedCustomer.kycStatus !== 'approved') {
-    const synced = await syncBankCustomerKycFromBridge(resolvedCustomer, { db });
+    const synced = await syncBankCustomerKycFromBridge(resolvedCustomer, {
+      db,
+    });
     resolvedCustomer = synced.customer;
     if (!synced.isApproved) {
       throw new BankOnboardingError(
@@ -84,7 +91,9 @@ export async function executeBridgeBankTransfer(
 
   let customerId = resolvedCustomer.providerCustomerId;
   if (!customerId) {
-    const synced = await syncBankCustomerKycFromBridge(resolvedCustomer, { db });
+    const synced = await syncBankCustomerKycFromBridge(resolvedCustomer, {
+      db,
+    });
     resolvedCustomer = synced.customer;
     customerId = resolvedCustomer.providerCustomerId ?? null;
   }
@@ -129,8 +138,15 @@ export async function executeBridgeBankTransfer(
       paymentRail: created.paymentRail,
       amount: created.amount,
       depositMessage: created.depositMessage,
-      depositInstructions: created.depositInstructions,
+      depositInstructions: enrichBridgeDepositInstructions(
+        created.depositInstructions,
+        {
+          developerFeePercent: created.developerFeePercent,
+          destination: created.destination,
+        },
+      ),
       status: created.status,
+      destinationAddress: created.destination?.address ?? space.address,
     };
   } catch (error) {
     const mapped = mapBridgeTransferError(error);

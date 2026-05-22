@@ -12,7 +12,11 @@ import { findSpaceBySlug } from '../../space/server/queries';
 import { authorizeSpaceBankOnboarding } from './authorize-space-bank-onboarding';
 import { BankOnboardingError } from './errors';
 import { mapBridgeApiError } from './map-bridge-api-error';
-import { insertBankVirtualAccount, updateBankVirtualAccount } from './mutations';
+import {
+  insertBankVirtualAccount,
+  updateBankVirtualAccount,
+} from './mutations';
+import { enrichBridgeDepositInstructions } from './enrich-bridge-deposit-instructions';
 import { mapBankVirtualAccountToPublic } from './map-bank-virtual-account-public';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
@@ -193,8 +197,14 @@ export async function provisionSpaceBankVirtualAccount(
     providerVirtualAccountId: provisioned.providerVirtualAccountId,
     currency: provisioned.currency,
     paymentRail: provisioned.paymentRail,
-    depositInstructions: provisioned.depositInstructions,
-    destinationAddress: space.address,
+    depositInstructions: enrichBridgeDepositInstructions(
+      provisioned.depositInstructions,
+      {
+        developerFeePercent: provisioned.developerFeePercent,
+        destination: provisioned.destination,
+      },
+    ),
+    destinationAddress: provisioned.destination?.address ?? space.address,
     status: provisioned.status,
   };
 

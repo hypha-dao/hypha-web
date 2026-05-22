@@ -93,12 +93,23 @@ export function createBridgeKycProvider(): BankKycProvider {
           ? paymentRails[0]
           : paymentRail);
 
+      const destinationAddress =
+        typeof response.destination?.address === 'string'
+          ? response.destination.address
+          : input.destinationAddress;
+
       return {
         providerVirtualAccountId: response.id,
         currency,
         paymentRail: responseRail,
         depositInstructions: instructions,
         status: response.status,
+        developerFeePercent: response.developer_fee_percent ?? null,
+        destination: {
+          currency: response.destination?.currency ?? 'usdc',
+          paymentRail: response.destination?.payment_rail ?? 'base',
+          address: destinationAddress,
+        },
       };
     },
     async createTransfer(
@@ -152,6 +163,9 @@ export function createBridgeKycProvider(): BankKycProvider {
         response.amount ??
         (typeof instructions.amount === 'string' ? instructions.amount : null);
 
+      const destinationAddress =
+        response.destination?.to_address ?? input.destinationAddress;
+
       return {
         providerTransferId: response.id,
         currency,
@@ -160,6 +174,15 @@ export function createBridgeKycProvider(): BankKycProvider {
         depositMessage,
         depositInstructions: instructions,
         status: response.state,
+        developerFeePercent:
+          typeof response.developer_fee_percent === 'string'
+            ? response.developer_fee_percent
+            : null,
+        destination: {
+          currency: response.destination?.currency ?? 'usdc',
+          paymentRail: response.destination?.payment_rail ?? 'base',
+          address: destinationAddress,
+        },
       };
     },
   };

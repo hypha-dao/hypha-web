@@ -26,6 +26,8 @@ const space = { id: 1 };
 
 const pendingCustomer = {
   id: 10,
+  name: 'Hypha Test DAO',
+  contactEmail: 'treasury@example.com',
   kycStatus: 'pending',
   tosStatus: 'pending',
   kycLink: 'https://bridge.example/kyc',

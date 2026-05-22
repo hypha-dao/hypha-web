@@ -8,7 +8,9 @@ import {
   getBankCurrencyMeta,
   type BankCurrencyCode,
 } from '../bank-currency-display';
+import { getPrimaryDepositIdentifier } from '../deposit-instruction-display';
 import type { BankTransferPublic } from '../hooks/types';
+import { InlineCopyRow } from './inline-copy-row';
 import { CurrencyFlagBadge } from './currency-flag-badge';
 
 type BankTransferCardProps = {
@@ -59,6 +61,7 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
   isActivating = false,
 }) => {
   const t = useTranslations('BankingTab');
+  const tFields = useTranslations('BankingTab.depositInstructions');
   const tCurrencies = useTranslations('BankingTab.currencies');
   const tStatus = useTranslations('BankingTab.transferStatus');
   const tOp = useTranslations('BankingTab.operationStatus');
@@ -74,42 +77,49 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
     transfer.lifecycle === 'pending_kyb'
       ? tOp('pendingKyb')
       : transfer.lifecycle === 'pending_activation'
-        ? tOp('pendingActivation')
-        : bridgeStatuses.includes(
-              transfer.status as (typeof bridgeStatuses)[number],
-            )
-          ? tStatus(transfer.status as (typeof bridgeStatuses)[number])
-          : transfer.status;
+      ? tOp('pendingActivation')
+      : bridgeStatuses.includes(
+          transfer.status as (typeof bridgeStatuses)[number],
+        )
+      ? tStatus(transfer.status as (typeof bridgeStatuses)[number])
+      : transfer.status;
 
   const amountLabel = transfer.amount
     ? `${transfer.amount} ${transfer.currency.toUpperCase()}`
     : t('transferCard.flexibleAmount');
 
-  const hint =
-    transfer.lifecycle === 'pending_kyb'
-      ? tOp('pendingKybHint')
-      : transfer.lifecycle === 'pending_activation'
-        ? tOp('pendingActivationHint')
-        : t('transferCard.shareHint');
-
   const isPendingKyb = transfer.lifecycle === 'pending_kyb';
-  const openGearFromCard =
+  const handleCardClick =
     isPendingKyb && onOpenVerificationDetails
-      ? () => onOpenVerificationDetails()
+      ? onOpenVerificationDetails
+      : !isPendingKyb
+      ? onViewDetails
       : undefined;
+
+  const primaryIdentifier =
+    transfer.lifecycle === 'active'
+      ? getPrimaryDepositIdentifier(
+          transfer.paymentRail,
+          transfer.depositInstructions,
+        )
+      : null;
 
   return (
     <Card
-      className={`flex h-full flex-col gap-4 p-5${openGearFromCard ? ' cursor-pointer transition-colors hover:bg-background-2/50' : ''}`}
-      role={openGearFromCard ? 'button' : undefined}
-      tabIndex={openGearFromCard ? 0 : undefined}
-      onClick={openGearFromCard}
+      className={`flex h-full flex-col gap-3 p-5${
+        handleCardClick
+          ? ' cursor-pointer transition-colors hover:bg-background-2/50'
+          : ''
+      }`}
+      role={handleCardClick ? 'button' : undefined}
+      tabIndex={handleCardClick ? 0 : undefined}
+      onClick={handleCardClick}
       onKeyDown={
-        openGearFromCard
+        handleCardClick
           ? (event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                openGearFromCard();
+                handleCardClick();
               }
             }
           : undefined
@@ -126,13 +136,26 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
           <p className="mt-0.5 text-2 text-muted-foreground">{amountLabel}</p>
         </div>
         <span
-          className={`rounded-full px-2 py-0.5 text-1 font-medium ${getTransferStatusBadgeClass(transfer.lifecycle, transfer.status)}`}
+          className={`rounded-full px-2 py-0.5 text-1 font-medium ${getTransferStatusBadgeClass(
+            transfer.lifecycle,
+            transfer.status,
+          )}`}
         >
           {statusLabel}
         </span>
       </div>
-      <p className="flex-1 text-2 text-muted-foreground">{hint}</p>
-      <div className="flex flex-col gap-2">
+
+      {primaryIdentifier ? (
+        <InlineCopyRow
+          className="flex-1"
+          label={tFields(primaryIdentifier.labelKey)}
+          value={primaryIdentifier.value}
+        />
+      ) : (
+        <div className="flex-1" />
+      )}
+
+      <div className="flex flex-col gap-1.5">
         {isPendingKyb ? (
           <p className="text-1 text-muted-foreground">
             {tOp('openGearForVerification')}
@@ -143,7 +166,7 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
             type="button"
             colorVariant="accent"
             size="sm"
-            className="w-fit"
+            className="h-7 min-h-7 w-fit px-3 py-0 text-xs"
             disabled={isActivating}
             onClick={(event) => {
               event.stopPropagation();

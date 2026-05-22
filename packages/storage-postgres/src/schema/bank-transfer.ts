@@ -1,11 +1,5 @@
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import {
-  integer,
-  jsonb,
-  pgTable,
-  serial,
-  text,
-} from 'drizzle-orm/pg-core';
+import { integer, jsonb, pgTable, serial, text } from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
 import { bankCustomers } from './bank-customer';
 

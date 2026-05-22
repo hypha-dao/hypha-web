@@ -29,48 +29,49 @@ export const useSyncBanking = ({
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const syncBanking = React.useCallback(async (): Promise<SyncBankingResult> => {
-    setIsSyncing(true);
-    setError(null);
+  const syncBanking =
+    React.useCallback(async (): Promise<SyncBankingResult> => {
+      setIsSyncing(true);
+      setError(null);
 
-    try {
-      const token = await getAccessToken();
-      if (!token) {
-        throw new Error('Unauthorized');
-      }
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          throw new Error('Unauthorized');
+        }
 
-      const endpoint = getSyncBankingEndpoint(spaceSlug);
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        const endpoint = getSyncBankingEndpoint(spaceSlug);
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      const body = (await res.json().catch(() => ({}))) as
-        | SyncBankingResult
-        | { error?: string };
+        const body = (await res.json().catch(() => ({}))) as
+          | SyncBankingResult
+          | { error?: string };
 
-      if (!res.ok) {
+        if (!res.ok) {
+          const message =
+            typeof body === 'object' && body && 'error' in body && body.error
+              ? String(body.error)
+              : `Request failed (${res.status})`;
+          throw new Error(message);
+        }
+
+        const result = body as SyncBankingResult;
+        await mutate([getTransfersEndpoint(spaceSlug), 'transfers']);
+        return result;
+      } catch (err) {
         const message =
-          typeof body === 'object' && body && 'error' in body && body.error
-            ? String(body.error)
-            : `Request failed (${res.status})`;
-        throw new Error(message);
+          err instanceof Error ? err.message : 'Failed to sync banking status';
+        setError(message);
+        throw err;
+      } finally {
+        setIsSyncing(false);
       }
-
-      const result = body as SyncBankingResult;
-      await mutate([getTransfersEndpoint(spaceSlug), 'transfers']);
-      return result;
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to sync banking status';
-      setError(message);
-      throw err;
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [getAccessToken, mutate, spaceSlug]);
+    }, [getAccessToken, mutate, spaceSlug]);
 
   return {
     syncBanking,

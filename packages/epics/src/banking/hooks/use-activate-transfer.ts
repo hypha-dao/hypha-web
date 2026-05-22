@@ -59,5 +59,10 @@ export const useActivateTransfer = ({
     [getAccessToken, mutate, spaceSlug],
   );
 
-  return { activateTransfer, isActivating, error, clearError: () => setError(null) };
+  return {
+    activateTransfer,
+    isActivating,
+    error,
+    clearError: () => setError(null),
+  };
 };

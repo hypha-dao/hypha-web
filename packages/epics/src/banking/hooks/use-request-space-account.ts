@@ -59,7 +59,10 @@ export const useRequestSpaceAccount = ({
               : `Request failed (${res.status})`,
           );
         }
-        await mutate([getVirtualAccountsEndpoint(spaceSlug), 'virtual-accounts']);
+        await mutate([
+          getVirtualAccountsEndpoint(spaceSlug),
+          'virtual-accounts',
+        ]);
         return body as BankVirtualAccountPublic[];
       } catch (err) {
         const message =

@@ -35,6 +35,12 @@ export type BridgeCreateVirtualAccountRequest = {
 export type BridgeCreateVirtualAccountResponse = {
   id: string;
   status: string;
+  developer_fee_percent?: string;
+  destination?: {
+    currency?: string;
+    payment_rail?: string;
+    address?: string;
+  };
   /** Legacy/alternate shape; sandbox often omits this. */
   source?: { currency?: string; payment_rail?: string };
   source_deposit_instructions: Record<string, unknown>;
@@ -87,6 +93,7 @@ export type BridgeCreateTransferRequest = {
 export type BridgeTransferResponse = {
   id: string;
   state: string;
+  developer_fee_percent?: string;
   on_behalf_of?: string;
   amount?: string | null;
   source?: { payment_rail?: string; currency?: string };
@@ -392,7 +399,9 @@ function isBridgeSimulateKycApprovalRecord(
   );
 }
 
-function isBridgeTransferRecord(value: unknown): value is BridgeTransferResponse {
+function isBridgeTransferRecord(
+  value: unknown,
+): value is BridgeTransferResponse {
   if (typeof value !== 'object' || value === null) {
     return false;
   }

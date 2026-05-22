@@ -22,6 +22,8 @@ export type BankVerificationProcedurePublic = {
 };
 
 export type BankCustomerPublicStatus = {
+  name: string;
+  contactEmail: string;
   kycStatus: string;
   tosStatus: string | null;
   kycLink: string | null;
@@ -73,6 +75,7 @@ export type BankVirtualAccountPublic = {
   currency: string;
   paymentRail: string;
   depositInstructions: Record<string, unknown>;
+  destinationAddress: string;
   status: string;
   lifecycle: BankOperationLifecycle;
   canActivate: boolean;
@@ -91,6 +94,7 @@ export type BankTransferPublic = {
   depositMessage: string | null;
   status: string;
   depositInstructions: Record<string, unknown>;
+  destinationAddress: string;
   createdAt: string;
   lifecycle: BankOperationLifecycle;
   canActivate: boolean;
