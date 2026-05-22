@@ -19,6 +19,16 @@ import {
 } from 'lucide-react';
 import { CallHangUpIcon } from './call-hang-up-icon';
 import { useTranslations } from 'next-intl';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
   getCallControlsPhase,
@@ -95,6 +105,9 @@ export function HumanChatPanelInCallControls({
   const audioMenuRef = useRef<HTMLDivElement | null>(null);
   const [isCaptureMenuOpen, setIsCaptureMenuOpen] = useState(false);
   const captureMenuRef = useRef<HTMLDivElement | null>(null);
+  const [stopConfirmStep, setStopConfirmStep] = useState<
+    'none' | 'recording' | 'transcript'
+  >('none');
   const isFull = variant === 'fullView';
   const isCenteredInBanner = !isFull && inBannerLayout === 'centered';
   /**
@@ -148,11 +161,16 @@ export function HumanChatPanelInCallControls({
       ? t('callCaptureStatusError')
       : t('callCaptureStatusIdle');
   const captureIconClass = isFull ? fullViewIcon : 'h-4 w-4';
-  const captureRecordingIconClass = cn(
+  const captureIdleIconClass = cn(
     captureIconClass,
-    isFull ? 'text-rose-400 stroke-rose-400' : 'text-rose-600 stroke-rose-600',
+    isFull
+      ? 'fill-none stroke-white/80 text-white/80'
+      : 'fill-none stroke-muted-foreground text-muted-foreground',
   );
-  const captureActive = captureMode !== 'none';
+  const captureActive =
+    recordingStatus === 'recording' ||
+    recordingStatus === 'paused' ||
+    recordingStatus === 'uploading';
   const leaveOnly = controlsMode === 'leave_only';
 
   useEffect(() => {
@@ -191,29 +209,29 @@ export function HumanChatPanelInCallControls({
   const selectCapturePreference = (
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
   ) => {
-    onCapturePreferenceChange(mode);
     if (!captureActive) {
       onStartCapture(mode);
     }
     setIsCaptureMenuOpen(false);
   };
   const captureStopLabel = t('callCaptureStop');
-  const confirmStopCapture = () => {
-    if (typeof window === 'undefined') return true;
+  const requestStopCapture = () => {
+    setIsCaptureMenuOpen(false);
     if (captureMode === 'recording_with_transcript') {
-      const confirmedRecordingStop = window.confirm(
-        t('callCaptureConfirmStopRecording'),
-      );
-      if (!confirmedRecordingStop) return false;
+      setStopConfirmStep('recording');
+      return;
     }
-    return window.confirm(t('callCaptureConfirmStopTranscript'));
+    setStopConfirmStep('transcript');
   };
-  const captureModeLabel =
-    capturePreference === 'transcript_only'
+  const confirmStopCapture = () => {
+    setStopConfirmStep('none');
+    onStopCapture();
+  };
+  const captureModeLabel = captureActive
+    ? captureMode === 'transcript_only'
       ? t('callCaptureModeTranscriptOnly')
-      : capturePreference === 'recording_with_transcript'
-      ? t('callCaptureModeRecordingWithTranscript')
-      : t('callCaptureModeRecordingWithTranscript');
+      : t('callCaptureModeRecordingWithTranscript')
+    : t('callCaptureStatusIdle');
 
   const renderAudioSettingsMenu = (
     <div className="relative" ref={audioMenuRef}>
@@ -288,6 +306,7 @@ export function HumanChatPanelInCallControls({
       <button
         type="button"
         className={audioSettingsBtn}
+        disabled={controlsDisabled}
         title={`${t(
           'callCaptureLabel',
         )}: ${captureModeLabel} - ${captureStatusText}`}
@@ -297,16 +316,30 @@ export function HumanChatPanelInCallControls({
         onClick={() => setIsCaptureMenuOpen((open) => !open)}
       >
         {captureActive ? (
-          <Circle
+          <span
             className={cn(
-              captureIconClass,
-              isFull
-                ? 'fill-rose-400 text-rose-400 stroke-rose-400'
-                : 'fill-rose-600 text-rose-600 stroke-rose-600',
+              'relative inline-flex items-center justify-center',
+              isFull ? 'h-5 w-5' : 'h-4 w-4',
             )}
-          />
+            aria-hidden
+          >
+            <Circle
+              className={cn(
+                'fill-none',
+                isFull
+                  ? 'h-5 w-5 stroke-rose-400 text-rose-400'
+                  : 'h-4 w-4 stroke-rose-600 text-rose-600',
+              )}
+            />
+            <span
+              className={cn(
+                'absolute rounded-full',
+                isFull ? 'h-2.5 w-2.5 bg-rose-400' : 'h-2 w-2 bg-rose-600',
+              )}
+            />
+          </span>
         ) : (
-          <Circle className={captureRecordingIconClass} />
+          <Circle className={captureIdleIconClass} />
         )}
         <ChevronDown
           className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
@@ -353,11 +386,7 @@ export function HumanChatPanelInCallControls({
               <button
                 type="button"
                 role="menuitem"
-                onClick={() => {
-                  if (!confirmStopCapture()) return;
-                  onStopCapture();
-                  setIsCaptureMenuOpen(false);
-                }}
+                onClick={requestStopCapture}
                 className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
               >
                 <span className="inline-flex items-center gap-2 text-rose-500">
@@ -415,7 +444,71 @@ export function HumanChatPanelInCallControls({
     </div>
   );
   return (
-    <div role="group" aria-label={t('callToolbarLabel')}>
+    <>
+      <AlertDialog
+        open={stopConfirmStep === 'recording'}
+        onOpenChange={(open) => {
+          if (!open) setStopConfirmStep('none');
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('callCaptureConfirmStopRecordingTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('callCaptureConfirmStopRecording')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline" colorVariant="neutral">
+                {t('callCaptureConfirmCancel')}
+              </Button>
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              onClick={() => setStopConfirmStep('transcript')}
+            >
+              {t('callCaptureConfirmStopRecordingAction')}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={stopConfirmStep === 'transcript'}
+        onOpenChange={(open) => {
+          if (!open) setStopConfirmStep('none');
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('callCaptureConfirmStopTranscriptTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('callCaptureConfirmStopTranscript')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline" colorVariant="neutral">
+                {t('callCaptureConfirmCancel')}
+              </Button>
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              colorVariant="accent"
+              onClick={confirmStopCapture}
+            >
+              {t('callCaptureConfirmStopTranscriptAction')}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <div role="group" aria-label={t('callToolbarLabel')}>
       <div
         className={cn(
           useSideAudioSettings
@@ -554,6 +647,7 @@ export function HumanChatPanelInCallControls({
           {recordingError}
         </p>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 }
