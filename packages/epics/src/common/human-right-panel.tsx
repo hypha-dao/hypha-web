@@ -969,6 +969,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     screenshareErrorCode: spaceCallScreenshareError,
     captureMode: spaceCallCaptureMode,
     capturePreference: spaceCallCapturePreference,
+    capturePreferenceSelected: spaceCallCapturePreferenceSelected,
     setCapturePreference: setSpaceCallCapturePreference,
     startCapture: startSpaceCallCapture,
     pauseCapture: pauseSpaceCallCapture,
@@ -3248,6 +3249,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               }
               captureMode={spaceCallCaptureMode}
               capturePreference={spaceCallCapturePreference}
+              capturePreferenceSelected={spaceCallCapturePreferenceSelected}
               onCapturePreferenceChange={setSpaceCallCapturePreference}
               onStartCapture={startSpaceCallCapture}
               onPauseCapture={pauseSpaceCallCapture}
@@ -3259,6 +3261,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onAcknowledgeRemoteCaptureNotice={
                 acknowledgeSpaceCallRemoteCaptureNotice
               }
+              controlsMode="leave_only"
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
               onRetryCall={handleRetrySpaceCall}
               onDismissCallError={dismissSpaceCallError}

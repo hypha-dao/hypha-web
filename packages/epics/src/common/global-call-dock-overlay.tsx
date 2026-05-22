@@ -195,6 +195,7 @@ export function GlobalCallDockOverlay() {
     setVoiceProcessingPreset,
     captureMode,
     capturePreference,
+    capturePreferenceSelected,
     setCapturePreference,
     startCapture,
     pauseCapture,
@@ -535,8 +536,10 @@ export function GlobalCallDockOverlay() {
   ) => {
     setCapturePreference(mode);
   };
-  const onStartCapture = () => {
-    startCapture();
+  const onStartCaptureWithMode = (
+    mode?: Exclude<SpaceGroupCallCaptureMode, 'none'>,
+  ) => {
+    startCapture(mode);
   };
   const onPauseCapture = () => {
     pauseCapture();
@@ -719,8 +722,9 @@ export function GlobalCallDockOverlay() {
             onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
             captureMode={captureMode}
             capturePreference={capturePreference}
+            capturePreferenceSelected={capturePreferenceSelected}
             onCapturePreferenceChange={onCapturePreferenceChange}
-            onStartCapture={onStartCapture}
+            onStartCapture={onStartCaptureWithMode}
             onPauseCapture={onPauseCapture}
             onResumeCapture={onResumeCapture}
             onStopCapture={onStopCapture}
@@ -745,8 +749,9 @@ export function GlobalCallDockOverlay() {
             onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
             captureMode={captureMode}
             capturePreference={capturePreference}
+            capturePreferenceSelected={capturePreferenceSelected}
             onCapturePreferenceChange={onCapturePreferenceChange}
-            onStartCapture={onStartCapture}
+            onStartCapture={onStartCaptureWithMode}
             onPauseCapture={onPauseCapture}
             onResumeCapture={onResumeCapture}
             onStopCapture={onStopCapture}

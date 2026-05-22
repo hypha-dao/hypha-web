@@ -40,10 +40,11 @@ type HumanChatPanelCallBannerProps = {
   ) => void;
   captureMode: SpaceGroupCallCaptureMode;
   capturePreference: Exclude<SpaceGroupCallCaptureMode, 'none'>;
+  capturePreferenceSelected: boolean;
   onCapturePreferenceChange: (
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
   ) => void;
-  onStartCapture: () => void;
+  onStartCapture: (mode?: Exclude<SpaceGroupCallCaptureMode, 'none'>) => void;
   onPauseCapture: () => void;
   onResumeCapture: () => void;
   onStopCapture: () => void;
@@ -58,6 +59,7 @@ type HumanChatPanelCallBannerProps = {
   /** Reconnect after a recoverable call error. */
   onRetryCall: () => void;
   onDismissCallError: () => void;
+  controlsMode?: 'full' | 'leave_only';
 };
 
 function errorKey(code: SpaceGroupCallErrorCode): string {
@@ -106,6 +108,7 @@ export function HumanChatPanelCallBanner({
   onVoiceProcessingPresetChange,
   captureMode,
   capturePreference,
+  capturePreferenceSelected,
   onCapturePreferenceChange,
   onStartCapture,
   onPauseCapture,
@@ -119,6 +122,7 @@ export function HumanChatPanelCallBanner({
   tabBackgroundWhileInCall,
   onRetryCall,
   onDismissCallError,
+  controlsMode = 'full',
 }: HumanChatPanelCallBannerProps) {
   const t = useTranslations('HumanChatPanel');
   const showRetryOnError =
@@ -316,6 +320,7 @@ export function HumanChatPanelCallBanner({
             onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
             captureMode={captureMode}
             capturePreference={capturePreference}
+            capturePreferenceSelected={capturePreferenceSelected}
             onCapturePreferenceChange={onCapturePreferenceChange}
             onStartCapture={onStartCapture}
             onPauseCapture={onPauseCapture}
@@ -325,6 +330,7 @@ export function HumanChatPanelCallBanner({
             recordingError={recordingError}
             onLeave={onLeave}
             variant="inBanner"
+            controlsMode={controlsMode}
           />
         </div>
       </div>

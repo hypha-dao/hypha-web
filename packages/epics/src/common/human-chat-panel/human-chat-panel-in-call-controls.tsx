@@ -41,10 +41,11 @@ type HumanChatPanelInCallControlsProps = {
   ) => void;
   captureMode: SpaceGroupCallCaptureMode;
   capturePreference: Exclude<SpaceGroupCallCaptureMode, 'none'>;
+  capturePreferenceSelected: boolean;
   onCapturePreferenceChange: (
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
   ) => void;
-  onStartCapture: () => void;
+  onStartCapture: (mode?: Exclude<SpaceGroupCallCaptureMode, 'none'>) => void;
   onPauseCapture: () => void;
   onResumeCapture: () => void;
   onStopCapture: () => void;
@@ -55,6 +56,8 @@ type HumanChatPanelInCallControlsProps = {
   variant?: 'inBanner' | 'fullView';
   /** Compact row alignment for dock/banner usage. */
   inBannerLayout?: 'inline' | 'balanced' | 'centered';
+  /** Leave-only mode for in-chat convenience controls. */
+  controlsMode?: 'full' | 'leave_only';
 };
 
 /**
@@ -73,6 +76,7 @@ export function HumanChatPanelInCallControls({
   onVoiceProcessingPresetChange,
   captureMode,
   capturePreference,
+  capturePreferenceSelected,
   onCapturePreferenceChange,
   onStartCapture,
   onPauseCapture,
@@ -83,6 +87,7 @@ export function HumanChatPanelInCallControls({
   onLeave,
   variant = 'inBanner',
   inBannerLayout = 'inline',
+  controlsMode = 'full',
 }: HumanChatPanelInCallControlsProps) {
   const t = useTranslations('HumanChatPanel');
   const { controlsDisabled } = getCallControlsPhase(callState);
@@ -148,6 +153,7 @@ export function HumanChatPanelInCallControls({
     isFull ? 'text-rose-400 stroke-rose-400' : 'text-rose-600 stroke-rose-600',
   );
   const captureActive = captureMode !== 'none';
+  const leaveOnly = controlsMode === 'leave_only';
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
@@ -187,11 +193,21 @@ export function HumanChatPanelInCallControls({
   ) => {
     onCapturePreferenceChange(mode);
     if (!captureActive) {
-      onStartCapture();
+      onStartCapture(mode);
     }
     setIsCaptureMenuOpen(false);
   };
   const captureStopLabel = t('callCaptureStop');
+  const confirmStopCapture = () => {
+    if (typeof window === 'undefined') return true;
+    if (captureMode === 'recording_with_transcript') {
+      const confirmedRecordingStop = window.confirm(
+        t('callCaptureConfirmStopRecording'),
+      );
+      if (!confirmedRecordingStop) return false;
+    }
+    return window.confirm(t('callCaptureConfirmStopTranscript'));
+  };
   const captureModeLabel =
     capturePreference === 'transcript_only'
       ? t('callCaptureModeTranscriptOnly')
@@ -281,9 +297,14 @@ export function HumanChatPanelInCallControls({
         onClick={() => setIsCaptureMenuOpen((open) => !open)}
       >
         {captureActive ? (
-          <Square className={captureIconClass} />
-        ) : capturePreference === 'transcript_only' ? (
-          <FileText className={captureIconClass} />
+          <Circle
+            className={cn(
+              captureIconClass,
+              isFull
+                ? 'fill-rose-400 text-rose-400 stroke-rose-400'
+                : 'fill-rose-600 text-rose-600 stroke-rose-600',
+            )}
+          />
         ) : (
           <Circle className={captureRecordingIconClass} />
         )}
@@ -304,80 +325,95 @@ export function HumanChatPanelInCallControls({
           </p>
           <div className="-mx-0 my-1 h-px bg-neutral-6" />
           {captureActive ? (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                onStopCapture();
-                setIsCaptureMenuOpen(false);
-              }}
-              className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Square className="h-4 w-4" />
-                {captureStopLabel}
-              </span>
-            </button>
-          ) : null}
-          <button
-            type="button"
-            role="menuitemradio"
-            aria-checked={capturePreference === 'transcript_only'}
-            onClick={() => selectCapturePreference('transcript_only')}
-            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
-          >
-            <span className="inline-flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              {t('callCaptureModeTranscriptOnly')}
-            </span>
-            {capturePreference === 'transcript_only' ? (
-              <Check className={menuCheckIcon} />
-            ) : null}
-          </button>
-          <button
-            type="button"
-            role="menuitemradio"
-            aria-checked={capturePreference === 'recording_with_transcript'}
-            onClick={() => selectCapturePreference('recording_with_transcript')}
-            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
-          >
-            <span className="inline-flex items-center gap-2">
-              <Circle className="h-4 w-4 text-rose-600 stroke-rose-600" />
-              {t('callCaptureModeRecordingWithTranscript')}
-            </span>
-            {capturePreference === 'recording_with_transcript' ? (
-              <Check className={menuCheckIcon} />
-            ) : null}
-          </button>
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  if (recordingStatus === 'paused') {
+                    onResumeCapture();
+                  } else {
+                    onPauseCapture();
+                  }
+                  setIsCaptureMenuOpen(false);
+                }}
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+              >
+                <span className="inline-flex items-center gap-2">
+                  {recordingStatus === 'paused' ? (
+                    <Play className="h-4 w-4" />
+                  ) : (
+                    <Pause className="h-4 w-4" />
+                  )}
+                  {recordingStatus === 'paused'
+                    ? t('callCaptureResume')
+                    : t('callCapturePause')}
+                </span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  if (!confirmStopCapture()) return;
+                  onStopCapture();
+                  setIsCaptureMenuOpen(false);
+                }}
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+              >
+                <span className="inline-flex items-center gap-2 text-rose-500">
+                  <Square className="h-4 w-4 fill-current" />
+                  {captureStopLabel}
+                </span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={
+                  capturePreferenceSelected &&
+                  capturePreference === 'transcript_only'
+                }
+                onClick={() => selectCapturePreference('transcript_only')}
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  {t('callCaptureModeTranscriptOnly')}
+                </span>
+                {capturePreferenceSelected &&
+                capturePreference === 'transcript_only' ? (
+                  <Check className={menuCheckIcon} />
+                ) : null}
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={
+                  capturePreferenceSelected &&
+                  capturePreference === 'recording_with_transcript'
+                }
+                onClick={() =>
+                  selectCapturePreference('recording_with_transcript')
+                }
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Circle className="h-4 w-4 text-rose-600 stroke-rose-600" />
+                  {t('callCaptureModeRecordingWithTranscript')}
+                </span>
+                {capturePreferenceSelected &&
+                capturePreference === 'recording_with_transcript' ? (
+                  <Check className={menuCheckIcon} />
+                ) : null}
+              </button>
+            </>
+          )}
         </div>
       ) : null}
     </div>
   );
-  const renderCapturePauseResume = captureActive ? (
-    <button
-      type="button"
-      onClick={recordingStatus === 'paused' ? onResumeCapture : onPauseCapture}
-      disabled={controlsDisabled || recordingStatus === 'uploading'}
-      className={neutralBtn}
-      title={
-        recordingStatus === 'paused'
-          ? t('callCaptureResume')
-          : t('callCapturePause')
-      }
-      aria-label={
-        recordingStatus === 'paused'
-          ? t('callCaptureResume')
-          : t('callCapturePause')
-      }
-    >
-      {recordingStatus === 'paused' ? (
-        <Play className={icon} />
-      ) : (
-        <Pause className={icon} />
-      )}
-    </button>
-  ) : null;
-
   return (
     <div role="group" aria-label={t('callToolbarLabel')}>
       <div
@@ -395,96 +431,100 @@ export function HumanChatPanelInCallControls({
             useSideAudioSettings ? 'justify-center' : 'justify-start',
           )}
         >
-          <button
-            type="button"
-            onClick={onToggleMic}
-            disabled={controlsDisabled}
-            className={cn(
-              isFull
-                ? isMicrophoneMuted
-                  ? micMutedBtn
-                  : baseBtn
-                : isMicrophoneMuted
-                ? micMutedBtn
-                : neutralBtn,
-              (isFull || isMicrophoneMuted) &&
-                'inline-flex items-center justify-center',
-              'disabled:cursor-not-allowed',
-              !isFull && controlsDisabled && 'opacity-50',
-            )}
-            title={t('callControlsMicrophone')}
-            aria-label={
-              isMicrophoneMuted
-                ? t('callControlsMicrophoneMutedAria')
-                : t('callControlsMicrophoneUnmutedAria')
-            }
-          >
-            {isMicrophoneMuted ? (
-              <MicOff className={icon} />
-            ) : (
-              <Mic className={icon} />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={onToggleCamera}
-            disabled={controlsDisabled}
-            className={cn(
-              isFull
-                ? isLocalVideoMuted
-                  ? camOffBtn
-                  : baseBtn
-                : isLocalVideoMuted
-                ? camOffBtn
-                : neutralBtn,
-              (isFull || isLocalVideoMuted) &&
-                'inline-flex items-center justify-center',
-              'disabled:cursor-not-allowed',
-              !isFull && controlsDisabled && 'opacity-50',
-            )}
-            title={t('callControlsCamera')}
-            aria-label={
-              isLocalVideoMuted
-                ? t('callControlsCameraOffAria')
-                : t('callControlsCameraOnAria')
-            }
-          >
-            {isLocalVideoMuted ? (
-              <VideoOff className={icon} />
-            ) : (
-              <Video className={icon} />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={onToggleScreenshare}
-            disabled={controlsDisabled}
-            className={cn(
-              isFull
-                ? isScreensharing
-                  ? shareActiveBtn
-                  : baseBtn
-                : isScreensharing
-                ? shareActiveBtn
-                : neutralBtn,
-              (isFull || isScreensharing) &&
-                'inline-flex items-center justify-center',
-              'disabled:cursor-not-allowed',
-              !isFull && controlsDisabled && 'opacity-50',
-            )}
-            title={t('callControlsScreenshare')}
-            aria-label={
-              isScreensharing
-                ? t('callControlsScreenshareActiveAria')
-                : t('callControlsScreenshareInactiveAria')
-            }
-          >
-            {isScreensharing ? (
-              <MonitorOff className={icon} />
-            ) : (
-              <Monitor className={icon} />
-            )}
-          </button>
+          {!leaveOnly ? (
+            <>
+              <button
+                type="button"
+                onClick={onToggleMic}
+                disabled={controlsDisabled}
+                className={cn(
+                  isFull
+                    ? isMicrophoneMuted
+                      ? micMutedBtn
+                      : baseBtn
+                    : isMicrophoneMuted
+                    ? micMutedBtn
+                    : neutralBtn,
+                  (isFull || isMicrophoneMuted) &&
+                    'inline-flex items-center justify-center',
+                  'disabled:cursor-not-allowed',
+                  !isFull && controlsDisabled && 'opacity-50',
+                )}
+                title={t('callControlsMicrophone')}
+                aria-label={
+                  isMicrophoneMuted
+                    ? t('callControlsMicrophoneMutedAria')
+                    : t('callControlsMicrophoneUnmutedAria')
+                }
+              >
+                {isMicrophoneMuted ? (
+                  <MicOff className={icon} />
+                ) : (
+                  <Mic className={icon} />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={onToggleCamera}
+                disabled={controlsDisabled}
+                className={cn(
+                  isFull
+                    ? isLocalVideoMuted
+                      ? camOffBtn
+                      : baseBtn
+                    : isLocalVideoMuted
+                    ? camOffBtn
+                    : neutralBtn,
+                  (isFull || isLocalVideoMuted) &&
+                    'inline-flex items-center justify-center',
+                  'disabled:cursor-not-allowed',
+                  !isFull && controlsDisabled && 'opacity-50',
+                )}
+                title={t('callControlsCamera')}
+                aria-label={
+                  isLocalVideoMuted
+                    ? t('callControlsCameraOffAria')
+                    : t('callControlsCameraOnAria')
+                }
+              >
+                {isLocalVideoMuted ? (
+                  <VideoOff className={icon} />
+                ) : (
+                  <Video className={icon} />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={onToggleScreenshare}
+                disabled={controlsDisabled}
+                className={cn(
+                  isFull
+                    ? isScreensharing
+                      ? shareActiveBtn
+                      : baseBtn
+                    : isScreensharing
+                    ? shareActiveBtn
+                    : neutralBtn,
+                  (isFull || isScreensharing) &&
+                    'inline-flex items-center justify-center',
+                  'disabled:cursor-not-allowed',
+                  !isFull && controlsDisabled && 'opacity-50',
+                )}
+                title={t('callControlsScreenshare')}
+                aria-label={
+                  isScreensharing
+                    ? t('callControlsScreenshareActiveAria')
+                    : t('callControlsScreenshareInactiveAria')
+                }
+              >
+                {isScreensharing ? (
+                  <MonitorOff className={icon} />
+                ) : (
+                  <Monitor className={icon} />
+                )}
+              </button>
+            </>
+          ) : null}
           <button
             type="button"
             onClick={onLeave}
@@ -499,13 +539,11 @@ export function HumanChatPanelInCallControls({
           >
             <CallHangUpIcon className={leaveIcon} />
           </button>
-          {!useSideAudioSettings ? renderCapturePauseResume : null}
-          {!useSideAudioSettings ? renderCaptureMenu : null}
-          {!useSideAudioSettings ? renderAudioSettingsMenu : null}
+          {!leaveOnly && !useSideAudioSettings ? renderCaptureMenu : null}
+          {!leaveOnly && !useSideAudioSettings ? renderAudioSettingsMenu : null}
         </div>
-        {useSideAudioSettings ? (
+        {useSideAudioSettings && !leaveOnly ? (
           <div className="justify-self-end flex items-center gap-2">
-            {renderCapturePauseResume}
             {renderCaptureMenu}
             {renderAudioSettingsMenu}
           </div>
