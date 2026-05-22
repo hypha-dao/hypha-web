@@ -39,9 +39,21 @@ type HumanChatPanelCallBannerProps = {
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
   captureMode: SpaceGroupCallCaptureMode;
-  onCaptureModeChange: (mode: SpaceGroupCallCaptureMode) => void;
+  capturePreference: Exclude<SpaceGroupCallCaptureMode, 'none'>;
+  onCapturePreferenceChange: (
+    mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
+  ) => void;
+  onStartCapture: () => void;
+  onPauseCapture: () => void;
+  onResumeCapture: () => void;
+  onStopCapture: () => void;
   recordingStatus: SpaceGroupCallRecordingStatus;
   recordingError: string | null;
+  remoteCaptureNotice: {
+    actor: string;
+    mode: Exclude<SpaceGroupCallCaptureMode, 'none'>;
+  } | null;
+  onAcknowledgeRemoteCaptureNotice: () => void;
   onDismissScreenshareError: () => void;
   /** Reconnect after a recoverable call error. */
   onRetryCall: () => void;
@@ -93,9 +105,16 @@ export function HumanChatPanelCallBanner({
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
   captureMode,
-  onCaptureModeChange,
+  capturePreference,
+  onCapturePreferenceChange,
+  onStartCapture,
+  onPauseCapture,
+  onResumeCapture,
+  onStopCapture,
   recordingStatus,
   recordingError,
+  remoteCaptureNotice,
+  onAcknowledgeRemoteCaptureNotice,
   onDismissScreenshareError,
   tabBackgroundWhileInCall,
   onRetryCall,
@@ -218,6 +237,24 @@ export function HumanChatPanelCallBanner({
           </button>
         </div>
       )}
+      {remoteCaptureNotice && callState === 'connected' && (
+        <div className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/12 px-4 py-1.5">
+          <p className="min-w-0 flex-1 text-xs text-amber-950 dark:text-amber-100">
+            {remoteCaptureNotice.actor} is recording this call (
+            {remoteCaptureNotice.mode === 'transcript_only'
+              ? t('callCaptureModeTranscriptOnly')
+              : t('callCaptureModeRecordingWithTranscript')}
+            ).
+          </p>
+          <button
+            type="button"
+            onClick={onAcknowledgeRemoteCaptureNotice}
+            className="shrink-0 text-xs font-medium text-amber-900 underline-offset-2 hover:underline dark:text-amber-50"
+          >
+            Got it
+          </button>
+        </div>
+      )}
       <div className="flex min-h-[44px] flex-wrap items-center gap-2 px-4 py-2">
         <div className="min-w-0 flex-1 basis-0 pr-1 sm:pr-2">
           {callState === 'connected' ? (
@@ -278,7 +315,12 @@ export function HumanChatPanelCallBanner({
             voiceProcessingPreset={voiceProcessingPreset}
             onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
             captureMode={captureMode}
-            onCaptureModeChange={onCaptureModeChange}
+            capturePreference={capturePreference}
+            onCapturePreferenceChange={onCapturePreferenceChange}
+            onStartCapture={onStartCapture}
+            onPauseCapture={onPauseCapture}
+            onResumeCapture={onResumeCapture}
+            onStopCapture={onStopCapture}
             recordingStatus={recordingStatus}
             recordingError={recordingError}
             onLeave={onLeave}

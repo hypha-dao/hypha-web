@@ -34,6 +34,14 @@ import {
 } from '../matrix-webrtc-env';
 import { createHyphaMatrixClientLogger } from '../matrix-client-logger';
 
+const CALL_CAPTURE_NOTICE_MSGTYPE = 'io.hypha.call_capture_notice.v1';
+
+function isCallCaptureNoticeEvent(event: MatrixSdk.MatrixEvent): boolean {
+  if (event.getType() !== MatrixSdk.EventType.RoomMessage) return false;
+  const content = event.getContent() as { msgtype?: string };
+  return content.msgtype === CALL_CAPTURE_NOTICE_MSGTYPE;
+}
+
 export interface SendAttachmentInput {
   file: File;
   /** Drives Matrix `msgtype`: `m.image` vs `m.file` vs `m.audio`. */
@@ -289,7 +297,10 @@ function isMatrixUnknownTokenError(err: unknown): boolean {
     message?: string;
     data?: { errcode?: string; soft_logout?: boolean };
   };
-  if (e.errcode === 'M_UNKNOWN_TOKEN' || e.data?.errcode === 'M_UNKNOWN_TOKEN') {
+  if (
+    e.errcode === 'M_UNKNOWN_TOKEN' ||
+    e.data?.errcode === 'M_UNKNOWN_TOKEN'
+  ) {
     return true;
   }
   if (e.httpStatus === 401 && e.data?.soft_logout === true) return true;
@@ -579,7 +590,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       try {
         const refreshed = await refreshMatrixToken();
         const freshToken =
-          refreshed && typeof refreshed === 'object' && 'accessToken' in refreshed
+          refreshed &&
+          typeof refreshed === 'object' &&
+          'accessToken' in refreshed
             ? (refreshed as MatrixTokenData)
             : null;
         if (!freshToken) {
@@ -601,7 +614,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         await initializeMatrixClient(freshToken);
         return true;
       } catch (error) {
-        console.error('[MatrixProvider] Failed to recover Matrix session:', error);
+        console.error(
+          '[MatrixProvider] Failed to recover Matrix session:',
+          error,
+        );
         return false;
       } finally {
         sessionRecoveryPromiseRef.current = null;
@@ -1353,6 +1369,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             .getLiveTimeline()
             .getEvents()
             .filter((event) => event.getType() === EventType.RoomMessage)
+            .filter((event) => !isCallCaptureNoticeEvent(event))
             .filter((event) => !isRedactedRoomMessageEvent(event))
             .filter((event) => event.getId() && event.getSender())
             .filter((event) => getMessageReplaceTargetEventId(event) == null)
@@ -1586,6 +1603,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const room = client.getRoom(roomId);
 
         if (type === EventType.RoomMessage) {
+          if (isCallCaptureNoticeEvent(event)) {
+            return;
+          }
           if (isRedactedRoomMessageEvent(event)) {
             const id = event.getId();
             if (id) {

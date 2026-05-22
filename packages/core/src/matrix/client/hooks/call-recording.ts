@@ -30,17 +30,20 @@ export function startBrowserCallTranscription(options?: {
   if (!SpeechRecognition) {
     return {
       supported: false as const,
+      pause: async () => {},
+      resume: () => {},
       stop: () => '',
     };
   }
 
   const chunks: string[] = [];
   let stopped = false;
+  let paused = false;
   const recognition = new SpeechRecognition();
   recognition.continuous = true;
   recognition.interimResults = false;
   recognition.lang = options?.language?.trim() || 'en-US';
-  recognition.onresult = (event) => {
+  const handleResult = (event: unknown) => {
     try {
       const e = event as {
         resultIndex?: number;
@@ -65,13 +68,43 @@ export function startBrowserCallTranscription(options?: {
       // ignore malformed browser event payloads
     }
   };
+  recognition.onresult = handleResult;
   recognition.onerror = (event) => {
     const message =
       (event as { error?: string })?.error ?? 'speech-recognition-error';
     options?.onError?.(message);
   };
-  recognition.onend = () => {
-    if (stopped) return;
+
+  const stopRecognition = () =>
+    new Promise<void>((resolve) => {
+      let settled = false;
+      const previousOnEnd = recognition.onend;
+      const finalize = () => {
+        if (settled) return;
+        settled = true;
+        if (recognition.onend === onEndWrapper) {
+          recognition.onend = previousOnEnd;
+        }
+        resolve();
+      };
+      const onEndWrapper: NonNullable<
+        SpeechRecognitionInstance['onend']
+      > = () => {
+        previousOnEnd?.();
+        finalize();
+      };
+      recognition.onend = onEndWrapper;
+      try {
+        recognition.stop();
+      } catch {
+        finalize();
+        return;
+      }
+      setTimeout(finalize, 1500);
+    });
+
+  const startRecognition = () => {
+    if (stopped || paused) return;
     try {
       recognition.start();
     } catch {
@@ -79,69 +112,43 @@ export function startBrowserCallTranscription(options?: {
     }
   };
 
+  recognition.onend = () => {
+    if (stopped || paused) return;
+    startRecognition();
+  };
+
   try {
-    recognition.start();
+    startRecognition();
   } catch (error) {
     options?.onError?.(error instanceof Error ? error.message : String(error));
     return {
       supported: false as const,
+      pause: async () => {},
+      resume: () => {},
       stop: () => '',
     };
   }
 
   return {
     supported: true as const,
+    pause: async () => {
+      if (stopped || paused) return;
+      paused = true;
+      await stopRecognition();
+    },
+    resume: () => {
+      if (stopped || !paused) return;
+      paused = false;
+      startRecognition();
+    },
     stop: async () => {
-      await new Promise<void>((resolve) => {
-        let settled = false;
-        const finalize = () => {
-          if (settled) return;
-          settled = true;
-          if (recognition.onresult === onResult) recognition.onresult = null;
-          if (recognition.onend === onEnd) recognition.onend = null;
-          resolve();
-        };
-        const onResult: NonNullable<SpeechRecognitionInstance['onresult']> = (
-          event,
-        ) => {
-          try {
-            const e = event as {
-              resultIndex?: number;
-              results?: ArrayLike<{
-                0?: { transcript?: string };
-                isFinal?: boolean;
-              }>;
-            };
-            const list = e.results;
-            if (!list) return;
-            const start =
-              typeof e.resultIndex === 'number' && e.resultIndex >= 0
-                ? e.resultIndex
-                : 0;
-            for (let i = start; i < list.length; i += 1) {
-              const result = list[i];
-              if (!result?.isFinal) continue;
-              const transcript = result[0]?.transcript?.trim();
-              if (transcript) chunks.push(transcript);
-            }
-          } catch {
-            // ignore malformed browser event payloads
-          }
-        };
-        const onEnd: NonNullable<SpeechRecognitionInstance['onend']> = () => {
-          finalize();
-        };
-        recognition.onresult = onResult;
-        recognition.onend = onEnd;
+      if (!stopped) {
+        paused = false;
         stopped = true;
-        try {
-          recognition.stop();
-        } catch {
-          finalize();
-          return;
-        }
-        setTimeout(finalize, 1500);
-      });
+        await stopRecognition();
+      }
+      recognition.onresult = handleResult;
+      recognition.onend = null;
       return chunks.join(' ').trim();
     },
   };
@@ -249,6 +256,22 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
 
   return {
     mimeType: recorder.mimeType || mimeType || 'video/webm',
+    pause: () => {
+      if (recorder.state !== 'recording') return;
+      try {
+        recorder.pause();
+      } catch {
+        // ignore pause failures; recorder may be mid-transition
+      }
+    },
+    resume: () => {
+      if (recorder.state !== 'paused') return;
+      try {
+        recorder.resume();
+      } catch {
+        // ignore resume failures; recorder may be mid-transition
+      }
+    },
     stop: async () => {
       const buildBlob = () =>
         new Blob(chunks, {

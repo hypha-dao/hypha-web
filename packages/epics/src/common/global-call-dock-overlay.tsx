@@ -9,7 +9,11 @@ import {
   PanelBottomOpen,
   ArrowUpRight,
 } from 'lucide-react';
-import { useMatrix, useMe } from '@hypha-platform/core/client';
+import {
+  useMatrix,
+  useMe,
+  type SpaceGroupCallCaptureMode,
+} from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -190,9 +194,16 @@ export function GlobalCallDockOverlay() {
     voiceProcessingPreset,
     setVoiceProcessingPreset,
     captureMode,
-    setCaptureMode,
+    capturePreference,
+    setCapturePreference,
+    startCapture,
+    pauseCapture,
+    resumeCapture,
+    stopCapture,
     recordingStatus,
     recordingError,
+    remoteCaptureNotice,
+    acknowledgeRemoteCaptureNotice,
     leave,
   } = useGlobalCallDock();
 
@@ -519,8 +530,28 @@ export function GlobalCallDockOverlay() {
   ) => {
     void setVoiceProcessingPreset(preset);
   };
+  const onCapturePreferenceChange = (
+    mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
+  ) => {
+    setCapturePreference(mode);
+  };
+  const onStartCapture = () => {
+    startCapture();
+  };
+  const onPauseCapture = () => {
+    pauseCapture();
+  };
+  const onResumeCapture = () => {
+    resumeCapture();
+  };
+  const onStopCapture = () => {
+    stopCapture();
+  };
   const showDockBanner =
-    errorCode != null || screenshareErrorCode != null || remoteMediaStall;
+    errorCode != null ||
+    screenshareErrorCode != null ||
+    remoteMediaStall ||
+    remoteCaptureNotice != null;
 
   return (
     <div
@@ -687,9 +718,16 @@ export function GlobalCallDockOverlay() {
             voiceProcessingPreset={voiceProcessingPreset}
             onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
             captureMode={captureMode}
-            onCaptureModeChange={setCaptureMode}
+            capturePreference={capturePreference}
+            onCapturePreferenceChange={onCapturePreferenceChange}
+            onStartCapture={onStartCapture}
+            onPauseCapture={onPauseCapture}
+            onResumeCapture={onResumeCapture}
+            onStopCapture={onStopCapture}
             recordingStatus={recordingStatus}
             recordingError={recordingError}
+            remoteCaptureNotice={remoteCaptureNotice}
+            onAcknowledgeRemoteCaptureNotice={acknowledgeRemoteCaptureNotice}
             onDismissScreenshareError={dismissScreenshareError}
             onRetryCall={retryFromError}
             onDismissCallError={dismissCallError}
@@ -706,7 +744,12 @@ export function GlobalCallDockOverlay() {
             voiceProcessingPreset={voiceProcessingPreset}
             onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
             captureMode={captureMode}
-            onCaptureModeChange={setCaptureMode}
+            capturePreference={capturePreference}
+            onCapturePreferenceChange={onCapturePreferenceChange}
+            onStartCapture={onStartCapture}
+            onPauseCapture={onPauseCapture}
+            onResumeCapture={onResumeCapture}
+            onStopCapture={onStopCapture}
             recordingStatus={recordingStatus}
             recordingError={recordingError}
             onLeave={() => {

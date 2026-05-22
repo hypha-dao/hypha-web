@@ -968,9 +968,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     feedVersion: spaceCallFeedVersion,
     screenshareErrorCode: spaceCallScreenshareError,
     captureMode: spaceCallCaptureMode,
-    setCaptureMode: setSpaceCallCaptureMode,
+    capturePreference: spaceCallCapturePreference,
+    setCapturePreference: setSpaceCallCapturePreference,
+    startCapture: startSpaceCallCapture,
+    pauseCapture: pauseSpaceCallCapture,
+    resumeCapture: resumeSpaceCallCapture,
+    stopCapture: stopSpaceCallCapture,
     recordingStatus: spaceCallRecordingStatus,
     recordingError: spaceCallRecordingError,
+    remoteCaptureNotice: spaceCallRemoteCaptureNotice,
+    acknowledgeRemoteCaptureNotice: acknowledgeSpaceCallRemoteCaptureNotice,
     dismissScreenshareError: dismissSpaceCallScreenshareError,
     activeSpeakerKey: spaceCallActiveSpeakerKey,
     setScreensharingEnabled: setSpaceCallScreensharing,
@@ -3068,9 +3075,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const isUnknownTokenError =
         typeof err === 'object' &&
         err !== null &&
-        (((err as { errcode?: string }).errcode === 'M_UNKNOWN_TOKEN' ||
+        ((err as { errcode?: string }).errcode === 'M_UNKNOWN_TOKEN' ||
           (err as { data?: { errcode?: string } }).data?.errcode ===
-            'M_UNKNOWN_TOKEN') ||
+            'M_UNKNOWN_TOKEN' ||
           `${(err as { message?: string }).message ?? ''}`
             .toLowerCase()
             .includes('unknown token'));
@@ -3238,9 +3245,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 handleCallVoiceProcessingPresetChange
               }
               captureMode={spaceCallCaptureMode}
-              onCaptureModeChange={setSpaceCallCaptureMode}
+              capturePreference={spaceCallCapturePreference}
+              onCapturePreferenceChange={setSpaceCallCapturePreference}
+              onStartCapture={startSpaceCallCapture}
+              onPauseCapture={pauseSpaceCallCapture}
+              onResumeCapture={resumeSpaceCallCapture}
+              onStopCapture={stopSpaceCallCapture}
               recordingStatus={spaceCallRecordingStatus}
               recordingError={spaceCallRecordingError}
+              remoteCaptureNotice={spaceCallRemoteCaptureNotice}
+              onAcknowledgeRemoteCaptureNotice={
+                acknowledgeSpaceCallRemoteCaptureNotice
+              }
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
               onRetryCall={handleRetrySpaceCall}
               onDismissCallError={dismissSpaceCallError}
