@@ -210,6 +210,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const pendingSeedAttachmentsRef = useRef<File[]>([]);
   const lastAutoTransitionSpaceSlugRef = useRef<string | null>(null);
   const lastAutoNavigationKeyRef = useRef<string | null>(null);
+  const lastMcpNavigationTargetSpaceSlugRef = useRef<string | null>(null);
   const lastChatSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
   const {
     createSpace: createSpaceWithWalletFlow,
@@ -617,10 +618,16 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     const previousSlug = lastChatSpaceSlugRef.current;
     if (previousSlug === nextSlug) return;
     lastChatSpaceSlugRef.current = nextSlug;
-    // Preserve conversation when navigating across spaces (including AI-driven
-    // navigation). The current space context is still sent per request via
-    // buildMessageOptions/transport body, so context can update without reset.
-  }, [spaceSlug]);
+    const fromMcpNavigation =
+      !!nextSlug && lastMcpNavigationTargetSpaceSlugRef.current === nextSlug;
+    // Keep context for AI-directed space hops, but reset on manual space changes
+    // (space picker / direct nav) to avoid stale answers from prior space history.
+    if (!fromMcpNavigation) {
+      setMessages([]);
+      lastAutoNavigationKeyRef.current = null;
+    }
+    lastMcpNavigationTargetSpaceSlugRef.current = null;
+  }, [setMessages, spaceSlug]);
 
   const buildMessageOptions = useCallback(async () => {
     let token: string | undefined;
@@ -907,6 +914,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       window.open(href, '_blank', 'noopener,noreferrer');
       return;
     }
+    lastMcpNavigationTargetSpaceSlugRef.current =
+      getDhoSpaceSlugFromPathname(href) ?? null;
     // Keep the AI panel expanded when MCP navigation redirects internally.
     // This prevents perceived panel "close" regressions during route changes.
     openAiPanel();
