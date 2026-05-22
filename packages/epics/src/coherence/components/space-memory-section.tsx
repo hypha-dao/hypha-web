@@ -109,13 +109,19 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         `documentStates.${state}` as
           | 'documentStates.discussion'
           | 'documentStates.proposal'
-          | 'documentStates.agreement',
+          | 'documentStates.agreement'
+          | 'documentStates.memory',
       ),
     [t],
   );
 
   const contextLineForItem = React.useCallback(
     (row: SpaceMemoryItem) => {
+      if (row.source === 'memory') {
+        return t('spaceMemoryContextMemory', {
+          title: row.context.documentTitle || t('untitledDocument'),
+        });
+      }
       if (row.source === 'matrix_chat') {
         return t('spaceMemoryContextMatrix');
       }

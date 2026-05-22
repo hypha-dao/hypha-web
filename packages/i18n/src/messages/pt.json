@@ -2317,6 +2317,7 @@
     "spaceMemoryRefresh": "Atualizar",
     "openDocument": "Abrir documento",
     "spaceMemoryContext": "De «{title}» · {state}",
+    "spaceMemoryContextMemory": "Memória · «{title}»",
     "spaceMemoryContextMatrix": "Do chat Matrix",
     "spaceMemoryMatrixPreviewNeedsChat": "A pré-visualização precisa do Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Abra o Human Chat para ligar o Matrix e atualize a memória do espaço para abrir este ficheiro.",
@@ -2335,7 +2336,8 @@
     "documentStates": {
       "discussion": "Discussão",
       "proposal": "Proposta",
-      "agreement": "Acordo"
+      "agreement": "Acordo",
+      "memory": "Memória"
     },
     "types": {
       "Opportunity": "Oportunidade",

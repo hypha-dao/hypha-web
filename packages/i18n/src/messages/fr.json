@@ -2313,6 +2313,7 @@
     "spaceMemoryRefresh": "Actualiser",
     "openDocument": "Ouvrir le document",
     "spaceMemoryContext": "Depuis «{title}» · {state}",
+    "spaceMemoryContextMemory": "Mémoire · «{title}»",
     "spaceMemoryContextMatrix": "Depuis le chat Matrix",
     "spaceMemoryContextCallTranscript": "Transcription d'appel (mémoire organisationnelle)",
     "spaceMemoryContextCallRecording": "Enregistrement d'appel (mémoire organisationnelle)",
@@ -2336,7 +2337,8 @@
     "documentStates": {
       "discussion": "Discussion",
       "proposal": "Proposition",
-      "agreement": "Accord"
+      "agreement": "Accord",
+      "memory": "Mémoire"
     },
     "types": {
       "Opportunity": "Opportunité",

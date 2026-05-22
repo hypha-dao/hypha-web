@@ -7,6 +7,7 @@ import {
 export type OrgMemoryAssetLike = {
   source:
     | 'proposal_upload'
+    | 'memory'
     | 'matrix_chat'
     | 'call_recording'
     | 'call_transcript'
@@ -30,6 +31,11 @@ export function withOrgMemoryAssetKeys<T extends OrgMemoryAssetLike>(
     let payload: OrgMemoryAssetKeyPayload;
     if (a.source === 'proposal_upload' && a.app_url && a.document_id != null) {
       payload = { k: 'p', d: a.document_id, u: a.app_url.trim() };
+    } else if (a.source === 'memory' && a.document_id != null) {
+      const url = a.app_url?.trim();
+      payload = url
+        ? { k: 'mem', d: a.document_id, u: url }
+        : { k: 'mem', d: a.document_id };
     } else if (
       a.source === 'matrix_chat' &&
       a.matrix_room_id &&

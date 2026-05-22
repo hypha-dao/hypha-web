@@ -4,6 +4,7 @@
  */
 export type OrgMemoryAssetKeyPayload =
   | { k: 'p'; d: number; u: string }
+  | { k: 'mem'; d: number; u?: string }
   | { k: 'm'; r: string; e: string; x: string }
   | { k: 'cr'; i: number }
   | { k: 'ct'; i: number }
@@ -60,6 +61,11 @@ export function parseOrgMemoryAssetKey(
   const o = parsed as Record<string, unknown>;
   if (o.k === 'p' && typeof o.d === 'number' && typeof o.u === 'string') {
     return { k: 'p', d: o.d, u: o.u };
+  }
+  if (o.k === 'mem' && typeof o.d === 'number') {
+    return typeof o.u === 'string' && o.u.trim()
+      ? { k: 'mem', d: o.d, u: o.u }
+      : { k: 'mem', d: o.d };
   }
   if (
     o.k === 'm' &&

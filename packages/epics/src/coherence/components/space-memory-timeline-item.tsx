@@ -263,9 +263,26 @@ export function SpaceMemoryTimelineItem({
         : item.url
       : null;
   const openHref = mxc ? mxcDownload : item.url;
-  const canOpen = Boolean(openHref && isSafeAssetUrl(openHref));
+  const isMemoryBody =
+    item.source === 'memory' && item.url.startsWith('memory://document/');
+  const canOpen = Boolean(
+    !isMemoryBody && openHref && isSafeAssetUrl(openHref),
+  );
 
   const thumbPreview = (() => {
+    if (isMemoryBody) {
+      const excerpt =
+        item.context.textExcerpt?.trim() ||
+        item.context.documentTitle?.trim() ||
+        displayName;
+      return (
+        <div className="flex min-h-[120px] w-full flex-col justify-start gap-2 overflow-y-auto px-3 py-3 text-left">
+          <p className="line-clamp-8 whitespace-pre-wrap text-sm leading-relaxed text-card-foreground">
+            {excerpt}
+          </p>
+        </div>
+      );
+    }
     if (mxc) {
       if (looksLikePdf(item.name, item.url) && pdfSrc) {
         return (
@@ -449,6 +466,7 @@ export function SpaceMemoryTimelineItem({
     'inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground underline-offset-2 group-hover:text-primary group-hover:underline';
 
   const sourceLabel = (() => {
+    if (item.source === 'memory') return t('spaceMemory');
     if (item.source === 'proposal_upload') return t('spaceMemoryProposals');
     if (item.source === 'matrix_chat') return t('spaceMemoryConversations');
     if (item.source === 'call_transcript')

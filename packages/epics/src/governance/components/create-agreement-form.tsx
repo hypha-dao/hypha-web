@@ -109,7 +109,7 @@ export const CreateAgreementForm = ({
     await createAgreement({
       ...data,
       label: resolvedLabel,
-      ...(mode === 'memory' ? { state: DocumentState.AGREEMENT } : {}),
+      ...(mode === 'memory' ? { state: DocumentState.MEMORY } : {}),
       spaceId: spaceId as number,
       ...(mode === 'memory' || typeof web3SpaceId !== 'number'
         ? {}

@@ -1,7 +1,11 @@
 import 'server-only';
 
 import type { Document } from '../types';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import {
+  canConvertToBigInt,
+  stripDescription,
+  stripMarkdown,
+} from '@hypha-platform/ui-utils';
 import { and, desc, eq } from 'drizzle-orm';
 import type { DbConfig } from '../../server';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
@@ -23,11 +27,13 @@ import {
 import { coherences } from '@hypha-platform/storage-postgres';
 import { withOrgMemoryAssetKeys } from '../../org-memory/with-org-memory-asset-keys';
 import { listSpaceCallArtifactsBySpaceId } from './call-artifacts';
+import { isMemoryDocument } from '../space-memory-document-label';
 
 /** Aligned with MCP §8.1 / architecture org memory rows. */
 export type OrgMemoryAsset = {
   source:
     | 'proposal_upload'
+    | 'memory'
     | 'matrix_chat'
     | 'call_recording'
     | 'call_transcript'
@@ -212,6 +218,92 @@ function normalizeAttachment(
     occurred_at: doc.updatedAt.toISOString(),
     ...proposalDocContextFields(doc),
   };
+}
+
+function memoryDocumentExcerpt(description?: string | null): string {
+  return stripMarkdown(stripDescription(description ?? ''), {
+    extraNewlines: true,
+  }).trim();
+}
+
+function normalizeMemoryAttachment(
+  doc: Document,
+  raw: string | { name: string; url: string },
+  index: number,
+): OrgMemoryAsset | null {
+  const url = typeof raw === 'string' ? raw : raw.url;
+  const filename =
+    typeof raw === 'string'
+      ? url.split('/').pop() || `attachment-${index + 1}`
+      : raw.name || url.split('/').pop() || `attachment-${index + 1}`;
+  if (!url?.trim()) return null;
+  return {
+    source: 'memory',
+    filename,
+    app_url: url,
+    document_id: doc.id,
+    occurred_at: doc.updatedAt.toISOString(),
+    text_excerpt:
+      memoryDocumentExcerpt(doc.description).slice(0, 500) || undefined,
+    ...proposalDocContextFields(doc),
+  };
+}
+
+function collectMemoryDocumentAssets(
+  documents: Array<
+    Document & { creator?: Document['creator']; status?: Document['status'] }
+  >,
+): OrgMemoryAsset[] {
+  const out: OrgMemoryAsset[] = [];
+  const seen = new Set<string>();
+
+  for (const doc of documents) {
+    if (!isMemoryDocument(doc)) continue;
+
+    const title = doc.title?.trim() || 'Memory';
+    const excerpt = memoryDocumentExcerpt(doc.description);
+    const bodyKey = `memory:${doc.id}:body`;
+    if (!seen.has(bodyKey)) {
+      seen.add(bodyKey);
+      out.push({
+        source: 'memory',
+        filename: title,
+        document_id: doc.id,
+        occurred_at: doc.updatedAt.toISOString(),
+        text_excerpt: excerpt.slice(0, 500) || undefined,
+        ...proposalDocContextFields(doc),
+      });
+    }
+
+    if (doc.leadImage?.trim()) {
+      const url = doc.leadImage;
+      const key = `memory:${doc.id}:lead`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push({
+          source: 'memory',
+          filename: url.split('/').pop() || 'lead-image',
+          app_url: url,
+          document_id: doc.id,
+          occurred_at: doc.updatedAt.toISOString(),
+          text_excerpt: excerpt.slice(0, 500) || undefined,
+          ...proposalDocContextFields(doc),
+        });
+      }
+    }
+
+    const attachments = doc.attachments ?? [];
+    attachments.forEach((a, i) => {
+      const row = normalizeMemoryAttachment(doc, a, i);
+      if (!row?.app_url) return;
+      const key = `memory:${doc.id}:att:${row.app_url}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push(row);
+    });
+  }
+
+  return out;
 }
 
 function collectProposalAssets(
@@ -831,7 +923,10 @@ export async function getOrgMemoryBySpaceSlug(
     attachProposalStatusToDocument(d, proposalOutcomes),
   );
 
-  const proposalAssets = collectProposalAssets(docsWithStatus);
+  const proposalAssets = collectProposalAssets(
+    docsWithStatus.filter((doc) => !isMemoryDocument(doc)),
+  );
+  const memoryAssets = collectMemoryDocumentAssets(docsWithStatus);
 
   const matrixRoomIds = await listSpaceMatrixRoomIds(
     {
@@ -936,6 +1031,7 @@ export async function getOrgMemoryBySpaceSlug(
 
   let combined = [
     ...proposalAssets,
+    ...memoryAssets,
     ...matrixAssets,
     ...recordingAssets,
     ...transcriptAssets,

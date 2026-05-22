@@ -2324,6 +2324,7 @@
     "spaceMemoryRefresh": "Refresh",
     "openDocument": "Open document",
     "spaceMemoryContext": "From «{title}» · {state}",
+    "spaceMemoryContextMemory": "Memory · «{title}»",
     "spaceMemoryContextMatrix": "From Matrix chat",
     "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)",
     "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
@@ -2439,7 +2440,8 @@
     "documentStates": {
       "discussion": "Discussion",
       "proposal": "Proposal",
-      "agreement": "Agreement"
+      "agreement": "Agreement",
+      "memory": "Memory"
     },
     "types": {
       "Opportunity": "Opportunity",

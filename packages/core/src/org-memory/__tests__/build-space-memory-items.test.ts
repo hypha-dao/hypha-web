@@ -24,8 +24,24 @@ const baseDoc = (over: Partial<Document>): Document => ({
 });
 
 describe('buildSpaceMemoryItemsFromDocuments', () => {
-  it('returns empty when no attachments or lead image', () => {
+  it('returns empty when no attachments or lead image for proposals', () => {
     expect(buildSpaceMemoryItemsFromDocuments([baseDoc({})])).toEqual([]);
+  });
+
+  it('emits a memory row for text-only memory documents', () => {
+    const rows = buildSpaceMemoryItemsFromDocuments([
+      baseDoc({
+        title: 'Team notes',
+        description: 'We agreed to revisit the roadmap next week.',
+        state: DocumentState.MEMORY,
+        label: 'Space Memory',
+      }),
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.source).toBe('memory');
+    expect(rows[0]?.name).toBe('Team notes');
+    expect(rows[0]?.context.documentState).toBe(DocumentState.MEMORY);
+    expect(rows[0]?.context.textExcerpt).toContain('roadmap');
   });
 
   it('emits one row per attachment', () => {
