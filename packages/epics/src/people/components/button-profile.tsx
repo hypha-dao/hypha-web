@@ -95,6 +95,7 @@ export const ButtonProfile = ({
     address: safeWalletAddress,
     title: tCommon('receiveFundsTitle'),
     subtitle: tCommon('receiveFundsSubtitle'),
+    defaultFundingMethod: 'manual',
   });
 
   const handleAddressCopy = useCallback(
