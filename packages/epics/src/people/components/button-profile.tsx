@@ -59,6 +59,7 @@ const menuItemClass =
   'gap-2 px-2 py-2 text-2 [&_svg]:text-muted-foreground data-[highlighted]:[&_svg]:text-foreground';
 const compactSheetItemClass =
   'flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left text-2 text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 export const ButtonProfile = ({
   person,
@@ -83,11 +84,15 @@ export const ButtonProfile = ({
   const fundWalletTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
+  const safeWalletAddress =
+    address && EVM_ADDRESS_REGEX.test(address)
+      ? (address as `0x${string}`)
+      : undefined;
   const { user } = usePrivy();
   const { showMfaEnrollmentModal } = useMfaEnrollment();
   const hasMfaMethods = user && user.mfaMethods && user.mfaMethods.length > 0;
   const { fundWallet } = useFundWallet({
-    address: address as `0x${string}` | undefined,
+    address: safeWalletAddress,
     title: tCommon('receiveFundsTitle'),
     subtitle: tCommon('receiveFundsSubtitle'),
   });
