@@ -1619,8 +1619,9 @@ export function useSpaceGroupCall(
   }, []);
 
   useEffect(() => {
-    if (callState !== 'connected') return;
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
     if (recordingRuntimeRef.current) return;
+    if (recordingFinalizeInFlightRef.current) return;
     if (captureMode === 'none') {
       if (!recordingFinalizeInFlightRef.current) {
         setRecordingStatus('idle');
@@ -1638,6 +1639,12 @@ export function useSpaceGroupCall(
         // recording continues even if speech recognition fails
       },
     });
+    if (captureMode === 'transcript_only' && transcript.supported === false) {
+      setRecordingStatus('error');
+      setRecordingError('transcript capture is not supported in this browser');
+      setCaptureMode('none');
+      return;
+    }
     let recorder: ReturnType<typeof startGroupCallRecording> | null = null;
     if (captureMode === 'recording_with_transcript') {
       recorder = startGroupCallRecording(gc);
@@ -1645,6 +1652,7 @@ export function useSpaceGroupCall(
         void transcript.stop();
         setRecordingStatus('error');
         setRecordingError('recording not supported by this browser');
+        setCaptureMode('none');
         return;
       }
     }
@@ -1666,7 +1674,30 @@ export function useSpaceGroupCall(
     setRecordingStatus('recording');
     setRecordingError(null);
     void announceCaptureNotice('started', captureMode);
-  }, [announceCaptureNotice, callSessionId, callState, captureMode, roomId]);
+  }, [
+    announceCaptureNotice,
+    callSessionId,
+    callState,
+    captureMode,
+    feedVersion,
+    roomId,
+  ]);
+
+  useEffect(() => {
+    if (captureMode === 'none') return;
+    if (recordingRuntimeRef.current) return;
+    if (recordingFinalizeInFlightRef.current) return;
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+
+    const timer = window.setTimeout(() => {
+      if (recordingRuntimeRef.current) return;
+      setRecordingStatus('error');
+      setRecordingError('capture could not start: call media not ready');
+      setCaptureMode('none');
+    }, 5000);
+
+    return () => window.clearTimeout(timer);
+  }, [callState, captureMode, callSessionId, feedVersion, roomId]);
 
   const startCapture = useCallback(
     (mode?: Exclude<SpaceGroupCallCaptureMode, 'none'>) => {
@@ -2054,15 +2085,6 @@ export function useSpaceGroupCall(
       setCaptureMode('none');
     }
   }, [callState, finalizeRecording]);
-
-  /** Stop capture when the call session ends with no participants left. */
-  useEffect(() => {
-    if (callState !== 'connected' && callState !== 'awaiting_media') return;
-    if (!recordingRuntimeRef.current) return;
-    if (participantCount > 0) return;
-    finalizeRecording();
-    setCaptureMode('none');
-  }, [callState, finalizeRecording, participantCount]);
 
   const dismissCallError = useCallback(() => {
     if (callState !== 'error') return;

@@ -167,12 +167,20 @@ export function HumanChatPanelInCallControls({
       ? 'fill-none stroke-white/80 text-white/80'
       : 'fill-none stroke-muted-foreground text-muted-foreground',
   );
-  const captureLive = captureMode !== 'none';
-  const capturePulsing =
-    captureLive &&
-    recordingStatus !== 'paused' &&
-    recordingStatus !== 'uploading' &&
-    recordingStatus !== 'error';
+  const capturePending =
+    captureMode !== 'none' && recordingStatus === 'idle' && !controlsDisabled;
+  const captureLive =
+    captureMode !== 'none' &&
+    recordingStatus !== 'error' &&
+    (capturePending ||
+      recordingStatus === 'recording' ||
+      recordingStatus === 'paused' ||
+      recordingStatus === 'uploading');
+  const captureMenuActive =
+    recordingStatus === 'recording' ||
+    recordingStatus === 'paused' ||
+    recordingStatus === 'uploading';
+  const capturePulsing = recordingStatus === 'recording';
   const leaveOnly = controlsMode === 'leave_only';
   const captureSettingsBtn = cn(
     audioSettingsBtn,
@@ -189,7 +197,7 @@ export function HumanChatPanelInCallControls({
       )}
       aria-hidden
     >
-      {capturePulsing ? (
+      {capturePulsing || capturePending ? (
         <span
           className={cn(
             'absolute rounded-full animate-ping opacity-70',
@@ -269,10 +277,12 @@ export function HumanChatPanelInCallControls({
     setStopConfirmStep('none');
     onStopCapture();
   };
-  const captureModeLabel = captureLive
+  const captureModeLabel = captureMenuActive
     ? captureMode === 'transcript_only'
       ? t('callCaptureModeTranscriptOnly')
       : t('callCaptureModeRecordingWithTranscript')
+    : capturePending
+    ? t('callCaptureStatusCapturing')
     : t('callCaptureStatusIdle');
 
   const renderAudioSettingsMenu = (
@@ -378,7 +388,7 @@ export function HumanChatPanelInCallControls({
             {t('callCaptureLabel')}
           </p>
           <div className="-mx-0 my-1 h-px bg-neutral-6" />
-          {captureLive ? (
+          {captureMenuActive ? (
             <>
               <button
                 type="button"
