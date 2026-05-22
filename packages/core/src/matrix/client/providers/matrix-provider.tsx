@@ -34,12 +34,14 @@ import {
 } from '../matrix-webrtc-env';
 import { createHyphaMatrixClientLogger } from '../matrix-client-logger';
 
-const CALL_CAPTURE_NOTICE_MSGTYPE = 'io.hypha.call_capture_notice.v1';
+const CALL_CAPTURE_NOTICE_TYPE = 'io.hypha.call_capture_notice.v1';
 
 function isCallCaptureNoticeEvent(event: MatrixSdk.MatrixEvent): boolean {
   if (event.getType() !== MatrixSdk.EventType.RoomMessage) return false;
-  const content = event.getContent() as { msgtype?: string };
-  return content.msgtype === CALL_CAPTURE_NOTICE_MSGTYPE;
+  const content = event.getContent() as {
+    [CALL_CAPTURE_NOTICE_TYPE]?: boolean;
+  };
+  return content[CALL_CAPTURE_NOTICE_TYPE] === true;
 }
 
 export interface SendAttachmentInput {
@@ -673,24 +675,37 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
   React.useEffect(() => {
     if (!client) return;
+    const matrixClientWithSessionEvent = client as MatrixSdk.MatrixClient & {
+      on: (
+        event: 'Session.logged_out',
+        listener: (event: unknown) => void,
+      ) => void;
+      removeListener: (
+        event: 'Session.logged_out',
+        listener: (event: unknown) => void,
+      ) => void;
+    };
     const handleSessionLoggedOut = (event: unknown) => {
       if (!isMatrixUnknownTokenError(event)) return;
       void recoverMatrixSession();
     };
     const handleSyncState = (
-      state: string,
-      _prevState: string,
+      state: unknown,
+      _prevState: unknown,
       data?: { error?: unknown },
     ) => {
       if (state !== 'ERROR') return;
       if (!isMatrixUnknownTokenError(data?.error)) return;
       void recoverMatrixSession();
     };
-    client.on('Session.logged_out' as never, handleSessionLoggedOut);
+    matrixClientWithSessionEvent.on(
+      'Session.logged_out',
+      handleSessionLoggedOut,
+    );
     client.on(MatrixSdk.ClientEvent.Sync, handleSyncState);
     return () => {
-      client.removeListener(
-        'Session.logged_out' as never,
+      matrixClientWithSessionEvent.removeListener(
+        'Session.logged_out',
         handleSessionLoggedOut,
       );
       client.removeListener(MatrixSdk.ClientEvent.Sync, handleSyncState);

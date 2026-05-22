@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
 import { ClientEvent, RoomEvent, RoomStateEvent } from 'matrix-js-sdk';
+import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEventHandler';
 import { useMatrix } from '../providers/matrix-provider';
 import { isPermissionLikeGroupCallError } from './space-group-call-utils';
@@ -54,7 +55,7 @@ const PLACE_OUTGOING_DELAYED_MS = 600;
 const PLACE_OUTGOING_RETRY_MS = [1500, 4000, 8000] as const;
 const ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS = 30_000;
 const VOICE_PROCESSING_PRESET_KEY = 'hypha-group-call-voice-processing-v1';
-const CALL_CAPTURE_NOTICE_MSGTYPE = 'io.hypha.call_capture_notice.v1';
+const CALL_CAPTURE_NOTICE_TYPE = 'io.hypha.call_capture_notice.v1';
 const CALL_CAPTURE_NOTICE_BODY = 'Hypha call capture notice';
 
 export type SpaceGroupCallOptions = {
@@ -384,14 +385,20 @@ export function useSpaceGroupCall(
         .toString(36)
         .slice(2, 8)}`;
       try {
-        await client.sendEvent(activeRoomId, MatrixSdk.EventType.RoomMessage, {
-          msgtype: CALL_CAPTURE_NOTICE_MSGTYPE,
+        const noticePayload = {
+          msgtype: MatrixSdk.MsgType.Notice,
           body: CALL_CAPTURE_NOTICE_BODY,
+          [CALL_CAPTURE_NOTICE_TYPE]: true,
           notice_id: noticeId,
           action,
           mode,
           sent_at: new Date().toISOString(),
-        });
+        } as RoomMessageEventContent;
+        await client.sendEvent(
+          activeRoomId,
+          MatrixSdk.EventType.RoomMessage,
+          noticePayload,
+        );
       } catch {
         // best effort; recording can continue without room-wide notice
       }
@@ -1708,11 +1715,12 @@ export function useSpaceGroupCall(
       if (event.getType() !== MatrixSdk.EventType.RoomMessage) return;
       const content = event.getContent() as {
         msgtype?: string;
+        [CALL_CAPTURE_NOTICE_TYPE]?: boolean;
         notice_id?: string;
         action?: 'started' | 'stopped';
         mode?: SpaceGroupCallCaptureMode;
       };
-      if (content.msgtype !== CALL_CAPTURE_NOTICE_MSGTYPE) return;
+      if (content[CALL_CAPTURE_NOTICE_TYPE] !== true) return;
       if (content.action === 'stopped') {
         setRemoteCaptureNotice(null);
         return;
@@ -1740,10 +1748,10 @@ export function useSpaceGroupCall(
     if (recent?.length) {
       for (const event of recent) {
         const content = event.getContent() as {
-          msgtype?: string;
+          [CALL_CAPTURE_NOTICE_TYPE]?: boolean;
           action?: 'started' | 'stopped';
         };
-        if (content.msgtype === CALL_CAPTURE_NOTICE_MSGTYPE) {
+        if (content[CALL_CAPTURE_NOTICE_TYPE] === true) {
           setNoticeFromEvent(event);
           break;
         }

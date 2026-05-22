@@ -300,7 +300,9 @@ export function createMcpNavigationTool(authToken: string) {
       }
 
       if (data.destination_type === 'app_screen') {
-        const requestedScreen = data.app_screen as z.infer<typeof appScreenSchema>;
+        const requestedScreen = data.app_screen as z.infer<
+          typeof appScreenSchema
+        >;
         const intentText = [data.context_hint, data.label]
           .filter((value): value is string => typeof value === 'string')
           .join(' ');
@@ -328,10 +330,14 @@ export function createMcpNavigationTool(authToken: string) {
               .filter((row) => row.score > 0)
               .sort(
                 (a, b) =>
-                  b.score - a.score || a.space.title.localeCompare(b.space.title),
+                  b.score - a.score ||
+                  a.space.title.localeCompare(b.space.title),
               );
             for (const row of rankedDirectMatches) {
-              const access = await checkSpaceAccessForSpace(row.space, authToken);
+              const access = await checkSpaceAccessForSpace(
+                row.space,
+                authToken,
+              );
               if (!access.hasAccess) continue;
               if (row.score < 80) break;
               const inferredScreen = inferScreenFromIntent(intentText);
@@ -488,8 +494,9 @@ export function createMcpNavigationTool(authToken: string) {
           ...rankedGlobalFallback,
         ];
 
-        let destinationSpace: (typeof rankedCandidates)[number]['space'] | null =
-          null;
+        let destinationSpace:
+          | (typeof rankedCandidates)[number]['space']
+          | null = null;
         let resolvedScope: 'ecosystem' | 'network' | null = null;
         for (const row of rankedCandidates) {
           const access = await checkSpaceAccessForSpace(row.space, authToken);
