@@ -8,12 +8,15 @@ export interface UseFundWalletParams {
   /** When omitted, `fundWallet` is a no-op (safe for gated / loading UIs). */
   address?: `0x${string}`;
   chain?: Chain;
+  /** Localized modal title; defaults to English fallback when omitted. */
   title?: string;
+  /** Localized modal subtitle; defaults to English fallback when omitted. */
   subtitle?: string;
 }
 
 export function useFundWallet({
   address,
+  // Keep English fallbacks for legacy callers; prefer passing localized copy.
   title = 'Receive Funds',
   subtitle = 'Share this QR code or wallet address to receive funds in this wallet.',
   chain = base,
