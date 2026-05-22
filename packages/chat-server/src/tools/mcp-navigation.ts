@@ -245,9 +245,30 @@ function shouldForceNetworkDiscoveryScreen(intentText: string): boolean {
   ) {
     return false;
   }
-  return /\b(find|search|look up|discover|explore|join|space|spaces|hypha|network)\b/.test(
+  return /\b(find|search|look up|discover|explore|browse|list)\b/.test(
     normalized,
   );
+}
+
+function extractDirectSpaceQuery(intentText: string): string | null {
+  const normalized = intentText.trim().toLowerCase();
+  if (!normalized) return null;
+  if (
+    !/\b(go to|open|take me to|navigate to|route to|bring me to|head to)\b/.test(
+      normalized,
+    )
+  ) {
+    return null;
+  }
+  const cleaned = normalized
+    .replace(
+      /\b(go to|open|take me to|navigate to|route to|bring me to|head to)\b/g,
+      ' ',
+    )
+    .replace(/\b(space|screen|page|tab|the|a|an|please|platform)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned.length > 1 ? cleaned : null;
 }
 
 export function createMcpNavigationTool(authToken: string) {
@@ -283,6 +304,60 @@ export function createMcpNavigationTool(authToken: string) {
         const intentText = [data.context_hint, data.label]
           .filter((value): value is string => typeof value === 'string')
           .join(' ');
+        if (requestedScreen === 'onboarding') {
+          const directSpaceQuery = extractDirectSpaceQuery(intentText);
+          if (directSpaceQuery) {
+            const directMatches = await findAllSpaces(
+              { db },
+              {
+                search: directSpaceQuery,
+                parentOnly: false,
+                omitSandbox: false,
+                omitArchived: true,
+              },
+            );
+            const rankedDirectMatches = directMatches
+              .map((space) => ({
+                space,
+                score: scoreSpaceMatch(
+                  directSpaceQuery,
+                  space.title,
+                  space.slug,
+                ),
+              }))
+              .filter((row) => row.score > 0)
+              .sort(
+                (a, b) =>
+                  b.score - a.score || a.space.title.localeCompare(b.space.title),
+              );
+            for (const row of rankedDirectMatches) {
+              const access = await checkSpaceAccessForSpace(row.space, authToken);
+              if (!access.hasAccess) continue;
+              if (row.score < 80) break;
+              const inferredScreen = inferScreenFromIntent(intentText);
+              const href = inferredScreen
+                ? resolveSpaceScreenPath(lang, row.space.slug, inferredScreen)
+                : `/${lang}/dho/${row.space.slug}/agreements`;
+              return {
+                ok: true,
+                destination_type: 'space',
+                navigation: {
+                  kind: 'internal',
+                  href,
+                  space_slug: row.space.slug,
+                  ...(inferredScreen ? { screen: inferredScreen } : {}),
+                  label: customLabel ?? `Open ${row.space.title}`,
+                  open_in_new_tab: data.open_in_new_tab ?? false,
+                },
+                matched_space: {
+                  slug: row.space.slug,
+                  title: row.space.title,
+                },
+                message: `Navigate to space "${row.space.title}".`,
+              };
+            }
+          }
+        }
         const screen =
           requestedScreen === 'onboarding' &&
           shouldForceNetworkDiscoveryScreen(intentText)
