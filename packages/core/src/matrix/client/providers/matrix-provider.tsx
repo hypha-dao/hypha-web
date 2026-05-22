@@ -5,6 +5,7 @@ import * as MatrixSdk from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { MatrixTokenData, useMatrixToken } from '../hooks';
+import { isMatrixRateLimitedError } from '../hooks/space-group-call-utils';
 import type { Message, MessageMediaInfo } from '../../types';
 import { attachReactionsToMessage, isValidReactionKey } from '../../reactions';
 import {
@@ -272,23 +273,6 @@ function getEventIdFromSendResponse(response: unknown): string | undefined {
   if (!response || typeof response !== 'object') return undefined;
   const eventId = (response as { event_id?: unknown }).event_id;
   return typeof eventId === 'string' && eventId.trim() ? eventId : undefined;
-}
-
-/** True when the homeserver rejected the request for rate limiting (HTTP 429 / M_LIMIT_EXCEEDED). */
-export function isMatrixRateLimitedError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const e = err as Error & {
-    httpStatus?: number;
-    errcode?: string;
-    data?: { errcode?: string; retry_after_ms?: number };
-  };
-  if (e.httpStatus === 429) return true;
-  const msg = e.message;
-  if (msg.includes('[429]') || msg.includes(' 429 ')) return true;
-  if (e.errcode === 'M_LIMIT_EXCEEDED') return true;
-  if (e.data?.errcode === 'M_LIMIT_EXCEEDED') return true;
-  if (/too many requests/i.test(msg)) return true;
-  return false;
 }
 
 function isMatrixUnknownTokenError(err: unknown): boolean {

@@ -647,11 +647,7 @@ export function useSpaceGroupCall(
     }
     loggedStatsForGroupCallIdRef.current = null;
     lastRoomIdForTelemetryRef.current = null;
-  }, [
-    clearConnectingStallTimer,
-    clearMediaDebugInterval,
-    finalizeRecording,
-  ]);
+  }, [clearConnectingStallTimer, clearMediaDebugInterval, finalizeRecording]);
 
   const refreshLocalPreview = useCallback(() => {
     const gc = groupCallRef.current;

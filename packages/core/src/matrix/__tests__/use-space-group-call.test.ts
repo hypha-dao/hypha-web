@@ -56,7 +56,9 @@ describe('isPermissionLikeGroupCallError', () => {
 
 describe('isMatrixRateLimitedError', () => {
   it('returns true for M_LIMIT_EXCEEDED errcode', () => {
-    const err = new Error('MatrixError: [429] You are sending too many requests');
+    const err = new Error(
+      'MatrixError: [429] You are sending too many requests',
+    );
     (err as Error & { errcode?: string }).errcode = 'M_LIMIT_EXCEEDED';
     expect(isMatrixRateLimitedError(err)).toBe(true);
   });
