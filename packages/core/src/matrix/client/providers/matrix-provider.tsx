@@ -281,6 +281,22 @@ export function isMatrixRateLimitedError(err: unknown): boolean {
   return false;
 }
 
+function isMatrixUnknownTokenError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as {
+    errcode?: string;
+    httpStatus?: number;
+    message?: string;
+    data?: { errcode?: string; soft_logout?: boolean };
+  };
+  if (e.errcode === 'M_UNKNOWN_TOKEN' || e.data?.errcode === 'M_UNKNOWN_TOKEN') {
+    return true;
+  }
+  if (e.httpStatus === 401 && e.data?.soft_logout === true) return true;
+  const msg = `${e.message ?? ''}`.toLowerCase();
+  return msg.includes('unknown token') || msg.includes('m_unknown_token');
+}
+
 function matrixRateLimitBackoffMs(
   err: unknown,
   zeroBasedAttempt: number,
@@ -474,6 +490,8 @@ interface MatrixContextType {
    * “mark as read” for Human Chat).
    */
   markRoomRead: (roomId: string, eventId: string) => Promise<void>;
+  /** Force refresh Matrix auth/session after UNKNOWN_TOKEN or soft logout. */
+  refreshSession: () => Promise<boolean>;
 }
 
 const MatrixContext = React.createContext<MatrixContextType | null>(null);
@@ -492,6 +510,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const [activeMatrixUserId, setActiveMatrixUserId] = React.useState<
     string | null
   >(null);
+  const clientRef = React.useRef<MatrixSdk.MatrixClient | null>(null);
+  const sessionRecoveryPromiseRef = React.useRef<Promise<boolean> | null>(null);
   const registeredRoomListenersRef = React.useRef<RoomMessageListenerRecord[]>(
     [],
   );
@@ -505,6 +525,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     matrixToken,
     isLoading: isMatrixTokenLoading,
     error: matrixTokenError,
+    refreshMatrixToken,
   } = useMatrixToken();
 
   const initializeMatrixClient = React.useCallback(
@@ -536,17 +557,59 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
         await matrixClient.setPresence({ presence: 'online' });
 
+        clientRef.current = matrixClient;
         setClient(matrixClient);
         setActiveMatrixUserId(userId);
         setIsMatrixAvailable(matrixClient !== null);
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Failed to initialize Matrix client:', error);
+        clientRef.current = null;
         setClient(null);
       }
     },
     [],
   );
+
+  const recoverMatrixSession = React.useCallback(async (): Promise<boolean> => {
+    if (sessionRecoveryPromiseRef.current) {
+      return sessionRecoveryPromiseRef.current;
+    }
+    const recovery = (async () => {
+      try {
+        const refreshed = await refreshMatrixToken();
+        const freshToken =
+          refreshed && typeof refreshed === 'object' && 'accessToken' in refreshed
+            ? (refreshed as MatrixTokenData)
+            : null;
+        if (!freshToken) {
+          return false;
+        }
+        const existingClient = clientRef.current;
+        if (existingClient) {
+          try {
+            existingClient.stopClient();
+          } catch {
+            // ignore stop errors during auth recovery
+          }
+        }
+        clientRef.current = null;
+        setClient(null);
+        setIsAuthenticated(false);
+        setIsMatrixAvailable(false);
+        setActiveMatrixUserId(null);
+        await initializeMatrixClient(freshToken);
+        return true;
+      } catch (error) {
+        console.error('[MatrixProvider] Failed to recover Matrix session:', error);
+        return false;
+      } finally {
+        sessionRecoveryPromiseRef.current = null;
+      }
+    })();
+    sessionRecoveryPromiseRef.current = recovery;
+    return recovery;
+  }, [initializeMatrixClient, refreshMatrixToken]);
 
   React.useEffect(() => {
     if (!client) {
@@ -564,6 +627,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     setIsAuthenticated(false);
     setIsMatrixAvailable(false);
   }, [activeMatrixUserId, client, matrixToken]);
+
+  React.useEffect(() => {
+    clientRef.current = client;
+  }, [client]);
 
   React.useEffect(() => {
     if (client) {
@@ -589,11 +656,38 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   ]);
 
   React.useEffect(() => {
+    if (!client) return;
+    const handleSessionLoggedOut = (event: unknown) => {
+      if (!isMatrixUnknownTokenError(event)) return;
+      void recoverMatrixSession();
+    };
+    const handleSyncState = (
+      state: string,
+      _prevState: string,
+      data?: { error?: unknown },
+    ) => {
+      if (state !== 'ERROR') return;
+      if (!isMatrixUnknownTokenError(data?.error)) return;
+      void recoverMatrixSession();
+    };
+    client.on('Session.logged_out' as never, handleSessionLoggedOut);
+    client.on(MatrixSdk.ClientEvent.Sync, handleSyncState);
+    return () => {
+      client.removeListener(
+        'Session.logged_out' as never,
+        handleSessionLoggedOut,
+      );
+      client.removeListener(MatrixSdk.ClientEvent.Sync, handleSyncState);
+    };
+  }, [client, recoverMatrixSession]);
+
+  React.useEffect(() => {
     return () => {
       if (client) {
         const matrixClient = client as MatrixSdk.MatrixClient;
         matrixClient.setPresence({ presence: 'offline' });
         matrixClient.stopClient();
+        clientRef.current = null;
         setClient(null);
       }
     };
@@ -1690,6 +1784,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     unregisterRoomListener,
     registeredRoomListeners,
     markRoomRead,
+    refreshSession: recoverMatrixSession,
   };
   return (
     <MatrixContext.Provider value={value}>{children}</MatrixContext.Provider>
@@ -1729,6 +1824,7 @@ const noopMatrixContext: MatrixContextType = {
   markRoomRead: async () => {
     throw new Error('Matrix unavailable');
   },
+  refreshSession: async () => false,
 };
 
 export const useMatrix = () => {

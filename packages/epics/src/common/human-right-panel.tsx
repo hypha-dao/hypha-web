@@ -3065,6 +3065,30 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setEditDraft(savedEditDraft);
         return;
       }
+      const isUnknownTokenError =
+        typeof err === 'object' &&
+        err !== null &&
+        (((err as { errcode?: string }).errcode === 'M_UNKNOWN_TOKEN' ||
+          (err as { data?: { errcode?: string } }).data?.errcode ===
+            'M_UNKNOWN_TOKEN') ||
+          `${(err as { message?: string }).message ?? ''}`
+            .toLowerCase()
+            .includes('unknown token'));
+      if (isUnknownTokenError) {
+        const recovered = await matrixRef.current
+          .refreshSession()
+          .catch(() => false);
+        setComposerError(
+          recovered
+            ? 'Chat session refreshed. Please send your message again.'
+            : 'Chat session expired. Please reload the page and try again.',
+        );
+        setInput(text);
+        setReplyDraft(savedDraft);
+        setEditDraft(savedEditDraft);
+        setDraftAttachments(savedAttachments);
+        return;
+      }
       const msg = isMatrixRateLimitedError(err)
         ? t('sendRateLimited')
         : err instanceof MatrixUploadTimeoutError

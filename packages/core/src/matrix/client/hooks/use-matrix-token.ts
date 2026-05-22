@@ -86,5 +86,6 @@ export const useMatrixToken = () => {
     isLoading: isLoading || isLoadingJwt,
     matrixToken,
     error,
+    refreshMatrixToken: mutateMatrixToken,
   };
 };
