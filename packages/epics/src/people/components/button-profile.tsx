@@ -32,7 +32,7 @@ import { Person } from '@hypha-platform/core/client';
 import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 import { useFundWallet } from '../../treasury/hooks';
 
@@ -80,6 +80,9 @@ export const ButtonProfile = ({
   const tCommon = useTranslations('Common');
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const fundWalletTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
   const { user } = usePrivy();
   const { showMfaEnrollmentModal } = useMfaEnrollment();
   const hasMfaMethods = user && user.mfaMethods && user.mfaMethods.length > 0;
@@ -93,7 +96,13 @@ export const ButtonProfile = ({
     (walletAddress: string) => {
       copyToClipboard(walletAddress);
       setProfileMenuOpen(false);
-      void fundWallet();
+      if (fundWalletTimeoutRef.current) {
+        clearTimeout(fundWalletTimeoutRef.current);
+      }
+      // Avoid colliding focus traps while sheet-like menus are closing.
+      fundWalletTimeoutRef.current = setTimeout(() => {
+        void fundWallet();
+      }, 300);
     },
     [fundWallet],
   );
@@ -104,6 +113,14 @@ export const ButtonProfile = ({
   useEffect(() => {
     setProfileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    return () => {
+      if (fundWalletTimeoutRef.current) {
+        clearTimeout(fundWalletTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (compact) {
     if (!isConnected) {
