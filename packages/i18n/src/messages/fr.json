@@ -1034,6 +1034,7 @@
       "votingMethod": "Méthode de vote",
       "entryMethod": "Méthode d'entrée",
       "membershipExit": "Sortie de membre",
+      "spaceMemory": "Space Memory",
       "spaceToSpace": "Espace-à-espace",
       "issueNewToken": "Émettre un nouveau token",
       "treasuryMinting": "Frappe de trésorerie",

@@ -320,6 +320,15 @@ export function CreateAgreementBaseFields({
   const progressRef = React.useRef(progress);
   progressRef.current = progress;
 
+  const hasNavigatedAfterMemoryPublishRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (mode !== 'memory') return;
+    if (progress < 100 || hasNavigatedAfterMemoryPublishRef.current) return;
+    hasNavigatedAfterMemoryPublishRef.current = true;
+    router.push(successfulUrl);
+  }, [mode, progress, router, successfulUrl]);
+
   const postProposalCreated = React.useCallback(
     async ({
       spaceId,
@@ -389,7 +398,7 @@ export function CreateAgreementBaseFields({
     lang,
     spaceSlug,
     authToken,
-    postProposalCreated,
+    postProposalCreated: mode === 'memory' ? undefined : postProposalCreated,
   });
 
   const handleResetForm = React.useCallback(() => {

@@ -1040,6 +1040,7 @@
       "votingMethod": "Abstimmungsmethode",
       "entryMethod": "Beitrittsmethode",
       "membershipExit": "Mitgliedschaft beenden",
+      "spaceMemory": "Space Memory",
       "spaceToSpace": "Space-zu-Space",
       "issueNewToken": "Neuen Token ausgeben",
       "treasuryMinting": "Treasury Minting",

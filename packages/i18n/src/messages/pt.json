@@ -604,6 +604,7 @@
       "votingMethod": "Método de votação",
       "entryMethod": "Método de entrada",
       "membershipExit": "Saída de adesão",
+      "spaceMemory": "Space Memory",
       "spaceToSpace": "Espaço para Espaço",
       "issueNewToken": "Emitir novo token",
       "treasuryMinting": "Cunhagem de Tesouro",

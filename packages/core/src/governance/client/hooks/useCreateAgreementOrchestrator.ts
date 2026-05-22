@@ -19,6 +19,8 @@ import { useAgreementFileUploads } from './useAgreementFileUploads';
 type UseCreateAgreementOrchestratorInput = {
   authToken?: string | null;
   config?: Config;
+  /** Space Memory publish: persist document + files only (no on-chain proposal). */
+  skipWeb3Proposal?: boolean;
 };
 
 export type TaskName =
@@ -89,8 +91,13 @@ export const progressStateReducer = (
   });
 };
 
-const computeProgress = (tasks: TaskState): number => {
-  const taskList = Object.values(tasks);
+const computeProgress = (
+  tasks: TaskState,
+  skipWeb3Proposal: boolean,
+): number => {
+  const taskList = skipWeb3Proposal
+    ? [tasks.CREATE_WEB2_AGREEMENT, tasks.UPLOAD_FILES]
+    : Object.values(tasks);
   const totalTasks = taskList.length;
   if (totalTasks === 0) return 0;
   const completedTasks = taskList.filter(
@@ -105,6 +112,7 @@ const computeProgress = (tasks: TaskState): number => {
 export const useCreateAgreementOrchestrator = ({
   authToken,
   config,
+  skipWeb3Proposal = false,
 }: UseCreateAgreementOrchestratorInput) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
   const web3 = useAgreementMutationsWeb3Rpc({
@@ -125,7 +133,7 @@ export const useCreateAgreementOrchestrator = ({
     progressStateReducer,
     initialTaskState,
   );
-  const progress = computeProgress(taskState);
+  const progress = computeProgress(taskState, skipWeb3Proposal);
   const [currentAction, setCurrentAction] = React.useState<string>();
 
   const startTask = useCallback((taskName: TaskName) => {
@@ -168,9 +176,9 @@ export const useCreateAgreementOrchestrator = ({
 
       let web3ProposalResult = undefined;
       const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
-      const web3SpaceId = (arg as any).web3SpaceId;
+      const web3SpaceId = (arg as { web3SpaceId?: number }).web3SpaceId;
       try {
-        if (config) {
+        if (config && !skipWeb3Proposal) {
           if (typeof web3SpaceId !== 'number') {
             throw new Error(
               'web3SpaceId is required for web3 proposal creation',
@@ -231,7 +239,8 @@ export const useCreateAgreementOrchestrator = ({
   );
 
   const { data: updatedWeb2Agreement } = useSWR(
-    web2.createdAgreement?.slug &&
+    !skipWeb3Proposal &&
+      web2.createdAgreement?.slug &&
       taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
       (!config || taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE)
       ? [

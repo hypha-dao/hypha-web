@@ -1039,6 +1039,7 @@
       "votingMethod": "Voting Method",
       "entryMethod": "Entry Method",
       "membershipExit": "Membership Exit",
+      "spaceMemory": "Space Memory",
       "spaceToSpace": "Space to Space",
       "issueNewToken": "Issue New Token",
       "treasuryMinting": "Treasury Minting",

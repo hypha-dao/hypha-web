@@ -7,6 +7,8 @@ import {
   useMe,
   useJwt,
   useCreateAgreementOrchestrator,
+  DocumentState,
+  SPACE_MEMORY_DOCUMENT_LABEL,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form } from '@hypha-platform/ui';
@@ -65,16 +67,19 @@ export const CreateAgreementForm = ({
     isError,
     isPending,
     progress,
-  } = useCreateAgreementOrchestrator({ authToken: jwt, config });
+  } = useCreateAgreementOrchestrator({
+    authToken: jwt,
+    config,
+    skipWeb3Proposal: mode === 'memory',
+  });
   const resolver = useLocalizedProposalResolver(
     fullSchemaCreateSpaceForm,
     tAgreementFlow,
   );
   const resolvedLabel =
-    label ??
-    (mode === 'memory'
-      ? tCoherence('newMemory')
-      : tAgreementFlow('createActionForms.defaultAgreement'));
+    mode === 'memory'
+      ? SPACE_MEMORY_DOCUMENT_LABEL
+      : label ?? tAgreementFlow('createActionForms.defaultAgreement');
 
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -104,8 +109,11 @@ export const CreateAgreementForm = ({
     await createAgreement({
       ...data,
       label: resolvedLabel,
+      ...(mode === 'memory' ? { state: DocumentState.AGREEMENT } : {}),
       spaceId: spaceId as number,
-      ...(typeof web3SpaceId === 'number' ? { web3SpaceId } : {}),
+      ...(mode === 'memory' || typeof web3SpaceId !== 'number'
+        ? {}
+        : { web3SpaceId }),
     });
   };
 
@@ -113,57 +121,73 @@ export const CreateAgreementForm = ({
     console.log('form errors:', err);
   };
 
+  const loadingMessage = isError ? (
+    <div className="flex flex-col">
+      <div>{tSpaces('errorOhSnap')}</div>
+      <Button onClick={reset}>{tSpaces('reset')}</Button>
+    </div>
+  ) : (
+    <div>{currentAction}</div>
+  );
+
+  const formContent = (
+    <Form {...form}>
+      <form
+        ref={formRef}
+        onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
+        className="flex flex-col gap-5"
+      >
+        <CreateAgreementBaseFields
+          key={resubmitKey}
+          creator={{
+            avatar: person?.avatarUrl || '',
+            name: person?.name || '',
+            surname: person?.surname || '',
+          }}
+          successfulUrl={successfulUrl}
+          closeUrl={closeUrl || successfulUrl}
+          backUrl={backUrl}
+          isLoading={false}
+          label={resolvedLabel}
+          stickyHeaderTitle={stickyHeaderTitle}
+          mode={mode}
+          progress={progress}
+        />
+        <div className="flex justify-end w-full">
+          <Button type="submit">
+            {mode === 'memory'
+              ? tCoherence.has('publish')
+                ? tCoherence('publish')
+                : tAgreementFlow('buttons.publish')
+              : tAgreementFlow('buttons.publish')}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+
+  const sharedBackdropProps = {
+    progress,
+    isLoading: isPending,
+    fullHeight: true as const,
+    message: loadingMessage,
+    children: formContent,
+  };
+
+  if (mode === 'memory') {
+    return (
+      <SpaceLoadingBackdrop
+        showKeepWindowOpenMessage={false}
+        {...sharedBackdropProps}
+      />
+    );
+  }
+
   return (
     <SpaceLoadingBackdrop
-      showKeepWindowOpenMessage={true}
+      showKeepWindowOpenMessage
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
-      progress={progress}
-      isLoading={isPending}
-      fullHeight={true}
-      message={
-        isError ? (
-          <div className="flex flex-col">
-            <div>{tSpaces('errorOhSnap')}</div>
-            <Button onClick={reset}>{tSpaces('reset')}</Button>
-          </div>
-        ) : (
-          <div>{currentAction}</div>
-        )
-      }
-    >
-      <Form {...form}>
-        <form
-          ref={formRef}
-          onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
-          className="flex flex-col gap-5"
-        >
-          <CreateAgreementBaseFields
-            key={resubmitKey}
-            creator={{
-              avatar: person?.avatarUrl || '',
-              name: person?.name || '',
-              surname: person?.surname || '',
-            }}
-            successfulUrl={successfulUrl}
-            closeUrl={closeUrl || successfulUrl}
-            backUrl={backUrl}
-            isLoading={false}
-            label={resolvedLabel}
-            stickyHeaderTitle={stickyHeaderTitle}
-            mode={mode}
-            progress={progress}
-          />
-          <div className="flex justify-end w-full">
-            <Button type="submit">
-              {mode === 'memory'
-                ? tCoherence.has('publish')
-                  ? tCoherence('publish')
-                  : tAgreementFlow('buttons.publish')
-                : tAgreementFlow('buttons.publish')}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </SpaceLoadingBackdrop>
+      {...sharedBackdropProps}
+    />
   );
 };
