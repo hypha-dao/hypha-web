@@ -167,11 +167,53 @@ export function HumanChatPanelInCallControls({
       ? 'fill-none stroke-white/80 text-white/80'
       : 'fill-none stroke-muted-foreground text-muted-foreground',
   );
-  const captureActive =
-    recordingStatus === 'recording' ||
-    recordingStatus === 'paused' ||
-    recordingStatus === 'uploading';
+  const captureLive = captureMode !== 'none';
+  const capturePulsing =
+    captureLive &&
+    recordingStatus !== 'paused' &&
+    recordingStatus !== 'uploading' &&
+    recordingStatus !== 'error';
   const leaveOnly = controlsMode === 'leave_only';
+  const captureSettingsBtn = cn(
+    audioSettingsBtn,
+    captureLive &&
+      (isFull
+        ? 'border-rose-500/50 bg-rose-950/80 text-white'
+        : 'border-rose-500/45 bg-rose-500/10 text-rose-600'),
+  );
+  const renderCaptureOnAirIcon = (
+    <span
+      className={cn(
+        'relative inline-flex items-center justify-center',
+        isFull ? 'h-5 w-5' : 'h-4 w-4',
+      )}
+      aria-hidden
+    >
+      {capturePulsing ? (
+        <span
+          className={cn(
+            'absolute rounded-full animate-ping opacity-70',
+            isFull ? 'h-2.5 w-2.5 bg-rose-400' : 'h-2 w-2 bg-rose-600',
+          )}
+        />
+      ) : null}
+      <Circle
+        className={cn(
+          'fill-none',
+          isFull
+            ? 'h-5 w-5 stroke-rose-400 text-rose-400'
+            : 'h-4 w-4 stroke-rose-600 text-rose-600',
+        )}
+      />
+      <span
+        className={cn(
+          'absolute rounded-full',
+          isFull ? 'h-2.5 w-2.5 bg-rose-400' : 'h-2 w-2 bg-rose-600',
+          capturePulsing && 'animate-pulse',
+        )}
+      />
+    </span>
+  );
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
@@ -209,7 +251,7 @@ export function HumanChatPanelInCallControls({
   const selectCapturePreference = (
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
   ) => {
-    if (!captureActive) {
+    if (captureMode === 'none') {
       onStartCapture(mode);
     }
     setIsCaptureMenuOpen(false);
@@ -227,7 +269,7 @@ export function HumanChatPanelInCallControls({
     setStopConfirmStep('none');
     onStopCapture();
   };
-  const captureModeLabel = captureActive
+  const captureModeLabel = captureLive
     ? captureMode === 'transcript_only'
       ? t('callCaptureModeTranscriptOnly')
       : t('callCaptureModeRecordingWithTranscript')
@@ -305,7 +347,7 @@ export function HumanChatPanelInCallControls({
     <div className="relative" ref={captureMenuRef}>
       <button
         type="button"
-        className={audioSettingsBtn}
+        className={captureSettingsBtn}
         disabled={controlsDisabled}
         title={`${t(
           'callCaptureLabel',
@@ -315,29 +357,8 @@ export function HumanChatPanelInCallControls({
         aria-expanded={isCaptureMenuOpen}
         onClick={() => setIsCaptureMenuOpen((open) => !open)}
       >
-        {captureActive ? (
-          <span
-            className={cn(
-              'relative inline-flex items-center justify-center',
-              isFull ? 'h-5 w-5' : 'h-4 w-4',
-            )}
-            aria-hidden
-          >
-            <Circle
-              className={cn(
-                'fill-none',
-                isFull
-                  ? 'h-5 w-5 stroke-rose-400 text-rose-400'
-                  : 'h-4 w-4 stroke-rose-600 text-rose-600',
-              )}
-            />
-            <span
-              className={cn(
-                'absolute rounded-full',
-                isFull ? 'h-2.5 w-2.5 bg-rose-400' : 'h-2 w-2 bg-rose-600',
-              )}
-            />
-          </span>
+        {captureLive ? (
+          renderCaptureOnAirIcon
         ) : (
           <Circle className={captureIdleIconClass} />
         )}
@@ -357,7 +378,7 @@ export function HumanChatPanelInCallControls({
             {t('callCaptureLabel')}
           </p>
           <div className="-mx-0 my-1 h-px bg-neutral-6" />
-          {captureActive ? (
+          {captureLive ? (
             <>
               <button
                 type="button"
