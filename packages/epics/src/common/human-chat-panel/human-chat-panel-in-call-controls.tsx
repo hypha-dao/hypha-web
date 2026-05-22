@@ -139,7 +139,7 @@ export function HumanChatPanelInCallControls({
     recordingStatus === 'recording'
       ? t('callCaptureStatusCapturing')
       : recordingStatus === 'paused'
-      ? 'Paused'
+      ? t('callCaptureStatusPaused')
       : recordingStatus === 'uploading'
       ? t('callCaptureStatusSaving')
       : recordingStatus === 'error'
@@ -150,16 +150,6 @@ export function HumanChatPanelInCallControls({
     captureIconClass,
     isFull ? 'text-rose-400 stroke-rose-400' : 'text-rose-600 stroke-rose-600',
   );
-  const captureStatusDotClass =
-    recordingStatus === 'recording'
-      ? 'bg-emerald-500'
-      : recordingStatus === 'paused'
-      ? 'bg-amber-500'
-      : recordingStatus === 'uploading'
-      ? 'bg-amber-500'
-      : recordingStatus === 'error'
-      ? 'bg-destructive'
-      : 'bg-muted-foreground/40';
   const captureActive = captureMode !== 'none';
 
   useEffect(() => {
@@ -208,6 +198,7 @@ export function HumanChatPanelInCallControls({
     }
     onStartCapture();
   };
+  const captureStopLabel = t('callCaptureStop');
   const captureModeLabel =
     capturePreference === 'transcript_only'
       ? t('callCaptureModeTranscriptOnly')
@@ -296,17 +287,8 @@ export function HumanChatPanelInCallControls({
         aria-expanded={isCaptureMenuOpen}
         onClick={() => setIsCaptureMenuOpen((open) => !open)}
       >
-        {capturePreference === 'transcript_only' ? (
-          <FileText className={captureIconClass} />
-        ) : (
-          <Circle className={captureRecordingIconClass} />
-        )}
-        <span
-          className={cn(
-            'absolute -bottom-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full ring-2 ring-background',
-            isFull && 'ring-zinc-900',
-            captureStatusDotClass,
-          )}
+        <ChevronDown
+          className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
         />
       </button>
       {isCaptureMenuOpen ? (
@@ -365,8 +347,8 @@ export function HumanChatPanelInCallControls({
         captureActive &&
           'border-rose-500/45 bg-rose-600/15 text-rose-700 hover:bg-rose-600/20 dark:text-rose-300',
       )}
-      title={captureActive ? t('stopButton') : captureModeLabel}
-      aria-label={captureActive ? t('stopButton') : captureModeLabel}
+      title={captureActive ? captureStopLabel : captureModeLabel}
+      aria-label={captureActive ? captureStopLabel : captureModeLabel}
     >
       {captureActive ? (
         <Square className={captureIconClass} />
@@ -383,9 +365,15 @@ export function HumanChatPanelInCallControls({
       onClick={recordingStatus === 'paused' ? onResumeCapture : onPauseCapture}
       disabled={controlsDisabled || recordingStatus === 'uploading'}
       className={neutralBtn}
-      title={recordingStatus === 'paused' ? 'Resume capture' : 'Pause capture'}
+      title={
+        recordingStatus === 'paused'
+          ? t('callCaptureResume')
+          : t('callCapturePause')
+      }
       aria-label={
-        recordingStatus === 'paused' ? 'Resume capture' : 'Pause capture'
+        recordingStatus === 'paused'
+          ? t('callCaptureResume')
+          : t('callCapturePause')
       }
     >
       {recordingStatus === 'paused' ? (
