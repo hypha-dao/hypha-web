@@ -3420,7 +3420,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                         type="button"
                         variant="outline"
                         colorVariant="accent"
-                        className="h-8 min-h-8 self-center border-[color:var(--space-accent)] px-2.5 py-0 text-xs font-semibold leading-none whitespace-nowrap text-[color:var(--space-accent)] hover:bg-accent-3"
+                        className="h-7 min-h-7 self-center border-[color:var(--space-accent)] px-2.5 py-0 text-xs font-semibold leading-none whitespace-nowrap text-[color:var(--space-accent)] hover:bg-accent-3"
                         onClick={() => {
                           if (signalTeamPanelOpen) {
                             void commitSignalTeamDraft();
