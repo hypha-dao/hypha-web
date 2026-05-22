@@ -22,6 +22,8 @@
     "by": "by",
     "copyWalletAddress": "Copy wallet address",
     "walletAddressCopied": "Copied!",
+    "receiveFundsTitle": "Receive Funds",
+    "receiveFundsSubtitle": "Share this QR code or wallet address to receive funds in this wallet.",
     "otherMembers": "+ other {count} members",
     "exploreSpaces": "Explore Spaces",
     "findCategory": "Find a Category",

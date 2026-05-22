@@ -22,6 +22,8 @@
     "by": "por",
     "copyWalletAddress": "Copiar dirección de la billetera",
     "walletAddressCopied": "¡Copiado!",
+    "receiveFundsTitle": "Recibir fondos",
+    "receiveFundsSubtitle": "Comparte este código QR o dirección de billetera para recibir fondos en esta billetera.",
     "otherMembers": "+ {count} otros miembros",
     "exploreSpaces": "Explorar espacios",
     "findCategory": "Encuentra una categoría",

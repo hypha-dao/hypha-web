@@ -22,6 +22,8 @@
     "by": "par",
     "copyWalletAddress": "Copier l’adresse du portefeuille",
     "walletAddressCopied": "Copié !",
+    "receiveFundsTitle": "Recevoir des fonds",
+    "receiveFundsSubtitle": "Partagez ce QR code ou l’adresse du portefeuille pour recevoir des fonds dans ce portefeuille.",
     "otherMembers": "+ {count} autres membres",
     "exploreSpaces": "Explorer les espaces",
     "findCategory": "Trouver une catégorie",
