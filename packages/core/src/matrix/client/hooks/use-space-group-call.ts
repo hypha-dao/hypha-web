@@ -6,7 +6,10 @@ import { ClientEvent, RoomEvent, RoomStateEvent } from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEventHandler';
 import { useMatrix } from '../providers/matrix-provider';
-import { isPermissionLikeGroupCallError } from './space-group-call-utils';
+import {
+  isPermissionLikeGroupCallError,
+  shouldIgnoreGroupCallErrorDuringCapture,
+} from './space-group-call-utils';
 import { logSpaceGroupCallEvent } from './space-group-call-telemetry';
 import { matrixGroupCallSummaryStatsMsFromEnv } from '../matrix-webrtc-env';
 import {
@@ -319,17 +322,8 @@ export function useSpaceGroupCall(
     startedAt: string;
     recordedRoomId: string;
   } | null>(null);
-  const captureStartWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const captureModeRef = useRef<SpaceGroupCallCaptureMode>('none');
   const acknowledgedCaptureNoticeIdsRef = useRef<Set<string>>(new Set());
-
-  const clearCaptureStartWatchdog = useCallback(() => {
-    if (captureStartWatchdogRef.current != null) {
-      clearTimeout(captureStartWatchdogRef.current);
-      captureStartWatchdogRef.current = null;
-    }
-  }, []);
   const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
 
@@ -354,6 +348,10 @@ export function useSpaceGroupCall(
   useEffect(() => {
     latestSpaceSlugRef.current = spaceSlug?.trim() || null;
   }, [spaceSlug]);
+
+  useEffect(() => {
+    captureModeRef.current = captureMode;
+  }, [captureMode]);
 
   const setActiveKeyFromGroupCall = useCallback((gc: MatrixSdk.GroupCall) => {
     const f = gc.activeSpeaker;
@@ -566,7 +564,6 @@ export function useSpaceGroupCall(
   }, [announceCaptureNotice, callSessionId, roomId]);
 
   const runCleanup = useCallback(() => {
-    clearCaptureStartWatchdog();
     finalizeRecording();
     setCaptureMode('none');
 
@@ -651,7 +648,6 @@ export function useSpaceGroupCall(
     loggedStatsForGroupCallIdRef.current = null;
     lastRoomIdForTelemetryRef.current = null;
   }, [
-    clearCaptureStartWatchdog,
     clearConnectingStallTimer,
     clearMediaDebugInterval,
     finalizeRecording,
@@ -889,6 +885,27 @@ export function useSpaceGroupCall(
       groupCallListenerCleanupRef.current = null;
 
       const onError = (err: unknown) => {
+        const captureActive =
+          captureModeRef.current !== 'none' ||
+          recordingRuntimeRef.current != null ||
+          recordingFinalizeInFlightRef.current;
+        if (shouldIgnoreGroupCallErrorDuringCapture(err, captureActive)) {
+          if (roomId) {
+            logSpaceGroupCallEvent({
+              name: 'hypha.group_call.error_ignored',
+              roomId,
+              kind: lastJoinKindRef.current ?? undefined,
+              errorCode: 'WEBRTC_FAILED',
+            });
+          }
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(
+              '[hypha.group_call] Ignoring transient group call error during capture',
+              err,
+            );
+          }
+          return;
+        }
         const isPerm = isPermissionLikeGroupCallError(err);
         const code: SpaceGroupCallErrorCode = isPerm
           ? 'PERMISSION_DENIED'
@@ -1687,7 +1704,6 @@ export function useSpaceGroupCall(
       startedAt: new Date().toISOString(),
       recordedRoomId: activeRoom,
     };
-    clearCaptureStartWatchdog();
     setRecordingStatus('recording');
     setRecordingError(null);
     void announceCaptureNotice('started', captureMode);
@@ -1696,46 +1712,7 @@ export function useSpaceGroupCall(
     callSessionId,
     callState,
     captureMode,
-    clearCaptureStartWatchdog,
     feedVersion,
-    roomId,
-  ]);
-
-  useEffect(() => {
-    if (captureMode === 'none') {
-      clearCaptureStartWatchdog();
-      return;
-    }
-    if (recordingRuntimeRef.current) {
-      clearCaptureStartWatchdog();
-      return;
-    }
-    if (recordingFinalizeInFlightRef.current) return;
-    if (callState !== 'connected' && callState !== 'awaiting_media') return;
-    if (
-      recordingStatus === 'recording' ||
-      recordingStatus === 'paused' ||
-      recordingStatus === 'uploading'
-    ) {
-      clearCaptureStartWatchdog();
-      return;
-    }
-    if (captureStartWatchdogRef.current != null) return;
-
-    captureStartWatchdogRef.current = setTimeout(() => {
-      captureStartWatchdogRef.current = null;
-      if (recordingRuntimeRef.current) return;
-      setRecordingStatus('error');
-      setRecordingError('capture could not start: call media not ready');
-      setCaptureMode('none');
-    }, 12_000);
-
-    return clearCaptureStartWatchdog;
-  }, [
-    callState,
-    captureMode,
-    clearCaptureStartWatchdog,
-    recordingStatus,
     roomId,
   ]);
 

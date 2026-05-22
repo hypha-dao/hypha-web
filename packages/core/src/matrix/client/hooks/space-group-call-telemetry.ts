@@ -12,6 +12,7 @@ export type SpaceGroupCallTelemetryEvent = {
     | 'hypha.group_call.join_ms'
     | 'hypha.group_call.left'
     | 'hypha.group_call.error'
+    | 'hypha.group_call.error_ignored'
     | 'hypha.group_call.connected'
     | 'hypha.group_call.media_snapshot'
     | 'hypha.group_call.remote_media_stall'
