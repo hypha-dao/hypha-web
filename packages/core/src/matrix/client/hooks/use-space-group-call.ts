@@ -249,6 +249,8 @@ export function useSpaceGroupCall(
   const [capturePreference, setCapturePreference] = useState<
     Exclude<SpaceGroupCallCaptureMode, 'none'>
   >('recording_with_transcript');
+  const [capturePreferenceSelected, setCapturePreferenceSelected] =
+    useState(false);
   const [captureMode, setCaptureMode] =
     useState<SpaceGroupCallCaptureMode>('none');
   const [remoteCaptureNotice, setRemoteCaptureNotice] = useState<{
@@ -629,6 +631,7 @@ export function useSpaceGroupCall(
     setActiveSpeakerKey(null);
     setCallSessionId(null);
     setScreenshareErrorCode(null);
+    setCapturePreferenceSelected(false);
     if (!recordingFinalizeInFlightRef.current) {
       setRecordingStatus('idle');
       setRecordingError(null);
@@ -1669,6 +1672,7 @@ export function useSpaceGroupCall(
       if (recordingFinalizeInFlightRef.current) return;
       const nextMode = mode ?? capturePreference;
       setCapturePreference(nextMode);
+      setCapturePreferenceSelected(true);
       if (recordingRuntimeRef.current) return;
       setCaptureMode(nextMode);
     },
@@ -2042,6 +2046,14 @@ export function useSpaceGroupCall(
     setScreenshareErrorCode(null);
   }, []);
 
+  useEffect(() => {
+    if (!recordingRuntimeRef.current) return;
+    if (callState === 'idle' || callState === 'error') {
+      finalizeRecording();
+      setCaptureMode('none');
+    }
+  }, [callState, finalizeRecording]);
+
   const dismissCallError = useCallback(() => {
     if (callState !== 'error') return;
     setErrorCode(null);
@@ -2050,6 +2062,14 @@ export function useSpaceGroupCall(
     setThreadContext(null);
     isJoiningRef.current = false;
   }, [callState]);
+
+  const updateCapturePreference = useCallback(
+    (mode: Exclude<SpaceGroupCallCaptureMode, 'none'>) => {
+      setCapturePreference(mode);
+      setCapturePreferenceSelected(true);
+    },
+    [],
+  );
 
   const retryFromError = useCallback(() => {
     if (callState !== 'error') return;
@@ -2105,7 +2125,8 @@ export function useSpaceGroupCall(
     captureMode,
     setCaptureMode,
     capturePreference,
-    setCapturePreference,
+    capturePreferenceSelected,
+    setCapturePreference: updateCapturePreference,
     startCapture,
     pauseCapture,
     resumeCapture,
