@@ -167,19 +167,11 @@ export function HumanChatPanelInCallControls({
       ? 'fill-none stroke-white/80 text-white/80'
       : 'fill-none stroke-muted-foreground text-muted-foreground',
   );
+  const captureActive = captureMode !== 'none' && recordingStatus !== 'error';
   const capturePending =
-    captureMode !== 'none' && recordingStatus === 'idle' && !controlsDisabled;
-  const captureLive =
-    captureMode !== 'none' &&
-    recordingStatus !== 'error' &&
-    (capturePending ||
-      recordingStatus === 'recording' ||
-      recordingStatus === 'paused' ||
-      recordingStatus === 'uploading');
-  const captureMenuActive =
-    recordingStatus === 'recording' ||
-    recordingStatus === 'paused' ||
-    recordingStatus === 'uploading';
+    captureActive && recordingStatus === 'idle' && !controlsDisabled;
+  const captureLive = captureActive;
+  const captureMenuActive = captureActive;
   const capturePulsing = recordingStatus === 'recording';
   const leaveOnly = controlsMode === 'leave_only';
   const captureSettingsBtn = cn(
@@ -277,13 +269,13 @@ export function HumanChatPanelInCallControls({
     setStopConfirmStep('none');
     onStopCapture();
   };
-  const captureModeLabel = captureMenuActive
-    ? captureMode === 'transcript_only'
-      ? t('callCaptureModeTranscriptOnly')
-      : t('callCaptureModeRecordingWithTranscript')
+  const captureModeLabel = !captureActive
+    ? t('callCaptureStatusIdle')
     : capturePending
     ? t('callCaptureStatusCapturing')
-    : t('callCaptureStatusIdle');
+    : captureMode === 'transcript_only'
+    ? t('callCaptureModeTranscriptOnly')
+    : t('callCaptureModeRecordingWithTranscript');
 
   const renderAudioSettingsMenu = (
     <div className="relative" ref={audioMenuRef}>

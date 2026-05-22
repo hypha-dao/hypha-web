@@ -319,7 +319,17 @@ export function useSpaceGroupCall(
     startedAt: string;
     recordedRoomId: string;
   } | null>(null);
+  const captureStartWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const acknowledgedCaptureNoticeIdsRef = useRef<Set<string>>(new Set());
+
+  const clearCaptureStartWatchdog = useCallback(() => {
+    if (captureStartWatchdogRef.current != null) {
+      clearTimeout(captureStartWatchdogRef.current);
+      captureStartWatchdogRef.current = null;
+    }
+  }, []);
   const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
 
@@ -556,6 +566,7 @@ export function useSpaceGroupCall(
   }, [announceCaptureNotice, callSessionId, roomId]);
 
   const runCleanup = useCallback(() => {
+    clearCaptureStartWatchdog();
     finalizeRecording();
     setCaptureMode('none');
 
@@ -639,7 +650,12 @@ export function useSpaceGroupCall(
     }
     loggedStatsForGroupCallIdRef.current = null;
     lastRoomIdForTelemetryRef.current = null;
-  }, [clearConnectingStallTimer, clearMediaDebugInterval, finalizeRecording]);
+  }, [
+    clearCaptureStartWatchdog,
+    clearConnectingStallTimer,
+    clearMediaDebugInterval,
+    finalizeRecording,
+  ]);
 
   const refreshLocalPreview = useCallback(() => {
     const gc = groupCallRef.current;
@@ -1671,6 +1687,7 @@ export function useSpaceGroupCall(
       startedAt: new Date().toISOString(),
       recordedRoomId: activeRoom,
     };
+    clearCaptureStartWatchdog();
     setRecordingStatus('recording');
     setRecordingError(null);
     void announceCaptureNotice('started', captureMode);
@@ -1679,25 +1696,48 @@ export function useSpaceGroupCall(
     callSessionId,
     callState,
     captureMode,
+    clearCaptureStartWatchdog,
     feedVersion,
     roomId,
   ]);
 
   useEffect(() => {
-    if (captureMode === 'none') return;
-    if (recordingRuntimeRef.current) return;
+    if (captureMode === 'none') {
+      clearCaptureStartWatchdog();
+      return;
+    }
+    if (recordingRuntimeRef.current) {
+      clearCaptureStartWatchdog();
+      return;
+    }
     if (recordingFinalizeInFlightRef.current) return;
     if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    if (
+      recordingStatus === 'recording' ||
+      recordingStatus === 'paused' ||
+      recordingStatus === 'uploading'
+    ) {
+      clearCaptureStartWatchdog();
+      return;
+    }
+    if (captureStartWatchdogRef.current != null) return;
 
-    const timer = window.setTimeout(() => {
+    captureStartWatchdogRef.current = setTimeout(() => {
+      captureStartWatchdogRef.current = null;
       if (recordingRuntimeRef.current) return;
       setRecordingStatus('error');
       setRecordingError('capture could not start: call media not ready');
       setCaptureMode('none');
-    }, 5000);
+    }, 12_000);
 
-    return () => window.clearTimeout(timer);
-  }, [callState, captureMode, callSessionId, feedVersion, roomId]);
+    return clearCaptureStartWatchdog;
+  }, [
+    callState,
+    captureMode,
+    clearCaptureStartWatchdog,
+    recordingStatus,
+    roomId,
+  ]);
 
   const startCapture = useCallback(
     (mode?: Exclude<SpaceGroupCallCaptureMode, 'none'>) => {
