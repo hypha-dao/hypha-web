@@ -81,9 +81,9 @@ export const ButtonProfile = ({
   const tCommon = useTranslations('Common');
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const fundWalletTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
+  const fundWalletTimeoutRef = useRef<
+    ReturnType<typeof setTimeout> | undefined
+  >(undefined);
   const safeWalletAddress =
     address && EVM_ADDRESS_REGEX.test(address)
       ? (address as `0x${string}`)
