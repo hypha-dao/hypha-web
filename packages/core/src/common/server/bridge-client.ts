@@ -72,6 +72,34 @@ export type BridgeUpdateCustomerRequest = {
   business_legal_name?: string;
 };
 
+export type BridgeCreateTransferRequest = {
+  on_behalf_of: string;
+  source: { payment_rail: string; currency: string };
+  destination: {
+    payment_rail: string;
+    currency: string;
+    to_address: string;
+  };
+  amount?: string;
+  features?: { flexible_amount?: boolean };
+};
+
+export type BridgeTransferResponse = {
+  id: string;
+  state: string;
+  on_behalf_of?: string;
+  amount?: string | null;
+  source?: { payment_rail?: string; currency?: string };
+  destination?: {
+    payment_rail?: string;
+    currency?: string;
+    to_address?: string;
+  };
+  source_deposit_instructions: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+};
+
 function isBridgeCustomerRecord(
   value: unknown,
 ): value is BridgeGetCustomerResponse {
@@ -362,6 +390,56 @@ function isBridgeSimulateKycApprovalRecord(
     typeof record.kyc_status === 'string' &&
     typeof record.message === 'string'
   );
+}
+
+function isBridgeTransferRecord(value: unknown): value is BridgeTransferResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.id === 'string' &&
+    typeof record.state === 'string' &&
+    typeof record.source_deposit_instructions === 'object' &&
+    record.source_deposit_instructions !== null
+  );
+}
+
+export async function bridgeCreateTransfer(
+  body: BridgeCreateTransferRequest,
+  idempotencyKey: string,
+): Promise<BridgeTransferResponse> {
+  const parsed = await bridgeRequest('/v0/transfers', {
+    method: 'POST',
+    body,
+    idempotencyKey,
+  });
+
+  if (!isBridgeTransferRecord(parsed)) {
+    throw new Error(
+      'Bridge API returned an unexpected transfer response shape',
+    );
+  }
+
+  return parsed;
+}
+
+export async function bridgeGetTransfer(
+  transferId: string,
+): Promise<BridgeTransferResponse> {
+  const parsed = await bridgeRequest(
+    `/v0/transfers/${encodeURIComponent(transferId)}`,
+    { method: 'GET' },
+  );
+
+  if (!isBridgeTransferRecord(parsed)) {
+    throw new Error(
+      'Bridge API returned an unexpected transfer response shape',
+    );
+  }
+
+  return parsed;
 }
 
 export async function bridgeSimulateKycApproval(

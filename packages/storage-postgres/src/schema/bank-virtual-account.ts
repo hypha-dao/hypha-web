@@ -18,7 +18,7 @@ export const bankVirtualAccounts = pgTable(
       .notNull()
       .references(() => bankCustomers.id),
     provider: text('provider').notNull(),
-    providerVirtualAccountId: text('provider_virtual_account_id').notNull(),
+    providerVirtualAccountId: text('provider_virtual_account_id'),
     currency: text('currency').notNull(),
     paymentRail: text('payment_rail').notNull(),
     depositInstructions: jsonb('deposit_instructions')

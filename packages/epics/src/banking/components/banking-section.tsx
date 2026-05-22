@@ -1,53 +1,42 @@
 'use client';
 
-import { FC, ReactNode, useCallback, useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { FC, useCallback, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Text } from '@radix-ui/themes';
-import { useAuthentication } from '@hypha-platform/authentication';
 import {
   useIsDelegate,
+  useMe,
   useSpaceBySlug,
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { Button } from '@hypha-platform/ui';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 import { useSpaceMember } from '../../spaces';
 import {
-  BANK_KYC_STATUSES,
-  type BankKycStatus,
-  type BankVirtualAccountCurrency,
+  useActivateTransfer,
+  useActivateVirtualAccount,
   useBankCustomerStatus,
-  useProvisionVirtualAccount,
+  useCreateTransfer,
+  useRequestSpaceAccount,
+  useTransfers,
   useVirtualAccounts,
 } from '../hooks';
-import { ApprovedBankingDeposits } from './approved-banking-deposits';
-import { BankOnboardingDialog } from './bank-onboarding-dialog';
-import { BankingSandboxDemoBar } from './banking-sandbox-demo-bar';
+import { type BankCurrencyCode } from '../bank-currency-display';
+import { BankAccountsSection } from './bank-accounts-section';
+import { BankTransfersSection } from './bank-transfers-section';
+import { BankingToolbar } from './banking-toolbar';
+import { CreateTransferDialog } from './create-transfer-dialog';
+import {
+  OpenSpaceAccountDialog,
+  type OpenSpaceAccountDialogMode,
+} from './open-space-account-dialog';
+import { openBankVerificationTosLink } from '../open-bank-verification-tos';
 
 type BankingSectionProps = {
   spaceSlug: string;
   web3SpaceId?: number;
 };
-
-function openVerificationLink(url: string | null | undefined) {
-  if (!url) {
-    return;
-  }
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
-
-function getKycStatusLabel(
-  kycStatus: string,
-  t: ReturnType<typeof useTranslations<'BankingTab'>>,
-): string {
-  if ((BANK_KYC_STATUSES as readonly string[]).includes(kycStatus)) {
-    return t(`status.${kycStatus as BankKycStatus}.title`);
-  }
-  return kycStatus;
-}
 
 export const BankingSection: FC<BankingSectionProps> = ({
   spaceSlug,
@@ -57,26 +46,64 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const tCommon = useTranslations('Common');
   const { isAuthenticated } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug);
+  const { person } = useMe();
   const { status, isLoading, isRefreshing, error, refresh } =
-    useBankCustomerStatus({
-      spaceSlug,
-    });
+    useBankCustomerStatus({ spaceSlug });
+
+  const hasCustomer = status != null;
+
   const {
     accounts: virtualAccounts,
     isLoading: virtualAccountsLoading,
     refresh: refreshVirtualAccounts,
   } = useVirtualAccounts({
     spaceSlug,
-    enabled: Boolean(status?.isApproved),
+    enabled: isAuthenticated && hasCustomer,
   });
   const {
-    provisionAccount,
-    isProvisioning,
-    provisioningCurrency,
-    error: provisionError,
-    clearError: clearProvisionError,
-  } = useProvisionVirtualAccount({ spaceSlug });
-  const [dialogOpen, setDialogOpen] = useState(false);
+    transfers,
+    isLoading: transfersLoading,
+    refresh: refreshTransfers,
+  } = useTransfers({
+    spaceSlug,
+    enabled: isAuthenticated && hasCustomer,
+  });
+
+  const {
+    createTransfer,
+    isCreating: isCreatingTransfer,
+    error: createTransferError,
+    clearError: clearCreateTransferError,
+  } = useCreateTransfer({ spaceSlug });
+  const {
+    requestSpaceAccount,
+    isSubmitting: isRequestingSpaceAccount,
+    error: spaceAccountError,
+    clearError: clearSpaceAccountError,
+  } = useRequestSpaceAccount({ spaceSlug });
+  const { activateTransfer, isActivating: isActivatingTransfer } =
+    useActivateTransfer({ spaceSlug });
+  const { activateAccount, isActivating: isActivatingAccount } =
+    useActivateVirtualAccount({ spaceSlug });
+
+  const [gearOpen, setGearOpen] = useState(false);
+  const [createTransferOpen, setCreateTransferOpen] = useState(false);
+  const [openDialogOpen, setOpenDialogOpen] = useState(false);
+  const [openDialogMode, setOpenDialogMode] =
+    useState<OpenSpaceAccountDialogMode>('full');
+
+  const needsProviderStatusRefresh =
+    hasCustomer && status != null && !status.approvalRegistered;
+
+  const handleGearOpenChange = useCallback(
+    (open: boolean) => {
+      setGearOpen(open);
+      if (open && needsProviderStatusRefresh) {
+        void refresh();
+      }
+    },
+    [needsProviderStatusRefresh, refresh],
+  );
 
   const resolvedWeb3SpaceId =
     web3SpaceId ??
@@ -87,12 +114,8 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: resolvedWeb3SpaceId,
   });
-  const { isMember } = useSpaceMember({
-    spaceId: resolvedWeb3SpaceId,
-  });
-  const { isDelegate } = useIsDelegate({
-    spaceId: resolvedWeb3SpaceId,
-  });
+  const { isMember } = useSpaceMember({ spaceId: resolvedWeb3SpaceId });
+  const { isDelegate } = useIsDelegate({ spaceId: resolvedWeb3SpaceId });
 
   const hasOnChainSpace = resolvedWeb3SpaceId != null;
   const hasTreasuryAddress = Boolean(spaceDetails?.executor);
@@ -105,163 +128,61 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const blockerMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember && !isDelegate
-    ? tCommon('joinSpaceToUse')
-    : !hasOnChainSpace
-    ? t('blockers.notOnChain')
-    : !hasTreasuryAddress
-    ? t('blockers.noTreasury')
-    : null;
+      ? tCommon('joinSpaceToUse')
+      : !hasOnChainSpace
+        ? t('blockers.notOnChain')
+        : !hasTreasuryAddress
+          ? t('blockers.noTreasury')
+          : null;
 
-  const handleRefreshStatus = useCallback(() => {
-    void refresh();
-  }, [refresh]);
+  const showOnboardingFields = !hasCustomer;
 
-  const handleOnboardingSuccess = useCallback(
-    (result: {
-      kycLink: string | null;
-      kycStatus: string;
-      isApproved?: boolean;
-    }) => {
+  const openVerificationGear = useCallback(() => {
+    setGearOpen(true);
+    if (needsProviderStatusRefresh) {
       void refresh();
-      if (!result.isApproved && result.kycStatus !== 'approved') {
-        openVerificationLink(result.kycLink);
-      }
-    },
-    [refresh],
-  );
-
-  const handleProvision = useCallback(
-    (currency: BankVirtualAccountCurrency) => {
-      clearProvisionError();
-      void provisionAccount(currency)
-        .then(() => {
-          void refreshVirtualAccounts();
-          void refresh();
-        })
-        .catch(() => undefined);
-    },
-    [clearProvisionError, provisionAccount, refresh, refreshVirtualAccounts],
-  );
-
-  const renderStatusBody = () => {
-    if (!isAuthenticated) {
-      return (
-        <Text size="2" className="text-muted-foreground">
-          {tCommon('signIn')}
-        </Text>
-      );
     }
+  }, [needsProviderStatusRefresh, refresh]);
 
-    if (isLoading) {
-      return (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <Text size="2">{t('loading')}</Text>
-        </div>
-      );
-    }
+  const initialLegalName = space?.title?.trim() ?? '';
+  const initialContactEmail = person?.email?.trim() ?? '';
 
-    if (status == null) {
-      return (
-        <div className="flex flex-col gap-4">
-          <Text size="2" className="text-muted-foreground">
-            {t('notStarted.description')}
-          </Text>
-          {canManage ? (
-            <Button
-              colorVariant="accent"
-              className="w-fit"
-              onClick={() => setDialogOpen(true)}
-            >
-              {t('notStarted.enableCta')}
-            </Button>
-          ) : (
-            <Button
-              colorVariant="accent"
-              className="w-fit"
-              disabled
-              title={blockerMessage ?? ''}
-            >
-              {t('notStarted.enableCta')}
-            </Button>
-          )}
-        </div>
-      );
-    }
-
-    if (status.isApproved) {
-      return (
-        <div className="flex flex-col gap-4">
-          <StatusPanel
-            title={t('status.approved.title')}
-            description={t('status.approved.description')}
-          />
-          <ApprovedBankingDeposits
-            virtualAccounts={virtualAccounts}
-            virtualAccountsLoading={virtualAccountsLoading}
-            canManage={canManage}
-            isProvisioning={isProvisioning}
-            provisioningCurrency={provisioningCurrency}
-            provisionError={provisionError}
-            onProvision={handleProvision}
-          />
-        </div>
-      );
-    }
-
-    const kycLink = status.kycLink;
-    const tosLink = status.tosLink;
-
-    return (
-      <StatusPanel
-        title={getKycStatusLabel(status.kycStatus, t)}
-        description={t('verificationInProgress')}
-        actions={
-          <>
-            {kycLink ? (
-              <Button
-                colorVariant="accent"
-                className="w-fit"
-                onClick={() => openVerificationLink(kycLink)}
-              >
-                {t('actions.openVerificationForm')}
-              </Button>
-            ) : null}
-            {tosLink ? (
-              <TosLink href={tosLink} label={t('actions.viewTerms')} />
-            ) : null}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-fit"
-              disabled={isRefreshing}
-              onClick={handleRefreshStatus}
-            >
-              {isRefreshing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('actions.refreshingStatus')}
-                </>
-              ) : (
-                t('actions.refreshStatus')
-              )}
-            </Button>
-          </>
-        }
-      />
+  const availableCurrencyCodes = useMemo((): BankCurrencyCode[] => {
+    const provisioned = new Set(
+      virtualAccounts
+        .filter((a) => a.lifecycle === 'active')
+        .map((a) => `${a.currency}:${a.paymentRail}`),
     );
-  };
+    return ['eur', 'usd', 'gbp', 'mxn', 'brl', 'cop'].filter((c) => {
+      const rail =
+        c === 'eur'
+          ? 'sepa'
+          : c === 'usd'
+            ? 'ach'
+            : c === 'gbp'
+              ? 'faster_payments'
+              : c === 'mxn'
+                ? 'spei'
+                : c === 'brl'
+                  ? 'pix'
+                  : 'cop';
+      return !provisioned.has(`${c}:${rail}`);
+    }) as BankCurrencyCode[];
+  }, [virtualAccounts]);
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <div className="w-full">
-        <h3 className="text-4 font-semibold tracking-tight text-foreground">
-          {t('title')}
-        </h3>
-        <p className="mt-1 max-w-3xl text-2 text-muted-foreground">
-          {t('subtitle')}
-        </p>
-      </div>
+    <div className="flex w-full flex-col gap-8">
+      <BankingToolbar
+        spaceSlug={spaceSlug}
+        status={status}
+        isLoading={isLoading}
+        isRefreshing={isRefreshing}
+        canManage={canManage}
+        blockerMessage={blockerMessage}
+        gearOpen={gearOpen}
+        onGearOpenChange={handleGearOpenChange}
+        onRefreshStatus={refresh}
+      />
 
       {error ? (
         <div className="flex flex-col gap-2">
@@ -276,52 +197,97 @@ export const BankingSection: FC<BankingSectionProps> = ({
         </div>
       ) : null}
 
-      {blockerMessage && status == null && !isLoading && isAuthenticated ? (
+      {blockerMessage && !canManage && isAuthenticated ? (
         <p className="text-sm text-muted-foreground">{blockerMessage}</p>
       ) : null}
 
-      <div className="rounded-lg border border-border bg-card p-4">
-        {renderStatusBody()}
-      </div>
+      <BankTransfersSection
+        transfers={hasCustomer ? transfers : []}
+        transfersLoading={hasCustomer && transfersLoading}
+        canManage={canManage}
+        isActivating={isActivatingTransfer}
+        onOpenVerificationDetails={openVerificationGear}
+        onActivateTransfer={(id) => {
+          void activateTransfer(id).then(() => void refreshTransfers());
+        }}
+        onNewPaymentLink={
+          canManage
+            ? () => {
+                clearCreateTransferError();
+                setCreateTransferOpen(true);
+              }
+            : undefined
+        }
+      />
 
-      {!isLoading && status != null && !status.isApproved ? (
-        <BankingSandboxDemoBar spaceSlug={spaceSlug} canManage={canManage} />
-      ) : null}
+      <BankAccountsSection
+        isAuthenticated={isAuthenticated}
+        canManage={canManage}
+        onOpenSpaceAccount={
+          canManage
+            ? () => {
+                clearSpaceAccountError();
+                setOpenDialogMode(
+                  hasCustomer && status?.isApproved ? 'addCurrency' : 'full',
+                );
+                setOpenDialogOpen(true);
+              }
+            : undefined
+        }
+        depositsProps={{
+          virtualAccounts: hasCustomer ? virtualAccounts : [],
+          virtualAccountsLoading: hasCustomer && virtualAccountsLoading,
+          canManage,
+          isActivating: isActivatingAccount,
+          provisionError: spaceAccountError,
+          onOpenVerificationDetails: openVerificationGear,
+          onActivateAccount: (id) => {
+            void activateAccount(id).then(() => void refreshVirtualAccounts());
+          },
+        }}
+      />
 
-      <BankOnboardingDialog
-        spaceSlug={spaceSlug}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onSuccess={handleOnboardingSuccess}
+      <CreateTransferDialog
+        open={createTransferOpen}
+        onOpenChange={setCreateTransferOpen}
+        showOnboardingFields={showOnboardingFields}
+        initialLegalName={initialLegalName}
+        initialContactEmail={initialContactEmail}
+        isSubmitting={isCreatingTransfer}
+        error={createTransferError}
+        onSubmit={async (input) => {
+          await createTransfer(input);
+          setCreateTransferOpen(false);
+          const updated = await refresh();
+          openBankVerificationTosLink(updated);
+          void refreshTransfers();
+        }}
+      />
+
+      <OpenSpaceAccountDialog
+        open={openDialogOpen}
+        onOpenChange={setOpenDialogOpen}
+        mode={openDialogMode}
+        availableCurrencies={
+          openDialogMode === 'addCurrency' ? availableCurrencyCodes : undefined
+        }
+        initialLegalName={initialLegalName}
+        initialContactEmail={initialContactEmail}
+        isSubmitting={isRequestingSpaceAccount}
+        error={spaceAccountError}
+        onSubmit={async (input) => {
+          clearSpaceAccountError();
+          await requestSpaceAccount({
+            legalName: input.legalName,
+            contactEmail: input.contactEmail,
+            currencies: input.currencies,
+          });
+          setOpenDialogOpen(false);
+          const updated = await refresh();
+          openBankVerificationTosLink(updated);
+          void refreshVirtualAccounts();
+        }}
       />
     </div>
   );
 };
-
-type StatusPanelProps = {
-  title: string;
-  description: string;
-  actions?: ReactNode;
-};
-
-function StatusPanel({ title, description, actions }: StatusPanelProps) {
-  return (
-    <div className="flex flex-col gap-3">
-      <h4 className="text-3 font-semibold tracking-tight text-foreground">
-        {title}
-      </h4>
-      <p className="text-2 text-muted-foreground">{description}</p>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
-    </div>
-  );
-}
-
-function TosLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Button variant="outline" className="w-fit" asChild>
-      <Link href={href} target="_blank" rel="noopener noreferrer">
-        {label}
-      </Link>
-    </Button>
-  );
-}

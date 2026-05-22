@@ -30,9 +30,19 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let includeKybData = true;
+  try {
+    const body = (await request.json()) as { includeKybData?: unknown };
+    if (body && typeof body === 'object' && 'includeKybData' in body) {
+      includeKybData = body.includeKybData !== false;
+    }
+  } catch {
+    // Empty body — default includeKybData true
+  }
+
   try {
     const status = await simulateSpaceBankKycApproval(
-      { spaceSlug, authToken },
+      { spaceSlug, authToken, includeKybData },
       { db },
     );
 

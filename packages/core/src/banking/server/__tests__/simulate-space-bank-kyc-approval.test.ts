@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 const isBridgeSandboxApi = vi.fn(() => true);
-const applyBridgeSandboxCustomerMockAddress = vi.fn();
+const isBankingSandboxDemoEnabled = vi.fn(() => true);
+const simulateBridgeKybData = vi.fn();
 const bridgeSimulateKycApproval = vi.fn();
 const resolveBridgeCustomerId = vi.fn();
 const findSpaceBySlug = vi.fn();
@@ -12,11 +13,11 @@ const findBankCustomerBySpaceAndProvider = vi.fn();
 
 vi.mock('../../../common/server/bridge-sandbox', () => ({
   isBridgeSandboxApi: () => isBridgeSandboxApi(),
+  isBankingSandboxDemoEnabled: () => isBankingSandboxDemoEnabled(),
 }));
 
-vi.mock('../bridge-sandbox-mock-customer-address', () => ({
-  applyBridgeSandboxCustomerMockAddress: (...args: unknown[]) =>
-    applyBridgeSandboxCustomerMockAddress(...args),
+vi.mock('../simulate-bridge-kyb-data', () => ({
+  simulateBridgeKybData: (...args: unknown[]) => simulateBridgeKybData(...args),
 }));
 
 vi.mock('../../../common/server/bridge-client', () => ({
@@ -57,6 +58,8 @@ const bankCustomer = {
 describe('simulateSpaceBankKycApproval', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    isBridgeSandboxApi.mockReturnValue(true);
+    isBankingSandboxDemoEnabled.mockReturnValue(true);
     findSpaceBySlug.mockResolvedValue({ id: 10, slug: 'acme' });
     authorizeSpaceBankOnboarding.mockResolvedValue({ authorized: true });
     findBankCustomerBySpaceAndProvider.mockResolvedValue(bankCustomer);
@@ -64,7 +67,7 @@ describe('simulateSpaceBankKycApproval', () => {
       customerId: 'cust_1',
       customer: bankCustomer,
     });
-    applyBridgeSandboxCustomerMockAddress.mockResolvedValue(undefined);
+    simulateBridgeKybData.mockResolvedValue(undefined);
     bridgeSimulateKycApproval.mockResolvedValue({
       success: true,
       customer_id: 'cust_1',
@@ -73,22 +76,76 @@ describe('simulateSpaceBankKycApproval', () => {
     });
   });
 
-  it('applies mock address from Bridge customer type before simulate KYB', async () => {
+  it('rejects when sandbox demo env flag is off', async () => {
+    isBankingSandboxDemoEnabled.mockReturnValue(false);
+
+    await expect(
+      simulateSpaceBankKycApproval(
+        { spaceSlug: 'acme', authToken: 'token' },
+        { db: mockDb },
+      ),
+    ).rejects.toMatchObject({ message: 'KYB simulation is not enabled' });
+
+    expect(bridgeSimulateKycApproval).not.toHaveBeenCalled();
+    expect(simulateBridgeKybData).not.toHaveBeenCalled();
+  });
+
+  it('rejects when Bridge API is not sandbox', async () => {
+    isBridgeSandboxApi.mockReturnValue(false);
+
+    await expect(
+      simulateSpaceBankKycApproval(
+        { spaceSlug: 'acme', authToken: 'token' },
+        { db: mockDb },
+      ),
+    ).rejects.toMatchObject({
+      message:
+        'KYC simulation is only available against the Bridge sandbox API',
+    });
+
+    expect(bridgeSimulateKycApproval).not.toHaveBeenCalled();
+    expect(simulateBridgeKybData).not.toHaveBeenCalled();
+  });
+
+  it('simulates KYB approval before mock KYB data PUT', async () => {
     await simulateSpaceBankKycApproval(
       { spaceSlug: 'acme', authToken: 'token' },
       { db: mockDb },
     );
 
     expect(
-      applyBridgeSandboxCustomerMockAddress.mock.invocationCallOrder[0]!,
-    ).toBeLessThan(bridgeSimulateKycApproval.mock.invocationCallOrder[0]!);
-    expect(applyBridgeSandboxCustomerMockAddress).toHaveBeenCalledWith(
-      'cust_1',
-      { businessLegalName: 'Hypha Test Space', force: true },
-    );
+      bridgeSimulateKycApproval.mock.invocationCallOrder[0]!,
+    ).toBeLessThan(simulateBridgeKybData.mock.invocationCallOrder[0]!);
+    expect(simulateBridgeKybData).toHaveBeenCalledWith('cust_1', {
+      businessLegalName: 'Hypha Test Space',
+      force: true,
+    });
     expect(bridgeSimulateKycApproval).toHaveBeenCalledWith(
       'cust_1',
       expect.any(String),
     );
+  });
+
+  it('skips mock KYB data when includeKybData is false', async () => {
+    await simulateSpaceBankKycApproval(
+      { spaceSlug: 'acme', authToken: 'token', includeKybData: false },
+      { db: mockDb },
+    );
+
+    expect(bridgeSimulateKycApproval).toHaveBeenCalled();
+    expect(simulateBridgeKybData).not.toHaveBeenCalled();
+  });
+
+  it('does not apply mock KYB data when simulate_kyc_approval fails', async () => {
+    bridgeSimulateKycApproval.mockRejectedValue(new Error('not sandbox'));
+
+    await expect(
+      simulateSpaceBankKycApproval(
+        { spaceSlug: 'acme', authToken: 'token' },
+        { db: mockDb },
+      ),
+    ).rejects.toThrow('not sandbox');
+
+    expect(simulateBridgeKybData).not.toHaveBeenCalled();
   });
 });

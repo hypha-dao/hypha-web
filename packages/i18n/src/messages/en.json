@@ -494,14 +494,143 @@
     }
   },
   "BankingTab": {
-    "title": "Bank Deposits",
-    "subtitle": "Enable your space to receive direct bank transfers.",
-    "loading": "Loading linked bank account status…",
-    "returnBanner": "You have returned from verification. Your status is updated below.",
-    "errorLoad": "Could not load linked bank account status.",
+    "title": "Bank Transfers",
+    "subtitle": "Receive bank transfers into your treasury and manage space deposit accounts.",
+    "loading": "Loading bank account status…",
+    "returnBanner": "Welcome back — we're checking your verification status.",
+    "returnBannerDismiss": "Dismiss",
+    "returnBannerApprovedHint": "Verification is complete. Open a space account to add any remaining currencies.",
+    "errorLoad": "Could not load bank account status.",
+    "sections": {
+      "transfers": {
+        "title": "Bank Transfers",
+        "description": "One-time payment links for donors and payers. Send a link once; funds convert to USDC in your treasury.",
+        "emptyTitle": "No one-time transfers yet",
+        "emptyDescription": "Create a payment link when you need a single incoming transfer without setting up a full deposit account.",
+        "newLinkCta": "New one-time payment link",
+        "loading": "Loading payment requests…"
+      },
+      "accounts": {
+        "title": "Bank Accounts",
+        "description": "Permanent deposit details per currency. Share these with anyone who pays your space regularly.",
+        "openAccountCta": "Open a space account",
+        "addCurrencyCta": "Add a currency",
+        "emptyTitle": "No bank accounts yet",
+        "emptyDescription": "Open a space account and choose which currencies you need. We'll set up deposit details for each one.",
+        "pendingTitle": "Verification in progress",
+        "pendingDescription": "Finish verification in Bridge to activate the currencies you selected. Your accounts will be created automatically once approved.",
+        "continueVerificationCta": "Continue verification",
+        "loadingAccounts": "Loading bank accounts…",
+        "signInHint": "Sign in to manage bank accounts."
+      }
+    },
+    "openAccount": {
+      "title": "Open a space account",
+      "titleAddCurrency": "Add a currency",
+      "description": "Tell us about your organization and which currencies you need. We'll verify your space once, then create accounts for each currency.",
+      "descriptionAddCurrency": "Choose additional currencies to add deposit accounts for your space.",
+      "legalName": "Legal entity name",
+      "contactEmail": "Contact email",
+      "currenciesLabel": "Currencies",
+      "currenciesHint": "Select every currency you want to receive bank transfers in.",
+      "submit": "Open account",
+      "submitAddCurrency": "Add currencies",
+      "submitting": "Working…",
+      "provisioningProgress": "Creating {currency} account…",
+      "redirectPendingTitle": "Continue in Bridge",
+      "redirectPendingDescription": "Accept terms and complete verification to activate your selected currencies."
+    },
+    "toolbar": {
+      "add": "Add",
+      "newPaymentLink": "New one-time payment link",
+      "openSpaceAccount": "Open a space account"
+    },
+    "operationStatus": {
+      "pendingKyb": "Pending verification",
+      "pendingActivation": "Ready to activate",
+      "pendingKybHint": "Complete business verification in Bridge to activate this request.",
+      "pendingActivationHint": "Verification is complete. Activate to generate deposit instructions.",
+      "continueVerification": "Continue verification",
+      "completeSetup": "Activate",
+      "activating": "Activating…",
+      "openGearForVerification": "Click to open verification details and Bridge links."
+    },
+    "advanced": {
+      "gearLabel": "Banking settings",
+      "dialogTitle": "Banking settings",
+      "dialogDescription": "Detailed information and technical configurations.",
+      "noCustomer": "No bank customer record for this space yet.",
+      "approvedSummary": "Verification is approved. Manage accounts in the Bank Accounts section below.",
+      "providerValidationsTitle": "Provider validations",
+      "stepCompleted": "Completed",
+      "tosProcedure": "Terms of service",
+      "kybProcedure": "Business verification (KYB)",
+      "approvedOnBridgePendingRecord": "Bridge shows verification as approved. Activate a pending request below to record approval and finish setup.",
+      "procedureHints": {
+        "fallback": "No further action is required for this step in Bridge right now.",
+        "tos": {
+          "complete": "Terms of service have been accepted. No further action is required here.",
+          "pending": "Terms are still pending on Bridge."
+        },
+        "kyb": {
+          "complete": "Business verification is complete. No further action is required here.",
+          "not_started": "Open the verification link to start your organization verification.",
+          "incomplete": "Complete and submit the verification form in Bridge to continue.",
+          "awaiting_questionnaire": "Bridge requires additional information. Check your email or the verification portal for the questionnaire.",
+          "awaiting_ubo": "Awaiting the ultimate beneficial owners (UBOs) listed in the KYB form to complete the verification sent by email.",
+          "under_review": "Your submission is under review with Bridge. This can take from a few hours to several days.",
+          "approved": "Business verification is complete. No further action is required here.",
+          "rejected": "Verification was declined. Contact support if you believe this is an error.",
+          "paused": "Verification is paused. Contact support for assistance.",
+          "offboarded": "Banking verification is no longer available for this customer. Contact support for assistance."
+        }
+      }
+    },
+    "tosStatus": {
+      "pending": {
+        "title": "Terms not accepted",
+        "description": "Accept the terms of service to continue."
+      },
+      "approved": {
+        "title": "Terms accepted",
+        "description": "Terms of service have been accepted."
+      }
+    },
+    "currencies": {
+      "eur": {
+        "code": "EUR",
+        "name": "Euro",
+        "payoutMethod": "IBAN and SWIFT/BIC"
+      },
+      "usd": {
+        "code": "USD",
+        "name": "US Dollar",
+        "payoutMethod": "ACH routing and account number"
+      },
+      "gbp": {
+        "code": "GBP",
+        "name": "British Pound",
+        "payoutMethod": "Sort code and account number"
+      },
+      "mxn": {
+        "code": "MXN",
+        "name": "Mexican Peso",
+        "payoutMethod": "CLABE bank transfer"
+      },
+      "brl": {
+        "code": "BRL",
+        "name": "Brazilian Real",
+        "payoutMethod": "PIX"
+      },
+      "cop": {
+        "code": "COP",
+        "name": "Colombian Peso",
+        "payoutMethod": "Bre-B"
+      }
+    },
     "notStarted": {
-      "description": "Complete a short business verification to enable bank deposits for this space. Once approved, anyone can send bank transfers directly to your treasury.",
-      "enableCta": "Enable bank deposits"
+      "description": "Open a space account to receive bank transfers in the currencies you need.",
+      "enableCta": "Open a space account"
     },
     "blockers": {
       "notOnChain": "This space must be deployed on-chain before a linked bank account can be set up.",
@@ -515,16 +644,44 @@
       "refreshingStatus": "Checking status…"
     },
     "corridors": {
-      "loading": "Loading deposit accounts…",
-      "activeTitle": "Deposit accounts",
-      "emptyAccounts": "No deposit accounts yet.",
-      "addAccountCta": "Add deposit account",
-      "addDialogTitle": "Choose a currency",
-      "addDialogDescription": "Each account is dedicated to one payment rail. Only corridors you have not set up yet are listed.",
-      "addDialogSelect": "Set up",
-      "addDisabledNotManager": "Only space members with treasury access can add deposit accounts.",
       "provisioning": "Setting up…",
-      "allActive": "All supported deposit corridors are active."
+      "allActive": "All supported currencies are active.",
+      "addDisabledNotManager": "Only space members with treasury access can manage bank accounts."
+    },
+    "accountCard": {
+      "viewDetails": "View deposit details"
+    },
+    "transferCard": {
+      "viewDetails": "View payment details",
+      "flexibleAmount": "Any amount",
+      "shareHint": "Share deposit details and the reference message with your payer."
+    },
+    "transferDetails": {
+      "title": "One-time payment",
+      "description": "The payer must include the reference message on their bank transfer so Bridge can match the deposit."
+    },
+    "createTransfer": {
+      "title": "New one-time payment link",
+      "description": "Create deposit instructions for a single incoming payment. Funds convert to USDC in your treasury.",
+      "currencyLabel": "Currency",
+      "fixedAmountLabel": "Require a fixed amount",
+      "amountPlaceholder": "e.g. 1000.00",
+      "flexibleAmountHint": "The payer can send any amount.",
+      "cancel": "Cancel",
+      "submit": "Create payment link",
+      "submitting": "Creating…"
+    },
+    "transferStatus": {
+      "awaiting_funds": "Awaiting funds",
+      "funds_received": "Funds received",
+      "payment_processed": "Completed",
+      "canceled": "Canceled",
+      "cancelled": "Canceled",
+      "failed": "Failed",
+      "returned": "Returned"
+    },
+    "accountDetails": {
+      "description": "Share these details for bank transfers into your treasury."
     },
     "depositInstructions": {
       "iban": "IBAN",
@@ -535,15 +692,18 @@
       "bankName": "Bank name",
       "activeBadge": "Active",
       "shareHint": "Give donors these details for bank transfers into your treasury.",
+      "depositMessage": "Reference message (required)",
       "copy": "Copy",
       "copied": "Copied"
     },
     "sandboxDemo": {
       "title": "Sandbox / Dev — KYB simulation",
-      "description": "Unlike ToS, KYB status is not updated automatically when you complete verification in Bridge sandbox. This applies a mock US address on the Bridge customer, then simulates KYB approval. Refresh status or reload this page afterwards to sync Hypha with Bridge.",
+      "description": "KYB is a manual step, so it must be simulated in sandbox. This can bypass filling in the form completely as well.",
+      "infoTooltipAria": "About KYB simulation in sandbox",
+      "simulateFillingKybRequiredData": "Simulate Filling KYB Required Data",
       "cta": "Simulate KYB approval",
       "simulating": "Simulating…",
-      "successRefreshHint": "KYB is approved in Bridge. Use Refresh status or reload this page to sync."
+      "refreshing": "Refreshing status…"
     },
     "endorsements": {
       "base": "USD (ACH / wire transfer)",
@@ -577,8 +737,8 @@
         "description": "Please complete the additional questionnaire to continue verification."
       },
       "awaiting_ubo": {
-        "title": "Beneficial owners required",
-        "description": "Please provide information about individuals who own or control 25% or more of the organization."
+        "title": "Awaiting UBO verification",
+        "description": "Awaiting the ultimate beneficial owners (UBOs) listed in the KYB form to complete the verification sent by email."
       },
       "under_review": {
         "title": "Under review",
@@ -586,7 +746,7 @@
       },
       "approved": {
         "title": "Verification approved",
-        "description": "Your organization has been verified. Activate each payment corridor below to receive deposit instructions."
+        "description": "Your organization is verified. Add currencies below to open deposit accounts."
       },
       "rejected": {
         "title": "Verification declined",
@@ -607,7 +767,7 @@
     }
   },
   "TreasuryTab": {
-    "bankAccounts": "Bank Deposits",
+    "bankAccounts": "Bank Transfers",
     "balance": "Balance",
     "wallet": "Wallet",
     "searchTokens": "Search tokens",

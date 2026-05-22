@@ -7,8 +7,13 @@ type UseSimulateKycApprovalOptions = {
   spaceSlug: string;
 };
 
+export type SimulateKycApprovalOptions = {
+  /** When true (default), apply mock KYB data on Bridge after approval simulation. */
+  includeKybData?: boolean;
+};
+
 type UseSimulateKycApprovalReturn = {
-  simulateApproval: () => Promise<void>;
+  simulateApproval: (options?: SimulateKycApprovalOptions) => Promise<void>;
   isSimulating: boolean;
   error: string | null;
   clearError: () => void;
@@ -25,44 +30,55 @@ export const useSimulateKycApproval = ({
   const [isSimulating, setIsSimulating] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const simulateApproval = React.useCallback(async (): Promise<void> => {
-    setIsSimulating(true);
-    setError(null);
+  const simulateApproval = React.useCallback(
+    async (options?: SimulateKycApprovalOptions): Promise<void> => {
+      setIsSimulating(true);
+      setError(null);
 
-    try {
-      const token = await getAccessToken();
-      if (!token) {
-        throw new Error('Unauthorized');
-      }
+      const includeKybData = options?.includeKybData !== false;
 
-      const endpoint = getSimulateKycApprovalEndpoint(spaceSlug);
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          throw new Error('Unauthorized');
+        }
 
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
+        const endpoint = getSimulateKycApprovalEndpoint(spaceSlug);
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ includeKybData }),
+        });
 
-      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+
+        if (!res.ok) {
+          const message =
+            typeof body === 'object' && body && 'error' in body && body.error
+              ? String(body.error)
+              : `Request failed (${res.status})`;
+          throw new Error(message);
+        }
+
+        // Caller refreshes bank customer status after success.
+      } catch (err) {
         const message =
-          typeof body === 'object' && body && 'error' in body && body.error
-            ? String(body.error)
-            : `Request failed (${res.status})`;
-        throw new Error(message);
+          err instanceof Error
+            ? err.message
+            : 'Failed to simulate KYB approval';
+        setError(message);
+        throw err;
+      } finally {
+        setIsSimulating(false);
       }
-
-      // Do not mutate SWR or update banking UI — simulate manual refresh + lazy sync.
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to simulate KYB approval';
-      setError(message);
-      throw err;
-    } finally {
-      setIsSimulating(false);
-    }
-  }, [getAccessToken, spaceSlug]);
+    },
+    [getAccessToken, spaceSlug],
+  );
 
   const clearError = React.useCallback(() => setError(null), []);
 

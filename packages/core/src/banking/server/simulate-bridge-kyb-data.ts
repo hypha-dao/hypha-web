@@ -52,11 +52,10 @@ export function buildBridgeSandboxCustomerAddressUpdate(
 }
 
 /**
- * Ensures the Bridge customer has a complete physical/residential address.
- * Uses the customer type from Bridge (not Hypha DB) so business always gets
- * `physical_address`, which virtual account provisioning requires.
+ * Sandbox-only: applies mock KYB-related customer data on Bridge (address today).
+ * Uses the customer type from Bridge so business always gets `physical_address`.
  */
-export async function applyBridgeSandboxCustomerMockAddress(
+export async function simulateBridgeKybData(
   customerId: string,
   options?: { businessLegalName?: string; force?: boolean },
 ): Promise<void> {

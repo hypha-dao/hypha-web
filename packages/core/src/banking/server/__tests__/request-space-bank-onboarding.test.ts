@@ -41,6 +41,7 @@ const onboardingInput = {
 const mockProvider: BankKycProvider = {
   provider: 'bridge',
   provisionVirtualAccount: vi.fn(),
+  createTransfer: vi.fn(),
   createKycLink: vi.fn().mockResolvedValue({
     providerCustomerId: 'cust_1',
     providerKycLinkId: 'link_1',
@@ -162,7 +163,6 @@ describe('requestSpaceBankOnboarding', () => {
     expect(createBody).not.toHaveProperty('redirectUri');
     expect(insertBankCustomer).toHaveBeenCalledWith(
       expect.objectContaining({
-        adminPersonId: 10,
         name: 'Acme Foundation Ltd.',
         contactEmail: 'compliance@acme.org',
         endorsements: ['base', 'sepa'],

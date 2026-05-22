@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   AssetsSection,
   BankingSection,
@@ -29,7 +30,15 @@ export function TreasuryTabs({
   const tCommon = useTranslations('Common');
   const tTreasury = useTranslations('TreasuryTab');
   const format = useFormatter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('balance');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'bank-accounts') {
+      setActiveTab('bank-accounts');
+    }
+  }, [searchParams]);
   const { assets } = useAssets({});
   const { transfers } = useTransfers({ spaceSlug });
   const { vaults } = useVaults({ spaceSlug });

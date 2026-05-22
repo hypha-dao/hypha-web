@@ -4,11 +4,13 @@ import { createBridgeKycProvider } from '../adapter';
 
 const bridgeCreateKycLink = vi.fn();
 const bridgeCreateVirtualAccount = vi.fn();
+const bridgeCreateTransfer = vi.fn();
 
 vi.mock('../../../../../common/server/bridge-client', () => ({
   bridgeCreateKycLink: (...args: unknown[]) => bridgeCreateKycLink(...args),
   bridgeCreateVirtualAccount: (...args: unknown[]) =>
     bridgeCreateVirtualAccount(...args),
+  bridgeCreateTransfer: (...args: unknown[]) => bridgeCreateTransfer(...args),
 }));
 
 describe('createBridgeKycProvider', () => {
@@ -322,6 +324,96 @@ describe('createBridgeKycProvider', () => {
       ).rejects.toThrow(/Unsupported virtual account currency/);
 
       expect(bridgeCreateVirtualAccount).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createTransfer', () => {
+    beforeEach(() => {
+      bridgeCreateTransfer.mockResolvedValue({
+        id: 'transfer_1',
+        state: 'awaiting_funds',
+        on_behalf_of: 'cust_1',
+        amount: null,
+        source: { payment_rail: 'ach_push', currency: 'usd' },
+        destination: {
+          payment_rail: 'base',
+          currency: 'usdc',
+          to_address: '0xtreasury',
+        },
+        source_deposit_instructions: {
+          bank_account_number: '123456789',
+          bank_routing_number: '101019644',
+          currency: 'usd',
+          deposit_message: 'BRG7depositmessage',
+        },
+      });
+    });
+
+    it('calls Bridge with flexible_amount when amount is omitted', async () => {
+      const provider = createBridgeKycProvider();
+      await provider.createTransfer({
+        customerId: 'cust_1',
+        currency: 'usd',
+        paymentRail: 'ach_push',
+        destinationAddress: '0xtreasury',
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440010',
+      });
+
+      expect(bridgeCreateTransfer).toHaveBeenCalledWith(
+        {
+          on_behalf_of: 'cust_1',
+          source: { payment_rail: 'ach_push', currency: 'usd' },
+          destination: {
+            payment_rail: 'base',
+            currency: 'usdc',
+            to_address: '0xtreasury',
+          },
+          features: { flexible_amount: true },
+        },
+        '550e8400-e29b-41d4-a716-446655440010',
+      );
+    });
+
+    it('sends fixed amount when amount is provided', async () => {
+      const provider = createBridgeKycProvider();
+      await provider.createTransfer({
+        customerId: 'cust_1',
+        currency: 'eur',
+        paymentRail: 'sepa',
+        destinationAddress: '0xtreasury',
+        amount: '500.00',
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440011',
+      });
+
+      const [body] = bridgeCreateTransfer.mock.calls[0] as [
+        Record<string, unknown>,
+        string,
+      ];
+      expect(body.amount).toBe('500.00');
+      expect(body).not.toHaveProperty('features');
+    });
+
+    it('maps response including deposit_message', async () => {
+      const provider = createBridgeKycProvider();
+      const result = await provider.createTransfer({
+        customerId: 'cust_1',
+        currency: 'usd',
+        paymentRail: 'ach_push',
+        destinationAddress: '0xtreasury',
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440012',
+      });
+
+      expect(result).toEqual({
+        providerTransferId: 'transfer_1',
+        currency: 'usd',
+        paymentRail: 'ach_push',
+        amount: null,
+        depositMessage: 'BRG7depositmessage',
+        depositInstructions: expect.objectContaining({
+          deposit_message: 'BRG7depositmessage',
+        }),
+        status: 'awaiting_funds',
+      });
     });
   });
 });

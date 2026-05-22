@@ -23,3 +23,36 @@ export const schemaProvisionVirtualAccount = z
 export type ProvisionVirtualAccountBody = z.infer<
   typeof schemaProvisionVirtualAccount
 >;
+
+const optionalOnboardingFields = {
+  legalName: z.string().trim().min(1).max(1024).optional(),
+  contactEmail: z.string().trim().email().optional(),
+};
+
+export const schemaCreateBankTransfer = z
+  .object({
+    currency: z.enum(BANK_VIRTUAL_ACCOUNT_CURRENCIES),
+    amount: z
+      .string()
+      .trim()
+      .min(1)
+      .regex(/^\d+(\.\d+)?$/, 'amount must be a positive decimal string')
+      .optional(),
+    ...optionalOnboardingFields,
+  })
+  .strict();
+
+export type CreateBankTransferBody = z.infer<typeof schemaCreateBankTransfer>;
+
+export const schemaRequestSpaceBankVirtualAccounts = z
+  .object({
+    currencies: z
+      .array(z.enum(BANK_VIRTUAL_ACCOUNT_CURRENCIES))
+      .min(1, 'currencies must include at least one value'),
+    ...optionalOnboardingFields,
+  })
+  .strict();
+
+export type RequestSpaceBankVirtualAccountsBody = z.infer<
+  typeof schemaRequestSpaceBankVirtualAccounts
+>;

@@ -34,10 +34,30 @@ export type ProvisionVirtualAccountResult = {
   status: string;
 };
 
+export type CreateTransferInput = {
+  customerId: string;
+  currency: string;
+  paymentRail: string;
+  destinationAddress: string;
+  amount?: string;
+  idempotencyKey: string;
+};
+
+export type CreateTransferResult = {
+  providerTransferId: string;
+  currency: string;
+  paymentRail: string;
+  amount: string | null;
+  depositMessage: string;
+  depositInstructions: Record<string, unknown>;
+  status: string;
+};
+
 export interface BankKycProvider {
   readonly provider: BankProvider;
   createKycLink(input: CreateKycLinkInput): Promise<CreateKycLinkResult>;
   provisionVirtualAccount(
     input: ProvisionVirtualAccountInput,
   ): Promise<ProvisionVirtualAccountResult>;
+  createTransfer(input: CreateTransferInput): Promise<CreateTransferResult>;
 }

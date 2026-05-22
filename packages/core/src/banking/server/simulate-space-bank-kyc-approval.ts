@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 
 import { bridgeSimulateKycApproval } from '../../common/server/bridge-client';
-import { applyBridgeSandboxCustomerMockAddress } from './bridge-sandbox-mock-customer-address';
-import { isBridgeSandboxApi } from '../../common/server/bridge-sandbox';
+import {
+  isBankingSandboxDemoEnabled,
+  isBridgeSandboxApi,
+} from '../../common/server/bridge-sandbox';
 import type { DatabaseInstance } from '../../common/server/types';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
 import { findSpaceBySlug } from '../../space/server/queries';
@@ -11,10 +13,13 @@ import { BankOnboardingError } from './errors';
 import { mapBridgeApiError } from './map-bridge-api-error';
 import { resolveBridgeCustomerId } from './resolve-bridge-customer-id';
 import { findBankCustomerBySpaceAndProvider } from './queries';
+import { simulateBridgeKybData } from './simulate-bridge-kyb-data';
 
 export type SimulateSpaceBankKycApprovalInput = {
   spaceSlug: string;
   authToken: string;
+  /** When true (default), PUT mock KYB data on Bridge after approval simulation. */
+  includeKybData?: boolean;
 };
 
 /** Intentionally minimal — UI must not react to this payload. */
@@ -23,13 +28,17 @@ export type SimulateSpaceBankKycApprovalResult = {
 };
 
 /**
- * Sandbox-only: applies a mock address on the Bridge customer, then simulates KYB
- * approval. Does not update Hypha DB — refresh status to sync.
+ * Sandbox-only: simulates KYB approval on Bridge, then optionally applies mock KYB
+ * data (address). Does not update Hypha DB — refresh status to sync.
  */
 export async function simulateSpaceBankKycApproval(
   input: SimulateSpaceBankKycApprovalInput,
   { db }: { db: DatabaseInstance },
 ): Promise<SimulateSpaceBankKycApprovalResult> {
+  if (!isBankingSandboxDemoEnabled()) {
+    throw new BankOnboardingError('KYB simulation is not enabled', 403);
+  }
+
   if (!isBridgeSandboxApi()) {
     throw new BankOnboardingError(
       'KYC simulation is only available against the Bridge sandbox API',
@@ -37,7 +46,7 @@ export async function simulateSpaceBankKycApproval(
     );
   }
 
-  const { spaceSlug, authToken } = input;
+  const { spaceSlug, authToken, includeKybData = true } = input;
 
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!space) {
@@ -77,19 +86,6 @@ export async function simulateSpaceBankKycApproval(
   }
 
   try {
-    await applyBridgeSandboxCustomerMockAddress(customerId, {
-      businessLegalName: customer.name,
-      force: true,
-    });
-  } catch (error) {
-    const mapped = mapBridgeApiError(error, 'PUT /customers/{id}');
-    if (mapped) {
-      throw mapped;
-    }
-    throw error;
-  }
-
-  try {
     await bridgeSimulateKycApproval(customerId, randomUUID());
   } catch (error) {
     const mapped = mapBridgeApiError(
@@ -100,6 +96,21 @@ export async function simulateSpaceBankKycApproval(
       throw mapped;
     }
     throw error;
+  }
+
+  if (includeKybData) {
+    try {
+      await simulateBridgeKybData(customerId, {
+        businessLegalName: customer.name,
+        force: true,
+      });
+    } catch (error) {
+      const mapped = mapBridgeApiError(error, 'PUT /customers/{id}');
+      if (mapped) {
+        throw mapped;
+      }
+      throw error;
+    }
   }
 
   return { ok: true };

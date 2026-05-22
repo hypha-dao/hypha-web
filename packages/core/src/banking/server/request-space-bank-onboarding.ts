@@ -97,7 +97,6 @@ export async function requestSpaceBankOnboarding(
   const customer = await insertBankCustomer(
     {
       spaceId: space.id,
-      adminPersonId: auth.person.id,
       entityType: 'business',
       provider: DEFAULT_BANK_PROVIDER,
       providerCustomerId: kycLinkResult.providerCustomerId,

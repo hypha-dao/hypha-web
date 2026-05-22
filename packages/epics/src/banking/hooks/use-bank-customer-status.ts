@@ -59,6 +59,10 @@ export const useBankCustomerStatus = ({
 
         return (await res.json()) as BankCustomerPublicStatus | null;
       },
+      {
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+      },
     );
 
   const refresh = React.useCallback(() => mutate(), [mutate]);

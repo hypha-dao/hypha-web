@@ -358,6 +358,27 @@
       "when": 1779340443446,
       "tag": "0050_bank_virtual_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1779400000000,
+      "tag": "0051_bank_transfers",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1779401000000,
+      "tag": "0052_banking_pending_operations",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1779500000000,
+      "tag": "0053_drop_bank_customer_admin_person",
+      "breakpoints": true
     }
   ]
 }

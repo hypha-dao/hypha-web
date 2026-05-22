@@ -10,9 +10,9 @@ vi.mock('../../../common/server/bridge-client', () => ({
 
 import {
   BRIDGE_SANDBOX_MOCK_COMPLETE_ADDRESS,
-  applyBridgeSandboxCustomerMockAddress,
   buildBridgeSandboxCustomerAddressUpdate,
-} from '../bridge-sandbox-mock-customer-address';
+  simulateBridgeKybData,
+} from '../simulate-bridge-kyb-data';
 
 describe('buildBridgeSandboxCustomerAddressUpdate', () => {
   it('uses residential_address for individual customers', () => {
@@ -34,7 +34,7 @@ describe('buildBridgeSandboxCustomerAddressUpdate', () => {
   });
 });
 
-describe('applyBridgeSandboxCustomerMockAddress', () => {
+describe('simulateBridgeKybData', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     bridgeUpdateCustomer.mockResolvedValue({});
@@ -48,7 +48,7 @@ describe('applyBridgeSandboxCustomerMockAddress', () => {
       registered_address: { subdivision: 'CA', country: 'USA' },
     });
 
-    await applyBridgeSandboxCustomerMockAddress('cust_1', {
+    await simulateBridgeKybData('cust_1', {
       businessLegalName: 'Sandbox Business',
     });
 
@@ -68,7 +68,7 @@ describe('applyBridgeSandboxCustomerMockAddress', () => {
       physical_address: BRIDGE_SANDBOX_MOCK_COMPLETE_ADDRESS,
     });
 
-    await applyBridgeSandboxCustomerMockAddress('cust_1');
+    await simulateBridgeKybData('cust_1');
 
     expect(bridgeUpdateCustomer).not.toHaveBeenCalled();
   });
@@ -80,7 +80,7 @@ describe('applyBridgeSandboxCustomerMockAddress', () => {
       physical_address: BRIDGE_SANDBOX_MOCK_COMPLETE_ADDRESS,
     });
 
-    await applyBridgeSandboxCustomerMockAddress('cust_1', { force: true });
+    await simulateBridgeKybData('cust_1', { force: true });
 
     expect(bridgeUpdateCustomer).toHaveBeenCalled();
   });

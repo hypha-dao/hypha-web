@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { isBridgeSandboxApi } from '../../common/server/bridge-sandbox';
 import type { DatabaseInstance } from '../../common/server/types';
-import { applyBridgeSandboxCustomerMockAddress } from './bridge-sandbox-mock-customer-address';
+import { simulateBridgeKybData } from './simulate-bridge-kyb-data';
 import { DEFAULT_BANK_PROVIDER, getPaymentRailForCurrency } from '../constants';
 import type {
   ProvisionSpaceBankVirtualAccountResult,
@@ -12,7 +12,7 @@ import { findSpaceBySlug } from '../../space/server/queries';
 import { authorizeSpaceBankOnboarding } from './authorize-space-bank-onboarding';
 import { BankOnboardingError } from './errors';
 import { mapBridgeApiError } from './map-bridge-api-error';
-import { insertBankVirtualAccount } from './mutations';
+import { insertBankVirtualAccount, updateBankVirtualAccount } from './mutations';
 import { mapBankVirtualAccountToPublic } from './map-bank-virtual-account-public';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
@@ -106,9 +106,12 @@ export async function provisionSpaceBankVirtualAccount(
     { db },
   );
 
-  if (existing) {
+  if (existing?.providerVirtualAccountId) {
     return {
-      ...mapBankVirtualAccountToPublic(existing),
+      ...mapBankVirtualAccountToPublic(
+        existing,
+        customer.kycStatus === 'approved',
+      ),
       created: false,
     };
   }
@@ -155,7 +158,7 @@ export async function provisionSpaceBankVirtualAccount(
 
   if (isBridgeSandboxApi()) {
     try {
-      await applyBridgeSandboxCustomerMockAddress(customerId, {
+      await simulateBridgeKybData(customerId, {
         businessLegalName: resolvedCustomer.name,
       });
     } catch (error) {
@@ -186,22 +189,32 @@ export async function provisionSpaceBankVirtualAccount(
     throw error;
   }
 
-  const inserted = await insertBankVirtualAccount(
-    {
-      bankCustomerId: resolvedCustomer.id,
-      provider: DEFAULT_BANK_PROVIDER,
-      providerVirtualAccountId: provisioned.providerVirtualAccountId,
-      currency: provisioned.currency,
-      paymentRail: provisioned.paymentRail,
-      depositInstructions: provisioned.depositInstructions,
-      destinationAddress: space.address,
-      status: provisioned.status,
-    },
-    { db },
-  );
+  const accountPayload = {
+    providerVirtualAccountId: provisioned.providerVirtualAccountId,
+    currency: provisioned.currency,
+    paymentRail: provisioned.paymentRail,
+    depositInstructions: provisioned.depositInstructions,
+    destinationAddress: space.address,
+    status: provisioned.status,
+  };
+
+  const row =
+    existing && !existing.providerVirtualAccountId
+      ? await updateBankVirtualAccount(
+          { id: existing.id, ...accountPayload },
+          { db },
+        )
+      : await insertBankVirtualAccount(
+          {
+            bankCustomerId: resolvedCustomer.id,
+            provider: DEFAULT_BANK_PROVIDER,
+            ...accountPayload,
+          },
+          { db },
+        );
 
   return {
-    ...mapBankVirtualAccountToPublic(inserted),
-    created: true,
+    ...mapBankVirtualAccountToPublic(row, true),
+    created: !existing,
   };
 }

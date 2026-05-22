@@ -58,6 +58,7 @@ const approvedCustomer = {
 const mockProvider: BankKycProvider = {
   provider: 'bridge',
   createKycLink: vi.fn(),
+  createTransfer: vi.fn(),
   provisionVirtualAccount: vi.fn().mockResolvedValue({
     providerVirtualAccountId: 'va_1',
     currency: 'eur',

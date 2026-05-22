@@ -8,7 +8,6 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
-import { people } from './people';
 import { spaces } from './space';
 
 export const bankCustomers = pgTable(
@@ -18,9 +17,6 @@ export const bankCustomers = pgTable(
     spaceId: integer('space_id')
       .notNull()
       .references(() => spaces.id),
-    adminPersonId: integer('admin_person_id')
-      .notNull()
-      .references(() => people.id),
     entityType: text('entity_type').notNull(),
     provider: text('provider').notNull(),
     providerCustomerId: text('provider_customer_id'),

@@ -1,13 +1,17 @@
 import {
   bridgeCreateKycLink,
+  bridgeCreateTransfer,
   bridgeCreateVirtualAccount,
   type BridgeCreateKycLinkRequest,
+  type BridgeCreateTransferRequest,
 } from '../../../../common/server/bridge-client';
 import { getPaymentRailForCurrency } from '../../../constants';
 import type {
   BankKycProvider,
   CreateKycLinkInput,
   CreateKycLinkResult,
+  CreateTransferInput,
+  CreateTransferResult,
   ProvisionVirtualAccountInput,
   ProvisionVirtualAccountResult,
 } from '../types';
@@ -95,6 +99,67 @@ export function createBridgeKycProvider(): BankKycProvider {
         paymentRail: responseRail,
         depositInstructions: instructions,
         status: response.status,
+      };
+    },
+    async createTransfer(
+      input: CreateTransferInput,
+    ): Promise<CreateTransferResult> {
+      const body: BridgeCreateTransferRequest = {
+        on_behalf_of: input.customerId,
+        source: {
+          payment_rail: input.paymentRail,
+          currency: input.currency,
+        },
+        destination: {
+          payment_rail: 'base',
+          currency: 'usdc',
+          to_address: input.destinationAddress,
+        },
+      };
+
+      if (input.amount) {
+        body.amount = input.amount;
+      } else {
+        body.features = { flexible_amount: true };
+      }
+
+      const response = await bridgeCreateTransfer(body, input.idempotencyKey);
+      const instructions = response.source_deposit_instructions;
+      const depositMessage =
+        typeof instructions.deposit_message === 'string'
+          ? instructions.deposit_message
+          : '';
+
+      if (!depositMessage) {
+        throw new Error(
+          'Bridge transfer response missing deposit_message in source_deposit_instructions',
+        );
+      }
+
+      const currency =
+        response.source?.currency ??
+        (typeof instructions.currency === 'string'
+          ? instructions.currency
+          : input.currency);
+
+      const paymentRail =
+        response.source?.payment_rail ??
+        (typeof instructions.payment_rail === 'string'
+          ? instructions.payment_rail
+          : input.paymentRail);
+
+      const amount =
+        response.amount ??
+        (typeof instructions.amount === 'string' ? instructions.amount : null);
+
+      return {
+        providerTransferId: response.id,
+        currency,
+        paymentRail,
+        amount: amount ?? input.amount ?? null,
+        depositMessage,
+        depositInstructions: instructions,
+        status: response.state,
       };
     },
   };
