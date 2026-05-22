@@ -2231,6 +2231,8 @@
     "callCaptureStop": "Detener captura",
     "callCapturePause": "Pausar captura",
     "callCaptureResume": "Reanudar captura",
+    "callCaptureConfirmStopRecording": "¿Detener la grabación de esta llamada?",
+    "callCaptureConfirmStopTranscript": "¿Detener también la transcripción y guardar ahora?",
     "callCaptureStatusError": "Error de captura",
     "messageReadMore": "Leer más",
     "messageShowLess": "Mostrar menos",

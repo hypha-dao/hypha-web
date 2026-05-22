@@ -2238,6 +2238,8 @@
     "callCaptureStop": "Stop capture",
     "callCapturePause": "Pause capture",
     "callCaptureResume": "Resume capture",
+    "callCaptureConfirmStopRecording": "Stop recording for this call?",
+    "callCaptureConfirmStopTranscript": "Stop transcript capture and save now?",
     "callCaptureStatusError": "Capture error",
     "messageReadMore": "Read more",
     "messageShowLess": "Show less",
