@@ -286,6 +286,16 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
           return;
         }
         try {
+          if (
+            typeof recorder.requestData === 'function' &&
+            recorder.state === 'recording'
+          ) {
+            recorder.requestData();
+          }
+        } catch {
+          // best effort — still attempt stop below
+        }
+        try {
           recorder.stop();
         } catch {
           resolve(buildBlob());
