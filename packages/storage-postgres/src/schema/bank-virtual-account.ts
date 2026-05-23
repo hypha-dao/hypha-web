@@ -1,5 +1,6 @@
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import {
+  boolean,
   integer,
   jsonb,
   pgTable,
@@ -26,6 +27,7 @@ export const bankVirtualAccounts = pgTable(
       .notNull(),
     destinationAddress: text('destination_address').notNull(),
     status: text('status').notNull(),
+    isApproved: boolean('is_approved').notNull().default(false),
     ...commonDateFields,
   },
   (table) => [

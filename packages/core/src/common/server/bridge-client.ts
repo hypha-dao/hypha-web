@@ -62,12 +62,20 @@ export type BridgeCustomerAddress = {
   country: string;
 };
 
+export type BridgeCustomerEndorsement = {
+  name: string;
+  status: string;
+  additionalRequirements?: unknown[];
+  requirements?: Record<string, unknown>;
+};
+
 export type BridgeGetCustomerResponse = {
   id: string;
   type: 'individual' | 'business';
   physical_address?: BridgeCustomerAddress | null;
   residential_address?: BridgeCustomerAddress | null;
   registered_address?: BridgeCustomerAddress | null;
+  endorsements?: BridgeCustomerEndorsement[];
 };
 
 export type BridgeUpdateCustomerRequest = {
@@ -327,6 +335,27 @@ export async function bridgeCreateKycLink(
   if (!isBridgeKycLinkRecord(parsed)) {
     throw new Error(
       'Bridge API returned an unexpected KYC link response shape',
+    );
+  }
+
+  return parsed;
+}
+
+export async function bridgeGetCustomerKycLink(
+  customerId: string,
+  options?: { endorsement?: string },
+): Promise<BridgeCreateKycLinkResponse> {
+  const query = options?.endorsement
+    ? `?endorsement=${encodeURIComponent(options.endorsement)}`
+    : '';
+  const parsed = await bridgeRequest(
+    `/v0/customers/${encodeURIComponent(customerId)}/kyc_link${query}`,
+    { method: 'GET' },
+  );
+
+  if (!isBridgeKycLinkRecord(parsed)) {
+    throw new Error(
+      'Bridge API returned an unexpected customer KYC link response shape',
     );
   }
 

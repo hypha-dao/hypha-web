@@ -379,6 +379,20 @@
       "when": 1779500000000,
       "tag": "0053_drop_bank_customer_admin_person",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1779600000000,
+      "tag": "0054_bank_virtual_account_is_approved",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1779700000000,
+      "tag": "0055_bank_customer_previous_kyc_links",
+      "breakpoints": true
     }
   ]
 }

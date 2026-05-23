@@ -4,14 +4,15 @@ import { resolveBankOperationLifecycle } from './map-bank-operation-lifecycle';
 
 export function mapBankVirtualAccountToPublic(
   account: BankVirtualAccount,
-  isCustomerApproved: boolean,
 ): BankVirtualAccountPublic {
   const hasProviderResource = Boolean(account.providerVirtualAccountId);
+  const isEndorsementApproved =
+    hasProviderResource || account.isApproved === true;
   const { lifecycle, canActivate, canContinueVerification } =
     resolveBankOperationLifecycle({
       status: account.status,
       hasProviderResource,
-      isCustomerApproved,
+      isEndorsementApproved,
     });
 
   return {
@@ -21,6 +22,8 @@ export function mapBankVirtualAccountToPublic(
     depositInstructions: account.depositInstructions,
     destinationAddress: account.destinationAddress,
     status: account.status,
+    isApproved: isEndorsementApproved,
+    approvalRegistered: account.isApproved === true,
     lifecycle,
     canActivate,
     canContinueVerification,

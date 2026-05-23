@@ -1,7 +1,7 @@
 import {
   BankOnboardingError,
+  createSpaceBankVirtualAccount,
   getSpaceBankVirtualAccounts,
-  provisionSpaceBankVirtualAccount,
   schemaProvisionVirtualAccount,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -36,9 +36,9 @@ export async function GET(
     });
     return NextResponse.json(accounts);
   } catch (error) {
-    console.error('banking/virtual-accounts GET failed:', error);
+    console.error('banking/accounts GET failed:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch virtual accounts' },
+      { error: 'Failed to fetch bank accounts' },
       { status: 500 },
     );
   }
@@ -76,7 +76,7 @@ export async function POST(
   }
 
   try {
-    const result = await provisionSpaceBankVirtualAccount(
+    const result = await createSpaceBankVirtualAccount(
       {
         spaceSlug,
         authToken,
@@ -94,9 +94,9 @@ export async function POST(
       );
     }
 
-    console.error('banking/virtual-accounts POST failed:', error);
+    console.error('banking/accounts POST failed:', error);
     return NextResponse.json(
-      { error: 'Failed to provision virtual account' },
+      { error: 'Failed to create bank account' },
       { status: 500 },
     );
   }

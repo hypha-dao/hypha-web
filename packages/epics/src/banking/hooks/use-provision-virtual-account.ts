@@ -6,8 +6,9 @@ import { useAuthentication } from '@hypha-platform/authentication';
 
 import type {
   BankVirtualAccountCurrency,
-  ProvisionVirtualAccountResult,
+  CreateBankAccountResult,
 } from './types';
+import { getBankCustomerStatusEndpoint } from './use-bank-customer-status';
 import { getVirtualAccountsEndpoint } from './use-virtual-accounts';
 
 type UseProvisionVirtualAccountOptions = {
@@ -15,11 +16,11 @@ type UseProvisionVirtualAccountOptions = {
 };
 
 type UseProvisionVirtualAccountReturn = {
-  provisionAccount: (
+  createAccount: (
     currency: BankVirtualAccountCurrency,
-  ) => Promise<ProvisionVirtualAccountResult>;
-  isProvisioning: boolean;
-  provisioningCurrency: BankVirtualAccountCurrency | null;
+  ) => Promise<CreateBankAccountResult>;
+  isCreating: boolean;
+  creatingCurrency: BankVirtualAccountCurrency | null;
   error: string | null;
   clearError: () => void;
 };
@@ -29,17 +30,17 @@ export const useProvisionVirtualAccount = ({
 }: UseProvisionVirtualAccountOptions): UseProvisionVirtualAccountReturn => {
   const { getAccessToken } = useAuthentication();
   const { mutate } = useSWRConfig();
-  const [isProvisioning, setIsProvisioning] = React.useState(false);
-  const [provisioningCurrency, setProvisioningCurrency] =
+  const [isCreating, setIsCreating] = React.useState(false);
+  const [creatingCurrency, setCreatingCurrency] =
     React.useState<BankVirtualAccountCurrency | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
-  const provisionAccount = React.useCallback(
+  const createAccount = React.useCallback(
     async (
       currency: BankVirtualAccountCurrency,
-    ): Promise<ProvisionVirtualAccountResult> => {
-      setIsProvisioning(true);
-      setProvisioningCurrency(currency);
+    ): Promise<CreateBankAccountResult> => {
+      setIsCreating(true);
+      setCreatingCurrency(currency);
       setError(null);
 
       try {
@@ -59,7 +60,7 @@ export const useProvisionVirtualAccount = ({
         });
 
         const body = (await res.json().catch(() => ({}))) as
-          | ProvisionVirtualAccountResult
+          | CreateBankAccountResult
           | { error?: string };
 
         if (!res.ok) {
@@ -70,19 +71,20 @@ export const useProvisionVirtualAccount = ({
           throw new Error(message);
         }
 
-        const result = body as ProvisionVirtualAccountResult;
-        await mutate([endpoint, 'virtual-accounts']);
+        const result = body as CreateBankAccountResult;
+        await Promise.all([
+          mutate([endpoint, 'virtual-accounts']),
+          mutate(getBankCustomerStatusEndpoint(spaceSlug)),
+        ]);
         return result;
       } catch (err) {
         const message =
-          err instanceof Error
-            ? err.message
-            : 'Failed to set up deposit account';
+          err instanceof Error ? err.message : 'Failed to create bank account';
         setError(message);
         throw err;
       } finally {
-        setIsProvisioning(false);
-        setProvisioningCurrency(null);
+        setIsCreating(false);
+        setCreatingCurrency(null);
       }
     },
     [getAccessToken, mutate, spaceSlug],
@@ -91,9 +93,9 @@ export const useProvisionVirtualAccount = ({
   const clearError = React.useCallback(() => setError(null), []);
 
   return {
-    provisionAccount,
-    isProvisioning,
-    provisioningCurrency,
+    createAccount,
+    isCreating,
+    creatingCurrency,
     error,
     clearError,
   };

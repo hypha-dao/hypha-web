@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, FormEvent, useEffect, useMemo, useState } from 'react';
+import { FC, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -21,6 +21,7 @@ import {
   type BankCurrencyCode,
 } from '../bank-currency-display';
 import { CurrencyOptionRow } from './currency-option-row';
+import { BANKING_READONLY_INPUT_CLASS } from '../banking-ui';
 
 export type OpenSpaceAccountDialogMode = 'full' | 'addCurrency';
 
@@ -73,10 +74,16 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
     getDefaultBankCurrencyCodes().filter((c) => currencyOptions.includes(c)),
   );
 
+  const wasOpenRef = useRef(false);
+
   useEffect(() => {
-    if (!open) {
+    const justOpened = open && !wasOpenRef.current;
+    wasOpenRef.current = open;
+
+    if (!justOpened) {
       return;
     }
+
     setLegalName(initialLegalName.trim());
     setContactEmail(initialContactEmail.trim());
     const defaults = getDefaultBankCurrencyCodes().filter((c) =>
@@ -144,6 +151,17 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
                   maxLength={1024}
                   disabled={isSubmitting || customerFieldsLocked}
                   readOnly={customerFieldsLocked}
+                  tabIndex={customerFieldsLocked ? -1 : undefined}
+                  className={
+                    customerFieldsLocked
+                      ? BANKING_READONLY_INPUT_CLASS
+                      : undefined
+                  }
+                  onFocus={
+                    customerFieldsLocked
+                      ? (event) => event.currentTarget.blur()
+                      : undefined
+                  }
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -156,6 +174,17 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
                   required={!customerFieldsLocked}
                   disabled={isSubmitting || customerFieldsLocked}
                   readOnly={customerFieldsLocked}
+                  tabIndex={customerFieldsLocked ? -1 : undefined}
+                  className={
+                    customerFieldsLocked
+                      ? BANKING_READONLY_INPUT_CLASS
+                      : undefined
+                  }
+                  onFocus={
+                    customerFieldsLocked
+                      ? (event) => event.currentTarget.blur()
+                      : undefined
+                  }
                 />
               </div>
             </>

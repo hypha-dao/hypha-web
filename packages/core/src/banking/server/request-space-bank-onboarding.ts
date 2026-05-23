@@ -86,6 +86,12 @@ export async function requestSpaceBankOnboarding(
 
   const resolvedEndorsements = resolveBridgeKycEndorsements(endorsements);
 
+  console.log('[banking] requestSpaceBankOnboarding endorsements', {
+    spaceSlug,
+    requestedEndorsements: endorsements,
+    resolvedEndorsements,
+  });
+
   const kycLinkResult = await kycProvider.createKycLink({
     entityType: 'business',
     legalName,

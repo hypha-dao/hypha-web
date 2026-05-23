@@ -16,12 +16,18 @@ export const useActivateTransfer = ({
 }: UseActivateTransferOptions) => {
   const { getAccessToken } = useAuthentication();
   const { mutate } = useSWRConfig();
-  const [isActivating, setIsActivating] = React.useState(false);
+  const [activatingTransferId, setActivatingTransferId] = React.useState<
+    number | null
+  >(null);
+  const [failedTransferId, setFailedTransferId] = React.useState<number | null>(
+    null,
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   const activateTransfer = React.useCallback(
     async (transferId: number): Promise<BankTransferPublic> => {
-      setIsActivating(true);
+      setActivatingTransferId(transferId);
+      setFailedTransferId(null);
       setError(null);
       try {
         const token = await getAccessToken();
@@ -50,10 +56,11 @@ export const useActivateTransfer = ({
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Failed to activate';
+        setFailedTransferId(transferId);
         setError(message);
         throw err;
       } finally {
-        setIsActivating(false);
+        setActivatingTransferId(null);
       }
     },
     [getAccessToken, mutate, spaceSlug],
@@ -61,8 +68,13 @@ export const useActivateTransfer = ({
 
   return {
     activateTransfer,
-    isActivating,
+    isActivating: activatingTransferId != null,
+    activatingTransferId,
+    failedTransferId,
     error,
-    clearError: () => setError(null),
+    clearError: () => {
+      setError(null);
+      setFailedTransferId(null);
+    },
   };
 };

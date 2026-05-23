@@ -3,11 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 const findBankCustomerBySpaceAndProvider = vi.fn();
+const findBankVirtualAccountsByCustomer = vi.fn();
 const fetchBridgeKycLinkLive = vi.fn();
+const fetchBridgeCustomerEndorsementStatuses = vi.fn();
 
 vi.mock('../queries', () => ({
   findBankCustomerBySpaceAndProvider: (...args: unknown[]) =>
     findBankCustomerBySpaceAndProvider(...args),
+  findBankVirtualAccountsByCustomer: (...args: unknown[]) =>
+    findBankVirtualAccountsByCustomer(...args),
 }));
 
 vi.mock('../fetch-bridge-kyc-link-live', () => ({
@@ -18,6 +22,17 @@ vi.mock('../fetch-bridge-kyc-link-live', () => ({
   isBridgeTosProcedureSubmitted: (status: string | null | undefined) =>
     status === 'approved',
 }));
+
+vi.mock('../bridge-customer-endorsements', async (importOriginal) => {
+  const actual = await importOriginal<
+    typeof import('../bridge-customer-endorsements')
+  >();
+  return {
+    ...actual,
+    fetchBridgeCustomerEndorsementStatuses: (...args: unknown[]) =>
+      fetchBridgeCustomerEndorsementStatuses(...args),
+  };
+});
 
 import { getSpaceBankCustomerPublicStatus } from '../get-space-bank-customer-public-status';
 
@@ -33,11 +48,14 @@ const pendingCustomer = {
   kycLink: 'https://bridge.example/kyc',
   tosLink: 'https://bridge.example/tos',
   providerKycLinkId: 'link_1',
+  endorsements: ['base', 'sepa'],
 };
 
 describe('getSpaceBankCustomerPublicStatus', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    findBankVirtualAccountsByCustomer.mockResolvedValue([]);
+    fetchBridgeCustomerEndorsementStatuses.mockResolvedValue(new Map());
   });
 
   it('returns null when no bank customer exists', async () => {
@@ -56,6 +74,7 @@ describe('getSpaceBankCustomerPublicStatus', () => {
       ...pendingCustomer,
       kycStatus: 'approved',
       tosStatus: 'approved',
+      providerCustomerId: 'cust_1',
     });
 
     const result = await getSpaceBankCustomerPublicStatus(space, {
@@ -63,14 +82,22 @@ describe('getSpaceBankCustomerPublicStatus', () => {
     });
 
     expect(fetchBridgeKycLinkLive).not.toHaveBeenCalled();
+    expect(fetchBridgeCustomerEndorsementStatuses).toHaveBeenCalledWith(
+      'cust_1',
+    );
     expect(result?.isApproved).toBe(true);
     expect(result?.approvalRegistered).toBe(true);
-    expect(result?.procedures.tos.isComplete).toBe(true);
-    expect(result?.procedures.tos.link).toBe(pendingCustomer.tosLink);
+    expect(result?.currencyStatuses.map((entry) => entry.currency)).toEqual([
+      'eur',
+      'usd',
+    ]);
   });
 
   it('reads Bridge live status without persisting when not registered', async () => {
-    findBankCustomerBySpaceAndProvider.mockResolvedValue(pendingCustomer);
+    findBankCustomerBySpaceAndProvider.mockResolvedValue({
+      ...pendingCustomer,
+      providerCustomerId: 'cust_1',
+    });
     fetchBridgeKycLinkLive.mockResolvedValue({
       kycStatus: 'approved',
       tosStatus: 'approved',
@@ -83,13 +110,14 @@ describe('getSpaceBankCustomerPublicStatus', () => {
       db: mockDb,
     });
 
-    expect(fetchBridgeKycLinkLive).toHaveBeenCalledWith(pendingCustomer);
+    expect(fetchBridgeKycLinkLive).toHaveBeenCalledTimes(1);
     expect(result?.isApproved).toBe(true);
     expect(result?.approvalRegistered).toBe(false);
     expect(result?.procedures.kyc.status).toBe('approved');
-    expect(result?.procedures.kyc.isComplete).toBe(true);
-    expect(result?.procedures.tos.isComplete).toBe(true);
-    expect(result?.tosLink).toBe(pendingCustomer.tosLink);
+    expect(result?.currencyStatuses.map((entry) => entry.currency)).toEqual([
+      'eur',
+      'usd',
+    ]);
   });
 
   it('falls back to DB when Bridge live read fails', async () => {

@@ -12,6 +12,7 @@ export * from './get-space-bank-transfers';
 export * from './provision-space-bank-virtual-account';
 export * from './create-space-bank-transfer';
 export * from './request-space-bank-virtual-accounts';
+export * from './create-space-bank-virtual-account';
 export * from './activate-space-bank-transfer';
 export * from './activate-space-bank-virtual-account';
 export * from './ensure-space-bank-customer';

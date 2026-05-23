@@ -25,6 +25,10 @@ export const BANKING_LOADING_STATE_CLASS =
 export const BANKING_COPYABLE_SURFACE_CLASS =
   'rounded-md border border-border/70 bg-muted/25';
 
+/** Locked customer fields — readable but not focusable like an editable input. */
+export const BANKING_READONLY_INPUT_CLASS =
+  'cursor-default bg-muted/30 focus-visible:ring-0 focus-visible:ring-offset-0';
+
 /** True while ToS/KYB still need action (matches gear procedure badges). */
 export function isBankVerificationInProgress(
   status: BankCustomerPublicStatus | null | undefined,
@@ -81,11 +85,64 @@ function enrichBankOperationWithCustomerStatus<T extends BankOperationLike>(
   return operation;
 }
 
+function findCurrencyStatusForAccount(
+  account: BankVirtualAccountPublic,
+  status: BankCustomerPublicStatus | null | undefined,
+) {
+  return status?.currencyStatuses?.find(
+    (entry) => entry.currency.toLowerCase() === account.currency.toLowerCase(),
+  );
+}
+
+/** Align listing cards with gear using live per-currency endorsement status. */
 export function enrichVirtualAccountWithCustomerStatus(
   account: BankVirtualAccountPublic,
   status: BankCustomerPublicStatus | null | undefined,
 ): BankVirtualAccountPublic {
-  return enrichBankOperationWithCustomerStatus(account, status);
+  if (account.lifecycle === 'active') {
+    return account;
+  }
+
+  const currencyStatus = findCurrencyStatusForAccount(account, status);
+  if (!currencyStatus) {
+    return account;
+  }
+
+  switch (currencyStatus.operationalStatus) {
+    case 'active':
+      return {
+        ...account,
+        lifecycle: 'active',
+        canActivate: false,
+        canContinueVerification: false,
+        isApproved: true,
+      };
+    case 'approved':
+      return {
+        ...account,
+        lifecycle: 'pending_activation',
+        canActivate: true,
+        canContinueVerification: false,
+        isApproved: true,
+      };
+    case 'pending':
+      return {
+        ...account,
+        lifecycle: 'pending_kyb',
+        canActivate: false,
+        canContinueVerification: false,
+      };
+    case 'not_approved':
+    case 'not_opened':
+      return {
+        ...account,
+        lifecycle: 'pending_kyb',
+        canActivate: false,
+        canContinueVerification: false,
+      };
+    default:
+      return account;
+  }
 }
 
 export function enrichTransferWithCustomerStatus(
@@ -98,6 +155,7 @@ export function enrichTransferWithCustomerStatus(
 export function getCoveredBankCurrencyCodes(
   virtualAccounts: BankVirtualAccountPublic[],
 ): Set<BankCurrencyCode> {
+  // Only count corridors with a DB bank_virtual_accounts row (from GET /banking/accounts).
   const covered = new Set<BankCurrencyCode>();
   for (const account of virtualAccounts) {
     const code = account.currency.toLowerCase() as BankCurrencyCode;

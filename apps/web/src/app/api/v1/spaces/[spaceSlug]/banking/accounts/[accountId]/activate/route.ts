@@ -1,4 +1,5 @@
 import {
+  BANK_SETUP_FAILED_USER_MESSAGE,
   BankOnboardingError,
   activateSpaceBankVirtualAccount,
 } from '@hypha-platform/core/server';
@@ -48,9 +49,9 @@ export async function POST(
       );
     }
 
-    console.error('banking/virtual-accounts/activate POST failed:', error);
+    console.error('banking/accounts/activate POST failed:', error);
     return NextResponse.json(
-      { error: 'Failed to activate bank account' },
+      { error: BANK_SETUP_FAILED_USER_MESSAGE },
       { status: 500 },
     );
   }

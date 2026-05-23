@@ -10,7 +10,7 @@ import type {
 } from '../types';
 import { findSpaceBySlug } from '../../space/server/queries';
 import { authorizeSpaceBankOnboarding } from './authorize-space-bank-onboarding';
-import { BankOnboardingError } from './errors';
+import { BankOnboardingError, BANK_SETUP_FAILED_USER_MESSAGE } from './errors';
 import { mapBridgeApiError } from './map-bridge-api-error';
 import {
   insertBankVirtualAccount,
@@ -24,7 +24,14 @@ import {
   findBankCustomerBySpaceAndProvider,
   findBankVirtualAccountByCorridorAndCustomer,
 } from './queries';
+import {
+  fetchBridgeCustomerEndorsementStatuses,
+  getEndorsementForCurrency,
+  isBridgeEndorsementApproved,
+  resolveEndorsementStatusFromMap,
+} from './bridge-customer-endorsements';
 import { syncBankCustomerKycFromBridge } from './sync-bank-customer-kyc-from-bridge';
+import { persistVirtualAccountEndorsementFromBridge } from './sync-bank-virtual-account-endorsement';
 
 function mapBridgeProvisionError(error: unknown): BankOnboardingError | null {
   if (!(error instanceof Error)) {
@@ -34,26 +41,7 @@ function mapBridgeProvisionError(error: unknown): BankOnboardingError | null {
   const status = (error as Error & { status?: number }).status;
   if (status !== undefined && status >= 400 && status < 500) {
     console.error('Bridge virtual account provisioning failed:', error);
-    const body = (error as Error & { body?: unknown }).body;
-    const code =
-      typeof body === 'object' &&
-      body !== null &&
-      'code' in body &&
-      typeof (body as { code: unknown }).code === 'string'
-        ? (body as { code: string }).code
-        : null;
-
-    if (code === 'missing_address_data') {
-      return new BankOnboardingError(
-        'Bridge customer is missing a complete physical address. In sandbox, use Simulate KYB approval or retry after addresses are set on the customer.',
-        400,
-      );
-    }
-
-    return new BankOnboardingError(
-      'This payment corridor was not verified during KYB. Complete verification for this corridor in Bridge, or choose a different currency.',
-      400,
-    );
+    return new BankOnboardingError(BANK_SETUP_FAILED_USER_MESSAGE, 400);
   }
 
   return null;
@@ -112,25 +100,58 @@ export async function provisionSpaceBankVirtualAccount(
 
   if (existing?.providerVirtualAccountId) {
     return {
-      ...mapBankVirtualAccountToPublic(
-        existing,
-        customer.kycStatus === 'approved',
-      ),
+      ...mapBankVirtualAccountToPublic(existing),
       created: false,
     };
   }
 
   let resolvedCustomer = customer;
+  let resolvedAccount = existing;
 
-  if (resolvedCustomer.kycStatus !== 'approved') {
-    const synced = await syncBankCustomerKycFromBridge(resolvedCustomer, {
-      db,
-    });
-    resolvedCustomer = synced.customer;
-
-    if (!synced.isApproved) {
+  if (resolvedAccount && !resolvedAccount.providerVirtualAccountId) {
+    const persisted = await persistVirtualAccountEndorsementFromBridge(
+      resolvedAccount,
+      resolvedCustomer,
+      { db },
+    );
+    resolvedAccount = persisted.account;
+    if (!persisted.isApproved) {
       throw new BankOnboardingError(
-        'KYB is not yet approved. Complete verification before setting up deposit accounts.',
+        'This currency is not yet approved in Bridge. Complete verification for this corridor first.',
+        403,
+      );
+    }
+  } else if (!resolvedAccount) {
+    let customerId = resolvedCustomer.providerCustomerId;
+    if (!customerId) {
+      const syncedCustomer = await syncBankCustomerKycFromBridge(
+        resolvedCustomer,
+        { db },
+      );
+      resolvedCustomer = syncedCustomer.customer;
+      customerId = resolvedCustomer.providerCustomerId ?? null;
+    }
+
+    if (!customerId) {
+      throw new BankOnboardingError(
+        'Bridge customer is not ready yet. Try again after KYB approval completes.',
+        422,
+      );
+    }
+
+    const endorsement = getEndorsementForCurrency(currency);
+    if (!endorsement) {
+      throw new BankOnboardingError('Unsupported currency', 400);
+    }
+
+    const statusMap = await fetchBridgeCustomerEndorsementStatuses(customerId);
+    const endorsementStatus = resolveEndorsementStatusFromMap(
+      statusMap,
+      endorsement,
+    );
+    if (!isBridgeEndorsementApproved(endorsementStatus)) {
+      throw new BankOnboardingError(
+        'This currency is not yet approved in Bridge. Complete verification for this corridor first.',
         403,
       );
     }
@@ -206,12 +227,13 @@ export async function provisionSpaceBankVirtualAccount(
     ),
     destinationAddress: provisioned.destination?.address ?? space.address,
     status: provisioned.status,
+    isApproved: true,
   };
 
   const row =
-    existing && !existing.providerVirtualAccountId
+    resolvedAccount && !resolvedAccount.providerVirtualAccountId
       ? await updateBankVirtualAccount(
-          { id: existing.id, ...accountPayload },
+          { id: resolvedAccount.id, ...accountPayload },
           { db },
         )
       : await insertBankVirtualAccount(
@@ -224,7 +246,7 @@ export async function provisionSpaceBankVirtualAccount(
         );
 
   return {
-    ...mapBankVirtualAccountToPublic(row, true),
-    created: !existing,
+    ...mapBankVirtualAccountToPublic(row),
+    created: !resolvedAccount,
   };
 }

@@ -12,7 +12,7 @@ describe('resolveBankOperationLifecycle', () => {
       resolveBankOperationLifecycle({
         status: BANK_OPERATION_PENDING_KYB,
         hasProviderResource: true,
-        isCustomerApproved: false,
+        isEndorsementApproved: false,
       }),
     ).toEqual({
       lifecycle: 'active',
@@ -26,7 +26,7 @@ describe('resolveBankOperationLifecycle', () => {
       resolveBankOperationLifecycle({
         status: BANK_OPERATION_PENDING_ACTIVATION,
         hasProviderResource: false,
-        isCustomerApproved: true,
+        isEndorsementApproved: true,
       }),
     ).toEqual({
       lifecycle: 'pending_activation',
@@ -40,7 +40,7 @@ describe('resolveBankOperationLifecycle', () => {
       resolveBankOperationLifecycle({
         status: BANK_OPERATION_PENDING_KYB,
         hasProviderResource: false,
-        isCustomerApproved: false,
+        isEndorsementApproved: false,
       }),
     ).toEqual({
       lifecycle: 'pending_kyb',
@@ -54,7 +54,7 @@ describe('resolveBankOperationLifecycle', () => {
       resolveBankOperationLifecycle({
         status: BANK_OPERATION_PENDING_KYB,
         hasProviderResource: false,
-        isCustomerApproved: true,
+        isEndorsementApproved: true,
       }),
     ).toEqual({
       lifecycle: 'pending_activation',

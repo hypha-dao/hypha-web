@@ -9,6 +9,7 @@ import { ApprovedBankingDeposits } from './approved-banking-deposits';
 import type { ApprovedBankingDepositsProps } from './approved-banking-deposits';
 
 type OpenSpaceAccountDisabledReason =
+  | 'loadingAccounts'
   | 'finishVerificationFirst'
   | 'allCurrenciesCovered'
   | null;
@@ -17,7 +18,7 @@ type BankAccountsSectionProps = {
   isAuthenticated: boolean;
   canManage: boolean;
   depositsProps: ApprovedBankingDepositsProps;
-  onOpenSpaceAccount?: () => void;
+  onOpenSpaceAccount: () => void;
   openSpaceAccountDisabled?: boolean;
   openSpaceAccountDisabledReason?: OpenSpaceAccountDisabledReason;
 };
@@ -33,10 +34,12 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
   const t = useTranslations('BankingTab.sections.accounts');
   const tToolbar = useTranslations('BankingTab.toolbar');
 
-  const showOpenButton = canManage && onOpenSpaceAccount;
+  const showOpenButton = canManage && isAuthenticated;
   const buttonDisabled = openSpaceAccountDisabled;
   const tooltipText =
-    openSpaceAccountDisabledReason === 'finishVerificationFirst'
+    openSpaceAccountDisabledReason === 'loadingAccounts'
+      ? tToolbar('loadingAccounts')
+      : openSpaceAccountDisabledReason === 'finishVerificationFirst'
       ? tToolbar('finishVerificationFirst')
       : openSpaceAccountDisabledReason === 'allCurrenciesCovered'
       ? tToolbar('allCurrenciesCovered')

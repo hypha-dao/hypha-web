@@ -504,11 +504,11 @@
     "sections": {
       "transfers": {
         "title": "One-time Bank Transfers",
-        "description": "One-time payment links for donors and payers. Send a link once; funds convert to USDC in your treasury.",
+        "description": "One-time incoming transfers for donors and payers. Each request has its own deposit instructions; funds convert to USDC in your treasury.",
         "emptyTitle": "No one-time transfers yet",
-        "emptyDescription": "Create a payment link when you need a single incoming transfer without setting up a full deposit account.",
-        "newLinkCta": "New one-time payment link",
-        "loading": "Loading payment requests…"
+        "emptyDescription": "Create a one-time transfer when you need a single incoming payment without setting up a full deposit account.",
+        "newTransferCta": "New one-time transfer",
+        "loading": "Loading transfers…"
       },
       "accounts": {
         "title": "Bank Accounts",
@@ -529,10 +529,12 @@
       "titleAddCurrency": "Add a currency",
       "description": "Tell us about your organization and which currencies you need. We'll verify your space once, then create accounts for each currency.",
       "descriptionAddCurrency": "Choose additional currencies to add deposit accounts for your space.",
+      "descriptionAddCurrencySingle": "Choose the currency to add. Additional verification from the provider may be required.",
       "legalName": "Legal entity name",
       "contactEmail": "Contact email",
       "currenciesLabel": "Currencies",
       "currenciesHint": "Select every currency you want to receive bank transfers in.",
+      "currenciesHintSingle": "Select a currency you want to receive bank transfers in.",
       "submit": "Open account",
       "submitAddCurrency": "Add currencies",
       "submitting": "Working…",
@@ -543,10 +545,10 @@
     },
     "toolbar": {
       "add": "Add",
-      "newPaymentLink": "New one-time payment link",
       "openSpaceAccount": "Open a space account",
       "finishVerificationFirst": "Finish the current verification first",
-      "allCurrenciesCovered": "All supported currencies already have accounts"
+      "allCurrenciesCovered": "All supported currencies already have accounts",
+      "loadingAccounts": "Loading bank accounts…"
     },
     "operationStatus": {
       "pendingKyb": "Pending verification",
@@ -556,6 +558,7 @@
       "continueVerification": "Continue verification",
       "completeSetup": "Activate",
       "activating": "Activating…",
+      "activateFailed": "We couldn't complete setup. Please try again later. If the problem continues, contact us.",
       "openGearForVerification": "Click to open verification details and Bridge links."
     },
     "advanced": {
@@ -571,6 +574,18 @@
       "tosProcedure": "Terms of service",
       "kybProcedure": "Business verification (KYB)",
       "approvedOnBridgePendingRecord": "Bridge shows verification as approved. Activate a pending request below to record approval and finish setup.",
+      "currencyValidationsTitle": "Currency validations",
+      "currencyStatusesTitle": "Currency corridors",
+      "currencyStatusesDescription": "Per-currency endorsement status from Bridge and account setup progress.",
+      "currencyStatusesDescriptionAdd": "Add support for a currency corridor. Bridge may require additional verification for some regions.",
+      "addCurrencySupport": "Open {currency} account",
+      "currencyStatus": {
+        "active": "Active",
+        "approved": "Approved",
+        "pending": "Pending verification",
+        "not_approved": "Not approved",
+        "not_opened": "Not opened"
+      },
       "procedureHints": {
         "fallback": "No further action is required for this step in Bridge right now.",
         "tos": {
@@ -661,18 +676,18 @@
       "flexibleAmount": "Any amount"
     },
     "transferDetails": {
-      "title": "One-time payment",
+      "title": "One-time transfer",
       "description": "The payer must include the reference message on their bank transfer so Bridge can match the deposit."
     },
     "createTransfer": {
-      "title": "New one-time payment link",
-      "description": "Create deposit instructions for a single incoming payment. Funds convert to USDC in your treasury.",
+      "title": "New one-time transfer",
+      "description": "Create deposit instructions for a single incoming transfer. Funds convert to USDC in your treasury.",
       "currencyLabel": "Currency",
       "fixedAmountLabel": "Require a fixed amount",
       "amountPlaceholder": "e.g. 1000.00",
       "flexibleAmountHint": "The payer can send any amount.",
       "cancel": "Cancel",
-      "submit": "Create payment link",
+      "submit": "Create transfer",
       "submitting": "Creating…"
     },
     "transferStatus": {

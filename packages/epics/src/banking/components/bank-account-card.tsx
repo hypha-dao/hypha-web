@@ -8,7 +8,7 @@ import {
   getBankCurrencyMeta,
   type BankCurrencyCode,
 } from '../bank-currency-display';
-import { getPrimaryDepositIdentifier } from '../deposit-instruction-display';
+import { getCardDepositCopyBlock } from '../deposit-instruction-display';
 import type { BankVirtualAccountPublic } from '../hooks/types';
 import { InlineCopyRow } from './inline-copy-row';
 import { CurrencyFlagBadge } from './currency-flag-badge';
@@ -19,6 +19,7 @@ type BankAccountCardProps = {
   onOpenVerificationDetails?: () => void;
   onActivate?: () => void;
   isActivating?: boolean;
+  activationError?: string | null;
 };
 
 function accountToCurrency(
@@ -44,6 +45,7 @@ export const BankAccountCard: FC<BankAccountCardProps> = ({
   onOpenVerificationDetails,
   onActivate,
   isActivating = false,
+  activationError = null,
 }) => {
   const t = useTranslations('BankingTab');
   const tFields = useTranslations('BankingTab.depositInstructions');
@@ -65,20 +67,21 @@ export const BankAccountCard: FC<BankAccountCardProps> = ({
       : 'bg-amber-9/90 text-white';
 
   const isPendingKyb = account.lifecycle === 'pending_kyb';
+  const isActive = account.lifecycle === 'active';
   const handleCardClick =
     isPendingKyb && onOpenVerificationDetails
       ? onOpenVerificationDetails
-      : !isPendingKyb
+      : isActive
       ? onViewDetails
       : undefined;
 
-  const primaryIdentifier =
-    account.lifecycle === 'active'
-      ? getPrimaryDepositIdentifier(
-          account.paymentRail,
-          account.depositInstructions,
-        )
-      : null;
+  const cardCopyBlock = isActive
+    ? getCardDepositCopyBlock(
+        account.paymentRail,
+        account.depositInstructions,
+        (key) => tFields(key),
+      )
+    : null;
 
   return (
     <Card
@@ -122,11 +125,12 @@ export const BankAccountCard: FC<BankAccountCardProps> = ({
         </span>
       </div>
 
-      {primaryIdentifier ? (
+      {cardCopyBlock ? (
         <InlineCopyRow
           className="flex-1"
-          label={tFields(primaryIdentifier.labelKey)}
-          value={primaryIdentifier.value}
+          label={cardCopyBlock.label}
+          value={cardCopyBlock.copyText}
+          multiline={cardCopyBlock.multiline}
         />
       ) : (
         <div className="flex-1" />
@@ -152,6 +156,11 @@ export const BankAccountCard: FC<BankAccountCardProps> = ({
           >
             {isActivating ? tOp('activating') : tOp('completeSetup')}
           </Button>
+        ) : null}
+        {activationError ? (
+          <p className="text-1 text-error-11" role="alert">
+            {tOp('activateFailed')}
+          </p>
         ) : null}
         {account.lifecycle === 'active' ? (
           <button

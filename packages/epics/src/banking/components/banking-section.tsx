@@ -18,6 +18,7 @@ import {
   useActivateVirtualAccount,
   useBankCustomerStatus,
   useCreateTransfer,
+  useProvisionVirtualAccount,
   useRequestSpaceAccount,
   useTransfers,
   useVirtualAccounts,
@@ -32,12 +33,13 @@ import {
 import { BankAccountsSection } from './bank-accounts-section';
 import { BankTransfersSection } from './bank-transfers-section';
 import { BankingToolbar } from './banking-toolbar';
+import { AddBankCurrencyDialog } from './add-bank-currency-dialog';
 import { CreateTransferDialog } from './create-transfer-dialog';
 import {
   OpenSpaceAccountDialog,
   type OpenSpaceAccountDialogMode,
 } from './open-space-account-dialog';
-import { openBankVerificationTosLink } from '../open-bank-verification-tos';
+import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
 
 type BankingSectionProps = {
   spaceSlug: string;
@@ -87,14 +89,31 @@ export const BankingSection: FC<BankingSectionProps> = ({
     error: spaceAccountError,
     clearError: clearSpaceAccountError,
   } = useRequestSpaceAccount({ spaceSlug });
-  const { activateTransfer, isActivating: isActivatingTransfer } =
-    useActivateTransfer({ spaceSlug });
-  const { activateAccount, isActivating: isActivatingAccount } =
-    useActivateVirtualAccount({ spaceSlug });
+  const {
+    createAccount,
+    creatingCurrency,
+    error: createAccountError,
+    clearError: clearCreateAccountError,
+  } = useProvisionVirtualAccount({ spaceSlug });
+  const {
+    activateTransfer,
+    activatingTransferId,
+    failedTransferId: failedActivateTransferId,
+    error: activateTransferError,
+    clearError: clearActivateTransferError,
+  } = useActivateTransfer({ spaceSlug });
+  const {
+    activateAccount,
+    activatingAccountId,
+    failedAccountId: failedActivateAccountId,
+    error: activateAccountError,
+    clearError: clearActivateAccountError,
+  } = useActivateVirtualAccount({ spaceSlug });
 
   const [gearOpen, setGearOpen] = useState(false);
   const [createTransferOpen, setCreateTransferOpen] = useState(false);
   const [openDialogOpen, setOpenDialogOpen] = useState(false);
+  const [addCurrencyDialogOpen, setAddCurrencyDialogOpen] = useState(false);
   const [openDialogMode, setOpenDialogMode] =
     useState<OpenSpaceAccountDialogMode>('full');
 
@@ -202,13 +221,41 @@ export const BankingSection: FC<BankingSectionProps> = ({
     [hasCustomer, virtualAccounts],
   );
 
+  const customerApproved = Boolean(
+    status?.approvalRegistered || status?.isApproved,
+  );
+
+  const openSpaceAccountAvailabilityKnown =
+    !isLoading && (!hasCustomer || !virtualAccountsLoading);
+
   const openSpaceAccountDisabled =
-    verificationInProgress || availableCurrencyCodes.length === 0;
-  const openSpaceAccountDisabledReason = verificationInProgress
+    !openSpaceAccountAvailabilityKnown ||
+    verificationInProgress ||
+    availableCurrencyCodes.length === 0;
+
+  const openSpaceAccountDisabledReason = !openSpaceAccountAvailabilityKnown
+    ? 'loadingAccounts'
+    : verificationInProgress
     ? 'finishVerificationFirst'
     : availableCurrencyCodes.length === 0
     ? 'allCurrenciesCovered'
     : null;
+
+  const handleOpenSpaceAccount = useCallback(() => {
+    if (customerApproved) {
+      clearCreateAccountError();
+      setAddCurrencyDialogOpen(true);
+      return;
+    }
+    clearSpaceAccountError();
+    setOpenDialogMode(hasCustomer ? 'addCurrency' : 'full');
+    setOpenDialogOpen(true);
+  }, [
+    clearCreateAccountError,
+    clearSpaceAccountError,
+    customerApproved,
+    hasCustomer,
+  ]);
 
   return (
     <div className="flex w-full flex-col gap-8">
@@ -241,16 +288,45 @@ export const BankingSection: FC<BankingSectionProps> = ({
         <p className="text-sm text-muted-foreground">{blockerMessage}</p>
       ) : null}
 
+      <BankAccountsSection
+        isAuthenticated={isAuthenticated}
+        canManage={canManage}
+        openSpaceAccountDisabled={openSpaceAccountDisabled}
+        openSpaceAccountDisabledReason={openSpaceAccountDisabledReason}
+        onOpenSpaceAccount={handleOpenSpaceAccount}
+        depositsProps={{
+          virtualAccounts: hasCustomer ? displayVirtualAccounts : [],
+          virtualAccountsLoading: hasCustomer && virtualAccountsLoading,
+          canManage,
+          activatingAccountId,
+          failedAccountId: failedActivateAccountId,
+          activateError: activateAccountError,
+          provisionError: spaceAccountError,
+          onOpenVerificationDetails: openVerificationGear,
+          onActivateAccount: (id) => {
+            clearActivateAccountError();
+            void activateAccount(id)
+              .then(() => void refreshVirtualAccounts())
+              .catch(() => undefined);
+          },
+        }}
+      />
+
       <BankTransfersSection
         transfers={hasCustomer ? displayTransfers : []}
         transfersLoading={hasCustomer && transfersLoading}
         canManage={canManage}
-        isActivating={isActivatingTransfer}
+        activatingTransferId={activatingTransferId}
+        failedTransferId={failedActivateTransferId}
+        activateError={activateTransferError}
         onOpenVerificationDetails={openVerificationGear}
         onActivateTransfer={(id) => {
-          void activateTransfer(id).then(() => void refreshTransfers());
+          clearActivateTransferError();
+          void activateTransfer(id)
+            .then(() => void refreshTransfers())
+            .catch(() => undefined);
         }}
-        onNewPaymentLink={
+        onNewTransfer={
           canManage
             ? () => {
                 clearCreateTransferError();
@@ -258,33 +334,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
               }
             : undefined
         }
-      />
-
-      <BankAccountsSection
-        isAuthenticated={isAuthenticated}
-        canManage={canManage}
-        openSpaceAccountDisabled={openSpaceAccountDisabled}
-        openSpaceAccountDisabledReason={openSpaceAccountDisabledReason}
-        onOpenSpaceAccount={
-          canManage
-            ? () => {
-                clearSpaceAccountError();
-                setOpenDialogMode(hasCustomer ? 'addCurrency' : 'full');
-                setOpenDialogOpen(true);
-              }
-            : undefined
-        }
-        depositsProps={{
-          virtualAccounts: hasCustomer ? displayVirtualAccounts : [],
-          virtualAccountsLoading: hasCustomer && virtualAccountsLoading,
-          canManage,
-          isActivating: isActivatingAccount,
-          provisionError: spaceAccountError,
-          onOpenVerificationDetails: openVerificationGear,
-          onActivateAccount: (id) => {
-            void activateAccount(id).then(() => void refreshVirtualAccounts());
-          },
-        }}
       />
 
       <CreateTransferDialog
@@ -299,7 +348,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
           await createTransfer(input);
           setCreateTransferOpen(false);
           const updated = await refresh();
-          openBankVerificationTosLink(updated);
+          openBankVerificationFlowLink(updated);
           void refreshTransfers();
         }}
       />
@@ -323,8 +372,35 @@ export const BankingSection: FC<BankingSectionProps> = ({
           });
           setOpenDialogOpen(false);
           const updated = await refresh();
-          openBankVerificationTosLink(updated);
+          openBankVerificationFlowLink(updated);
           void refreshVirtualAccounts();
+        }}
+      />
+
+      <AddBankCurrencyDialog
+        open={addCurrencyDialogOpen}
+        onOpenChange={setAddCurrencyDialogOpen}
+        legalName={customerLegalName}
+        contactEmail={customerContactEmail}
+        availableCurrencies={availableCurrencyCodes}
+        submittingCurrency={creatingCurrency}
+        error={createAccountError}
+        onAddCurrency={async (currency) => {
+          clearCreateAccountError();
+          try {
+            const result = await createAccount(currency);
+            setAddCurrencyDialogOpen(false);
+            const updated = await refresh();
+            if (result.action === 'kyc_required') {
+              openBankVerificationFlowLink({
+                tosLink: result.tosLink,
+                kycLink: result.kycLink,
+              }) || openBankVerificationFlowLink(updated ?? undefined);
+            }
+            void refreshVirtualAccounts();
+          } catch {
+            // Error state is handled by the hook; keep the dialog open.
+          }
         }}
       />
     </div>

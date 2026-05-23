@@ -46,6 +46,45 @@ export type UpdateBankCustomerInput = {
   providerCustomerId?: string | null;
 };
 
+export type UpdateBankCustomerKycSessionInput = {
+  id: number;
+  providerKycLinkId: string;
+  providerCustomerId?: string | null;
+  kycLink: string | null;
+  tosLink: string | null;
+  kycStatus: string;
+  tosStatus: string | null;
+  endorsements: string[];
+  previousKycLinks: import('@hypha-platform/storage-postgres').BankCustomerPreviousKycLink[];
+};
+
+export const updateBankCustomerKycSession = async (
+  input: UpdateBankCustomerKycSessionInput,
+  { db }: DbConfig,
+): Promise<BankCustomer> => {
+  const [row] = await db
+    .update(bankCustomers)
+    .set({
+      providerKycLinkId: input.providerKycLinkId,
+      providerCustomerId: input.providerCustomerId,
+      kycLink: input.kycLink,
+      tosLink: input.tosLink,
+      kycStatus: input.kycStatus,
+      tosStatus: input.tosStatus,
+      endorsements: input.endorsements,
+      previousKycLinks: input.previousKycLinks,
+      updatedAt: new Date(),
+    })
+    .where(eq(bankCustomers.id, input.id))
+    .returning();
+
+  if (!row) {
+    throw new Error('Failed to update bank customer KYC session');
+  }
+
+  return row;
+};
+
 export const updateBankCustomer = async (
   { id, kycStatus, providerCustomerId }: UpdateBankCustomerInput,
   { db }: DbConfig,
@@ -78,12 +117,13 @@ export const updateBankCustomer = async (
 export type InsertBankVirtualAccountInput = {
   bankCustomerId: number;
   provider: BankProvider;
-  providerVirtualAccountId: string;
+  providerVirtualAccountId: string | null;
   currency: string;
   paymentRail: string;
   depositInstructions: Record<string, unknown>;
   destinationAddress: string;
   status: string;
+  isApproved?: boolean;
 };
 
 export const insertBankVirtualAccount = async (
@@ -133,6 +173,7 @@ export type UpdateBankVirtualAccountInput = {
   depositInstructions?: Record<string, unknown>;
   destinationAddress?: string;
   status?: string;
+  isApproved?: boolean;
 };
 
 export const updateBankVirtualAccount = async (
@@ -147,6 +188,7 @@ export const updateBankVirtualAccount = async (
     depositInstructions,
     destinationAddress,
     status,
+    isApproved,
   } = input;
 
   const patch: Partial<typeof bankVirtualAccounts.$inferInsert> = {
@@ -170,6 +212,9 @@ export const updateBankVirtualAccount = async (
   }
   if (status !== undefined) {
     patch.status = status;
+  }
+  if (isApproved !== undefined) {
+    patch.isApproved = isApproved;
   }
 
   const [row] = await db

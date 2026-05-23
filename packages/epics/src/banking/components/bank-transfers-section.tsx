@@ -21,23 +21,26 @@ export type BankTransfersSectionProps = {
   transfers: BankTransferPublic[];
   transfersLoading: boolean;
   canManage: boolean;
-  isActivating: boolean;
+  activatingTransferId: number | null;
+  failedTransferId: number | null;
+  activateError: string | null;
   onOpenVerificationDetails: () => void;
   onActivateTransfer: (transferId: number) => void;
-  onNewPaymentLink?: () => void;
+  onNewTransfer?: () => void;
 };
 
 export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
   transfers,
   transfersLoading,
   canManage,
-  isActivating,
+  activatingTransferId,
+  failedTransferId,
+  activateError,
   onOpenVerificationDetails,
   onActivateTransfer,
-  onNewPaymentLink,
+  onNewTransfer,
 }) => {
   const t = useTranslations('BankingTab.sections.transfers');
-  const tToolbar = useTranslations('BankingTab.toolbar');
   const [detailsTransfer, setDetailsTransfer] =
     useState<BankTransferPublic | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -58,16 +61,16 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
             {t('description')}
           </p>
         </div>
-        {canManage && onNewPaymentLink ? (
+        {canManage && onNewTransfer ? (
           <Button
             type="button"
             colorVariant="accent"
             size="sm"
             className="shrink-0 gap-1.5"
-            onClick={onNewPaymentLink}
+            onClick={onNewTransfer}
           >
             <Plus className="h-4 w-4" />
-            {tToolbar('newPaymentLink')}
+            {t('newTransferCta')}
           </Button>
         ) : null}
       </div>
@@ -104,7 +107,10 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
                     ? () => onActivateTransfer(transfer.id)
                     : undefined
                 }
-                isActivating={isActivating}
+                isActivating={activatingTransferId === transfer.id}
+                activationError={
+                  failedTransferId === transfer.id ? activateError : null
+                }
               />
             ))}
           </div>

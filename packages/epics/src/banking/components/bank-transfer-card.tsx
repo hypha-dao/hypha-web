@@ -8,7 +8,7 @@ import {
   getBankCurrencyMeta,
   type BankCurrencyCode,
 } from '../bank-currency-display';
-import { getPrimaryDepositIdentifier } from '../deposit-instruction-display';
+import { getCardDepositCopyBlock } from '../deposit-instruction-display';
 import type { BankTransferPublic } from '../hooks/types';
 import { InlineCopyRow } from './inline-copy-row';
 import { CurrencyFlagBadge } from './currency-flag-badge';
@@ -19,6 +19,7 @@ type BankTransferCardProps = {
   onOpenVerificationDetails?: () => void;
   onActivate?: () => void;
   isActivating?: boolean;
+  activationError?: string | null;
 };
 
 function transferToCurrency(transfer: BankTransferPublic): BankCurrencyCode {
@@ -59,6 +60,7 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
   onOpenVerificationDetails,
   onActivate,
   isActivating = false,
+  activationError = null,
 }) => {
   const t = useTranslations('BankingTab');
   const tFields = useTranslations('BankingTab.depositInstructions');
@@ -89,20 +91,21 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
     : t('transferCard.flexibleAmount');
 
   const isPendingKyb = transfer.lifecycle === 'pending_kyb';
+  const isActive = transfer.lifecycle === 'active';
   const handleCardClick =
     isPendingKyb && onOpenVerificationDetails
       ? onOpenVerificationDetails
-      : !isPendingKyb
+      : isActive
       ? onViewDetails
       : undefined;
 
-  const primaryIdentifier =
-    transfer.lifecycle === 'active'
-      ? getPrimaryDepositIdentifier(
-          transfer.paymentRail,
-          transfer.depositInstructions,
-        )
-      : null;
+  const cardCopyBlock = isActive
+    ? getCardDepositCopyBlock(
+        transfer.paymentRail,
+        transfer.depositInstructions,
+        (key) => tFields(key),
+      )
+    : null;
 
   return (
     <Card
@@ -145,11 +148,12 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
         </span>
       </div>
 
-      {primaryIdentifier ? (
+      {cardCopyBlock ? (
         <InlineCopyRow
           className="flex-1"
-          label={tFields(primaryIdentifier.labelKey)}
-          value={primaryIdentifier.value}
+          label={cardCopyBlock.label}
+          value={cardCopyBlock.copyText}
+          multiline={cardCopyBlock.multiline}
         />
       ) : (
         <div className="flex-1" />
@@ -175,6 +179,11 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
           >
             {isActivating ? tOp('activating') : tOp('completeSetup')}
           </Button>
+        ) : null}
+        {activationError ? (
+          <p className="text-1 text-error-11" role="alert">
+            {tOp('activateFailed')}
+          </p>
         ) : null}
         {transfer.lifecycle === 'active' ? (
           <button

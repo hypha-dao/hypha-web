@@ -6,6 +6,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 
 import type { BankCurrencyCode } from '../bank-currency-display';
 import type { BankVirtualAccountPublic } from './types';
+import { getBankCustomerStatusEndpoint } from './use-bank-customer-status';
 import { getVirtualAccountsEndpoint } from './use-virtual-accounts';
 
 export function getSpaceAccountEndpoint(spaceSlug: string): string {
@@ -59,9 +60,9 @@ export const useRequestSpaceAccount = ({
               : `Request failed (${res.status})`,
           );
         }
-        await mutate([
-          getVirtualAccountsEndpoint(spaceSlug),
-          'virtual-accounts',
+        await Promise.all([
+          mutate([getVirtualAccountsEndpoint(spaceSlug), 'virtual-accounts']),
+          mutate(getBankCustomerStatusEndpoint(spaceSlug)),
         ]);
         return body as BankVirtualAccountPublic[];
       } catch (err) {

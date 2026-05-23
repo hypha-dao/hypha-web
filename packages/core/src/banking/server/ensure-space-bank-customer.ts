@@ -69,6 +69,15 @@ export async function ensureSpaceBankCustomer(
       input.endorsements,
     );
 
+    console.log('[banking] createKycLink', {
+      spaceId: input.space.id,
+      legalName,
+      contactEmail,
+      requestedEndorsements: input.endorsements,
+      resolvedEndorsements,
+      redirectUri: input.redirectUri,
+    });
+
     const kycLinkResult = await kycProvider.createKycLink({
       entityType: 'business',
       legalName,
@@ -110,6 +119,22 @@ export async function ensureSpaceBankCustomer(
   if (customer.kycStatus !== 'approved') {
     const synced = await syncBankCustomerKycFromBridge(customer, { db });
     customer = synced.customer;
+  }
+
+  const requestedEndorsements = input.endorsements
+    ? resolveBridgeKycEndorsements(input.endorsements)
+    : null;
+  if (
+    requestedEndorsements &&
+    requestedEndorsements.some(
+      (endorsement) => !customer.endorsements.includes(endorsement),
+    )
+  ) {
+    console.log('[banking] existing customer missing requested endorsements', {
+      spaceId: input.space.id,
+      storedEndorsements: customer.endorsements,
+      requestedEndorsements,
+    });
   }
 
   return {

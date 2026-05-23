@@ -7,7 +7,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import type { BankVirtualAccountPublic } from './types';
 
 export function getVirtualAccountsEndpoint(spaceSlug: string): string {
-  return `/api/v1/spaces/${spaceSlug}/banking/virtual-accounts`;
+  return `/api/v1/spaces/${spaceSlug}/banking/accounts`;
 }
 
 type UseVirtualAccountsOptions = {

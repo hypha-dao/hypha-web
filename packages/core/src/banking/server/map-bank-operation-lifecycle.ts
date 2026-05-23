@@ -7,13 +7,13 @@ import type { BankOperationLifecycle } from '../types';
 export function resolveBankOperationLifecycle(input: {
   status: string;
   hasProviderResource: boolean;
-  isCustomerApproved: boolean;
+  isEndorsementApproved: boolean;
 }): {
   lifecycle: BankOperationLifecycle;
   canActivate: boolean;
   canContinueVerification: boolean;
 } {
-  const { status, hasProviderResource, isCustomerApproved } = input;
+  const { status, hasProviderResource, isEndorsementApproved } = input;
 
   if (hasProviderResource) {
     return {
@@ -26,13 +26,13 @@ export function resolveBankOperationLifecycle(input: {
   if (status === BANK_OPERATION_PENDING_ACTIVATION) {
     return {
       lifecycle: 'pending_activation',
-      canActivate: isCustomerApproved,
+      canActivate: isEndorsementApproved,
       canContinueVerification: false,
     };
   }
 
   if (status === BANK_OPERATION_PENDING_KYB) {
-    if (isCustomerApproved) {
+    if (isEndorsementApproved) {
       return {
         lifecycle: 'pending_activation',
         canActivate: true,
@@ -46,7 +46,7 @@ export function resolveBankOperationLifecycle(input: {
     };
   }
 
-  if (!isCustomerApproved) {
+  if (!isEndorsementApproved) {
     return {
       lifecycle: 'pending_kyb',
       canActivate: false,
@@ -56,7 +56,7 @@ export function resolveBankOperationLifecycle(input: {
 
   return {
     lifecycle: 'pending_activation',
-    canActivate: isCustomerApproved,
+    canActivate: isEndorsementApproved,
     canContinueVerification: false,
   };
 }

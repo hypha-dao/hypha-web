@@ -17,7 +17,9 @@ export type ApprovedBankingDepositsProps = {
   virtualAccounts: BankVirtualAccountPublic[];
   virtualAccountsLoading: boolean;
   canManage: boolean;
-  isActivating: boolean;
+  activatingAccountId: number | null;
+  failedAccountId: number | null;
+  activateError: string | null;
   provisionError: string | null;
   onOpenVerificationDetails: () => void;
   onActivateAccount: (accountId: number) => void;
@@ -27,7 +29,9 @@ export const ApprovedBankingDeposits: FC<ApprovedBankingDepositsProps> = ({
   virtualAccounts,
   virtualAccountsLoading,
   canManage,
-  isActivating,
+  activatingAccountId,
+  failedAccountId,
+  activateError,
   provisionError,
   onOpenVerificationDetails,
   onActivateAccount,
@@ -85,7 +89,10 @@ export const ApprovedBankingDeposits: FC<ApprovedBankingDepositsProps> = ({
                 ? () => onActivateAccount(account.id)
                 : undefined
             }
-            isActivating={isActivating}
+            isActivating={activatingAccountId === account.id}
+            activationError={
+              failedAccountId === account.id ? activateError : null
+            }
           />
         ))}
       </div>

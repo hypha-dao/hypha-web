@@ -16,12 +16,18 @@ export const useActivateVirtualAccount = ({
 }: UseActivateVirtualAccountOptions) => {
   const { getAccessToken } = useAuthentication();
   const { mutate } = useSWRConfig();
-  const [isActivating, setIsActivating] = React.useState(false);
+  const [activatingAccountId, setActivatingAccountId] = React.useState<
+    number | null
+  >(null);
+  const [failedAccountId, setFailedAccountId] = React.useState<number | null>(
+    null,
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   const activateAccount = React.useCallback(
     async (accountId: number): Promise<BankVirtualAccountPublic> => {
-      setIsActivating(true);
+      setActivatingAccountId(accountId);
+      setFailedAccountId(null);
       setError(null);
       try {
         const token = await getAccessToken();
@@ -53,10 +59,11 @@ export const useActivateVirtualAccount = ({
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Failed to activate';
+        setFailedAccountId(accountId);
         setError(message);
         throw err;
       } finally {
-        setIsActivating(false);
+        setActivatingAccountId(null);
       }
     },
     [getAccessToken, mutate, spaceSlug],
@@ -64,8 +71,13 @@ export const useActivateVirtualAccount = ({
 
   return {
     activateAccount,
-    isActivating,
+    isActivating: activatingAccountId != null,
+    activatingAccountId,
+    failedAccountId,
     error,
-    clearError: () => setError(null),
+    clearError: () => {
+      setError(null);
+      setFailedAccountId(null);
+    },
   };
 };

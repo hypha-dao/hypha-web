@@ -165,6 +165,128 @@ function ProcedureRow({
   );
 }
 
+function CurrencyValidationsList({
+  status,
+  tAdvanced,
+}: {
+  status: NonNullable<BankCustomerPublicStatus>;
+  tAdvanced: ReturnType<typeof useTranslations<'BankingTab.advanced'>>;
+}) {
+  if (status.currencyStatuses.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-lg border border-border/80 bg-background-2/30 px-3 py-3">
+      <p className="text-2 font-medium text-foreground">
+        {tAdvanced('currencyValidationsTitle')}
+      </p>
+      <dl className="mt-3 flex flex-col gap-1.5">
+        {status.currencyStatuses.map((entry) => {
+          const currencyId = entry.currency.toUpperCase();
+
+          return (
+            <div
+              key={entry.currency}
+              className="flex items-center justify-between gap-3 py-0.5"
+            >
+              <dt className="text-2 font-medium tabular-nums text-foreground">
+                {currencyId}
+              </dt>
+              <dd className="flex shrink-0 items-center">
+                <Badge
+                  variant="outline"
+                  colorVariant={
+                    entry.operationalStatus === 'active'
+                      ? 'success'
+                      : entry.operationalStatus === 'approved'
+                      ? 'accent'
+                      : 'neutral'
+                  }
+                  className="pointer-events-none cursor-default text-1 shadow-none"
+                >
+                  {tAdvanced(
+                    `currencyStatus.${entry.operationalStatus}` as
+                      | 'currencyStatus.active'
+                      | 'currencyStatus.approved'
+                      | 'currencyStatus.pending'
+                      | 'currencyStatus.not_approved'
+                      | 'currencyStatus.not_opened',
+                  )}
+                </Badge>
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+    </div>
+  );
+}
+
+function ProviderValidationsSection({
+  status,
+  t,
+  tTos,
+  tAdvanced,
+  showCustomerDetails,
+  showProcedures,
+}: {
+  status: NonNullable<BankCustomerPublicStatus>;
+  t: ReturnType<typeof useTranslations<'BankingTab'>>;
+  tTos: ReturnType<typeof useTranslations<'BankingTab.tosStatus'>>;
+  tAdvanced: ReturnType<typeof useTranslations<'BankingTab.advanced'>>;
+  showCustomerDetails: boolean;
+  showProcedures: boolean;
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-card p-4">
+      <h3 className="text-2 font-semibold text-foreground">
+        {tAdvanced('providerValidationsTitle')}
+      </h3>
+
+      {showCustomerDetails ? (
+        <dl className="mt-3 grid gap-2 rounded-md border border-border/60 bg-background-2/40 px-3 py-3 text-2 sm:grid-cols-[auto_1fr] sm:gap-x-4">
+          <dt className="font-medium text-muted-foreground">
+            {tAdvanced('legalNameLabel')}
+          </dt>
+          <dd className="text-foreground">{status.name}</dd>
+          <dt className="font-medium text-muted-foreground">
+            {tAdvanced('contactEmailLabel')}
+          </dt>
+          <dd className="break-all text-foreground">{status.contactEmail}</dd>
+        </dl>
+      ) : null}
+
+      <div className="mt-3 flex flex-col gap-3">
+        {showProcedures ? (
+          <>
+            <ProcedureRow
+              kind="tos"
+              title={tAdvanced('tosProcedure')}
+              procedure={status.procedures.tos}
+              openLinkLabel={t('actions.viewTerms')}
+              t={t}
+              tTos={tTos}
+              tAdvanced={tAdvanced}
+            />
+            <ProcedureRow
+              kind="kyc"
+              title={tAdvanced('kybProcedure')}
+              procedure={status.procedures.kyc}
+              openLinkLabel={t('actions.openVerificationForm')}
+              t={t}
+              tTos={tTos}
+              tAdvanced={tAdvanced}
+            />
+          </>
+        ) : null}
+
+        <CurrencyValidationsList status={status} tAdvanced={tAdvanced} />
+      </div>
+    </section>
+  );
+}
+
 export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
   spaceSlug,
   status,
@@ -198,51 +320,21 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
       );
     }
 
-    if (status.approvalRegistered) {
-      return (
-        <p className="text-2 text-muted-foreground">
-          {tAdvanced('approvedSummary')}
-        </p>
-      );
-    }
-
     return (
       <div className="flex flex-col gap-3">
-        <section className="rounded-lg border border-border bg-card p-4">
-          <h3 className="text-2 font-semibold text-foreground">
-            {tAdvanced('providerValidationsTitle')}
-          </h3>
-          <dl className="mt-3 grid gap-2 rounded-md border border-border/60 bg-background-2/40 px-3 py-3 text-2 sm:grid-cols-[auto_1fr] sm:gap-x-4">
-            <dt className="font-medium text-muted-foreground">
-              {tAdvanced('legalNameLabel')}
-            </dt>
-            <dd className="text-foreground">{status.name}</dd>
-            <dt className="font-medium text-muted-foreground">
-              {tAdvanced('contactEmailLabel')}
-            </dt>
-            <dd className="break-all text-foreground">{status.contactEmail}</dd>
-          </dl>
-          <div className="mt-3 flex flex-col gap-3">
-            <ProcedureRow
-              kind="tos"
-              title={tAdvanced('tosProcedure')}
-              procedure={status.procedures.tos}
-              openLinkLabel={t('actions.viewTerms')}
-              t={t}
-              tTos={tTos}
-              tAdvanced={tAdvanced}
-            />
-            <ProcedureRow
-              kind="kyc"
-              title={tAdvanced('kybProcedure')}
-              procedure={status.procedures.kyc}
-              openLinkLabel={t('actions.openVerificationForm')}
-              t={t}
-              tTos={tTos}
-              tAdvanced={tAdvanced}
-            />
-          </div>
-        </section>
+        {status.approvalRegistered ? (
+          <p className="text-2 text-muted-foreground">
+            {tAdvanced('approvedSummary')}
+          </p>
+        ) : null}
+        <ProviderValidationsSection
+          status={status}
+          t={t}
+          tTos={tTos}
+          tAdvanced={tAdvanced}
+          showCustomerDetails={!status.approvalRegistered}
+          showProcedures={!status.approvalRegistered}
+        />
       </div>
     );
   };

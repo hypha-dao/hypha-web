@@ -72,7 +72,7 @@ export const useOpenSpaceAccount = ({
 }: UseOpenSpaceAccountOptions): UseOpenSpaceAccountReturn => {
   const { status, refresh } = useBankCustomerStatus({ spaceSlug });
   const { requestOnboarding } = useRequestBankOnboarding({ spaceSlug });
-  const { provisionAccount } = useProvisionVirtualAccount({ spaceSlug });
+  const { createAccount } = useProvisionVirtualAccount({ spaceSlug });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -88,7 +88,7 @@ export const useOpenSpaceAccount = ({
         (c) => !isCurrencyProvisioned(virtualAccounts, c),
       );
       for (const currency of toProvision) {
-        await provisionAccount(currency);
+        await createAccount(currency);
       }
       if (toProvision.length > 0) {
         onAccountsRefresh();
@@ -96,7 +96,7 @@ export const useOpenSpaceAccount = ({
       }
       return toProvision;
     },
-    [onAccountsRefresh, provisionAccount, refresh, virtualAccounts],
+    [onAccountsRefresh, createAccount, refresh, virtualAccounts],
   );
 
   const submit = React.useCallback(

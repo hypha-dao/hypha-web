@@ -50,6 +50,12 @@ export async function requestSpaceBankVirtualAccounts(
     input.endorsements ?? currenciesToEndorsements(normalized),
   );
 
+  console.log('[banking] requestSpaceBankVirtualAccounts endorsements', {
+    spaceSlug,
+    currencies: normalized,
+    endorsements,
+  });
+
   const ensured = await ensureSpaceBankCustomer(
     {
       space,
@@ -87,7 +93,7 @@ export async function requestSpaceBankVirtualAccounts(
     );
 
     if (existing) {
-      results.push(mapBankVirtualAccountToPublic(existing, isApproved));
+      results.push(mapBankVirtualAccountToPublic(existing));
       continue;
     }
 
@@ -105,7 +111,7 @@ export async function requestSpaceBankVirtualAccounts(
         },
         { db },
       );
-      results.push(mapBankVirtualAccountToPublic(inserted, false));
+      results.push(mapBankVirtualAccountToPublic(inserted));
       continue;
     }
 
@@ -115,16 +121,7 @@ export async function requestSpaceBankVirtualAccounts(
       options,
     );
 
-    results.push({
-      id: provisioned.id,
-      currency: provisioned.currency,
-      paymentRail: provisioned.paymentRail,
-      depositInstructions: provisioned.depositInstructions,
-      status: provisioned.status,
-      lifecycle: provisioned.lifecycle,
-      canActivate: provisioned.canActivate,
-      canContinueVerification: provisioned.canContinueVerification,
-    });
+    results.push(provisioned);
   }
 
   return results;

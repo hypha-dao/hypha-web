@@ -10,6 +10,16 @@ import {
 import { commonDateFields } from './shared';
 import { spaces } from './space';
 
+export type BankCustomerPreviousKycLink = {
+  providerKycLinkId: string;
+  kycLink: string | null;
+  tosLink: string | null;
+  kycStatus: string;
+  tosStatus: string | null;
+  endorsements: string[];
+  archivedAt: string;
+};
+
 export const bankCustomers = pgTable(
   'bank_customers',
   {
@@ -28,6 +38,10 @@ export const bankCustomers = pgTable(
     tosStatus: text('tos_status'),
     kycLink: text('kyc_link'),
     tosLink: text('tos_link'),
+    previousKycLinks: jsonb('previous_kyc_links')
+      .$type<BankCustomerPreviousKycLink[]>()
+      .notNull()
+      .default([]),
     idempotencyKey: text('idempotency_key').notNull(),
     ...commonDateFields,
   },

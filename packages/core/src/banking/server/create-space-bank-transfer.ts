@@ -1,8 +1,10 @@
 import type { DatabaseInstance } from '../../common/server/types';
 import {
   BANK_OPERATION_PENDING_KYB,
+  currenciesToEndorsements,
   DEFAULT_BANK_PROVIDER,
   getTransferSourceRailForCurrency,
+  type BankVirtualAccountCurrency,
 } from '../constants';
 import type {
   CreateSpaceBankTransferResult,
@@ -39,7 +41,10 @@ export async function createSpaceBankTransfer(
     throw new BankOnboardingError('Space not found', 404);
   }
 
-  const endorsements = resolveBridgeKycEndorsements(input.endorsements);
+  const endorsements = resolveBridgeKycEndorsements(
+    input.endorsements ??
+      currenciesToEndorsements([currency as BankVirtualAccountCurrency]),
+  );
 
   const ensured = await ensureSpaceBankCustomer(
     {

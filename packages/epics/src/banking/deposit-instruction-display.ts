@@ -20,54 +20,141 @@ export function combineInstructionLines(
   return lines.length > 0 ? lines.join('\n') : null;
 }
 
-export type PrimaryDepositIdentifier = {
-  labelKey: 'iban' | 'accountNumber';
+export type DepositIdentifierLabelKey =
+  | 'iban'
+  | 'routingNumber'
+  | 'accountNumber'
+  | 'sortCode';
+
+export type DepositIdentifierRow = {
+  labelKey: DepositIdentifierLabelKey;
   value: string;
 };
+
+export type PrimaryDepositIdentifier = DepositIdentifierRow;
+
+/** Normalize Bridge transfer rails to virtual-account rails for display. */
+export function normalizePaymentRailForDisplay(paymentRail: string): string {
+  if (paymentRail === 'ach_push') {
+    return 'ach';
+  }
+  return paymentRail;
+}
+
+function readAccountNumber(
+  instructions: Record<string, unknown>,
+): string | null {
+  return readInstructionString(instructions, [
+    'bank_account_number',
+    'account_number',
+    'clabe',
+    'pix_key',
+  ]);
+}
+
+function readRoutingNumber(
+  instructions: Record<string, unknown>,
+): string | null {
+  return readInstructionString(instructions, [
+    'bank_routing_number',
+    'routing_number',
+  ]);
+}
+
+function readSortCode(instructions: Record<string, unknown>): string | null {
+  return readInstructionString(instructions, ['sort_code']);
+}
+
+/** Copyable rows shown on account/transfer cards (may include multiple fields). */
+export function getCardDepositIdentifiers(
+  paymentRail: string,
+  instructions: Record<string, unknown>,
+): DepositIdentifierRow[] {
+  const rail = normalizePaymentRailForDisplay(paymentRail);
+
+  switch (rail) {
+    case 'sepa': {
+      const iban = readInstructionString(instructions, ['iban']);
+      return iban ? [{ labelKey: 'iban', value: iban }] : [];
+    }
+    case 'ach': {
+      const rows: DepositIdentifierRow[] = [];
+      const routing = readRoutingNumber(instructions);
+      if (routing) {
+        rows.push({ labelKey: 'routingNumber', value: routing });
+      }
+      const accountNumber = readAccountNumber(instructions);
+      if (accountNumber) {
+        rows.push({ labelKey: 'accountNumber', value: accountNumber });
+      }
+      return rows;
+    }
+    case 'faster_payments': {
+      const rows: DepositIdentifierRow[] = [];
+      const sortCode = readSortCode(instructions);
+      if (sortCode) {
+        rows.push({ labelKey: 'sortCode', value: sortCode });
+      }
+      const accountNumber = readAccountNumber(instructions);
+      if (accountNumber) {
+        rows.push({ labelKey: 'accountNumber', value: accountNumber });
+      }
+      return rows;
+    }
+    default: {
+      const iban = readInstructionString(instructions, ['iban']);
+      if (iban) {
+        return [{ labelKey: 'iban', value: iban }];
+      }
+      const accountNumber = readAccountNumber(instructions);
+      return accountNumber
+        ? [{ labelKey: 'accountNumber', value: accountNumber }]
+        : [];
+    }
+  }
+}
+
+export type CardDepositCopyBlock = {
+  label: string | null;
+  copyText: string;
+  multiline: boolean;
+};
+
+/** Single copyable block for account/transfer cards. */
+export function getCardDepositCopyBlock(
+  paymentRail: string,
+  instructions: Record<string, unknown>,
+  resolveLabel: (key: DepositIdentifierLabelKey) => string,
+): CardDepositCopyBlock | null {
+  const identifiers = getCardDepositIdentifiers(paymentRail, instructions);
+  if (identifiers.length === 0) {
+    return null;
+  }
+
+  if (identifiers.length === 1) {
+    const row = identifiers[0];
+    return {
+      label: resolveLabel(row.labelKey),
+      copyText: row.value,
+      multiline: false,
+    };
+  }
+
+  return {
+    label: null,
+    copyText: identifiers
+      .map((row) => `${resolveLabel(row.labelKey)}: ${row.value}`)
+      .join('\n'),
+    multiline: true,
+  };
+}
 
 export function getPrimaryDepositIdentifier(
   paymentRail: string,
   instructions: Record<string, unknown>,
 ): PrimaryDepositIdentifier | null {
-  switch (paymentRail) {
-    case 'sepa': {
-      const iban = readInstructionString(instructions, ['iban']);
-      return iban ? { labelKey: 'iban', value: iban } : null;
-    }
-    case 'ach': {
-      const accountNumber = readInstructionString(instructions, [
-        'bank_account_number',
-        'account_number',
-      ]);
-      return accountNumber
-        ? { labelKey: 'accountNumber', value: accountNumber }
-        : null;
-    }
-    case 'faster_payments': {
-      const accountNumber = readInstructionString(instructions, [
-        'account_number',
-        'bank_account_number',
-      ]);
-      return accountNumber
-        ? { labelKey: 'accountNumber', value: accountNumber }
-        : null;
-    }
-    default: {
-      const iban = readInstructionString(instructions, ['iban']);
-      if (iban) {
-        return { labelKey: 'iban', value: iban };
-      }
-      const accountNumber = readInstructionString(instructions, [
-        'bank_account_number',
-        'account_number',
-        'clabe',
-        'pix_key',
-      ]);
-      return accountNumber
-        ? { labelKey: 'accountNumber', value: accountNumber }
-        : null;
-    }
-  }
+  const rows = getCardDepositIdentifiers(paymentRail, instructions);
+  return rows[0] ?? null;
 }
 
 export type DepositInstructionBlock = {
@@ -81,6 +168,7 @@ export function getBankInstructionBlocks(
   instructions: Record<string, unknown>,
 ): DepositInstructionBlock[] {
   const blocks: DepositInstructionBlock[] = [];
+  const rail = normalizePaymentRailForDisplay(paymentRail);
 
   const accountHolder = readInstructionString(instructions, [
     'account_holder_name',
@@ -95,13 +183,66 @@ export function getBankInstructionBlocks(
     });
   }
 
-  const primary = getPrimaryDepositIdentifier(paymentRail, instructions);
-  if (primary) {
+  const beneficiaryName = readInstructionString(instructions, [
+    'bank_beneficiary_name',
+    'beneficiary_name',
+    'beneficiary',
+  ]);
+  const beneficiaryAddress = readInstructionString(instructions, [
+    'bank_beneficiary_address',
+    'beneficiary_address',
+  ]);
+  const beneficiaryBlock = combineInstructionLines([
+    beneficiaryName,
+    beneficiaryAddress,
+  ]);
+  if (beneficiaryBlock) {
     blocks.push({
-      id: 'primaryAccount',
-      labelKey: primary.labelKey,
-      value: primary.value,
+      id: 'beneficiary',
+      labelKey: 'beneficiaryNameAndAddress',
+      value: beneficiaryBlock,
     });
+  }
+
+  if (rail === 'ach') {
+    const routing = readRoutingNumber(instructions);
+    if (routing) {
+      blocks.push({
+        id: 'routingNumber',
+        labelKey: 'routingNumber',
+        value: routing,
+      });
+    }
+    const accountNumber = readAccountNumber(instructions);
+    if (accountNumber) {
+      blocks.push({
+        id: 'accountNumber',
+        labelKey: 'accountNumber',
+        value: accountNumber,
+      });
+    }
+  } else if (rail === 'faster_payments') {
+    const sortCode = readSortCode(instructions);
+    if (sortCode) {
+      blocks.push({ id: 'sortCode', labelKey: 'sortCode', value: sortCode });
+    }
+    const accountNumber = readAccountNumber(instructions);
+    if (accountNumber) {
+      blocks.push({
+        id: 'accountNumber',
+        labelKey: 'accountNumber',
+        value: accountNumber,
+      });
+    }
+  } else {
+    const primary = getPrimaryDepositIdentifier(paymentRail, instructions);
+    if (primary) {
+      blocks.push({
+        id: 'primaryAccount',
+        labelKey: primary.labelKey,
+        value: primary.value,
+      });
+    }
   }
 
   const swift = readInstructionString(instructions, [
@@ -124,27 +265,6 @@ export function getBankInstructionBlocks(
       id: 'bank',
       labelKey: 'bankNameAndAddress',
       value: bankBlock,
-    });
-  }
-
-  const beneficiaryName = readInstructionString(instructions, [
-    'bank_beneficiary_name',
-    'beneficiary_name',
-    'beneficiary',
-  ]);
-  const beneficiaryAddress = readInstructionString(instructions, [
-    'bank_beneficiary_address',
-    'beneficiary_address',
-  ]);
-  const beneficiaryBlock = combineInstructionLines([
-    beneficiaryName,
-    beneficiaryAddress,
-  ]);
-  if (beneficiaryBlock) {
-    blocks.push({
-      id: 'beneficiary',
-      labelKey: 'beneficiaryNameAndAddress',
-      value: beneficiaryBlock,
     });
   }
 

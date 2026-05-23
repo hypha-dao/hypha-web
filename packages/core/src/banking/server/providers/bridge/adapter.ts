@@ -16,6 +16,7 @@ import type {
   ProvisionVirtualAccountResult,
 } from '../types';
 import { resolveBridgeKycEndorsements } from './endorsements';
+import { mapBridgeKycLinkUrls } from './kyc-link-urls';
 
 function toBridgeCreateKycLinkBody(
   input: CreateKycLinkInput,
@@ -41,10 +42,16 @@ export function createBridgeKycProvider(): BankKycProvider {
     async createKycLink(
       input: CreateKycLinkInput,
     ): Promise<CreateKycLinkResult> {
-      const response = await bridgeCreateKycLink(
-        toBridgeCreateKycLinkBody(input),
-        input.idempotencyKey,
-      );
+      const body = toBridgeCreateKycLinkBody(input);
+      console.log('[banking] bridgeCreateKycLink request', {
+        endorsements: body.endorsements,
+        email: body.email,
+        type: body.type,
+      });
+
+      const response = await bridgeCreateKycLink(body, input.idempotencyKey);
+
+      const { kycLink, tosLink } = mapBridgeKycLinkUrls(response);
 
       return {
         providerCustomerId: response.customer_id ?? null,
@@ -52,8 +59,8 @@ export function createBridgeKycProvider(): BankKycProvider {
         kycStatus: response.kyc_status,
         isApproved: response.kyc_status === 'approved',
         tosStatus: response.tos_status ?? null,
-        kycLink: response.kyc_link,
-        tosLink: response.tos_link ?? null,
+        kycLink,
+        tosLink,
       };
     },
     async provisionVirtualAccount(

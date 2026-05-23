@@ -137,6 +137,35 @@ describe('createBridgeKycProvider', () => {
     expect(result.providerCustomerId).toBeNull();
   });
 
+  it('rewrites tos_link redirect_uri to kyc_link after Bridge create', async () => {
+    bridgeCreateKycLink.mockResolvedValueOnce({
+      id: 'kyc_link_1',
+      customer_id: 'cust_1',
+      kyc_link:
+        'https://bridge.example/kyc?redirect_uri=https%3A%2F%2Fapp.hypha.earth%2Freturn',
+      tos_link:
+        'https://bridge.example/tos?redirect_uri=https%3A%2F%2Fapp.hypha.earth%2Freturn',
+      kyc_status: 'not_started',
+      tos_status: 'pending',
+      created_at: '2026-05-18T00:00:00Z',
+    });
+
+    const provider = createBridgeKycProvider();
+    const result = await provider.createKycLink({
+      entityType: 'business',
+      legalName: 'Acme Foundation Ltd.',
+      contactEmail: 'compliance@acme.org',
+      idempotencyKey: '550e8400-e29b-41d4-a716-446655440000',
+      redirectUri: 'https://app.hypha.earth/en/dho/acme/banking',
+    });
+
+    expect(result.kycLink).toContain('https://bridge.example/kyc');
+    expect(result.tosLink).not.toBeNull();
+    expect(new URL(result.tosLink!).searchParams.get('redirect_uri')).toBe(
+      result.kycLink,
+    );
+  });
+
   it('maps tosLink null when response tos_link is absent', async () => {
     bridgeCreateKycLink.mockResolvedValueOnce({
       id: 'kyc_link_1',
@@ -246,6 +275,12 @@ describe('createBridgeKycProvider', () => {
           bic: 'COBADEFFXXX',
           bank_name: 'Bridge Bank',
         },
+        destination: {
+          currency: 'usdc',
+          paymentRail: 'base',
+          address: '0xtreasury',
+        },
+        developerFeePercent: null,
         status: 'activated',
       });
     });
@@ -285,6 +320,12 @@ describe('createBridgeKycProvider', () => {
           iban: 'LU204080000025759864',
           payment_rails: ['sepa'],
         }),
+        destination: {
+          currency: 'usdc',
+          paymentRail: 'base',
+          address: '0xtreasury',
+        },
+        developerFeePercent: null,
         status: 'activated',
       });
     });
@@ -412,6 +453,12 @@ describe('createBridgeKycProvider', () => {
         depositInstructions: expect.objectContaining({
           deposit_message: 'BRG7depositmessage',
         }),
+        destination: {
+          currency: 'usdc',
+          paymentRail: 'base',
+          address: '0xtreasury',
+        },
+        developerFeePercent: null,
         status: 'awaiting_funds',
       });
     });

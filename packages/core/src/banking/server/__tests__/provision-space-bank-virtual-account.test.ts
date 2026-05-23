@@ -3,12 +3,39 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 const syncBankCustomerKycFromBridge = vi.fn();
+const persistVirtualAccountEndorsementFromBridge = vi.fn();
+const fetchBridgeCustomerEndorsementStatuses = vi.fn();
 
 vi.mock('../sync-bank-customer-kyc-from-bridge', () => ({
   syncBankCustomerKycFromBridge: (...args: unknown[]) =>
     syncBankCustomerKycFromBridge(...args),
 }));
 
+vi.mock('../sync-bank-virtual-account-endorsement', () => ({
+  persistVirtualAccountEndorsementFromBridge: (...args: unknown[]) =>
+    persistVirtualAccountEndorsementFromBridge(...args),
+}));
+
+vi.mock('../bridge-customer-endorsements', async (importOriginal) => {
+  const actual = await importOriginal<
+    typeof import('../bridge-customer-endorsements')
+  >();
+  return {
+    ...actual,
+    fetchBridgeCustomerEndorsementStatuses: (...args: unknown[]) =>
+      fetchBridgeCustomerEndorsementStatuses(...args),
+  };
+});
+
+vi.mock('../../../common/server/bridge-sandbox', () => ({
+  isBridgeSandboxApi: () => false,
+}));
+
+vi.mock('../simulate-bridge-kyb-data', () => ({
+  simulateBridgeKybData: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { BANK_SETUP_FAILED_USER_MESSAGE } from '../errors';
 import { provisionSpaceBankVirtualAccount } from '../provision-space-bank-virtual-account';
 import type { BankKycProvider } from '../providers/types';
 
@@ -17,6 +44,7 @@ const authorizeSpaceBankOnboarding = vi.fn();
 const findBankCustomerBySpaceAndProvider = vi.fn();
 const findBankVirtualAccountByCorridorAndCustomer = vi.fn();
 const insertBankVirtualAccount = vi.fn();
+const updateBankVirtualAccount = vi.fn();
 
 vi.mock('../../../space/server/queries', () => ({
   findSpaceBySlug: (...args: unknown[]) => findSpaceBySlug(...args),
@@ -37,6 +65,8 @@ vi.mock('../queries', () => ({
 vi.mock('../mutations', () => ({
   insertBankVirtualAccount: (...args: unknown[]) =>
     insertBankVirtualAccount(...args),
+  updateBankVirtualAccount: (...args: unknown[]) =>
+    updateBankVirtualAccount(...args),
 }));
 
 const mockDb = {} as never;
@@ -88,6 +118,15 @@ describe('provisionSpaceBankVirtualAccount', () => {
       depositInstructions: { iban: 'DE00' },
       status: 'activated',
     });
+    fetchBridgeCustomerEndorsementStatuses.mockResolvedValue(
+      new Map([['sepa', 'approved']]),
+    );
+    persistVirtualAccountEndorsementFromBridge.mockImplementation(
+      async (account) => ({
+        account: { ...account, isApproved: true },
+        isApproved: true,
+      }),
+    );
   });
 
   it('throws 404 when space is not found', async () => {
@@ -120,10 +159,13 @@ describe('provisionSpaceBankVirtualAccount', () => {
 
   it('returns existing account without calling provider (idempotent)', async () => {
     findBankVirtualAccountByCorridorAndCustomer.mockResolvedValue({
+      id: 9,
       currency: 'eur',
       paymentRail: 'sepa',
+      providerVirtualAccountId: 'va_existing',
       depositInstructions: { iban: 'DE00' },
       status: 'activated',
+      isApproved: true,
     });
 
     const result = await provisionSpaceBankVirtualAccount(
@@ -136,15 +178,10 @@ describe('provisionSpaceBankVirtualAccount', () => {
     expect(mockProvider.provisionVirtualAccount).not.toHaveBeenCalled();
   });
 
-  it('throws 403 when KYB is not approved after sync', async () => {
-    findBankCustomerBySpaceAndProvider.mockResolvedValue({
-      ...approvedCustomer,
-      kycStatus: 'under_review',
-    });
-    syncBankCustomerKycFromBridge.mockResolvedValue({
-      customer: { ...approvedCustomer, kycStatus: 'under_review' },
-      isApproved: false,
-    });
+  it('throws 403 when corridor endorsement is not approved', async () => {
+    fetchBridgeCustomerEndorsementStatuses.mockResolvedValue(
+      new Map([['sepa', 'incomplete']]),
+    );
 
     await expect(
       provisionSpaceBankVirtualAccount(
@@ -161,6 +198,7 @@ describe('provisionSpaceBankVirtualAccount', () => {
     findBankCustomerBySpaceAndProvider.mockResolvedValue({
       ...approvedCustomer,
       kycStatus: 'under_review',
+      providerCustomerId: null,
     });
     syncBankCustomerKycFromBridge.mockResolvedValue({
       customer: approvedCustomer,
@@ -228,7 +266,7 @@ describe('provisionSpaceBankVirtualAccount', () => {
       ),
     ).rejects.toMatchObject({
       status: 400,
-      message: expect.stringContaining('not verified during KYB'),
+      message: BANK_SETUP_FAILED_USER_MESSAGE,
     });
   });
 });

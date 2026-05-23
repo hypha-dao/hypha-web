@@ -10,6 +10,7 @@ import {
 } from './queries';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
 import { mapBankVirtualAccountToPublic } from './map-bank-virtual-account-public';
+import { persistVirtualAccountEndorsementFromBridge } from './sync-bank-virtual-account-endorsement';
 
 export type ActivateSpaceBankVirtualAccountInput = {
   spaceSlug: string;
@@ -44,7 +45,20 @@ export async function activateSpaceBankVirtualAccount(
   }
 
   if (account.providerVirtualAccountId) {
-    return mapBankVirtualAccountToPublic(account, true);
+    return mapBankVirtualAccountToPublic(account);
+  }
+
+  const persisted = await persistVirtualAccountEndorsementFromBridge(
+    account,
+    customer,
+    { db },
+  );
+
+  if (!persisted.isApproved) {
+    throw new BankOnboardingError(
+      'This currency is not yet approved in Bridge. Complete verification for this corridor first.',
+      403,
+    );
   }
 
   const result = await provisionSpaceBankVirtualAccount(
