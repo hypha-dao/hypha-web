@@ -1,7 +1,12 @@
 'use client';
 
 import React from 'react';
-import { useSpaceGroupCall } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
+import {
+  useSpaceGroupCall,
+  type GetCallCaptureVoiceAnnouncement,
+} from '@hypha-platform/core/client';
+import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
 
 type PendingJoin = {
   kind: 'audio' | 'video';
@@ -108,6 +113,7 @@ const GlobalCallDockContext =
   React.createContext<GlobalCallDockContextValue | null>(null);
 
 function useGlobalCallDockValue() {
+  const t = useTranslations('HumanChatPanel');
   const [boundRoomId, setBoundRoomId] = React.useState<string | null>(null);
   const [boundSpaceSlug, setBoundSpaceSlug] = React.useState<string | null>(
     null,
@@ -131,9 +137,33 @@ function useGlobalCallDockValue() {
   const restoreInProgressRef = React.useRef(false);
   const restoreTimerRef = React.useRef<number | null>(null);
 
+  const onCallArtifactsUploaded = React.useCallback(
+    ({ spaceSlug: slug }: { spaceSlug: string }) => {
+      void revalidateSpaceMemoryOrg(slug);
+    },
+    [],
+  );
+
+  const getCaptureVoiceAnnouncement =
+    React.useCallback<GetCallCaptureVoiceAnnouncement>(
+      ({ action, mode }) => {
+        if (mode === 'recording_with_transcript') {
+          return action === 'started'
+            ? t('callCaptureVoiceStartedRecordingTranscript')
+            : t('callCaptureVoiceStoppedRecordingTranscript');
+        }
+        return action === 'started'
+          ? t('callCaptureVoiceStartedTranscript')
+          : t('callCaptureVoiceStoppedTranscript');
+      },
+      [t],
+    );
+
   const call = useSpaceGroupCall(activeRoomId, {
     authToken: activeAuthToken,
     spaceSlug: activeSpaceSlug,
+    onCallArtifactsUploaded,
+    getCaptureVoiceAnnouncement,
   });
 
   const inSession =
@@ -179,6 +209,23 @@ function useGlobalCallDockValue() {
       setActiveAuthToken(boundAuthToken);
     }
   }, [inSession, boundAuthToken, boundRoomId, boundSpaceSlug]);
+
+  React.useEffect(() => {
+    if (!activeRoomId || !boundRoomId || activeRoomId !== boundRoomId) return;
+    if (activeSpaceSlug !== boundSpaceSlug) {
+      setActiveSpaceSlug(boundSpaceSlug);
+    }
+    if (activeAuthToken !== boundAuthToken) {
+      setActiveAuthToken(boundAuthToken);
+    }
+  }, [
+    activeAuthToken,
+    activeRoomId,
+    activeSpaceSlug,
+    boundAuthToken,
+    boundRoomId,
+    boundSpaceSlug,
+  ]);
 
   React.useEffect(() => {
     if (call.callState === 'idle') {
