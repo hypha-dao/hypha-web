@@ -98,6 +98,7 @@ import {
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
+import { useHumanChatPanel } from './human-chat-panel-context';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
 import {

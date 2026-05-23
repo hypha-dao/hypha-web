@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "check-types": {
+      "dependsOn": [
+        "@hypha-platform/chat-server#check-types",
+        "@hypha-platform/mcp-server#check-types"
+      ]
+    }
+  }
+}
