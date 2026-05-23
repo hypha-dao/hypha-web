@@ -4,12 +4,14 @@ import { Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   getCallControlsPhase,
+  type SpaceGroupCallCaptureConsent,
   type SpaceGroupCallCaptureMode,
   type SpaceGroupCallErrorCode,
   type SpaceGroupCallRecordingStatus,
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
 import { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
+import { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
 
 type HumanChatPanelCallBannerProps = {
   callState: SpaceGroupCallState;
@@ -50,11 +52,7 @@ type HumanChatPanelCallBannerProps = {
   onStopCapture: () => void;
   recordingStatus: SpaceGroupCallRecordingStatus;
   recordingError: string | null;
-  remoteCaptureNotice: {
-    actor: string;
-    mode: Exclude<SpaceGroupCallCaptureMode, 'none'>;
-  } | null;
-  onAcknowledgeRemoteCaptureNotice: () => void;
+  captureConsent: SpaceGroupCallCaptureConsent | null;
   onDismissScreenshareError: () => void;
   /** Reconnect after a recoverable call error. */
   onRetryCall: () => void;
@@ -116,8 +114,7 @@ export function HumanChatPanelCallBanner({
   onStopCapture,
   recordingStatus,
   recordingError,
-  remoteCaptureNotice,
-  onAcknowledgeRemoteCaptureNotice,
+  captureConsent,
   onDismissScreenshareError,
   tabBackgroundWhileInCall,
   onRetryCall,
@@ -241,24 +238,12 @@ export function HumanChatPanelCallBanner({
           </button>
         </div>
       )}
-      {remoteCaptureNotice && callState === 'connected' && (
-        <div className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/12 px-4 py-1.5">
-          <p className="min-w-0 flex-1 text-xs text-amber-950 dark:text-amber-100">
-            {remoteCaptureNotice.actor} is recording this call (
-            {remoteCaptureNotice.mode === 'transcript_only'
-              ? t('callCaptureModeTranscriptOnly')
-              : t('callCaptureModeRecordingWithTranscript')}
-            ).
-          </p>
-          <button
-            type="button"
-            onClick={onAcknowledgeRemoteCaptureNotice}
-            className="shrink-0 text-xs font-medium text-amber-900 underline-offset-2 hover:underline dark:text-amber-50"
-          >
-            Got it
-          </button>
-        </div>
-      )}
+      {callState === 'connected' && captureConsent ? (
+        <HumanChatPanelCaptureConsentBanner
+          consent={captureConsent}
+          variant="inCall"
+        />
+      ) : null}
       <div className="flex min-h-[44px] flex-wrap items-center gap-2 px-4 py-2">
         <div className="min-w-0 flex-1 basis-0 pr-1 sm:pr-2">
           {callState === 'connected' ? (

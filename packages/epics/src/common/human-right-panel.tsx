@@ -1005,8 +1005,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     stopCapture: stopSpaceCallCapture,
     recordingStatus: spaceCallRecordingStatus,
     recordingError: spaceCallRecordingError,
-    remoteCaptureNotice: spaceCallRemoteCaptureNotice,
-    acknowledgeRemoteCaptureNotice: acknowledgeSpaceCallRemoteCaptureNotice,
+    captureConsent: spaceCallCaptureConsent,
     dismissScreenshareError: dismissSpaceCallScreenshareError,
     activeSpeakerKey: spaceCallActiveSpeakerKey,
     setScreensharingEnabled: setSpaceCallScreensharing,
@@ -3252,6 +3251,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               deviceCount={spaceCallRoomGroupDeviceCount}
               disabled={!callUiEnabled}
               busy={spaceCallBusyJoining}
+              captureConsent={spaceCallCaptureConsent}
               onJoinAudio={() => {
                 if (!canJoinSignalThreadCall && isSignalThread) {
                   void requestSignalTeamAccess();
@@ -3303,10 +3303,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onStopCapture={stopSpaceCallCapture}
               recordingStatus={spaceCallRecordingStatus}
               recordingError={spaceCallRecordingError}
-              remoteCaptureNotice={spaceCallRemoteCaptureNotice}
-              onAcknowledgeRemoteCaptureNotice={
-                acknowledgeSpaceCallRemoteCaptureNotice
-              }
+              captureConsent={spaceCallCaptureConsent}
               controlsMode="leave_only"
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
               onRetryCall={handleRetrySpaceCall}

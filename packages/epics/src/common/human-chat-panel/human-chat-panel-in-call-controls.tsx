@@ -66,6 +66,8 @@ type HumanChatPanelInCallControlsProps = {
   variant?: 'inBanner' | 'fullView';
   /** Compact row alignment for dock/banner usage. */
   inBannerLayout?: 'inline' | 'balanced' | 'centered';
+  /** Tighter controls for Document Picture-in-Picture floating window. */
+  density?: 'default' | 'compact';
   /** Leave-only mode for in-chat convenience controls. */
   controlsMode?: 'full' | 'leave_only';
 };
@@ -97,10 +99,12 @@ export function HumanChatPanelInCallControls({
   onLeave,
   variant = 'inBanner',
   inBannerLayout = 'inline',
+  density = 'default',
   controlsMode = 'full',
 }: HumanChatPanelInCallControlsProps) {
   const t = useTranslations('HumanChatPanel');
   const { controlsDisabled } = getCallControlsPhase(callState);
+  const isCompact = density === 'compact';
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
   const audioMenuRef = useRef<HTMLDivElement | null>(null);
   const [isCaptureMenuOpen, setIsCaptureMenuOpen] = useState(false);
@@ -109,28 +113,46 @@ export function HumanChatPanelInCallControls({
     'none' | 'recording' | 'transcript'
   >('none');
   const isFull = variant === 'fullView';
-  const isCenteredInBanner = !isFull && inBannerLayout === 'centered';
+  const isCenteredInBanner =
+    !isFull && !isCompact && inBannerLayout === 'centered';
   /**
    * Full view modal: §3.4.4.4 — white glyphs on dark / green / red (not
    * `text-foreground` on near-black / green where Lucide would read as black).
    */
   const fullViewIcon = 'h-5 w-5 text-white stroke-white';
+  const compactBtn =
+    'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const baseBtn = isFull
     ? 'h-10 min-w-10 sm:h-11 sm:min-w-11 inline-flex items-center justify-center rounded-full border border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
+    : isCompact
+    ? compactBtn
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const neutralBtn = isFull
     ? baseBtn
+    : isCompact
+    ? compactBtn
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
-  const leaveIcon = isFull ? fullViewIcon : 'h-4 w-4';
+  const leaveIcon = isFull
+    ? fullViewIcon
+    : isCompact
+    ? 'h-3.5 w-3.5'
+    : 'h-4 w-4';
   /**
    * End call — classic “hang up” red (explicit red-600/700, not `destructive` token
    * which can read as salmon in dark UIs on video chrome).
    */
   const leaveBtn = isFull
     ? 'inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center rounded-full border border-red-800/25 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/50 disabled:opacity-50'
+    : isCompact
+    ? 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40';
   const micMutedBtn = isFull
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
+    : isCompact
+    ? cn(
+        compactBtn,
+        'border-destructive/30 bg-destructive/12 text-destructive hover:bg-destructive/20',
+      )
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20';
   const shareActiveBtn = isFull
     ? cn(
@@ -140,16 +162,24 @@ export function HumanChatPanelInCallControls({
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-500/55 bg-emerald-600/90 text-white shadow-sm ring-2 ring-emerald-500/25 transition-colors hover:bg-emerald-500/90';
   const camOffBtn = isFull
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
+    : isCompact
+    ? cn(
+        compactBtn,
+        'border-destructive/30 bg-destructive/12 text-destructive hover:bg-destructive/20',
+      )
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20';
-  const icon = isFull ? fullViewIcon : 'h-4 w-4';
+  const icon = isFull ? fullViewIcon : isCompact ? 'h-3.5 w-3.5' : 'h-4 w-4';
   const audioSettingsBtn = isFull
     ? 'inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center gap-1 rounded-full border border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
+    : isCompact
+    ? 'inline-flex h-7 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-1.5 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
     : 'inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-border/60 bg-background px-2 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const menuCheckIcon = isFull
     ? 'h-4 w-4 text-white'
     : 'h-4 w-4 text-foreground';
   const useSideAudioSettings =
-    isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered';
+    !isCompact &&
+    (isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered');
   const captureStatusText =
     recordingStatus === 'recording'
       ? t('callCaptureStatusCapturing')
@@ -159,6 +189,8 @@ export function HumanChatPanelInCallControls({
       ? t('callCaptureStatusSaving')
       : recordingStatus === 'error'
       ? t('callCaptureStatusError')
+      : capturePending
+      ? t('callCaptureStatusStarting')
       : t('callCaptureStatusIdle');
   const captureIconClass = isFull ? fullViewIcon : 'h-4 w-4';
   const captureIdleIconClass = cn(
@@ -257,10 +289,11 @@ export function HumanChatPanelInCallControls({
     setIsCaptureMenuOpen(false);
   };
   const captureStopLabel = t('callCaptureStop');
-  const captureControlsReady =
-    captureActive && !capturePending && recordingStatus !== 'uploading';
+  const captureStopReady = captureActive && recordingStatus !== 'uploading';
+  const capturePauseReady =
+    recordingStatus === 'recording' || recordingStatus === 'paused';
   const requestStopCapture = () => {
-    if (!captureControlsReady) return;
+    if (!captureStopReady) return;
     setIsCaptureMenuOpen(false);
     if (captureMode === 'recording_with_transcript') {
       setStopConfirmStep('recording');
@@ -275,7 +308,7 @@ export function HumanChatPanelInCallControls({
   const captureModeLabel = !captureActive
     ? t('callCaptureStatusIdle')
     : capturePending
-    ? t('callCaptureStatusCapturing')
+    ? t('callCaptureStatusStarting')
     : captureMode === 'transcript_only'
     ? t('callCaptureModeTranscriptOnly')
     : t('callCaptureModeRecordingWithTranscript');
@@ -388,9 +421,9 @@ export function HumanChatPanelInCallControls({
               <button
                 type="button"
                 role="menuitem"
-                disabled={!captureControlsReady}
+                disabled={!capturePauseReady}
                 onClick={() => {
-                  if (!captureControlsReady) return;
+                  if (!capturePauseReady) return;
                   if (recordingStatus === 'paused') {
                     onResumeCapture();
                   } else {
@@ -414,7 +447,7 @@ export function HumanChatPanelInCallControls({
               <button
                 type="button"
                 role="menuitem"
-                disabled={!captureControlsReady}
+                disabled={!captureStopReady}
                 onClick={requestStopCapture}
                 className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -548,7 +581,11 @@ export function HumanChatPanelInCallControls({
           <div
             className={cn(
               'flex items-center',
-              isCenteredInBanner ? 'gap-2.5 sm:gap-3' : 'gap-1.5 sm:gap-2',
+              isCenteredInBanner
+                ? 'gap-2.5 sm:gap-3'
+                : isCompact
+                ? 'gap-1'
+                : 'gap-1.5 sm:gap-2',
               useSideAudioSettings ? 'justify-center' : 'justify-start',
             )}
           >
@@ -672,7 +709,7 @@ export function HumanChatPanelInCallControls({
             </div>
           ) : null}
         </div>
-        {recordingStatus === 'uploading' ? (
+        {!isCompact && recordingStatus === 'uploading' ? (
           <p className={cn('mt-1 text-[11px] text-muted-foreground')}>
             {t('callCaptureStatusSaving')}
           </p>
@@ -680,7 +717,7 @@ export function HumanChatPanelInCallControls({
           <p className={cn('mt-1 text-[11px] text-destructive')}>
             {recordingError}
           </p>
-        ) : captureMode === 'none' && !leaveOnly ? (
+        ) : !isCompact && captureMode === 'none' && !leaveOnly ? (
           <p className={cn('mt-1 text-[11px] text-muted-foreground')}>
             {t('callCaptureOffHint')}
           </p>
