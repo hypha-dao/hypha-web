@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import {
+  AppWindow,
   Maximize2,
   Minimize2,
   PictureInPicture2,
@@ -31,6 +33,7 @@ import {
 import { matrixMemberDisplayLabelFromRoom } from './human-chat-panel/matrix-room-member-display';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { getLocaleFromPath } from './get-locale-from-path';
+import { useCallDockDocumentPip } from './use-call-dock-document-pip';
 
 type DockGeometry = {
   x: number;
@@ -255,6 +258,13 @@ export function GlobalCallDockOverlay() {
   } | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isResizing, setIsResizing] = React.useState(false);
+  const {
+    pipWindow,
+    isSupported: isDocumentPipSupported,
+    isOpen: isDocumentPipOpen,
+    openPip,
+    closePip,
+  } = useCallDockDocumentPip(dockRef);
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserDisplayName = React.useMemo(() => {
     const profile = (me ?? null) as {
@@ -477,6 +487,20 @@ export function GlobalCallDockOverlay() {
     setDockMode('fullscreen');
   }, [applyDockMode, dockMode, setDockMode]);
 
+  React.useEffect(() => {
+    if (!showFloatingDock) {
+      closePip();
+    }
+  }, [closePip, showFloatingDock]);
+
+  const onToggleDocumentPip = React.useCallback(async () => {
+    if (isDocumentPipOpen) {
+      closePip();
+      return;
+    }
+    await openPip();
+  }, [closePip, isDocumentPipOpen, openPip]);
+
   const resolveMemberLabel = React.useCallback(
     (userId: string | undefined) => {
       if (
@@ -499,8 +523,11 @@ export function GlobalCallDockOverlay() {
 
   if (!showFloatingDock || !activeRoomId) return null;
 
+  const inDocumentPip = Boolean(pipWindow);
   const modeIsFullscreen = dockMode === 'fullscreen';
-  const containerStyle: React.CSSProperties = modeIsFullscreen
+  const containerStyle: React.CSSProperties = inDocumentPip
+    ? { width: '100%', height: '100%' }
+    : modeIsFullscreen
     ? {
         left: 16,
         right: 16,
@@ -556,17 +583,19 @@ export function GlobalCallDockOverlay() {
     remoteMediaStall ||
     remoteCaptureNotice != null;
 
-  return (
+  const dockContent = (
     <div
       ref={dockRef}
       data-testid="global-call-dock"
       className={cn(
-        'fixed z-[130] flex min-h-[260px] min-w-[360px] flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
+        inDocumentPip
+          ? 'relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm'
+          : 'fixed z-[130] flex min-h-[260px] min-w-[360px] flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
         modeIsFullscreen ? 'rounded-2xl' : '',
       )}
       style={containerStyle}
     >
-      {!modeIsFullscreen && (
+      {!modeIsFullscreen && !inDocumentPip && (
         <>
           <div
             data-no-dock-drag
@@ -597,7 +626,7 @@ export function GlobalCallDockOverlay() {
       <div
         className={cn(
           'flex shrink-0 items-center gap-2 border-b border-border/50 bg-muted/45 px-2.5 py-2',
-          modeIsFullscreen
+          modeIsFullscreen || inDocumentPip
             ? 'cursor-default'
             : 'cursor-grab active:cursor-grabbing',
         )}
@@ -620,6 +649,31 @@ export function GlobalCallDockOverlay() {
           </button>
         )}
         <div className="flex items-center gap-1">
+          {isDocumentPipSupported && !modeIsFullscreen && (
+            <button
+              type="button"
+              data-no-dock-drag
+              onClick={() => {
+                void onToggleDocumentPip();
+              }}
+              className={cn(
+                'inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted',
+                isDocumentPipOpen && 'border-primary/50 bg-primary/10',
+              )}
+              aria-label={
+                isDocumentPipOpen
+                  ? t('closeFloatingWindowLabel')
+                  : t('openFloatingWindowLabel')
+              }
+              title={
+                isDocumentPipOpen
+                  ? t('closeFloatingWindowLabel')
+                  : t('openFloatingWindowLabel')
+              }
+            >
+              <AppWindow className="h-3.5 w-3.5" />
+            </button>
+          )}
           {dockMode !== 'thumbnail' && (
             <button
               type="button"
@@ -672,6 +726,7 @@ export function GlobalCallDockOverlay() {
           groupCall={groupCall}
           callKind={callKind}
           isLocalVideoMuted={isLocalVideoMuted}
+          isMicrophoneMuted={isMicrophoneMuted}
           isScreensharing={isScreensharing}
           callState={callState}
           feedVersion={feedVersion}
@@ -766,4 +821,10 @@ export function GlobalCallDockOverlay() {
       )}
     </div>
   );
+
+  if (pipWindow) {
+    return createPortal(dockContent, pipWindow.document.body);
+  }
+
+  return dockContent;
 }
