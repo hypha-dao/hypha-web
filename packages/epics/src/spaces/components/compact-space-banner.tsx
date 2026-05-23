@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { LinkIcon } from '../../common/link-icon';
 import { LinkLabel } from '../../common/link-label';
-import { Avatar, AvatarFallback, AvatarImage } from '@hypha-platform/ui';
+import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { CompactSpaceBannerLead } from './compact-space-banner-lead';
 import { isSafeExternalUrl, isSafeImageUrl } from '../utils/safe-image-url';
@@ -44,23 +44,6 @@ const DESCRIPTION_SCROLL_BOX = cn(
   '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
 );
-
-function hashSeed(input: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < input.length; i++) {
-    hash ^= input.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-function gradientHuesFromSeed(seed: string): [number, number, number] {
-  const hash = hashSeed(seed || 'hypha');
-  const h1 = hash % 360;
-  const h2 = (h1 + 48 + ((hash >>> 7) % 55)) % 360;
-  const h3 = (h2 + 62 + ((hash >>> 13) % 65)) % 360;
-  return [h1, h2, h3];
-}
 
 type CompactSpaceBannerCommon = {
   title: string;
@@ -141,14 +124,6 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     if (candidate && isSafeImageUrl(candidate)) return candidate;
     return isSafeImageUrl(defaultLogoSrc) ? defaultLogoSrc : '';
   })();
-  const [h1, h2, h3] = gradientHuesFromSeed(title);
-  const bannerPlaceholderStyle = {
-    backgroundImage: `radial-gradient(circle at 12% 18%, hsla(${h1}, 86%, 66%, 0.55), transparent 44%), radial-gradient(circle at 84% 84%, hsla(${h3}, 90%, 62%, 0.42), transparent 40%), linear-gradient(135deg, hsl(${h1}, 92%, 54%) 0%, hsl(${h2}, 86%, 52%) 48%, hsl(${h3}, 82%, 48%) 100%)`,
-  } satisfies React.CSSProperties;
-  const logoPlaceholderStyle = {
-    backgroundImage: `linear-gradient(145deg, hsl(${h1}, 88%, 58%), hsl(${h2}, 78%, 49%))`,
-  } satisfies React.CSSProperties;
-  const logoInitial = title.trim().charAt(0).toUpperCase() || 'H';
 
   return (
     <section
@@ -169,12 +144,11 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
       ) : (
         <>
           <div
-            className="pointer-events-none absolute inset-0"
-            style={bannerPlaceholderStyle}
+            className="pointer-events-none absolute inset-0 bg-white dark:bg-black"
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.20),transparent_62%)]"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.16),transparent_62%)] dark:bg-[radial-gradient(ellipse_55%_45%_at_80%_8%,rgba(255,255,255,0.06),transparent_62%)]"
             aria-hidden
           />
         </>
@@ -189,12 +163,6 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               alt={logoAlt}
               className="object-cover"
             />
-            <AvatarFallback
-              className="text-xl font-semibold text-white"
-              style={logoPlaceholderStyle}
-            >
-              {logoInitial}
-            </AvatarFallback>
           </Avatar>
 
           <div className="min-w-0 flex-1 basis-[16rem] space-y-2">
