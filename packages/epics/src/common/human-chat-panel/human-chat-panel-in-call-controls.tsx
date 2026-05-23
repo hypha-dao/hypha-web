@@ -257,7 +257,10 @@ export function HumanChatPanelInCallControls({
     setIsCaptureMenuOpen(false);
   };
   const captureStopLabel = t('callCaptureStop');
+  const captureControlsReady =
+    captureActive && !capturePending && recordingStatus !== 'uploading';
   const requestStopCapture = () => {
+    if (!captureControlsReady) return;
     setIsCaptureMenuOpen(false);
     if (captureMode === 'recording_with_transcript') {
       setStopConfirmStep('recording');
@@ -385,7 +388,9 @@ export function HumanChatPanelInCallControls({
               <button
                 type="button"
                 role="menuitem"
+                disabled={!captureControlsReady}
                 onClick={() => {
+                  if (!captureControlsReady) return;
                   if (recordingStatus === 'paused') {
                     onResumeCapture();
                   } else {
@@ -393,7 +398,7 @@ export function HumanChatPanelInCallControls({
                   }
                   setIsCaptureMenuOpen(false);
                 }}
-                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="inline-flex items-center gap-2">
                   {recordingStatus === 'paused' ? (
@@ -409,8 +414,9 @@ export function HumanChatPanelInCallControls({
               <button
                 type="button"
                 role="menuitem"
+                disabled={!captureControlsReady}
                 onClick={requestStopCapture}
-                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="inline-flex items-center gap-2 text-rose-500">
                   <Square className="h-4 w-4 fill-current" />
@@ -491,9 +497,8 @@ export function HumanChatPanelInCallControls({
             </AlertDialogCancel>
             <Button
               type="button"
-              variant="outline"
-              colorVariant="neutral"
-              onClick={() => setStopConfirmStep('transcript')}
+              colorVariant="accent"
+              onClick={confirmStopCapture}
             >
               {t('callCaptureConfirmStopRecordingAction')}
             </Button>
@@ -667,9 +672,17 @@ export function HumanChatPanelInCallControls({
             </div>
           ) : null}
         </div>
-        {recordingStatus === 'error' && recordingError?.trim() ? (
+        {recordingStatus === 'uploading' ? (
+          <p className={cn('mt-1 text-[11px] text-muted-foreground')}>
+            {t('callCaptureStatusSaving')}
+          </p>
+        ) : recordingStatus === 'error' && recordingError?.trim() ? (
           <p className={cn('mt-1 text-[11px] text-destructive')}>
             {recordingError}
+          </p>
+        ) : captureMode === 'none' && !leaveOnly ? (
+          <p className={cn('mt-1 text-[11px] text-muted-foreground')}>
+            {t('callCaptureOffHint')}
           </p>
         ) : null}
       </div>
