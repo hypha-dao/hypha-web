@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "check-types": "node --max-old-space-size=8192 ../../node_modules/typescript/bin/tsc --noEmit",
+    "check-types": "node --max-old-space-size=12288 ../../node_modules/typescript/bin/tsc --noEmit",
     "lint": "eslint ."
   },
   "devDependencies": {
