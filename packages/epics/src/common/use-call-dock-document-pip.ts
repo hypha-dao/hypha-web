@@ -16,6 +16,9 @@ declare global {
   }
 }
 
+const PIP_WINDOW_WIDTH = 320;
+const PIP_WINDOW_HEIGHT = 208;
+
 /** Mirror theme tokens and typography so portaled dock matches the main app. */
 function copyDocumentAppearance(source: Document, target: Document) {
   const sourceHtml = source.documentElement;
@@ -123,8 +126,14 @@ export function useCallDockDocumentPip(dockRef: RefObject<HTMLElement | null>) {
     if (pipWindow) return true;
 
     const el = dockRef.current;
-    const width = Math.max(360, el?.offsetWidth ?? 480);
-    const height = Math.max(260, el?.offsetHeight ?? 320);
+    const width = Math.min(
+      PIP_WINDOW_WIDTH,
+      Math.max(280, el?.offsetWidth ?? PIP_WINDOW_WIDTH),
+    );
+    const height = Math.min(
+      PIP_WINDOW_HEIGHT,
+      Math.max(180, el?.offsetHeight ?? PIP_WINDOW_HEIGHT),
+    );
     const win = await api.requestWindow({ width, height });
     copyStylesIntoWindow(win);
     setPipWindow(win);

@@ -21,6 +21,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   DEFAULT_CALL_FULL_VIEW_LAYOUT,
   HumanChatPanelCallBanner,
+  HumanChatPanelCaptureConsentBanner,
   HumanChatPanelCallStage,
   HumanChatPanelCallFullViewLayoutMenu,
   HumanChatPanelInCallControls,
@@ -207,8 +208,7 @@ export function GlobalCallDockOverlay() {
     stopCapture,
     recordingStatus,
     recordingError,
-    remoteCaptureNotice,
-    acknowledgeRemoteCaptureNotice,
+    captureConsent,
     leave,
   } = useGlobalCallDock();
 
@@ -539,7 +539,8 @@ export function GlobalCallDockOverlay() {
   if (!showFloatingDock || !activeRoomId) return null;
 
   const inDocumentPip = Boolean(pipWindow);
-  const modeIsFullscreen = dockMode === 'fullscreen';
+  const dockCompact = inDocumentPip;
+  const modeIsFullscreen = dockMode === 'fullscreen' && !inDocumentPip;
   const containerStyle: React.CSSProperties = inDocumentPip
     ? { width: '100%', height: '100%' }
     : modeIsFullscreen
@@ -593,10 +594,7 @@ export function GlobalCallDockOverlay() {
     stopCapture();
   };
   const showDockBanner =
-    errorCode != null ||
-    screenshareErrorCode != null ||
-    remoteMediaStall ||
-    remoteCaptureNotice != null;
+    errorCode != null || screenshareErrorCode != null || remoteMediaStall;
 
   const dockContent = (
     <div
@@ -604,7 +602,7 @@ export function GlobalCallDockOverlay() {
       data-testid="global-call-dock"
       className={cn(
         inDocumentPip
-          ? 'relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm'
+          ? 'relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-background/95 shadow-lg'
           : 'fixed z-[130] flex min-h-[260px] min-w-[360px] flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
         modeIsFullscreen ? 'rounded-2xl' : '',
       )}
@@ -640,14 +638,20 @@ export function GlobalCallDockOverlay() {
       )}
       <div
         className={cn(
-          'flex shrink-0 items-center gap-2 border-b border-border/50 bg-muted/45 px-2.5 py-2',
+          'flex shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45',
+          dockCompact ? 'px-1.5 py-1' : 'px-2.5 py-2',
           modeIsFullscreen || inDocumentPip
             ? 'cursor-default'
             : 'cursor-grab active:cursor-grabbing',
         )}
         onPointerDown={onDragStart}
       >
-        <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
+        <p
+          className={cn(
+            'min-w-0 flex-1 truncate font-medium text-foreground',
+            dockCompact ? 'text-[11px]' : 'text-xs',
+          )}
+        >
           {t('callTitle', { count: roomGroupCallDeviceCount })}
         </p>
         {callSpaceHref && (
@@ -655,22 +659,27 @@ export function GlobalCallDockOverlay() {
             type="button"
             data-no-dock-drag
             onClick={() => router.push(callSpaceHref)}
-            className="inline-flex h-7 items-center gap-1 rounded-md border border-border/60 bg-background px-2 text-xs hover:bg-muted"
+            className={cn(
+              'inline-flex items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted',
+              dockCompact ? 'h-6 w-6' : 'h-7 gap-1 px-2 text-xs',
+            )}
             aria-label={t('openSpaceLabel')}
             title={t('openSpaceLabel')}
           >
-            <ArrowUpRight className="h-3.5 w-3.5" />
-            {t('spaceButton')}
+            <ArrowUpRight className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+            {!dockCompact ? t('spaceButton') : null}
           </button>
         )}
-        {isScreensharing && roomGroupCallDeviceCount > 1 ? (
+        {isScreensharing && roomGroupCallDeviceCount > 1 && !dockCompact ? (
           <HumanChatPanelCallFullViewLayoutMenu
             value={layoutMode}
             onValueChange={onShareLayoutModeChange}
             className="shrink-0"
           />
         ) : null}
-        <div className="flex items-center gap-1">
+        <div
+          className={cn('flex items-center', dockCompact ? 'gap-0.5' : 'gap-1')}
+        >
           {isDocumentPipSupported && (
             <button
               type="button"
@@ -679,7 +688,8 @@ export function GlobalCallDockOverlay() {
                 void onToggleDocumentPip();
               }}
               className={cn(
-                'inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted',
+                'inline-flex items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted',
+                dockCompact ? 'h-6 w-6' : 'h-7 w-7',
                 isDocumentPipOpen && 'border-primary/50 bg-primary/10',
               )}
               aria-label={
@@ -693,10 +703,10 @@ export function GlobalCallDockOverlay() {
                   : t('openFloatingWindowLabel')
               }
             >
-              <AppWindow className="h-3.5 w-3.5" />
+              <AppWindow className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
             </button>
           )}
-          {dockMode !== 'thumbnail' && (
+          {!dockCompact && dockMode !== 'thumbnail' && (
             <button
               type="button"
               data-no-dock-drag
@@ -708,7 +718,7 @@ export function GlobalCallDockOverlay() {
               <PictureInPicture2 className="h-3.5 w-3.5" />
             </button>
           )}
-          {!modeIsFullscreen && dockMode !== 'expanded' && (
+          {!dockCompact && !modeIsFullscreen && dockMode !== 'expanded' && (
             <button
               type="button"
               data-no-dock-drag
@@ -720,28 +730,40 @@ export function GlobalCallDockOverlay() {
               <PanelBottomOpen className="h-3.5 w-3.5" />
             </button>
           )}
-          <button
-            type="button"
-            data-no-dock-drag
-            onClick={onToggleFullscreen}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
-            aria-label={
-              modeIsFullscreen ? t('exitFullscreenLabel') : t('fullscreenLabel')
-            }
-            title={
-              modeIsFullscreen ? t('exitFullscreenLabel') : t('fullscreenLabel')
-            }
-          >
-            {modeIsFullscreen ? (
-              <Minimize2 className="h-3.5 w-3.5" />
-            ) : (
-              <Maximize2 className="h-3.5 w-3.5" />
-            )}
-          </button>
+          {!dockCompact && (
+            <button
+              type="button"
+              data-no-dock-drag
+              onClick={onToggleFullscreen}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
+              aria-label={
+                modeIsFullscreen
+                  ? t('exitFullscreenLabel')
+                  : t('fullscreenLabel')
+              }
+              title={
+                modeIsFullscreen
+                  ? t('exitFullscreenLabel')
+                  : t('fullscreenLabel')
+              }
+            >
+              {modeIsFullscreen ? (
+                <Minimize2 className="h-3.5 w-3.5" />
+              ) : (
+                <Maximize2 className="h-3.5 w-3.5" />
+              )}
+            </button>
+          )}
         </div>
       </div>
 
-      <div ref={splitContainerRef} className="min-h-0 min-w-0 flex-1">
+      <div
+        ref={splitContainerRef}
+        className={cn(
+          'min-h-0 min-w-0',
+          inDocumentPip ? 'max-h-[72px] shrink-0' : 'flex-1',
+        )}
+      >
         <HumanChatPanelCallStage
           client={client}
           roomId={activeRoomId}
@@ -769,7 +791,24 @@ export function GlobalCallDockOverlay() {
         />
       </div>
 
-      <div className="shrink-0 border-t border-border/50 bg-muted/35 px-2 py-2">
+      <div
+        className={cn(
+          'shrink-0 border-t border-border/50 bg-muted/35',
+          dockCompact ? 'px-1 py-1' : 'px-2 py-2',
+        )}
+      >
+        {captureConsent && callState === 'connected' && !showDockBanner ? (
+          <HumanChatPanelCaptureConsentBanner
+            consent={captureConsent}
+            variant="inCall"
+            className={cn(
+              'rounded-none border-x-0 border-t-0',
+              dockCompact
+                ? '-mx-1 -mt-1 mb-1 px-2 py-1 [&_p]:text-[10px] [&_p]:leading-tight'
+                : '-mx-2 -mt-2 mb-2',
+            )}
+          />
+        ) : null}
         {showDockBanner ? (
           <HumanChatPanelCallBanner
             callState={callState}
@@ -802,8 +841,7 @@ export function GlobalCallDockOverlay() {
             onStopCapture={onStopCapture}
             recordingStatus={recordingStatus}
             recordingError={recordingError}
-            remoteCaptureNotice={remoteCaptureNotice}
-            onAcknowledgeRemoteCaptureNotice={acknowledgeRemoteCaptureNotice}
+            captureConsent={captureConsent}
             onDismissScreenshareError={dismissScreenshareError}
             onRetryCall={retryFromError}
             onDismissCallError={dismissCallError}
@@ -832,8 +870,11 @@ export function GlobalCallDockOverlay() {
             onLeave={() => {
               void leave();
             }}
+            density={dockCompact ? 'compact' : 'default'}
             variant={modeIsFullscreen ? 'fullView' : 'inBanner'}
-            inBannerLayout={modeIsFullscreen ? 'inline' : 'centered'}
+            inBannerLayout={
+              dockCompact ? 'inline' : modeIsFullscreen ? 'inline' : 'centered'
+            }
           />
         )}
       </div>
