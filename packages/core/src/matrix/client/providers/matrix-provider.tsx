@@ -157,6 +157,9 @@ export const MATRIX_UPLOAD_TIMEOUT_MS = 120_000;
 const MATRIX_UPLOAD_STAGGER_MS = 400;
 
 const MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS = 4;
+/** Gap between paginated `scrollback` calls to avoid homeserver 429 bursts. */
+const MATRIX_SCROLLBACK_STAGGER_MS = 350;
+const MATRIX_SCROLLBACK_RATE_LIMIT_MAX_ATTEMPTS = 4;
 const MATRIX_GROUP_CALL_EVENT_TYPE = 'org.matrix.msc3401.call';
 const MATRIX_GROUP_CALL_MEMBER_EVENT_TYPE = 'org.matrix.msc3401.call.member';
 const MATRIX_LEGACY_CALL_MEMBER_EVENT_TYPE = 'm.call.member';
@@ -1415,22 +1418,41 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const maxBatches = Math.max(1, options?.maxBatches ?? 10);
       const loadPromise = (async () => {
         for (let i = 0; i < maxBatches; i++) {
+          if (i > 0) {
+            await delay(MATRIX_SCROLLBACK_STAGGER_MS);
+          }
           const beforeCount = room.getLiveTimeline().getEvents().length;
-          try {
-            await client.scrollback(room, pageSize);
-          } catch (error) {
-            if (isMatrixRateLimitedError(error)) {
-              console.warn(
-                '[MatrixProvider] Stopped room history scrollback after rate limit:',
-                error,
-              );
-            } else {
+          let scrollbackSucceeded = false;
+          for (
+            let attempt = 0;
+            attempt < MATRIX_SCROLLBACK_RATE_LIMIT_MAX_ATTEMPTS;
+            attempt += 1
+          ) {
+            try {
+              await client.scrollback(room, pageSize);
+              scrollbackSucceeded = true;
+              break;
+            } catch (error) {
+              if (isMatrixRateLimitedError(error)) {
+                if (attempt >= MATRIX_SCROLLBACK_RATE_LIMIT_MAX_ATTEMPTS - 1) {
+                  console.warn(
+                    '[MatrixProvider] Paused room history scrollback after rate limit (will retry later):',
+                    error,
+                  );
+                  return;
+                }
+                await delay(matrixRateLimitBackoffMs(error, attempt));
+                continue;
+              }
               console.warn(
                 '[MatrixProvider] Failed while loading room history:',
                 error,
               );
+              return;
             }
-            break;
+          }
+          if (!scrollbackSucceeded) {
+            return;
           }
           const afterCount = room.getLiveTimeline().getEvents().length;
           if (afterCount <= beforeCount) {
