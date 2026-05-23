@@ -517,7 +517,7 @@ export function useSpaceGroupCall(
         const uploadTranscriptOnly = async () => {
           if (!normalizedTranscript) {
             throw new Error(
-              'recording upload failed and no transcript captured',
+              'Nothing was captured to save. Keep capture running for a few seconds, speak into your mic, and ensure call audio/video is connected before stopping.',
             );
           }
           await uploadRecordedCallArtifact({
