@@ -15,12 +15,6 @@ export {
   type SpaceGroupCallCaptureConsent,
 } from './call-capture-consent';
 export {
-  speakCallCaptureVoiceAnnouncement,
-  type CallCaptureVoiceAction,
-  type CallCaptureVoiceAnnouncementParams,
-  type GetCallCaptureVoiceAnnouncement,
-} from './call-capture-voice-announcement';
-export {
   isMatrixRateLimitedError,
   isPermissionLikeGroupCallError,
   shouldIgnoreGroupCallErrorDuringCapture,
