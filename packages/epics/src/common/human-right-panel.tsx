@@ -88,6 +88,7 @@ import {
 import {
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
+  matrixUserIdToCanonicalPrivySub,
   shortenMatrixIdForDisplay,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
@@ -1182,13 +1183,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const matrixLocalpartToPrivySub = useCallback(
     (userId: string): string | null => {
-      const trimmed = userId.trim();
-      if (!trimmed.startsWith('@')) return null;
-      const colonIndex = trimmed.indexOf(':');
-      if (colonIndex <= 1) return null;
-      const localpart = trimmed.slice(1, colonIndex).trim();
-      if (!localpart) return null;
-      return localpart;
+      return matrixUserIdToCanonicalPrivySub(userId);
     },
     [],
   );
@@ -1318,6 +1313,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!client || rawMentionCandidates.length === 0) return;
     const unresolved = rawMentionCandidates.filter((candidate) => {
       if (matrixProfileLabelByUserId[candidate.userId]) return false;
+      if (matrixUserIdToCanonicalPrivySub(candidate.userId)) return false;
+      if (matrixUserIdToPersonLabel.has(candidate.userId)) return false;
       return looksLikeTechnicalMatrixDisplayName(
         candidate.displayLabel,
         candidate.userId,
@@ -1325,7 +1322,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     });
     if (unresolved.length === 0) return;
 
-    for (const candidate of unresolved) {
+    const batch = unresolved.slice(0, 3);
+    for (const candidate of batch) {
       const userId = candidate.userId;
       if (profileLookupInFlightRef.current.has(userId)) continue;
       profileLookupInFlightRef.current.add(userId);
@@ -1354,7 +1352,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           profileLookupInFlightRef.current.delete(userId);
         });
     }
-  }, [client, rawMentionCandidates, matrixProfileLabelByUserId]);
+  }, [
+    client,
+    rawMentionCandidates,
+    matrixProfileLabelByUserId,
+    matrixUserIdToPersonLabel,
+  ]);
 
   const mergeMentionDisplayLabel = useCallback(
     (userId: string, displayLabel: string) => {

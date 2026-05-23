@@ -49,6 +49,23 @@ export function needsHyphaProfileResolutionForMatrixLabel(
   return false;
 }
 
+/**
+ * Map bridged Matrix `@prod_privy_did_privy_*:hs` locals to Hypha roster `did:privy:*` subs.
+ * Roster lookup by raw localpart fails for production bridge users.
+ */
+export function matrixUserIdToCanonicalPrivySub(userId: string): string | null {
+  const trimmed = userId.trim();
+  if (!trimmed.startsWith('@')) return null;
+  const colon = trimmed.indexOf(':');
+  if (colon <= 1) return null;
+  const localpart = trimmed.slice(1, colon).trim();
+  if (!localpart) return null;
+  if (localpart.startsWith('did:privy:')) return localpart;
+  const bridged = localpart.match(/^(?:dev|prev|prod)_privy_did_privy_(.+)$/i);
+  if (bridged?.[1]) return `did:privy:${bridged[1]}`;
+  return null;
+}
+
 /** Shorten ugly synthetic MXIDs for UI when no display name exists. */
 export function shortenMatrixIdForDisplay(mxid: string): string {
   if (!mxid.startsWith('@')) return mxid;

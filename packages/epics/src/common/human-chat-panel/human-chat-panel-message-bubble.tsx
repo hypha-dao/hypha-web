@@ -52,6 +52,7 @@ import {
 import { ChatMessageRichText } from './parse-simple-matrix-html';
 import {
   matrixMemberDisplayLabelFromRoom,
+  matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
 } from './matrix-room-member-display';
 import {
@@ -1287,12 +1288,15 @@ function MxidMentionPill({
   viewerMentionTintRow: boolean;
 }) {
   const needsProfile = needsHyphaProfileForMatrixLabel(syncLabel, fullMxid);
+  const canonicalSub = needsProfile
+    ? matrixUserIdToCanonicalPrivySub(fullMxid) ?? undefined
+    : undefined;
   const { privyUserId: linkedSub, isLoading: loadingLink } =
     useUserPrivyIdByMatrixId({
-      matrixUserId: needsProfile ? fullMxid : undefined,
+      matrixUserId: needsProfile && !canonicalSub ? fullMxid : undefined,
     });
   const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: linkedSub,
+    sub: linkedSub ?? canonicalSub,
   });
 
   const displayLabel = useMemo(() => {
@@ -1303,7 +1307,8 @@ function MxidMentionPill({
   }, [person, syncLabel, fullMxid]);
 
   const loading =
-    needsProfile && (loadingLink || (Boolean(linkedSub) && loadingPerson));
+    needsProfile &&
+    (loadingLink || (Boolean(linkedSub ?? canonicalSub) && loadingPerson));
 
   if (loading) {
     return (
@@ -1549,19 +1554,34 @@ export function HumanChatPanelMessageBubble({
       replyTo.sourceUserId,
     );
 
+  const senderCanonicalSub =
+    resolveSenderProfile && message.senderMatrixId
+      ? matrixUserIdToCanonicalPrivySub(message.senderMatrixId) ?? undefined
+      : undefined;
+  const replyCanonicalSub =
+    resolveReplyProfile && replyTo?.sourceUserId
+      ? matrixUserIdToCanonicalPrivySub(replyTo.sourceUserId) ?? undefined
+      : undefined;
+
   const { privyUserId: senderPrivySub, isLoading: isLoadingSenderLink } =
     useUserPrivyIdByMatrixId({
-      matrixUserId: resolveSenderProfile ? message.senderMatrixId : undefined,
+      matrixUserId:
+        resolveSenderProfile && !senderCanonicalSub
+          ? message.senderMatrixId
+          : undefined,
     });
   const { privyUserId: replyPrivySub, isLoading: isLoadingReplyLink } =
     useUserPrivyIdByMatrixId({
-      matrixUserId: resolveReplyProfile ? replyTo?.sourceUserId : undefined,
+      matrixUserId:
+        resolveReplyProfile && !replyCanonicalSub
+          ? replyTo?.sourceUserId
+          : undefined,
     });
 
   const { person: senderPerson, isLoading: isLoadingSenderPerson } =
-    usePersonBySub({ sub: senderPrivySub });
+    usePersonBySub({ sub: senderPrivySub ?? senderCanonicalSub });
   const { person: replyPerson, isLoading: isLoadingReplyPerson } =
-    usePersonBySub({ sub: replyPrivySub });
+    usePersonBySub({ sub: replyPrivySub ?? replyCanonicalSub });
 
   const resolvedSenderName = useMemo(() => {
     if (message.role === 'user') {
