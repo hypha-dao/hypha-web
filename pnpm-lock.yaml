@@ -975,18 +975,30 @@ importers:
       '@hypha-platform/ui-utils':
         specifier: workspace:*
         version: link:../ui-utils
+      '@openrouter/ai-sdk-provider':
+        specifier: ^2.3.3
+        version: 2.3.3(ai@6.0.138(zod@3.25.76))(zod@3.25.76)
       '@privy-io/node':
         specifier: ^0.12.0
         version: 0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@wagmi/cli':
         specifier: ^2.2.0
         version: 2.2.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      ai:
+        specifier: ^6.0.105
+        version: 6.0.138(zod@3.25.76)
       matrix-js-sdk:
         specifier: ^40.0.0
         version: 40.2.0
       pdf-parse:
         specifier: ^1.1.1
         version: 1.1.4
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
     devDependencies:
       '@hypha-platform/config-eslint':
         specifier: workspace:*
@@ -31774,7 +31786,7 @@ snapshots:
 
   '@wagmi/cli@2.2.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)':
     dependencies:
-      abitype: 1.0.8(typescript@5.8.3)(zod@3.24.3)
+      abitype: 1.0.8(typescript@5.8.3)(zod@3.25.76)
       bundle-require: 4.2.1(esbuild@0.19.12)
       cac: 6.7.14
       change-case: 5.4.4
@@ -31790,8 +31802,8 @@ snapshots:
       picocolors: 1.1.1
       picomatch: 3.0.1
       prettier: 3.5.3
-      viem: 2.31.4(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.3)
-      zod: 3.24.3
+      viem: 2.31.4(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      zod: 3.25.76
     optionalDependencies:
       typescript: 5.8.3
     transitivePeerDependencies:
@@ -40500,8 +40512,8 @@ snapshots:
       react-compiler-runtime: 0.0.0-experimental-22c6e49-20241219(react@19.1.2)
       react-dom: 19.1.2(react@19.1.2)
       scroll-into-view-if-needed: 3.1.0
-      zod: 3.24.3
-      zod-validation-error: 3.4.0(zod@3.24.3)
+      zod: 3.25.76
+      zod-validation-error: 3.4.0(zod@3.25.76)
       zustand: 5.0.3(@types/react@19.1.2)(immer@10.1.1)(react@19.1.2)(use-sync-external-store@1.5.0(react@19.1.2))
     transitivePeerDependencies:
       - '@types/react'
@@ -40549,8 +40561,8 @@ snapshots:
       unist-util-visit: 5.0.0
       unist-util-visit-children: 3.0.0
       yaml: 2.7.1
-      zod: 3.24.3
-      zod-validation-error: 3.4.0(zod@3.24.3)
+      zod: 3.25.76
+      zod-validation-error: 3.4.0(zod@3.25.76)
     transitivePeerDependencies:
       - acorn
       - supports-color
@@ -45532,6 +45544,23 @@ snapshots:
       - utf-8-validate
       - zod
 
+  viem@2.31.4(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76):
+    dependencies:
+      '@noble/curves': 1.9.2
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.0.8(typescript@5.8.3)(zod@3.25.76)
+      isows: 1.0.7(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      ox: 0.8.1(typescript@5.8.3)(zod@3.25.76)
+      ws: 8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+    optionalDependencies:
+      typescript: 5.8.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+      - zod
+
   viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4):
     dependencies:
       '@noble/curves': 1.9.2
@@ -46291,9 +46320,9 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  zod-validation-error@3.4.0(zod@3.24.3):
+  zod-validation-error@3.4.0(zod@3.25.76):
     dependencies:
-      zod: 3.24.3
+      zod: 3.25.76
 
   zod@3.22.4: {}
 

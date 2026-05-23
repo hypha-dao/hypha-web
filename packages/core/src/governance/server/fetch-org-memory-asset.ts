@@ -9,6 +9,13 @@ import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { HYPHA_MEDIA_BUNDLE_FIELD } from '../../matrix/rich-reply';
 import { findAllDocumentsBySpaceSlugWithoutPagination } from './queries';
 import { parseOrgMemoryAssetKey } from '../../org-memory/org-memory-asset-key';
+import { getSpaceCallArtifactById } from './call-artifacts';
+import { getThreadSummaryById } from './thread-summaries';
+import type {
+  SpaceCallRecording,
+  SpaceCallTranscript,
+  SpaceDiscussionSummary,
+} from '@hypha-platform/storage-postgres';
 
 const DEFAULT_MAX_BYTES = 2 * 1024 * 1024; // 2 MiB
 const DEFAULT_FETCH_TIMEOUT_MS = 25_000;
@@ -559,7 +566,7 @@ export async function fetchOrgMemoryAsset(
     }
     fetchUrl = hit.url.trim();
     filename = hit.filename;
-  } else {
+  } else if (key.k === 'm') {
     const matrixRoomId = host.chatRoomId?.trim() ?? '';
     if (!matrixRoomId || key.r !== matrixRoomId) {
       return {
@@ -639,6 +646,191 @@ export async function fetchOrgMemoryAsset(
       mxcParsed.mediaId,
     );
     matrixAccessToken = tokenPack.token;
+  } else if (key.k === 'cr') {
+    const recording = (await getSpaceCallArtifactById(
+      { kind: 'recording', id: key.i, spaceId: host.id },
+      { db },
+    )) as SpaceCallRecording | null;
+    if (!recording) {
+      return {
+        access: 'ok',
+        result: {
+          ok: false,
+          error: 'Call recording not found for this space',
+          code: 'not_found',
+        },
+      };
+    }
+    filename =
+      recording.mediaUri.split('/').pop()?.trim() ||
+      `recording-${recording.callSessionId}.webm`;
+    const mxcParsed = parseMxc(recording.mediaUri);
+    if (mxcParsed) {
+      const homeserver = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.replace(
+        /\/?$/,
+        '',
+      );
+      if (!homeserver) {
+        return {
+          access: 'ok',
+          result: {
+            ok: false,
+            error: 'Matrix homeserver not configured',
+            code: 'matrix_auth',
+          },
+        };
+      }
+      const tokenPack = await resolveMatrixAccessToken(
+        authToken,
+        requestUrlForSessionMatrix,
+      );
+      if (!tokenPack) {
+        return {
+          access: 'ok',
+          result: {
+            ok: false,
+            error: 'No Matrix access token available for recording fetch',
+            code: 'matrix_auth',
+          },
+        };
+      }
+      fetchUrl = matrixMediaDownloadPath(
+        homeserver,
+        mxcParsed.serverName,
+        mxcParsed.mediaId,
+      );
+      matrixAccessToken = tokenPack.token;
+    } else {
+      fetchUrl = recording.mediaUri;
+    }
+  } else if (key.k === 'ct') {
+    const transcript = (await getSpaceCallArtifactById(
+      { kind: 'transcript', id: key.i, spaceId: host.id },
+      { db },
+    )) as SpaceCallTranscript | null;
+    if (!transcript) {
+      return {
+        access: 'ok',
+        result: {
+          ok: false,
+          error: 'Call transcript not found for this space',
+          code: 'not_found',
+        },
+      };
+    }
+    const textPayload = transcript.text;
+    const byteLength = Buffer.byteLength(textPayload, 'utf8');
+    if (byteLength > max_bytes) {
+      return {
+        access: 'ok',
+        result: {
+          ok: false,
+          error: `Response size ${byteLength} exceeds max_bytes`,
+          code: 'too_large',
+        },
+      };
+    }
+    const { text, truncated } = truncateText(textPayload, MAX_TEXT_CHARS);
+    return {
+      access: 'ok',
+      result: buildSuccessText(
+        `call-transcript-${transcript.callSessionId}.txt`,
+        'text/plain',
+        text,
+        truncated,
+        byteLength,
+      ),
+    };
+  } else if (key.k === 'ds') {
+    const summary = (await getSpaceCallArtifactById(
+      { kind: 'discussion_summary', id: key.i, spaceId: host.id },
+      { db },
+    )) as SpaceDiscussionSummary | null;
+    if (!summary) {
+      return {
+        access: 'ok',
+        result: {
+          ok: false,
+          error: 'Discussion summary not found for this space',
+          code: 'not_found',
+        },
+      };
+    }
+    const bullets = Array.isArray(summary.bullets)
+      ? summary.bullets.filter(
+          (b: unknown): b is string => typeof b === 'string',
+        )
+      : [];
+    const body = [summary.summary, ...bullets.map((b) => `- ${b}`)]
+      .join('\n')
+      .trim();
+    const byteLength = Buffer.byteLength(body, 'utf8');
+    if (byteLength > max_bytes) {
+      return {
+        access: 'ok',
+        result: {
+          ok: false,
+          error: `Response size ${byteLength} exceeds max_bytes`,
+          code: 'too_large',
+        },
+      };
+    }
+    const { text, truncated } = truncateText(body, MAX_TEXT_CHARS);
+    return {
+      access: 'ok',
+      result: buildSuccessText(
+        `discussion-summary-${summary.id}.md`,
+        'text/markdown',
+        text,
+        truncated,
+        byteLength,
+      ),
+    };
+  } else if (key.k === 'ts') {
+    const summary = await getThreadSummaryById(
+      { id: key.i, spaceId: host.id },
+      { db },
+    );
+    if (!summary) {
+      return {
+        access: 'ok',
+        result: {
+          ok: false,
+          error: 'Thread summary not found for this space',
+          code: 'not_found',
+        },
+      };
+    }
+    const bullets = Array.isArray(summary.bullets)
+      ? summary.bullets.filter(
+          (b: unknown): b is string => typeof b === 'string',
+        )
+      : [];
+    const body = [summary.summary, ...bullets.map((b) => `- ${b}`)]
+      .join('\n')
+      .trim();
+    const byteLength = Buffer.byteLength(body, 'utf8');
+    if (byteLength > max_bytes) {
+      return {
+        access: 'ok',
+        result: {
+          ok: false,
+          error: `Response size ${byteLength} exceeds max_bytes`,
+          code: 'too_large',
+        },
+      };
+    }
+    const { text, truncated } = truncateText(body, MAX_TEXT_CHARS);
+    return {
+      access: 'ok',
+      result: buildSuccessText(
+        `thread-summary-${summary.id}.md`,
+        'text/markdown',
+        text,
+        truncated,
+        byteLength,
+      ),
+    };
   }
 
   if (!fetchUrl) {

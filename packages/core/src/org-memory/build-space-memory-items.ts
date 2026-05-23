@@ -1,7 +1,16 @@
 import type { Attachment, Document } from '../governance/types';
 import { DocumentState } from '../governance/types';
+import { isMemoryDocument } from '../governance/space-memory-document-label';
+import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 
-export type SpaceMemorySource = 'proposal_upload' | 'matrix_chat';
+export type SpaceMemorySource =
+  | 'proposal_upload'
+  | 'memory'
+  | 'matrix_chat'
+  | 'call_recording'
+  | 'call_transcript'
+  | 'discussion_summary'
+  | 'thread_summary';
 
 export type SpaceMemoryAssetKind = 'document' | 'image' | 'video' | 'other';
 
@@ -19,12 +28,20 @@ export type SpaceMemoryItem = {
     documentSlug?: string;
     documentLabel?: string;
     matrixEventId?: string;
+    textExcerpt?: string;
   };
 };
 
 /** JSON shape of `org_memory_assets[]` from `/api/v1/spaces/.../org-memory` (dates are ISO strings). */
 export type OrgMemoryAssetWire = {
-  source: 'proposal_upload' | 'matrix_chat';
+  source:
+    | 'proposal_upload'
+    | 'memory'
+    | 'matrix_chat'
+    | 'call_recording'
+    | 'call_transcript'
+    | 'discussion_summary'
+    | 'thread_summary';
   filename: string;
   asset_key?: string;
   mime?: string;
@@ -37,6 +54,10 @@ export type OrgMemoryAssetWire = {
   document_state?: string;
   document_slug?: string;
   document_label?: string;
+  call_session_id?: string;
+  discussion_summary_id?: number;
+  thread_summary_id?: number;
+  text_excerpt?: string;
   occurred_at: string;
 };
 
@@ -97,6 +118,14 @@ function normalizeHttpUrl(raw: string): string | null {
   }
 }
 
+function resolveOrgMemoryMxcUri(asset: OrgMemoryAssetWire): string | null {
+  const fromField = asset.mxc_uri?.trim();
+  if (fromField?.startsWith('mxc://')) return fromField;
+  const fromAppUrl = asset.app_url?.trim();
+  if (fromAppUrl?.startsWith('mxc://')) return fromAppUrl;
+  return null;
+}
+
 function inferKind(name: string, url: string): SpaceMemoryAssetKind {
   const has = (value: string, exts: string) =>
     new RegExp(`\\.(${exts})(\\?|$)`, 'i').test(value);
@@ -142,13 +171,20 @@ function documentActivityIso(doc: Document): string {
   return new Date(0).toISOString();
 }
 
+function memoryDocumentExcerpt(description?: string | null): string {
+  return stripMarkdown(stripDescription(description ?? ''), {
+    extraNewlines: true,
+  }).trim();
+}
+
 export function documentStateForContext(
   state: Document['state'],
 ): DocumentState {
   if (
     state === DocumentState.DISCUSSION ||
     state === DocumentState.PROPOSAL ||
-    state === DocumentState.AGREEMENT
+    state === DocumentState.AGREEMENT ||
+    state === DocumentState.MEMORY
   ) {
     return state;
   }
@@ -156,6 +192,7 @@ export function documentStateForContext(
   if (s === DocumentState.DISCUSSION) return DocumentState.DISCUSSION;
   if (s === DocumentState.PROPOSAL) return DocumentState.PROPOSAL;
   if (s === DocumentState.AGREEMENT) return DocumentState.AGREEMENT;
+  if (s === DocumentState.MEMORY) return DocumentState.MEMORY;
   return DocumentState.PROPOSAL;
 }
 
@@ -170,7 +207,6 @@ export function buildSpaceMemoryItemsFromDocuments(
 
   for (const doc of documents) {
     const activityIso = documentActivityIso(doc);
-    const attachmentUrls = new Set<string>();
     const docTitle = doc.title?.trim() || '';
     const stateEnum = documentStateForContext(doc.state);
     const baseContext = {
@@ -181,36 +217,46 @@ export function buildSpaceMemoryItemsFromDocuments(
       documentLabel: doc.label?.trim() || undefined,
     };
 
+    if (isMemoryDocument(doc)) {
+      const excerpt = memoryDocumentExcerpt(doc.description);
+      items.push({
+        id: `${doc.id}:memory`,
+        name: docTitle || 'Memory',
+        url: `memory://document/${doc.id}`,
+        kind: 'document',
+        source: 'memory',
+        uploadedAt: activityIso,
+        context: {
+          ...baseContext,
+          documentState: DocumentState.MEMORY,
+          textExcerpt: excerpt || undefined,
+        },
+      });
+    }
+
+    const uploadSource: SpaceMemorySource = isMemoryDocument(doc)
+      ? 'memory'
+      : 'proposal_upload';
+
     const attachments = doc.attachments ?? [];
     attachments.forEach((raw, index) => {
       const { name, url } = normalizeAttachment(raw);
       const safeUrl = normalizeHttpUrl(url);
       if (!safeUrl) return;
-      attachmentUrls.add(safeUrl);
       items.push({
         id: `${doc.id}:attachment:${index}`,
         name,
         url: safeUrl,
         kind: inferKind(name, safeUrl),
-        source: 'proposal_upload',
+        source: uploadSource,
         uploadedAt: activityIso,
         context: { ...baseContext },
       });
     });
 
-    const lead = doc.leadImage ? normalizeHttpUrl(doc.leadImage) : null;
-    if (lead && !attachmentUrls.has(lead)) {
-      const name = fileNameFromUrl(lead);
-      items.push({
-        id: `${doc.id}:lead`,
-        name,
-        url: lead,
-        kind: inferKind(name, lead),
-        source: 'proposal_upload',
-        uploadedAt: activityIso,
-        context: { ...baseContext },
-      });
-    }
+    // Proposal/document leadImage is a decorative header banner (often auto-copied
+    // from the space hero). Real uploads live in `attachments` — omit leadImage
+    // from Space Memory / org_memory_assets.
   }
 
   items.sort((a, b) => {
@@ -280,6 +326,49 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
       continue;
     }
 
+    if (a.source === 'memory') {
+      const docId = a.document_id ?? 0;
+      const title = a.document_title?.trim() || a.filename?.trim() || 'Memory';
+      const excerpt = a.text_excerpt?.trim() || '';
+      const safeUrl = a.app_url ? normalizeHttpUrl(a.app_url) : null;
+      if (safeUrl) {
+        items.push({
+          id: `memory:${docId}:${safeUrl}`,
+          name: a.filename?.trim() ? a.filename : fileNameFromUrl(safeUrl),
+          url: safeUrl,
+          kind: inferKindFromMime(a.mime, a.filename, safeUrl),
+          source: 'memory',
+          uploadedAt,
+          context: {
+            documentId: docId,
+            documentTitle: title,
+            documentState: DocumentState.MEMORY,
+            documentSlug: a.document_slug,
+            documentLabel: a.document_label?.trim() || undefined,
+            textExcerpt: excerpt || undefined,
+          },
+        });
+        continue;
+      }
+      items.push({
+        id: `memory:${docId}:body`,
+        name: title,
+        url: `memory://document/${docId}`,
+        kind: 'document',
+        source: 'memory',
+        uploadedAt,
+        context: {
+          documentId: docId,
+          documentTitle: title,
+          documentState: DocumentState.MEMORY,
+          documentSlug: a.document_slug,
+          documentLabel: a.document_label?.trim() || undefined,
+          textExcerpt: excerpt || undefined,
+        },
+      });
+      continue;
+    }
+
     if (a.source === 'matrix_chat') {
       const mxc = a.mxc_uri?.trim() ?? '';
       const room = a.matrix_room_id?.trim() ?? '';
@@ -302,6 +391,63 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
           documentTitle: '',
           documentState: DocumentState.PROPOSAL,
           matrixEventId: ev || undefined,
+        },
+      });
+      continue;
+    }
+
+    if (a.source === 'call_recording') {
+      const mxc = resolveOrgMemoryMxcUri(a);
+      const safeUrl = !mxc && a.app_url ? normalizeHttpUrl(a.app_url) : null;
+      const sessionId = a.call_session_id ?? a.filename;
+      items.push({
+        id: `call-recording:${sessionId}`,
+        name: a.filename?.trim() ? a.filename : 'Call recording',
+        url: mxc ?? safeUrl ?? `memory://call-recording/${sessionId}`,
+        kind: inferKindFromMime(
+          a.mime,
+          a.filename,
+          mxc ?? a.app_url ?? safeUrl ?? '',
+        ),
+        source: 'call_recording',
+        uploadedAt,
+        context: {
+          documentId: 0,
+          documentTitle: a.call_session_id ?? '',
+          documentState: DocumentState.PROPOSAL,
+        },
+      });
+      continue;
+    }
+
+    if (
+      a.source === 'call_transcript' ||
+      a.source === 'discussion_summary' ||
+      a.source === 'thread_summary'
+    ) {
+      const syntheticId =
+        a.source === 'discussion_summary'
+          ? String(a.discussion_summary_id ?? a.filename)
+          : a.source === 'thread_summary'
+          ? String(a.thread_summary_id ?? a.filename)
+          : String(a.call_session_id ?? a.filename);
+      items.push({
+        id: `${a.source}:${syntheticId}`,
+        name: a.filename?.trim()
+          ? a.filename
+          : a.source === 'discussion_summary'
+          ? 'Discussion summary'
+          : a.source === 'thread_summary'
+          ? 'Thread summary'
+          : 'Call transcript',
+        url: `memory://${a.source}/${syntheticId}`,
+        kind: 'document',
+        source: a.source,
+        uploadedAt,
+        context: {
+          documentId: 0,
+          documentTitle: a.text_excerpt ?? '',
+          documentState: DocumentState.PROPOSAL,
         },
       });
     }

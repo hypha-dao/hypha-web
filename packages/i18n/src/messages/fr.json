@@ -100,7 +100,43 @@
   },
   "OnboardingAdventure": {
     "title": "Votre aventure commence ici.",
-    "subtitle": "Choisissez votre prochaine étape.",
+    "continueAdventure": "Votre aventure continue ici",
+    "subtitle": "Vous avez une vision puissante du monde, nous vous donnons les outils pour la concrétiser.",
+    "aiHero": {
+      "title": "Build Anything, Together",
+      "description": "Expliquez à Hypha AI ce que vous voulez construire, et elle vous guidera étape par étape.",
+      "placeholder": "Créer un espace, rejoindre un espace existant, explorer le réseau ou financer une trésorerie - décrivez votre objectif et l’AI vous guide.",
+      "rotating": {
+        "createSpace": "Demandez à Hypha AI de créer un espace pour votre mission...",
+        "governance": "Demandez à Hypha AI de proposer une gouvernance pour votre communauté...",
+        "joinSpace": "Demandez à Hypha AI de vous aider à rejoindre le bon espace...",
+        "treasury": "Demandez à Hypha AI de préparer un espace prêt pour la trésorerie...",
+        "explore": "Demandez à Hypha AI d’identifier des opportunités dans le réseau..."
+      },
+      "cta": "Commencer avec l’AI",
+      "starting": "Démarrage...",
+      "openingAi": "Ouverture du panneau AI...",
+      "sending": "Envoi de votre prompt à l’AI...",
+      "handoffFailed": "Impossible de démarrer la conversation AI. Veuillez réessayer.",
+      "handoffTimeout": "Le transfert AI prend plus de temps que prévu. Veuillez réessayer.",
+      "sendFailed": "Le prompt n’a pas pu être envoyé à l’AI. Veuillez réessayer.",
+      "helper": "L’AI proposera chaque action et demandera une confirmation avant toute création ou modification.",
+      "unavailable": "L’onboarding AI est temporairement indisponible sur ce déploiement.",
+      "ariaLabel": "Invite d’onboarding AI",
+      "flow": {
+        "badge": "Simple. Powerful. By design.",
+        "reviewingTitle": "Analyse de votre demande",
+        "reviewingDescription": "L’AI prépare le meilleur parcours pour votre objectif.",
+        "reviewingDescriptionPersonalized": "{firstName}, l’AI prépare le meilleur parcours pour votre objectif.",
+        "confirmingTitle": "Préparation d’une confirmation claire",
+        "confirmingDescription": "Vous verrez un choix ciblé avant toute action d’écriture.",
+        "executingTitle": "Exécution de l’action choisie",
+        "executingDescription": "L’AI crée, oriente ou rejoint selon votre choix.",
+        "routingTitle": "Navigation vers la bonne destination",
+        "routingDescription": "Finalisation de la navigation vers votre espace ou l’écran ciblé.",
+        "confirmationHint": "Vous gardez le contrôle : l’AI demande une confirmation avant toute création ou mise à jour."
+      }
+    },
     "spacePlaceholder": "Sélectionner un espace",
     "spaceSearchPlaceholder": "Rechercher des espaces...",
     "searchToSeeSpaces": "Commencez à taper pour voir les espaces correspondants.",
@@ -165,7 +201,8 @@
       "browserNotifications": "Notifications du navigateur (anciennement « Notifications pop-up bureau »)",
       "yes": "Oui",
       "no": "Non",
-      "emailNotificationsWithEmail": "Notifications par e-mail ({email})"
+      "emailNotificationsWithEmail": "Notifications par e-mail ({email})",
+      "mentionConsent": "Consentement aux notifications de mention"
     },
     "subscriptions": {
       "title": "Être notifié quand...",
@@ -178,7 +215,11 @@
         "title": "Une proposition est approuvée ou rejetée",
         "description": "Dans n’importe lequel des espaces dont vous êtes membre."
       },
-      "labelWithComingSoon": "{title} ({comingSoon})"
+      "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentionOnChatMessage": {
+        "title": "Vous êtes mentionné dans un message du chat",
+        "description": "Dans tout fil ou chat où les mentions sont activées pour vous."
+      }
     },
     "actions": {
       "retry": "Réessayer",
@@ -493,7 +534,10 @@
         "selectMember": "Veuillez sélectionner un membre",
         "selectSpace": "Veuillez sélectionner un espace"
       }
-    }
+    },
+    "aiAgents": "Agents IA",
+    "aiAgentsEmptyState": "Aucun agent IA mobilisé pour le moment. Posez des questions stratégiques pour les activer.",
+    "aiAgentsMobilizedCount": "Mobilisé {count, plural, one {# fois} other {# fois}}"
   },
   "TreasuryTab": {
     "balance": "Solde",
@@ -968,6 +1012,8 @@
     "rootSpaceDescription": "Marquer cet espace comme Espace racine le rendra indépendant. Il ne sera plus lié à l’organisation actuelle, et tous ses espaces liés seront déplacés avec lui.",
     "uploadEcosystemLogoLight": "Téléverser le logo de l’écosystème (clair)",
     "uploadEcosystemLogoDark": "Téléverser le logo de l’écosystème (sombre)",
+    "ecosystemLogoPlaceholder": "Téléverser le logo de l’écosystème de {spaceName}",
+    "ecosystemLogoPlaceholderFallback": "cet espace",
     "ecosystemLogoLightDescription": "Téléversez un logo clair pour votre écosystème (PNG, JPG, GIF ou WEBP).",
     "ecosystemLogoDarkDescription": "Téléversez un logo sombre pour votre écosystème (PNG, JPG, GIF ou WEBP).",
     "search": "Rechercher...",
@@ -988,6 +1034,7 @@
       "votingMethod": "Méthode de vote",
       "entryMethod": "Méthode d'entrée",
       "membershipExit": "Sortie de membre",
+      "spaceMemory": "Space Memory",
       "spaceToSpace": "Espace-à-espace",
       "issueNewToken": "Émettre un nouveau token",
       "treasuryMinting": "Frappe de trésorerie",
@@ -1928,7 +1975,13 @@
     "toolTokens": "{count} jeton(s) récupéré(s) pour l'espace \"{slug}\".",
     "toolError": "Erreur : {message}",
     "streamError": "Une erreur est survenue lors de la génération de la réponse.",
-    "attachment": "Pièce jointe"
+    "attachment": "Pièce jointe",
+    "pendingAction": "Action en attente",
+    "confirmWith": "Confirmer avec :",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "showMore": "Lire la suite",
+    "showLess": "Afficher moins"
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -1984,6 +2037,7 @@
     "mentionNotAvailable": "Mentions (bientôt)",
     "mentionNoMembers": "Membres pas encore chargés — réessayez dans un instant",
     "mentionListLabel": "Mentionner quelqu’un",
+    "mentionListHintIncludesParentSpaceMembers": "Choisissez un membre à mentionner. Cette liste peut aussi inclure des membres de l’espace parent.",
     "mentionInboxTitle": "Mentions",
     "mentionInboxBellCallRingHint": "Cliquez sur la cloche pour couper ou réactiver le son d’appel. Ouvrez l’onglet Mentions pour voir les @mentions.",
     "callJoinCallAlertsMutedShort": "Muet",
@@ -2142,6 +2196,8 @@
     "callRemoteParticipant": "Participant",
     "callScreenShare": "Partage d’écran",
     "callScreenShareActive": "Partage d’écran actif",
+    "callYouAreSharingScreen": "Vous partagez votre écran",
+    "callYouAreSharingScreenHint": "Les autres voient votre écran. Vous ne voyez pas votre propre partage ici.",
     "callFullView": "Plein affichage",
     "callFullViewDescription": "Affichage plus large de l’appel. L’appel dans l’espace reste actif lorsque vous fermez cette fenêtre.",
     "callFullViewClose": "Fermer",
@@ -2159,7 +2215,66 @@
     "callLeftBannerDismiss": "Fermer",
     "callPaneResizeSharePeople": "Redimensionner partage d’écran et personnes",
     "callPaneResizeShareStrip": "Redimensionner partage d’écran et film",
-    "callPaneResizeSpeakerShare": "Redimensionner l’orateur et le partage d’écran"
+    "callPaneResizeSpeakerShare": "Redimensionner l’orateur et le partage d’écran",
+    "callDockTitleWithMembers": "Appel - {count, plural, one {# membre} other {# membres}}",
+    "callDockOpenCallSpace": "Ouvrir l’espace d’appel",
+    "callDockSpaceLabel": "Espace",
+    "callDockMinimize": "Réduire l’appel",
+    "callDockExpand": "Agrandir l’appel",
+    "callDockFullscreen": "Plein écran",
+    "callDockExitFullscreen": "Quitter le plein écran",
+    "callCaptureLabel": "Capture de l’appel",
+    "callCaptureModeNone": "Désactivé",
+    "callCaptureModeTranscriptOnly": "Transcription uniquement",
+    "callCaptureModeRecordingWithTranscript": "Enregistrement + transcription",
+    "callCaptureStatusIdle": "Inactif",
+    "callCaptureStatusCapturing": "Capture en cours",
+    "callCaptureStatusStarting": "Démarrage…",
+    "callCaptureStatusPaused": "En pause",
+    "callCaptureStatusSaving": "Enregistrement",
+    "callCaptureStatusError": "Erreur de capture",
+    "callCaptureStop": "Arrêter l’enregistrement",
+    "callCapturePause": "Mettre l’enregistrement en pause",
+    "callCaptureResume": "Reprendre l’enregistrement",
+    "callCaptureConfirmStopRecordingTitle": "Arrêter l’enregistrement cloud ?",
+    "callCaptureConfirmStopRecording": "L’enregistrement prendra fin pour tous les participants de cet appel.",
+    "callCaptureConfirmStopRecordingAction": "Arrêter l’enregistrement",
+    "callCaptureConfirmStopTranscriptTitle": "Arrêter la transcription ?",
+    "callCaptureConfirmStopTranscript": "La transcription est encore active. L’arrêter et l’enregistrer maintenant ?",
+    "callCaptureConfirmStopTranscriptAction": "Arrêter la transcription",
+    "callCaptureConfirmCancel": "Annuler",
+    "callCaptureOffHint": "La capture est désactivée. Aucun enregistrement ni transcription ne sera enregistré pour cet appel.",
+    "threadSummaryLabel": "Résumé du fil",
+    "threadSummaryTitle": "Résumé vivant",
+    "threadSummaryLoading": "Mise à jour du résumé du fil…",
+    "threadSummaryUpdated": "Mis à jour {when}",
+    "threadSummaryExpand": "Développer le résumé",
+    "threadSummaryCollapse": "Réduire le résumé",
+    "callCaptureLeaveWarning": "La capture est désactivée. Appuyez à nouveau sur Quitter pour confirmer.",
+    "callCaptureConsentLocal": "Vous capturez cet appel ({mode}). Les autres sont informés.",
+    "callCaptureConsentRemote": "{actor} capture cet appel ({mode}).",
+    "callCaptureConsentJoin": "Cet appel est capturé ({mode}) par {actor}. Rejoindre vaut consentement.",
+    "callCaptureConsentLegalNote": "L'enregistrement et la transcription peuvent être stockés dans la mémoire de l'espace.",
+    "callCaptureConsentPausedSuffix": " La capture est en pause.",
+    "callCaptureVoiceStartedRecordingTranscript": "Cet appel est maintenant enregistré et transcrit.",
+    "callCaptureVoiceStoppedRecordingTranscript": "L'enregistrement et la transcription sont terminés.",
+    "callCaptureVoiceStartedTranscript": "Cet appel est maintenant transcrit.",
+    "callCaptureVoiceStoppedTranscript": "La transcription est terminée.",
+    "composerLockedPlaceholder": "Seuls les membres sélectionnés de l’équipe peuvent interagir dans ce fil.",
+    "signalTeamInteractionRestricted": "Seuls les membres sélectionnés de l’équipe peuvent envoyer des messages et des mentions dans ce fil.",
+    "signalTeamBannerReadOnly": "Ce fil est limité à l’équipe. Vous pouvez lire les mises à jour, mais seuls les membres sélectionnés peuvent interagir.",
+    "signalTeamRequestAccess": "Demander à être inclus",
+    "signalTeamRequestPending": "Demande en attente",
+    "signalTeamManageTitle": "Équipe Signal",
+    "signalTeamManageOpen": "Gérer",
+    "signalTeamManageClose": "Terminé",
+    "signalTeamMemberListHint": "Sélectionnez les membres qui peuvent envoyer des messages, mentionner et rejoindre les appels du fil.",
+    "signalTeamAddMember": "Ajouter",
+    "signalTeamRemoveMember": "Retirer",
+    "signalTeamPendingRequests": "Demandes en attente",
+    "signalTeamApproveRequester": "Ajouter à l’équipe",
+    "mentionOpenFallbackRoom": "Impossible de résoudre ce salon depuis votre contexte local. Ouvrez l'espace concerné puis réessayez.",
+    "mentionOpenFallbackMissingMessage": "Ce message de mention n'est pas encore disponible dans la chronologie chargée. Réessayez dans un instant."
   },
   "CoherenceTab": {
     "signals": "Signaux",
@@ -2187,6 +2302,7 @@
     "openConversation": "Ouvrir la conversation",
     "saySomething": "Dites quelque chose...",
     "proposeAgreement": "Proposer un accord",
+    "comingSoon": "Bientôt disponible",
     "errorOhSnap": "Oups ! Une erreur est survenue",
     "reset": "Réinitialiser",
     "creatingNewSignal": "Création d'un nouveau signal",
@@ -2215,8 +2331,9 @@
     "spaceMemoryLoadMoreError": "Impossible de charger d'autres éléments. Veuillez réessayer.",
     "spaceMemoryRetry": "Réessayer",
     "spaceMemoryRefresh": "Actualiser",
-    "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace",
+    "openDocument": "Ouvrir le document",
     "spaceMemoryContext": "Depuis «{title}» · {state}",
+    "spaceMemoryContextMemory": "Mémoire · «{title}»",
     "spaceMemoryContextMatrix": "Depuis le chat Matrix",
     "spaceMemoryContextCallTranscript": "Transcription d'appel (mémoire organisationnelle)",
     "spaceMemoryContextCallRecording": "Enregistrement d'appel (mémoire organisationnelle)",
@@ -2226,19 +2343,26 @@
     "spaceMemoryMatrixPreviewNeedsChat": "L’aperçu nécessite Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Ouvrez Human Chat pour connecter Matrix, puis actualisez la mémoire d’espace pour ouvrir ce fichier.",
     "spaceMemoryMatrixVideoPlayHint": "Appuyez pour lire l’aperçu",
+    "spaceMemoryPdfPreviewUnavailable": "Aperçu PDF indisponible",
     "spaceMemoryOpenAsset": "Ouvrir {name}",
     "untitledDocument": "Document sans titre",
     "spaceMemoryGeneral": "Général",
     "spaceMemoryProposals": "Propositions",
     "spaceMemoryConversations": "Conversations",
+    "spaceMemoryCalls": "Appels",
     "spaceMemoryAiChat": "Chat IA",
+    "newMemoryUploadDocumentsTitle": "Téléverser des documents",
+    "newMemoryUploadingFiles": "Téléversement des souvenirs de l'espace...",
+    "newMemoryAttachmentsRequired": "Veuillez téléverser au moins un document pour ce souvenir.",
     "newMemory": "Nouvelle mémoire",
     "spaceMemoryEmptyTab": "Aucun élément trouvé dans cette vue.",
     "spaceMemoryAiChatEmpty": "Les mémoires du chat IA ne sont pas encore disponibles.",
+    "spaceMemoryCallsEmpty": "Aucun enregistrement ni transcription d'appel pour l'instant. Ils apparaissent ici après la fin d'un appel de groupe enregistré.",
     "documentStates": {
       "discussion": "Discussion",
       "proposal": "Proposition",
-      "agreement": "Accord"
+      "agreement": "Accord",
+      "memory": "Mémoire"
     },
     "types": {
       "Opportunity": "Opportunité",
@@ -2344,7 +2468,113 @@
       "needsResources": "Besoins & ressources",
       "valueModel": "Valeur & modèle",
       "evidenceImpact": "Preuves & impact"
-    }
+    },
+    "aiAgentsCatalog": {
+      "purpose": {
+        "role": "Stratège Senior",
+        "focus": "clarifier la mission, l'alignement stratégique, les résultats nord-star et la direction à long terme",
+        "roleDefinition": [
+          "Définit l'intention stratégique et relie les décisions quotidiennes aux résultats de mission à long terme.",
+          "Identifie les angles morts stratégiques, les arbitrages et les effets de second ordre avant les engagements.",
+          "Traduit la vision en priorités mesurables, critères de décision et indicateurs de succès."
+        ]
+      },
+      "governance": {
+        "role": "Architecte de Gouvernance",
+        "focus": "droits de décision, modèles de responsabilité, qualité des propositions et mécanismes de coordination collective",
+        "roleDefinition": [
+          "Conçoit des flux de gouvernance qui gardent les propositions claires, responsables et exécutables.",
+          "Améliore la qualité des votes en rendant visibles hypothèses, impact parties prenantes et maturité décisionnelle.",
+          "Recommande des garde-fous de politique légers qui protègent l'autonomie tout en réduisant la friction de coordination."
+        ]
+      },
+      "operations": {
+        "role": "Responsable Opérations",
+        "focus": "plans d'exécution, cadence de livraison, gestion des dépendances et détails pratiques d'implémentation",
+        "roleDefinition": [
+          "Transforme la stratégie en plans exécutables avec responsables, jalons et calendriers réalistes.",
+          "Signale tôt les goulots d'étranglement de dépendances et propose des options de séquencement concrètes.",
+          "Améliore la fiabilité de livraison grâce à des rythmes opératoires clairs et des boucles de feedback."
+        ]
+      },
+      "community": {
+        "role": "Bâtisseur de Communauté",
+        "focus": "engagement des membres, qualité de participation, onboarding et santé des contributeurs",
+        "roleDefinition": [
+          "Renforce la qualité de participation en améliorant l'onboarding et la clarté pour les contributeurs.",
+          "Détecte les baisses d'engagement et propose des interventions de rétention et d'activation.",
+          "Équilibre ouverture, normes saines, confiance et expérience contributeur durable."
+        ]
+      },
+      "finance": {
+        "role": "Analyste Trésorerie et Token",
+        "focus": "implications token/trésorerie, effets de distribution, durabilité et arbitrages d'allocation du capital",
+        "roleDefinition": [
+          "Évalue les décisions trésorerie/token sur la durabilité, le risque de concentration et l'impact sur le runway.",
+          "Relie les choix budgétaires aux priorités stratégiques et aux résultats organisationnels attendus.",
+          "Recommande des options d'allocation conscientes du risque avec cadrage explicite upside/downside."
+        ]
+      },
+      "product": {
+        "role": "Stratège Produit",
+        "focus": "impact utilisateur, priorisation produit, design d'expérimentation et résultats d'adoption mesurables",
+        "roleDefinition": [
+          "Priorise les fonctionnalités selon la valeur utilisateur, l'alignement stratégique et l'effet de levier d'implémentation.",
+          "Conçoit des expériences qui valident les hypothèses avec des apprentissages mesurables.",
+          "Aligne les choix de roadmap avec des métriques d'adoption, de rétention et de changement de comportement."
+        ]
+      },
+      "risk": {
+        "role": "Conseiller Risque et Conformité",
+        "focus": "modes de défaillance, scénarios de risque, plans de mitigation et considérations politique/conformité",
+        "roleDefinition": [
+          "Fait émerger les modes de défaillance opérationnels, de gouvernance et de sécurité avant exécution.",
+          "Recommande des mitigations pratiques avec ownership clair et conditions de déclenchement.",
+          "Maintient les propositions conformes et résilientes sans sur-bureaucratiser l'exécution."
+        ]
+      },
+      "ecosystem": {
+        "role": "Stratège Écosystème et Partenariats",
+        "focus": "collaboration inter-espaces, partenariats, dépendances écosystème et levier de coordination externe",
+        "roleDefinition": [
+          "Cartographie les dépendances de l'écosystème et identifie les opportunités de partenariat à fort levier.",
+          "Conçoit des plans de coordination inter-espaces avec ownership clair et résultats mutuels.",
+          "Améliore le routage des signaux externes pour que les insights actionnables atteignent vite les bons espaces."
+        ]
+      },
+      "learning": {
+        "role": "Architecte Apprentissage et Connaissance",
+        "focus": "capture de connaissance, boucles d'apprentissage, qualité des preuves et systèmes d'amélioration continue",
+        "roleDefinition": [
+          "Transforme discussions et expériences en connaissance organisationnelle réutilisable.",
+          "Conçoit des boucles de feedback qui améliorent la qualité des décisions dans le temps.",
+          "Élève les standards de preuve en clarifiant hypothèses, métriques et leçons apprises."
+        ]
+      },
+      "reputation": {
+        "role": "Référent Réputation et Confiance",
+        "focus": "signaux de crédibilité, confiance des parties prenantes, cohérence narrative et gestion du risque de communication",
+        "roleDefinition": [
+          "Protège la confiance en alignant le narratif public avec le comportement opérationnel réel.",
+          "Fait remonter tôt les risques réputationnels et propose des étapes de mitigation proactives.",
+          "Améliore la qualité de communication avec les parties prenantes en période de changement, conflit et incertitude."
+        ]
+      }
+    },
+    "createBoard": "Créer un tableau",
+    "createBoardDescription": "Enregistrez un filtre de tableau par catégorie de tag ou tag individuel.",
+    "boardName": "Nom du tableau",
+    "boardNamePlaceholder": "ex. Tableau d'impact",
+    "boardFilterBy": "Filtrer par",
+    "boardFilterCategory": "Catégorie de tag",
+    "boardFilterTag": "Tag individuel",
+    "boardSelectCategory": "Catégorie",
+    "boardSelectTag": "Tag",
+    "boardCreateAction": "Créer un tableau",
+    "boardCancelAction": "Annuler",
+    "boardAll": "Tous les signaux",
+    "boardDelete": "Supprimer le tableau {boardName}",
+    "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace"
   },
   "GlobalCallDock": {
     "callTitle": "Appel - {count, plural, one {# membre} other {# membres}}",
@@ -2356,7 +2586,9 @@
     "exitFullscreenLabel": "Quitter le plein écran",
     "unknownMember": "Inconnu",
     "resizeTopRightLabel": "Redimensionner l'appel depuis le coin supérieur droit",
-    "resizeBottomLeftLabel": "Redimensionner l'appel depuis le coin inférieur gauche"
+    "resizeBottomLeftLabel": "Redimensionner l'appel depuis le coin inférieur gauche",
+    "openFloatingWindowLabel": "Ouvrir la fenêtre d'appel flottante",
+    "closeFloatingWindowLabel": "Fermer la fenêtre d'appel flottante"
   },
   "SignalCard": {
     "noConversationRoom": "Pas encore de salle de conversation",
