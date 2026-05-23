@@ -632,18 +632,12 @@ export function GlobalCallDockOverlay() {
               <PictureInPicture2 className="h-3.5 w-3.5" />
             </button>
           )}
-          {!modeIsFullscreen && (
+          {!modeIsFullscreen && dockMode !== 'expanded' && (
             <button
               type="button"
               data-no-dock-drag
               onClick={() => applyDockMode('expanded')}
-              disabled={dockMode === 'expanded'}
-              className={cn(
-                'inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background',
-                dockMode === 'expanded'
-                  ? 'cursor-not-allowed opacity-45'
-                  : 'hover:bg-muted',
-              )}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
               aria-label={t('expandLabel')}
               title={t('expandLabel')}
             >
@@ -688,7 +682,8 @@ export function GlobalCallDockOverlay() {
           currentUserProfileAvatarUrl={me?.avatarUrl ?? null}
           resolveMemberLabel={resolveMemberLabel}
           layout={modeIsFullscreen ? 'fullView' : 'panel'}
-          panelVideoFit={dockMode === 'thumbnail' ? 'contain' : 'cover'}
+          panelVideoFit="cover"
+          panelFlush={!modeIsFullscreen}
           fullViewOpen={modeIsFullscreen}
           fullViewLayoutMode={layoutMode}
           fullViewPaneSplit={paneSplit}

@@ -63,6 +63,8 @@ type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
   layout: HumanChatPanelCallStageLayout;
   /** In panel layout, choose between immersive crop (`cover`) and full-frame (`contain`). */
   panelVideoFit?: 'cover' | 'contain';
+  /** Edge-to-edge tiles (global call dock): no inset padding or rounded tile corners. */
+  panelFlush?: boolean;
   /** Shown in panel when full view is available; opens the enlarged dialog. */
   onRequestFullView?: () => void;
   /** `true` when the app-level full-view dialog is open; hides the inline stage so one video tree remains mounted. */
@@ -285,6 +287,7 @@ export function HumanChatPanelCallStage({
   remoteMediaStall = false,
   layout,
   panelVideoFit = 'cover',
+  panelFlush = false,
   onRequestFullView,
   fullViewOpen = false,
   fullViewTriggerRef,
@@ -475,6 +478,7 @@ export function HumanChatPanelCallStage({
         activeSpeakerKey != null && activeSpeakerKey === feedKeyForActive(feed)
       }
       panelVideoFit={panelVideoFit}
+      panelFlush={panelFlush}
       room={room}
       currentUserId={currentUserId}
       resolveMemberLabel={resolveMemberLabel}
@@ -510,6 +514,8 @@ export function HumanChatPanelCallStage({
    */
   const userGridCellClass = isFull
     ? 'min-h-0 w-full min-w-0'
+    : panelFlush && userGridTileCount <= 1
+    ? 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col'
     : userGridTileCount > 1
     ? 'flex h-full min-h-[min(40vh,280px)] w-full min-w-0 flex-1 flex-col'
     : 'min-w-0';
@@ -520,6 +526,8 @@ export function HumanChatPanelCallStage({
         'relative w-full max-w-full @container/call',
         isFull
           ? 'box-border flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-0 bg-black p-0.5 text-zinc-50 ring-1 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]'
+          : panelFlush
+          ? 'box-border flex h-full min-h-0 w-full min-w-0 max-h-full shrink-0 flex-col overflow-hidden bg-black p-0'
           : 'box-border flex h-full min-h-0 w-full min-w-0 max-h-full shrink-0 flex-col overflow-hidden border-b border-border bg-muted/20 p-0.5',
       )}
       role="region"
@@ -581,6 +589,7 @@ export function HumanChatPanelCallStage({
                           isShare
                           isFullView={isFull}
                           panelVideoFit={panelVideoFit}
+                          panelFlush={panelFlush}
                           isActiveSpeaker={
                             activeSpeakerKey != null &&
                             activeSpeakerKey === feedKeyForActive(feed)
@@ -649,6 +658,7 @@ export function HumanChatPanelCallStage({
                           isShare
                           isFullView={isFull}
                           panelVideoFit={panelVideoFit}
+                          panelFlush={panelFlush}
                           isActiveSpeaker={
                             activeSpeakerKey != null &&
                             activeSpeakerKey === feedKeyForActive(feed)
@@ -714,6 +724,7 @@ export function HumanChatPanelCallStage({
                             feed={speakerFeedForTopMode}
                             isFullView={isFull}
                             panelVideoFit={panelVideoFit}
+                            panelFlush={panelFlush}
                             isActiveSpeaker
                             room={room}
                             currentUserId={currentUserId}
@@ -770,6 +781,7 @@ export function HumanChatPanelCallStage({
                           isShare
                           isFullView={isFull}
                           panelVideoFit={panelVideoFit}
+                          panelFlush={panelFlush}
                           isActiveSpeaker={
                             activeSpeakerKey != null &&
                             activeSpeakerKey === feedKeyForActive(feed)
@@ -800,6 +812,7 @@ export function HumanChatPanelCallStage({
                     isShare
                     isFullView={isFull}
                     panelVideoFit={panelVideoFit}
+                    panelFlush={panelFlush}
                     isActiveSpeaker={
                       activeSpeakerKey != null &&
                       activeSpeakerKey === feedKeyForActive(feed)
@@ -836,9 +849,11 @@ export function HumanChatPanelCallStage({
         shareFeeds.length > 0 && (
           <div
             className={cn(
-              'w-full p-2 pb-0',
+              'w-full',
               isFull && 'flex min-h-0 min-w-0 flex-1 flex-col p-0',
               isFull && shareFeeds.length > 0 && 'min-w-0', // FV-1: full width of main stage
+              !isFull && panelFlush && 'p-0',
+              !isFull && !panelFlush && 'p-2 pb-0',
             )}
             data-feed-tick={_feedVersion}
           >
@@ -858,6 +873,7 @@ export function HumanChatPanelCallStage({
                   isShare
                   isFullView={isFull}
                   panelVideoFit={panelVideoFit}
+                  panelFlush={panelFlush}
                   isActiveSpeaker={
                     activeSpeakerKey != null &&
                     activeSpeakerKey === feedKeyForActive(feed)
@@ -876,7 +892,10 @@ export function HumanChatPanelCallStage({
         !skipUserGridInFullViewWithShare &&
         (useFullViewSingleMainTile ? (
           <div
-            className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col px-2 pb-2 pt-0"
+            className={cn(
+              'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col',
+              panelFlush ? 'p-0' : 'px-2 pb-2 pt-0',
+            )}
             data-feed-tick={_feedVersion}
           >
             {remoteUserMedia[0] ? (
@@ -888,6 +907,7 @@ export function HumanChatPanelCallStage({
                   feed={remoteUserMedia[0]}
                   isFullView={isFull}
                   panelVideoFit={panelVideoFit}
+                  panelFlush={panelFlush}
                   isActiveSpeaker={
                     activeSpeakerKey != null &&
                     activeSpeakerKey === feedKeyForActive(remoteUserMedia[0]!)
@@ -922,6 +942,7 @@ export function HumanChatPanelCallStage({
                   feed={localUserMedia[0]}
                   isFullView={isFull}
                   panelVideoFit={panelVideoFit}
+                  panelFlush={panelFlush}
                   isActiveSpeaker={
                     activeSpeakerKey != null &&
                     activeSpeakerKey === feedKeyForActive(localUserMedia[0]!)
@@ -937,7 +958,9 @@ export function HumanChatPanelCallStage({
         ) : (
           <div
             className={cn(
-              'grid gap-2 p-2 pt-2',
+              panelFlush && !isFull
+                ? 'grid h-full min-h-0 w-full min-w-0 flex-1 gap-0 p-0'
+                : 'grid gap-2 p-2 pt-2',
               isFull
                 ? cn(
                     'h-full min-h-0 w-full min-w-0 flex-1',
@@ -986,6 +1009,7 @@ export function HumanChatPanelCallStage({
                     feed={feed}
                     isFullView={isFull}
                     panelVideoFit={panelVideoFit}
+                    panelFlush={panelFlush}
                     isActiveSpeaker={
                       activeSpeakerKey != null &&
                       activeSpeakerKey === feedKeyForActive(feed)
@@ -1021,6 +1045,7 @@ export function HumanChatPanelCallStage({
                 isPip
                 isFullView={isFull}
                 panelVideoFit={panelVideoFit}
+                panelFlush={panelFlush}
                 isActiveSpeaker={
                   activeSpeakerKey != null &&
                   activeSpeakerKey === feedKeyForActive(feed)
@@ -1288,6 +1313,7 @@ const CallFeedTile = ({
   isActiveSpeaker = false,
   isFullView = false,
   panelVideoFit = 'cover',
+  panelFlush = false,
   room,
   currentUserId,
   resolveMemberLabel,
@@ -1302,6 +1328,7 @@ const CallFeedTile = ({
   isActiveSpeaker?: boolean;
   isFullView?: boolean;
   panelVideoFit?: 'cover' | 'contain';
+  panelFlush?: boolean;
   room: Room | null;
   currentUserId: string | null;
   resolveMemberLabel: (userId: string | undefined) => string;
@@ -1325,6 +1352,7 @@ const CallFeedTile = ({
       resolveMemberLabel={resolveMemberLabel}
       nameFallback={nameFallback}
       panelVideoFit={panelVideoFit}
+      panelFlush={panelFlush}
       t={t}
     />
   );
@@ -1341,6 +1369,7 @@ const FeedContent = ({
   isPip,
   isFullView,
   panelVideoFit,
+  panelFlush,
   isActiveSpeaker,
   resolveMemberLabel,
   nameFallback,
@@ -1356,6 +1385,7 @@ const FeedContent = ({
   isPip: boolean;
   isFullView: boolean;
   panelVideoFit: 'cover' | 'contain';
+  panelFlush: boolean;
   isActiveSpeaker: boolean;
   resolveMemberLabel: (userId: string | undefined) => string;
   nameFallback: string;
@@ -1497,7 +1527,8 @@ const FeedContent = ({
     <div
       className={cn(
         /* `rounded-md` = button-like corners; solid black so letterboxing (if any) is never a light “white” gap in light mode */
-        'relative min-w-0 overflow-hidden rounded-md bg-black',
+        'relative min-w-0 overflow-hidden bg-black',
+        panelFlush && !isPip && !isFullView ? 'rounded-none' : 'rounded-md',
         isFullView && !isPip
           ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col'
           : isPip
@@ -1518,12 +1549,16 @@ const FeedContent = ({
             className={cn(
               'min-h-0 w-full',
               isPip && 'h-full flex-1',
-              isFullView && !isPip && 'absolute inset-0 h-full w-full',
-              !isPip && !isFullView && 'h-full min-h-0 flex-1',
+              (isFullView && !isPip) || (panelFlush && !isPip && !isFullView)
+                ? 'absolute inset-0 h-full w-full'
+                : null,
+              !isPip && !isFullView && !panelFlush && 'h-full min-h-0 flex-1',
               isFullView && !isPip
                 ? 'object-contain'
                 : isShare
                 ? 'object-contain'
+                : panelFlush && !isPip && !isFullView
+                ? 'object-cover'
                 : !isPip && panelVideoFit === 'contain'
                 ? 'object-contain'
                 : 'object-cover',
