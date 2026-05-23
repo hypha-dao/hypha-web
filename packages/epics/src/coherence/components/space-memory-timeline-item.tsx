@@ -269,7 +269,10 @@ export function SpaceMemoryTimelineItem({
     item.source === 'call_transcript' &&
     item.url.startsWith('memory://call_transcript/');
   const canOpen = Boolean(
-    !isMemoryBody && !isCallTranscriptBody && openHref && isSafeAssetUrl(openHref),
+    !isMemoryBody &&
+      !isCallTranscriptBody &&
+      openHref &&
+      isSafeAssetUrl(openHref),
   );
   const cardTitle =
     isCallTranscriptBody && item.context.documentTitle?.trim()
@@ -476,11 +479,11 @@ export function SpaceMemoryTimelineItem({
     if (item.source === 'memory') return t('spaceMemory');
     if (item.source === 'proposal_upload') return t('spaceMemoryProposals');
     if (item.source === 'matrix_chat') return t('spaceMemoryConversations');
+    if (item.source === 'discussion_summary')
+      return t('spaceMemoryConversations');
     if (item.source === 'call_transcript')
       return t('spaceMemoryCallTranscriptExcerpt');
-    if (item.source === 'call_recording')
-      return t('spaceMemoryContextCallRecording');
-    if (item.source === 'discussion_summary') return displayName;
+    if (item.source === 'call_recording') return t('spaceMemoryCalls');
     return t('spaceMemory');
   })();
 

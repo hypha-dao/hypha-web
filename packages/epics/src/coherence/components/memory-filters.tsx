@@ -9,6 +9,7 @@ export type MemoryFilterValue =
   | 'general'
   | 'proposals'
   | 'conversations'
+  | 'calls'
   | 'ai-chat';
 
 type MemoryFiltersProps = {
@@ -34,6 +35,7 @@ export function MemoryFilters({
     { value: 'general', label: t('spaceMemoryGeneral') },
     { value: 'proposals', label: t('spaceMemoryProposals') },
     { value: 'conversations', label: t('spaceMemoryConversations') },
+    { value: 'calls', label: t('spaceMemoryCalls') },
     { value: 'ai-chat', label: t('spaceMemoryAiChat') },
   ];
 

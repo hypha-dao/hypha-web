@@ -52,6 +52,18 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     [],
   );
 
+  const isConversationItem = React.useCallback(
+    (row: SpaceMemoryItem) =>
+      row.source === 'matrix_chat' || row.source === 'discussion_summary',
+    [],
+  );
+
+  const isCallItem = React.useCallback(
+    (row: SpaceMemoryItem) =>
+      row.source === 'call_recording' || row.source === 'call_transcript',
+    [],
+  );
+
   const stateLabel = React.useCallback(
     (state: DocumentState) =>
       t(
@@ -74,14 +86,14 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       if (row.source === 'matrix_chat') {
         return t('spaceMemoryContextMatrix');
       }
+      if (row.source === 'discussion_summary') {
+        return humanizeAssetName(row.name);
+      }
       if (row.source === 'call_transcript') {
         return t('spaceMemoryContextCallTranscript');
       }
       if (row.source === 'call_recording') {
         return t('spaceMemoryContextCallRecording');
-      }
-      if (row.source === 'discussion_summary') {
-        return humanizeAssetName(row.name);
       }
       return t('spaceMemoryContext', {
         title: row.context.documentTitle || t('untitledDocument'),
@@ -100,11 +112,11 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
             row.source === 'proposal_upload' &&
             row.context.documentState === DocumentState.PROPOSAL,
         ).length,
-        conversations: items.filter((row) => row.source === 'matrix_chat')
-          .length,
+        conversations: items.filter((row) => isConversationItem(row)).length,
+        calls: items.filter((row) => isCallItem(row)).length,
         'ai-chat': items.filter((row) => isAiChatItem(row)).length,
       } satisfies Record<MemoryFilterValue, number>),
-    [isAiChatItem, items],
+    [isAiChatItem, isCallItem, isConversationItem, items],
   );
 
   const filteredItems = React.useMemo(() => {
@@ -119,7 +131,10 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         );
       }
       if (activeFilter === 'conversations') {
-        return row.source === 'matrix_chat';
+        return isConversationItem(row);
+      }
+      if (activeFilter === 'calls') {
+        return isCallItem(row);
       }
       if (activeFilter === 'ai-chat') {
         return isAiChatItem(row);
@@ -128,7 +143,14 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     });
 
     return filterSpaceMemoryItems(byFilter, searchTerm);
-  }, [activeFilter, isAiChatItem, items, searchTerm]);
+  }, [
+    activeFilter,
+    isAiChatItem,
+    isCallItem,
+    isConversationItem,
+    items,
+    searchTerm,
+  ]);
 
   const newMemoryHref = `/${lang}/dho/${id}/memory/new-memory`;
 
@@ -179,6 +201,8 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
               ? t('spaceMemoryEmptySearch')
               : activeFilter === 'ai-chat'
               ? t('spaceMemoryAiChatEmpty')
+              : activeFilter === 'calls'
+              ? t('spaceMemoryCallsEmpty')
               : activeFilter === 'general'
               ? t('spaceMemoryEmpty')
               : t('spaceMemoryEmptyTab')}
