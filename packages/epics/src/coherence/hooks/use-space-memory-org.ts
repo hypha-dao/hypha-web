@@ -9,16 +9,31 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import queryString from 'query-string';
 import React from 'react';
 import useSWRInfinite from 'swr/infinite';
+import { mutate } from 'swr';
 
 const ASSETS_PAGE_SIZE = 12;
 
+export const SPACE_MEMORY_ORG_SWR_KEY = 'space-memory-org' as const;
+
 type SpaceMemoryFetcherKey = readonly [
-  'space-memory-org',
+  typeof SPACE_MEMORY_ORG_SWR_KEY,
   string,
   number,
   number,
   string,
 ];
+
+/** Revalidate all org-memory list pages for a space (e.g. after publishing a memory). */
+export function revalidateSpaceMemoryOrg(spaceSlug: string) {
+  return mutate(
+    (key: unknown) =>
+      Array.isArray(key) &&
+      key[0] === SPACE_MEMORY_ORG_SWR_KEY &&
+      key[1] === spaceSlug,
+    undefined,
+    { revalidate: true },
+  );
+}
 
 export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
   const { getAccessToken } = useAuthentication();
@@ -39,7 +54,7 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
         return null;
       }
       return [
-        'space-memory-org',
+        SPACE_MEMORY_ORG_SWR_KEY,
         spaceSlug,
         pageIndex + 1,
         ASSETS_PAGE_SIZE,

@@ -50,6 +50,7 @@ import {
   getProposalTemplateSegmentFromPathname,
   isLegacyGenericResubmitSegment,
 } from '../../utils/resubmit-proposal-template';
+import { revalidateSpaceMemoryOrg } from '../../coherence/hooks/use-space-memory-org';
 
 /** Session payload for `RESUBMIT_FORM_DATA_KEY` (lead image / attachments bridge). */
 export type ResubmitFormData = {
@@ -326,8 +327,10 @@ export function CreateAgreementBaseFields({
     if (mode !== 'memory') return;
     if (progress < 100 || hasNavigatedAfterMemoryPublishRef.current) return;
     hasNavigatedAfterMemoryPublishRef.current = true;
-    router.replace(successfulUrl, { scroll: false });
-  }, [mode, progress, router, successfulUrl]);
+    void revalidateSpaceMemoryOrg(spaceSlug).finally(() => {
+      router.replace(successfulUrl, { scroll: false });
+    });
+  }, [mode, progress, router, spaceSlug, successfulUrl]);
 
   const postProposalCreated = React.useCallback(
     async ({
