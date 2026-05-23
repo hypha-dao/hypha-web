@@ -11,6 +11,7 @@ Set these on the web deployment:
   - Shared secret for ops endpoints:
     - `GET /api/v1/ops/space-memory/health`
     - `POST /api/v1/ops/space-memory/refresh-discussions`
+    - `POST /api/v1/ops/space-memory/refresh-thread-summaries`
 - `HYPHA_CALL_ARTIFACT_INGEST_SECRET`
   - Shared secret for call artifact ingestion endpoint:
     - `POST /api/v1/spaces/[spaceSlug]/call-artifacts`
@@ -21,6 +22,10 @@ Set these on the web deployment:
 
 Optional but useful:
 
+- `OPENROUTER_API_KEY`
+  - Enables LLM-backed living thread summaries (falls back to heuristics when unset).
+- `OPENROUTER_THREAD_SUMMARY_MODEL`
+  - Optional model override for thread summary generation.
 - `NEXT_PUBLIC_ENABLE_SPACE_MEMORY=true`
   - Explicitly pins Space Memory to enabled (even though default now enables it).
 - `HYPHA_MCP_AUTH_TOKEN`
@@ -45,7 +50,37 @@ Minimum payload:
 
 Recommended payload includes both `recording` and `transcript`.
 
-## 3) Scheduled Discussion Refresh (Automation)
+## 3) Scheduled Thread Summary Refresh (Automation)
+
+Living thread summaries refresh when chat activity is recorded and via a scheduled
+sweep for rows that are due (≥30 minutes since last refresh and ≥1 new message).
+
+- `POST /api/v1/ops/space-memory/refresh-thread-summaries`
+- Header:
+  - `x-hypha-ops-secret: $HYPHA_SPACE_MEMORY_OPS_SECRET`
+
+Example body:
+
+```json
+{
+  "limit": 100
+}
+```
+
+Dry run:
+
+```json
+{
+  "dry_run": true,
+  "limit": 50
+}
+```
+
+### Suggested schedule
+
+- Every 30 minutes alongside discussion refresh for active orgs.
+
+## 4) Scheduled Discussion Refresh (Automation)
 
 Use the new ops endpoint:
 
@@ -76,7 +111,7 @@ Dry run:
 - Every 30 minutes for active orgs.
 - Every 2-4 hours for low-activity environments.
 
-## 4) Health + Alerting
+## 5) Health + Alerting
 
 Use the new health endpoint:
 
@@ -97,14 +132,14 @@ The response includes:
 - Warn if `alerts` contains `missing_matrix_bot_token`.
 - Warn if `alerts` contains `no_recent_summaries` for > 24h.
 
-## 5) Pagination Discipline for “Everything”
+## 6) Pagination Discipline for “Everything”
 
 When querying memory via AI/MCP, always paginate until completion:
 
 - `assets_pagination.has_next_page === false`
 - Document/member pagination likewise.
 
-## 6) Operational Verification (Go-Live)
+## 7) Operational Verification (Go-Live)
 
 1. Call `/api/v1/ops/space-memory/health` and confirm no critical alerts.
 2. Run refresh dry-run and verify expected target spaces.

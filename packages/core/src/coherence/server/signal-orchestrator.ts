@@ -98,6 +98,7 @@ const SOURCE_TO_TAGS: Record<string, string[]> = {
   call_recording: ['Learning', 'Knowledge'],
   call_transcript: ['Learning', 'Feedback Loop', 'Knowledge'],
   discussion_summary: ['Feedback Loop', 'Processes', 'Rhythms'],
+  thread_summary: ['Feedback Loop', 'Processes', 'Knowledge'],
   matrix_chat: ['Feedback Loop', 'Communities'],
   proposal_upload: ['Strategy', 'Milestones', 'Governance'],
 };
@@ -107,6 +108,7 @@ type EnqueueInput = {
   triggerKind:
     | 'memory_ingest'
     | 'discussion_summary'
+    | 'thread_summary'
     | 'ops_refresh'
     | 'manual'
     | 'unknown';

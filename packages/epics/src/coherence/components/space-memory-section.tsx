@@ -54,7 +54,9 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
 
   const isConversationItem = React.useCallback(
     (row: SpaceMemoryItem) =>
-      row.source === 'matrix_chat' || row.source === 'discussion_summary',
+      row.source === 'matrix_chat' ||
+      row.source === 'discussion_summary' ||
+      row.source === 'thread_summary',
     [],
   );
 
@@ -86,7 +88,10 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       if (row.source === 'matrix_chat') {
         return t('spaceMemoryContextMatrix');
       }
-      if (row.source === 'discussion_summary') {
+      if (
+        row.source === 'discussion_summary' ||
+        row.source === 'thread_summary'
+      ) {
         return humanizeAssetName(row.name);
       }
       if (row.source === 'call_transcript') {

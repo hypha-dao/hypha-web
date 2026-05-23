@@ -18,6 +18,7 @@ import {
   spaceCallTranscripts,
   spaceDiscussionSummaries,
 } from './call-artifacts';
+import { threadSummaries } from './thread-summaries';
 import {
   signalOrchestratorCooldowns,
   signalOrchestratorDispatches,
@@ -40,6 +41,7 @@ export * from './coherence';
 export * from './matrix-user-link';
 export * from './token-updates';
 export * from './call-artifacts';
+export * from './thread-summaries';
 export * from './signal-orchestrator';
 
 export const schema = {
@@ -63,6 +65,7 @@ export const schema = {
   spaceCallRecordings,
   spaceCallTranscripts,
   spaceDiscussionSummaries,
+  threadSummaries,
   signalOrchestratorQueue,
   signalOrchestratorCooldowns,
   signalOrchestratorDispatches,

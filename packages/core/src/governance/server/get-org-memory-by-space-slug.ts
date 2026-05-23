@@ -27,6 +27,7 @@ import {
 import { coherences } from '@hypha-platform/storage-postgres';
 import { withOrgMemoryAssetKeys } from '../../org-memory/with-org-memory-asset-keys';
 import { listSpaceCallArtifactsBySpaceId } from './call-artifacts';
+import { listThreadSummariesBySpaceId } from './thread-summaries';
 import { isMemoryDocument } from '../space-memory-document-label';
 
 /** Aligned with MCP §8.1 / architecture org memory rows. */
@@ -37,7 +38,8 @@ export type OrgMemoryAsset = {
     | 'matrix_chat'
     | 'call_recording'
     | 'call_transcript'
-    | 'discussion_summary';
+    | 'discussion_summary'
+    | 'thread_summary';
   filename: string;
   /** Opaque key for `fetch_org_memory_asset` (MCP / Chat). */
   asset_key?: string;
@@ -56,6 +58,7 @@ export type OrgMemoryAsset = {
   call_recording_id?: number;
   call_transcript_id?: number;
   discussion_summary_id?: number;
+  thread_summary_id?: number;
   text_excerpt?: string;
   occurred_at: string;
 };
@@ -742,6 +745,9 @@ function orgMemoryAssetStableId(asset: OrgMemoryAsset): string {
     (asset.discussion_summary_id != null
       ? `discussion-summary:${asset.discussion_summary_id}`
       : null) ??
+    (asset.thread_summary_id != null
+      ? `thread-summary:${asset.thread_summary_id}`
+      : null) ??
     (asset.document_id != null && asset.source === 'memory' && !asset.app_url
       ? `memory-body:${asset.document_id}`
       : null) ??
@@ -780,6 +786,9 @@ function compactOrgMemoryAssetsForSignal(
         : null) ??
       (asset.discussion_summary_id != null
         ? `discussion-summary:${asset.discussion_summary_id}`
+        : null) ??
+      (asset.thread_summary_id != null
+        ? `thread-summary:${asset.thread_summary_id}`
         : null) ??
       `${asset.filename}:${asset.occurred_at}`;
     const dedupeKey = `${asset.source}:${uniqueLocator}`;
@@ -1038,6 +1047,19 @@ export async function getOrgMemoryBySpaceSlug(
       text_excerpt: s.summary,
     }),
   );
+  const threadSummaryRows = await listThreadSummariesBySpaceId(host.id, { db });
+  const threadSummaryAssets: OrgMemoryAsset[] = threadSummaryRows.map((s) => ({
+    source: 'thread_summary',
+    filename: `thread-summary-${s.id}.md`,
+    mime: 'text/markdown',
+    matrix_room_id: s.matrixRoomId,
+    occurred_at:
+      s.updatedAt instanceof Date
+        ? s.updatedAt.toISOString()
+        : String(s.updatedAt),
+    thread_summary_id: s.id,
+    text_excerpt: s.summary,
+  }));
 
   let combined = [
     ...proposalAssets,
@@ -1046,6 +1068,7 @@ export async function getOrgMemoryBySpaceSlug(
     ...recordingAssets,
     ...transcriptAssets,
     ...discussionSummaryAssets,
+    ...threadSummaryAssets,
   ].sort(compareOrgMemoryAssetsStable);
   if (assetView === 'signal') {
     combined = compactOrgMemoryAssetsForSignal(combined);

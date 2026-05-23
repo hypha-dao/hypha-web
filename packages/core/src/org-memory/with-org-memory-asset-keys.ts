@@ -11,7 +11,8 @@ export type OrgMemoryAssetLike = {
     | 'matrix_chat'
     | 'call_recording'
     | 'call_transcript'
-    | 'discussion_summary';
+    | 'discussion_summary'
+    | 'thread_summary';
   app_url?: string;
   document_id?: number;
   matrix_room_id?: string;
@@ -21,6 +22,7 @@ export type OrgMemoryAssetLike = {
   call_recording_id?: number;
   call_transcript_id?: number;
   discussion_summary_id?: number;
+  thread_summary_id?: number;
   text_excerpt?: string;
 };
 
@@ -57,10 +59,13 @@ export function withOrgMemoryAssetKeys<T extends OrgMemoryAssetLike>(
       a.discussion_summary_id != null
     ) {
       payload = { k: 'ds', i: a.discussion_summary_id };
+    } else if (a.source === 'thread_summary' && a.thread_summary_id != null) {
+      payload = { k: 'ts', i: a.thread_summary_id };
     } else if (
       a.source === 'call_recording' ||
       a.source === 'call_transcript' ||
-      a.source === 'discussion_summary'
+      a.source === 'discussion_summary' ||
+      a.source === 'thread_summary'
     ) {
       throw new Error(`Missing artifact id for source "${a.source}"`);
     } else {
