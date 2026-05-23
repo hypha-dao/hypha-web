@@ -115,6 +115,14 @@ function normalizeHttpUrl(raw: string): string | null {
   }
 }
 
+function resolveOrgMemoryMxcUri(asset: OrgMemoryAssetWire): string | null {
+  const fromField = asset.mxc_uri?.trim();
+  if (fromField?.startsWith('mxc://')) return fromField;
+  const fromAppUrl = asset.app_url?.trim();
+  if (fromAppUrl?.startsWith('mxc://')) return fromAppUrl;
+  return null;
+}
+
 function inferKind(name: string, url: string): SpaceMemoryAssetKind {
   const has = (value: string, exts: string) =>
     new RegExp(`\\.(${exts})(\\?|$)`, 'i').test(value);
@@ -398,14 +406,18 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
     }
 
     if (a.source === 'call_recording') {
-      const safeUrl = a.app_url ? normalizeHttpUrl(a.app_url) : null;
+      const mxc = resolveOrgMemoryMxcUri(a);
+      const safeUrl = !mxc && a.app_url ? normalizeHttpUrl(a.app_url) : null;
+      const sessionId = a.call_session_id ?? a.filename;
       items.push({
-        id: `call-recording:${a.call_session_id ?? a.filename}`,
+        id: `call-recording:${sessionId}`,
         name: a.filename?.trim() ? a.filename : 'Call recording',
-        url:
-          safeUrl ??
-          `memory://call-recording/${a.call_session_id ?? 'unknown'}`,
-        kind: inferKindFromMime(a.mime, a.filename, a.app_url ?? ''),
+        url: mxc ?? safeUrl ?? `memory://call-recording/${sessionId}`,
+        kind: inferKindFromMime(
+          a.mime,
+          a.filename,
+          mxc ?? a.app_url ?? safeUrl ?? '',
+        ),
         source: 'call_recording',
         uploadedAt,
         context: {

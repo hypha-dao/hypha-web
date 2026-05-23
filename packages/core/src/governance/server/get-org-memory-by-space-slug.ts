@@ -1033,17 +1033,21 @@ export async function getOrgMemoryBySpaceSlug(
 
   const callArtifacts = await listSpaceCallArtifactsBySpaceId(host.id, { db });
   const recordingAssets: OrgMemoryAsset[] = callArtifacts.recordings.map(
-    (r) => ({
-      source: 'call_recording',
-      filename:
-        r.mediaUri.split('/').pop()?.trim() ||
-        `call-recording-${r.callSessionId}.webm`,
-      app_url: r.mediaUri,
-      mime: r.mimeType,
-      occurred_at: r.createdAt.toISOString(),
-      call_session_id: r.callSessionId,
-      call_recording_id: r.id,
-    }),
+    (r) => {
+      const mediaUri = r.mediaUri.trim();
+      const isMxc = mediaUri.startsWith('mxc://');
+      return {
+        source: 'call_recording',
+        filename:
+          mediaUri.split('/').pop()?.trim() ||
+          `call-recording-${r.callSessionId}.webm`,
+        ...(isMxc ? { mxc_uri: mediaUri } : { app_url: mediaUri }),
+        mime: r.mimeType,
+        occurred_at: r.createdAt.toISOString(),
+        call_session_id: r.callSessionId,
+        call_recording_id: r.id,
+      };
+    },
   );
   const transcriptAssets: OrgMemoryAsset[] = callArtifacts.transcripts.map(
     (t) => ({

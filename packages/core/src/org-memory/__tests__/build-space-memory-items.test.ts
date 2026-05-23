@@ -198,6 +198,26 @@ describe('buildSpaceMemoryItemsFromOrgMemoryPayload', () => {
     expect(rows[0]!.kind).toBe('image');
   });
 
+  it('includes call_recording rows with mxc URL for Matrix playback', () => {
+    const rows = buildSpaceMemoryItemsFromOrgMemoryPayload({
+      org_memory_assets: [
+        {
+          source: 'call_recording',
+          filename: 'session-1.webm',
+          mxc_uri: 'mxc://example.org/recording123',
+          mime: 'video/webm',
+          call_session_id: 'session-1',
+          call_recording_id: 9,
+          occurred_at: '2024-07-01T00:00:00.000Z',
+        },
+      ],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.source).toBe('call_recording');
+    expect(rows[0]!.url).toBe('mxc://example.org/recording123');
+    expect(rows[0]!.kind).toBe('video');
+  });
+
   it('skips proposal rows without http(s) app_url', () => {
     const rows = buildSpaceMemoryItemsFromOrgMemoryPayload({
       org_memory_assets: [
