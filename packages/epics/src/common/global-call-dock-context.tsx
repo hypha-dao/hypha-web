@@ -1,7 +1,11 @@
 'use client';
 
 import React from 'react';
-import { useSpaceGroupCall } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
+import {
+  useSpaceGroupCall,
+  type GetCallCaptureVoiceAnnouncement,
+} from '@hypha-platform/core/client';
 import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
 
 type PendingJoin = {
@@ -109,6 +113,7 @@ const GlobalCallDockContext =
   React.createContext<GlobalCallDockContextValue | null>(null);
 
 function useGlobalCallDockValue() {
+  const t = useTranslations('HumanChatPanel');
   const [boundRoomId, setBoundRoomId] = React.useState<string | null>(null);
   const [boundSpaceSlug, setBoundSpaceSlug] = React.useState<string | null>(
     null,
@@ -139,10 +144,26 @@ function useGlobalCallDockValue() {
     [],
   );
 
+  const getCaptureVoiceAnnouncement =
+    React.useCallback<GetCallCaptureVoiceAnnouncement>(
+      ({ action, mode }) => {
+        if (mode === 'recording_with_transcript') {
+          return action === 'started'
+            ? t('callCaptureVoiceStartedRecordingTranscript')
+            : t('callCaptureVoiceStoppedRecordingTranscript');
+        }
+        return action === 'started'
+          ? t('callCaptureVoiceStartedTranscript')
+          : t('callCaptureVoiceStoppedTranscript');
+      },
+      [t],
+    );
+
   const call = useSpaceGroupCall(activeRoomId, {
     authToken: activeAuthToken,
     spaceSlug: activeSpaceSlug,
     onCallArtifactsUploaded,
+    getCaptureVoiceAnnouncement,
   });
 
   const inSession =

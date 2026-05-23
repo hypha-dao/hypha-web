@@ -33,12 +33,17 @@ import {
   resolveLocalCaptureConsent,
   type SpaceGroupCallCaptureConsent,
 } from './call-capture-consent';
+import {
+  speakCallCaptureVoiceAnnouncement,
+  type GetCallCaptureVoiceAnnouncement,
+} from './call-capture-voice-announcement';
 export type { SpaceGroupCallState } from './space-group-call-state';
 export type {
   SpaceGroupCallCaptureMode,
   SpaceGroupCallRecordingStatus,
 } from './space-group-call-state';
 export type { SpaceGroupCallCaptureConsent } from './call-capture-consent';
+export type { GetCallCaptureVoiceAnnouncement } from './call-capture-voice-announcement';
 
 export type SpaceGroupCallErrorCode =
   | 'NO_CLIENT'
@@ -90,6 +95,8 @@ export type SpaceGroupCallOptions = {
   spaceSlug?: string | null;
   /** Fired after call recording/transcript artifacts are persisted successfully. */
   onCallArtifactsUploaded?: (params: { spaceSlug: string }) => void;
+  /** Localized spoken notice when capture starts or stops (Zoom-style compliance cue). */
+  getCaptureVoiceAnnouncement?: GetCallCaptureVoiceAnnouncement;
 };
 export type SpaceGroupCallVoiceProcessingPreset =
   | 'standard'
@@ -236,10 +243,15 @@ export function useSpaceGroupCall(
     authToken = null,
     spaceSlug = null,
     onCallArtifactsUploaded,
+    getCaptureVoiceAnnouncement,
   } = options;
   const latestAuthTokenRef = useRef<string | null>(authToken?.trim() || null);
   const latestSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
   const onCallArtifactsUploadedRef = useRef(onCallArtifactsUploaded);
+  const getCaptureVoiceAnnouncementRef = useRef(getCaptureVoiceAnnouncement);
+  const prevActiveRoomCaptureRef = useRef<SpaceGroupCallCaptureConsent | null>(
+    null,
+  );
 
   const [callState, setCallState] = useState<SpaceGroupCallState>('idle');
   const [errorCode, setErrorCode] = useState<SpaceGroupCallErrorCode | null>(
@@ -369,6 +381,21 @@ export function useSpaceGroupCall(
   useEffect(() => {
     onCallArtifactsUploadedRef.current = onCallArtifactsUploaded;
   }, [onCallArtifactsUploaded]);
+
+  useEffect(() => {
+    getCaptureVoiceAnnouncementRef.current = getCaptureVoiceAnnouncement;
+  }, [getCaptureVoiceAnnouncement]);
+
+  const playCaptureVoiceAnnouncement = useCallback(
+    (
+      action: 'started' | 'stopped',
+      mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
+    ) => {
+      const text = getCaptureVoiceAnnouncementRef.current?.({ action, mode });
+      speakCallCaptureVoiceAnnouncement(text);
+    },
+    [],
+  );
 
   useEffect(() => {
     captureModeRef.current = captureMode;
@@ -517,6 +544,7 @@ export function useSpaceGroupCall(
       runtime.mode === 'transcript_only'
     ) {
       void announceCaptureNotice('stopped', runtime.mode);
+      playCaptureVoiceAnnouncement('stopped', runtime.mode);
     }
     void (async () => {
       try {
@@ -583,7 +611,7 @@ export function useSpaceGroupCall(
         }
       }
     })();
-  }, [announceCaptureNotice, callSessionId, roomId]);
+  }, [announceCaptureNotice, callSessionId, playCaptureVoiceAnnouncement, roomId]);
 
   const runCleanup = useCallback(() => {
     finalizeRecording();
@@ -1725,6 +1753,7 @@ export function useSpaceGroupCall(
     setRecordingStatus('recording');
     setRecordingError(null);
     void announceCaptureNotice('started', captureMode);
+    playCaptureVoiceAnnouncement('started', captureMode);
   }, [
     announceCaptureNotice,
     callSessionId,
@@ -1732,6 +1761,7 @@ export function useSpaceGroupCall(
     captureMode,
     feedVersion,
     groupCall,
+    playCaptureVoiceAnnouncement,
     roomId,
   ]);
 
@@ -1858,6 +1888,18 @@ export function useSpaceGroupCall(
     });
     return resolveCaptureConsent(activeRoomCapture, localCapture);
   }, [activeRoomCapture, captureMode, recordingStatus]);
+
+  useEffect(() => {
+    const prev = prevActiveRoomCaptureRef.current;
+    const next = activeRoomCapture;
+    prevActiveRoomCaptureRef.current = next;
+
+    if (next && !prev && !next.isLocalInitiator) {
+      playCaptureVoiceAnnouncement('started', next.mode);
+    } else if (!next && prev && !prev.isLocalInitiator) {
+      playCaptureVoiceAnnouncement('stopped', prev.mode);
+    }
+  }, [activeRoomCapture, playCaptureVoiceAnnouncement]);
 
   useEffect(() => {
     if (!groupCallRef.current) return;
