@@ -280,13 +280,8 @@ export function HumanChatPanelInCallControls({
     onVoiceProcessingPresetChange(preset);
     setIsAudioMenuOpen(false);
   };
-  const defaultCaptureMode = (): Exclude<
-    SpaceGroupCallCaptureMode,
-    'none'
-  > =>
-    capturePreferenceSelected
-      ? capturePreference
-      : 'recording_with_transcript';
+  const defaultCaptureMode = (): Exclude<SpaceGroupCallCaptureMode, 'none'> =>
+    capturePreferenceSelected ? capturePreference : 'recording_with_transcript';
 
   const selectCapturePreference = (
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
@@ -413,7 +408,11 @@ export function HumanChatPanelInCallControls({
           type="button"
           className={cn(
             'inline-flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-50',
-            isFull ? 'min-w-10 px-2.5 sm:min-w-11' : isCompact ? 'h-7 w-7' : 'h-8 w-8',
+            isFull
+              ? 'min-w-10 px-2.5 sm:min-w-11'
+              : isCompact
+              ? 'h-7 w-7'
+              : 'h-8 w-8',
           )}
           disabled={controlsDisabled}
           title={`${t(
