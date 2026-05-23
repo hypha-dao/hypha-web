@@ -23,6 +23,7 @@ import {
   SidebarFooter,
   useSidebar,
   Button,
+  Skeleton,
 } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -121,16 +122,40 @@ function SignalTeamResolvedMemberLabel({
   candidate,
   fallbackLabel,
   isOwner = false,
+  unknownMemberLabel,
 }: {
   candidate: MentionPickCandidate;
   fallbackLabel: string;
   isOwner?: boolean;
+  unknownMemberLabel: string;
 }) {
-  const { resolvedLabel } = useResolvedMentionCandidateLabel(candidate);
-  const finalLabel = resolvedLabel?.trim() || fallbackLabel;
+  const { resolvedLabel, busy } = useResolvedMentionCandidateLabel(candidate);
+  const syncFallback = looksLikeTechnicalMatrixDisplayName(
+    fallbackLabel,
+    candidate.userId,
+  )
+    ? ''
+    : fallbackLabel.trim();
+  const finalLabel = resolvedLabel?.trim() || syncFallback;
+  const showSkeleton =
+    busy ||
+    !finalLabel ||
+    looksLikeTechnicalMatrixDisplayName(finalLabel, candidate.userId);
+
+  if (showSkeleton) {
+    return (
+      <Skeleton
+        className="inline-block align-baseline"
+        loading
+        width={140}
+        height={16}
+      />
+    );
+  }
+
   return (
     <span className="truncate">
-      {finalLabel}
+      {finalLabel || unknownMemberLabel}
       {isOwner ? ' 👑' : ''}
     </span>
   );
@@ -1275,7 +1300,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     for (const p of spaceMembers) {
       const sub = p.sub?.trim();
       if (!sub) continue;
-      const mxid = subToMatrixUserId[sub];
+      let mxid = subToMatrixUserId[sub];
+      if (!mxid) {
+        for (const userId of byUserId.keys()) {
+          if (matrixUserIdToCanonicalPrivySub(userId) === sub) {
+            mxid = userId;
+            break;
+          }
+        }
+      }
       if (!mxid) continue;
       if (currentUserId && mxid === currentUserId) continue;
       const prev = byUserId.get(mxid);
@@ -3410,6 +3443,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                                 fallbackLabel={resolveMentionMemberLabel(
                                   requesterId,
                                 )}
+                                unknownMemberLabel={t('unknownMember')}
                               />
                             </span>
                             <Button
@@ -3499,15 +3533,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                                 <SignalTeamResolvedMemberLabel
                                   candidate={{
                                     userId: member.userId,
-                                    displayLabel: resolveMentionMemberLabel(
-                                      member.userId,
-                                    ),
+                                    displayLabel: member.displayLabel,
                                     privySub: member.privySub,
                                   }}
-                                  fallbackLabel={resolveMentionMemberLabel(
-                                    member.userId,
-                                  )}
+                                  fallbackLabel={member.displayLabel}
                                   isOwner={isOwner}
+                                  unknownMemberLabel={t('unknownMember')}
                                 />
                                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                                   {isOwner ? null : selected ? (
