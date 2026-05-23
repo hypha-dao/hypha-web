@@ -1296,7 +1296,7 @@ function MxidMentionPill({
       matrixUserId: needsProfile && !canonicalSub ? fullMxid : undefined,
     });
   const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: linkedSub ?? canonicalSub,
+    sub: linkedSub ?? canonicalSub ?? undefined,
   });
 
   const displayLabel = useMemo(() => {

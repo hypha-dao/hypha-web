@@ -181,7 +181,7 @@ function ReplyPreviewAuthorName({
       matrixUserId: needsLinkLookup ? matrixUserId : undefined,
     });
   const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: linkedSub ?? canonicalSub,
+    sub: linkedSub ?? canonicalSub ?? undefined,
   });
 
   const text = useMemo(() => {

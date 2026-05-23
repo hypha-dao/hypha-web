@@ -11,8 +11,6 @@ describe('matrixUserIdToCanonicalPrivySub', () => {
   });
 
   it('returns null for non-bridged locals', () => {
-    expect(
-      matrixUserIdToCanonicalPrivySub('@alice:matrix.org'),
-    ).toBeNull();
+    expect(matrixUserIdToCanonicalPrivySub('@alice:matrix.org')).toBeNull();
   });
 });
