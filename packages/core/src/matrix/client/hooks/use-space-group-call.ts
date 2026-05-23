@@ -1720,6 +1720,41 @@ export function useSpaceGroupCall(
     const activeRoom = roomId?.trim();
     if (!gc || !sessionId || !activeRoom) return;
 
+    let recorder: ReturnType<typeof startGroupCallRecording> | null = null;
+    if (captureMode === 'recording_with_transcript') {
+      recorder = startGroupCallRecording(gc);
+      if (!recorder) {
+        // No media available yet for recording. If browser transcription is
+        // supported, immediately fall back to transcript-only capture so we
+        // still persist something to space memory instead of silently doing
+        // nothing.
+        const SpeechRecognitionCtor =
+          typeof window !== 'undefined'
+            ? (
+                window as Window & {
+                  SpeechRecognition?: unknown;
+                  webkitSpeechRecognition?: unknown;
+                }
+              ).SpeechRecognition ??
+              (
+                window as Window & {
+                  webkitSpeechRecognition?: unknown;
+                }
+              ).webkitSpeechRecognition
+            : null;
+        if (!SpeechRecognitionCtor) {
+          setRecordingStatus('error');
+          setRecordingError(
+            'No call audio or video is available to record yet. Unmute your microphone or turn on your camera, then try again.',
+          );
+          setCaptureMode('none');
+          return;
+        }
+        setCapturePreference('transcript_only');
+        setCaptureMode('transcript_only');
+        return;
+      }
+    }
     const transcript = startBrowserCallTranscription({
       onError: () => {
         // recording continues even if speech recognition fails
@@ -1730,25 +1765,6 @@ export function useSpaceGroupCall(
       setRecordingError('transcript capture is not supported in this browser');
       setCaptureMode('none');
       return;
-    }
-    let recorder: ReturnType<typeof startGroupCallRecording> | null = null;
-    if (captureMode === 'recording_with_transcript') {
-      recorder = startGroupCallRecording(gc);
-      if (!recorder) {
-        if (transcript.supported === false) {
-          void transcript.stop();
-          setRecordingStatus('error');
-          setRecordingError(
-            'No call audio or video is available to record yet. Unmute your microphone or turn on your camera, then try again.',
-          );
-          setCaptureMode('none');
-          return;
-        }
-        // Media feeds can arrive a few seconds after connect — keep capture armed
-        // and retry when feedVersion bumps instead of resetting to idle.
-        void transcript.stop();
-        return;
-      }
     }
     const generation = recordingGenerationRef.current + 1;
     recordingGenerationRef.current = generation;
@@ -1776,6 +1792,7 @@ export function useSpaceGroupCall(
     feedVersion,
     groupCall,
     roomId,
+    setCapturePreference,
   ]);
 
   useEffect(() => {
