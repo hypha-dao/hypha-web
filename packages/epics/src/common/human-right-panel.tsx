@@ -3360,6 +3360,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       groupCall={spaceGroupCall}
                       callKind={spaceCallKind}
                       isLocalVideoMuted={spaceCallVideoMuted}
+                      isMicrophoneMuted={spaceCallMicMuted}
                       isScreensharing={spaceCallScreensharing}
                       callState={spaceCallState}
                       feedVersion={spaceCallFeedVersion}
