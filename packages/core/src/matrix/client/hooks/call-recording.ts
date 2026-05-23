@@ -177,10 +177,18 @@ function allLiveAudioTracks(
   groupCall: MatrixSdk.GroupCall,
 ): MediaStreamTrack[] {
   const tracks: MediaStreamTrack[] = [];
-  for (const feed of groupCall.userMediaFeeds) {
-    for (const track of feed.stream.getAudioTracks()) {
-      if (track.readyState === 'live') tracks.push(track);
+  const seen = new Set<string>();
+  const addFromStream = (stream: MediaStream | undefined) => {
+    if (!stream) return;
+    for (const track of stream.getAudioTracks()) {
+      if (track.readyState !== 'live' || seen.has(track.id)) continue;
+      seen.add(track.id);
+      tracks.push(track);
     }
+  };
+  addFromStream(groupCall.localCallFeed?.stream);
+  for (const feed of groupCall.userMediaFeeds) {
+    addFromStream(feed.stream);
   }
   return tracks;
 }
@@ -218,14 +226,17 @@ function createMixedAudioTrack(
   };
 }
 
-function chooseRecorderMimeType(): string | undefined {
+function chooseRecorderMimeType(output: MediaStream): string | undefined {
   if (typeof MediaRecorder === 'undefined') return undefined;
-  const preferred = [
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm;codecs=h264,opus',
-    'video/webm',
-  ];
+  const hasVideo = output.getVideoTracks().length > 0;
+  const preferred = hasVideo
+    ? [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=h264,opus',
+        'video/webm',
+      ]
+    : ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
   return preferred.find((type) => MediaRecorder.isTypeSupported(type));
 }
 
@@ -244,7 +255,7 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
     return null;
   }
 
-  const mimeType = chooseRecorderMimeType();
+  const mimeType = chooseRecorderMimeType(output);
   const recorder = mimeType
     ? new MediaRecorder(output, { mimeType })
     : new MediaRecorder(output);

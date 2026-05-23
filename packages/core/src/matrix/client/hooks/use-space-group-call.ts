@@ -1680,7 +1680,7 @@ export function useSpaceGroupCall(
       }
       return;
     }
-    const gc = groupCallRef.current;
+    const gc = groupCallRef.current ?? groupCall;
     const sessionId = callSessionId?.trim();
     const activeRoom = roomId?.trim();
     if (!gc || !sessionId || !activeRoom) return;
@@ -1702,7 +1702,9 @@ export function useSpaceGroupCall(
       if (!recorder) {
         void transcript.stop();
         setRecordingStatus('error');
-        setRecordingError('recording not supported by this browser');
+        setRecordingError(
+          'No call audio or video is available to record yet. Unmute your microphone or turn on your camera, then try again.',
+        );
         setCaptureMode('none');
         return;
       }
@@ -1740,7 +1742,13 @@ export function useSpaceGroupCall(
     if (recordingRuntimeRef.current) return;
     if (recordingFinalizeInFlightRef.current) return;
     if (recordingStatus !== 'idle') return;
+    if (callState === 'connecting' || callState === 'initializing') return;
     if (!isCaptureEligibleCallState(callState)) return;
+
+    const gc = groupCallRef.current ?? groupCall;
+    const sessionId = callSessionId?.trim();
+    const activeRoom = roomId?.trim();
+    if (!gc || !sessionId || !activeRoom) return;
 
     const timer = window.setTimeout(() => {
       if (captureModeRef.current === 'none') return;
