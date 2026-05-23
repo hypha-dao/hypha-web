@@ -51,6 +51,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Type check
+        env:
+          NODE_OPTIONS: --max-old-space-size=10240
         run: pnpm turbo run check-types --filter=web
 
   i18n-verify:
