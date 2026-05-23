@@ -280,13 +280,33 @@ export function HumanChatPanelInCallControls({
     onVoiceProcessingPresetChange(preset);
     setIsAudioMenuOpen(false);
   };
+  const defaultCaptureMode = (): Exclude<
+    SpaceGroupCallCaptureMode,
+    'none'
+  > =>
+    capturePreferenceSelected
+      ? capturePreference
+      : 'recording_with_transcript';
+
   const selectCapturePreference = (
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
   ) => {
+    onCapturePreferenceChange(mode);
     if (captureMode === 'none') {
       onStartCapture(mode);
     }
     setIsCaptureMenuOpen(false);
+  };
+
+  const handleCapturePrimaryClick = () => {
+    if (controlsDisabled) return;
+    if (captureMode === 'none') {
+      const mode = defaultCaptureMode();
+      onCapturePreferenceChange(mode);
+      onStartCapture(mode);
+      return;
+    }
+    setIsCaptureMenuOpen((open) => !open);
   };
   const captureStopLabel = t('callCaptureStop');
   const captureStopReady = captureActive && recordingStatus !== 'uploading';
@@ -383,27 +403,49 @@ export function HumanChatPanelInCallControls({
   );
   const renderCaptureMenu = (
     <div className="relative" ref={captureMenuRef}>
-      <button
-        type="button"
-        className={captureSettingsBtn}
-        disabled={controlsDisabled}
-        title={`${t(
-          'callCaptureLabel',
-        )}: ${captureModeLabel} - ${captureStatusText}`}
-        aria-label={`${t('callCaptureLabel')}: ${captureModeLabel}`}
-        aria-haspopup="menu"
-        aria-expanded={isCaptureMenuOpen}
-        onClick={() => setIsCaptureMenuOpen((open) => !open)}
-      >
-        {captureLive ? (
-          renderCaptureOnAirIcon
-        ) : (
-          <Circle className={captureIdleIconClass} />
+      <div
+        className={cn(
+          captureSettingsBtn,
+          'inline-flex items-stretch gap-0 p-0',
         )}
-        <ChevronDown
-          className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
-        />
-      </button>
+      >
+        <button
+          type="button"
+          className={cn(
+            'inline-flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-50',
+            isFull ? 'min-w-10 px-2.5 sm:min-w-11' : isCompact ? 'h-7 w-7' : 'h-8 w-8',
+          )}
+          disabled={controlsDisabled}
+          title={`${t(
+            'callCaptureLabel',
+          )}: ${captureModeLabel} - ${captureStatusText}`}
+          aria-label={`${t('callCaptureLabel')}: ${captureModeLabel}`}
+          onClick={handleCapturePrimaryClick}
+        >
+          {captureLive ? (
+            renderCaptureOnAirIcon
+          ) : (
+            <Circle className={captureIdleIconClass} />
+          )}
+        </button>
+        <button
+          type="button"
+          className={cn(
+            'inline-flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-50',
+            isFull ? 'px-1.5' : isCompact ? 'h-7 px-0.5' : 'h-8 px-0.5',
+          )}
+          disabled={controlsDisabled}
+          title={t('callCaptureLabel')}
+          aria-label={t('callCaptureLabel')}
+          aria-haspopup="menu"
+          aria-expanded={isCaptureMenuOpen}
+          onClick={() => setIsCaptureMenuOpen((open) => !open)}
+        >
+          <ChevronDown
+            className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
+          />
+        </button>
+      </div>
       {isCaptureMenuOpen ? (
         <div
           role="menu"
@@ -716,6 +758,14 @@ export function HumanChatPanelInCallControls({
         ) : recordingStatus === 'error' && recordingError?.trim() ? (
           <p className={cn('mt-1 text-[11px] text-destructive')}>
             {recordingError}
+          </p>
+        ) : !isCompact && capturePending && !leaveOnly ? (
+          <p className={cn('mt-1 text-[11px] text-muted-foreground')}>
+            {t('callCaptureStatusStarting')}
+          </p>
+        ) : !isCompact && captureLive && !leaveOnly ? (
+          <p className={cn('mt-1 text-[11px] text-muted-foreground')}>
+            {captureModeLabel} · {captureStatusText}
           </p>
         ) : !isCompact && captureMode === 'none' && !leaveOnly ? (
           <p className={cn('mt-1 text-[11px] text-muted-foreground')}>

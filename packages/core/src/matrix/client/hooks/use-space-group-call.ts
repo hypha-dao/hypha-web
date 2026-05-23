@@ -1771,7 +1771,12 @@ export function useSpaceGroupCall(
       const nextMode = mode ?? capturePreference;
       setCapturePreference(nextMode);
       setCapturePreferenceSelected(true);
-      if (recordingRuntimeRef.current) return;
+      if (
+        recordingRuntimeRef.current &&
+        captureModeRef.current !== 'none'
+      ) {
+        return;
+      }
       setCaptureMode(nextMode);
     },
     [capturePreference],
