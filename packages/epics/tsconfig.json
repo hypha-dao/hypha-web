@@ -1,34 +1,6 @@
 {
   "extends": "@hypha-platform/config-typescript/nextjs.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@hypha-platform/authentication": ["../authentication/src/index.ts"],
-      "@hypha-platform/core/client": ["../core/src/client.ts"],
-      "@hypha-platform/core/coherence/server/web3": [
-        "../core/src/coherence/server/web3/index.ts"
-      ],
-      "@hypha-platform/core/generated": ["../core/src/generated.ts"],
-      "@hypha-platform/core/governance/server/actions": [
-        "../core/src/governance/server/actions.ts"
-      ],
-      "@hypha-platform/core/people/server/actions": [
-        "../core/src/people/server/actions.ts"
-      ],
-      "@hypha-platform/core/server": ["../core/src/server.ts"],
-      "@hypha-platform/core/space/server/actions": [
-        "../core/src/space/server/actions.ts"
-      ],
-      "@hypha-platform/i18n": ["../i18n/src/index.ts"],
-      "@hypha-platform/notifications": ["../notifications/src/index.ts"],
-      "@hypha-platform/storage-postgres": ["../storage-postgres/src/index.ts"],
-      "@hypha-platform/ui": ["../ui/src/index.ts"],
-      "@hypha-platform/ui-utils": ["../ui-utils/src/index.ts"],
-      "@ai-sdk/react": ["./node_modules/@ai-sdk/react"],
-      "ai": ["./node_modules/ai"],
-      "matrix-js-sdk": ["./node_modules/matrix-js-sdk"],
-      "matrix-js-sdk/*": ["./node_modules/matrix-js-sdk/*"]
-    },
     "plugins": [
       {
         "name": "next"

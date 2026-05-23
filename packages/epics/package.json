@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "check-types": "node ./scripts/check-types.mjs",
+    "check-types": "tsc --noEmit",
     "lint": "eslint ."
   },
   "devDependencies": {

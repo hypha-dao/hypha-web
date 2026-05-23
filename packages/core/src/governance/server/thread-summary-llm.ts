@@ -70,14 +70,7 @@ export async function generateThreadLivingSummaryWithLlm(params: {
   const title = params.threadTitle?.trim() || 'Conversation thread';
   const prior = params.previousSummary?.trim();
 
-  const generateSummary = generateObject as (options: {
-    model: unknown;
-    schema: z.ZodType<ThreadSummaryLlmResult>;
-    abortSignal?: AbortSignal;
-    prompt: string;
-  }) => Promise<{ object: ThreadSummaryLlmResult }>;
-
-  const { object } = await generateSummary({
+  const { object } = await generateObject({
     model: openrouter(resolveModelId()),
     schema: threadSummarySchema,
     abortSignal: params.signal,
