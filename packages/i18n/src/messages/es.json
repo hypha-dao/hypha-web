@@ -2330,6 +2330,8 @@
     "spaceMemoryConversations": "Conversaciones",
     "spaceMemoryAiChat": "Chat con IA",
     "newMemoryUploadDocumentsTitle": "Subir documentos",
+    "newMemoryUploadingFiles": "Subiendo recuerdos del espacio...",
+    "newMemoryAttachmentsRequired": "Sube al menos un documento para este recuerdo.",
     "newMemory": "Nueva memoria",
     "spaceMemoryEmptyTab": "No se encontraron elementos en esta vista.",
     "spaceMemoryAiChatEmpty": "Las memorias del chat con IA aún no están disponibles.",

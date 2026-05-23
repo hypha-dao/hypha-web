@@ -326,7 +326,7 @@ export function CreateAgreementBaseFields({
     if (mode !== 'memory') return;
     if (progress < 100 || hasNavigatedAfterMemoryPublishRef.current) return;
     hasNavigatedAfterMemoryPublishRef.current = true;
-    router.push(successfulUrl);
+    router.replace(successfulUrl, { scroll: false });
   }, [mode, progress, router, successfulUrl]);
 
   const postProposalCreated = React.useCallback(
@@ -634,8 +634,9 @@ export function CreateAgreementBaseFields({
 
                 return (
                   <FormItem className="mb-6">
-                    <FormLabel className="mb-2 block text-sm font-medium text-foreground">
-                      {tCoherence('newMemoryUploadDocumentsTitle')}
+                    <FormLabel className="mb-2 block gap-1 text-sm font-medium text-foreground">
+                      {tCoherence('newMemoryUploadDocumentsTitle')}{' '}
+                      <RequirementMark />
                     </FormLabel>
                     <FormControl>
                       <AddAttachment
@@ -645,7 +646,7 @@ export function CreateAgreementBaseFields({
                           form.setValue(
                             'attachments',
                             [...existingAttachments, ...files],
-                            { shouldValidate: false, shouldDirty: true },
+                            { shouldValidate: true, shouldDirty: true },
                           );
                         }}
                         onExistingAttachmentsChange={(updated) => {
@@ -653,7 +654,7 @@ export function CreateAgreementBaseFields({
                           form.setValue(
                             'attachments',
                             [...updated, ...newFiles],
-                            { shouldValidate: false, shouldDirty: true },
+                            { shouldValidate: true, shouldDirty: true },
                           );
                         }}
                         value={

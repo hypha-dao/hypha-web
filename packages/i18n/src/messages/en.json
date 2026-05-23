@@ -1193,6 +1193,9 @@
       "addAttachmentLabel": "Add Attachment (JPEG, PNG, WebP, or PDF — max 4MB)",
       "proposalContent": "Proposal Content",
       "proposalContentPlaceholder": "Type your proposal content here...",
+      "errors": {
+        "memoryAttachmentsRequired": "Please upload at least one document for this memory."
+      },
       "editor": {
         "toolbar": {
           "blockTypes": {
@@ -2342,6 +2345,8 @@
     "spaceMemoryConversations": "Conversations",
     "spaceMemoryAiChat": "AI Chat",
     "newMemoryUploadDocumentsTitle": "Upload Documents",
+    "newMemoryUploadingFiles": "Uploading space memories...",
+    "newMemoryAttachmentsRequired": "Please upload at least one document for this memory.",
     "newMemory": "New memory",
     "aiAgentsCatalog": {
       "purpose": {

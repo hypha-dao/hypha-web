@@ -2331,6 +2331,8 @@
     "spaceMemoryConversations": "Conversations",
     "spaceMemoryAiChat": "Chat IA",
     "newMemoryUploadDocumentsTitle": "Téléverser des documents",
+    "newMemoryUploadingFiles": "Téléversement des souvenirs de l'espace...",
+    "newMemoryAttachmentsRequired": "Veuillez téléverser au moins un document pour ce souvenir.",
     "newMemory": "Nouvelle mémoire",
     "spaceMemoryEmptyTab": "Aucun élément trouvé dans cette vue.",
     "spaceMemoryAiChatEmpty": "Les mémoires du chat IA ne sont pas encore disponibles.",

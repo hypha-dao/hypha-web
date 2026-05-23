@@ -28,8 +28,16 @@ const COLLECTIVE_AGREEMENT_RESUBMIT_SEGMENT = '';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
 
-const fullSchemaCreateSpaceForm =
+const baseCreateAgreementFormSchema =
   schemaCreateAgreementForm.extend(createAgreementFiles);
+
+const schemaCreateMemoryForm = baseCreateAgreementFormSchema.refine(
+  (data) => (data.attachments?.length ?? 0) > 0,
+  {
+    message: 'Please upload at least one document for this memory.',
+    path: ['attachments'],
+  },
+);
 
 interface CreateAgreementFormProps {
   spaceId: number | undefined | null;
@@ -71,11 +79,16 @@ export const CreateAgreementForm = ({
     authToken: jwt,
     config,
     skipWeb3Proposal: mode === 'memory',
+    taskActionLabels:
+      mode === 'memory'
+        ? {
+            UPLOAD_FILES: tCoherence('newMemoryUploadingFiles'),
+          }
+        : undefined,
   });
-  const resolver = useLocalizedProposalResolver(
-    fullSchemaCreateSpaceForm,
-    tAgreementFlow,
-  );
+  const formSchema =
+    mode === 'memory' ? schemaCreateMemoryForm : baseCreateAgreementFormSchema;
+  const resolver = useLocalizedProposalResolver(formSchema, tAgreementFlow);
   const resolvedLabel =
     mode === 'memory'
       ? SPACE_MEMORY_DOCUMENT_LABEL

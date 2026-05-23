@@ -21,6 +21,8 @@ type UseCreateAgreementOrchestratorInput = {
   config?: Config;
   /** Space Memory publish: persist document + files only (no on-chain proposal). */
   skipWeb3Proposal?: boolean;
+  /** Override default progress copy (e.g. Space Memory upload label). */
+  taskActionLabels?: Partial<Record<TaskName, string>>;
 };
 
 export type TaskName =
@@ -113,6 +115,7 @@ export const useCreateAgreementOrchestrator = ({
   authToken,
   config,
   skipWeb3Proposal = false,
+  taskActionLabels,
 }: UseCreateAgreementOrchestratorInput) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
   const web3 = useAgreementMutationsWeb3Rpc({
@@ -136,28 +139,37 @@ export const useCreateAgreementOrchestrator = ({
   const progress = computeProgress(taskState, skipWeb3Proposal);
   const [currentAction, setCurrentAction] = React.useState<string>();
 
-  const startTask = useCallback((taskName: TaskName) => {
-    const action = taskActionDescriptions[taskName];
-    setCurrentAction(action);
-    dispatch({ type: 'START_TASK', taskName, message: action });
-  }, []);
+  const getTaskActionLabel = useCallback(
+    (taskName: TaskName) =>
+      taskActionLabels?.[taskName] ?? taskActionDescriptions[taskName],
+    [taskActionLabels],
+  );
+
+  const startTask = useCallback(
+    (taskName: TaskName) => {
+      const action = getTaskActionLabel(taskName);
+      setCurrentAction(action);
+      dispatch({ type: 'START_TASK', taskName, message: action });
+    },
+    [getTaskActionLabel],
+  );
 
   const completeTask = useCallback(
     (taskName: TaskName) => {
-      if (currentAction === taskActionDescriptions[taskName])
-        setCurrentAction(undefined);
+      const action = getTaskActionLabel(taskName);
+      if (currentAction === action) setCurrentAction(undefined);
       dispatch({ type: 'COMPLETE_TASK', taskName });
     },
-    [currentAction],
+    [currentAction, getTaskActionLabel],
   );
 
   const errorTask = useCallback(
     (taskName: TaskName, error: string) => {
-      if (currentAction === taskActionDescriptions[taskName])
-        setCurrentAction(undefined);
+      const action = getTaskActionLabel(taskName);
+      if (currentAction === action) setCurrentAction(undefined);
       dispatch({ type: 'SET_ERROR', taskName, message: error });
     },
-    [currentAction],
+    [currentAction, getTaskActionLabel],
   );
 
   const resetTasks = useCallback(() => {

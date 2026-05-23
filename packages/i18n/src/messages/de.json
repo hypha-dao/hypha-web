@@ -2338,6 +2338,8 @@
     "spaceMemoryConversations": "Gespräche",
     "spaceMemoryAiChat": "AI-Chat",
     "newMemoryUploadDocumentsTitle": "Dokumente hochladen",
+    "newMemoryUploadingFiles": "Space-Memories werden hochgeladen...",
+    "newMemoryAttachmentsRequired": "Bitte laden Sie mindestens ein Dokument für diese Erinnerung hoch.",
     "newMemory": "Neue Erinnerung",
     "spaceMemoryEmptyTab": "In dieser Ansicht wurden keine Einträge gefunden.",
     "spaceMemoryAiChatEmpty": "AI-Chat-Erinnerungen sind noch nicht verfügbar.",
