@@ -64,6 +64,8 @@ const CALL_CAPTURE_NOTICE_BODY = 'Hypha call capture notice';
 export type SpaceGroupCallOptions = {
   authToken?: string | null;
   spaceSlug?: string | null;
+  /** Fired after call recording/transcript artifacts are persisted successfully. */
+  onCallArtifactsUploaded?: (params: { spaceSlug: string }) => void;
 };
 export type SpaceGroupCallVoiceProcessingPreset =
   | 'standard'
@@ -216,9 +218,14 @@ export function useSpaceGroupCall(
   options: SpaceGroupCallOptions = {},
 ) {
   const { client } = useMatrix();
-  const { authToken = null, spaceSlug = null } = options;
+  const {
+    authToken = null,
+    spaceSlug = null,
+    onCallArtifactsUploaded,
+  } = options;
   const latestAuthTokenRef = useRef<string | null>(authToken?.trim() || null);
   const latestSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
+  const onCallArtifactsUploadedRef = useRef(onCallArtifactsUploaded);
 
   const [callState, setCallState] = useState<SpaceGroupCallState>('idle');
   const [errorCode, setErrorCode] = useState<SpaceGroupCallErrorCode | null>(
@@ -348,6 +355,10 @@ export function useSpaceGroupCall(
   useEffect(() => {
     latestSpaceSlugRef.current = spaceSlug?.trim() || null;
   }, [spaceSlug]);
+
+  useEffect(() => {
+    onCallArtifactsUploadedRef.current = onCallArtifactsUploaded;
+  }, [onCallArtifactsUploaded]);
 
   useEffect(() => {
     captureModeRef.current = captureMode;
@@ -546,6 +557,7 @@ export function useSpaceGroupCall(
         if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
           setRecordingStatus('idle');
           setRecordingError(null);
+          onCallArtifactsUploadedRef.current?.({ spaceSlug: slug });
         }
       } catch (error) {
         if (recordingFinalizeGenerationRef.current === cleanupGeneration) {

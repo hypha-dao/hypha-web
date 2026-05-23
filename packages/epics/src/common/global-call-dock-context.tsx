@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useSpaceGroupCall } from '@hypha-platform/core/client';
+import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
 
 type PendingJoin = {
   kind: 'audio' | 'video';
@@ -131,9 +132,17 @@ function useGlobalCallDockValue() {
   const restoreInProgressRef = React.useRef(false);
   const restoreTimerRef = React.useRef<number | null>(null);
 
+  const onCallArtifactsUploaded = React.useCallback(
+    ({ spaceSlug: slug }: { spaceSlug: string }) => {
+      void revalidateSpaceMemoryOrg(slug);
+    },
+    [],
+  );
+
   const call = useSpaceGroupCall(activeRoomId, {
     authToken: activeAuthToken,
     spaceSlug: activeSpaceSlug,
+    onCallArtifactsUploaded,
   });
 
   const inSession =
