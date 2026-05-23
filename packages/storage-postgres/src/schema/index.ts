@@ -13,6 +13,17 @@ import { transfers } from './transfers';
 import { coherences } from './coherence';
 import { matrixUserLinks } from './matrix-user-link';
 import { tokenUpdates, tokenUpdateRelations } from './token-updates';
+import {
+  spaceCallRecordings,
+  spaceCallTranscripts,
+  spaceDiscussionSummaries,
+} from './call-artifacts';
+import { threadSummaries } from './thread-summaries';
+import {
+  signalOrchestratorCooldowns,
+  signalOrchestratorDispatches,
+  signalOrchestratorQueue,
+} from './signal-orchestrator';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -29,6 +40,9 @@ export * from './transfers';
 export * from './coherence';
 export * from './matrix-user-link';
 export * from './token-updates';
+export * from './call-artifacts';
+export * from './thread-summaries';
+export * from './signal-orchestrator';
 
 export const schema = {
   documents,
@@ -48,4 +62,11 @@ export const schema = {
   matrixUserLinks,
   tokenUpdates,
   tokenUpdateRelations,
+  spaceCallRecordings,
+  spaceCallTranscripts,
+  spaceDiscussionSummaries,
+  threadSummaries,
+  signalOrchestratorQueue,
+  signalOrchestratorCooldowns,
+  signalOrchestratorDispatches,
 };

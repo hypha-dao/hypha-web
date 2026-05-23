@@ -1,7 +1,12 @@
 import 'server-only';
 
 import type { Document } from '../types';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import {
+  canConvertToBigInt,
+  stripDescription,
+  stripMarkdown,
+} from '@hypha-platform/ui-utils';
+import { and, desc, eq } from 'drizzle-orm';
 import type { DbConfig } from '../../server';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
@@ -19,11 +24,22 @@ import {
   HYPHA_MEDIA_BUNDLE_FIELD,
   type HyphaMediaBundleItemWire,
 } from '../../matrix/rich-reply';
+import { coherences } from '@hypha-platform/storage-postgres';
 import { withOrgMemoryAssetKeys } from '../../org-memory/with-org-memory-asset-keys';
+import { listSpaceCallArtifactsBySpaceId } from './call-artifacts';
+import { listThreadSummariesBySpaceId } from './thread-summaries';
+import { isMemoryDocument } from '../space-memory-document-label';
 
 /** Aligned with MCP §8.1 / architecture org memory rows. */
 export type OrgMemoryAsset = {
-  source: 'proposal_upload' | 'matrix_chat';
+  source:
+    | 'proposal_upload'
+    | 'memory'
+    | 'matrix_chat'
+    | 'call_recording'
+    | 'call_transcript'
+    | 'discussion_summary'
+    | 'thread_summary';
   filename: string;
   /** Opaque key for `fetch_org_memory_asset` (MCP / Chat). */
   asset_key?: string;
@@ -38,6 +54,12 @@ export type OrgMemoryAsset = {
   document_state?: Document['state'];
   document_slug?: string;
   document_label?: string;
+  call_session_id?: string;
+  call_recording_id?: number;
+  call_transcript_id?: number;
+  discussion_summary_id?: number;
+  thread_summary_id?: number;
+  text_excerpt?: string;
   occurred_at: string;
 };
 
@@ -58,6 +80,11 @@ export type GetOrgMemoryBySpaceSlugInput = {
    * (Space Memory / browser API parity with Human Chat).
    */
   requestUrlForSessionMatrix?: string;
+  /**
+   * `full` — user-facing Space Memory (no signal compaction).
+   * `signal` — coherence / signal orchestrator digest (applies compaction).
+   */
+  assetView?: 'full' | 'signal';
 };
 
 /** Why Matrix-backed rows may be empty (MCP / debugging — no secrets). */
@@ -201,6 +228,75 @@ function normalizeAttachment(
   };
 }
 
+function memoryDocumentExcerpt(description?: string | null): string {
+  return stripMarkdown(stripDescription(description ?? ''), {
+    extraNewlines: true,
+  }).trim();
+}
+
+function normalizeMemoryAttachment(
+  doc: Document,
+  raw: string | { name: string; url: string },
+  index: number,
+): OrgMemoryAsset | null {
+  const url = typeof raw === 'string' ? raw : raw.url;
+  const filename =
+    typeof raw === 'string'
+      ? url.split('/').pop() || `attachment-${index + 1}`
+      : raw.name || url.split('/').pop() || `attachment-${index + 1}`;
+  if (!url?.trim()) return null;
+  return {
+    source: 'memory',
+    filename,
+    app_url: url,
+    document_id: doc.id,
+    occurred_at: doc.updatedAt.toISOString(),
+    text_excerpt:
+      memoryDocumentExcerpt(doc.description).slice(0, 500) || undefined,
+    ...proposalDocContextFields(doc),
+  };
+}
+
+function collectMemoryDocumentAssets(
+  documents: Array<
+    Document & { creator?: Document['creator']; status?: Document['status'] }
+  >,
+): OrgMemoryAsset[] {
+  const out: OrgMemoryAsset[] = [];
+  const seen = new Set<string>();
+
+  for (const doc of documents) {
+    if (!isMemoryDocument(doc)) continue;
+
+    const title = doc.title?.trim() || 'Memory';
+    const excerpt = memoryDocumentExcerpt(doc.description);
+    const bodyKey = `memory:${doc.id}:body`;
+    if (!seen.has(bodyKey)) {
+      seen.add(bodyKey);
+      out.push({
+        source: 'memory',
+        filename: title,
+        document_id: doc.id,
+        occurred_at: doc.updatedAt.toISOString(),
+        text_excerpt: excerpt.slice(0, 500) || undefined,
+        ...proposalDocContextFields(doc),
+      });
+    }
+
+    const attachments = doc.attachments ?? [];
+    attachments.forEach((a, i) => {
+      const row = normalizeMemoryAttachment(doc, a, i);
+      if (!row?.app_url) return;
+      const key = `memory:${doc.id}:att:${row.app_url}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push(row);
+    });
+  }
+
+  return out;
+}
+
 function collectProposalAssets(
   documents: Array<
     Document & { creator?: Document['creator']; status?: Document['status'] }
@@ -209,21 +305,6 @@ function collectProposalAssets(
   const out: OrgMemoryAsset[] = [];
   const seen = new Set<string>();
   for (const doc of documents) {
-    if (doc.leadImage?.trim()) {
-      const url = doc.leadImage;
-      const key = `doc:${doc.id}:lead`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        out.push({
-          source: 'proposal_upload',
-          filename: url.split('/').pop() || 'lead-image',
-          app_url: url,
-          document_id: doc.id,
-          occurred_at: doc.updatedAt.toISOString(),
-          ...proposalDocContextFields(doc),
-        });
-      }
-    }
     const attachments = doc.attachments ?? [];
     attachments.forEach((a, i) => {
       const row = normalizeAttachment(doc, a, i);
@@ -233,6 +314,37 @@ function collectProposalAssets(
       seen.add(key);
       out.push(row);
     });
+  }
+  return out;
+}
+
+async function listSpaceMatrixRoomIds(
+  {
+    spaceId,
+    primaryRoomId,
+  }: {
+    spaceId: number;
+    primaryRoomId: string | null;
+  },
+  { db }: DbConfig,
+): Promise<string[]> {
+  const rows = await db
+    .select({ roomId: coherences.roomId })
+    .from(coherences)
+    .where(and(eq(coherences.spaceId, spaceId), eq(coherences.archived, false)))
+    .orderBy(desc(coherences.updatedAt))
+    .limit(200);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const push = (roomId: string | null | undefined) => {
+    const trimmed = roomId?.trim();
+    if (!trimmed || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    out.push(trimmed);
+  };
+  push(primaryRoomId);
+  for (const row of rows) {
+    push(row.roomId);
   }
   return out;
 }
@@ -572,14 +684,143 @@ function filterAssetsBySearch(
   return assets.filter(
     (a) =>
       a.filename.toLowerCase().includes(q) ||
+      (a.text_excerpt?.toLowerCase().includes(q) ?? false) ||
       (a.app_url?.toLowerCase().includes(q) ?? false) ||
       (a.mxc_uri?.toLowerCase().includes(q) ?? false),
   );
 }
 
+function inferAssetKindForSignal(asset: OrgMemoryAsset) {
+  const name = asset.filename.toLowerCase();
+  const target = `${asset.filename} ${
+    asset.app_url ?? asset.mxc_uri ?? ''
+  }`.toLowerCase();
+  if (/\.(png|jpe?g|gif|webp|svg|avif)(\?|#|$)/i.test(target)) return 'image';
+  if (/\.(mp4|webm|mov|mkv|m4v)(\?|#|$)/i.test(target)) return 'video';
+  if (/\.(pdf|doc|docx|txt|md|csv|xls|xlsx|ppt|pptx|zip)(\?|#|$)/i.test(target))
+    return 'document';
+  if ((asset.mime ?? '').toLowerCase().startsWith('image/')) return 'image';
+  if ((asset.mime ?? '').toLowerCase().startsWith('video/')) return 'video';
+  if (
+    name.endsWith('.pdf') ||
+    name.endsWith('.doc') ||
+    name.endsWith('.docx') ||
+    name.endsWith('.txt') ||
+    name.endsWith('.md')
+  ) {
+    return 'document';
+  }
+  return 'other';
+}
+
+function looksOpaqueNoiseFilename(filename: string): boolean {
+  const raw = filename.trim();
+  if (!raw) return true;
+  const lower = raw.toLowerCase();
+  const hasExtension = /\.[a-z0-9]{2,5}(\?|#|$)/i.test(raw);
+  const alphaNumOnly = /^[a-z0-9_-]+$/i.test(raw);
+  const hashLike = alphaNumOnly && raw.length >= 28 && !hasExtension;
+  const uuidLike =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      raw,
+    );
+  const genericScreenshot =
+    /(screenshot|screen shot|image)[\s_-]*\d*/i.test(lower) &&
+    !/(architecture|roadmap|proposal|budget|decision|minutes|plan|spec)/i.test(
+      lower,
+    );
+  return hashLike || uuidLike || genericScreenshot;
+}
+
+function orgMemoryAssetStableId(asset: OrgMemoryAsset): string {
+  const uniqueLocator =
+    asset.app_url ??
+    asset.mxc_uri ??
+    (asset.call_recording_id != null
+      ? `call-recording:${asset.call_recording_id}`
+      : null) ??
+    (asset.call_transcript_id != null
+      ? `call-transcript:${asset.call_transcript_id}`
+      : null) ??
+    (asset.discussion_summary_id != null
+      ? `discussion-summary:${asset.discussion_summary_id}`
+      : null) ??
+    (asset.thread_summary_id != null
+      ? `thread-summary:${asset.thread_summary_id}`
+      : null) ??
+    (asset.document_id != null && asset.source === 'memory' && !asset.app_url
+      ? `memory-body:${asset.document_id}`
+      : null) ??
+    `${asset.filename}:${asset.occurred_at}`;
+  return `${asset.source}:${uniqueLocator}`;
+}
+
+function compareOrgMemoryAssetsStable(
+  a: OrgMemoryAsset,
+  b: OrgMemoryAsset,
+): number {
+  const tb = Date.parse(b.occurred_at);
+  const ta = Date.parse(a.occurred_at);
+  const tbd = Number.isFinite(tb) ? tb : 0;
+  const tad = Number.isFinite(ta) ? ta : 0;
+  if (tbd !== tad) return tbd - tad;
+  return orgMemoryAssetStableId(a).localeCompare(orgMemoryAssetStableId(b));
+}
+
+function compactOrgMemoryAssetsForSignal(
+  assets: OrgMemoryAsset[],
+): OrgMemoryAsset[] {
+  const dedupeKeys = new Set<string>();
+  const imageQuotaByDocument = new Map<number, number>();
+  const compacted: OrgMemoryAsset[] = [];
+
+  for (const asset of assets) {
+    const uniqueLocator =
+      asset.app_url ??
+      asset.mxc_uri ??
+      (asset.call_recording_id != null
+        ? `call-recording:${asset.call_recording_id}`
+        : null) ??
+      (asset.call_transcript_id != null
+        ? `call-transcript:${asset.call_transcript_id}`
+        : null) ??
+      (asset.discussion_summary_id != null
+        ? `discussion-summary:${asset.discussion_summary_id}`
+        : null) ??
+      (asset.thread_summary_id != null
+        ? `thread-summary:${asset.thread_summary_id}`
+        : null) ??
+      `${asset.filename}:${asset.occurred_at}`;
+    const dedupeKey = `${asset.source}:${uniqueLocator}`;
+    if (dedupeKeys.has(dedupeKey)) continue;
+    dedupeKeys.add(dedupeKey);
+
+    const kind = inferAssetKindForSignal(asset);
+    const lowSignalName = looksOpaqueNoiseFilename(asset.filename);
+
+    if (asset.source === 'proposal_upload') {
+      if (kind === 'other' && lowSignalName) {
+        continue;
+      }
+      if (kind === 'image' && lowSignalName) {
+        continue;
+      }
+      if (kind === 'image' && asset.document_id != null) {
+        const used = imageQuotaByDocument.get(asset.document_id) ?? 0;
+        if (used >= 1) continue;
+        imageQuotaByDocument.set(asset.document_id, used + 1);
+      }
+    }
+
+    compacted.push(asset);
+  }
+
+  return compacted;
+}
+
 /**
  * Organisation memory for a space: member roster (same as `getSpaceMembersRoster`)
- * plus `org_memory_assets` from proposal document attachments/lead images and,
+ * plus `org_memory_assets` from proposal document attachments and,
  * when `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` is set and either
  * `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` **or** (for HTTP with Privy JWT)
  * the caller passes `requestUrlForSessionMatrix` so the user's Matrix token
@@ -596,6 +837,7 @@ export async function getOrgMemoryBySpaceSlug(
     assetsPageSize = 50,
     assetsSearch,
     requestUrlForSessionMatrix,
+    assetView = 'full',
   }: GetOrgMemoryBySpaceSlugInput,
   { db, authToken }: DbConfig & { authToken?: string },
 ): Promise<
@@ -696,36 +938,141 @@ export async function getOrgMemoryBySpaceSlug(
     attachProposalStatusToDocument(d, proposalOutcomes),
   );
 
-  const proposalAssets = collectProposalAssets(docsWithStatus);
-
-  const matrixRoomId = host.chatRoomId?.trim() ?? '';
-  const { assets: matrixAssets, meta: matrixFetchMeta } =
-    matrixRoomId.length > 0
-      ? await fetchMatrixChatAssets(matrixRoomId, {
-          authToken,
-          requestUrlForSessionMatrix,
-        })
-      : {
-          assets: [] as OrgMemoryAsset[],
-          meta: {
-            attempted: false,
-            skipped_reason: 'missing_chat_room_id' as const,
-            chat_room_id: null,
-            ...matrixEnvFlags(),
-            used_bot_access_token: false,
-            used_session_matrix_token: false,
-            session_matrix_token_unavailable: false,
-            http_status: null,
-            events_in_chunk: 0,
-            media_events_yielded: 0,
-            hypha_media_bundle_slots: 0,
-            error: null,
-          } satisfies MatrixOrgMemoryFetchMeta,
-        };
-
-  let combined = [...proposalAssets, ...matrixAssets].sort((a, b) =>
-    a.occurred_at < b.occurred_at ? 1 : a.occurred_at > b.occurred_at ? -1 : 0,
+  const proposalAssets = collectProposalAssets(
+    docsWithStatus.filter((doc) => !isMemoryDocument(doc)),
   );
+  const memoryAssets = collectMemoryDocumentAssets(docsWithStatus);
+
+  const matrixRoomIds = await listSpaceMatrixRoomIds(
+    {
+      spaceId: host.id,
+      primaryRoomId: host.chatRoomId ?? null,
+    },
+    { db },
+  );
+  const matrixResults =
+    matrixRoomIds.length > 0
+      ? await Promise.all(
+          matrixRoomIds.map((roomId) =>
+            fetchMatrixChatAssets(roomId, {
+              authToken,
+              requestUrlForSessionMatrix,
+            }),
+          ),
+        )
+      : [];
+  const matrixAssets = matrixResults.flatMap((result) => result.assets);
+  const matrixMetaFallback: MatrixOrgMemoryFetchMeta = {
+    attempted: false,
+    skipped_reason: 'missing_chat_room_id',
+    chat_room_id: null,
+    ...matrixEnvFlags(),
+    used_bot_access_token: false,
+    used_session_matrix_token: false,
+    session_matrix_token_unavailable: false,
+    http_status: null,
+    events_in_chunk: 0,
+    media_events_yielded: 0,
+    hypha_media_bundle_slots: 0,
+    error: null,
+  };
+  const matrixFetchMeta = matrixResults.reduce<MatrixOrgMemoryFetchMeta>(
+    (aggregate, current) => {
+      aggregate.attempted = aggregate.attempted || current.meta.attempted;
+      aggregate.used_bot_access_token =
+        aggregate.used_bot_access_token || current.meta.used_bot_access_token;
+      aggregate.used_session_matrix_token =
+        aggregate.used_session_matrix_token ||
+        current.meta.used_session_matrix_token;
+      aggregate.session_matrix_token_unavailable =
+        aggregate.session_matrix_token_unavailable ||
+        current.meta.session_matrix_token_unavailable;
+      aggregate.events_in_chunk += current.meta.events_in_chunk;
+      aggregate.media_events_yielded += current.meta.media_events_yielded;
+      aggregate.hypha_media_bundle_slots +=
+        current.meta.hypha_media_bundle_slots;
+      if (current.meta.http_status != null) {
+        aggregate.http_status = current.meta.http_status;
+      }
+      if (current.meta.error) {
+        aggregate.error = aggregate.error
+          ? `${aggregate.error} | ${current.meta.error}`
+          : current.meta.error;
+      }
+      return aggregate;
+    },
+    {
+      ...matrixMetaFallback,
+      chat_room_id: matrixRoomIds[0] ?? null,
+      skipped_reason: matrixRoomIds.length > 0 ? null : 'missing_chat_room_id',
+    },
+  );
+
+  const callArtifacts = await listSpaceCallArtifactsBySpaceId(host.id, { db });
+  const recordingAssets: OrgMemoryAsset[] = callArtifacts.recordings.map(
+    (r) => {
+      const mediaUri = r.mediaUri.trim();
+      const isMxc = mediaUri.startsWith('mxc://');
+      return {
+        source: 'call_recording',
+        filename:
+          mediaUri.split('/').pop()?.trim() ||
+          `call-recording-${r.callSessionId}.webm`,
+        ...(isMxc ? { mxc_uri: mediaUri } : { app_url: mediaUri }),
+        mime: r.mimeType,
+        occurred_at: r.createdAt.toISOString(),
+        call_session_id: r.callSessionId,
+        call_recording_id: r.id,
+      };
+    },
+  );
+  const transcriptAssets: OrgMemoryAsset[] = callArtifacts.transcripts.map(
+    (t) => ({
+      source: 'call_transcript',
+      filename: `call-transcript-${t.callSessionId}.txt`,
+      mime: 'text/plain',
+      occurred_at: t.createdAt.toISOString(),
+      call_session_id: t.callSessionId,
+      call_transcript_id: t.id,
+      text_excerpt: t.summary ?? t.text.slice(0, 240),
+    }),
+  );
+  const discussionSummaryAssets: OrgMemoryAsset[] = callArtifacts.summaries.map(
+    (s) => ({
+      source: 'discussion_summary',
+      filename: `discussion-summary-${s.id}.md`,
+      mime: 'text/markdown',
+      occurred_at: s.createdAt.toISOString(),
+      discussion_summary_id: s.id,
+      text_excerpt: s.summary,
+    }),
+  );
+  const threadSummaryRows = await listThreadSummariesBySpaceId(host.id, { db });
+  const threadSummaryAssets: OrgMemoryAsset[] = threadSummaryRows.map((s) => ({
+    source: 'thread_summary',
+    filename: `thread-summary-${s.id}.md`,
+    mime: 'text/markdown',
+    matrix_room_id: s.matrixRoomId,
+    occurred_at:
+      s.updatedAt instanceof Date
+        ? s.updatedAt.toISOString()
+        : String(s.updatedAt),
+    thread_summary_id: s.id,
+    text_excerpt: s.summary,
+  }));
+
+  let combined = [
+    ...proposalAssets,
+    ...memoryAssets,
+    ...matrixAssets,
+    ...recordingAssets,
+    ...transcriptAssets,
+    ...discussionSummaryAssets,
+    ...threadSummaryAssets,
+  ].sort(compareOrgMemoryAssetsStable);
+  if (assetView === 'signal') {
+    combined = compactOrgMemoryAssetsForSignal(combined);
+  }
   combined = filterAssetsBySearch(combined, assetsSearch);
 
   const total = combined.length;
