@@ -239,6 +239,12 @@ export function useSpaceGroupCall(
   } = options;
   const latestAuthTokenRef = useRef<string | null>(authToken?.trim() || null);
   const latestSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
+  /** Pinned at connect so upload still works if chat panel unbinds mid-call. */
+  const pinnedUploadContextRef = useRef<{
+    authToken: string;
+    spaceSlug: string;
+    roomId: string;
+  } | null>(null);
   const onCallArtifactsUploadedRef = useRef(onCallArtifactsUploaded);
 
   const [callState, setCallState] = useState<SpaceGroupCallState>('idle');
@@ -367,6 +373,19 @@ export function useSpaceGroupCall(
   }, [spaceSlug]);
 
   useEffect(() => {
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    const token = latestAuthTokenRef.current;
+    const slug = latestSpaceSlugRef.current;
+    const activeRoom = roomId?.trim();
+    if (!token || !slug || !activeRoom) return;
+    pinnedUploadContextRef.current = {
+      authToken: token,
+      spaceSlug: slug,
+      roomId: activeRoom,
+    };
+  }, [callState, roomId, spaceSlug, authToken]);
+
+  useEffect(() => {
     onCallArtifactsUploadedRef.current = onCallArtifactsUploaded;
   }, [onCallArtifactsUploaded]);
 
@@ -448,9 +467,19 @@ export function useSpaceGroupCall(
       return;
     }
 
-    const token = latestAuthTokenRef.current;
-    const slug = latestSpaceSlugRef.current;
-    const activeRoomId = runtime?.recordedRoomId?.trim() || roomId?.trim();
+    const token =
+      latestAuthTokenRef.current ??
+      pinnedUploadContextRef.current?.authToken ??
+      null;
+    const slug =
+      latestSpaceSlugRef.current ??
+      pinnedUploadContextRef.current?.spaceSlug ??
+      null;
+    const activeRoomId =
+      runtime?.recordedRoomId?.trim() ||
+      roomId?.trim() ||
+      pinnedUploadContextRef.current?.roomId ||
+      null;
     if (!runtime) {
       recordingRuntimeRef.current = null;
       if (!recordingFinalizeInFlightRef.current) {
@@ -580,6 +609,7 @@ export function useSpaceGroupCall(
         if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
           recordingFinalizeInFlightRef.current = false;
           recordingFinalizeGenerationRef.current = null;
+          pinnedUploadContextRef.current = null;
         }
       }
     })();
@@ -1676,7 +1706,6 @@ export function useSpaceGroupCall(
     if (captureMode === 'none') {
       if (!recordingFinalizeInFlightRef.current) {
         setRecordingStatus('idle');
-        setRecordingError(null);
       }
       return;
     }
@@ -1779,6 +1808,7 @@ export function useSpaceGroupCall(
       const nextMode = mode ?? capturePreference;
       setCapturePreference(nextMode);
       setCapturePreferenceSelected(true);
+      setRecordingError(null);
       if (recordingRuntimeRef.current && captureModeRef.current !== 'none') {
         return;
       }

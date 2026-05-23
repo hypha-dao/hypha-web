@@ -163,8 +163,10 @@ function useGlobalCallDockValue() {
       spaceSlug: string | null,
       authToken?: string | null,
     ) => {
-      if (!roomId && !inSessionRef.current && restoreInProgressRef.current) {
-        return;
+      if (!roomId) {
+        if (inSessionRef.current || restoreInProgressRef.current) {
+          return;
+        }
       }
       if (roomId) {
         restoreInProgressRef.current = false;
