@@ -468,7 +468,7 @@ interface MatrixContextType {
   getRoomMessages: (roomId: string) => Message[] | null;
   loadRoomHistory: (
     roomId: string,
-    options?: { pageSize?: number; maxBatches?: number },
+    options?: { pageSize?: number; maxBatches?: number; force?: boolean },
   ) => Promise<void>;
   getPinnedMessageIds: (roomId: string) => string[];
   togglePinnedMessage: (roomId: string, messageId: string) => Promise<void>;
@@ -515,6 +515,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const roomHistoryLoadRef = React.useRef<Map<string, Promise<void>>>(
     new Map(),
   );
+  const roomHistoryLoadedRef = React.useRef<Set<string>>(new Set());
   const [registeredRoomListeners, setRegisteredRoomListeners] = React.useState<
     RoomMessageListenerRecord[]
   >([]);
@@ -1390,7 +1391,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const loadRoomHistory = React.useCallback(
     async (
       roomId: string,
-      options?: { pageSize?: number; maxBatches?: number },
+      options?: { pageSize?: number; maxBatches?: number; force?: boolean },
     ): Promise<void> => {
       if (!client) {
         throw new Error('Client should be specified');
@@ -1400,6 +1401,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('Room not found');
       }
 
+      if (!options?.force && roomHistoryLoadedRef.current.has(roomId)) {
+        return;
+      }
+
       const existingLoad = roomHistoryLoadRef.current.get(roomId);
       if (existingLoad) {
         await existingLoad;
@@ -1407,17 +1412,24 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
 
       const pageSize = Math.max(10, options?.pageSize ?? 50);
-      const maxBatches = Math.max(1, options?.maxBatches ?? 40);
+      const maxBatches = Math.max(1, options?.maxBatches ?? 10);
       const loadPromise = (async () => {
         for (let i = 0; i < maxBatches; i++) {
           const beforeCount = room.getLiveTimeline().getEvents().length;
           try {
             await client.scrollback(room, pageSize);
           } catch (error) {
-            console.warn(
-              '[MatrixProvider] Failed while loading room history:',
-              error,
-            );
+            if (isMatrixRateLimitedError(error)) {
+              console.warn(
+                '[MatrixProvider] Stopped room history scrollback after rate limit:',
+                error,
+              );
+            } else {
+              console.warn(
+                '[MatrixProvider] Failed while loading room history:',
+                error,
+              );
+            }
             break;
           }
           const afterCount = room.getLiveTimeline().getEvents().length;
@@ -1425,6 +1437,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             break;
           }
         }
+        roomHistoryLoadedRef.current.add(roomId);
       })();
 
       roomHistoryLoadRef.current.set(roomId, loadPromise);

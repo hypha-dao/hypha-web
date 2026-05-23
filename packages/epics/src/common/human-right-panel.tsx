@@ -217,6 +217,8 @@ type ReplyDraft = {
   messageId: string;
   authorLabel: string;
   excerpt: string;
+  sourceUserId?: string;
+  isYou?: boolean;
 };
 
 type EditDraft = {
@@ -1144,6 +1146,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     Record<string, string>
   >({});
   const profileLookupInFlightRef = useRef<Set<string>>(new Set());
+  const profileLookupAttemptedRef = useRef<Set<string>>(new Set());
 
   const rosterSubs = useMemo(
     () =>
@@ -1312,6 +1315,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (!client || rawMentionCandidates.length === 0) return;
     const unresolved = rawMentionCandidates.filter((candidate) => {
+      if (profileLookupAttemptedRef.current.has(candidate.userId)) return false;
       if (matrixProfileLabelByUserId[candidate.userId]) return false;
       if (matrixUserIdToCanonicalPrivySub(candidate.userId)) return false;
       if (matrixUserIdToPersonLabel.has(candidate.userId)) return false;
@@ -1326,7 +1330,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     for (const candidate of batch) {
       const userId = candidate.userId;
       if (profileLookupInFlightRef.current.has(userId)) continue;
+      if (profileLookupAttemptedRef.current.has(userId)) continue;
       profileLookupInFlightRef.current.add(userId);
+      profileLookupAttemptedRef.current.add(userId);
       void client
         .getProfileInfo(userId)
         .then((profile) => {
@@ -2781,6 +2787,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         messageId,
         authorLabel,
         excerpt,
+        ...(target.role === 'user' ? { isYou: true } : {}),
+        ...(target.role === 'member' && target.senderMatrixId
+          ? { sourceUserId: target.senderMatrixId }
+          : {}),
       });
     },
     [messages, resolveMemberLabel, t],
@@ -3630,6 +3640,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   ? {
                       authorLabel: replyDraft.authorLabel,
                       excerpt: replyDraft.excerpt,
+                      sourceUserId: replyDraft.sourceUserId,
+                      isYou: replyDraft.isYou,
                       onDismiss: () => setReplyDraft(null),
                     }
                   : undefined

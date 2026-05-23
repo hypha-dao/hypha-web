@@ -39,8 +39,17 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import {
+  usePersonBySub,
+  useUserPrivyIdByMatrixId,
+} from '@hypha-platform/core/client';
+import {
+  matrixUserIdToCanonicalPrivySub,
+  needsHyphaProfileResolutionForMatrixLabel,
+} from './matrix-room-member-display';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
 import {
@@ -125,7 +134,79 @@ type ReplyPreview = {
   authorLabel: string;
   excerpt: string;
   onDismiss: () => void;
+  /** Matrix sender when replying to another member — resolves Hypha profile reactively. */
+  sourceUserId?: string;
+  isYou?: boolean;
 };
+
+function formatPersonDisplayName(p: {
+  name?: string | null;
+  surname?: string | null;
+  nickname?: string | null;
+}): string {
+  const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
+  if (full) return full;
+  if (p.nickname?.trim()) return p.nickname.trim();
+  return '';
+}
+
+function ReplyPreviewAuthorName({
+  authorLabel,
+  sourceUserId,
+  isYou,
+  youLabel,
+}: {
+  authorLabel: string;
+  sourceUserId?: string;
+  isYou?: boolean;
+  youLabel: string;
+}) {
+  if (isYou) {
+    return <>{youLabel}</>;
+  }
+
+  const matrixUserId = sourceUserId?.trim() ?? '';
+  const canonicalSub = matrixUserId
+    ? matrixUserIdToCanonicalPrivySub(matrixUserId)
+    : null;
+  const needsLinkLookup =
+    Boolean(matrixUserId) &&
+    !canonicalSub &&
+    (needsHyphaProfileResolutionForMatrixLabel(authorLabel) ||
+      !authorLabel.trim() ||
+      authorLabel.trim() === matrixUserId);
+
+  const { privyUserId: linkedSub, isLoading: loadingLink } =
+    useUserPrivyIdByMatrixId({
+      matrixUserId: needsLinkLookup ? matrixUserId : undefined,
+    });
+  const { person, isLoading: loadingPerson } = usePersonBySub({
+    sub: linkedSub ?? canonicalSub,
+  });
+
+  const text = useMemo(() => {
+    const fromPerson = person ? formatPersonDisplayName(person) : '';
+    if (fromPerson.trim()) return fromPerson;
+    return authorLabel.trim() || matrixUserId || youLabel;
+  }, [authorLabel, matrixUserId, person, youLabel]);
+
+  const loading =
+    Boolean(matrixUserId) &&
+    (loadingLink || (Boolean(linkedSub ?? canonicalSub) && loadingPerson));
+
+  if (loading) {
+    return (
+      <Skeleton
+        className="inline-block align-baseline"
+        loading
+        width={120}
+        height={14}
+      />
+    );
+  }
+
+  return <>{text}</>;
+}
 
 type EditPreview = {
   excerpt: string;
@@ -1850,7 +1931,12 @@ export function HumanChatPanelChatBar({
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">
-                  {replyPreview.authorLabel}
+                  <ReplyPreviewAuthorName
+                    authorLabel={replyPreview.authorLabel}
+                    sourceUserId={replyPreview.sourceUserId}
+                    isYou={replyPreview.isYou}
+                    youLabel={t('you')}
+                  />
                 </span>
                 <span className="text-muted-foreground"> — </span>
                 <span>{replyPreview.excerpt}</span>
