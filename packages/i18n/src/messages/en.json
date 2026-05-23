@@ -2206,6 +2206,8 @@
     "callRemoteParticipant": "Participant",
     "callScreenShare": "Screen share",
     "callScreenShareActive": "Screen share is on",
+    "callYouAreSharingScreen": "You're sharing your screen",
+    "callYouAreSharingScreenHint": "Others can see your screen. You won't see your own share here.",
     "callFullView": "Full view",
     "callFullViewDescription": "Larger view of the call. Your space call stays active when you close this window.",
     "callFullViewClose": "Close",
@@ -2343,6 +2345,7 @@
     "spaceMemoryGeneral": "General",
     "spaceMemoryProposals": "Proposals",
     "spaceMemoryConversations": "Conversations",
+    "spaceMemoryCalls": "Calls",
     "spaceMemoryAiChat": "AI Chat",
     "newMemoryUploadDocumentsTitle": "Upload Documents",
     "newMemoryUploadingFiles": "Uploading space memories...",
@@ -2442,6 +2445,7 @@
     },
     "spaceMemoryEmptyTab": "No items found in this view.",
     "spaceMemoryAiChatEmpty": "AI chat memories are not available yet.",
+    "spaceMemoryCallsEmpty": "No call recordings or transcripts yet. They appear here after a recorded group call ends.",
     "documentStates": {
       "discussion": "Discussion",
       "proposal": "Proposal",
@@ -2580,7 +2584,9 @@
     "exitFullscreenLabel": "Exit fullscreen",
     "unknownMember": "Unknown",
     "resizeTopRightLabel": "Resize call window from top-right corner",
-    "resizeBottomLeftLabel": "Resize call window from bottom-left corner"
+    "resizeBottomLeftLabel": "Resize call window from bottom-left corner",
+    "openFloatingWindowLabel": "Open floating call window",
+    "closeFloatingWindowLabel": "Close floating call window"
   },
   "SignalCard": {
     "noConversationRoom": "No conversation room yet",

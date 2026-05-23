@@ -2204,6 +2204,8 @@
     "callRemoteParticipant": "Teilnehmende/r",
     "callScreenShare": "Bildschirmfreigabe",
     "callScreenShareActive": "Bildschirmfreigabe ist aktiv",
+    "callYouAreSharingScreen": "Sie teilen Ihren Bildschirm",
+    "callYouAreSharingScreenHint": "Andere sehen Ihren Bildschirm. Ihre eigene Freigabe sehen Sie hier nicht.",
     "callFullView": "Vollansicht",
     "callFullViewDescription": "Größere Anzeige des Anrufs. Der Space-Anruf bleibt aktiv, wenn Sie dieses Fenster schließen.",
     "callFullViewClose": "Schließen",
@@ -2336,6 +2338,7 @@
     "spaceMemoryGeneral": "Allgemein",
     "spaceMemoryProposals": "Vorschläge",
     "spaceMemoryConversations": "Gespräche",
+    "spaceMemoryCalls": "Anrufe",
     "spaceMemoryAiChat": "AI-Chat",
     "newMemoryUploadDocumentsTitle": "Dokumente hochladen",
     "newMemoryUploadingFiles": "Space-Memories werden hochgeladen...",
@@ -2343,6 +2346,7 @@
     "newMemory": "Neue Erinnerung",
     "spaceMemoryEmptyTab": "In dieser Ansicht wurden keine Einträge gefunden.",
     "spaceMemoryAiChatEmpty": "AI-Chat-Erinnerungen sind noch nicht verfügbar.",
+    "spaceMemoryCallsEmpty": "Noch keine Anrufaufzeichnungen oder Transkripte. Sie erscheinen hier, nachdem ein aufgezeichneter Gruppenanruf beendet wurde.",
     "documentStates": {
       "discussion": "Diskussion",
       "proposal": "Vorschlag",
@@ -2578,7 +2582,9 @@
     "exitFullscreenLabel": "Vollbild beenden",
     "unknownMember": "Unbekannt",
     "resizeTopRightLabel": "Anruffenster über die obere rechte Ecke skalieren",
-    "resizeBottomLeftLabel": "Anruffenster über die untere linke Ecke skalieren"
+    "resizeBottomLeftLabel": "Anruffenster über die untere linke Ecke skalieren",
+    "openFloatingWindowLabel": "Schwebendes Anruffenster öffnen",
+    "closeFloatingWindowLabel": "Schwebendes Anruffenster schließen"
   },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",

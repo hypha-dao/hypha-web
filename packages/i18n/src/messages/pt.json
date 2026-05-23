@@ -2196,6 +2196,8 @@
     "callRemoteParticipant": "Participante",
     "callScreenShare": "Partilha de ecrã",
     "callScreenShareActive": "Partilha de ecrã ativa",
+    "callYouAreSharingScreen": "Está a partilhar o seu ecrã",
+    "callYouAreSharingScreenHint": "Os outros veem o seu ecrã. A sua própria partilha não aparece aqui.",
     "callFullView": "Vista alargada",
     "callFullViewDescription": "Vista mais ampla da chamada. A chamada no espaço continua ativa ao fechar esta janela.",
     "callFullViewClose": "Fechar",
@@ -2328,6 +2330,7 @@
     "spaceMemoryGeneral": "Geral",
     "spaceMemoryProposals": "Propostas",
     "spaceMemoryConversations": "Conversas",
+    "spaceMemoryCalls": "Chamadas",
     "spaceMemoryAiChat": "Chat com IA",
     "newMemoryUploadDocumentsTitle": "Carregar documentos",
     "newMemoryUploadingFiles": "A carregar memórias do espaço...",
@@ -2335,6 +2338,7 @@
     "newMemory": "Nova memória",
     "spaceMemoryEmptyTab": "Nenhum item encontrado nesta visualização.",
     "spaceMemoryAiChatEmpty": "As memórias do chat com IA ainda não estão disponíveis.",
+    "spaceMemoryCallsEmpty": "Ainda não há gravações nem transcrições de chamadas. Aparecem aqui depois de uma chamada de grupo gravada terminar.",
     "documentStates": {
       "discussion": "Discussão",
       "proposal": "Proposta",
@@ -2568,7 +2572,9 @@
     "exitFullscreenLabel": "Sair do ecrã inteiro",
     "unknownMember": "Desconhecido",
     "resizeTopRightLabel": "Redimensionar chamada pelo canto superior direito",
-    "resizeBottomLeftLabel": "Redimensionar chamada pelo canto inferior esquerdo"
+    "resizeBottomLeftLabel": "Redimensionar chamada pelo canto inferior esquerdo",
+    "openFloatingWindowLabel": "Abrir janela flutuante da chamada",
+    "closeFloatingWindowLabel": "Fechar janela flutuante da chamada"
   },
   "SignalCard": {
     "noConversationRoom": "Ainda não há sala de conversa",

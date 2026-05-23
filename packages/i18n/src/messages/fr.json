@@ -2196,6 +2196,8 @@
     "callRemoteParticipant": "Participant",
     "callScreenShare": "Partage d’écran",
     "callScreenShareActive": "Partage d’écran actif",
+    "callYouAreSharingScreen": "Vous partagez votre écran",
+    "callYouAreSharingScreenHint": "Les autres voient votre écran. Vous ne voyez pas votre propre partage ici.",
     "callFullView": "Plein affichage",
     "callFullViewDescription": "Affichage plus large de l’appel. L’appel dans l’espace reste actif lorsque vous fermez cette fenêtre.",
     "callFullViewClose": "Fermer",
@@ -2329,6 +2331,7 @@
     "spaceMemoryGeneral": "Général",
     "spaceMemoryProposals": "Propositions",
     "spaceMemoryConversations": "Conversations",
+    "spaceMemoryCalls": "Appels",
     "spaceMemoryAiChat": "Chat IA",
     "newMemoryUploadDocumentsTitle": "Téléverser des documents",
     "newMemoryUploadingFiles": "Téléversement des souvenirs de l'espace...",
@@ -2336,6 +2339,7 @@
     "newMemory": "Nouvelle mémoire",
     "spaceMemoryEmptyTab": "Aucun élément trouvé dans cette vue.",
     "spaceMemoryAiChatEmpty": "Les mémoires du chat IA ne sont pas encore disponibles.",
+    "spaceMemoryCallsEmpty": "Aucun enregistrement ni transcription d'appel pour l'instant. Ils apparaissent ici après la fin d'un appel de groupe enregistré.",
     "documentStates": {
       "discussion": "Discussion",
       "proposal": "Proposition",
@@ -2564,7 +2568,9 @@
     "exitFullscreenLabel": "Quitter le plein écran",
     "unknownMember": "Inconnu",
     "resizeTopRightLabel": "Redimensionner l'appel depuis le coin supérieur droit",
-    "resizeBottomLeftLabel": "Redimensionner l'appel depuis le coin inférieur gauche"
+    "resizeBottomLeftLabel": "Redimensionner l'appel depuis le coin inférieur gauche",
+    "openFloatingWindowLabel": "Ouvrir la fenêtre d'appel flottante",
+    "closeFloatingWindowLabel": "Fermer la fenêtre d'appel flottante"
   },
   "SignalCard": {
     "noConversationRoom": "Pas encore de salle de conversation",
