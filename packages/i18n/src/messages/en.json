@@ -548,7 +548,8 @@
       "openSpaceAccount": "Open a space account",
       "finishVerificationFirst": "Finish the current verification first",
       "allCurrenciesCovered": "All supported currencies already have accounts",
-      "loadingAccounts": "Loading bank accounts…"
+      "loadingAccounts": "Loading bank accounts…",
+      "oneTimeTransferComingSoon": "One-time transfers are coming soon"
     },
     "operationStatus": {
       "pendingKyb": "Pending verification",

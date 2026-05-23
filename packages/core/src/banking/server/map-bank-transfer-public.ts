@@ -4,14 +4,14 @@ import { resolveBankOperationLifecycle } from './map-bank-operation-lifecycle';
 
 export function mapBankTransferToPublic(
   transfer: BankTransfer,
-  isCustomerApproved: boolean,
+  isEndorsementApproved: boolean,
 ): BankTransferPublic {
   const hasProviderResource = Boolean(transfer.providerTransferId);
   const { lifecycle, canActivate, canContinueVerification } =
     resolveBankOperationLifecycle({
       status: transfer.status,
       hasProviderResource,
-      isCustomerApproved,
+      isEndorsementApproved,
     });
 
   return {

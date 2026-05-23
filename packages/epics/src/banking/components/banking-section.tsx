@@ -17,10 +17,10 @@ import {
   useActivateTransfer,
   useActivateVirtualAccount,
   useBankCustomerStatus,
+  useBankTransfers,
   useCreateTransfer,
   useProvisionVirtualAccount,
   useRequestSpaceAccount,
-  useTransfers,
   useVirtualAccounts,
 } from '../hooks';
 import {
@@ -72,7 +72,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
     transfers,
     isLoading: transfersLoading,
     refresh: refreshTransfers,
-  } = useTransfers({
+  } = useBankTransfers({
     spaceSlug,
     enabled: isAuthenticated && hasCustomer,
   });
@@ -326,14 +326,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
             .then(() => void refreshTransfers())
             .catch(() => undefined);
         }}
-        onNewTransfer={
-          canManage
-            ? () => {
-                clearCreateTransferError();
-                setCreateTransferOpen(true);
-              }
-            : undefined
-        }
+        newTransferDisabled
       />
 
       <CreateTransferDialog

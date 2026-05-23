@@ -133,6 +133,9 @@ export function getCardDepositCopyBlock(
 
   if (identifiers.length === 1) {
     const row = identifiers[0];
+    if (!row) {
+      return null;
+    }
     return {
       label: resolveLabel(row.labelKey),
       copyText: row.value,

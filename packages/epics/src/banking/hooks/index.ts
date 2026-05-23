@@ -5,7 +5,7 @@ export * from './use-virtual-accounts';
 export * from './use-provision-virtual-account';
 export * from './use-simulate-kyc-approval';
 export * from './use-open-space-account';
-export * from './use-transfers';
+export { useTransfers as useBankTransfers } from './use-transfers';
 export * from './use-create-transfer';
 export * from './use-sync-banking';
 export * from './use-request-space-account';

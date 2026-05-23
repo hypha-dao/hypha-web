@@ -27,6 +27,8 @@ export type BankTransfersSectionProps = {
   onOpenVerificationDetails: () => void;
   onActivateTransfer: (transferId: number) => void;
   onNewTransfer?: () => void;
+  /** When true, shows the CTA disabled (e.g. feature not ready for preview). */
+  newTransferDisabled?: boolean;
 };
 
 export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
@@ -39,8 +41,10 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
   onOpenVerificationDetails,
   onActivateTransfer,
   onNewTransfer,
+  newTransferDisabled = false,
 }) => {
   const t = useTranslations('BankingTab.sections.transfers');
+  const tToolbar = useTranslations('BankingTab.toolbar');
   const [detailsTransfer, setDetailsTransfer] =
     useState<BankTransferPublic | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -61,17 +65,27 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
             {t('description')}
           </p>
         </div>
-        {canManage && onNewTransfer ? (
-          <Button
-            type="button"
-            colorVariant="accent"
-            size="sm"
-            className="shrink-0 gap-1.5"
-            onClick={onNewTransfer}
+        {canManage && (onNewTransfer || newTransferDisabled) ? (
+          <span
+            className="inline-flex shrink-0"
+            title={
+              newTransferDisabled
+                ? tToolbar('oneTimeTransferComingSoon')
+                : undefined
+            }
           >
-            <Plus className="h-4 w-4" />
-            {t('newTransferCta')}
-          </Button>
+            <Button
+              type="button"
+              colorVariant="accent"
+              size="sm"
+              className="shrink-0 gap-1.5"
+              disabled={newTransferDisabled}
+              onClick={newTransferDisabled ? undefined : onNewTransfer}
+            >
+              <Plus className="h-4 w-4" />
+              {t('newTransferCta')}
+            </Button>
+          </span>
         ) : null}
       </div>
 

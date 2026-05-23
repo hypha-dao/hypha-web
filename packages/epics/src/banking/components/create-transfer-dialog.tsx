@@ -128,8 +128,12 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
                   <CurrencyOptionRow
                     key={code}
                     currency={code}
-                    selected={currency === code}
-                    onSelect={() => setCurrency(code)}
+                    checked={currency === code}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setCurrency(code);
+                      }
+                    }}
                   />
                 ))}
               </div>

@@ -119,14 +119,35 @@ export const useOpenSpaceAccount = ({
             endorsements,
           };
           const result = await requestOnboarding(onboardingInput);
-          await refresh();
-          currentStatus = {
-            kycStatus: result.kycStatus,
-            kycLink: result.kycLink,
-            tosLink: result.tosLink,
-            isApproved:
-              result.isApproved === true || result.kycStatus === 'approved',
-          };
+          currentStatus = (await refresh()) ?? null;
+          if (currentStatus == null) {
+            currentStatus = {
+              name: input.legalName.trim(),
+              contactEmail: input.contactEmail.trim(),
+              kycStatus: result.kycStatus,
+              tosStatus: null,
+              kycLink: result.kycLink,
+              tosLink: result.tosLink,
+              isApproved:
+                result.isApproved === true || result.kycStatus === 'approved',
+              approvalRegistered: false,
+              procedures: {
+                tos: {
+                  status: result.tosLink ? 'pending' : null,
+                  isComplete: false,
+                  link: result.tosLink,
+                  linkDisabled: false,
+                },
+                kyc: {
+                  status: result.kycStatus,
+                  isComplete: result.kycStatus === 'approved',
+                  link: result.kycLink,
+                  linkDisabled: false,
+                },
+              },
+              currencyStatuses: [],
+            };
+          }
         }
 
         if (currentStatus?.isApproved) {

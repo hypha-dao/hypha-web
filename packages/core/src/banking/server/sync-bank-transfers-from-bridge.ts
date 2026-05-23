@@ -25,6 +25,10 @@ export async function syncBankTransfersFromBridge(
       continue;
     }
 
+    if (!transfer.providerTransferId) {
+      continue;
+    }
+
     try {
       const remote = await bridgeGetTransfer(transfer.providerTransferId);
       const instructions = remote.source_deposit_instructions;

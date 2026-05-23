@@ -142,11 +142,11 @@ export const insertBankVirtualAccount = async (
 export type InsertBankTransferInput = {
   bankCustomerId: number;
   provider: BankProvider;
-  providerTransferId: string;
+  providerTransferId: string | null;
   currency: string;
   paymentRail: string;
   amount: string | null;
-  depositMessage: string;
+  depositMessage: string | null;
   status: string;
   depositInstructions: Record<string, unknown>;
   destinationAddress: string;
