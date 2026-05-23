@@ -22,6 +22,7 @@ import {
   DEFAULT_CALL_FULL_VIEW_LAYOUT,
   HumanChatPanelCallBanner,
   HumanChatPanelCallStage,
+  HumanChatPanelCallFullViewLayoutMenu,
   HumanChatPanelInCallControls,
   readCallFullViewLayoutFromStorage,
   persistCallFullViewLayout,
@@ -283,6 +284,20 @@ export function GlobalCallDockOverlay() {
   React.useEffect(() => {
     setLayoutMode(readCallFullViewLayoutFromStorage());
   }, []);
+
+  React.useEffect(() => {
+    if (!isScreensharing || roomGroupCallDeviceCount <= 1) return;
+    setLayoutMode('sideBySide');
+    persistCallFullViewLayout('sideBySide');
+  }, [isScreensharing, roomGroupCallDeviceCount]);
+
+  const onShareLayoutModeChange = React.useCallback(
+    (mode: CallFullViewLayoutMode) => {
+      persistCallFullViewLayout(mode);
+      setLayoutMode(mode);
+    },
+    [],
+  );
 
   React.useEffect(() => {
     setPaneSplit({
@@ -648,8 +663,15 @@ export function GlobalCallDockOverlay() {
             {t('spaceButton')}
           </button>
         )}
+        {isScreensharing && roomGroupCallDeviceCount > 1 ? (
+          <HumanChatPanelCallFullViewLayoutMenu
+            value={layoutMode}
+            onValueChange={onShareLayoutModeChange}
+            className="shrink-0"
+          />
+        ) : null}
         <div className="flex items-center gap-1">
-          {isDocumentPipSupported && !modeIsFullscreen && (
+          {isDocumentPipSupported && (
             <button
               type="button"
               data-no-dock-drag

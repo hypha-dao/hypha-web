@@ -18,7 +18,7 @@ const MODES: CallFullViewLayoutMode[] = [
 ];
 
 export const DEFAULT_CALL_FULL_VIEW_LAYOUT: CallFullViewLayoutMode =
-  'filmstrip';
+  'sideBySide';
 
 export function parseCallFullViewLayoutMode(
   raw: string | null,
