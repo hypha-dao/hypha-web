@@ -793,7 +793,7 @@ export function GlobalCallDockOverlay() {
 
       <div
         className={cn(
-          'shrink-0 border-t border-border/50 bg-muted/35',
+          'relative z-10 shrink-0 overflow-visible border-t border-border/50 bg-muted/35',
           dockCompact ? 'px-1 py-1' : 'px-2 py-2',
         )}
       >

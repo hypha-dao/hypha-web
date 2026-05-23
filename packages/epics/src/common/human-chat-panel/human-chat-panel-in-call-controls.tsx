@@ -283,6 +283,7 @@ export function HumanChatPanelInCallControls({
   const selectCapturePreference = (
     mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
   ) => {
+    onCapturePreferenceChange(mode);
     if (captureMode === 'none') {
       onStartCapture(mode);
     }
@@ -407,8 +408,9 @@ export function HumanChatPanelInCallControls({
       {isCaptureMenuOpen ? (
         <div
           role="menu"
+          onPointerDown={(event) => event.stopPropagation()}
           className={cn(
-            'absolute bottom-full right-0 z-[60] mb-2 min-w-52 rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            'absolute bottom-full right-0 z-[70] mb-2 min-w-52 rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
             isFull && 'border-zinc-700 bg-zinc-900 text-white',
           )}
         >
@@ -466,7 +468,10 @@ export function HumanChatPanelInCallControls({
                   capturePreferenceSelected &&
                   capturePreference === 'transcript_only'
                 }
-                onClick={() => selectCapturePreference('transcript_only')}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  selectCapturePreference('transcript_only');
+                }}
                 className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
               >
                 <span className="inline-flex items-center gap-2">
@@ -485,9 +490,10 @@ export function HumanChatPanelInCallControls({
                   capturePreferenceSelected &&
                   capturePreference === 'recording_with_transcript'
                 }
-                onClick={() =>
-                  selectCapturePreference('recording_with_transcript')
-                }
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  selectCapturePreference('recording_with_transcript');
+                }}
                 className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
               >
                 <span className="inline-flex items-center gap-2">

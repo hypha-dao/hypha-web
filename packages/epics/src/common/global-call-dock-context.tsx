@@ -313,17 +313,19 @@ function useGlobalCallDockValue() {
       roomId: string | null | undefined,
       spaceSlug?: string | null,
       threadRootEventId?: string,
+      authToken?: string | null,
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
+      const targetAuthToken = authToken?.trim() || boundAuthToken;
       if (activeRoomId !== targetRoomId) {
         setBoundRoomId(targetRoomId);
         setBoundSpaceSlug(targetSpaceSlug);
-        setBoundAuthToken(boundAuthToken);
+        setBoundAuthToken(targetAuthToken);
         setActiveRoomId(targetRoomId);
         setActiveSpaceSlug(targetSpaceSlug);
-        setActiveAuthToken(boundAuthToken);
+        setActiveAuthToken(targetAuthToken);
         setPendingJoin({
           kind: 'audio',
           roomId: targetRoomId,
@@ -341,17 +343,19 @@ function useGlobalCallDockValue() {
       roomId: string | null | undefined,
       spaceSlug?: string | null,
       threadRootEventId?: string,
+      authToken?: string | null,
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
+      const targetAuthToken = authToken?.trim() || boundAuthToken;
       if (activeRoomId !== targetRoomId) {
         setBoundRoomId(targetRoomId);
         setBoundSpaceSlug(targetSpaceSlug);
-        setBoundAuthToken(boundAuthToken);
+        setBoundAuthToken(targetAuthToken);
         setActiveRoomId(targetRoomId);
         setActiveSpaceSlug(targetSpaceSlug);
-        setActiveAuthToken(boundAuthToken);
+        setActiveAuthToken(targetAuthToken);
         setPendingJoin({
           kind: 'video',
           roomId: targetRoomId,

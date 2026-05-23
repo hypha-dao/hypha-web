@@ -373,7 +373,13 @@ export function useSpaceGroupCall(
   }, [spaceSlug]);
 
   useEffect(() => {
-    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    const inSession =
+      callState === 'connected' ||
+      callState === 'awaiting_media' ||
+      callState === 'connecting' ||
+      callState === 'initializing' ||
+      callState === 'disconnecting';
+    if (!inSession) return;
     const token = latestAuthTokenRef.current;
     const slug = latestSpaceSlugRef.current;
     const activeRoom = roomId?.trim();
@@ -1729,12 +1735,18 @@ export function useSpaceGroupCall(
     if (captureMode === 'recording_with_transcript') {
       recorder = startGroupCallRecording(gc);
       if (!recorder) {
+        if (transcript.supported === false) {
+          void transcript.stop();
+          setRecordingStatus('error');
+          setRecordingError(
+            'No call audio or video is available to record yet. Unmute your microphone or turn on your camera, then try again.',
+          );
+          setCaptureMode('none');
+          return;
+        }
+        // Media feeds can arrive a few seconds after connect — keep capture armed
+        // and retry when feedVersion bumps instead of resetting to idle.
         void transcript.stop();
-        setRecordingStatus('error');
-        setRecordingError(
-          'No call audio or video is available to record yet. Unmute your microphone or turn on your camera, then try again.',
-        );
-        setCaptureMode('none');
         return;
       }
     }
@@ -1783,6 +1795,11 @@ export function useSpaceGroupCall(
       if (captureModeRef.current === 'none') return;
       if (recordingRuntimeRef.current) return;
       if (recordingFinalizeInFlightRef.current) return;
+      if (captureModeRef.current === 'recording_with_transcript') {
+        setCapturePreference('transcript_only');
+        setCaptureMode('transcript_only');
+        return;
+      }
       setRecordingStatus('error');
       setRecordingError(
         'Call capture could not start. Stop capture and try again, or leave and rejoin the call.',
