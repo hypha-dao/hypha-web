@@ -265,12 +265,19 @@ export function SpaceMemoryTimelineItem({
   const openHref = mxc ? mxcDownload : item.url;
   const isMemoryBody =
     item.source === 'memory' && item.url.startsWith('memory://document/');
+  const isCallTranscriptBody =
+    item.source === 'call_transcript' &&
+    item.url.startsWith('memory://call_transcript/');
   const canOpen = Boolean(
-    !isMemoryBody && openHref && isSafeAssetUrl(openHref),
+    !isMemoryBody && !isCallTranscriptBody && openHref && isSafeAssetUrl(openHref),
   );
+  const cardTitle =
+    isCallTranscriptBody && item.context.documentTitle?.trim()
+      ? item.context.documentTitle.trim()
+      : displayName;
 
   const thumbPreview = (() => {
-    if (isMemoryBody) {
+    if (isMemoryBody || isCallTranscriptBody) {
       const excerpt =
         item.context.textExcerpt?.trim() ||
         item.context.documentTitle?.trim() ||
@@ -494,7 +501,7 @@ export function SpaceMemoryTimelineItem({
         {contextLine}
       </p>
       <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-card-foreground">
-        {displayName}
+        {cardTitle}
       </p>
 
       <div className="mt-3 flex flex-1 flex-col gap-2">
