@@ -10,7 +10,6 @@ import { HYPHA_MEDIA_BUNDLE_FIELD } from '../../matrix/rich-reply';
 import { findAllDocumentsBySpaceSlugWithoutPagination } from './queries';
 import { parseOrgMemoryAssetKey } from '../../org-memory/org-memory-asset-key';
 import { getSpaceCallArtifactById } from './call-artifacts';
-import { getThreadSummaryById } from './thread-summaries';
 import type {
   SpaceCallRecording,
   SpaceCallTranscript,
@@ -780,51 +779,6 @@ export async function fetchOrgMemoryAsset(
       access: 'ok',
       result: buildSuccessText(
         `discussion-summary-${summary.id}.md`,
-        'text/markdown',
-        text,
-        truncated,
-        byteLength,
-      ),
-    };
-  } else if (key.k === 'ts') {
-    const summary = await getThreadSummaryById(
-      { id: key.i, spaceId: host.id },
-      { db },
-    );
-    if (!summary) {
-      return {
-        access: 'ok',
-        result: {
-          ok: false,
-          error: 'Thread summary not found for this space',
-          code: 'not_found',
-        },
-      };
-    }
-    const bullets = Array.isArray(summary.bullets)
-      ? summary.bullets.filter(
-          (b: unknown): b is string => typeof b === 'string',
-        )
-      : [];
-    const body = [summary.summary, ...bullets.map((b) => `- ${b}`)]
-      .join('\n')
-      .trim();
-    const byteLength = Buffer.byteLength(body, 'utf8');
-    if (byteLength > max_bytes) {
-      return {
-        access: 'ok',
-        result: {
-          ok: false,
-          error: `Response size ${byteLength} exceeds max_bytes`,
-          code: 'too_large',
-        },
-      };
-    }
-    const { text, truncated } = truncateText(body, MAX_TEXT_CHARS);
-    return {
-      access: 'ok',
-      result: buildSuccessText(
-        `thread-summary-${summary.id}.md`,
         'text/markdown',
         text,
         truncated,

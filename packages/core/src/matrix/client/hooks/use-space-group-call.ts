@@ -611,12 +611,7 @@ export function useSpaceGroupCall(
         }
       }
     })();
-  }, [
-    announceCaptureNotice,
-    callSessionId,
-    playCaptureVoiceAnnouncement,
-    roomId,
-  ]);
+  }, [announceCaptureNotice, callSessionId, playCaptureVoiceAnnouncement, roomId]);
 
   const runCleanup = useCallback(() => {
     finalizeRecording();

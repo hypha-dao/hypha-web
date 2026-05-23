@@ -81,11 +81,7 @@ import {
   useResolvedMentionCandidateLabel,
 } from './human-chat-panel/use-resolved-mention-candidate-label';
 import type { ChatPanelTab } from './human-chat-panel';
-import {
-  recordThreadSummaryActivity,
-  useThreadSummary,
-} from './human-chat-panel/use-thread-summary';
-import { HumanChatPanelThreadSummary } from './human-chat-panel/human-chat-panel-thread-summary';
+import { useHumanChatPanel } from './human-chat-panel-context';
 import {
   computeAggregateUnreadMentionCount,
   computeHumanChatUnreadState,
@@ -862,7 +858,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isAuthenticated,
     isLoading: isAuthLoading,
     login,
-    getAccessToken,
   } = useAuthentication();
 
   const currentUserAvatarUrl = me?.avatarUrl;
@@ -895,11 +890,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const editDraftRef = useRef(editDraft);
   editDraftRef.current = editDraft;
   const [roomId, setRoomId] = useState<string | null>(null);
-  const {
-    summary: threadSummary,
-    isLoading: threadSummaryLoading,
-    refresh: refreshThreadSummaryView,
-  } = useThreadSummary(spaceSlug, roomId);
 
   useEffect(() => {
     setMentionDisplayOverride({});
@@ -2530,47 +2520,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return [...messages, pendingRow];
   }, [messages, sendingPending, currentUserAvatarUrl]);
 
-  const reportThreadSummaryActivity = useCallback(
-    (eventId: string, originServerTs: number) => {
-      const slug = spaceSlug?.trim();
-      const activeRoomId = roomId?.trim();
-      if (!slug || !activeRoomId || !eventId.trim()) return;
-      void recordThreadSummaryActivity({
-        spaceSlug: slug,
-        matrixRoomId: activeRoomId,
-        threadKind: mode === 'coherence' ? 'coherence' : 'space',
-        coherenceSlug: mode === 'coherence' ? coherenceSlug : null,
-        threadTitle: mode === 'coherence' ? coherenceTitle : null,
-        lastMessageEventId: eventId,
-        lastMessageOriginServerTs: originServerTs,
-        getAccessToken,
-      }).then(() => {
-        void refreshThreadSummaryView();
-      });
-    },
-    [
-      coherenceSlug,
-      coherenceTitle,
-      getAccessToken,
-      mode,
-      refreshThreadSummaryView,
-      roomId,
-      spaceSlug,
-    ],
-  );
-
-  useEffect(() => {
-    if (!roomId || !spaceSlug?.trim()) return;
-    const latest = [...messages]
-      .reverse()
-      .find((m) => !m.isSynthetic && !m.sendPending && m.id.trim());
-    if (!latest?.timestamp) return;
-    const timer = window.setTimeout(() => {
-      reportThreadSummaryActivity(latest.id, latest.timestamp!.getTime());
-    }, 2500);
-    return () => window.clearTimeout(timer);
-  }, [messages, reportThreadSummaryActivity, roomId, spaceSlug]);
-
   useEffect(() => {
     if (!client || !roomId) return;
     const room = client.getRoom(roomId);
@@ -3073,9 +3022,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               }
             : {}),
         });
-        if (sendResult.eventId && spaceSlug?.trim()) {
-          reportThreadSummaryActivity(sendResult.eventId, Date.now());
-        }
         const mentionTargets = mentionUserIds.filter((matrixId) => {
           if (matrixId === currentUserIdRef.current) return false;
           if (!hasSignalTeamPolicy) return true;
@@ -3635,41 +3581,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     </div>
                   </div>
                 ) : (
-                  <>
-                    <HumanChatPanelThreadSummary
-                      summary={threadSummary}
-                      isLoading={threadSummaryLoading}
-                      threadTitle={mode === 'coherence' ? coherenceTitle : null}
-                    />
-                    <HumanChatPanelMessages
-                      messages={mergedMessages}
-                      roomId={roomId}
-                      currentUserId={currentUserId}
-                      currentUserAvatarUrl={currentUserAvatarUrl}
-                      onReply={handleReplyToMessage}
-                      onEditMessage={handleEditMessage}
-                      onDeleteMessage={handleDeleteMessage}
-                      onToggleReaction={handleToggleReaction}
-                      resolveReactionReactorLabel={(userId) =>
-                        resolveMemberLabel(userId)
-                      }
-                      resolveMatrixMemberLabel={resolveMentionMemberLabel}
-                      resolveSenderDisplayLabel={resolveSenderDisplayLabel}
-                      onCancelSendPending={cancelSendInFlight}
-                      firstUnreadMessageId={
-                        unreadChatState.firstUnreadMessageId
-                      }
-                      unreadNotificationCount={
-                        unreadChatState.unreadNotificationCount
-                      }
-                      unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
-                      onReachedTimelineBottom={handleReachedTimelineBottom}
-                      onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
-                      scrollTargetEventId={scrollToEventId}
-                      onConsumedScrollTarget={handleConsumedScrollTarget}
-                      onScrollTargetNotFound={handleScrollTargetNotFound}
-                    />
-                  </>
+                  <HumanChatPanelMessages
+                    messages={mergedMessages}
+                    roomId={roomId}
+                    currentUserId={currentUserId}
+                    currentUserAvatarUrl={currentUserAvatarUrl}
+                    onReply={handleReplyToMessage}
+                    onEditMessage={handleEditMessage}
+                    onDeleteMessage={handleDeleteMessage}
+                    onToggleReaction={handleToggleReaction}
+                    resolveReactionReactorLabel={(userId) =>
+                      resolveMemberLabel(userId)
+                    }
+                    resolveMatrixMemberLabel={resolveMentionMemberLabel}
+                    resolveSenderDisplayLabel={resolveSenderDisplayLabel}
+                    onCancelSendPending={cancelSendInFlight}
+                    firstUnreadMessageId={unreadChatState.firstUnreadMessageId}
+                    unreadNotificationCount={
+                      unreadChatState.unreadNotificationCount
+                    }
+                    unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
+                    onReachedTimelineBottom={handleReachedTimelineBottom}
+                    onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
+                    scrollTargetEventId={scrollToEventId}
+                    onConsumedScrollTarget={handleConsumedScrollTarget}
+                    onScrollTargetNotFound={handleScrollTargetNotFound}
+                  />
                 )}
               </div>
             )}

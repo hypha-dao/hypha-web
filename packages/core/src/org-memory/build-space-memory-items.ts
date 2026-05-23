@@ -9,8 +9,7 @@ export type SpaceMemorySource =
   | 'matrix_chat'
   | 'call_recording'
   | 'call_transcript'
-  | 'discussion_summary'
-  | 'thread_summary';
+  | 'discussion_summary';
 
 export type SpaceMemoryAssetKind = 'document' | 'image' | 'video' | 'other';
 
@@ -40,8 +39,7 @@ export type OrgMemoryAssetWire = {
     | 'matrix_chat'
     | 'call_recording'
     | 'call_transcript'
-    | 'discussion_summary'
-    | 'thread_summary';
+    | 'discussion_summary';
   filename: string;
   asset_key?: string;
   mime?: string;
@@ -56,7 +54,6 @@ export type OrgMemoryAssetWire = {
   document_label?: string;
   call_session_id?: string;
   discussion_summary_id?: number;
-  thread_summary_id?: number;
   text_excerpt?: string;
   occurred_at: string;
 };
@@ -420,16 +417,10 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
       continue;
     }
 
-    if (
-      a.source === 'call_transcript' ||
-      a.source === 'discussion_summary' ||
-      a.source === 'thread_summary'
-    ) {
+    if (a.source === 'call_transcript' || a.source === 'discussion_summary') {
       const syntheticId =
         a.source === 'discussion_summary'
           ? String(a.discussion_summary_id ?? a.filename)
-          : a.source === 'thread_summary'
-          ? String(a.thread_summary_id ?? a.filename)
           : String(a.call_session_id ?? a.filename);
       items.push({
         id: `${a.source}:${syntheticId}`,
@@ -437,8 +428,6 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
           ? a.filename
           : a.source === 'discussion_summary'
           ? 'Discussion summary'
-          : a.source === 'thread_summary'
-          ? 'Thread summary'
           : 'Call transcript',
         url: `memory://${a.source}/${syntheticId}`,
         kind: 'document',

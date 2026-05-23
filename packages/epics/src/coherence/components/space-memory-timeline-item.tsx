@@ -479,10 +479,7 @@ export function SpaceMemoryTimelineItem({
     if (item.source === 'memory') return t('spaceMemory');
     if (item.source === 'proposal_upload') return t('spaceMemoryProposals');
     if (item.source === 'matrix_chat') return t('spaceMemoryConversations');
-    if (
-      item.source === 'discussion_summary' ||
-      item.source === 'thread_summary'
-    )
+    if (item.source === 'discussion_summary')
       return t('spaceMemoryConversations');
     if (item.source === 'call_transcript')
       return t('spaceMemoryCallTranscriptExcerpt');
