@@ -16,10 +16,59 @@ declare global {
   }
 }
 
+/** Mirror theme tokens and typography so portaled dock matches the main app. */
+function copyDocumentAppearance(source: Document, target: Document) {
+  const sourceHtml = source.documentElement;
+  const targetHtml = target.documentElement;
+  targetHtml.className = sourceHtml.className;
+  targetHtml.lang = sourceHtml.lang;
+  for (const attr of sourceHtml.attributes) {
+    if (attr.name === 'class' || attr.name === 'lang') continue;
+    targetHtml.setAttribute(attr.name, attr.value);
+  }
+
+  const rootComputed = getComputedStyle(sourceHtml);
+  for (let i = 0; i < rootComputed.length; i += 1) {
+    const prop = rootComputed.item(i);
+    if (!prop?.startsWith('--')) continue;
+    targetHtml.style.setProperty(prop, rootComputed.getPropertyValue(prop));
+  }
+  const colorScheme = rootComputed.colorScheme;
+  if (colorScheme) {
+    targetHtml.style.colorScheme = colorScheme;
+  }
+
+  target.body.className = source.body.className;
+  const bodyComputed = getComputedStyle(source.body);
+  target.body.style.fontFamily = bodyComputed.fontFamily;
+  target.body.style.fontSize = bodyComputed.fontSize;
+  target.body.style.lineHeight = bodyComputed.lineHeight;
+  target.body.style.background = 'transparent';
+  target.body.style.margin = '0';
+  target.body.style.height = '100%';
+  target.body.style.overflow = 'hidden';
+  targetHtml.style.height = '100%';
+}
+
 function copyStylesIntoWindow(target: Window) {
+  copyDocumentAppearance(document, target.document);
+
+  const seenHrefs = new Set<string>();
+  for (const node of document.head.querySelectorAll(
+    'link[rel="stylesheet"], style',
+  )) {
+    if (node instanceof HTMLLinkElement && node.href) {
+      if (seenHrefs.has(node.href)) continue;
+      seenHrefs.add(node.href);
+    }
+    target.document.head.appendChild(node.cloneNode(true));
+  }
+
   for (const sheet of document.styleSheets) {
     try {
       if (sheet.href) {
+        if (seenHrefs.has(sheet.href)) continue;
+        seenHrefs.add(sheet.href);
         const link = target.document.createElement('link');
         link.rel = 'stylesheet';
         link.href = sheet.href;
@@ -31,7 +80,8 @@ function copyStylesIntoWindow(target: Window) {
         target.document.head.appendChild(owner.cloneNode(true));
       }
     } catch {
-      if (sheet.href) {
+      if (sheet.href && !seenHrefs.has(sheet.href)) {
+        seenHrefs.add(sheet.href);
         const link = target.document.createElement('link');
         link.rel = 'stylesheet';
         link.href = sheet.href;
@@ -44,6 +94,10 @@ function copyStylesIntoWindow(target: Window) {
 /**
  * Chrome/Edge Document Picture-in-Picture — keeps the call dock visible when
  * the user switches to another browser tab (Zoom-style floating window).
+ *
+ * The in-page call dock is already draggable/floating; this API creates a
+ * separate always-on-top browser window because a fixed in-tab overlay is
+ * hidden when the Hypha tab is in the background.
  */
 export function useCallDockDocumentPip(dockRef: RefObject<HTMLElement | null>) {
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
@@ -73,11 +127,6 @@ export function useCallDockDocumentPip(dockRef: RefObject<HTMLElement | null>) {
     const height = Math.max(260, el?.offsetHeight ?? 320);
     const win = await api.requestWindow({ width, height });
     copyStylesIntoWindow(win);
-    win.document.documentElement.style.height = '100%';
-    win.document.body.style.margin = '0';
-    win.document.body.style.height = '100%';
-    win.document.body.style.background = 'transparent';
-    win.document.body.style.overflow = 'hidden';
     setPipWindow(win);
     return true;
   }, [dockRef, pipWindow]);
