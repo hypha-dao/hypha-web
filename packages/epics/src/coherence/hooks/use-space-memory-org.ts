@@ -57,6 +57,7 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
         const qs = queryString.stringify({
           assets_page: assetsPage,
           assets_page_size: assetsPageSize,
+          assets_view: 'full',
           ...(search ? { assets_search: search } : {}),
         });
         const url = `/api/v1/spaces/${slug}/org-memory?${qs}`;
@@ -72,10 +73,12 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
         return (await res.json()) as OrgMemorySpaceMemoryPayload;
       },
       {
-        revalidateOnFocus: true,
-        refreshInterval: 60_000,
+        revalidateOnFocus: false,
+        revalidateIfStale: true,
+        refreshInterval: 120_000,
         refreshWhenHidden: false,
         refreshWhenOffline: false,
+        keepPreviousData: true,
       },
     );
 

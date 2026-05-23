@@ -77,6 +77,11 @@ export type GetOrgMemoryBySpaceSlugInput = {
    * (Space Memory / browser API parity with Human Chat).
    */
   requestUrlForSessionMatrix?: string;
+  /**
+   * `full` — user-facing Space Memory (no signal compaction).
+   * `signal` — coherence / signal orchestrator digest (applies compaction).
+   */
+  assetView?: 'full' | 'signal';
 };
 
 /** Why Matrix-backed rows may be empty (MCP / debugging — no secrets). */
@@ -756,6 +761,38 @@ function looksOpaqueNoiseFilename(filename: string): boolean {
   return hashLike || uuidLike || genericScreenshot;
 }
 
+function orgMemoryAssetStableId(asset: OrgMemoryAsset): string {
+  const uniqueLocator =
+    asset.app_url ??
+    asset.mxc_uri ??
+    (asset.call_recording_id != null
+      ? `call-recording:${asset.call_recording_id}`
+      : null) ??
+    (asset.call_transcript_id != null
+      ? `call-transcript:${asset.call_transcript_id}`
+      : null) ??
+    (asset.discussion_summary_id != null
+      ? `discussion-summary:${asset.discussion_summary_id}`
+      : null) ??
+    (asset.document_id != null && asset.source === 'memory' && !asset.app_url
+      ? `memory-body:${asset.document_id}`
+      : null) ??
+    `${asset.filename}:${asset.occurred_at}`;
+  return `${asset.source}:${uniqueLocator}`;
+}
+
+function compareOrgMemoryAssetsStable(
+  a: OrgMemoryAsset,
+  b: OrgMemoryAsset,
+): number {
+  const tb = Date.parse(b.occurred_at);
+  const ta = Date.parse(a.occurred_at);
+  const tbd = Number.isFinite(tb) ? tb : 0;
+  const tad = Number.isFinite(ta) ? ta : 0;
+  if (tbd !== tad) return tbd - tad;
+  return orgMemoryAssetStableId(a).localeCompare(orgMemoryAssetStableId(b));
+}
+
 function compactOrgMemoryAssetsForSignal(
   assets: OrgMemoryAsset[],
 ): OrgMemoryAsset[] {
@@ -823,6 +860,7 @@ export async function getOrgMemoryBySpaceSlug(
     assetsPageSize = 50,
     assetsSearch,
     requestUrlForSessionMatrix,
+    assetView = 'full',
   }: GetOrgMemoryBySpaceSlugInput,
   { db, authToken }: DbConfig & { authToken?: string },
 ): Promise<
@@ -1036,10 +1074,10 @@ export async function getOrgMemoryBySpaceSlug(
     ...recordingAssets,
     ...transcriptAssets,
     ...discussionSummaryAssets,
-  ].sort((a, b) =>
-    a.occurred_at < b.occurred_at ? 1 : a.occurred_at > b.occurred_at ? -1 : 0,
-  );
-  combined = compactOrgMemoryAssetsForSignal(combined);
+  ].sort(compareOrgMemoryAssetsStable);
+  if (assetView === 'signal') {
+    combined = compactOrgMemoryAssetsForSignal(combined);
+  }
   combined = filterAssetsBySearch(combined, assetsSearch);
 
   const total = combined.length;

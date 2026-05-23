@@ -544,6 +544,7 @@ export async function processSignalOrchestratorBatch(
             assetsPage: 1,
             assetsPageSize: 40,
             requestUrlForSessionMatrix,
+            assetView: 'signal',
           },
           { db, authToken: systemAuthToken },
         ),
