@@ -280,23 +280,6 @@ function collectMemoryDocumentAssets(
       });
     }
 
-    if (doc.leadImage?.trim()) {
-      const url = doc.leadImage;
-      const key = `memory:${doc.id}:lead`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        out.push({
-          source: 'memory',
-          filename: url.split('/').pop() || 'lead-image',
-          app_url: url,
-          document_id: doc.id,
-          occurred_at: doc.updatedAt.toISOString(),
-          text_excerpt: excerpt.slice(0, 500) || undefined,
-          ...proposalDocContextFields(doc),
-        });
-      }
-    }
-
     const attachments = doc.attachments ?? [];
     attachments.forEach((a, i) => {
       const row = normalizeMemoryAttachment(doc, a, i);
@@ -319,21 +302,6 @@ function collectProposalAssets(
   const out: OrgMemoryAsset[] = [];
   const seen = new Set<string>();
   for (const doc of documents) {
-    if (doc.leadImage?.trim()) {
-      const url = doc.leadImage;
-      const key = `doc:${doc.id}:lead`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        out.push({
-          source: 'proposal_upload',
-          filename: url.split('/').pop() || 'lead-image',
-          app_url: url,
-          document_id: doc.id,
-          occurred_at: doc.updatedAt.toISOString(),
-          ...proposalDocContextFields(doc),
-        });
-      }
-    }
     const attachments = doc.attachments ?? [];
     attachments.forEach((a, i) => {
       const row = normalizeAttachment(doc, a, i);
@@ -843,7 +811,7 @@ function compactOrgMemoryAssetsForSignal(
 
 /**
  * Organisation memory for a space: member roster (same as `getSpaceMembersRoster`)
- * plus `org_memory_assets` from proposal document attachments/lead images and,
+ * plus `org_memory_assets` from proposal document attachments and,
  * when `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` is set and either
  * `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` **or** (for HTTP with Privy JWT)
  * the caller passes `requestUrlForSessionMatrix` so the user's Matrix token

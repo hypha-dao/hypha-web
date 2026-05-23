@@ -24,7 +24,17 @@ const baseDoc = (over: Partial<Document>): Document => ({
 });
 
 describe('buildSpaceMemoryItemsFromDocuments', () => {
-  it('returns empty when no attachments or lead image for proposals', () => {
+  it('returns empty when proposal has only a lead image (decorative banner)', () => {
+    expect(
+      buildSpaceMemoryItemsFromDocuments([
+        baseDoc({
+          leadImage: 'https://cdn.example/hero.jpg',
+        }),
+      ]),
+    ).toEqual([]);
+  });
+
+  it('returns empty when no attachments for proposals', () => {
     expect(buildSpaceMemoryItemsFromDocuments([baseDoc({})])).toEqual([]);
   });
 
@@ -62,7 +72,7 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
     expect(rows.every((r) => r.source === 'proposal_upload')).toBe(true);
   });
 
-  it('adds lead image when not duplicated in attachments', () => {
+  it('emits attachments but not decorative lead image', () => {
     const docs = [
       baseDoc({
         leadImage: 'https://cdn.example/hero.jpg',
@@ -70,13 +80,12 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
       }),
     ];
     const rows = buildSpaceMemoryItemsFromDocuments(docs);
-    expect(rows).toHaveLength(2);
-    const lead = rows.find((r) => r.id.endsWith(':lead'));
-    expect(lead?.url).toBe('https://cdn.example/hero.jpg');
-    expect(lead?.kind).toBe('image');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.url).toBe('https://cdn.example/other.pdf');
+    expect(rows.some((r) => r.id.endsWith(':lead'))).toBe(false);
   });
 
-  it('skips lead image when same URL exists in attachments', () => {
+  it('dedupes when lead image URL is also listed as attachment', () => {
     const url = 'https://cdn.example/same.png';
     const docs = [
       baseDoc({

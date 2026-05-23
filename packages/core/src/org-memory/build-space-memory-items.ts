@@ -204,7 +204,6 @@ export function buildSpaceMemoryItemsFromDocuments(
 
   for (const doc of documents) {
     const activityIso = documentActivityIso(doc);
-    const attachmentUrls = new Set<string>();
     const docTitle = doc.title?.trim() || '';
     const stateEnum = documentStateForContext(doc.state);
     const baseContext = {
@@ -241,7 +240,6 @@ export function buildSpaceMemoryItemsFromDocuments(
       const { name, url } = normalizeAttachment(raw);
       const safeUrl = normalizeHttpUrl(url);
       if (!safeUrl) return;
-      attachmentUrls.add(safeUrl);
       items.push({
         id: `${doc.id}:attachment:${index}`,
         name,
@@ -253,19 +251,9 @@ export function buildSpaceMemoryItemsFromDocuments(
       });
     });
 
-    const lead = doc.leadImage ? normalizeHttpUrl(doc.leadImage) : null;
-    if (lead && !attachmentUrls.has(lead)) {
-      const name = fileNameFromUrl(lead);
-      items.push({
-        id: `${doc.id}:lead`,
-        name,
-        url: lead,
-        kind: inferKind(name, lead),
-        source: uploadSource,
-        uploadedAt: activityIso,
-        context: { ...baseContext },
-      });
-    }
+    // Proposal/document leadImage is a decorative header banner (often auto-copied
+    // from the space hero). Real uploads live in `attachments` — omit leadImage
+    // from Space Memory / org_memory_assets.
   }
 
   items.sort((a, b) => {
