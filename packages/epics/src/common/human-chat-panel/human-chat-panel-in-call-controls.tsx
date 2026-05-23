@@ -180,9 +180,6 @@ export function HumanChatPanelInCallControls({
   const useSideAudioSettings =
     !isCompact &&
     (isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered');
-  const captureActive = captureMode !== 'none' && recordingStatus !== 'error';
-  const capturePending =
-    captureActive && recordingStatus === 'idle' && !controlsDisabled;
   const captureStatusText =
     recordingStatus === 'recording'
       ? t('callCaptureStatusCapturing')
@@ -202,6 +199,9 @@ export function HumanChatPanelInCallControls({
       ? 'fill-none stroke-white/80 text-white/80'
       : 'fill-none stroke-muted-foreground text-muted-foreground',
   );
+  const captureActive = captureMode !== 'none' && recordingStatus !== 'error';
+  const capturePending =
+    captureActive && recordingStatus === 'idle' && !controlsDisabled;
   const captureLive = captureActive;
   const captureMenuActive = captureActive;
   const capturePulsing = recordingStatus === 'recording';
