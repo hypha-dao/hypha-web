@@ -389,9 +389,13 @@ export function HumanChatPanelMessages({
       {showUnreadBanner &&
       firstUnreadMeta.dateLabel &&
       firstUnreadMeta.timeLabel ? (
-        <div className="border-b border-border bg-primary px-3 py-2 text-primary-foreground shadow-sm">
+        <div
+          role="status"
+          aria-live="polite"
+          className="border-b border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_40%,transparent)] bg-[color:var(--color-accent-9,var(--space-accent,#4a65d8))] px-3 py-2 shadow-sm"
+        >
           <div className="flex items-start justify-between gap-2">
-            <p className="min-w-0 flex-1 text-xs font-medium leading-snug">
+            <p className="min-w-0 flex-1 text-xs font-medium leading-snug text-[color:var(--color-accent-contrast,#f8fafc)]">
               {unreadNotificationCount <= 0
                 ? t('unreadBannerSince', {
                     date: firstUnreadMeta.dateLabel,
@@ -412,7 +416,7 @@ export function HumanChatPanelMessages({
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 shrink-0 border-0 bg-primary-foreground/15 text-xs text-primary-foreground hover:bg-primary-foreground/25"
+              className="h-7 shrink-0 border-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_12%,transparent)] text-xs text-[color:var(--color-accent-contrast,#f8fafc)] hover:bg-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_22%,transparent)]"
               onClick={() => {
                 onMarkAsReadFromBanner?.();
               }}
