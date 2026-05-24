@@ -3,7 +3,7 @@
 import { useMemo, type KeyboardEvent, type ReactNode } from 'react';
 import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
-import { Bell, BellOff, ArrowUpRight } from 'lucide-react';
+import { Bell, ArrowUpRight } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -23,7 +23,11 @@ import {
   looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
 } from './matrix-room-member-display';
-import { gatherAggregatedMentionPreviews } from './matrix-chat-unread';
+import {
+  gatherAggregatedMentionPreviews,
+  replacementEventsByRootId,
+  wireContentForMentionParse,
+} from './matrix-chat-unread';
 
 export type HumanChatPanelMentionTabProps = {
   client: MatrixClient | null;
@@ -36,8 +40,15 @@ export type HumanChatPanelMentionTabProps = {
   aggregatedMentions?: boolean;
 };
 
-function excerptFromRoomMessage(ev: MatrixEvent): string {
-  const content = ev.getContent() as { body?: string } | undefined;
+function excerptFromRoomMessage(
+  ev: MatrixEvent,
+  replacementsByRootId?: Map<string, MatrixEvent[]>,
+): string {
+  const content = (
+    replacementsByRootId
+      ? wireContentForMentionParse(ev, replacementsByRootId)
+      : ev.getContent()
+  ) as { body?: string } | undefined;
   const raw = typeof content?.body === 'string' ? content.body : '';
   return stripMatrixReplyFallback(raw).trim().slice(0, 280);
 }
@@ -151,6 +162,7 @@ function gatherMentionEvents(
   if (!room) return [];
 
   const events = room.getLiveTimeline().getEvents();
+  const replacementsByRootId = replacementEventsByRootId(events);
   const out: MatrixEvent[] = [];
   for (let i = events.length - 1; i >= 0 && out.length < limit; i--) {
     const ev = events[i];
@@ -161,7 +173,14 @@ function gatherMentionEvents(
     if (isRedactedRoomMessageEvent(ev)) continue;
     if (getMessageReplaceTargetEventId(ev) != null) continue;
 
-    if (!contentMentionsMatrixUser(ev.getContent(), currentUserId)) continue;
+    if (
+      !contentMentionsMatrixUser(
+        wireContentForMentionParse(ev, replacementsByRootId),
+        currentUserId,
+      )
+    ) {
+      continue;
+    }
 
     out.push(ev);
   }
@@ -245,6 +264,12 @@ export function HumanChatPanelMentionTab({
       ? gatherAggregatedMentionPreviews(client, currentUserId, 80)
       : [];
 
+  const singleRoomTimeline =
+    !aggregatedMentions && client && roomId
+      ? client.getRoom(roomId)?.getLiveTimeline().getEvents() ?? []
+      : [];
+  const singleRoomReplacements = replacementEventsByRootId(singleRoomTimeline);
+
   const singleRoomRows =
     !aggregatedMentions && client && roomId && currentUserId
       ? gatherMentionEvents(client, roomId, currentUserId, 80)
@@ -317,7 +342,10 @@ export function HumanChatPanelMentionTab({
                   const id = ev.getId();
                   const senderId = ev.getSender();
                   if (!id || !senderId) return null;
-                  const excerpt = excerptFromRoomMessage(ev);
+                  const excerpt = excerptFromRoomMessage(
+                    ev,
+                    singleRoomReplacements,
+                  );
                   const senderSyncLabel = resolveMemberLabel(senderId);
                   const ts = ev.getTs();
                   const navigateLabel = t('mentionInboxNavigateToMessage');
