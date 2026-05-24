@@ -2061,6 +2061,8 @@
     "mentionInboxBellAria": "{count, plural, one {# unread mention} other {# unread mentions}}",
     "mentionInboxBellAriaCapped": "99 or more unread mentions",
     "mentionInboxBellAriaEmpty": "Open mentions",
+    "mentionInboxNavigateToMessage": "Go to message",
+    "mentionInboxOpenConversation": "Open conversation in {room}",
     "composerVoiceRecord": "Record voice message",
     "composerVoiceStop": "Stop recording",
     "composerMicMenu": "Voice and dictation",

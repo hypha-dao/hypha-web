@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, type KeyboardEvent } from 'react';
+import { useMemo, type KeyboardEvent, type ReactNode } from 'react';
 import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
-import { Bell, BellOff } from 'lucide-react';
+import { Bell, BellOff, ArrowUpRight } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -168,6 +168,66 @@ function gatherMentionEvents(
   return out;
 }
 
+const MENTION_INBOX_ROW_CLASS =
+  'group flex w-full cursor-pointer flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+
+const MENTION_INBOX_NAV_ICON_CLASS =
+  'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background/80 text-muted-foreground shadow-sm transition-colors group-hover:border-accent-8/60 group-hover:bg-accent-2/80 group-hover:text-foreground';
+
+function MentionInboxNavigateIcon({ label }: { label: string }) {
+  return (
+    <span className={MENTION_INBOX_NAV_ICON_CLASS} aria-hidden title={label}>
+      <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
+    </span>
+  );
+}
+
+function MentionInboxRow({
+  ariaLabel,
+  navigateLabel,
+  onNavigate,
+  header,
+  sender,
+  excerpt,
+}: {
+  ariaLabel: string;
+  navigateLabel: string;
+  onNavigate: () => void;
+  header?: ReactNode;
+  sender: ReactNode;
+  excerpt: ReactNode;
+}) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      className={MENTION_INBOX_ROW_CLASS}
+      aria-label={ariaLabel}
+      onClick={(e) => {
+        if (eventComesFromInteractiveChild(e.target)) return;
+        onNavigate();
+      }}
+      onKeyDown={(e) => {
+        if (eventComesFromInteractiveChild(e.target)) return;
+        selectMentionRowKeyDown(e, onNavigate);
+      }}
+    >
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1 flex flex-col gap-1">
+          {header}
+          <div className="flex items-baseline justify-between gap-2">
+            {sender}
+          </div>
+          <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground [&_a]:break-all [&_a]:font-medium [&_a]:text-primary [&_a]:underline">
+            {excerpt}
+          </p>
+        </div>
+        <MentionInboxNavigateIcon label={navigateLabel} />
+      </div>
+    </div>
+  );
+}
+
 /** Inline Mentions tab body (same panel as Chat / Members — no overlay). */
 export function HumanChatPanelMentionTab({
   client,
@@ -206,54 +266,50 @@ export function HumanChatPanelMentionTab({
             {aggregatedMentions
               ? aggregatedRows.map((row) => {
                   const senderSyncLabel = resolveMemberLabel(row.senderId);
+                  const navigateLabel = t('mentionInboxNavigateToMessage');
                   return (
                     <li key={`${row.roomId}:${row.eventId}`}>
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        className="flex w-full flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md"
-                        onClick={(e) => {
-                          if (eventComesFromInteractiveChild(e.target)) return;
-                          onSelectMessage(row.eventId, row.roomId);
-                        }}
-                        onKeyDown={(e) => {
-                          if (eventComesFromInteractiveChild(e.target)) return;
-                          selectMentionRowKeyDown(e, () =>
-                            onSelectMessage(row.eventId, row.roomId),
-                          );
-                        }}
-                      >
-                        <div className="flex items-baseline justify-between gap-2">
-                          <span className="min-w-0 truncate text-[11px] font-medium text-muted-foreground">
-                            {row.roomDisplayName}
-                          </span>
-                          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                            {format.dateTime(new Date(row.timestamp), {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </span>
-                        </div>
-                        <div className="flex items-baseline justify-between gap-2">
+                      <MentionInboxRow
+                        ariaLabel={t('mentionInboxOpenConversation', {
+                          room: row.roomDisplayName,
+                        })}
+                        navigateLabel={navigateLabel}
+                        onNavigate={() =>
+                          onSelectMessage(row.eventId, row.roomId)
+                        }
+                        header={
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="min-w-0 truncate text-[11px] font-medium text-muted-foreground">
+                              {row.roomDisplayName}
+                            </span>
+                            <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                              {format.dateTime(new Date(row.timestamp), {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          </div>
+                        }
+                        sender={
                           <span className="min-w-0 truncate text-xs font-semibold text-foreground">
                             <MentionInboxSenderName
                               matrixUserId={row.senderId}
                               syncLabel={senderSyncLabel}
                             />
                           </span>
-                        </div>
-                        <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground [&_a]:break-all [&_a]:font-medium [&_a]:text-primary [&_a]:underline">
-                          {row.excerpt
+                        }
+                        excerpt={
+                          row.excerpt
                             ? renderTextWithMentions(
                                 row.excerpt,
                                 resolveMemberLabel,
                                 false,
                               )
-                            : t('mentionInboxNoPreview')}
-                        </p>
-                      </div>
+                            : t('mentionInboxNoPreview')
+                        }
+                      />
                     </li>
                   );
                 })
@@ -264,48 +320,42 @@ export function HumanChatPanelMentionTab({
                   const excerpt = excerptFromRoomMessage(ev);
                   const senderSyncLabel = resolveMemberLabel(senderId);
                   const ts = ev.getTs();
+                  const navigateLabel = t('mentionInboxNavigateToMessage');
 
                   return (
                     <li key={id}>
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        className="flex w-full flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md"
-                        onClick={(e) => {
-                          if (eventComesFromInteractiveChild(e.target)) return;
-                          onSelectMessage(id);
-                        }}
-                        onKeyDown={(e) => {
-                          if (eventComesFromInteractiveChild(e.target)) return;
-                          selectMentionRowKeyDown(e, () => onSelectMessage(id));
-                        }}
-                      >
-                        <div className="flex items-baseline justify-between gap-2">
-                          <span className="min-w-0 truncate text-xs font-semibold text-foreground">
-                            <MentionInboxSenderName
-                              matrixUserId={senderId}
-                              syncLabel={senderSyncLabel}
-                            />
-                          </span>
-                          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                            {format.dateTime(new Date(ts), {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </span>
-                        </div>
-                        <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground [&_a]:break-all [&_a]:font-medium [&_a]:text-primary [&_a]:underline">
-                          {excerpt
+                      <MentionInboxRow
+                        ariaLabel={navigateLabel}
+                        navigateLabel={navigateLabel}
+                        onNavigate={() => onSelectMessage(id)}
+                        sender={
+                          <>
+                            <span className="min-w-0 truncate text-xs font-semibold text-foreground">
+                              <MentionInboxSenderName
+                                matrixUserId={senderId}
+                                syncLabel={senderSyncLabel}
+                              />
+                            </span>
+                            <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                              {format.dateTime(new Date(ts), {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          </>
+                        }
+                        excerpt={
+                          excerpt
                             ? renderTextWithMentions(
                                 excerpt,
                                 resolveMemberLabel,
                                 false,
                               )
-                            : t('mentionInboxNoPreview')}
-                        </p>
-                      </div>
+                            : t('mentionInboxNoPreview')
+                        }
+                      />
                     </li>
                   );
                 })}

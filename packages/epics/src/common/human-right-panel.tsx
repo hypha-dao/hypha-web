@@ -259,6 +259,7 @@ const ROOM_STORAGE_KEY = 'hypha-chat-room-';
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
 const SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX = 'hypha-room-to-coherence-slug-';
 const SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX = 'hypha-room-to-coherence-title-';
+const COHERENCE_ROOM_REVERSE_PREFIX = 'hypha-room-id-to-coherence-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
 const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
@@ -494,6 +495,10 @@ function rememberRoomToCoherenceSession(
         title.trim(),
       );
     }
+    window.localStorage.setItem(
+      `${COHERENCE_ROOM_REVERSE_PREFIX}${roomId}`,
+      JSON.stringify({ slug, title: title?.trim() || null }),
+    );
   } catch {
     // ignore
   }
@@ -511,10 +516,26 @@ function readRoomToCoherenceSession(roomId: string): {
     const title = window.sessionStorage
       .getItem(`${SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX}${roomId}`)
       ?.trim();
-    return {
-      slug: slug || null,
-      title: title || null,
-    };
+    if (slug) {
+      return { slug, title: title || null };
+    }
+    const persisted = window.localStorage
+      .getItem(`${COHERENCE_ROOM_REVERSE_PREFIX}${roomId}`)
+      ?.trim();
+    if (persisted) {
+      const parsed = JSON.parse(persisted) as {
+        slug?: string;
+        title?: string | null;
+      };
+      const persistedSlug = parsed.slug?.trim();
+      if (persistedSlug) {
+        return {
+          slug: persistedSlug,
+          title: parsed.title?.trim() || null,
+        };
+      }
+    }
+    return { slug: null, title: null };
   } catch {
     return { slug: null, title: null };
   }
@@ -2490,6 +2511,24 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const current = roomId?.trim();
       const langMatch = pathname.match(/^\/([^/]+)\//);
       const lang = langMatch?.[1] ?? 'en';
+      const spaceChatRoomId = space?.chatRoomId?.trim() ?? null;
+      const pathSlug = getDhoSpaceSlugFromPathname(pathname)?.trim() ?? null;
+
+      if (
+        targetRoom &&
+        spaceChatRoomId &&
+        targetRoom === spaceChatRoomId &&
+        spaceSlug &&
+        pathSlug === spaceSlug
+      ) {
+        if (mode === 'coherence') {
+          closeCoherenceChat();
+        }
+        openHumanChatPanel();
+        setActiveTab('chat');
+        setScrollToEventId(eventId);
+        return;
+      }
 
       if (
         targetRoom &&
@@ -2504,7 +2543,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
           slug = fromLs ?? null;
         }
-        if (!slug && space?.chatRoomId?.trim() === targetRoom && spaceSlug) {
+        if (!slug && spaceChatRoomId === targetRoom && spaceSlug) {
           slug = spaceSlug;
         }
         if (slug) {
@@ -2540,6 +2579,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       router,
       openCoherenceChat,
       openHumanChatPanel,
+      closeCoherenceChat,
+      mode,
       space?.chatRoomId,
       spaceSlug,
       t,
