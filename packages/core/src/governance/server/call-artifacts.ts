@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { and, desc, eq, lt, sql } from 'drizzle-orm';
+import { isTrustedCallRecordingMediaUrl } from '../../assets/call-recording-constants';
 import {
   coherences,
   spaceCallRecordings,
@@ -61,13 +62,8 @@ function normalizeRecordingMediaUri(value: string): string | null {
   const mediaUri = value.trim();
   if (!mediaUri) return null;
   if (mediaUri.startsWith('mxc://')) return mediaUri;
-  try {
-    const parsed = new URL(mediaUri);
-    if (parsed.protocol !== 'https:') return null;
-    return parsed.toString();
-  } catch {
-    return null;
-  }
+  if (isTrustedCallRecordingMediaUrl(mediaUri)) return mediaUri;
+  return null;
 }
 
 export async function ingestSpaceCallArtifacts(
@@ -100,7 +96,8 @@ export async function ingestSpaceCallArtifacts(
   if (input.recording && !recordingMediaUri) {
     return {
       ok: false,
-      error: 'recording.mediaUri must be an mxc:// URI or https URL',
+      error:
+        'recording.mediaUri must be an mxc:// URI or trusted object storage URL',
     };
   }
 
