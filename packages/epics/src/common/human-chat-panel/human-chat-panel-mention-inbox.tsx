@@ -8,16 +8,21 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
   contentMentionsMatrixUser,
   stripMatrixReplyFallback,
+  useJwt,
   usePersonBySub,
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
 import { renderTextWithMentions } from './human-chat-panel-message-bubble';
-import { needsHyphaProfileResolutionForMatrixLabel } from './matrix-room-member-display';
+import {
+  looksLikeTechnicalMatrixDisplayName,
+  matrixUserIdToCanonicalPrivySub,
+} from './matrix-room-member-display';
 import { gatherAggregatedMentionPreviews } from './matrix-chat-unread';
 
 export type HumanChatPanelMentionTabProps = {
@@ -59,26 +64,52 @@ function MentionInboxSenderName({
   matrixUserId: string;
   syncLabel: string;
 }) {
-  const needs =
-    needsHyphaProfileResolutionForMatrixLabel(syncLabel) ||
-    !syncLabel.trim() ||
-    syncLabel.trim() === matrixUserId;
+  const t = useTranslations('HumanChatPanel');
+  const canonicalSub = matrixUserIdToCanonicalPrivySub(matrixUserId);
+  const syncLooksTechnical = looksLikeTechnicalMatrixDisplayName(
+    syncLabel,
+    matrixUserId,
+  );
+  const hasFriendlySyncLabel =
+    Boolean(syncLabel.trim()) &&
+    syncLabel.trim() !== matrixUserId &&
+    !syncLooksTechnical;
+  const needsLinkLookup =
+    Boolean(matrixUserId) && !canonicalSub && !hasFriendlySyncLabel;
+  const needsPersonLookup =
+    !hasFriendlySyncLabel && (Boolean(canonicalSub) || needsLinkLookup);
+
   const { privyUserId: linkedSub, isLoading: loadingLink } =
     useUserPrivyIdByMatrixId({
-      matrixUserId: needs ? matrixUserId : undefined,
+      matrixUserId: needsLinkLookup ? matrixUserId : undefined,
     });
+  const resolvedSub = canonicalSub ?? linkedSub;
+  const { user } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
   const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: linkedSub,
+    sub: resolvedSub,
   });
 
   const text = useMemo(() => {
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     if (fromPerson.trim()) return fromPerson;
-    return syncLabel.trim() || matrixUserId;
-  }, [person, syncLabel, matrixUserId]);
+    const fallback = syncLabel.trim();
+    if (
+      fallback &&
+      !looksLikeTechnicalMatrixDisplayName(fallback, matrixUserId)
+    ) {
+      return fallback;
+    }
+    return t('unknownMember');
+  }, [matrixUserId, person, syncLabel, t]);
 
+  const jwtBlockingForPerson =
+    Boolean(resolvedSub) &&
+    ((user && isLoadingJwt && !jwt) || (!user && isLoadingJwt));
   const loading =
-    needs && (loadingLink || (Boolean(linkedSub) && loadingPerson));
+    needsPersonLookup &&
+    ((needsLinkLookup && loadingLink) ||
+      (Boolean(resolvedSub) && (loadingPerson || jwtBlockingForPerson)));
 
   if (loading) {
     return (

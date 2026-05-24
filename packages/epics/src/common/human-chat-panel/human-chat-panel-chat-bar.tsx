@@ -42,13 +42,15 @@ import {
   Skeleton,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
+  useJwt,
   usePersonBySub,
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
 import {
+  looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
-  needsHyphaProfileResolutionForMatrixLabel,
 } from './matrix-room-member-display';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
@@ -155,11 +157,13 @@ function ReplyPreviewAuthorName({
   sourceUserId,
   isYou,
   youLabel,
+  unknownMemberLabel,
 }: {
   authorLabel: string;
   sourceUserId?: string;
   isYou?: boolean;
   youLabel: string;
+  unknownMemberLabel: string;
 }) {
   if (isYou) {
     return <>{youLabel}</>;
@@ -169,30 +173,50 @@ function ReplyPreviewAuthorName({
   const canonicalSub = matrixUserId
     ? matrixUserIdToCanonicalPrivySub(matrixUserId)
     : null;
+  const authorLooksTechnical = looksLikeTechnicalMatrixDisplayName(
+    authorLabel,
+    matrixUserId,
+  );
+  const hasFriendlyAuthorLabel =
+    Boolean(authorLabel.trim()) &&
+    authorLabel.trim() !== matrixUserId &&
+    !authorLooksTechnical;
   const needsLinkLookup =
-    Boolean(matrixUserId) &&
-    !canonicalSub &&
-    (needsHyphaProfileResolutionForMatrixLabel(authorLabel) ||
-      !authorLabel.trim() ||
-      authorLabel.trim() === matrixUserId);
+    Boolean(matrixUserId) && !canonicalSub && !hasFriendlyAuthorLabel;
+  const needsPersonLookup =
+    !hasFriendlyAuthorLabel && (Boolean(canonicalSub) || needsLinkLookup);
 
   const { privyUserId: linkedSub, isLoading: loadingLink } =
     useUserPrivyIdByMatrixId({
       matrixUserId: needsLinkLookup ? matrixUserId : undefined,
     });
+  const resolvedSub = linkedSub ?? canonicalSub ?? undefined;
+  const { user } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
   const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: linkedSub ?? canonicalSub ?? undefined,
+    sub: resolvedSub,
   });
 
   const text = useMemo(() => {
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     if (fromPerson.trim()) return fromPerson;
-    return authorLabel.trim() || matrixUserId || youLabel;
-  }, [authorLabel, matrixUserId, person, youLabel]);
+    const fallback = authorLabel.trim();
+    if (
+      fallback &&
+      !looksLikeTechnicalMatrixDisplayName(fallback, matrixUserId)
+    ) {
+      return fallback;
+    }
+    return unknownMemberLabel;
+  }, [authorLabel, matrixUserId, person, unknownMemberLabel]);
 
+  const jwtBlockingForPerson =
+    Boolean(resolvedSub) &&
+    ((user && isLoadingJwt && !jwt) || (!user && isLoadingJwt));
   const loading =
-    Boolean(matrixUserId) &&
-    (loadingLink || (Boolean(linkedSub ?? canonicalSub) && loadingPerson));
+    needsPersonLookup &&
+    ((needsLinkLookup && loadingLink) ||
+      (Boolean(resolvedSub) && (loadingPerson || jwtBlockingForPerson)));
 
   if (loading) {
     return (
@@ -1936,6 +1960,7 @@ export function HumanChatPanelChatBar({
                     sourceUserId={replyPreview.sourceUserId}
                     isYou={replyPreview.isYou}
                     youLabel={t('you')}
+                    unknownMemberLabel={t('unknownMember')}
                   />
                 </span>
                 <span className="text-muted-foreground"> — </span>

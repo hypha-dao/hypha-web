@@ -1280,7 +1280,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (rosterBySub) return rosterBySub;
       }
       const profileLabel = matrixProfileLabelByUserId[userId]?.trim();
-      if (profileLabel) return profileLabel;
+      if (
+        profileLabel &&
+        !looksLikeTechnicalMatrixDisplayName(profileLabel, userId)
+      ) {
+        return profileLabel;
+      }
       if (roomId && client) {
         const room = client.getRoom(roomId);
         const member = room?.getMember(userId);
