@@ -1,7 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useSpaceGroupCall } from '@hypha-platform/core/client';
+import {
+  setGroupCallSessionActive,
+  useSpaceGroupCall,
+} from '@hypha-platform/core/client';
 import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
 
 type PendingJoin = {
@@ -390,6 +393,13 @@ function useGlobalCallDockValue() {
   );
 
   const showFloatingDock = inSession || call.recordingStatus === 'uploading';
+
+  React.useEffect(() => {
+    setGroupCallSessionActive(showFloatingDock);
+    return () => {
+      setGroupCallSessionActive(false);
+    };
+  }, [showFloatingDock]);
 
   return {
     bindRoomContext,

@@ -23,3 +23,8 @@ export type { ScreenshareTakeoverIncoming } from './screenshare-takeover';
 export type { CallRecordingCaptureWarning } from '../../../assets/call-recording-limits';
 export { logSpaceGroupCallEvent } from './space-group-call-telemetry';
 export type { SpaceGroupCallTelemetryEvent } from './space-group-call-telemetry';
+export {
+  isGroupCallSessionActive,
+  setGroupCallSessionActive,
+  subscribeGroupCallSessionActive,
+} from './active-group-call-registry';

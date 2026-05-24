@@ -5,6 +5,10 @@ import * as MatrixSdk from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { MatrixTokenData, useMatrixToken } from '../hooks';
+import {
+  isGroupCallSessionActive,
+  subscribeGroupCallSessionActive,
+} from '../hooks/active-group-call-registry';
 import { isMatrixRateLimitedError } from '../hooks/space-group-call-utils';
 import type { Message, MessageMediaInfo } from '../../types';
 import { attachReactionsToMessage, isValidReactionKey } from '../../reactions';
@@ -514,6 +518,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   >(null);
   const clientRef = React.useRef<MatrixSdk.MatrixClient | null>(null);
   const sessionRecoveryPromiseRef = React.useRef<Promise<boolean> | null>(null);
+  const pendingClientRecycleRef = React.useRef(false);
   const registeredRoomListenersRef = React.useRef<RoomMessageListenerRecord[]>(
     [],
   );
@@ -574,6 +579,21 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [],
   );
 
+  const recycleMatrixClient = React.useCallback(() => {
+    const existingClient = clientRef.current;
+    if (!existingClient) {
+      return;
+    }
+    existingClient.stopClient();
+    registeredRoomListenersRef.current = [];
+    setRegisteredRoomListeners([]);
+    clientRef.current = null;
+    setClient(null);
+    setActiveMatrixUserId(null);
+    setIsAuthenticated(false);
+    setIsMatrixAvailable(false);
+  }, []);
+
   const recoverMatrixSession = React.useCallback(async (): Promise<boolean> => {
     if (sessionRecoveryPromiseRef.current) {
       return sessionRecoveryPromiseRef.current;
@@ -592,6 +612,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         }
         const existingClient = clientRef.current;
         if (existingClient) {
+          if (isGroupCallSessionActive()) {
+            pendingClientRecycleRef.current = true;
+            return false;
+          }
           try {
             existingClient.stopClient();
           } catch {
@@ -624,17 +648,28 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       return;
     }
     if (matrixToken && activeMatrixUserId === matrixToken.userId) {
+      pendingClientRecycleRef.current = false;
       return;
     }
 
-    client.stopClient();
-    registeredRoomListenersRef.current = [];
-    setRegisteredRoomListeners([]);
-    setClient(null);
-    setActiveMatrixUserId(null);
-    setIsAuthenticated(false);
-    setIsMatrixAvailable(false);
-  }, [activeMatrixUserId, client, matrixToken]);
+    if (isGroupCallSessionActive()) {
+      pendingClientRecycleRef.current = true;
+      return;
+    }
+
+    pendingClientRecycleRef.current = false;
+    recycleMatrixClient();
+  }, [activeMatrixUserId, client, matrixToken, recycleMatrixClient]);
+
+  React.useEffect(() => {
+    return subscribeGroupCallSessionActive(() => {
+      if (!pendingClientRecycleRef.current || isGroupCallSessionActive()) {
+        return;
+      }
+      pendingClientRecycleRef.current = false;
+      recycleMatrixClient();
+    });
+  }, [recycleMatrixClient]);
 
   React.useEffect(() => {
     clientRef.current = client;
