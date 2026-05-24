@@ -55,8 +55,8 @@ export function HumanChatPanelCaptureConsentBanner({
       className={cn(
         'border-b px-4 py-2',
         variant === 'inCall'
-          ? 'border-amber-400/40 bg-amber-600/35'
-          : 'border-amber-500/35 bg-amber-500/12',
+          ? 'border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_40%,transparent)] bg-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_28%,var(--background))]'
+          : 'border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_30%,transparent)] bg-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_12%,var(--background))]',
         className,
       )}
     >
@@ -64,8 +64,8 @@ export function HumanChatPanelCaptureConsentBanner({
         className={cn(
           'text-xs font-medium leading-snug',
           variant === 'inCall'
-            ? 'text-amber-50'
-            : 'text-amber-950 dark:text-amber-50',
+            ? 'text-[color:var(--color-accent-contrast,#f8fafc)]'
+            : 'text-[color:var(--color-accent-12,var(--foreground))]',
         )}
       >
         {message}
@@ -75,8 +75,8 @@ export function HumanChatPanelCaptureConsentBanner({
         className={cn(
           'mt-0.5 text-[11px] leading-snug',
           variant === 'inCall'
-            ? 'text-amber-100'
-            : 'text-amber-900/90 dark:text-amber-100/90',
+            ? 'text-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_88%,transparent)]'
+            : 'text-[color:color-mix(in_srgb,var(--color-accent-11,var(--foreground))_85%,transparent)]',
         )}
       >
         {t('callCaptureConsentLegalNote')}

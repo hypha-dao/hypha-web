@@ -50,7 +50,9 @@ function copyDocumentAppearance(source: Document, target: Document) {
   target.body.style.margin = '0';
   target.body.style.height = '100%';
   target.body.style.overflow = 'hidden';
+  target.body.style.userSelect = 'none';
   targetHtml.style.height = '100%';
+  targetHtml.style.userSelect = 'none';
 }
 
 function copyStylesIntoWindow(target: Window) {

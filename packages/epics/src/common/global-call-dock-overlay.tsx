@@ -37,6 +37,8 @@ import { matrixMemberDisplayLabelFromRoom } from './human-chat-panel/matrix-room
 import { useGlobalCallDock } from './global-call-dock-context';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallDockDocumentPip } from './use-call-dock-document-pip';
+import { useCallDocumentKeepalive } from './use-call-document-keepalive';
+import { useSpaceAccentPortalStyles } from '../spaces/components/space-accent-portal-context';
 
 type DockGeometry = {
   x: number;
@@ -268,6 +270,13 @@ export function GlobalCallDockOverlay() {
     openPip,
     closePip,
   } = useCallDockDocumentPip(dockRef);
+  const spaceAccentStyles = useSpaceAccentPortalStyles();
+  const callMediaActive =
+    callState === 'connected' ||
+    callState === 'connecting' ||
+    callState === 'awaiting_media' ||
+    callState === 'initializing';
+  useCallDocumentKeepalive(callMediaActive, isDocumentPipOpen);
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserDisplayName = React.useMemo(() => {
     const profile = (me ?? null) as {
@@ -610,11 +619,11 @@ export function GlobalCallDockOverlay() {
       data-testid="global-call-dock"
       className={cn(
         inDocumentPip
-          ? 'relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-background/95 shadow-lg'
-          : 'fixed z-[130] flex min-h-[260px] min-w-[360px] flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
+          ? 'relative flex h-full w-full min-h-0 min-w-0 select-none flex-col overflow-hidden rounded-lg border border-border/60 bg-background/95 shadow-lg'
+          : 'fixed z-[130] flex min-h-[260px] min-w-[360px] select-none flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
         modeIsFullscreen ? 'rounded-2xl' : '',
       )}
-      style={containerStyle}
+      style={{ ...spaceAccentStyles, ...containerStyle }}
     >
       {!modeIsFullscreen && !inDocumentPip && (
         <>

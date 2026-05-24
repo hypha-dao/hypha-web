@@ -323,6 +323,16 @@ function chooseRecorderMimeType(output: MediaStream): string | undefined {
   return preferred.find((type) => MediaRecorder.isTypeSupported(type));
 }
 
+/** Typical Synapse default; stay under this when uploading to Matrix directly. */
+export const MATRIX_MEDIA_UPLOAD_SOFT_LIMIT_BYTES = 10 * 1024 * 1024;
+
+/** Vercel serverless request body limit (~4.5 MB). Upload media to Matrix first. */
+const VERCEL_FUNCTION_PAYLOAD_SOFT_LIMIT_BYTES = 4 * 1024 * 1024;
+
+/** Target ~6–7 MB for a 5-minute capture at default bitrates. */
+const RECORDING_AUDIO_BITS_PER_SECOND = 48_000;
+const RECORDING_VIDEO_BITS_PER_SECOND = 96_000;
+
 type CallRecordingControls = {
   mimeType: string;
   pause: () => void;
@@ -344,11 +354,17 @@ function startMediaStreamRecording(
   }
 
   const mimeType = chooseRecorderMimeType(output);
+  const hasVideo = output.getVideoTracks().length > 0;
+  const recorderOptions: MediaRecorderOptions = {
+    ...(mimeType ? { mimeType } : {}),
+    audioBitsPerSecond: RECORDING_AUDIO_BITS_PER_SECOND,
+    ...(hasVideo
+      ? { videoBitsPerSecond: RECORDING_VIDEO_BITS_PER_SECOND }
+      : {}),
+  };
   let recorder: MediaRecorder;
   try {
-    recorder = mimeType
-      ? new MediaRecorder(output, { mimeType })
-      : new MediaRecorder(output);
+    recorder = new MediaRecorder(output, recorderOptions);
   } catch {
     dispose();
     return null;
@@ -543,9 +559,6 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
   });
 }
 
-/** Vercel serverless request body limit (~4.5 MB). Upload media to Matrix first. */
-const VERCEL_FUNCTION_PAYLOAD_SOFT_LIMIT_BYTES = 4 * 1024 * 1024;
-
 export async function uploadRecordedCallArtifact({
   authToken,
   spaceSlug,
@@ -583,6 +596,15 @@ export async function uploadRecordedCallArtifact({
       });
       uploadedMediaUri = upload.content_uri?.trim() || null;
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (
+        message.includes('413') ||
+        message.includes('maximum allowed upload size')
+      ) {
+        throw new Error(
+          'Recording exceeds your Matrix server upload limit (~10 MB). Use transcript-only capture or stop recording sooner.',
+        );
+      }
       if (blob.size <= VERCEL_FUNCTION_PAYLOAD_SOFT_LIMIT_BYTES) {
         // Fall back to server relay for small blobs when direct upload fails.
       } else {
