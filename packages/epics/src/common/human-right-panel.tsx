@@ -59,6 +59,9 @@ import {
   UserSpaceState,
   useUserSpaceState,
 } from '../spaces/hooks/use-user-space-state';
+import { useSpaceDiscoverability } from '../spaces/hooks/use-space-discoverability';
+import { checkAccess } from '../spaces/utils/transparency-access';
+import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 
 import {
   HumanChatPanelHeader,
@@ -857,17 +860,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [spaceMembersResult?.data],
   );
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
+  const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
+  const { access: spaceActivityAccess, isLoading: isDiscoverabilityLoading } =
+    useSpaceDiscoverability({
+      spaceId: effectiveSpaceWeb3Id ? BigInt(effectiveSpaceWeb3Id) : undefined,
+    });
   const { userState: userSpaceState, isLoading: isUserSpaceStateLoading } =
     useUserSpaceState({
       spaceSlug,
       space,
+      spaceId: effectiveSpaceWeb3Id,
     });
   const { updateSpaceBySlug } = useSpaceMutationsWeb2Rsc(authToken);
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
 
-  const hasSpaceChatAccess = userSpaceState === UserSpaceState.LOGGED_IN_SPACE;
-  const blockSpaceChatForMembership =
-    mode === 'space' && !isUserSpaceStateLoading && !hasSpaceChatAccess;
+  const hasSpaceActivityAccess = checkAccess(
+    spaceActivityAccess,
+    userSpaceState,
+  );
+  const isSpaceMember = userSpaceState === UserSpaceState.LOGGED_IN_SPACE;
+  const blockSpaceChatForActivityAccess =
+    mode === 'space' &&
+    !isUserSpaceStateLoading &&
+    !isDiscoverabilityLoading &&
+    !hasSpaceActivityAccess;
+  const blockSpaceChatComposer =
+    mode === 'space' && !isUserSpaceStateLoading && !isSpaceMember;
 
   const authTokenRef = useRef(authToken);
   authTokenRef.current = authToken;
@@ -1069,8 +1087,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       Boolean(roomId) &&
       isMatrixAvailable &&
       isMatrixAuthenticated &&
-      hasSpaceChatAccess,
-    [roomId, isMatrixAvailable, isMatrixAuthenticated, hasSpaceChatAccess],
+      isSpaceMember,
+    [roomId, isMatrixAvailable, isMatrixAuthenticated, isSpaceMember],
   );
 
   const inSpaceCall =
@@ -1997,7 +2015,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (mode !== 'space') return;
     if (isUserSpaceStateLoading) return;
-    if (hasSpaceChatAccess) return;
+    if (hasSpaceActivityAccess) return;
     if (roomId) {
       matrixRef.current.unregisterRoomListener(roomId);
     }
@@ -2008,7 +2026,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setEditDraft(null);
     setInput('');
     setError(null);
-  }, [mode, roomId, hasSpaceChatAccess, isUserSpaceStateLoading]);
+  }, [mode, roomId, hasSpaceActivityAccess, isUserSpaceStateLoading]);
 
   // Join space room when Matrix is ready (space mode)
   useEffect(() => {
@@ -2022,7 +2040,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!spaceSlug) return;
     if (isSpaceLoading) return;
     if (isUserSpaceStateLoading) return;
-    if (!hasSpaceChatAccess) return;
+    if (!hasSpaceActivityAccess) return;
 
     let cancelled = false;
     const { joinRoom, createRoom, getRoomMessages, loadRoomHistory, client } =
@@ -2136,7 +2154,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceSlug,
     isSpaceLoading,
     isUserSpaceStateLoading,
-    hasSpaceChatAccess,
+    hasSpaceActivityAccess,
     space?.chatRoomId,
   ]);
 
@@ -3447,6 +3465,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               </div>
             </Empty>
           </div>
+        ) : blockSpaceChatForActivityAccess ? (
+          <div className="flex flex-1 items-center justify-center px-6">
+            <SpaceAccessDenied
+              userState={userSpaceState}
+              spaceId={effectiveSpaceWeb3Id}
+              spaceSlug={spaceSlug ?? undefined}
+            />
+          </div>
         ) : (
           <>
             {activeTab === 'chat' && (
@@ -3762,7 +3788,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           </>
         )}
       </SidebarContent>
-      {activeTab === 'chat' && !blockSpaceChatForMembership && (
+      {activeTab === 'chat' && !blockSpaceChatComposer && (
         <SidebarFooter className="relative z-20 bg-background-2 p-0">
           <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
             <HumanChatPanelChatBar

@@ -35,6 +35,7 @@ import {
   useCreateSpaceOrchestrator,
   useJwt,
   useMatrix,
+  useSpaceBySlug,
   useSpacesBySlugs,
 } from '@hypha-platform/core/client';
 import {
@@ -68,6 +69,9 @@ import {
   UserSpaceState,
   useUserSpaceState,
 } from '../spaces/hooks/use-user-space-state';
+import { useSpaceDiscoverability } from '../spaces/hooks/use-space-discoverability';
+import { checkAccess } from '../spaces/utils/transparency-access';
+import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import {
   MAX_RECENT_SPACE_HISTORY,
   MAX_VISIBLE_RECENT_SPACES,
@@ -171,8 +175,27 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   const { jwt } = useJwt();
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const isCompactHeader = useCompactHeaderMode();
+  const { space } = useSpaceBySlug(spaceSlug ?? '');
+  const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
+  const { access: spaceActivityAccess, isLoading: isDiscoverabilityLoading } =
+    useSpaceDiscoverability({
+      spaceId: effectiveSpaceWeb3Id ? BigInt(effectiveSpaceWeb3Id) : undefined,
+    });
   const { userState: userSpaceState, isLoading: isUserSpaceStateLoading } =
-    useUserSpaceState({ spaceSlug });
+    useUserSpaceState({
+      spaceSlug,
+      space,
+      spaceId: effectiveSpaceWeb3Id,
+    });
+  const hasSpaceActivityAccess = checkAccess(
+    spaceActivityAccess,
+    userSpaceState,
+  );
+  const blockSpaceAiForActivityAccess =
+    Boolean(spaceSlug) &&
+    !isUserSpaceStateLoading &&
+    !isDiscoverabilityLoading &&
+    !hasSpaceActivityAccess;
   const {
     open: isAiOpen,
     overlayVisible,
@@ -1436,6 +1459,27 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
               </div>
             </div>
           </Empty>
+        </SidebarContent>
+      </>
+    );
+  }
+
+  if (blockSpaceAiForActivityAccess) {
+    return (
+      <>
+        <SidebarHeader className="bg-background-2 p-0">
+          <AiPanelHeader
+            showCloseButton={false}
+            leftSlot={triggerButton}
+            rightSlot={closeButton}
+          />
+        </SidebarHeader>
+        <SidebarContent className="flex flex-1 items-center justify-center px-6">
+          <SpaceAccessDenied
+            userState={userSpaceState}
+            spaceId={effectiveSpaceWeb3Id}
+            spaceSlug={spaceSlug ?? undefined}
+          />
         </SidebarContent>
       </>
     );
