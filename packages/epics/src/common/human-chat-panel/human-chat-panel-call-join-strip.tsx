@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import type { SpaceGroupCallCaptureConsent } from '@hypha-platform/core/client';
-import { Phone, Video, X } from 'lucide-react';
+import { Bell, BellOff, Phone, Video, X } from 'lucide-react';
 import { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
 
 type HumanChatPanelCallJoinStripProps = {
@@ -18,6 +18,8 @@ type HumanChatPanelCallJoinStripProps = {
    */
   durableMessage?: string | null;
   onDismissDurable?: () => void;
+  callJoinAlertsUnmuted?: boolean;
+  onCallJoinAlertsUnmutedChange?: (unmuted: boolean) => void;
 };
 
 /**
@@ -32,6 +34,8 @@ export function HumanChatPanelCallJoinStrip({
   captureConsent = null,
   durableMessage,
   onDismissDurable,
+  callJoinAlertsUnmuted = true,
+  onCallJoinAlertsUnmutedChange,
 }: HumanChatPanelCallJoinStripProps) {
   const t = useTranslations('HumanChatPanel');
   const statusLine = t('callJoinStripLine', { count: deviceCount });
@@ -49,6 +53,8 @@ export function HumanChatPanelCallJoinStrip({
   const videoTitle =
     deviceCount > 0 ? t('callJoinWithVideo') : t('callStartWithVideo');
   const showAudioButton = deviceCount > 0 || Boolean(onJoinAudio);
+  const showCallAlertToggle = Boolean(onCallJoinAlertsUnmutedChange);
+  const callAlertsMuted = showCallAlertToggle && !callJoinAlertsUnmuted;
 
   return (
     <div className="border-b border-border bg-muted/30">
@@ -77,6 +83,45 @@ export function HumanChatPanelCallJoinStrip({
           </p>
 
           <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+            {showCallAlertToggle ? (
+              <button
+                type="button"
+                onClick={() =>
+                  onCallJoinAlertsUnmutedChange?.(!callJoinAlertsUnmuted)
+                }
+                className={cn(
+                  'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1 rounded-md border border-border bg-background/90 px-2 text-xs font-medium text-foreground transition-colors hover:bg-muted',
+                  callAlertsMuted && 'pe-2.5',
+                )}
+                aria-pressed={callAlertsMuted}
+                aria-label={
+                  callJoinAlertsUnmuted
+                    ? t('callJoinCallAlertsMuteAction')
+                    : t('callJoinCallAlertsUnmuteAction')
+                }
+                title={
+                  callJoinAlertsUnmuted
+                    ? t('callJoinCallAlertsUnmuted')
+                    : t('callJoinCallAlertsMuted')
+                }
+              >
+                {callJoinAlertsUnmuted ? (
+                  <Bell className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                ) : (
+                  <BellOff
+                    className="h-3.5 w-3.5 shrink-0"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                )}
+                {callAlertsMuted ? (
+                  <span className="max-w-[4rem] truncate text-[10px] font-semibold leading-none">
+                    {t('callJoinCallAlertsMutedShort')}
+                  </span>
+                ) : null}
+              </button>
+            ) : null}
+
             {hasDurable && onDismissDurable && (
               <button
                 type="button"

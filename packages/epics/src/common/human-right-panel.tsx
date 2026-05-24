@@ -3316,11 +3316,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 countIsCapped={bellMentionCapped}
                 mentionsTabActive={activeTab === 'mentions'}
                 onOpenMentions={() => setActiveTab('mentions')}
-                callJoinRingControlsActive={
-                  callUiEnabled && !inSpaceCall && spaceCallShowJoinStrip
-                }
-                callJoinAlertsUnmuted={joinAlertSoundEnabled}
-                onCallJoinAlertsUnmutedChange={setJoinAlertSoundEnabled}
               />
             ) : null
           }
@@ -3369,6 +3364,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               disabled={!callUiEnabled}
               busy={spaceCallBusyJoining}
               captureConsent={spaceCallCaptureConsent}
+              callJoinAlertsUnmuted={joinAlertSoundEnabled}
+              onCallJoinAlertsUnmutedChange={setJoinAlertSoundEnabled}
               onJoinAudio={() => {
                 if (!canJoinSignalThreadCall && isSignalThread) {
                   void requestSignalTeamAccess();

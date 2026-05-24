@@ -401,13 +401,6 @@ export type HumanChatPanelMentionBellProps = {
   onOpenMentions: () => void;
   /** True when the Mentions tab is active — bell icon uses white on accent. */
   mentionsTabActive?: boolean;
-  /**
-   * When true, a **click** on the bell toggles call join chime (storage-backed).
-   * Open the Mentions **tab** for the @ inbox; the bell no longer opens it while this is active.
-   */
-  callJoinRingControlsActive?: boolean;
-  callJoinAlertsUnmuted?: boolean;
-  onCallJoinAlertsUnmutedChange?: (unmuted: boolean) => void;
 };
 
 export function HumanChatPanelMentionBell({
@@ -415,23 +408,8 @@ export function HumanChatPanelMentionBell({
   countIsCapped,
   onOpenMentions,
   mentionsTabActive = false,
-  callJoinRingControlsActive = false,
-  callJoinAlertsUnmuted = true,
-  onCallJoinAlertsUnmutedChange,
 }: HumanChatPanelMentionBellProps) {
   const t = useTranslations('HumanChatPanel');
-  const callRingControls =
-    callJoinRingControlsActive && onCallJoinAlertsUnmutedChange;
-
-  if (
-    process.env.NODE_ENV === 'development' &&
-    callJoinRingControlsActive &&
-    !onCallJoinAlertsUnmutedChange
-  ) {
-    console.warn(
-      'HumanChatPanelMentionBell: callJoinRingControlsActive requires onCallJoinAlertsUnmutedChange',
-    );
-  }
 
   const badgeLabel =
     unreadCount <= 0
@@ -440,62 +418,27 @@ export function HumanChatPanelMentionBell({
       ? '99+'
       : String(unreadCount);
 
-  const showRingOff = callRingControls && !callJoinAlertsUnmuted;
-  const ringLabel = callJoinAlertsUnmuted
-    ? t('callJoinCallAlertsMuteAction')
-    : t('callJoinCallAlertsUnmuteAction');
-
   return (
     <button
       type="button"
       className={cn(
-        'relative flex h-7 shrink-0 items-center justify-center rounded-lg border text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        showRingOff ? 'min-w-0 gap-1 px-1.5 pe-2' : 'w-7',
+        'relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         mentionsTabActive
           ? 'border border-accent-9/40 bg-accent-9/18 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/22 dark:ring-accent-10/30'
           : 'border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/80 hover:text-foreground',
       )}
-      aria-pressed={
-        callRingControls ? !callJoinAlertsUnmuted : mentionsTabActive
-      }
+      aria-pressed={mentionsTabActive}
       aria-label={
-        callRingControls
-          ? callJoinAlertsUnmuted
-            ? t('mentionInboxBellCallRingUnmutedAria')
-            : t('mentionInboxBellCallRingMutedAria')
-          : unreadCount > 0
+        unreadCount > 0
           ? countIsCapped || unreadCount >= 100
             ? t('mentionInboxBellAriaCapped')
             : t('mentionInboxBellAria', { count: unreadCount })
           : t('mentionInboxBellAriaEmpty')
       }
-      title={
-        callRingControls
-          ? `${t('mentionInboxTitle')}. ${ringLabel}`
-          : t('mentionInboxTitle')
-      }
-      onClick={() => {
-        if (callRingControls) {
-          onCallJoinAlertsUnmutedChange(!callJoinAlertsUnmuted);
-          return;
-        }
-        onOpenMentions();
-      }}
+      title={t('mentionInboxTitle')}
+      onClick={onOpenMentions}
     >
-      {showRingOff ? (
-        <BellOff
-          className="h-3.5 w-3.5 shrink-0 text-foreground/90"
-          strokeWidth={2.25}
-          aria-hidden
-        />
-      ) : (
-        <Bell className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-      )}
-      {showRingOff && (
-        <span className="max-w-[3.5rem] truncate text-[10px] font-semibold leading-none text-foreground/90">
-          {t('callJoinCallAlertsMutedShort')}
-        </span>
-      )}
+      <Bell className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
       {badgeLabel != null && (
         <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full border border-accent-9/35 bg-accent-9 px-0.5 text-[9px] font-semibold leading-none text-accent-contrast shadow-sm">
           {badgeLabel}
