@@ -217,10 +217,10 @@ function useGlobalCallDockValue() {
   ]);
 
   React.useEffect(() => {
-    if (call.callState === 'idle') {
+    if (call.callState === 'idle' && call.recordingStatus !== 'uploading') {
       setDockMode('thumbnail');
     }
-  }, [call.callState]);
+  }, [call.callState, call.recordingStatus]);
 
   React.useEffect(() => {
     const snapshot = readCallResumeSnapshot();
@@ -246,6 +246,7 @@ function useGlobalCallDockValue() {
   }, []);
 
   React.useEffect(() => {
+    if (restoreInProgressRef.current) return;
     setDockMode(readDockModeFromStorage());
     setDockModeHydrated(true);
   }, []);
