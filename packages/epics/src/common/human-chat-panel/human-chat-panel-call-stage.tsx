@@ -428,14 +428,21 @@ export function HumanChatPanelCallStage({
 
   const userTilesForFullViewShare: RemoteTileItem[] = (() => {
     const out: RemoteTileItem[] = [...remoteUserTiles];
-    if (showLocalPip && localUserMedia[0]) {
+    const localFeed = localUserMedia[0];
+    const appendLocalTile = () => {
+      if (!localFeed) return;
       const hasLocal = out.some(
-        (x) =>
-          x.kind === 'feed' && x.feed.isLocal() && x.feed === localUserMedia[0],
+        (x) => x.kind === 'feed' && x.feed.isLocal() && x.feed === localFeed,
       );
       if (!hasLocal) {
-        out.push({ kind: 'feed', feed: localUserMedia[0]! });
+        out.push({ kind: 'feed', feed: localFeed });
       }
+    };
+    /** Presenter sees participants only (incl. self) — no share mirror pane. */
+    if (presenterShareOnly) {
+      appendLocalTile();
+    } else if (showLocalPip) {
+      appendLocalTile();
     }
     return out;
   })();
@@ -546,11 +553,14 @@ export function HumanChatPanelCallStage({
   const renderParticipantShareSidebar = (
     keyPrefix: number,
     tileClassName: string,
+    presenterOnly = false,
   ) => (
     <div
       className={cn(
         'flex min-h-0 flex-col gap-1.5 overflow-y-auto p-1.5',
-        isFull
+        presenterOnly
+          ? 'h-full w-full flex-1'
+          : isFull
           ? 'min-h-[4.5rem] w-full flex-1 lg:max-w-none'
           : 'ml-auto w-[min(44%,13rem)] min-w-[8.5rem] shrink-0 border-l border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]',
       )}
@@ -627,18 +637,26 @@ export function HumanChatPanelCallStage({
           data-feed-tick={_feedVersion}
         >
           {presenterShareOnly ? (
-            <div
-              className={cn(
-                'flex min-h-0 min-w-0 flex-1 overflow-hidden',
-                isFull ? 'flex-col' : 'flex-row justify-end',
-              )}
-            >
-              {renderParticipantShareSidebar(
-                1000,
-                cn(
-                  'w-full shrink-0',
-                  isFull ? 'min-h-[4.5rem]' : 'aspect-video min-h-[4rem]',
-                ),
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-black">
+              {userTilesForFullViewShare.length > 0 ? (
+                renderParticipantShareSidebar(
+                  1000,
+                  cn(
+                    'w-full shrink-0',
+                    isFull
+                      ? 'min-h-[4.5rem] flex-1'
+                      : userTilesForFullViewShare.length === 1
+                      ? 'min-h-0 flex-1'
+                      : 'aspect-video min-h-[4rem]',
+                  ),
+                  true,
+                )
+              ) : (
+                <div className="flex flex-1 items-center justify-center px-3 py-4">
+                  <p className="text-center text-xs text-zinc-400">
+                    {t('callScreenShareActive')}
+                  </p>
+                </div>
               )}
             </div>
           ) : (
@@ -866,7 +884,8 @@ export function HumanChatPanelCallStage({
           )}
         </div>
       ) : (
-        hasRenderableShare && (
+        hasRenderableShare &&
+        !presenterShareOnly && (
           <div
             className={cn(
               'w-full',
@@ -877,46 +896,35 @@ export function HumanChatPanelCallStage({
             )}
             data-feed-tick={_feedVersion}
           >
-            {presenterShareOnly ? (
-              <section
-                className="shrink-0 border-b border-border/40 bg-muted/25 px-3 py-2"
-                role="status"
+            {shareFeeds.map((feed, i) => (
+              <div
+                key={feedKey(feed, i)}
+                className={cn(
+                  'w-full max-w-full',
+                  isFull && 'flex min-h-0 min-w-0 flex-1 flex-col',
+                )}
               >
-                <p className="text-xs text-muted-foreground">
-                  {t('callScreenShareActive')}
-                </p>
-              </section>
-            ) : (
-              shareFeeds.map((feed, i) => (
-                <div
-                  key={feedKey(feed, i)}
-                  className={cn(
-                    'w-full max-w-full',
-                    isFull && 'flex min-h-0 min-w-0 flex-1 flex-col',
-                  )}
-                >
-                  <CallFeedTile
-                    client={client}
-                    roomId={roomId}
-                    currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
-                    feed={feed}
-                    isShare
-                    isFullView={isFull}
-                    panelVideoFit={panelVideoFit}
-                    panelFlush={panelFlush}
-                    isActiveSpeaker={
-                      activeSpeakerKey != null &&
-                      activeSpeakerKey === feedKeyForActive(feed)
-                    }
-                    room={room}
-                    currentUserId={currentUserId}
-                    resolveMemberLabel={resolveMemberLabel}
-                    isMicrophoneMuted={isMicrophoneMuted}
-                    t={t}
-                  />
-                </div>
-              ))
-            )}
+                <CallFeedTile
+                  client={client}
+                  roomId={roomId}
+                  currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
+                  feed={feed}
+                  isShare
+                  isFullView={isFull}
+                  panelVideoFit={panelVideoFit}
+                  panelFlush={panelFlush}
+                  isActiveSpeaker={
+                    activeSpeakerKey != null &&
+                    activeSpeakerKey === feedKeyForActive(feed)
+                  }
+                  room={room}
+                  currentUserId={currentUserId}
+                  resolveMemberLabel={resolveMemberLabel}
+                  isMicrophoneMuted={isMicrophoneMuted}
+                  t={t}
+                />
+              </div>
+            ))}
           </div>
         )
       )}
