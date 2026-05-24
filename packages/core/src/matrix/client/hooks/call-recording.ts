@@ -482,11 +482,18 @@ export async function createCallRecording(
       output.addTrack(mixed.track);
       disposers.push(() => mixed.dispose());
     }
+
+    if (output.getTracks().length === 0) {
+      disposeAll();
+      return null;
+    }
+
+    return startMediaStreamRecording(output, disposeAll);
   }
 
   // Never open a second getUserMedia mic while in a Matrix call — it steals
   // the device from the call and causes video/audio flicker in the UI.
-  if (output.getAudioTracks().length === 0 && !groupCall) {
+  if (output.getAudioTracks().length === 0) {
     const mic = await acquireLocalMicStream();
     if (mic?.track) {
       output.addTrack(mic.track);
@@ -526,13 +533,13 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
   const audioTracks = allLiveAudioTracks(groupCall);
   const mixed = createMixedAudioTrack(audioTracks);
   if (mixed?.track) output.addTrack(mixed.track);
-  const silentFallback =
-    output.getTracks().length === 0 ? createSilentAudioTrack() : null;
-  if (silentFallback?.track) output.addTrack(silentFallback.track);
+  if (output.getTracks().length === 0) {
+    mixed?.dispose();
+    return null;
+  }
 
   return startMediaStreamRecording(output, () => {
     mixed?.dispose();
-    silentFallback?.dispose();
   });
 }
 

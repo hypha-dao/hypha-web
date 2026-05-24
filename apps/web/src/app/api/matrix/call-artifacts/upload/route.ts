@@ -13,6 +13,7 @@ import {
 } from '@hypha-platform/core/server';
 import {
   resolveMatrixAccessToken,
+  verifyMatrixMediaUriAccessible,
   verifyPrivyToken,
 } from '../../room-call-permissions/_lib';
 
@@ -21,6 +22,45 @@ type MatrixMediaUploadResponse = {
 };
 
 const MAX_RECORDING_UPLOAD_BYTES = 100 * 1024 * 1024;
+
+function normalizeTranscriptForIngest(text: string | undefined): string | null {
+  const trimmed = text?.trim() ?? '';
+  if (!trimmed) return null;
+  if (trimmed === '[No speech captured during this call. Capture session saved.]') {
+    return null;
+  }
+  return trimmed;
+}
+
+async function resolveMatrixUploadContext(
+  request: NextRequest,
+  privyUserId: string,
+): Promise<
+  | { ok: true; accessToken: string; homeserverUrl: string }
+  | { ok: false; status: number; error: string }
+> {
+  const environment = determineEnvironment(request.url);
+  const matrix = await resolveMatrixAccessToken(environment, privyUserId);
+  if (!matrix) {
+    return {
+      ok: false,
+      status: 403,
+      error: 'Unable to resolve Matrix token',
+    };
+  }
+  const homeserverUrl = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.replace(
+    /\/?$/,
+    '',
+  );
+  if (!homeserverUrl) {
+    return {
+      ok: false,
+      status: 500,
+      error: 'Matrix homeserver not configured',
+    };
+  }
+  return { ok: true, accessToken: matrix.accessToken, homeserverUrl };
+}
 
 function logCallArtifactsUpload(
   event: string,
@@ -93,13 +133,17 @@ async function persistTranscriptOnly(params: {
   callSessionId: string;
   transcriptText: string;
 }) {
-  const { spaceSlug, callSessionId, transcriptText } = params;
+  const { spaceSlug, callSessionId } = params;
+  const normalizedText = normalizeTranscriptForIngest(params.transcriptText);
+  if (!normalizedText) {
+    return { ok: false, error: 'transcript.text is required' };
+  }
   const transcriptResult = await ingestSpaceCallArtifacts(
     {
       spaceSlug,
       callSessionId,
       transcript: {
-        text: transcriptText,
+        text: normalizedText,
         source: 'browser_speech_recognition',
         metadata: {
           capture: 'automatic_in_call',
@@ -138,6 +182,7 @@ export async function POST(request: NextRequest) {
     String(form?.get('call_session_id') ?? '').trim() || randomUUID();
   const recording = form?.get('recording');
   const transcriptText = String(form?.get('transcript_text') ?? '').trim();
+  const normalizedTranscriptText = normalizeTranscriptForIngest(transcriptText);
   const mimeType = String(form?.get('mime_type') ?? '').trim() || 'video/webm';
   const startedAt = String(form?.get('started_at') ?? '').trim();
   const endedAt = String(form?.get('ended_at') ?? '').trim();
@@ -150,10 +195,13 @@ export async function POST(request: NextRequest) {
     callSessionId,
     hasRecordingBlob,
     hasClientMediaUri,
-    hasTranscriptText: Boolean(transcriptText),
+    hasTranscriptText: Boolean(normalizedTranscriptText),
   });
 
-  if (!roomId || (!hasRecordingBlob && !hasClientMediaUri && !transcriptText)) {
+  if (
+    !roomId ||
+    (!hasRecordingBlob && !hasClientMediaUri && !normalizedTranscriptText)
+  ) {
     return NextResponse.json(
       {
         error:
@@ -234,11 +282,11 @@ export async function POST(request: NextRequest) {
     { db },
   );
   if (existingRecording?.mediaUri?.trim()) {
-    if (transcriptText) {
+    if (normalizedTranscriptText) {
       const transcriptResult = await persistTranscriptOnly({
         spaceSlug: targetSpaceSlug,
         callSessionId,
-        transcriptText,
+        transcriptText: normalizedTranscriptText,
       });
       if (!transcriptResult.ok) {
         return NextResponse.json(
@@ -251,14 +299,14 @@ export async function POST(request: NextRequest) {
       spaceSlug,
       roomId,
       callSessionId,
-      transcriptStored: Boolean(transcriptText),
+      transcriptStored: Boolean(normalizedTranscriptText),
     });
     return NextResponse.json({
       ok: true,
       media_uri: existingRecording.mediaUri,
       call_session_id: callSessionId,
       recording_stored: true,
-      transcript_stored: Boolean(transcriptText),
+      transcript_stored: Boolean(normalizedTranscriptText),
       transcript_job: {
         attempted: false,
         ok: false,
@@ -269,6 +317,32 @@ export async function POST(request: NextRequest) {
   }
 
   if (!hasRecordingBlob && hasClientMediaUri) {
+    const matrixContext = await resolveMatrixUploadContext(request, privyUserId);
+    if (!matrixContext.ok) {
+      return NextResponse.json(
+        { error: matrixContext.error },
+        { status: matrixContext.status },
+      );
+    }
+    const mediaAccessible = await verifyMatrixMediaUriAccessible({
+      mediaUri: clientMediaUri,
+      accessToken: matrixContext.accessToken,
+      homeserverUrl: matrixContext.homeserverUrl,
+    });
+    if (!mediaAccessible) {
+      logCallArtifactsUpload('client_media_uri_not_accessible', {
+        spaceSlug,
+        roomId,
+        callSessionId,
+      });
+      return NextResponse.json(
+        {
+          error:
+            'media_uri is not accessible with your Matrix credentials. Upload the recording through the client first.',
+        },
+        { status: 400 },
+      );
+    }
     const ingestResult = await ingestSpaceCallArtifacts(
       {
         spaceSlug: targetSpaceSlug,
@@ -280,9 +354,9 @@ export async function POST(request: NextRequest) {
           endedAt: endedAt || undefined,
           source: 'matrix_live_call_upload',
         },
-        transcript: transcriptText
+        transcript: normalizedTranscriptText
           ? {
-              text: transcriptText,
+              text: normalizedTranscriptText,
               source: 'browser_speech_recognition',
               metadata: {
                 capture: 'automatic_in_call',
@@ -331,14 +405,14 @@ export async function POST(request: NextRequest) {
       resolvedSpaceSlug: targetSpaceSlug,
       roomId,
       callSessionId,
-      transcriptStored: Boolean(transcriptText),
+      transcriptStored: Boolean(normalizedTranscriptText),
     });
     return NextResponse.json({
       ok: true,
       media_uri: clientMediaUri,
       call_session_id: callSessionId,
       recording_stored: true,
-      transcript_stored: Boolean(transcriptText),
+      transcript_stored: Boolean(normalizedTranscriptText),
       transcript_job: transcriptJob,
     });
   }
@@ -393,11 +467,11 @@ export async function POST(request: NextRequest) {
   const environment = determineEnvironment(request.url);
   const matrix = await resolveMatrixAccessToken(environment, privyUserId);
   if (!matrix) {
-    if (transcriptText) {
+    if (normalizedTranscriptText) {
       const transcriptResult = await persistTranscriptOnly({
         spaceSlug: targetSpaceSlug,
         callSessionId,
-        transcriptText,
+        transcriptText: normalizedTranscriptText,
       });
       if (transcriptResult.ok) {
         try {
@@ -435,7 +509,7 @@ export async function POST(request: NextRequest) {
       resolvedSpaceSlug: targetSpaceSlug,
       roomId,
       callSessionId,
-      hasTranscriptText: Boolean(transcriptText),
+      hasTranscriptText: Boolean(normalizedTranscriptText),
     });
     return NextResponse.json(
       { error: 'Unable to resolve Matrix token' },
@@ -471,11 +545,11 @@ export async function POST(request: NextRequest) {
   }).catch((error) => error);
 
   if (uploadResponse instanceof Error) {
-    if (transcriptText) {
+    if (normalizedTranscriptText) {
       const transcriptResult = await persistTranscriptOnly({
         spaceSlug: targetSpaceSlug,
         callSessionId,
-        transcriptText,
+        transcriptText: normalizedTranscriptText,
       });
       if (transcriptResult.ok) {
         logCallArtifactsUpload('recording_upload_error_transcript_fallback', {
@@ -507,11 +581,11 @@ export async function POST(request: NextRequest) {
   }
   if (!uploadResponse.ok) {
     const detail = await uploadResponse.text().catch(() => '');
-    if (transcriptText) {
+    if (normalizedTranscriptText) {
       const transcriptResult = await persistTranscriptOnly({
         spaceSlug: targetSpaceSlug,
         callSessionId,
-        transcriptText,
+        transcriptText: normalizedTranscriptText,
       });
       if (transcriptResult.ok) {
         logCallArtifactsUpload('recording_upload_http_transcript_fallback', {
@@ -547,11 +621,11 @@ export async function POST(request: NextRequest) {
       .catch(() => null)) as MatrixMediaUploadResponse | null) ?? null;
   const mediaUri = uploadPayload?.content_uri?.trim();
   if (!mediaUri) {
-    if (transcriptText) {
+    if (normalizedTranscriptText) {
       const transcriptResult = await persistTranscriptOnly({
         spaceSlug: targetSpaceSlug,
         callSessionId,
-        transcriptText,
+        transcriptText: normalizedTranscriptText,
       });
       if (transcriptResult.ok) {
         logCallArtifactsUpload('recording_upload_no_uri_transcript_fallback', {
@@ -593,9 +667,9 @@ export async function POST(request: NextRequest) {
         endedAt: endedAt || undefined,
         source: 'matrix_live_call_upload',
       },
-      transcript: transcriptText
+      transcript: normalizedTranscriptText
         ? {
-            text: transcriptText,
+            text: normalizedTranscriptText,
             source: 'browser_speech_recognition',
             metadata: {
               capture: 'automatic_in_call',
@@ -648,7 +722,7 @@ export async function POST(request: NextRequest) {
     resolvedSpaceSlug: targetSpaceSlug,
     roomId,
     callSessionId,
-    transcriptStored: Boolean(transcriptText),
+    transcriptStored: Boolean(normalizedTranscriptText),
     transcriptJobAttempted: transcriptJob.attempted,
     transcriptJobOk: transcriptJob.ok,
     transcriptJobStatus: transcriptJob.status,
@@ -658,7 +732,7 @@ export async function POST(request: NextRequest) {
     media_uri: mediaUri,
     call_session_id: callSessionId,
     recording_stored: true,
-    transcript_stored: Boolean(transcriptText),
+    transcript_stored: Boolean(normalizedTranscriptText),
     transcript_job: {
       attempted: transcriptJob.attempted,
       ok: transcriptJob.ok,

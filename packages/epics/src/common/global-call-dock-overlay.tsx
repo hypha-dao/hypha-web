@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import {
   AppWindow,
+  Loader2,
   Maximize2,
   Minimize2,
   PictureInPicture2,
@@ -164,6 +165,7 @@ function persistDockGeometry(next: DockGeometry): void {
 
 export function GlobalCallDockOverlay() {
   const t = useTranslations('GlobalCallDock');
+  const tCapture = useTranslations('HumanChatPanel');
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const { client } = useMatrix();
@@ -538,6 +540,12 @@ export function GlobalCallDockOverlay() {
 
   if (!showFloatingDock || !activeRoomId) return null;
 
+  const captureUploadFinalizing =
+    recordingStatus === 'uploading' &&
+    callState !== 'connected' &&
+    callState !== 'connecting' &&
+    callState !== 'awaiting_media' &&
+    callState !== 'initializing';
   const inDocumentPip = Boolean(pipWindow);
   const dockCompact = inDocumentPip;
   const modeIsFullscreen = dockMode === 'fullscreen' && !inDocumentPip;
@@ -764,31 +772,40 @@ export function GlobalCallDockOverlay() {
           inDocumentPip ? 'max-h-[72px] shrink-0' : 'flex-1',
         )}
       >
-        <HumanChatPanelCallStage
-          client={client}
-          roomId={activeRoomId}
-          groupCall={groupCall}
-          callKind={callKind}
-          isLocalVideoMuted={isLocalVideoMuted}
-          isMicrophoneMuted={isMicrophoneMuted}
-          isScreensharing={isScreensharing}
-          callState={callState}
-          feedVersion={feedVersion}
-          activeSpeakerKey={activeSpeakerKey}
-          currentUserId={currentUserId}
-          inCallUserIds={inCallUserIdsForRoster}
-          remoteMediaStall={remoteMediaStall}
-          currentUserProfileAvatarUrl={me?.avatarUrl ?? null}
-          resolveMemberLabel={resolveMemberLabel}
-          layout={modeIsFullscreen ? 'fullView' : 'panel'}
-          panelVideoFit="cover"
-          panelFlush={!modeIsFullscreen}
-          fullViewOpen={modeIsFullscreen}
-          fullViewLayoutMode={layoutMode}
-          fullViewPaneSplit={paneSplit}
-          onFullViewPaneSplitChange={onPaneSplitChange}
-          fullViewSplitContainerRef={splitContainerRef}
-        />
+        {captureUploadFinalizing ? (
+          <div className="flex h-full min-h-[120px] flex-col items-center justify-center gap-2 px-4 py-6 text-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              {tCapture('callCaptureStatusSaving')}
+            </p>
+          </div>
+        ) : (
+          <HumanChatPanelCallStage
+            client={client}
+            roomId={activeRoomId}
+            groupCall={groupCall}
+            callKind={callKind}
+            isLocalVideoMuted={isLocalVideoMuted}
+            isMicrophoneMuted={isMicrophoneMuted}
+            isScreensharing={isScreensharing}
+            callState={callState}
+            feedVersion={feedVersion}
+            activeSpeakerKey={activeSpeakerKey}
+            currentUserId={currentUserId}
+            inCallUserIds={inCallUserIdsForRoster}
+            remoteMediaStall={remoteMediaStall}
+            currentUserProfileAvatarUrl={me?.avatarUrl ?? null}
+            resolveMemberLabel={resolveMemberLabel}
+            layout={modeIsFullscreen ? 'fullView' : 'panel'}
+            panelVideoFit="cover"
+            panelFlush={!modeIsFullscreen}
+            fullViewOpen={modeIsFullscreen}
+            fullViewLayoutMode={layoutMode}
+            fullViewPaneSplit={paneSplit}
+            onFullViewPaneSplitChange={onPaneSplitChange}
+            fullViewSplitContainerRef={splitContainerRef}
+          />
+        )}
       </div>
 
       <div
@@ -797,85 +814,97 @@ export function GlobalCallDockOverlay() {
           dockCompact ? 'px-1 py-1' : 'px-2 py-2',
         )}
       >
-        {captureConsent && callState === 'connected' && !showDockBanner ? (
-          <HumanChatPanelCaptureConsentBanner
-            consent={captureConsent}
-            variant="inCall"
-            className={cn(
-              'rounded-none border-x-0 border-t-0',
-              dockCompact
-                ? '-mx-1 -mt-1 mb-1 px-2 py-1 [&_p]:text-[10px] [&_p]:leading-tight'
-                : '-mx-2 -mt-2 mb-2',
-            )}
-          />
-        ) : null}
-        {showDockBanner ? (
-          <HumanChatPanelCallBanner
-            callState={callState}
-            callKind={callKind}
-            errorCode={errorCode}
-            isScreensharing={isScreensharing}
-            screenshareErrorCode={screenshareErrorCode}
-            tabBackgroundWhileInCall={tabBackgroundWhileInCall}
-            isMicrophoneMuted={isMicrophoneMuted}
-            isLocalVideoMuted={isLocalVideoMuted}
-            participantCount={roomGroupCallDeviceCount}
-            othersInRoomCallCount={othersInRoomCallCount}
-            remoteMediaStall={remoteMediaStall}
-            onDismissRemoteMediaStall={dismissRemoteMediaStallBanner}
-            onLeave={() => {
-              void leave();
-            }}
-            onToggleMic={onToggleMic}
-            onToggleCamera={onToggleCamera}
-            onToggleScreenshare={onToggleScreenshare}
-            voiceProcessingPreset={voiceProcessingPreset}
-            onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
-            captureMode={captureMode}
-            capturePreference={capturePreference}
-            capturePreferenceSelected={capturePreferenceSelected}
-            onCapturePreferenceChange={onCapturePreferenceChange}
-            onStartCapture={onStartCaptureWithMode}
-            onPauseCapture={onPauseCapture}
-            onResumeCapture={onResumeCapture}
-            onStopCapture={onStopCapture}
-            recordingStatus={recordingStatus}
-            recordingError={recordingError}
-            captureConsent={captureConsent}
-            onDismissScreenshareError={dismissScreenshareError}
-            onRetryCall={retryFromError}
-            onDismissCallError={dismissCallError}
-          />
+        {captureUploadFinalizing ? (
+          recordingError?.trim() ? (
+            <p className="text-[11px] text-destructive">{recordingError}</p>
+          ) : null
         ) : (
-          <HumanChatPanelInCallControls
-            callState={callState}
-            isMicrophoneMuted={isMicrophoneMuted}
-            isLocalVideoMuted={isLocalVideoMuted}
-            isScreensharing={isScreensharing}
-            onToggleMic={onToggleMic}
-            onToggleCamera={onToggleCamera}
-            onToggleScreenshare={onToggleScreenshare}
-            voiceProcessingPreset={voiceProcessingPreset}
-            onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
-            captureMode={captureMode}
-            capturePreference={capturePreference}
-            capturePreferenceSelected={capturePreferenceSelected}
-            onCapturePreferenceChange={onCapturePreferenceChange}
-            onStartCapture={onStartCaptureWithMode}
-            onPauseCapture={onPauseCapture}
-            onResumeCapture={onResumeCapture}
-            onStopCapture={onStopCapture}
-            recordingStatus={recordingStatus}
-            recordingError={recordingError}
-            onLeave={() => {
-              void leave();
-            }}
-            density={dockCompact ? 'compact' : 'default'}
-            variant={modeIsFullscreen ? 'fullView' : 'inBanner'}
-            inBannerLayout={
-              dockCompact ? 'inline' : modeIsFullscreen ? 'inline' : 'centered'
-            }
-          />
+          <>
+            {captureConsent && callState === 'connected' && !showDockBanner ? (
+              <HumanChatPanelCaptureConsentBanner
+                consent={captureConsent}
+                variant="inCall"
+                className={cn(
+                  'rounded-none border-x-0 border-t-0',
+                  dockCompact
+                    ? '-mx-1 -mt-1 mb-1 px-2 py-1 [&_p]:text-[10px] [&_p]:leading-tight'
+                    : '-mx-2 -mt-2 mb-2',
+                )}
+              />
+            ) : null}
+            {showDockBanner ? (
+              <HumanChatPanelCallBanner
+                callState={callState}
+                callKind={callKind}
+                errorCode={errorCode}
+                isScreensharing={isScreensharing}
+                screenshareErrorCode={screenshareErrorCode}
+                tabBackgroundWhileInCall={tabBackgroundWhileInCall}
+                isMicrophoneMuted={isMicrophoneMuted}
+                isLocalVideoMuted={isLocalVideoMuted}
+                participantCount={roomGroupCallDeviceCount}
+                othersInRoomCallCount={othersInRoomCallCount}
+                remoteMediaStall={remoteMediaStall}
+                onDismissRemoteMediaStall={dismissRemoteMediaStallBanner}
+                onLeave={() => {
+                  void leave();
+                }}
+                onToggleMic={onToggleMic}
+                onToggleCamera={onToggleCamera}
+                onToggleScreenshare={onToggleScreenshare}
+                voiceProcessingPreset={voiceProcessingPreset}
+                onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+                captureMode={captureMode}
+                capturePreference={capturePreference}
+                capturePreferenceSelected={capturePreferenceSelected}
+                onCapturePreferenceChange={onCapturePreferenceChange}
+                onStartCapture={onStartCaptureWithMode}
+                onPauseCapture={onPauseCapture}
+                onResumeCapture={onResumeCapture}
+                onStopCapture={onStopCapture}
+                recordingStatus={recordingStatus}
+                recordingError={recordingError}
+                captureConsent={captureConsent}
+                onDismissScreenshareError={dismissScreenshareError}
+                onRetryCall={retryFromError}
+                onDismissCallError={dismissCallError}
+              />
+            ) : (
+              <HumanChatPanelInCallControls
+                callState={callState}
+                isMicrophoneMuted={isMicrophoneMuted}
+                isLocalVideoMuted={isLocalVideoMuted}
+                isScreensharing={isScreensharing}
+                onToggleMic={onToggleMic}
+                onToggleCamera={onToggleCamera}
+                onToggleScreenshare={onToggleScreenshare}
+                voiceProcessingPreset={voiceProcessingPreset}
+                onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+                captureMode={captureMode}
+                capturePreference={capturePreference}
+                capturePreferenceSelected={capturePreferenceSelected}
+                onCapturePreferenceChange={onCapturePreferenceChange}
+                onStartCapture={onStartCaptureWithMode}
+                onPauseCapture={onPauseCapture}
+                onResumeCapture={onResumeCapture}
+                onStopCapture={onStopCapture}
+                recordingStatus={recordingStatus}
+                recordingError={recordingError}
+                onLeave={() => {
+                  void leave();
+                }}
+                density={dockCompact ? 'compact' : 'default'}
+                variant={modeIsFullscreen ? 'fullView' : 'inBanner'}
+                inBannerLayout={
+                  dockCompact
+                    ? 'inline'
+                    : modeIsFullscreen
+                    ? 'inline'
+                    : 'centered'
+                }
+              />
+            )}
+          </>
         )}
       </div>
 

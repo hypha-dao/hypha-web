@@ -368,7 +368,8 @@ function useGlobalCallDockValue() {
     [activeRoomId, boundAuthToken, call],
   );
 
-  const showFloatingDock = inSession;
+  const showFloatingDock =
+    inSession || call.recordingStatus === 'uploading';
 
   return {
     bindRoomContext,

@@ -704,23 +704,27 @@ export function useSpaceGroupCall(
         const transcriptText = await runtime.stopTranscript();
         const sessionId = callSessionId ?? newCallSessionId();
         const normalizedTranscript = transcriptText.trim();
-        const transcriptForPersistence =
-          normalizedTranscript ||
-          '[No speech captured during this call. Capture session saved.]';
         const uploadTranscriptOnly = async () => {
+          if (!normalizedTranscript) return;
           await uploadRecordedCallArtifact({
             authToken: token,
             spaceSlug: slug,
             roomId: activeRoomId,
             callSessionId: sessionId,
-            transcriptText: transcriptForPersistence,
+            transcriptText: normalizedTranscript,
             startedAt: runtime.startedAt,
             endedAt,
             matrixClient: client,
           });
         };
         if (runtime.mode === 'transcript_only') {
-          await uploadTranscriptOnly();
+          if (normalizedTranscript) {
+            await uploadTranscriptOnly();
+          } else if (
+            recordingFinalizeGenerationRef.current === cleanupGeneration
+          ) {
+            setRecordingError('No speech was captured during this call.');
+          }
         } else if (runtime.mode === 'recording_with_transcript') {
           if (!runtime.stopRecorder || !runtime.mimeType) {
             await uploadTranscriptOnly();
@@ -734,12 +738,20 @@ export function useSpaceGroupCall(
                   errorCode: 'CAPTURE_EMPTY_BLOB',
                 });
               }
-              await uploadTranscriptOnly();
-              if (
+              if (normalizedTranscript) {
+                await uploadTranscriptOnly();
+                if (
+                  recordingFinalizeGenerationRef.current === cleanupGeneration
+                ) {
+                  setRecordingError(
+                    'Recording file was empty. Transcript only was saved.',
+                  );
+                }
+              } else if (
                 recordingFinalizeGenerationRef.current === cleanupGeneration
               ) {
                 setRecordingError(
-                  'Recording file was empty. Transcript only was saved.',
+                  'Recording file was empty and no transcript was captured.',
                 );
               }
             } else {
