@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE } from '../call-recording-constants';
+import {
+  CALL_RECORDING_MAX_FILE_SIZE_LABEL,
+  CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE,
+} from '../call-recording-constants';
 import {
   classifyCallRecordingUploadError,
   formatCallRecordingUploadFailureMessage,
@@ -13,7 +16,7 @@ describe('classifyCallRecordingUploadError', () => {
       { fileName: 'session.webm', fileSizeBytes: 600 * 1024 * 1024 },
     );
     expect(failure.kind).toBe('file_too_large');
-    expect(failure.message).toContain(CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE);
+    expect(failure.message).toContain(CALL_RECORDING_MAX_FILE_SIZE_LABEL);
     expect(failure.logPayload.fileSizeBytes).toBe(600 * 1024 * 1024);
   });
 
@@ -48,7 +51,7 @@ describe('classifyCallRecordingUploadError', () => {
 describe('formatCallRecordingUploadFailureMessage', () => {
   it('mentions the configured max size for file_too_large', () => {
     expect(formatCallRecordingUploadFailureMessage('file_too_large')).toContain(
-      '640MB',
+      CALL_RECORDING_MAX_FILE_SIZE_LABEL,
     );
   });
 });

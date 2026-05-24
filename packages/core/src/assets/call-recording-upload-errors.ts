@@ -1,5 +1,6 @@
 import {
   CALL_RECORDING_MAX_FILE_SIZE_BYTES,
+  CALL_RECORDING_MAX_FILE_SIZE_LABEL,
   CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE,
 } from './call-recording-constants';
 
@@ -136,7 +137,7 @@ export function formatCallRecordingUploadFailureMessage(
 ): string {
   switch (kind) {
     case 'file_too_large':
-      return `Recording exceeds the ${CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE} upload limit. Try a shorter capture or transcript-only mode.`;
+      return `Recording exceeds the ${CALL_RECORDING_MAX_FILE_SIZE_LABEL} upload limit. Try a shorter capture or transcript-only mode.`;
     case 'storage_quota':
       return 'Call recording storage quota exceeded on UploadThing. Upgrade the UploadThing plan or migrate recordings to dedicated object storage.';
     case 'unauthorized':

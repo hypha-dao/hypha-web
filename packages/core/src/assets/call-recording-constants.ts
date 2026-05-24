@@ -25,7 +25,11 @@ export const CALL_RECORDING_SIZE_CRITICAL_RATIO = 0.9;
  */
 export const CALL_RECORDING_MAX_FILE_SIZE_BYTES = 640 * 1024 * 1024;
 
-export const CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE = '640MB' as const;
+/** Shown in capture warnings and upload error copy. */
+export const CALL_RECORDING_MAX_FILE_SIZE_LABEL = '640MB' as const;
+
+/** UploadThing only accepts fixed size tiers; keep >= CALL_RECORDING_MAX_FILE_SIZE_BYTES. */
+export const CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE = '1024MB' as const;
 
 export const CALL_RECORDING_MIN_FILE_SIZE_BYTES = 2048;
 
