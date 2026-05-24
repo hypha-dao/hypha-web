@@ -11,9 +11,10 @@ import { formatDate } from '@hypha-platform/ui-utils';
 import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { ResolvedCallTranscriptExcerpt } from './resolved-call-transcript-excerpt';
+import { SpaceMemoryCallRecordingPlayer } from './space-memory-call-recording-player';
 
-/** Centered play affordance for call recordings in Space Memory. */
-function CallRecordingMediaPreview({
+/** Static preview when call recording URL is not yet openable. */
+function CallRecordingStaticPreview({
   src,
   poster,
   variant,
@@ -383,7 +384,7 @@ export function SpaceMemoryTimelineItem({
       }
       if (isCallRecording && mxcDownload) {
         return (
-          <CallRecordingMediaPreview
+          <CallRecordingStaticPreview
             src={mxcDownload}
             poster={mxcPreview}
             variant={item.kind === 'video' ? 'video' : 'audio'}
@@ -480,7 +481,7 @@ export function SpaceMemoryTimelineItem({
     }
     if (isCallRecording) {
       return (
-        <CallRecordingMediaPreview
+        <CallRecordingStaticPreview
           src={item.url}
           variant={item.kind === 'video' ? 'video' : 'audio'}
           playLabel={t('spaceMemoryPlayCallRecording')}
@@ -595,7 +596,17 @@ export function SpaceMemoryTimelineItem({
       </p>
 
       <div className="mt-3 flex flex-1 flex-col gap-2">
-        {canOpen ? (
+        {isCallRecording && canOpen && openHref ? (
+          <SpaceMemoryCallRecordingPlayer
+            src={openHref}
+            poster={mxcPreview}
+            variant={item.kind === 'video' ? 'video' : 'audio'}
+            title={cardTitle}
+            contextLine={contextLine}
+            openHref={openHref}
+            thumbShellClass={THUMB_SHELL}
+          />
+        ) : canOpen ? (
           <a
             href={openHref!}
             target="_blank"

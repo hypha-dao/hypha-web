@@ -2362,6 +2362,8 @@
     "spaceMemoryMatrixOpenHint": "Open Human Chat to connect Matrix, then refresh Space Memory to open this file.",
     "spaceMemoryMatrixVideoPlayHint": "Tap to play preview",
     "spaceMemoryPlayCallRecording": "Play recording",
+    "spaceMemoryOpenCallRecordingFullscreen": "Open recording player",
+    "spaceMemoryOpenCallRecordingNewTab": "Open in new tab",
     "spaceMemoryPdfPreviewUnavailable": "PDF preview unavailable",
     "spaceMemoryOpenAsset": "Open {name}",
     "untitledDocument": "Untitled document",
