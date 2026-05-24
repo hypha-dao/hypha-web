@@ -1477,9 +1477,9 @@ const FeedContent = ({
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || !liveVideoTrack) return;
+    if (!el || !showVideo || !liveVideoTrack) return;
     el.srcObject = stream;
-    el.play().catch((err) => {
+    void el.play().catch((err) => {
       if (process.env.NODE_ENV === 'development') {
         console.debug('[CallFeedTile] video play rejected', err);
       }
@@ -1488,7 +1488,7 @@ const FeedContent = ({
     return () => {
       el.srcObject = null;
     };
-  }, [stream, streamBindVersion, liveVideoTrack?.id]);
+  }, [stream, streamBindVersion, liveVideoTrack?.id, showVideo]);
 
   useEffect(() => {
     const el = audioRef.current;
