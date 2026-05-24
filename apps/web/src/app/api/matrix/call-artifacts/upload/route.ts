@@ -120,11 +120,19 @@ async function triggerTranscriptJob(payload: {
     return { attempted: false as const, ok: false as const, status: null };
   }
   const jobSecret = process.env.HYPHA_CALL_TRANSCRIPT_JOB_SECRET?.trim();
+  if (!jobSecret) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error(
+        '[matrix.call-artifacts.upload] HYPHA_CALL_TRANSCRIPT_JOB_URL is set but HYPHA_CALL_TRANSCRIPT_JOB_SECRET is missing',
+      );
+    }
+    return { attempted: false as const, ok: false as const, status: null };
+  }
   const response = await fetch(jobUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(jobSecret ? { Authorization: `Bearer ${jobSecret}` } : {}),
+      Authorization: `Bearer ${jobSecret}`,
     },
     body: JSON.stringify({
       space_slug: payload.spaceSlug,
