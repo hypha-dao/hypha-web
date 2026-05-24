@@ -1475,6 +1475,16 @@ const FeedContent = ({
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
   const [streamBindVersion, rebindStream] = useReducer((n: number) => n + 1, 0);
 
+  const [showVideo, setShowVideo] = useState(hasVideo);
+  useEffect(() => {
+    if (hasVideo) {
+      setShowVideo(true);
+      return;
+    }
+    const hideTimer = window.setTimeout(() => setShowVideo(false), 450);
+    return () => window.clearTimeout(hideTimer);
+  }, [hasVideo]);
+
   useEffect(() => {
     const el = ref.current;
     if (!el || !showVideo || !liveVideoTrack) return;
@@ -1550,15 +1560,6 @@ const FeedContent = ({
     };
   }, [stream]);
 
-  const [showVideo, setShowVideo] = useState(hasVideo);
-  useEffect(() => {
-    if (hasVideo) {
-      setShowVideo(true);
-      return;
-    }
-    const hideTimer = window.setTimeout(() => setShowVideo(false), 450);
-    return () => window.clearTimeout(hideTimer);
-  }, [hasVideo]);
   /** Analyse mic/remote line whenever the tile has a live audio track (not just Matrix `isSpeaking`, which lags and hid real levels). */
   const canVoiceWave =
     !showVideo &&
