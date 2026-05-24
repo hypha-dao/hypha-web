@@ -58,7 +58,8 @@ function isCaptureEligibleCallState(state: SpaceGroupCallState): boolean {
   return (
     state === 'connected' ||
     state === 'awaiting_media' ||
-    state === 'connecting'
+    state === 'connecting' ||
+    state === 'initializing'
   );
 }
 
@@ -461,6 +462,66 @@ export function useSpaceGroupCall(
     },
     [client, roomId],
   );
+
+  const tryBeginCaptureRuntime = useCallback((): boolean => {
+    if (recordingRuntimeRef.current) return true;
+    if (recordingFinalizeInFlightRef.current) return false;
+    const mode = captureModeRef.current;
+    if (mode === 'none') return false;
+    if (!isCaptureEligibleCallState(callState)) return false;
+
+    const gc = groupCallRef.current ?? groupCall;
+    const sessionId = callSessionId?.trim();
+    const activeRoom =
+      roomId?.trim() || pinnedUploadContextRef.current?.roomId?.trim() || '';
+    if (!sessionId || !activeRoom) return false;
+
+    let recorder: ReturnType<typeof startGroupCallRecording> | null = null;
+    let runtimeMode: Exclude<SpaceGroupCallCaptureMode, 'none'> = mode;
+    if (mode === 'recording_with_transcript') {
+      if (!gc) return false;
+      try {
+        recorder = startGroupCallRecording(gc);
+      } catch {
+        recorder = null;
+      }
+      if (!recorder) {
+        runtimeMode = 'transcript_only';
+      }
+    }
+
+    const transcript = startBrowserCallTranscription({
+      onError: () => {
+        // recording continues even if speech recognition fails
+      },
+    });
+    if (runtimeMode === 'transcript_only' && transcript.supported === false) {
+      setRecordingStatus('error');
+      setRecordingError('transcript capture is not supported in this browser');
+      setCaptureMode('none');
+      return false;
+    }
+
+    const generation = recordingGenerationRef.current + 1;
+    recordingGenerationRef.current = generation;
+    recordingRuntimeRef.current = {
+      generation,
+      mode: runtimeMode,
+      pauseRecorder: recorder?.pause,
+      resumeRecorder: recorder?.resume,
+      stopRecorder: recorder?.stop,
+      pauseTranscript: transcript.pause,
+      resumeTranscript: transcript.resume,
+      stopTranscript: transcript.stop,
+      mimeType: recorder?.mimeType,
+      startedAt: new Date().toISOString(),
+      recordedRoomId: activeRoom,
+    };
+    setRecordingStatus('recording');
+    setRecordingError(null);
+    void announceCaptureNotice('started', runtimeMode);
+    return true;
+  }, [announceCaptureNotice, callSessionId, callState, groupCall, roomId]);
 
   const finalizeRecording = useCallback(() => {
     const runtime = recordingRuntimeRef.current;
@@ -1704,93 +1765,21 @@ export function useSpaceGroupCall(
   }, []);
 
   useEffect(() => {
-    if (!isCaptureEligibleCallState(callState)) return;
-    if (recordingRuntimeRef.current) return;
-    if (recordingFinalizeInFlightRef.current) return;
     if (captureMode === 'none') {
       if (!recordingFinalizeInFlightRef.current) {
         setRecordingStatus('idle');
       }
       return;
     }
-    const gc = groupCallRef.current ?? groupCall;
-    const sessionId = callSessionId?.trim();
-    const activeRoom = roomId?.trim();
-    if (!gc || !sessionId || !activeRoom) return;
-
-    let recorder: ReturnType<typeof startGroupCallRecording> | null = null;
-    if (captureMode === 'recording_with_transcript') {
-      recorder = startGroupCallRecording(gc);
-      if (!recorder) {
-        // No media available yet for recording. If browser transcription is
-        // supported, immediately fall back to transcript-only capture so we
-        // still persist something to space memory instead of silently doing
-        // nothing.
-        const SpeechRecognitionCtor =
-          typeof window !== 'undefined'
-            ? (
-                window as Window & {
-                  SpeechRecognition?: unknown;
-                  webkitSpeechRecognition?: unknown;
-                }
-              ).SpeechRecognition ??
-              (
-                window as Window & {
-                  webkitSpeechRecognition?: unknown;
-                }
-              ).webkitSpeechRecognition
-            : null;
-        if (!SpeechRecognitionCtor) {
-          setRecordingStatus('error');
-          setRecordingError(
-            'No call audio or video is available to record yet. Unmute your microphone or turn on your camera, then try again.',
-          );
-          setCaptureMode('none');
-          return;
-        }
-        setCapturePreference('transcript_only');
-        setCaptureMode('transcript_only');
-        return;
-      }
-    }
-    const transcript = startBrowserCallTranscription({
-      onError: () => {
-        // recording continues even if speech recognition fails
-      },
-    });
-    if (captureMode === 'transcript_only' && transcript.supported === false) {
-      setRecordingStatus('error');
-      setRecordingError('transcript capture is not supported in this browser');
-      setCaptureMode('none');
-      return;
-    }
-    const generation = recordingGenerationRef.current + 1;
-    recordingGenerationRef.current = generation;
-    recordingRuntimeRef.current = {
-      generation,
-      mode: captureMode,
-      pauseRecorder: recorder?.pause,
-      resumeRecorder: recorder?.resume,
-      stopRecorder: recorder?.stop,
-      pauseTranscript: transcript.pause,
-      resumeTranscript: transcript.resume,
-      stopTranscript: transcript.stop,
-      mimeType: recorder?.mimeType,
-      startedAt: new Date().toISOString(),
-      recordedRoomId: activeRoom,
-    };
-    setRecordingStatus('recording');
-    setRecordingError(null);
-    void announceCaptureNotice('started', captureMode);
+    tryBeginCaptureRuntime();
   }, [
-    announceCaptureNotice,
-    callSessionId,
-    callState,
     captureMode,
+    callState,
+    callSessionId,
     feedVersion,
     groupCall,
     roomId,
-    setCapturePreference,
+    tryBeginCaptureRuntime,
   ]);
 
   useEffect(() => {
@@ -1810,10 +1799,12 @@ export function useSpaceGroupCall(
       if (captureModeRef.current === 'none') return;
       if (recordingRuntimeRef.current) return;
       if (recordingFinalizeInFlightRef.current) return;
+      if (tryBeginCaptureRuntime()) return;
       if (captureModeRef.current === 'recording_with_transcript') {
         setCapturePreference('transcript_only');
+        captureModeRef.current = 'transcript_only';
         setCaptureMode('transcript_only');
-        return;
+        if (tryBeginCaptureRuntime()) return;
       }
       setRecordingStatus('error');
       setRecordingError(
@@ -1832,6 +1823,7 @@ export function useSpaceGroupCall(
     groupCall,
     recordingStatus,
     roomId,
+    tryBeginCaptureRuntime,
   ]);
 
   const startCapture = useCallback(
@@ -1844,60 +1836,40 @@ export function useSpaceGroupCall(
       if (recordingRuntimeRef.current && captureModeRef.current !== 'none') {
         return;
       }
+      captureModeRef.current = nextMode;
       setCaptureMode(nextMode);
+      tryBeginCaptureRuntime();
     },
-    [capturePreference],
+    [capturePreference, tryBeginCaptureRuntime],
   );
 
   const stopCapture = useCallback(() => {
     const pendingMode = captureModeRef.current;
+    if (!recordingRuntimeRef.current && !recordingFinalizeInFlightRef.current) {
+      if (
+        pendingMode === 'recording_with_transcript' ||
+        pendingMode === 'transcript_only'
+      ) {
+        tryBeginCaptureRuntime();
+      }
+    }
     if (recordingRuntimeRef.current || recordingFinalizeInFlightRef.current) {
       finalizeRecording();
     } else if (
       pendingMode === 'recording_with_transcript' ||
       pendingMode === 'transcript_only'
     ) {
-      const token =
-        latestAuthTokenRef.current ?? pinnedUploadContextRef.current?.authToken;
-      const slug =
-        latestSpaceSlugRef.current ?? pinnedUploadContextRef.current?.spaceSlug;
-      const activeRoomId =
-        roomId?.trim() || pinnedUploadContextRef.current?.roomId;
-      if (token && slug && activeRoomId) {
-        const sessionId = callSessionId ?? newCallSessionId();
-        setRecordingStatus('uploading');
-        setRecordingError(null);
-        void uploadRecordedCallArtifact({
-          authToken: token,
-          spaceSlug: slug,
-          roomId: activeRoomId,
-          callSessionId: sessionId,
-          transcriptText:
-            '[Capture stopped before media/transcript became available.]',
-          startedAt: new Date().toISOString(),
-          endedAt: new Date().toISOString(),
-        })
-          .then(() => {
-            setRecordingStatus('idle');
-            onCallArtifactsUploadedRef.current?.({ spaceSlug: slug });
-          })
-          .catch((error) => {
-            setRecordingStatus('error');
-            setRecordingError(
-              error instanceof Error ? error.message : String(error),
-            );
-          });
-      } else {
-        setRecordingStatus('idle');
-        setRecordingError(null);
-      }
+      setRecordingStatus('error');
+      setRecordingError(
+        'Capture did not start. Wait until the record indicator turns red, speak for a few seconds, then stop again.',
+      );
       void announceCaptureNotice('stopped', pendingMode);
     } else {
       setRecordingStatus('idle');
       setRecordingError(null);
     }
     setCaptureMode('none');
-  }, [announceCaptureNotice, callSessionId, finalizeRecording, roomId]);
+  }, [announceCaptureNotice, finalizeRecording, tryBeginCaptureRuntime]);
 
   const pauseCapture = useCallback(() => {
     const runtime = recordingRuntimeRef.current;
