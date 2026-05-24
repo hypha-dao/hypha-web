@@ -226,6 +226,48 @@ function createMixedAudioTrack(
   };
 }
 
+function createSilentAudioTrack(): {
+  track: MediaStreamTrack;
+  dispose: () => void;
+} | null {
+  if (typeof window === 'undefined') return null;
+  const Ctx =
+    window.AudioContext ||
+    (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext;
+  if (!Ctx) return null;
+  const context = new Ctx();
+  const destination = context.createMediaStreamDestination();
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  gain.gain.value = 0.00001;
+  oscillator.connect(gain);
+  gain.connect(destination);
+  oscillator.start();
+  const track = destination.stream.getAudioTracks()[0];
+  if (!track) {
+    oscillator.stop();
+    oscillator.disconnect();
+    gain.disconnect();
+    void context.close();
+    return null;
+  }
+  return {
+    track,
+    dispose: () => {
+      try {
+        oscillator.stop();
+      } catch {
+        // ignore; oscillator may already be stopped
+      }
+      oscillator.disconnect();
+      gain.disconnect();
+      track.stop();
+      void context.close();
+    },
+  };
+}
+
 function chooseRecorderMimeType(output: MediaStream): string | undefined {
   if (typeof MediaRecorder === 'undefined') return undefined;
   const hasVideo = output.getVideoTracks().length > 0;
@@ -250,8 +292,12 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
   const audioTracks = allLiveAudioTracks(groupCall);
   const mixed = createMixedAudioTrack(audioTracks);
   if (mixed?.track) output.addTrack(mixed.track);
+  const silentFallback =
+    output.getTracks().length === 0 ? createSilentAudioTrack() : null;
+  if (silentFallback?.track) output.addTrack(silentFallback.track);
   if (output.getTracks().length === 0) {
     mixed?.dispose();
+    silentFallback?.dispose();
     return null;
   }
 
@@ -314,6 +360,7 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
       });
       output.getTracks().forEach((track) => track.stop());
       mixed?.dispose();
+      silentFallback?.dispose();
       return result;
     },
   };
