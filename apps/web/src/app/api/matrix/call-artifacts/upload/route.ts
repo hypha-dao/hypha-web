@@ -169,27 +169,35 @@ export async function POST(request: NextRequest) {
   }
 
   const space = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
-  const linkedRoom = space
-    ? await isSpaceLinkedCallRoom({
-        spaceId: space.id,
-        spaceChatRoomId: space.chatRoomId,
-        roomId,
-      })
-    : false;
-  if (!space || !linkedRoom) {
-    logCallArtifactsUpload('space_room_mismatch', {
+  if (!space) {
+    logCallArtifactsUpload('space_not_found', {
       spaceSlug,
       roomId,
       callSessionId,
-      hasSpace: Boolean(space),
-      linkedRoom,
     });
-    return NextResponse.json({ error: 'Space/room mismatch' }, { status: 404 });
+    return NextResponse.json({ error: 'Space not found' }, { status: 404 });
   }
+
+  const linkedRoom = await isSpaceLinkedCallRoom({
+    spaceId: space.id,
+    spaceChatRoomId: space.chatRoomId,
+    roomId,
+  });
 
   const access = await checkSpaceAccessForSpace(space, authToken);
   if (!access.hasAccess) {
     return NextResponse.json({ error: access.message }, { status: 403 });
+  }
+
+  if (!linkedRoom) {
+    // Do not block artifact ingestion when room linkage metadata is stale.
+    // We still require an authenticated user with access to the target space.
+    logCallArtifactsUpload('space_room_mismatch_bypassed', {
+      spaceSlug,
+      roomId,
+      callSessionId,
+      spaceChatRoomId: space.chatRoomId,
+    });
   }
 
   const existingRecording = await getSpaceCallRecordingBySessionId(
