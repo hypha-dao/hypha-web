@@ -753,7 +753,7 @@ export function HumanChatPanelInCallControls({
           <p
             className={cn(
               'mt-1 text-[11px]',
-              recordingWarning.code.endsWith('_critical')
+              recordingWarning?.code.endsWith('_critical')
                 ? 'text-amber-600 dark:text-amber-400'
                 : 'text-muted-foreground',
             )}
