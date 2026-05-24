@@ -75,7 +75,13 @@ export function logSpaceGroupCallEvent(
     return;
   }
   try {
-    if (process.env.NODE_ENV === 'development' || matrixWebRtcDebugFromEnv()) {
+    const debugOverrideEnabled =
+      typeof window !== 'undefined' &&
+      window.localStorage.getItem('hypha.group_call.debug') === '1';
+    if (
+      process.env.NODE_ENV === 'development' ||
+      (matrixWebRtcDebugFromEnv() && debugOverrideEnabled)
+    ) {
       console.info('[hypha.group_call]', event);
     }
   } catch {

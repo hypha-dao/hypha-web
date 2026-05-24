@@ -559,18 +559,16 @@ export function useSpaceGroupCall(
         const transcriptText = await runtime.stopTranscript();
         const sessionId = callSessionId ?? newCallSessionId();
         const normalizedTranscript = transcriptText.trim();
+        const transcriptForPersistence =
+          normalizedTranscript ||
+          '[No speech captured during this call. Capture session saved.]';
         const uploadTranscriptOnly = async () => {
-          if (!normalizedTranscript) {
-            throw new Error(
-              'Nothing was captured to save. Keep capture running for a few seconds, speak into your mic, and ensure call audio/video is connected before stopping.',
-            );
-          }
           await uploadRecordedCallArtifact({
             authToken: token,
             spaceSlug: slug,
             roomId: activeRoomId,
             callSessionId: sessionId,
-            transcriptText: normalizedTranscript,
+            transcriptText: transcriptForPersistence,
             startedAt: runtime.startedAt,
             endedAt,
           });
