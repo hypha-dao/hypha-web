@@ -22,9 +22,43 @@ function resolveSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
   return win.SpeechRecognition ?? win.webkitSpeechRecognition ?? null;
 }
 
+export type CallTranscriptChunk = {
+  speakerLabel: string;
+  text: string;
+  timestampMs: number;
+};
+
+export function formatSpeakerLabeledTranscript(
+  chunks: CallTranscriptChunk[],
+): string {
+  if (chunks.length === 0) return '';
+  const lines: string[] = [];
+  let currentSpeaker: string | null = null;
+  let currentText = '';
+  for (const chunk of chunks) {
+    const speaker = chunk.speakerLabel.trim() || 'Speaker';
+    const text = chunk.text.trim();
+    if (!text) continue;
+    if (speaker === currentSpeaker) {
+      currentText = currentText ? `${currentText} ${text}` : text;
+    } else {
+      if (currentSpeaker && currentText) {
+        lines.push(`${currentSpeaker}: ${currentText}`);
+      }
+      currentSpeaker = speaker;
+      currentText = text;
+    }
+  }
+  if (currentSpeaker && currentText) {
+    lines.push(`${currentSpeaker}: ${currentText}`);
+  }
+  return lines.join('\n');
+}
+
 export function startBrowserCallTranscription(options?: {
   language?: string;
   onError?: (message: string) => void;
+  resolveSpeakerLabel?: () => string;
 }) {
   const SpeechRecognition = resolveSpeechRecognitionCtor();
   if (!SpeechRecognition) {
@@ -36,7 +70,7 @@ export function startBrowserCallTranscription(options?: {
     };
   }
 
-  const chunks: string[] = [];
+  const chunks: CallTranscriptChunk[] = [];
   let stopped = false;
   let paused = false;
   const recognition = new SpeechRecognition();
@@ -62,7 +96,14 @@ export function startBrowserCallTranscription(options?: {
         const result = list[i];
         if (!result?.isFinal) continue;
         const transcript = result[0]?.transcript?.trim();
-        if (transcript) chunks.push(transcript);
+        if (!transcript) continue;
+        const speakerLabel =
+          options?.resolveSpeakerLabel?.().trim() || 'Speaker';
+        chunks.push({
+          speakerLabel,
+          text: transcript,
+          timestampMs: Date.now(),
+        });
       }
     } catch {
       // ignore malformed browser event payloads
@@ -149,7 +190,7 @@ export function startBrowserCallTranscription(options?: {
       }
       recognition.onresult = handleResult;
       recognition.onend = null;
-      return chunks.join(' ').trim();
+      return formatSpeakerLabeledTranscript(chunks);
     },
   };
 }

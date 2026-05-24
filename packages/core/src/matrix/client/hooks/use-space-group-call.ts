@@ -8,6 +8,7 @@ import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEv
 import { useMatrix } from '../providers/matrix-provider';
 import {
   isPermissionLikeGroupCallError,
+  resolveMatrixSpeakerDisplayName,
   shouldIgnoreGroupCallErrorDuringCapture,
 } from './space-group-call-utils';
 import { logSpaceGroupCallEvent } from './space-group-call-telemetry';
@@ -282,6 +283,8 @@ export function useSpaceGroupCall(
   /** `userId::deviceId` for GroupCall.activeSpeaker; Phase 4 optional UI highlight. */
   const [callSessionId, setCallSessionId] = useState<string | null>(null);
   const [activeSpeakerKey, setActiveSpeakerKey] = useState<string | null>(null);
+  /** Latest active speaker for transcript attribution (avoids stale closure in SR). */
+  const activeSpeakerKeyRef = useRef<string | null>(null);
   /** Screenshare-only failure (does not end the call). */
   const [screenshareErrorCode, setScreenshareErrorCode] =
     useState<SpaceGroupCallErrorCode | null>(null);
@@ -414,7 +417,9 @@ export function useSpaceGroupCall(
 
   const setActiveKeyFromGroupCall = useCallback((gc: MatrixSdk.GroupCall) => {
     const f = gc.activeSpeaker;
-    setActiveSpeakerKey(f ? `${f.userId}::${f.deviceId ?? ''}` : null);
+    const key = f ? `${f.userId}::${f.deviceId ?? ''}` : null;
+    activeSpeakerKeyRef.current = key;
+    setActiveSpeakerKey(key);
   }, []);
 
   const scheduleFeedBatched = useCallback(() => {
@@ -514,6 +519,12 @@ export function useSpaceGroupCall(
       }
 
       const transcript = startBrowserCallTranscription({
+        resolveSpeakerLabel: () =>
+          resolveMatrixSpeakerDisplayName(
+            client,
+            activeRoom,
+            activeSpeakerKeyRef.current,
+          ),
         onError: () => {
           // recording continues even if speech recognition fails
         },
@@ -572,6 +583,7 @@ export function useSpaceGroupCall(
     callKind,
     callSessionId,
     callState,
+    client,
     groupCall,
     roomId,
   ]);
@@ -862,6 +874,7 @@ export function useSpaceGroupCall(
     setIsMicrophoneMuted(false);
     setIsLocalVideoMuted(true);
     setGroupCall(null);
+    activeSpeakerKeyRef.current = null;
     setActiveSpeakerKey(null);
     setCallSessionId(null);
     setScreenshareErrorCode(null);
@@ -1200,9 +1213,9 @@ export function useSpaceGroupCall(
       const onActiveSpeaker = (
         feed: { userId: string; deviceId?: string } | undefined,
       ) => {
-        setActiveSpeakerKey(
-          feed ? `${feed.userId}::${feed.deviceId ?? ''}` : null,
-        );
+        const key = feed ? `${feed.userId}::${feed.deviceId ?? ''}` : null;
+        activeSpeakerKeyRef.current = key;
+        setActiveSpeakerKey(key);
       };
       gc.on(GroupCallEvent.ActiveSpeakerChanged, onActiveSpeaker);
       onActiveSpeaker(gc.activeSpeaker);

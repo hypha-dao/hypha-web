@@ -1,3 +1,35 @@
+import type * as MatrixSdk from 'matrix-js-sdk';
+
+/**
+ * Resolve a human-readable speaker label from Matrix active-speaker state.
+ * Falls back to the local user when no active speaker is set (solo calls).
+ */
+export function resolveMatrixSpeakerDisplayName(
+  client: MatrixSdk.MatrixClient | null | undefined,
+  roomId: string | null | undefined,
+  activeSpeakerKey: string | null | undefined,
+): string {
+  if (!client) return 'Speaker';
+  let userId = client.getUserId();
+  const key = activeSpeakerKey?.trim();
+  if (key) {
+    const separator = key.indexOf('::');
+    const parsedUserId = separator >= 0 ? key.slice(0, separator) : key;
+    if (parsedUserId) userId = parsedUserId;
+  }
+  if (!userId) return 'Speaker';
+  const room = roomId?.trim() ? client.getRoom(roomId.trim()) : null;
+  const member = room?.getMember(userId);
+  const displayName =
+    member?.rawDisplayName?.trim() || member?.name?.trim() || null;
+  if (displayName && displayName !== userId) return displayName;
+  if (userId.startsWith('@')) {
+    const localpart = userId.slice(1).split(':')[0];
+    if (localpart) return localpart;
+  }
+  return userId;
+}
+
 /**
  * Classifies Matrix GroupCall / getUserMedia failures for UI (permission vs other).
  * @public
