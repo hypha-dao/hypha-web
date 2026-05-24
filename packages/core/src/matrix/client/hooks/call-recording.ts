@@ -413,9 +413,9 @@ async function acquireLocalMicStream(): Promise<{
 }
 
 /**
- * Build a call recording from live call feeds, falling back to the local
- * microphone when Matrix WebRTC tracks are not yet available (solo calls,
- * "multiple calls" SDK races, etc.).
+ * Build a call recording from live call audio feeds. We intentionally record
+ * audio only (no video track clone) to keep blobs small and avoid disturbing
+ * the active call video pipeline.
  */
 export async function createCallRecording(
   groupCall: MatrixSdk.GroupCall | null | undefined,
@@ -431,8 +431,6 @@ export async function createCallRecording(
   };
 
   if (groupCall) {
-    const videoTrack = firstLiveVideoTrack(groupCall);
-    if (videoTrack) output.addTrack(videoTrack.clone());
     const audioTracks = allLiveAudioTracks(groupCall);
     const mixed = createMixedAudioTrack(audioTracks);
     if (mixed?.track) {
@@ -441,7 +439,9 @@ export async function createCallRecording(
     }
   }
 
-  if (output.getAudioTracks().length === 0) {
+  // Never open a second getUserMedia mic while in a Matrix call — it steals
+  // the device from the call and causes video/audio flicker in the UI.
+  if (output.getAudioTracks().length === 0 && !groupCall) {
     const mic = await acquireLocalMicStream();
     if (mic?.track) {
       output.addTrack(mic.track);
@@ -449,7 +449,7 @@ export async function createCallRecording(
     }
   }
 
-  if (output.getTracks().length === 0) {
+  if (output.getAudioTracks().length === 0) {
     const silentFallback = createSilentAudioTrack();
     if (silentFallback?.track) {
       output.addTrack(silentFallback.track);
@@ -491,6 +491,9 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
   });
 }
 
+/** Vercel serverless request body limit (~4.5 MB). Upload media to Matrix first. */
+const VERCEL_FUNCTION_PAYLOAD_SOFT_LIMIT_BYTES = 4 * 1024 * 1024;
+
 export async function uploadRecordedCallArtifact({
   authToken,
   spaceSlug,
@@ -501,6 +504,7 @@ export async function uploadRecordedCallArtifact({
   transcriptText,
   startedAt,
   endedAt,
+  matrixClient,
 }: {
   authToken: string;
   spaceSlug: string;
@@ -511,13 +515,43 @@ export async function uploadRecordedCallArtifact({
   transcriptText?: string;
   startedAt?: string;
   endedAt?: string;
+  matrixClient?: MatrixSdk.MatrixClient | null;
 }) {
+  const resolvedMimeType = mimeType || 'audio/webm';
+  let uploadedMediaUri: string | null = null;
+
+  if (blob && blob.size > 0 && matrixClient) {
+    const file = new File([blob], `${callSessionId}.webm`, {
+      type: resolvedMimeType,
+    });
+    try {
+      const upload = await matrixClient.uploadContent(file, {
+        name: file.name,
+        type: resolvedMimeType,
+      });
+      uploadedMediaUri = upload.content_uri?.trim() || null;
+    } catch (error) {
+      if (blob.size <= VERCEL_FUNCTION_PAYLOAD_SOFT_LIMIT_BYTES) {
+        // Fall back to server relay for small blobs when direct upload fails.
+      } else {
+        throw new Error(
+          error instanceof Error
+            ? error.message
+            : 'Recording upload to Matrix failed',
+        );
+      }
+    }
+  }
+
   const form = new FormData();
   form.set('room_id', roomId);
   form.set('call_session_id', callSessionId);
-  if (blob && blob.size > 0) {
+  if (uploadedMediaUri) {
+    form.set('media_uri', uploadedMediaUri);
+    form.set('mime_type', resolvedMimeType);
+  } else if (blob && blob.size > 0) {
     form.set('recording', blob, `${callSessionId}.webm`);
-    form.set('mime_type', mimeType || 'video/webm');
+    form.set('mime_type', resolvedMimeType);
   }
   if (startedAt) form.set('started_at', startedAt);
   if (endedAt) form.set('ended_at', endedAt);
@@ -538,6 +572,11 @@ export async function uploadRecordedCallArtifact({
   );
   if (!response.ok) {
     const text = await response.text().catch(() => '');
+    if (response.status === 413) {
+      throw new Error(
+        'Recording is too large for server upload. Try a shorter capture or transcript-only mode.',
+      );
+    }
     throw new Error(text || `upload failed with status ${response.status}`);
   }
   return (await response.json()) as {

@@ -704,6 +704,7 @@ export function useSpaceGroupCall(
             transcriptText: transcriptForPersistence,
             startedAt: runtime.startedAt,
             endedAt,
+            matrixClient: client,
           });
         };
         if (runtime.mode === 'transcript_only') {
@@ -740,6 +741,7 @@ export function useSpaceGroupCall(
                 transcriptText: normalizedTranscript,
                 startedAt: runtime.startedAt,
                 endedAt,
+                matrixClient: client,
               });
               if (
                 recordingFinalizeGenerationRef.current === cleanupGeneration &&
@@ -772,7 +774,7 @@ export function useSpaceGroupCall(
         }
       }
     })();
-  }, [announceCaptureNotice, callSessionId, roomId]);
+  }, [announceCaptureNotice, callSessionId, client, roomId]);
 
   const runCleanupRef = useRef<() => void>(() => {});
 
@@ -1610,20 +1612,6 @@ export function useSpaceGroupCall(
            */
           if (gc.isLocalVideoMuted() || !hasLiveLocalVideoTrack()) {
             await gc.setLocalVideoMuted(false);
-          }
-          /**
-           * Direct video-join can occasionally land in a stale local video state
-           * (black tile with a non-live track). Retry camera unmute once if no
-           * live video track is present shortly after `enter()`.
-           */
-          if (!hasLiveLocalVideoTrack()) {
-            await new Promise<void>((resolve) =>
-              window.setTimeout(resolve, 320),
-            );
-            if (!hasLiveLocalVideoTrack()) {
-              await gc.setLocalVideoMuted(true);
-              await gc.setLocalVideoMuted(false);
-            }
           }
         } catch {
           /* camera permission / hardware — remain in call with video off */

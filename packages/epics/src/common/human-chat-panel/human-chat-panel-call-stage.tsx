@@ -1486,9 +1486,18 @@ const FeedContent = ({
   }, [stream]);
 
   const hasVideo = !feed.isVideoMuted() && stream.getVideoTracks().length > 0;
+  const [showVideo, setShowVideo] = useState(hasVideo);
+  useEffect(() => {
+    if (hasVideo) {
+      setShowVideo(true);
+      return;
+    }
+    const hideTimer = window.setTimeout(() => setShowVideo(false), 450);
+    return () => window.clearTimeout(hideTimer);
+  }, [hasVideo]);
   /** Analyse mic/remote line whenever the tile has a live audio track (not just Matrix `isSpeaking`, which lags and hid real levels). */
   const canVoiceWave =
-    !hasVideo &&
+    !showVideo &&
     !isShare &&
     !audioMuted &&
     (feed.isLocal() ||
@@ -1533,7 +1542,7 @@ const FeedContent = ({
           ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col'
           : isPip
           ? 'flex h-full min-h-0 w-full min-w-0'
-          : hasVideo
+          : showVideo
           ? 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col' // panel: match avatar tile height in multi-row grid
           : 'flex min-h-[10rem] items-stretch justify-center',
         isShare && !isFullView && 'min-h-[min(42vh,360px)] w-full',
@@ -1542,7 +1551,7 @@ const FeedContent = ({
           'ring-2 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_70%,transparent)]',
       )}
     >
-      {hasVideo ? (
+      {showVideo ? (
         <>
           <video
             ref={ref}

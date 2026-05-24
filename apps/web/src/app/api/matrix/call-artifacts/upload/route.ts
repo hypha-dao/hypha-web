@@ -141,20 +141,23 @@ export async function POST(request: NextRequest) {
   const mimeType = String(form?.get('mime_type') ?? '').trim() || 'video/webm';
   const startedAt = String(form?.get('started_at') ?? '').trim();
   const endedAt = String(form?.get('ended_at') ?? '').trim();
+  const clientMediaUri = String(form?.get('media_uri') ?? '').trim();
+  const hasClientMediaUri = clientMediaUri.startsWith('mxc://');
   const hasRecordingBlob = recording instanceof Blob && recording.size > 0;
   logCallArtifactsUpload('request_received', {
     spaceSlug,
     roomId,
     callSessionId,
     hasRecordingBlob,
+    hasClientMediaUri,
     hasTranscriptText: Boolean(transcriptText),
   });
 
-  if (!roomId || (!hasRecordingBlob && !transcriptText)) {
+  if (!roomId || (!hasRecordingBlob && !hasClientMediaUri && !transcriptText)) {
     return NextResponse.json(
       {
         error:
-          'room_id and either a recording blob or transcript_text are required',
+          'room_id and either a recording blob, media_uri, or transcript_text are required',
       },
       { status: 400 },
     );
@@ -262,6 +265,81 @@ export async function POST(request: NextRequest) {
         status: null,
       },
       deduped: true,
+    });
+  }
+
+  if (!hasRecordingBlob && hasClientMediaUri) {
+    const ingestResult = await ingestSpaceCallArtifacts(
+      {
+        spaceSlug: targetSpaceSlug,
+        callSessionId,
+        recording: {
+          mediaUri: clientMediaUri,
+          mimeType,
+          startedAt: startedAt || undefined,
+          endedAt: endedAt || undefined,
+          source: 'matrix_live_call_upload',
+        },
+        transcript: transcriptText
+          ? {
+              text: transcriptText,
+              source: 'browser_speech_recognition',
+              metadata: {
+                capture: 'automatic_in_call',
+              },
+            }
+          : undefined,
+      },
+      { db },
+    );
+    if (!ingestResult.ok) {
+      logCallArtifactsUpload('client_media_uri_ingest_failed', {
+        spaceSlug,
+        resolvedSpaceSlug: targetSpaceSlug,
+        roomId,
+        callSessionId,
+        error: ingestResult.error,
+      });
+      return NextResponse.json({ error: ingestResult.error }, { status: 400 });
+    }
+    try {
+      await enqueueSignalEvaluationFromMemory(
+        {
+          spaceSlug: targetSpaceSlug,
+          triggerKind: 'memory_ingest',
+        },
+        { db },
+      );
+    } catch (error) {
+      console.error('[matrix.call-artifacts.upload] enqueue failed', {
+        spaceSlug,
+        triggerKind: 'memory_ingest',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    const transcriptJob = await triggerTranscriptJob({
+      spaceSlug: targetSpaceSlug,
+      roomId,
+      callSessionId,
+      mediaUri: clientMediaUri,
+      mimeType,
+      startedAt: startedAt || undefined,
+      endedAt: endedAt || undefined,
+    });
+    logCallArtifactsUpload('client_media_uri_ingested', {
+      spaceSlug,
+      resolvedSpaceSlug: targetSpaceSlug,
+      roomId,
+      callSessionId,
+      transcriptStored: Boolean(transcriptText),
+    });
+    return NextResponse.json({
+      ok: true,
+      media_uri: clientMediaUri,
+      call_session_id: callSessionId,
+      recording_stored: true,
+      transcript_stored: Boolean(transcriptText),
+      transcript_job: transcriptJob,
     });
   }
 
