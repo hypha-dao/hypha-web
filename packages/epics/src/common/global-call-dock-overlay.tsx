@@ -4,13 +4,13 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import {
-  AppWindow,
+  Expand,
+  ExternalLink,
   Loader2,
   Maximize2,
   Minimize2,
   PictureInPicture2,
-  PanelBottomOpen,
-  ArrowUpRight,
+  Shrink,
 } from 'lucide-react';
 import {
   useMatrix,
@@ -678,13 +678,12 @@ export function GlobalCallDockOverlay() {
             onClick={() => router.push(callSpaceHref)}
             className={cn(
               'inline-flex items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted',
-              dockCompact ? 'h-6 w-6' : 'h-7 gap-1 px-2 text-xs',
+              dockCompact ? 'h-6 w-6' : 'h-7 w-7',
             )}
             aria-label={t('openSpaceLabel')}
             title={t('openSpaceLabel')}
           >
-            <ArrowUpRight className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
-            {!dockCompact ? t('spaceButton') : null}
+            <ExternalLink className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
           </button>
         )}
         {isScreensharing && roomGroupCallDeviceCount > 1 && !dockCompact ? (
@@ -720,7 +719,9 @@ export function GlobalCallDockOverlay() {
                   : t('openFloatingWindowLabel')
               }
             >
-              <AppWindow className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+              <PictureInPicture2
+                className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+              />
             </button>
           )}
           {!dockCompact && dockMode !== 'thumbnail' && (
@@ -732,7 +733,7 @@ export function GlobalCallDockOverlay() {
               aria-label={t('minimizeLabel')}
               title={t('minimizeLabel')}
             >
-              <PictureInPicture2 className="h-3.5 w-3.5" />
+              <Shrink className="h-3.5 w-3.5" />
             </button>
           )}
           {!dockCompact && !modeIsFullscreen && dockMode !== 'expanded' && (
@@ -744,7 +745,7 @@ export function GlobalCallDockOverlay() {
               aria-label={t('expandLabel')}
               title={t('expandLabel')}
             >
-              <PanelBottomOpen className="h-3.5 w-3.5" />
+              <Expand className="h-3.5 w-3.5" />
             </button>
           )}
           {!dockCompact && (

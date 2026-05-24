@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  Circle,
   Check,
   ChevronDown,
+  Circle,
+  Disc,
   FileText,
   Mic,
   MicOff,
@@ -12,10 +13,10 @@ import {
   MonitorOff,
   Pause,
   Play,
+  SlidersHorizontal,
   Square,
   Video,
   VideoOff,
-  Volume2,
 } from 'lucide-react';
 import { CallHangUpIcon } from './call-hang-up-icon';
 import { useTranslations } from 'next-intl';
@@ -325,7 +326,7 @@ export function HumanChatPanelInCallControls({
         aria-expanded={isAudioMenuOpen}
         onClick={() => setIsAudioMenuOpen((open) => !open)}
       >
-        <Volume2 className={icon} />
+        <SlidersHorizontal className={icon} />
         <ChevronDown
           className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
         />
@@ -399,7 +400,7 @@ export function HumanChatPanelInCallControls({
         {captureLive ? (
           renderCaptureOnAirIcon
         ) : (
-          <Circle className={captureIdleIconClass} />
+          <Disc className={captureIdleIconClass} />
         )}
         <ChevronDown
           className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
@@ -497,7 +498,7 @@ export function HumanChatPanelInCallControls({
                 className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
               >
                 <span className="inline-flex items-center gap-2">
-                  <Circle className="h-4 w-4 text-rose-600 stroke-rose-600" />
+                  <Disc className="h-4 w-4 text-rose-600 fill-rose-600 stroke-rose-600" />
                   {t('callCaptureModeRecordingWithTranscript')}
                 </span>
                 {capturePreferenceSelected &&
