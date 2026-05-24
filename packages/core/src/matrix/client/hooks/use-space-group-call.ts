@@ -66,6 +66,14 @@ function abortStaleJoinAttempt(
   setCallState('idle');
 }
 
+function abortInFlightJoin(
+  joinEpochRef: { current: number },
+  isJoiningRef: { current: boolean },
+) {
+  joinEpochRef.current += 1;
+  isJoiningRef.current = false;
+}
+
 /** Abort `gc.enter()` hang (SFU/TURN stuck) — user-recoverable via Retry. */
 const CONNECT_STALL_ABORT_MS = 90_000;
 
@@ -766,10 +774,9 @@ export function useSpaceGroupCall(
     })();
   }, [announceCaptureNotice, callSessionId, roomId]);
 
-  const runCleanup = useCallback(() => {
-    joinEpochRef.current += 1;
-    isJoiningRef.current = false;
+  const runCleanupRef = useRef<() => void>(() => {});
 
+  const runCleanup = useCallback(() => {
     const shouldBootstrapCapture =
       captureModeRef.current !== 'none' &&
       !recordingRuntimeRef.current &&
@@ -869,6 +876,8 @@ export function useSpaceGroupCall(
     clearMediaDebugInterval,
     finalizeRecording,
   ]);
+
+  runCleanupRef.current = runCleanup;
 
   const refreshLocalPreview = useCallback(() => {
     const gc = groupCallRef.current;
@@ -1150,6 +1159,7 @@ export function useSpaceGroupCall(
           });
         }
         setCallState('error');
+        abortInFlightJoin(joinEpochRef, isJoiningRef);
         runCleanup();
         setCallKind(null);
         setIsScreensharing(false);
@@ -1511,7 +1521,7 @@ export function useSpaceGroupCall(
       clearConnectingStallTimer();
       connectingStallTimerRef.current = setTimeout(() => {
         clearConnectingStallTimer();
-        joinEpochRef.current += 1;
+        abortInFlightJoin(joinEpochRef, isJoiningRef);
         if (groupCallRef.current !== gc) return;
         if (process.env.NODE_ENV === 'development') {
           console.warn('[hypha.group_call] enter() stalled — forcing cleanup', {
@@ -1519,7 +1529,6 @@ export function useSpaceGroupCall(
             ms: CONNECT_STALL_ABORT_MS,
           });
         }
-        isJoiningRef.current = false;
         setErrorCode('CONNECT_STALL');
         if (roomId) {
           logSpaceGroupCallEvent({
@@ -1561,6 +1570,7 @@ export function useSpaceGroupCall(
           });
         }
         setCallState('error');
+        abortInFlightJoin(joinEpochRef, isJoiningRef);
         runCleanup();
         setCallKind(null);
         setThreadContext(null);
@@ -1742,6 +1752,7 @@ export function useSpaceGroupCall(
         reason: 'user',
       });
     }
+    abortInFlightJoin(joinEpochRef, isJoiningRef);
     runCleanup();
     setCallState('idle');
     setErrorCode(null);
@@ -2083,6 +2094,7 @@ export function useSpaceGroupCall(
       });
     }
     setCallState('disconnecting');
+    abortInFlightJoin(joinEpochRef, isJoiningRef);
     runCleanup();
     setCallState('idle');
     setErrorCode(null);
@@ -2176,9 +2188,10 @@ export function useSpaceGroupCall(
           reason: 'unmount',
         });
       }
-      runCleanup();
+      abortInFlightJoin(joinEpochRef, isJoiningRef);
+      runCleanupRef.current();
     };
-  }, [runCleanup]);
+  }, []);
 
   useEffect(() => {
     if (!remoteMediaRecoverRequestedRef.current) return;
@@ -2195,6 +2208,7 @@ export function useSpaceGroupCall(
         kind: retryKind,
       });
     }
+    abortInFlightJoin(joinEpochRef, isJoiningRef);
     runCleanup();
     remoteMediaRecoverInFlightRef.current = true;
     setCallState('idle');
