@@ -8,6 +8,48 @@ import { formatDate } from '@hypha-platform/ui-utils';
 import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 
+/** Centered play affordance for call recordings in Space Memory. */
+function CallRecordingMediaPreview({
+  src,
+  poster,
+  variant,
+  playLabel,
+}: {
+  src: string;
+  poster?: string | null;
+  variant: 'video' | 'audio';
+  playLabel: string;
+}) {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center bg-black">
+      {variant === 'video' ? (
+        <video
+          src={src}
+          poster={poster ?? undefined}
+          muted
+          playsInline
+          preload="metadata"
+          className="max-h-full max-w-full object-contain"
+        >
+          <track kind="captions" />
+        </video>
+      ) : (
+        <audio src={src} preload="metadata" className="sr-only">
+          <track kind="captions" />
+        </audio>
+      )}
+      <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white shadow-md ring-1 ring-white/20">
+          <Play className="h-6 w-6 fill-current" aria-hidden />
+        </span>
+      </span>
+      <span className="pointer-events-none absolute bottom-1 left-1 right-1 flex items-center justify-center gap-1 rounded bg-black/55 px-1 py-0.5 text-[9px] font-medium text-white/95">
+        <span className="line-clamp-1">{playLabel}</span>
+      </span>
+    </div>
+  );
+}
+
 /** Matches Human Chat image slot: rounded shell with safe media preview. */
 const THUMB_SHELL =
   'relative flex min-h-[160px] w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/30';
@@ -279,6 +321,11 @@ export function SpaceMemoryTimelineItem({
       ? item.context.documentTitle.trim()
       : displayName;
 
+  const isCallRecording = item.source === 'call_recording';
+  const openLinkLabel = isCallRecording
+    ? t('spaceMemoryPlayCallRecording')
+    : t('openDocument');
+
   const thumbPreview = (() => {
     if (isMemoryBody || isCallTranscriptBody) {
       const excerpt =
@@ -311,6 +358,16 @@ export function SpaceMemoryTimelineItem({
               {t('spaceMemoryMatrixPreviewNeedsChat')}
             </span>
           </div>
+        );
+      }
+      if (isCallRecording && mxcDownload) {
+        return (
+          <CallRecordingMediaPreview
+            src={mxcDownload}
+            poster={mxcPreview}
+            variant={item.kind === 'video' ? 'video' : 'audio'}
+            playLabel={t('spaceMemoryPlayCallRecording')}
+          />
         );
       }
       if (item.kind === 'image' && !imageFailed) {
@@ -397,6 +454,15 @@ export function SpaceMemoryTimelineItem({
         <FileIcon
           className="h-12 w-12 text-muted-foreground"
           strokeWidth={1.25}
+        />
+      );
+    }
+    if (isCallRecording) {
+      return (
+        <CallRecordingMediaPreview
+          src={item.url}
+          variant={item.kind === 'video' ? 'video' : 'audio'}
+          playLabel={t('spaceMemoryPlayCallRecording')}
         />
       );
     }
@@ -520,7 +586,7 @@ export function SpaceMemoryTimelineItem({
               {thumbPreview}
             </div>
             <span className={filenameRowClass}>
-              <span>{t('openDocument')}</span>
+              <span>{openLinkLabel}</span>
               <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 opacity-60" />
             </span>
           </a>

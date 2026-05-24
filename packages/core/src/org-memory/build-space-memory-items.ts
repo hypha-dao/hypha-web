@@ -397,15 +397,18 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
       const mxc = resolveOrgMemoryMxcUri(a);
       const safeUrl = !mxc && a.app_url ? normalizeHttpUrl(a.app_url) : null;
       const sessionId = a.call_session_id ?? a.filename;
+      const mime = a.mime?.toLowerCase() ?? '';
+      const recordingKind: SpaceMemoryAssetKind =
+        mime.startsWith('video/') || mime.startsWith('audio/')
+          ? mime.startsWith('video/')
+            ? 'video'
+            : 'other'
+          : 'video';
       items.push({
         id: `call-recording:${sessionId}`,
         name: a.filename?.trim() ? a.filename : 'Call recording',
         url: mxc ?? safeUrl ?? `memory://call-recording/${sessionId}`,
-        kind: inferKindFromMime(
-          a.mime,
-          a.filename,
-          mxc ?? a.app_url ?? safeUrl ?? '',
-        ),
+        kind: recordingKind,
         source: 'call_recording',
         uploadedAt,
         context: {
