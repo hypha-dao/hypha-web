@@ -22,6 +22,8 @@ export const CALL_RECORDING_MAX_FILE_SIZE_BYTES = 512 * 1024 * 1024;
 
 export const CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE = '512MB' as const;
 
+export const CALL_RECORDING_MIN_FILE_SIZE_BYTES = 2048;
+
 /** Hostnames allowed for ingested call recording media_uri (UploadThing CDN). */
 export const CALL_RECORDING_TRUSTED_STORAGE_HOST_SUFFIXES = [
   '.utfs.io',
@@ -52,8 +54,8 @@ export function objectStorageUriMatchesKey(
   try {
     const parsed = new URL(url.trim());
     const path = decodeURIComponent(parsed.pathname);
-    const segments = path.split('/').filter(Boolean)
-    return segments.includes(key) || segments.at(-1) === key
+    const segments = path.split('/').filter(Boolean);
+    return segments.includes(key) || segments.at(-1) === key;
   } catch {
     return false;
   }

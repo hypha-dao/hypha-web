@@ -28,6 +28,7 @@ import {
   type CallRecordingLimitWarningCode,
 } from '../../../assets/call-recording-limits';
 import { downloadCallRecordingBackup } from '../../../assets/client/call-recording-local-backup';
+import { CALL_RECORDING_MIN_FILE_SIZE_BYTES } from '../../../assets/call-recording-constants';
 import type {
   SpaceGroupCallCaptureMode,
   SpaceGroupCallRecordingStatus,
@@ -1032,7 +1033,9 @@ export function useSpaceGroupCall(
             await uploadTranscriptOnly();
           } else {
             const blob = await runtime.stopRecorder();
-            if (blob.size === 0) {
+            const recordingTooSmall =
+              blob.size === 0 || blob.size < CALL_RECORDING_MIN_FILE_SIZE_BYTES;
+            if (recordingTooSmall) {
               if (roomId) {
                 logSpaceGroupCallEvent({
                   name: 'hypha.group_call.error',
@@ -1321,21 +1324,18 @@ export function useSpaceGroupCall(
     [readParticipantsFromGroupCall],
   );
 
-  const scheduleLocalMediaBootstrap = useCallback(
-    (gc: MatrixSdk.GroupCall) => {
-      if (typeof window === 'undefined') return;
-      if (localMediaBootstrapDebounceRef.current != null) {
-        clearTimeout(localMediaBootstrapDebounceRef.current);
-      }
-      localMediaBootstrapDebounceRef.current = window.setTimeout(() => {
-        localMediaBootstrapDebounceRef.current = null;
-        if (groupCallRef.current !== gc) return;
-        const kind = lastJoinKindRef.current ?? 'audio';
-        void ensureLocalCallMediaPublished(gc, kind);
-      }, 350);
-    },
-    [],
-  );
+  const scheduleLocalMediaBootstrap = useCallback((gc: MatrixSdk.GroupCall) => {
+    if (typeof window === 'undefined') return;
+    if (localMediaBootstrapDebounceRef.current != null) {
+      clearTimeout(localMediaBootstrapDebounceRef.current);
+    }
+    localMediaBootstrapDebounceRef.current = window.setTimeout(() => {
+      localMediaBootstrapDebounceRef.current = null;
+      if (groupCallRef.current !== gc) return;
+      const kind = lastJoinKindRef.current ?? 'audio';
+      void ensureLocalCallMediaPublished(gc, kind);
+    }, 350);
+  }, []);
 
   const startLocalMediaBootstrapSeries = useCallback(
     (gc: MatrixSdk.GroupCall) => {
