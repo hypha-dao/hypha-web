@@ -282,37 +282,45 @@ function chooseRecorderMimeType(output: MediaStream): string | undefined {
   return preferred.find((type) => MediaRecorder.isTypeSupported(type));
 }
 
-export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
-  if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') {
+type CallRecordingControls = {
+  mimeType: string;
+  pause: () => void;
+  resume: () => void;
+  stop: () => Promise<Blob>;
+};
+
+function startMediaStreamRecording(
+  output: MediaStream,
+  dispose: () => void,
+): CallRecordingControls | null {
+  if (typeof MediaRecorder === 'undefined') {
+    dispose();
     return null;
   }
-  const output = new MediaStream();
-  const videoTrack = firstLiveVideoTrack(groupCall);
-  if (videoTrack) output.addTrack(videoTrack.clone());
-  const audioTracks = allLiveAudioTracks(groupCall);
-  const mixed = createMixedAudioTrack(audioTracks);
-  if (mixed?.track) output.addTrack(mixed.track);
-  const silentFallback =
-    output.getTracks().length === 0 ? createSilentAudioTrack() : null;
-  if (silentFallback?.track) output.addTrack(silentFallback.track);
   if (output.getTracks().length === 0) {
-    mixed?.dispose();
-    silentFallback?.dispose();
+    dispose();
     return null;
   }
 
   const mimeType = chooseRecorderMimeType(output);
-  const recorder = mimeType
-    ? new MediaRecorder(output, { mimeType })
-    : new MediaRecorder(output);
+  let recorder: MediaRecorder;
+  try {
+    recorder = mimeType
+      ? new MediaRecorder(output, { mimeType })
+      : new MediaRecorder(output);
+  } catch {
+    dispose();
+    return null;
+  }
   const chunks: BlobPart[] = [];
   recorder.ondataavailable = (event) => {
     if (event.data && event.data.size > 0) chunks.push(event.data);
   };
-  recorder.start(1000);
+  recorder.start(250);
 
+  const resolvedMimeType = recorder.mimeType || mimeType || 'video/webm';
   return {
-    mimeType: recorder.mimeType || mimeType || 'video/webm',
+    mimeType: resolvedMimeType,
     pause: () => {
       if (recorder.state !== 'recording') return;
       try {
@@ -332,7 +340,7 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
     stop: async () => {
       const buildBlob = () =>
         new Blob(chunks, {
-          type: recorder.mimeType || mimeType || 'video/webm',
+          type: resolvedMimeType,
         });
       const result = await new Promise<Blob>((resolve) => {
         recorder.onstop = () => {
@@ -359,11 +367,41 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
         }
       });
       output.getTracks().forEach((track) => track.stop());
-      mixed?.dispose();
-      silentFallback?.dispose();
+      dispose();
       return result;
     },
   };
+}
+
+/** Record without Matrix feeds when group call state is unavailable. */
+export function startStandaloneCallRecording() {
+  if (typeof window === 'undefined') return null;
+  const output = new MediaStream();
+  const silentFallback = createSilentAudioTrack();
+  if (silentFallback?.track) output.addTrack(silentFallback.track);
+  return startMediaStreamRecording(output, () => {
+    silentFallback?.dispose();
+  });
+}
+
+export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
+  if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') {
+    return null;
+  }
+  const output = new MediaStream();
+  const videoTrack = firstLiveVideoTrack(groupCall);
+  if (videoTrack) output.addTrack(videoTrack.clone());
+  const audioTracks = allLiveAudioTracks(groupCall);
+  const mixed = createMixedAudioTrack(audioTracks);
+  if (mixed?.track) output.addTrack(mixed.track);
+  const silentFallback =
+    output.getTracks().length === 0 ? createSilentAudioTrack() : null;
+  if (silentFallback?.track) output.addTrack(silentFallback.track);
+
+  return startMediaStreamRecording(output, () => {
+    mixed?.dispose();
+    silentFallback?.dispose();
+  });
 }
 
 export async function uploadRecordedCallArtifact({

@@ -19,6 +19,7 @@ import {
 import {
   startBrowserCallTranscription,
   startGroupCallRecording,
+  startStandaloneCallRecording,
   uploadRecordedCallArtifact,
 } from './call-recording';
 import type {
@@ -479,11 +480,19 @@ export function useSpaceGroupCall(
     let recorder: ReturnType<typeof startGroupCallRecording> | null = null;
     let runtimeMode: Exclude<SpaceGroupCallCaptureMode, 'none'> = mode;
     if (mode === 'recording_with_transcript') {
-      if (!gc) return false;
-      try {
-        recorder = startGroupCallRecording(gc);
-      } catch {
-        recorder = null;
+      if (gc) {
+        try {
+          recorder = startGroupCallRecording(gc);
+        } catch {
+          recorder = null;
+        }
+      }
+      if (!recorder) {
+        try {
+          recorder = startStandaloneCallRecording();
+        } catch {
+          recorder = null;
+        }
       }
       if (!recorder) {
         runtimeMode = 'transcript_only';
@@ -681,6 +690,13 @@ export function useSpaceGroupCall(
   }, [announceCaptureNotice, callSessionId, roomId]);
 
   const runCleanup = useCallback(() => {
+    if (
+      captureModeRef.current !== 'none' &&
+      !recordingRuntimeRef.current &&
+      !recordingFinalizeInFlightRef.current
+    ) {
+      tryBeginCaptureRuntime();
+    }
     finalizeRecording();
     setCaptureMode('none');
 
@@ -764,7 +780,12 @@ export function useSpaceGroupCall(
     }
     loggedStatsForGroupCallIdRef.current = null;
     lastRoomIdForTelemetryRef.current = null;
-  }, [clearConnectingStallTimer, clearMediaDebugInterval, finalizeRecording]);
+  }, [
+    clearConnectingStallTimer,
+    clearMediaDebugInterval,
+    finalizeRecording,
+    tryBeginCaptureRuntime,
+  ]);
 
   const refreshLocalPreview = useCallback(() => {
     const gc = groupCallRef.current;
@@ -1790,10 +1811,9 @@ export function useSpaceGroupCall(
     if (callState === 'connecting' || callState === 'initializing') return;
     if (!isCaptureEligibleCallState(callState)) return;
 
-    const gc = groupCallRef.current ?? groupCall;
     const sessionId = callSessionId?.trim();
     const activeRoom = roomId?.trim();
-    if (!gc || !sessionId || !activeRoom) return;
+    if (!sessionId || !activeRoom) return;
 
     const timer = window.setTimeout(() => {
       if (captureModeRef.current === 'none') return;
@@ -1838,9 +1858,20 @@ export function useSpaceGroupCall(
       }
       captureModeRef.current = nextMode;
       setCaptureMode(nextMode);
+      const token = latestAuthTokenRef.current;
+      const slug = latestSpaceSlugRef.current;
+      const activeRoom =
+        roomId?.trim() || pinnedUploadContextRef.current?.roomId?.trim() || '';
+      if (token && slug && activeRoom) {
+        pinnedUploadContextRef.current = {
+          authToken: token,
+          spaceSlug: slug,
+          roomId: activeRoom,
+        };
+      }
       tryBeginCaptureRuntime();
     },
-    [capturePreference, tryBeginCaptureRuntime],
+    [capturePreference, roomId, tryBeginCaptureRuntime],
   );
 
   const stopCapture = useCallback(() => {
