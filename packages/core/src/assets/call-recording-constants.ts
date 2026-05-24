@@ -52,7 +52,8 @@ export function objectStorageUriMatchesKey(
   try {
     const parsed = new URL(url.trim());
     const path = decodeURIComponent(parsed.pathname);
-    return path.includes(key) || parsed.href.includes(key);
+    const segments = path.split('/').filter(Boolean)
+    return segments.includes(key) || segments.at(-1) === key
   } catch {
     return false;
   }
