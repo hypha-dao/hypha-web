@@ -17,9 +17,8 @@ import {
   probeMatrixTurnServerReadiness,
 } from './group-call-webrtc-diagnostics';
 import {
+  createCallRecording,
   startBrowserCallTranscription,
-  startGroupCallRecording,
-  startStandaloneCallRecording,
   uploadRecordedCallArtifact,
 } from './call-recording';
 import type {
@@ -54,6 +53,8 @@ const { GroupCallEvent, GroupCallIntent, GroupCallType, GroupCallState } =
   MatrixSdk;
 
 const CAPTURE_START_STALL_MS = 8_000;
+/** Minimum time capture must run before finalize produces a non-empty blob. */
+const CAPTURE_MIN_DURATION_MS = 2_000;
 
 function isCaptureEligibleCallState(state: SpaceGroupCallState): boolean {
   return (
@@ -335,6 +336,7 @@ export function useSpaceGroupCall(
   const recordingGenerationRef = useRef(0);
   const recordingFinalizeInFlightRef = useRef(false);
   const recordingFinalizeGenerationRef = useRef<number | null>(null);
+  const captureBootstrapInFlightRef = useRef(false);
   const recordingRuntimeRef = useRef<{
     generation: number;
     mode: SpaceGroupCallCaptureMode;
@@ -464,73 +466,112 @@ export function useSpaceGroupCall(
     [client, roomId],
   );
 
-  const tryBeginCaptureRuntime = useCallback((): boolean => {
+  const beginCaptureRuntimeAsync = useCallback(async (): Promise<boolean> => {
     if (recordingRuntimeRef.current) return true;
     if (recordingFinalizeInFlightRef.current) return false;
+    if (captureBootstrapInFlightRef.current) return false;
+
     const mode = captureModeRef.current;
     if (mode === 'none') return false;
     if (!isCaptureEligibleCallState(callState)) return false;
 
-    const gc = groupCallRef.current ?? groupCall;
     const sessionId = callSessionId?.trim();
     const activeRoom =
       roomId?.trim() || pinnedUploadContextRef.current?.roomId?.trim() || '';
     if (!sessionId || !activeRoom) return false;
 
-    let recorder: ReturnType<typeof startGroupCallRecording> | null = null;
-    let runtimeMode: Exclude<SpaceGroupCallCaptureMode, 'none'> = mode;
-    if (mode === 'recording_with_transcript') {
-      if (gc) {
-        try {
-          recorder = startGroupCallRecording(gc);
-        } catch {
-          recorder = null;
+    captureBootstrapInFlightRef.current = true;
+    try {
+      const gc = groupCallRef.current ?? groupCall;
+      let recorder: Awaited<ReturnType<typeof createCallRecording>> | null =
+        null;
+      if (mode === 'recording_with_transcript') {
+        recorder = await createCallRecording(gc);
+        if (!recorder) {
+          setRecordingStatus('error');
+          setRecordingError(
+            'Could not access your microphone for recording. Check browser permissions and try again.',
+          );
+          setCaptureMode('none');
+          return false;
         }
       }
-      if (!recorder) {
-        try {
-          recorder = startStandaloneCallRecording();
-        } catch {
-          recorder = null;
-        }
-      }
-      if (!recorder) {
-        runtimeMode = 'transcript_only';
-      }
-    }
 
-    const transcript = startBrowserCallTranscription({
-      onError: () => {
-        // recording continues even if speech recognition fails
-      },
-    });
-    if (runtimeMode === 'transcript_only' && transcript.supported === false) {
-      setRecordingStatus('error');
-      setRecordingError('transcript capture is not supported in this browser');
-      setCaptureMode('none');
-      return false;
-    }
+      if (captureModeRef.current === 'none') {
+        if (recorder) await recorder.stop().catch(() => undefined);
+        return false;
+      }
 
-    const generation = recordingGenerationRef.current + 1;
-    recordingGenerationRef.current = generation;
-    recordingRuntimeRef.current = {
-      generation,
-      mode: runtimeMode,
-      pauseRecorder: recorder?.pause,
-      resumeRecorder: recorder?.resume,
-      stopRecorder: recorder?.stop,
-      pauseTranscript: transcript.pause,
-      resumeTranscript: transcript.resume,
-      stopTranscript: transcript.stop,
-      mimeType: recorder?.mimeType,
-      startedAt: new Date().toISOString(),
-      recordedRoomId: activeRoom,
-    };
-    setRecordingStatus('recording');
-    setRecordingError(null);
-    void announceCaptureNotice('started', runtimeMode);
-    return true;
-  }, [announceCaptureNotice, callSessionId, callState, groupCall, roomId]);
+      const transcript = startBrowserCallTranscription({
+        onError: () => {
+          // recording continues even if speech recognition fails
+        },
+      });
+      if (mode === 'transcript_only' && transcript.supported === false) {
+        if (recorder) await recorder.stop().catch(() => undefined);
+        setRecordingStatus('error');
+        setRecordingError(
+          'transcript capture is not supported in this browser',
+        );
+        setCaptureMode('none');
+        return false;
+      }
+
+      if (captureModeRef.current === 'none') {
+        if (recorder) await recorder.stop().catch(() => undefined);
+        return false;
+      }
+
+      const generation = recordingGenerationRef.current + 1;
+      recordingGenerationRef.current = generation;
+      recordingRuntimeRef.current = {
+        generation,
+        mode,
+        pauseRecorder: recorder?.pause,
+        resumeRecorder: recorder?.resume,
+        stopRecorder: recorder?.stop,
+        pauseTranscript: transcript.pause,
+        resumeTranscript: transcript.resume,
+        stopTranscript: transcript.stop,
+        mimeType: recorder?.mimeType,
+        startedAt: new Date().toISOString(),
+        recordedRoomId: activeRoom,
+      };
+      setRecordingStatus('recording');
+      setRecordingError(null);
+      void announceCaptureNotice('started', mode);
+      if (roomId) {
+        logSpaceGroupCallEvent({
+          name: 'hypha.group_call.capture_started',
+          roomId,
+          kind: callKind ?? undefined,
+          captureMode: mode,
+          hasRecorder: Boolean(recorder),
+          hasGroupCall: Boolean(gc),
+        });
+      }
+      return true;
+    } finally {
+      captureBootstrapInFlightRef.current = false;
+    }
+  }, [
+    announceCaptureNotice,
+    callKind,
+    callSessionId,
+    callState,
+    groupCall,
+    roomId,
+  ]);
+
+  const waitForCaptureBootstrap = useCallback(async () => {
+    let waited = 0;
+    while (captureBootstrapInFlightRef.current && waited < 8_000) {
+      await new Promise<void>((resolve) => {
+        window.setTimeout(resolve, 100);
+      });
+      waited += 100;
+    }
+  }, []);
 
   const finalizeRecording = useCallback(() => {
     const runtime = recordingRuntimeRef.current;
@@ -625,6 +666,15 @@ export function useSpaceGroupCall(
     }
     void (async () => {
       try {
+        const startedMs = Date.parse(runtime.startedAt);
+        if (Number.isFinite(startedMs)) {
+          const remaining = CAPTURE_MIN_DURATION_MS - (Date.now() - startedMs);
+          if (remaining > 0) {
+            await new Promise<void>((resolve) => {
+              window.setTimeout(resolve, remaining);
+            });
+          }
+        }
         const endedAt = new Date().toISOString();
         const transcriptText = await runtime.stopTranscript();
         const sessionId = callSessionId ?? newCallSessionId();
@@ -651,9 +701,23 @@ export function useSpaceGroupCall(
           } else {
             const blob = await runtime.stopRecorder();
             if (blob.size === 0) {
+              if (roomId) {
+                logSpaceGroupCallEvent({
+                  name: 'hypha.group_call.error',
+                  roomId,
+                  errorCode: 'CAPTURE_EMPTY_BLOB',
+                });
+              }
               await uploadTranscriptOnly();
+              if (
+                recordingFinalizeGenerationRef.current === cleanupGeneration
+              ) {
+                setRecordingError(
+                  'Recording file was empty. Transcript only was saved.',
+                );
+              }
             } else {
-              await uploadRecordedCallArtifact({
+              const result = await uploadRecordedCallArtifact({
                 authToken: token,
                 spaceSlug: slug,
                 roomId: activeRoomId,
@@ -664,6 +728,14 @@ export function useSpaceGroupCall(
                 startedAt: runtime.startedAt,
                 endedAt,
               });
+              if (
+                recordingFinalizeGenerationRef.current === cleanupGeneration &&
+                !result.recording_stored
+              ) {
+                setRecordingError(
+                  'Recording upload did not persist media. Check server logs.',
+                );
+              }
             }
           }
         }
@@ -690,14 +762,17 @@ export function useSpaceGroupCall(
   }, [announceCaptureNotice, callSessionId, roomId]);
 
   const runCleanup = useCallback(() => {
-    if (
+    const shouldBootstrapCapture =
       captureModeRef.current !== 'none' &&
       !recordingRuntimeRef.current &&
-      !recordingFinalizeInFlightRef.current
-    ) {
-      tryBeginCaptureRuntime();
-    }
-    finalizeRecording();
+      !recordingFinalizeInFlightRef.current;
+
+    void (async () => {
+      if (shouldBootstrapCapture) {
+        await beginCaptureRuntimeAsync();
+      }
+      finalizeRecording();
+    })();
     setCaptureMode('none');
 
     clearConnectingStallTimer();
@@ -781,10 +856,10 @@ export function useSpaceGroupCall(
     loggedStatsForGroupCallIdRef.current = null;
     lastRoomIdForTelemetryRef.current = null;
   }, [
+    beginCaptureRuntimeAsync,
     clearConnectingStallTimer,
     clearMediaDebugInterval,
     finalizeRecording,
-    tryBeginCaptureRuntime,
   ]);
 
   const refreshLocalPreview = useCallback(() => {
@@ -1792,15 +1867,15 @@ export function useSpaceGroupCall(
       }
       return;
     }
-    tryBeginCaptureRuntime();
+    void beginCaptureRuntimeAsync();
   }, [
+    beginCaptureRuntimeAsync,
     captureMode,
     callState,
     callSessionId,
     feedVersion,
     groupCall,
     roomId,
-    tryBeginCaptureRuntime,
   ]);
 
   useEffect(() => {
@@ -1819,31 +1894,29 @@ export function useSpaceGroupCall(
       if (captureModeRef.current === 'none') return;
       if (recordingRuntimeRef.current) return;
       if (recordingFinalizeInFlightRef.current) return;
-      if (tryBeginCaptureRuntime()) return;
-      if (captureModeRef.current === 'recording_with_transcript') {
-        setCapturePreference('transcript_only');
-        captureModeRef.current = 'transcript_only';
-        setCaptureMode('transcript_only');
-        if (tryBeginCaptureRuntime()) return;
-      }
-      setRecordingStatus('error');
-      setRecordingError(
-        'Call capture could not start. Stop capture and try again, or leave and rejoin the call.',
-      );
-      setCaptureMode('none');
+      void beginCaptureRuntimeAsync().then((started) => {
+        if (started) return;
+        if (captureModeRef.current === 'none') return;
+        if (recordingRuntimeRef.current) return;
+        setRecordingStatus('error');
+        setRecordingError(
+          'Call capture could not start. Check microphone permissions, then try again.',
+        );
+        setCaptureMode('none');
+      });
     }, CAPTURE_START_STALL_MS);
 
     return () => {
       window.clearTimeout(timer);
     };
   }, [
+    beginCaptureRuntimeAsync,
     callState,
     captureMode,
     callSessionId,
     groupCall,
     recordingStatus,
     roomId,
-    tryBeginCaptureRuntime,
   ]);
 
   const startCapture = useCallback(
@@ -1869,38 +1942,49 @@ export function useSpaceGroupCall(
           roomId: activeRoom,
         };
       }
-      tryBeginCaptureRuntime();
+      void beginCaptureRuntimeAsync();
     },
-    [capturePreference, roomId, tryBeginCaptureRuntime],
+    [beginCaptureRuntimeAsync, capturePreference, roomId],
   );
 
   const stopCapture = useCallback(() => {
     const pendingMode = captureModeRef.current;
-    if (!recordingRuntimeRef.current && !recordingFinalizeInFlightRef.current) {
+    void (async () => {
+      await waitForCaptureBootstrap();
       if (
+        !recordingRuntimeRef.current &&
+        !recordingFinalizeInFlightRef.current
+      ) {
+        if (
+          pendingMode === 'recording_with_transcript' ||
+          pendingMode === 'transcript_only'
+        ) {
+          await beginCaptureRuntimeAsync();
+        }
+      }
+      if (recordingRuntimeRef.current || recordingFinalizeInFlightRef.current) {
+        finalizeRecording();
+      } else if (
         pendingMode === 'recording_with_transcript' ||
         pendingMode === 'transcript_only'
       ) {
-        tryBeginCaptureRuntime();
+        setRecordingStatus('error');
+        setRecordingError(
+          'Capture did not start. Wait until the record indicator turns red, speak for a few seconds, then stop again.',
+        );
+        void announceCaptureNotice('stopped', pendingMode);
+      } else {
+        setRecordingStatus('idle');
+        setRecordingError(null);
       }
-    }
-    if (recordingRuntimeRef.current || recordingFinalizeInFlightRef.current) {
-      finalizeRecording();
-    } else if (
-      pendingMode === 'recording_with_transcript' ||
-      pendingMode === 'transcript_only'
-    ) {
-      setRecordingStatus('error');
-      setRecordingError(
-        'Capture did not start. Wait until the record indicator turns red, speak for a few seconds, then stop again.',
-      );
-      void announceCaptureNotice('stopped', pendingMode);
-    } else {
-      setRecordingStatus('idle');
-      setRecordingError(null);
-    }
-    setCaptureMode('none');
-  }, [announceCaptureNotice, finalizeRecording, tryBeginCaptureRuntime]);
+      setCaptureMode('none');
+    })();
+  }, [
+    announceCaptureNotice,
+    beginCaptureRuntimeAsync,
+    finalizeRecording,
+    waitForCaptureBootstrap,
+  ]);
 
   const pauseCapture = useCallback(() => {
     const runtime = recordingRuntimeRef.current;

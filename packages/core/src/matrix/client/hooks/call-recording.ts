@@ -360,17 +360,104 @@ function startMediaStreamRecording(
         } catch {
           // best effort — still attempt stop below
         }
-        try {
-          recorder.stop();
-        } catch {
-          resolve(buildBlob());
-        }
+        window.setTimeout(() => {
+          try {
+            if (recorder.state !== 'inactive') {
+              recorder.stop();
+            }
+          } catch {
+            resolve(buildBlob());
+          }
+        }, 300);
       });
       output.getTracks().forEach((track) => track.stop());
       dispose();
       return result;
     },
   };
+}
+
+async function acquireLocalMicStream(): Promise<{
+  track: MediaStreamTrack;
+  dispose: () => void;
+} | null> {
+  if (
+    typeof navigator === 'undefined' ||
+    !navigator.mediaDevices?.getUserMedia
+  ) {
+    return null;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+      video: false,
+    });
+    const track = stream.getAudioTracks()[0];
+    if (!track) {
+      stream.getTracks().forEach((t) => t.stop());
+      return null;
+    }
+    return {
+      track,
+      dispose: () => {
+        stream.getTracks().forEach((t) => t.stop());
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build a call recording from live call feeds, falling back to the local
+ * microphone when Matrix WebRTC tracks are not yet available (solo calls,
+ * "multiple calls" SDK races, etc.).
+ */
+export async function createCallRecording(
+  groupCall: MatrixSdk.GroupCall | null | undefined,
+): Promise<CallRecordingControls | null> {
+  if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') {
+    return null;
+  }
+
+  const output = new MediaStream();
+  const disposers: Array<() => void> = [];
+  const disposeAll = () => {
+    for (const dispose of disposers) dispose();
+  };
+
+  if (groupCall) {
+    const videoTrack = firstLiveVideoTrack(groupCall);
+    if (videoTrack) output.addTrack(videoTrack.clone());
+    const audioTracks = allLiveAudioTracks(groupCall);
+    const mixed = createMixedAudioTrack(audioTracks);
+    if (mixed?.track) {
+      output.addTrack(mixed.track);
+      disposers.push(() => mixed.dispose());
+    }
+  }
+
+  if (output.getAudioTracks().length === 0) {
+    const mic = await acquireLocalMicStream();
+    if (mic?.track) {
+      output.addTrack(mic.track);
+      disposers.push(mic.dispose);
+    }
+  }
+
+  if (output.getTracks().length === 0) {
+    const silentFallback = createSilentAudioTrack();
+    if (silentFallback?.track) {
+      output.addTrack(silentFallback.track);
+      disposers.push(() => silentFallback.dispose());
+    }
+  }
+
+  return startMediaStreamRecording(output, disposeAll);
 }
 
 /** Record without Matrix feeds when group call state is unavailable. */

@@ -20,9 +20,13 @@ export type SpaceGroupCallTelemetryEvent = {
     | 'hypha.group_call.turn_probe'
     | 'hypha.group_call.ice_gather_probe'
     | 'hypha.group_call.webrtc_summary'
-    | 'hypha.group_call.room_type_sync';
+    | 'hypha.group_call.room_type_sync'
+    | 'hypha.group_call.capture_started';
   roomId: string;
   kind?: 'audio' | 'video';
+  captureMode?: string;
+  hasRecorder?: boolean;
+  hasGroupCall?: boolean;
   /** Matrix group call state event `m.type` before sync (voice→video upgrade). */
   previousRoomGroupCallType?: string;
   /** Matrix group call state event `m.type` after sync. */
