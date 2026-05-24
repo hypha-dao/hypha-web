@@ -32,7 +32,6 @@ import { CallAudioVoiceWaves } from './call-audio-voice-waves';
 import type { CallFullViewLayoutMode } from './call-full-view-layout';
 import { CallFullViewPaneSplitter } from './human-chat-panel-call-full-view-pane-splitter';
 import type { CallFullViewPaneSplit } from './call-full-view-split';
-import { LocalScreenSharePlaceholder } from './local-screen-share-placeholder';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
 
@@ -384,6 +383,8 @@ export function HumanChatPanelCallStage({
   const shareFeeds = liveShareFeeds.filter((feed) => !feed.isLocal());
   const localShareActive =
     isScreensharing && liveShareFeeds.some((feed) => feed.isLocal());
+  /** Presenter is sharing — hide the local mirror/placeholder (Zoom-style). */
+  const presenterShareOnly = localShareActive && shareFeeds.length === 0;
   const hasRenderableShare = shareFeeds.length > 0 || localShareActive;
   const hasRemotesOrShare =
     remoteUserMedia.length > 0 ||
@@ -512,40 +513,64 @@ export function HumanChatPanelCallStage({
 
   const skipUserGridWithShareLayout = useShareWithParticipantsLayout;
 
-  const renderSharePane = (keyOffset: number) =>
-    localShareActive && shareFeeds.length === 0 ? (
-      <LocalScreenSharePlaceholder
-        isFullView={isFull}
-        panelFlush={panelFlush}
-      />
-    ) : (
-      shareFeeds.map((feed, i) => (
+  const renderSharePane = (keyOffset: number) => {
+    if (presenterShareOnly) return null;
+    return shareFeeds.map((feed, i) => (
+      <div
+        key={feedKey(feed, keyOffset + i)}
+        className="flex min-h-0 min-w-0 flex-1 flex-col"
+      >
+        <CallFeedTile
+          client={client}
+          roomId={roomId}
+          currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
+          feed={feed}
+          isShare
+          isFullView={isFull}
+          panelVideoFit={panelVideoFit}
+          panelFlush={panelFlush}
+          isActiveSpeaker={
+            activeSpeakerKey != null &&
+            activeSpeakerKey === feedKeyForActive(feed)
+          }
+          room={room}
+          currentUserId={currentUserId}
+          resolveMemberLabel={resolveMemberLabel}
+          isMicrophoneMuted={isMicrophoneMuted}
+          t={t}
+        />
+      </div>
+    ));
+  };
+
+  const renderParticipantShareSidebar = (
+    keyPrefix: number,
+    tileClassName: string,
+  ) => (
+    <div
+      className={cn(
+        'flex min-h-0 flex-col gap-1.5 overflow-y-auto p-1.5',
+        isFull
+          ? 'min-h-[4.5rem] w-full flex-1 lg:max-w-none'
+          : 'ml-auto w-[min(44%,13rem)] min-w-[8.5rem] shrink-0 border-l border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]',
+      )}
+      role="group"
+      aria-label={t('callLayoutSideBySide')}
+    >
+      {userTilesForFullViewShare.map((item, i) => (
         <div
-          key={feedKey(feed, keyOffset + i)}
-          className="flex min-h-0 min-w-0 flex-1 flex-col"
+          key={
+            item.kind === 'feed'
+              ? feedKey(item.feed, keyPrefix + i)
+              : `ph-presenter-${item.userId}-${i}`
+          }
+          className={tileClassName}
         >
-          <CallFeedTile
-            client={client}
-            roomId={roomId}
-            currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
-            feed={feed}
-            isShare
-            isFullView={isFull}
-            panelVideoFit={panelVideoFit}
-            panelFlush={panelFlush}
-            isActiveSpeaker={
-              activeSpeakerKey != null &&
-              activeSpeakerKey === feedKeyForActive(feed)
-            }
-            room={room}
-            currentUserId={currentUserId}
-            resolveMemberLabel={resolveMemberLabel}
-            isMicrophoneMuted={isMicrophoneMuted}
-            t={t}
-          />
+          {renderRemoteUserTile(item, keyPrefix + i)}
         </div>
-      ))
-    );
+      ))}
+    </div>
+  );
 
   /**
    * In-panel, 2+ user tiles: each cell is a flex column with the same min-height so
@@ -601,219 +626,243 @@ export function HumanChatPanelCallStage({
           className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
           data-feed-tick={_feedVersion}
         >
-          {effectiveShareLayoutMode === 'sideBySide' &&
-            (() => {
-              const r = fullViewPaneSplit.sideBySide;
-              const a = Math.max(0, Math.min(1, r));
-              return (
-                <div
-                  className={cn(
-                    'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
-                    isFull ? 'lg:flex-row' : 'flex-row',
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'flex min-w-0 min-h-[4.5rem] flex-1 flex-col',
-                      isFull
-                        ? 'w-full border-b border-border/20 pb-0 lg:min-h-0 lg:w-auto lg:border-b-0 lg:border-r lg:pb-0'
-                        : 'min-h-0 border-r border-border/20',
-                    )}
-                    style={{ flex: `${a} 1 0%` }}
-                  >
-                    {renderSharePane(0)}
-                  </div>
-                  {onSplit && isFull && (
-                    <CallFullViewPaneSplitter
-                      orientation="horizontal"
-                      containerRef={splitRef}
-                      ratio={r}
-                      onRatioChange={(v) => onSplit('sideBySide', v)}
-                      className="lg:hidden"
-                      aria-label={t('callPaneResizeSharePeople')}
-                    />
-                  )}
-                  {onSplit && (
-                    <CallFullViewPaneSplitter
-                      orientation={isFull ? 'vertical' : 'vertical'}
-                      containerRef={splitRef}
-                      ratio={r}
-                      onRatioChange={(v) => onSplit('sideBySide', v)}
-                      className={isFull ? 'hidden lg:block' : undefined}
-                      aria-label={t('callPaneResizeSharePeople')}
-                    />
-                  )}
-                  <div
-                    className={cn(
-                      'flex min-h-0 flex-col gap-1.5 overflow-y-auto p-1.5',
-                      isFull
-                        ? 'w-full min-h-[4.5rem] max-h-[min(50dvh,20rem)] flex-1 lg:max-w-none'
-                        : 'min-w-[7.5rem] shrink-0',
-                    )}
-                    style={{ flex: `${1 - a} 1 0%` }}
-                    role="group"
-                    aria-label={t('callLayoutSideBySide')}
-                  >
-                    {userTilesForFullViewShare.map((item, i) => (
-                      <div
-                        key={
-                          item.kind === 'feed'
-                            ? feedKey(item.feed, 1000 + i)
-                            : `ph-side-${item.userId}-${i}`
-                        }
-                        className={cn(
-                          'w-full shrink-0',
-                          isFull
-                            ? 'min-h-[4.5rem]'
-                            : 'aspect-video min-h-[4rem]',
-                        )}
-                      >
-                        {renderRemoteUserTile(item, 1000 + i)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-          {isFull &&
-            fullViewLayoutMode === 'filmstrip' &&
-            (() => {
-              const r = fullViewPaneSplit.filmstrip;
-              const a = Math.max(0, Math.min(1, r));
-              return (
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-                  <div
-                    className="flex min-h-0 min-w-0 flex-1 flex-col"
-                    style={{ flex: `${a} 1 0%` }}
-                  >
-                    {renderSharePane(100)}
-                  </div>
-                  {onSplit && (
-                    <CallFullViewPaneSplitter
-                      orientation="horizontal"
-                      containerRef={splitRef}
-                      ratio={r}
-                      onRatioChange={(v) => onSplit('filmstrip', v)}
-                      aria-label={t('callPaneResizeShareStrip')}
-                    />
-                  )}
-                  <div
-                    className="flex w-full min-h-0 min-h-[3.5rem] shrink-0 items-stretch gap-2 overflow-x-auto border-t border-border/30 p-2"
-                    style={{ flex: `${1 - a} 1 0%` }}
-                    role="group"
-                    aria-label={t('callLayoutFilmstrip')}
-                  >
-                    {userTilesForFullViewShare.map((item, i) => (
-                      <div
-                        key={
-                          item.kind === 'feed'
-                            ? feedKey(item.feed, 2000 + i)
-                            : `ph-strip-${item.userId}-${i}`
-                        }
-                        className="h-full min-h-[4.5rem] w-[min(42%,9rem)] min-w-[6.5rem] shrink-0"
-                      >
-                        {renderRemoteUserTile(item, 2000 + i)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-          {isFull &&
-            fullViewLayoutMode === 'speakerTop' &&
-            (() => {
-              const r = fullViewPaneSplit.speakerOnTop;
-              const a = Math.max(0, Math.min(1, r));
-              return (
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-                  {(speakerFeedForTopMode || speakerTopPlaceholderId) && (
+          {presenterShareOnly ? (
+            <div
+              className={cn(
+                'flex min-h-0 min-w-0 flex-1 overflow-hidden',
+                isFull ? 'flex-col' : 'flex-row justify-end',
+              )}
+            >
+              {renderParticipantShareSidebar(
+                1000,
+                cn(
+                  'w-full shrink-0',
+                  isFull ? 'min-h-[4.5rem]' : 'aspect-video min-h-[4rem]',
+                ),
+              )}
+            </div>
+          ) : (
+            <>
+              {effectiveShareLayoutMode === 'sideBySide' &&
+                (() => {
+                  const r = fullViewPaneSplit.sideBySide;
+                  const a = Math.max(0, Math.min(1, r));
+                  return (
                     <div
-                      className="w-full min-h-0 min-h-[3.5rem] max-h-[min(40dvh,16rem)] shrink-0 border-b border-border/30 p-2"
-                      style={{ flex: `${a} 1 0%` }}
+                      className={cn(
+                        'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+                        isFull ? 'lg:flex-row' : 'flex-row',
+                      )}
                     >
-                      <div className="h-full min-h-0" key="speaker-top-tile">
-                        {speakerFeedForTopMode ? (
-                          <CallFeedTile
-                            client={client}
-                            roomId={roomId}
-                            currentUserProfileAvatarUrl={
-                              currentUserProfileAvatarUrl
+                      <div
+                        className={cn(
+                          'flex min-w-0 min-h-[4.5rem] flex-1 flex-col',
+                          isFull
+                            ? 'w-full border-b border-border/20 pb-0 lg:min-h-0 lg:w-auto lg:border-b-0 lg:border-r lg:pb-0'
+                            : 'min-h-0 border-r border-border/20',
+                        )}
+                        style={{ flex: `${a} 1 0%` }}
+                      >
+                        {renderSharePane(0)}
+                      </div>
+                      {onSplit && isFull && (
+                        <CallFullViewPaneSplitter
+                          orientation="horizontal"
+                          containerRef={splitRef}
+                          ratio={r}
+                          onRatioChange={(v) => onSplit('sideBySide', v)}
+                          className="lg:hidden"
+                          aria-label={t('callPaneResizeSharePeople')}
+                        />
+                      )}
+                      {onSplit && (
+                        <CallFullViewPaneSplitter
+                          orientation={isFull ? 'vertical' : 'vertical'}
+                          containerRef={splitRef}
+                          ratio={r}
+                          onRatioChange={(v) => onSplit('sideBySide', v)}
+                          className={isFull ? 'hidden lg:block' : undefined}
+                          aria-label={t('callPaneResizeSharePeople')}
+                        />
+                      )}
+                      <div
+                        className={cn(
+                          'flex min-h-0 flex-col gap-1.5 overflow-y-auto p-1.5',
+                          isFull
+                            ? 'w-full min-h-[4.5rem] max-h-[min(50dvh,20rem)] flex-1 lg:max-w-none'
+                            : 'min-w-[7.5rem] shrink-0',
+                        )}
+                        style={{ flex: `${1 - a} 1 0%` }}
+                        role="group"
+                        aria-label={t('callLayoutSideBySide')}
+                      >
+                        {userTilesForFullViewShare.map((item, i) => (
+                          <div
+                            key={
+                              item.kind === 'feed'
+                                ? feedKey(item.feed, 1000 + i)
+                                : `ph-side-${item.userId}-${i}`
                             }
-                            feed={speakerFeedForTopMode}
-                            isFullView={isFull}
-                            panelVideoFit={panelVideoFit}
-                            panelFlush={panelFlush}
-                            isActiveSpeaker
-                            room={room}
-                            currentUserId={currentUserId}
-                            resolveMemberLabel={resolveMemberLabel}
-                            isMicrophoneMuted={isMicrophoneMuted}
-                            t={t}
-                          />
-                        ) : speakerTopPlaceholderId ? (
-                          <CallParticipantPlaceholderTile
-                            client={client}
-                            roomId={roomId}
-                            userId={speakerTopPlaceholderId}
-                            currentUserId={currentUserId}
-                            currentUserProfileAvatarUrl={
-                              currentUserProfileAvatarUrl
-                            }
-                            isFullView={isFull}
-                            isPip={false}
-                            resolveMemberLabel={resolveMemberLabel}
-                            remoteMediaStall={remoteMediaStall}
-                            t={t}
-                          />
-                        ) : null}
+                            className={cn(
+                              'w-full shrink-0',
+                              isFull
+                                ? 'min-h-[4.5rem]'
+                                : 'aspect-video min-h-[4rem]',
+                            )}
+                          >
+                            {renderRemoteUserTile(item, 1000 + i)}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  )}
-                  {onSplit &&
-                    (speakerFeedForTopMode || speakerTopPlaceholderId) && (
-                      <CallFullViewPaneSplitter
-                        orientation="horizontal"
-                        containerRef={splitRef}
-                        ratio={r}
-                        onRatioChange={(v) => onSplit('speakerOnTop', v)}
-                        aria-label={t('callPaneResizeSpeakerShare')}
-                      />
-                    )}
+                  );
+                })()}
+              {isFull &&
+                fullViewLayoutMode === 'filmstrip' &&
+                (() => {
+                  const r = fullViewPaneSplit.filmstrip;
+                  const a = Math.max(0, Math.min(1, r));
+                  return (
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                      <div
+                        className="flex min-h-0 min-w-0 flex-1 flex-col"
+                        style={{ flex: `${a} 1 0%` }}
+                      >
+                        {renderSharePane(100)}
+                      </div>
+                      {onSplit && (
+                        <CallFullViewPaneSplitter
+                          orientation="horizontal"
+                          containerRef={splitRef}
+                          ratio={r}
+                          onRatioChange={(v) => onSplit('filmstrip', v)}
+                          aria-label={t('callPaneResizeShareStrip')}
+                        />
+                      )}
+                      <div
+                        className="flex w-full min-h-0 min-h-[3.5rem] shrink-0 items-stretch gap-2 overflow-x-auto border-t border-border/30 p-2"
+                        style={{ flex: `${1 - a} 1 0%` }}
+                        role="group"
+                        aria-label={t('callLayoutFilmstrip')}
+                      >
+                        {userTilesForFullViewShare.map((item, i) => (
+                          <div
+                            key={
+                              item.kind === 'feed'
+                                ? feedKey(item.feed, 2000 + i)
+                                : `ph-strip-${item.userId}-${i}`
+                            }
+                            className="h-full min-h-[4.5rem] w-[min(42%,9rem)] min-w-[6.5rem] shrink-0"
+                          >
+                            {renderRemoteUserTile(item, 2000 + i)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              {isFull &&
+                fullViewLayoutMode === 'speakerTop' &&
+                (() => {
+                  const r = fullViewPaneSplit.speakerOnTop;
+                  const a = Math.max(0, Math.min(1, r));
+                  return (
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                      {(speakerFeedForTopMode || speakerTopPlaceholderId) && (
+                        <div
+                          className="w-full min-h-0 min-h-[3.5rem] max-h-[min(40dvh,16rem)] shrink-0 border-b border-border/30 p-2"
+                          style={{ flex: `${a} 1 0%` }}
+                        >
+                          <div
+                            className="h-full min-h-0"
+                            key="speaker-top-tile"
+                          >
+                            {speakerFeedForTopMode ? (
+                              <CallFeedTile
+                                client={client}
+                                roomId={roomId}
+                                currentUserProfileAvatarUrl={
+                                  currentUserProfileAvatarUrl
+                                }
+                                feed={speakerFeedForTopMode}
+                                isFullView={isFull}
+                                panelVideoFit={panelVideoFit}
+                                panelFlush={panelFlush}
+                                isActiveSpeaker
+                                room={room}
+                                currentUserId={currentUserId}
+                                resolveMemberLabel={resolveMemberLabel}
+                                isMicrophoneMuted={isMicrophoneMuted}
+                                t={t}
+                              />
+                            ) : speakerTopPlaceholderId ? (
+                              <CallParticipantPlaceholderTile
+                                client={client}
+                                roomId={roomId}
+                                userId={speakerTopPlaceholderId}
+                                currentUserId={currentUserId}
+                                currentUserProfileAvatarUrl={
+                                  currentUserProfileAvatarUrl
+                                }
+                                isFullView={isFull}
+                                isPip={false}
+                                resolveMemberLabel={resolveMemberLabel}
+                                remoteMediaStall={remoteMediaStall}
+                                t={t}
+                              />
+                            ) : null}
+                          </div>
+                        </div>
+                      )}
+                      {onSplit &&
+                        (speakerFeedForTopMode || speakerTopPlaceholderId) && (
+                          <CallFullViewPaneSplitter
+                            orientation="horizontal"
+                            containerRef={splitRef}
+                            ratio={r}
+                            onRatioChange={(v) => onSplit('speakerOnTop', v)}
+                            aria-label={t('callPaneResizeSpeakerShare')}
+                          />
+                        )}
+                      <div
+                        className="flex min-h-0 min-w-0 flex-1 flex-col"
+                        style={{
+                          flex: speakerFeedForTopMode
+                            ? `${1 - a} 1 0%`
+                            : '1 1 0%',
+                        }}
+                      >
+                        {renderSharePane(200)}
+                      </div>
+                    </div>
+                  );
+                })()}
+              {isFull && fullViewLayoutMode === 'pip' && (
+                <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+                  <div className="absolute inset-0 flex min-h-0 min-w-0">
+                    {renderSharePane(300)}
+                  </div>
                   <div
-                    className="flex min-h-0 min-w-0 flex-1 flex-col"
-                    style={{
-                      flex: speakerFeedForTopMode ? `${1 - a} 1 0%` : '1 1 0%',
-                    }}
+                    className="pointer-events-none absolute end-4 bottom-4 z-10 flex w-[min(38%,12rem)] min-w-[6rem] flex-col gap-2"
+                    role="group"
+                    aria-label={t('callLayoutPip')}
                   >
-                    {renderSharePane(200)}
+                    {userTilesForFullViewShare.map((item, i) => (
+                      <div
+                        key={
+                          item.kind === 'feed'
+                            ? feedKey(item.feed, 3000 + i)
+                            : `ph-pip-${item.userId}-${i}`
+                        }
+                        className="pointer-events-auto"
+                      >
+                        {renderRemoteUserTile(item, 3000 + i)}
+                      </div>
+                    ))}
                   </div>
                 </div>
-              );
-            })()}
-          {isFull && fullViewLayoutMode === 'pip' && (
-            <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-              <div className="absolute inset-0 flex min-h-0 min-w-0">
-                {renderSharePane(300)}
-              </div>
-              <div
-                className="pointer-events-none absolute end-4 bottom-4 z-10 flex w-[min(38%,12rem)] min-w-[6rem] flex-col gap-2"
-                role="group"
-                aria-label={t('callLayoutPip')}
-              >
-                {userTilesForFullViewShare.map((item, i) => (
-                  <div
-                    key={
-                      item.kind === 'feed'
-                        ? feedKey(item.feed, 3000 + i)
-                        : `ph-pip-${item.userId}-${i}`
-                    }
-                    className="pointer-events-auto"
-                  >
-                    {renderRemoteUserTile(item, 3000 + i)}
-                  </div>
-                ))}
-              </div>
-            </div>
+              )}
+            </>
           )}
         </div>
       ) : (
@@ -828,11 +877,15 @@ export function HumanChatPanelCallStage({
             )}
             data-feed-tick={_feedVersion}
           >
-            {localShareActive && shareFeeds.length === 0 ? (
-              <LocalScreenSharePlaceholder
-                isFullView={isFull}
-                panelFlush={panelFlush}
-              />
+            {presenterShareOnly ? (
+              <section
+                className="shrink-0 border-b border-border/40 bg-muted/25 px-3 py-2"
+                role="status"
+              >
+                <p className="text-xs text-muted-foreground">
+                  {t('callScreenShareActive')}
+                </p>
+              </section>
             ) : (
               shareFeeds.map((feed, i) => (
                 <div
