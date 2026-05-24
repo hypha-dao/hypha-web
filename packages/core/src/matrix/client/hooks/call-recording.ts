@@ -454,9 +454,8 @@ async function acquireLocalMicStream(): Promise<{
 }
 
 /**
- * Build a call recording from live call audio feeds. We intentionally record
- * audio only (no video track clone) to keep blobs small and avoid disturbing
- * the active call video pipeline.
+ * Build a call recording from live call feeds. Video is captured by cloning an
+ * active feed track so the in-call pipeline is not disturbed.
  */
 export async function createCallRecording(
   groupCall: MatrixSdk.GroupCall | null | undefined,
@@ -472,6 +471,11 @@ export async function createCallRecording(
   };
 
   if (groupCall) {
+    const videoTrack = firstLiveVideoTrack(groupCall);
+    if (videoTrack) {
+      output.addTrack(videoTrack.clone());
+    }
+
     const audioTracks = allLiveAudioTracks(groupCall);
     const mixed = createMixedAudioTrack(audioTracks);
     if (mixed?.track) {
@@ -558,7 +562,7 @@ export async function uploadRecordedCallArtifact({
   endedAt?: string;
   matrixClient?: MatrixSdk.MatrixClient | null;
 }) {
-  const resolvedMimeType = mimeType || 'audio/webm';
+  const resolvedMimeType = mimeType || blob?.type?.trim() || 'video/webm';
   let uploadedMediaUri: string | null = null;
 
   if (blob && blob.size > 0 && matrixClient) {
