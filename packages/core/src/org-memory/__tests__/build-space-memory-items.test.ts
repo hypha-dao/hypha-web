@@ -207,6 +207,26 @@ describe('buildSpaceMemoryItemsFromOrgMemoryPayload', () => {
     expect(rows[0]!.kind).toBe('image');
   });
 
+  it('includes call_recording rows with https app_url for object storage playback', () => {
+    const rows = buildSpaceMemoryItemsFromOrgMemoryPayload({
+      org_memory_assets: [
+        {
+          source: 'call_recording',
+          filename: 'session-2.webm',
+          app_url: 'https://utfs.io/f/recording-key',
+          mime: 'video/webm',
+          call_session_id: 'session-2',
+          call_recording_id: 10,
+          occurred_at: '2024-07-02T00:00:00.000Z',
+        },
+      ],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.source).toBe('call_recording');
+    expect(rows[0]!.url).toBe('https://utfs.io/f/recording-key');
+    expect(rows[0]!.kind).toBe('video');
+  });
+
   it('includes call_recording rows with mxc URL for Matrix playback', () => {
     const rows = buildSpaceMemoryItemsFromOrgMemoryPayload({
       org_memory_assets: [

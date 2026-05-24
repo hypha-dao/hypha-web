@@ -33,6 +33,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import {
   getCallControlsPhase,
+  type CallRecordingCaptureWarning,
   type SpaceGroupCallCaptureMode,
   type SpaceGroupCallRecordingStatus,
   type SpaceGroupCallState,
@@ -62,6 +63,9 @@ type HumanChatPanelInCallControlsProps = {
   onStopCapture: () => void;
   recordingStatus: SpaceGroupCallRecordingStatus;
   recordingError: string | null;
+  recordingWarning?: CallRecordingCaptureWarning | null;
+  canRetryRecordingUpload?: boolean;
+  onRetryRecordingUpload?: () => void;
   onLeave: () => void;
   /** In header strip: compact buttons; in full view: larger, high-contrast on video. */
   variant?: 'inBanner' | 'fullView';
@@ -97,6 +101,9 @@ export function HumanChatPanelInCallControls({
   onStopCapture,
   recordingStatus,
   recordingError,
+  recordingWarning = null,
+  canRetryRecordingUpload = false,
+  onRetryRecordingUpload,
   onLeave,
   variant = 'inBanner',
   inBannerLayout = 'inline',
@@ -291,6 +298,29 @@ export function HumanChatPanelInCallControls({
     setIsCaptureMenuOpen(false);
   };
   const captureStopLabel = t('callCaptureStop');
+  const recordingWarningMessage = (() => {
+    if (!recordingWarning) return null;
+    switch (recordingWarning.code) {
+      case 'duration_warn':
+        return t('callCaptureLimitDurationWarn', {
+          minutes: recordingWarning.remainingMinutes,
+        });
+      case 'duration_critical':
+        return t('callCaptureLimitDurationCritical', {
+          minutes: recordingWarning.remainingMinutes,
+        });
+      case 'size_warn':
+        return t('callCaptureLimitSizeWarn', {
+          sizeMb: recordingWarning.remainingSizeMb,
+        });
+      case 'size_critical':
+        return t('callCaptureLimitSizeCritical', {
+          sizeMb: recordingWarning.remainingSizeMb,
+        });
+      default:
+        return null;
+    }
+  })();
   const captureStopReady = captureActive && recordingStatus !== 'uploading';
   const capturePauseReady =
     recordingStatus === 'recording' || recordingStatus === 'paused';
@@ -722,10 +752,34 @@ export function HumanChatPanelInCallControls({
           <p className={cn('mt-1 text-[11px] text-muted-foreground')}>
             {t('callCaptureStatusSaving')}
           </p>
-        ) : recordingStatus === 'error' && recordingError?.trim() ? (
-          <p className={cn('mt-1 text-[11px] text-destructive')}>
-            {recordingError}
+        ) : recordingWarningMessage ? (
+          <p
+            className={cn(
+              'mt-1 text-[11px]',
+              recordingWarning.code.endsWith('_critical')
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-muted-foreground',
+            )}
+          >
+            {recordingWarningMessage}
           </p>
+        ) : recordingStatus === 'error' && recordingError?.trim() ? (
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className={cn('text-[11px] text-destructive')}>
+              {recordingError}
+            </p>
+            {canRetryRecordingUpload && onRetryRecordingUpload ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-6 px-2 text-[10px]"
+                onClick={() => void onRetryRecordingUpload()}
+              >
+                {t('callCaptureRetryUpload')}
+              </Button>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </>

@@ -1,5 +1,8 @@
 import type * as MatrixSdk from 'matrix-js-sdk';
 
+import { uploadCallRecordingBlob } from '../../../assets/client/upload-call-recording';
+import { sleepMs } from '../../../assets/client/call-recording-local-backup';
+
 type SpeechRecognitionInstance = {
   continuous: boolean;
   interimResults: boolean;
@@ -557,15 +560,10 @@ function chooseRecorderMimeType(output: MediaStream): string | undefined {
   return preferred.find((type) => MediaRecorder.isTypeSupported(type));
 }
 
-/** Typical Synapse default; stay under this when uploading to Matrix directly. */
-export const MATRIX_MEDIA_UPLOAD_SOFT_LIMIT_BYTES = 10 * 1024 * 1024;
-
-/** Vercel serverless request body limit (~4.5 MB). Upload media to Matrix first. */
-const VERCEL_FUNCTION_PAYLOAD_SOFT_LIMIT_BYTES = 4 * 1024 * 1024;
-
-/** Target ~6–7 MB for a 5-minute capture at default bitrates. */
-const RECORDING_AUDIO_BITS_PER_SECOND = 48_000;
-const RECORDING_VIDEO_BITS_PER_SECOND = 96_000;
+import {
+  CALL_RECORDING_AUDIO_BITS_PER_SECOND,
+  CALL_RECORDING_VIDEO_BITS_PER_SECOND,
+} from '../../../assets/call-recording-constants';
 
 type CallRecordingControls = {
   mimeType: string;
@@ -591,9 +589,9 @@ function startMediaStreamRecording(
   const hasVideo = output.getVideoTracks().length > 0;
   const recorderOptions: MediaRecorderOptions = {
     ...(mimeType ? { mimeType } : {}),
-    audioBitsPerSecond: RECORDING_AUDIO_BITS_PER_SECOND,
+    audioBitsPerSecond: CALL_RECORDING_AUDIO_BITS_PER_SECOND,
     ...(hasVideo
-      ? { videoBitsPerSecond: RECORDING_VIDEO_BITS_PER_SECOND }
+      ? { videoBitsPerSecond: CALL_RECORDING_VIDEO_BITS_PER_SECOND }
       : {}),
   };
   let recorder: MediaRecorder;
@@ -812,7 +810,6 @@ export async function uploadRecordedCallArtifact({
   transcriptText,
   startedAt,
   endedAt,
-  matrixClient,
   launchContext,
 }: {
   authToken: string;
@@ -824,7 +821,6 @@ export async function uploadRecordedCallArtifact({
   transcriptText?: string;
   startedAt?: string;
   endedAt?: string;
-  matrixClient?: MatrixSdk.MatrixClient | null;
   launchContext?: {
     signalTitle?: string;
     signalSlug?: string;
@@ -833,37 +829,17 @@ export async function uploadRecordedCallArtifact({
 }) {
   const resolvedMimeType = mimeType || blob?.type?.trim() || 'video/webm';
   let uploadedMediaUri: string | null = null;
+  let uploadedStorageKey: string | null = null;
 
-  if (blob && blob.size > 0 && matrixClient) {
-    const file = new File([blob], `${callSessionId}.webm`, {
-      type: resolvedMimeType,
+  if (blob && blob.size > 0) {
+    const uploaded = await uploadCallRecordingBlob({
+      blob,
+      fileName: `${callSessionId}.webm`,
+      mimeType: resolvedMimeType,
+      authorizationToken: authToken,
     });
-    try {
-      const upload = await matrixClient.uploadContent(file, {
-        name: file.name,
-        type: resolvedMimeType,
-      });
-      uploadedMediaUri = upload.content_uri?.trim() || null;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (
-        message.includes('413') ||
-        message.includes('maximum allowed upload size')
-      ) {
-        throw new Error(
-          'Recording exceeds your Matrix server upload limit (~10 MB). Use transcript-only capture or stop recording sooner.',
-        );
-      }
-      if (blob.size <= VERCEL_FUNCTION_PAYLOAD_SOFT_LIMIT_BYTES) {
-        // Fall back to server relay for small blobs when direct upload fails.
-      } else {
-        throw new Error(
-          error instanceof Error
-            ? error.message
-            : 'Recording upload to Matrix failed',
-        );
-      }
-    }
+    uploadedMediaUri = uploaded.mediaUri;
+    uploadedStorageKey = uploaded.storageKey;
   }
 
   const form = new FormData();
@@ -872,9 +848,9 @@ export async function uploadRecordedCallArtifact({
   if (uploadedMediaUri) {
     form.set('media_uri', uploadedMediaUri);
     form.set('mime_type', resolvedMimeType);
-  } else if (blob && blob.size > 0) {
-    form.set('recording', blob, `${callSessionId}.webm`);
-    form.set('mime_type', resolvedMimeType);
+    if (uploadedStorageKey) {
+      form.set('storage_key', uploadedStorageKey);
+    }
   }
   if (startedAt) form.set('started_at', startedAt);
   if (endedAt) form.set('ended_at', endedAt);
@@ -907,7 +883,7 @@ export async function uploadRecordedCallArtifact({
     const text = await response.text().catch(() => '');
     if (response.status === 413) {
       throw new Error(
-        'Recording is too large for server upload. Try a shorter capture or transcript-only mode.',
+        'Recording exceeds the maximum upload size (90-minute calls). Try a shorter capture or transcript-only mode.',
       );
     }
     throw new Error(text || `upload failed with status ${response.status}`);
@@ -919,4 +895,25 @@ export async function uploadRecordedCallArtifact({
     transcript_stored: boolean;
     recording_stored: boolean;
   };
+}
+
+export const CALL_RECORDING_UPLOAD_MAX_ATTEMPTS = 3;
+
+export async function uploadRecordedCallArtifactWithRetry(
+  input: Parameters<typeof uploadRecordedCallArtifact>[0],
+): Promise<Awaited<ReturnType<typeof uploadRecordedCallArtifact>>> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= CALL_RECORDING_UPLOAD_MAX_ATTEMPTS; attempt++) {
+    try {
+      return await uploadRecordedCallArtifact(input);
+    } catch (error) {
+      lastError = error;
+      if (attempt < CALL_RECORDING_UPLOAD_MAX_ATTEMPTS) {
+        await sleepMs(1000 * attempt);
+      }
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(String(lastError ?? 'Call recording upload failed'));
 }

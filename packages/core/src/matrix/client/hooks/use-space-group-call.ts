@@ -21,7 +21,13 @@ import {
   createCallRecording,
   startBrowserCallTranscription,
   uploadRecordedCallArtifact,
+  uploadRecordedCallArtifactWithRetry,
 } from './call-recording';
+import {
+  evaluateCallRecordingCaptureLimits,
+  type CallRecordingLimitWarningCode,
+} from '../../../assets/call-recording-limits';
+import { downloadCallRecordingBackup } from '../../../assets/client/call-recording-local-backup';
 import type {
   SpaceGroupCallCaptureMode,
   SpaceGroupCallRecordingStatus,
@@ -63,6 +69,24 @@ const { GroupCallEvent, GroupCallIntent, GroupCallType, GroupCallState } =
 const CAPTURE_START_STALL_MS = 8_000;
 /** Minimum time capture must run before finalize produces a non-empty blob. */
 const CAPTURE_MIN_DURATION_MS = 2_000;
+const CAPTURE_LIMIT_CHECK_MS = 15_000;
+
+type PendingRecordingUpload = {
+  blob: Blob;
+  mimeType: string;
+  callSessionId: string;
+  spaceSlug: string;
+  roomId: string;
+  authToken: string;
+  transcriptText?: string;
+  startedAt: string;
+  endedAt: string;
+  launchContext?: {
+    signalTitle?: string;
+    signalSlug?: string;
+    threadRootEventId?: string;
+  };
+};
 
 function isCaptureEligibleCallState(state: SpaceGroupCallState): boolean {
   return state === 'connected' || state === 'awaiting_media';
@@ -315,6 +339,12 @@ export function useSpaceGroupCall(
   const [recordingStatus, setRecordingStatus] =
     useState<SpaceGroupCallRecordingStatus>('idle');
   const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [recordingWarning, setRecordingWarning] = useState<{
+    code: CallRecordingLimitWarningCode;
+    remainingMinutes: number;
+    remainingSizeMb: number;
+  } | null>(null);
+  const [canRetryRecordingUpload, setCanRetryRecordingUpload] = useState(false);
   const [capturePreference, setCapturePreference] = useState<
     Exclude<SpaceGroupCallCaptureMode, 'none'>
   >('recording_with_transcript');
@@ -383,9 +413,11 @@ export function useSpaceGroupCall(
     resumeTranscript?: () => void;
     stopTranscript: () => Promise<string> | string;
     mimeType?: string;
+    hasVideoRecording: boolean;
     startedAt: string;
     recordedRoomId: string;
   } | null>(null);
+  const pendingRecordingUploadRef = useRef<PendingRecordingUpload | null>(null);
   const captureModeRef = useRef<SpaceGroupCallCaptureMode>('none');
   const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
@@ -645,11 +677,13 @@ export function useSpaceGroupCall(
         resumeTranscript: transcript.resume,
         stopTranscript: transcript.stop,
         mimeType: recorder?.mimeType,
+        hasVideoRecording: recorder?.mimeType?.startsWith('video/') ?? false,
         startedAt: new Date().toISOString(),
         recordedRoomId: activeRoom,
       };
       setRecordingStatus('recording');
       setRecordingError(null);
+      setRecordingWarning(null);
       void announceCaptureNotice('started', mode);
       if (roomId) {
         logSpaceGroupCallEvent({
@@ -777,6 +811,29 @@ export function useSpaceGroupCall(
       void announceCaptureNotice('stopped', runtime.mode);
     }
     void (async () => {
+      let captureFinalizeOk = true;
+      const failCaptureFinalize = (
+        message: string,
+        options?: { blob?: Blob; pending?: PendingRecordingUpload },
+      ) => {
+        captureFinalizeOk = false;
+        if (options?.blob) {
+          downloadCallRecordingBackup(
+            options.blob,
+            options.pending?.callSessionId ?? sessionId,
+            options.pending?.mimeType ?? runtime.mimeType,
+          );
+        }
+        if (options?.pending) {
+          pendingRecordingUploadRef.current = options.pending;
+          setCanRetryRecordingUpload(true);
+        }
+        if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
+          setRecordingStatus('error');
+          setRecordingError(message);
+        }
+      };
+
       try {
         const startedMs = Date.parse(runtime.startedAt);
         if (Number.isFinite(startedMs)) {
@@ -806,9 +863,52 @@ export function useSpaceGroupCall(
             transcriptText: normalizedTranscript,
             startedAt: runtime.startedAt,
             endedAt,
-            matrixClient: client,
             launchContext: launchContext ?? undefined,
           });
+        };
+        const uploadRecordingBlob = async (blob: Blob) => {
+          const pendingPayload: PendingRecordingUpload = {
+            blob,
+            mimeType: runtime.mimeType ?? blob.type ?? 'video/webm',
+            callSessionId: sessionId,
+            spaceSlug: slug,
+            roomId: activeRoomId,
+            authToken: token,
+            transcriptText: normalizedTranscript || undefined,
+            startedAt: runtime.startedAt,
+            endedAt,
+            launchContext: launchContext ?? undefined,
+          };
+          try {
+            const result = await uploadRecordedCallArtifactWithRetry({
+              authToken: token,
+              spaceSlug: slug,
+              roomId: activeRoomId,
+              callSessionId: sessionId,
+              blob,
+              mimeType: runtime.mimeType,
+              transcriptText: normalizedTranscript,
+              startedAt: runtime.startedAt,
+              endedAt,
+              launchContext: launchContext ?? undefined,
+            });
+            if (!result.recording_stored) {
+              failCaptureFinalize(
+                'Recording upload did not persist media. A copy was saved to your downloads folder — use Retry upload.',
+                { blob, pending: pendingPayload },
+              );
+              return;
+            }
+            pendingRecordingUploadRef.current = null;
+            setCanRetryRecordingUpload(false);
+          } catch (error) {
+            const baseMessage =
+              error instanceof Error ? error.message : String(error);
+            failCaptureFinalize(
+              `${baseMessage} A copy was saved to your downloads folder — use Retry upload.`,
+              { blob, pending: pendingPayload },
+            );
+          }
         };
         if (runtime.mode === 'transcript_only') {
           if (normalizedTranscript) {
@@ -816,6 +916,8 @@ export function useSpaceGroupCall(
           } else if (
             recordingFinalizeGenerationRef.current === cleanupGeneration
           ) {
+            captureFinalizeOk = false;
+            setRecordingStatus('error');
             setRecordingError('No speech was captured during this call.');
           }
         } else if (runtime.mode === 'recording_with_transcript') {
@@ -836,6 +938,8 @@ export function useSpaceGroupCall(
                 if (
                   recordingFinalizeGenerationRef.current === cleanupGeneration
                 ) {
+                  captureFinalizeOk = false;
+                  setRecordingStatus('error');
                   setRecordingError(
                     'Recording file was empty. Transcript only was saved.',
                   );
@@ -843,42 +947,29 @@ export function useSpaceGroupCall(
               } else if (
                 recordingFinalizeGenerationRef.current === cleanupGeneration
               ) {
+                captureFinalizeOk = false;
+                setRecordingStatus('error');
                 setRecordingError(
                   'Recording file was empty and no transcript was captured.',
                 );
               }
             } else {
-              const result = await uploadRecordedCallArtifact({
-                authToken: token,
-                spaceSlug: slug,
-                roomId: activeRoomId,
-                callSessionId: sessionId,
-                blob,
-                mimeType: runtime.mimeType,
-                transcriptText: normalizedTranscript,
-                startedAt: runtime.startedAt,
-                endedAt,
-                matrixClient: client,
-                launchContext: launchContext ?? undefined,
-              });
-              if (
-                recordingFinalizeGenerationRef.current === cleanupGeneration &&
-                !result.recording_stored
-              ) {
-                setRecordingError(
-                  'Recording upload did not persist media. Check server logs.',
-                );
-              }
+              await uploadRecordingBlob(blob);
             }
           }
         }
-        if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
+        if (
+          recordingFinalizeGenerationRef.current === cleanupGeneration &&
+          captureFinalizeOk
+        ) {
           setRecordingStatus('idle');
           setRecordingError(null);
+          setRecordingWarning(null);
           onCallArtifactsUploadedRef.current?.({ spaceSlug: slug });
         }
       } catch (error) {
         if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
+          captureFinalizeOk = false;
           setRecordingStatus('error');
           setRecordingError(
             error instanceof Error ? error.message : String(error),
@@ -2156,6 +2247,86 @@ export function useSpaceGroupCall(
     roomId,
   ]);
 
+  useEffect(() => {
+    if (recordingStatus !== 'recording' && recordingStatus !== 'paused') {
+      setRecordingWarning(null);
+      return;
+    }
+    const evaluateLimits = () => {
+      const runtime = recordingRuntimeRef.current;
+      if (!runtime) return;
+      const startedMs = Date.parse(runtime.startedAt);
+      if (!Number.isFinite(startedMs)) return;
+      const elapsedSeconds = Math.max(
+        0,
+        Math.floor((Date.now() - startedMs) / 1000),
+      );
+      const evaluation = evaluateCallRecordingCaptureLimits({
+        elapsedSeconds,
+        hasVideo: runtime.hasVideoRecording,
+      });
+      setRecordingWarning(
+        evaluation.warningCode
+          ? {
+              code: evaluation.warningCode,
+              remainingMinutes: Math.max(
+                1,
+                Math.ceil(evaluation.remainingDurationSeconds / 60),
+              ),
+              remainingSizeMb: Math.max(
+                1,
+                Math.ceil(evaluation.remainingBytes / (1024 * 1024)),
+              ),
+            }
+          : null,
+      );
+    };
+    evaluateLimits();
+    const timer = window.setInterval(evaluateLimits, CAPTURE_LIMIT_CHECK_MS);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [recordingStatus]);
+
+  const retryRecordingUpload = useCallback(async () => {
+    const pending = pendingRecordingUploadRef.current;
+    if (!pending) return;
+    setRecordingStatus('uploading');
+    setRecordingError(null);
+    try {
+      const result = await uploadRecordedCallArtifactWithRetry({
+        authToken: pending.authToken,
+        spaceSlug: pending.spaceSlug,
+        roomId: pending.roomId,
+        callSessionId: pending.callSessionId,
+        blob: pending.blob,
+        mimeType: pending.mimeType,
+        transcriptText: pending.transcriptText,
+        startedAt: pending.startedAt,
+        endedAt: pending.endedAt,
+        launchContext: pending.launchContext,
+      });
+      if (!result.recording_stored) {
+        throw new Error('Recording upload did not persist media.');
+      }
+      pendingRecordingUploadRef.current = null;
+      setCanRetryRecordingUpload(false);
+      setRecordingStatus('idle');
+      setRecordingError(null);
+      onCallArtifactsUploadedRef.current?.({ spaceSlug: pending.spaceSlug });
+    } catch (error) {
+      downloadCallRecordingBackup(
+        pending.blob,
+        pending.callSessionId,
+        pending.mimeType,
+      );
+      setRecordingStatus('error');
+      setRecordingError(
+        `${error instanceof Error ? error.message : String(error)} A copy was saved to your downloads folder — use Retry upload.`,
+      );
+    }
+  }, []);
+
   const startCapture = useCallback(
     (mode?: Exclude<SpaceGroupCallCaptureMode, 'none'>) => {
       if (recordingFinalizeInFlightRef.current) return;
@@ -2705,6 +2876,9 @@ export function useSpaceGroupCall(
     screenshareErrorCode,
     recordingStatus,
     recordingError,
+    recordingWarning,
+    canRetryRecordingUpload,
+    retryRecordingUpload,
     captureMode,
     setCaptureMode,
     capturePreference,

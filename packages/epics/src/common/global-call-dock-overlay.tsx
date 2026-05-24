@@ -451,6 +451,9 @@ export function GlobalCallDockOverlay() {
     stopCapture,
     recordingStatus,
     recordingError,
+    recordingWarning,
+    canRetryRecordingUpload,
+    retryRecordingUpload,
     captureConsent,
     leave,
   } = useGlobalCallDock();
@@ -1148,6 +1151,9 @@ export function GlobalCallDockOverlay() {
                   onStopCapture={onStopCapture}
                   recordingStatus={recordingStatus}
                   recordingError={recordingError}
+                  recordingWarning={recordingWarning}
+                  canRetryRecordingUpload={canRetryRecordingUpload}
+                  onRetryRecordingUpload={() => void retryRecordingUpload()}
                   captureConsent={captureConsent}
                   onDismissScreenshareError={dismissScreenshareError}
                   onRetryCall={retryFromError}
@@ -1174,6 +1180,9 @@ export function GlobalCallDockOverlay() {
                   onStopCapture={onStopCapture}
                   recordingStatus={recordingStatus}
                   recordingError={recordingError}
+                  recordingWarning={recordingWarning}
+                  canRetryRecordingUpload={canRetryRecordingUpload}
+                  onRetryRecordingUpload={() => void retryRecordingUpload()}
                   onLeave={() => {
                     void leave();
                   }}

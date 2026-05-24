@@ -5,23 +5,21 @@ import { getEnableHumanChat } from '@hypha-platform/feature-flags';
 import { coherences, db, spaces } from '@hypha-platform/storage-postgres';
 import {
   checkSpaceAccessForSpace,
+  computeCallRecordingDurationSeconds,
   determineEnvironment,
   enqueueSignalEvaluationFromMemory,
   findSpaceHostFieldsBySlug,
   getSpaceCallRecordingBySessionId,
   ingestSpaceCallArtifacts,
+  isTrustedCallRecordingMediaUrl,
+  objectStorageUriMatchesKey,
+  verifyCallRecordingMediaAccessible,
 } from '@hypha-platform/core/server';
 import {
   resolveMatrixAccessToken,
   verifyMatrixMediaUriAccessible,
   verifyPrivyToken,
 } from '../../room-call-permissions/_lib';
-
-type MatrixMediaUploadResponse = {
-  content_uri?: string;
-};
-
-const MAX_RECORDING_UPLOAD_BYTES = 100 * 1024 * 1024;
 
 function normalizeTranscriptForIngest(text: string | undefined): string | null {
   const trimmed = text?.trim() ?? '';
@@ -210,14 +208,19 @@ export async function POST(request: NextRequest) {
   const startedAt = String(form?.get('started_at') ?? '').trim();
   const endedAt = String(form?.get('ended_at') ?? '').trim();
   const clientMediaUri = String(form?.get('media_uri') ?? '').trim();
-  const hasClientMediaUri = clientMediaUri.startsWith('mxc://');
+  const storageKey = String(form?.get('storage_key') ?? '').trim();
+  const hasClientMxcUri = clientMediaUri.startsWith('mxc://');
+  const hasClientObjectStorageUri =
+    isTrustedCallRecordingMediaUrl(clientMediaUri);
+  const hasClientMediaUri = hasClientMxcUri || hasClientObjectStorageUri;
   const hasRecordingBlob = recording instanceof Blob && recording.size > 0;
   logCallArtifactsUpload('request_received', {
     spaceSlug,
     roomId,
     callSessionId,
     hasRecordingBlob,
-    hasClientMediaUri,
+    hasClientMxcUri,
+    hasClientObjectStorageUri,
     hasTranscriptText: Boolean(normalizedTranscriptText),
   });
 
@@ -228,17 +231,48 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          'room_id and either a recording blob, media_uri, or transcript_text are required',
+          'room_id and either object-storage media_uri, legacy mxc media_uri, or transcript_text are required',
       },
       { status: 400 },
     );
   }
-  if (hasRecordingBlob && recording.size > MAX_RECORDING_UPLOAD_BYTES) {
+  if (hasRecordingBlob) {
     return NextResponse.json(
       {
-        error: `Recording exceeds max upload size (${MAX_RECORDING_UPLOAD_BYTES} bytes)`,
+        error:
+          'Raw recording blobs are no longer accepted. Upload to object storage first and send media_uri with storage_key.',
       },
-      { status: 413 },
+      { status: 400 },
+    );
+  }
+  if (
+    hasClientObjectStorageUri &&
+    clientMediaUri.length > 0 &&
+    !storageKey
+  ) {
+    return NextResponse.json(
+      { error: 'storage_key is required with object storage media_uri' },
+      { status: 400 },
+    );
+  }
+  if (
+    hasClientObjectStorageUri &&
+    storageKey &&
+    !objectStorageUriMatchesKey(clientMediaUri, storageKey)
+  ) {
+    return NextResponse.json(
+      { error: 'storage_key does not match media_uri' },
+      { status: 400 },
+    );
+  }
+  if (
+    clientMediaUri.length > 0 &&
+    !hasClientMxcUri &&
+    !hasClientObjectStorageUri
+  ) {
+    return NextResponse.json(
+      { error: 'media_uri must be mxc:// or a trusted object storage URL' },
+      { status: 400 },
     );
   }
 
@@ -340,7 +374,104 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  if (!hasRecordingBlob && hasClientMediaUri) {
+  if (!hasRecordingBlob && hasClientObjectStorageUri) {
+    const mediaAccessible = await verifyCallRecordingMediaAccessible(
+      clientMediaUri,
+    );
+    if (!mediaAccessible) {
+      logCallArtifactsUpload('object_storage_media_uri_not_accessible', {
+        spaceSlug,
+        roomId,
+        callSessionId,
+      });
+      return NextResponse.json(
+        {
+          error:
+            'media_uri is not accessible. Finish the object storage upload before ingesting.',
+        },
+        { status: 400 },
+      );
+    }
+    const durationSeconds = computeCallRecordingDurationSeconds(
+      startedAt || undefined,
+      endedAt || undefined,
+    );
+    const ingestResult = await ingestSpaceCallArtifacts(
+      {
+        spaceSlug: targetSpaceSlug,
+        callSessionId,
+        recording: {
+          mediaUri: clientMediaUri,
+          storageKey,
+          mimeType,
+          durationSeconds: durationSeconds ?? undefined,
+          startedAt: startedAt || undefined,
+          endedAt: endedAt || undefined,
+          source: 'client_object_storage_upload',
+          metadata: launchMetadata,
+        },
+        transcript: normalizedTranscriptText
+          ? {
+              text: normalizedTranscriptText,
+              source: 'browser_speech_recognition',
+              metadata: launchMetadata,
+            }
+          : undefined,
+      },
+      { db },
+    );
+    if (!ingestResult.ok) {
+      logCallArtifactsUpload('object_storage_ingest_failed', {
+        spaceSlug,
+        resolvedSpaceSlug: targetSpaceSlug,
+        roomId,
+        callSessionId,
+        error: ingestResult.error,
+      });
+      return NextResponse.json({ error: ingestResult.error }, { status: 400 });
+    }
+    try {
+      await enqueueSignalEvaluationFromMemory(
+        {
+          spaceSlug: targetSpaceSlug,
+          triggerKind: 'memory_ingest',
+        },
+        { db },
+      );
+    } catch (error) {
+      console.error('[matrix.call-artifacts.upload] enqueue failed', {
+        spaceSlug,
+        triggerKind: 'memory_ingest',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    const transcriptJob = await triggerTranscriptJob({
+      spaceSlug: targetSpaceSlug,
+      roomId,
+      callSessionId,
+      mediaUri: clientMediaUri,
+      mimeType,
+      startedAt: startedAt || undefined,
+      endedAt: endedAt || undefined,
+    });
+    logCallArtifactsUpload('object_storage_ingested', {
+      spaceSlug,
+      resolvedSpaceSlug: targetSpaceSlug,
+      roomId,
+      callSessionId,
+      transcriptStored: Boolean(normalizedTranscriptText),
+    });
+    return NextResponse.json({
+      ok: true,
+      media_uri: clientMediaUri,
+      call_session_id: callSessionId,
+      recording_stored: true,
+      transcript_stored: Boolean(normalizedTranscriptText),
+      transcript_job: transcriptJob,
+    });
+  }
+
+  if (!hasRecordingBlob && hasClientMxcUri) {
     const matrixContext = await resolveMatrixUploadContext(
       request,
       privyUserId,
@@ -491,282 +622,5 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const environment = determineEnvironment(request.url);
-  const matrix = await resolveMatrixAccessToken(environment, privyUserId);
-  if (!matrix) {
-    if (normalizedTranscriptText) {
-      const transcriptResult = await persistTranscriptOnly({
-        spaceSlug: targetSpaceSlug,
-        callSessionId,
-        transcriptText: normalizedTranscriptText,
-        metadata: launchMetadata,
-      });
-      if (transcriptResult.ok) {
-        try {
-          await enqueueSignalEvaluationFromMemory(
-            {
-              spaceSlug: targetSpaceSlug,
-              triggerKind: 'memory_ingest',
-            },
-            { db },
-          );
-        } catch (error) {
-          console.error('[matrix.call-artifacts.upload] enqueue failed', {
-            spaceSlug,
-            triggerKind: 'memory_ingest',
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-        return NextResponse.json({
-          ok: true,
-          media_uri: null,
-          call_session_id: callSessionId,
-          recording_stored: false,
-          transcript_stored: true,
-          warning: 'Recording upload skipped: unable to resolve Matrix token',
-          transcript_job: {
-            attempted: false,
-            ok: false,
-            status: null,
-          },
-        });
-      }
-    }
-    logCallArtifactsUpload('matrix_token_unavailable', {
-      spaceSlug,
-      resolvedSpaceSlug: targetSpaceSlug,
-      roomId,
-      callSessionId,
-      hasTranscriptText: Boolean(normalizedTranscriptText),
-    });
-    return NextResponse.json(
-      { error: 'Unable to resolve Matrix token' },
-      { status: 403 },
-    );
-  }
-
-  const homeserver = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.replace(
-    /\/?$/,
-    '',
-  );
-  if (!homeserver) {
-    return NextResponse.json(
-      { error: 'Matrix homeserver not configured' },
-      { status: 500 },
-    );
-  }
-
-  const recordingBlob = recording as Blob;
-  const buffer = Buffer.from(await recordingBlob.arrayBuffer());
-  const uploadUrl = `${homeserver}/_matrix/media/v3/upload?filename=${encodeURIComponent(
-    `${callSessionId}.webm`,
-  )}`;
-  const uploadResponse = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${matrix.accessToken}`,
-      'Content-Type': mimeType,
-      'Content-Length': String(buffer.byteLength),
-    },
-    body: buffer,
-    signal: AbortSignal.timeout(45_000),
-  }).catch((error) => error);
-
-  if (uploadResponse instanceof Error) {
-    if (normalizedTranscriptText) {
-      const transcriptResult = await persistTranscriptOnly({
-        spaceSlug: targetSpaceSlug,
-        callSessionId,
-        transcriptText: normalizedTranscriptText,
-        metadata: launchMetadata,
-      });
-      if (transcriptResult.ok) {
-        logCallArtifactsUpload('recording_upload_error_transcript_fallback', {
-          spaceSlug,
-          resolvedSpaceSlug: targetSpaceSlug,
-          roomId,
-          callSessionId,
-          error: uploadResponse.message,
-        });
-        return NextResponse.json({
-          ok: true,
-          media_uri: null,
-          call_session_id: callSessionId,
-          recording_stored: false,
-          transcript_stored: true,
-          warning: `Recording upload skipped: ${uploadResponse.message}`,
-          transcript_job: {
-            attempted: false,
-            ok: false,
-            status: null,
-          },
-        });
-      }
-    }
-    return NextResponse.json(
-      { error: `Matrix upload failed: ${uploadResponse.message}` },
-      { status: 502 },
-    );
-  }
-  if (!uploadResponse.ok) {
-    const detail = await uploadResponse.text().catch(() => '');
-    if (normalizedTranscriptText) {
-      const transcriptResult = await persistTranscriptOnly({
-        spaceSlug: targetSpaceSlug,
-        callSessionId,
-        transcriptText: normalizedTranscriptText,
-        metadata: launchMetadata,
-      });
-      if (transcriptResult.ok) {
-        logCallArtifactsUpload('recording_upload_http_transcript_fallback', {
-          spaceSlug,
-          resolvedSpaceSlug: targetSpaceSlug,
-          roomId,
-          callSessionId,
-          status: uploadResponse.status,
-        });
-        return NextResponse.json({
-          ok: true,
-          media_uri: null,
-          call_session_id: callSessionId,
-          recording_stored: false,
-          transcript_stored: true,
-          warning: `Recording upload skipped (${uploadResponse.status}) ${detail}`,
-          transcript_job: {
-            attempted: false,
-            ok: false,
-            status: null,
-          },
-        });
-      }
-    }
-    return NextResponse.json(
-      { error: `Matrix upload failed (${uploadResponse.status}) ${detail}` },
-      { status: 502 },
-    );
-  }
-  const uploadPayload =
-    ((await uploadResponse
-      .json()
-      .catch(() => null)) as MatrixMediaUploadResponse | null) ?? null;
-  const mediaUri = uploadPayload?.content_uri?.trim();
-  if (!mediaUri) {
-    if (normalizedTranscriptText) {
-      const transcriptResult = await persistTranscriptOnly({
-        spaceSlug: targetSpaceSlug,
-        callSessionId,
-        transcriptText: normalizedTranscriptText,
-        metadata: launchMetadata,
-      });
-      if (transcriptResult.ok) {
-        logCallArtifactsUpload('recording_upload_no_uri_transcript_fallback', {
-          spaceSlug,
-          resolvedSpaceSlug: targetSpaceSlug,
-          roomId,
-          callSessionId,
-        });
-        return NextResponse.json({
-          ok: true,
-          media_uri: null,
-          call_session_id: callSessionId,
-          recording_stored: false,
-          transcript_stored: true,
-          warning:
-            'Recording upload skipped: Matrix did not return content_uri',
-          transcript_job: {
-            attempted: false,
-            ok: false,
-            status: null,
-          },
-        });
-      }
-    }
-    return NextResponse.json(
-      { error: 'Matrix upload did not return content_uri' },
-      { status: 502 },
-    );
-  }
-
-  const ingestResult = await ingestSpaceCallArtifacts(
-    {
-      spaceSlug: targetSpaceSlug,
-      callSessionId,
-      recording: {
-        mediaUri,
-        mimeType,
-        startedAt: startedAt || undefined,
-        endedAt: endedAt || undefined,
-        source: 'matrix_live_call_upload',
-        metadata: launchMetadata,
-      },
-      transcript: normalizedTranscriptText
-        ? {
-            text: normalizedTranscriptText,
-            source: 'browser_speech_recognition',
-            metadata: launchMetadata,
-          }
-        : undefined,
-    },
-    { db },
-  );
-
-  if (!ingestResult.ok) {
-    logCallArtifactsUpload('ingest_failed', {
-      spaceSlug,
-      resolvedSpaceSlug: targetSpaceSlug,
-      roomId,
-      callSessionId,
-      error: ingestResult.error,
-    });
-    return NextResponse.json({ error: ingestResult.error }, { status: 400 });
-  }
-
-  try {
-    await enqueueSignalEvaluationFromMemory(
-      {
-        spaceSlug: targetSpaceSlug,
-        triggerKind: 'memory_ingest',
-      },
-      { db },
-    );
-  } catch (error) {
-    console.error('[matrix.call-artifacts.upload] enqueue failed', {
-      spaceSlug,
-      resolvedSpaceSlug: targetSpaceSlug,
-      triggerKind: 'memory_ingest',
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-
-  const transcriptJob = await triggerTranscriptJob({
-    spaceSlug: targetSpaceSlug,
-    roomId,
-    callSessionId,
-    mediaUri,
-    mimeType,
-    startedAt: startedAt || undefined,
-    endedAt: endedAt || undefined,
-  }).catch(() => ({ attempted: true as const, ok: false as const, status: 0 }));
-  logCallArtifactsUpload('recording_and_transcript_ingested', {
-    spaceSlug,
-    resolvedSpaceSlug: targetSpaceSlug,
-    roomId,
-    callSessionId,
-    transcriptStored: Boolean(normalizedTranscriptText),
-    transcriptJobAttempted: transcriptJob.attempted,
-    transcriptJobOk: transcriptJob.ok,
-    transcriptJobStatus: transcriptJob.status,
-  });
-  return NextResponse.json({
-    ok: true,
-    media_uri: mediaUri,
-    call_session_id: callSessionId,
-    recording_stored: true,
-    transcript_stored: Boolean(normalizedTranscriptText),
-    transcript_job: {
-      attempted: transcriptJob.attempted,
-      ok: transcriptJob.ok,
-      status: transcriptJob.status,
-    },
-  });
+  return NextResponse.json({ error: 'Unsupported call artifact upload' }, { status: 400 });
 }

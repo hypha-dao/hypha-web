@@ -52,6 +52,9 @@ type HumanChatPanelCallBannerProps = {
   onStopCapture: () => void;
   recordingStatus: SpaceGroupCallRecordingStatus;
   recordingError: string | null;
+  recordingWarning?: import('@hypha-platform/core/client').CallRecordingCaptureWarning | null;
+  canRetryRecordingUpload?: boolean;
+  onRetryRecordingUpload?: () => void;
   captureConsent: SpaceGroupCallCaptureConsent | null;
   onDismissScreenshareError: () => void;
   /** Reconnect after a recoverable call error. */
@@ -114,6 +117,9 @@ export function HumanChatPanelCallBanner({
   onStopCapture,
   recordingStatus,
   recordingError,
+  recordingWarning = null,
+  canRetryRecordingUpload = false,
+  onRetryRecordingUpload,
   captureConsent,
   onDismissScreenshareError,
   tabBackgroundWhileInCall,
@@ -313,6 +319,9 @@ export function HumanChatPanelCallBanner({
             onStopCapture={onStopCapture}
             recordingStatus={recordingStatus}
             recordingError={recordingError}
+            recordingWarning={recordingWarning}
+            canRetryRecordingUpload={canRetryRecordingUpload}
+            onRetryRecordingUpload={onRetryRecordingUpload}
             onLeave={onLeave}
             variant="inBanner"
             controlsMode={controlsMode}

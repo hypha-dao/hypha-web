@@ -1045,6 +1045,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     stopCapture: stopSpaceCallCapture,
     recordingStatus: spaceCallRecordingStatus,
     recordingError: spaceCallRecordingError,
+    recordingWarning: spaceCallRecordingWarning,
+    canRetryRecordingUpload: spaceCallCanRetryRecordingUpload,
+    retryRecordingUpload: retrySpaceCallRecordingUpload,
     captureConsent: spaceCallCaptureConsent,
     dismissScreenshareError: dismissSpaceCallScreenshareError,
     screenshareTakeoverIncoming: spaceCallScreenshareTakeoverIncoming,
@@ -3417,6 +3420,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onStopCapture={stopSpaceCallCapture}
               recordingStatus={spaceCallRecordingStatus}
               recordingError={spaceCallRecordingError}
+              recordingWarning={spaceCallRecordingWarning}
+              canRetryRecordingUpload={spaceCallCanRetryRecordingUpload}
+              onRetryRecordingUpload={() => {
+                void retrySpaceCallRecordingUpload();
+              }}
               captureConsent={spaceCallCaptureConsent}
               controlsMode="leave_only"
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
