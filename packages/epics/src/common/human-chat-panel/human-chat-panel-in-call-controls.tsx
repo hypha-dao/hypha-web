@@ -519,7 +519,10 @@ export function HumanChatPanelInCallControls({
           if (!open) setStopConfirmStep('none');
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent
+          viewport="full"
+          overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>
               {t('callCaptureConfirmStopRecordingTitle')}
@@ -529,10 +532,8 @@ export function HumanChatPanelInCallControls({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel asChild>
-              <Button variant="outline" colorVariant="neutral">
-                {t('callCaptureConfirmCancel')}
-              </Button>
+            <AlertDialogCancel>
+              {t('callCaptureConfirmCancel')}
             </AlertDialogCancel>
             <Button
               type="button"
@@ -550,7 +551,10 @@ export function HumanChatPanelInCallControls({
           if (!open) setStopConfirmStep('none');
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent
+          viewport="full"
+          overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>
               {t('callCaptureConfirmStopTranscriptTitle')}
@@ -560,10 +564,8 @@ export function HumanChatPanelInCallControls({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel asChild>
-              <Button variant="outline" colorVariant="neutral">
-                {t('callCaptureConfirmCancel')}
-              </Button>
+            <AlertDialogCancel>
+              {t('callCaptureConfirmCancel')}
             </AlertDialogCancel>
             <Button
               type="button"
