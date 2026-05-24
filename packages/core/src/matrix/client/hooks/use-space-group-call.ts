@@ -1857,15 +1857,47 @@ export function useSpaceGroupCall(
       pendingMode === 'recording_with_transcript' ||
       pendingMode === 'transcript_only'
     ) {
-      setRecordingStatus('idle');
-      setRecordingError(null);
+      const token =
+        latestAuthTokenRef.current ?? pinnedUploadContextRef.current?.authToken;
+      const slug =
+        latestSpaceSlugRef.current ?? pinnedUploadContextRef.current?.spaceSlug;
+      const activeRoomId =
+        roomId?.trim() || pinnedUploadContextRef.current?.roomId;
+      if (token && slug && activeRoomId) {
+        const sessionId = callSessionId ?? newCallSessionId();
+        setRecordingStatus('uploading');
+        setRecordingError(null);
+        void uploadRecordedCallArtifact({
+          authToken: token,
+          spaceSlug: slug,
+          roomId: activeRoomId,
+          callSessionId: sessionId,
+          transcriptText:
+            '[Capture stopped before media/transcript became available.]',
+          startedAt: new Date().toISOString(),
+          endedAt: new Date().toISOString(),
+        })
+          .then(() => {
+            setRecordingStatus('idle');
+            onCallArtifactsUploadedRef.current?.({ spaceSlug: slug });
+          })
+          .catch((error) => {
+            setRecordingStatus('error');
+            setRecordingError(
+              error instanceof Error ? error.message : String(error),
+            );
+          });
+      } else {
+        setRecordingStatus('idle');
+        setRecordingError(null);
+      }
       void announceCaptureNotice('stopped', pendingMode);
     } else {
       setRecordingStatus('idle');
       setRecordingError(null);
     }
     setCaptureMode('none');
-  }, [announceCaptureNotice, finalizeRecording]);
+  }, [announceCaptureNotice, callSessionId, finalizeRecording, roomId]);
 
   const pauseCapture = useCallback(() => {
     const runtime = recordingRuntimeRef.current;
