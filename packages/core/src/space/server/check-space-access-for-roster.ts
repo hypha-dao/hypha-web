@@ -1,6 +1,8 @@
 import { publicClient } from '../../common/web3/public-client';
 import { findSelf } from '../../people/server/queries';
 import { getDb } from '../../common/server/get-db';
+import { and, eq } from 'drizzle-orm';
+import { memberships } from '@hypha-platform/storage-postgres';
 import {
   findAllOrganizationSpacesForNodeById,
   findSpaceByWeb3Id,
@@ -28,11 +30,57 @@ export type CheckSpaceAccessForRosterResult =
  * Used by MCP stdio server to mirror GET /api/v1/spaces/[spaceSlug]/members gating.
  */
 export async function checkSpaceAccessForSpace(
-  host: Pick<Space, 'web3SpaceId'>,
+  host: Pick<Space, 'id' | 'web3SpaceId'>,
   authToken: string | undefined,
+  options?: { requireMembershipWhenOffChain?: boolean },
 ): Promise<CheckSpaceAccessForRosterResult> {
   if (host.web3SpaceId == null) {
-    return { hasAccess: true };
+    if (!options?.requireMembershipWhenOffChain) {
+      return { hasAccess: true };
+    }
+    if (!authToken) {
+      return {
+        hasAccess: false,
+        message: 'Authentication required to access this space.',
+        httpStatus: 401,
+      };
+    }
+    try {
+      const db = getDb({ authToken });
+      const person = await findSelf({ db });
+      if (!person?.id) {
+        return {
+          hasAccess: false,
+          message: 'Could not verify your identity.',
+          httpStatus: 401,
+        };
+      }
+      const [membership] = await db
+        .select({ id: memberships.id })
+        .from(memberships)
+        .where(
+          and(
+            eq(memberships.spaceId, host.id),
+            eq(memberships.personId, person.id),
+          ),
+        )
+        .limit(1);
+      if (!membership) {
+        return {
+          hasAccess: false,
+          message: 'You need to be a member of this space to access its data.',
+          httpStatus: 403,
+        };
+      }
+      return { hasAccess: true };
+    } catch (error) {
+      console.error('checkSpaceAccessForSpace off-chain membership:', error);
+      return {
+        hasAccess: false,
+        message: 'An error occurred while checking your permissions.',
+        httpStatus: 500,
+      };
+    }
   }
 
   const spaceIdBigInt = BigInt(host.web3SpaceId);

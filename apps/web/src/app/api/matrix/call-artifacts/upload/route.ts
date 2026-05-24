@@ -321,7 +321,9 @@ export async function POST(request: NextRequest) {
     roomId,
   });
 
-  const access = await checkSpaceAccessForSpace(space, authToken);
+  const access = await checkSpaceAccessForSpace(space, authToken, {
+    requireMembershipWhenOffChain: true,
+  });
   if (!access.hasAccess) {
     return NextResponse.json({ error: access.message }, { status: 403 });
   }
