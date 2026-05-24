@@ -1111,14 +1111,14 @@ function splitPlainTextMatrixMentions(
 }
 
 /**
- * Discord-like mention: soft outline + light fill so pills stay readable on accent rows.
+ * Discord-like mention: inline pill that stays on the text baseline (no float above).
  */
 function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
   return cn(
-    'inline-flex min-h-[1.35em] w-fit max-w-full min-w-0 items-center self-baseline rounded px-1 py-0 text-[13px] font-medium leading-snug tracking-tight',
+    'mention-pill inline-block max-w-full align-baseline rounded px-1 py-0 text-[13px] font-medium leading-[inherit] whitespace-nowrap',
     onViewerMentionTintRow
-      ? 'border border-accent-9/45 bg-accent-9/10 text-foreground ring-1 ring-inset ring-accent-9/18 dark:border-accent-10/50 dark:bg-accent-9/14 dark:ring-accent-10/22'
-      : 'border border-border/55 bg-background/30 text-foreground dark:border-border/60 dark:bg-background/20',
+      ? 'border border-accent-9/50 bg-background/95 text-foreground shadow-sm dark:border-accent-10/55 dark:bg-background/90'
+      : 'border border-border/70 bg-muted/95 text-foreground shadow-sm dark:border-border/65 dark:bg-muted/90',
   );
 }
 

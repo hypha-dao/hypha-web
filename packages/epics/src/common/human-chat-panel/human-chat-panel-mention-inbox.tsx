@@ -169,7 +169,7 @@ function gatherMentionEvents(
 }
 
 const MENTION_INBOX_ROW_CLASS =
-  'group flex w-full cursor-pointer flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+  'group flex w-full cursor-pointer flex-col gap-1 rounded-xl border border-border/70 bg-card px-3 py-2.5 text-left text-foreground shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-muted/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 const MENTION_INBOX_NAV_ICON_CLASS =
   'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background/80 text-muted-foreground shadow-sm transition-colors group-hover:border-accent-8/60 group-hover:bg-accent-2/80 group-hover:text-foreground';
@@ -218,9 +218,9 @@ function MentionInboxRow({
           <div className="flex items-baseline justify-between gap-2">
             {sender}
           </div>
-          <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground [&_a]:break-all [&_a]:font-medium [&_a]:text-primary [&_a]:underline">
+          <div className="border-l-2 border-accent-8/70 pl-2 text-xs leading-relaxed text-foreground/90 [&_a]:break-all [&_a]:font-medium [&_a]:text-primary [&_a]:underline">
             {excerpt}
-          </p>
+          </div>
         </div>
         <MentionInboxNavigateIcon label={navigateLabel} />
       </div>
@@ -279,10 +279,10 @@ export function HumanChatPanelMentionTab({
                         }
                         header={
                           <div className="flex items-baseline justify-between gap-2">
-                            <span className="min-w-0 truncate text-[11px] font-medium text-muted-foreground">
+                            <span className="min-w-0 truncate text-[11px] font-medium text-foreground/70">
                               {row.roomDisplayName}
                             </span>
-                            <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                            <span className="shrink-0 text-[11px] tabular-nums text-foreground/60">
                               {format.dateTime(new Date(row.timestamp), {
                                 hour: 'numeric',
                                 minute: '2-digit',
@@ -305,7 +305,7 @@ export function HumanChatPanelMentionTab({
                             ? renderTextWithMentions(
                                 row.excerpt,
                                 resolveMemberLabel,
-                                false,
+                                true,
                               )
                             : t('mentionInboxNoPreview')
                         }
@@ -336,7 +336,7 @@ export function HumanChatPanelMentionTab({
                                 syncLabel={senderSyncLabel}
                               />
                             </span>
-                            <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                            <span className="shrink-0 text-[11px] tabular-nums text-foreground/60">
                               {format.dateTime(new Date(ts), {
                                 hour: 'numeric',
                                 minute: '2-digit',
@@ -351,7 +351,7 @@ export function HumanChatPanelMentionTab({
                             ? renderTextWithMentions(
                                 excerpt,
                                 resolveMemberLabel,
-                                false,
+                                true,
                               )
                             : t('mentionInboxNoPreview')
                         }
