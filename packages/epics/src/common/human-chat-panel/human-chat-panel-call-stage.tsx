@@ -1459,13 +1459,17 @@ const FeedContent = ({
   const ref = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stream = feed.stream;
+  const liveVideoTrack =
+    stream.getVideoTracks().find((track) => track.readyState === 'live') ??
+    null;
+  const hasVideo = !feed.isVideoMuted() && liveVideoTrack !== null;
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
   const [streamBindVersion, rebindStream] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || !liveVideoTrack) return;
     el.srcObject = stream;
     el.play().catch((err) => {
       if (process.env.NODE_ENV === 'development') {
@@ -1476,7 +1480,7 @@ const FeedContent = ({
     return () => {
       el.srcObject = null;
     };
-  }, [stream, streamBindVersion]);
+  }, [stream, streamBindVersion, liveVideoTrack?.id]);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -1538,7 +1542,6 @@ const FeedContent = ({
     };
   }, [stream]);
 
-  const hasVideo = !feed.isVideoMuted() && stream.getVideoTracks().length > 0;
   const [showVideo, setShowVideo] = useState(hasVideo);
   useEffect(() => {
     if (hasVideo) {

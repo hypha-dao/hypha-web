@@ -254,6 +254,41 @@ function nudgeGroupCallPlaceOutgoing(gc: MatrixSdk.GroupCall): void {
   }
 }
 
+function getLiveLocalVideoTrack(
+  gc: MatrixSdk.GroupCall,
+): MediaStreamTrack | null {
+  const track = gc.localCallFeed?.stream.getVideoTracks()[0];
+  return track && track.readyState === 'live' ? track : null;
+}
+
+async function waitForLiveLocalVideoTrack(
+  gc: MatrixSdk.GroupCall,
+  timeoutMs = 400,
+): Promise<boolean> {
+  if (getLiveLocalVideoTrack(gc)) return true;
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    if (getLiveLocalVideoTrack(gc)) return true;
+  }
+  return false;
+}
+
+/** Matrix SDK can leave a stale or missing track after camera off→on. */
+async function recoverLocalCameraFeed(gc: MatrixSdk.GroupCall): Promise<void> {
+  if (gc.isLocalVideoMuted()) return;
+  if (getLiveLocalVideoTrack(gc)) return;
+
+  await gc.setLocalVideoMuted(false);
+  if (await waitForLiveLocalVideoTrack(gc, 220)) return;
+
+  await gc.setLocalVideoMuted(true);
+  await gc.setLocalVideoMuted(false);
+  await waitForLiveLocalVideoTrack(gc, 400);
+}
+
 /** Matrix SDK group-call summary stats interval (`NEXT_PUBLIC_MATRIX_WEBRTC_GROUP_STATS_MS`). */
 const GROUP_WEBRTC_SUMMARY_STATS_MS = matrixGroupCallSummaryStatsMsFromEnv();
 
@@ -1814,16 +1849,7 @@ export function useSpaceGroupCall(
        */
       if (kind === 'video') {
         try {
-          const hasLiveLocalVideoTrack = () => {
-            const track = gc.localCallFeed?.stream.getVideoTracks()[0];
-            return Boolean(track && track.readyState === 'live');
-          };
-          /**
-           * Avoid unnecessary camera churn: if `enter()` already yielded a live
-           * local video track, forcing another `setLocalVideoMuted(false)` can
-           * cause a visible video→black→video flash.
-           */
-          if (gc.isLocalVideoMuted() || !hasLiveLocalVideoTrack()) {
+          if (gc.isLocalVideoMuted() || !getLiveLocalVideoTrack(gc)) {
             await gc.setLocalVideoMuted(false);
           }
         } catch {
@@ -2013,6 +2039,13 @@ export function useSpaceGroupCall(
         setCallKind('video');
         lastJoinKindRef.current = 'video';
         nudgeGroupCallPlaceOutgoing(gc);
+        if (!(await waitForLiveLocalVideoTrack(gc))) {
+          try {
+            await recoverLocalCameraFeed(gc);
+          } catch {
+            /* camera permission / hardware — remain in call with video off */
+          }
+        }
       }
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
       refreshLocalPreview();
@@ -2155,19 +2188,11 @@ export function useSpaceGroupCall(
       try {
         const applied = await applyVoiceProcessingPresetToGroupCall(gc, preset);
         if (applied) {
-          const hasLiveLocalVideoTrack = () => {
-            const track = gc.localCallFeed?.stream.getVideoTracks()[0];
-            return Boolean(track && track.readyState === 'live');
-          };
-          // Keep camera stable when audio preset swaps local streams mid-call.
-          if (!gc.isLocalVideoMuted() && !hasLiveLocalVideoTrack()) {
-            await gc.setLocalVideoMuted(false);
-            await new Promise<void>((resolve) => {
-              setTimeout(resolve, 220);
-            });
-            if (!hasLiveLocalVideoTrack()) {
-              await gc.setLocalVideoMuted(true);
-              await gc.setLocalVideoMuted(false);
+          if (!gc.isLocalVideoMuted() && !getLiveLocalVideoTrack(gc)) {
+            try {
+              await recoverLocalCameraFeed(gc);
+            } catch {
+              /* keep call connected if camera recovery fails */
             }
           }
           scheduleFeedBatched();
