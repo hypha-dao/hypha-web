@@ -2,8 +2,9 @@
 export const CALL_RECORDING_TARGET_DURATION_SECONDS = 90 * 60;
 
 /** Default MediaRecorder bitrates (must match call-recording.ts). */
-export const CALL_RECORDING_AUDIO_BITS_PER_SECOND = 48_000;
-export const CALL_RECORDING_VIDEO_BITS_PER_SECOND = 96_000;
+export const CALL_RECORDING_AUDIO_BITS_PER_SECOND = 128_000;
+/** 640×360 @ 15fps; ~600 kbps avoids macroblocking while staying under the 512 MB cap for 90 min. */
+export const CALL_RECORDING_VIDEO_BITS_PER_SECOND = 600_000;
 
 /** Warn when elapsed capture reaches this fraction of the target duration. */
 export const CALL_RECORDING_DURATION_WARN_RATIO = 0.8;
@@ -14,8 +15,8 @@ export const CALL_RECORDING_SIZE_WARN_RATIO = 0.8;
 export const CALL_RECORDING_SIZE_CRITICAL_RATIO = 0.9;
 
 /**
- * Upload cap for call recordings. At default recorder bitrates (48k audio + 96k
- * video) a 90-minute capture is ~97 MB; 512 MB leaves headroom for encoder variance.
+ * Upload cap for call recordings. At default recorder bitrates (128k audio + 600k
+ * video) a 90-minute capture is ~491 MB; 512 MB leaves headroom for encoder variance.
  */
 export const CALL_RECORDING_MAX_FILE_SIZE_BYTES = 512 * 1024 * 1024;
 

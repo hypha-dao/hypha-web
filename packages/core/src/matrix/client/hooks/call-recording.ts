@@ -344,6 +344,8 @@ function createCallVideoCompositor(
   canvas.height = COMPOSITOR_HEIGHT;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   const videoElements = new Map<string, HTMLVideoElement>();
   let disposed = false;
