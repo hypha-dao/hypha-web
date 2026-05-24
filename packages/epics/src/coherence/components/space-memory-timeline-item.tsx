@@ -1,7 +1,10 @@
 'use client';
 
 import type { SpaceMemoryItem } from '@hypha-platform/core/client';
-import { useMatrix } from '@hypha-platform/core/client';
+import {
+  deriveSpaceMemoryDisplayTitle,
+  useMatrix,
+} from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
 import { ExternalLink, FileIcon, Image as ImageIcon, Play } from 'lucide-react';
 import { formatDate } from '@hypha-platform/ui-utils';
@@ -268,7 +271,17 @@ export function SpaceMemoryTimelineItem({
   const t = useTranslations('CoherenceTab');
   const { client, isMatrixAvailable } = useMatrix();
   const uploaded = formatDate(new Date(item.uploadedAt), true);
-  const displayName = useMemo(() => humanizeAssetName(item.name), [item.name]);
+  const displayName = useMemo(
+    () =>
+      deriveSpaceMemoryDisplayTitle({
+        source: item.source,
+        name: item.name,
+        contextTitle: item.context.contextTitle,
+        textExcerpt: item.context.textExcerpt,
+        documentTitle: item.context.documentTitle,
+      }),
+    [item],
+  );
   const [imageFailed, setImageFailed] = React.useState(false);
   /** After a scaled thumbnail fails, retry full media (Synapse sometimes fails thumbnailing only). */
   const [matrixImagePhase, setMatrixImagePhase] = React.useState<
@@ -317,11 +330,10 @@ export function SpaceMemoryTimelineItem({
       openHref &&
       isSafeAssetUrl(openHref),
   );
-  const cardTitle = isCallTranscriptBody
-    ? displayName
-    : isMemoryBody && item.context.documentTitle?.trim()
-    ? item.context.documentTitle.trim()
-    : displayName;
+  const cardTitle =
+    isMemoryBody && item.context.documentTitle?.trim()
+      ? item.context.documentTitle.trim()
+      : displayName;
 
   const isCallRecording = item.source === 'call_recording';
   const openLinkLabel = isCallRecording

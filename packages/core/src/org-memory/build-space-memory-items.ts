@@ -2,6 +2,7 @@ import type { Attachment, Document } from '../governance/types';
 import { DocumentState } from '../governance/types';
 import { isMemoryDocument } from '../governance/space-memory-document-label';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
+import { deriveSpaceMemoryDisplayTitle } from './space-memory-display';
 
 export type SpaceMemorySource =
   | 'proposal_upload'
@@ -28,6 +29,10 @@ export type SpaceMemoryItem = {
     documentLabel?: string;
     matrixEventId?: string;
     textExcerpt?: string;
+    /** Human-facing title (signal name, AI summary, etc.) — not a filename or id. */
+    contextTitle?: string;
+    /** Signal that launched the call, when known. */
+    signalTitle?: string;
   };
 };
 
@@ -55,6 +60,8 @@ export type OrgMemoryAssetWire = {
   call_session_id?: string;
   discussion_summary_id?: number;
   text_excerpt?: string;
+  context_title?: string;
+  signal_title?: string;
   occurred_at: string;
 };
 
@@ -404,17 +411,28 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
             ? 'video'
             : 'other'
           : 'video';
+      const contextTitle = a.context_title?.trim() || undefined;
+      const signalTitle = a.signal_title?.trim() || undefined;
+      const displayTitle = deriveSpaceMemoryDisplayTitle({
+        source: 'call_recording',
+        name: a.filename?.trim() ? a.filename : 'Call recording',
+        contextTitle: signalTitle ?? contextTitle,
+        textExcerpt: a.text_excerpt,
+      });
       items.push({
         id: `call-recording:${sessionId}`,
-        name: a.filename?.trim() ? a.filename : 'Call recording',
+        name: displayTitle,
         url: mxc ?? safeUrl ?? `memory://call-recording/${sessionId}`,
         kind: recordingKind,
         source: 'call_recording',
         uploadedAt,
         context: {
           documentId: 0,
-          documentTitle: a.call_session_id ?? '',
+          documentTitle: displayTitle,
           documentState: DocumentState.PROPOSAL,
+          textExcerpt: a.text_excerpt?.trim() || undefined,
+          contextTitle: displayTitle,
+          signalTitle,
         },
       });
       continue;
@@ -425,22 +443,33 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
         a.source === 'discussion_summary'
           ? String(a.discussion_summary_id ?? a.filename)
           : String(a.call_session_id ?? a.filename);
+      const contextTitle = a.context_title?.trim() || undefined;
+      const signalTitle = a.signal_title?.trim() || undefined;
+      const excerpt = a.text_excerpt?.trim() || undefined;
+      const displayTitle = deriveSpaceMemoryDisplayTitle({
+        source: a.source,
+        name:
+          a.filename?.trim() ||
+          (a.source === 'discussion_summary'
+            ? 'Discussion summary'
+            : 'Call transcript'),
+        contextTitle: signalTitle ?? contextTitle,
+        textExcerpt: excerpt,
+      });
       items.push({
         id: `${a.source}:${syntheticId}`,
-        name: a.filename?.trim()
-          ? a.filename
-          : a.source === 'discussion_summary'
-          ? 'Discussion summary'
-          : 'Call transcript',
+        name: displayTitle,
         url: `memory://${a.source}/${syntheticId}`,
         kind: 'document',
         source: a.source,
         uploadedAt,
         context: {
           documentId: 0,
-          documentTitle: a.text_excerpt ?? '',
+          documentTitle: displayTitle,
           documentState: DocumentState.PROPOSAL,
-          textExcerpt: a.text_excerpt?.trim() || undefined,
+          textExcerpt: excerpt,
+          contextTitle: displayTitle,
+          signalTitle,
         },
       });
     }
@@ -467,6 +496,8 @@ export function filterSpaceMemoryItems(
       row.name.toLowerCase().includes(q) ||
       row.url.toLowerCase().includes(q) ||
       row.context.documentTitle.toLowerCase().includes(q) ||
-      (row.context.documentLabel?.toLowerCase().includes(q) ?? false),
+      (row.context.contextTitle?.toLowerCase().includes(q) ?? false) ||
+      (row.context.documentLabel?.toLowerCase().includes(q) ?? false) ||
+      (row.context.textExcerpt?.toLowerCase().includes(q) ?? false),
   );
 }

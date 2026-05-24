@@ -12,10 +12,7 @@ import {
   filterSpaceMemoryItems,
 } from '@hypha-platform/core/client';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
-import {
-  SpaceMemoryTimelineItem,
-  humanizeAssetName,
-} from './space-memory-timeline-item';
+import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
 import { MemoryFilterValue, MemoryFilters } from './memory-filters';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
@@ -87,13 +84,21 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         return t('spaceMemoryContextMatrix');
       }
       if (row.source === 'discussion_summary') {
-        return humanizeAssetName(row.name);
+        return t('spaceMemoryContextDiscussionSummary');
       }
       if (row.source === 'call_transcript') {
-        return t('spaceMemoryContextCallTranscript');
+        const signalTitle = row.context.signalTitle?.trim();
+        return signalTitle
+          ? t('spaceMemoryContextCallFromSignal', { title: signalTitle })
+          : t('spaceMemoryContextCallTranscript');
       }
       if (row.source === 'call_recording') {
-        return t('spaceMemoryContextCallRecording');
+        const signalTitle = row.context.signalTitle?.trim();
+        return signalTitle
+          ? t('spaceMemoryContextCallRecordingFromSignal', {
+              title: signalTitle,
+            })
+          : t('spaceMemoryContextCallRecording');
       }
       return t('spaceMemoryContext', {
         title: row.context.documentTitle || t('untitledDocument'),
@@ -220,7 +225,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                 item={row}
                 contextLine={contextLineForItem(row)}
                 openLabel={t('spaceMemoryOpenAsset', {
-                  name: humanizeAssetName(row.name),
+                  name: row.name,
                 })}
               />
             ))}

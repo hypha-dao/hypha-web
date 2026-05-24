@@ -28,6 +28,10 @@ import { coherences } from '@hypha-platform/storage-postgres';
 import { withOrgMemoryAssetKeys } from '../../org-memory/with-org-memory-asset-keys';
 import { listSpaceCallArtifactsBySpaceId } from './call-artifacts';
 import { isMemoryDocument } from '../space-memory-document-label';
+import {
+  deriveSpaceMemoryDisplayTitle,
+  looksLikeTechnicalSpaceMemoryName,
+} from '../../org-memory/space-memory-display';
 
 /** Aligned with MCP §8.1 / architecture org memory rows. */
 export type OrgMemoryAsset = {
@@ -57,6 +61,8 @@ export type OrgMemoryAsset = {
   call_transcript_id?: number;
   discussion_summary_id?: number;
   text_excerpt?: string;
+  context_title?: string;
+  signal_title?: string;
   occurred_at: string;
 };
 
@@ -188,6 +194,34 @@ function emptyAssetsPagination(
     has_next_page: false,
     has_previous_page: false,
   };
+}
+
+function readCallArtifactSignalTitle(
+  metadata: Record<string, unknown> | null | undefined,
+): string | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const signalTitle =
+    typeof metadata.signal_title === 'string'
+      ? metadata.signal_title.trim()
+      : '';
+  if (signalTitle && !looksLikeTechnicalSpaceMemoryName(signalTitle)) {
+    return signalTitle;
+  }
+  return null;
+}
+
+function readCallArtifactContextTitle(
+  metadata: Record<string, unknown> | null | undefined,
+): string | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const contextTitle =
+    typeof metadata.context_title === 'string'
+      ? metadata.context_title.trim()
+      : '';
+  if (contextTitle && !looksLikeTechnicalSpaceMemoryName(contextTitle)) {
+    return contextTitle;
+  }
+  return readCallArtifactSignalTitle(metadata);
 }
 
 function proposalDocContextFields(
@@ -681,6 +715,7 @@ function filterAssetsBySearch(
   return assets.filter(
     (a) =>
       a.filename.toLowerCase().includes(q) ||
+      (a.context_title?.toLowerCase().includes(q) ?? false) ||
       (a.text_excerpt?.toLowerCase().includes(q) ?? false) ||
       (a.app_url?.toLowerCase().includes(q) ?? false) ||
       (a.mxc_uri?.toLowerCase().includes(q) ?? false),
@@ -1000,43 +1035,89 @@ export async function getOrgMemoryBySpaceSlug(
   );
 
   const callArtifacts = await listSpaceCallArtifactsBySpaceId(host.id, { db });
+  const transcriptSummaryBySession = new Map<string, string>();
+  for (const t of callArtifacts.transcripts) {
+    const summary = t.summary?.trim() || t.text.slice(0, 240).trim();
+    if (summary) transcriptSummaryBySession.set(t.callSessionId, summary);
+  }
+
   const recordingAssets: OrgMemoryAsset[] = callArtifacts.recordings.map(
     (r) => {
       const mediaUri = r.mediaUri.trim();
       const isMxc = mediaUri.startsWith('mxc://');
-      return {
+      const signalTitle = readCallArtifactSignalTitle(r.metadata);
+      const contextTitle =
+        signalTitle ??
+        readCallArtifactContextTitle(r.metadata) ??
+        transcriptSummaryBySession.get(r.callSessionId) ??
+        undefined;
+      const displayTitle = deriveSpaceMemoryDisplayTitle({
         source: 'call_recording',
-        filename:
+        name:
           mediaUri.split('/').pop()?.trim() ||
           `call-recording-${r.callSessionId}.webm`,
+        contextTitle,
+        textExcerpt: transcriptSummaryBySession.get(r.callSessionId),
+      });
+      return {
+        source: 'call_recording',
+        filename: displayTitle,
         ...(isMxc ? { mxc_uri: mediaUri } : { app_url: mediaUri }),
         mime: r.mimeType,
         occurred_at: r.createdAt.toISOString(),
         call_session_id: r.callSessionId,
         call_recording_id: r.id,
+        context_title: displayTitle,
+        signal_title: signalTitle ?? undefined,
+        text_excerpt: transcriptSummaryBySession.get(r.callSessionId),
       };
     },
   );
   const transcriptAssets: OrgMemoryAsset[] = callArtifacts.transcripts.map(
-    (t) => ({
-      source: 'call_transcript',
-      filename: `call-transcript-${t.callSessionId}.txt`,
-      mime: 'text/plain',
-      occurred_at: t.createdAt.toISOString(),
-      call_session_id: t.callSessionId,
-      call_transcript_id: t.id,
-      text_excerpt: t.summary ?? t.text.slice(0, 240),
-    }),
+    (t) => {
+      const excerpt = t.summary?.trim() || t.text.slice(0, 240).trim();
+      const signalTitle = readCallArtifactSignalTitle(t.metadata);
+      const contextTitle =
+        signalTitle ??
+        readCallArtifactContextTitle(t.metadata) ??
+        (excerpt || undefined);
+      const displayTitle = deriveSpaceMemoryDisplayTitle({
+        source: 'call_transcript',
+        name: `call-transcript-${t.callSessionId}.txt`,
+        contextTitle,
+        textExcerpt: excerpt,
+      });
+      return {
+        source: 'call_transcript',
+        filename: displayTitle,
+        mime: 'text/plain',
+        occurred_at: t.createdAt.toISOString(),
+        call_session_id: t.callSessionId,
+        call_transcript_id: t.id,
+        text_excerpt: excerpt,
+        context_title: displayTitle,
+        signal_title: signalTitle ?? undefined,
+      };
+    },
   );
   const discussionSummaryAssets: OrgMemoryAsset[] = callArtifacts.summaries.map(
-    (s) => ({
-      source: 'discussion_summary',
-      filename: `discussion-summary-${s.id}.md`,
-      mime: 'text/markdown',
-      occurred_at: s.createdAt.toISOString(),
-      discussion_summary_id: s.id,
-      text_excerpt: s.summary,
-    }),
+    (s) => {
+      const excerpt = s.summary.trim();
+      const displayTitle = deriveSpaceMemoryDisplayTitle({
+        source: 'discussion_summary',
+        name: `discussion-summary-${s.id}.md`,
+        textExcerpt: excerpt,
+      });
+      return {
+        source: 'discussion_summary',
+        filename: displayTitle,
+        mime: 'text/markdown',
+        occurred_at: s.createdAt.toISOString(),
+        discussion_summary_id: s.id,
+        text_excerpt: excerpt,
+        context_title: displayTitle,
+      };
+    },
   );
 
   let combined = [
