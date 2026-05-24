@@ -35,6 +35,8 @@ import {
 } from '../matrix-webrtc-env';
 import { createHyphaMatrixClientLogger } from '../matrix-client-logger';
 
+import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
+
 const CALL_CAPTURE_NOTICE_TYPE = 'io.hypha.call_capture_notice.v1';
 
 function isCallCaptureNoticeEvent(event: MatrixSdk.MatrixEvent): boolean {
@@ -1373,6 +1375,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             .getEvents()
             .filter((event) => event.getType() === EventType.RoomMessage)
             .filter((event) => !isCallCaptureNoticeEvent(event))
+            .filter((event) => !isScreenshareTakeoverEvent(event))
             .filter((event) => !isRedactedRoomMessageEvent(event))
             .filter((event) => event.getId() && event.getSender())
             .filter((event) => getMessageReplaceTargetEventId(event) == null)
@@ -1638,6 +1641,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
         if (type === EventType.RoomMessage) {
           if (isCallCaptureNoticeEvent(event)) {
+            return;
+          }
+          if (isScreenshareTakeoverEvent(event)) {
             return;
           }
           if (isRedactedRoomMessageEvent(event)) {

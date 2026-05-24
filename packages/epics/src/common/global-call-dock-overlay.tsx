@@ -26,6 +26,7 @@ import {
   HumanChatPanelCallStage,
   HumanChatPanelCallFullViewLayoutMenu,
   HumanChatPanelInCallControls,
+  HumanChatPanelScreenshareTakeoverDialog,
   readCallFullViewLayoutFromStorage,
   persistCallFullViewLayout,
   type CallFullViewLayoutMode,
@@ -322,6 +323,13 @@ export function GlobalCallDockOverlay() {
     setMicrophoneMuted,
     setCameraMuted,
     setScreensharingEnabled,
+    screenshareTakeoverIncoming,
+    screenshareTakeoverPendingId,
+    screenshareTakeoverDenied,
+    approveScreenshareTakeover,
+    denyScreenshareTakeover,
+    cancelScreenshareTakeoverRequest,
+    dismissScreenshareTakeoverPrompt,
     voiceProcessingPreset,
     setVoiceProcessingPreset,
     captureMode,
@@ -1014,6 +1022,22 @@ export function GlobalCallDockOverlay() {
       {modeIsFullscreen && (
         <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-black/5" />
       )}
+
+      <HumanChatPanelScreenshareTakeoverDialog
+        incoming={screenshareTakeoverIncoming}
+        pending={Boolean(screenshareTakeoverPendingId)}
+        denied={screenshareTakeoverDenied}
+        onApprove={(request) => {
+          void approveScreenshareTakeover(request);
+        }}
+        onDeny={(request) => {
+          void denyScreenshareTakeover(request);
+        }}
+        onCancelPending={() => {
+          void cancelScreenshareTakeoverRequest();
+        }}
+        onDismissDenied={dismissScreenshareTakeoverPrompt}
+      />
     </div>
   );
 

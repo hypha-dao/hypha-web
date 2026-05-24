@@ -70,6 +70,7 @@ import {
   HumanChatPanelMentionTab,
   HumanChatPanelCallToolbar,
   HumanChatPanelCallBanner,
+  HumanChatPanelScreenshareTakeoverDialog,
   HumanChatPanelCallJoinStrip,
   HumanChatPanelCallStage,
   type ChatDraftAttachment,
@@ -1007,6 +1008,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     recordingError: spaceCallRecordingError,
     captureConsent: spaceCallCaptureConsent,
     dismissScreenshareError: dismissSpaceCallScreenshareError,
+    screenshareTakeoverIncoming: spaceCallScreenshareTakeoverIncoming,
+    screenshareTakeoverPendingId: spaceCallScreenshareTakeoverPendingId,
+    screenshareTakeoverDenied: spaceCallScreenshareTakeoverDenied,
+    approveScreenshareTakeover: approveSpaceCallScreenshareTakeover,
+    denyScreenshareTakeover: denySpaceCallScreenshareTakeover,
+    cancelScreenshareTakeoverRequest: cancelSpaceCallScreenshareTakeoverRequest,
+    dismissScreenshareTakeoverPrompt: dismissSpaceCallScreenshareTakeoverPrompt,
     activeSpeakerKey: spaceCallActiveSpeakerKey,
     setScreensharingEnabled: setSpaceCallScreensharing,
     voiceProcessingPreset: spaceCallVoiceProcessingPreset,
@@ -3310,6 +3318,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onDismissCallError={dismissSpaceCallError}
             />
           )}
+        {!showFloatingDock && callUiEnabled ? (
+          <HumanChatPanelScreenshareTakeoverDialog
+            incoming={spaceCallScreenshareTakeoverIncoming}
+            pending={Boolean(spaceCallScreenshareTakeoverPendingId)}
+            denied={spaceCallScreenshareTakeoverDenied}
+            onApprove={(request) => {
+              void approveSpaceCallScreenshareTakeover(request);
+            }}
+            onDeny={(request) => {
+              void denySpaceCallScreenshareTakeover(request);
+            }}
+            onCancelPending={() => {
+              void cancelSpaceCallScreenshareTakeoverRequest();
+            }}
+            onDismissDenied={dismissSpaceCallScreenshareTakeoverPrompt}
+          />
+        ) : null}
       </SidebarHeader>
       {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
       <SidebarContent

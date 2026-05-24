@@ -19,5 +19,6 @@ export {
   isPermissionLikeGroupCallError,
   shouldIgnoreGroupCallErrorDuringCapture,
 } from './space-group-call-utils';
+export type { ScreenshareTakeoverIncoming } from './screenshare-takeover';
 export { logSpaceGroupCallEvent } from './space-group-call-telemetry';
 export type { SpaceGroupCallTelemetryEvent } from './space-group-call-telemetry';

@@ -34,6 +34,13 @@ import {
   resolveLocalCaptureConsent,
   type SpaceGroupCallCaptureConsent,
 } from './call-capture-consent';
+import {
+  buildScreenshareTakeoverContent,
+  getRemoteScreenshareOwner,
+  resolveIncomingScreenshareTakeover,
+  resolveScreenshareTakeoverOutcome,
+  type ScreenshareTakeoverIncoming,
+} from './screenshare-takeover';
 export type { SpaceGroupCallState } from './space-group-call-state';
 export type {
   SpaceGroupCallCaptureMode,
@@ -270,6 +277,13 @@ export function useSpaceGroupCall(
   const [callKind, setCallKind] = useState<'audio' | 'video' | null>(null);
   const [participantCount, setParticipantCount] = useState(0);
   const [isScreensharing, setIsScreensharing] = useState(false);
+  const [screenshareTakeoverIncoming, setScreenshareTakeoverIncoming] =
+    useState<ScreenshareTakeoverIncoming | null>(null);
+  const [screenshareTakeoverPendingId, setScreenshareTakeoverPendingId] =
+    useState<string | null>(null);
+  const [screenshareTakeoverDenied, setScreenshareTakeoverDenied] =
+    useState(false);
+  const screenshareTakeoverPendingIdRef = useRef<string | null>(null);
   const [localPreviewStream, setLocalPreviewStream] =
     useState<MediaStream | null>(null);
   const [voiceProcessingPreset, setVoiceProcessingPresetState] =
@@ -447,6 +461,65 @@ export function useSpaceGroupCall(
       mediaDebugIntervalRef.current = null;
     }
   }, []);
+
+  const syncLocalScreenshareState = useCallback(
+    (gc: MatrixSdk.GroupCall | null | undefined) => {
+      if (!gc) {
+        setIsScreensharing(false);
+        return;
+      }
+      setIsScreensharing(gc.isScreensharing());
+    },
+    [],
+  );
+
+  const sendScreenshareTakeoverEvent = useCallback(
+    async (
+      action: 'request' | 'approve' | 'deny' | 'cancel',
+      requestId: string,
+      requesterUserId: string,
+      targetUserId?: string,
+    ) => {
+      const activeRoomId = roomId?.trim();
+      if (!client || !activeRoomId) return;
+      try {
+        await client.sendEvent(
+          activeRoomId,
+          MatrixSdk.EventType.RoomMessage,
+          buildScreenshareTakeoverContent(
+            action,
+            requestId,
+            requesterUserId,
+            targetUserId,
+          ),
+        );
+      } catch {
+        // best effort
+      }
+    },
+    [client, roomId],
+  );
+
+  const enableLocalScreenshareDirect = useCallback(
+    async (gc: MatrixSdk.GroupCall) => {
+      try {
+        const ok = await gc.setScreensharingEnabled(true);
+        syncLocalScreenshareState(gc);
+        if (ok === false) {
+          setScreenshareErrorCode('WEBRTC_FAILED');
+        }
+      } catch (e) {
+        syncLocalScreenshareState(gc);
+        if (isPermissionLikeGroupCallError(e)) {
+          setScreenshareErrorCode('PERMISSION_DENIED');
+        } else {
+          setScreenshareErrorCode('WEBRTC_FAILED');
+        }
+      }
+      scheduleFeedBatched();
+    },
+    [scheduleFeedBatched, syncLocalScreenshareState],
+  );
 
   const announceCaptureNotice = useCallback(
     async (
@@ -1202,7 +1275,8 @@ export function useSpaceGroupCall(
       };
       gc.on(GroupCallEvent.GroupCallStateChanged, onState);
       const onLocalScreenshareStateChanged = (sharing: boolean) => {
-        setIsScreensharing(sharing);
+        const gcNow = groupCallRef.current;
+        setIsScreensharing(gcNow ? gcNow.isScreensharing() : sharing);
       };
       gc.on(
         GroupCallEvent.LocalScreenshareStateChanged,
@@ -1219,6 +1293,7 @@ export function useSpaceGroupCall(
         scheduleFeedBatched();
         updateParticipantCount();
         evalRemoteMediaStall();
+        syncLocalScreenshareState(gc);
       };
       gc.on(GroupCallEvent.UserMediaFeedsChanged, onFeedsMaybeParticipants);
       gc.on(GroupCallEvent.ScreenshareFeedsChanged, onFeedsMaybeParticipants);
@@ -1273,6 +1348,7 @@ export function useSpaceGroupCall(
       scheduleFeedBatched,
       updateParticipantCount,
       evalRemoteMediaStall,
+      syncLocalScreenshareState,
     ],
   );
 
@@ -1677,6 +1753,7 @@ export function useSpaceGroupCall(
       updateParticipantCount();
       setIsMicrophoneMuted(gc.isMicrophoneMuted());
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
+      syncLocalScreenshareState(gc);
       setActiveKeyFromGroupCall(gc);
       isJoiningRef.current = false;
       lastRoomIdForTelemetryRef.current = roomId;
@@ -1771,6 +1848,10 @@ export function useSpaceGroupCall(
     setErrorCode(null);
     setCallKind(null);
     setIsScreensharing(false);
+    setScreenshareTakeoverIncoming(null);
+    setScreenshareTakeoverPendingId(null);
+    setScreenshareTakeoverDenied(false);
+    screenshareTakeoverPendingIdRef.current = null;
     setThreadContext(null);
     setParticipantCount(0);
     setTabBackgroundWhileInCall(false);
@@ -1840,28 +1921,118 @@ export function useSpaceGroupCall(
       const gc = groupCallRef.current;
       if (!gc) return;
       setScreenshareErrorCode(null);
-      try {
-        const ok = await gc.setScreensharingEnabled(enabled);
-        // Stopping share is user-initiated; the SDK can report `false` without a real failure.
-        if (enabled && ok === false) {
-          setScreenshareErrorCode('WEBRTC_FAILED');
-        }
-      } catch (e) {
-        if (!enabled) {
-          setScreenshareErrorCode(null);
-          scheduleFeedBatched();
+
+      const sdkSharing = gc.isScreensharing();
+      if (enabled === sdkSharing) {
+        setIsScreensharing(sdkSharing);
+        return;
+      }
+
+      if (enabled) {
+        const localUserId = client?.getUserId()?.trim() ?? null;
+        const remoteOwner = getRemoteScreenshareOwner(gc);
+        if (
+          remoteOwner &&
+          localUserId &&
+          remoteOwner.userId !== localUserId &&
+          !sdkSharing
+        ) {
+          const requestId = crypto.randomUUID();
+          screenshareTakeoverPendingIdRef.current = requestId;
+          setScreenshareTakeoverPendingId(requestId);
+          setScreenshareTakeoverDenied(false);
+          await sendScreenshareTakeoverEvent(
+            'request',
+            requestId,
+            localUserId,
+            remoteOwner.userId,
+          );
           return;
         }
-        if (isPermissionLikeGroupCallError(e)) {
-          setScreenshareErrorCode('PERMISSION_DENIED');
-        } else {
-          setScreenshareErrorCode('WEBRTC_FAILED');
-        }
+        await enableLocalScreenshareDirect(gc);
+        return;
       }
+
+      try {
+        await gc.setScreensharingEnabled(false);
+      } catch {
+        // user-initiated stop — reconcile UI even when SDK throws
+      }
+      syncLocalScreenshareState(gc);
+      setScreenshareTakeoverIncoming(null);
       scheduleFeedBatched();
     },
-    [scheduleFeedBatched],
+    [
+      client,
+      enableLocalScreenshareDirect,
+      scheduleFeedBatched,
+      sendScreenshareTakeoverEvent,
+      syncLocalScreenshareState,
+    ],
   );
+
+  const approveScreenshareTakeover = useCallback(
+    async (request: ScreenshareTakeoverIncoming) => {
+      const gc = groupCallRef.current;
+      const localUserId = client?.getUserId()?.trim();
+      if (!gc || !localUserId || !request.requestId.trim()) return;
+      setScreenshareTakeoverIncoming(null);
+      try {
+        if (gc.isScreensharing()) {
+          await gc.setScreensharingEnabled(false);
+        }
+      } catch {
+        // continue — still notify requester
+      }
+      syncLocalScreenshareState(gc);
+      await sendScreenshareTakeoverEvent(
+        'approve',
+        request.requestId.trim(),
+        request.requesterUserId,
+        localUserId,
+      );
+      scheduleFeedBatched();
+    },
+    [
+      client,
+      scheduleFeedBatched,
+      sendScreenshareTakeoverEvent,
+      syncLocalScreenshareState,
+    ],
+  );
+
+  const denyScreenshareTakeover = useCallback(
+    async (request: ScreenshareTakeoverIncoming) => {
+      const localUserId = client?.getUserId()?.trim();
+      if (!localUserId || !request.requestId.trim()) return;
+      setScreenshareTakeoverIncoming(null);
+      await sendScreenshareTakeoverEvent(
+        'deny',
+        request.requestId.trim(),
+        request.requesterUserId,
+        localUserId,
+      );
+    },
+    [client, sendScreenshareTakeoverEvent],
+  );
+
+  const dismissScreenshareTakeoverPrompt = useCallback(() => {
+    setScreenshareTakeoverIncoming(null);
+    setScreenshareTakeoverPendingId(null);
+    setScreenshareTakeoverDenied(false);
+    screenshareTakeoverPendingIdRef.current = null;
+  }, []);
+
+  const cancelScreenshareTakeoverRequest = useCallback(async () => {
+    const localUserId = client?.getUserId()?.trim();
+    const requestId = screenshareTakeoverPendingIdRef.current;
+    if (!localUserId || !requestId) {
+      dismissScreenshareTakeoverPrompt();
+      return;
+    }
+    await sendScreenshareTakeoverEvent('cancel', requestId, localUserId);
+    dismissScreenshareTakeoverPrompt();
+  }, [client, dismissScreenshareTakeoverPrompt, sendScreenshareTakeoverEvent]);
 
   const setVoiceProcessingPreset = useCallback(
     async (preset: SpaceGroupCallVoiceProcessingPreset) => {
@@ -2087,6 +2258,70 @@ export function useSpaceGroupCall(
     };
   }, [client, roomId]);
 
+  useEffect(() => {
+    screenshareTakeoverPendingIdRef.current = screenshareTakeoverPendingId;
+  }, [screenshareTakeoverPendingId]);
+
+  useEffect(() => {
+    if (!client || !roomId?.trim() || callState !== 'connected') {
+      setScreenshareTakeoverIncoming(null);
+      return;
+    }
+    const activeRoomId = roomId.trim();
+    const room = client.getRoom(activeRoomId);
+    const gc = groupCallRef.current;
+    if (!room || !gc) return;
+
+    const localUserId = client.getUserId() ?? null;
+    const syncTakeoverFromTimeline = () => {
+      const recent = room.getLiveTimeline()?.getEvents()?.slice().reverse();
+      if (!recent?.length) return;
+
+      const incoming = resolveIncomingScreenshareTakeover(
+        recent,
+        localUserId,
+        gc.isScreensharing(),
+        (senderId) => room.getMember(senderId)?.name || senderId,
+      );
+      setScreenshareTakeoverIncoming(incoming);
+
+      const pendingId = screenshareTakeoverPendingIdRef.current;
+      if (pendingId) {
+        const outcome = resolveScreenshareTakeoverOutcome(
+          recent,
+          localUserId,
+          pendingId,
+        );
+        if (outcome === 'approved') {
+          screenshareTakeoverPendingIdRef.current = null;
+          setScreenshareTakeoverPendingId(null);
+          setScreenshareTakeoverDenied(false);
+          void enableLocalScreenshareDirect(gc);
+        } else if (outcome === 'denied') {
+          screenshareTakeoverPendingIdRef.current = null;
+          setScreenshareTakeoverPendingId(null);
+          setScreenshareTakeoverDenied(true);
+        }
+      }
+    };
+
+    syncTakeoverFromTimeline();
+    const onTimeline = () => {
+      syncTakeoverFromTimeline();
+    };
+    room.on(RoomEvent.Timeline, onTimeline);
+    return () => {
+      room.off(RoomEvent.Timeline, onTimeline);
+    };
+  }, [
+    callState,
+    client,
+    enableLocalScreenshareDirect,
+    feedVersion,
+    isScreensharing,
+    roomId,
+  ]);
+
   const captureConsent = useMemo(() => {
     const localCapture = resolveLocalCaptureConsent({
       captureMode,
@@ -2113,6 +2348,10 @@ export function useSpaceGroupCall(
     setErrorCode(null);
     setCallKind(null);
     setIsScreensharing(false);
+    setScreenshareTakeoverIncoming(null);
+    setScreenshareTakeoverPendingId(null);
+    setScreenshareTakeoverDenied(false);
+    screenshareTakeoverPendingIdRef.current = null;
     setThreadContext(null);
     setParticipantCount(0);
     setScreenshareErrorCode(null);
@@ -2228,6 +2467,10 @@ export function useSpaceGroupCall(
     setErrorCode(null);
     setCallKind(null);
     setIsScreensharing(false);
+    setScreenshareTakeoverIncoming(null);
+    setScreenshareTakeoverPendingId(null);
+    setScreenshareTakeoverDenied(false);
+    screenshareTakeoverPendingIdRef.current = null;
     setThreadContext(null);
     setParticipantCount(0);
     setScreenshareErrorCode(null);
@@ -2452,6 +2695,13 @@ export function useSpaceGroupCall(
     stopCapture,
     captureConsent,
     dismissScreenshareError,
+    screenshareTakeoverIncoming,
+    screenshareTakeoverPendingId,
+    screenshareTakeoverDenied,
+    approveScreenshareTakeover,
+    denyScreenshareTakeover,
+    cancelScreenshareTakeoverRequest,
+    dismissScreenshareTakeoverPrompt,
     dismissCallError,
     retryFromError,
     /** Matrix lists others in-call but no remote media after threshold — likely WebRTC/signaling. */
