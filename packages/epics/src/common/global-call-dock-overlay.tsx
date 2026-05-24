@@ -54,6 +54,11 @@ const SNAP_EDGE_PX = 24;
 // Minimum dock size (thumbnail mode baseline); resize can never go below this.
 const DOCK_MIN_WIDTH = 360;
 const DOCK_MIN_HEIGHT = 260;
+/** Keep the dock in a usable video-call aspect range and avoid extreme sizes. */
+const DOCK_MAX_WIDTH = 880;
+const DOCK_MAX_HEIGHT = 640;
+const DOCK_MIN_WIDTH_TO_HEIGHT = 1.05;
+const DOCK_MAX_WIDTH_TO_HEIGHT = 1.85;
 const THUMBNAIL_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
   width: DOCK_MIN_WIDTH,
   height: DOCK_MIN_HEIGHT,
