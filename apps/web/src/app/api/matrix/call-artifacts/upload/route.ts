@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 import { getEnableHumanChat } from '@hypha-platform/feature-flags';
-import { coherences, db } from '@hypha-platform/storage-postgres';
+import { coherences, db, spaces } from '@hypha-platform/storage-postgres';
 import {
   checkSpaceAccessForSpace,
   determineEnvironment,
@@ -168,7 +168,31 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const space = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
+  let space = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
+  if (!space && roomId) {
+    const [fallbackSpace] = await db
+      .select({
+        id: spaces.id,
+        slug: spaces.slug,
+        title: spaces.title,
+        parentId: spaces.parentId,
+        web3SpaceId: spaces.web3SpaceId,
+        chatRoomId: spaces.chatRoomId,
+      })
+      .from(spaces)
+      .leftJoin(coherences, eq(coherences.spaceId, spaces.id))
+      .where(or(eq(spaces.chatRoomId, roomId), eq(coherences.roomId, roomId)))
+      .limit(1);
+    if (fallbackSpace) {
+      space = fallbackSpace;
+      logCallArtifactsUpload('space_resolved_from_room', {
+        requestedSpaceSlug: spaceSlug,
+        resolvedSpaceSlug: fallbackSpace.slug,
+        roomId,
+        callSessionId,
+      });
+    }
+  }
   if (!space) {
     logCallArtifactsUpload('space_not_found', {
       spaceSlug,
@@ -177,6 +201,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ error: 'Space not found' }, { status: 404 });
   }
+  const targetSpaceSlug = space.slug;
 
   const linkedRoom = await isSpaceLinkedCallRoom({
     spaceId: space.id,
@@ -194,6 +219,7 @@ export async function POST(request: NextRequest) {
     // We still require an authenticated user with access to the target space.
     logCallArtifactsUpload('space_room_mismatch_bypassed', {
       spaceSlug,
+      resolvedSpaceSlug: targetSpaceSlug,
       roomId,
       callSessionId,
       spaceChatRoomId: space.chatRoomId,
@@ -207,7 +233,7 @@ export async function POST(request: NextRequest) {
   if (existingRecording?.mediaUri?.trim()) {
     if (transcriptText) {
       const transcriptResult = await persistTranscriptOnly({
-        spaceSlug,
+        spaceSlug: targetSpaceSlug,
         callSessionId,
         transcriptText,
       });
@@ -241,7 +267,7 @@ export async function POST(request: NextRequest) {
 
   if (!hasRecordingBlob) {
     const transcriptResult = await persistTranscriptOnly({
-      spaceSlug,
+      spaceSlug: targetSpaceSlug,
       callSessionId,
       transcriptText,
     });
@@ -254,7 +280,7 @@ export async function POST(request: NextRequest) {
     try {
       await enqueueSignalEvaluationFromMemory(
         {
-          spaceSlug,
+          spaceSlug: targetSpaceSlug,
           triggerKind: 'memory_ingest',
         },
         { db },
@@ -268,6 +294,7 @@ export async function POST(request: NextRequest) {
     }
     logCallArtifactsUpload('transcript_only_ingested', {
       spaceSlug,
+      resolvedSpaceSlug: targetSpaceSlug,
       roomId,
       callSessionId,
     });
@@ -290,7 +317,7 @@ export async function POST(request: NextRequest) {
   if (!matrix) {
     if (transcriptText) {
       const transcriptResult = await persistTranscriptOnly({
-        spaceSlug,
+        spaceSlug: targetSpaceSlug,
         callSessionId,
         transcriptText,
       });
@@ -298,7 +325,7 @@ export async function POST(request: NextRequest) {
         try {
           await enqueueSignalEvaluationFromMemory(
             {
-              spaceSlug,
+              spaceSlug: targetSpaceSlug,
               triggerKind: 'memory_ingest',
             },
             { db },
@@ -327,6 +354,7 @@ export async function POST(request: NextRequest) {
     }
     logCallArtifactsUpload('matrix_token_unavailable', {
       spaceSlug,
+      resolvedSpaceSlug: targetSpaceSlug,
       roomId,
       callSessionId,
       hasTranscriptText: Boolean(transcriptText),
@@ -367,13 +395,14 @@ export async function POST(request: NextRequest) {
   if (uploadResponse instanceof Error) {
     if (transcriptText) {
       const transcriptResult = await persistTranscriptOnly({
-        spaceSlug,
+        spaceSlug: targetSpaceSlug,
         callSessionId,
         transcriptText,
       });
       if (transcriptResult.ok) {
         logCallArtifactsUpload('recording_upload_error_transcript_fallback', {
           spaceSlug,
+          resolvedSpaceSlug: targetSpaceSlug,
           roomId,
           callSessionId,
           error: uploadResponse.message,
@@ -402,13 +431,14 @@ export async function POST(request: NextRequest) {
     const detail = await uploadResponse.text().catch(() => '');
     if (transcriptText) {
       const transcriptResult = await persistTranscriptOnly({
-        spaceSlug,
+        spaceSlug: targetSpaceSlug,
         callSessionId,
         transcriptText,
       });
       if (transcriptResult.ok) {
         logCallArtifactsUpload('recording_upload_http_transcript_fallback', {
           spaceSlug,
+          resolvedSpaceSlug: targetSpaceSlug,
           roomId,
           callSessionId,
           status: uploadResponse.status,
@@ -441,13 +471,14 @@ export async function POST(request: NextRequest) {
   if (!mediaUri) {
     if (transcriptText) {
       const transcriptResult = await persistTranscriptOnly({
-        spaceSlug,
+        spaceSlug: targetSpaceSlug,
         callSessionId,
         transcriptText,
       });
       if (transcriptResult.ok) {
         logCallArtifactsUpload('recording_upload_no_uri_transcript_fallback', {
           spaceSlug,
+          resolvedSpaceSlug: targetSpaceSlug,
           roomId,
           callSessionId,
         });
@@ -475,7 +506,7 @@ export async function POST(request: NextRequest) {
 
   const ingestResult = await ingestSpaceCallArtifacts(
     {
-      spaceSlug,
+      spaceSlug: targetSpaceSlug,
       callSessionId,
       recording: {
         mediaUri,
@@ -500,6 +531,7 @@ export async function POST(request: NextRequest) {
   if (!ingestResult.ok) {
     logCallArtifactsUpload('ingest_failed', {
       spaceSlug,
+      resolvedSpaceSlug: targetSpaceSlug,
       roomId,
       callSessionId,
       error: ingestResult.error,
@@ -510,7 +542,7 @@ export async function POST(request: NextRequest) {
   try {
     await enqueueSignalEvaluationFromMemory(
       {
-        spaceSlug,
+        spaceSlug: targetSpaceSlug,
         triggerKind: 'memory_ingest',
       },
       { db },
@@ -518,13 +550,14 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[matrix.call-artifacts.upload] enqueue failed', {
       spaceSlug,
+      resolvedSpaceSlug: targetSpaceSlug,
       triggerKind: 'memory_ingest',
       error: error instanceof Error ? error.message : String(error),
     });
   }
 
   const transcriptJob = await triggerTranscriptJob({
-    spaceSlug,
+    spaceSlug: targetSpaceSlug,
     roomId,
     callSessionId,
     mediaUri,
@@ -534,6 +567,7 @@ export async function POST(request: NextRequest) {
   }).catch(() => ({ attempted: true as const, ok: false as const, status: 0 }));
   logCallArtifactsUpload('recording_and_transcript_ingested', {
     spaceSlug,
+    resolvedSpaceSlug: targetSpaceSlug,
     roomId,
     callSessionId,
     transcriptStored: Boolean(transcriptText),
