@@ -1,5 +1,6 @@
 import type * as MatrixSdk from 'matrix-js-sdk';
-import { EventType } from 'matrix-js-sdk';
+import { EventType, MsgType } from 'matrix-js-sdk';
+import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 
 export const SCREENSHARE_TAKEOVER_TYPE = 'io.hypha.screenshare_takeover.v1';
 
@@ -128,7 +129,7 @@ export function buildScreenshareTakeoverContent(
   requestId: string,
   requesterUserId: string,
   targetUserId?: string,
-): ScreenshareTakeoverWire & { msgtype: string; body: string } {
+): RoomMessageEventContent {
   const body =
     action === 'request'
       ? 'Screen share takeover request'
@@ -138,12 +139,12 @@ export function buildScreenshareTakeoverContent(
       ? 'Screen share takeover denied'
       : 'Screen share takeover cancelled';
   return {
-    msgtype: 'm.notice',
+    msgtype: MsgType.Notice,
     body,
     [SCREENSHARE_TAKEOVER_TYPE]: true,
     action,
     request_id: requestId,
     requester_user_id: requesterUserId,
     ...(targetUserId ? { target_user_id: targetUserId } : {}),
-  };
+  } as RoomMessageEventContent;
 }
