@@ -497,7 +497,9 @@ export function useSpaceGroupCall(
         }
       }
 
-      if (captureModeRef.current === 'none') {
+      const armedModeAfterRecorder: SpaceGroupCallCaptureMode =
+        captureModeRef.current;
+      if (armedModeAfterRecorder === 'none') {
         if (recorder) await recorder.stop().catch(() => undefined);
         return false;
       }
@@ -517,7 +519,9 @@ export function useSpaceGroupCall(
         return false;
       }
 
-      if (captureModeRef.current === 'none') {
+      const armedModeBeforeRuntime: SpaceGroupCallCaptureMode =
+        captureModeRef.current;
+      if (armedModeBeforeRuntime === 'none') {
         if (recorder) await recorder.stop().catch(() => undefined);
         return false;
       }
