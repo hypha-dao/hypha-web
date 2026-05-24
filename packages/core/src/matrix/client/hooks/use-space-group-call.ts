@@ -124,7 +124,9 @@ const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
  * side with media until reload. Nudge once after enter + optional delayed retry.
  */
 const PLACE_OUTGOING_DELAYED_MS = 600;
-const PLACE_OUTGOING_RETRY_MS = [1500, 4000, 8000] as const;
+const PLACE_OUTGOING_RETRY_MS = [1500, 4000, 8000, 12000] as const;
+/** Re-verify local tracks + nudge pairwise calls while WebRTC settles after join. */
+const LOCAL_MEDIA_BOOTSTRAP_MS = [800, 2000, 5000, 10000] as const;
 const ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS = 30_000;
 const VOICE_PROCESSING_PRESET_KEY = 'hypha-group-call-voice-processing-v1';
 const CALL_CAPTURE_NOTICE_BODY = 'Hypha call capture notice';
@@ -289,6 +291,61 @@ async function recoverLocalCameraFeed(gc: MatrixSdk.GroupCall): Promise<void> {
   await waitForLiveLocalVideoTrack(gc, 400);
 }
 
+function getLiveLocalAudioTrack(
+  gc: MatrixSdk.GroupCall,
+): MediaStreamTrack | null {
+  const track = gc.localCallFeed?.stream.getAudioTracks()[0];
+  return track && track.readyState === 'live' ? track : null;
+}
+
+async function waitForLiveLocalAudioTrack(
+  gc: MatrixSdk.GroupCall,
+  timeoutMs = 400,
+): Promise<boolean> {
+  if (getLiveLocalAudioTrack(gc)) return true;
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    if (getLiveLocalAudioTrack(gc)) return true;
+  }
+  return false;
+}
+
+/** Matrix SDK can leave mic unmuted but without a live audio track after enter(). */
+async function recoverLocalMicrophoneFeed(
+  gc: MatrixSdk.GroupCall,
+): Promise<void> {
+  if (gc.isMicrophoneMuted()) return;
+  if (getLiveLocalAudioTrack(gc)) return;
+
+  await gc.setMicrophoneMuted(true);
+  await gc.setMicrophoneMuted(false);
+  await waitForLiveLocalAudioTrack(gc, 400);
+}
+
+/**
+ * After enter() or participant changes, confirm local tracks are live and retry
+ * pairwise call placement so remote peers receive A/V.
+ */
+async function ensureLocalCallMediaPublished(
+  gc: MatrixSdk.GroupCall,
+  kind: 'audio' | 'video',
+): Promise<void> {
+  try {
+    if (!gc.isMicrophoneMuted()) {
+      await recoverLocalMicrophoneFeed(gc);
+    }
+    if (kind === 'video' && !gc.isLocalVideoMuted()) {
+      await recoverLocalCameraFeed(gc);
+    }
+  } catch {
+    /* keep call connected if device recovery fails */
+  }
+  nudgeGroupCallPlaceOutgoing(gc);
+}
+
 /** Matrix SDK group-call summary stats interval (`NEXT_PUBLIC_MATRIX_WEBRTC_GROUP_STATS_MS`). */
 const GROUP_WEBRTC_SUMMARY_STATS_MS = matrixGroupCallSummaryStatsMsFromEnv();
 
@@ -411,6 +468,8 @@ export function useSpaceGroupCall(
   const placeOutgoingNudgeTimerRef = useRef<number | null>(null);
   /** Additional pairwise call-placement retries for rejoin/refresh races. */
   const placeOutgoingRetryTimerRefs = useRef<number[]>([]);
+  const localMediaBootstrapDebounceRef = useRef<number | null>(null);
+  const localMediaBootstrapTimerRefs = useRef<number[]>([]);
   /**
    * Bumped when starting a join and when the stall watchdog fires — stale
    * `await gc.enter()` must not run success paths after forced cleanup.
@@ -540,6 +599,19 @@ export function useSpaceGroupCall(
     if (mediaDebugIntervalRef.current != null) {
       clearInterval(mediaDebugIntervalRef.current);
       mediaDebugIntervalRef.current = null;
+    }
+  }, []);
+
+  const clearLocalMediaBootstrapTimers = useCallback(() => {
+    if (localMediaBootstrapDebounceRef.current != null) {
+      clearTimeout(localMediaBootstrapDebounceRef.current);
+      localMediaBootstrapDebounceRef.current = null;
+    }
+    if (localMediaBootstrapTimerRefs.current.length > 0) {
+      for (const id of localMediaBootstrapTimerRefs.current) {
+        clearTimeout(id);
+      }
+      localMediaBootstrapTimerRefs.current = [];
     }
   }, []);
 
@@ -1048,6 +1120,7 @@ export function useSpaceGroupCall(
       }
       placeOutgoingRetryTimerRefs.current = [];
     }
+    clearLocalMediaBootstrapTimers();
     webRtcDiagCleanupRef.current?.();
     webRtcDiagCleanupRef.current = null;
     groupCallListenerCleanupRef.current?.();
@@ -1120,6 +1193,7 @@ export function useSpaceGroupCall(
   }, [
     beginCaptureRuntimeAsync,
     clearConnectingStallTimer,
+    clearLocalMediaBootstrapTimers,
     clearMediaDebugInterval,
     finalizeRecording,
   ]);
@@ -1247,6 +1321,38 @@ export function useSpaceGroupCall(
     [readParticipantsFromGroupCall],
   );
 
+  const scheduleLocalMediaBootstrap = useCallback(
+    (gc: MatrixSdk.GroupCall) => {
+      if (typeof window === 'undefined') return;
+      if (localMediaBootstrapDebounceRef.current != null) {
+        clearTimeout(localMediaBootstrapDebounceRef.current);
+      }
+      localMediaBootstrapDebounceRef.current = window.setTimeout(() => {
+        localMediaBootstrapDebounceRef.current = null;
+        if (groupCallRef.current !== gc) return;
+        const kind = lastJoinKindRef.current ?? 'audio';
+        void ensureLocalCallMediaPublished(gc, kind);
+      }, 350);
+    },
+    [],
+  );
+
+  const startLocalMediaBootstrapSeries = useCallback(
+    (gc: MatrixSdk.GroupCall) => {
+      if (typeof window === 'undefined') return;
+      clearLocalMediaBootstrapTimers();
+      const kind = lastJoinKindRef.current ?? 'audio';
+      localMediaBootstrapTimerRefs.current = LOCAL_MEDIA_BOOTSTRAP_MS.map(
+        (delayMs) =>
+          window.setTimeout(() => {
+            if (groupCallRef.current !== gc) return;
+            void ensureLocalCallMediaPublished(gc, kind);
+          }, delayMs),
+      );
+    },
+    [clearLocalMediaBootstrapTimers],
+  );
+
   /** Stall detection: others in participant map but no remote userMedia CallFeed (WebRTC lag). */
   const evalRemoteMediaStall = useCallback(() => {
     const gc = groupCallRef.current;
@@ -1281,6 +1387,7 @@ export function useSpaceGroupCall(
       if (remoteMediaGapSinceRef.current == null) {
         remoteMediaGapSinceRef.current = now;
       }
+      scheduleLocalMediaBootstrap(gc);
       const waitedMs = now - remoteMediaGapSinceRef.current;
       if (
         waitedMs >= REMOTE_MEDIA_STALL_MS &&
@@ -1318,7 +1425,7 @@ export function useSpaceGroupCall(
       }
       setRemoteMediaStall(false);
     }
-  }, [client, roomId, inCallUserIdsFromGroupCall]);
+  }, [client, roomId, inCallUserIdsFromGroupCall, scheduleLocalMediaBootstrap]);
 
   const logDevMediaSnapshot = useCallback(() => {
     const gc = groupCallRef.current;
@@ -1434,6 +1541,7 @@ export function useSpaceGroupCall(
         evalRemoteMediaStall();
         /** Pairwise VoIP: roster changes can arrive after the internal nudge — retry outbound setup. */
         nudgeGroupCallPlaceOutgoing(gc);
+        scheduleLocalMediaBootstrap(gc);
       };
       gc.on(GroupCallEvent.ParticipantsChanged, onParticipantsChanged);
       const onFeedsMaybeParticipants = () => {
@@ -1441,6 +1549,9 @@ export function useSpaceGroupCall(
         updateParticipantCount();
         evalRemoteMediaStall();
         syncLocalScreenshareState(gc);
+        /** Local/remote feeds can appear after getUserMedia — re-publish and nudge peers. */
+        nudgeGroupCallPlaceOutgoing(gc);
+        scheduleLocalMediaBootstrap(gc);
       };
       gc.on(GroupCallEvent.UserMediaFeedsChanged, onFeedsMaybeParticipants);
       gc.on(GroupCallEvent.ScreenshareFeedsChanged, onFeedsMaybeParticipants);
@@ -1493,6 +1604,7 @@ export function useSpaceGroupCall(
       refreshLocalPreview,
       runCleanup,
       scheduleFeedBatched,
+      scheduleLocalMediaBootstrap,
       updateParticipantCount,
       evalRemoteMediaStall,
       syncLocalScreenshareState,
@@ -1842,22 +1954,15 @@ export function useSpaceGroupCall(
         // keep the call connected if browser denies advanced audio constraints
       }
       /**
-       * Voice→video: request camera explicitly after the post-enter voice preset step.
-       * `applyVoiceProcessingPresetToGroupCall()` can replace local streams, so running
-       * camera recovery after that avoids settling in an audio-only stream on direct
-       * video joins.
+       * Voice preset replaces the local audio stream; confirm mic/camera tracks
+       * are live and retry pairwise call placement so remote peers receive A/V.
        */
-      if (kind === 'video') {
-        try {
-          if (gc.isLocalVideoMuted() || !getLiveLocalVideoTrack(gc)) {
-            await gc.setLocalVideoMuted(false);
-          }
-        } catch {
-          /* camera permission / hardware — remain in call with video off */
-        }
+      try {
+        await ensureLocalCallMediaPublished(gc, kind);
+      } catch {
+        /* best-effort local media bootstrap */
       }
 
-      nudgeGroupCallPlaceOutgoing(gc);
       if (typeof window !== 'undefined') {
         if (placeOutgoingNudgeTimerRef.current != null) {
           clearTimeout(placeOutgoingNudgeTimerRef.current);
@@ -1865,7 +1970,7 @@ export function useSpaceGroupCall(
         placeOutgoingNudgeTimerRef.current = window.setTimeout(() => {
           placeOutgoingNudgeTimerRef.current = null;
           if (groupCallRef.current !== gc) return;
-          nudgeGroupCallPlaceOutgoing(gc);
+          void ensureLocalCallMediaPublished(gc, kind);
         }, PLACE_OUTGOING_DELAYED_MS);
         placeOutgoingRetryTimerRefs.current = PLACE_OUTGOING_RETRY_MS.map(
           (delayMs) =>
@@ -1874,6 +1979,7 @@ export function useSpaceGroupCall(
               nudgeGroupCallPlaceOutgoing(gc);
             }, delayMs),
         );
+        startLocalMediaBootstrapSeries(gc);
       }
 
       webRtcDiagCleanupRef.current?.();
@@ -1952,6 +2058,7 @@ export function useSpaceGroupCall(
       evalRemoteMediaStall,
       applyVoiceProcessingPresetToGroupCall,
       voiceProcessingPreset,
+      startLocalMediaBootstrapSeries,
     ],
   );
 
@@ -2000,6 +2107,17 @@ export function useSpaceGroupCall(
       const gc = groupCallRef.current;
       if (!gc) return;
       await gc.setMicrophoneMuted(muted);
+      if (!muted) {
+        nudgeGroupCallPlaceOutgoing(gc);
+        if (!(await waitForLiveLocalAudioTrack(gc))) {
+          try {
+            await recoverLocalMicrophoneFeed(gc);
+          } catch {
+            /* mic permission / hardware — remain in call with mic off */
+          }
+        }
+        nudgeGroupCallPlaceOutgoing(gc);
+      }
       setIsMicrophoneMuted(gc.isMicrophoneMuted());
       scheduleFeedBatched();
       window.setTimeout(scheduleFeedBatched, 350);
