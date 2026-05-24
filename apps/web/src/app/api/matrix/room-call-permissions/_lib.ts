@@ -149,7 +149,9 @@ export async function verifyMatrixMediaUriAccessible(params: {
   const parsed = parseMxcMediaUri(params.mediaUri.trim());
   if (!parsed) return false;
   const base = params.homeserverUrl.replace(/\/$/, '');
-  const url = `${base}/_matrix/media/v3/download/${encodeURIComponent(parsed.serverName)}/${encodeURIComponent(parsed.mediaId)}`;
+  const url = `${base}/_matrix/media/v3/download/${encodeURIComponent(
+    parsed.serverName,
+  )}/${encodeURIComponent(parsed.mediaId)}`;
   try {
     const response = await fetch(url, {
       method: 'GET',

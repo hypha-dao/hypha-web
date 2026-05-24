@@ -26,7 +26,9 @@ const MAX_RECORDING_UPLOAD_BYTES = 100 * 1024 * 1024;
 function normalizeTranscriptForIngest(text: string | undefined): string | null {
   const trimmed = text?.trim() ?? '';
   if (!trimmed) return null;
-  if (trimmed === '[No speech captured during this call. Capture session saved.]') {
+  if (
+    trimmed === '[No speech captured during this call. Capture session saved.]'
+  ) {
     return null;
   }
   return trimmed;
@@ -317,7 +319,10 @@ export async function POST(request: NextRequest) {
   }
 
   if (!hasRecordingBlob && hasClientMediaUri) {
-    const matrixContext = await resolveMatrixUploadContext(request, privyUserId);
+    const matrixContext = await resolveMatrixUploadContext(
+      request,
+      privyUserId,
+    );
     if (!matrixContext.ok) {
       return NextResponse.json(
         { error: matrixContext.error },
