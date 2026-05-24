@@ -105,11 +105,19 @@ const ROOM_CALL_PERMISSION_REPAIR_TIMEOUT_MS = 30_000;
 const VOICE_PROCESSING_PRESET_KEY = 'hypha-group-call-voice-processing-v1';
 const CALL_CAPTURE_NOTICE_BODY = 'Hypha call capture notice';
 
+export type SpaceGroupCallLaunchContext = {
+  signalTitle?: string;
+  signalSlug?: string;
+  threadRootEventId?: string;
+};
+
 export type SpaceGroupCallOptions = {
   authToken?: string | null;
   spaceSlug?: string | null;
   /** Fired after call recording/transcript artifacts are persisted successfully. */
   onCallArtifactsUploaded?: (params: { spaceSlug: string }) => void;
+  /** Optional launch context (signal title, thread root) for Space Memory display. */
+  getCallLaunchContext?: () => SpaceGroupCallLaunchContext | null;
 };
 export type SpaceGroupCallVoiceProcessingPreset =
   | 'standard'
@@ -256,6 +264,7 @@ export function useSpaceGroupCall(
     authToken = null,
     spaceSlug = null,
     onCallArtifactsUploaded,
+    getCallLaunchContext,
   } = options;
   const latestAuthTokenRef = useRef<string | null>(authToken?.trim() || null);
   const latestSpaceSlugRef = useRef<string | null>(spaceSlug?.trim() || null);
@@ -266,6 +275,7 @@ export function useSpaceGroupCall(
     roomId: string;
   } | null>(null);
   const onCallArtifactsUploadedRef = useRef(onCallArtifactsUploaded);
+  const getCallLaunchContextRef = useRef(getCallLaunchContext);
 
   const [callState, setCallState] = useState<SpaceGroupCallState>('idle');
   const [errorCode, setErrorCode] = useState<SpaceGroupCallErrorCode | null>(
@@ -424,6 +434,10 @@ export function useSpaceGroupCall(
   useEffect(() => {
     onCallArtifactsUploadedRef.current = onCallArtifactsUploaded;
   }, [onCallArtifactsUploaded]);
+
+  useEffect(() => {
+    getCallLaunchContextRef.current = getCallLaunchContext;
+  }, [getCallLaunchContext]);
 
   useEffect(() => {
     captureModeRef.current = captureMode;
@@ -777,6 +791,11 @@ export function useSpaceGroupCall(
         const transcriptText = await runtime.stopTranscript();
         const sessionId = callSessionId ?? newCallSessionId();
         const normalizedTranscript = transcriptText.trim();
+        const launchContext =
+          getCallLaunchContextRef.current?.() ??
+          (threadContext?.threadRootEventId
+            ? { threadRootEventId: threadContext.threadRootEventId }
+            : null);
         const uploadTranscriptOnly = async () => {
           if (!normalizedTranscript) return;
           await uploadRecordedCallArtifact({
@@ -788,6 +807,7 @@ export function useSpaceGroupCall(
             startedAt: runtime.startedAt,
             endedAt,
             matrixClient: client,
+            launchContext: launchContext ?? undefined,
           });
         };
         if (runtime.mode === 'transcript_only') {
@@ -839,6 +859,7 @@ export function useSpaceGroupCall(
                 startedAt: runtime.startedAt,
                 endedAt,
                 matrixClient: client,
+                launchContext: launchContext ?? undefined,
               });
               if (
                 recordingFinalizeGenerationRef.current === cleanupGeneration &&

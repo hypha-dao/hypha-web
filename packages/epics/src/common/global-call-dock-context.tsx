@@ -103,6 +103,12 @@ function readCallResumeSnapshot(): CallResumeSnapshot | null {
   }
 }
 
+type CallLaunchContext = {
+  signalTitle?: string;
+  signalSlug?: string;
+  threadRootEventId?: string;
+};
+
 type GlobalCallDockContextValue = ReturnType<typeof useGlobalCallDockValue>;
 
 const GlobalCallDockContext =
@@ -131,6 +137,7 @@ function useGlobalCallDockValue() {
   const [dockModeHydrated, setDockModeHydrated] = React.useState(false);
   const restoreInProgressRef = React.useRef(false);
   const restoreTimerRef = React.useRef<number | null>(null);
+  const callLaunchContextRef = React.useRef<CallLaunchContext | null>(null);
 
   const onCallArtifactsUploaded = React.useCallback(
     ({ spaceSlug: slug }: { spaceSlug: string }) => {
@@ -143,6 +150,7 @@ function useGlobalCallDockValue() {
     authToken: activeAuthToken,
     spaceSlug: activeSpaceSlug,
     onCallArtifactsUploaded,
+    getCallLaunchContext: () => callLaunchContextRef.current,
   });
 
   const inSession =
@@ -314,9 +322,15 @@ function useGlobalCallDockValue() {
       spaceSlug?: string | null,
       threadRootEventId?: string,
       authToken?: string | null,
+      launchContext?: CallLaunchContext | null,
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
+      callLaunchContextRef.current = launchContext?.signalTitle?.trim()
+        ? launchContext
+        : threadRootEventId?.trim()
+        ? { threadRootEventId: threadRootEventId.trim() }
+        : null;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
       const targetAuthToken = authToken?.trim() || boundAuthToken;
       if (activeRoomId !== targetRoomId) {
@@ -344,9 +358,15 @@ function useGlobalCallDockValue() {
       spaceSlug?: string | null,
       threadRootEventId?: string,
       authToken?: string | null,
+      launchContext?: CallLaunchContext | null,
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
+      callLaunchContextRef.current = launchContext?.signalTitle?.trim()
+        ? launchContext
+        : threadRootEventId?.trim()
+        ? { threadRootEventId: threadRootEventId.trim() }
+        : null;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
       const targetAuthToken = authToken?.trim() || boundAuthToken;
       if (activeRoomId !== targetRoomId) {

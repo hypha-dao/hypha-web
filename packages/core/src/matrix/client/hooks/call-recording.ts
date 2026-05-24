@@ -813,6 +813,7 @@ export async function uploadRecordedCallArtifact({
   startedAt,
   endedAt,
   matrixClient,
+  launchContext,
 }: {
   authToken: string;
   spaceSlug: string;
@@ -824,6 +825,11 @@ export async function uploadRecordedCallArtifact({
   startedAt?: string;
   endedAt?: string;
   matrixClient?: MatrixSdk.MatrixClient | null;
+  launchContext?: {
+    signalTitle?: string;
+    signalSlug?: string;
+    threadRootEventId?: string;
+  };
 }) {
   const resolvedMimeType = mimeType || blob?.type?.trim() || 'video/webm';
   let uploadedMediaUri: string | null = null;
@@ -872,6 +878,16 @@ export async function uploadRecordedCallArtifact({
   }
   if (startedAt) form.set('started_at', startedAt);
   if (endedAt) form.set('ended_at', endedAt);
+  if (launchContext?.signalTitle?.trim()) {
+    form.set('signal_title', launchContext.signalTitle.trim());
+    form.set('context_title', launchContext.signalTitle.trim());
+  }
+  if (launchContext?.signalSlug?.trim()) {
+    form.set('signal_slug', launchContext.signalSlug.trim());
+  }
+  if (launchContext?.threadRootEventId?.trim()) {
+    form.set('thread_root_event_id', launchContext.threadRootEventId.trim());
+  }
   if (transcriptText?.trim())
     form.set('transcript_text', transcriptText.trim());
 

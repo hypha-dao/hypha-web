@@ -1138,12 +1138,54 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'connecting';
 
   const handleCallAudio = useCallback(() => {
-    void startAudioForRoom(roomId, spaceSlug ?? null, undefined, authToken);
-  }, [authToken, startAudioForRoom, roomId, spaceSlug]);
+    const launchContext =
+      mode === 'coherence' && coherenceTitle?.trim()
+        ? {
+            signalTitle: coherenceTitle.trim(),
+            signalSlug: coherenceSlug?.trim() || undefined,
+          }
+        : undefined;
+    void startAudioForRoom(
+      roomId,
+      spaceSlug ?? null,
+      undefined,
+      authToken,
+      launchContext,
+    );
+  }, [
+    authToken,
+    coherenceSlug,
+    coherenceTitle,
+    mode,
+    startAudioForRoom,
+    roomId,
+    spaceSlug,
+  ]);
 
   const handleCallVideo = useCallback(() => {
-    void startVideoForRoom(roomId, spaceSlug ?? null, undefined, authToken);
-  }, [authToken, startVideoForRoom, roomId, spaceSlug]);
+    const launchContext =
+      mode === 'coherence' && coherenceTitle?.trim()
+        ? {
+            signalTitle: coherenceTitle.trim(),
+            signalSlug: coherenceSlug?.trim() || undefined,
+          }
+        : undefined;
+    void startVideoForRoom(
+      roomId,
+      spaceSlug ?? null,
+      undefined,
+      authToken,
+      launchContext,
+    );
+  }, [
+    authToken,
+    coherenceSlug,
+    coherenceTitle,
+    mode,
+    startVideoForRoom,
+    roomId,
+    spaceSlug,
+  ]);
 
   const handleCallLeave = useCallback(() => {
     void leaveSpaceCall();
