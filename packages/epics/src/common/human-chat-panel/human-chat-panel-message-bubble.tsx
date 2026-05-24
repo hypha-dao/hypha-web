@@ -1111,14 +1111,14 @@ function splitPlainTextMatrixMentions(
 }
 
 /**
- * Discord-like mention: soft fill, **no ring**, minimal horizontal padding so the box hugs `@name`.
+ * Discord-like mention: soft outline + light fill so pills stay readable on accent rows.
  */
 function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
   return cn(
-    'inline-flex min-h-[1.35em] w-fit max-w-full min-w-0 items-center self-baseline rounded px-1 py-0 text-[13px] font-semibold leading-snug tracking-tight',
+    'inline-flex min-h-[1.35em] w-fit max-w-full min-w-0 items-center self-baseline rounded px-1 py-0 text-[13px] font-medium leading-snug tracking-tight',
     onViewerMentionTintRow
-      ? 'bg-accent-9/22 text-foreground dark:bg-accent-9/28 dark:text-foreground'
-      : 'bg-muted/70 text-foreground dark:bg-muted/50 dark:text-foreground',
+      ? 'border border-accent-9/45 bg-accent-9/10 text-foreground ring-1 ring-inset ring-accent-9/18 dark:border-accent-10/50 dark:bg-accent-9/14 dark:ring-accent-10/22'
+      : 'border border-border/55 bg-background/30 text-foreground dark:border-border/60 dark:bg-background/20',
   );
 }
 
@@ -1322,10 +1322,7 @@ function MxidMentionPill({
   }
 
   return (
-    <span
-      title={fullMxid}
-      className={chatMentionPillClass(viewerMentionTintRow)}
-    >
+    <span className={chatMentionPillClass(viewerMentionTintRow)}>
       {displayLabel}
     </span>
   );
