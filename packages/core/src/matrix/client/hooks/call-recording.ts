@@ -903,7 +903,11 @@ export async function uploadRecordedCallArtifactWithRetry(
   input: Parameters<typeof uploadRecordedCallArtifact>[0],
 ): Promise<Awaited<ReturnType<typeof uploadRecordedCallArtifact>>> {
   let lastError: unknown;
-  for (let attempt = 1; attempt <= CALL_RECORDING_UPLOAD_MAX_ATTEMPTS; attempt++) {
+  for (
+    let attempt = 1;
+    attempt <= CALL_RECORDING_UPLOAD_MAX_ATTEMPTS;
+    attempt++
+  ) {
     try {
       return await uploadRecordedCallArtifact(input);
     } catch (error) {

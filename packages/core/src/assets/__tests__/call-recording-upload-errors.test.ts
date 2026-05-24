@@ -1,8 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE,
-} from '../call-recording-constants';
+import { CALL_RECORDING_UPLOADTHING_MAX_FILE_SIZE } from '../call-recording-constants';
 import {
   classifyCallRecordingUploadError,
   formatCallRecordingUploadFailureMessage,
@@ -21,7 +19,9 @@ describe('classifyCallRecordingUploadError', () => {
 
   it('classifies UploadThing storage quota errors', () => {
     const failure = classifyCallRecordingUploadError(
-      new Error('Storage quota exceeded. Upgrade your plan to upload more files.'),
+      new Error(
+        'Storage quota exceeded. Upgrade your plan to upload more files.',
+      ),
     );
     expect(failure.kind).toBe('storage_quota');
     expect(failure.message).toContain('storage quota');
@@ -37,7 +37,9 @@ describe('classifyCallRecordingUploadError', () => {
   });
 
   it('falls back to unknown for unrecognized errors', () => {
-    const failure = classifyCallRecordingUploadError(new Error('something odd'));
+    const failure = classifyCallRecordingUploadError(
+      new Error('something odd'),
+    );
     expect(failure.kind).toBe('unknown');
     expect(failure.rawMessage).toBe('something odd');
   });
@@ -89,9 +91,11 @@ describe('uploadCallRecordingBlob smoke', () => {
   it('surfaces a friendly quota message when UploadThing rejects storage', async () => {
     vi.doMock('uploadthing/client', () => ({
       genUploader: () => ({
-        uploadFiles: vi.fn().mockRejectedValue(
-          new Error('Storage quota exceeded. Upgrade your plan.'),
-        ),
+        uploadFiles: vi
+          .fn()
+          .mockRejectedValue(
+            new Error('Storage quota exceeded. Upgrade your plan.'),
+          ),
       }),
     }));
 

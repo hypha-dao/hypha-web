@@ -42,7 +42,10 @@ export function isTrustedCallRecordingMediaUrl(url: string): boolean {
   }
 }
 
-export function objectStorageUriMatchesKey(url: string, storageKey: string): boolean {
+export function objectStorageUriMatchesKey(
+  url: string,
+  storageKey: string,
+): boolean {
   const key = storageKey.trim();
   if (!key) return false;
   try {
@@ -60,7 +63,11 @@ export function computeCallRecordingDurationSeconds(
 ): number | null {
   const startMs = startedAt ? Date.parse(startedAt) : Number.NaN;
   const endMs = endedAt ? Date.parse(endedAt) : Number.NaN;
-  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+  if (
+    !Number.isFinite(startMs) ||
+    !Number.isFinite(endMs) ||
+    endMs <= startMs
+  ) {
     return null;
   }
   return Math.round((endMs - startMs) / 1000);

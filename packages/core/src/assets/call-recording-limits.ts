@@ -37,8 +37,7 @@ export function estimateCallRecordingBytes(
   hasVideo: boolean,
 ): number {
   const safeSeconds = Math.max(0, elapsedSeconds);
-  const audioBytes =
-    (CALL_RECORDING_AUDIO_BITS_PER_SECOND * safeSeconds) / 8;
+  const audioBytes = (CALL_RECORDING_AUDIO_BITS_PER_SECOND * safeSeconds) / 8;
   const videoBytes = hasVideo
     ? (CALL_RECORDING_VIDEO_BITS_PER_SECOND * safeSeconds) / 8
     : 0;
@@ -69,8 +68,7 @@ export function evaluateCallRecordingCaptureLimits(params: {
     CALL_RECORDING_MAX_FILE_SIZE_BYTES - estimatedBytes,
   );
 
-  const durationRatio =
-    elapsedSeconds / CALL_RECORDING_TARGET_DURATION_SECONDS;
+  const durationRatio = elapsedSeconds / CALL_RECORDING_TARGET_DURATION_SECONDS;
   const sizeRatio = estimatedBytes / CALL_RECORDING_MAX_FILE_SIZE_BYTES;
 
   let level: CallRecordingLimitLevel = 'ok';

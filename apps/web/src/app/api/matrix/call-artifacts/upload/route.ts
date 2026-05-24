@@ -245,11 +245,7 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
-  if (
-    hasClientObjectStorageUri &&
-    clientMediaUri.length > 0 &&
-    !storageKey
-  ) {
+  if (hasClientObjectStorageUri && clientMediaUri.length > 0 && !storageKey) {
     return NextResponse.json(
       { error: 'storage_key is required with object storage media_uri' },
       { status: 400 },
@@ -323,15 +319,17 @@ export async function POST(request: NextRequest) {
   }
 
   if (!linkedRoom) {
-    // Do not block artifact ingestion when room linkage metadata is stale.
-    // We still require an authenticated user with access to the target space.
-    logCallArtifactsUpload('space_room_mismatch_bypassed', {
+    logCallArtifactsUpload('space_room_mismatch_rejected', {
       spaceSlug,
       resolvedSpaceSlug: targetSpaceSlug,
       roomId,
       callSessionId,
       spaceChatRoomId: space.chatRoomId,
     });
+    return NextResponse.json(
+      { error: 'room_id is not linked to this space' },
+      { status: 403 },
+    );
   }
 
   const existingRecording = await getSpaceCallRecordingBySessionId(
@@ -622,5 +620,8 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  return NextResponse.json({ error: 'Unsupported call artifact upload' }, { status: 400 });
+  return NextResponse.json(
+    { error: 'Unsupported call artifact upload' },
+    { status: 400 },
+  );
 }

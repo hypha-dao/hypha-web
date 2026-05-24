@@ -52,7 +52,9 @@ type HumanChatPanelCallBannerProps = {
   onStopCapture: () => void;
   recordingStatus: SpaceGroupCallRecordingStatus;
   recordingError: string | null;
-  recordingWarning?: import('@hypha-platform/core/client').CallRecordingCaptureWarning | null;
+  recordingWarning?:
+    | import('@hypha-platform/core/client').CallRecordingCaptureWarning
+    | null;
   canRetryRecordingUpload?: boolean;
   onRetryRecordingUpload?: () => void;
   captureConsent: SpaceGroupCallCaptureConsent | null;

@@ -612,7 +612,7 @@ export function SpaceMemoryTimelineItem({
             target="_blank"
             rel="noopener noreferrer"
             className={linkClass}
-            aria-label={openLabel}
+            aria-label={isCallRecording ? openLinkLabel : openLabel}
           >
             <div className={cn(THUMB_SHELL, 'aspect-[16/10]')}>
               {thumbPreview}

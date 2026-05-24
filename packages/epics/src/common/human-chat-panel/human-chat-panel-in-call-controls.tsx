@@ -499,10 +499,7 @@ export function HumanChatPanelInCallControls({
                   capturePreferenceSelected &&
                   capturePreference === 'transcript_only'
                 }
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  selectCapturePreference('transcript_only');
-                }}
+                onClick={() => selectCapturePreference('transcript_only')}
                 className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
               >
                 <span className="inline-flex items-center gap-2">

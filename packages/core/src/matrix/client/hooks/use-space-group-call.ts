@@ -820,7 +820,7 @@ export function useSpaceGroupCall(
         if (options?.blob) {
           downloadCallRecordingBackup(
             options.blob,
-            options.pending?.callSessionId ?? sessionId,
+            options.pending?.callSessionId ?? callSessionId ?? 'recording',
             options.pending?.mimeType ?? runtime.mimeType,
           );
         }
@@ -2322,7 +2322,9 @@ export function useSpaceGroupCall(
       );
       setRecordingStatus('error');
       setRecordingError(
-        `${error instanceof Error ? error.message : String(error)} A copy was saved to your downloads folder — use Retry upload.`,
+        `${
+          error instanceof Error ? error.message : String(error)
+        } A copy was saved to your downloads folder — use Retry upload.`,
       );
     }
   }, []);
