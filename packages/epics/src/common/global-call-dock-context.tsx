@@ -1,7 +1,11 @@
 'use client';
 
 import React from 'react';
-import { useSpaceGroupCall } from '@hypha-platform/core/client';
+import {
+  setGroupCallSessionActive,
+  useSpaceGroupCall,
+} from '@hypha-platform/core/client';
+import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
 
 type PendingJoin = {
   kind: 'audio' | 'video';
@@ -102,6 +106,12 @@ function readCallResumeSnapshot(): CallResumeSnapshot | null {
   }
 }
 
+type CallLaunchContext = {
+  signalTitle?: string;
+  signalSlug?: string;
+  threadRootEventId?: string;
+};
+
 type GlobalCallDockContextValue = ReturnType<typeof useGlobalCallDockValue>;
 
 const GlobalCallDockContext =
@@ -130,10 +140,20 @@ function useGlobalCallDockValue() {
   const [dockModeHydrated, setDockModeHydrated] = React.useState(false);
   const restoreInProgressRef = React.useRef(false);
   const restoreTimerRef = React.useRef<number | null>(null);
+  const callLaunchContextRef = React.useRef<CallLaunchContext | null>(null);
+
+  const onCallArtifactsUploaded = React.useCallback(
+    ({ spaceSlug: slug }: { spaceSlug: string }) => {
+      void revalidateSpaceMemoryOrg(slug);
+    },
+    [],
+  );
 
   const call = useSpaceGroupCall(activeRoomId, {
     authToken: activeAuthToken,
     spaceSlug: activeSpaceSlug,
+    onCallArtifactsUploaded,
+    getCallLaunchContext: () => callLaunchContextRef.current,
   });
 
   const inSession =
@@ -154,8 +174,10 @@ function useGlobalCallDockValue() {
       spaceSlug: string | null,
       authToken?: string | null,
     ) => {
-      if (!roomId && !inSessionRef.current && restoreInProgressRef.current) {
-        return;
+      if (!roomId) {
+        if (inSessionRef.current || restoreInProgressRef.current) {
+          return;
+        }
       }
       if (roomId) {
         restoreInProgressRef.current = false;
@@ -181,10 +203,27 @@ function useGlobalCallDockValue() {
   }, [inSession, boundAuthToken, boundRoomId, boundSpaceSlug]);
 
   React.useEffect(() => {
-    if (call.callState === 'idle') {
+    if (!activeRoomId || !boundRoomId || activeRoomId !== boundRoomId) return;
+    if (activeSpaceSlug !== boundSpaceSlug) {
+      setActiveSpaceSlug(boundSpaceSlug);
+    }
+    if (activeAuthToken !== boundAuthToken) {
+      setActiveAuthToken(boundAuthToken);
+    }
+  }, [
+    activeAuthToken,
+    activeRoomId,
+    activeSpaceSlug,
+    boundAuthToken,
+    boundRoomId,
+    boundSpaceSlug,
+  ]);
+
+  React.useEffect(() => {
+    if (call.callState === 'idle' && call.recordingStatus !== 'uploading') {
       setDockMode('thumbnail');
     }
-  }, [call.callState]);
+  }, [call.callState, call.recordingStatus]);
 
   React.useEffect(() => {
     const snapshot = readCallResumeSnapshot();
@@ -210,6 +249,7 @@ function useGlobalCallDockValue() {
   }, []);
 
   React.useEffect(() => {
+    if (restoreInProgressRef.current) return;
     setDockMode(readDockModeFromStorage());
     setDockModeHydrated(true);
   }, []);
@@ -285,17 +325,25 @@ function useGlobalCallDockValue() {
       roomId: string | null | undefined,
       spaceSlug?: string | null,
       threadRootEventId?: string,
+      authToken?: string | null,
+      launchContext?: CallLaunchContext | null,
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
+      callLaunchContextRef.current = launchContext?.signalTitle?.trim()
+        ? launchContext
+        : threadRootEventId?.trim()
+        ? { threadRootEventId: threadRootEventId.trim() }
+        : null;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
+      const targetAuthToken = authToken?.trim() || boundAuthToken;
       if (activeRoomId !== targetRoomId) {
         setBoundRoomId(targetRoomId);
         setBoundSpaceSlug(targetSpaceSlug);
-        setBoundAuthToken(boundAuthToken);
+        setBoundAuthToken(targetAuthToken);
         setActiveRoomId(targetRoomId);
         setActiveSpaceSlug(targetSpaceSlug);
-        setActiveAuthToken(boundAuthToken);
+        setActiveAuthToken(targetAuthToken);
         setPendingJoin({
           kind: 'audio',
           roomId: targetRoomId,
@@ -313,17 +361,25 @@ function useGlobalCallDockValue() {
       roomId: string | null | undefined,
       spaceSlug?: string | null,
       threadRootEventId?: string,
+      authToken?: string | null,
+      launchContext?: CallLaunchContext | null,
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
+      callLaunchContextRef.current = launchContext?.signalTitle?.trim()
+        ? launchContext
+        : threadRootEventId?.trim()
+        ? { threadRootEventId: threadRootEventId.trim() }
+        : null;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
+      const targetAuthToken = authToken?.trim() || boundAuthToken;
       if (activeRoomId !== targetRoomId) {
         setBoundRoomId(targetRoomId);
         setBoundSpaceSlug(targetSpaceSlug);
-        setBoundAuthToken(boundAuthToken);
+        setBoundAuthToken(targetAuthToken);
         setActiveRoomId(targetRoomId);
         setActiveSpaceSlug(targetSpaceSlug);
-        setActiveAuthToken(boundAuthToken);
+        setActiveAuthToken(targetAuthToken);
         setPendingJoin({
           kind: 'video',
           roomId: targetRoomId,
@@ -336,7 +392,14 @@ function useGlobalCallDockValue() {
     [activeRoomId, boundAuthToken, call],
   );
 
-  const showFloatingDock = inSession;
+  const showFloatingDock = inSession || call.recordingStatus === 'uploading';
+
+  React.useEffect(() => {
+    setGroupCallSessionActive(showFloatingDock);
+    return () => {
+      setGroupCallSessionActive(false);
+    };
+  }, [showFloatingDock]);
 
   return {
     bindRoomContext,

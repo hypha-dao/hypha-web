@@ -87,6 +87,7 @@ export async function GET(
         assetsPageSize,
         assetsSearch,
         requestUrlForSessionMatrix: request.url,
+        assetView: 'full',
       },
       { db, authToken: bearer },
     );

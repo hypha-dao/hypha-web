@@ -4,7 +4,11 @@
  */
 export type OrgMemoryAssetKeyPayload =
   | { k: 'p'; d: number; u: string }
-  | { k: 'm'; r: string; e: string; x: string };
+  | { k: 'mem'; d: number; u?: string }
+  | { k: 'm'; r: string; e: string; x: string }
+  | { k: 'cr'; i: number }
+  | { k: 'ct'; i: number }
+  | { k: 'ds'; i: number };
 
 function uint8ToBinaryString(bytes: Uint8Array): string {
   const chunk = 0x8000;
@@ -58,6 +62,11 @@ export function parseOrgMemoryAssetKey(
   if (o.k === 'p' && typeof o.d === 'number' && typeof o.u === 'string') {
     return { k: 'p', d: o.d, u: o.u };
   }
+  if (o.k === 'mem' && typeof o.d === 'number') {
+    return typeof o.u === 'string' && o.u.trim()
+      ? { k: 'mem', d: o.d, u: o.u }
+      : { k: 'mem', d: o.d };
+  }
   if (
     o.k === 'm' &&
     typeof o.r === 'string' &&
@@ -65,6 +74,30 @@ export function parseOrgMemoryAssetKey(
     typeof o.x === 'string'
   ) {
     return { k: 'm', r: o.r, e: o.e, x: o.x };
+  }
+  if (
+    o.k === 'cr' &&
+    typeof o.i === 'number' &&
+    Number.isInteger(o.i) &&
+    o.i > 0
+  ) {
+    return { k: 'cr', i: o.i };
+  }
+  if (
+    o.k === 'ct' &&
+    typeof o.i === 'number' &&
+    Number.isInteger(o.i) &&
+    o.i > 0
+  ) {
+    return { k: 'ct', i: o.i };
+  }
+  if (
+    o.k === 'ds' &&
+    typeof o.i === 'number' &&
+    Number.isInteger(o.i) &&
+    o.i > 0
+  ) {
+    return { k: 'ds', i: o.i };
   }
   return null;
 }

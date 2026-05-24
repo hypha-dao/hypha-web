@@ -1,6 +1,13 @@
 'use client';
 
-import { Fragment, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
@@ -45,6 +52,7 @@ import {
 import { ChatMessageRichText } from './parse-simple-matrix-html';
 import {
   matrixMemberDisplayLabelFromRoom,
+  matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
 } from './matrix-room-member-display';
 import {
@@ -1103,14 +1111,14 @@ function splitPlainTextMatrixMentions(
 }
 
 /**
- * Discord-like mention: soft fill, **no ring**, minimal horizontal padding so the box hugs `@name`.
+ * Discord-like mention: inline pill that stays on the text baseline (no float above).
  */
 function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
   return cn(
-    'inline-flex min-h-[1.35em] w-fit max-w-full min-w-0 items-center self-baseline rounded px-1 py-0 text-[13px] font-semibold leading-snug tracking-tight',
+    'mention-pill inline-block max-w-full align-baseline rounded px-1 py-0 text-[13px] font-medium leading-[inherit] whitespace-nowrap',
     onViewerMentionTintRow
-      ? 'bg-accent-9/22 text-foreground dark:bg-accent-9/28 dark:text-foreground'
-      : 'bg-muted/70 text-foreground dark:bg-muted/50 dark:text-foreground',
+      ? 'border border-accent-9/50 bg-background/95 text-foreground shadow-sm dark:border-accent-10/55 dark:bg-background/90'
+      : 'border border-border/70 bg-muted/95 text-foreground shadow-sm dark:border-border/65 dark:bg-muted/90',
   );
 }
 
@@ -1280,12 +1288,15 @@ function MxidMentionPill({
   viewerMentionTintRow: boolean;
 }) {
   const needsProfile = needsHyphaProfileForMatrixLabel(syncLabel, fullMxid);
+  const canonicalSub = needsProfile
+    ? matrixUserIdToCanonicalPrivySub(fullMxid) ?? undefined
+    : undefined;
   const { privyUserId: linkedSub, isLoading: loadingLink } =
     useUserPrivyIdByMatrixId({
-      matrixUserId: needsProfile ? fullMxid : undefined,
+      matrixUserId: needsProfile && !canonicalSub ? fullMxid : undefined,
     });
   const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: linkedSub,
+    sub: linkedSub ?? canonicalSub ?? undefined,
   });
 
   const displayLabel = useMemo(() => {
@@ -1296,7 +1307,8 @@ function MxidMentionPill({
   }, [person, syncLabel, fullMxid]);
 
   const loading =
-    needsProfile && (loadingLink || (Boolean(linkedSub) && loadingPerson));
+    needsProfile &&
+    (loadingLink || (Boolean(linkedSub ?? canonicalSub) && loadingPerson));
 
   if (loading) {
     return (
@@ -1310,10 +1322,7 @@ function MxidMentionPill({
   }
 
   return (
-    <span
-      title={fullMxid}
-      className={chatMentionPillClass(viewerMentionTintRow)}
-    >
+    <span className={chatMentionPillClass(viewerMentionTintRow)}>
       {displayLabel}
     </span>
   );
@@ -1480,6 +1489,9 @@ export function HumanChatPanelMessageBubble({
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+  const textBodyRef = useRef<HTMLDivElement>(null);
+  const [textExpanded, setTextExpanded] = useState(false);
+  const [textCanExpand, setTextCanExpand] = useState(false);
 
   /**
    * Use **unauthenticated** v3 media URLs for `<img>` and `<a target="_blank">`.
@@ -1539,19 +1551,34 @@ export function HumanChatPanelMessageBubble({
       replyTo.sourceUserId,
     );
 
+  const senderCanonicalSub =
+    resolveSenderProfile && message.senderMatrixId
+      ? matrixUserIdToCanonicalPrivySub(message.senderMatrixId) ?? undefined
+      : undefined;
+  const replyCanonicalSub =
+    resolveReplyProfile && replyTo?.sourceUserId
+      ? matrixUserIdToCanonicalPrivySub(replyTo.sourceUserId) ?? undefined
+      : undefined;
+
   const { privyUserId: senderPrivySub, isLoading: isLoadingSenderLink } =
     useUserPrivyIdByMatrixId({
-      matrixUserId: resolveSenderProfile ? message.senderMatrixId : undefined,
+      matrixUserId:
+        resolveSenderProfile && !senderCanonicalSub
+          ? message.senderMatrixId
+          : undefined,
     });
   const { privyUserId: replyPrivySub, isLoading: isLoadingReplyLink } =
     useUserPrivyIdByMatrixId({
-      matrixUserId: resolveReplyProfile ? replyTo?.sourceUserId : undefined,
+      matrixUserId:
+        resolveReplyProfile && !replyCanonicalSub
+          ? replyTo?.sourceUserId
+          : undefined,
     });
 
   const { person: senderPerson, isLoading: isLoadingSenderPerson } =
-    usePersonBySub({ sub: senderPrivySub });
+    usePersonBySub({ sub: senderPrivySub ?? senderCanonicalSub });
   const { person: replyPerson, isLoading: isLoadingReplyPerson } =
-    usePersonBySub({ sub: replyPrivySub });
+    usePersonBySub({ sub: replyPrivySub ?? replyCanonicalSub });
 
   const resolvedSenderName = useMemo(() => {
     if (message.role === 'user') {
@@ -1650,6 +1677,34 @@ export function HumanChatPanelMessageBubble({
   const messageRowRef = useRef<HTMLDivElement>(null);
   const replyAvatarMeasureRef = useRef<HTMLDivElement>(null);
   const mainAvatarMeasureRef = useRef<HTMLDivElement>(null);
+  const hasInlineMedia =
+    Boolean(message.media) ||
+    Boolean(message.mediaSlots && message.mediaSlots.length > 0);
+  const textBodyClassName = cn(
+    'text-sm leading-snug text-foreground',
+    hasInlineMedia ? 'mt-1' : 'mt-0',
+    !textExpanded && 'line-clamp-10',
+  );
+
+  useEffect(() => {
+    setTextExpanded(false);
+  }, [message.id, textContent, message.formattedContentHtml]);
+
+  useLayoutEffect(() => {
+    const el = textBodyRef.current;
+    if (!el || !textContent.trim()) {
+      setTextCanExpand(false);
+      return;
+    }
+    if (textExpanded) return;
+    const measure = () => {
+      setTextCanExpand(el.scrollHeight > el.clientHeight + 1);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [textContent, textExpanded, message.formattedContentHtml, hasInlineMedia]);
 
   const row = (moreSlot: ReactNode | null) => (
     <div
@@ -1807,15 +1862,10 @@ export function HumanChatPanelMessageBubble({
           {/* Message text above attachments (caption + media in one Matrix event) */}
           {textContent &&
             (message.formattedContentHtml ? (
-              <p
+              <div
+                ref={textBodyRef}
                 data-testid="chat-message-body"
-                className={cn(
-                  'text-sm leading-snug text-foreground',
-                  message.media ||
-                    (message.mediaSlots && message.mediaSlots.length > 0)
-                    ? 'mt-1'
-                    : 'mt-0',
-                )}
+                className={textBodyClassName}
               >
                 <ChatMessageRichText
                   html={message.formattedContentHtml}
@@ -1827,7 +1877,7 @@ export function HumanChatPanelMessageBubble({
                     )
                   }
                 />
-              </p>
+              </div>
             ) : jumboLayout.mode === 'jumbo' ? (
               <p
                 data-testid="chat-message-body"
@@ -1848,23 +1898,27 @@ export function HumanChatPanelMessageBubble({
                 ))}
               </p>
             ) : (
-              <p
+              <div
+                ref={textBodyRef}
                 data-testid="chat-message-body"
-                className={cn(
-                  'text-sm leading-snug text-foreground',
-                  message.media ||
-                    (message.mediaSlots && message.mediaSlots.length > 0)
-                    ? 'mt-1'
-                    : 'mt-0',
-                )}
+                className={textBodyClassName}
               >
                 {renderTextWithMentions(
                   textContent,
                   bodyResolveMx,
                   highlightMentionForViewer,
                 )}
-              </p>
+              </div>
             ))}
+          {textContent && textCanExpand && jumboLayout.mode !== 'jumbo' ? (
+            <button
+              type="button"
+              className="mt-1 w-fit text-xs font-medium text-accent-11 underline-offset-4 hover:underline"
+              onClick={() => setTextExpanded((v) => !v)}
+            >
+              {textExpanded ? t('messageShowLess') : t('messageReadMore')}
+            </button>
+          ) : null}
 
           {message.mediaSlots && message.mediaSlots.length > 1 && (
             <div
@@ -2278,6 +2332,7 @@ export function HumanChatPanelMessageBubble({
       onDeleteMessage={onDeleteMessage}
       currentUserId={currentUserId}
       senderMatrixId={message.senderMatrixId}
+      resolveMatrixMemberLabel={bodyResolveMx}
       message={{
         parts: message.parts,
         media: message.media,

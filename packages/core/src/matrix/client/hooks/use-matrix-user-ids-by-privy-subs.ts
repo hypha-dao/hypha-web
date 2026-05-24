@@ -8,6 +8,11 @@ import { getMatrixUserIdsByPrivySubsAction } from '../../server/actions';
 
 /** Stable fallback — `data ?? {}` was a new object each render and broke referential equality downstream. */
 const EMPTY_SUB_TO_MATRIX: Record<string, string> = {};
+const lastSubToMatrixByKey = new Map<string, Record<string, string>>();
+
+function subsCacheKey(subs: string[]): string {
+  return subs.join('\u0000');
+}
 
 export interface UseMatrixUserIdsByPrivySubsInput {
   /** Privy `sub` values from Hypha `Person.sub` (omit empty). */
@@ -48,14 +53,20 @@ export const useMatrixUserIdsByPrivySubs = ({
       for (const row of rows) {
         map[row.privyUserId] = row.matrixUserId;
       }
+      lastSubToMatrixByKey.set(subsCacheKey(a.privyUserIds), map);
       return map;
     },
     /** Avoid flashing Privy/Matrix technical locals when JWT refreshes or focus revalidation races. */
     { keepPreviousData: true },
   );
 
+  const cachedMap =
+    uniqueSorted.length > 0
+      ? lastSubToMatrixByKey.get(subsCacheKey(uniqueSorted))
+      : undefined;
+
   return {
-    subToMatrixUserId: data ?? EMPTY_SUB_TO_MATRIX,
+    subToMatrixUserId: data ?? cachedMap ?? EMPTY_SUB_TO_MATRIX,
     isLoading: isLoadingJwt || isLoading,
     error,
   };

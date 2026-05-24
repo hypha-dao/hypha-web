@@ -157,6 +157,7 @@ type HumanChatPanelMessagesProps = {
   /** Scroll this Matrix event id into view when set (e.g. mention inbox). */
   scrollTargetEventId?: string | null;
   onConsumedScrollTarget?: () => void;
+  onScrollTargetNotFound?: (eventId: string) => void;
 };
 
 export function HumanChatPanelMessages({
@@ -180,6 +181,7 @@ export function HumanChatPanelMessages({
   onMarkAsReadFromBanner,
   scrollTargetEventId,
   onConsumedScrollTarget,
+  onScrollTargetNotFound,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
   const formatter = useFormatter();
@@ -200,6 +202,9 @@ export function HumanChatPanelMessages({
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
   /** Avoid calling onConsumedScrollTarget repeatedly while scrollTargetEventId is unchanged. */
   const scrollTargetConsumedRef = useRef<string | null>(null);
+  /** Retry deep-link target lookup across timeline growth before falling back. */
+  const scrollTargetMissCountRef = useRef(0);
+  const scrollTargetMissHandledRef = useRef<string | null>(null);
 
   /** At most one floating action bar: pointer hover, or locked while that row's hover emoji picker is open. */
   const [hoverActionMessageId, setHoverActionMessageId] = useState<
@@ -271,6 +276,13 @@ export function HumanChatPanelMessages({
   useEffect(() => {
     if (!scrollTargetEventId) {
       scrollTargetConsumedRef.current = null;
+      scrollTargetMissCountRef.current = 0;
+      scrollTargetMissHandledRef.current = null;
+      return;
+    }
+    if (scrollTargetMissHandledRef.current !== scrollTargetEventId) {
+      scrollTargetMissCountRef.current = 0;
+      scrollTargetMissHandledRef.current = null;
     }
   }, [scrollTargetEventId]);
 
@@ -330,9 +342,26 @@ export function HumanChatPanelMessages({
       row.scrollIntoView({ block: 'center', behavior: 'smooth' });
       stickToBottomRef.current = false;
       scrollTargetConsumedRef.current = scrollTargetEventId;
+      scrollTargetMissCountRef.current = 0;
+      scrollTargetMissHandledRef.current = null;
       onConsumedScrollTarget?.();
+      return;
     }
-  }, [scrollTargetEventId, onConsumedScrollTarget, timelineRows.length]);
+
+    scrollTargetMissCountRef.current += 1;
+    if (
+      scrollTargetMissCountRef.current >= 12 &&
+      scrollTargetMissHandledRef.current !== scrollTargetEventId
+    ) {
+      scrollTargetMissHandledRef.current = scrollTargetEventId;
+      onScrollTargetNotFound?.(scrollTargetEventId);
+    }
+  }, [
+    scrollTargetEventId,
+    onConsumedScrollTarget,
+    onScrollTargetNotFound,
+    timelineRows.length,
+  ]);
 
   useEffect(() => {
     const root = containerRef.current;
@@ -360,9 +389,13 @@ export function HumanChatPanelMessages({
       {showUnreadBanner &&
       firstUnreadMeta.dateLabel &&
       firstUnreadMeta.timeLabel ? (
-        <div className="border-b border-border bg-primary px-3 py-2 text-primary-foreground shadow-sm">
+        <div
+          role="status"
+          aria-live="polite"
+          className="border-b border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_40%,transparent)] bg-[color:var(--color-accent-9,var(--space-accent,#4a65d8))] px-3 py-2 shadow-sm"
+        >
           <div className="flex items-start justify-between gap-2">
-            <p className="min-w-0 flex-1 text-xs font-medium leading-snug">
+            <p className="min-w-0 flex-1 text-xs font-medium leading-snug text-[color:var(--color-accent-contrast,#f8fafc)]">
               {unreadNotificationCount <= 0
                 ? t('unreadBannerSince', {
                     date: firstUnreadMeta.dateLabel,
@@ -383,7 +416,7 @@ export function HumanChatPanelMessages({
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 shrink-0 border-0 bg-primary-foreground/15 text-xs text-primary-foreground hover:bg-primary-foreground/25"
+              className="h-7 shrink-0 border-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_12%,transparent)] text-xs text-[color:var(--color-accent-contrast,#f8fafc)] hover:bg-[color:color-mix(in_srgb,var(--color-accent-contrast,#f8fafc)_22%,transparent)]"
               onClick={() => {
                 onMarkAsReadFromBanner?.();
               }}
