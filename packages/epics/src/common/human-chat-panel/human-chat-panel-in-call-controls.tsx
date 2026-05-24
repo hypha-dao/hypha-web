@@ -726,13 +726,6 @@ export function HumanChatPanelInCallControls({
           <p className={cn('mt-1 text-[11px] text-destructive')}>
             {recordingError}
           </p>
-        ) : !isCompact &&
-          captureMode === 'none' &&
-          !leaveOnly &&
-          !recordingError?.trim() ? (
-          <p className={cn('mt-1 text-[11px] text-muted-foreground')}>
-            {t('callCaptureOffHint')}
-          </p>
         ) : null}
       </div>
     </>
