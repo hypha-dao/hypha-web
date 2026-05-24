@@ -2580,8 +2580,10 @@
     "fullscreenLabel": "Plein écran",
     "exitFullscreenLabel": "Quitter le plein écran",
     "unknownMember": "Inconnu",
+    "resizeTopLeftLabel": "Redimensionner l'appel depuis le coin supérieur gauche",
     "resizeTopRightLabel": "Redimensionner l'appel depuis le coin supérieur droit",
     "resizeBottomLeftLabel": "Redimensionner l'appel depuis le coin inférieur gauche",
+    "resizeBottomRightLabel": "Redimensionner l'appel depuis le coin inférieur droit",
     "openFloatingWindowLabel": "Ouvrir la fenêtre d'appel flottante",
     "closeFloatingWindowLabel": "Fermer la fenêtre d'appel flottante"
   },

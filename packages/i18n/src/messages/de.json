@@ -2596,8 +2596,10 @@
     "fullscreenLabel": "Vollbild",
     "exitFullscreenLabel": "Vollbild beenden",
     "unknownMember": "Unbekannt",
+    "resizeTopLeftLabel": "Anruffenster über die obere linke Ecke skalieren",
     "resizeTopRightLabel": "Anruffenster über die obere rechte Ecke skalieren",
     "resizeBottomLeftLabel": "Anruffenster über die untere linke Ecke skalieren",
+    "resizeBottomRightLabel": "Anruffenster über die untere rechte Ecke skalieren",
     "openFloatingWindowLabel": "Schwebendes Anruffenster öffnen",
     "closeFloatingWindowLabel": "Schwebendes Anruffenster schließen"
   },

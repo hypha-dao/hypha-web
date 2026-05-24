@@ -46,7 +46,7 @@ type DockGeometry = {
   width: number;
   height: number;
 };
-type ResizeCorner = 'top-right' | 'bottom-left';
+type ResizeCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v1';
 const DOCK_MARGIN_PX = 16;
@@ -73,6 +73,113 @@ const DEFAULT_PANE_SPLIT: Record<CallFullViewPaneSplit, number> = {
   speakerOnTop: 0.28,
 };
 
+function applyCornerResize(
+  corner: ResizeCorner,
+  start: DockGeometry,
+  dx: number,
+  dy: number,
+): DockGeometry {
+  let { x, y, width, height } = start;
+
+  switch (corner) {
+    case 'top-left': {
+      const nextWidth = start.width - dx;
+      const nextHeight = start.height - dy;
+      x = start.x + (nextWidth - start.width);
+      y = start.y + (nextHeight - start.height);
+      width = nextWidth;
+      height = nextHeight;
+      break;
+    }
+    case 'top-right': {
+      const nextWidth = start.width + dx;
+      const nextHeight = start.height - dy;
+      x = start.x + (nextWidth - start.width);
+      y = start.y;
+      width = nextWidth;
+      height = nextHeight;
+      break;
+    }
+    case 'bottom-left': {
+      const nextWidth = start.width - dx;
+      const nextHeight = start.height + dy;
+      x = start.x;
+      y = start.y + (nextHeight - start.height);
+      width = nextWidth;
+      height = nextHeight;
+      break;
+    }
+    case 'bottom-right': {
+      width = start.width + dx;
+      height = start.height + dy;
+      break;
+    }
+  }
+
+  return clampDockGeometry({ x, y, width, height });
+}
+
+function DockResizeHandle({
+  corner,
+  ariaLabel,
+  onResizeStart,
+}: {
+  corner: ResizeCorner;
+  ariaLabel: string;
+  onResizeStart: (
+    corner: ResizeCorner,
+  ) => (e: React.PointerEvent<HTMLDivElement>) => void;
+}) {
+  const positionClass =
+    corner === 'top-left'
+      ? '-top-1 -left-1 cursor-nwse-resize'
+      : corner === 'top-right'
+      ? '-top-1 -right-1 cursor-nesw-resize'
+      : corner === 'bottom-left'
+      ? '-bottom-1 -left-1 cursor-nesw-resize'
+      : '-bottom-1 -right-1 cursor-nwse-resize';
+  const gripClass =
+    corner === 'top-left' || corner === 'bottom-right'
+      ? 'rotate-45'
+      : '-rotate-45';
+
+  return (
+    <div
+      data-no-dock-drag
+      onPointerDown={onResizeStart(corner)}
+      className={cn(
+        'absolute z-[3] flex h-5 w-5 touch-none items-center justify-center',
+        positionClass,
+      )}
+      aria-label={ariaLabel}
+      title={ariaLabel}
+    >
+      <div className="pointer-events-none relative h-3 w-3">
+        <span
+          className={cn(
+            'absolute block h-[1.5px] w-2 rounded bg-foreground/70',
+            corner === 'top-left' && 'left-0 top-[1px]',
+            corner === 'top-right' && 'right-0 top-[1px]',
+            corner === 'bottom-left' && 'left-0 top-[6px]',
+            corner === 'bottom-right' && 'right-0 top-[6px]',
+            gripClass,
+          )}
+        />
+        <span
+          className={cn(
+            'absolute block h-[1.5px] w-2 rounded bg-foreground/70',
+            corner === 'top-left' && 'left-[2px] top-[4px]',
+            corner === 'top-right' && 'right-[2px] top-[4px]',
+            corner === 'bottom-left' && 'left-[2px] top-[3px]',
+            corner === 'bottom-right' && 'right-[2px] top-[3px]',
+            gripClass,
+          )}
+        />
+      </div>
+    </div>
+  );
+}
+
 function getDockOffsetBounds(width: number, height: number) {
   if (typeof window === 'undefined') {
     return { minX: -1000, maxX: 0, minY: -1000, maxY: 0 };
@@ -85,22 +192,32 @@ function getDockOffsetBounds(width: number, height: number) {
 }
 
 function clampDockGeometry(next: DockGeometry): DockGeometry {
-  const maxWidth =
+  const viewportMaxWidth =
     typeof window === 'undefined'
-      ? DOCK_MIN_WIDTH
-      : Math.max(280, window.innerWidth - 2 * DOCK_MARGIN_PX);
-  const maxHeight =
+      ? DOCK_MAX_WIDTH
+      : Math.max(DOCK_MIN_WIDTH, window.innerWidth - 2 * DOCK_MARGIN_PX);
+  const viewportMaxHeight =
     typeof window === 'undefined'
-      ? DOCK_MIN_HEIGHT
-      : Math.max(180, window.innerHeight - 2 * DOCK_MARGIN_PX);
+      ? DOCK_MAX_HEIGHT
+      : Math.max(DOCK_MIN_HEIGHT, window.innerHeight - 2 * DOCK_MARGIN_PX);
+  const maxWidth = Math.min(DOCK_MAX_WIDTH, viewportMaxWidth);
+  const maxHeight = Math.min(DOCK_MAX_HEIGHT, viewportMaxHeight);
   const minWidth = Math.min(DOCK_MIN_WIDTH, maxWidth);
   const minHeight = Math.min(DOCK_MIN_HEIGHT, maxHeight);
   const safeWidth = Number.isFinite(next.width) ? next.width : minWidth;
   const safeHeight = Number.isFinite(next.height) ? next.height : minHeight;
   const safeX = Number.isFinite(next.x) ? next.x : 0;
   const safeY = Number.isFinite(next.y) ? next.y : 0;
-  const width = Math.min(Math.max(safeWidth, minWidth), maxWidth);
-  const height = Math.min(Math.max(safeHeight, minHeight), maxHeight);
+  let width = Math.min(Math.max(safeWidth, minWidth), maxWidth);
+  let height = Math.min(Math.max(safeHeight, minHeight), maxHeight);
+  const ratio = width / height;
+  if (ratio > DOCK_MAX_WIDTH_TO_HEIGHT) {
+    height = Math.max(minHeight, width / DOCK_MAX_WIDTH_TO_HEIGHT);
+  } else if (ratio < DOCK_MIN_WIDTH_TO_HEIGHT) {
+    width = Math.max(minWidth, height * DOCK_MIN_WIDTH_TO_HEIGHT);
+  }
+  width = Math.min(Math.max(width, minWidth), maxWidth);
+  height = Math.min(Math.max(height, minHeight), maxHeight);
   const bounds = getDockOffsetBounds(width, height);
   return {
     width,
@@ -391,33 +508,8 @@ export function GlobalCallDockOverlay() {
       if (!resize || e.pointerId !== resize.pointerId) return;
       const dx = e.clientX - resize.startX;
       const dy = e.clientY - resize.startY;
-      const start = resize.startGeometry;
-
-      if (resize.corner === 'top-right') {
-        const nextWidth = start.width + dx;
-        const nextHeight = start.height - dy;
-        const widthDelta = nextWidth - start.width;
-        setGeometry(
-          clampDockGeometry({
-            x: start.x + widthDelta,
-            y: start.y,
-            width: nextWidth,
-            height: nextHeight,
-          }),
-        );
-        return;
-      }
-
-      const nextWidth = start.width - dx;
-      const nextHeight = start.height + dy;
-      const heightDelta = nextHeight - start.height;
       setGeometry(
-        clampDockGeometry({
-          x: start.x,
-          y: start.y + heightDelta,
-          width: nextWidth,
-          height: nextHeight,
-        }),
+        applyCornerResize(resize.corner, resize.startGeometry, dx, dy),
       );
     };
 
@@ -632,30 +724,26 @@ export function GlobalCallDockOverlay() {
     >
       {!modeIsFullscreen && !inDocumentPip && (
         <>
-          <div
-            data-no-dock-drag
-            onPointerDown={onResizeStart('top-right')}
-            className="absolute -top-1 -right-1 z-[3] flex h-5 w-5 cursor-nesw-resize touch-none items-center justify-center"
-            aria-label={t('resizeTopRightLabel')}
-            title={t('resizeTopRightLabel')}
-          >
-            <div className="pointer-events-none relative h-3 w-3">
-              <span className="absolute right-0 top-[1px] block h-[1.5px] w-2 rotate-45 rounded bg-foreground/70" />
-              <span className="absolute right-[2px] top-[4px] block h-[1.5px] w-2 rotate-45 rounded bg-foreground/70" />
-            </div>
-          </div>
-          <div
-            data-no-dock-drag
-            onPointerDown={onResizeStart('bottom-left')}
-            className="absolute -bottom-1 -left-1 z-[3] flex h-5 w-5 cursor-nesw-resize touch-none items-center justify-center"
-            aria-label={t('resizeBottomLeftLabel')}
-            title={t('resizeBottomLeftLabel')}
-          >
-            <div className="pointer-events-none relative h-3 w-3">
-              <span className="absolute left-0 top-[6px] block h-[1.5px] w-2 -rotate-[135deg] rounded bg-foreground/70" />
-              <span className="absolute left-[2px] top-[3px] block h-[1.5px] w-2 -rotate-[135deg] rounded bg-foreground/70" />
-            </div>
-          </div>
+          <DockResizeHandle
+            corner="top-left"
+            ariaLabel={t('resizeTopLeftLabel')}
+            onResizeStart={onResizeStart}
+          />
+          <DockResizeHandle
+            corner="top-right"
+            ariaLabel={t('resizeTopRightLabel')}
+            onResizeStart={onResizeStart}
+          />
+          <DockResizeHandle
+            corner="bottom-left"
+            ariaLabel={t('resizeBottomLeftLabel')}
+            onResizeStart={onResizeStart}
+          />
+          <DockResizeHandle
+            corner="bottom-right"
+            ariaLabel={t('resizeBottomRightLabel')}
+            onResizeStart={onResizeStart}
+          />
         </>
       )}
       <div

@@ -2582,8 +2582,10 @@
     "fullscreenLabel": "Ecrã inteiro",
     "exitFullscreenLabel": "Sair do ecrã inteiro",
     "unknownMember": "Desconhecido",
+    "resizeTopLeftLabel": "Redimensionar chamada pelo canto superior esquerdo",
     "resizeTopRightLabel": "Redimensionar chamada pelo canto superior direito",
     "resizeBottomLeftLabel": "Redimensionar chamada pelo canto inferior esquerdo",
+    "resizeBottomRightLabel": "Redimensionar chamada pelo canto inferior direito",
     "openFloatingWindowLabel": "Abrir janela flutuante da chamada",
     "closeFloatingWindowLabel": "Fechar janela flutuante da chamada"
   },
