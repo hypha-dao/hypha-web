@@ -23,10 +23,10 @@ const callArtifactIngestSchema = z.object({
   transcript: z
     .object({
       language: z.string().trim().optional(),
-      text: z.string().trim().min(1),
-      summary: z.string().trim().optional(),
+      text: z.string().trim().min(1).max(500_000),
+      summary: z.string().trim().max(50_000).optional(),
       source: z.string().trim().optional(),
-      segments: z.array(z.record(z.string(), z.unknown())).optional(),
+      segments: z.array(z.record(z.string(), z.unknown())).max(5000).optional(),
       metadata: z.record(z.string(), z.unknown()).optional(),
     })
     .optional(),
