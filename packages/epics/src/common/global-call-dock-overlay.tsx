@@ -4,8 +4,8 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import {
+  ArrowUpRight,
   Expand,
-  ExternalLink,
   Loader2,
   Maximize2,
   Minimize2,
@@ -36,6 +36,7 @@ import {
 } from './human-chat-panel';
 import { matrixMemberDisplayLabelFromRoom } from './human-chat-panel/matrix-room-member-display';
 import { useGlobalCallDock } from './global-call-dock-context';
+import { useHumanChatPanel } from './human-chat-panel-context';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallDockDocumentPip } from './use-call-dock-document-pip';
 import { useCallDocumentKeepalive } from './use-call-document-keepalive';
@@ -73,6 +74,25 @@ const DEFAULT_PANE_SPLIT: Record<CallFullViewPaneSplit, number> = {
   filmstrip: 0.72,
   speakerOnTop: 0.28,
 };
+const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
+
+function readCallSpaceSlug(
+  activeSpaceSlug: string | null,
+  activeRoomId: string | null,
+): string | null {
+  const fromState = activeSpaceSlug?.trim();
+  if (fromState) return fromState;
+  if (!activeRoomId?.trim() || typeof window === 'undefined') return null;
+  try {
+    return (
+      window.sessionStorage
+        .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${activeRoomId.trim()}`)
+        ?.trim() || null
+    );
+  } catch {
+    return null;
+  }
+}
 
 function applyCornerResize(
   corner: ResizeCorner,
@@ -293,6 +313,7 @@ export function GlobalCallDockOverlay() {
   const tCapture = useTranslations('HumanChatPanel');
   const router = useRouter();
   const pathname = usePathname() ?? '';
+  const { openHumanChatPanel, closeCoherenceChat } = useHumanChatPanel();
   const { client } = useMatrix();
   const { person: me } = useMe();
   const {
@@ -648,9 +669,44 @@ export function GlobalCallDockOverlay() {
     [activeRoomId, client, currentUserDisplayName, currentUserId, t],
   );
   const locale = React.useMemo(() => getLocaleFromPath(pathname), [pathname]);
-  const callSpaceHref = activeSpaceSlug
-    ? `/${locale}/dho/${activeSpaceSlug}/coherence`
+  const callSpaceSlug = React.useMemo(
+    () => readCallSpaceSlug(activeSpaceSlug, activeRoomId),
+    [activeRoomId, activeSpaceSlug],
+  );
+  const callSpaceHref = callSpaceSlug
+    ? `/${locale}/dho/${callSpaceSlug}/coherence`
     : null;
+
+  const onOpenCallSpace = React.useCallback(() => {
+    if (!callSpaceHref) return;
+
+    if (isDocumentPipOpen) {
+      closePip();
+    }
+    window.focus();
+
+    closeCoherenceChat();
+
+    const normalizedPath = (pathname.split('?')[0] ?? '').replace(/\/$/, '');
+    const normalizedHref = callSpaceHref.replace(/\/$/, '');
+    const alreadyOnCallSpacePage = normalizedPath === normalizedHref;
+
+    if (alreadyOnCallSpacePage) {
+      openHumanChatPanel();
+      return;
+    }
+
+    router.push(callSpaceHref);
+    openHumanChatPanel();
+  }, [
+    callSpaceHref,
+    closeCoherenceChat,
+    closePip,
+    isDocumentPipOpen,
+    openHumanChatPanel,
+    pathname,
+    router,
+  ]);
 
   if (!showFloatingDock || !activeRoomId) return null;
 
@@ -776,15 +832,18 @@ export function GlobalCallDockOverlay() {
           <button
             type="button"
             data-no-dock-drag
-            onClick={() => router.push(callSpaceHref)}
+            onClick={onOpenCallSpace}
             className={cn(
-              'inline-flex items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted',
-              dockCompact ? 'h-6 w-6' : 'h-7 w-7',
+              'inline-flex items-center rounded-md border border-border/60 bg-background hover:bg-muted',
+              dockCompact
+                ? 'h-6 justify-center gap-0.5 px-1.5 text-[10px]'
+                : 'h-7 gap-1 px-2 text-xs',
             )}
             aria-label={t('openSpaceLabel')}
             title={t('openSpaceLabel')}
           >
-            <ExternalLink className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+            <ArrowUpRight className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+            {t('spaceButton')}
           </button>
         )}
         {isScreensharing && roomGroupCallDeviceCount > 1 && !dockCompact ? (
