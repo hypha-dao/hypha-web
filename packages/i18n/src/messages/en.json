@@ -2614,6 +2614,10 @@
     "resizeTopRightLabel": "Resize call window from top-right corner",
     "resizeBottomLeftLabel": "Resize call window from bottom-left corner",
     "resizeBottomRightLabel": "Resize call window from bottom-right corner",
+    "resizeTopLabel": "Resize call window from top edge",
+    "resizeRightLabel": "Resize call window from right edge",
+    "resizeBottomLabel": "Resize call window from bottom edge",
+    "resizeLeftLabel": "Resize call window from left edge",
     "openFloatingWindowLabel": "Open floating call window",
     "closeFloatingWindowLabel": "Close floating call window"
   },
