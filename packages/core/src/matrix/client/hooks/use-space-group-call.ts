@@ -57,12 +57,13 @@ const CAPTURE_START_STALL_MS = 8_000;
 const CAPTURE_MIN_DURATION_MS = 2_000;
 
 function isCaptureEligibleCallState(state: SpaceGroupCallState): boolean {
-  return (
-    state === 'connected' ||
-    state === 'awaiting_media' ||
-    state === 'connecting' ||
-    state === 'initializing'
-  );
+  return state === 'connected' || state === 'awaiting_media';
+}
+
+function abortStaleJoinAttempt(
+  setCallState: (state: SpaceGroupCallState) => void,
+) {
+  setCallState('idle');
 }
 
 /** Abort `gc.enter()` hang (SFU/TURN stuck) — user-recoverable via Retry. */
@@ -766,6 +767,9 @@ export function useSpaceGroupCall(
   }, [announceCaptureNotice, callSessionId, roomId]);
 
   const runCleanup = useCallback(() => {
+    joinEpochRef.current += 1;
+    isJoiningRef.current = false;
+
     const shouldBootstrapCapture =
       captureModeRef.current !== 'none' &&
       !recordingRuntimeRef.current &&
@@ -1102,6 +1106,15 @@ export function useSpaceGroupCall(
           captureModeRef.current !== 'none' ||
           recordingRuntimeRef.current != null ||
           recordingFinalizeInFlightRef.current;
+        if (isJoiningRef.current && !isPermissionLikeGroupCallError(err)) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(
+              '[hypha.group_call] Ignoring transient group call error during join',
+              err,
+            );
+          }
+          return;
+        }
         if (shouldIgnoreGroupCallErrorDuringCapture(err, captureActive)) {
           if (roomId) {
             logSpaceGroupCallEvent({
@@ -1312,7 +1325,9 @@ export function useSpaceGroupCall(
           } catch {
             /* stale local group call cleanup is best-effort */
           }
-          gc = client.getGroupCallForRoom(roomId);
+          // Do not reuse SDK-tracked call after terminate — room state may
+          // still carry a different groupCallId ("multiple calls" warning).
+          gc = null;
         }
       }
 
@@ -1527,6 +1542,7 @@ export function useSpaceGroupCall(
         clearConnectingStallTimer();
         if (joinEpoch !== joinEpochRef.current || groupCallRef.current !== gc) {
           isJoiningRef.current = false;
+          abortStaleJoinAttempt(setCallState);
           return;
         }
         isJoiningRef.current = false;
@@ -1556,6 +1572,7 @@ export function useSpaceGroupCall(
 
       if (joinEpoch !== joinEpochRef.current || groupCallRef.current !== gc) {
         isJoiningRef.current = false;
+        abortStaleJoinAttempt(setCallState);
         return;
       }
 
