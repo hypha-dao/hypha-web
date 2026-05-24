@@ -167,15 +167,23 @@ jobs:
           # GITHUB_OUTPUT breaks when the capture is multiline, leaving preview_url empty and
           # breaking `vercel alias`. Parse the deployment URL explicitly.
           export CI=1 FORCE_COLOR=0 NO_COLOR=1
-          deploy_output="$(
-            vercel deploy --prebuilt --yes \
-              --token="${VERCEL_TOKEN}" \
-              --env "BRANCH_DB_URL=${BRANCH_DB_URL:-}" \
-              2>&1
-          )" || {
-            printf '%s\n' "${deploy_output}"
-            exit 1
-          }
+          deploy_output=""
+          for attempt in 1 2 3; do
+            if deploy_output="$(
+              vercel deploy --prebuilt --yes \
+                --token="${VERCEL_TOKEN}" \
+                --env "BRANCH_DB_URL=${BRANCH_DB_URL:-}" \
+                2>&1
+            )"; then
+              break
+            fi
+            if [ "${attempt}" -eq 3 ]; then
+              printf '%s\n' "${deploy_output}"
+              exit 1
+            fi
+            echo "vercel deploy failed (attempt ${attempt}/3), retrying in 30s..."
+            sleep 30
+          done
           preview_url="$(
             set +o pipefail
             printf '%s\n' "${deploy_output}" \
