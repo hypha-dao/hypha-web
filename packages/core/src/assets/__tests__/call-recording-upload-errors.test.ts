@@ -48,7 +48,7 @@ describe('classifyCallRecordingUploadError', () => {
 describe('formatCallRecordingUploadFailureMessage', () => {
   it('mentions the configured max size for file_too_large', () => {
     expect(formatCallRecordingUploadFailureMessage('file_too_large')).toContain(
-      '512MB',
+      '640MB',
     );
   });
 });

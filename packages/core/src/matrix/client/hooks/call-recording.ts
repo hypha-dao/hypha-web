@@ -198,9 +198,6 @@ export function startBrowserCallTranscription(options?: {
   };
 }
 
-const COMPOSITOR_WIDTH = 640;
-const COMPOSITOR_HEIGHT = 360;
-const COMPOSITOR_FPS = 15;
 const AUDIO_MIXER_REFRESH_MS = 400;
 
 type CallVideoSourceKind = 'screenshare' | 'camera';
@@ -340,8 +337,8 @@ function createCallVideoCompositor(
   if (typeof document === 'undefined') return null;
 
   const canvas = document.createElement('canvas');
-  canvas.width = COMPOSITOR_WIDTH;
-  canvas.height = COMPOSITOR_HEIGHT;
+  canvas.width = CALL_RECORDING_COMPOSITOR_WIDTH;
+  canvas.height = CALL_RECORDING_COMPOSITOR_HEIGHT;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
   ctx.imageSmoothingEnabled = true;
@@ -372,7 +369,12 @@ function createCallVideoCompositor(
   const drawFrame = () => {
     if (disposed) return;
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, COMPOSITOR_WIDTH, COMPOSITOR_HEIGHT);
+    ctx.fillRect(
+      0,
+      0,
+      CALL_RECORDING_COMPOSITOR_WIDTH,
+      CALL_RECORDING_COMPOSITOR_HEIGHT,
+    );
 
     const sources = collectCallVideoSources(groupCall);
     const activeIds = new Set(sources.map((s) => s.track.id));
@@ -385,8 +387,8 @@ function createCallVideoCompositor(
 
     const tiles = layoutCallRecordingTiles(
       sources,
-      COMPOSITOR_WIDTH,
-      COMPOSITOR_HEIGHT,
+      CALL_RECORDING_COMPOSITOR_WIDTH,
+      CALL_RECORDING_COMPOSITOR_HEIGHT,
     );
     for (const tile of tiles) {
       const video = ensureVideoElement(tile.source.track);
@@ -402,9 +404,9 @@ function createCallVideoCompositor(
   drawFrame();
   const drawTimer = window.setInterval(
     drawFrame,
-    Math.round(1000 / COMPOSITOR_FPS),
+    Math.round(1000 / CALL_RECORDING_COMPOSITOR_FPS),
   );
-  const capture = canvas.captureStream(COMPOSITOR_FPS);
+  const capture = canvas.captureStream(CALL_RECORDING_COMPOSITOR_FPS);
   const track = capture.getVideoTracks()[0];
   if (!track) {
     window.clearInterval(drawTimer);
@@ -564,6 +566,9 @@ function chooseRecorderMimeType(output: MediaStream): string | undefined {
 
 import {
   CALL_RECORDING_AUDIO_BITS_PER_SECOND,
+  CALL_RECORDING_COMPOSITOR_FPS,
+  CALL_RECORDING_COMPOSITOR_HEIGHT,
+  CALL_RECORDING_COMPOSITOR_WIDTH,
   CALL_RECORDING_VIDEO_BITS_PER_SECOND,
 } from '../../../assets/call-recording-constants';
 
