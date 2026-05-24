@@ -440,6 +440,7 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
           documentId: 0,
           documentTitle: a.text_excerpt ?? '',
           documentState: DocumentState.PROPOSAL,
+          textExcerpt: a.text_excerpt?.trim() || undefined,
         },
       });
     }

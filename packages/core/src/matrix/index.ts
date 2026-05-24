@@ -4,3 +4,4 @@ export * from './rich-reply';
 export * from './chat-markup';
 export * from './reactions';
 export * from './mentions';
+export * from './matrix-member-display';

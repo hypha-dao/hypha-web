@@ -7,6 +7,7 @@ import { ExternalLink, FileIcon, Image as ImageIcon, Play } from 'lucide-react';
 import { formatDate } from '@hypha-platform/ui-utils';
 import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { ResolvedCallTranscriptExcerpt } from './resolved-call-transcript-excerpt';
 
 /** Centered play affordance for call recordings in Space Memory. */
 function CallRecordingMediaPreview({
@@ -316,10 +317,11 @@ export function SpaceMemoryTimelineItem({
       openHref &&
       isSafeAssetUrl(openHref),
   );
-  const cardTitle =
-    isCallTranscriptBody && item.context.documentTitle?.trim()
-      ? item.context.documentTitle.trim()
-      : displayName;
+  const cardTitle = isCallTranscriptBody
+    ? displayName
+    : isMemoryBody && item.context.documentTitle?.trim()
+    ? item.context.documentTitle.trim()
+    : displayName;
 
   const isCallRecording = item.source === 'call_recording';
   const openLinkLabel = isCallRecording
@@ -334,9 +336,16 @@ export function SpaceMemoryTimelineItem({
         displayName;
       return (
         <div className="flex min-h-[120px] w-full flex-col justify-start gap-2 overflow-y-auto px-3 py-3 text-left">
-          <p className="line-clamp-8 whitespace-pre-wrap text-sm leading-relaxed text-card-foreground">
-            {excerpt}
-          </p>
+          {isCallTranscriptBody ? (
+            <ResolvedCallTranscriptExcerpt
+              excerpt={excerpt}
+              className="line-clamp-8 whitespace-pre-wrap text-sm leading-relaxed text-card-foreground"
+            />
+          ) : (
+            <p className="line-clamp-8 whitespace-pre-wrap text-sm leading-relaxed text-card-foreground">
+              {excerpt}
+            </p>
+          )}
         </div>
       );
     }

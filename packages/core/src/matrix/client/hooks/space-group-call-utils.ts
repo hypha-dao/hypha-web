@@ -1,8 +1,14 @@
 import type * as MatrixSdk from 'matrix-js-sdk';
+import {
+  looksLikeTechnicalMatrixDisplayName,
+  matrixMemberDisplayLabel,
+} from '../../matrix-member-display';
 
 /**
  * Resolve a human-readable speaker label from Matrix active-speaker state.
  * Falls back to the local user when no active speaker is set (solo calls).
+ * When the Matrix label is still a bridged Privy slug, store the full MXID so
+ * downstream UI can resolve Hypha profile names.
  */
 export function resolveMatrixSpeakerDisplayName(
   client: MatrixSdk.MatrixClient | null | undefined,
@@ -20,14 +26,11 @@ export function resolveMatrixSpeakerDisplayName(
   if (!userId) return 'Speaker';
   const room = roomId?.trim() ? client.getRoom(roomId.trim()) : null;
   const member = room?.getMember(userId);
-  const displayName =
-    member?.rawDisplayName?.trim() || member?.name?.trim() || null;
-  if (displayName && displayName !== userId) return displayName;
-  if (userId.startsWith('@')) {
-    const localpart = userId.slice(1).split(':')[0];
-    if (localpart) return localpart;
+  const label = member ? matrixMemberDisplayLabel(member, userId) : userId;
+  if (looksLikeTechnicalMatrixDisplayName(label, userId)) {
+    return userId;
   }
-  return userId;
+  return label;
 }
 
 /**

@@ -2335,6 +2335,7 @@ export function HumanChatPanelMessageBubble({
       onDeleteMessage={onDeleteMessage}
       currentUserId={currentUserId}
       senderMatrixId={message.senderMatrixId}
+      resolveMatrixMemberLabel={bodyResolveMx}
       message={{
         parts: message.parts,
         media: message.media,

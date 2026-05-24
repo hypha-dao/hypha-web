@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   matrixUserIdToCanonicalPrivySub,
   speakerLabelToCanonicalPrivySub,
-} from '../matrix-room-member-display';
+} from '../matrix-member-display';
 
 describe('matrixUserIdToCanonicalPrivySub', () => {
   it('maps bridged prod localparts to did:privy subs', () => {

@@ -39,7 +39,10 @@ import {
   DropdownMenuTrigger,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { stripMatrixReplyFallback } from '@hypha-platform/core/client';
+import {
+  stripMatrixReplyFallback,
+  replacePlainTextMatrixMxidsWithLabels,
+} from '@hypha-platform/core/client';
 import { usePathname } from 'next/navigation';
 
 import { HumanChatPanelEmojiMartSurface } from './human-chat-panel-emoji-mart-surface';
@@ -106,6 +109,8 @@ export type HumanChatPanelMessageOverflowProps = {
   currentUserId?: string | null;
   /** Message author MXID when known (for delete permission). */
   senderMatrixId?: string;
+  /** Resolve `@mxid` tokens to human labels for read-aloud. */
+  resolveMatrixMemberLabel?: (matrixUserId: string) => string;
   message: {
     parts?: UIMessagePart[];
     media?: ChatPanelAttachmentMedia;
@@ -322,6 +327,7 @@ export function HumanChatPanelMessageOverflow({
   onDeleteMessage,
   currentUserId,
   senderMatrixId,
+  resolveMatrixMemberLabel,
   message,
   children,
 }: HumanChatPanelMessageOverflowProps) {
@@ -334,6 +340,14 @@ export function HumanChatPanelMessageOverflow({
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const plain = useMemo(() => getMessagePlainTextBody(message), [message]);
+  const speakablePlain = useMemo(() => {
+    if (!plain.trim()) return '';
+    if (!resolveMatrixMemberLabel) return plain;
+    return replacePlainTextMatrixMxidsWithLabels(
+      plain,
+      resolveMatrixMemberLabel,
+    );
+  }, [plain, resolveMatrixMemberLabel]);
   const canCopy = plain.trim().length > 0;
   const canEdit = menuCanEdit ?? Boolean(onEdit);
   const canReply = menuCanReply ?? Boolean(onReply);
@@ -370,14 +384,17 @@ export function HumanChatPanelMessageOverflow({
   }, [copyMessageLinkTarget]);
 
   const onSpeak = useCallback(() => {
-    if (!plain.trim() || typeof globalThis.speechSynthesis === 'undefined') {
+    if (
+      !speakablePlain.trim() ||
+      typeof globalThis.speechSynthesis === 'undefined'
+    ) {
       return;
     }
     globalThis.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(plain);
+    const u = new SpeechSynthesisUtterance(speakablePlain);
     u.lang = document.documentElement.lang || 'en';
     globalThis.speechSynthesis.speak(u);
-  }, [plain]);
+  }, [speakablePlain]);
 
   const confirmDelete = useCallback(async () => {
     if (!canDelete || !onDeleteMessage || deleteBusy) return;
