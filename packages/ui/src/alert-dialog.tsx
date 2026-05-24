@@ -44,19 +44,33 @@ export type AlertDialogContentProps = React.ComponentPropsWithoutRef<
 > & {
   /** Merged into the bundled overlay (e.g. heavier scrim for destructive flows). */
   overlayClassName?: string;
+  /**
+   * `content` (default): scrim and dialog center in the main column between side panels.
+   * `full`: cover the entire viewport — use for in-call flows so side panels are dimmed too.
+   */
+  viewport?: 'content' | 'full';
 };
 
 const AlertDialogContent = React.forwardRef<
   React.ComponentRef<typeof AlertDialogPrimitive.Content>,
   AlertDialogContentProps
->(({ className, overlayClassName, ...props }, ref) => (
+>(({ className, overlayClassName, viewport = 'content', ...props }, ref) => (
   <AlertDialogPortal>
-    <AlertDialogOverlay className={overlayClassName} />
+    <AlertDialogPrimitive.Overlay
+      className={cn(
+        `fixed ${ALERT_DIALOG_Z} data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0`,
+        viewport === 'full' ? 'inset-0' : ALERT_DIALOG_VIEWPORT_INSET,
+        ALERT_DIALOG_OVERLAY_DEFAULT,
+        overlayClassName,
+      )}
+    />
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        `fixed ${ALERT_DIALOG_Z} grid w-[min(32rem,calc(100vw-var(--sidebar-left-width,0px)-var(--sidebar-right-width,0px)-2rem))] max-w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg`,
-        'left-[calc((var(--sidebar-left-width,0px)+100vw-var(--sidebar-right-width,0px))/2)] top-[50%]',
+        `fixed ${ALERT_DIALOG_Z} grid max-w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg`,
+        viewport === 'full'
+          ? 'left-1/2 top-[50%] w-[min(32rem,calc(100vw-2rem))]'
+          : 'left-[calc((var(--sidebar-left-width,0px)+100vw-var(--sidebar-right-width,0px))/2)] top-[50%] w-[min(32rem,calc(100vw-var(--sidebar-left-width,0px)-var(--sidebar-right-width,0px)-2rem))]',
         className,
       )}
       {...props}
