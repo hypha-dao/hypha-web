@@ -100,6 +100,7 @@ import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
+import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import {
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
@@ -262,6 +263,7 @@ const ROOM_STORAGE_KEY = 'hypha-chat-room-';
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
 const SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX = 'hypha-room-to-coherence-slug-';
 const SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX = 'hypha-room-to-coherence-title-';
+const SESSION_ROOM_TO_COHERENCE_SPACE_PREFIX = 'hypha-room-to-coherence-space-';
 const COHERENCE_ROOM_REVERSE_PREFIX = 'hypha-room-id-to-coherence-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
@@ -485,6 +487,7 @@ function rememberRoomToCoherenceSession(
   roomId: string,
   slug: string,
   title?: string | null,
+  spaceSlug?: string | null,
 ): void {
   if (typeof window === 'undefined') return;
   try {
@@ -498,9 +501,19 @@ function rememberRoomToCoherenceSession(
         title.trim(),
       );
     }
+    if (spaceSlug?.trim()) {
+      window.sessionStorage.setItem(
+        `${SESSION_ROOM_TO_COHERENCE_SPACE_PREFIX}${roomId}`,
+        spaceSlug.trim(),
+      );
+    }
     window.localStorage.setItem(
       `${COHERENCE_ROOM_REVERSE_PREFIX}${roomId}`,
-      JSON.stringify({ slug, title: title?.trim() || null }),
+      JSON.stringify({
+        slug,
+        title: title?.trim() || null,
+        spaceSlug: spaceSlug?.trim() || null,
+      }),
     );
   } catch {
     // ignore
@@ -510,8 +523,11 @@ function rememberRoomToCoherenceSession(
 function readRoomToCoherenceSession(roomId: string): {
   slug: string | null;
   title: string | null;
+  spaceSlug: string | null;
 } {
-  if (typeof window === 'undefined') return { slug: null, title: null };
+  if (typeof window === 'undefined') {
+    return { slug: null, title: null, spaceSlug: null };
+  }
   try {
     const slug = window.sessionStorage
       .getItem(`${SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX}${roomId}`)
@@ -519,8 +535,11 @@ function readRoomToCoherenceSession(roomId: string): {
     const title = window.sessionStorage
       .getItem(`${SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX}${roomId}`)
       ?.trim();
+    const spaceSlug = window.sessionStorage
+      .getItem(`${SESSION_ROOM_TO_COHERENCE_SPACE_PREFIX}${roomId}`)
+      ?.trim();
     if (slug) {
-      return { slug, title: title || null };
+      return { slug, title: title || null, spaceSlug: spaceSlug || null };
     }
     const persisted = window.localStorage
       .getItem(`${COHERENCE_ROOM_REVERSE_PREFIX}${roomId}`)
@@ -529,18 +548,20 @@ function readRoomToCoherenceSession(roomId: string): {
       const parsed = JSON.parse(persisted) as {
         slug?: string;
         title?: string | null;
+        spaceSlug?: string | null;
       };
       const persistedSlug = parsed.slug?.trim();
       if (persistedSlug) {
         return {
           slug: persistedSlug,
           title: parsed.title?.trim() || null,
+          spaceSlug: parsed.spaceSlug?.trim() || null,
         };
       }
     }
-    return { slug: null, title: null };
+    return { slug: null, title: null, spaceSlug: null };
   } catch {
-    return { slug: null, title: null };
+    return { slug: null, title: null, spaceSlug: null };
   }
 }
 
@@ -2526,7 +2547,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [pathname, params?.id, spaceSlug]);
 
   const handleSelectMentionFromInbox = useCallback(
-    (eventId: string, fromRoomId?: string) => {
+    async (eventId: string, fromRoomId?: string) => {
       setMentionNavigationNotice(null);
       const targetRoom = fromRoomId?.trim();
       const current = roomId?.trim();
@@ -2556,24 +2577,60 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         targetRoom !== current &&
         typeof window !== 'undefined'
       ) {
-        let slug =
-          window.sessionStorage
-            .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${targetRoom}`)
-            ?.trim() ?? null;
-        if (!slug) {
-          const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
-          slug = fromLs ?? null;
-        }
-        if (!slug && spaceChatRoomId === targetRoom && spaceSlug) {
-          slug = spaceSlug;
-        }
-        if (slug) {
+        const signalTarget = await resolveSignalThreadByMatrixRoom(
+          targetRoom,
+          async () => authTokenRef.current,
+        );
+        if (signalTarget) {
+          rememberRoomToCoherenceSession(
+            signalTarget.roomId,
+            signalTarget.signalSlug,
+            signalTarget.signalTitle,
+            signalTarget.spaceSlug,
+          );
+
+          if (pathSlug === signalTarget.spaceSlug) {
+            openCoherenceChat(
+              signalTarget.roomId,
+              signalTarget.signalTitle,
+              signalTarget.signalSlug,
+            );
+            openHumanChatPanel();
+            setActiveTab('chat');
+            setScrollToEventId(eventId);
+            return;
+          }
+
           router.push(
-            `/${lang}/dho/${slug}?msg=${encodeURIComponent(eventId)}`,
+            `/${lang}/dho/${signalTarget.spaceSlug}?signal=${encodeURIComponent(
+              signalTarget.signalSlug,
+            )}&msg=${encodeURIComponent(eventId)}`,
           );
           openHumanChatPanel();
           setActiveTab('chat');
           return;
+        }
+
+        if (spaceChatRoomId && targetRoom === spaceChatRoomId) {
+          let slug =
+            window.sessionStorage
+              .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${targetRoom}`)
+              ?.trim() ?? null;
+          if (!slug) {
+            const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
+            slug = fromLs ?? null;
+          }
+          if (!slug && spaceSlug) {
+            slug = spaceSlug;
+          }
+          if (slug) {
+            router.push(
+              `/${lang}/dho/${slug}?msg=${encodeURIComponent(eventId)}`,
+            );
+            openHumanChatPanel();
+            setActiveTab('chat');
+            return;
+          }
         }
 
         const coherence = readRoomToCoherenceSession(targetRoom);
@@ -2588,6 +2645,24 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           setScrollToEventId(eventId);
           return;
         }
+
+        let slug =
+          window.sessionStorage
+            .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${targetRoom}`)
+            ?.trim() ?? null;
+        if (!slug) {
+          const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
+          slug = fromLs ?? null;
+        }
+        if (slug) {
+          router.push(
+            `/${lang}/dho/${slug}?msg=${encodeURIComponent(eventId)}`,
+          );
+          openHumanChatPanel();
+          setActiveTab('chat');
+          return;
+        }
+
         setMentionNavigationNotice(t('mentionOpenFallbackRoom'));
       }
 
@@ -2689,6 +2764,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     const rid = roomId?.trim() ?? null;
     const slug = coherenceSlug?.trim() ?? null;
+    const pathSlug = getDhoSpaceSlugFromPathname(pathname)?.trim() ?? null;
     if (
       !rid ||
       !slug ||
@@ -2697,8 +2773,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     ) {
       return;
     }
-    rememberRoomToCoherenceSession(rid, slug, coherenceTitle);
-  }, [roomId, coherenceSlug, coherenceTitle, mode]);
+    rememberRoomToCoherenceSession(rid, slug, coherenceTitle, pathSlug);
+  }, [roomId, coherenceSlug, coherenceTitle, mode, pathname]);
 
   /**
    * Global mention badge: avoid listening to `ClientEvent.Room` — it fires on almost every
@@ -2858,6 +2934,81 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       cancelled = true;
     };
   }, [mode, roomId, pathname, router, searchParams, openHumanChatPanel]);
+
+  useEffect(() => {
+    if (mode !== 'space' || !spaceSlug?.trim()) return;
+    const qpSignal = searchParams?.get('signal')?.trim();
+    const qpMsg = searchParams?.get('msg')?.trim();
+    if (!qpSignal) return;
+
+    let cancelled = false;
+
+    const stripSignalQueryFromUrl = () => {
+      const next = new URLSearchParams(searchParams?.toString() ?? '');
+      next.delete('signal');
+      if (qpMsg) next.delete('msg');
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    };
+
+    void (async () => {
+      const headers: HeadersInit = {};
+      const token = authTokenRef.current?.trim();
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const res = await fetch(
+        `/api/v1/signals/${encodeURIComponent(qpSignal)}`,
+        { headers },
+      );
+      if (cancelled || !res.ok) return;
+
+      const data = (await res.json()) as {
+        signalSlug?: string;
+        signalTitle?: string;
+        spaceSlug?: string;
+        roomId?: string;
+      };
+      const resolvedSlug = data.signalSlug?.trim();
+      const resolvedSpaceSlug = data.spaceSlug?.trim();
+      const resolvedRoomId = data.roomId?.trim();
+      if (
+        !resolvedSlug ||
+        !resolvedSpaceSlug ||
+        !resolvedRoomId ||
+        resolvedSpaceSlug !== spaceSlug.trim()
+      ) {
+        return;
+      }
+
+      rememberRoomToCoherenceSession(
+        resolvedRoomId,
+        resolvedSlug,
+        data.signalTitle,
+        resolvedSpaceSlug,
+      );
+      openCoherenceChat(
+        resolvedRoomId,
+        data.signalTitle?.trim() || resolvedSlug,
+        resolvedSlug,
+      );
+      openHumanChatPanel();
+      setActiveTab('chat');
+      if (qpMsg) setScrollToEventId(qpMsg);
+      stripSignalQueryFromUrl();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    mode,
+    spaceSlug,
+    pathname,
+    router,
+    searchParams,
+    openCoherenceChat,
+    openHumanChatPanel,
+  ]);
 
   /**
    * When `?msg=` is present, retry locating the row after the timeline grows (initial effect may run
