@@ -3012,13 +3012,30 @@ export function useSpaceGroupCall(
     ? inCallUserIdsFromGroupCall(groupCall)
     : idleInCallUserIds;
 
-  const showRoomCallInProgress = useMemo(
+  const showRoomCallInProgressRaw = useMemo(
     () =>
       !inOurSession &&
       idleRoomParticipantCount > 0 &&
       (callState === 'idle' || callState === 'error'),
     [callState, inOurSession, idleRoomParticipantCount],
   );
+
+  /**
+   * Hysteresis: show quickly when a call appears, hide only after it stays empty.
+   * Prevents join-strip blink + repeated chimes when Matrix sync/token recovery flickers.
+   */
+  const [showRoomCallInProgress, setShowRoomCallInProgress] = useState(false);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (showRoomCallInProgressRaw) {
+      timer = setTimeout(() => setShowRoomCallInProgress(true), 250);
+    } else {
+      timer = setTimeout(() => setShowRoomCallInProgress(false), 2000);
+    }
+    return () => {
+      if (timer != null) clearTimeout(timer);
+    };
+  }, [showRoomCallInProgressRaw]);
 
   return {
     callState,

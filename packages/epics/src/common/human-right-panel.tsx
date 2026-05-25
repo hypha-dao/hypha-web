@@ -1187,12 +1187,26 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [t, spaceCallRoomGroupDeviceCount],
   );
 
+  const callJoinNotificationTarget = useMemo(() => {
+    const slug = spaceSlug?.trim();
+    const rid = roomId?.trim();
+    if (!slug || !rid) return null;
+    return {
+      lang: getLocaleFromPath(pathname),
+      spaceSlug: slug,
+      roomId: rid,
+      signalSlug: mode === 'coherence' ? coherenceSlug?.trim() || null : null,
+    };
+  }, [spaceSlug, roomId, pathname, mode, coherenceSlug]);
+
   const { joinAlertSoundEnabled, setJoinAlertSoundEnabled } = useCallJoinChime({
     callUiEnabled,
     roomId,
     showJoinOpportunity: spaceCallShowJoinChime,
     roomCallDeviceCount: spaceCallRoomGroupDeviceCount,
     notification: joinChimeNotification,
+    notificationTarget: callJoinNotificationTarget,
+    matrixSessionReady: isMatrixAuthenticated && Boolean(client),
   });
 
   const spaceCallBusyJoining =
@@ -2946,6 +2960,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const stripSignalQueryFromUrl = () => {
       const next = new URLSearchParams(searchParams?.toString() ?? '');
       next.delete('signal');
+      next.delete('joinCall');
       if (qpMsg) next.delete('msg');
       const qs = next.toString();
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
@@ -3009,6 +3024,21 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     openCoherenceChat,
     openHumanChatPanel,
   ]);
+
+  useEffect(() => {
+    if (!spaceSlug?.trim()) return;
+    const qpJoinCall = searchParams?.get('joinCall')?.trim();
+    if (qpJoinCall !== '1') return;
+    if (searchParams?.get('signal')?.trim()) return;
+
+    openHumanChatPanel();
+    setActiveTab('chat');
+
+    const next = new URLSearchParams(searchParams?.toString() ?? '');
+    next.delete('joinCall');
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [spaceSlug, pathname, router, searchParams, openHumanChatPanel]);
 
   /**
    * When `?msg=` is present, retry locating the row after the timeline grows (initial effect may run
