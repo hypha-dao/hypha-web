@@ -3516,8 +3516,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               busy={spaceCallBusyJoining}
               captureConsent={spaceCallCaptureConsent}
               roomId={roomId}
-              callJoinAlertsUnmuted={joinAlertSoundEnabled}
-              onCallJoinAlertsUnmutedChange={setJoinAlertSoundEnabled}
               onJoinAudio={() => {
                 if (!canJoinSignalThreadCall && isSignalThread) {
                   void requestSignalTeamAccess();
