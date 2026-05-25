@@ -259,8 +259,7 @@ function matrixMemberAvatarSquareForCall(
   );
 }
 
-export type CallStageContentModel = {
-  kind: 'hidden' | 'screenSharePendingStrip' | 'main';
+type CallStageContentModelFields = {
   isVideoCall: boolean;
   userMediaFeeds: CallFeed[];
   shareFeeds: CallFeed[];
@@ -273,6 +272,12 @@ export type CallStageContentModel = {
   showLocalInMainGrid: boolean;
   showLocalPip: boolean;
 };
+
+export type CallStageContentModel =
+  | ({ kind: 'screenSharePendingStrip' } & CallStageContentModelFields)
+  | ({ kind: 'main' } & CallStageContentModelFields);
+
+type CallStageMainModel = Extract<CallStageContentModel, { kind: 'main' }>;
 
 /**
  * Feeds the same gating as {@link HumanChatPanelCallStage} to decide if the
@@ -400,7 +405,7 @@ function CallScreenSharePendingStrip({
 }
 
 type HumanChatPanelCallStageMainProps = HumanChatPanelCallStageProps & {
-  model: Extract<CallStageContentModel, { kind: 'main' }>;
+  model: CallStageMainModel;
 };
 
 /**
@@ -425,8 +430,8 @@ export function HumanChatPanelCallStage(props: HumanChatPanelCallStageProps) {
   if (model.kind === 'screenSharePendingStrip') {
     return <CallScreenSharePendingStrip layout={props.layout} />;
   }
-  if (model.kind === 'hidden') return null;
   if (props.layout === 'hidden') return null;
+  if (model.kind !== 'main') return null;
 
   return <HumanChatPanelCallStageMain {...props} model={model} />;
 }
@@ -491,7 +496,9 @@ function HumanChatPanelCallStageMain({
     setGalleryPage(0);
   }, [galleryParticipantCount]);
   const isLiveAndUnmuted = useCallback((feed: CallFeed): boolean => {
-    const track = feed.stream.getVideoTracks()[0];
+    const stream = feed.stream;
+    if (!stream) return false;
+    const track = stream.getVideoTracks()[0];
     if (!track || track.readyState !== 'live') return false;
     return !feed.isVideoMuted();
   }, []);
@@ -1759,9 +1766,9 @@ const FeedContent = ({
 
   const ref = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const stream = feed.stream;
+  const stream = feed.stream ?? null;
   const liveVideoTrack =
-    stream.getVideoTracks().find((track) => track.readyState === 'live') ??
+    stream?.getVideoTracks().find((track) => track.readyState === 'live') ??
     null;
   const hasVideo = !feed.isVideoMuted() && liveVideoTrack !== null;
 
@@ -1795,7 +1802,7 @@ const FeedContent = ({
 
   useEffect(() => {
     const el = audioRef.current;
-    if (!el) return;
+    if (!el || !stream) return;
     el.srcObject = stream;
     el.play().catch((err) => {
       if (process.env.NODE_ENV === 'development') {
@@ -1831,6 +1838,7 @@ const FeedContent = ({
   }, [feed]);
 
   useEffect(() => {
+    if (!stream) return;
     const onTrackChange = () => {
       rebindStream();
       rerenderOnFeed();
@@ -1859,7 +1867,7 @@ const FeedContent = ({
     !isShare &&
     !audioMuted &&
     (feed.isLocal() ||
-      (!feed.isAudioMuted() && stream.getAudioTracks().length > 0));
+      (!feed.isAudioMuted() && (stream?.getAudioTracks().length ?? 0) > 0));
 
   const tileAvatarSizePx = isPip ? 48 : isFullView && !isPip ? 128 : 80;
   const tileAvatarUrl = useMemo(() => {
