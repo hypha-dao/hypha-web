@@ -49,6 +49,7 @@ import {
   isRedactedRoomMessageEvent,
   type MessageReaction,
   type Person,
+  looksLikeTechnicalSpaceMemoryName,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -102,6 +103,7 @@ import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname'
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
+import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
   sanitizeMentionDisplayLabel,
   wireComposerPlainForMatrixSend,
@@ -122,6 +124,28 @@ function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
       URL.revokeObjectURL(a.previewUrl);
     }
   }
+}
+
+function resolveCallRecordingRoomTitle(
+  client: ReturnType<typeof useMatrix>['client'],
+  roomId: string | null | undefined,
+  spaceTitle?: string | null,
+): string | undefined {
+  const rid = roomId?.trim();
+  if (client && rid) {
+    const room = client.getRoom(rid);
+    if (room) {
+      const label = matrixRoomShortLabel(room).trim();
+      if (label && !looksLikeTechnicalSpaceMemoryName(label)) {
+        return label;
+      }
+    }
+  }
+  const title = spaceTitle?.trim();
+  if (title && !looksLikeTechnicalSpaceMemoryName(title)) {
+    return title;
+  }
+  return undefined;
 }
 
 function SignalTeamResolvedMemberLabel({
@@ -1231,8 +1255,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         ? {
             signalTitle: coherenceTitle.trim(),
             signalSlug: coherenceSlug?.trim() || undefined,
+            roomTitle: coherenceTitle.trim(),
           }
-        : undefined;
+        : (() => {
+            const roomTitle = resolveCallRecordingRoomTitle(
+              client,
+              roomId,
+              space?.title,
+            );
+            return roomTitle ? { roomTitle } : undefined;
+          })();
     void startAudioForRoom(
       roomId,
       spaceSlug ?? null,
@@ -1242,12 +1274,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     );
   }, [
     authToken,
+    client,
     coherenceSlug,
     coherenceTitle,
     mode,
-    startAudioForRoom,
     roomId,
+    space?.title,
     spaceSlug,
+    startAudioForRoom,
   ]);
 
   const handleCallVideo = useCallback(() => {
@@ -1256,8 +1290,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         ? {
             signalTitle: coherenceTitle.trim(),
             signalSlug: coherenceSlug?.trim() || undefined,
+            roomTitle: coherenceTitle.trim(),
           }
-        : undefined;
+        : (() => {
+            const roomTitle = resolveCallRecordingRoomTitle(
+              client,
+              roomId,
+              space?.title,
+            );
+            return roomTitle ? { roomTitle } : undefined;
+          })();
     void startVideoForRoom(
       roomId,
       spaceSlug ?? null,
@@ -1267,12 +1309,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     );
   }, [
     authToken,
+    client,
     coherenceSlug,
     coherenceTitle,
     mode,
-    startVideoForRoom,
     roomId,
+    space?.title,
     spaceSlug,
+    startVideoForRoom,
   ]);
 
   const handleCallLeave = useCallback(() => {

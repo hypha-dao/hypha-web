@@ -137,6 +137,7 @@ export type SpaceGroupCallLaunchContext = {
   signalTitle?: string;
   signalSlug?: string;
   threadRootEventId?: string;
+  roomTitle?: string;
 };
 
 export type SpaceGroupCallOptions = {

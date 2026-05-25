@@ -17,6 +17,11 @@ describe('looksLikeTechnicalSpaceMemoryName', () => {
     ).toBe(true);
     expect(
       looksLikeTechnicalSpaceMemoryName(
+        '6MiOwFUJuAco8jasovTtxmqrbFV7No38vZBst2dA4lgwXT0y',
+      ),
+    ).toBe(true);
+    expect(
+      looksLikeTechnicalSpaceMemoryName(
         'prod_privy_did_privy_cmcj7opiz01vjju0mixu',
       ),
     ).toBe(true);

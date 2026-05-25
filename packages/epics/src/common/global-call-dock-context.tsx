@@ -110,6 +110,7 @@ type CallLaunchContext = {
   signalTitle?: string;
   signalSlug?: string;
   threadRootEventId?: string;
+  roomTitle?: string;
 };
 
 type GlobalCallDockContextValue = ReturnType<typeof useGlobalCallDockValue>;
@@ -375,11 +376,12 @@ function useGlobalCallDockValue() {
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
-      callLaunchContextRef.current = launchContext?.signalTitle?.trim()
-        ? launchContext
-        : threadRootEventId?.trim()
-        ? { threadRootEventId: threadRootEventId.trim() }
-        : null;
+      callLaunchContextRef.current =
+        launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
+          ? launchContext
+          : threadRootEventId?.trim()
+          ? { threadRootEventId: threadRootEventId.trim() }
+          : null;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
       const targetAuthToken = authToken?.trim() || boundAuthToken;
       if (activeRoomId !== targetRoomId) {
@@ -411,11 +413,12 @@ function useGlobalCallDockValue() {
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
-      callLaunchContextRef.current = launchContext?.signalTitle?.trim()
-        ? launchContext
-        : threadRootEventId?.trim()
-        ? { threadRootEventId: threadRootEventId.trim() }
-        : null;
+      callLaunchContextRef.current =
+        launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
+          ? launchContext
+          : threadRootEventId?.trim()
+          ? { threadRootEventId: threadRootEventId.trim() }
+          : null;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
       const targetAuthToken = authToken?.trim() || boundAuthToken;
       if (activeRoomId !== targetRoomId) {

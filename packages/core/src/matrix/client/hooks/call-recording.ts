@@ -946,6 +946,7 @@ export async function uploadRecordedCallArtifact({
     signalTitle?: string;
     signalSlug?: string;
     threadRootEventId?: string;
+    roomTitle?: string;
   };
 }) {
   const resolvedMimeType = mimeType || blob?.type?.trim() || 'video/webm';
@@ -965,6 +966,7 @@ export async function uploadRecordedCallArtifact({
 
   const form = new FormData();
   form.set('room_id', roomId);
+  form.set('matrix_room_id', roomId);
   form.set('call_session_id', callSessionId);
   if (uploadedMediaUri) {
     form.set('media_uri', uploadedMediaUri);
@@ -978,6 +980,9 @@ export async function uploadRecordedCallArtifact({
   if (launchContext?.signalTitle?.trim()) {
     form.set('signal_title', launchContext.signalTitle.trim());
     form.set('context_title', launchContext.signalTitle.trim());
+  } else if (launchContext?.roomTitle?.trim()) {
+    form.set('room_title', launchContext.roomTitle.trim());
+    form.set('context_title', launchContext.roomTitle.trim());
   }
   if (launchContext?.signalSlug?.trim()) {
     form.set('signal_slug', launchContext.signalSlug.trim());

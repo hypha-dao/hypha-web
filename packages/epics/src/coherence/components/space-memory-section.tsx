@@ -97,11 +97,12 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       }
       if (row.source === 'call_recording') {
         const signalTitle = row.context.signalTitle?.trim();
-        return signalTitle
-          ? t('spaceMemoryContextCallRecordingFromSignal', {
-              title: signalTitle,
-            })
-          : t('spaceMemoryContextCallRecording');
+        if (signalTitle) {
+          return t('spaceMemoryContextCallRecordingFromSignal', {
+            title: signalTitle,
+          });
+        }
+        return t('spaceMemoryContextCallRecording');
       }
       return t('spaceMemoryContext', {
         title: row.context.documentTitle || t('untitledDocument'),

@@ -9,6 +9,8 @@ const TECHNICAL_FILENAME =
 const LONG_HEX = /^[a-f0-9]{24,}(?:\.[a-z0-9]+)?$/i;
 const UUID_LIKE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:\.[a-z0-9]+)?$/i;
+/** Matrix MXC segment / UploadThing keys — not human-readable titles. */
+const OPAQUE_MEDIA_KEY = /^[A-Za-z0-9_-]{30,}$/;
 
 /** True when a Space Memory label looks like a hash, synthetic filename, or bridged id. */
 export function looksLikeTechnicalSpaceMemoryName(value: string): boolean {
@@ -20,6 +22,7 @@ export function looksLikeTechnicalSpaceMemoryName(value: string): boolean {
   if (TECHNICAL_FILENAME.test(trimmed)) return true;
   if (LONG_HEX.test(trimmed)) return true;
   if (UUID_LIKE.test(trimmed)) return true;
+  if (OPAQUE_MEDIA_KEY.test(trimmed)) return true;
   if (looksLikeTechnicalSpeakerLabel(trimmed)) return true;
   if (/privy_did_privy/i.test(trimmed)) return true;
   if (/^prod_[a-z0-9_]+$/i.test(trimmed) && trimmed.length > 20) return true;

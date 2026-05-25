@@ -3,6 +3,7 @@
 import type { SpaceMemoryItem } from '@hypha-platform/core/client';
 import {
   deriveSpaceMemoryDisplayTitle,
+  looksLikeTechnicalSpaceMemoryName,
   useMatrix,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
@@ -339,6 +340,11 @@ export function SpaceMemoryTimelineItem({
       : displayName;
 
   const isCallRecording = item.source === 'call_recording';
+  const callRecordingFallbackTitle = t('spaceMemoryContextCallRecording');
+  const showCallRecordingTitle =
+    isCallRecording &&
+    displayName.trim() !== callRecordingFallbackTitle &&
+    !looksLikeTechnicalSpaceMemoryName(displayName);
   const openLinkLabel = isCallRecording
     ? t('spaceMemoryPlayCallRecording')
     : t('openDocument');
@@ -594,9 +600,11 @@ export function SpaceMemoryTimelineItem({
       <p className="line-clamp-2 text-xs leading-tight text-muted-foreground">
         {contextLine}
       </p>
-      <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-card-foreground">
-        {cardTitle}
-      </p>
+      {(!isCallRecording || showCallRecordingTitle) && (
+        <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-card-foreground">
+          {cardTitle}
+        </p>
+      )}
 
       <div className="mt-3 flex flex-1 flex-col gap-2">
         {isCallRecording && canOpen && openHref ? (

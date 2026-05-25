@@ -37,6 +37,8 @@ function readCallLaunchMetadata(
 ): Record<string, unknown> {
   const signalTitle = String(form?.get('signal_title') ?? '').trim();
   const contextTitle = String(form?.get('context_title') ?? '').trim();
+  const roomTitle = String(form?.get('room_title') ?? '').trim();
+  const matrixRoomId = String(form?.get('matrix_room_id') ?? '').trim();
   const signalSlug = String(form?.get('signal_slug') ?? '').trim();
   const threadRootEventId = String(
     form?.get('thread_root_event_id') ?? '',
@@ -46,6 +48,11 @@ function readCallLaunchMetadata(
   };
   if (signalTitle) metadata.signal_title = signalTitle;
   if (contextTitle) metadata.context_title = contextTitle;
+  if (roomTitle) metadata.room_title = roomTitle;
+  if (matrixRoomId) {
+    metadata.matrix_room_id = matrixRoomId;
+    metadata.room_id = matrixRoomId;
+  }
   if (signalSlug) metadata.signal_slug = signalSlug;
   if (threadRootEventId) metadata.thread_root_event_id = threadRootEventId;
   return metadata;
