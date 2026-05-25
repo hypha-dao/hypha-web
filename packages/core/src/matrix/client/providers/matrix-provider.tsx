@@ -37,7 +37,10 @@ import {
   matrixWebRtcForceTurnFromEnv,
   matrixWebRtcIceCandidatePoolSizeFromEnv,
 } from '../matrix-webrtc-env';
-import { createHyphaMatrixClientLogger } from '../matrix-client-logger';
+import {
+  createHyphaMatrixClientLogger,
+  configureMatrixGlobalLogger,
+} from '../matrix-client-logger';
 import { isTransientMatrixNetworkError } from '../matrix-network-errors';
 import { useMatrixTabLeader } from '../hooks/use-matrix-tab-leader';
 
@@ -523,6 +526,10 @@ interface MatrixProviderProps {
 }
 
 export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
+  React.useEffect(() => {
+    configureMatrixGlobalLogger();
+  }, []);
+
   const { user } = useAuthentication();
   const { isSyncLeader, claimSyncLeadership } = useMatrixTabLeader();
   const [client, setClient] = React.useState<MatrixSdk.MatrixClient | null>(
