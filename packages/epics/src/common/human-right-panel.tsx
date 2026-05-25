@@ -3364,6 +3364,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               disabled={!callUiEnabled}
               busy={spaceCallBusyJoining}
               captureConsent={spaceCallCaptureConsent}
+              roomId={roomId}
               callJoinAlertsUnmuted={joinAlertSoundEnabled}
               onCallJoinAlertsUnmutedChange={setJoinAlertSoundEnabled}
               onJoinAudio={() => {
@@ -3423,6 +3424,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 void retrySpaceCallRecordingUpload();
               }}
               captureConsent={spaceCallCaptureConsent}
+              roomId={roomId}
               controlsMode="leave_only"
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
               onRetryCall={handleRetrySpaceCall}

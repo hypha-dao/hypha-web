@@ -6,6 +6,7 @@ import { ClientEvent, RoomEvent, RoomStateEvent } from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEventHandler';
 import { useMatrix } from '../providers/matrix-provider';
+import { matrixMemberDisplayLabel } from '../../matrix-member-display';
 import {
   isPermissionLikeGroupCallError,
   resolveMatrixSpeakerDisplayName,
@@ -2579,7 +2580,12 @@ export function useSpaceGroupCall(
       setActiveRoomCapture(
         resolveActiveRoomCaptureFromEvents(
           recent,
-          (senderId) => room.getMember(senderId)?.name || senderId,
+          (senderId) => {
+            const member = room.getMember(senderId);
+            return member
+              ? matrixMemberDisplayLabel(member, senderId)
+              : senderId;
+          },
           localUserId,
         ),
       );

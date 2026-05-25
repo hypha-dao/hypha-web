@@ -898,18 +898,8 @@ export function GlobalCallDockOverlay() {
             onResizeStart={onResizeStart}
           />
           <DockResizeHandle
-            handle="bottom-right"
-            ariaLabel={t('resizeBottomRightLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
             handle="bottom"
             ariaLabel={t('resizeBottomLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="bottom-left"
-            ariaLabel={t('resizeBottomLeftLabel')}
             onResizeStart={onResizeStart}
           />
           <DockResizeHandle
@@ -1110,6 +1100,7 @@ export function GlobalCallDockOverlay() {
               !showDockBanner ? (
                 <HumanChatPanelCaptureConsentBanner
                   consent={captureConsent}
+                  roomId={activeRoomId}
                   variant="inCall"
                   className={cn(
                     'rounded-none border-x-0 border-t-0',
@@ -1155,6 +1146,7 @@ export function GlobalCallDockOverlay() {
                   canRetryRecordingUpload={canRetryRecordingUpload}
                   onRetryRecordingUpload={() => void retryRecordingUpload()}
                   captureConsent={captureConsent}
+                  roomId={activeRoomId}
                   onDismissScreenshareError={dismissScreenshareError}
                   onRetryCall={retryFromError}
                   onDismissCallError={dismissCallError}

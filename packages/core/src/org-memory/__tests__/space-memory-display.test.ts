@@ -36,6 +36,14 @@ describe('stripTechnicalSpeakerFromExcerpt', () => {
       ),
     ).toBe('ok recording with voice only');
   });
+
+  it('removes full Matrix bridged speaker prefixes', () => {
+    expect(
+      stripTechnicalSpeakerFromExcerpt(
+        '@prod_privy_did_privy_cmabc123:srv1294735.hstgr.cloud: ok recording with voice only',
+      ),
+    ).toBe('ok recording with voice only');
+  });
 });
 
 describe('deriveSpaceMemoryDisplayTitle', () => {

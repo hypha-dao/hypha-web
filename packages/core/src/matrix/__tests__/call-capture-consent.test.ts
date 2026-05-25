@@ -36,6 +36,7 @@ describe('call-capture-consent', () => {
       ),
     ).toEqual({
       actor: 'Bob',
+      actorUserId: '@bob:example.org',
       mode: 'recording_with_transcript',
       isLocalInitiator: false,
     });
@@ -64,6 +65,7 @@ describe('call-capture-consent', () => {
     const merged = resolveCaptureConsent(
       {
         actor: 'Bob',
+        actorUserId: '@bob:example.org',
         mode: 'recording_with_transcript',
         isLocalInitiator: false,
       },
@@ -72,6 +74,7 @@ describe('call-capture-consent', () => {
 
     expect(merged).toEqual({
       actor: '',
+      actorUserId: '',
       mode: 'transcript_only',
       isLocalInitiator: true,
       paused: false,

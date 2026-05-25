@@ -13,6 +13,7 @@ type HumanChatPanelCallJoinStripProps = {
   onJoinAudio?: () => void;
   onJoinVideo: () => void;
   captureConsent?: SpaceGroupCallCaptureConsent | null;
+  roomId?: string | null;
   /**
    * When set, replaces the “call in progress” line (e.g. “You left the call”).
    */
@@ -32,6 +33,7 @@ export function HumanChatPanelCallJoinStrip({
   onJoinAudio,
   onJoinVideo,
   captureConsent = null,
+  roomId = null,
   durableMessage,
   onDismissDurable,
   callJoinAlertsUnmuted = true,
@@ -61,6 +63,7 @@ export function HumanChatPanelCallJoinStrip({
       {captureConsent ? (
         <HumanChatPanelCaptureConsentBanner
           consent={captureConsent}
+          roomId={roomId}
           variant="join"
           className="border-border/60"
         />

@@ -1,4 +1,7 @@
-import { looksLikeTechnicalSpeakerLabel } from '../matrix/matrix-member-display';
+import {
+  looksLikeTechnicalSpeakerLabel,
+  splitSpeakerLabeledTranscriptLine,
+} from '../matrix/matrix-member-display';
 import type { SpaceMemorySource } from './build-space-memory-items';
 
 const TECHNICAL_FILENAME =
@@ -42,12 +45,11 @@ function firstSentence(text: string, maxLen = 120): string {
 export function stripTechnicalSpeakerFromExcerpt(excerpt: string): string {
   const trimmed = excerpt.trim();
   if (!trimmed) return '';
-  const colonIdx = trimmed.indexOf(':');
-  if (colonIdx <= 0) return trimmed;
-  const speaker = trimmed.slice(0, colonIdx).trim();
-  const body = trimmed.slice(colonIdx + 1).trim();
+  const parsed = splitSpeakerLabeledTranscriptLine(trimmed);
+  if (!parsed) return trimmed;
+  const body = parsed.body.trim();
   if (!body) return trimmed;
-  if (looksLikeTechnicalSpeakerLabel(speaker)) return body;
+  if (looksLikeTechnicalSpeakerLabel(parsed.speaker)) return body;
   return trimmed;
 }
 

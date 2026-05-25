@@ -257,6 +257,7 @@ function resolveMxcUrls(
 type SpaceMemoryTimelineItemProps = {
   item: SpaceMemoryItem;
   contextLine: string;
+  matrixChatRoomId?: string | null;
   openLabel: string;
 };
 
@@ -267,6 +268,7 @@ type SpaceMemoryTimelineItemProps = {
 export function SpaceMemoryTimelineItem({
   item,
   contextLine,
+  matrixChatRoomId = null,
   openLabel,
 }: SpaceMemoryTimelineItemProps) {
   const t = useTranslations('CoherenceTab');
@@ -352,6 +354,7 @@ export function SpaceMemoryTimelineItem({
           {isCallTranscriptBody ? (
             <ResolvedCallTranscriptExcerpt
               excerpt={excerpt}
+              roomId={matrixChatRoomId}
               className="line-clamp-8 whitespace-pre-wrap text-sm leading-relaxed text-card-foreground"
             />
           ) : (
