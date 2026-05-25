@@ -516,6 +516,7 @@ export function useSpaceGroupCall(
   const pendingRecordingUploadRef = useRef<PendingRecordingUpload | null>(null);
   const captureModeRef = useRef<SpaceGroupCallCaptureMode>('none');
   const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
+  const [isCallRecovering, setIsCallRecovering] = useState(false);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
 
   const dismissRemoteMediaStallBanner = useCallback(() => {
@@ -1141,6 +1142,7 @@ export function useSpaceGroupCall(
     remoteMediaRecoverRequestedRef.current = false;
     remoteMediaRecoverAttemptedRef.current = false;
     remoteMediaRecoverInFlightRef.current = false;
+    setIsCallRecovering(false);
     setRemoteMediaStall(false);
     if (feedUpdateRafRef.current != null) {
       cancelAnimationFrame(feedUpdateRafRef.current);
@@ -1412,7 +1414,9 @@ export function useSpaceGroupCall(
       if (
         waitedMs >= REMOTE_MEDIA_AUTO_RECOVER_MS &&
         !remoteMediaRecoverAttemptedRef.current &&
-        !remoteMediaRecoverInFlightRef.current
+        !remoteMediaRecoverInFlightRef.current &&
+        typeof document !== 'undefined' &&
+        !document.hidden
       ) {
         remoteMediaRecoverAttemptedRef.current = true;
         remoteMediaRecoverRequestedRef.current = true;
@@ -2678,6 +2682,14 @@ export function useSpaceGroupCall(
   useEffect(() => {
     if (!groupCallRef.current) return;
     if (activeGroupCallRoomIdRef.current === roomId) return;
+    if (
+      activeGroupCallRoomIdRef.current &&
+      roomId &&
+      activeGroupCallRoomIdRef.current !== roomId
+    ) {
+      // Chat panel room changed while the dock keeps the call pinned — ignore.
+      return;
+    }
     if (lastRoomIdForTelemetryRef.current) {
       logSpaceGroupCallEvent({
         name: 'hypha.group_call.left',
@@ -2767,13 +2779,21 @@ export function useSpaceGroupCall(
       setTabBackgroundWhileInCall(
         inCall && typeof document !== 'undefined' && document.hidden,
       );
+      if (document.hidden || !inCall) return;
+      const gc = groupCallRef.current;
+      if (!gc) return;
+      remoteMediaGapSinceRef.current = null;
+      remoteMediaStallLoggedRef.current = false;
+      remoteMediaRecoverAttemptedRef.current = false;
+      nudgeGroupCallPlaceOutgoing(gc);
+      evalRemoteMediaStall();
     };
     document.addEventListener('visibilitychange', onVis);
     onVis();
     return () => {
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [callState]);
+  }, [callState, evalRemoteMediaStall]);
 
   useEffect(() => {
     return () => {
@@ -2808,6 +2828,7 @@ export function useSpaceGroupCall(
     abortInFlightJoin(joinEpochRef, isJoiningRef);
     runCleanup();
     remoteMediaRecoverInFlightRef.current = true;
+    setIsCallRecovering(true);
     setCallState('idle');
     setErrorCode(null);
     setCallKind(null);
@@ -2823,6 +2844,7 @@ export function useSpaceGroupCall(
     void enterWithKind(retryKind, retryThreadRootEventId, {
       preserveRemoteMediaRecoverInFlight: true,
     }).finally(() => {
+      setIsCallRecovering(false);
       if (!groupCallRef.current) {
         remoteMediaRecoverAttemptedRef.current = false;
       }
@@ -3073,6 +3095,7 @@ export function useSpaceGroupCall(
     remoteMediaStall,
     dismissRemoteMediaStallBanner,
     tabBackgroundWhileInCall,
+    isCallRecovering,
     activeSpeakerKey,
     threadContext,
     callKind,

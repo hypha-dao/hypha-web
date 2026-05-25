@@ -1094,6 +1094,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     dismissRemoteMediaStallBanner: dismissSpaceCallRemoteMediaStall,
     showFloatingDock,
   } = useGlobalCallDock();
+  const showFloatingDockRef = useRef(showFloatingDock);
+  showFloatingDockRef.current = showFloatingDock;
 
   useEffect(() => {
     const activeRoomId = roomId?.trim() || null;
@@ -1102,12 +1104,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
     if (activeRoomId) {
       bindRoomContext(activeRoomId, activeSpaceSlug, activeAuthToken);
-    } else {
+      return;
+    }
+    if (!showFloatingDockRef.current) {
       bindRoomContext(null, null, null);
     }
 
     return () => {
-      bindRoomContext(null, null, null);
+      if (!showFloatingDockRef.current) {
+        bindRoomContext(null, null, null);
+      }
     };
   }, [authToken, bindRoomContext, roomId, spaceSlug]);
 
