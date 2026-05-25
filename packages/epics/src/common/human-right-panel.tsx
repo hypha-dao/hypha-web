@@ -3938,6 +3938,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   resolveMemberLabel={resolveMentionMemberLabel}
                   onSelectMessage={handleSelectMentionFromInbox}
                   aggregatedMentions={mode === 'space'}
+                  callJoinAlertsUnmuted={
+                    callUiEnabled && mode === 'space'
+                      ? joinAlertSoundEnabled
+                      : undefined
+                  }
+                  onCallJoinAlertsUnmutedChange={
+                    callUiEnabled && mode === 'space'
+                      ? setJoinAlertSoundEnabled
+                      : undefined
+                  }
                 />
               </div>
             )}
