@@ -2971,45 +2971,49 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const token = authTokenRef.current?.trim();
       if (token) headers.Authorization = `Bearer ${token}`;
 
-      const res = await fetch(
-        `/api/v1/signals/${encodeURIComponent(qpSignal)}`,
-        { headers },
-      );
-      if (cancelled || !res.ok) return;
+      try {
+        const res = await fetch(
+          `/api/v1/signals/${encodeURIComponent(qpSignal)}`,
+          { headers },
+        );
+        if (cancelled || !res.ok) return;
 
-      const data = (await res.json()) as {
-        signalSlug?: string;
-        signalTitle?: string;
-        spaceSlug?: string;
-        roomId?: string;
-      };
-      const resolvedSlug = data.signalSlug?.trim();
-      const resolvedSpaceSlug = data.spaceSlug?.trim();
-      const resolvedRoomId = data.roomId?.trim();
-      if (
-        !resolvedSlug ||
-        !resolvedSpaceSlug ||
-        !resolvedRoomId ||
-        resolvedSpaceSlug !== spaceSlug.trim()
-      ) {
-        return;
+        const data = (await res.json()) as {
+          signalSlug?: string;
+          signalTitle?: string;
+          spaceSlug?: string;
+          roomId?: string;
+        };
+        const resolvedSlug = data.signalSlug?.trim();
+        const resolvedSpaceSlug = data.spaceSlug?.trim();
+        const resolvedRoomId = data.roomId?.trim();
+        if (
+          !resolvedSlug ||
+          !resolvedSpaceSlug ||
+          !resolvedRoomId ||
+          resolvedSpaceSlug !== spaceSlug.trim()
+        ) {
+          return;
+        }
+
+        rememberRoomToCoherenceSession(
+          resolvedRoomId,
+          resolvedSlug,
+          data.signalTitle,
+          resolvedSpaceSlug,
+        );
+        openCoherenceChat(
+          resolvedRoomId,
+          data.signalTitle?.trim() || resolvedSlug,
+          resolvedSlug,
+        );
+        openHumanChatPanel();
+        setActiveTab('chat');
+        if (qpMsg) setScrollToEventId(qpMsg);
+        stripSignalQueryFromUrl();
+      } catch (error) {
+        console.warn('[HumanRightPanel] signal deep-link lookup failed:', error);
       }
-
-      rememberRoomToCoherenceSession(
-        resolvedRoomId,
-        resolvedSlug,
-        data.signalTitle,
-        resolvedSpaceSlug,
-      );
-      openCoherenceChat(
-        resolvedRoomId,
-        data.signalTitle?.trim() || resolvedSlug,
-        resolvedSlug,
-      );
-      openHumanChatPanel();
-      setActiveTab('chat');
-      if (qpMsg) setScrollToEventId(qpMsg);
-      stripSignalQueryFromUrl();
     })();
 
     return () => {
