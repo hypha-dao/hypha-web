@@ -10,10 +10,7 @@ import {
   BANKING_LOADING_STATE_CLASS,
   TREASURY_CARD_GRID_CLASS,
 } from '../banking-ui';
-import type {
-  BankTransferPublic,
-  BankVirtualAccountCurrency,
-} from '../hooks/types';
+import type { BankTransferPublic } from '../hooks/types';
 import { BankTransferCard } from './bank-transfer-card';
 import { BankTransferDetailsDialog } from './bank-transfer-details-dialog';
 
@@ -21,27 +18,31 @@ export type BankTransfersSectionProps = {
   transfers: BankTransferPublic[];
   transfersLoading: boolean;
   canManage: boolean;
+  newTransferDisabled?: boolean;
+  newTransferDisabledReason?:
+    | 'loadingTransfers'
+    | 'finishVerificationFirst'
+    | null;
   activatingTransferId: number | null;
   failedTransferId: number | null;
   activateError: string | null;
   onOpenVerificationDetails: () => void;
   onActivateTransfer: (transferId: number) => void;
   onNewTransfer?: () => void;
-  /** When true, shows the CTA disabled (e.g. feature not ready for preview). */
-  newTransferDisabled?: boolean;
 };
 
 export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
   transfers,
   transfersLoading,
   canManage,
+  newTransferDisabled = false,
+  newTransferDisabledReason = null,
   activatingTransferId,
   failedTransferId,
   activateError,
   onOpenVerificationDetails,
   onActivateTransfer,
   onNewTransfer,
-  newTransferDisabled = false,
 }) => {
   const t = useTranslations('BankingTab.sections.transfers');
   const tToolbar = useTranslations('BankingTab.toolbar');
@@ -54,6 +55,30 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
     setDetailsOpen(true);
   };
 
+  const tooltipText =
+    newTransferDisabledReason === 'loadingTransfers'
+      ? tToolbar('loadingTransfers')
+      : newTransferDisabledReason === 'finishVerificationFirst'
+      ? tToolbar('finishVerificationFirst')
+      : null;
+
+  const showNewTransferCta =
+    canManage && (onNewTransfer != null || newTransferDisabled);
+
+  const newTransferButton = (
+    <Button
+      type="button"
+      colorVariant="accent"
+      size="sm"
+      className="shrink-0 gap-1.5"
+      disabled={newTransferDisabled}
+      onClick={newTransferDisabled ? undefined : onNewTransfer}
+    >
+      <Plus className="h-4 w-4" />
+      {t('newTransferCta')}
+    </Button>
+  );
+
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-4">
@@ -65,27 +90,14 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
             {t('description')}
           </p>
         </div>
-        {canManage && (onNewTransfer || newTransferDisabled) ? (
-          <span
-            className="inline-flex shrink-0"
-            title={
-              newTransferDisabled
-                ? tToolbar('oneTimeTransferComingSoon')
-                : undefined
-            }
-          >
-            <Button
-              type="button"
-              colorVariant="accent"
-              size="sm"
-              className="shrink-0 gap-1.5"
-              disabled={newTransferDisabled}
-              onClick={newTransferDisabled ? undefined : onNewTransfer}
-            >
-              <Plus className="h-4 w-4" />
-              {t('newTransferCta')}
-            </Button>
-          </span>
+        {showNewTransferCta ? (
+          tooltipText && newTransferDisabled ? (
+            <span className="inline-flex shrink-0" title={tooltipText}>
+              {newTransferButton}
+            </span>
+          ) : (
+            newTransferButton
+          )
         ) : null}
       </div>
 

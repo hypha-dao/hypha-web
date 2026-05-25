@@ -96,14 +96,29 @@ export type BridgeCreateTransferRequest = {
   };
   amount?: string;
   features?: { flexible_amount?: boolean };
+  developer_fee?: string;
+  developer_fee_percent?: string;
+};
+
+export type BridgeTransferReceipt = {
+  initial_amount?: string;
+  developer_fee?: string;
+  exchange_fee?: string;
+  subtotal_amount?: string;
+  gas_fee?: string;
+  final_amount?: string;
+  destination_tx_hash?: string;
+  url?: string;
 };
 
 export type BridgeTransferResponse = {
   id: string;
   state: string;
+  developer_fee?: string;
   developer_fee_percent?: string;
   on_behalf_of?: string;
   amount?: string | null;
+  currency?: string;
   source?: { payment_rail?: string; currency?: string };
   destination?: {
     payment_rail?: string;
@@ -111,6 +126,7 @@ export type BridgeTransferResponse = {
     to_address?: string;
   };
   source_deposit_instructions: Record<string, unknown>;
+  receipt?: BridgeTransferReceipt;
   created_at?: string;
   updated_at?: string;
 };
@@ -281,6 +297,8 @@ export async function bridgeGetKycLink(
     },
   );
 
+  console.log('GERGERGER');
+  console.log(parsed);
   if (!isBridgeKycLinkRecord(parsed)) {
     throw new Error(
       'Bridge API returned an unexpected KYC link response shape',
@@ -332,6 +350,8 @@ export async function bridgeCreateKycLink(
     );
   }
 
+  console.log('GERGERGER');
+  console.log(parsed);
   if (!isBridgeKycLinkRecord(parsed)) {
     throw new Error(
       'Bridge API returned an unexpected KYC link response shape',
@@ -353,6 +373,8 @@ export async function bridgeGetCustomerKycLink(
     { method: 'GET' },
   );
 
+  console.log('GERGERGER');
+  console.log(parsed);
   if (!isBridgeKycLinkRecord(parsed)) {
     throw new Error(
       'Bridge API returned an unexpected customer KYC link response shape',

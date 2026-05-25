@@ -3,7 +3,7 @@ import {
   BANK_OPERATION_PENDING_KYB,
   currenciesToEndorsements,
   DEFAULT_BANK_PROVIDER,
-  getTransferSourceRailForCurrency,
+  resolveBankTransferCorridor,
   type BankVirtualAccountCurrency,
 } from '../constants';
 import type {
@@ -11,6 +11,7 @@ import type {
   RequestSpaceBankTransferInput,
 } from '../types';
 import { findSpaceBySlug } from '../../space/server/queries';
+import { resolveSpaceExecutorAddress } from '../../space/server/resolve-space-executor-address';
 import { BankOnboardingError } from './errors';
 import { ensureSpaceBankCustomer } from './ensure-space-bank-customer';
 import { executeBridgeBankTransfer } from './execute-bridge-bank-transfer';
@@ -29,12 +30,17 @@ export async function createSpaceBankTransfer(
   { db }: { db: DatabaseInstance },
   options?: CreateSpaceBankTransferOptions,
 ): Promise<CreateSpaceBankTransferResult> {
-  const { spaceSlug, authToken, currency, amount } = input;
+  const { spaceSlug, authToken, amount } = input;
 
-  const paymentRail = getTransferSourceRailForCurrency(currency);
-  if (!paymentRail) {
-    throw new BankOnboardingError('Unsupported currency', 400);
+  const corridor = resolveBankTransferCorridor({
+    corridorKey: input.corridorKey,
+    currency: input.currency,
+  });
+  if (!corridor) {
+    throw new BankOnboardingError('Unsupported transfer corridor', 400);
   }
+
+  const { currency, paymentRail } = corridor;
 
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!space) {
@@ -67,6 +73,8 @@ export async function createSpaceBankTransfer(
 
   const isApproved = customer.kycStatus === 'approved';
 
+  const treasuryAddress = (await resolveSpaceExecutorAddress(space)) ?? '';
+
   if (!isApproved) {
     const inserted = await insertBankTransfer(
       {
@@ -79,7 +87,7 @@ export async function createSpaceBankTransfer(
         depositMessage: null,
         status: BANK_OPERATION_PENDING_KYB,
         depositInstructions: {},
-        destinationAddress: space.address ?? '',
+        destinationAddress: treasuryAddress,
       },
       { db },
     );
@@ -88,7 +96,7 @@ export async function createSpaceBankTransfer(
   }
 
   const bridgeResult = await executeBridgeBankTransfer(
-    { customer, space, currency, amount },
+    { customer, space, currency, paymentRail, amount },
     { db },
     options,
   );

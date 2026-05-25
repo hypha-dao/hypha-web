@@ -504,7 +504,7 @@
     "sections": {
       "transfers": {
         "title": "One-time Bank Transfers",
-        "description": "One-time incoming transfers for donors and payers. Each request has its own deposit instructions; funds convert to USDC in your treasury.",
+        "description": "One-time incoming transfers.",
         "emptyTitle": "No one-time transfers yet",
         "emptyDescription": "Create a one-time transfer when you need a single incoming payment without setting up a full deposit account.",
         "newTransferCta": "New one-time transfer",
@@ -512,7 +512,7 @@
       },
       "accounts": {
         "title": "Bank Accounts",
-        "description": "Permanent deposit details per currency. Share these with anyone who pays your space regularly.",
+        "description": "Permanent deposit details per currency.",
         "openAccountCta": "Open a space account",
         "addCurrencyCta": "Add a currency",
         "emptyTitle": "No bank accounts yet",
@@ -549,7 +549,7 @@
       "finishVerificationFirst": "Finish the current verification first",
       "allCurrenciesCovered": "All supported currencies already have accounts",
       "loadingAccounts": "Loading bank accounts…",
-      "oneTimeTransferComingSoon": "One-time transfers are coming soon"
+      "loadingTransfers": "Loading transfers…"
     },
     "operationStatus": {
       "pendingKyb": "Pending verification",
@@ -587,6 +587,8 @@
         "not_approved": "Not approved",
         "not_opened": "Not opened"
       },
+      "syncStatus": "Sync status",
+      "syncingStatus": "Syncing…",
       "procedureHints": {
         "fallback": "No further action is required for this step in Bridge right now.",
         "tos": {
@@ -674,16 +676,76 @@
     },
     "transferCard": {
       "viewDetails": "View details",
-      "flexibleAmount": "Any amount"
+      "flexibleAmount": "Any amount",
+      "feeHint": "Developer fee: 0% · Provider fees may apply"
     },
     "transferDetails": {
       "title": "One-time transfer",
-      "description": "The payer must include the reference message on their bank transfer so Bridge can match the deposit."
+      "description": "The payer must include the reference message on their bank transfer so Bridge can match the deposit.",
+      "referenceWarning": "The sender must include the payment reference below in the wire memo, ACH description, or SEPA reference. Without it, the provider cannot match the deposit.",
+      "amountLabel": "Amount",
+      "flexibleAmount": "Any amount",
+      "receiptHeading": "Payment receipt",
+      "finalAmount": "Received in treasury",
+      "gasFee": "Network fee (gas)",
+      "exchangeFee": "Exchange fee",
+      "destinationTx": "Treasury transaction",
+      "viewProviderReceipt": "View provider receipt",
+      "receiptFields": {
+        "transferId": "Transfer ID",
+        "state": "Status",
+        "amount": "Amount",
+        "developerFee": "Developer fee",
+        "source": "Source",
+        "createdAt": "Created",
+        "updatedAt": "Updated",
+        "destinationRail": "Destination",
+        "destinationAddress": "Treasury address",
+        "initialAmount": "Initial amount",
+        "subtotalAmount": "Subtotal",
+        "finalAmount": "Final amount",
+        "exchangeFee": "Exchange fee",
+        "gasFee": "Network fee (gas)",
+        "receiptDeveloperFee": "Receipt developer fee",
+        "destinationTx": "Treasury transaction",
+        "receiptUrl": "Provider receipt URL"
+      }
+    },
+    "transferCorridors": {
+      "usd-ach": {
+        "label": "USD — local (ACH)",
+        "hint": "Domestic US bank transfers via ACH"
+      },
+      "usd-wire": {
+        "label": "USD — international (wire)",
+        "hint": "International wire transfers in US dollars"
+      },
+      "eur": {
+        "label": "EUR",
+        "hint": "SEPA bank transfers in euros"
+      },
+      "gbp": {
+        "label": "GBP",
+        "hint": "Faster Payments in British pounds"
+      },
+      "mxn": {
+        "label": "MXN",
+        "hint": "SPEI transfers in Mexican pesos"
+      },
+      "brl": {
+        "label": "BRL",
+        "hint": "PIX transfers in Brazilian reais"
+      },
+      "cop": {
+        "label": "COP (beta)",
+        "hint": "Bre-B transfers in Colombian pesos"
+      }
     },
     "createTransfer": {
       "title": "New one-time transfer",
       "description": "Create deposit instructions for a single incoming transfer. Funds convert to USDC in your treasury.",
-      "currencyLabel": "Currency",
+      "corridorLabel": "Corridor",
+      "corridorHint": "Select how the payer will send funds. This determines the deposit instructions.",
       "fixedAmountLabel": "Require a fixed amount",
       "amountPlaceholder": "e.g. 1000.00",
       "flexibleAmountHint": "The payer can send any amount.",
@@ -692,13 +754,15 @@
       "submitting": "Creating…"
     },
     "transferStatus": {
-      "awaiting_funds": "Awaiting funds",
-      "funds_received": "Funds received",
+      "awaiting_funds": "Awaiting payment",
+      "funds_received": "Received",
       "payment_processed": "Completed",
-      "canceled": "Canceled",
-      "cancelled": "Canceled",
+      "canceled": "Cancelled",
+      "cancelled": "Cancelled",
       "failed": "Failed",
-      "returned": "Returned"
+      "returned": "Returned",
+      "in_review": "In review",
+      "undeliverable": "Undeliverable"
     },
     "accountDetails": {},
     "depositInstructions": {

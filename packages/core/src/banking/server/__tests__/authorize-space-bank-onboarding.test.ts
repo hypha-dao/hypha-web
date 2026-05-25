@@ -5,6 +5,13 @@ vi.mock('@hypha-platform/ui-utils', () => ({
     value != null && Number.isFinite(value) && value >= 0,
 }));
 
+const resolveSpaceExecutorAddress = vi.fn();
+
+vi.mock('../../../space/server/resolve-space-executor-address', () => ({
+  resolveSpaceExecutorAddress: (...args: unknown[]) =>
+    resolveSpaceExecutorAddress(...args),
+}));
+
 import { authorizeSpaceBankOnboarding } from '../authorize-space-bank-onboarding';
 
 const findSelf = vi.fn();
@@ -23,6 +30,8 @@ vi.mock('../../../common/server/get-db', () => ({
   getDb: () => ({}),
 }));
 
+const TREASURY = '0xtreasury000000000000000000000000000001' as const;
+
 describe('authorizeSpaceBankOnboarding', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -30,7 +39,7 @@ describe('authorizeSpaceBankOnboarding', () => {
 
   it('returns 422 when space has no web3SpaceId', async () => {
     const result = await authorizeSpaceBankOnboarding({
-      space: { web3SpaceId: null, address: '0xabc' },
+      space: { web3SpaceId: null },
       authToken: 'token',
     });
 
@@ -43,9 +52,11 @@ describe('authorizeSpaceBankOnboarding', () => {
     expect(findSelf).not.toHaveBeenCalled();
   });
 
-  it('returns 422 when space has no treasury address', async () => {
+  it('returns 422 when on-chain treasury address is missing', async () => {
+    resolveSpaceExecutorAddress.mockResolvedValue(null);
+
     const result = await authorizeSpaceBankOnboarding({
-      space: { web3SpaceId: 42, address: null },
+      space: { web3SpaceId: 42 },
       authToken: 'token',
     });
 
@@ -59,6 +70,7 @@ describe('authorizeSpaceBankOnboarding', () => {
   });
 
   it('returns 403 when findSelf returns person without wallet address', async () => {
+    resolveSpaceExecutorAddress.mockResolvedValue(TREASURY);
     findSelf.mockResolvedValue({
       id: 10,
       slug: 'alice',
@@ -66,10 +78,7 @@ describe('authorizeSpaceBankOnboarding', () => {
     });
 
     const result = await authorizeSpaceBankOnboarding({
-      space: {
-        web3SpaceId: 42,
-        address: '0xtreasury000000000000000000000000000001',
-      },
+      space: { web3SpaceId: 42 },
       authToken: 'token',
     });
 
@@ -83,6 +92,7 @@ describe('authorizeSpaceBankOnboarding', () => {
   });
 
   it('returns 500 when isOnChainMemberOrDelegate throws', async () => {
+    resolveSpaceExecutorAddress.mockResolvedValue(TREASURY);
     findSelf.mockResolvedValue({
       id: 10,
       slug: 'alice',
@@ -91,10 +101,7 @@ describe('authorizeSpaceBankOnboarding', () => {
     isOnChainMemberOrDelegate.mockRejectedValue(new Error('rpc down'));
 
     const result = await authorizeSpaceBankOnboarding({
-      space: {
-        web3SpaceId: 42,
-        address: '0xtreasury000000000000000000000000000001',
-      },
+      space: { web3SpaceId: 42 },
       authToken: 'token',
     });
 
@@ -106,13 +113,11 @@ describe('authorizeSpaceBankOnboarding', () => {
   });
 
   it('returns 401 when findSelf returns null', async () => {
+    resolveSpaceExecutorAddress.mockResolvedValue(TREASURY);
     findSelf.mockResolvedValue(null);
 
     const result = await authorizeSpaceBankOnboarding({
-      space: {
-        web3SpaceId: 42,
-        address: '0xtreasury000000000000000000000000000001',
-      },
+      space: { web3SpaceId: 42 },
       authToken: 'token',
     });
 
@@ -124,6 +129,7 @@ describe('authorizeSpaceBankOnboarding', () => {
   });
 
   it('returns 403 when caller is not an on-chain member or delegate', async () => {
+    resolveSpaceExecutorAddress.mockResolvedValue(TREASURY);
     findSelf.mockResolvedValue({
       id: 10,
       slug: 'alice',
@@ -132,10 +138,7 @@ describe('authorizeSpaceBankOnboarding', () => {
     isOnChainMemberOrDelegate.mockResolvedValue(false);
 
     const result = await authorizeSpaceBankOnboarding({
-      space: {
-        web3SpaceId: 42,
-        address: '0xtreasury000000000000000000000000000001',
-      },
+      space: { web3SpaceId: 42 },
       authToken: 'token',
     });
 
@@ -148,6 +151,7 @@ describe('authorizeSpaceBankOnboarding', () => {
   });
 
   it('allows on-chain member or delegate with treasury deployed', async () => {
+    resolveSpaceExecutorAddress.mockResolvedValue(TREASURY);
     findSelf.mockResolvedValue({
       id: 10,
       slug: 'alice',
@@ -156,10 +160,7 @@ describe('authorizeSpaceBankOnboarding', () => {
     isOnChainMemberOrDelegate.mockResolvedValue(true);
 
     const result = await authorizeSpaceBankOnboarding({
-      space: {
-        web3SpaceId: 42,
-        address: '0xtreasury000000000000000000000000000001',
-      },
+      space: { web3SpaceId: 42 },
       authToken: 'token',
     });
 

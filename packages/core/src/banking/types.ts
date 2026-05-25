@@ -90,7 +90,10 @@ export type CreateSpaceBankTransferResult = BankTransferPublic;
 export type RequestSpaceBankTransferInput = {
   spaceSlug: string;
   authToken: string;
-  currency: string;
+  /** Preferred — derives currency and paymentRail server-side. */
+  corridorKey?: string;
+  /** Legacy fallback when corridorKey is omitted (USD defaults to ACH). */
+  currency?: string;
   amount?: string;
   legalName?: string;
   contactEmail?: string;

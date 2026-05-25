@@ -6,13 +6,17 @@ import { useTranslations } from 'next-intl';
 
 import { copyToClipboard, cn } from '@hypha-platform/ui-utils';
 
-import { BANKING_COPYABLE_SURFACE_CLASS } from '../banking-ui';
+import {
+  BANKING_COPYABLE_SURFACE_CLASS,
+  BANKING_READONLY_SURFACE_CLASS,
+} from '../banking-ui';
 
 type InlineCopyRowProps = {
   label?: string | null;
   value: string;
   className?: string;
   multiline?: boolean;
+  readOnly?: boolean;
 };
 
 export const InlineCopyRow: FC<InlineCopyRowProps> = ({
@@ -20,6 +24,7 @@ export const InlineCopyRow: FC<InlineCopyRowProps> = ({
   value,
   className,
   multiline = false,
+  readOnly = false,
 }) => {
   const t = useTranslations('BankingTab.depositInstructions');
   const [copied, setCopied] = useState(false);
@@ -33,6 +38,31 @@ export const InlineCopyRow: FC<InlineCopyRowProps> = ({
     },
     [value],
   );
+
+  const valueClassName = cn(
+    'min-w-0 flex-1 font-mono',
+    readOnly ? 'text-muted-foreground' : 'text-foreground',
+    multiline ? 'whitespace-pre-line' : 'truncate',
+  );
+
+  if (readOnly) {
+    return (
+      <div
+        className={cn(
+          BANKING_READONLY_SURFACE_CLASS,
+          'flex min-w-0 w-full cursor-default px-3 py-2 text-left text-2 opacity-80',
+          multiline ? 'flex-col items-start gap-1' : 'items-center gap-2',
+          className,
+        )}
+        aria-disabled
+      >
+        {label ? (
+          <span className="shrink-0 text-muted-foreground">{label}:</span>
+        ) : null}
+        <span className={valueClassName}>{value}</span>
+      </div>
+    );
+  }
 
   return (
     <button
@@ -49,14 +79,7 @@ export const InlineCopyRow: FC<InlineCopyRowProps> = ({
       {label ? (
         <span className="shrink-0 text-muted-foreground">{label}:</span>
       ) : null}
-      <span
-        className={cn(
-          'min-w-0 flex-1 font-mono text-foreground',
-          multiline ? 'whitespace-pre-line' : 'truncate',
-        )}
-      >
-        {value}
-      </span>
+      <span className={valueClassName}>{value}</span>
       {copied ? (
         <Check className="h-3.5 w-3.5 shrink-0 text-success-11" aria-hidden />
       ) : (

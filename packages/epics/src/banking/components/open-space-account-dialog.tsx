@@ -22,6 +22,14 @@ import {
 } from '../bank-currency-display';
 import { CurrencyOptionRow } from './currency-option-row';
 import { BANKING_READONLY_INPUT_CLASS } from '../banking-ui';
+import {
+  BANKING_DIALOG_CONTENT_CLASS,
+  BANKING_DIALOG_FOOTER_CLASS,
+  BANKING_DIALOG_FORM_CONTENT_CLASS,
+  BANKING_DIALOG_HEADER_CLASS,
+  BankingDialogBody,
+} from './banking-dialog-layout';
+import { cn } from '@hypha-platform/ui-utils';
 
 export type OpenSpaceAccountDialogMode = 'full' | 'addCurrency';
 
@@ -122,8 +130,10 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent
+        className={cn(BANKING_DIALOG_FORM_CONTENT_CLASS, 'max-w-md')}
+      >
+        <DialogHeader className={BANKING_DIALOG_HEADER_CLASS}>
           <DialogTitle>
             {isAddMode ? t('titleAddCurrency') : t('title')}
           </DialogTitle>
@@ -132,96 +142,100 @@ export const OpenSpaceAccountDialog: FC<OpenSpaceAccountDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form
-          id={formId}
-          onSubmit={handleSubmit}
-          className="flex flex-col gap-4"
-        >
-          {showCustomerFields ? (
-            <>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="open-account-legal-name">
-                  {t('legalName')}
-                </Label>
-                <Input
-                  id="open-account-legal-name"
-                  value={legalName}
-                  onChange={(e) => setLegalName(e.target.value)}
-                  required={!customerFieldsLocked}
-                  maxLength={1024}
-                  disabled={isSubmitting || customerFieldsLocked}
-                  readOnly={customerFieldsLocked}
-                  tabIndex={customerFieldsLocked ? -1 : undefined}
-                  className={
-                    customerFieldsLocked
-                      ? BANKING_READONLY_INPUT_CLASS
-                      : undefined
-                  }
-                  onFocus={
-                    customerFieldsLocked
-                      ? (event) => event.currentTarget.blur()
-                      : undefined
-                  }
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="open-account-email">{t('contactEmail')}</Label>
-                <Input
-                  id="open-account-email"
-                  type="email"
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  required={!customerFieldsLocked}
-                  disabled={isSubmitting || customerFieldsLocked}
-                  readOnly={customerFieldsLocked}
-                  tabIndex={customerFieldsLocked ? -1 : undefined}
-                  className={
-                    customerFieldsLocked
-                      ? BANKING_READONLY_INPUT_CLASS
-                      : undefined
-                  }
-                  onFocus={
-                    customerFieldsLocked
-                      ? (event) => event.currentTarget.blur()
-                      : undefined
-                  }
-                />
-              </div>
-            </>
-          ) : null}
-
-          <fieldset className="flex flex-col gap-2">
-            <legend className="text-sm font-medium">
-              {t('currenciesLabel')}
-            </legend>
-            <p className="text-sm text-muted-foreground">
-              {t('currenciesHint')}
-            </p>
-            {currencyOptions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t('noCurrenciesAvailable')}
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {currencyOptions.map((currency) => (
-                  <CurrencyOptionRow
-                    key={currency}
-                    currency={currency}
-                    checked={selected.includes(currency)}
-                    disabled={isSubmitting}
-                    onCheckedChange={(checked) =>
-                      toggleCurrency(currency, checked)
+        <BankingDialogBody>
+          <form
+            id={formId}
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-4"
+          >
+            {showCustomerFields ? (
+              <>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="open-account-legal-name">
+                    {t('legalName')}
+                  </Label>
+                  <Input
+                    id="open-account-legal-name"
+                    value={legalName}
+                    onChange={(e) => setLegalName(e.target.value)}
+                    required={!customerFieldsLocked}
+                    maxLength={1024}
+                    disabled={isSubmitting || customerFieldsLocked}
+                    readOnly={customerFieldsLocked}
+                    tabIndex={customerFieldsLocked ? -1 : undefined}
+                    className={
+                      customerFieldsLocked
+                        ? BANKING_READONLY_INPUT_CLASS
+                        : undefined
+                    }
+                    onFocus={
+                      customerFieldsLocked
+                        ? (event) => event.currentTarget.blur()
+                        : undefined
                     }
                   />
-                ))}
-              </div>
-            )}
-          </fieldset>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="open-account-email">
+                    {t('contactEmail')}
+                  </Label>
+                  <Input
+                    id="open-account-email"
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    required={!customerFieldsLocked}
+                    disabled={isSubmitting || customerFieldsLocked}
+                    readOnly={customerFieldsLocked}
+                    tabIndex={customerFieldsLocked ? -1 : undefined}
+                    className={
+                      customerFieldsLocked
+                        ? BANKING_READONLY_INPUT_CLASS
+                        : undefined
+                    }
+                    onFocus={
+                      customerFieldsLocked
+                        ? (event) => event.currentTarget.blur()
+                        : undefined
+                    }
+                  />
+                </div>
+              </>
+            ) : null}
 
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </form>
+            <fieldset className="flex flex-col gap-2">
+              <legend className="text-sm font-medium">
+                {t('currenciesLabel')}
+              </legend>
+              <p className="text-sm text-muted-foreground">
+                {t('currenciesHint')}
+              </p>
+              {currencyOptions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t('noCurrenciesAvailable')}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {currencyOptions.map((currency) => (
+                    <CurrencyOptionRow
+                      key={currency}
+                      currency={currency}
+                      checked={selected.includes(currency)}
+                      disabled={isSubmitting}
+                      onCheckedChange={(checked) =>
+                        toggleCurrency(currency, checked)
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </fieldset>
 
-        <DialogFooter>
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          </form>
+        </BankingDialogBody>
+
+        <DialogFooter className={BANKING_DIALOG_FOOTER_CLASS}>
           <Button
             type="submit"
             form={formId}

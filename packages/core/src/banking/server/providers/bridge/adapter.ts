@@ -137,8 +137,10 @@ export function createBridgeKycProvider(): BankKycProvider {
 
       if (input.amount) {
         body.amount = input.amount;
+        body.developer_fee = '0.0';
       } else {
         body.features = { flexible_amount: true };
+        body.developer_fee_percent = '0.0';
       }
 
       const response = await bridgeCreateTransfer(body, input.idempotencyKey);

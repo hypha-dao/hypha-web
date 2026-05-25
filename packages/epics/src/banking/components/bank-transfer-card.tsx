@@ -3,13 +3,21 @@
 import { FC } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button, Card } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 import {
   getBankCurrencyMeta,
+  getTransferCorridorKeyFromStored,
   type BankCurrencyCode,
 } from '../bank-currency-display';
-import { getCardDepositCopyBlock } from '../deposit-instruction-display';
+import {
+  formatCompletedTransferReferenceText,
+  getCompletedTransferReferenceRows,
+  getDepositMessage,
+  getTransferCardDepositCopyBlock,
+} from '../deposit-instruction-display';
 import type { BankTransferPublic } from '../hooks/types';
+import { isTransferDepositInstructionsReadOnly } from '../banking-ui';
 import { InlineCopyRow } from './inline-copy-row';
 import { CurrencyFlagBadge } from './currency-flag-badge';
 
@@ -46,9 +54,13 @@ function getTransferStatusBadgeClass(
   }
   switch (status) {
     case 'payment_processed':
-      return 'bg-success-9 text-white';
+      return 'bg-muted text-muted-foreground';
     case 'funds_received':
       return 'bg-accent-9 text-white';
+    case 'in_review':
+    case 'undeliverable':
+    case 'returned':
+      return 'bg-amber-9/90 text-white';
     default:
       return 'bg-muted text-muted-foreground';
   }
@@ -64,17 +76,29 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
 }) => {
   const t = useTranslations('BankingTab');
   const tFields = useTranslations('BankingTab.depositInstructions');
-  const tCurrencies = useTranslations('BankingTab.currencies');
+  const tDetails = useTranslations('BankingTab.transferDetails');
+  const tCorridors = useTranslations('BankingTab.transferCorridors');
   const tStatus = useTranslations('BankingTab.transferStatus');
   const tOp = useTranslations('BankingTab.operationStatus');
   const currency = transferToCurrency(transfer);
   const meta = getBankCurrencyMeta(currency);
+  const corridorKey = getTransferCorridorKeyFromStored(
+    transfer.currency,
+    transfer.paymentRail,
+  );
 
   const bridgeStatuses = [
     'awaiting_funds',
     'funds_received',
     'payment_processed',
+    'canceled',
+    'cancelled',
+    'failed',
+    'returned',
+    'in_review',
+    'undeliverable',
   ] as const;
+
   const statusLabel =
     transfer.lifecycle === 'pending_kyb'
       ? tOp('pendingKyb')
@@ -86,12 +110,20 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
       ? tStatus(transfer.status as (typeof bridgeStatuses)[number])
       : transfer.status;
 
+  const corridorLabel = corridorKey
+    ? tCorridors(`${corridorKey}.label`)
+    : meta
+    ? meta.currency.toUpperCase()
+    : transfer.currency.toUpperCase();
+
   const amountLabel = transfer.amount
     ? `${transfer.amount} ${transfer.currency.toUpperCase()}`
     : t('transferCard.flexibleAmount');
 
   const isPendingKyb = transfer.lifecycle === 'pending_kyb';
   const isActive = transfer.lifecycle === 'active';
+  const instructionsReadOnly =
+    isActive && isTransferDepositInstructionsReadOnly(transfer);
   const handleCardClick =
     isPendingKyb && onOpenVerificationDetails
       ? onOpenVerificationDetails
@@ -99,21 +131,47 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
       ? onViewDetails
       : undefined;
 
+  const depositMessage = isActive
+    ? getDepositMessage(transfer.depositInstructions, transfer.depositMessage)
+    : null;
+
   const cardCopyBlock = isActive
-    ? getCardDepositCopyBlock(
-        transfer.paymentRail,
-        transfer.depositInstructions,
-        (key) => tFields(key),
-      )
+    ? instructionsReadOnly
+      ? (() => {
+          const referenceText = formatCompletedTransferReferenceText(
+            getCompletedTransferReferenceRows(transfer, (amount, currency) =>
+              amount
+                ? `${amount} ${currency.toUpperCase()}`
+                : t('transferCard.flexibleAmount'),
+            ),
+            (key) =>
+              key === 'amount' ? tDetails('amountLabel') : tFields(key),
+          );
+          return referenceText
+            ? {
+                label: null,
+                copyText: referenceText,
+                multiline: true,
+              }
+            : null;
+        })()
+      : getTransferCardDepositCopyBlock(
+          transfer.paymentRail,
+          transfer.depositInstructions,
+          depositMessage,
+          (key) => tFields(key),
+          () => tFields('depositMessage'),
+        )
     : null;
 
   return (
     <Card
-      className={`flex h-full flex-col gap-3 p-5${
-        handleCardClick
-          ? ' cursor-pointer transition-colors hover:bg-background-2/50'
-          : ''
-      }`}
+      className={cn(
+        'flex h-full flex-col gap-3 p-5',
+        instructionsReadOnly && 'opacity-70',
+        handleCardClick &&
+          'cursor-pointer transition-colors hover:bg-background-2/50',
+      )}
       role={handleCardClick ? 'button' : undefined}
       tabIndex={handleCardClick ? 0 : undefined}
       onClick={handleCardClick}
@@ -131,12 +189,19 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
       <div className="flex items-start gap-3">
         <CurrencyFlagBadge currency={currency} />
         <div className="min-w-0 flex-1">
-          <p className="text-3 font-semibold text-foreground">
-            {meta
-              ? tCurrencies(`${meta.nameKey}.code`)
-              : transfer.currency.toUpperCase()}
+          <p
+            className={cn(
+              'text-3 font-semibold',
+              instructionsReadOnly
+                ? 'text-muted-foreground'
+                : 'text-foreground',
+            )}
+          >
+            {corridorLabel}
           </p>
-          <p className="mt-0.5 text-2 text-muted-foreground">{amountLabel}</p>
+          {isActive ? (
+            <p className="mt-0.5 text-2 text-muted-foreground">{amountLabel}</p>
+          ) : null}
         </div>
         <span
           className={`rounded-full px-2 py-0.5 text-1 font-medium ${getTransferStatusBadgeClass(
@@ -154,6 +219,7 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
           label={cardCopyBlock.label}
           value={cardCopyBlock.copyText}
           multiline={cardCopyBlock.multiline}
+          readOnly={instructionsReadOnly}
         />
       ) : (
         <div className="flex-1" />

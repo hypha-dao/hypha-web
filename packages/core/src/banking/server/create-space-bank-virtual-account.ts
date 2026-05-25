@@ -10,6 +10,7 @@ import type {
   CreateSpaceBankVirtualAccountResult,
 } from '../types';
 import { findSpaceBySlug } from '../../space/server/queries';
+import { resolveSpaceExecutorAddress } from '../../space/server/resolve-space-executor-address';
 import { authorizeSpaceBankOnboarding } from './authorize-space-bank-onboarding';
 import { BankOnboardingError } from './errors';
 import { insertBankVirtualAccount } from './mutations';
@@ -88,6 +89,7 @@ export async function createSpaceBankVirtualAccount(
   }
 
   if (!account) {
+    const treasuryAddress = (await resolveSpaceExecutorAddress(space)) ?? '';
     account = await insertBankVirtualAccount(
       {
         bankCustomerId: customer.id,
@@ -96,7 +98,7 @@ export async function createSpaceBankVirtualAccount(
         currency,
         paymentRail,
         depositInstructions: {},
-        destinationAddress: space.address ?? '',
+        destinationAddress: treasuryAddress,
         status: BANK_OPERATION_PENDING_KYB,
       },
       { db },

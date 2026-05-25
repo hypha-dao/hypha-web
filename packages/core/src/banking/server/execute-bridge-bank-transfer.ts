@@ -4,10 +4,7 @@ import { isBridgeSandboxApi } from '../../common/server/bridge-sandbox';
 import type { DatabaseInstance } from '../../common/server/types';
 import type { BankCustomer } from '@hypha-platform/storage-postgres';
 import type { Space } from '../../space/types';
-import {
-  DEFAULT_BANK_PROVIDER,
-  getTransferSourceRailForCurrency,
-} from '../constants';
+import { DEFAULT_BANK_PROVIDER } from '../constants';
 import { simulateBridgeKybData } from './simulate-bridge-kyb-data';
 import { BankOnboardingError } from './errors';
 import { mapBridgeApiError } from './map-bridge-api-error';
@@ -15,6 +12,7 @@ import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import { syncBankCustomerKycFromBridge } from './sync-bank-customer-kyc-from-bridge';
 import { enrichBridgeDepositInstructions } from './enrich-bridge-deposit-instructions';
+import { requireSpaceTreasuryAddress } from './require-space-treasury-address';
 
 function mapBridgeTransferError(error: unknown): BankOnboardingError | null {
   if (!(error instanceof Error)) {
@@ -35,8 +33,9 @@ function mapBridgeTransferError(error: unknown): BankOnboardingError | null {
 
 export type ExecuteBridgeBankTransferInput = {
   customer: BankCustomer;
-  space: Pick<Space, 'address'>;
+  space: Pick<Space, 'web3SpaceId'>;
   currency: string;
+  paymentRail: string;
   amount?: string;
 };
 
@@ -60,19 +59,13 @@ export async function executeBridgeBankTransfer(
   { db }: { db: DatabaseInstance },
   options?: ExecuteBridgeBankTransferOptions,
 ): Promise<ExecuteBridgeBankTransferResult> {
-  const { customer, space, currency, amount } = input;
+  const { customer, space, currency, paymentRail, amount } = input;
 
-  const paymentRail = getTransferSourceRailForCurrency(currency);
-  if (!paymentRail) {
-    throw new BankOnboardingError('Unsupported currency', 400);
+  if (!paymentRail.trim()) {
+    throw new BankOnboardingError('Unsupported payment corridor', 400);
   }
 
-  if (!space.address) {
-    throw new BankOnboardingError(
-      'Space treasury address is required before creating payment requests',
-      422,
-    );
-  }
+  const treasuryAddress = await requireSpaceTreasuryAddress(space);
 
   let resolvedCustomer = customer;
 
@@ -127,7 +120,7 @@ export async function executeBridgeBankTransfer(
       customerId,
       currency,
       paymentRail,
-      destinationAddress: space.address,
+      destinationAddress: treasuryAddress,
       amount,
       idempotencyKey: randomUUID(),
     });
@@ -146,7 +139,7 @@ export async function executeBridgeBankTransfer(
         },
       ),
       status: created.status,
-      destinationAddress: created.destination?.address ?? space.address,
+      destinationAddress: created.destination?.address ?? treasuryAddress,
     };
   } catch (error) {
     const mapped = mapBridgeTransferError(error);

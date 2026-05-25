@@ -58,6 +58,64 @@ export function endorsementToCurrency(
   return meta?.currency ?? null;
 }
 
+/** One-time transfer corridors — mirrors core BANK_TRANSFER_CORRIDORS. */
+export const BANK_TRANSFER_CORRIDOR_KEYS = [
+  'usd-ach',
+  'usd-wire',
+  'eur',
+  'gbp',
+  'mxn',
+  'brl',
+  'cop',
+] as const;
+
+export type BankTransferCorridorKey =
+  (typeof BANK_TRANSFER_CORRIDOR_KEYS)[number];
+
+export type BankTransferCorridorMeta = {
+  corridorKey: BankTransferCorridorKey;
+  currency: BankCurrencyCode;
+  paymentRail: string;
+};
+
+export const BANK_TRANSFER_CORRIDOR_METAS: readonly BankTransferCorridorMeta[] =
+  [
+    { corridorKey: 'usd-ach', currency: 'usd', paymentRail: 'ach_push' },
+    { corridorKey: 'usd-wire', currency: 'usd', paymentRail: 'wire' },
+    { corridorKey: 'eur', currency: 'eur', paymentRail: 'sepa' },
+    { corridorKey: 'gbp', currency: 'gbp', paymentRail: 'faster_payments' },
+    { corridorKey: 'mxn', currency: 'mxn', paymentRail: 'spei' },
+    { corridorKey: 'brl', currency: 'brl', paymentRail: 'pix' },
+    { corridorKey: 'cop', currency: 'cop', paymentRail: 'cop' },
+  ] as const;
+
+export function getTransferCorridorMeta(
+  corridorKey: BankTransferCorridorKey,
+): BankTransferCorridorMeta | undefined {
+  return BANK_TRANSFER_CORRIDOR_METAS.find(
+    (m) => m.corridorKey === corridorKey,
+  );
+}
+
+export function getTransferCorridorKeyFromStored(
+  currency: string,
+  paymentRail: string,
+): BankTransferCorridorKey | null {
+  const normalizedCurrency = currency.toLowerCase();
+  const normalizedRail = paymentRail.toLowerCase();
+
+  for (const meta of BANK_TRANSFER_CORRIDOR_METAS) {
+    if (
+      meta.currency === normalizedCurrency &&
+      meta.paymentRail.toLowerCase() === normalizedRail
+    ) {
+      return meta.corridorKey;
+    }
+  }
+
+  return null;
+}
+
 export function getCorridorForCurrency(currency: BankCurrencyCode): {
   currency: BankCurrencyCode;
   paymentRail: string;

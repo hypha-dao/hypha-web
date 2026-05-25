@@ -101,6 +101,115 @@ export function getTransferSourceRailForCurrency(
   return BANK_TRANSFER_SOURCE_RAILS[currency as BankVirtualAccountCurrency];
 }
 
+/** One-time transfer corridors (UI label + server rail derivation). */
+export const BANK_TRANSFER_CORRIDOR_KEYS = [
+  'usd-ach',
+  'usd-wire',
+  'eur',
+  'gbp',
+  'mxn',
+  'brl',
+  'cop',
+] as const;
+
+export type BankTransferCorridorKey =
+  (typeof BANK_TRANSFER_CORRIDOR_KEYS)[number];
+
+export type BankTransferCorridor = {
+  currency: BankVirtualAccountCurrency;
+  paymentRail: string;
+  labelKey: BankTransferCorridorKey;
+};
+
+export const BANK_TRANSFER_CORRIDORS: Record<
+  BankTransferCorridorKey,
+  BankTransferCorridor
+> = {
+  'usd-ach': { currency: 'usd', paymentRail: 'ach_push', labelKey: 'usd-ach' },
+  'usd-wire': { currency: 'usd', paymentRail: 'wire', labelKey: 'usd-wire' },
+  eur: { currency: 'eur', paymentRail: 'sepa', labelKey: 'eur' },
+  gbp: {
+    currency: 'gbp',
+    paymentRail: 'faster_payments',
+    labelKey: 'gbp',
+  },
+  mxn: { currency: 'mxn', paymentRail: 'spei', labelKey: 'mxn' },
+  brl: { currency: 'brl', paymentRail: 'pix', labelKey: 'brl' },
+  cop: { currency: 'cop', paymentRail: 'cop', labelKey: 'cop' },
+};
+
+const DEFAULT_TRANSFER_CORRIDOR_BY_CURRENCY: Record<
+  BankVirtualAccountCurrency,
+  BankTransferCorridorKey
+> = {
+  eur: 'eur',
+  usd: 'usd-ach',
+  gbp: 'gbp',
+  mxn: 'mxn',
+  brl: 'brl',
+  cop: 'cop',
+};
+
+export function resolveBankTransferCorridor(input: {
+  corridorKey?: string;
+  currency?: string;
+}): {
+  corridorKey: BankTransferCorridorKey;
+  currency: string;
+  paymentRail: string;
+} | null {
+  if (input.corridorKey) {
+    const key = input.corridorKey as BankTransferCorridorKey;
+    const corridor = BANK_TRANSFER_CORRIDORS[key];
+    if (!corridor) {
+      return null;
+    }
+    return {
+      corridorKey: key,
+      currency: corridor.currency,
+      paymentRail: corridor.paymentRail,
+    };
+  }
+
+  if (
+    input.currency &&
+    (BANK_VIRTUAL_ACCOUNT_CURRENCIES as readonly string[]).includes(
+      input.currency,
+    )
+  ) {
+    const currency = input.currency as BankVirtualAccountCurrency;
+    const corridorKey = DEFAULT_TRANSFER_CORRIDOR_BY_CURRENCY[currency];
+    const corridor = BANK_TRANSFER_CORRIDORS[corridorKey];
+    return {
+      corridorKey,
+      currency: corridor.currency,
+      paymentRail: corridor.paymentRail,
+    };
+  }
+
+  return null;
+}
+
+export function getTransferCorridorKeyFromStored(
+  currency: string,
+  paymentRail: string,
+): BankTransferCorridorKey | null {
+  const normalizedCurrency = currency.toLowerCase();
+  const normalizedRail = paymentRail.toLowerCase();
+
+  for (const key of BANK_TRANSFER_CORRIDOR_KEYS) {
+    const corridor = BANK_TRANSFER_CORRIDORS[key];
+    if (
+      corridor.currency === normalizedCurrency &&
+      corridor.paymentRail.toLowerCase() === normalizedRail
+    ) {
+      return key;
+    }
+  }
+
+  return null;
+}
+
 /** Hypha-internal statuses before Bridge resources exist. */
 export const BANK_OPERATION_PENDING_KYB = 'pending_kyb' as const;
 export const BANK_OPERATION_PENDING_ACTIVATION = 'pending_activation' as const;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  schemaCreateBankTransfer,
   schemaProvisionVirtualAccount,
   schemaSpaceBankCustomerOnboarding,
 } from '../validation';
@@ -69,6 +70,25 @@ describe('schemaProvisionVirtualAccount', () => {
       currency: 'eur',
       extra: true,
     });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('schemaCreateBankTransfer', () => {
+  it('accepts corridorKey', () => {
+    const result = schemaCreateBankTransfer.safeParse({
+      corridorKey: 'usd-wire',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts legacy currency fallback', () => {
+    const result = schemaCreateBankTransfer.safeParse({ currency: 'eur' });
+    expect(result.success).toBe(true);
+  });
+
+  it('requires corridorKey or currency', () => {
+    const result = schemaCreateBankTransfer.safeParse({});
     expect(result.success).toBe(false);
   });
 });

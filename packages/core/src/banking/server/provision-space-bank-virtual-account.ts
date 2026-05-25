@@ -32,6 +32,7 @@ import {
 } from './bridge-customer-endorsements';
 import { syncBankCustomerKycFromBridge } from './sync-bank-customer-kyc-from-bridge';
 import { persistVirtualAccountEndorsementFromBridge } from './sync-bank-virtual-account-endorsement';
+import { requireSpaceTreasuryAddress } from './require-space-treasury-address';
 
 function mapBridgeProvisionError(error: unknown): BankOnboardingError | null {
   if (!(error instanceof Error)) {
@@ -174,12 +175,7 @@ export async function provisionSpaceBankVirtualAccount(
     );
   }
 
-  if (!space.address) {
-    throw new BankOnboardingError(
-      'Space treasury address is required before provisioning deposit accounts',
-      422,
-    );
-  }
+  const treasuryAddress = await requireSpaceTreasuryAddress(space);
 
   if (isBridgeSandboxApi()) {
     try {
@@ -203,7 +199,7 @@ export async function provisionSpaceBankVirtualAccount(
     provisioned = await kycProvider.provisionVirtualAccount({
       customerId,
       currency,
-      destinationAddress: space.address,
+      destinationAddress: treasuryAddress,
       idempotencyKey: randomUUID(),
     });
   } catch (error) {
@@ -225,7 +221,7 @@ export async function provisionSpaceBankVirtualAccount(
         destination: provisioned.destination,
       },
     ),
-    destinationAddress: provisioned.destination?.address ?? space.address,
+    destinationAddress: provisioned.destination?.address ?? treasuryAddress,
     status: provisioned.status,
     isApproved: true,
   };

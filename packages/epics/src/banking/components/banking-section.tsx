@@ -21,6 +21,7 @@ import {
   useCreateTransfer,
   useProvisionVirtualAccount,
   useRequestSpaceAccount,
+  useSyncBanking,
   useVirtualAccounts,
 } from '../hooks';
 import {
@@ -110,6 +111,10 @@ export const BankingSection: FC<BankingSectionProps> = ({
     clearError: clearActivateAccountError,
   } = useActivateVirtualAccount({ spaceSlug });
 
+  const { syncBanking, isSyncing: isSyncingBanking } = useSyncBanking({
+    spaceSlug,
+  });
+
   const [gearOpen, setGearOpen] = useState(false);
   const [createTransferOpen, setCreateTransferOpen] = useState(false);
   const [openDialogOpen, setOpenDialogOpen] = useState(false);
@@ -128,6 +133,11 @@ export const BankingSection: FC<BankingSectionProps> = ({
     }
     return updated;
   }, [refresh, refreshTransfers, refreshVirtualAccounts]);
+
+  const handleSyncBanking = useCallback(async () => {
+    await syncBanking();
+    await refreshBankingState();
+  }, [refreshBankingState, syncBanking]);
 
   const handleGearOpenChange = useCallback(
     (open: boolean) => {
@@ -241,6 +251,18 @@ export const BankingSection: FC<BankingSectionProps> = ({
     ? 'allCurrenciesCovered'
     : null;
 
+  const newTransferAvailabilityKnown =
+    !isLoading && (!hasCustomer || !transfersLoading);
+
+  const newTransferDisabled =
+    !newTransferAvailabilityKnown || verificationInProgress;
+
+  const newTransferDisabledReason = !newTransferAvailabilityKnown
+    ? 'loadingTransfers'
+    : verificationInProgress
+    ? 'finishVerificationFirst'
+    : null;
+
   const handleOpenSpaceAccount = useCallback(() => {
     if (customerApproved) {
       clearCreateAccountError();
@@ -269,6 +291,8 @@ export const BankingSection: FC<BankingSectionProps> = ({
         gearOpen={gearOpen}
         onGearOpenChange={handleGearOpenChange}
         onRefreshStatus={refreshBankingState}
+        onSyncBanking={() => void handleSyncBanking()}
+        isSyncingBanking={isSyncingBanking}
       />
 
       {error ? (
@@ -316,6 +340,8 @@ export const BankingSection: FC<BankingSectionProps> = ({
         transfers={hasCustomer ? displayTransfers : []}
         transfersLoading={hasCustomer && transfersLoading}
         canManage={canManage}
+        newTransferDisabled={newTransferDisabled}
+        newTransferDisabledReason={newTransferDisabledReason}
         activatingTransferId={activatingTransferId}
         failedTransferId={failedActivateTransferId}
         activateError={activateTransferError}
@@ -326,7 +352,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
             .then(() => void refreshTransfers())
             .catch(() => undefined);
         }}
-        newTransferDisabled
+        onNewTransfer={() => setCreateTransferOpen(true)}
       />
 
       <CreateTransferDialog

@@ -8,12 +8,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 import {
-  getBankCurrencyMeta,
+  getTransferCorridorKeyFromStored,
   type BankCurrencyCode,
 } from '../bank-currency-display';
 import type { BankTransferPublic } from '../hooks/types';
+import {
+  BANKING_DIALOG_CONTENT_CLASS,
+  BANKING_DIALOG_HEADER_CLASS,
+  BankingDialogBody,
+} from './banking-dialog-layout';
 import { CurrencyFlagBadge } from './currency-flag-badge';
 import { DepositInstructionsPanel } from './deposit-instructions-fields';
 
@@ -44,28 +50,33 @@ export const BankTransferDetailsDialog: FC<BankTransferDetailsDialogProps> = ({
   onOpenChange,
 }) => {
   const t = useTranslations('BankingTab.transferDetails');
-  const tCurrencies = useTranslations('BankingTab.currencies');
+  const tCorridors = useTranslations('BankingTab.transferCorridors');
 
   if (!transfer) {
     return null;
   }
 
   const currency = transferToCurrency(transfer);
-  const meta = getBankCurrencyMeta(currency);
-  const title = meta
-    ? `${tCurrencies(`${meta.nameKey}.code`)} — ${t('title')}`
+  const corridorKey = getTransferCorridorKeyFromStored(
+    transfer.currency,
+    transfer.paymentRail,
+  );
+  const title = corridorKey
+    ? `${tCorridors(`${corridorKey}.label`)} — ${t('title')}`
     : t('title');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <div className="flex min-w-0 items-center gap-3">
+      <DialogContent className={cn(BANKING_DIALOG_CONTENT_CLASS, 'max-w-xl')}>
+        <DialogHeader className={BANKING_DIALOG_HEADER_CLASS}>
+          <div className="flex min-w-0 items-center gap-3 pr-8">
             <CurrencyFlagBadge currency={currency} />
             <DialogTitle className="text-left">{title}</DialogTitle>
           </div>
         </DialogHeader>
-        <DepositInstructionsPanel transfer={transfer} />
+        <BankingDialogBody>
+          <DepositInstructionsPanel transfer={transfer} />
+        </BankingDialogBody>
       </DialogContent>
     </Dialog>
   );

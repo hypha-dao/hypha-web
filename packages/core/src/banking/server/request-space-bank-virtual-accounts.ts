@@ -12,6 +12,7 @@ import type {
   RequestSpaceBankVirtualAccountsInput,
 } from '../types';
 import { findSpaceBySlug } from '../../space/server/queries';
+import { resolveSpaceExecutorAddress } from '../../space/server/resolve-space-executor-address';
 import { BankOnboardingError } from './errors';
 import { ensureSpaceBankCustomer } from './ensure-space-bank-customer';
 import { provisionSpaceBankVirtualAccount } from './provision-space-bank-virtual-account';
@@ -76,6 +77,7 @@ export async function requestSpaceBankVirtualAccounts(
 
   const isApproved = customer.kycStatus === 'approved';
   const results: BankVirtualAccountPublic[] = [];
+  const treasuryAddress = (await resolveSpaceExecutorAddress(space)) ?? '';
 
   for (const currency of normalized) {
     const paymentRail = getPaymentRailForCurrency(currency);
@@ -106,7 +108,7 @@ export async function requestSpaceBankVirtualAccounts(
           currency,
           paymentRail,
           depositInstructions: {},
-          destinationAddress: space.address ?? '',
+          destinationAddress: treasuryAddress,
           status: BANK_OPERATION_PENDING_KYB,
         },
         { db },

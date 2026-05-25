@@ -120,6 +120,48 @@ export type CardDepositCopyBlock = {
   multiline: boolean;
 };
 
+/** Combined copy block for transfer cards (identifiers + reference message). */
+export function getTransferCardDepositCopyBlock(
+  paymentRail: string,
+  instructions: Record<string, unknown>,
+  depositMessage: string | null,
+  resolveIdentifierLabel: (key: DepositIdentifierLabelKey) => string,
+  resolveDepositMessageLabel: () => string,
+): CardDepositCopyBlock | null {
+  const identifiers = getCardDepositIdentifiers(paymentRail, instructions);
+  const lines: string[] = [];
+
+  for (const row of identifiers) {
+    lines.push(`${resolveIdentifierLabel(row.labelKey)}: ${row.value}`);
+  }
+
+  if (depositMessage) {
+    lines.push(`${resolveDepositMessageLabel()}: ${depositMessage}`);
+  }
+
+  if (lines.length === 0) {
+    return null;
+  }
+
+  if (lines.length === 1 && identifiers.length === 1 && !depositMessage) {
+    const row = identifiers[0];
+    if (!row) {
+      return null;
+    }
+    return {
+      label: resolveIdentifierLabel(row.labelKey),
+      copyText: row.value,
+      multiline: false,
+    };
+  }
+
+  return {
+    label: null,
+    copyText: lines.join('\n'),
+    multiline: true,
+  };
+}
+
 /** Single copyable block for account/transfer cards. */
 export function getCardDepositCopyBlock(
   paymentRail: string,
@@ -165,6 +207,31 @@ export type DepositInstructionBlock = {
   labelKey: string;
   value: string;
 };
+
+/** Split detail blocks so the reference message sits directly under card identifiers (IBAN, etc.). */
+export function splitInstructionBlocksForTransferReference(
+  blocks: DepositInstructionBlock[],
+  paymentRail: string,
+): {
+  leading: DepositInstructionBlock[];
+  trailing: DepositInstructionBlock[];
+} {
+  const rail = normalizePaymentRailForDisplay(paymentRail);
+  const anchorId =
+    rail === 'ach' || rail === 'faster_payments'
+      ? 'accountNumber'
+      : 'primaryAccount';
+
+  const anchorIndex = blocks.findIndex((block) => block.id === anchorId);
+  if (anchorIndex === -1) {
+    return { leading: blocks, trailing: [] };
+  }
+
+  return {
+    leading: blocks.slice(0, anchorIndex + 1),
+    trailing: blocks.slice(anchorIndex + 1),
+  };
+}
 
 export function getBankInstructionBlocks(
   paymentRail: string,
@@ -309,19 +376,29 @@ export function getDestinationFromInstructions(
   paymentRail: string;
   address: string;
 } | null {
-  if (!destinationAddress) {
+  const snapshot = readBridgeTransferSnapshot(instructions);
+  const address =
+    snapshot?.destination?.toAddress?.trim() ||
+    destinationAddress?.trim() ||
+    '';
+
+  if (!address) {
     return null;
   }
 
   const currency =
-    readInstructionString(instructions, ['destination_currency']) ?? 'usdc';
+    snapshot?.destination?.currency ??
+    readInstructionString(instructions, ['destination_currency']) ??
+    'usdc';
   const paymentRail =
-    readInstructionString(instructions, ['destination_payment_rail']) ?? 'base';
+    snapshot?.destination?.paymentRail ??
+    readInstructionString(instructions, ['destination_payment_rail']) ??
+    'base';
 
   return {
     currency,
     paymentRail,
-    address: destinationAddress,
+    address,
   };
 }
 
@@ -342,20 +419,26 @@ export function truncateAddress(address: string): string {
 export function formatBankInstructionsCopyText({
   blocks,
   depositMessage,
+  amount,
   resolveLabel,
 }: {
   blocks: DepositInstructionBlock[];
   depositMessage?: string | null;
+  amount?: { label: string; value: string } | null;
   resolveLabel: (key: string) => string;
 }): string {
   const lines: string[] = [];
+
+  for (const block of blocks) {
+    lines.push(`${resolveLabel(block.labelKey)}:`, block.value, '');
+  }
 
   if (depositMessage) {
     lines.push(`${resolveLabel('depositMessage')}: ${depositMessage}`, '');
   }
 
-  for (const block of blocks) {
-    lines.push(`${resolveLabel(block.labelKey)}:`, block.value, '');
+  if (amount) {
+    lines.push(`${amount.label}: ${amount.value}`, '');
   }
 
   return lines.join('\n').trim();
@@ -407,4 +490,196 @@ export function formatDepositInstructionsShareText({
   }
 
   return lines.join('\n').trim();
+}
+
+const BRIDGE_RECEIPT_STORAGE_KEY = 'bridge_receipt';
+const BRIDGE_SNAPSHOT_STORAGE_KEY = 'bridge_transfer_snapshot';
+
+export type BridgeTransferReceiptDisplay = {
+  initialAmount?: string;
+  finalAmount?: string;
+  subtotalAmount?: string;
+  gasFee?: string;
+  exchangeFee?: string;
+  developerFee?: string;
+  destinationTxHash?: string;
+  receiptUrl?: string;
+};
+
+export type BridgeTransferSnapshotDisplay = {
+  id?: string;
+  state?: string;
+  currency?: string;
+  amount?: string;
+  developerFee?: string;
+  source?: { paymentRail?: string; currency?: string };
+  destination?: {
+    paymentRail?: string;
+    currency?: string;
+    toAddress?: string;
+  };
+  receipt?: BridgeTransferReceiptDisplay;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export function readBridgeTransferReceipt(
+  depositInstructions: Record<string, unknown>,
+): BridgeTransferReceiptDisplay | null {
+  const raw = depositInstructions[BRIDGE_RECEIPT_STORAGE_KEY];
+  if (typeof raw !== 'object' || raw === null) {
+    return null;
+  }
+
+  const record = raw as Record<string, unknown>;
+  const read = (key: string) => {
+    const value = record[key];
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  };
+
+  const receipt: BridgeTransferReceiptDisplay = {
+    initialAmount: read('initial_amount'),
+    finalAmount: read('final_amount'),
+    subtotalAmount: read('subtotal_amount'),
+    gasFee: read('gas_fee'),
+    exchangeFee: read('exchange_fee'),
+    developerFee: read('developer_fee'),
+    destinationTxHash: read('destination_tx_hash'),
+    receiptUrl: read('url'),
+  };
+
+  return Object.values(receipt).some(Boolean) ? receipt : null;
+}
+
+function readReceiptFromRecord(
+  raw: Record<string, unknown>,
+): BridgeTransferReceiptDisplay | null {
+  const read = (key: string) => {
+    const value = raw[key];
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  };
+
+  const receipt: BridgeTransferReceiptDisplay = {
+    initialAmount: read('initial_amount'),
+    finalAmount: read('final_amount'),
+    subtotalAmount: read('subtotal_amount'),
+    gasFee: read('gas_fee'),
+    exchangeFee: read('exchange_fee'),
+    developerFee: read('developer_fee'),
+    destinationTxHash: read('destination_tx_hash'),
+    receiptUrl: read('url'),
+  };
+
+  return Object.values(receipt).some(Boolean) ? receipt : null;
+}
+
+export function readBridgeTransferSnapshot(
+  depositInstructions: Record<string, unknown>,
+): BridgeTransferSnapshotDisplay | null {
+  const raw = depositInstructions[BRIDGE_SNAPSHOT_STORAGE_KEY];
+  if (typeof raw !== 'object' || raw === null) {
+    return null;
+  }
+
+  const record = raw as Record<string, unknown>;
+  const readString = (key: string) => {
+    const value = record[key];
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  };
+
+  const readNested = (key: 'source' | 'destination') => {
+    const value = record[key];
+    if (typeof value !== 'object' || value === null) {
+      return undefined;
+    }
+    const nested = value as Record<string, unknown>;
+    const paymentRail =
+      typeof nested.payment_rail === 'string' ? nested.payment_rail : undefined;
+    const currency =
+      typeof nested.currency === 'string' ? nested.currency : undefined;
+    const toAddress =
+      typeof nested.to_address === 'string' ? nested.to_address : undefined;
+    if (!paymentRail && !currency && !toAddress) {
+      return undefined;
+    }
+    return key === 'destination'
+      ? { paymentRail, currency, toAddress }
+      : { paymentRail, currency };
+  };
+
+  const snapshot: BridgeTransferSnapshotDisplay = {
+    id: readString('id'),
+    state: readString('state'),
+    currency: readString('currency'),
+    amount: readString('amount'),
+    developerFee: readString('developer_fee'),
+    source: readNested('source') as BridgeTransferSnapshotDisplay['source'],
+    destination: readNested(
+      'destination',
+    ) as BridgeTransferSnapshotDisplay['destination'],
+    createdAt: readString('created_at'),
+    updatedAt: readString('updated_at'),
+  };
+
+  if (typeof record.receipt === 'object' && record.receipt !== null) {
+    snapshot.receipt =
+      readReceiptFromRecord(record.receipt as Record<string, unknown>) ??
+      undefined;
+  }
+
+  return snapshot.id || snapshot.state || snapshot.receipt ? snapshot : null;
+}
+
+export function getCompletedTransferIban(
+  depositInstructions: Record<string, unknown>,
+): string | null {
+  return readInstructionString(depositInstructions, ['iban']);
+}
+
+export type CompletedTransferReferenceRow = {
+  labelKey: 'iban' | 'depositMessage' | 'amount';
+  value: string;
+};
+
+/** Minimal reference fields for completed transfers (IBAN when present, reference, amount). */
+export function getCompletedTransferReferenceRows(
+  transfer: {
+    paymentRail: string;
+    depositInstructions: Record<string, unknown>;
+    depositMessage: string | null;
+    amount: string | null;
+    currency: string;
+  },
+  resolveAmountLabel: (amount: string | null, currency: string) => string,
+): CompletedTransferReferenceRow[] {
+  const rows: CompletedTransferReferenceRow[] = [];
+  const iban = readInstructionString(transfer.depositInstructions, ['iban']);
+
+  if (iban) {
+    rows.push({ labelKey: 'iban', value: iban });
+  }
+
+  const depositMessage = getDepositMessage(
+    transfer.depositInstructions,
+    transfer.depositMessage,
+  );
+  if (depositMessage) {
+    rows.push({ labelKey: 'depositMessage', value: depositMessage });
+  }
+
+  rows.push({
+    labelKey: 'amount',
+    value: resolveAmountLabel(transfer.amount, transfer.currency),
+  });
+
+  return rows;
+}
+
+export function formatCompletedTransferReferenceText(
+  rows: CompletedTransferReferenceRow[],
+  resolveLabel: (key: CompletedTransferReferenceRow['labelKey']) => string,
+): string {
+  return rows
+    .map((row) => `${resolveLabel(row.labelKey)}: ${row.value}`)
+    .join('\n');
 }

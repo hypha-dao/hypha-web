@@ -4,7 +4,8 @@ import React from 'react';
 import { useSWRConfig } from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 
-import type { BankTransferPublic, BankVirtualAccountCurrency } from './types';
+import type { BankTransferCorridorKey } from '../bank-currency-display';
+import type { BankTransferPublic } from './types';
 import { getTransfersEndpoint } from './use-transfers';
 
 type UseCreateTransferOptions = {
@@ -13,8 +14,10 @@ type UseCreateTransferOptions = {
 
 type UseCreateTransferReturn = {
   createTransfer: (input: {
-    currency: BankVirtualAccountCurrency;
+    corridorKey: BankTransferCorridorKey;
     amount?: string;
+    legalName?: string;
+    contactEmail?: string;
   }) => Promise<BankTransferPublic>;
   isCreating: boolean;
   error: string | null;
@@ -31,7 +34,7 @@ export const useCreateTransfer = ({
 
   const createTransfer = React.useCallback(
     async (input: {
-      currency: BankVirtualAccountCurrency;
+      corridorKey: BankTransferCorridorKey;
       amount?: string;
       legalName?: string;
       contactEmail?: string;

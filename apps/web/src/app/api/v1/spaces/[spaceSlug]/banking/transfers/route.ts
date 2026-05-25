@@ -81,6 +81,7 @@ export async function POST(
       {
         spaceSlug,
         authToken,
+        corridorKey: parsed.data.corridorKey,
         currency: parsed.data.currency,
         amount: parsed.data.amount,
         legalName: parsed.data.legalName,

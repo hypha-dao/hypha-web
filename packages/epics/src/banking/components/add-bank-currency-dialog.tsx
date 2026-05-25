@@ -20,6 +20,12 @@ import {
 } from '../bank-currency-display';
 import { BANKING_READONLY_INPUT_CLASS } from '../banking-ui';
 import { CurrencyFlagBadge } from './currency-flag-badge';
+import {
+  BANKING_DIALOG_CONTENT_CLASS,
+  BANKING_DIALOG_HEADER_CLASS,
+  BankingDialogBody,
+} from './banking-dialog-layout';
+import { cn } from '@hypha-platform/ui-utils';
 
 type AddBankCurrencyDialogProps = {
   open: boolean;
@@ -49,15 +55,15 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className={cn(BANKING_DIALOG_CONTENT_CLASS, 'max-w-md')}>
+        <DialogHeader className={BANKING_DIALOG_HEADER_CLASS}>
           <DialogTitle>{t('titleAddCurrency')}</DialogTitle>
           <DialogDescription>
             {t('descriptionAddCurrencySingle')}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4">
+        <BankingDialogBody className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="add-currency-legal-name">{t('legalName')}</Label>
             <Input
@@ -140,7 +146,7 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
               {tOp('activateFailed')}
             </p>
           ) : null}
-        </div>
+        </BankingDialogBody>
       </DialogContent>
     </Dialog>
   );

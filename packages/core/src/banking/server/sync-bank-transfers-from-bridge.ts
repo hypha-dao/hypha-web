@@ -1,12 +1,35 @@
 import { bridgeGetTransfer } from '../../common/server/bridge-client';
 import type { DatabaseInstance } from '../../common/server/types';
 import type { BankCustomer } from '@hypha-platform/storage-postgres';
+import {
+  hasBridgeTransferSnapshot,
+  mergeBridgeTransferSyncIntoInstructions,
+} from '../bridge-transfer-receipt';
 import { BANK_TRANSFER_TERMINAL_STATES } from '../constants';
 import { updateBankTransfer } from './mutations';
 import { findBankTransfersByCustomer } from './queries';
 
 function isTerminalTransferStatus(status: string): boolean {
   return (BANK_TRANSFER_TERMINAL_STATES as readonly string[]).includes(status);
+}
+
+function shouldSyncTransferFromBridge(transfer: {
+  status: string;
+  providerTransferId: string | null;
+  depositInstructions: Record<string, unknown>;
+}): boolean {
+  if (!transfer.providerTransferId) {
+    return false;
+  }
+
+  if (!isTerminalTransferStatus(transfer.status)) {
+    return true;
+  }
+
+  return (
+    transfer.status === 'payment_processed' &&
+    !hasBridgeTransferSnapshot(transfer.depositInstructions)
+  );
 }
 
 export async function syncBankTransfersFromBridge(
@@ -21,25 +44,29 @@ export async function syncBankTransfersFromBridge(
   let synced = 0;
 
   for (const transfer of transfers) {
-    if (isTerminalTransferStatus(transfer.status)) {
-      continue;
-    }
-
-    if (!transfer.providerTransferId) {
+    if (!shouldSyncTransferFromBridge(transfer)) {
       continue;
     }
 
     try {
-      const remote = await bridgeGetTransfer(transfer.providerTransferId);
-      const instructions = remote.source_deposit_instructions;
+      const remote = await bridgeGetTransfer(transfer.providerTransferId!);
+      const instructions = mergeBridgeTransferSyncIntoInstructions(
+        remote.source_deposit_instructions,
+        remote,
+      );
       const depositMessage =
         typeof instructions.deposit_message === 'string'
           ? instructions.deposit_message
           : transfer.depositMessage;
 
+      const snapshotChanged = !hasBridgeTransferSnapshot(
+        transfer.depositInstructions,
+      );
+
       if (
         remote.state !== transfer.status ||
-        depositMessage !== transfer.depositMessage
+        depositMessage !== transfer.depositMessage ||
+        snapshotChanged
       ) {
         await updateBankTransfer(
           {
@@ -47,6 +74,8 @@ export async function syncBankTransfersFromBridge(
             status: remote.state,
             depositInstructions: instructions,
             depositMessage,
+            destinationAddress:
+              remote.destination?.to_address ?? transfer.destinationAddress,
           },
           { db },
         );

@@ -25,6 +25,29 @@ export const BANKING_LOADING_STATE_CLASS =
 export const BANKING_COPYABLE_SURFACE_CLASS =
   'rounded-md border border-border/70 bg-muted/25';
 
+/** Completed / locked instruction fields — muted, non-interactive appearance. */
+export const BANKING_READONLY_SURFACE_CLASS =
+  'rounded-md border border-border/50 bg-muted/15 text-muted-foreground';
+
+/** Callout above reference fields in transfer details (only place warning border is used). */
+export const BANKING_REFERENCE_WARNING_BANNER_CLASS =
+  'rounded-md border-2 border-warning-8 bg-warning-3 px-3 py-2 text-1 text-foreground';
+
+/** @deprecated Import from `./components/banking-dialog-layout` */
+export {
+  BANKING_DIALOG_CONTENT_CLASS as BANKING_DETAILS_DIALOG_CONTENT_CLASS,
+  BANKING_DIALOG_BODY_CLASS as BANKING_DETAILS_DIALOG_BODY_CLASS,
+} from './components/banking-dialog-layout';
+
+/** Completed transfers — instructions are view-only (no copy). */
+export function isTransferDepositInstructionsReadOnly(
+  transfer: Pick<BankTransferPublic, 'lifecycle' | 'status'>,
+): boolean {
+  return (
+    transfer.lifecycle === 'active' && transfer.status === 'payment_processed'
+  );
+}
+
 /** Locked customer fields — readable but not focusable like an editable input. */
 export const BANKING_READONLY_INPUT_CLASS =
   'cursor-default bg-muted/30 focus-visible:ring-0 focus-visible:ring-offset-0';

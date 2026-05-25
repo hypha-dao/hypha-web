@@ -410,6 +410,7 @@ describe('createBridgeKycProvider', () => {
             to_address: '0xtreasury',
           },
           features: { flexible_amount: true },
+          developer_fee_percent: '0.0',
         },
         '550e8400-e29b-41d4-a716-446655440010',
       );
@@ -431,6 +432,7 @@ describe('createBridgeKycProvider', () => {
         string,
       ];
       expect(body.amount).toBe('500.00');
+      expect(body.developer_fee).toBe('0.0');
       expect(body).not.toHaveProperty('features');
     });
 

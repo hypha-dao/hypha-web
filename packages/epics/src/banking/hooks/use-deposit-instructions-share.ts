@@ -49,6 +49,7 @@ export function useDepositInstructionsShare({
   transfer?: BankTransferPublic | null;
 }) {
   const t = useTranslations('BankingTab.depositInstructions');
+  const tDetails = useTranslations('BankingTab.transferDetails');
   const [shareCopied, setShareCopied] = useState(false);
 
   const source = toShareSource(account, transfer);
@@ -67,13 +68,23 @@ export function useDepositInstructionsShare({
       source.depositMessage,
     );
 
-    if (blocks.length === 0 && !depositMessage) {
+    const amount = transfer
+      ? {
+          label: tDetails('amountLabel'),
+          value: transfer.amount
+            ? `${transfer.amount} ${transfer.currency.toUpperCase()}`
+            : tDetails('flexibleAmount'),
+        }
+      : null;
+
+    if (blocks.length === 0 && !depositMessage && !amount) {
       return '';
     }
 
     return formatBankInstructionsCopyText({
       blocks,
       depositMessage,
+      amount,
       resolveLabel: (key) => {
         try {
           return t(key as Parameters<typeof t>[0]);
@@ -82,7 +93,7 @@ export function useDepositInstructionsShare({
         }
       },
     });
-  }, [source, t]);
+  }, [source, t, tDetails, transfer]);
 
   const handleShare = useCallback(() => {
     if (!shareText) {

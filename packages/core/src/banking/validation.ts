@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-import { BANK_VIRTUAL_ACCOUNT_CURRENCIES } from './constants';
+import {
+  BANK_TRANSFER_CORRIDOR_KEYS,
+  BANK_VIRTUAL_ACCOUNT_CURRENCIES,
+} from './constants';
 
 export const schemaSpaceBankCustomerOnboarding = z
   .object({
@@ -31,7 +34,8 @@ const optionalOnboardingFields = {
 
 export const schemaCreateBankTransfer = z
   .object({
-    currency: z.enum(BANK_VIRTUAL_ACCOUNT_CURRENCIES),
+    corridorKey: z.enum(BANK_TRANSFER_CORRIDOR_KEYS).optional(),
+    currency: z.enum(BANK_VIRTUAL_ACCOUNT_CURRENCIES).optional(),
     amount: z
       .string()
       .trim()
@@ -40,7 +44,10 @@ export const schemaCreateBankTransfer = z
       .optional(),
     ...optionalOnboardingFields,
   })
-  .strict();
+  .strict()
+  .refine((data) => data.corridorKey != null || data.currency != null, {
+    message: 'corridorKey or currency is required',
+  });
 
 export type CreateBankTransferBody = z.infer<typeof schemaCreateBankTransfer>;
 

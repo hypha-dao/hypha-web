@@ -3,11 +3,12 @@ import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { getDb } from '../../common/server/get-db';
 import { findSelf } from '../../people/server/queries';
 import { isOnChainMemberOrDelegate } from '../../space/server/is-on-chain-member-or-delegate';
+import { resolveSpaceExecutorAddress } from '../../space/server/resolve-space-executor-address';
 import type { Space } from '../../space/types';
 import type { BankOnboardingHttpStatus } from './errors';
 
 export type AuthorizeSpaceBankOnboardingInput = {
-  space: Pick<Space, 'web3SpaceId' | 'address'>;
+  space: Pick<Space, 'web3SpaceId'>;
   authToken: string;
 };
 
@@ -45,7 +46,19 @@ export async function authorizeSpaceBankOnboarding({
     };
   }
 
-  if (!space.address?.trim()) {
+  let treasuryAddress: string | null;
+  try {
+    treasuryAddress = await resolveSpaceExecutorAddress(space);
+  } catch (error) {
+    console.error('authorizeSpaceBankOnboarding treasury lookup:', error);
+    return {
+      authorized: false,
+      httpStatus: 500,
+      message: 'An error occurred while checking your permissions.',
+    };
+  }
+
+  if (!treasuryAddress) {
     return {
       authorized: false,
       httpStatus: 422,

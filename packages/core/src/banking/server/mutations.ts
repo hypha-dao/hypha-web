@@ -239,6 +239,7 @@ export type UpdateBankTransferInput = {
   amount?: string | null;
   currency?: string;
   paymentRail?: string;
+  destinationAddress?: string;
 };
 
 export const updateBankTransfer = async (
@@ -269,6 +270,9 @@ export const updateBankTransfer = async (
   }
   if (input.paymentRail !== undefined) {
     patch.paymentRail = input.paymentRail;
+  }
+  if (input.destinationAddress !== undefined) {
+    patch.destinationAddress = input.destinationAddress;
   }
 
   const [row] = await db

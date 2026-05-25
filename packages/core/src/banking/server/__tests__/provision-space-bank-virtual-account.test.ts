@@ -45,9 +45,15 @@ const findBankCustomerBySpaceAndProvider = vi.fn();
 const findBankVirtualAccountByCorridorAndCustomer = vi.fn();
 const insertBankVirtualAccount = vi.fn();
 const updateBankVirtualAccount = vi.fn();
+const resolveSpaceExecutorAddress = vi.fn();
 
 vi.mock('../../../space/server/queries', () => ({
   findSpaceBySlug: (...args: unknown[]) => findSpaceBySlug(...args),
+}));
+
+vi.mock('../../../space/server/resolve-space-executor-address', () => ({
+  resolveSpaceExecutorAddress: (...args: unknown[]) =>
+    resolveSpaceExecutorAddress(...args),
 }));
 
 vi.mock('../authorize-space-bank-onboarding', () => ({
@@ -104,8 +110,12 @@ describe('provisionSpaceBankVirtualAccount', () => {
     findSpaceBySlug.mockResolvedValue({
       id: 1,
       slug: 'acme',
+      web3SpaceId: 42,
       address: '0xtreasury',
     });
+    resolveSpaceExecutorAddress.mockResolvedValue(
+      '0xtreasury000000000000000000000000000001',
+    );
     authorizeSpaceBankOnboarding.mockResolvedValue({
       authorized: true,
       person: { id: 10, slug: 'alice' },
@@ -216,7 +226,7 @@ describe('provisionSpaceBankVirtualAccount', () => {
       expect.objectContaining({
         customerId: 'cust_1',
         currency: 'eur',
-        destinationAddress: '0xtreasury',
+        destinationAddress: '0xtreasury000000000000000000000000000001',
       }),
     );
     expect(result.created).toBe(true);

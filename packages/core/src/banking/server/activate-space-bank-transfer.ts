@@ -81,6 +81,7 @@ export async function activateSpaceBankTransfer(
       customer: resolvedCustomer,
       space,
       currency: transfer.currency,
+      paymentRail: transfer.paymentRail,
       amount: transfer.amount ?? undefined,
     },
     { db },
