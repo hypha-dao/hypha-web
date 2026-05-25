@@ -42,7 +42,9 @@ export function HumanChatPanelCaptureConsentBanner({
     ? t('callCaptureConsentPausedSuffix')
     : '';
   const actorLabel =
-    resolvedActor.trim() || consent.actor.trim() || 'A participant';
+    resolvedActor.trim() ||
+    consent.actor.trim() ||
+    t('callCaptureConsentActorFallback');
 
   let message: string;
   if (variant === 'join') {

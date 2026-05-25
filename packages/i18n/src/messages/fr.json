@@ -2251,6 +2251,7 @@
     "callCaptureConsentRemote": "{actor} capture cet appel ({mode}).",
     "callCaptureConsentJoin": "Cet appel est capturé ({mode}) par {actor}. Rejoindre vaut consentement.",
     "callCaptureConsentLegalNote": "L'enregistrement et la transcription peuvent être stockés dans la mémoire de l'espace.",
+    "callCaptureConsentActorFallback": "Un participant",
     "callCaptureConsentPausedSuffix": " La capture est en pause.",
     "callCaptureVoiceStartedRecordingTranscript": "Cet appel est maintenant enregistré et transcrit.",
     "callCaptureVoiceStoppedRecordingTranscript": "L'enregistrement et la transcription sont terminés.",

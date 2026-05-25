@@ -2259,6 +2259,7 @@
     "callCaptureConsentRemote": "{actor} zeichnet diesen Anruf auf ({mode}).",
     "callCaptureConsentJoin": "Dieser Anruf wird aufgezeichnet ({mode}) von {actor}. Beitritt gilt als Zustimmung.",
     "callCaptureConsentLegalNote": "Aufzeichnung und Transkript können im Space-Gedächtnis gespeichert werden.",
+    "callCaptureConsentActorFallback": "Ein Teilnehmer",
     "callCaptureConsentPausedSuffix": " Aufzeichnung ist pausiert.",
     "callCaptureVoiceStartedRecordingTranscript": "Dieser Anruf wird jetzt aufgezeichnet und transkribiert.",
     "callCaptureVoiceStoppedRecordingTranscript": "Aufzeichnung und Transkription wurden beendet.",

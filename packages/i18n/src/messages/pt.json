@@ -2253,6 +2253,7 @@
     "callCaptureConsentRemote": "{actor} está a capturar esta chamada ({mode}).",
     "callCaptureConsentJoin": "Esta chamada está a ser capturada ({mode}) por {actor}. Entrar implica o seu consentimento.",
     "callCaptureConsentLegalNote": "A gravação e a transcrição podem ser guardadas na memória do espaço.",
+    "callCaptureConsentActorFallback": "Um participante",
     "callCaptureConsentPausedSuffix": " A captura está em pausa.",
     "callCaptureVoiceStartedRecordingTranscript": "Esta chamada está a ser gravada e transcrita.",
     "callCaptureVoiceStoppedRecordingTranscript": "A gravação e a transcrição foram interrompidas.",

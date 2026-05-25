@@ -2272,6 +2272,7 @@
     "callCaptureConsentRemote": "{actor} is capturing this call ({mode}).",
     "callCaptureConsentJoin": "This call is being captured ({mode}) by {actor}. Joining indicates your consent.",
     "callCaptureConsentLegalNote": "Recording and transcription may be stored in this space's memory.",
+    "callCaptureConsentActorFallback": "A participant",
     "callCaptureConsentPausedSuffix": " Capture is paused.",
     "callCaptureVoiceStartedRecordingTranscript": "This call is now being recorded and transcribed.",
     "callCaptureVoiceStoppedRecordingTranscript": "Recording and transcription have stopped.",
