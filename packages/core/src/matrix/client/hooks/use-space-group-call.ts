@@ -728,7 +728,9 @@ export function useSpaceGroupCall(
       let recorder: Awaited<ReturnType<typeof createCallRecording>> | null =
         null;
       if (mode === 'recording_with_transcript') {
-        recorder = await createCallRecording(gc);
+        recorder = await createCallRecording(
+          () => groupCallRef.current ?? groupCall,
+        );
         if (!recorder) {
           setRecordingStatus('error');
           setRecordingError(
