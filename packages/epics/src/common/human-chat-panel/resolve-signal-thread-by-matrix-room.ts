@@ -72,31 +72,36 @@ export async function resolveSignalThreadByMatrixRoom(
   if (cached) return cached;
 
   const headers: HeadersInit = {};
-  const token = getAccessToken ? await getAccessToken() : null;
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  try {
+    const token = getAccessToken ? await getAccessToken() : null;
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const res = await fetch(
+      `/api/v1/matrix/rooms/${encodeURIComponent(trimmed)}/signal`,
+      { headers },
+    );
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as {
+      signalSlug?: string;
+      signalTitle?: string;
+      spaceSlug?: string;
+      roomId?: string;
+    };
+    const signalSlug = data.signalSlug?.trim();
+    const spaceSlug = data.spaceSlug?.trim();
+    if (!signalSlug || !spaceSlug) return null;
+
+    return {
+      signalSlug,
+      signalTitle: data.signalTitle?.trim() || signalSlug,
+      spaceSlug,
+      roomId: data.roomId?.trim() || trimmed,
+    };
+  } catch (error) {
+    console.warn('[resolveSignalThreadByMatrixRoom] lookup failed:', error);
+    return null;
   }
-
-  const res = await fetch(
-    `/api/v1/matrix/rooms/${encodeURIComponent(trimmed)}/signal`,
-    { headers },
-  );
-  if (!res.ok) return null;
-
-  const data = (await res.json()) as {
-    signalSlug?: string;
-    signalTitle?: string;
-    spaceSlug?: string;
-    roomId?: string;
-  };
-  const signalSlug = data.signalSlug?.trim();
-  const spaceSlug = data.spaceSlug?.trim();
-  if (!signalSlug || !spaceSlug) return null;
-
-  return {
-    signalSlug,
-    signalTitle: data.signalTitle?.trim() || signalSlug,
-    spaceSlug,
-    roomId: data.roomId?.trim() || trimmed,
-  };
 }
