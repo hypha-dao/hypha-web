@@ -241,10 +241,6 @@ function CallParticipantGalleryGrid({
   );
 }
 
-/** Stable empty refs so `useMemo` for `remoteUserTiles` always runs the same number of hooks. */
-const emptyCallFeedsUnstable: CallFeed[] = [];
-const emptyUserIdsUnstable: string[] = [];
-
 /** Room member Matrix avatar → HTTP for `<img>` in call tiles (no media auth). */
 function matrixMemberAvatarSquareForCall(
   client: MatrixClient | null,
@@ -384,6 +380,29 @@ export function canOpenHumanChatCallFullView(
   return m?.kind === 'main';
 }
 
+function CallScreenSharePendingStrip({
+  layout,
+}: {
+  layout: HumanChatPanelCallStageLayout;
+}) {
+  const t = useTranslations('HumanChatPanel');
+  if (layout === 'fullView') return null;
+  return (
+    <section
+      className="shrink-0 border-b border-border bg-muted/20 px-3 py-2"
+      role="status"
+    >
+      <p className="text-xs text-muted-foreground">
+        {t('callScreenShareActive')}
+      </p>
+    </section>
+  );
+}
+
+type HumanChatPanelCallStageMainProps = HumanChatPanelCallStageProps & {
+  model: Extract<CallStageContentModel, { kind: 'main' }>;
+};
+
 /**
  * Video grid + local PiP from GroupCall userMedia / screenshare feeds.
  * Use `layout: 'panel' | 'fullView' | 'hidden'`: mount **one** instance with
@@ -391,21 +410,43 @@ export function canOpenHumanChatCallFullView(
  * single-sourced (spec §3.4.4).
  * @see voice-video-call-implementation-spec.md §3.4.2, §3.4.4, §3.5
  */
-export function HumanChatPanelCallStage({
+export function HumanChatPanelCallStage(props: HumanChatPanelCallStageProps) {
+  const model = getHumanChatPanelCallStageModel(
+    props.groupCall,
+    props.callKind,
+    props.isLocalVideoMuted,
+    props.isScreensharing,
+    props.callState,
+    props.currentUserId,
+    props.inCallUserIds,
+  );
+
+  if (!model) return null;
+  if (model.kind === 'screenSharePendingStrip') {
+    return <CallScreenSharePendingStrip layout={props.layout} />;
+  }
+  if (model.kind === 'hidden') return null;
+  if (props.layout === 'hidden') return null;
+
+  return <HumanChatPanelCallStageMain {...props} model={model} />;
+}
+
+function HumanChatPanelCallStageMain({
+  model,
   client,
   roomId,
-  groupCall,
-  callKind,
-  isLocalVideoMuted,
+  groupCall: _groupCall,
+  callKind: _callKind,
+  isLocalVideoMuted: _isLocalVideoMuted,
   isMicrophoneMuted,
   isScreensharing,
-  callState,
+  callState: _callState,
   feedVersion: _feedVersion,
   activeSpeakerKey,
   currentUserId,
   resolveMemberLabel,
   currentUserProfileAvatarUrl = null,
-  inCallUserIds = null,
+  inCallUserIds: _inCallUserIds = null,
   remoteMediaStall = false,
   layout,
   panelVideoFit = 'cover',
@@ -421,49 +462,31 @@ export function HumanChatPanelCallStage({
   },
   onFullViewPaneSplitChange,
   fullViewSplitContainerRef,
-}: HumanChatPanelCallStageProps) {
+}: HumanChatPanelCallStageMainProps) {
   const t = useTranslations('HumanChatPanel');
   const labelId = useId();
   const [galleryPage, setGalleryPage] = useState(0);
   const localSplitRef = useRef<HTMLDivElement | null>(null);
   const splitRef = fullViewSplitContainerRef ?? localSplitRef;
   const onSplit = onFullViewPaneSplitChange;
-  const model = getHumanChatPanelCallStageModel(
-    groupCall,
-    callKind,
-    isLocalVideoMuted,
-    isScreensharing,
-    callState,
-    currentUserId,
-    inCallUserIds,
-  );
   const handleExpand = useCallback(() => {
     onRequestFullView?.();
   }, [onRequestFullView]);
 
-  const emptyCallFeeds: CallFeed[] = emptyCallFeedsUnstable;
-  const emptyUserIds: string[] = emptyUserIdsUnstable;
-  const rmuForTiles =
-    model?.kind === 'main' ? model.remoteUserMedia : emptyCallFeeds;
-  const missForTiles =
-    model?.kind === 'main' ? model.missingRemoteUserIds : emptyUserIds;
   const remoteUserTiles = useMemo(
-    () => buildRemoteUserTiles(rmuForTiles, missForTiles),
-    [rmuForTiles, missForTiles],
+    () =>
+      buildRemoteUserTiles(model.remoteUserMedia, model.missingRemoteUserIds),
+    [model.missingRemoteUserIds, model.remoteUserMedia],
   );
-  const localUserMediaForGallery =
-    model?.kind === 'main' ? model.localUserMedia : emptyCallFeeds;
   const mainGalleryTiles = useMemo(() => {
     const tiles: RemoteTileItem[] = [...remoteUserTiles];
-    if (localUserMediaForGallery[0]) {
-      tiles.push({ kind: 'feed', feed: localUserMediaForGallery[0] });
+    if (model.localUserMedia[0]) {
+      tiles.push({ kind: 'feed', feed: model.localUserMedia[0] });
     }
     return tiles;
-  }, [remoteUserTiles, localUserMediaForGallery]);
+  }, [model.localUserMedia, remoteUserTiles]);
   const galleryParticipantCount =
-    model?.kind === 'main'
-      ? remoteUserTiles.length + (model.localUserMedia.length > 0 ? 1 : 0)
-      : 0;
+    remoteUserTiles.length + (model.localUserMedia.length > 0 ? 1 : 0);
   useEffect(() => {
     setGalleryPage(0);
   }, [galleryParticipantCount]);
@@ -472,32 +495,6 @@ export function HumanChatPanelCallStage({
     if (!track || track.readyState !== 'live') return false;
     return !feed.isVideoMuted();
   }, []);
-
-  if (!model) {
-    return null;
-  }
-
-  if (model.kind === 'screenSharePendingStrip') {
-    if (layout === 'fullView') {
-      return null;
-    }
-    return (
-      <section
-        className="shrink-0 border-b border-border bg-muted/20 px-3 py-2"
-        role="status"
-      >
-        <p className="text-xs text-muted-foreground">
-          {t('callScreenShareActive')}
-        </p>
-      </section>
-    );
-  }
-  if (model.kind === 'hidden') {
-    return null;
-  }
-  if (layout === 'hidden' && model.kind === 'main') {
-    return null;
-  }
 
   const {
     isVideoCall,
