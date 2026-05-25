@@ -286,14 +286,14 @@ export function HumanChatPanelMentionTab({
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       {showCallAlertToggle ? (
-        <div className="flex shrink-0 items-center justify-end gap-2 border-b border-border/60 px-3 py-2">
+        <div className="flex shrink-0 items-center border-b border-border/60 px-3 py-2">
           <button
             type="button"
             onClick={() =>
               onCallJoinAlertsUnmutedChange?.(!callJoinAlertsUnmuted)
             }
             className={cn(
-              'inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted',
+              'inline-flex h-auto min-h-7 w-full max-w-full items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1 text-left text-xs font-medium leading-snug text-foreground transition-colors hover:bg-muted',
               callAlertsMuted && 'text-muted-foreground',
             )}
             aria-pressed={callAlertsMuted}
@@ -317,7 +317,7 @@ export function HumanChatPanelMentionTab({
                 aria-hidden
               />
             )}
-            <span className="max-w-[8rem] truncate">
+            <span className="min-w-0 flex-1 whitespace-normal">
               {callJoinAlertsUnmuted
                 ? t('callJoinCallAlertsUnmuted')
                 : t('callJoinCallAlertsMutedShort')}
