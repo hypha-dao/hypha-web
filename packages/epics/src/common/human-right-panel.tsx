@@ -3017,7 +3017,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (qpMsg) setScrollToEventId(qpMsg);
         stripSignalQueryFromUrl();
       } catch (error) {
-        console.warn('[HumanRightPanel] signal deep-link lookup failed:', error);
+        console.warn(
+          '[HumanRightPanel] signal deep-link lookup failed:',
+          error,
+        );
       }
     })();
 
