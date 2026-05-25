@@ -5,6 +5,15 @@ export { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-c
 export { HumanChatPanelCallJoinStrip } from './human-chat-panel-call-join-strip';
 export { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
 export { HumanChatPanelScreenshareTakeoverDialog } from './human-chat-panel-screenshare-takeover-dialog';
+export {
+  CALL_GALLERY_MAX_TILES_PER_PAGE,
+  CALL_GALLERY_MIN_PARTICIPANTS,
+  computeCallGalleryGrid,
+  getCallGalleryPageCount,
+  getCallGalleryTileColumnStart,
+  callGalleryGridStyle,
+  sliceCallGalleryPage,
+} from './call-gallery-grid';
 export { HumanChatPanelCallFullViewLayoutMenu } from './human-chat-panel-call-full-view-layout-menu';
 export {
   type CallFullViewLayoutMode,

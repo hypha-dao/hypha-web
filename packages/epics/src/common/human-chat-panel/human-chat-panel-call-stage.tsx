@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type RefObject,
+  type ReactNode,
 } from 'react';
 import type { MatrixClient, GroupCall, Room } from 'matrix-js-sdk';
 import {
@@ -32,6 +33,15 @@ import { CallAudioVoiceWaves } from './call-audio-voice-waves';
 import type { CallFullViewLayoutMode } from './call-full-view-layout';
 import { CallFullViewPaneSplitter } from './human-chat-panel-call-full-view-pane-splitter';
 import type { CallFullViewPaneSplit } from './call-full-view-split';
+import {
+  CALL_GALLERY_MAX_TILES_PER_PAGE,
+  CALL_GALLERY_MIN_PARTICIPANTS,
+  computeCallGalleryGrid,
+  getCallGalleryPageCount,
+  getCallGalleryTileColumnStart,
+  callGalleryGridStyle,
+  sliceCallGalleryPage,
+} from './call-gallery-grid';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
 
@@ -120,6 +130,111 @@ function buildRemoteUserTiles(
     out.push({ kind: 'placeholder', userId: id });
   }
   return out;
+}
+
+function galleryTileKey(item: RemoteTileItem, index: number): string {
+  return item.kind === 'feed'
+    ? feedKey(item.feed, index)
+    : `ph-gallery-${item.userId}-${index}`;
+}
+
+type CallParticipantGalleryGridProps = {
+  tiles: RemoteTileItem[];
+  isFull: boolean;
+  galleryPage: number;
+  onGalleryPageChange: (page: number) => void;
+  showPagination: boolean;
+  keyPrefix: number;
+  cellClassName: string;
+  className?: string;
+  renderTile: (item: RemoteTileItem, keyIdx: number) => ReactNode;
+  pageLabel: (current: number, total: number) => string;
+  previousPageLabel: string;
+  nextPageLabel: string;
+};
+
+function CallParticipantGalleryGrid({
+  tiles,
+  isFull,
+  galleryPage,
+  onGalleryPageChange,
+  showPagination,
+  keyPrefix,
+  cellClassName,
+  className,
+  renderTile,
+  pageLabel,
+  previousPageLabel,
+  nextPageLabel,
+}: CallParticipantGalleryGridProps) {
+  const pageSize = CALL_GALLERY_MAX_TILES_PER_PAGE;
+  const visibleTiles = showPagination
+    ? sliceCallGalleryPage(tiles, galleryPage, pageSize)
+    : tiles;
+  const layout = computeCallGalleryGrid(visibleTiles.length, isFull ? 5 : 2);
+  const pageCount = getCallGalleryPageCount(tiles.length, pageSize);
+  const gridStyle = callGalleryGridStyle(layout);
+
+  return (
+    <div
+      className={cn(
+        'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          'grid min-h-0 w-full min-w-0 flex-1 gap-1.5',
+          'content-stretch items-stretch [grid-auto-rows:minmax(0,1fr)]',
+        )}
+        style={gridStyle}
+      >
+        {visibleTiles.map((item, i) => {
+          const colStart = getCallGalleryTileColumnStart(
+            i,
+            visibleTiles.length,
+            layout,
+          );
+          return (
+            <div
+              key={galleryTileKey(item, keyPrefix + i)}
+              className={cellClassName}
+              style={colStart ? { gridColumnStart: colStart } : undefined}
+            >
+              {renderTile(item, keyPrefix + i)}
+            </div>
+          );
+        })}
+      </div>
+      {showPagination && pageCount > 1 ? (
+        <div className="flex shrink-0 items-center justify-center gap-2 border-t border-border/30 px-2 py-1.5 text-xs text-zinc-300">
+          <button
+            type="button"
+            className="rounded-md border border-border/40 px-2 py-0.5 transition hover:bg-white/10 disabled:opacity-40"
+            disabled={galleryPage <= 0}
+            onClick={() => onGalleryPageChange(Math.max(0, galleryPage - 1))}
+            aria-label={previousPageLabel}
+          >
+            ‹
+          </button>
+          <span aria-live="polite">
+            {pageLabel(galleryPage + 1, pageCount)}
+          </span>
+          <button
+            type="button"
+            className="rounded-md border border-border/40 px-2 py-0.5 transition hover:bg-white/10 disabled:opacity-40"
+            disabled={galleryPage >= pageCount - 1}
+            onClick={() =>
+              onGalleryPageChange(Math.min(pageCount - 1, galleryPage + 1))
+            }
+            aria-label={nextPageLabel}
+          >
+            ›
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 /** Stable empty refs so `useMemo` for `remoteUserTiles` always runs the same number of hooks. */
@@ -305,6 +420,7 @@ export function HumanChatPanelCallStage({
 }: HumanChatPanelCallStageProps) {
   const t = useTranslations('HumanChatPanel');
   const labelId = useId();
+  const [galleryPage, setGalleryPage] = useState(0);
   const localSplitRef = useRef<HTMLDivElement | null>(null);
   const splitRef = fullViewSplitContainerRef ?? localSplitRef;
   const onSplit = onFullViewPaneSplitChange;
@@ -331,6 +447,13 @@ export function HumanChatPanelCallStage({
     () => buildRemoteUserTiles(rmuForTiles, missForTiles),
     [rmuForTiles, missForTiles],
   );
+  const galleryParticipantCount =
+    model?.kind === 'main'
+      ? remoteUserTiles.length + (model.localUserMedia.length > 0 ? 1 : 0)
+      : 0;
+  useEffect(() => {
+    setGalleryPage(0);
+  }, [galleryParticipantCount]);
   const isLiveAndUnmuted = useCallback((feed: CallFeed): boolean => {
     const track = feed.stream.getVideoTracks()[0];
     if (!track || track.readyState !== 'live') return false;
@@ -453,13 +576,31 @@ export function HumanChatPanelCallStage({
     ? fullViewLayoutMode
     : 'sideBySide';
 
-  /** Skip corner PiP when share layout already shows participant tiles. */
+  const mainGalleryTiles = useMemo(() => {
+    const tiles: RemoteTileItem[] = [...remoteUserTiles];
+    if (localUserMedia[0]) {
+      tiles.push({ kind: 'feed', feed: localUserMedia[0] });
+    }
+    return tiles;
+  }, [remoteUserTiles, localUserMedia]);
+
+  const useMainGalleryLayout =
+    !useShareWithParticipantsLayout &&
+    !hasRenderableShare &&
+    mainGalleryTiles.length >= CALL_GALLERY_MIN_PARTICIPANTS;
+
+  const useShareParticipantGallery =
+    useShareWithParticipantsLayout &&
+    userTilesForFullViewShare.length >= CALL_GALLERY_MIN_PARTICIPANTS;
+
+  /** Skip corner PiP when gallery grid already includes the local tile. */
   const showFloatingLocalPip =
     isVideoCall &&
     localUserMedia.length > 0 &&
     hasLocalWebcam &&
     showLocalPip &&
-    !useShareWithParticipantsLayout;
+    !useShareWithParticipantsLayout &&
+    !useMainGalleryLayout;
 
   const speakerFeedForTopMode = (() => {
     if (remoteUserMedia.length > 0) {
@@ -554,33 +695,62 @@ export function HumanChatPanelCallStage({
     keyPrefix: number,
     tileClassName: string,
     presenterOnly = false,
-  ) => (
-    <div
-      className={cn(
-        'flex min-h-0 flex-col gap-1.5 overflow-y-auto p-1.5',
-        presenterOnly
-          ? 'h-full w-full flex-1'
-          : isFull
-          ? 'min-h-[4.5rem] w-full flex-1 lg:max-w-none'
-          : 'ml-auto w-[min(44%,13rem)] min-w-[8.5rem] shrink-0 border-l border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]',
-      )}
-      role="group"
-      aria-label={t('callLayoutSideBySide')}
-    >
-      {userTilesForFullViewShare.map((item, i) => (
-        <div
-          key={
-            item.kind === 'feed'
-              ? feedKey(item.feed, keyPrefix + i)
-              : `ph-presenter-${item.userId}-${i}`
+  ) => {
+    if (useShareParticipantGallery) {
+      return (
+        <CallParticipantGalleryGrid
+          tiles={userTilesForFullViewShare}
+          isFull={isFull}
+          galleryPage={galleryPage}
+          onGalleryPageChange={setGalleryPage}
+          showPagination={isFull}
+          keyPrefix={keyPrefix}
+          cellClassName={tileClassName}
+          className={
+            presenterOnly
+              ? 'h-full w-full flex-1'
+              : isFull
+              ? 'min-h-[4.5rem] w-full flex-1'
+              : 'ml-auto w-full min-w-0 shrink-0 border-l border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]'
           }
-          className={tileClassName}
-        >
-          {renderRemoteUserTile(item, keyPrefix + i)}
-        </div>
-      ))}
-    </div>
-  );
+          renderTile={renderRemoteUserTile}
+          pageLabel={(current, total) =>
+            t('callGalleryPage', { current, total })
+          }
+          previousPageLabel={t('callGalleryPreviousPage')}
+          nextPageLabel={t('callGalleryNextPage')}
+        />
+      );
+    }
+
+    return (
+      <div
+        className={cn(
+          'flex min-h-0 flex-col gap-1.5 overflow-y-auto p-1.5',
+          presenterOnly
+            ? 'h-full w-full flex-1'
+            : isFull
+            ? 'min-h-[4.5rem] w-full flex-1 lg:max-w-none'
+            : 'ml-auto w-[min(44%,13rem)] min-w-[8.5rem] shrink-0 border-l border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]',
+        )}
+        role="group"
+        aria-label={t('callLayoutSideBySide')}
+      >
+        {userTilesForFullViewShare.map((item, i) => (
+          <div
+            key={
+              item.kind === 'feed'
+                ? feedKey(item.feed, keyPrefix + i)
+                : `ph-presenter-${item.userId}-${i}`
+            }
+            className={tileClassName}
+          >
+            {renderRemoteUserTile(item, keyPrefix + i)}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   /**
    * In-panel, 2+ user tiles: each cell is a flex column with the same min-height so
@@ -714,23 +884,46 @@ export function HumanChatPanelCallStage({
                         role="group"
                         aria-label={t('callLayoutSideBySide')}
                       >
-                        {userTilesForFullViewShare.map((item, i) => (
-                          <div
-                            key={
-                              item.kind === 'feed'
-                                ? feedKey(item.feed, 1000 + i)
-                                : `ph-side-${item.userId}-${i}`
-                            }
-                            className={cn(
-                              'w-full shrink-0',
+                        {useShareParticipantGallery ? (
+                          <CallParticipantGalleryGrid
+                            tiles={userTilesForFullViewShare}
+                            isFull={isFull}
+                            galleryPage={galleryPage}
+                            onGalleryPageChange={setGalleryPage}
+                            showPagination={isFull}
+                            keyPrefix={1000}
+                            cellClassName={cn(
+                              'w-full shrink-0 min-h-0',
                               isFull
                                 ? 'min-h-[4.5rem]'
                                 : 'aspect-video min-h-[4rem]',
                             )}
-                          >
-                            {renderRemoteUserTile(item, 1000 + i)}
-                          </div>
-                        ))}
+                            renderTile={renderRemoteUserTile}
+                            pageLabel={(current, total) =>
+                              t('callGalleryPage', { current, total })
+                            }
+                            previousPageLabel={t('callGalleryPreviousPage')}
+                            nextPageLabel={t('callGalleryNextPage')}
+                          />
+                        ) : (
+                          userTilesForFullViewShare.map((item, i) => (
+                            <div
+                              key={
+                                item.kind === 'feed'
+                                  ? feedKey(item.feed, 1000 + i)
+                                  : `ph-side-${item.userId}-${i}`
+                              }
+                              className={cn(
+                                'w-full shrink-0',
+                                isFull
+                                  ? 'min-h-[4.5rem]'
+                                  : 'aspect-video min-h-[4rem]',
+                              )}
+                            >
+                              {renderRemoteUserTile(item, 1000 + i)}
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   );
@@ -758,23 +951,46 @@ export function HumanChatPanelCallStage({
                         />
                       )}
                       <div
-                        className="flex w-full min-h-0 min-h-[3.5rem] shrink-0 items-stretch gap-2 overflow-x-auto border-t border-border/30 p-2"
+                        className={cn(
+                          'w-full min-h-0 shrink-0 border-t border-border/30 p-2',
+                          useShareParticipantGallery
+                            ? 'flex min-h-[8rem] flex-1 flex-col'
+                            : 'flex min-h-[3.5rem] items-stretch gap-2 overflow-x-auto',
+                        )}
                         style={{ flex: `${1 - a} 1 0%` }}
                         role="group"
                         aria-label={t('callLayoutFilmstrip')}
                       >
-                        {userTilesForFullViewShare.map((item, i) => (
-                          <div
-                            key={
-                              item.kind === 'feed'
-                                ? feedKey(item.feed, 2000 + i)
-                                : `ph-strip-${item.userId}-${i}`
+                        {useShareParticipantGallery ? (
+                          <CallParticipantGalleryGrid
+                            tiles={userTilesForFullViewShare}
+                            isFull={isFull}
+                            galleryPage={galleryPage}
+                            onGalleryPageChange={setGalleryPage}
+                            showPagination
+                            keyPrefix={2000}
+                            cellClassName="min-h-0 w-full min-w-0"
+                            renderTile={renderRemoteUserTile}
+                            pageLabel={(current, total) =>
+                              t('callGalleryPage', { current, total })
                             }
-                            className="h-full min-h-[4.5rem] w-[min(42%,9rem)] min-w-[6.5rem] shrink-0"
-                          >
-                            {renderRemoteUserTile(item, 2000 + i)}
-                          </div>
-                        ))}
+                            previousPageLabel={t('callGalleryPreviousPage')}
+                            nextPageLabel={t('callGalleryNextPage')}
+                          />
+                        ) : (
+                          userTilesForFullViewShare.map((item, i) => (
+                            <div
+                              key={
+                                item.kind === 'feed'
+                                  ? feedKey(item.feed, 2000 + i)
+                                  : `ph-strip-${item.userId}-${i}`
+                              }
+                              className="h-full min-h-[4.5rem] w-[min(42%,9rem)] min-w-[6.5rem] shrink-0"
+                            >
+                              {renderRemoteUserTile(item, 2000 + i)}
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   );
@@ -930,7 +1146,31 @@ export function HumanChatPanelCallStage({
       )}
       {(hasRemotesOrShare || showLocalInMainGrid) &&
         !skipUserGridWithShareLayout &&
-        (useFullViewSingleMainTile ? (
+        (useMainGalleryLayout ? (
+          <div
+            className={cn(
+              'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col',
+              panelFlush && !isFull ? 'p-0' : 'px-2 pb-2 pt-0',
+            )}
+            data-feed-tick={_feedVersion}
+          >
+            <CallParticipantGalleryGrid
+              tiles={mainGalleryTiles}
+              isFull={isFull}
+              galleryPage={galleryPage}
+              onGalleryPageChange={setGalleryPage}
+              showPagination={isFull}
+              keyPrefix={0}
+              cellClassName={userGridCellClass}
+              renderTile={renderRemoteUserTile}
+              pageLabel={(current, total) =>
+                t('callGalleryPage', { current, total })
+              }
+              previousPageLabel={t('callGalleryPreviousPage')}
+              nextPageLabel={t('callGalleryNextPage')}
+            />
+          </div>
+        ) : useFullViewSingleMainTile ? (
           <div
             className={cn(
               'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col',
