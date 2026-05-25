@@ -75,6 +75,7 @@ import {
   HumanChatPanelCallBanner,
   HumanChatPanelScreenshareTakeoverDialog,
   HumanChatPanelCallJoinStrip,
+  HumanChatPanelConnectionBanner,
   HumanChatPanelCallStage,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
@@ -831,6 +832,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     client,
     isMatrixAvailable,
     isAuthenticated: isMatrixAuthenticated,
+    isMatrixSyncLeader,
+    connectionStatus,
+    claimMatrixSyncLeadership,
+    retryMatrixConnection,
     markRoomRead,
   } = matrix;
 
@@ -3538,6 +3543,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     {mentionNavigationNotice}
                   </div>
                 )}
+                <HumanChatPanelConnectionBanner
+                  connectionStatus={connectionStatus}
+                  isMatrixSyncLeader={isMatrixSyncLeader}
+                  onRetry={() => {
+                    void retryMatrixConnection();
+                  }}
+                  onUseThisTab={claimMatrixSyncLeadership}
+                />
                 {isSignalThread &&
                   hasSignalTeamPolicy &&
                   !canInteractWithSignalThread && (
