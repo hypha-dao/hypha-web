@@ -451,6 +451,15 @@ export function HumanChatPanelCallStage({
     () => buildRemoteUserTiles(rmuForTiles, missForTiles),
     [rmuForTiles, missForTiles],
   );
+  const localUserMediaForGallery =
+    model?.kind === 'main' ? model.localUserMedia : emptyCallFeeds;
+  const mainGalleryTiles = useMemo(() => {
+    const tiles: RemoteTileItem[] = [...remoteUserTiles];
+    if (localUserMediaForGallery[0]) {
+      tiles.push({ kind: 'feed', feed: localUserMediaForGallery[0] });
+    }
+    return tiles;
+  }, [remoteUserTiles, localUserMediaForGallery]);
   const galleryParticipantCount =
     model?.kind === 'main'
       ? remoteUserTiles.length + (model.localUserMedia.length > 0 ? 1 : 0)
@@ -579,14 +588,6 @@ export function HumanChatPanelCallStage({
   const effectiveShareLayoutMode: CallFullViewLayoutMode = isFull
     ? fullViewLayoutMode
     : 'sideBySide';
-
-  const mainGalleryTiles = useMemo(() => {
-    const tiles: RemoteTileItem[] = [...remoteUserTiles];
-    if (localUserMedia[0]) {
-      tiles.push({ kind: 'feed', feed: localUserMedia[0] });
-    }
-    return tiles;
-  }, [remoteUserTiles, localUserMedia]);
 
   const useMainGalleryLayout =
     !useShareWithParticipantsLayout &&
