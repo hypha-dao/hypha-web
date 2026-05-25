@@ -1,7 +1,9 @@
 export { HumanChatPanelCallToolbar } from './human-chat-panel-call-toolbar';
 export { HumanChatPanelCallBanner } from './human-chat-panel-call-banner';
+export { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
 export { HumanChatPanelCallJoinStrip } from './human-chat-panel-call-join-strip';
 export { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
+export { HumanChatPanelScreenshareTakeoverDialog } from './human-chat-panel-screenshare-takeover-dialog';
 export { HumanChatPanelCallFullViewLayoutMenu } from './human-chat-panel-call-full-view-layout-menu';
 export {
   type CallFullViewLayoutMode,

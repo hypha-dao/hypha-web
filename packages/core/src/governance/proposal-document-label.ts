@@ -88,6 +88,11 @@ export const LOCALIZED_PROPOSAL_LABEL_TO_CANONICAL: Record<string, string> = {
   "Transparence de l'espace": 'Space Transparency',
   'Transparencia espacial': 'Space Transparency',
   'Transparência Espacial': 'Space Transparency',
+  'New memory': 'Space Memory',
+  'Neue Erinnerung': 'Space Memory',
+  'Nueva memoria': 'Space Memory',
+  'Nouvelle mémoire': 'Space Memory',
+  'Nova memória': 'Space Memory',
 };
 
 export function normalizeProposalDocumentLabel(

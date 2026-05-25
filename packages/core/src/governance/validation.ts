@@ -6,6 +6,7 @@ import {
 } from '../assets/constant';
 import { isBefore } from 'date-fns';
 import {
+  DocumentState,
   EntryMethodType,
   REFERENCE_CURRENCIES,
   TOKEN_PRICE_REFERENCE_CURRENCIES,
@@ -135,6 +136,7 @@ const createAgreementWeb2Props = {
   spaceId: z.number().min(1),
   web3ProposalId: z.number().optional(),
   label: z.string().optional(),
+  state: z.nativeEnum(DocumentState).optional(),
 };
 
 export const schemaCreateAgreementWeb2 = z.object(createAgreementWeb2Props);

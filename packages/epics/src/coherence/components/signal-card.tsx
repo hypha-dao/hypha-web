@@ -8,7 +8,10 @@ import {
   DEFAULT_SPACE_LEAD_IMAGE,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
+  useMatrix,
   useMe,
+  usePersonById,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import {
   AlertDialog,
@@ -19,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   BadgeItem,
-  Badge,
   BadgesList,
   Button,
   Card,
@@ -35,6 +37,7 @@ import {
   DialogTitle,
   Image,
   Skeleton,
+  type LucideReactIcon,
 } from '@hypha-platform/ui';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -42,12 +45,13 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { Pencil, Trash2, Users } from 'lucide-react';
+import { Archive, Pencil, Sparkles, UserCircle2, Workflow } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 import { useScrollParallax } from '../../common/use-scroll-parallax';
 import { useParams, useRouter } from 'next/navigation';
+import { PersonAvatar } from '../../people/components/person-avatar';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -71,41 +75,113 @@ const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
 type SignalColorVariant = NonNullable<BadgeProps['colorVariant']>;
 
 const HERO_PRIORITY_WASH_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-accent-9/18',
-  error: 'bg-error-9/20',
-  warn: 'bg-warning-9/19',
-  success: 'bg-success-9/18',
-  neutral: 'bg-neutral-9/16',
+  accent: 'bg-accent-9/12',
+  error: 'bg-error-9/14',
+  warn: 'bg-warning-9/13',
+  success: 'bg-success-9/12',
+  neutral: 'bg-neutral-9/10',
 };
 
 const HERO_PRIORITY_SPOTLIGHT_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-gradient-to-br from-accent-9/34 via-accent-8/16 to-transparent',
-  error: 'bg-gradient-to-br from-error-9/36 via-error-8/18 to-transparent',
-  warn: 'bg-gradient-to-br from-warning-9/36 via-warning-8/18 to-transparent',
+  accent: 'bg-gradient-to-br from-accent-9/24 via-accent-8/11 to-transparent',
+  error: 'bg-gradient-to-br from-error-9/26 via-error-8/12 to-transparent',
+  warn: 'bg-gradient-to-br from-warning-9/26 via-warning-8/12 to-transparent',
   success:
-    'bg-gradient-to-br from-success-9/34 via-success-8/16 to-transparent',
+    'bg-gradient-to-br from-success-9/24 via-success-8/11 to-transparent',
   neutral:
-    'bg-gradient-to-br from-neutral-9/30 via-neutral-8/14 to-transparent',
+    'bg-gradient-to-br from-neutral-9/22 via-neutral-8/10 to-transparent',
 };
 
 const HERO_PRIORITY_VIGNETTE_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-gradient-to-t from-black/22 via-black/8 to-accent-10/14',
-  error: 'bg-gradient-to-t from-black/24 via-black/10 to-error-10/16',
-  warn: 'bg-gradient-to-t from-black/24 via-black/10 to-warning-10/16',
-  success: 'bg-gradient-to-t from-black/22 via-black/8 to-success-10/14',
-  neutral: 'bg-gradient-to-t from-black/22 via-black/8 to-neutral-10/12',
+  accent: 'bg-gradient-to-t from-accent-10/20 via-accent-9/10 to-transparent',
+  error: 'bg-gradient-to-t from-error-10/22 via-error-9/10 to-transparent',
+  warn: 'bg-gradient-to-t from-warning-10/22 via-warning-9/10 to-transparent',
+  success:
+    'bg-gradient-to-t from-success-10/20 via-success-9/10 to-transparent',
+  neutral: 'bg-gradient-to-t from-neutral-10/16 via-neutral-9/8 to-transparent',
 };
 
 const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
   {
-    accent: 'bg-gradient-to-t from-accent-10/30 via-accent-9/14 to-transparent',
-    error: 'bg-gradient-to-t from-error-10/34 via-error-9/16 to-transparent',
-    warn: 'bg-gradient-to-t from-warning-10/34 via-warning-9/16 to-transparent',
+    accent: 'bg-gradient-to-t from-accent-10/24 via-accent-9/10 to-transparent',
+    error: 'bg-gradient-to-t from-error-10/26 via-error-9/11 to-transparent',
+    warn: 'bg-gradient-to-t from-warning-10/26 via-warning-9/11 to-transparent',
     success:
-      'bg-gradient-to-t from-success-10/30 via-success-9/14 to-transparent',
+      'bg-gradient-to-t from-success-10/24 via-success-9/10 to-transparent',
     neutral:
-      'bg-gradient-to-t from-neutral-10/24 via-neutral-9/12 to-transparent',
+      'bg-gradient-to-t from-neutral-10/18 via-neutral-9/9 to-transparent',
   };
+const MAX_VISIBLE_SIGNAL_TAGS = 3;
+const SIGNAL_TAG_BADGE_CLASS =
+  'max-w-[8.5rem] overflow-hidden text-ellipsis whitespace-nowrap rounded-full';
+
+const BADGE_ICON_COLOR_CLASS_MAP: Record<SignalColorVariant, string> = {
+  accent: 'text-accent-10',
+  error: 'text-error-10',
+  warn: 'text-warning-10',
+  success: 'text-success-10',
+  neutral: 'text-neutral-11',
+};
+
+const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
+const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
+
+function normalizeMatrixUserIds(ids: unknown): string[] {
+  if (!Array.isArray(ids)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of ids) {
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    out.push(trimmed);
+  }
+  return out;
+}
+
+function getSignalTeamMembersFromRoom(options: {
+  room: {
+    getLiveTimeline: () => {
+      getEvents: () => Array<{
+        getType: () => string;
+        getContent: () => Record<string, unknown> | null;
+      }>;
+    };
+  } | null;
+  coherenceSlug?: string;
+}): { hasPolicy: boolean; memberMatrixUserIds: string[] } {
+  const { room, coherenceSlug } = options;
+  if (!room) return { hasPolicy: false, memberMatrixUserIds: [] };
+  const targetSlug = coherenceSlug?.trim() || null;
+  let hasPolicy = false;
+  let members: string[] = [];
+  for (const event of room.getLiveTimeline().getEvents()) {
+    if (event.getType() !== 'm.room.message') continue;
+    const content = event.getContent();
+    if (!content || typeof content !== 'object') continue;
+    const msgtype =
+      typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
+    const body = typeof content.body === 'string' ? content.body.trim() : '';
+    const eventKind =
+      msgtype === SIGNAL_TEAM_EVENT_KIND ||
+      body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
+        ? SIGNAL_TEAM_EVENT_KIND
+        : null;
+    if (!eventKind) continue;
+    const eventSlug =
+      typeof content.coherenceSlug === 'string'
+        ? content.coherenceSlug.trim()
+        : '';
+    if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
+    const nextMembers = normalizeMatrixUserIds(content.memberMatrixUserIds);
+    if (nextMembers.length > 0) {
+      members = nextMembers;
+      hasPolicy = true;
+    }
+  }
+  return { hasPolicy, memberMatrixUserIds: members };
+}
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isLoading,
@@ -127,8 +203,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 }) => {
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
-  const { updateCoherenceBySlug, deleteCoherenceBySlug } =
-    useCoherenceMutationsWeb2Rsc(authToken);
+  const { client: matrixClient } = useMatrix();
+  const { person: creatorPerson } = usePersonById({ id: creatorId });
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
   const tCommon = useTranslations('Common');
@@ -145,6 +222,16 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     const parsed = new Date(createdAt);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }, [createdAt]);
+  const createdAtRelative = React.useMemo(
+    () =>
+      createdAtDate
+        ? formatDistanceToNowStrict(createdAtDate, {
+            addSuffix: true,
+            locale: dateFnsLocale,
+          })
+        : '',
+    [createdAtDate, dateFnsLocale],
+  );
   const normalizedMessagesCount = React.useMemo(() => {
     const parsed =
       typeof messages === 'number'
@@ -153,6 +240,44 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     if (!Number.isFinite(parsed) || parsed < 0) return 0;
     return Math.trunc(parsed);
   }, [messages]);
+  const hasAiSignalTag = React.useMemo(
+    () => tags.some((tag) => tag.trim().toLowerCase() === 'ai signal'),
+    [tags],
+  );
+  const relaySourceSpaceSlug = React.useMemo(() => {
+    const match = description.match(
+      /Relayed from ecosystem space:\s*([a-z0-9-]+)/i,
+    );
+    return match?.[1] ?? null;
+  }, [description]);
+  const { space: relaySourceSpace, isLoading: isRelaySourceSpaceLoading } =
+    useSpaceBySlug(relaySourceSpaceSlug ?? '');
+  const isBackgroundJobSignal = React.useMemo(
+    () =>
+      /recent space-memory activity indicates a coordination opportunity/i.test(
+        description,
+      ) || /high-signal .* update/i.test(title),
+    [description, title],
+  );
+  const creatorKind = React.useMemo<
+    'person' | 'aiRole' | 'backgroundJob' | 'relay'
+  >(() => {
+    if (relaySourceSpaceSlug) return 'relay';
+    if (isBackgroundJobSignal) return 'backgroundJob';
+    if (hasAiSignalTag) return 'aiRole';
+    return 'person';
+  }, [relaySourceSpaceSlug, isBackgroundJobSignal, hasAiSignalTag]);
+  const creatorLabel = React.useMemo(() => {
+    if (creatorKind === 'relay') {
+      return relaySourceSpace?.title || relaySourceSpaceSlug || 'Relay space';
+    }
+    if (creatorKind === 'backgroundJob') return 'AI Agent';
+    if (creatorKind === 'aiRole') return 'AI Agent';
+    return (
+      [creatorPerson?.name, creatorPerson?.surname].filter(Boolean).join(' ') ||
+      'Member'
+    );
+  }, [creatorKind, creatorPerson, relaySourceSpace, relaySourceSpaceSlug]);
 
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -163,8 +288,66 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     maxShiftPx: 20,
   });
   const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
+  const metaBadgesRef = React.useRef<HTMLDivElement>(null);
+  const metaDetailsRef = React.useRef<HTMLDivElement>(null);
   const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
+  const [metaDetailsShouldLeftAlign, setMetaDetailsShouldLeftAlign] =
+    React.useState(false);
   const isCreator = person?.id === creatorId;
+  const currentUserMatrixId = matrixClient?.getUserId?.()?.trim() || null;
+  const signalTeamAccess = React.useMemo(() => {
+    if (!roomId?.trim()) {
+      return { hasPolicy: false, memberMatrixUserIds: [] };
+    }
+    return getSignalTeamMembersFromRoom({
+      room: matrixClient?.getRoom(roomId.trim()) ?? null,
+      coherenceSlug: slug ?? undefined,
+    });
+  }, [matrixClient, roomId, slug]);
+  const isSignalTeamMember = currentUserMatrixId
+    ? signalTeamAccess.memberMatrixUserIds.includes(currentUserMatrixId)
+    : false;
+  const canManageSignal =
+    isCreator || (signalTeamAccess.hasPolicy && isSignalTeamMember);
+  const creatorDisplayName = React.useMemo(() => {
+    if (isCreator) {
+      const currentUserName = [person?.name, person?.surname]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+      return currentUserName || 'You';
+    }
+
+    if (creatorKind !== 'person') return creatorLabel;
+
+    const resolvedPersonName = [creatorPerson?.name, creatorPerson?.surname]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    if (resolvedPersonName) return resolvedPersonName;
+
+    const raw = `${creatorId ?? ''}`.trim();
+    if (!raw) return creatorLabel;
+
+    if (raw.startsWith('@')) {
+      const [localpart] = raw.slice(1).split(':');
+      return localpart?.trim() || creatorLabel;
+    }
+
+    const [left] = raw.split(':');
+    const fallback = left?.trim() || raw;
+    if (/^\d+$/.test(fallback)) return creatorLabel;
+    return fallback;
+  }, [
+    creatorId,
+    creatorKind,
+    creatorLabel,
+    creatorPerson?.name,
+    creatorPerson?.surname,
+    isCreator,
+    person?.name,
+    person?.surname,
+  ]);
 
   const coherenceType = React.useMemo(
     () => COHERENCE_TYPE_OPTIONS.find((option) => option.type === type),
@@ -201,9 +384,13 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
   const metaBadges: BadgeItem[] = React.useMemo(() => {
     const typeBadge: BadgeItem = {
+      icon: (coherenceType?.icon ?? 'ArrowUpRight') as LucideReactIcon,
+      iconClassName: BADGE_ICON_COLOR_CLASS_MAP[typeColorVariant],
       label: typeLabel,
-      variant: 'surface',
-      colorVariant: typeColorVariant,
+      variant: 'outline',
+      colorVariant: 'neutral',
+      className:
+        'rounded-md border-transparent bg-transparent px-0 py-0 shadow-none ring-0 font-medium text-foreground hover:border-transparent hover:bg-transparent hover:ring-transparent',
     };
     if (!priorityMeta) return [typeBadge];
     const priorityKey = `priorities.${priorityMeta.priority}`;
@@ -211,12 +398,23 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       ? t(priorityKey as never)
       : priorityMeta.priority;
     const priorityBadge: BadgeItem = {
+      icon: (priorityMeta.icon ?? 'CircleDot') as LucideReactIcon,
+      iconClassName: BADGE_ICON_COLOR_CLASS_MAP[priorityColorVariant],
       label: priorityLabel,
       variant: 'outline',
-      colorVariant: priorityColorVariant,
+      colorVariant: 'neutral',
+      className:
+        'rounded-md border-transparent bg-transparent px-0 py-0 shadow-none ring-0 font-medium text-foreground hover:border-transparent hover:bg-transparent hover:ring-transparent',
     };
     return [typeBadge, priorityBadge];
-  }, [priorityMeta, t, typeLabel, typeColorVariant, priorityColorVariant]);
+  }, [
+    coherenceType?.icon,
+    priorityMeta,
+    priorityColorVariant,
+    t,
+    typeLabel,
+    typeColorVariant,
+  ]);
 
   const tagList: BadgeItem[] = tags.map((tag) => {
     const translationKey = `tagLabels.${tag}`;
@@ -229,7 +427,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       label: `#${displayLabel}`,
       variant: 'outline',
       colorVariant: 'neutral',
-      className: 'rounded-full',
+      className: SIGNAL_TAG_BADGE_CLASS,
       style: {
         borderColor:
           'color-mix(in srgb, var(--space-accent) 42%, var(--color-neutral-8) 58%)',
@@ -239,6 +437,18 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       },
     };
   });
+  const compactTagList: BadgeItem[] = React.useMemo(() => {
+    if (tagList.length <= MAX_VISIBLE_SIGNAL_TAGS) return tagList;
+    return [
+      ...tagList.slice(0, MAX_VISIBLE_SIGNAL_TAGS),
+      {
+        label: `+${tagList.length - MAX_VISIBLE_SIGNAL_TAGS}`,
+        variant: 'outline',
+        colorVariant: 'neutral',
+        className: `${SIGNAL_TAG_BADGE_CLASS} border-border/60 bg-transparent text-muted-foreground`,
+      },
+    ];
+  }, [tagList]);
 
   const plainDescription = React.useMemo(
     () =>
@@ -266,6 +476,31 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     return () => ro.disconnect();
   }, [plainDescription, isLoading]);
 
+  React.useLayoutEffect(() => {
+    const detailsEl = metaDetailsRef.current;
+    if (!detailsEl) {
+      setMetaDetailsShouldLeftAlign(false);
+      return;
+    }
+    const measure = () => {
+      const badgesTop = metaBadgesRef.current?.offsetTop ?? detailsEl.offsetTop;
+      const movedToNextLine = detailsEl.offsetTop > badgesTop + 1;
+      const children = Array.from(detailsEl.children) as HTMLElement[];
+      const firstChildTop = children[0]?.offsetTop ?? 0;
+      const childrenWrapped = children.some(
+        (child) => child.offsetTop > firstChildTop + 1,
+      );
+      setMetaDetailsShouldLeftAlign(movedToNextLine || childrenWrapped);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(detailsEl);
+    if (metaBadgesRef.current) {
+      ro.observe(metaBadgesRef.current);
+    }
+    return () => ro.disconnect();
+  }, [creatorDisplayName, createdAtDate, normalizedMessagesCount, metaBadges]);
+
   const handleUnarchive = React.useCallback(async () => {
     if (!slug) return;
     try {
@@ -276,26 +511,26 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     }
   }, [slug, refresh, updateCoherenceBySlug]);
 
-  const handleDelete = React.useCallback(async (): Promise<boolean> => {
+  const handleArchive = React.useCallback(async (): Promise<boolean> => {
     if (!slug || isDeleting) return false;
     setDeleteError(null);
     setIsDeleting(true);
     try {
-      await deleteCoherenceBySlug({ slug });
+      await updateCoherenceBySlug({ slug, archived: true });
       try {
         await refresh();
       } catch (refreshErr) {
-        console.warn('Signal deleted but list refresh failed:', refreshErr);
+        console.warn('Signal archived but list refresh failed:', refreshErr);
       }
       return true;
     } catch (error) {
-      console.warn('Could not delete signal:', error);
-      setDeleteError(tSignalCard('deleteFailed'));
+      console.warn('Could not archive signal:', error);
+      setDeleteError(t('errorOhSnap'));
       return false;
     } finally {
       setIsDeleting(false);
     }
-  }, [slug, isDeleting, deleteCoherenceBySlug, refresh, tSignalCard]);
+  }, [slug, isDeleting, refresh, t, updateCoherenceBySlug]);
 
   const stopCardActivationKey = React.useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
@@ -312,18 +547,18 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   return (
     <Card
       className={cn(
-        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 bg-card pt-0 shadow-sm',
+        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-xl border-border/70 bg-card pt-0 shadow-sm',
         'transition-[border-color,box-shadow] duration-200 ease-out',
         'hover:border-accent-8/75 hover:shadow-md',
         'focus-within:border-accent-8/75 focus-within:shadow-md',
         className,
       )}
     >
-      <CardHeader className="relative h-[104px] shrink-0 overflow-hidden p-0 isolate">
+      <CardHeader className="relative h-[98px] shrink-0 overflow-hidden p-0 isolate">
         <Skeleton
           className="h-full min-w-full"
           width="100%"
-          height="104px"
+          height="98px"
           loading={isLoading}
         >
           <div className="absolute inset-0 overflow-hidden">
@@ -337,8 +572,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             >
               <Image
                 width={640}
-                height={104}
-                className="h-full w-full object-cover"
+                height={98}
+                className="block h-full w-full object-cover"
                 src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
                 alt=""
               />
@@ -365,137 +600,163 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               />
               <div
                 className={cn(
-                  'pointer-events-none absolute inset-x-0 bottom-0 h-20',
+                  'pointer-events-none absolute inset-0',
                   HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP[priorityColorVariant],
                 )}
                 aria-hidden
               />
-              <div
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/20 to-transparent"
-                aria-hidden
-              />
             </div>
+            <div
+              className={cn(
+                'pointer-events-none absolute inset-0',
+                HERO_PRIORITY_WASH_CLASS_MAP[priorityColorVariant],
+              )}
+              aria-hidden
+            />
           </div>
         </Skeleton>
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
-        {isCreator && slug ? (
-          <div className="absolute right-3 top-3 z-10 flex items-center gap-0.5">
-            <Button
-              type="button"
-              variant="ghost"
-              colorVariant="neutral"
-              size="sm"
-              className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              disabled={isLoading}
-              aria-label={tSignalCard('editMenu')}
-              title={tSignalCard('editMenu')}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!params.lang || !params.id || !slug) return;
-                const tab = params.tab ?? 'coherence';
-                router.push(
-                  `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
-                );
-              }}
-              onKeyDown={stopCardActivationKey}
-            >
-              <Pencil className="h-3.5 w-3.5" aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              colorVariant="neutral"
-              size="sm"
-              className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              disabled={isLoading}
-              aria-label={tSignalCard('deleteMenu')}
-              title={tSignalCard('deleteMenu')}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setDeleteOpen(true);
-              }}
-              onKeyDown={stopCardActivationKey}
-            >
-              <Trash2 className="h-3.5 w-3.5" aria-hidden />
-            </Button>
-          </div>
-        ) : null}
-        <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
-          <div className="flex min-w-0 flex-wrap items-center gap-2 pr-20 text-1 text-muted-foreground">
-            {metaBadges.length > 0 ? (
-              <BadgesList isLoading={isLoading} badges={metaBadges} />
-            ) : null}
-          </div>
-
-          <div className="min-w-0">
-            <Skeleton
-              className="min-w-0"
-              width="100%"
-              height="22px"
-              loading={isLoading}
-            >
-              <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
-                {title}
-              </CardTitle>
-            </Skeleton>
-          </div>
-
-          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-1 text-muted-foreground">
-            <span className="inline-flex min-w-0 items-center gap-1">
-              <ClockIcon
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                aria-hidden
-              />
-              {createdAtDate
-                ? formatDistanceToNowStrict(createdAtDate, {
-                    addSuffix: true,
-                    locale: dateFnsLocale,
-                  })
-                : ''}
-            </span>
-            <Badge
-              isLoading={isLoading}
-              variant="outline"
-              colorVariant="neutral"
-              className="gap-1.5"
-            >
-              <Users size={12} aria-hidden />
-              <span>
-                {t('messageCount', { count: normalizedMessagesCount })}
-              </span>
-            </Badge>
+        <div className="relative flex min-h-0 flex-1 flex-col gap-2 px-3 pb-2 pt-2.5">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <div className="flex min-h-[2.75rem] min-w-0 items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <Skeleton
+                  className="min-w-0"
+                  width="100%"
+                  height="20px"
+                  loading={isLoading}
+                >
+                  <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
+                    {title}
+                  </CardTitle>
+                </Skeleton>
+              </div>
+              {canManageSignal && slug ? (
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    size="sm"
+                    className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    disabled={isLoading}
+                    aria-label={tSignalCard('editMenu')}
+                    title={tSignalCard('editMenu')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!params.lang || !params.id || !slug) return;
+                      const tab = params.tab ?? 'coherence';
+                      router.push(
+                        `/${params.lang}/dho/${params.id}/${tab}/edit-signal/${slug}`,
+                      );
+                    }}
+                    onKeyDown={stopCardActivationKey}
+                  >
+                    <Pencil className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    size="sm"
+                    className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    disabled={isLoading}
+                    aria-label={t('archiveConversation')}
+                    title={t('archiveConversation')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDeleteOpen(true);
+                    }}
+                    onKeyDown={stopCardActivationKey}
+                  >
+                    <Archive className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              <div ref={metaBadgesRef} className="min-w-0">
+                {metaBadges.length > 0 ? (
+                  <BadgesList isLoading={isLoading} badges={metaBadges} />
+                ) : null}
+              </div>
+              <div
+                ref={metaDetailsRef}
+                className={cn(
+                  'flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-1 text-muted-foreground',
+                  metaDetailsShouldLeftAlign
+                    ? 'w-full justify-start'
+                    : 'ml-auto justify-end',
+                )}
+              >
+                {creatorDisplayName ? (
+                  <span className="inline-flex min-w-0 items-center gap-1 truncate">
+                    <UserCircle2 className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                    <span className="truncate">{creatorDisplayName}</span>
+                  </span>
+                ) : null}
+                <span className="inline-flex min-w-0 items-center gap-1">
+                  <ClockIcon
+                    className="h-3.5 w-3.5 shrink-0 opacity-70"
+                    aria-hidden
+                  />
+                  {createdAtDate
+                    ? formatDistanceToNowStrict(createdAtDate, {
+                        addSuffix: true,
+                        locale: dateFnsLocale,
+                      })
+                    : ''}
+                </span>
+                <span
+                  className="inline-flex items-center gap-1 text-muted-foreground"
+                  aria-label={t('messageCount', {
+                    count: normalizedMessagesCount,
+                  })}
+                >
+                  <ChatBubbleIcon
+                    className="h-3.5 w-3.5 shrink-0 opacity-70"
+                    aria-hidden
+                  />
+                  <span className="tabular-nums" aria-hidden>
+                    {normalizedMessagesCount}
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
 
           <Skeleton
             className="min-w-full"
             width="100%"
-            height="44px"
+            height="56px"
             loading={isLoading}
           >
-            <div className="flex flex-col gap-1">
+            <div className="flex min-h-[3.5rem] flex-col">
               <p
                 ref={descriptionClampRef}
-                className="text-1 leading-snug text-neutral-11 line-clamp-2"
+                className="text-2 leading-snug text-neutral-11 line-clamp-2"
               >
                 {plainDescription}
               </p>
-              {descriptionTruncated ? (
-                <button
-                  type="button"
-                  className="w-fit text-left text-1 font-medium text-accent-11 underline-offset-4 hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setDetailsOpen(true);
-                  }}
-                  onKeyDown={stopCardActivationKey}
-                >
-                  {tSignalCard('readFullDescription')}
-                </button>
-              ) : null}
+              <div className="min-h-[1.1rem] pt-0.5">
+                {descriptionTruncated ? (
+                  <button
+                    type="button"
+                    className="w-fit text-left text-1 font-medium text-accent-11 underline-offset-4 hover:underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDetailsOpen(true);
+                    }}
+                    onKeyDown={stopCardActivationKey}
+                  >
+                    {tSignalCard('readFullDescription')}
+                  </button>
+                ) : null}
+              </div>
             </div>
           </Skeleton>
 
@@ -544,18 +805,20 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </DialogContent>
           </Dialog>
 
-          {tagList?.length > 0 ? (
-            <div className="mt-auto pt-1">
+          <div className="mt-auto min-h-[1.9rem] pt-0.5">
+            {tagList?.length > 0 ? (
               <BadgesList
                 isLoading={isLoading}
-                badges={tagList ?? []}
-                className="content-start"
+                badges={compactTagList}
+                className="content-start flex-nowrap overflow-hidden"
               />
-            </div>
-          ) : null}
+            ) : (
+              <span className="block h-6" aria-hidden />
+            )}
+          </div>
         </div>
 
-        <div className="mt-auto flex min-h-[3.5rem] shrink-0 flex-col justify-center border-t border-border px-4 py-2">
+        <div className="mt-auto flex min-h-[2.75rem] shrink-0 flex-col justify-center bg-muted/10 px-3 py-1.5">
           {archived ? (
             <div
               onClick={(e) => {
@@ -573,7 +836,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 <Button
                   variant="outline"
                   colorVariant="accent"
-                  className="w-full"
+                  size="sm"
+                  className="h-8 w-full bg-transparent hover:bg-accent-3/30"
                 >
                   {t('unarchive')}
                 </Button>
@@ -583,7 +847,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <Button
               variant="outline"
               colorVariant="accent"
-              className="w-full"
+              size="sm"
+              className="h-8 w-full bg-transparent hover:bg-accent-3/30"
               disabled={isLoading || !roomId}
               onClick={(e) => {
                 if (onOpenConversation) {
@@ -615,9 +880,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <AlertDialogHeader>
-              <AlertDialogTitle>{tSignalCard('deleteSignal')}</AlertDialogTitle>
+              <AlertDialogTitle>{t('archiveConversation')}</AlertDialogTitle>
               <AlertDialogDescription>
-                {tSignalCard('deleteConfirm')}
+                {t('archiveConfirm')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             {deleteError ? (
@@ -645,12 +910,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 disabled={isDeleting}
                 onClick={async (e) => {
                   e.stopPropagation();
-                  const deleted = await handleDelete();
-                  if (deleted) setDeleteOpen(false);
+                  const archived = await handleArchive();
+                  if (archived) setDeleteOpen(false);
                 }}
                 onKeyDown={stopCardActivationKey}
               >
-                {tSignalCard('deleteConfirmAction')}
+                {t('yesArchive')}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

@@ -1,24 +1,33 @@
 'use client';
 
-import { useMemo, type KeyboardEvent } from 'react';
+import { useMemo, type KeyboardEvent, type ReactNode } from 'react';
 import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
-import { Bell, BellOff } from 'lucide-react';
+import { Bell, ArrowUpRight } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+import { useAuthentication } from '@hypha-platform/authentication';
 import {
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
   contentMentionsMatrixUser,
   stripMatrixReplyFallback,
+  useJwt,
   usePersonBySub,
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
 import { renderTextWithMentions } from './human-chat-panel-message-bubble';
-import { needsHyphaProfileResolutionForMatrixLabel } from './matrix-room-member-display';
-import { gatherAggregatedMentionPreviews } from './matrix-chat-unread';
+import {
+  looksLikeTechnicalMatrixDisplayName,
+  matrixUserIdToCanonicalPrivySub,
+} from './matrix-room-member-display';
+import {
+  gatherAggregatedMentionPreviews,
+  replacementEventsByRootId,
+  wireContentForMentionParse,
+} from './matrix-chat-unread';
 
 export type HumanChatPanelMentionTabProps = {
   client: MatrixClient | null;
@@ -31,8 +40,15 @@ export type HumanChatPanelMentionTabProps = {
   aggregatedMentions?: boolean;
 };
 
-function excerptFromRoomMessage(ev: MatrixEvent): string {
-  const content = ev.getContent() as { body?: string } | undefined;
+function excerptFromRoomMessage(
+  ev: MatrixEvent,
+  replacementsByRootId?: Map<string, MatrixEvent[]>,
+): string {
+  const content = (
+    replacementsByRootId
+      ? wireContentForMentionParse(ev, replacementsByRootId)
+      : ev.getContent()
+  ) as { body?: string } | undefined;
   const raw = typeof content?.body === 'string' ? content.body : '';
   return stripMatrixReplyFallback(raw).trim().slice(0, 280);
 }
@@ -59,26 +75,52 @@ function MentionInboxSenderName({
   matrixUserId: string;
   syncLabel: string;
 }) {
-  const needs =
-    needsHyphaProfileResolutionForMatrixLabel(syncLabel) ||
-    !syncLabel.trim() ||
-    syncLabel.trim() === matrixUserId;
+  const t = useTranslations('HumanChatPanel');
+  const canonicalSub = matrixUserIdToCanonicalPrivySub(matrixUserId);
+  const syncLooksTechnical = looksLikeTechnicalMatrixDisplayName(
+    syncLabel,
+    matrixUserId,
+  );
+  const hasFriendlySyncLabel =
+    Boolean(syncLabel.trim()) &&
+    syncLabel.trim() !== matrixUserId &&
+    !syncLooksTechnical;
+  const needsLinkLookup =
+    Boolean(matrixUserId) && !canonicalSub && !hasFriendlySyncLabel;
+  const needsPersonLookup =
+    !hasFriendlySyncLabel && (Boolean(canonicalSub) || needsLinkLookup);
+
   const { privyUserId: linkedSub, isLoading: loadingLink } =
     useUserPrivyIdByMatrixId({
-      matrixUserId: needs ? matrixUserId : undefined,
+      matrixUserId: needsLinkLookup ? matrixUserId : undefined,
     });
+  const resolvedSub = canonicalSub ?? linkedSub;
+  const { user } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
   const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: linkedSub,
+    sub: resolvedSub,
   });
 
   const text = useMemo(() => {
     const fromPerson = person ? formatPersonDisplayName(person) : '';
     if (fromPerson.trim()) return fromPerson;
-    return syncLabel.trim() || matrixUserId;
-  }, [person, syncLabel, matrixUserId]);
+    const fallback = syncLabel.trim();
+    if (
+      fallback &&
+      !looksLikeTechnicalMatrixDisplayName(fallback, matrixUserId)
+    ) {
+      return fallback;
+    }
+    return t('unknownMember');
+  }, [matrixUserId, person, syncLabel, t]);
 
+  const jwtBlockingForPerson =
+    Boolean(resolvedSub) &&
+    ((user && isLoadingJwt && !jwt) || (!user && isLoadingJwt));
   const loading =
-    needs && (loadingLink || (Boolean(linkedSub) && loadingPerson));
+    needsPersonLookup &&
+    ((needsLinkLookup && loadingLink) ||
+      (Boolean(resolvedSub) && (loadingPerson || jwtBlockingForPerson)));
 
   if (loading) {
     return (
@@ -120,6 +162,7 @@ function gatherMentionEvents(
   if (!room) return [];
 
   const events = room.getLiveTimeline().getEvents();
+  const replacementsByRootId = replacementEventsByRootId(events);
   const out: MatrixEvent[] = [];
   for (let i = events.length - 1; i >= 0 && out.length < limit; i--) {
     const ev = events[i];
@@ -130,11 +173,78 @@ function gatherMentionEvents(
     if (isRedactedRoomMessageEvent(ev)) continue;
     if (getMessageReplaceTargetEventId(ev) != null) continue;
 
-    if (!contentMentionsMatrixUser(ev.getContent(), currentUserId)) continue;
+    if (
+      !contentMentionsMatrixUser(
+        wireContentForMentionParse(ev, replacementsByRootId),
+        currentUserId,
+      )
+    ) {
+      continue;
+    }
 
     out.push(ev);
   }
   return out;
+}
+
+const MENTION_INBOX_ROW_CLASS =
+  'group flex w-full cursor-pointer flex-col gap-1 rounded-xl border border-border/70 bg-card px-3 py-2.5 text-left text-foreground shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-muted/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+
+const MENTION_INBOX_NAV_ICON_CLASS =
+  'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background/80 text-muted-foreground shadow-sm transition-colors group-hover:border-accent-8/60 group-hover:bg-accent-2/80 group-hover:text-foreground';
+
+function MentionInboxNavigateIcon({ label }: { label: string }) {
+  return (
+    <span className={MENTION_INBOX_NAV_ICON_CLASS} aria-hidden title={label}>
+      <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
+    </span>
+  );
+}
+
+function MentionInboxRow({
+  ariaLabel,
+  navigateLabel,
+  onNavigate,
+  header,
+  sender,
+  excerpt,
+}: {
+  ariaLabel: string;
+  navigateLabel: string;
+  onNavigate: () => void;
+  header?: ReactNode;
+  sender: ReactNode;
+  excerpt: ReactNode;
+}) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      className={MENTION_INBOX_ROW_CLASS}
+      aria-label={ariaLabel}
+      onClick={(e) => {
+        if (eventComesFromInteractiveChild(e.target)) return;
+        onNavigate();
+      }}
+      onKeyDown={(e) => {
+        if (eventComesFromInteractiveChild(e.target)) return;
+        selectMentionRowKeyDown(e, onNavigate);
+      }}
+    >
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1 flex flex-col gap-1">
+          {header}
+          <div className="flex items-baseline justify-between gap-2">
+            {sender}
+          </div>
+          <div className="border-l-2 border-accent-8/70 pl-2 text-xs leading-relaxed text-foreground/90 [&_a]:break-all [&_a]:font-medium [&_a]:text-primary [&_a]:underline">
+            {excerpt}
+          </div>
+        </div>
+        <MentionInboxNavigateIcon label={navigateLabel} />
+      </div>
+    </div>
+  );
 }
 
 /** Inline Mentions tab body (same panel as Chat / Members — no overlay). */
@@ -153,6 +263,12 @@ export function HumanChatPanelMentionTab({
     aggregatedMentions && client && currentUserId
       ? gatherAggregatedMentionPreviews(client, currentUserId, 80)
       : [];
+
+  const singleRoomTimeline =
+    !aggregatedMentions && client && roomId
+      ? client.getRoom(roomId)?.getLiveTimeline().getEvents() ?? []
+      : [];
+  const singleRoomReplacements = replacementEventsByRootId(singleRoomTimeline);
 
   const singleRoomRows =
     !aggregatedMentions && client && roomId && currentUserId
@@ -175,54 +291,50 @@ export function HumanChatPanelMentionTab({
             {aggregatedMentions
               ? aggregatedRows.map((row) => {
                   const senderSyncLabel = resolveMemberLabel(row.senderId);
+                  const navigateLabel = t('mentionInboxNavigateToMessage');
                   return (
                     <li key={`${row.roomId}:${row.eventId}`}>
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        className="flex w-full flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md"
-                        onClick={(e) => {
-                          if (eventComesFromInteractiveChild(e.target)) return;
-                          onSelectMessage(row.eventId, row.roomId);
-                        }}
-                        onKeyDown={(e) => {
-                          if (eventComesFromInteractiveChild(e.target)) return;
-                          selectMentionRowKeyDown(e, () =>
-                            onSelectMessage(row.eventId, row.roomId),
-                          );
-                        }}
-                      >
-                        <div className="flex items-baseline justify-between gap-2">
-                          <span className="min-w-0 truncate text-[11px] font-medium text-muted-foreground">
-                            {row.roomDisplayName}
-                          </span>
-                          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                            {format.dateTime(new Date(row.timestamp), {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </span>
-                        </div>
-                        <div className="flex items-baseline justify-between gap-2">
+                      <MentionInboxRow
+                        ariaLabel={t('mentionInboxOpenConversation', {
+                          room: row.roomDisplayName,
+                        })}
+                        navigateLabel={navigateLabel}
+                        onNavigate={() =>
+                          onSelectMessage(row.eventId, row.roomId)
+                        }
+                        header={
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="min-w-0 truncate text-[11px] font-medium text-foreground/70">
+                              {row.roomDisplayName}
+                            </span>
+                            <span className="shrink-0 text-[11px] tabular-nums text-foreground/60">
+                              {format.dateTime(new Date(row.timestamp), {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          </div>
+                        }
+                        sender={
                           <span className="min-w-0 truncate text-xs font-semibold text-foreground">
                             <MentionInboxSenderName
                               matrixUserId={row.senderId}
                               syncLabel={senderSyncLabel}
                             />
                           </span>
-                        </div>
-                        <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground [&_a]:break-all [&_a]:font-medium [&_a]:text-primary [&_a]:underline">
-                          {row.excerpt
+                        }
+                        excerpt={
+                          row.excerpt
                             ? renderTextWithMentions(
                                 row.excerpt,
                                 resolveMemberLabel,
-                                false,
+                                true,
                               )
-                            : t('mentionInboxNoPreview')}
-                        </p>
-                      </div>
+                            : t('mentionInboxNoPreview')
+                        }
+                      />
                     </li>
                   );
                 })
@@ -230,51 +342,48 @@ export function HumanChatPanelMentionTab({
                   const id = ev.getId();
                   const senderId = ev.getSender();
                   if (!id || !senderId) return null;
-                  const excerpt = excerptFromRoomMessage(ev);
+                  const excerpt = excerptFromRoomMessage(
+                    ev,
+                    singleRoomReplacements,
+                  );
                   const senderSyncLabel = resolveMemberLabel(senderId);
                   const ts = ev.getTs();
+                  const navigateLabel = t('mentionInboxNavigateToMessage');
 
                   return (
                     <li key={id}>
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        className="flex w-full flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md"
-                        onClick={(e) => {
-                          if (eventComesFromInteractiveChild(e.target)) return;
-                          onSelectMessage(id);
-                        }}
-                        onKeyDown={(e) => {
-                          if (eventComesFromInteractiveChild(e.target)) return;
-                          selectMentionRowKeyDown(e, () => onSelectMessage(id));
-                        }}
-                      >
-                        <div className="flex items-baseline justify-between gap-2">
-                          <span className="min-w-0 truncate text-xs font-semibold text-foreground">
-                            <MentionInboxSenderName
-                              matrixUserId={senderId}
-                              syncLabel={senderSyncLabel}
-                            />
-                          </span>
-                          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                            {format.dateTime(new Date(ts), {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </span>
-                        </div>
-                        <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground [&_a]:break-all [&_a]:font-medium [&_a]:text-primary [&_a]:underline">
-                          {excerpt
+                      <MentionInboxRow
+                        ariaLabel={navigateLabel}
+                        navigateLabel={navigateLabel}
+                        onNavigate={() => onSelectMessage(id)}
+                        sender={
+                          <>
+                            <span className="min-w-0 truncate text-xs font-semibold text-foreground">
+                              <MentionInboxSenderName
+                                matrixUserId={senderId}
+                                syncLabel={senderSyncLabel}
+                              />
+                            </span>
+                            <span className="shrink-0 text-[11px] tabular-nums text-foreground/60">
+                              {format.dateTime(new Date(ts), {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          </>
+                        }
+                        excerpt={
+                          excerpt
                             ? renderTextWithMentions(
                                 excerpt,
                                 resolveMemberLabel,
-                                false,
+                                true,
                               )
-                            : t('mentionInboxNoPreview')}
-                        </p>
-                      </div>
+                            : t('mentionInboxNoPreview')
+                        }
+                      />
                     </li>
                   );
                 })}
@@ -292,13 +401,6 @@ export type HumanChatPanelMentionBellProps = {
   onOpenMentions: () => void;
   /** True when the Mentions tab is active — bell icon uses white on accent. */
   mentionsTabActive?: boolean;
-  /**
-   * When true, a **click** on the bell toggles call join chime (storage-backed).
-   * Open the Mentions **tab** for the @ inbox; the bell no longer opens it while this is active.
-   */
-  callJoinRingControlsActive?: boolean;
-  callJoinAlertsUnmuted?: boolean;
-  onCallJoinAlertsUnmutedChange?: (unmuted: boolean) => void;
 };
 
 export function HumanChatPanelMentionBell({
@@ -306,23 +408,8 @@ export function HumanChatPanelMentionBell({
   countIsCapped,
   onOpenMentions,
   mentionsTabActive = false,
-  callJoinRingControlsActive = false,
-  callJoinAlertsUnmuted = true,
-  onCallJoinAlertsUnmutedChange,
 }: HumanChatPanelMentionBellProps) {
   const t = useTranslations('HumanChatPanel');
-  const callRingControls =
-    callJoinRingControlsActive && onCallJoinAlertsUnmutedChange;
-
-  if (
-    process.env.NODE_ENV === 'development' &&
-    callJoinRingControlsActive &&
-    !onCallJoinAlertsUnmutedChange
-  ) {
-    console.warn(
-      'HumanChatPanelMentionBell: callJoinRingControlsActive requires onCallJoinAlertsUnmutedChange',
-    );
-  }
 
   const badgeLabel =
     unreadCount <= 0
@@ -331,62 +418,27 @@ export function HumanChatPanelMentionBell({
       ? '99+'
       : String(unreadCount);
 
-  const showRingOff = callRingControls && !callJoinAlertsUnmuted;
-  const ringLabel = callJoinAlertsUnmuted
-    ? t('callJoinCallAlertsMuteAction')
-    : t('callJoinCallAlertsUnmuteAction');
-
   return (
     <button
       type="button"
       className={cn(
-        'relative flex h-7 shrink-0 items-center justify-center rounded-lg border text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        showRingOff ? 'min-w-0 gap-1 px-1.5 pe-2' : 'w-7',
+        'relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         mentionsTabActive
           ? 'border border-accent-9/40 bg-accent-9/18 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/22 dark:ring-accent-10/30'
           : 'border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/80 hover:text-foreground',
       )}
-      aria-pressed={
-        callRingControls ? !callJoinAlertsUnmuted : mentionsTabActive
-      }
+      aria-pressed={mentionsTabActive}
       aria-label={
-        callRingControls
-          ? callJoinAlertsUnmuted
-            ? t('mentionInboxBellCallRingUnmutedAria')
-            : t('mentionInboxBellCallRingMutedAria')
-          : unreadCount > 0
+        unreadCount > 0
           ? countIsCapped || unreadCount >= 100
             ? t('mentionInboxBellAriaCapped')
             : t('mentionInboxBellAria', { count: unreadCount })
           : t('mentionInboxBellAriaEmpty')
       }
-      title={
-        callRingControls
-          ? `${t('mentionInboxTitle')}. ${ringLabel}`
-          : t('mentionInboxTitle')
-      }
-      onClick={() => {
-        if (callRingControls) {
-          onCallJoinAlertsUnmutedChange(!callJoinAlertsUnmuted);
-          return;
-        }
-        onOpenMentions();
-      }}
+      title={t('mentionInboxTitle')}
+      onClick={onOpenMentions}
     >
-      {showRingOff ? (
-        <BellOff
-          className="h-3.5 w-3.5 shrink-0 text-foreground/90"
-          strokeWidth={2.25}
-          aria-hidden
-        />
-      ) : (
-        <Bell className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-      )}
-      {showRingOff && (
-        <span className="max-w-[3.5rem] truncate text-[10px] font-semibold leading-none text-foreground/90">
-          {t('callJoinCallAlertsMutedShort')}
-        </span>
-      )}
+      <Bell className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
       {badgeLabel != null && (
         <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full border border-accent-9/35 bg-accent-9 px-0.5 text-[9px] font-semibold leading-none text-accent-contrast shadow-sm">
           {badgeLabel}

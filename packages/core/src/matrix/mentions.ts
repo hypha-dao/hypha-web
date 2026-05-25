@@ -101,6 +101,38 @@ export function extractMentionUserIdsFromPlainBody(plain: string): string[] {
   return out;
 }
 
+/**
+ * Replace `@user:homeserver` tokens in plaintext with human labels (TTS, copy, etc.).
+ * Uses the same MXID scan as {@link extractMentionUserIdsFromPlainBody}.
+ */
+export function replacePlainTextMatrixMxidsWithLabels(
+  plain: string,
+  resolveLabel: (matrixUserId: string) => string,
+): string {
+  if (!plain.trim()) return plain;
+  let out = '';
+  let lastIndex = 0;
+  const re = new RegExp(MATRIX_MXID_IN_PLAIN_TEXT.source, 'g');
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(plain)) !== null) {
+    const rawMid = m[1] ?? '';
+    const mid = normalizePlainTextMxidCaptureFromMatch(
+      rawMid,
+      plain,
+      m.index,
+      m[0].length,
+    );
+    const full = `@${mid}`;
+    if (!isLikelyMatrixUserId(full)) continue;
+    out += plain.slice(lastIndex, m.index);
+    const label = resolveLabel(full).trim();
+    out += label && label !== full ? label : m[0];
+    lastIndex = m.index + m[0].length;
+  }
+  out += plain.slice(lastIndex);
+  return out;
+}
+
 export function mentionsContentFromUserIds(
   userIds: string[],
 ): Record<string, { user_ids: string[] }> | undefined {

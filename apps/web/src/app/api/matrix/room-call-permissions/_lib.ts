@@ -125,3 +125,44 @@ export async function resolveAdminMatrixAccessToken(
   if (!adminUsername) return null;
   return resolveMatrixAccessToken(environment, adminUsername);
 }
+
+function parseMxcMediaUri(mediaUri: string): {
+  serverName: string;
+  mediaId: string;
+} | null {
+  if (!mediaUri.startsWith('mxc://')) return null;
+  const rest = mediaUri.slice('mxc://'.length);
+  const slash = rest.indexOf('/');
+  if (slash <= 0 || slash >= rest.length - 1) return null;
+  const serverName = rest.slice(0, slash).trim();
+  const mediaId = rest.slice(slash + 1).trim();
+  if (!serverName || !mediaId) return null;
+  return { serverName, mediaId };
+}
+
+/** Verify the caller can read an MXC URI they claim to have uploaded. */
+export async function verifyMatrixMediaUriAccessible(params: {
+  mediaUri: string;
+  accessToken: string;
+  homeserverUrl: string;
+}): Promise<boolean> {
+  const parsed = parseMxcMediaUri(params.mediaUri.trim());
+  if (!parsed) return false;
+  const base = params.homeserverUrl.replace(/\/$/, '');
+  const url = `${base}/_matrix/media/v3/download/${encodeURIComponent(
+    parsed.serverName,
+  )}/${encodeURIComponent(parsed.mediaId)}`;
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${params.accessToken}`,
+        Range: 'bytes=0-0',
+      },
+      signal: AbortSignal.timeout(12_000),
+    });
+    return response.ok || response.status === 206;
+  } catch {
+    return false;
+  }
+}

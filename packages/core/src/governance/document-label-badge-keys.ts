@@ -24,4 +24,5 @@ export const DOCUMENT_LABEL_BADGE_KEYS: Partial<Record<string, string>> = {
   Investment: 'labels.investment',
   Exchange: 'labels.exchange',
   'Membership Exit': 'labels.membershipExit',
+  'Space Memory': 'labels.spaceMemory',
 };

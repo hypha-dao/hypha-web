@@ -4,8 +4,8 @@ export type ProposalErrorTranslation = {
 };
 
 const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
-  'Please add a title for your proposal':
-    'issueNewTokenForm.errors.titleRequired',
+  'Please upload at least one document for this memory.':
+    'createAgreementBaseFields.errors.memoryAttachmentsRequired',
   'Please add content to your proposal':
     'issueNewTokenForm.errors.descriptionRequired',
   'Slug must contain only lowercase letters, numbers, and hyphens':

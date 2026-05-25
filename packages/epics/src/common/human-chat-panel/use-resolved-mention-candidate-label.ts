@@ -7,6 +7,10 @@ import {
   useUserPrivyIdByMatrixId,
   usePersonBySub,
 } from '@hypha-platform/core/client';
+import {
+  looksLikeTechnicalMatrixDisplayName,
+  matrixUserIdToCanonicalPrivySub,
+} from './matrix-room-member-display';
 
 /** Minimal fields for Matrix→Person resolution (matches mention picker rows). */
 export type MentionPickCandidate = {
@@ -41,12 +45,18 @@ export function useResolvedMentionCandidateLabel(
   const matrixUserId = candidate?.userId ?? '';
   const matrixFallbackLabel = candidate?.displayLabel ?? '';
   const privySub = candidate?.privySub;
+  const canonicalSub = matrixUserId
+    ? matrixUserIdToCanonicalPrivySub(matrixUserId)
+    : null;
+  const needsMatrixLinkLookup = Boolean(
+    matrixUserId && !privySub && !canonicalSub,
+  );
 
   const { privyUserId: linkedSub, isLoading: loadingLink } =
     useUserPrivyIdByMatrixId({
-      matrixUserId: privySub || !matrixUserId ? undefined : matrixUserId,
+      matrixUserId: needsMatrixLinkLookup ? matrixUserId : undefined,
     });
-  const resolvedSub = privySub ?? linkedSub;
+  const resolvedSub = privySub ?? canonicalSub ?? linkedSub;
   const { user } = useAuthentication();
   const { jwt, isLoadingJwt } = useJwt();
   const { person, isLoading: loadingPerson } = usePersonBySub({
@@ -56,8 +66,16 @@ export function useResolvedMentionCandidateLabel(
   const resolvedLabel = useMemo(() => {
     if (!candidate) return '';
     const fromPerson = person ? formatHyphaPersonName(person) : '';
-    return fromPerson || matrixFallbackLabel;
-  }, [candidate, person, matrixFallbackLabel]);
+    if (fromPerson.trim()) return fromPerson;
+    const fallback = matrixFallbackLabel.trim();
+    if (
+      fallback &&
+      !looksLikeTechnicalMatrixDisplayName(fallback, matrixUserId)
+    ) {
+      return fallback;
+    }
+    return '';
+  }, [candidate, matrixFallbackLabel, matrixUserId, person]);
 
   /**
    * Person fetch needs JWT; `usePersonBySub` is idle until then. Block pick while auth is
@@ -69,7 +87,7 @@ export function useResolvedMentionCandidateLabel(
   /** True while Matrix→Privy link, JWT bootstrap, or Person profile is still loading. */
   const busy =
     Boolean(candidate) &&
-    ((!privySub && loadingLink) ||
+    ((needsMatrixLinkLookup && loadingLink) ||
       (Boolean(resolvedSub) && (loadingPerson || jwtBlockingForPerson)));
 
   const avatarUrl = person?.avatarUrl?.trim() || undefined;

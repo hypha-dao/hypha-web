@@ -80,7 +80,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
             type="checkbox"
             checked={hideSmallBalances}
             onChange={(e) => setHideSmallBalances(e.target.checked)}
-            className="h-4 w-4"
+            className="h-4 w-4 accent-accent-9"
           />
           <span>{tTreasury('hideSmall')}</span>
         </label>

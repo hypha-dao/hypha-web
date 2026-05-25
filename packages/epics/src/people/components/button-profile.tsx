@@ -32,8 +32,9 @@ import { Person } from '@hypha-platform/core/client';
 import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { cn } from '@hypha-platform/ui-utils';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
+import { useFundWallet } from '../../treasury/hooks';
 
 export type ButtonProfileProps = {
   address?: string;
@@ -58,6 +59,7 @@ const menuItemClass =
   'gap-2 px-2 py-2 text-2 [&_svg]:text-muted-foreground data-[highlighted]:[&_svg]:text-foreground';
 const compactSheetItemClass =
   'flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left text-2 text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const EVM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 export const ButtonProfile = ({
   person,
@@ -79,9 +81,37 @@ export const ButtonProfile = ({
   const tCommon = useTranslations('Common');
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const fundWalletTimeoutRef = useRef<
+    ReturnType<typeof setTimeout> | undefined
+  >(undefined);
+  const safeWalletAddress =
+    address && EVM_ADDRESS_REGEX.test(address)
+      ? (address as `0x${string}`)
+      : undefined;
   const { user } = usePrivy();
   const { showMfaEnrollmentModal } = useMfaEnrollment();
   const hasMfaMethods = user && user.mfaMethods && user.mfaMethods.length > 0;
+  const { fundWallet } = useFundWallet({
+    address: safeWalletAddress,
+    title: tCommon('receiveFundsTitle'),
+    subtitle: tCommon('receiveFundsSubtitle'),
+    defaultFundingMethod: 'manual',
+  });
+
+  const handleAddressCopy = useCallback(
+    (walletAddress: string) => {
+      copyToClipboard(walletAddress);
+      setProfileMenuOpen(false);
+      if (fundWalletTimeoutRef.current) {
+        clearTimeout(fundWalletTimeoutRef.current);
+      }
+      // Avoid colliding focus traps while sheet-like menus are closing.
+      fundWalletTimeoutRef.current = setTimeout(() => {
+        void fundWallet();
+      }, 300);
+    },
+    [fundWallet],
+  );
 
   const displayName = [person?.name, person?.surname].filter(Boolean).join(' ');
   const primaryLine = displayName.trim() || person?.nickname || t('myProfile');
@@ -89,6 +119,14 @@ export const ButtonProfile = ({
   useEffect(() => {
     setProfileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    return () => {
+      if (fundWalletTimeoutRef.current) {
+        clearTimeout(fundWalletTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (compact) {
     if (!isConnected) {
@@ -109,7 +147,7 @@ export const ButtonProfile = ({
               'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
               'shadow-sm transition-colors duration-150',
               'hover:text-foreground',
-              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             )}
             aria-label={t('openProfileMenu')}
             aria-haspopup="dialog"
@@ -155,7 +193,7 @@ export const ButtonProfile = ({
                 </div>
                 {address ? (
                   <div className="mt-3 w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5 text-1 text-muted-foreground">
-                    <EthAddress address={address} />
+                    <EthAddress address={address} onClick={handleAddressCopy} />
                   </div>
                 ) : null}
               </div>
@@ -351,7 +389,7 @@ export const ButtonProfile = ({
               </div>
               {address ? (
                 <div className="w-full rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
-                  <EthAddress address={address} />
+                  <EthAddress address={address} onClick={handleAddressCopy} />
                 </div>
               ) : null}
             </div>
@@ -442,7 +480,7 @@ export const ButtonProfile = ({
                     'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
                     'shadow-sm transition-colors duration-150',
                     'hover:text-foreground',
-                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                     'data-[state=open]:shadow-md',
                   )}
                   aria-label={t('openProfileMenu')}
@@ -496,7 +534,10 @@ export const ButtonProfile = ({
                         'text-1 text-muted-foreground',
                       )}
                     >
-                      <EthAddress address={address} />
+                      <EthAddress
+                        address={address}
+                        onClick={handleAddressCopy}
+                      />
                     </div>
                   </div>
                 ) : null}

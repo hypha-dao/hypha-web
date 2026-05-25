@@ -8,6 +8,8 @@ import {
   type MatrixEvent,
   type Room,
 } from 'matrix-js-sdk';
+import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
+import { Check, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   useParams,
@@ -21,11 +23,13 @@ import {
   SidebarFooter,
   useSidebar,
   Button,
+  Skeleton,
 } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   useMatrix,
   useCoherenceMutationsWeb2Rsc,
+  useHookRegistry,
   useJwt,
   useMatrixUserIdsByPrivySubs,
   useMe,
@@ -36,6 +40,7 @@ import {
   stripMatrixReplyFallback,
   RoomEvent,
   EventType,
+  MsgType,
   MatrixUploadTimeoutError,
   SendMessageCancelledError,
   SendMessagePartialFailureError,
@@ -54,6 +59,9 @@ import {
   UserSpaceState,
   useUserSpaceState,
 } from '../spaces/hooks/use-user-space-state';
+import { useSpaceDiscoverability } from '../spaces/hooks/use-space-discoverability';
+import { checkAccess } from '../spaces/utils/transparency-access';
+import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 
 import {
   HumanChatPanelHeader,
@@ -65,12 +73,17 @@ import {
   HumanChatPanelMentionTab,
   HumanChatPanelCallToolbar,
   HumanChatPanelCallBanner,
+  HumanChatPanelScreenshareTakeoverDialog,
   HumanChatPanelCallJoinStrip,
   HumanChatPanelCallStage,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
 } from './human-chat-panel';
+import {
+  type MentionPickCandidate,
+  useResolvedMentionCandidateLabel,
+} from './human-chat-panel/use-resolved-mention-candidate-label';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import {
@@ -80,6 +93,7 @@ import {
 import {
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
+  matrixUserIdToCanonicalPrivySub,
   shortenMatrixIdForDisplay,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
@@ -106,6 +120,49 @@ function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
       URL.revokeObjectURL(a.previewUrl);
     }
   }
+}
+
+function SignalTeamResolvedMemberLabel({
+  candidate,
+  fallbackLabel,
+  isOwner = false,
+  unknownMemberLabel,
+}: {
+  candidate: MentionPickCandidate;
+  fallbackLabel: string;
+  isOwner?: boolean;
+  unknownMemberLabel: string;
+}) {
+  const { resolvedLabel, busy } = useResolvedMentionCandidateLabel(candidate);
+  const syncFallback = looksLikeTechnicalMatrixDisplayName(
+    fallbackLabel,
+    candidate.userId,
+  )
+    ? ''
+    : fallbackLabel.trim();
+  const finalLabel = resolvedLabel?.trim() || syncFallback;
+  const showSkeleton =
+    busy ||
+    !finalLabel ||
+    looksLikeTechnicalMatrixDisplayName(finalLabel, candidate.userId);
+
+  if (showSkeleton) {
+    return (
+      <Skeleton
+        className="inline-block align-baseline"
+        loading
+        width={140}
+        height={16}
+      />
+    );
+  }
+
+  return (
+    <span className="truncate">
+      {finalLabel || unknownMemberLabel}
+      {isOwner ? ' 👑' : ''}
+    </span>
+  );
 }
 
 /** Sanitized labels shared by multiple members need a disambiguated composer token + map key. */
@@ -189,6 +246,8 @@ type ReplyDraft = {
   messageId: string;
   authorLabel: string;
   excerpt: string;
+  sourceUserId?: string;
+  isYou?: boolean;
 };
 
 type EditDraft = {
@@ -201,12 +260,156 @@ type EditDraft = {
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
 
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
+const SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX = 'hypha-room-to-coherence-slug-';
+const SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX = 'hypha-room-to-coherence-title-';
+const COHERENCE_ROOM_REVERSE_PREFIX = 'hypha-room-id-to-coherence-';
 const CHAT_HISTORY_SESSION_PREFIX = 'hypha-chat-history-v1-';
 const CHAT_HISTORY_MAX_ITEMS = 250;
+const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
+const SIGNAL_TEAM_REQUEST_EVENT_KIND = 'io.hypha.signal.team.request.v1';
+const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
+const SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER = '[hypha:signal-team-request]';
+
+function toUserFriendlySignalSystemBody(body: string): string {
+  const trimmed = body.trim();
+  const withoutMarker = trimmed
+    .replace(SIGNAL_TEAM_EVENT_BODY_MARKER, '')
+    .replace(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER, '')
+    .trim();
+  if (!withoutMarker) return 'Signal team updated';
+  if (withoutMarker === 'signal team members updated') {
+    return 'Signal team updated';
+  }
+  if (withoutMarker === 'signal team access requested') {
+    return 'Signal team access requested';
+  }
+  if (withoutMarker === 'signal team access approved') {
+    return 'Signal team access approved';
+  }
+  return withoutMarker;
+}
 
 type PersistedUIMessage = Omit<UIMessage, 'timestamp'> & {
   timestamp?: string;
 };
+
+type SignalTeamTimelineState = {
+  memberMatrixUserIds: string[];
+  pendingRequesterIds: string[];
+  ownerMatrixUserId: string | null;
+};
+
+type SignalTeamEventContent = {
+  msgtype: RoomMessageEventContent['msgtype'];
+  body: RoomMessageEventContent['body'];
+  coherenceSlug: string | null;
+  memberMatrixUserIds?: string[];
+  ownerMatrixUserId?: string | null;
+  requesterMatrixUserId?: string;
+  status?: 'pending' | 'approved';
+  addedMemberMatrixUserIds?: string[];
+  removedMemberMatrixUserIds?: string[];
+  updatedAt: string;
+} & RoomMessageEventContent;
+
+function normalizeMatrixUserIds(ids: unknown): string[] {
+  if (!Array.isArray(ids)) return [];
+  return [...new Set(ids.map((id) => String(id).trim()).filter(Boolean))];
+}
+
+function roomPowerLevelForUser(
+  room: Room | undefined,
+  userId: string | null,
+): number {
+  if (!room || !userId) return 0;
+  const powerLevels = room.currentState.getStateEvents(
+    EventType.RoomPowerLevels,
+    '',
+  );
+  const content = (powerLevels?.getContent() ?? {}) as {
+    users?: Record<string, number>;
+    users_default?: number;
+  };
+  const perUser = content.users?.[userId];
+  if (typeof perUser === 'number') return perUser;
+  const fromMember = room.getMember(userId)?.powerLevel;
+  if (typeof fromMember === 'number') return fromMember;
+  return typeof content.users_default === 'number' ? content.users_default : 0;
+}
+
+function deriveSignalTeamStateFromEvents(
+  events: MatrixEvent[],
+  coherenceSlug?: string | null,
+  room?: Room,
+): SignalTeamTimelineState {
+  let memberMatrixUserIds: string[] = [];
+  const pending = new Set<string>();
+  let ownerMatrixUserId: string | null = null;
+  const targetSlug = coherenceSlug?.trim() || null;
+
+  for (const ev of events) {
+    const eventType = ev.getType();
+    if (eventType !== EventType.RoomMessage) continue;
+    const content = ev.getContent() as Record<string, unknown> | null;
+    if (!content || typeof content !== 'object') continue;
+    const msgtype =
+      typeof content.msgtype === 'string' ? content.msgtype.trim() : '';
+    const body = typeof content.body === 'string' ? content.body.trim() : '';
+    const eventKind = body.startsWith(SIGNAL_TEAM_EVENT_BODY_MARKER)
+      ? SIGNAL_TEAM_EVENT_KIND
+      : body.startsWith(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER)
+      ? SIGNAL_TEAM_REQUEST_EVENT_KIND
+      : msgtype;
+    const eventSlug =
+      typeof content.coherenceSlug === 'string'
+        ? content.coherenceSlug.trim()
+        : '';
+    if (targetSlug && eventSlug && eventSlug !== targetSlug) continue;
+    const senderId = ev.getSender()?.trim() || null;
+    const isKnownTrustedSender = Boolean(
+      senderId &&
+        (senderId === ownerMatrixUserId ||
+          memberMatrixUserIds.includes(senderId)),
+    );
+    const hasElevatedRoomPower = roomPowerLevelForUser(room, senderId) >= 50;
+    const isTrustedActor = isKnownTrustedSender || hasElevatedRoomPower;
+
+    if (eventKind === SIGNAL_TEAM_EVENT_KIND) {
+      if (!isTrustedActor) continue;
+      memberMatrixUserIds = normalizeMatrixUserIds(content.memberMatrixUserIds);
+      const nextOwnerId =
+        typeof content.ownerMatrixUserId === 'string'
+          ? content.ownerMatrixUserId.trim()
+          : '';
+      if (nextOwnerId) {
+        ownerMatrixUserId = nextOwnerId;
+      }
+      continue;
+    }
+
+    if (eventKind !== SIGNAL_TEAM_REQUEST_EVENT_KIND) continue;
+    const requesterId =
+      typeof content.requesterMatrixUserId === 'string'
+        ? content.requesterMatrixUserId.trim()
+        : '';
+    if (!requesterId) continue;
+    const status =
+      typeof content.status === 'string' ? content.status.trim() : 'pending';
+    const requesterIsSender = senderId === requesterId;
+    if (!requesterIsSender && !isTrustedActor) continue;
+    if (status === 'pending') {
+      pending.add(requesterId);
+    } else {
+      pending.delete(requesterId);
+    }
+  }
+
+  return {
+    memberMatrixUserIds,
+    pendingRequesterIds: [...pending],
+    ownerMatrixUserId,
+  };
+}
 
 function readPersistedChatHistory(roomId: string): UIMessage[] {
   if (typeof window === 'undefined') return [];
@@ -275,6 +478,69 @@ function rememberRoomToSpaceSlugSession(roomId: string, slug: string): void {
     );
   } catch {
     // ignore
+  }
+}
+
+function rememberRoomToCoherenceSession(
+  roomId: string,
+  slug: string,
+  title?: string | null,
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(
+      `${SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX}${roomId}`,
+      slug,
+    );
+    if (title?.trim()) {
+      window.sessionStorage.setItem(
+        `${SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX}${roomId}`,
+        title.trim(),
+      );
+    }
+    window.localStorage.setItem(
+      `${COHERENCE_ROOM_REVERSE_PREFIX}${roomId}`,
+      JSON.stringify({ slug, title: title?.trim() || null }),
+    );
+  } catch {
+    // ignore
+  }
+}
+
+function readRoomToCoherenceSession(roomId: string): {
+  slug: string | null;
+  title: string | null;
+} {
+  if (typeof window === 'undefined') return { slug: null, title: null };
+  try {
+    const slug = window.sessionStorage
+      .getItem(`${SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX}${roomId}`)
+      ?.trim();
+    const title = window.sessionStorage
+      .getItem(`${SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX}${roomId}`)
+      ?.trim();
+    if (slug) {
+      return { slug, title: title || null };
+    }
+    const persisted = window.localStorage
+      .getItem(`${COHERENCE_ROOM_REVERSE_PREFIX}${roomId}`)
+      ?.trim();
+    if (persisted) {
+      const parsed = JSON.parse(persisted) as {
+        slug?: string;
+        title?: string | null;
+      };
+      const persistedSlug = parsed.slug?.trim();
+      if (persistedSlug) {
+        return {
+          slug: persistedSlug,
+          title: parsed.title?.trim() || null,
+        };
+      }
+    }
+    return { slug: null, title: null };
+  } catch {
+    return { slug: null, title: null };
   }
 }
 
@@ -427,6 +693,9 @@ function toUIMessage(
       : undefined;
 
   const media = mediaSingle;
+  const normalizedTextContent = isMedia
+    ? msg.content
+    : toUserFriendlySignalSystemBody(msg.content);
 
   const memberAvatar =
     !isCurrentUser && msg.sender ? resolveAvatarForUser(msg.sender) : undefined;
@@ -439,7 +708,7 @@ function toUIMessage(
       ? captionForMedia
         ? [{ type: 'text', text: captionForMedia }]
         : []
-      : [{ type: 'text', text: msg.content }],
+      : [{ type: 'text', text: normalizedTextContent }],
     media,
     mediaSlots,
     formattedContentHtml:
@@ -579,6 +848,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     openHumanChatPanel,
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
+  const { useSendNotifications } = useHookRegistry();
+  const { notifyChatMention } = useSendNotifications({ authToken });
   const { person: me } = useMe();
   const { persons: spaceMembersResult } = useMembers({
     spaceSlug,
@@ -589,17 +860,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [spaceMembersResult?.data],
   );
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
+  const effectiveSpaceWeb3Id = space?.web3SpaceId ?? undefined;
+  const { access: spaceActivityAccess, isLoading: isDiscoverabilityLoading } =
+    useSpaceDiscoverability({
+      spaceId: effectiveSpaceWeb3Id ? BigInt(effectiveSpaceWeb3Id) : undefined,
+    });
   const { userState: userSpaceState, isLoading: isUserSpaceStateLoading } =
     useUserSpaceState({
       spaceSlug,
       space,
+      spaceId: effectiveSpaceWeb3Id,
     });
   const { updateSpaceBySlug } = useSpaceMutationsWeb2Rsc(authToken);
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
 
-  const hasSpaceChatAccess = userSpaceState === UserSpaceState.LOGGED_IN_SPACE;
-  const blockSpaceChatForMembership =
-    mode === 'space' && !isUserSpaceStateLoading && !hasSpaceChatAccess;
+  const hasSpaceActivityAccess = checkAccess(
+    spaceActivityAccess,
+    userSpaceState,
+  );
+  const isSpaceMember = userSpaceState === UserSpaceState.LOGGED_IN_SPACE;
+  const blockSpaceChatForActivityAccess =
+    mode === 'space' &&
+    !isUserSpaceStateLoading &&
+    !isDiscoverabilityLoading &&
+    !hasSpaceActivityAccess;
+  const blockSpaceChatComposer =
+    mode === 'space' && !isUserSpaceStateLoading && !isSpaceMember;
 
   const authTokenRef = useRef(authToken);
   authTokenRef.current = authToken;
@@ -649,6 +935,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setMentionDisplayOverride({});
   }, [roomId]);
 
+  useEffect(() => {
+    if (mode !== 'coherence') {
+      setSignalTeamPanelOpen(false);
+    }
+  }, [mode]);
+
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState<string | null>(null);
@@ -656,6 +948,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
   const [scrollToEventId, setScrollToEventId] = useState<string | null>(null);
+  const [mentionNavigationNotice, setMentionNavigationNotice] = useState<
+    string | null
+  >(null);
   /** Shown in timeline after a short delay while large attachment sends run. */
   const [sendingPending, setSendingPending] = useState<null | {
     id: string;
@@ -667,6 +962,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [unreadBump, setUnreadBump] = useState(0);
   const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
+  const [signalTeamMemberIds, setSignalTeamMemberIds] = useState<string[]>([]);
+  const [signalTeamOwnerId, setSignalTeamOwnerId] = useState<string | null>(
+    null,
+  );
+  const [signalTeamPendingRequesterIds, setSignalTeamPendingRequesterIds] =
+    useState<string[]>([]);
+  const [signalTeamPanelOpen, setSignalTeamPanelOpen] = useState(false);
+  const [signalTeamDraftMemberIds, setSignalTeamDraftMemberIds] = useState<
+    string[] | null
+  >(null);
+  const [signalTeamBusy, setSignalTeamBusy] = useState(false);
+  const signalTeamAutoSeededRoomIdsRef = useRef<Set<string>>(new Set());
 
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
@@ -728,7 +1035,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     groupCall: spaceGroupCall,
     feedVersion: spaceCallFeedVersion,
     screenshareErrorCode: spaceCallScreenshareError,
+    captureMode: spaceCallCaptureMode,
+    capturePreference: spaceCallCapturePreference,
+    capturePreferenceSelected: spaceCallCapturePreferenceSelected,
+    setCapturePreference: setSpaceCallCapturePreference,
+    startCapture: startSpaceCallCapture,
+    pauseCapture: pauseSpaceCallCapture,
+    resumeCapture: resumeSpaceCallCapture,
+    stopCapture: stopSpaceCallCapture,
+    recordingStatus: spaceCallRecordingStatus,
+    recordingError: spaceCallRecordingError,
+    recordingWarning: spaceCallRecordingWarning,
+    canRetryRecordingUpload: spaceCallCanRetryRecordingUpload,
+    retryRecordingUpload: retrySpaceCallRecordingUpload,
+    captureConsent: spaceCallCaptureConsent,
     dismissScreenshareError: dismissSpaceCallScreenshareError,
+    screenshareTakeoverIncoming: spaceCallScreenshareTakeoverIncoming,
+    screenshareTakeoverPendingId: spaceCallScreenshareTakeoverPendingId,
+    screenshareTakeoverDenied: spaceCallScreenshareTakeoverDenied,
+    approveScreenshareTakeover: approveSpaceCallScreenshareTakeover,
+    denyScreenshareTakeover: denySpaceCallScreenshareTakeover,
+    cancelScreenshareTakeoverRequest: cancelSpaceCallScreenshareTakeoverRequest,
+    dismissScreenshareTakeoverPrompt: dismissSpaceCallScreenshareTakeoverPrompt,
     activeSpeakerKey: spaceCallActiveSpeakerKey,
     setScreensharingEnabled: setSpaceCallScreensharing,
     voiceProcessingPreset: spaceCallVoiceProcessingPreset,
@@ -742,30 +1070,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   } = useGlobalCallDock();
 
   useEffect(() => {
-    if (mode === 'space') {
-      bindRoomContext(roomId, spaceSlug ?? null, authToken ?? null);
+    const activeRoomId = roomId?.trim() || null;
+    const activeSpaceSlug = spaceSlug?.trim() || null;
+    const activeAuthToken = authToken?.trim() || null;
+
+    if (activeRoomId) {
+      bindRoomContext(activeRoomId, activeSpaceSlug, activeAuthToken);
     } else {
-      bindRoomContext(null, null);
+      bindRoomContext(null, null, null);
     }
+
     return () => {
-      bindRoomContext(null, null);
+      bindRoomContext(null, null, null);
     };
-  }, [authToken, bindRoomContext, mode, roomId, spaceSlug]);
+  }, [authToken, bindRoomContext, roomId, spaceSlug]);
 
   const callUiEnabled = useMemo(
     () =>
-      mode === 'space' &&
       Boolean(roomId) &&
       isMatrixAvailable &&
       isMatrixAuthenticated &&
-      hasSpaceChatAccess,
-    [
-      mode,
-      roomId,
-      isMatrixAvailable,
-      isMatrixAuthenticated,
-      hasSpaceChatAccess,
-    ],
+      isSpaceMember,
+    [roomId, isMatrixAvailable, isMatrixAuthenticated, isSpaceMember],
   );
 
   const inSpaceCall =
@@ -854,12 +1180,54 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'connecting';
 
   const handleCallAudio = useCallback(() => {
-    void startAudioForRoom(roomId, spaceSlug ?? null);
-  }, [startAudioForRoom, roomId, spaceSlug]);
+    const launchContext =
+      mode === 'coherence' && coherenceTitle?.trim()
+        ? {
+            signalTitle: coherenceTitle.trim(),
+            signalSlug: coherenceSlug?.trim() || undefined,
+          }
+        : undefined;
+    void startAudioForRoom(
+      roomId,
+      spaceSlug ?? null,
+      undefined,
+      authToken,
+      launchContext,
+    );
+  }, [
+    authToken,
+    coherenceSlug,
+    coherenceTitle,
+    mode,
+    startAudioForRoom,
+    roomId,
+    spaceSlug,
+  ]);
 
   const handleCallVideo = useCallback(() => {
-    void startVideoForRoom(roomId, spaceSlug ?? null);
-  }, [startVideoForRoom, roomId, spaceSlug]);
+    const launchContext =
+      mode === 'coherence' && coherenceTitle?.trim()
+        ? {
+            signalTitle: coherenceTitle.trim(),
+            signalSlug: coherenceSlug?.trim() || undefined,
+          }
+        : undefined;
+    void startVideoForRoom(
+      roomId,
+      spaceSlug ?? null,
+      undefined,
+      authToken,
+      launchContext,
+    );
+  }, [
+    authToken,
+    coherenceSlug,
+    coherenceTitle,
+    mode,
+    startVideoForRoom,
+    roomId,
+    spaceSlug,
+  ]);
 
   const handleCallLeave = useCallback(() => {
     void leaveSpaceCall();
@@ -890,6 +1258,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
+  const [matrixProfileLabelByUserId, setMatrixProfileLabelByUserId] = useState<
+    Record<string, string>
+  >({});
+  const profileLookupInFlightRef = useRef<Set<string>>(new Set());
+  const profileLookupAttemptedRef = useRef<Set<string>>(new Set());
 
   const rosterSubs = useMemo(
     () =>
@@ -916,6 +1289,24 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return m;
   }, [spaceMembers, subToMatrixUserId, t]);
 
+  /** Fallback roster lookup using Matrix localpart == Privy sub (same `useMembers` roster source as chat Members tab). */
+  const personLabelByPrivySub = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of spaceMembers) {
+      const sub = p.sub?.trim();
+      if (!sub) continue;
+      m.set(sub, personRosterLabel(p, t('unknownMember')));
+    }
+    return m;
+  }, [spaceMembers, t]);
+
+  const matrixLocalpartToPrivySub = useCallback(
+    (userId: string): string | null => {
+      return matrixUserIdToCanonicalPrivySub(userId);
+    },
+    [],
+  );
+
   const resolveMemberLabel = useCallback(
     (userId: string | undefined) => {
       if (!userId) return t('unknownMember');
@@ -925,6 +1316,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       const rosterLabel = matrixUserIdToPersonLabel.get(userId)?.trim();
       if (rosterLabel) return rosterLabel;
+      const localpartSub = matrixLocalpartToPrivySub(userId);
+      if (localpartSub) {
+        const rosterBySub = personLabelByPrivySub.get(localpartSub)?.trim();
+        if (rosterBySub) return rosterBySub;
+      }
+      const profileLabel = matrixProfileLabelByUserId[userId]?.trim();
+      if (
+        profileLabel &&
+        !looksLikeTechnicalMatrixDisplayName(profileLabel, userId)
+      ) {
+        return profileLabel;
+      }
       if (roomId && client) {
         const room = client.getRoom(roomId);
         const member = room?.getMember(userId);
@@ -940,39 +1343,68 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [
       client,
       currentUserId,
+      matrixLocalpartToPrivySub,
+      matrixProfileLabelByUserId,
       matrixUserIdToPersonLabel,
       me?.name,
       me?.surname,
+      personLabelByPrivySub,
       roomId,
       t,
     ],
   );
 
-  const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
-    if (!client || !roomId) return [];
-    const room = client.getRoom(roomId);
-    if (!room) return [];
+  const mentionCandidateRoomIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (roomId?.trim()) {
+      ids.add(roomId.trim());
+    }
+    if (mode === 'coherence' && space?.chatRoomId?.trim()) {
+      ids.add(space.chatRoomId.trim());
+    }
+    return [...ids];
+  }, [roomId, mode, space?.chatRoomId]);
+
+  const rawMentionCandidates = useMemo((): ChatMentionCandidate[] => {
+    if (!client || mentionCandidateRoomIds.length === 0) return [];
 
     const byUserId = new Map<
       string,
       { displayLabel: string; avatarUrl?: string; privySub?: string }
     >();
 
-    for (const member of room.getJoinedMembers()) {
-      const userId = member.userId;
-      if (!userId) continue;
-      if (currentUserId && userId === currentUserId) continue;
-      byUserId.set(userId, {
-        displayLabel: matrixMemberDisplayLabel(member, userId),
-        avatarUrl: matrixMemberAvatarSquare(client, roomId, userId, 64),
-      });
+    for (const candidateRoomId of mentionCandidateRoomIds) {
+      const room = client.getRoom(candidateRoomId);
+      if (!room) continue;
+      for (const member of room.getJoinedMembers()) {
+        const userId = member.userId;
+        if (!userId) continue;
+        if (currentUserId && userId === currentUserId) continue;
+        byUserId.set(userId, {
+          displayLabel: matrixMemberDisplayLabel(member, userId),
+          avatarUrl: matrixMemberAvatarSquare(
+            client,
+            candidateRoomId,
+            userId,
+            64,
+          ),
+        });
+      }
     }
 
     /** Same names as Members tab — overrides Matrix-only technical displaynames. */
     for (const p of spaceMembers) {
       const sub = p.sub?.trim();
       if (!sub) continue;
-      const mxid = subToMatrixUserId[sub];
+      let mxid = subToMatrixUserId[sub];
+      if (!mxid) {
+        for (const userId of byUserId.keys()) {
+          if (matrixUserIdToCanonicalPrivySub(userId) === sub) {
+            mxid = userId;
+            break;
+          }
+        }
+      }
       if (!mxid) continue;
       if (currentUserId && mxid === currentUserId) continue;
       const prev = byUserId.get(mxid);
@@ -1001,12 +1433,65 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return list;
   }, [
     client,
-    roomId,
+    mentionCandidateRoomIds,
     currentUserId,
     spaceMembers,
     subToMatrixUserId,
     t,
     mentionMembershipEpoch,
+  ]);
+
+  useEffect(() => {
+    if (!client || rawMentionCandidates.length === 0) return;
+    const unresolved = rawMentionCandidates.filter((candidate) => {
+      if (profileLookupAttemptedRef.current.has(candidate.userId)) return false;
+      if (matrixProfileLabelByUserId[candidate.userId]) return false;
+      if (matrixUserIdToCanonicalPrivySub(candidate.userId)) return false;
+      if (matrixUserIdToPersonLabel.has(candidate.userId)) return false;
+      return looksLikeTechnicalMatrixDisplayName(
+        candidate.displayLabel,
+        candidate.userId,
+      );
+    });
+    if (unresolved.length === 0) return;
+
+    const batch = unresolved.slice(0, 3);
+    for (const candidate of batch) {
+      const userId = candidate.userId;
+      if (profileLookupInFlightRef.current.has(userId)) continue;
+      if (profileLookupAttemptedRef.current.has(userId)) continue;
+      profileLookupInFlightRef.current.add(userId);
+      profileLookupAttemptedRef.current.add(userId);
+      void client
+        .getProfileInfo(userId)
+        .then((profile) => {
+          const displayName =
+            typeof profile?.displayname === 'string'
+              ? profile.displayname.trim()
+              : '';
+          if (
+            !displayName ||
+            looksLikeTechnicalMatrixDisplayName(displayName, userId)
+          ) {
+            return;
+          }
+          setMatrixProfileLabelByUserId((prev) => {
+            if (prev[userId] === displayName) return prev;
+            return { ...prev, [userId]: displayName };
+          });
+        })
+        .catch(() => {
+          // Best-effort lookup; keep existing fallback when unavailable.
+        })
+        .finally(() => {
+          profileLookupInFlightRef.current.delete(userId);
+        });
+    }
+  }, [
+    client,
+    rawMentionCandidates,
+    matrixProfileLabelByUserId,
+    matrixUserIdToPersonLabel,
   ]);
 
   const mergeMentionDisplayLabel = useCallback(
@@ -1021,6 +1506,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [],
   );
 
+  const isSignalThread = mode === 'coherence' && Boolean(coherenceSlug?.trim());
+  const hasSignalTeamPolicy = isSignalThread && signalTeamMemberIds.length > 0;
+  const signalTeamMemberIdSet = useMemo(
+    () => new Set(signalTeamMemberIds),
+    [signalTeamMemberIds],
+  );
+  const isCurrentUserSignalTeamMember = Boolean(
+    currentUserId && signalTeamMemberIdSet.has(currentUserId),
+  );
+  const canInteractWithSignalThread =
+    !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
+  const canJoinSignalThreadCall =
+    !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
+
+  const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
+    if (!isSignalThread) return rawMentionCandidates;
+    return rawMentionCandidates.filter((candidate) =>
+      signalTeamMemberIdSet.has(candidate.userId),
+    );
+  }, [isSignalThread, rawMentionCandidates, signalTeamMemberIdSet]);
+
   const mentionLabelByUserId = useMemo(
     () =>
       new Map(
@@ -1028,11 +1534,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           const o = mentionDisplayOverride[candidate.userId];
           return [
             candidate.userId,
-            o?.trim() ? o : candidate.displayLabel,
+            o?.trim() ? o : resolveMemberLabel(candidate.userId),
           ] as const;
         }),
       ),
-    [mentionCandidates, mentionDisplayOverride],
+    [mentionCandidates, mentionDisplayOverride, resolveMemberLabel],
   );
 
   const duplicateSanitizedDisplayKeys = useMemo(
@@ -1076,7 +1582,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     (userId: string | undefined) => {
       const id = userId?.trim();
       if (!id) return t('unknownMember');
-      return mentionLabelByUserId.get(id) ?? resolveMemberLabel(id);
+      const mentionLabel = mentionLabelByUserId.get(id)?.trim();
+      const resolved = resolveMemberLabel(id);
+      if (
+        mentionLabel &&
+        !looksLikeTechnicalMatrixDisplayName(mentionLabel, id)
+      ) {
+        return mentionLabel;
+      }
+      if (!looksLikeTechnicalMatrixDisplayName(resolved, id)) {
+        return resolved;
+      }
+      return mentionLabel || resolved;
     },
     [mentionLabelByUserId, resolveMemberLabel, t],
   );
@@ -1092,16 +1609,264 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
-  const mentionPickerEnabled = mentionCandidates.length > 0;
+  const mentionPickerEnabled =
+    canInteractWithSignalThread && mentionCandidates.length > 0;
+  const signalTeamSelectableMembers = useMemo((): ChatMentionCandidate[] => {
+    const byUserId = new Map<string, ChatMentionCandidate>();
+    for (const member of rawMentionCandidates) {
+      byUserId.set(member.userId, member);
+    }
+    if (currentUserId) {
+      const currentUserLabel =
+        [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
+        me?.nickname?.trim() ||
+        t('you');
+      if (!byUserId.has(currentUserId)) {
+        byUserId.set(currentUserId, {
+          userId: currentUserId,
+          displayLabel: currentUserLabel,
+          avatarUrl: me?.avatarUrl,
+        });
+      }
+    }
+    return [...byUserId.values()].sort((a, b) =>
+      resolveMentionMemberLabel(a.userId).localeCompare(
+        resolveMentionMemberLabel(b.userId),
+        undefined,
+        {
+          sensitivity: 'base',
+        },
+      ),
+    );
+  }, [
+    rawMentionCandidates,
+    currentUserId,
+    me?.name,
+    me?.surname,
+    me?.nickname,
+    me?.avatarUrl,
+    resolveMentionMemberLabel,
+    t,
+  ]);
+  const effectiveSignalTeamMemberIds = useMemo(
+    () =>
+      isSignalThread
+        ? signalTeamMemberIds
+        : signalTeamSelectableMembers.map((member) => member.userId),
+    [isSignalThread, signalTeamMemberIds, signalTeamSelectableMembers],
+  );
+  const signalTeamEditorMemberIds = useMemo(
+    () =>
+      signalTeamDraftMemberIds != null
+        ? signalTeamDraftMemberIds
+        : effectiveSignalTeamMemberIds,
+    [signalTeamDraftMemberIds, effectiveSignalTeamMemberIds],
+  );
+  const canManageSignalTeam =
+    isSignalThread && (!hasSignalTeamPolicy || isCurrentUserSignalTeamMember);
+  const currentUserPendingSignalTeamRequest = Boolean(
+    currentUserId && signalTeamPendingRequesterIds.includes(currentUserId),
+  );
+
+  const publishSignalTeamMembers = useCallback(
+    async (
+      nextMemberIds: string[],
+      options?: {
+        addedMemberMatrixUserIds?: string[];
+        removedMemberMatrixUserIds?: string[];
+      },
+    ) => {
+      if (!client || !roomId || !isSignalThread) return;
+      try {
+        const ownerId =
+          signalTeamOwnerId?.trim() || currentUserId?.trim() || null;
+        const actorId = currentUserId?.trim() || null;
+        const deduped = normalizeMatrixUserIds([
+          ...nextMemberIds,
+          ...(ownerId ? [ownerId] : []),
+          ...(actorId ? [actorId] : []),
+        ]);
+        const added = normalizeMatrixUserIds(options?.addedMemberMatrixUserIds);
+        const removed = normalizeMatrixUserIds(
+          options?.removedMemberMatrixUserIds,
+        );
+        const addedLabels = added.map((id) => resolveMentionMemberLabel(id));
+        const removedLabels = removed.map((id) =>
+          resolveMentionMemberLabel(id),
+        );
+        const summaryParts: string[] = [];
+        if (addedLabels.length > 0) {
+          summaryParts.push(`added ${addedLabels.join(', ')}`);
+        }
+        if (removedLabels.length > 0) {
+          summaryParts.push(`removed ${removedLabels.join(', ')}`);
+        }
+        const summaryText =
+          summaryParts.length > 0 ? `: ${summaryParts.join('; ')}` : '';
+        await client.sendEvent(roomId, EventType.RoomMessage, {
+          msgtype: MsgType.Notice,
+          body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team updated${summaryText}`,
+          coherenceSlug: coherenceSlug?.trim() || null,
+          memberMatrixUserIds: deduped,
+          ownerMatrixUserId: ownerId,
+          addedMemberMatrixUserIds: added,
+          removedMemberMatrixUserIds: removed,
+          updatedAt: new Date().toISOString(),
+        } as SignalTeamEventContent);
+        setSignalTeamMemberIds(deduped);
+        if (ownerId && !signalTeamOwnerId) {
+          setSignalTeamOwnerId(ownerId);
+        }
+        setSignalTeamPendingRequesterIds((prev) =>
+          prev.filter((id) => !deduped.includes(id)),
+        );
+      } catch (error) {
+        console.error(
+          '[HumanRightPanel] publishSignalTeamMembers failed',
+          error,
+        );
+        setComposerError(t('sendFailed'));
+      }
+    },
+    [
+      client,
+      roomId,
+      isSignalThread,
+      coherenceSlug,
+      currentUserId,
+      signalTeamOwnerId,
+      resolveMentionMemberLabel,
+      t,
+    ],
+  );
+
+  const commitSignalTeamDraft = useCallback(async () => {
+    if (!signalTeamPanelOpen) return;
+    const draftIds = signalTeamDraftMemberIds;
+    setSignalTeamPanelOpen(false);
+    if (!draftIds) return;
+
+    const currentIds = normalizeMatrixUserIds(effectiveSignalTeamMemberIds);
+    const nextIds = normalizeMatrixUserIds(draftIds);
+    const addedMemberMatrixUserIds = nextIds.filter(
+      (id) => !currentIds.includes(id),
+    );
+    const removedMemberMatrixUserIds = currentIds.filter(
+      (id) => !nextIds.includes(id),
+    );
+    setSignalTeamDraftMemberIds(null);
+    if (
+      addedMemberMatrixUserIds.length === 0 &&
+      removedMemberMatrixUserIds.length === 0
+    ) {
+      return;
+    }
+    await publishSignalTeamMembers(nextIds, {
+      addedMemberMatrixUserIds,
+      removedMemberMatrixUserIds,
+    });
+  }, [
+    signalTeamPanelOpen,
+    signalTeamDraftMemberIds,
+    effectiveSignalTeamMemberIds,
+    publishSignalTeamMembers,
+  ]);
+
+  const requestSignalTeamAccess = useCallback(async () => {
+    if (!client || !roomId || !isSignalThread || !currentUserId) return;
+    setSignalTeamBusy(true);
+    try {
+      await client.sendEvent(roomId, EventType.RoomMessage, {
+        msgtype: MsgType.Notice,
+        body: `${SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER} signal team access requested`,
+        coherenceSlug: coherenceSlug?.trim() || null,
+        requesterMatrixUserId: currentUserId,
+        status: 'pending',
+        updatedAt: new Date().toISOString(),
+      } as SignalTeamEventContent);
+      setSignalTeamPendingRequesterIds((prev) =>
+        prev.includes(currentUserId) ? prev : [...prev, currentUserId],
+      );
+    } catch (error) {
+      console.error('[HumanRightPanel] requestSignalTeamAccess failed', error);
+      setComposerError(t('sendFailed'));
+    } finally {
+      setSignalTeamBusy(false);
+    }
+  }, [client, roomId, isSignalThread, currentUserId, coherenceSlug, t]);
+
+  const approveSignalTeamRequester = useCallback(
+    async (requesterMatrixUserId: string) => {
+      if (!client || !roomId || !isSignalThread) return;
+      const requesterId = requesterMatrixUserId.trim();
+      if (!requesterId) return;
+      setSignalTeamBusy(true);
+      try {
+        const ownerId =
+          signalTeamOwnerId?.trim() || currentUserId?.trim() || null;
+        const actorId = currentUserId?.trim() || null;
+        const nextMembers = normalizeMatrixUserIds([
+          ...effectiveSignalTeamMemberIds,
+          requesterId,
+          ...(ownerId ? [ownerId] : []),
+          ...(actorId ? [actorId] : []),
+        ]);
+        await Promise.all([
+          client.sendEvent(roomId, EventType.RoomMessage, {
+            msgtype: MsgType.Notice,
+            body: `${SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER} signal team access approved`,
+            coherenceSlug: coherenceSlug?.trim() || null,
+            requesterMatrixUserId: requesterId,
+            status: 'approved',
+            updatedAt: new Date().toISOString(),
+          } as SignalTeamEventContent),
+          client.sendEvent(roomId, EventType.RoomMessage, {
+            msgtype: MsgType.Notice,
+            body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
+            coherenceSlug: coherenceSlug?.trim() || null,
+            memberMatrixUserIds: nextMembers,
+            ownerMatrixUserId: ownerId,
+            updatedAt: new Date().toISOString(),
+          } as SignalTeamEventContent),
+        ]);
+        setSignalTeamMemberIds(nextMembers);
+        setSignalTeamPendingRequesterIds((prev) =>
+          prev.filter((id) => id !== requesterId),
+        );
+      } catch (error) {
+        console.error(
+          '[HumanRightPanel] approveSignalTeamRequester failed',
+          error,
+        );
+        setComposerError(t('sendFailed'));
+      } finally {
+        setSignalTeamBusy(false);
+      }
+    },
+    [
+      client,
+      roomId,
+      isSignalThread,
+      coherenceSlug,
+      effectiveSignalTeamMemberIds,
+      currentUserId,
+      signalTeamOwnerId,
+      t,
+    ],
+  );
 
   useEffect(() => {
     if (!client || !roomId) return;
     const room = client.getRoom(roomId);
     if (!room) return;
+    const parentRoomId =
+      mode === 'coherence' ? space?.chatRoomId?.trim() : undefined;
 
     const bumpMembership = (...args: unknown[]) => {
       const state = args[1] as { roomId?: string } | undefined;
-      if (state?.roomId !== roomId) return;
+      const changedRoomId = state?.roomId?.trim();
+      if (!changedRoomId) return;
+      if (changedRoomId !== roomId && changedRoomId !== parentRoomId) return;
       setMentionMembershipEpoch((n) => n + 1);
     };
 
@@ -1112,7 +1877,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       client.off(RoomStateEvent.Members, bumpMembership);
       client.off(RoomStateEvent.NewMember, bumpMembership);
     };
-  }, [client, roomId]);
+  }, [client, mode, roomId, space?.chatRoomId]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
@@ -1253,7 +2018,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (mode !== 'space') return;
     if (isUserSpaceStateLoading) return;
-    if (hasSpaceChatAccess) return;
+    if (hasSpaceActivityAccess) return;
     if (roomId) {
       matrixRef.current.unregisterRoomListener(roomId);
     }
@@ -1264,7 +2029,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setEditDraft(null);
     setInput('');
     setError(null);
-  }, [mode, roomId, hasSpaceChatAccess, isUserSpaceStateLoading]);
+  }, [mode, roomId, hasSpaceActivityAccess, isUserSpaceStateLoading]);
 
   // Join space room when Matrix is ready (space mode)
   useEffect(() => {
@@ -1278,7 +2043,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!spaceSlug) return;
     if (isSpaceLoading) return;
     if (isUserSpaceStateLoading) return;
-    if (!hasSpaceChatAccess) return;
+    if (!hasSpaceActivityAccess) return;
 
     let cancelled = false;
     const { joinRoom, createRoom, getRoomMessages, loadRoomHistory, client } =
@@ -1392,7 +2157,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceSlug,
     isSpaceLoading,
     isUserSpaceStateLoading,
-    hasSpaceChatAccess,
+    hasSpaceActivityAccess,
     space?.chatRoomId,
   ]);
 
@@ -1762,10 +2527,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const handleSelectMentionFromInbox = useCallback(
     (eventId: string, fromRoomId?: string) => {
+      setMentionNavigationNotice(null);
       const targetRoom = fromRoomId?.trim();
       const current = roomId?.trim();
       const langMatch = pathname.match(/^\/([^/]+)\//);
       const lang = langMatch?.[1] ?? 'en';
+      const spaceChatRoomId = space?.chatRoomId?.trim() ?? null;
+      const pathSlug = getDhoSpaceSlugFromPathname(pathname)?.trim() ?? null;
+
+      if (
+        targetRoom &&
+        spaceChatRoomId &&
+        targetRoom === spaceChatRoomId &&
+        spaceSlug &&
+        pathSlug === spaceSlug
+      ) {
+        if (mode === 'coherence') {
+          closeCoherenceChat();
+        }
+        openHumanChatPanel();
+        setActiveTab('chat');
+        setScrollToEventId(eventId);
+        return;
+      }
 
       if (
         targetRoom &&
@@ -1780,7 +2564,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           const fromLs = readRoomIdToSpaceSlugFromStorage().get(targetRoom);
           slug = fromLs ?? null;
         }
-        if (!slug && space?.chatRoomId?.trim() === targetRoom && spaceSlug) {
+        if (!slug && spaceChatRoomId === targetRoom && spaceSlug) {
           slug = spaceSlug;
         }
         if (slug) {
@@ -1791,6 +2575,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           setActiveTab('chat');
           return;
         }
+
+        const coherence = readRoomToCoherenceSession(targetRoom);
+        if (coherence.slug) {
+          openCoherenceChat(
+            targetRoom,
+            coherence.title || 'Conversation',
+            coherence.slug,
+          );
+          openHumanChatPanel();
+          setActiveTab('chat');
+          setScrollToEventId(eventId);
+          return;
+        }
+        setMentionNavigationNotice(t('mentionOpenFallbackRoom'));
       }
 
       setActiveTab('chat');
@@ -1800,15 +2598,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       roomId,
       pathname,
       router,
+      openCoherenceChat,
       openHumanChatPanel,
+      closeCoherenceChat,
+      mode,
       space?.chatRoomId,
       spaceSlug,
+      t,
     ],
   );
 
   const handleConsumedScrollTarget = useCallback(() => {
     setScrollToEventId(null);
   }, []);
+
+  const handleScrollTargetNotFound = useCallback(
+    (_eventId: string) => {
+      setMentionNavigationNotice(t('mentionOpenFallbackMissingMessage'));
+      setScrollToEventId(null);
+    },
+    [t],
+  );
 
   const mergedMessages = useMemo(() => {
     if (!sendingPending) return messages;
@@ -1875,6 +2685,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       rememberRoomToSpaceSlugSession(rid, pathSlug);
     }
   }, [pathname, roomId, mode]);
+
+  useEffect(() => {
+    const rid = roomId?.trim() ?? null;
+    const slug = coherenceSlug?.trim() ?? null;
+    if (
+      !rid ||
+      !slug ||
+      mode !== 'coherence' ||
+      typeof window === 'undefined'
+    ) {
+      return;
+    }
+    rememberRoomToCoherenceSession(rid, slug, coherenceTitle);
+  }, [roomId, coherenceSlug, coherenceTitle, mode]);
 
   /**
    * Global mention badge: avoid listening to `ClientEvent.Room` — it fires on almost every
@@ -2103,13 +2927,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const authorLabel =
         target.role === 'user'
           ? t('you')
-          : target.senderName ?? resolveMemberLabel(target.senderMatrixId);
+          : target.role === 'member' && target.senderMatrixId
+          ? resolveMemberLabel(target.senderMatrixId)
+          : target.senderName ?? t('unknownMember');
       const excerpt = firstLineForReplyPreview(getMessagePlainText(target));
       setEditDraft(null);
       setReplyDraft({
         messageId,
         authorLabel,
         excerpt,
+        ...(target.role === 'user' ? { isYou: true } : {}),
+        ...(target.role === 'member' && target.senderMatrixId
+          ? { sourceUserId: target.senderMatrixId }
+          : {}),
       });
     },
     [messages, resolveMemberLabel, t],
@@ -2199,6 +3029,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const handleSend = useCallback(async () => {
     if (!roomId) return;
+    if (!canInteractWithSignalThread) {
+      setComposerError(t('signalTeamInteractionRestricted'));
+      return;
+    }
     const trimmed = input.trim();
     if (!trimmed && draftAttachments.length === 0) return;
     const text = input;
@@ -2274,7 +3108,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           });
         }
       } else {
-        await matrixRef.current.sendMessage({
+        const sendResult = await matrixRef.current.sendMessage({
           roomId,
           message: wirePlain,
           mentionUserIds,
@@ -2305,6 +3139,55 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               }
             : {}),
         });
+        const mentionTargets = mentionUserIds.filter((matrixId) => {
+          if (matrixId === currentUserIdRef.current) return false;
+          if (!hasSignalTeamPolicy) return true;
+          return signalTeamMemberIdSet.has(matrixId);
+        });
+        if (
+          mentionTargets.length > 0 &&
+          sendResult.eventId &&
+          mode === 'space'
+        ) {
+          const params = new URLSearchParams(
+            searchParams?.toString() ?? undefined,
+          );
+          params.set('msg', sendResult.eventId);
+          params.set('chat', roomId);
+          const query = params.toString();
+          const lang = getLocaleFromPath(pathname);
+          const mappedSpaceSlug = roomId
+            ? window.sessionStorage
+                .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${roomId}`)
+                ?.trim() || readRoomIdToSpaceSlugFromStorage().get(roomId)
+            : null;
+          const canonicalSpaceSlug = spaceSlug?.trim() || mappedSpaceSlug;
+          const canonicalPath = canonicalSpaceSlug
+            ? `/${lang}/dho/${canonicalSpaceSlug}`
+            : pathname;
+          const deepLink =
+            typeof window !== 'undefined'
+              ? `${window.location.origin}${canonicalPath}${
+                  query ? `?${query}` : ''
+                }`
+              : canonicalPath;
+          const actorDisplayName =
+            [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
+            me?.nickname?.trim() ||
+            t('you');
+          void notifyChatMention({
+            actorSlug: me?.slug,
+            actorDisplayName,
+            mentionMatrixUserIds: mentionTargets,
+            messagePreview: wirePlain.trim().slice(0, 220),
+            url: deepLink,
+          }).catch((notifyErr) => {
+            console.warn(
+              '[HumanRightPanel] Mention notification dispatch failed:',
+              notifyErr,
+            );
+          });
+        }
       }
       setSendingPending(null);
       disposeDraftAttachmentUrls(savedAttachments);
@@ -2354,6 +3237,30 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setEditDraft(savedEditDraft);
         return;
       }
+      const isUnknownTokenError =
+        typeof err === 'object' &&
+        err !== null &&
+        ((err as { errcode?: string }).errcode === 'M_UNKNOWN_TOKEN' ||
+          (err as { data?: { errcode?: string } }).data?.errcode ===
+            'M_UNKNOWN_TOKEN' ||
+          `${(err as { message?: string }).message ?? ''}`
+            .toLowerCase()
+            .includes('unknown token'));
+      if (isUnknownTokenError) {
+        const recovered = await matrixRef.current
+          .refreshSession()
+          .catch(() => false);
+        setComposerError(
+          recovered
+            ? 'Chat session refreshed. Please send your message again.'
+            : 'Chat session expired. Please reload the page and try again.',
+        );
+        setInput(text);
+        setReplyDraft(savedDraft);
+        setEditDraft(savedEditDraft);
+        setDraftAttachments(savedAttachments);
+        return;
+      }
       const msg = isMatrixRateLimitedError(err)
         ? t('sendRateLimited')
         : err instanceof MatrixUploadTimeoutError
@@ -2370,10 +3277,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     input,
     roomId,
+    canInteractWithSignalThread,
     replyDraft,
     editDraft,
     draftAttachments,
     mentionSanitizedLabelToUserId,
+    mode,
+    searchParams,
+    pathname,
+    me?.name,
+    me?.surname,
+    me?.nickname,
+    me?.slug,
+    spaceSlug,
+    notifyChatMention,
+    hasSignalTeamPolicy,
+    signalTeamMemberIdSet,
     t,
   ]);
 
@@ -2397,11 +3316,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 countIsCapped={bellMentionCapped}
                 mentionsTabActive={activeTab === 'mentions'}
                 onOpenMentions={() => setActiveTab('mentions')}
-                callJoinRingControlsActive={
-                  callUiEnabled && !inSpaceCall && spaceCallShowJoinStrip
-                }
-                callJoinAlertsUnmuted={joinAlertSoundEnabled}
-                onCallJoinAlertsUnmutedChange={setJoinAlertSoundEnabled}
               />
             ) : null
           }
@@ -2423,8 +3337,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 onlyLocalInRoomCall={
                   spaceCallShowJoinStrip && spaceCallOtherMemberCount === 0
                 }
-                onAudio={handleCallAudio}
-                onVideo={handleCallVideo}
+                onAudio={() => {
+                  if (!canJoinSignalThreadCall && isSignalThread) {
+                    void requestSignalTeamAccess();
+                    return;
+                  }
+                  handleCallAudio();
+                }}
+                onVideo={() => {
+                  if (!canJoinSignalThreadCall && isSignalThread) {
+                    void requestSignalTeamAccess();
+                    return;
+                  }
+                  handleCallVideo();
+                }}
               />
             ) : null
           }
@@ -2437,8 +3363,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               deviceCount={spaceCallRoomGroupDeviceCount}
               disabled={!callUiEnabled}
               busy={spaceCallBusyJoining}
-              onJoinAudio={handleCallAudio}
-              onJoinVideo={handleCallVideo}
+              captureConsent={spaceCallCaptureConsent}
+              callJoinAlertsUnmuted={joinAlertSoundEnabled}
+              onCallJoinAlertsUnmutedChange={setJoinAlertSoundEnabled}
+              onJoinAudio={() => {
+                if (!canJoinSignalThreadCall && isSignalThread) {
+                  void requestSignalTeamAccess();
+                  return;
+                }
+                handleCallAudio();
+              }}
+              onJoinVideo={() => {
+                if (!canJoinSignalThreadCall && isSignalThread) {
+                  void requestSignalTeamAccess();
+                  return;
+                }
+                handleCallVideo();
+              }}
             />
           )}
         {callUiEnabled &&
@@ -2466,11 +3407,45 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onVoiceProcessingPresetChange={
                 handleCallVoiceProcessingPresetChange
               }
+              captureMode={spaceCallCaptureMode}
+              capturePreference={spaceCallCapturePreference}
+              capturePreferenceSelected={spaceCallCapturePreferenceSelected}
+              onCapturePreferenceChange={setSpaceCallCapturePreference}
+              onStartCapture={startSpaceCallCapture}
+              onPauseCapture={pauseSpaceCallCapture}
+              onResumeCapture={resumeSpaceCallCapture}
+              onStopCapture={stopSpaceCallCapture}
+              recordingStatus={spaceCallRecordingStatus}
+              recordingError={spaceCallRecordingError}
+              recordingWarning={spaceCallRecordingWarning}
+              canRetryRecordingUpload={spaceCallCanRetryRecordingUpload}
+              onRetryRecordingUpload={() => {
+                void retrySpaceCallRecordingUpload();
+              }}
+              captureConsent={spaceCallCaptureConsent}
+              controlsMode="leave_only"
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
               onRetryCall={handleRetrySpaceCall}
               onDismissCallError={dismissSpaceCallError}
             />
           )}
+        {!showFloatingDock && callUiEnabled ? (
+          <HumanChatPanelScreenshareTakeoverDialog
+            incoming={spaceCallScreenshareTakeoverIncoming}
+            pending={Boolean(spaceCallScreenshareTakeoverPendingId)}
+            denied={spaceCallScreenshareTakeoverDenied}
+            onApprove={(request) => {
+              void approveSpaceCallScreenshareTakeover(request);
+            }}
+            onDeny={(request) => {
+              void denySpaceCallScreenshareTakeover(request);
+            }}
+            onCancelPending={() => {
+              void cancelSpaceCallScreenshareTakeoverRequest();
+            }}
+            onDismissDenied={dismissSpaceCallScreenshareTakeoverPrompt}
+          />
+        ) : null}
       </SidebarHeader>
       {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
       <SidebarContent
@@ -2495,6 +3470,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               </div>
             </Empty>
           </div>
+        ) : blockSpaceChatForActivityAccess ? (
+          <div className="flex flex-1 items-center justify-center px-6">
+            <SpaceAccessDenied
+              userState={userSpaceState}
+              spaceId={effectiveSpaceWeb3Id}
+              spaceSlug={spaceSlug ?? undefined}
+            />
+          </div>
         ) : (
           <>
             {activeTab === 'chat' && (
@@ -2518,6 +3501,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       groupCall={spaceGroupCall}
                       callKind={spaceCallKind}
                       isLocalVideoMuted={spaceCallVideoMuted}
+                      isMicrophoneMuted={spaceCallMicMuted}
                       isScreensharing={spaceCallScreensharing}
                       callState={spaceCallState}
                       feedVersion={spaceCallFeedVersion}
@@ -2533,7 +3517,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {error && (
                   <div
                     role="alert"
-                    className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    className="mt-0 w-full border-y border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
                     {error}
                   </div>
@@ -2541,15 +3525,187 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {composerError && (
                   <div
                     role="alert"
-                    className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    className="mt-0 w-full border-y border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
                     {composerError}
+                  </div>
+                )}
+                {mentionNavigationNotice && (
+                  <div
+                    role="status"
+                    className="mt-0 w-full border-y border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300"
+                  >
+                    {mentionNavigationNotice}
+                  </div>
+                )}
+                {isSignalThread &&
+                  hasSignalTeamPolicy &&
+                  !canInteractWithSignalThread && (
+                    <div className="mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2 text-sm text-foreground">
+                      <p>{t('signalTeamBannerReadOnly')}</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-8 min-h-8 border-[color:var(--space-accent)] bg-background px-3 text-[color:var(--space-accent)] hover:bg-accent-3 disabled:border-[color:var(--space-accent)]/45 disabled:text-[color:var(--space-accent)]/55 disabled:opacity-100"
+                          disabled={
+                            currentUserPendingSignalTeamRequest ||
+                            signalTeamBusy
+                          }
+                          onClick={() => void requestSignalTeamAccess()}
+                        >
+                          {currentUserPendingSignalTeamRequest
+                            ? t('signalTeamRequestPending')
+                            : t('signalTeamRequestAccess')}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                {isSignalThread &&
+                  canManageSignalTeam &&
+                  signalTeamPendingRequesterIds.length > 0 && (
+                    <div className="mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2">
+                      <p className="text-xs font-medium text-foreground">
+                        {t('signalTeamPendingRequests')}
+                      </p>
+                      <div className="mt-2 space-y-1">
+                        {signalTeamPendingRequesterIds.map((requesterId) => (
+                          <div
+                            key={requesterId}
+                            className="flex items-center justify-between gap-2"
+                          >
+                            <span className="truncate text-xs text-muted-foreground">
+                              <SignalTeamResolvedMemberLabel
+                                candidate={{
+                                  userId: requesterId,
+                                  displayLabel:
+                                    resolveMentionMemberLabel(requesterId),
+                                }}
+                                fallbackLabel={resolveMentionMemberLabel(
+                                  requesterId,
+                                )}
+                                unknownMemberLabel={t('unknownMember')}
+                              />
+                            </span>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={signalTeamBusy}
+                              onClick={() =>
+                                void approveSignalTeamRequester(requesterId)
+                              }
+                            >
+                              {t('signalTeamApproveRequester')}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                {isSignalThread && canManageSignalTeam && (
+                  <div className="mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-foreground">
+                        {t('signalTeamManageTitle')}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        colorVariant="accent"
+                        className="h-7 min-h-7 self-center border-[color:var(--space-accent)] px-2.5 py-0 text-xs font-semibold leading-none whitespace-nowrap text-[color:var(--space-accent)] hover:bg-accent-3"
+                        onClick={() => {
+                          if (signalTeamPanelOpen) {
+                            void commitSignalTeamDraft();
+                            return;
+                          }
+                          setSignalTeamDraftMemberIds(
+                            normalizeMatrixUserIds(
+                              effectiveSignalTeamMemberIds,
+                            ),
+                          );
+                          setSignalTeamPanelOpen(true);
+                        }}
+                      >
+                        {signalTeamPanelOpen
+                          ? t('signalTeamManageClose')
+                          : t('signalTeamManageOpen')}
+                      </Button>
+                    </div>
+                    {signalTeamPanelOpen && (
+                      <div className="mt-2 space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          {t('signalTeamMemberListHint')}
+                        </p>
+                        <div className="grid gap-1">
+                          {signalTeamSelectableMembers.map((member) => {
+                            const selected = signalTeamEditorMemberIds.includes(
+                              member.userId,
+                            );
+                            const isCurrentUser =
+                              member.userId === currentUserId;
+                            const isOwner = member.userId === signalTeamOwnerId;
+                            return (
+                              <button
+                                key={member.userId}
+                                type="button"
+                                className={`flex items-center justify-between rounded-md px-2 py-1 text-left text-sm ${
+                                  selected
+                                    ? 'border border-accent-8/55 bg-accent-3/28 ring-1 ring-accent-8/35'
+                                    : 'border border-transparent hover:bg-muted/70'
+                                }`}
+                                disabled={signalTeamBusy}
+                                onClick={() => {
+                                  if (isCurrentUser && selected) return;
+                                  if (isOwner && selected) return;
+                                  const next = selected
+                                    ? signalTeamEditorMemberIds.filter(
+                                        (id) => id !== member.userId,
+                                      )
+                                    : [
+                                        ...signalTeamEditorMemberIds,
+                                        member.userId,
+                                      ];
+                                  setSignalTeamDraftMemberIds(
+                                    normalizeMatrixUserIds(next),
+                                  );
+                                }}
+                              >
+                                <SignalTeamResolvedMemberLabel
+                                  candidate={{
+                                    userId: member.userId,
+                                    displayLabel: member.displayLabel,
+                                    privySub: member.privySub,
+                                  }}
+                                  fallbackLabel={member.displayLabel}
+                                  isOwner={isOwner}
+                                  unknownMemberLabel={t('unknownMember')}
+                                />
+                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                  {isOwner ? null : selected ? (
+                                    <Check className="h-3.5 w-3.5 text-accent-11" />
+                                  ) : (
+                                    <Plus className="h-3.5 w-3.5" />
+                                  )}
+                                  {isOwner
+                                    ? 'Owner'
+                                    : selected
+                                    ? t('signalTeamRemoveMember')
+                                    : t('signalTeamAddMember')}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 {reactionError && (
                   <div
                     role="alert"
-                    className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    className="mt-0 w-full border-y border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
                     {reactionError}
                   </div>
@@ -2557,7 +3713,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {deleteError && (
                   <div
                     role="alert"
-                    className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    className="mt-0 w-full border-y border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
                     {deleteError}
                   </div>
@@ -2593,6 +3749,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
                     scrollTargetEventId={scrollToEventId}
                     onConsumedScrollTarget={handleConsumedScrollTarget}
+                    onScrollTargetNotFound={handleScrollTargetNotFound}
                   />
                 )}
               </div>
@@ -2636,7 +3793,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           </>
         )}
       </SidebarContent>
-      {activeTab === 'chat' && !blockSpaceChatForMembership && (
+      {activeTab === 'chat' && !blockSpaceChatComposer && (
         <SidebarFooter className="relative z-20 bg-background-2 p-0">
           <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
             <HumanChatPanelChatBar
@@ -2645,6 +3802,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onSend={handleSend}
               mentionCandidates={mentionCandidates}
               mentionPickerEnabled={mentionPickerEnabled}
+              composerLocked={!canInteractWithSignalThread}
+              composerLockedMessage={t('signalTeamInteractionRestricted')}
               getMentionComposerLabel={getMentionComposerLabel}
               onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
               draftAttachments={draftAttachments}
@@ -2654,6 +3813,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   ? {
                       authorLabel: replyDraft.authorLabel,
                       excerpt: replyDraft.excerpt,
+                      sourceUserId: replyDraft.sourceUserId,
+                      isYou: replyDraft.isYou,
                       onDismiss: () => setReplyDraft(null),
                     }
                   : undefined
