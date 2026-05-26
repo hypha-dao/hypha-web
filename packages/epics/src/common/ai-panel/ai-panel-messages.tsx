@@ -3,8 +3,12 @@
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { resolveMobilizedAgentsForAssistantMessage } from '../ai-agent-competencies';
 import { AiPanelMessageBubble } from './ai-panel-message-bubble';
-import { AiPanelSuggestions } from './ai-panel-suggestions';
+import {
+  AiPanelSuggestions,
+  type AiPanelSuggestionItem,
+} from './ai-panel-suggestions';
 
 type UIMessage = {
   id: string;
@@ -16,8 +20,9 @@ type UIMessage = {
 
 type AiPanelMessagesProps = {
   messages: UIMessage[];
-  suggestions: readonly string[];
-  showSuggestions: boolean;
+  suggestionItems: readonly AiPanelSuggestionItem[];
+  /** Large suggestion cards below welcome — only before the user sends a message. */
+  showInlineSuggestions?: boolean;
   onSuggestionSelect: (text: string) => void;
   activeSpaceName?: string;
   isStreaming?: boolean;
@@ -26,8 +31,8 @@ type AiPanelMessagesProps = {
 
 export function AiPanelMessages({
   messages,
-  suggestions,
-  showSuggestions,
+  suggestionItems,
+  showInlineSuggestions = false,
   onSuggestionSelect,
   activeSpaceName,
   isStreaming = false,
@@ -71,6 +76,14 @@ export function AiPanelMessages({
           <AiPanelMessageBubble
             key={msg.id}
             message={msg}
+            mobilizedAgents={
+              msg.role === 'assistant' && msg.id !== 'welcome'
+                ? resolveMobilizedAgentsForAssistantMessage(
+                    displayMessages,
+                    index,
+                  )
+                : []
+            }
             onActionReplySelect={onActionReplySelect}
             isStreaming={
               msg.role === 'assistant' &&
@@ -80,10 +93,11 @@ export function AiPanelMessages({
           />
         ))}
 
-        {showSuggestions && messages.length <= 1 && (
+        {showInlineSuggestions && (
           <AiPanelSuggestions
-            suggestions={suggestions}
+            items={suggestionItems}
             onSelect={onSuggestionSelect}
+            variant="cards"
           />
         )}
       </div>
