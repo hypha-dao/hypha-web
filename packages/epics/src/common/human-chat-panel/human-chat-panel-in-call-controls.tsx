@@ -29,6 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
+  useIsMobile,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
@@ -111,6 +112,8 @@ export function HumanChatPanelInCallControls({
   controlsMode = 'full',
 }: HumanChatPanelInCallControlsProps) {
   const t = useTranslations('HumanChatPanel');
+  const isMobile = useIsMobile() ?? false;
+  const showAdvancedCallControls = !isMobile;
   const { controlsDisabled } = getCallControlsPhase(callState);
   const isCompact = density === 'compact';
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
@@ -186,6 +189,7 @@ export function HumanChatPanelInCallControls({
     ? 'h-4 w-4 text-white'
     : 'h-4 w-4 text-foreground';
   const useSideAudioSettings =
+    showAdvancedCallControls &&
     !isCompact &&
     (isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered');
   const captureActive = captureMode !== 'none' && recordingStatus !== 'error';
@@ -687,36 +691,38 @@ export function HumanChatPanelInCallControls({
                     <Video className={icon} />
                   )}
                 </button>
-                <button
-                  type="button"
-                  onClick={onToggleScreenshare}
-                  disabled={controlsDisabled}
-                  className={cn(
-                    isFull
-                      ? isScreensharing
+                {showAdvancedCallControls ? (
+                  <button
+                    type="button"
+                    onClick={onToggleScreenshare}
+                    disabled={controlsDisabled}
+                    className={cn(
+                      isFull
+                        ? isScreensharing
+                          ? shareActiveBtn
+                          : baseBtn
+                        : isScreensharing
                         ? shareActiveBtn
-                        : baseBtn
-                      : isScreensharing
-                      ? shareActiveBtn
-                      : neutralBtn,
-                    (isFull || isScreensharing) &&
-                      'inline-flex items-center justify-center',
-                    'disabled:cursor-not-allowed',
-                    !isFull && controlsDisabled && 'opacity-50',
-                  )}
-                  title={t('callControlsScreenshare')}
-                  aria-label={
-                    isScreensharing
-                      ? t('callControlsScreenshareActiveAria')
-                      : t('callControlsScreenshareInactiveAria')
-                  }
-                >
-                  {isScreensharing ? (
-                    <MonitorOff className={icon} />
-                  ) : (
-                    <Monitor className={icon} />
-                  )}
-                </button>
+                        : neutralBtn,
+                      (isFull || isScreensharing) &&
+                        'inline-flex items-center justify-center',
+                      'disabled:cursor-not-allowed',
+                      !isFull && controlsDisabled && 'opacity-50',
+                    )}
+                    title={t('callControlsScreenshare')}
+                    aria-label={
+                      isScreensharing
+                        ? t('callControlsScreenshareActiveAria')
+                        : t('callControlsScreenshareInactiveAria')
+                    }
+                  >
+                    {isScreensharing ? (
+                      <MonitorOff className={icon} />
+                    ) : (
+                      <Monitor className={icon} />
+                    )}
+                  </button>
+                ) : null}
               </>
             ) : null}
             <button
@@ -733,23 +739,27 @@ export function HumanChatPanelInCallControls({
             >
               <CallHangUpIcon className={leaveIcon} />
             </button>
-            {!leaveOnly && !useSideAudioSettings ? renderCaptureMenu : null}
-            {!leaveOnly && !useSideAudioSettings
+            {!leaveOnly && showAdvancedCallControls && !useSideAudioSettings
+              ? renderCaptureMenu
+              : null}
+            {!leaveOnly && showAdvancedCallControls && !useSideAudioSettings
               ? renderAudioSettingsMenu
               : null}
           </div>
-          {useSideAudioSettings && !leaveOnly ? (
+          {useSideAudioSettings && !leaveOnly && showAdvancedCallControls ? (
             <div className="justify-self-end flex items-center gap-2">
               {renderCaptureMenu}
               {renderAudioSettingsMenu}
             </div>
           ) : null}
         </div>
-        {!isCompact && recordingStatus === 'uploading' ? (
+        {!isCompact &&
+        showAdvancedCallControls &&
+        recordingStatus === 'uploading' ? (
           <p className={cn('mt-1 text-[11px] text-muted-foreground')}>
             {t('callCaptureStatusSaving')}
           </p>
-        ) : recordingWarningMessage ? (
+        ) : showAdvancedCallControls && recordingWarningMessage ? (
           <p
             className={cn(
               'mt-1 text-[11px]',
@@ -760,7 +770,9 @@ export function HumanChatPanelInCallControls({
           >
             {recordingWarningMessage}
           </p>
-        ) : recordingStatus === 'error' && recordingError?.trim() ? (
+        ) : showAdvancedCallControls &&
+          recordingStatus === 'error' &&
+          recordingError?.trim() ? (
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <p className={cn('text-[11px] text-destructive')}>
               {recordingError}
