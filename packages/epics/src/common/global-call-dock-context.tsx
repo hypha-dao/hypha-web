@@ -462,9 +462,13 @@ function useGlobalCallDockValue() {
     [activeRoomId, boundAuthToken, call],
   );
 
-  const showFloatingDock = inSession || call.recordingStatus === 'uploading';
+  const callChatRoomAligned =
+    boundRoomId != null && activeRoomId != null && boundRoomId === activeRoomId;
+  const showFloatingDock =
+    (inSession && !callChatRoomAligned) || call.recordingStatus === 'uploading';
   const holdsMatrixSyncForCall =
-    showFloatingDock ||
+    inSession ||
+    call.recordingStatus === 'uploading' ||
     pendingJoin != null ||
     restoreInProgressRef.current ||
     call.isCallRecovering;
