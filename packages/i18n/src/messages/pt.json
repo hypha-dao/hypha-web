@@ -2008,6 +2008,7 @@
     "toolError": "Erro: {message}",
     "streamError": "Ocorreu um erro ao gerar a resposta.",
     "attachment": "Anexo",
+    "uploadedImageAlt": "Imagem carregada {index}",
     "pendingAction": "Ação pendente",
     "confirmWith": "Confirmar com:",
     "confirm": "Confirmar",

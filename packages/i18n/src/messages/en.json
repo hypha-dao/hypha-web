@@ -2015,7 +2015,8 @@
     "showMore": "Read more",
     "showLess": "Show less",
     "streamError": "An error occurred while generating the response.",
-    "attachment": "Attachment"
+    "attachment": "Attachment",
+    "uploadedImageAlt": "Uploaded image {index}"
   },
   "HumanChatPanel": {
     "title": "Chat",

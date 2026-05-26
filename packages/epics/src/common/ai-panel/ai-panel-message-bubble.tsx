@@ -582,7 +582,7 @@ export function AiPanelMessageBubble({
                   <img
                     key={i}
                     src={part.url}
-                    alt={`Uploaded image ${i + 1}`}
+                    alt={t('uploadedImageAlt', { index: i + 1 })}
                     className="max-h-72 max-w-full rounded-lg object-contain"
                   />
                 ) : part.url ? (

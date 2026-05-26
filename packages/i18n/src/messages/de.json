@@ -2008,6 +2008,7 @@
     "toolError": "Fehler: {message}",
     "streamError": "Beim Generieren der Antwort ist ein Fehler aufgetreten.",
     "attachment": "Anhang",
+    "uploadedImageAlt": "Hochgeladenes Bild {index}",
     "pendingAction": "Ausstehende Aktion",
     "confirmWith": "Bestätigen mit:",
     "confirm": "Bestätigen",
