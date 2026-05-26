@@ -89,8 +89,9 @@ export function getCallGalleryPageCount(
   pageSize = CALL_GALLERY_MAX_TILES_PER_PAGE,
 ): number {
   const n = Math.max(0, Math.floor(tileCount));
+  const safePageSize = Math.max(1, Math.floor(pageSize));
   if (n === 0) return 1;
-  return Math.ceil(n / pageSize);
+  return Math.ceil(n / safePageSize);
 }
 
 export function sliceCallGalleryPage<T>(
@@ -99,10 +100,11 @@ export function sliceCallGalleryPage<T>(
   pageSize = CALL_GALLERY_MAX_TILES_PER_PAGE,
 ): T[] {
   if (items.length === 0) return [];
-  const pages = getCallGalleryPageCount(items.length, pageSize);
+  const safePageSize = Math.max(1, Math.floor(pageSize));
+  const pages = getCallGalleryPageCount(items.length, safePageSize);
   const safePage = clampInt(page, 0, Math.max(0, pages - 1));
-  const start = safePage * pageSize;
-  return items.slice(start, start + pageSize);
+  const start = safePage * safePageSize;
+  return items.slice(start, start + safePageSize);
 }
 
 export function callGalleryGridStyle(layout: CallGalleryGridLayout): {
