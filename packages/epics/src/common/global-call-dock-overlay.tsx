@@ -58,12 +58,12 @@ type ResizeHandle =
   | 'bottom'
   | 'left';
 
-const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v1';
+const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v2';
 const DOCK_MARGIN_PX = 16;
 const SNAP_EDGE_PX = 24;
 // Minimum dock size (thumbnail mode baseline); resize can never go below this.
-const DOCK_MIN_WIDTH = 360;
-const DOCK_MIN_HEIGHT = 260;
+const DOCK_MIN_WIDTH = 480;
+const DOCK_MIN_HEIGHT = 320;
 /** Keep the dock in a usable video-call aspect range and avoid extreme sizes. */
 const DOCK_MAX_WIDTH = 880;
 const DOCK_MAX_HEIGHT = 640;
@@ -870,7 +870,7 @@ export function GlobalCallDockOverlay() {
       className={cn(
         inDocumentPip
           ? 'relative flex h-full w-full min-h-0 min-w-0 select-none flex-col overflow-hidden rounded-lg border border-border/60 bg-background/95 shadow-lg'
-          : 'fixed z-[130] flex min-h-[260px] min-w-[360px] select-none flex-col overflow-visible rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
+          : 'fixed z-[130] flex min-h-[320px] min-w-[480px] select-none flex-col overflow-visible rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
         modeIsFullscreen ? 'rounded-2xl' : '',
       )}
       style={{ ...spaceAccentStyles, ...containerStyle }}
@@ -1072,7 +1072,11 @@ export function GlobalCallDockOverlay() {
               currentUserProfileAvatarUrl={me?.avatarUrl ?? null}
               resolveMemberLabel={resolveMemberLabel}
               layout={modeIsFullscreen ? 'fullView' : 'panel'}
-              panelVideoFit="cover"
+              panelVideoFit={
+                !modeIsFullscreen && dockMode === 'thumbnail'
+                  ? 'contain'
+                  : 'cover'
+              }
               panelFlush={!modeIsFullscreen}
               fullViewOpen={modeIsFullscreen}
               fullViewLayoutMode={layoutMode}

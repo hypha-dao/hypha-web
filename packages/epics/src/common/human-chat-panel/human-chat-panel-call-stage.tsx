@@ -766,7 +766,7 @@ function HumanChatPanelCallStageMain({
    * avatar-only and video rows match (video was capped by max-h and looked smaller).
    */
   const userGridCellClass = isFull
-    ? 'min-h-0 w-full min-w-0'
+    ? 'flex h-full min-h-0 w-full min-w-0 flex-col'
     : panelFlush && userGridTileCount <= 1
     ? 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col'
     : userGridTileCount > 1
@@ -1927,9 +1927,7 @@ const FeedContent = ({
           ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col'
           : isPip
           ? 'flex h-full min-h-0 w-full min-w-0'
-          : showVideo
-          ? 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col' // panel: match avatar tile height in multi-row grid
-          : 'flex min-h-[10rem] items-stretch justify-center',
+          : 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col',
         isShare && !isFullView && 'min-h-[min(42vh,360px)] w-full',
         isShare && isFullView && 'h-full min-h-0 w-full',
         isActiveSpeaker &&
@@ -1992,14 +1990,9 @@ const FeedContent = ({
       ) : (
         <div
           className={cn(
-            'flex w-full flex-col items-center justify-center gap-3 p-4 text-center',
+            'flex h-full w-full flex-col items-center justify-center gap-3 p-4 text-center',
             /* Fixed dark scrim: always pair with light glyphs (not theme `foreground`). */
             'bg-gradient-to-b from-zinc-900/95 to-black text-zinc-50',
-            isFullView && !isPip
-              ? 'min-h-0 flex-1'
-              : isPip
-              ? undefined
-              : 'h-full min-h-[10rem] flex-1', // panel: fill grid cell to match video tile
             isPip && 'gap-1.5 p-2',
           )}
           aria-label={ariaLabel}
