@@ -1720,7 +1720,21 @@
     "exchangeDepositProposalConfirming": "Confirmando...",
     "exchangeDepositProposalTitle": "Depositar {amount} {symbol} – Liquidar escrow (#{escrowId})",
     "exchangeDepositProposalDescription": "Aprueba y deposita {payAmount} {paySymbol} en el escrow (#{escrowId}) para completar el intercambio con {otherParty}. A cambio, {activeSpace} recibirá {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Aprueba y deposita {payAmount} {paySymbol} en el escrow (#{escrowId}) para completar la inversión en {otherParty}. A cambio, {activeSpace} recibirá {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Aprueba y deposita {payAmount} {paySymbol} en el escrow (#{escrowId}) para completar la inversión en {otherParty}. A cambio, {activeSpace} recibirá {receiveAmount} {receiveSymbol}.",
+    "confirmInvestmentCta": "Confirmar inversión",
+    "acceptInvestmentTitle": "Aceptar inversión",
+    "acceptInvestmentBody": "{sellerLabel} ha aceptado la inversión de tu espacio de {buyerAmountLabel} y ofrece {sellerAmountLabel} a cambio.",
+    "acceptInvestmentBodyPersonal": "{sellerLabel} ha aceptado tu inversión de {buyerAmountLabel} y ofrece {sellerAmountLabel} a cambio.",
+    "exchangeStakesAndTokensTitle": "Intercambiar participaciones y tokens",
+    "exchangeStakesAndTokensBody": "{sellerLabel} ha propuesto intercambiar {sellerAmountLabel} por {buyerAmountLabel} de tu espacio.",
+    "exchangeStakesAndTokensBodyPersonal": "{sellerLabel} ha propuesto intercambiar {sellerAmountLabel} por {buyerAmountLabel} contigo.",
+    "exchangeCounterpartyFallback": "la otra parte",
+    "escrowDepositRefuse": "Rechazar",
+    "escrowDepositRefusing": "Rechazando...",
+    "escrowConfirmExchange": "Confirmar intercambio",
+    "escrowDepositDepositing": "Depositando...",
+    "escrowDepositApproving": "Aprobando...",
+    "escrowDepositInsufficientWallet": "El saldo de tu billetera está por debajo del monto requerido."
   },
   "ProposalDetails": {
     "investment": {
@@ -1951,12 +1965,24 @@
   "AiPanel": {
     "title": "Hypha AI",
     "suggestions": {
-      "aboutSpace": "Cuéntame sobre este espacio",
-      "memberCount": "¿Cuántos miembros tiene este espacio?",
-      "agreements": "¿Qué acuerdos existen en este espacio?",
-      "structure": "Describe la estructura de este espacio"
+      "spaceHealth": "¿Cómo va nuestro espacio en general?",
+      "nextSignal": "¿Qué señal deberíamos crear o compartir a continuación?",
+      "blindSpot": "¿Cuál es nuestro mayor punto ciego?",
+      "summarizeDiscussion": "Resume la discusión reciente del equipo",
+      "spaceMemory": "¿Qué recuerda nuestro espacio?",
+      "valueFlows": "¿Cómo fluye el valor a través de nuestros tokens?"
+    },
+    "suggestionTags": {
+      "spaceHealth": "Salud del espacio",
+      "nextSignal": "Próxima señal",
+      "blindSpot": "Punto ciego",
+      "summarizeDiscussion": "Resumir discusión",
+      "spaceMemory": "Memoria del espacio",
+      "valueFlows": "Flujos de valor"
     },
     "welcome": "¡Hola! Soy tu asistente de Hypha AI para {spaceName}. Puedo buscar detalles del espacio como número de miembros, acuerdos y estructura. Pregúntame lo que quieras sobre el espacio que estás viendo.",
+    "specialistsResponding": "Especialistas contribuyendo",
+    "specialistsRespondingStreaming": "Especialistas contribuyendo…",
     "placeholder": "Pregunta a Hypha AI...",
     "sendButton": "Enviar",
     "stopButton": "Detener",

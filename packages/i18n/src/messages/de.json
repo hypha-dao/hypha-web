@@ -1033,9 +1033,17 @@
     "confirmInvestmentCta": "Investition bestätigen",
     "acceptInvestmentTitle": "Investition annehmen",
     "acceptInvestmentBody": "{sellerLabel} hat die Investition deines Spaces über {buyerAmountLabel} angenommen und bietet im Gegenzug {sellerAmountLabel} an.",
+    "acceptInvestmentBodyPersonal": "{sellerLabel} hat deine Investition über {buyerAmountLabel} angenommen und bietet im Gegenzug {sellerAmountLabel} an.",
     "exchangeStakesAndTokensTitle": "Anteile & Tokens tauschen",
     "exchangeStakesAndTokensBody": "{sellerLabel} hat vorgeschlagen, {sellerAmountLabel} gegen {buyerAmountLabel} aus deinem Space zu tauschen.",
-    "exchangeCounterpartyFallback": "die andere Partei"
+    "exchangeStakesAndTokensBodyPersonal": "{sellerLabel} hat vorgeschlagen, {sellerAmountLabel} gegen {buyerAmountLabel} von dir zu tauschen.",
+    "exchangeCounterpartyFallback": "die andere Partei",
+    "escrowDepositRefuse": "Ablehnen",
+    "escrowDepositRefusing": "Wird abgelehnt...",
+    "escrowConfirmExchange": "Tausch bestätigen",
+    "escrowDepositDepositing": "Einzahlung läuft...",
+    "escrowDepositApproving": "Genehmigung läuft...",
+    "escrowDepositInsufficientWallet": "Dein Wallet-Guthaben liegt unter dem erforderlichen Betrag."
   },
   "AgreementFlow": {
     "labels": {
@@ -1957,12 +1965,24 @@
   "AiPanel": {
     "title": "Hypha AI",
     "suggestions": {
-      "aboutSpace": "Erzähl mir etwas über diesen Space",
-      "memberCount": "Wie viele Mitglieder hat dieser Space?",
-      "agreements": "Welche Vereinbarungen gibt es in diesem Space?",
-      "structure": "Beschreibe die Struktur dieses Spaces"
+      "spaceHealth": "Wie steht unser Space insgesamt da?",
+      "nextSignal": "Welches Signal sollen wir als Nächstes erstellen oder teilen?",
+      "blindSpot": "Was ist unser größter blinder Fleck?",
+      "summarizeDiscussion": "Fasse die letzte Teamdiskussion zusammen",
+      "spaceMemory": "Was erinnert sich unser Space?",
+      "valueFlows": "Wie fließen Werte durch unsere Tokens?"
+    },
+    "suggestionTags": {
+      "spaceHealth": "Space-Gesundheit",
+      "nextSignal": "Nächstes Signal",
+      "blindSpot": "Blinder Fleck",
+      "summarizeDiscussion": "Diskussion zusammenfassen",
+      "spaceMemory": "Space-Memory",
+      "valueFlows": "Werteströme"
     },
     "welcome": "Hallo! Ich bin dein AI-Assistent für {spaceName}. Ich kann Space-Details wie Mitgliederzahlen, Vereinbarungen und Strukturen nachschlagen. Frag mich alles über den Space, den du gerade ansiehst.",
+    "specialistsResponding": "Beitragende Spezialisten",
+    "specialistsRespondingStreaming": "Beitragende Spezialisten…",
     "placeholder": "Frag Hypha AI etwas...",
     "sendButton": "Senden",
     "stopButton": "Stoppen",
