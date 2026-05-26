@@ -498,8 +498,10 @@ function HumanChatPanelCallStageMain({
   const isLiveAndUnmuted = useCallback((feed: CallFeed): boolean => {
     const stream = feed.stream;
     if (!stream) return false;
-    const track = stream.getVideoTracks()[0];
-    if (!track || track.readyState !== 'live') return false;
+    const liveVideoTrack = stream
+      .getVideoTracks()
+      .find((track) => track.readyState === 'live' && !track.muted);
+    if (!liveVideoTrack) return false;
     return !feed.isVideoMuted();
   }, []);
 
