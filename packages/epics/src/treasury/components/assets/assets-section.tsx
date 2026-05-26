@@ -86,7 +86,12 @@ export const AssetsSection: FC<AssetSectionProps> = ({
         </label>
         <div className="flex w-full flex-row flex-wrap items-center justify-end gap-2">
           {isDisabled ? (
-            <Button colorVariant="accent" variant="outline" disabled>
+            <Button
+              colorVariant="accent"
+              variant="outline"
+              disabled
+              title={tooltipMessage || ''}
+            >
               <RadiobuttonIcon />
               {tTreasury('newToken')}
             </Button>
