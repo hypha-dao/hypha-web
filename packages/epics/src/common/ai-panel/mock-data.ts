@@ -62,7 +62,7 @@ export function createMockWelcomeMessage(
   return {
     id: 'welcome',
     role: 'assistant',
-    content: welcomeTemplate.replace('{spaceName}', spaceName),
+    content: welcomeTemplate,
     timestamp: new Date(),
   };
 }

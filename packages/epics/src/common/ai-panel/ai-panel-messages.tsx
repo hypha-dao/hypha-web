@@ -58,9 +58,7 @@ export function AiPanelMessages({
             parts: [
               {
                 type: 'text' as const,
-                text: t('welcome', {
-                  spaceName: activeSpaceName?.trim() || 'Hypha',
-                }),
+                text: t('welcome'),
               },
             ],
           },
