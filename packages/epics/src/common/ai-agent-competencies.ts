@@ -365,7 +365,7 @@ export function detectAiAgentsForQuestion(
   for (const entry of KEYWORDS) {
     if (
       entry.keywords.some((keyword) =>
-        keyword.includes(' ') ? q.includes(keyword) : words.has(keyword),
+        /[^a-z0-9]/.test(keyword) ? q.includes(keyword) : words.has(keyword),
       )
     ) {
       groups.add(entry.tagGroup);
