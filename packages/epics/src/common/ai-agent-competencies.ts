@@ -20,7 +20,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'purpose',
     role: 'aiAgentsCatalog.purpose.role',
     focus: 'aiAgentsCatalog.purpose.focus',
-    avatarLabel: 'ST',
+    avatarLabel: 'SS',
     roleDefinition: [
       'aiAgentsCatalog.purpose.roleDefinition.0',
       'aiAgentsCatalog.purpose.roleDefinition.1',
@@ -32,7 +32,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'governance',
     role: 'aiAgentsCatalog.governance.role',
     focus: 'aiAgentsCatalog.governance.focus',
-    avatarLabel: 'GV',
+    avatarLabel: 'GA',
     roleDefinition: [
       'aiAgentsCatalog.governance.roleDefinition.0',
       'aiAgentsCatalog.governance.roleDefinition.1',
@@ -44,7 +44,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'operations',
     role: 'aiAgentsCatalog.operations.role',
     focus: 'aiAgentsCatalog.operations.focus',
-    avatarLabel: 'OP',
+    avatarLabel: 'OL',
     roleDefinition: [
       'aiAgentsCatalog.operations.roleDefinition.0',
       'aiAgentsCatalog.operations.roleDefinition.1',
@@ -56,7 +56,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'community',
     role: 'aiAgentsCatalog.community.role',
     focus: 'aiAgentsCatalog.community.focus',
-    avatarLabel: 'CM',
+    avatarLabel: 'CB',
     roleDefinition: [
       'aiAgentsCatalog.community.roleDefinition.0',
       'aiAgentsCatalog.community.roleDefinition.1',
@@ -68,7 +68,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'finance',
     role: 'aiAgentsCatalog.finance.role',
     focus: 'aiAgentsCatalog.finance.focus',
-    avatarLabel: 'FN',
+    avatarLabel: 'TT',
     roleDefinition: [
       'aiAgentsCatalog.finance.roleDefinition.0',
       'aiAgentsCatalog.finance.roleDefinition.1',
@@ -80,7 +80,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'product',
     role: 'aiAgentsCatalog.product.role',
     focus: 'aiAgentsCatalog.product.focus',
-    avatarLabel: 'PD',
+    avatarLabel: 'PS',
     roleDefinition: [
       'aiAgentsCatalog.product.roleDefinition.0',
       'aiAgentsCatalog.product.roleDefinition.1',
@@ -92,7 +92,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'risk',
     role: 'aiAgentsCatalog.risk.role',
     focus: 'aiAgentsCatalog.risk.focus',
-    avatarLabel: 'RK',
+    avatarLabel: 'SR',
     roleDefinition: [
       'aiAgentsCatalog.risk.roleDefinition.0',
       'aiAgentsCatalog.risk.roleDefinition.1',
@@ -104,7 +104,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'ecosystem',
     role: 'aiAgentsCatalog.ecosystem.role',
     focus: 'aiAgentsCatalog.ecosystem.focus',
-    avatarLabel: 'EC',
+    avatarLabel: 'EP',
     roleDefinition: [
       'aiAgentsCatalog.ecosystem.roleDefinition.0',
       'aiAgentsCatalog.ecosystem.roleDefinition.1',
@@ -116,7 +116,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'learning',
     role: 'aiAgentsCatalog.learning.role',
     focus: 'aiAgentsCatalog.learning.focus',
-    avatarLabel: 'LN',
+    avatarLabel: 'LK',
     roleDefinition: [
       'aiAgentsCatalog.learning.roleDefinition.0',
       'aiAgentsCatalog.learning.roleDefinition.1',
@@ -284,6 +284,38 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
 ];
 
 const AGENT_UPDATED_EVENT = 'hypha:ai-agents-updated';
+
+const AVATAR_INITIAL_STOP_WORDS = new Set([
+  'and',
+  'or',
+  'the',
+  'a',
+  'an',
+  'of',
+  'for',
+  'für',
+  'to',
+]);
+
+/** Two-letter initials from the first two meaningful words in a role title. */
+export function getAgentAvatarInitials(roleLabel: string): string {
+  const words = roleLabel
+    .replace(/&/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.replace(/[^\p{L}\p{N}]/gu, ''))
+    .filter(
+      (word) =>
+        word.length > 0 &&
+        !AVATAR_INITIAL_STOP_WORDS.has(word.toLowerCase()),
+    );
+
+  if (words.length === 0) return '?';
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
 
 export function tagGroupAccentClass(tagGroup: string): string {
   switch (tagGroup) {

@@ -22,6 +22,7 @@ import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
   readMobilizedAiAgents,
   subscribeMobilizedAiAgents,
+  getAgentAvatarInitials,
   tagGroupAccentClass,
 } from '../../common/ai-agent-competencies';
 
@@ -180,7 +181,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
                     )}`}
                     aria-hidden="true"
                   >
-                    {agent.avatarLabel}
+                    {getAgentAvatarInitials(tCoherence(agent.role))}
                   </div>
                   <div className="min-w-0">
                     <div className="mb-1 text-sm font-semibold text-foreground">
