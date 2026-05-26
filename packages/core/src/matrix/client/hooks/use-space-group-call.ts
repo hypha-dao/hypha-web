@@ -2684,15 +2684,14 @@ export function useSpaceGroupCall(
 
   useEffect(() => {
     if (!groupCallRef.current) return;
-    if (activeGroupCallRoomIdRef.current === roomId) return;
-    if (
-      activeGroupCallRoomIdRef.current &&
-      roomId &&
-      activeGroupCallRoomIdRef.current !== roomId
-    ) {
-      // Chat panel room changed while the dock keeps the call pinned — ignore.
+    const pinnedCallRoomId = activeGroupCallRoomIdRef.current;
+    if (pinnedCallRoomId) {
+      // Never tear down a pinned call when the hook room id changes or clears
+      // (e.g. navigating to another space while the dock keeps the call).
+      if (roomId !== pinnedCallRoomId) return;
       return;
     }
+    if (activeGroupCallRoomIdRef.current === roomId) return;
     if (lastRoomIdForTelemetryRef.current) {
       logSpaceGroupCallEvent({
         name: 'hypha.group_call.left',

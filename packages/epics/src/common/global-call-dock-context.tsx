@@ -180,7 +180,11 @@ function useGlobalCallDockValue() {
       authToken?: string | null,
     ) => {
       if (!roomId) {
-        if (inSessionRef.current || restoreInProgressRef.current) {
+        if (
+          inSessionRef.current ||
+          restoreInProgressRef.current ||
+          callSessionRoomIdRef.current
+        ) {
           return;
         }
       }
@@ -190,7 +194,7 @@ function useGlobalCallDockValue() {
       setBoundRoomId(roomId);
       setBoundSpaceSlug(spaceSlug);
       setBoundAuthToken(authToken?.trim() || null);
-      if (!inSessionRef.current) {
+      if (!inSessionRef.current && !callSessionRoomIdRef.current) {
         setActiveRoomId(roomId);
         setActiveSpaceSlug(spaceSlug);
         setActiveAuthToken(authToken?.trim() || null);
@@ -384,6 +388,12 @@ function useGlobalCallDockValue() {
           : null;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
       const targetAuthToken = authToken?.trim() || boundAuthToken;
+      const pinnedCallRoomId =
+        callSessionRoomIdRef.current ??
+        (inSessionRef.current ? activeRoomId : null);
+      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
+        return;
+      }
       if (activeRoomId !== targetRoomId) {
         setBoundRoomId(targetRoomId);
         setBoundSpaceSlug(targetSpaceSlug);
@@ -421,6 +431,12 @@ function useGlobalCallDockValue() {
           : null;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
       const targetAuthToken = authToken?.trim() || boundAuthToken;
+      const pinnedCallRoomId =
+        callSessionRoomIdRef.current ??
+        (inSessionRef.current ? activeRoomId : null);
+      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
+        return;
+      }
       if (activeRoomId !== targetRoomId) {
         setBoundRoomId(targetRoomId);
         setBoundSpaceSlug(targetSpaceSlug);

@@ -1067,6 +1067,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const {
     bindRoomContext,
+    activeRoomId: callSessionRoomId,
     callState: spaceCallState,
     errorCode: spaceCallError,
     callKind: spaceCallKind,
@@ -1157,6 +1158,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'initializing';
 
+  const callAppliesToCurrentChatRoom = useMemo(() => {
+    const chatRoomId = roomId?.trim() || null;
+    const sessionRoomId = callSessionRoomId?.trim() || null;
+    if (!sessionRoomId || !chatRoomId) return true;
+    return sessionRoomId === chatRoomId;
+  }, [callSessionRoomId, roomId]);
+
+  /** Sidebar call chrome only for the chat room that owns the active session. */
+  const showSidebarCallUi =
+    callUiEnabled && callAppliesToCurrentChatRoom && !showFloatingDock;
+
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
   const showAuthedUi = !isAuthLoading && isAuthenticated;
   const showAuthPrompt = !isAuthLoading && !isAuthenticated;
@@ -1209,8 +1221,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const spaceCallShowJoinChime = useMemo(
-    () => callUiEnabled && spaceCallShowJoinStrip && !inSpaceCall,
-    [callUiEnabled, spaceCallShowJoinStrip, inSpaceCall],
+    () => showSidebarCallUi && spaceCallShowJoinStrip && !inSpaceCall,
+    [showSidebarCallUi, spaceCallShowJoinStrip, inSpaceCall],
   );
 
   const joinChimeNotification = useMemo(
@@ -3559,7 +3571,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionTabBadgeCount={bellMentionCount}
           mentionTabBadgeCapped={bellMentionCapped}
           tabRowEnd={
-            callUiEnabled && !showFloatingDock ? (
+            showSidebarCallUi ? (
               <HumanChatPanelCallToolbar
                 callState={spaceCallState}
                 callKind={spaceCallKind}
@@ -3586,33 +3598,30 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {callUiEnabled &&
-          !showFloatingDock &&
-          !inSpaceCall &&
-          spaceCallShowJoinStrip && (
-            <HumanChatPanelCallJoinStrip
-              deviceCount={spaceCallRoomGroupDeviceCount}
-              disabled={!callUiEnabled}
-              busy={spaceCallBusyJoining}
-              captureConsent={spaceCallCaptureConsent}
-              roomId={roomId}
-              onJoinAudio={() => {
-                if (!canJoinSignalThreadCall && isSignalThread) {
-                  void requestSignalTeamAccess();
-                  return;
-                }
-                handleCallAudio();
-              }}
-              onJoinVideo={() => {
-                if (!canJoinSignalThreadCall && isSignalThread) {
-                  void requestSignalTeamAccess();
-                  return;
-                }
-                handleCallVideo();
-              }}
-            />
-          )}
-        {callUiEnabled &&
+        {showSidebarCallUi && !inSpaceCall && spaceCallShowJoinStrip && (
+          <HumanChatPanelCallJoinStrip
+            deviceCount={spaceCallRoomGroupDeviceCount}
+            disabled={!callUiEnabled}
+            busy={spaceCallBusyJoining}
+            captureConsent={spaceCallCaptureConsent}
+            roomId={roomId}
+            onJoinAudio={() => {
+              if (!canJoinSignalThreadCall && isSignalThread) {
+                void requestSignalTeamAccess();
+                return;
+              }
+              handleCallAudio();
+            }}
+            onJoinVideo={() => {
+              if (!canJoinSignalThreadCall && isSignalThread) {
+                void requestSignalTeamAccess();
+                return;
+              }
+              handleCallVideo();
+            }}
+          />
+        )}
+        {showSidebarCallUi &&
           (inSpaceCall ||
             spaceCallState === 'error' ||
             spaceCallState === 'disconnecting') && (
@@ -3660,7 +3669,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onDismissCallError={dismissSpaceCallError}
             />
           )}
-        {!showFloatingDock && callUiEnabled ? (
+        {showSidebarCallUi ? (
           <HumanChatPanelScreenshareTakeoverDialog
             incoming={spaceCallScreenshareTakeoverIncoming}
             pending={Boolean(spaceCallScreenshareTakeoverPendingId)}
@@ -3717,7 +3726,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 role="tabpanel"
                 id="chat-tabpanel-chat"
               >
-                {callUiEnabled && !showFloatingDock && (
+                {showSidebarCallUi && (
                   <div
                     className={
                       inSpaceCall
@@ -4006,7 +4015,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     roomId={roomId}
                     inCallMatrixUserIds={spaceCallInCallUserIds}
                     inOurCallSession={
-                      inSpaceCall && spaceCallState === 'connected'
+                      callAppliesToCurrentChatRoom &&
+                      inSpaceCall &&
+                      spaceCallState === 'connected'
                     }
                     currentUserMatrixId={currentUserId}
                   />
