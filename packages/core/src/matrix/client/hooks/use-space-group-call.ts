@@ -49,12 +49,17 @@ import {
   resolveScreenshareTakeoverOutcome,
   type ScreenshareTakeoverIncoming,
 } from './screenshare-takeover';
+import {
+  speakCallCaptureVoiceAnnouncement,
+  type GetCallCaptureVoiceAnnouncement,
+} from './call-capture-voice-announcement';
 export type { SpaceGroupCallState } from './space-group-call-state';
 export type {
   SpaceGroupCallCaptureMode,
   SpaceGroupCallRecordingStatus,
 } from './space-group-call-state';
 export type { SpaceGroupCallCaptureConsent } from './call-capture-consent';
+export type { GetCallCaptureVoiceAnnouncement } from './call-capture-voice-announcement';
 
 export type SpaceGroupCallErrorCode =
   | 'NO_CLIENT'
