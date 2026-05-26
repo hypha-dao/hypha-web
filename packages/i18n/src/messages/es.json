@@ -2535,7 +2535,7 @@
       "community": "Comunidad",
       "finance": "Tesorería y tokens",
       "product": "Producto",
-      "risk": "Riesgo y cumplimiento",
+      "risk": "Cuidado y resiliencia",
       "ecosystem": "Ecosistema y alianzas",
       "learning": "Aprendizaje y conocimiento",
       "reputation": "Reputación y confianza"
@@ -2596,12 +2596,12 @@
         ]
       },
       "risk": {
-        "role": "Asesor/a de Riesgo y Cumplimiento",
-        "focus": "Modos de fallo, mitigación y cumplimiento",
+        "role": "Asesor/a de Cuidado y Resiliencia",
+        "focus": "Señales débiles, salvaguardas y resiliencia a largo plazo",
         "roleDefinition": [
-          "Hace visibles riesgos operativos, de gobernanza y seguridad antes de ejecutar.",
-          "Propone mitigaciones con responsables y disparadores claros.",
-          "Mantiene propuestas resilientes sin burocracia innecesaria."
+          "Detecta tensión y señales débiles pronto para que el espacio se adapte antes de que el daño crezca.",
+          "Propone salvaguardas conscientes con responsables claros—resiliencia sin burocracia.",
+          "Mantiene compromisos alineados con vuestros valores y cuidado a medida que el espacio crece."
         ]
       },
       "ecosystem": {

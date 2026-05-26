@@ -2531,7 +2531,7 @@
       "community": "Communauté",
       "finance": "Trésorerie & tokens",
       "product": "Produit",
-      "risk": "Risque & conformité",
+      "risk": "Responsabilité & résilience",
       "ecosystem": "Écosystème & partenariats",
       "learning": "Apprentissage & connaissance",
       "reputation": "Réputation & confiance"
@@ -2592,12 +2592,12 @@
         ]
       },
       "risk": {
-        "role": "Conseiller Risque et Conformité",
-        "focus": "Modes de défaillance, mitigation et conformité",
+        "role": "Conseiller·ère responsabilité & résilience",
+        "focus": "Signaux faibles, garde-fous et résilience à long terme",
         "roleDefinition": [
-          "Fait émerger risques opérationnels, gouvernance et sécurité avant exécution.",
-          "Propose mitigations avec responsables et déclencheurs clairs.",
-          "Maintient propositions résilientes sans bureaucratie inutile."
+          "Repère les tensions et signaux faibles tôt pour que l'espace s'adapte avant que les dommages s'accumulent.",
+          "Propose des garde-fous attentifs avec des responsables clairs—résilience sans bureaucratie.",
+          "Garde les engagements alignés sur vos valeurs et votre responsabilité à mesure que l'espace grandit."
         ]
       },
       "ecosystem": {

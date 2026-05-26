@@ -2430,7 +2430,7 @@
       "community": "Community",
       "finance": "Treasury & tokens",
       "product": "Product",
-      "risk": "Risk & compliance",
+      "risk": "Stewardship & resilience",
       "ecosystem": "Ecosystem & partnerships",
       "learning": "Learning & knowledge",
       "reputation": "Reputation & trust"
@@ -2491,12 +2491,12 @@
         ]
       },
       "risk": {
-        "role": "Risk and Compliance Advisor",
-        "focus": "Failure modes, mitigation, and compliance",
+        "role": "Stewardship & Resilience Advisor",
+        "focus": "Weak signals, safeguards, and long-term resilience",
         "roleDefinition": [
-          "Surfaces operational, governance, and security risks before execution.",
-          "Proposes mitigations with owners and clear trigger conditions.",
-          "Keeps proposals resilient without unnecessary bureaucracy."
+          "Notices strain and weak signals early so the space can adapt before harm builds.",
+          "Proposes caring safeguards with clear owners—enough to stay resilient, not bureaucratic drag.",
+          "Keeps commitments aligned with your values and stewardship as the space grows."
         ]
       },
       "ecosystem": {

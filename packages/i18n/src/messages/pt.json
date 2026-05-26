@@ -2533,7 +2533,7 @@
       "community": "Comunidade",
       "finance": "Tesouraria e tokens",
       "product": "Produto",
-      "risk": "Risco e compliance",
+      "risk": "Cuidado e resiliência",
       "ecosystem": "Ecossistema e parcerias",
       "learning": "Aprendizagem e conhecimento",
       "reputation": "Reputação e confiança"
@@ -2594,12 +2594,12 @@
         ]
       },
       "risk": {
-        "role": "Consultor/a de Risco e Compliance",
-        "focus": "Modos de falha, mitigação e compliance",
+        "role": "Consultor/a de Cuidado e Resiliência",
+        "focus": "Sinais fracos, salvaguardas e resiliência a longo prazo",
         "roleDefinition": [
-          "Torna visíveis riscos operacionais, de governança e segurança antes da execução.",
-          "Propõe mitigação com responsáveis e disparadores claros.",
-          "Mantém propostas resilientes sem burocracia desnecessária."
+          "Deteta tensão e sinais fracos cedo para o espaço se adaptar antes de o dano crescer.",
+          "Propõe salvaguardas cuidadosas com responsáveis claros—resiliência sem burocracia.",
+          "Mantém compromissos alinhados com os vossos valores e cuidado à medida que o espaço cresce."
         ]
       },
       "ecosystem": {

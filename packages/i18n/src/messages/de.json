@@ -2539,7 +2539,7 @@
       "community": "Community",
       "finance": "Treasury & Tokens",
       "product": "Produkt",
-      "risk": "Risiko & Compliance",
+      "risk": "Verantwortung & Resilienz",
       "ecosystem": "Ökosystem & Partnerschaften",
       "learning": "Lernen & Wissen",
       "reputation": "Reputation & Vertrauen"
@@ -2600,12 +2600,12 @@
         ]
       },
       "risk": {
-        "role": "Risk- und Compliance-Berater:in",
-        "focus": "Fehlermodi, Minderung und Compliance",
+        "role": "Berater:in für Verantwortung & Resilienz",
+        "focus": "Frühe Signale, Schutzmechanismen und langfristige Resilienz",
         "roleDefinition": [
-          "Macht operative, Governance- und Sicherheitsrisiken vor Umsetzung sichtbar.",
-          "Schlägt Gegenmaßnahmen mit Verantwortlichen und Auslösern vor.",
-          "Hält Vorschläge resilient ohne unnötige Bürokratie."
+          "Erkennt Belastung und schwache Signale früh, damit der Space sich anpassen kann, bevor Schaden entsteht.",
+          "Schlägt wertschätzende Schutzmechanismen mit klaren Verantwortlichen vor—resilient ohne Bürokratie.",
+          "Hält Zusagen an Werte und Verantwortung ausgerichtet, während der Space wächst."
         ]
       },
       "ecosystem": {

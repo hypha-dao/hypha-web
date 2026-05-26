@@ -105,8 +105,8 @@ const COMPETENCY_PROFILES: CompetencyProfile[] = [
   },
   {
     tagGroup: 'risk',
-    role: 'Risk and Compliance Advisor',
-    focus: 'Failure modes, mitigation, and compliance',
+    role: 'Stewardship & Resilience Advisor',
+    focus: 'Weak signals, safeguards, and long-term resilience',
   },
   {
     tagGroup: 'ecosystem',
