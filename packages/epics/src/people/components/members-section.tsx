@@ -175,7 +175,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
               >
                 <div className="mb-3 flex items-start gap-3">
                   <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${tagGroupAccentClass(
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${tagGroupAccentClass(
                       agent.tagGroup,
                     )}`}
                     aria-hidden="true"

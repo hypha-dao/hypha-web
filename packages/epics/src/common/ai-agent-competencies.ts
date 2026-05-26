@@ -288,32 +288,30 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
 
 const AGENT_UPDATED_EVENT = 'hypha:ai-agents-updated';
 
-/** Solid avatar chip: scale-9 fill + white initials for readable contrast in light and dark theme. */
 export function tagGroupAccentClass(tagGroup: string): string {
-  const label = 'text-white';
   switch (tagGroup) {
     case 'purpose':
-      return `bg-accent-9 ${label} border-accent-8/50`;
+      return 'border-2 border-accent-8 bg-accent-3/30 text-accent-11';
     case 'governance':
-      return `bg-info-9 ${label} border-info-8/50`;
+      return 'border-2 border-info-8 bg-info-3/30 text-info-11';
     case 'operations':
-      return `bg-success-9 ${label} border-success-8/50`;
+      return 'border-2 border-success-8 bg-success-3/30 text-success-11';
     case 'community':
-      return `bg-neutral-9 ${label} border-neutral-8/50`;
+      return 'border-2 border-neutral-7 bg-neutral-3/30 text-neutral-11';
     case 'finance':
-      return `bg-warning-9 ${label} border-warning-8/50`;
+      return 'border-2 border-warning-8 bg-warning-3/30 text-warning-11';
     case 'product':
-      return `bg-accent-9 ${label} border-accent-8/50`;
+      return 'border-2 border-accent-8 bg-accent-3/30 text-accent-11';
     case 'risk':
-      return `bg-error-9 ${label} border-error-8/50`;
+      return 'border-2 border-error-8 bg-error-3/30 text-error-11';
     case 'ecosystem':
-      return `bg-info-9 ${label} border-info-8/50`;
+      return 'border-2 border-info-8 bg-info-3/30 text-info-11';
     case 'learning':
-      return `bg-success-9 ${label} border-success-8/50`;
+      return 'border-2 border-success-8 bg-success-3/30 text-success-11';
     case 'reputation':
-      return `bg-warning-9 ${label} border-warning-8/50`;
+      return 'border-2 border-warning-8 bg-warning-3/30 text-warning-11';
     default:
-      return `bg-neutral-9 ${label} border-neutral-8/50`;
+      return 'border-2 border-neutral-7 bg-neutral-3/30 text-neutral-11';
   }
 }
 
