@@ -5,7 +5,10 @@ import { useTranslations } from 'next-intl';
 
 import { resolveMobilizedAgentsForAssistantMessage } from '../ai-agent-competencies';
 import { AiPanelMessageBubble } from './ai-panel-message-bubble';
-import { AiPanelSuggestions } from './ai-panel-suggestions';
+import {
+  AiPanelSuggestions,
+  type AiPanelSuggestionItem,
+} from './ai-panel-suggestions';
 
 type UIMessage = {
   id: string;
@@ -17,8 +20,9 @@ type UIMessage = {
 
 type AiPanelMessagesProps = {
   messages: UIMessage[];
-  suggestions: readonly string[];
-  showSuggestions: boolean;
+  suggestionItems: readonly AiPanelSuggestionItem[];
+  /** Large suggestion cards below welcome — only before the user sends a message. */
+  showInlineSuggestions?: boolean;
   onSuggestionSelect: (text: string) => void;
   activeSpaceName?: string;
   isStreaming?: boolean;
@@ -27,8 +31,8 @@ type AiPanelMessagesProps = {
 
 export function AiPanelMessages({
   messages,
-  suggestions,
-  showSuggestions,
+  suggestionItems,
+  showInlineSuggestions = false,
   onSuggestionSelect,
   activeSpaceName,
   isStreaming = false,
@@ -89,17 +93,17 @@ export function AiPanelMessages({
           />
         ))}
 
-        {messages.length === 0 ? (
-          <p className="px-1 text-xs leading-relaxed text-muted-foreground">
-            {t('welcomeSpecialistsHint')}
-          </p>
-        ) : null}
-
-        {showSuggestions && messages.length <= 1 && (
-          <AiPanelSuggestions
-            suggestions={suggestions}
-            onSelect={onSuggestionSelect}
-          />
+        {showInlineSuggestions && (
+          <div className="flex flex-col gap-2">
+            <AiPanelSuggestions
+              items={suggestionItems}
+              onSelect={onSuggestionSelect}
+              variant="cards"
+            />
+            <p className="px-1 text-xs leading-relaxed text-muted-foreground">
+              {t('welcomeSpecialistsHint')}
+            </p>
+          </div>
         )}
       </div>
     </div>

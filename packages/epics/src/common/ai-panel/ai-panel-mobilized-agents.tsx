@@ -2,11 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 
-import {
-  type AiCompetencyAgent,
-  tagGroupAccentClass,
-} from '../ai-agent-competencies';
-import { cn } from '@hypha-platform/ui-utils';
+import { type AiCompetencyAgent } from '../ai-agent-competencies';
 
 type AiPanelMobilizedAgentsProps = {
   agents: readonly AiCompetencyAgent[];
@@ -36,14 +32,8 @@ export function AiPanelMobilizedAgents({
         {agents.map((agent) => (
           <span
             key={agent.id}
-            className={cn(
-              'inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium leading-tight',
-              tagGroupAccentClass(agent.tagGroup),
-            )}
+            className="inline-flex max-w-full items-center rounded-full border border-accent-8/70 bg-background px-2.5 py-0.5 text-[10px] font-medium leading-tight text-foreground shadow-sm"
           >
-            <span aria-hidden="true" className="font-semibold">
-              {agent.avatarLabel}
-            </span>
             <span className="truncate">{tCoherence(agent.role)}</span>
           </span>
         ))}

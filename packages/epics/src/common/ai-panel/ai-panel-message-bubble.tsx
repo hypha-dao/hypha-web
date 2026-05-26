@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
 
-import type { AiCompetencyAgent } from '../ai-agent-competencies';
+import { type AiCompetencyAgent } from '../ai-agent-competencies';
 import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
 
 type ConfirmationActionResult = {
@@ -43,6 +43,7 @@ type AiPanelMessageBubbleProps = {
     role: 'user' | 'assistant' | 'system';
     parts?: UIMessagePart[];
   };
+  mobilizedAgents?: readonly AiCompetencyAgent[];
   isStreaming?: boolean;
   mobilizedAgents?: readonly AiCompetencyAgent[];
   onActionReplySelect?: (text: string) => void;
@@ -264,6 +265,7 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
 
 export function AiPanelMessageBubble({
   message,
+  mobilizedAgents = [],
   isStreaming,
   mobilizedAgents = [],
   onActionReplySelect,
