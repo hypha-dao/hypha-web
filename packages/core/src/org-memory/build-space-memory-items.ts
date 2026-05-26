@@ -33,6 +33,8 @@ export type SpaceMemoryItem = {
     contextTitle?: string;
     /** Signal that launched the call, when known. */
     signalTitle?: string;
+    /** Matrix room or space chat label for the call, when known. */
+    roomTitle?: string;
   };
 };
 
@@ -62,6 +64,7 @@ export type OrgMemoryAssetWire = {
   text_excerpt?: string;
   context_title?: string;
   signal_title?: string;
+  room_title?: string;
   occurred_at: string;
 };
 
@@ -413,10 +416,11 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
           : 'video';
       const contextTitle = a.context_title?.trim() || undefined;
       const signalTitle = a.signal_title?.trim() || undefined;
+      const roomTitle = a.room_title?.trim() || undefined;
       const displayTitle = deriveSpaceMemoryDisplayTitle({
         source: 'call_recording',
-        name: a.filename?.trim() ? a.filename : 'Call recording',
-        contextTitle: signalTitle ?? contextTitle,
+        name: `call-recording-${sessionId}.webm`,
+        contextTitle: signalTitle ?? roomTitle ?? contextTitle,
         textExcerpt: a.text_excerpt,
       });
       items.push({
@@ -431,8 +435,9 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
           documentTitle: displayTitle,
           documentState: DocumentState.PROPOSAL,
           textExcerpt: a.text_excerpt?.trim() || undefined,
-          contextTitle: displayTitle,
+          contextTitle: signalTitle ?? roomTitle ?? contextTitle,
           signalTitle,
+          roomTitle,
         },
       });
       continue;
@@ -445,15 +450,15 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
           : String(a.call_session_id ?? a.filename);
       const contextTitle = a.context_title?.trim() || undefined;
       const signalTitle = a.signal_title?.trim() || undefined;
+      const roomTitle = a.room_title?.trim() || undefined;
       const excerpt = a.text_excerpt?.trim() || undefined;
       const displayTitle = deriveSpaceMemoryDisplayTitle({
         source: a.source,
         name:
-          a.filename?.trim() ||
-          (a.source === 'discussion_summary'
-            ? 'Discussion summary'
-            : 'Call transcript'),
-        contextTitle: signalTitle ?? contextTitle,
+          a.source === 'discussion_summary'
+            ? `discussion-summary-${syntheticId}.md`
+            : `call-transcript-${syntheticId}.txt`,
+        contextTitle: signalTitle ?? roomTitle ?? contextTitle,
         textExcerpt: excerpt,
       });
       items.push({
@@ -468,8 +473,9 @@ export function buildSpaceMemoryItemsFromOrgMemoryPayload(
           documentTitle: displayTitle,
           documentState: DocumentState.PROPOSAL,
           textExcerpt: excerpt,
-          contextTitle: displayTitle,
+          contextTitle: signalTitle ?? roomTitle ?? contextTitle,
           signalTitle,
+          roomTitle,
         },
       });
     }

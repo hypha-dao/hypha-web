@@ -17,6 +17,11 @@ describe('looksLikeTechnicalSpaceMemoryName', () => {
     ).toBe(true);
     expect(
       looksLikeTechnicalSpaceMemoryName(
+        '6MiOwFUJuAco8jasovTtxmqrbFV7No38vZBst2dA4lgwXT0y',
+      ),
+    ).toBe(true);
+    expect(
+      looksLikeTechnicalSpaceMemoryName(
         'prod_privy_did_privy_cmcj7opiz01vjju0mixu',
       ),
     ).toBe(true);
@@ -33,6 +38,14 @@ describe('stripTechnicalSpeakerFromExcerpt', () => {
     expect(
       stripTechnicalSpeakerFromExcerpt(
         'prod_privy_did_privy_abc: ok recording with voice only',
+      ),
+    ).toBe('ok recording with voice only');
+  });
+
+  it('removes full Matrix bridged speaker prefixes', () => {
+    expect(
+      stripTechnicalSpeakerFromExcerpt(
+        '@prod_privy_did_privy_cmabc123:srv1294735.hstgr.cloud: ok recording with voice only',
       ),
     ).toBe('ok recording with voice only');
   });

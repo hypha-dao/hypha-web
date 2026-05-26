@@ -35,6 +35,7 @@ import {
   persistCallFullViewPaneSplit,
 } from './human-chat-panel';
 import { matrixMemberDisplayLabelFromRoom } from './human-chat-panel/matrix-room-member-display';
+import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { getLocaleFromPath } from './get-locale-from-path';
@@ -58,12 +59,12 @@ type ResizeHandle =
   | 'bottom'
   | 'left';
 
-const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v1';
+const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v2';
 const DOCK_MARGIN_PX = 16;
 const SNAP_EDGE_PX = 24;
 // Minimum dock size (thumbnail mode baseline); resize can never go below this.
-const DOCK_MIN_WIDTH = 360;
-const DOCK_MIN_HEIGHT = 260;
+const DOCK_MIN_WIDTH = 480;
+const DOCK_MIN_HEIGHT = 320;
 /** Keep the dock in a usable video-call aspect range and avoid extreme sizes. */
 const DOCK_MAX_WIDTH = 880;
 const DOCK_MAX_HEIGHT = 640;
@@ -85,9 +86,12 @@ const DEFAULT_PANE_SPLIT: Record<CallFullViewPaneSplit, number> = {
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
 
 function readCallSpaceSlug(
+  pinnedSpaceSlug: string | null,
   activeSpaceSlug: string | null,
   activeRoomId: string | null,
 ): string | null {
+  const fromPinned = pinnedSpaceSlug?.trim();
+  if (fromPinned) return fromPinned;
   const fromState = activeSpaceSlug?.trim();
   if (fromState) return fromState;
   if (!activeRoomId?.trim() || typeof window === 'undefined') return null;
@@ -401,12 +405,13 @@ export function GlobalCallDockOverlay() {
   const tCapture = useTranslations('HumanChatPanel');
   const router = useRouter();
   const pathname = usePathname() ?? '';
-  const { openHumanChatPanel, closeCoherenceChat } = useHumanChatPanel();
+  const { openHumanChatPanel, openCoherenceChat } = useHumanChatPanel();
   const { client } = useMatrix();
   const { person: me } = useMe();
   const {
     activeRoomId,
     activeSpaceSlug,
+    pinnedCallSpaceSlug,
     showFloatingDock,
     dockMode,
     setDockMode,
@@ -759,39 +764,51 @@ export function GlobalCallDockOverlay() {
   );
   const locale = React.useMemo(() => getLocaleFromPath(pathname), [pathname]);
   const callSpaceSlug = React.useMemo(
-    () => readCallSpaceSlug(activeSpaceSlug, activeRoomId),
-    [activeRoomId, activeSpaceSlug],
+    () => readCallSpaceSlug(pinnedCallSpaceSlug, activeSpaceSlug, activeRoomId),
+    [activeRoomId, activeSpaceSlug, pinnedCallSpaceSlug],
   );
   const callSpaceHref = callSpaceSlug
     ? `/${locale}/dho/${callSpaceSlug}/coherence`
     : null;
 
-  const onOpenCallSpace = React.useCallback(() => {
-    if (!callSpaceHref) return;
+  const onOpenCallSpace = React.useCallback(async () => {
+    if (!callSpaceSlug || !activeRoomId?.trim()) return;
 
     if (isDocumentPipOpen) {
       closePip();
     }
     window.focus();
 
-    closeCoherenceChat();
-
     const normalizedPath = (pathname.split('?')[0] ?? '').replace(/\/$/, '');
-    const normalizedHref = callSpaceHref.replace(/\/$/, '');
-    const alreadyOnCallSpacePage = normalizedPath === normalizedHref;
+    const signalTarget = await resolveSignalThreadByMatrixRoom(
+      activeRoomId.trim(),
+    );
+    const spaceSlug = signalTarget?.spaceSlug ?? callSpaceSlug;
+    const destinationHref = `/${locale}/dho/${spaceSlug}/coherence`.replace(
+      /\/$/,
+      '',
+    );
 
-    if (alreadyOnCallSpacePage) {
-      openHumanChatPanel();
-      return;
+    if (signalTarget) {
+      openCoherenceChat(
+        signalTarget.roomId,
+        signalTarget.signalTitle,
+        signalTarget.signalSlug,
+      );
     }
 
-    router.push(callSpaceHref);
     openHumanChatPanel();
+
+    if (normalizedPath !== destinationHref) {
+      router.push(destinationHref);
+    }
   }, [
-    callSpaceHref,
-    closeCoherenceChat,
+    activeRoomId,
+    callSpaceSlug,
     closePip,
     isDocumentPipOpen,
+    locale,
+    openCoherenceChat,
     openHumanChatPanel,
     pathname,
     router,
@@ -870,7 +887,7 @@ export function GlobalCallDockOverlay() {
       className={cn(
         inDocumentPip
           ? 'relative flex h-full w-full min-h-0 min-w-0 select-none flex-col overflow-hidden rounded-lg border border-border/60 bg-background/95 shadow-lg'
-          : 'fixed z-[130] flex min-h-[260px] min-w-[360px] select-none flex-col overflow-visible rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
+          : 'fixed z-[130] flex min-h-[320px] min-w-[480px] select-none flex-col overflow-visible rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
         modeIsFullscreen ? 'rounded-2xl' : '',
       )}
       style={{ ...spaceAccentStyles, ...containerStyle }}
@@ -898,18 +915,8 @@ export function GlobalCallDockOverlay() {
             onResizeStart={onResizeStart}
           />
           <DockResizeHandle
-            handle="bottom-right"
-            ariaLabel={t('resizeBottomRightLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
             handle="bottom"
             ariaLabel={t('resizeBottomLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="bottom-left"
-            ariaLabel={t('resizeBottomLeftLabel')}
             onResizeStart={onResizeStart}
           />
           <DockResizeHandle
@@ -942,7 +949,9 @@ export function GlobalCallDockOverlay() {
             <button
               type="button"
               data-no-dock-drag
-              onClick={onOpenCallSpace}
+              onClick={() => {
+                void onOpenCallSpace();
+              }}
               className={cn(
                 'inline-flex items-center rounded-md border border-border/60 bg-background hover:bg-muted',
                 dockCompact
@@ -1082,7 +1091,11 @@ export function GlobalCallDockOverlay() {
               currentUserProfileAvatarUrl={me?.avatarUrl ?? null}
               resolveMemberLabel={resolveMemberLabel}
               layout={modeIsFullscreen ? 'fullView' : 'panel'}
-              panelVideoFit="cover"
+              panelVideoFit={
+                !modeIsFullscreen && dockMode === 'thumbnail'
+                  ? 'contain'
+                  : 'cover'
+              }
               panelFlush={!modeIsFullscreen}
               fullViewOpen={modeIsFullscreen}
               fullViewLayoutMode={layoutMode}
@@ -1110,6 +1123,7 @@ export function GlobalCallDockOverlay() {
               !showDockBanner ? (
                 <HumanChatPanelCaptureConsentBanner
                   consent={captureConsent}
+                  roomId={activeRoomId}
                   variant="inCall"
                   className={cn(
                     'rounded-none border-x-0 border-t-0',
@@ -1155,6 +1169,7 @@ export function GlobalCallDockOverlay() {
                   canRetryRecordingUpload={canRetryRecordingUpload}
                   onRetryRecordingUpload={() => void retryRecordingUpload()}
                   captureConsent={captureConsent}
+                  roomId={activeRoomId}
                   onDismissScreenshareError={dismissScreenshareError}
                   onRetryCall={retryFromError}
                   onDismissCallError={dismissCallError}

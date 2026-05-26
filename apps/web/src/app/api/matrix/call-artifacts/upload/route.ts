@@ -37,6 +37,8 @@ function readCallLaunchMetadata(
 ): Record<string, unknown> {
   const signalTitle = String(form?.get('signal_title') ?? '').trim();
   const contextTitle = String(form?.get('context_title') ?? '').trim();
+  const roomTitle = String(form?.get('room_title') ?? '').trim();
+  const matrixRoomId = String(form?.get('matrix_room_id') ?? '').trim();
   const signalSlug = String(form?.get('signal_slug') ?? '').trim();
   const threadRootEventId = String(
     form?.get('thread_root_event_id') ?? '',
@@ -46,6 +48,10 @@ function readCallLaunchMetadata(
   };
   if (signalTitle) metadata.signal_title = signalTitle;
   if (contextTitle) metadata.context_title = contextTitle;
+  if (roomTitle) metadata.room_title = roomTitle;
+  if (matrixRoomId) {
+    metadata.matrix_room_id = matrixRoomId;
+  }
   if (signalSlug) metadata.signal_slug = signalSlug;
   if (threadRootEventId) metadata.thread_root_event_id = threadRootEventId;
   return metadata;
@@ -340,6 +346,28 @@ export async function POST(request: NextRequest) {
       { error: 'room_id is not linked to this space' },
       { status: 403 },
     );
+  }
+
+  launchMetadata.room_id = roomId;
+  const matrixRoomIdFromLaunch =
+    typeof launchMetadata.matrix_room_id === 'string'
+      ? launchMetadata.matrix_room_id.trim()
+      : '';
+  if (matrixRoomIdFromLaunch && matrixRoomIdFromLaunch !== roomId) {
+    const matrixRoomLinked = await isSpaceLinkedCallRoom({
+      spaceId: space.id,
+      spaceChatRoomId: space.chatRoomId,
+      roomId: matrixRoomIdFromLaunch,
+    });
+    if (!matrixRoomLinked) {
+      logCallArtifactsUpload('matrix_room_id_mismatch_ignored', {
+        spaceSlug: targetSpaceSlug,
+        roomId,
+        matrixRoomId: matrixRoomIdFromLaunch,
+        callSessionId,
+      });
+      delete launchMetadata.matrix_room_id;
+    }
   }
 
   const existingRecording = await getSpaceCallRecordingBySessionId(

@@ -28,3 +28,4 @@ export {
   setGroupCallSessionActive,
   subscribeGroupCallSessionActive,
 } from './active-group-call-registry';
+export { useMatrixTabLeader } from './use-matrix-tab-leader';

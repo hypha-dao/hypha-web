@@ -58,6 +58,7 @@ type HumanChatPanelCallBannerProps = {
   canRetryRecordingUpload?: boolean;
   onRetryRecordingUpload?: () => void;
   captureConsent: SpaceGroupCallCaptureConsent | null;
+  roomId?: string | null;
   onDismissScreenshareError: () => void;
   /** Reconnect after a recoverable call error. */
   onRetryCall: () => void;
@@ -123,6 +124,7 @@ export function HumanChatPanelCallBanner({
   canRetryRecordingUpload = false,
   onRetryRecordingUpload,
   captureConsent,
+  roomId = null,
   onDismissScreenshareError,
   tabBackgroundWhileInCall,
   onRetryCall,
@@ -249,6 +251,7 @@ export function HumanChatPanelCallBanner({
       {callState === 'connected' && captureConsent ? (
         <HumanChatPanelCaptureConsentBanner
           consent={captureConsent}
+          roomId={roomId}
           variant="inCall"
         />
       ) : null}

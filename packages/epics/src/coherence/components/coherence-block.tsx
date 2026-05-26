@@ -103,7 +103,7 @@ export function CoherenceBlock({
     isLoading: isSignalsLoading,
     refresh: refreshSignals,
   } = useFindCoherences({
-    spaceId: space?.id,
+    spaceSlug,
     includeArchived: !hideArchived,
     orderBy: order,
   });

@@ -1,4 +1,7 @@
-import { looksLikeTechnicalSpeakerLabel } from '../matrix/matrix-member-display';
+import {
+  looksLikeTechnicalSpeakerLabel,
+  splitSpeakerLabeledTranscriptLine,
+} from '../matrix/matrix-member-display';
 import type { SpaceMemorySource } from './build-space-memory-items';
 
 const TECHNICAL_FILENAME =
@@ -6,6 +9,8 @@ const TECHNICAL_FILENAME =
 const LONG_HEX = /^[a-f0-9]{24,}(?:\.[a-z0-9]+)?$/i;
 const UUID_LIKE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:\.[a-z0-9]+)?$/i;
+/** Matrix MXC segment / UploadThing keys — not human-readable titles. */
+const OPAQUE_MEDIA_KEY = /^[A-Za-z0-9_-]{30,}$/;
 
 /** True when a Space Memory label looks like a hash, synthetic filename, or bridged id. */
 export function looksLikeTechnicalSpaceMemoryName(value: string): boolean {
@@ -17,6 +22,7 @@ export function looksLikeTechnicalSpaceMemoryName(value: string): boolean {
   if (TECHNICAL_FILENAME.test(trimmed)) return true;
   if (LONG_HEX.test(trimmed)) return true;
   if (UUID_LIKE.test(trimmed)) return true;
+  if (OPAQUE_MEDIA_KEY.test(trimmed)) return true;
   if (looksLikeTechnicalSpeakerLabel(trimmed)) return true;
   if (/privy_did_privy/i.test(trimmed)) return true;
   if (/^prod_[a-z0-9_]+$/i.test(trimmed) && trimmed.length > 20) return true;
@@ -42,12 +48,11 @@ function firstSentence(text: string, maxLen = 120): string {
 export function stripTechnicalSpeakerFromExcerpt(excerpt: string): string {
   const trimmed = excerpt.trim();
   if (!trimmed) return '';
-  const colonIdx = trimmed.indexOf(':');
-  if (colonIdx <= 0) return trimmed;
-  const speaker = trimmed.slice(0, colonIdx).trim();
-  const body = trimmed.slice(colonIdx + 1).trim();
+  const parsed = splitSpeakerLabeledTranscriptLine(trimmed);
+  if (!parsed) return trimmed;
+  const body = parsed.body.trim();
   if (!body) return trimmed;
-  if (looksLikeTechnicalSpeakerLabel(speaker)) return body;
+  if (looksLikeTechnicalSpeakerLabel(parsed.speaker)) return body;
   return trimmed;
 }
 

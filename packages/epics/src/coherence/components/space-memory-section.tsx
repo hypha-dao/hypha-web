@@ -10,6 +10,7 @@ import {
   DocumentState,
   SpaceMemoryItem,
   filterSpaceMemoryItems,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
@@ -38,6 +39,8 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     hasMore,
     loadMore,
   } = useSpaceMemoryOrg(spaceSlug);
+  const { space } = useSpaceBySlug(spaceSlug);
+  const matrixChatRoomId = space?.chatRoomId?.trim() || null;
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
   const [activeFilter, setActiveFilter] =
     React.useState<MemoryFilterValue>('general');
@@ -94,11 +97,12 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       }
       if (row.source === 'call_recording') {
         const signalTitle = row.context.signalTitle?.trim();
-        return signalTitle
-          ? t('spaceMemoryContextCallRecordingFromSignal', {
-              title: signalTitle,
-            })
-          : t('spaceMemoryContextCallRecording');
+        if (signalTitle) {
+          return t('spaceMemoryContextCallRecordingFromSignal', {
+            title: signalTitle,
+          });
+        }
+        return t('spaceMemoryContextCallRecording');
       }
       return t('spaceMemoryContext', {
         title: row.context.documentTitle || t('untitledDocument'),
@@ -224,6 +228,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                 key={row.id}
                 item={row}
                 contextLine={contextLineForItem(row)}
+                matrixChatRoomId={matrixChatRoomId}
                 openLabel={t('spaceMemoryOpenAsset', {
                   name: row.name,
                 })}

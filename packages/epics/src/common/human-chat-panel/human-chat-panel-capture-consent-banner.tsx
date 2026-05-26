@@ -3,9 +3,11 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import type { SpaceGroupCallCaptureConsent } from '@hypha-platform/core/client';
+import { useResolvedMatrixMemberLabel } from './use-resolved-matrix-member-label';
 
 type HumanChatPanelCaptureConsentBannerProps = {
   consent: SpaceGroupCallCaptureConsent | null;
+  roomId?: string | null;
   variant?: 'join' | 'inCall';
   className?: string;
 };
@@ -21,28 +23,40 @@ function captureModeLabel(
 
 export function HumanChatPanelCaptureConsentBanner({
   consent,
+  roomId = null,
   variant = 'inCall',
   className,
 }: HumanChatPanelCaptureConsentBannerProps) {
   const t = useTranslations('HumanChatPanel');
+  const actorUserId = consent?.actorUserId?.trim() ?? '';
+  const resolvedActor = useResolvedMatrixMemberLabel({
+    matrixUserId: actorUserId || undefined,
+    roomId,
+    fallbackLabel: consent?.actor ?? '',
+  });
+
   if (!consent) return null;
 
   const mode = captureModeLabel(t, consent.mode);
   const pausedSuffix = consent.paused
     ? t('callCaptureConsentPausedSuffix')
     : '';
+  const actorLabel =
+    resolvedActor.trim() ||
+    consent.actor.trim() ||
+    t('callCaptureConsentActorFallback');
 
   let message: string;
   if (variant === 'join') {
     message = t('callCaptureConsentJoin', {
-      actor: consent.actor,
+      actor: actorLabel,
       mode,
     });
   } else if (consent.isLocalInitiator) {
     message = t('callCaptureConsentLocal', { mode });
   } else {
     message = t('callCaptureConsentRemote', {
-      actor: consent.actor,
+      actor: actorLabel,
       mode,
     });
   }

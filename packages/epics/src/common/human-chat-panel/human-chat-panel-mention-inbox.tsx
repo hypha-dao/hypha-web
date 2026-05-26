@@ -3,7 +3,7 @@
 import { useMemo, type KeyboardEvent, type ReactNode } from 'react';
 import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
-import { Bell, ArrowUpRight } from 'lucide-react';
+import { Bell, ArrowUpRight, Volume2, VolumeX } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Skeleton } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -38,6 +38,8 @@ export type HumanChatPanelMentionTabProps = {
   onSelectMessage: (eventId: string, fromRoomId?: string) => void;
   /** When true, list @-mentions from all joined Matrix rooms with room labels. */
   aggregatedMentions?: boolean;
+  callJoinAlertsUnmuted?: boolean;
+  onCallJoinAlertsUnmutedChange?: (unmuted: boolean) => void;
 };
 
 function excerptFromRoomMessage(
@@ -255,9 +257,13 @@ export function HumanChatPanelMentionTab({
   resolveMemberLabel,
   onSelectMessage,
   aggregatedMentions = false,
+  callJoinAlertsUnmuted = true,
+  onCallJoinAlertsUnmutedChange,
 }: HumanChatPanelMentionTabProps) {
   const t = useTranslations('HumanChatPanel');
   const format = useFormatter();
+  const showCallAlertToggle = Boolean(onCallJoinAlertsUnmutedChange);
+  const callAlertsMuted = showCallAlertToggle && !callJoinAlertsUnmuted;
 
   const aggregatedRows =
     aggregatedMentions && client && currentUserId
@@ -279,6 +285,46 @@ export function HumanChatPanelMentionTab({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {showCallAlertToggle ? (
+        <div className="flex shrink-0 items-center border-b border-border/60 px-3 py-2">
+          <button
+            type="button"
+            onClick={() =>
+              onCallJoinAlertsUnmutedChange?.(!callJoinAlertsUnmuted)
+            }
+            className={cn(
+              'inline-flex h-auto min-h-7 w-full max-w-full items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1 text-left text-xs font-medium leading-snug text-foreground transition-colors hover:bg-muted',
+              callAlertsMuted && 'text-muted-foreground',
+            )}
+            aria-pressed={callAlertsMuted}
+            aria-label={
+              callJoinAlertsUnmuted
+                ? t('callJoinCallAlertsMuteAction')
+                : t('callJoinCallAlertsUnmuteAction')
+            }
+            title={
+              callJoinAlertsUnmuted
+                ? t('callJoinCallAlertsUnmuted')
+                : t('callJoinCallAlertsMuted')
+            }
+          >
+            {callJoinAlertsUnmuted ? (
+              <Volume2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+            ) : (
+              <VolumeX
+                className="h-3.5 w-3.5 shrink-0"
+                strokeWidth={2.25}
+                aria-hidden
+              />
+            )}
+            <span className="min-w-0 flex-1 whitespace-normal">
+              {callJoinAlertsUnmuted
+                ? t('callJoinCallAlertsUnmuted')
+                : t('callJoinCallAlertsMutedShort')}
+            </span>
+          </button>
+        </div>
+      ) : null}
       <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-3">
         {(aggregatedMentions
           ? aggregatedRows.length

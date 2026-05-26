@@ -63,6 +63,7 @@ export type OrgMemoryAsset = {
   text_excerpt?: string;
   context_title?: string;
   signal_title?: string;
+  room_title?: string;
   occurred_at: string;
 };
 
@@ -210,6 +211,43 @@ function readCallArtifactSignalTitle(
   return null;
 }
 
+function readCallArtifactMatrixRoomId(
+  metadata: Record<string, unknown> | null | undefined,
+): string | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const matrixRoomId =
+    typeof metadata.matrix_room_id === 'string'
+      ? metadata.matrix_room_id.trim()
+      : typeof metadata.room_id === 'string'
+      ? metadata.room_id.trim()
+      : '';
+  return matrixRoomId || null;
+}
+
+function readCallArtifactRoomTitle(
+  metadata: Record<string, unknown> | null | undefined,
+): string | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const roomTitle =
+    typeof metadata.room_title === 'string' ? metadata.room_title.trim() : '';
+  if (roomTitle && !looksLikeTechnicalSpaceMemoryName(roomTitle)) {
+    return roomTitle;
+  }
+  return null;
+}
+
+function resolveSpaceChatRoomTitle(
+  matrixRoomId: string | null,
+  host: { title: string | null; chatRoomId: string | null },
+): string | null {
+  const spaceTitle = host.title?.trim();
+  if (!spaceTitle || looksLikeTechnicalSpaceMemoryName(spaceTitle)) return null;
+  if (!matrixRoomId || host.chatRoomId?.trim() === matrixRoomId) {
+    return spaceTitle;
+  }
+  return null;
+}
+
 function readCallArtifactContextTitle(
   metadata: Record<string, unknown> | null | undefined,
 ): string | null {
@@ -221,7 +259,9 @@ function readCallArtifactContextTitle(
   if (contextTitle && !looksLikeTechnicalSpaceMemoryName(contextTitle)) {
     return contextTitle;
   }
-  return readCallArtifactSignalTitle(metadata);
+  return (
+    readCallArtifactRoomTitle(metadata) ?? readCallArtifactSignalTitle(metadata)
+  );
 }
 
 function proposalDocContextFields(
@@ -1035,6 +1075,24 @@ export async function getOrgMemoryBySpaceSlug(
   );
 
   const callArtifacts = await listSpaceCallArtifactsBySpaceId(host.id, { db });
+  const signalTitlesByRoomId = new Map<string, string>();
+  const coherenceRows = await db
+    .select({ roomId: coherences.roomId, title: coherences.title })
+    .from(coherences)
+    .where(and(eq(coherences.spaceId, host.id), eq(coherences.archived, false)))
+    .orderBy(desc(coherences.updatedAt));
+  for (const row of coherenceRows) {
+    const roomId = row.roomId?.trim();
+    const title = row.title?.trim();
+    if (
+      roomId &&
+      title &&
+      !looksLikeTechnicalSpaceMemoryName(title) &&
+      !signalTitlesByRoomId.has(roomId)
+    ) {
+      signalTitlesByRoomId.set(roomId, title);
+    }
+  }
   const transcriptSummaryBySession = new Map<string, string>();
   for (const t of callArtifacts.transcripts) {
     const summary = t.summary?.trim() || t.text.slice(0, 240).trim();
@@ -1045,17 +1103,22 @@ export async function getOrgMemoryBySpaceSlug(
     (r) => {
       const mediaUri = r.mediaUri.trim();
       const isMxc = mediaUri.startsWith('mxc://');
+      const matrixRoomId = readCallArtifactMatrixRoomId(r.metadata);
       const signalTitle = readCallArtifactSignalTitle(r.metadata);
+      const roomTitle =
+        readCallArtifactRoomTitle(r.metadata) ??
+        (matrixRoomId ? signalTitlesByRoomId.get(matrixRoomId) : undefined) ??
+        resolveSpaceChatRoomTitle(matrixRoomId, host) ??
+        undefined;
       const contextTitle =
         signalTitle ??
+        roomTitle ??
         readCallArtifactContextTitle(r.metadata) ??
         transcriptSummaryBySession.get(r.callSessionId) ??
         undefined;
       const displayTitle = deriveSpaceMemoryDisplayTitle({
         source: 'call_recording',
-        name:
-          mediaUri.split('/').pop()?.trim() ||
-          `call-recording-${r.callSessionId}.webm`,
+        name: `call-recording-${r.callSessionId}.webm`,
         contextTitle,
         textExcerpt: transcriptSummaryBySession.get(r.callSessionId),
       });
@@ -1069,6 +1132,7 @@ export async function getOrgMemoryBySpaceSlug(
         call_recording_id: r.id,
         context_title: displayTitle,
         signal_title: signalTitle ?? undefined,
+        room_title: roomTitle ?? undefined,
         text_excerpt: transcriptSummaryBySession.get(r.callSessionId),
       };
     },
@@ -1076,9 +1140,16 @@ export async function getOrgMemoryBySpaceSlug(
   const transcriptAssets: OrgMemoryAsset[] = callArtifacts.transcripts.map(
     (t) => {
       const excerpt = t.summary?.trim() || t.text.slice(0, 240).trim();
+      const matrixRoomId = readCallArtifactMatrixRoomId(t.metadata);
       const signalTitle = readCallArtifactSignalTitle(t.metadata);
+      const roomTitle =
+        readCallArtifactRoomTitle(t.metadata) ??
+        (matrixRoomId ? signalTitlesByRoomId.get(matrixRoomId) : undefined) ??
+        resolveSpaceChatRoomTitle(matrixRoomId, host) ??
+        undefined;
       const contextTitle =
         signalTitle ??
+        roomTitle ??
         readCallArtifactContextTitle(t.metadata) ??
         (excerpt || undefined);
       const displayTitle = deriveSpaceMemoryDisplayTitle({
@@ -1097,6 +1168,7 @@ export async function getOrgMemoryBySpaceSlug(
         text_excerpt: excerpt,
         context_title: displayTitle,
         signal_title: signalTitle ?? undefined,
+        room_title: roomTitle ?? undefined,
       };
     },
   );

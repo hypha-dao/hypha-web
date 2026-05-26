@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import type { SpaceGroupCallCaptureConsent } from '@hypha-platform/core/client';
-import { Bell, BellOff, Phone, Video, X } from 'lucide-react';
+import { Phone, Video, X } from 'lucide-react';
 import { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
 
 type HumanChatPanelCallJoinStripProps = {
@@ -13,13 +13,12 @@ type HumanChatPanelCallJoinStripProps = {
   onJoinAudio?: () => void;
   onJoinVideo: () => void;
   captureConsent?: SpaceGroupCallCaptureConsent | null;
+  roomId?: string | null;
   /**
    * When set, replaces the “call in progress” line (e.g. “You left the call”).
    */
   durableMessage?: string | null;
   onDismissDurable?: () => void;
-  callJoinAlertsUnmuted?: boolean;
-  onCallJoinAlertsUnmutedChange?: (unmuted: boolean) => void;
 };
 
 /**
@@ -32,10 +31,9 @@ export function HumanChatPanelCallJoinStrip({
   onJoinAudio,
   onJoinVideo,
   captureConsent = null,
+  roomId = null,
   durableMessage,
   onDismissDurable,
-  callJoinAlertsUnmuted = true,
-  onCallJoinAlertsUnmutedChange,
 }: HumanChatPanelCallJoinStripProps) {
   const t = useTranslations('HumanChatPanel');
   const statusLine = t('callJoinStripLine', { count: deviceCount });
@@ -53,25 +51,24 @@ export function HumanChatPanelCallJoinStrip({
   const videoTitle =
     deviceCount > 0 ? t('callJoinWithVideo') : t('callStartWithVideo');
   const showAudioButton = deviceCount > 0 || Boolean(onJoinAudio);
-  const showCallAlertToggle = Boolean(onCallJoinAlertsUnmutedChange);
-  const callAlertsMuted = showCallAlertToggle && !callJoinAlertsUnmuted;
 
   return (
     <div className="border-b border-border bg-muted/30">
       {captureConsent ? (
         <HumanChatPanelCaptureConsentBanner
           consent={captureConsent}
+          roomId={roomId}
           variant="join"
           className="border-border/60"
         />
       ) : null}
       <div role="status" aria-live="polite">
-        <div className="flex min-h-11 min-w-0 flex-nowrap items-center gap-2 px-3 py-1.5 sm:gap-3 sm:px-4">
+        <div className="flex min-h-11 min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 px-3 py-1.5 sm:gap-3 sm:px-4">
           <p
             className={cn(
-              'min-w-0 text-xs font-medium leading-tight text-foreground',
-              hasDurable ? 'shrink-0 whitespace-nowrap' : 'min-w-0 flex-1 pr-1',
-              hasDurable && 'max-w-[min(100%,32rem)]',
+              'min-w-0 flex-1 basis-full text-xs font-medium leading-tight text-foreground sm:basis-auto',
+              hasDurable &&
+                'shrink-0 whitespace-nowrap sm:max-w-[min(100%,32rem)]',
             )}
             title={hasDurable ? durableMessage ?? undefined : statusLine}
           >
@@ -82,46 +79,7 @@ export function HumanChatPanelCallJoinStrip({
             )}
           </p>
 
-          <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-            {showCallAlertToggle ? (
-              <button
-                type="button"
-                onClick={() =>
-                  onCallJoinAlertsUnmutedChange?.(!callJoinAlertsUnmuted)
-                }
-                className={cn(
-                  'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1 rounded-md border border-border bg-background/90 px-2 text-xs font-medium text-foreground transition-colors hover:bg-muted',
-                  callAlertsMuted && 'pe-2.5',
-                )}
-                aria-pressed={callAlertsMuted}
-                aria-label={
-                  callJoinAlertsUnmuted
-                    ? t('callJoinCallAlertsMuteAction')
-                    : t('callJoinCallAlertsUnmuteAction')
-                }
-                title={
-                  callJoinAlertsUnmuted
-                    ? t('callJoinCallAlertsUnmuted')
-                    : t('callJoinCallAlertsMuted')
-                }
-              >
-                {callJoinAlertsUnmuted ? (
-                  <Bell className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                ) : (
-                  <BellOff
-                    className="h-3.5 w-3.5 shrink-0"
-                    strokeWidth={2.25}
-                    aria-hidden
-                  />
-                )}
-                {callAlertsMuted ? (
-                  <span className="max-w-[4rem] truncate text-[10px] font-semibold leading-none">
-                    {t('callJoinCallAlertsMutedShort')}
-                  </span>
-                ) : null}
-              </button>
-            ) : null}
-
+          <div className="ms-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
             {hasDurable && onDismissDurable && (
               <button
                 type="button"

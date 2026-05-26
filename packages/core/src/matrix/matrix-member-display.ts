@@ -72,6 +72,37 @@ export function speakerLabelToCanonicalPrivySub(label: string): string | null {
   return null;
 }
 
+/**
+ * Split a speaker-labeled transcript line (`speaker: body`).
+ * When the speaker is a full Matrix id (`@local:domain: body`), split after the MXID,
+ * not on the first colon inside the localpart/domain.
+ */
+export function splitSpeakerLabeledTranscriptLine(
+  line: string,
+): { speaker: string; body: string } | null {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('@')) {
+    const domainColon = trimmed.indexOf(':', 1);
+    if (domainColon > 1) {
+      const bodyColon = trimmed.indexOf(':', domainColon + 1);
+      if (bodyColon > domainColon) {
+        const speaker = trimmed.slice(0, bodyColon).trim();
+        const body = trimmed.slice(bodyColon + 1);
+        if (speaker && body.trim()) {
+          return { speaker, body };
+        }
+      }
+    }
+  }
+  const colonIdx = trimmed.indexOf(':');
+  if (colonIdx <= 0) return null;
+  const speaker = trimmed.slice(0, colonIdx).trim();
+  const body = trimmed.slice(colonIdx + 1);
+  if (!speaker || !body.trim()) return null;
+  return { speaker, body };
+}
+
 /** True when a call-transcript speaker prefix still looks like a bridged Privy slug. */
 export function looksLikeTechnicalSpeakerLabel(label: string): boolean {
   const l = label.trim();

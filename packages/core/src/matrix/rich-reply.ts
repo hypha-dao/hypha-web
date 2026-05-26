@@ -5,6 +5,10 @@ import type * as MatrixSdk from 'matrix-js-sdk';
 
 import type { Message, MessageMediaBundleItem } from './types';
 import { parseMentionUserIdsFromWireContent } from './mentions';
+import {
+  parseSignalTeamNoticeFromWireContent,
+  resolveSignalTeamUpdateDisplayBody,
+} from './signal-team-events';
 
 /** Element / Hypha custom HTML for `m.room.message` (with plaintext `body` fallback). */
 export const MATRIX_CUSTOM_HTML_FORMAT = 'org.matrix.custom.html';
@@ -355,6 +359,24 @@ export function messageFromRoomMessageEvent(
     formattedContentHtml = content.formatted_body;
   }
 
+  const signalTeamNotice = parseSignalTeamNoticeFromWireContent(
+    content,
+    rawBody,
+  );
+  let signalTeamNoticeField: Message['signalTeamNotice'];
+  if (signalTeamNotice) {
+    signalTeamNoticeField = signalTeamNotice;
+    displayBody = rawBody.trim();
+  } else {
+    const signalTeamDisplayBody = resolveSignalTeamUpdateDisplayBody(
+      content,
+      rawBody,
+    );
+    if (signalTeamDisplayBody) {
+      displayBody = signalTeamDisplayBody;
+    }
+  }
+
   const id = event.getId();
   const sender = event.getSender();
   if (!id || !sender) {
@@ -470,5 +492,8 @@ export function messageFromRoomMessageEvent(
     inReplyToSender,
     inReplyToBodyPreview,
     ...(mentionedUserIds ? { mentionedUserIds } : {}),
+    ...(signalTeamNoticeField
+      ? { signalTeamNotice: signalTeamNoticeField }
+      : {}),
   };
 }

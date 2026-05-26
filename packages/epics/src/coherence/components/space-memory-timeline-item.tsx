@@ -3,6 +3,7 @@
 import type { SpaceMemoryItem } from '@hypha-platform/core/client';
 import {
   deriveSpaceMemoryDisplayTitle,
+  looksLikeTechnicalSpaceMemoryName,
   useMatrix,
 } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
@@ -257,6 +258,7 @@ function resolveMxcUrls(
 type SpaceMemoryTimelineItemProps = {
   item: SpaceMemoryItem;
   contextLine: string;
+  matrixChatRoomId?: string | null;
   openLabel: string;
 };
 
@@ -267,6 +269,7 @@ type SpaceMemoryTimelineItemProps = {
 export function SpaceMemoryTimelineItem({
   item,
   contextLine,
+  matrixChatRoomId = null,
   openLabel,
 }: SpaceMemoryTimelineItemProps) {
   const t = useTranslations('CoherenceTab');
@@ -337,6 +340,14 @@ export function SpaceMemoryTimelineItem({
       : displayName;
 
   const isCallRecording = item.source === 'call_recording';
+  const callRecordingFallbackTitle = deriveSpaceMemoryDisplayTitle({
+    source: 'call_recording',
+    name: '',
+  });
+  const showCallRecordingTitle =
+    isCallRecording &&
+    displayName.trim() !== callRecordingFallbackTitle &&
+    !looksLikeTechnicalSpaceMemoryName(displayName);
   const openLinkLabel = isCallRecording
     ? t('spaceMemoryPlayCallRecording')
     : t('openDocument');
@@ -352,6 +363,7 @@ export function SpaceMemoryTimelineItem({
           {isCallTranscriptBody ? (
             <ResolvedCallTranscriptExcerpt
               excerpt={excerpt}
+              roomId={matrixChatRoomId}
               className="line-clamp-8 whitespace-pre-wrap text-sm leading-relaxed text-card-foreground"
             />
           ) : (
@@ -591,9 +603,11 @@ export function SpaceMemoryTimelineItem({
       <p className="line-clamp-2 text-xs leading-tight text-muted-foreground">
         {contextLine}
       </p>
-      <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-card-foreground">
-        {cardTitle}
-      </p>
+      {(!isCallRecording || showCallRecordingTitle) && (
+        <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-card-foreground">
+          {cardTitle}
+        </p>
+      )}
 
       <div className="mt-3 flex flex-1 flex-col gap-2">
         {isCallRecording && canOpen && openHref ? (
