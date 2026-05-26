@@ -1981,7 +1981,7 @@
       "valueFlows": "Flujos de valor"
     },
     "welcome": "Soy tu IA de {spaceName}. Pregunta lo que quieras sobre este espacio o elige una sugerencia abajo.",
-    "welcomeSpecialistsHint": "Los especialistas activos también aparecen en Miembros > AI Agents.",
+    "welcomeSpecialistsHint": "Los especialistas activos también aparecen en Miembros > Agentes de IA.",
     "specialistsResponding": "Especialistas contribuyendo",
     "specialistsRespondingStreaming": "Especialistas contribuyendo…",
     "placeholder": "Pregunta lo que quieras...",
