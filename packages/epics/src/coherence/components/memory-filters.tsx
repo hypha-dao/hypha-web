@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { SearchIcon } from 'lucide-react';
 import {
@@ -39,6 +39,8 @@ export function MemoryFilters({
 }: MemoryFiltersProps) {
   const t = useTranslations('CoherenceTab');
   const isMobile = useIsMobile() ?? false;
+  const onFilterChangeRef = useRef(onFilterChange);
+  onFilterChangeRef.current = onFilterChange;
 
   const tabItems: Array<{ value: MemoryFilterValue; label: string }> = [
     { value: 'general', label: t('spaceMemoryGeneral') },
@@ -54,9 +56,9 @@ export function MemoryFilters({
 
   useEffect(() => {
     if (isMobile && activeFilter === 'general') {
-      onFilterChange('proposals');
+      onFilterChangeRef.current('proposals');
     }
-  }, [activeFilter, isMobile, onFilterChange]);
+  }, [activeFilter, isMobile]);
 
   return (
     <div className="flex w-full flex-col gap-4">
