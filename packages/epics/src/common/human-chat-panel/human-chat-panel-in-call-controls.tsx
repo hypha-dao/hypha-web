@@ -126,6 +126,7 @@ export function HumanChatPanelInCallControls({
   const isFull = variant === 'fullView';
   const isCenteredInBanner =
     !isFull && !isCompact && inBannerLayout === 'centered';
+  const useMobileCenteredToolbar = isMobile && isCenteredInBanner;
   /**
    * Full view modal: §3.4.4.4 — white glyphs on dark / green / red (not
    * `text-foreground` on near-black / green where Lucide would read as black).
@@ -609,15 +610,21 @@ export function HumanChatPanelInCallControls({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div role="group" aria-label={t('callToolbarLabel')}>
+      <div
+        role="group"
+        aria-label={t('callToolbarLabel')}
+        className={cn(useMobileCenteredToolbar && 'w-full')}
+      >
         <div
           className={cn(
-            useSideAudioSettings
+            useMobileCenteredToolbar
+              ? 'flex w-full items-center justify-center gap-2.5'
+              : useSideAudioSettings
               ? 'grid w-full grid-cols-[1fr_auto_1fr] items-center'
               : 'flex w-auto items-center',
           )}
         >
-          <div />
+          {!useMobileCenteredToolbar && useSideAudioSettings ? <div /> : null}
           <div
             className={cn(
               'flex items-center',
@@ -626,7 +633,9 @@ export function HumanChatPanelInCallControls({
                 : isCompact
                 ? 'gap-1'
                 : 'gap-1.5 sm:gap-2',
-              useSideAudioSettings ? 'justify-center' : 'justify-start',
+              useMobileCenteredToolbar || useSideAudioSettings
+                ? 'justify-center'
+                : 'justify-start',
             )}
           >
             {!leaveOnly ? (
