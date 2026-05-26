@@ -1980,7 +1980,7 @@
       "spaceMemory": "Memória do espaço",
       "valueFlows": "Fluxos de valor"
     },
-    "welcome": "Sou a sua AI de {spaceName}. Ajudo o seu espaço e o ecossistema mais amplo a pensar consigo—propósito, direção, operações, sinais de Coherence, memória org, impacto e fluxos de valor—com agentes de IA especialistas quando pergunta.",
+    "welcome": "Sou a sua IA de {spaceName}. Pergunte o que quiser sobre este espaço ou escolha uma sugestão abaixo.",
     "welcomeSpecialistsHint": "Os especialistas ativos também aparecem em Membros > AI Agents.",
     "specialistsResponding": "Especialistas a contribuir",
     "specialistsRespondingStreaming": "Especialistas a contribuir…",

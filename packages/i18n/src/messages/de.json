@@ -1980,7 +1980,7 @@
       "spaceMemory": "Space-Memory",
       "valueFlows": "Werteströme"
     },
-    "welcome": "Ich bin deine {spaceName} AI. Ich helfe deinem Space und dem breiteren Ökosystem, mit dir mitzudenken—Zweck, Ausrichtung, Operations, Coherence-Signale, Org-Memory, Impact und Werteströme—mit spezialisierten KI-Agent:innen, wenn du fragst.",
+    "welcome": "Ich bin deine {spaceName}-KI. Frag alles zu diesem Space oder wähle unten einen Vorschlag.",
     "welcomeSpecialistsHint": "Aktive Spezialist:innen findest du auch unter Mitglieder > AI Agents.",
     "specialistsResponding": "Beitragende Spezialist:innen",
     "specialistsRespondingStreaming": "Spezialist:innen tragen bei…",

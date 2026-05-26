@@ -11,7 +11,7 @@ const EXPECTED_SUGGESTIONS = [
 ];
 
 const EXPECTED_WELCOME_MESSAGE =
-  "I'm your Hypha AI. I help your space and the broader ecosystem think with you—purpose, direction, operations, coherence signals, org memory, impact, and value flows—with specialist AI agents when you ask.";
+  "I'm your Hypha AI. Ask anything about this space, or pick a suggestion below.";
 
 test.describe('AI Chat Panel', () => {
   let chatPanel: AiChatPanelPage;
@@ -91,8 +91,7 @@ test.describe('AI Chat Panel', () => {
         /space|signal|blind|discussion|memory|value|token/,
       );
     }
-    expect(EXPECTED_WELCOME_MESSAGE).toContain('think with you');
-    expect(EXPECTED_WELCOME_MESSAGE).toContain('coherence signals');
-    expect(EXPECTED_WELCOME_MESSAGE).toContain('specialist AI agents');
+    expect(EXPECTED_WELCOME_MESSAGE).toContain('Ask anything');
+    expect(EXPECTED_WELCOME_MESSAGE).toContain('suggestion');
   });
 });
