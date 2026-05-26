@@ -2,14 +2,16 @@ import { test, expect } from '@playwright/test';
 import { AiChatPanelPage } from './pages/ai-chat-panel.page';
 
 const EXPECTED_SUGGESTIONS = [
-  'Tell me about this space',
-  'How many members does this space have?',
-  'What agreements exist in this space?',
-  'Describe the structure of this space',
+  'How is our space doing overall?',
+  'What signal should we create or share next?',
+  "What's our biggest blind spot?",
+  'Summarize recent team discussion',
+  'What does our space remember?',
+  'How does value flow through our tokens?',
 ];
 
 const EXPECTED_WELCOME_MESSAGE =
-  "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.";
+  "I'm your Hypha AI. I help with strategic direction, operations, coherence signals, org memory, and value flows—with specialist agents that join when you ask.";
 
 test.describe('AI Chat Panel', () => {
   let chatPanel: AiChatPanelPage;
@@ -83,18 +85,12 @@ test.describe('AI Chat Panel', () => {
   }) => {
     await chatPanel.openPanel();
     // Verify suggestion-like buttons are visible in the panel
-    const suggestions = page.getByRole('button', {
-      name: /space|member|agreement|structure/i,
-    });
-    // At minimum the panel should contain text related to capabilities
     // For unauthenticated users, suggestions may not show, so verify constants as fallback
     for (const suggestion of EXPECTED_SUGGESTIONS) {
-      expect(suggestion.toLowerCase()).toMatch(
-        /space|member|agreement|structure/,
-      );
+      expect(suggestion.length).toBeGreaterThan(10);
     }
-    expect(EXPECTED_WELCOME_MESSAGE).toContain('space details');
-    expect(EXPECTED_WELCOME_MESSAGE).toContain('member counts');
-    expect(EXPECTED_WELCOME_MESSAGE).toContain('agreements');
+    expect(EXPECTED_WELCOME_MESSAGE).toContain('strategic direction');
+    expect(EXPECTED_WELCOME_MESSAGE).toContain('coherence signals');
+    expect(EXPECTED_WELCOME_MESSAGE).toContain('specialist agents');
   });
 });

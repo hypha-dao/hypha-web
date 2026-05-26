@@ -149,6 +149,9 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'strategic',
       'long term',
       'direction',
+      'overall',
+      'how is our',
+      'doing overall',
     ],
   },
   {
@@ -162,6 +165,9 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'decision-making',
       'accountability',
       'policy',
+      'signal',
+      'signals',
+      'coherence',
     ],
   },
   {
@@ -187,12 +193,16 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'onboarding',
       'contributors',
       'participation',
+      'discussion',
+      'summarize',
+      'team discussion',
     ],
   },
   {
     tagGroup: 'finance',
     keywords: [
       'token',
+      'tokens',
       'treasury',
       'budget',
       'funding',
@@ -200,6 +210,7 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'holdings',
       'distribution',
       'economics',
+      'value flow',
     ],
   },
   {
@@ -226,6 +237,8 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'incident',
       'failure',
       'threat',
+      'blind spot',
+      'blindspot',
     ],
   },
   {
@@ -239,6 +252,8 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'network',
       'external',
       'market',
+      'share',
+      'relay',
     ],
   },
   {
@@ -252,6 +267,8 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'evidence',
       'insight',
       'memory',
+      'remember',
+      'recall',
     ],
   },
   {
@@ -270,6 +287,68 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
 ];
 
 const AGENT_UPDATED_EVENT = 'hypha:ai-agents-updated';
+
+export function tagGroupAccentClass(tagGroup: string): string {
+  switch (tagGroup) {
+    case 'purpose':
+      return 'bg-accent-3 text-accent-12 border-accent-6';
+    case 'governance':
+      return 'bg-info-3 text-info-12 border-info-6';
+    case 'operations':
+      return 'bg-success-3 text-success-12 border-success-6';
+    case 'community':
+      return 'bg-neutral-3 text-neutral-12 border-neutral-6';
+    case 'finance':
+      return 'bg-warning-3 text-warning-12 border-warning-6';
+    case 'product':
+      return 'bg-accent-2 text-accent-11 border-accent-6';
+    case 'risk':
+      return 'bg-error-3 text-error-12 border-error-6';
+    case 'ecosystem':
+      return 'bg-info-2 text-info-11 border-info-6';
+    case 'learning':
+      return 'bg-success-2 text-success-11 border-success-6';
+    case 'reputation':
+      return 'bg-warning-2 text-warning-11 border-warning-6';
+    default:
+      return 'bg-muted text-foreground border-border';
+  }
+}
+
+type ChatMessagePart = {
+  type?: string;
+  text?: string;
+};
+
+export function extractTextFromChatMessageParts(
+  parts?: ChatMessagePart[],
+): string {
+  if (!parts?.length) return '';
+  return parts
+    .filter(
+      (part): part is { type: 'text'; text: string } =>
+        part.type === 'text' && typeof part.text === 'string',
+    )
+    .map((part) => part.text.trim())
+    .filter(Boolean)
+    .join(' ');
+}
+
+export function resolveMobilizedAgentsForAssistantMessage<
+  T extends { role: string; parts?: ChatMessagePart[] },
+>(messages: readonly T[], assistantIndex: number): AiCompetencyAgent[] {
+  const assistant = messages[assistantIndex];
+  if (!assistant || assistant.role !== 'assistant') return [];
+
+  for (let index = assistantIndex - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role !== 'user') continue;
+    const question = extractTextFromChatMessageParts(message.parts);
+    return question ? detectAiAgentsForQuestion(question) : [];
+  }
+
+  return [];
+}
 
 function storageKey(spaceSlug: string): string {
   return `hypha:ai-mobilized-agents:v1:${spaceSlug}`;

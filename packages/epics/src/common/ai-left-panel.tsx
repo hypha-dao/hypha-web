@@ -415,10 +415,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const suggestions = useMemo(
     () => [
-      t('suggestions.aboutSpace'),
-      t('suggestions.memberCount'),
-      t('suggestions.agreements'),
-      t('suggestions.structure'),
+      t('suggestions.spaceHealth'),
+      t('suggestions.nextSignal'),
+      t('suggestions.blindSpot'),
+      t('suggestions.summarizeDiscussion'),
+      t('suggestions.spaceMemory'),
+      t('suggestions.valueFlows'),
     ],
     [t],
   );

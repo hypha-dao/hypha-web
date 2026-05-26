@@ -1951,12 +1951,17 @@
   "AiPanel": {
     "title": "Hypha AI",
     "suggestions": {
-      "aboutSpace": "Conte-me sobre este espaço",
-      "memberCount": "Quantos membros este espaço tem?",
-      "agreements": "Quais acordos existem neste espaço?",
-      "structure": "Descreva a estrutura deste espaço"
+      "spaceHealth": "Como está o nosso espaço no geral?",
+      "nextSignal": "Que sinal devemos criar ou partilhar a seguir?",
+      "blindSpot": "Qual é o nosso maior ponto cego?",
+      "summarizeDiscussion": "Resuma a discussão recente da equipa",
+      "spaceMemory": "O que é que o nosso espaço recorda?",
+      "valueFlows": "Como flui o valor através dos nossos tokens?"
     },
-    "welcome": "Olá! Sou seu assistente AI de {spaceName}. Posso buscar detalhes do espaço como número de membros, acordos e estrutura. Pergunte-me qualquer coisa sobre o espaço que você está visualizando.",
+    "welcome": "Sou a sua AI de {spaceName}. Ajudo com direção estratégica, operações, sinais de Coherence, memória org e fluxos de valor—com agentes especialistas que entram quando pergunta.",
+    "welcomeSpecialistsHint": "Os especialistas ativos também aparecem em Membros → AI Agents.",
+    "specialistsResponding": "Especialistas a contribuir",
+    "specialistsRespondingStreaming": "Especialistas a contribuir…",
     "placeholder": "Pergunte ao Hypha AI...",
     "sendButton": "Enviar",
     "stopButton": "Parar",

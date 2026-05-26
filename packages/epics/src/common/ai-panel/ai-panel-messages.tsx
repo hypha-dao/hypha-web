@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { resolveMobilizedAgentsForAssistantMessage } from '../ai-agent-competencies';
 import { AiPanelMessageBubble } from './ai-panel-message-bubble';
 import { AiPanelSuggestions } from './ai-panel-suggestions';
 
@@ -71,6 +72,14 @@ export function AiPanelMessages({
           <AiPanelMessageBubble
             key={msg.id}
             message={msg}
+            mobilizedAgents={
+              msg.role === 'assistant' && msg.id !== 'welcome'
+                ? resolveMobilizedAgentsForAssistantMessage(
+                    displayMessages,
+                    index,
+                  )
+                : []
+            }
             onActionReplySelect={onActionReplySelect}
             isStreaming={
               msg.role === 'assistant' &&
@@ -79,6 +88,12 @@ export function AiPanelMessages({
             }
           />
         ))}
+
+        {messages.length === 0 ? (
+          <p className="px-1 text-xs leading-relaxed text-muted-foreground">
+            {t('welcomeSpecialistsHint')}
+          </p>
+        ) : null}
 
         {showSuggestions && messages.length <= 1 && (
           <AiPanelSuggestions

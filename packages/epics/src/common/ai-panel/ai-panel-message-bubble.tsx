@@ -6,6 +6,9 @@ import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
 
+import type { AiCompetencyAgent } from '../ai-agent-competencies';
+import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
+
 type ConfirmationActionResult = {
   ok?: boolean;
   dry_run?: boolean;
@@ -41,6 +44,7 @@ type AiPanelMessageBubbleProps = {
     parts?: UIMessagePart[];
   };
   isStreaming?: boolean;
+  mobilizedAgents?: readonly AiCompetencyAgent[];
   onActionReplySelect?: (text: string) => void;
 };
 
@@ -261,6 +265,7 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
 export function AiPanelMessageBubble({
   message,
   isStreaming,
+  mobilizedAgents = [],
   onActionReplySelect,
 }: AiPanelMessageBubbleProps) {
   const t = useTranslations('AiPanel');
@@ -482,6 +487,12 @@ export function AiPanelMessageBubble({
               : 'rounded-tl-sm bg-transparent px-0 py-0 text-foreground',
           )}
         >
+          {!isUser && mobilizedAgents.length > 0 ? (
+            <AiPanelMobilizedAgents
+              agents={mobilizedAgents}
+              isStreaming={isStreaming}
+            />
+          ) : null}
           {hasVisibleText && (
             <div className="flex flex-col gap-1">
               <div

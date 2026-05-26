@@ -1,16 +1,20 @@
 export const MOCK_SUGGESTION_KEYS = [
-  'AiPanel.suggestions.aboutSpace',
-  'AiPanel.suggestions.memberCount',
-  'AiPanel.suggestions.agreements',
-  'AiPanel.suggestions.structure',
+  'AiPanel.suggestions.spaceHealth',
+  'AiPanel.suggestions.nextSignal',
+  'AiPanel.suggestions.blindSpot',
+  'AiPanel.suggestions.summarizeDiscussion',
+  'AiPanel.suggestions.spaceMemory',
+  'AiPanel.suggestions.valueFlows',
 ] as const;
 
 // Fallback values used when translations are not yet loaded
 export const MOCK_SUGGESTIONS = [
-  'Tell me about this space',
-  'How many members does this space have?',
-  'What agreements exist in this space?',
-  'Describe the structure of this space',
+  'How is our space doing overall?',
+  'What signal should we create or share next?',
+  "What's our biggest blind spot?",
+  'Summarize recent team discussion',
+  'What does our space remember?',
+  'How does value flow through our tokens?',
 ];
 
 export type Message = {
@@ -25,7 +29,7 @@ export function createMockWelcomeMessage(spaceName = 'Hypha'): Message {
   return {
     id: 'welcome',
     role: 'assistant',
-    content: `Hello! I'm your ${spaceName} AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.`,
+    content: `I'm your ${spaceName} AI. I help with strategic direction, operations, coherence signals, org memory, and value flows—with specialist agents that join when you ask.`,
     timestamp: new Date(),
   };
 }
