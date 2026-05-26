@@ -2,6 +2,7 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import useSWR from 'swr';
+import type { PaginatedResponse } from '@hypha-platform/core/client';
 import { CoherenceType } from '../../coherence-types';
 import { CoherenceTag } from '../../coherence-tags';
 import { CoherencePriority } from '../../coherence-priorities';
@@ -18,10 +19,12 @@ export interface CoherenceQuery {
 }
 
 const COHERENCES_REFRESH_MS = 60_000;
+const COHERENCES_PAGE_SIZE = 100;
 
 function buildCoherencesUrl(
   spaceSlug: string,
   query: Omit<CoherenceQuery, 'spaceSlug'>,
+  page: number,
 ): string {
   const params = new URLSearchParams();
   if (query.search?.trim()) params.set('search', query.search.trim());
@@ -34,10 +37,41 @@ function buildCoherencesUrl(
   if (query.priority) params.set('priority', query.priority);
   if (query.includeArchived) params.set('includeArchived', 'true');
   if (query.orderBy) params.set('orderBy', query.orderBy);
+  params.set('page', String(page));
+  params.set('pageSize', String(COHERENCES_PAGE_SIZE));
   const qs = params.toString();
   return `/api/v1/spaces/${encodeURIComponent(spaceSlug)}/coherences${
     qs ? `?${qs}` : ''
   }`;
+}
+
+async function fetchAllCoherences(
+  spaceSlug: string,
+  query: Omit<CoherenceQuery, 'spaceSlug'>,
+  getAccessToken: () => Promise<string | null>,
+): Promise<Coherence[]> {
+  const headers: HeadersInit = {};
+  const token = await getAccessToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const all: Coherence[] = [];
+  let page = 1;
+
+  while (true) {
+    const url = buildCoherencesUrl(spaceSlug, query, page);
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch coherences: ${response.status}`);
+    }
+    const payload = (await response.json()) as PaginatedResponse<Coherence>;
+    all.push(...payload.data);
+    if (!payload.pagination.hasNextPage) break;
+    page += 1;
+  }
+
+  return all;
 }
 
 export const useFindCoherences = ({
@@ -72,26 +106,19 @@ export const useFindCoherences = ({
     mutate: refresh,
   } = useSWR(
     swrKey,
-    async ([, resolvedSlug]) => {
-      const url = buildCoherencesUrl(resolvedSlug, {
-        search,
-        type,
-        tags,
-        priority,
-        includeArchived,
-        orderBy,
-      });
-      const token = await getAccessToken();
-      const headers: HeadersInit = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      const response = await fetch(url, { headers });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch coherences: ${response.status}`);
-      }
-      return (await response.json()) as Coherence[];
-    },
+    async ([, resolvedSlug]) =>
+      fetchAllCoherences(
+        resolvedSlug,
+        {
+          search,
+          type,
+          tags,
+          priority,
+          includeArchived,
+          orderBy,
+        },
+        getAccessToken,
+      ),
     {
       refreshInterval: COHERENCES_REFRESH_MS,
       refreshWhenHidden: false,

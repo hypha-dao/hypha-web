@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import type { PaginatedResponse } from '@hypha-platform/core/client';
 import {
   COHERENCE_TAGS,
   COHERENCE_TYPES,
   findSpaceBySlug,
+  type Coherence,
   type CoherenceTag,
   type CoherenceType,
 } from '@hypha-platform/core/server';
@@ -17,6 +19,37 @@ import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 
 type Params = { spaceSlug: string };
+
+function parsePositiveInt(raw: string | null, fallback: number): number {
+  const parsed = Number.parseInt(raw ?? '', 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return parsed;
+}
+
+function paginateCoherences(
+  items: Coherence[],
+  page: number,
+  pageSize: number,
+): PaginatedResponse<Coherence> {
+  const total = items.length;
+  const safePageSize = Math.min(100, Math.max(1, pageSize));
+  const totalPages = total === 0 ? 0 : Math.ceil(total / safePageSize);
+  const safePage = Math.max(1, page);
+  const offset = (safePage - 1) * safePageSize;
+  const data = items.slice(offset, offset + safePageSize);
+
+  return {
+    data,
+    pagination: {
+      total,
+      page: safePage,
+      pageSize: safePageSize,
+      totalPages,
+      hasNextPage: totalPages > 0 && safePage < totalPages,
+      hasPreviousPage: totalPages > 0 && safePage > 1,
+    },
+  };
+}
 
 function parseOrderBy(
   raw: string | null,
@@ -96,7 +129,10 @@ export async function GET(
       orderBy: parseOrderBy(url.searchParams.get('orderBy')),
     });
 
-    return NextResponse.json(coherences);
+    const page = parsePositiveInt(url.searchParams.get('page'), 1);
+    const pageSize = parsePositiveInt(url.searchParams.get('pageSize'), 100);
+
+    return NextResponse.json(paginateCoherences(coherences, page, pageSize));
   } catch (error) {
     console.error('Failed to fetch coherences:', error);
     return NextResponse.json(
