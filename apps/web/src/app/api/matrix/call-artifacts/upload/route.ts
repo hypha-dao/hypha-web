@@ -51,7 +51,6 @@ function readCallLaunchMetadata(
   if (roomTitle) metadata.room_title = roomTitle;
   if (matrixRoomId) {
     metadata.matrix_room_id = matrixRoomId;
-    metadata.room_id = matrixRoomId;
   }
   if (signalSlug) metadata.signal_slug = signalSlug;
   if (threadRootEventId) metadata.thread_root_event_id = threadRootEventId;
@@ -347,6 +346,28 @@ export async function POST(request: NextRequest) {
       { error: 'room_id is not linked to this space' },
       { status: 403 },
     );
+  }
+
+  launchMetadata.room_id = roomId;
+  const matrixRoomIdFromLaunch =
+    typeof launchMetadata.matrix_room_id === 'string'
+      ? launchMetadata.matrix_room_id.trim()
+      : '';
+  if (matrixRoomIdFromLaunch && matrixRoomIdFromLaunch !== roomId) {
+    const matrixRoomLinked = await isSpaceLinkedCallRoom({
+      spaceId: space.id,
+      spaceChatRoomId: space.chatRoomId,
+      roomId: matrixRoomIdFromLaunch,
+    });
+    if (!matrixRoomLinked) {
+      logCallArtifactsUpload('matrix_room_id_mismatch_ignored', {
+        spaceSlug: targetSpaceSlug,
+        roomId,
+        matrixRoomId: matrixRoomIdFromLaunch,
+        callSessionId,
+      });
+      delete launchMetadata.matrix_room_id;
+    }
   }
 
   const existingRecording = await getSpaceCallRecordingBySessionId(
