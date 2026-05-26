@@ -2420,10 +2420,17 @@
     "editSignalMissingSlug": "L'identifiant du signal est manquant. Fermez puis rouvrez le formulaire d'édition.",
     "editSignalSaveFailed": "Impossible d'enregistrer les modifications du signal. Veuillez réessayer.",
     "keepWindowOpenWhileCreating": "Gardez cette fenêtre ouverte jusqu’à la fin.",
+    "createSignalAttachmentsTitle": "Pièces jointes",
+    "createSignalTeamOwner": "Propriétaire",
+    "createSignalTeamNoMembers": "Aucun membre de l'espace avec un compte de chat n'est disponible pour le moment.",
+    "loading": "Chargement...",
     "provisioning": {
       "chatUnavailable": "Signal créé, mais le chat est actuellement indisponible.",
       "roomProvisionFailed": "Signal créé, mais l’approvisionnement de la salle de chat a échoué.",
-      "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer."
+      "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer.",
+      "teamSeedSkipped": "Signal créé, mais les membres d’équipe sélectionnés n’ont pas encore pu être ajoutés au chat.",
+      "teamSeedFailed": "Signal créé, mais les membres d’équipe sélectionnés n’ont pas pu être ajoutés au chat.",
+      "attachmentsUploadFailed": "Signal créé, mais les pièces jointes n’ont pas pu être téléversées dans le chat."
     },
     "tagLabels": {
       "Purpose": "Raison d'être",

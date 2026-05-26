@@ -18,11 +18,8 @@ const accentBorder =
   'border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_30%,transparent)]';
 const accentSurface =
   'bg-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_12%,var(--background))]';
-const accentTitle = 'text-[color:var(--color-accent-12,var(--foreground))]';
-const accentBody =
-  'text-[color:color-mix(in_srgb,var(--color-accent-11,var(--foreground))_85%,transparent)]';
-const accentButton =
-  'h-7 min-h-7 shrink-0 gap-1.5 self-center border-[color:var(--space-accent)] bg-background px-2.5 py-0 text-xs font-semibold leading-none whitespace-nowrap text-[color:var(--space-accent)] hover:bg-accent-3 disabled:border-[color:var(--space-accent)]/45 disabled:text-[color:var(--space-accent)]/55 disabled:opacity-100';
+const bannerButtonClassName =
+  'h-7 min-h-7 shrink-0 gap-1.5 self-center border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_45%,var(--border))] bg-background/90 px-2.5 py-0 text-xs font-semibold leading-none whitespace-nowrap text-foreground hover:bg-accent-3 disabled:opacity-50';
 
 export function HumanChatPanelConnectionBanner({
   connectionStatus,
@@ -51,12 +48,12 @@ export function HumanChatPanelConnectionBanner({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className={cn('font-medium', accentTitle)}>
+          <p className="font-medium text-foreground">
             {isFollower
               ? t('connectionFollowerTitle')
               : t('connectionLostTitle')}
           </p>
-          <p className={cn('mt-0.5', accentBody)}>
+          <p className="mt-0.5 text-muted-foreground">
             {isFollower
               ? t('connectionFollowerDescription')
               : isReconnecting
@@ -68,8 +65,8 @@ export function HumanChatPanelConnectionBanner({
           <Button
             type="button"
             variant="outline"
-            colorVariant="accent"
-            className={accentButton}
+            colorVariant="neutral"
+            className={bannerButtonClassName}
             onClick={onUseThisTab}
           >
             {t('connectionFollowerUseTab')}
@@ -78,8 +75,8 @@ export function HumanChatPanelConnectionBanner({
           <Button
             type="button"
             variant="outline"
-            colorVariant="accent"
-            className={accentButton}
+            colorVariant="neutral"
+            className={bannerButtonClassName}
             disabled={isReconnecting}
             onClick={onRetry}
           >

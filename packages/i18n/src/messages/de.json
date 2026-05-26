@@ -2434,10 +2434,17 @@
     "savingSignal": "Signal wird gespeichert",
     "saveChanges": "Änderungen speichern",
     "keepWindowOpenWhileCreating": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind.",
+    "createSignalAttachmentsTitle": "Anhänge",
+    "createSignalTeamOwner": "Inhaber",
+    "createSignalTeamNoMembers": "Noch keine Space-Mitglieder mit Chat-Konten verfügbar.",
+    "loading": "Wird geladen...",
     "provisioning": {
       "chatUnavailable": "Signal erstellt, aber der Chat ist derzeit nicht verfügbar.",
       "roomProvisionFailed": "Signal erstellt, aber die Bereitstellung des Chatraums ist fehlgeschlagen.",
-      "roomLinkFailedRetry": "Signal erstellt, aber der Chatraum konnte nicht verknüpft werden. Bitte versuchen Sie es erneut."
+      "roomLinkFailedRetry": "Signal erstellt, aber der Chatraum konnte nicht verknüpft werden. Bitte versuchen Sie es erneut.",
+      "teamSeedSkipped": "Signal erstellt, aber ausgewählte Teammitglieder konnten dem Chat noch nicht hinzugefügt werden.",
+      "teamSeedFailed": "Signal erstellt, aber ausgewählte Teammitglieder konnten dem Chat nicht hinzugefügt werden.",
+      "attachmentsUploadFailed": "Signal erstellt, aber Anhänge konnten nicht in den Chat hochgeladen werden."
     },
     "tagLabels": {
       "Purpose": "Zweck",

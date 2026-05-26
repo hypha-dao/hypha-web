@@ -2424,10 +2424,17 @@
     "savingSignal": "Guardando señal",
     "saveChanges": "Guardar cambios",
     "keepWindowOpenWhileCreating": "Mantén esta ventana abierta hasta que terminemos.",
+    "createSignalAttachmentsTitle": "Adjuntos",
+    "createSignalTeamOwner": "Propietario",
+    "createSignalTeamNoMembers": "Aún no hay miembros del espacio con cuentas de chat disponibles.",
+    "loading": "Cargando...",
     "provisioning": {
       "chatUnavailable": "Señal creada, pero el chat no está disponible en este momento.",
       "roomProvisionFailed": "Señal creada, pero falló el aprovisionamiento de la sala de chat.",
-      "roomLinkFailedRetry": "Señal creada, pero no se pudo vincular la sala de chat. Inténtalo de nuevo."
+      "roomLinkFailedRetry": "Señal creada, pero no se pudo vincular la sala de chat. Inténtalo de nuevo.",
+      "teamSeedSkipped": "Señal creada, pero los miembros del equipo seleccionados aún no se pudieron añadir al chat.",
+      "teamSeedFailed": "Señal creada, pero no se pudieron añadir al chat los miembros del equipo seleccionados.",
+      "attachmentsUploadFailed": "Señal creada, pero no se pudieron subir los archivos adjuntos al chat."
     },
     "tagLabels": {
       "Purpose": "Propósito",

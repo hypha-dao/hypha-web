@@ -2540,10 +2540,17 @@
     "editSignalMissingSlug": "Signal identifier is missing. Please close and reopen the edit form.",
     "editSignalSaveFailed": "Could not save signal changes. Please try again.",
     "keepWindowOpenWhileCreating": "Keep this window open until we're finished.",
+    "createSignalAttachmentsTitle": "Attachments",
+    "createSignalTeamOwner": "Owner",
+    "createSignalTeamNoMembers": "No space members with chat accounts are available yet.",
+    "loading": "Loading...",
     "provisioning": {
       "chatUnavailable": "Signal created but chat is currently unavailable.",
       "roomProvisionFailed": "Signal created but chat room provisioning failed.",
-      "roomLinkFailedRetry": "Signal created but chat room could not be linked. Please retry."
+      "roomLinkFailedRetry": "Signal created but chat room could not be linked. Please retry.",
+      "teamSeedSkipped": "Signal created but selected team members could not be added to chat yet.",
+      "teamSeedFailed": "Signal created but selected team members could not be added to chat.",
+      "attachmentsUploadFailed": "Signal created but attachments could not be uploaded to chat."
     },
     "tagLabels": {
       "Purpose": "Purpose",

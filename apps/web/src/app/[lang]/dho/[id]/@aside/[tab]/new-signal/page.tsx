@@ -1,4 +1,5 @@
-import { CreateSignalForm, ProposalOverlayShell } from '@hypha-platform/epics';
+import { ConnectedCreateSignalForm } from '@web/components/connected-create-signal-form';
+import { ProposalOverlayShell } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../../../@tab/coherence/constants';
 import { Locale } from '@hypha-platform/i18n';
 import { COHERENCE_TAGS, findSpaceBySlug } from '@hypha-platform/core/server';
@@ -34,11 +35,12 @@ export default async function NewSignalPage({
   const successfulUrl = getDhoPathCoherence(lang, id);
   return (
     <ProposalOverlayShell>
-      <CreateSignalForm
+      <ConnectedCreateSignalForm
         successfulUrl={successfulUrl}
         closeUrl={successfulUrl}
         backUrl={successfulUrl}
         spaceId={spaceFromDb.id}
+        spaceSlug={id}
         initialValues={
           inheritedBoardTags.length > 0
             ? { tags: inheritedBoardTags }
