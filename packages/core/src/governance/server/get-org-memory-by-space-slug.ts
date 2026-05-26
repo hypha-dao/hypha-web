@@ -1079,7 +1079,8 @@ export async function getOrgMemoryBySpaceSlug(
   const coherenceRows = await db
     .select({ roomId: coherences.roomId, title: coherences.title })
     .from(coherences)
-    .where(eq(coherences.spaceId, host.id));
+    .where(and(eq(coherences.spaceId, host.id), eq(coherences.archived, false)))
+    .orderBy(desc(coherences.updatedAt));
   for (const row of coherenceRows) {
     const roomId = row.roomId?.trim();
     const title = row.title?.trim();
