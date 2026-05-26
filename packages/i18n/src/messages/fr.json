@@ -2427,7 +2427,10 @@
     "provisioning": {
       "chatUnavailable": "Signal créé, mais le chat est actuellement indisponible.",
       "roomProvisionFailed": "Signal créé, mais l’approvisionnement de la salle de chat a échoué.",
-      "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer."
+      "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer.",
+      "teamSeedSkipped": "Signal créé, mais les membres d’équipe sélectionnés n’ont pas encore pu être ajoutés au chat.",
+      "teamSeedFailed": "Signal créé, mais les membres d’équipe sélectionnés n’ont pas pu être ajoutés au chat.",
+      "attachmentsUploadFailed": "Signal créé, mais les pièces jointes n’ont pas pu être téléversées dans le chat."
     },
     "tagLabels": {
       "Purpose": "Raison d'être",

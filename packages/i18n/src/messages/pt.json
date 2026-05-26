@@ -2429,7 +2429,10 @@
     "provisioning": {
       "chatUnavailable": "Sinal criado, mas o chat está indisponível no momento.",
       "roomProvisionFailed": "Sinal criado, mas a criação da sala de chat falhou.",
-      "roomLinkFailedRetry": "Sinal criado, mas não foi possível vincular a sala de chat. Tente novamente."
+      "roomLinkFailedRetry": "Sinal criado, mas não foi possível vincular a sala de chat. Tente novamente.",
+      "teamSeedSkipped": "Sinal criado, mas os membros da equipe selecionados ainda não puderam ser adicionados ao chat.",
+      "teamSeedFailed": "Sinal criado, mas os membros da equipe selecionados não puderam ser adicionados ao chat.",
+      "attachmentsUploadFailed": "Sinal criado, mas os anexos não puderam ser enviados ao chat."
     },
     "tagLabels": {
       "Purpose": "Propósito",

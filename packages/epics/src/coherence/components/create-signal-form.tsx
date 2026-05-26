@@ -666,26 +666,36 @@ export const CreateSignalForm = ({
                 );
               }
 
-              if (
-                teamIdsToSeed.length > 0 &&
-                matrixClient &&
-                currentUserMatrixId
-              ) {
-                try {
-                  await publishSignalTeamNotice({
-                    client: matrixClient,
-                    roomId: canonicalRoomId,
-                    coherenceSlug,
-                    memberMatrixUserIds: teamIdsToSeed,
-                    ownerMatrixUserId: currentUserMatrixId,
-                    actorMatrixUserId: currentUserMatrixId,
-                    addedMemberMatrixUserIds: teamIdsToSeed,
-                  });
-                } catch (teamSeedError) {
-                  console.warn(
-                    'Signal room created but failed to seed signal team:',
-                    teamSeedError,
+              if (teamIdsToSeed.length > 0) {
+                if (!matrixClient || !currentUserMatrixId) {
+                  setSignalProvisioningNotice(
+                    t('provisioning.teamSeedSkipped'),
                   );
+                } else {
+                  try {
+                    await publishSignalTeamNotice({
+                      client: matrixClient,
+                      roomId: canonicalRoomId,
+                      coherenceSlug,
+                      memberMatrixUserIds: teamIdsToSeed,
+                      ownerMatrixUserId: currentUserMatrixId,
+                      actorMatrixUserId: currentUserMatrixId,
+                      addedMemberMatrixUserIds: teamIdsToSeed,
+                    });
+                  } catch (teamSeedError) {
+                    const teamSeedErrorMessage =
+                      teamSeedError instanceof Error
+                        ? teamSeedError.message
+                        : String(teamSeedError);
+                    setSignalProvisioningNotice(
+                      t('provisioning.teamSeedFailed'),
+                      teamSeedErrorMessage,
+                    );
+                    console.warn(
+                      'Signal room created but failed to seed signal team:',
+                      teamSeedError,
+                    );
+                  }
                 }
               }
 
@@ -700,6 +710,14 @@ export const CreateSignalForm = ({
                     })),
                   });
                 } catch (attachmentUploadError) {
+                  const attachmentUploadErrorMessage =
+                    attachmentUploadError instanceof Error
+                      ? attachmentUploadError.message
+                      : String(attachmentUploadError);
+                  setSignalProvisioningNotice(
+                    t('provisioning.attachmentsUploadFailed'),
+                    attachmentUploadErrorMessage,
+                  );
                   console.warn(
                     'Signal room created but failed to upload attachments:',
                     attachmentUploadError,
