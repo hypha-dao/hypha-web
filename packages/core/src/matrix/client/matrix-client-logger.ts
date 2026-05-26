@@ -39,9 +39,7 @@ export function configureMatrixGlobalLogger(): void {
     ) {
       return;
     }
-    if (matrixSdkVerboseFromEnv()) {
-      originalWarn(...args);
-    }
+    originalWarn(...args);
   };
 }
 
