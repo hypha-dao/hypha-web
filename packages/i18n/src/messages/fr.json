@@ -1958,7 +1958,7 @@
       "spaceMemory": "Que retient notre espace ?",
       "valueFlows": "Comment la valeur circule-t-elle via nos tokens ?"
     },
-    "welcome": "Je suis votre AI {spaceName}. J'aide votre espace et l'écosystème élargi à réfléchir avec vous—but, direction, opérations, signaux Coherence, mémoire org, impact et flux de valeur—avec des agents IA spécialisés quand vous le demandez.",
+    "welcome": "Je suis votre IA {spaceName}. J'aide votre espace et l'écosystème élargi à réfléchir avec vous—but, direction, opérations, signaux Coherence, mémoire org, impact et flux de valeur—avec des agents IA spécialisés quand vous le demandez.",
     "welcomeSpecialistsHint": "Les spécialistes actifs apparaissent aussi sous Membres → Agents IA.",
     "specialistsResponding": "Spécialistes mobilisés",
     "specialistsRespondingStreaming": "Spécialistes mobilisés…",
