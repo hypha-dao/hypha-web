@@ -1981,7 +1981,7 @@
       "valueFlows": "Werteströme"
     },
     "welcome": "Ich bin deine {spaceName}-KI. Frag alles zu diesem Space oder wähle unten einen Vorschlag.",
-    "welcomeSpecialistsHint": "Aktive Spezialist:innen findest du auch unter Mitglieder > AI Agents.",
+    "welcomeSpecialistsHint": "Aktive Spezialist:innen findest du auch unter Mitglieder > KI-Agenten.",
     "specialistsResponding": "Beitragende Spezialist:innen",
     "specialistsRespondingStreaming": "Spezialist:innen tragen bei…",
     "placeholder": "Einfach fragen...",
