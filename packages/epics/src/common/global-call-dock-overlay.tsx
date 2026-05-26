@@ -915,6 +915,21 @@ export function GlobalCallDockOverlay() {
   };
   const showDockBanner =
     errorCode != null || screenshareErrorCode != null || remoteMediaStall;
+  /** Mobile dock is always edge-to-edge; panel layout avoids full-view splitters eating taps. */
+  const dockStageLayout = isMobile
+    ? 'panel'
+    : modeIsFullscreen
+    ? 'fullView'
+    : 'panel';
+  const dockControlsVariant =
+    isMobile || !modeIsFullscreen ? 'inBanner' : 'fullView';
+  const dockControlsLayout = isMobile
+    ? 'centered'
+    : dockCompact
+    ? 'inline'
+    : modeIsFullscreen
+    ? 'inline'
+    : 'centered';
 
   const dockContent = (
     <div
@@ -924,7 +939,8 @@ export function GlobalCallDockOverlay() {
         inDocumentPip
           ? 'relative flex h-full w-full min-h-0 min-w-0 select-none flex-col overflow-hidden rounded-lg border border-border/60 bg-background/95 shadow-lg'
           : cn(
-              'fixed z-[130] flex select-none flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
+              'fixed z-[130] flex select-none flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl',
+              isMobile ? '' : 'backdrop-blur-sm',
               isMobile || modeIsFullscreen
                 ? 'min-h-0 min-w-0'
                 : 'min-h-[320px] min-w-[480px]',
@@ -970,7 +986,7 @@ export function GlobalCallDockOverlay() {
       <div className="relative z-[5] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
         <div
           className={cn(
-            'flex shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45',
+            'pointer-events-auto flex shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45',
             dockCompact ? 'px-1.5 py-1' : 'px-2.5 py-2',
             modeIsFullscreen || inDocumentPip
               ? 'cursor-default'
@@ -1103,8 +1119,10 @@ export function GlobalCallDockOverlay() {
         <div
           ref={splitContainerRef}
           className={cn(
-            'min-h-0 min-w-0',
-            inDocumentPip ? 'max-h-[72px] shrink-0' : 'flex-1',
+            'pointer-events-none min-h-0 min-w-0 overflow-hidden',
+            inDocumentPip
+              ? 'max-h-[72px] shrink-0'
+              : 'flex min-h-0 flex-1 flex-col',
           )}
         >
           {captureUploadFinalizing ? (
@@ -1131,14 +1149,14 @@ export function GlobalCallDockOverlay() {
               remoteMediaStall={remoteMediaStall}
               currentUserProfileAvatarUrl={me?.avatarUrl ?? null}
               resolveMemberLabel={resolveMemberLabel}
-              layout={modeIsFullscreen ? 'fullView' : 'panel'}
+              layout={dockStageLayout}
               panelVideoFit={
-                !modeIsFullscreen && dockMode === 'thumbnail'
+                dockStageLayout === 'panel' && dockMode === 'thumbnail'
                   ? 'contain'
                   : 'cover'
               }
-              panelFlush={!modeIsFullscreen}
-              fullViewOpen={modeIsFullscreen}
+              panelFlush={dockStageLayout === 'panel'}
+              fullViewOpen={dockStageLayout === 'fullView'}
               fullViewLayoutMode={layoutMode}
               fullViewPaneSplit={paneSplit}
               onFullViewPaneSplitChange={onPaneSplitChange}
@@ -1149,7 +1167,7 @@ export function GlobalCallDockOverlay() {
 
         <div
           className={cn(
-            'relative z-10 shrink-0 overflow-visible border-t border-border/50 bg-muted/35',
+            'pointer-events-auto relative isolate z-30 shrink-0 touch-manipulation overflow-visible border-t border-border/50 bg-muted/35',
             dockCompact ? 'px-1 py-1' : 'px-2 py-2',
           )}
         >
@@ -1243,24 +1261,14 @@ export function GlobalCallDockOverlay() {
                     void leave();
                   }}
                   density={dockCompact ? 'compact' : 'default'}
-                  variant={modeIsFullscreen ? 'fullView' : 'inBanner'}
-                  inBannerLayout={
-                    dockCompact
-                      ? 'inline'
-                      : modeIsFullscreen
-                      ? 'inline'
-                      : 'centered'
-                  }
+                  variant={dockControlsVariant}
+                  inBannerLayout={dockControlsLayout}
                 />
               )}
             </>
           )}
         </div>
       </div>
-
-      {modeIsFullscreen && (
-        <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-black/5" />
-      )}
 
       <HumanChatPanelScreenshareTakeoverDialog
         incoming={screenshareTakeoverIncoming}
@@ -1280,9 +1288,10 @@ export function GlobalCallDockOverlay() {
     </div>
   );
 
-  if (pipWindow) {
-    return createPortal(dockContent, pipWindow.document.body);
+  if (typeof document === 'undefined') {
+    return dockContent;
   }
 
-  return dockContent;
+  const portalTarget = pipWindow?.document.body ?? document.body;
+  return createPortal(dockContent, portalTarget);
 }
