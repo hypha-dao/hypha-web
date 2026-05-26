@@ -1966,7 +1966,7 @@
       "spaceMemory": "What does our space remember?",
       "valueFlows": "How does value flow through our tokens?"
     },
-    "welcome": "I'm your {spaceName} AI. I help this organisation think with you—direction, operations, coherence signals, org memory, and value flows—with specialist agents when you ask.",
+    "welcome": "I'm your {spaceName} AI. I help your space and the broader ecosystem think with you—purpose, direction, operations, coherence signals, org memory, impact, and value flows—with specialist AI agents when you ask.",
     "welcomeSpecialistsHint": "Active specialists also appear under Members → AI Agents.",
     "specialistsResponding": "Specialists contributing",
     "specialistsRespondingStreaming": "Specialists contributing…",
