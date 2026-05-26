@@ -2434,6 +2434,10 @@
     "savingSignal": "Signal wird gespeichert",
     "saveChanges": "Änderungen speichern",
     "keepWindowOpenWhileCreating": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind.",
+    "createSignalAttachmentsTitle": "Anhänge",
+    "createSignalTeamOwner": "Inhaber",
+    "createSignalTeamNoMembers": "Noch keine Space-Mitglieder mit Chat-Konten verfügbar.",
+    "loading": "Wird geladen...",
     "provisioning": {
       "chatUnavailable": "Signal erstellt, aber der Chat ist derzeit nicht verfügbar.",
       "roomProvisionFailed": "Signal erstellt, aber die Bereitstellung des Chatraums ist fehlgeschlagen.",

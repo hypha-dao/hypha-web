@@ -1,6 +1,60 @@
+import { EventType, MsgType } from 'matrix-js-sdk';
+
 export const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
 export const SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER =
   '[hypha:signal-team-request]';
+
+export type PublishSignalTeamNoticeInput = {
+  client: {
+    sendEvent: (
+      roomId: string,
+      eventType: string,
+      content: Record<string, unknown>,
+    ) => Promise<unknown>;
+  };
+  roomId: string;
+  coherenceSlug: string;
+  /** Selected team member MXIDs (owner/actor are merged in automatically). */
+  memberMatrixUserIds: string[];
+  ownerMatrixUserId?: string | null;
+  actorMatrixUserId?: string | null;
+  addedMemberMatrixUserIds?: string[];
+  removedMemberMatrixUserIds?: string[];
+};
+
+/** Publish a signal-team notice event (same wire format as chat panel team management). */
+export async function publishSignalTeamNotice({
+  client,
+  roomId,
+  coherenceSlug,
+  memberMatrixUserIds,
+  ownerMatrixUserId,
+  actorMatrixUserId,
+  addedMemberMatrixUserIds,
+  removedMemberMatrixUserIds,
+}: PublishSignalTeamNoticeInput): Promise<void> {
+  const ownerId = ownerMatrixUserId?.trim() || null;
+  const actorId = actorMatrixUserId?.trim() || null;
+  const deduped = normalizeMatrixUserIds([
+    ...memberMatrixUserIds,
+    ...(ownerId ? [ownerId] : []),
+    ...(actorId ? [actorId] : []),
+  ]);
+  await client.sendEvent(roomId, EventType.RoomMessage, {
+    msgtype: MsgType.Notice,
+    body: SIGNAL_TEAM_EVENT_BODY_MARKER,
+    coherenceSlug: coherenceSlug.trim() || null,
+    memberMatrixUserIds: deduped,
+    ownerMatrixUserId: ownerId,
+    addedMemberMatrixUserIds: normalizeMatrixUserIds(
+      addedMemberMatrixUserIds ?? memberMatrixUserIds,
+    ),
+    removedMemberMatrixUserIds: normalizeMatrixUserIds(
+      removedMemberMatrixUserIds,
+    ),
+    updatedAt: new Date().toISOString(),
+  });
+}
 
 export type SignalTeamNoticeKind =
   | 'updated'

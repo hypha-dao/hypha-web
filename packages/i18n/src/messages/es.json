@@ -2424,6 +2424,10 @@
     "savingSignal": "Guardando señal",
     "saveChanges": "Guardar cambios",
     "keepWindowOpenWhileCreating": "Mantén esta ventana abierta hasta que terminemos.",
+    "createSignalAttachmentsTitle": "Adjuntos",
+    "createSignalTeamOwner": "Propietario",
+    "createSignalTeamNoMembers": "Aún no hay miembros del espacio con cuentas de chat disponibles.",
+    "loading": "Cargando...",
     "provisioning": {
       "chatUnavailable": "Señal creada, pero el chat no está disponible en este momento.",
       "roomProvisionFailed": "Señal creada, pero falló el aprovisionamiento de la sala de chat.",

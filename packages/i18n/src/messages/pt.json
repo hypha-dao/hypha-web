@@ -2422,6 +2422,10 @@
     "editSignalMissingSlug": "O identificador do sinal está em falta. Feche e volte a abrir o formulário de edição.",
     "editSignalSaveFailed": "Não foi possível guardar as alterações do sinal. Tente novamente.",
     "keepWindowOpenWhileCreating": "Mantenha esta janela aberta até terminarmos.",
+    "createSignalAttachmentsTitle": "Anexos",
+    "createSignalTeamOwner": "Proprietário",
+    "createSignalTeamNoMembers": "Ainda não há membros do espaço com contas de chat disponíveis.",
+    "loading": "Carregando...",
     "provisioning": {
       "chatUnavailable": "Sinal criado, mas o chat está indisponível no momento.",
       "roomProvisionFailed": "Sinal criado, mas a criação da sala de chat falhou.",
