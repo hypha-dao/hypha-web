@@ -87,7 +87,9 @@ test.describe('AI Chat Panel', () => {
     // Verify suggestion-like buttons are visible in the panel
     // For unauthenticated users, suggestions may not show, so verify constants as fallback
     for (const suggestion of EXPECTED_SUGGESTIONS) {
-      expect(suggestion.length).toBeGreaterThan(10);
+      expect(suggestion.toLowerCase()).toMatch(
+        /space|signal|blind|discussion|memory|value|token/,
+      );
     }
     expect(EXPECTED_WELCOME_MESSAGE).toContain('think with you');
     expect(EXPECTED_WELCOME_MESSAGE).toContain('coherence signals');
