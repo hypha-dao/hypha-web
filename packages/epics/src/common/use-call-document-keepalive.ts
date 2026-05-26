@@ -74,7 +74,10 @@ export function useCallDocumentKeepalive(
       if (document.hidden || documentPipOpen) {
         startSilentKeepalive();
         void audioContext?.resume();
+        return;
       }
+      void requestWakeLock();
+      void audioContext?.resume();
     };
 
     void requestWakeLock();

@@ -263,7 +263,9 @@ function getLiveLocalVideoTrack(
   gc: MatrixSdk.GroupCall,
 ): MediaStreamTrack | null {
   const track = gc.localCallFeed?.stream.getVideoTracks()[0];
-  return track && track.readyState === 'live' ? track : null;
+  // Browsers mute (black-frame) camera tracks when the tab is backgrounded while
+  // keeping readyState `live`; treat that as unhealthy so recovery can republish.
+  return track && track.readyState === 'live' && !track.muted ? track : null;
 }
 
 async function waitForLiveLocalVideoTrack(
@@ -2787,6 +2789,9 @@ export function useSpaceGroupCall(
       remoteMediaStallLoggedRef.current = false;
       remoteMediaRecoverAttemptedRef.current = false;
       nudgeGroupCallPlaceOutgoing(gc);
+      scheduleLocalMediaBootstrap(gc);
+      scheduleFeedBatched();
+      refreshLocalPreview();
       evalRemoteMediaStall();
     };
     document.addEventListener('visibilitychange', onVis);
@@ -2794,7 +2799,67 @@ export function useSpaceGroupCall(
     return () => {
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [callState, evalRemoteMediaStall]);
+  }, [
+    callState,
+    evalRemoteMediaStall,
+    refreshLocalPreview,
+    scheduleFeedBatched,
+    scheduleLocalMediaBootstrap,
+  ]);
+
+  /** Republish camera when the browser unmutes the track after tab foreground. */
+  useEffect(() => {
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    const gc = groupCallRef.current;
+    if (!gc || gc.isLocalVideoMuted()) return;
+
+    const recoverIfNeeded = () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (gc.isLocalVideoMuted() || getLiveLocalVideoTrack(gc)) return;
+      const kind = lastJoinKindRef.current ?? 'video';
+      void ensureLocalCallMediaPublished(gc, kind).then(() => {
+        scheduleFeedBatched();
+        refreshLocalPreview();
+      });
+    };
+
+    const attachToStream = (stream: MediaStream | undefined) => {
+      if (!stream) return () => undefined;
+      const onTrackChange = () => recoverIfNeeded();
+      stream.addEventListener('addtrack', onTrackChange);
+      stream.addEventListener('removetrack', onTrackChange);
+      for (const track of stream.getVideoTracks()) {
+        track.addEventListener('mute', onTrackChange);
+        track.addEventListener('unmute', onTrackChange);
+        track.addEventListener('ended', onTrackChange);
+      }
+      return () => {
+        stream.removeEventListener('addtrack', onTrackChange);
+        stream.removeEventListener('removetrack', onTrackChange);
+        for (const track of stream.getVideoTracks()) {
+          track.removeEventListener('mute', onTrackChange);
+          track.removeEventListener('unmute', onTrackChange);
+          track.removeEventListener('ended', onTrackChange);
+        }
+      };
+    };
+
+    let detachStream = attachToStream(gc.localCallFeed?.stream);
+    const onFeedsChanged = () => {
+      detachStream?.();
+      detachStream = attachToStream(
+        groupCallRef.current?.localCallFeed?.stream,
+      );
+      recoverIfNeeded();
+    };
+    gc.on(GroupCallEvent.UserMediaFeedsChanged, onFeedsChanged);
+    recoverIfNeeded();
+
+    return () => {
+      detachStream?.();
+      gc.off(GroupCallEvent.UserMediaFeedsChanged, onFeedsChanged);
+    };
+  }, [callState, groupCall, refreshLocalPreview, scheduleFeedBatched]);
 
   useEffect(() => {
     return () => {

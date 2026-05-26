@@ -1768,8 +1768,9 @@ const FeedContent = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stream = feed.stream ?? null;
   const liveVideoTrack =
-    stream?.getVideoTracks().find((track) => track.readyState === 'live') ??
-    null;
+    stream
+      ?.getVideoTracks()
+      .find((track) => track.readyState === 'live' && !track.muted) ?? null;
   const hasVideo = !feed.isVideoMuted() && liveVideoTrack !== null;
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
@@ -1860,6 +1861,24 @@ const FeedContent = ({
       }
     };
   }, [stream]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') return;
+      rebindStream();
+      rerenderOnFeed();
+      const el = ref.current;
+      if (el && showVideo && stream) {
+        el.srcObject = stream;
+        void el.play().catch(() => undefined);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [showVideo, stream]);
 
   /** Analyse mic/remote line whenever the tile has a live audio track (not just Matrix `isSpeaking`, which lags and hid real levels). */
   const canVoiceWave =
