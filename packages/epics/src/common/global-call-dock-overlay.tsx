@@ -1024,7 +1024,10 @@ export function GlobalCallDockOverlay() {
               {t('spaceButton')}
             </button>
           )}
-          {isScreensharing && roomGroupCallDeviceCount > 1 && !dockCompact ? (
+          {dockStageLayout === 'fullView' &&
+          isScreensharing &&
+          roomGroupCallDeviceCount > 1 &&
+          !dockCompact ? (
             <HumanChatPanelCallFullViewLayoutMenu
               value={layoutMode}
               onValueChange={onShareLayoutModeChange}

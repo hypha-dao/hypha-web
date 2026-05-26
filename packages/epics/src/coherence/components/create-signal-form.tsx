@@ -538,7 +538,16 @@ export const CreateSignalForm = ({
         window.dispatchEvent(new Event(SIGNAL_PROVISIONING_NOTICE_EVENT));
         return;
       }
-      const lines = details ? [message, details] : [message];
+      const previous = JSON.parse(
+        sessionStorage.getItem(SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY) ?? '[]',
+      );
+      const existing = Array.isArray(previous)
+        ? previous.filter(
+            (line): line is string =>
+              typeof line === 'string' && line.trim().length > 0,
+          )
+        : [];
+      const lines = [...existing, message, ...(details ? [details] : [])];
       sessionStorage.setItem(
         SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
         JSON.stringify(lines),
