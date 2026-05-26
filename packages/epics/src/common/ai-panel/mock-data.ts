@@ -1,3 +1,5 @@
+import { getLocaleMessagesSync } from '@hypha-platform/i18n/messages';
+
 export const MOCK_SUGGESTION_KEYS = [
   'AiPanel.suggestions.spaceHealth',
   'AiPanel.suggestions.nextSignal',
@@ -7,15 +9,36 @@ export const MOCK_SUGGESTION_KEYS = [
   'AiPanel.suggestions.valueFlows',
 ] as const;
 
-// Fallback values used when translations are not yet loaded
-export const MOCK_SUGGESTIONS = [
-  'How is our space doing overall?',
-  'What signal should we create or share next?',
-  "What's our biggest blind spot?",
-  'Summarize recent team discussion',
-  'What does our space remember?',
-  'How does value flow through our tokens?',
-];
+const SUGGESTION_FIELD_NAMES = [
+  'spaceHealth',
+  'nextSignal',
+  'blindSpot',
+  'summarizeDiscussion',
+  'spaceMemory',
+  'valueFlows',
+] as const;
+
+type AiPanelMessages = {
+  welcome?: string;
+  suggestions?: Partial<
+    Record<(typeof SUGGESTION_FIELD_NAMES)[number], string>
+  >;
+};
+
+function getAiPanelMessages(locale?: string): AiPanelMessages {
+  const { messages } = getLocaleMessagesSync(locale);
+  return (messages.AiPanel ?? {}) as AiPanelMessages;
+}
+
+/** English defaults for tests and Storybook when translations are not wired. */
+export function getMockSuggestions(locale?: string): string[] {
+  const suggestions = getAiPanelMessages(locale).suggestions ?? {};
+  return SUGGESTION_FIELD_NAMES.map((key) => suggestions[key] ?? '').filter(
+    Boolean,
+  );
+}
+
+export const MOCK_SUGGESTIONS = getMockSuggestions();
 
 export type Message = {
   id: string;
@@ -25,11 +48,19 @@ export type Message = {
   isStreaming?: boolean;
 };
 
-export function createMockWelcomeMessage(spaceName = 'Hypha'): Message {
+export function createMockWelcomeMessage(
+  spaceName = 'Hypha',
+  locale?: string,
+): Message {
+  const welcomeTemplate =
+    getAiPanelMessages(locale).welcome ??
+    getAiPanelMessages('en').welcome ??
+    '';
+
   return {
     id: 'welcome',
     role: 'assistant',
-    content: `I'm your ${spaceName} AI. I help your space and the broader ecosystem think with you—purpose, direction, operations, coherence signals, org memory, impact, and value flows—with specialist AI agents when you ask.`,
+    content: welcomeTemplate.replace('{spaceName}', spaceName),
     timestamp: new Date(),
   };
 }

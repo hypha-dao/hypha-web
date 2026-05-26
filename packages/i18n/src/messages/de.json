@@ -1959,7 +1959,7 @@
     "suggestions": {
       "spaceHealth": "Wie steht unser Space insgesamt da?",
       "nextSignal": "Welches Signal sollen wir als Nächstes erstellen oder teilen?",
-      "blindSpot": "Was ist unsere größte blinde Fleck?",
+      "blindSpot": "Was ist unser größter blinder Fleck?",
       "summarizeDiscussion": "Fasse die letzte Teamdiskussion zusammen",
       "spaceMemory": "Was erinnert sich unser Space?",
       "valueFlows": "Wie fließen Werte durch unsere Tokens?"
