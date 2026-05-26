@@ -340,7 +340,10 @@ export function SpaceMemoryTimelineItem({
       : displayName;
 
   const isCallRecording = item.source === 'call_recording';
-  const callRecordingFallbackTitle = t('spaceMemoryContextCallRecording');
+  const callRecordingFallbackTitle = deriveSpaceMemoryDisplayTitle({
+    source: 'call_recording',
+    name: '',
+  });
   const showCallRecordingTitle =
     isCallRecording &&
     displayName.trim() !== callRecordingFallbackTitle &&
