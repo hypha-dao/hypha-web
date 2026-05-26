@@ -35,6 +35,7 @@ import {
   persistCallFullViewPaneSplit,
 } from './human-chat-panel';
 import { matrixMemberDisplayLabelFromRoom } from './human-chat-panel/matrix-room-member-display';
+import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { getLocaleFromPath } from './get-locale-from-path';
@@ -401,7 +402,7 @@ export function GlobalCallDockOverlay() {
   const tCapture = useTranslations('HumanChatPanel');
   const router = useRouter();
   const pathname = usePathname() ?? '';
-  const { openHumanChatPanel, closeCoherenceChat } = useHumanChatPanel();
+  const { openHumanChatPanel, openCoherenceChat } = useHumanChatPanel();
   const { client } = useMatrix();
   const { person: me } = useMe();
   const {
@@ -766,32 +767,47 @@ export function GlobalCallDockOverlay() {
     ? `/${locale}/dho/${callSpaceSlug}/coherence`
     : null;
 
-  const onOpenCallSpace = React.useCallback(() => {
-    if (!callSpaceHref) return;
+  const onOpenCallSpace = React.useCallback(async () => {
+    if (!callSpaceSlug || !activeRoomId?.trim()) return;
 
     if (isDocumentPipOpen) {
       closePip();
     }
     window.focus();
 
-    closeCoherenceChat();
-
     const normalizedPath = (pathname.split('?')[0] ?? '').replace(/\/$/, '');
-    const normalizedHref = callSpaceHref.replace(/\/$/, '');
-    const alreadyOnCallSpacePage = normalizedPath === normalizedHref;
+    const signalTarget = await resolveSignalThreadByMatrixRoom(
+      activeRoomId.trim(),
+    );
+    const spaceSlug = signalTarget?.spaceSlug ?? callSpaceSlug;
+    const spaceRootHref = `/${locale}/dho/${spaceSlug}`;
+    const spaceCoherenceHref = `${spaceRootHref}/coherence`;
+    const onTargetSpace = normalizedPath.startsWith(spaceRootHref);
 
-    if (alreadyOnCallSpacePage) {
+    if (signalTarget) {
+      openCoherenceChat(
+        signalTarget.roomId,
+        signalTarget.signalTitle,
+        signalTarget.signalSlug,
+      );
       openHumanChatPanel();
+      if (normalizedPath !== spaceCoherenceHref) {
+        router.push(spaceCoherenceHref);
+      }
       return;
     }
 
-    router.push(callSpaceHref);
     openHumanChatPanel();
+    if (!onTargetSpace) {
+      router.push(spaceRootHref);
+    }
   }, [
-    callSpaceHref,
-    closeCoherenceChat,
+    activeRoomId,
+    callSpaceSlug,
     closePip,
     isDocumentPipOpen,
+    locale,
+    openCoherenceChat,
     openHumanChatPanel,
     pathname,
     router,
@@ -932,7 +948,9 @@ export function GlobalCallDockOverlay() {
             <button
               type="button"
               data-no-dock-drag
-              onClick={onOpenCallSpace}
+              onClick={() => {
+                void onOpenCallSpace();
+              }}
               className={cn(
                 'inline-flex items-center rounded-md border border-border/60 bg-background hover:bg-muted',
                 dockCompact
