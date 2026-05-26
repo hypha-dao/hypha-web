@@ -11,7 +11,7 @@ const EXPECTED_SUGGESTIONS = [
 ];
 
 const EXPECTED_WELCOME_MESSAGE =
-  "I'm your Hypha AI. I help with strategic direction, operations, coherence signals, org memory, and value flows—with specialist agents that join when you ask.";
+  "I'm your Hypha AI. I help this organisation think with you—direction, operations, coherence signals, org memory, and value flows—with specialist agents when you ask.";
 
 test.describe('AI Chat Panel', () => {
   let chatPanel: AiChatPanelPage;
@@ -89,7 +89,7 @@ test.describe('AI Chat Panel', () => {
     for (const suggestion of EXPECTED_SUGGESTIONS) {
       expect(suggestion.length).toBeGreaterThan(10);
     }
-    expect(EXPECTED_WELCOME_MESSAGE).toContain('strategic direction');
+    expect(EXPECTED_WELCOME_MESSAGE).toContain('think with you');
     expect(EXPECTED_WELCOME_MESSAGE).toContain('coherence signals');
     expect(EXPECTED_WELCOME_MESSAGE).toContain('specialist agents');
   });

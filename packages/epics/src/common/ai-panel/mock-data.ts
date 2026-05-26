@@ -29,7 +29,7 @@ export function createMockWelcomeMessage(spaceName = 'Hypha'): Message {
   return {
     id: 'welcome',
     role: 'assistant',
-    content: `I'm your ${spaceName} AI. I help with strategic direction, operations, coherence signals, org memory, and value flows—with specialist agents that join when you ask.`,
+    content: `I'm your ${spaceName} AI. I help this organisation think with you—direction, operations, coherence signals, org memory, and value flows—with specialist agents when you ask.`,
     timestamp: new Date(),
   };
 }
