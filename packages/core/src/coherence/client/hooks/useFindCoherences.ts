@@ -21,11 +21,16 @@ const COHERENCES_REFRESH_MS = 60_000;
 
 function buildCoherencesUrl(
   spaceSlug: string,
-  query: Omit<CoherenceQuery, 'spaceSlug' | 'tags'>,
+  query: Omit<CoherenceQuery, 'spaceSlug'>,
 ): string {
   const params = new URLSearchParams();
   if (query.search?.trim()) params.set('search', query.search.trim());
   if (query.type) params.set('type', query.type);
+  if (query.tags?.length) {
+    for (const tag of query.tags) {
+      params.append('tags', tag);
+    }
+  }
   if (query.priority) params.set('priority', query.priority);
   if (query.includeArchived) params.set('includeArchived', 'true');
   if (query.orderBy) params.set('orderBy', query.orderBy);
@@ -71,6 +76,7 @@ export const useFindCoherences = ({
       const url = buildCoherencesUrl(resolvedSlug, {
         search,
         type,
+        tags,
         priority,
         includeArchived,
         orderBy,

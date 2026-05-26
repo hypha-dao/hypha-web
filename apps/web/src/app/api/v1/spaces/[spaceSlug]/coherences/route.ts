@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
+  COHERENCE_TAGS,
   COHERENCE_TYPES,
   findSpaceBySlug,
+  type CoherenceTag,
   type CoherenceType,
 } from '@hypha-platform/core/server';
 import {
@@ -39,6 +41,23 @@ function parsePriority(raw: string | null): CoherencePriority | undefined {
   return undefined;
 }
 
+function parseTags(url: URL): CoherenceTag[] | undefined {
+  const rawValues = [
+    ...url.searchParams.getAll('tags'),
+    ...(url.searchParams.get('tags')?.split(',') ?? []),
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (rawValues.length === 0) return undefined;
+  const allowed = new Set<string>(COHERENCE_TAGS);
+  const tags = [
+    ...new Set(
+      rawValues.filter((value): value is CoherenceTag => allowed.has(value)),
+    ),
+  ];
+  return tags.length > 0 ? tags : undefined;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<Params> },
@@ -72,6 +91,7 @@ export async function GET(
       spaceId: space.id,
       search: url.searchParams.get('search')?.trim() || undefined,
       type: parseType(url.searchParams.get('type')),
+      tags: parseTags(url),
       priority: parsePriority(url.searchParams.get('priority')),
       includeArchived,
       orderBy: parseOrderBy(url.searchParams.get('orderBy')),
