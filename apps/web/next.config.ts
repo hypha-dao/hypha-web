@@ -39,6 +39,10 @@ const nextConfig: NextConfig = {
         'lib/webrtc/groupCallEventHandler.js',
       ),
       'matrix-js-sdk/lib/logger': path.join(matrixRoot, 'lib/logger.js'),
+      'matrix-js-sdk/lib/http-api/errors': path.join(
+        matrixRoot,
+        'lib/http-api/errors.js',
+      ),
       'matrix-js-sdk': require.resolve('matrix-js-sdk'),
     };
     return config;
