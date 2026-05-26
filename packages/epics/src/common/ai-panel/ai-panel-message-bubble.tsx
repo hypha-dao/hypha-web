@@ -575,10 +575,7 @@ export function AiPanelMessageBubble({
           )}
           {fileParts.length > 0 && (
             <div
-              className={cn(
-                'flex flex-col gap-2',
-                hasVisibleText && 'mt-1',
-              )}
+              className={cn('flex flex-col gap-2', hasVisibleText && 'mt-1')}
             >
               {fileParts.map((part, i) =>
                 part.mediaType?.startsWith('image/') && part.url ? (
