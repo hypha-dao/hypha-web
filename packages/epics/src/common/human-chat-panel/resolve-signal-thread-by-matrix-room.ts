@@ -12,7 +12,14 @@ const SESSION_ROOM_TO_COHERENCE_TITLE_PREFIX = 'hypha-room-to-coherence-title-';
 const SESSION_ROOM_TO_COHERENCE_SPACE_PREFIX = 'hypha-room-to-coherence-space-';
 const COHERENCE_ROOM_REVERSE_PREFIX = 'hypha-room-id-to-coherence-';
 
-function readLocalSignalThreadTarget(
+/** Read cached signal thread metadata without hitting the network. */
+export function readLocalSignalThreadTarget(
+  roomId: string,
+): ResolvedSignalThreadTarget | null {
+  return readLocalSignalThreadTargetFromStorage(roomId);
+}
+
+function readLocalSignalThreadTargetFromStorage(
   roomId: string,
 ): ResolvedSignalThreadTarget | null {
   if (typeof window === 'undefined') return null;
@@ -60,6 +67,24 @@ function readLocalSignalThreadTarget(
   }
 }
 
+function hasLocalSignalThreadHint(roomId: string): boolean {
+  if (readLocalSignalThreadTargetFromStorage(roomId)) return true;
+  if (typeof window === 'undefined') return false;
+  try {
+    const fromSession = window.sessionStorage
+      .getItem(`${SESSION_ROOM_TO_COHERENCE_SLUG_PREFIX}${roomId}`)
+      ?.trim();
+    if (fromSession) return true;
+    return Boolean(
+      window.localStorage
+        .getItem(`${COHERENCE_ROOM_REVERSE_PREFIX}${roomId}`)
+        ?.trim(),
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Resolve a Matrix room id to a signal thread (local cache first, then API). */
 export async function resolveSignalThreadByMatrixRoom(
   roomId: string,
@@ -68,8 +93,12 @@ export async function resolveSignalThreadByMatrixRoom(
   const trimmed = roomId.trim();
   if (!trimmed) return null;
 
-  const cached = readLocalSignalThreadTarget(trimmed);
+  const cached = readLocalSignalThreadTargetFromStorage(trimmed);
   if (cached) return cached;
+
+  if (!hasLocalSignalThreadHint(trimmed)) {
+    return null;
+  }
 
   const headers: HeadersInit = {};
   try {

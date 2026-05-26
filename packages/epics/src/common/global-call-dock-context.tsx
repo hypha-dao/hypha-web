@@ -130,6 +130,9 @@ function useGlobalCallDockValue() {
   const [activeSpaceSlug, setActiveSpaceSlug] = React.useState<string | null>(
     null,
   );
+  const [pinnedCallSpaceSlug, setPinnedCallSpaceSlug] = React.useState<
+    string | null
+  >(null);
   const [activeAuthToken, setActiveAuthToken] = React.useState<string | null>(
     null,
   );
@@ -208,6 +211,7 @@ function useGlobalCallDockValue() {
       callSessionRoomIdRef.current = activeRoomId;
       callSessionSpaceSlugRef.current = activeSpaceSlug;
       callSessionAuthTokenRef.current = activeAuthToken;
+      setPinnedCallSpaceSlug(activeSpaceSlug);
       return;
     }
     if (
@@ -219,6 +223,7 @@ function useGlobalCallDockValue() {
       callSessionRoomIdRef.current = null;
       callSessionSpaceSlugRef.current = null;
       callSessionAuthTokenRef.current = null;
+      setPinnedCallSpaceSlug(null);
     }
   }, [
     activeAuthToken,
@@ -283,6 +288,7 @@ function useGlobalCallDockValue() {
     setBoundSpaceSlug(snapshot.spaceSlug);
     setActiveRoomId(snapshot.roomId);
     setActiveSpaceSlug(snapshot.spaceSlug);
+    setPinnedCallSpaceSlug(snapshot.spaceSlug);
     setPendingJoin({
       kind: snapshot.callKind,
       roomId: snapshot.roomId,
@@ -478,6 +484,7 @@ function useGlobalCallDockValue() {
     boundRoomId,
     activeRoomId,
     activeSpaceSlug,
+    pinnedCallSpaceSlug,
     dockMode,
     setDockMode,
     showFloatingDock,

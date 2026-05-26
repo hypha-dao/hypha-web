@@ -86,9 +86,12 @@ const DEFAULT_PANE_SPLIT: Record<CallFullViewPaneSplit, number> = {
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
 
 function readCallSpaceSlug(
+  pinnedSpaceSlug: string | null,
   activeSpaceSlug: string | null,
   activeRoomId: string | null,
 ): string | null {
+  const fromPinned = pinnedSpaceSlug?.trim();
+  if (fromPinned) return fromPinned;
   const fromState = activeSpaceSlug?.trim();
   if (fromState) return fromState;
   if (!activeRoomId?.trim() || typeof window === 'undefined') return null;
@@ -408,6 +411,7 @@ export function GlobalCallDockOverlay() {
   const {
     activeRoomId,
     activeSpaceSlug,
+    pinnedCallSpaceSlug,
     showFloatingDock,
     dockMode,
     setDockMode,
@@ -760,8 +764,8 @@ export function GlobalCallDockOverlay() {
   );
   const locale = React.useMemo(() => getLocaleFromPath(pathname), [pathname]);
   const callSpaceSlug = React.useMemo(
-    () => readCallSpaceSlug(activeSpaceSlug, activeRoomId),
-    [activeRoomId, activeSpaceSlug],
+    () => readCallSpaceSlug(pinnedCallSpaceSlug, activeSpaceSlug, activeRoomId),
+    [activeRoomId, activeSpaceSlug, pinnedCallSpaceSlug],
   );
   const callSpaceHref = callSpaceSlug
     ? `/${locale}/dho/${callSpaceSlug}/coherence`
@@ -780,9 +784,10 @@ export function GlobalCallDockOverlay() {
       activeRoomId.trim(),
     );
     const spaceSlug = signalTarget?.spaceSlug ?? callSpaceSlug;
-    const spaceRootHref = `/${locale}/dho/${spaceSlug}`;
-    const spaceCoherenceHref = `${spaceRootHref}/coherence`;
-    const onTargetSpace = normalizedPath.startsWith(spaceRootHref);
+    const destinationHref = `/${locale}/dho/${spaceSlug}/coherence`.replace(
+      /\/$/,
+      '',
+    );
 
     if (signalTarget) {
       openCoherenceChat(
@@ -790,16 +795,12 @@ export function GlobalCallDockOverlay() {
         signalTarget.signalTitle,
         signalTarget.signalSlug,
       );
-      openHumanChatPanel();
-      if (normalizedPath !== spaceCoherenceHref) {
-        router.push(spaceCoherenceHref);
-      }
-      return;
     }
 
     openHumanChatPanel();
-    if (!onTargetSpace) {
-      router.push(spaceRootHref);
+
+    if (normalizedPath !== destinationHref) {
+      router.push(destinationHref);
     }
   }, [
     activeRoomId,
