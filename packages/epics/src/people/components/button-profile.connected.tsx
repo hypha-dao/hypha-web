@@ -121,6 +121,7 @@ export const ConnectedButtonProfile = ({
           ? `/${lang}/profile/${person?.slug ?? ''}`
           : newUserRedirectPath
       }
+      onboardingUrl={`/${lang}/onboarding`}
       notificationCentrePath={notificationCentrePath}
       navItems={navItems}
       trailingBeforeProfile={trailingBeforeProfile}

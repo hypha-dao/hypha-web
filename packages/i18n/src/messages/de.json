@@ -93,7 +93,45 @@
     "delete": "Löschen",
     "signIn": "Anmelden",
     "getStarted": "Loslegen",
-    "ecosystemLogo": "Ökosystem-Logo"
+    "ecosystemLogo": "Ökosystem-Logo",
+    "continueAdventure": "Abenteuer fortsetzen"
+  },
+  "OnboardingAdventure": {
+    "title": "Onboarding-Abenteuer",
+    "subtitle": "Wähle deinen nächsten Schritt",
+    "spacePlaceholder": "Space auswählen",
+    "spaceSearchPlaceholder": "Spaces suchen...",
+    "noSpacesFound": "Keine Spaces gefunden.",
+    "loadingSpaces": "Spaces werden geladen...",
+    "explore": {
+      "title": "Netzwerk erkunden",
+      "description": "Entdecke Communities und Möglichkeiten im Netzwerk.",
+      "cta": "Jetzt erkunden"
+    },
+    "create": {
+      "title": "Erstelle deinen Space",
+      "description": "Starte einen neuen Space und lade andere ein.",
+      "cta": "Space erstellen"
+    },
+    "join": {
+      "title": "Einem Space beitreten",
+      "description": "Wähle einen Space und öffne ihn direkt.",
+      "cta": "Ausgewählten Space öffnen",
+      "unavailable": "Derzeit sind keine Spaces zum Beitreten verfügbar."
+    },
+    "deposit": {
+      "title": "Funds in einen Space einzahlen",
+      "description": "Wähle einen Space mit Treasury-Adresse aus.",
+      "cta": "Einzahlungsdetails anzeigen",
+      "unavailable": "Derzeit sind keine Spaces mit Treasury-Adresse verfügbar."
+    },
+    "depositDetails": {
+      "title": "Einzahlungsdetails",
+      "description": "Finanziere die Treasury von {spaceName} mit der untenstehenden Adresse.",
+      "addressLabel": "Treasury-Adresse",
+      "copy": "Adresse kopieren",
+      "copied": "Adresse kopiert"
+    }
   },
   "MyWallet": {
     "loading": "Wird geladen...",

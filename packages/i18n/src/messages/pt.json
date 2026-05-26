@@ -783,7 +783,45 @@
     "delete": "Excluir",
     "signIn": "Entrar",
     "getStarted": "Comece",
-    "ecosystemLogo": "Logo do ecossistema"
+    "ecosystemLogo": "Logo do ecossistema",
+    "continueAdventure": "Continuar sua aventura"
+  },
+  "OnboardingAdventure": {
+    "title": "Aventura de onboarding",
+    "subtitle": "Escolha seu próximo passo",
+    "spacePlaceholder": "Selecionar espaço",
+    "spaceSearchPlaceholder": "Buscar espaços...",
+    "noSpacesFound": "Nenhum espaço encontrado.",
+    "loadingSpaces": "Carregando espaços...",
+    "explore": {
+      "title": "Explorar a rede",
+      "description": "Descubra comunidades e oportunidades na rede.",
+      "cta": "Explorar agora"
+    },
+    "create": {
+      "title": "Crie seu espaço",
+      "description": "Inicie um novo espaço e convide outras pessoas para colaborar.",
+      "cta": "Criar um espaço"
+    },
+    "join": {
+      "title": "Entrar em um espaço",
+      "description": "Escolha um espaço e acesse diretamente sua atividade.",
+      "cta": "Abrir espaço selecionado",
+      "unavailable": "Não há espaços disponíveis para entrar no momento."
+    },
+    "deposit": {
+      "title": "Depositar fundos em um espaço",
+      "description": "Escolha um espaço com endereço de tesouraria para depositar.",
+      "cta": "Mostrar detalhes de depósito",
+      "unavailable": "Não há espaços com endereço de tesouraria disponíveis."
+    },
+    "depositDetails": {
+      "title": "Detalhes de depósito",
+      "description": "Deposite na tesouraria de {spaceName} usando o endereço abaixo.",
+      "addressLabel": "Endereço da tesouraria",
+      "copy": "Copiar endereço",
+      "copied": "Endereço copiado"
+    }
   },
   "MyWallet": {
     "loading": "Carregando...",
