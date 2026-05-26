@@ -1212,9 +1212,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return sessionRoomId === chatRoomId;
   }, [callSessionRoomId, roomId]);
 
-  /** Sidebar call chrome only for the chat room that owns the active session. */
-  const showSidebarCallUi =
-    callUiEnabled && callAppliesToCurrentChatRoom && !showFloatingDock;
+  /** Sidebar call chrome for the chat room that owns the active session. */
+  const showSidebarCallUi = callUiEnabled && callAppliesToCurrentChatRoom;
 
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
   const showAuthedUi = !isAuthLoading && isAuthenticated;

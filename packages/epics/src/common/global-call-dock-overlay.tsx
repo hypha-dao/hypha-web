@@ -23,8 +23,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   DEFAULT_CALL_FULL_VIEW_LAYOUT,
   HumanChatPanelCallBanner,
+  HumanChatPanelCaptureConsentBanner,
   HumanChatPanelCallStage,
   HumanChatPanelCallFullViewLayoutMenu,
+  HumanChatPanelInCallControls,
   HumanChatPanelScreenshareTakeoverDialog,
   readCallFullViewLayoutFromStorage,
   persistCallFullViewLayout,
@@ -911,6 +913,9 @@ export function GlobalCallDockOverlay() {
   const onStopCapture = () => {
     stopCapture();
   };
+  const showDockBanner =
+    errorCode != null || screenshareErrorCode != null || remoteMediaStall;
+
   const dockContent = (
     <div
       ref={dockRef}
@@ -1153,46 +1158,102 @@ export function GlobalCallDockOverlay() {
               <p className="text-[11px] text-destructive">{recordingError}</p>
             ) : null
           ) : (
-            <HumanChatPanelCallBanner
-              callState={callState}
-              callKind={callKind}
-              errorCode={errorCode}
-              isScreensharing={isScreensharing}
-              screenshareErrorCode={screenshareErrorCode}
-              tabBackgroundWhileInCall={tabBackgroundWhileInCall}
-              isMicrophoneMuted={isMicrophoneMuted}
-              isLocalVideoMuted={isLocalVideoMuted}
-              participantCount={roomGroupCallDeviceCount}
-              othersInRoomCallCount={othersInRoomCallCount}
-              remoteMediaStall={remoteMediaStall}
-              onDismissRemoteMediaStall={dismissRemoteMediaStallBanner}
-              onLeave={() => {
-                void leave();
-              }}
-              onToggleMic={onToggleMic}
-              onToggleCamera={onToggleCamera}
-              onToggleScreenshare={onToggleScreenshare}
-              voiceProcessingPreset={voiceProcessingPreset}
-              onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
-              captureMode={captureMode}
-              capturePreference={capturePreference}
-              capturePreferenceSelected={capturePreferenceSelected}
-              onCapturePreferenceChange={onCapturePreferenceChange}
-              onStartCapture={onStartCaptureWithMode}
-              onPauseCapture={onPauseCapture}
-              onResumeCapture={onResumeCapture}
-              onStopCapture={onStopCapture}
-              recordingStatus={recordingStatus}
-              recordingError={recordingError}
-              recordingWarning={recordingWarning}
-              canRetryRecordingUpload={canRetryRecordingUpload}
-              onRetryRecordingUpload={() => void retryRecordingUpload()}
-              captureConsent={captureConsent}
-              roomId={activeRoomId}
-              onDismissScreenshareError={dismissScreenshareError}
-              onRetryCall={retryFromError}
-              onDismissCallError={dismissCallError}
-            />
+            <>
+              {captureConsent &&
+              callState === 'connected' &&
+              !showDockBanner ? (
+                <HumanChatPanelCaptureConsentBanner
+                  consent={captureConsent}
+                  roomId={activeRoomId}
+                  variant="inCall"
+                  className={cn(
+                    'rounded-none border-x-0 border-t-0',
+                    dockCompact
+                      ? '-mx-1 -mt-1 mb-1 px-2 py-1 [&_p]:text-[10px] [&_p]:leading-tight'
+                      : '-mx-2 -mt-2 mb-2',
+                  )}
+                />
+              ) : null}
+              {showDockBanner ? (
+                <HumanChatPanelCallBanner
+                  callState={callState}
+                  callKind={callKind}
+                  errorCode={errorCode}
+                  isScreensharing={isScreensharing}
+                  screenshareErrorCode={screenshareErrorCode}
+                  tabBackgroundWhileInCall={tabBackgroundWhileInCall}
+                  isMicrophoneMuted={isMicrophoneMuted}
+                  isLocalVideoMuted={isLocalVideoMuted}
+                  participantCount={roomGroupCallDeviceCount}
+                  othersInRoomCallCount={othersInRoomCallCount}
+                  remoteMediaStall={remoteMediaStall}
+                  onDismissRemoteMediaStall={dismissRemoteMediaStallBanner}
+                  onLeave={() => {
+                    void leave();
+                  }}
+                  onToggleMic={onToggleMic}
+                  onToggleCamera={onToggleCamera}
+                  onToggleScreenshare={onToggleScreenshare}
+                  voiceProcessingPreset={voiceProcessingPreset}
+                  onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+                  captureMode={captureMode}
+                  capturePreference={capturePreference}
+                  capturePreferenceSelected={capturePreferenceSelected}
+                  onCapturePreferenceChange={onCapturePreferenceChange}
+                  onStartCapture={onStartCaptureWithMode}
+                  onPauseCapture={onPauseCapture}
+                  onResumeCapture={onResumeCapture}
+                  onStopCapture={onStopCapture}
+                  recordingStatus={recordingStatus}
+                  recordingError={recordingError}
+                  recordingWarning={recordingWarning}
+                  canRetryRecordingUpload={canRetryRecordingUpload}
+                  onRetryRecordingUpload={() => void retryRecordingUpload()}
+                  captureConsent={captureConsent}
+                  roomId={activeRoomId}
+                  onDismissScreenshareError={dismissScreenshareError}
+                  onRetryCall={retryFromError}
+                  onDismissCallError={dismissCallError}
+                />
+              ) : (
+                <HumanChatPanelInCallControls
+                  callState={callState}
+                  isMicrophoneMuted={isMicrophoneMuted}
+                  isLocalVideoMuted={isLocalVideoMuted}
+                  isScreensharing={isScreensharing}
+                  onToggleMic={onToggleMic}
+                  onToggleCamera={onToggleCamera}
+                  onToggleScreenshare={onToggleScreenshare}
+                  voiceProcessingPreset={voiceProcessingPreset}
+                  onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+                  captureMode={captureMode}
+                  capturePreference={capturePreference}
+                  capturePreferenceSelected={capturePreferenceSelected}
+                  onCapturePreferenceChange={onCapturePreferenceChange}
+                  onStartCapture={onStartCaptureWithMode}
+                  onPauseCapture={onPauseCapture}
+                  onResumeCapture={onResumeCapture}
+                  onStopCapture={onStopCapture}
+                  recordingStatus={recordingStatus}
+                  recordingError={recordingError}
+                  recordingWarning={recordingWarning}
+                  canRetryRecordingUpload={canRetryRecordingUpload}
+                  onRetryRecordingUpload={() => void retryRecordingUpload()}
+                  onLeave={() => {
+                    void leave();
+                  }}
+                  density={dockCompact ? 'compact' : 'default'}
+                  variant={modeIsFullscreen ? 'fullView' : 'inBanner'}
+                  inBannerLayout={
+                    dockCompact
+                      ? 'inline'
+                      : modeIsFullscreen
+                      ? 'inline'
+                      : 'centered'
+                  }
+                />
+              )}
+            </>
           )}
         </div>
       </div>
