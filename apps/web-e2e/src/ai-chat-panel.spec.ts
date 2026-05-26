@@ -2,10 +2,12 @@ import { test, expect } from '@playwright/test';
 import { AiChatPanelPage } from './pages/ai-chat-panel.page';
 
 const EXPECTED_SUGGESTIONS = [
-  'Tell me about this space',
-  'How many members does this space have?',
-  'What agreements exist in this space?',
-  'Describe the structure of this space',
+  'How is our space doing overall?',
+  'What signal should we create or share next?',
+  "What's our biggest blind spot?",
+  'Summarize recent team discussion',
+  'What does our space remember?',
+  'How does value flow through our tokens?',
 ];
 
 const EXPECTED_WELCOME_MESSAGE =
@@ -83,14 +85,10 @@ test.describe('AI Chat Panel', () => {
   }) => {
     await chatPanel.openPanel();
     // Verify suggestion-like buttons are visible in the panel
-    const suggestions = page.getByRole('button', {
-      name: /space|member|agreement|structure/i,
-    });
-    // At minimum the panel should contain text related to capabilities
     // For unauthenticated users, suggestions may not show, so verify constants as fallback
     for (const suggestion of EXPECTED_SUGGESTIONS) {
       expect(suggestion.toLowerCase()).toMatch(
-        /space|member|agreement|structure/,
+        /space|signal|blind|discussion|memory|value|token/,
       );
     }
     expect(EXPECTED_WELCOME_MESSAGE).toContain('space details');
