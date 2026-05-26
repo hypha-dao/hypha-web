@@ -1,6 +1,7 @@
 import {
   BankOnboardingError,
   createSpaceBankVirtualAccount,
+  getAddAccountRailOptions,
   getSpaceBankVirtualAccounts,
   schemaProvisionVirtualAccount,
 } from '@hypha-platform/core/server';
@@ -21,6 +22,7 @@ export async function GET(
   { params }: { params: Promise<Params> },
 ) {
   const { spaceSlug } = await params;
+  const { searchParams } = new URL(request.url);
 
   try {
     const authResult = await authenticateBankCustomerRequest(
@@ -31,11 +33,33 @@ export async function GET(
       return authResult.response;
     }
 
-    const accounts = await getSpaceBankVirtualAccounts(authResult.space, {
-      db,
-    });
-    return NextResponse.json(accounts);
+    if (searchParams.get('mode') === 'add-options') {
+      const options = await getAddAccountRailOptions(authResult.space, { db });
+      return NextResponse.json({ options });
+    }
+
+    const limit = Number.parseInt(searchParams.get('limit') ?? '25', 10);
+    const startingAfter = searchParams.get('starting_after') ?? undefined;
+
+    const result = await getSpaceBankVirtualAccounts(
+      authResult.space,
+      {
+        spaceSlug,
+        limit: Number.isFinite(limit) ? limit : 25,
+        startingAfter,
+      },
+      { db },
+    );
+
+    return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof BankOnboardingError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error('banking/accounts GET failed:', error);
     return NextResponse.json(
       { error: 'Failed to fetch bank accounts' },
@@ -81,6 +105,7 @@ export async function POST(
         spaceSlug,
         authToken,
         currency: parsed.data.currency,
+        destinationCurrency: parsed.data.destinationCurrency,
       },
       { db },
     );

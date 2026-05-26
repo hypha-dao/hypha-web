@@ -5,9 +5,9 @@ import { cn } from '@hypha-platform/ui-utils';
 
 /** Apply on `DialogContent` — scroll the whole panel when content exceeds the viewport. */
 export const BANKING_DIALOG_CONTENT_CLASS = cn(
-  '!block !max-h-[90vh] !overflow-y-scroll',
+  'block! max-h-[90vh]! overflow-y-scroll!',
   'gap-0 p-0',
-  '!top-[max(0.5rem,calc(var(--menu-top-height,70px)+0.5rem))] !translate-y-0',
+  'top-[max(0.5rem,calc(var(--menu-top-height,70px)+0.5rem))]! translate-y-0!',
 );
 
 export const BANKING_DIALOG_FORM_CONTENT_CLASS = BANKING_DIALOG_CONTENT_CLASS;

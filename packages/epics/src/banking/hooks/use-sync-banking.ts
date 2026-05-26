@@ -61,7 +61,10 @@ export const useSyncBanking = ({
         }
 
         const result = body as SyncBankingResult;
-        await mutate([getTransfersEndpoint(spaceSlug), 'transfers']);
+        await Promise.all([
+          mutate([getTransfersEndpoint(spaceSlug), 'transfers']),
+          mutate([`/api/v1/spaces/${spaceSlug}/banking/bank-customers`, 'bank-customer-status']),
+        ]);
         return result;
       } catch (err) {
         const message =

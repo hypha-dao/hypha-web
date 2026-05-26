@@ -14,6 +14,8 @@ export type BridgeCreateKycLinkResponse = {
   id: string;
   /** Present after KYC progresses; often absent on initial POST /v0/kyc_links. */
   customer_id?: string | null;
+  /** Present on GET /v0/kyc_links/{id}; used for endorsement KYC link query param only. */
+  email?: string;
   kyc_link: string;
   tos_link?: string | null;
   kyc_status: string;
@@ -72,6 +74,7 @@ export type BridgeCustomerEndorsement = {
 export type BridgeGetCustomerResponse = {
   id: string;
   type: 'individual' | 'business';
+  email?: string;
   physical_address?: BridgeCustomerAddress | null;
   residential_address?: BridgeCustomerAddress | null;
   registered_address?: BridgeCustomerAddress | null;
@@ -157,6 +160,80 @@ function isBridgeKycLinkRecord(
     typeof record.id === 'string' &&
     typeof record.kyc_link === 'string' &&
     typeof record.kyc_status === 'string'
+  );
+}
+
+export type BridgeGetCustomerKycLinkOptions = {
+  endorsement?: string;
+  /** Must match the email used when the Bridge customer was created. */
+  email?: string;
+};
+
+function buildCustomerKycLinkQuery(
+  options?: BridgeGetCustomerKycLinkOptions,
+): string {
+  if (!options) {
+    return '';
+  }
+
+  const params = new URLSearchParams();
+  if (options.endorsement) {
+    params.set('endorsement', options.endorsement);
+  }
+  if (options.email) {
+    params.set('email', options.email);
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
+/**
+ * GET /customers/{id}/kyc_link returns a full KYC link object on initial onboarding,
+ * but additional endorsements often return only `{ url }`.
+ */
+export function normalizeBridgeCustomerKycLinkResponse(
+  parsed: unknown,
+  fallback: { customerId: string; existingKycLinkId: string },
+): BridgeCreateKycLinkResponse {
+  if (isBridgeKycLinkRecord(parsed)) {
+    return parsed;
+  }
+
+  if (typeof parsed === 'object' && parsed !== null) {
+    const record = parsed as Record<string, unknown>;
+    const link =
+      typeof record.url === 'string'
+        ? record.url
+        : typeof record.kyc_link === 'string'
+          ? record.kyc_link
+          : null;
+
+    if (link) {
+      const hasBridgeKycLinkId =
+        typeof record.id === 'string' &&
+        record.id.length > 0 &&
+        record.id !== fallback.customerId;
+
+      return {
+        id: hasBridgeKycLinkId ? record.id : fallback.existingKycLinkId,
+        customer_id:
+          typeof record.customer_id === 'string'
+            ? record.customer_id
+            : fallback.customerId,
+        kyc_link: link,
+        kyc_status:
+          typeof record.kyc_status === 'string'
+            ? record.kyc_status
+            : 'not_started',
+        tos_status:
+          typeof record.tos_status === 'string' ? record.tos_status : null,
+      };
+    }
+  }
+
+  throw new Error(
+    'Bridge API returned an unexpected customer KYC link response shape',
   );
 }
 
@@ -297,8 +374,6 @@ export async function bridgeGetKycLink(
     },
   );
 
-  console.log('GERGERGER');
-  console.log(parsed);
   if (!isBridgeKycLinkRecord(parsed)) {
     throw new Error(
       'Bridge API returned an unexpected KYC link response shape',
@@ -350,8 +425,6 @@ export async function bridgeCreateKycLink(
     );
   }
 
-  console.log('GERGERGER');
-  console.log(parsed);
   if (!isBridgeKycLinkRecord(parsed)) {
     throw new Error(
       'Bridge API returned an unexpected KYC link response shape',
@@ -363,25 +436,18 @@ export async function bridgeCreateKycLink(
 
 export async function bridgeGetCustomerKycLink(
   customerId: string,
-  options?: { endorsement?: string },
+  options?: BridgeGetCustomerKycLinkOptions,
+  fallback?: { existingKycLinkId: string },
 ): Promise<BridgeCreateKycLinkResponse> {
-  const query = options?.endorsement
-    ? `?endorsement=${encodeURIComponent(options.endorsement)}`
-    : '';
   const parsed = await bridgeRequest(
-    `/v0/customers/${encodeURIComponent(customerId)}/kyc_link${query}`,
+    `/v0/customers/${encodeURIComponent(customerId)}/kyc_link${buildCustomerKycLinkQuery(options)}`,
     { method: 'GET' },
   );
 
-  console.log('GERGERGER');
-  console.log(parsed);
-  if (!isBridgeKycLinkRecord(parsed)) {
-    throw new Error(
-      'Bridge API returned an unexpected customer KYC link response shape',
-    );
-  }
-
-  return parsed;
+  return normalizeBridgeCustomerKycLinkResponse(parsed, {
+    customerId,
+    existingKycLinkId: fallback?.existingKycLinkId ?? customerId,
+  });
 }
 
 export async function bridgeGetCustomer(
@@ -521,4 +587,114 @@ export async function bridgeSimulateKycApproval(
   }
 
   return parsed;
+}
+
+export type BridgeListPaginationParams = {
+  limit?: number;
+  starting_after?: string;
+  ending_before?: string;
+};
+
+export type BridgeListResponse<T> = {
+  data: T[];
+  has_more?: boolean;
+};
+
+function parseBridgeListResponse<T>(
+  parsed: unknown,
+  isItem: (value: unknown) => value is T,
+): BridgeListResponse<T> {
+  if (Array.isArray(parsed)) {
+    const data = parsed.filter(isItem);
+    return { data, has_more: false };
+  }
+
+  if (typeof parsed !== 'object' || parsed === null) {
+    return { data: [] };
+  }
+
+  const record = parsed as Record<string, unknown>;
+  const rawData = record.data;
+  if (!Array.isArray(rawData)) {
+    return { data: [] };
+  }
+
+  const data = rawData.filter(isItem);
+  const has_more =
+    typeof record.has_more === 'boolean' ? record.has_more : undefined;
+
+  return { data, has_more };
+}
+
+function buildListQuery(params?: BridgeListPaginationParams): string {
+  if (!params) {
+    return '';
+  }
+
+  const search = new URLSearchParams();
+  if (params.limit !== undefined) {
+    search.set('limit', String(params.limit));
+  }
+  if (params.starting_after) {
+    search.set('starting_after', params.starting_after);
+  }
+  if (params.ending_before) {
+    search.set('ending_before', params.ending_before);
+  }
+
+  const query = search.toString();
+  return query ? `?${query}` : '';
+}
+
+export async function bridgeListVirtualAccounts(
+  customerId: string,
+  params?: BridgeListPaginationParams,
+): Promise<BridgeListResponse<BridgeCreateVirtualAccountResponse>> {
+  const parsed = await bridgeRequest(
+    `/v0/customers/${encodeURIComponent(customerId)}/virtual_accounts${buildListQuery(params)}`,
+    { method: 'GET' },
+  );
+
+  return parseBridgeListResponse(parsed, isBridgeVirtualAccountRecord);
+}
+
+export async function bridgeListTransfers(
+  customerId: string,
+  params?: BridgeListPaginationParams,
+): Promise<BridgeListResponse<BridgeTransferResponse>> {
+  const path = `/v0/customers/${encodeURIComponent(customerId)}/transfers${buildListQuery(params)}`;
+  const { baseUrl } = getBridgeConfig();
+
+  const parsed = await bridgeRequest(path, { method: 'GET' });
+
+  const result = parseBridgeListResponse(parsed, isBridgeTransferRecord);
+
+  return result;
+}
+
+export async function bridgeGetVirtualAccount(
+  customerId: string,
+  virtualAccountId: string,
+): Promise<BridgeCreateVirtualAccountResponse> {
+  const parsed = await bridgeRequest(
+    `/v0/customers/${encodeURIComponent(customerId)}/virtual_accounts/${encodeURIComponent(virtualAccountId)}`,
+    { method: 'GET' },
+  );
+
+  if (!isBridgeVirtualAccountRecord(parsed)) {
+    throw new Error(
+      'Bridge API returned an unexpected virtual account response shape',
+    );
+  }
+
+  return parsed;
+}
+
+export function assertTransferOwnedByCustomer(
+  transfer: BridgeTransferResponse,
+  customerId: string,
+): void {
+  if (transfer.on_behalf_of && transfer.on_behalf_of !== customerId) {
+    throw new Error('Transfer does not belong to this customer');
+  }
 }

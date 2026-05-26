@@ -23,6 +23,7 @@ export type ProvisionVirtualAccountInput = {
   customerId: string;
   currency: string;
   destinationAddress: string;
+  destinationCurrency?: string;
   idempotencyKey: string;
 };
 
@@ -45,6 +46,7 @@ export type CreateTransferInput = {
   currency: string;
   paymentRail: string;
   destinationAddress: string;
+  destinationCurrency?: string;
   amount?: string;
   idempotencyKey: string;
 };

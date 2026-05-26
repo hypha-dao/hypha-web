@@ -1,8 +1,8 @@
 import {
   BankOnboardingError,
-  buildBankingKycRedirectUri,
   createSpaceBankTransfer,
   getSpaceBankTransfers,
+  getTransferRailOptions,
   schemaCreateBankTransfer,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
@@ -12,7 +12,6 @@ import {
   authenticateBankCustomerRequest,
   extractBearerToken,
 } from '@web/lib/bank-customers/authenticate-bank-customer-request';
-import { getLocaleFromRequest } from '@web/lib/bank-customers/banking-request-locale';
 
 type Params = { spaceSlug: string };
 
@@ -23,6 +22,7 @@ export async function GET(
   { params }: { params: Promise<Params> },
 ) {
   const { spaceSlug } = await params;
+  const { searchParams } = new URL(request.url);
 
   try {
     const authResult = await authenticateBankCustomerRequest(
@@ -33,8 +33,27 @@ export async function GET(
       return authResult.response;
     }
 
-    const transfers = await getSpaceBankTransfers(authResult.space, { db });
-    return NextResponse.json(transfers);
+    if (searchParams.get('mode') === 'transfer-options') {
+      const options = await getTransferRailOptions(authResult.space, { db });
+      return NextResponse.json({ options });
+    }
+
+    const limit = Number.parseInt(searchParams.get('limit') ?? '25', 10);
+    const startingAfter = searchParams.get('starting_after') ?? undefined;
+    const endingBefore = searchParams.get('ending_before') ?? undefined;
+
+    const result = await getSpaceBankTransfers(
+      authResult.space,
+      {
+        spaceSlug,
+        limit: Number.isFinite(limit) ? limit : 25,
+        startingAfter,
+        endingBefore,
+      },
+      { db },
+    );
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error('banking/transfers GET failed:', error);
     return NextResponse.json(
@@ -76,17 +95,15 @@ export async function POST(
   }
 
   try {
-    const lang = getLocaleFromRequest(request);
     const result = await createSpaceBankTransfer(
       {
         spaceSlug,
         authToken,
+        railKey: parsed.data.railKey,
         corridorKey: parsed.data.corridorKey,
         currency: parsed.data.currency,
         amount: parsed.data.amount,
-        legalName: parsed.data.legalName,
-        contactEmail: parsed.data.contactEmail,
-        redirectUri: buildBankingKycRedirectUri(lang, spaceSlug),
+        destinationCurrency: parsed.data.destinationCurrency,
       },
       { db },
     );

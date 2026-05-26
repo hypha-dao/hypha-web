@@ -16,11 +16,41 @@ type UseBankCustomerStatusOptions = {
 
 type UseBankCustomerStatusReturn = {
   status: BankCustomerPublicStatus | null;
+  /** True only on the first status fetch (not background revalidation). */
   isLoading: boolean;
   isRefreshing: boolean;
-  error: Error | undefined;
   refresh: () => Promise<BankCustomerPublicStatus | null | undefined>;
 };
+
+async function fetchBankCustomerStatus(
+  url: string,
+  getAccessToken: () => Promise<string | null>,
+): Promise<BankCustomerPublicStatus | null> {
+  const token = await getAccessToken();
+  if (!token) {
+    return null;
+  }
+
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    console.warn(
+      `[banking] bank-customers GET returned ${res.status}; treating as no customer`,
+    );
+    return null;
+  }
+
+  const body = (await res.json()) as BankCustomerPublicStatus | null;
+  if (body == null) {
+    return null;
+  }
+
+  return body.hasCustomer === false ? null : body;
+}
 
 export const useBankCustomerStatus = ({
   spaceSlug,
@@ -38,32 +68,17 @@ export const useBankCustomerStatus = ({
     [endpoint, isAuthenticated],
   );
 
-  const { data, error, isLoading, isValidating, mutate } =
-    useSWR<BankCustomerPublicStatus | null>(
-      swrKey,
-      async ([url]: [string, string]) => {
-        const token = await getAccessToken();
-        if (!token) {
-          throw new Error('Unauthorized');
-        }
-
-        const res = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) {
-          throw new Error('Failed to fetch bank customer status');
-        }
-
-        return (await res.json()) as BankCustomerPublicStatus | null;
-      },
-      {
-        revalidateOnFocus: false,
-        revalidateOnReconnect: false,
-      },
-    );
+  const { data, isLoading, isValidating, mutate } = useSWR<
+    BankCustomerPublicStatus | null
+  >(
+    swrKey,
+    ([url]: [string, string]) => fetchBankCustomerStatus(url, getAccessToken),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      shouldRetryOnError: false,
+    },
+  );
 
   const refresh = React.useCallback(() => mutate(), [mutate]);
 
@@ -71,7 +86,6 @@ export const useBankCustomerStatus = ({
     status: data ?? null,
     isLoading: isAuthenticated && isLoading,
     isRefreshing: isAuthenticated && isValidating && !isLoading,
-    error,
     refresh,
   };
 };

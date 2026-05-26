@@ -10,3 +10,7 @@ export * from './notifications';
 export * from './matrix';
 export * from './coherence';
 export * from './org-memory';
+export {
+  getDefaultDestinationCurrency,
+  getDestinationCurrenciesForSourceRail,
+} from './banking/bridge-destination-currencies';

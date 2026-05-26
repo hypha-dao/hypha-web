@@ -5,6 +5,7 @@ import {
   type BridgeCreateKycLinkRequest,
   type BridgeCreateTransferRequest,
 } from '../../../../common/server/bridge-client';
+import { BRIDGE_DEFAULT_DESTINATION_CURRENCY } from '../../../bridge-destination-currencies';
 import { getPaymentRailForCurrency } from '../../../constants';
 import type {
   BankKycProvider,
@@ -43,12 +44,6 @@ export function createBridgeKycProvider(): BankKycProvider {
       input: CreateKycLinkInput,
     ): Promise<CreateKycLinkResult> {
       const body = toBridgeCreateKycLinkBody(input);
-      console.log('[banking] bridgeCreateKycLink request', {
-        endorsements: body.endorsements,
-        email: body.email,
-        type: body.type,
-      });
-
       const response = await bridgeCreateKycLink(body, input.idempotencyKey);
 
       const { kycLink, tosLink } = mapBridgeKycLinkUrls(response);
@@ -73,13 +68,16 @@ export function createBridgeKycProvider(): BankKycProvider {
         );
       }
 
+      const destinationCurrency =
+        input.destinationCurrency ?? BRIDGE_DEFAULT_DESTINATION_CURRENCY;
+
       const response = await bridgeCreateVirtualAccount(
         input.customerId,
         {
           source: { currency: input.currency },
           destination: {
             payment_rail: 'base',
-            currency: 'usdc',
+            currency: destinationCurrency,
             address: input.destinationAddress,
           },
         },
@@ -122,6 +120,9 @@ export function createBridgeKycProvider(): BankKycProvider {
     async createTransfer(
       input: CreateTransferInput,
     ): Promise<CreateTransferResult> {
+      const destinationCurrency =
+        input.destinationCurrency ?? BRIDGE_DEFAULT_DESTINATION_CURRENCY;
+
       const body: BridgeCreateTransferRequest = {
         on_behalf_of: input.customerId,
         source: {
@@ -130,7 +131,7 @@ export function createBridgeKycProvider(): BankKycProvider {
         },
         destination: {
           payment_rail: 'base',
-          currency: 'usdc',
+          currency: destinationCurrency,
           to_address: input.destinationAddress,
         },
       };

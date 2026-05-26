@@ -4,11 +4,12 @@ import { FC, FormEvent, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Checkbox, Input, Label } from '@hypha-platform/ui';
 
-import type { ProviderOnboardingFormProps } from './types';
 import {
-  BRIDGE_ENDORSEMENT_OPTIONS,
-  DEFAULT_BRIDGE_ENDORSEMENT_VALUES,
-} from './bridge-endorsement-options';
+  BANK_CURRENCY_METAS,
+  getDefaultBankCurrencyCodes,
+  type BankCurrencyCode,
+} from '../../bank-currency-display';
+import type { ProviderOnboardingFormProps } from './types';
 
 export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
   formId,
@@ -17,27 +18,27 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
   initialValues,
 }) => {
   const t = useTranslations('BankingTab.onboardingDialog');
-  const tEndorsements = useTranslations('BankingTab.endorsements');
+  const tCurrencies = useTranslations('BankingTab.currencies');
 
   const [legalName, setLegalName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
-  const [endorsements, setEndorsements] = useState<string[]>([
-    ...DEFAULT_BRIDGE_ENDORSEMENT_VALUES,
+  const [requestedRails, setRequestedRails] = useState<BankCurrencyCode[]>([
+    ...getDefaultBankCurrencyCodes(),
   ]);
 
   useEffect(() => {
     setLegalName(initialValues?.legalName?.trim() ?? '');
     setContactEmail(initialValues?.contactEmail?.trim() ?? '');
-    const nextEndorsements =
-      initialValues?.endorsements && initialValues.endorsements.length > 0
-        ? initialValues.endorsements
-        : [...DEFAULT_BRIDGE_ENDORSEMENT_VALUES];
-    setEndorsements(nextEndorsements);
+    const nextRails =
+      initialValues?.requestedRails && initialValues.requestedRails.length > 0
+        ? (initialValues.requestedRails as BankCurrencyCode[])
+        : [...getDefaultBankCurrencyCodes()];
+    setRequestedRails(nextRails);
   }, [initialValues]);
 
-  const toggleEndorsement = (value: string, checked: boolean) => {
-    setEndorsements((current) =>
-      checked ? [...current, value] : current.filter((item) => item !== value),
+  const toggleRail = (currency: BankCurrencyCode, checked: boolean) => {
+    setRequestedRails((current) =>
+      checked ? [...current, currency] : current.filter((c) => c !== currency),
     );
   };
 
@@ -46,14 +47,14 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
     const trimmedName = legalName.trim();
     const trimmedEmail = contactEmail.trim();
 
-    if (!trimmedName || !trimmedEmail) {
+    if (!trimmedName || !trimmedEmail || requestedRails.length === 0) {
       return;
     }
 
     await onSubmit({
       legalName: trimmedName,
       contactEmail: trimmedEmail,
-      endorsements,
+      requestedRails,
     });
   };
 
@@ -86,17 +87,15 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
         />
       </div>
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium">
-          {t('endorsementsLabel')}
-        </legend>
+        <legend className="text-sm font-medium">{t('endorsementsLabel')}</legend>
         <p className="text-sm text-muted-foreground">{t('endorsementsHint')}</p>
         <div className="flex flex-col gap-2">
-          {BRIDGE_ENDORSEMENT_OPTIONS.map((option) => {
-            const inputId = `bank-endorsement-${option.value}`;
-            const checked = endorsements.includes(option.value);
+          {BANK_CURRENCY_METAS.map((meta) => {
+            const inputId = `bank-rail-${meta.currency}`;
+            const checked = requestedRails.includes(meta.currency);
             return (
               <label
-                key={option.value}
+                key={meta.currency}
                 htmlFor={inputId}
                 className="flex cursor-pointer items-center gap-2 text-sm"
               >
@@ -105,10 +104,12 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
                   checked={checked}
                   disabled={isSubmitting}
                   onCheckedChange={(value) =>
-                    toggleEndorsement(option.value, value === true)
+                    toggleRail(meta.currency, value === true)
                   }
                 />
-                <span>{tEndorsements(option.labelKey)}</span>
+                <span>
+                  {meta.flagEmoji} {tCurrencies(meta.nameKey)}
+                </span>
               </label>
             );
           })}

@@ -4,15 +4,23 @@ import { isBridgeSandboxApi } from '../../common/server/bridge-sandbox';
 import type { DatabaseInstance } from '../../common/server/types';
 import type { BankCustomer } from '@hypha-platform/storage-postgres';
 import type { Space } from '../../space/types';
+import {
+  BRIDGE_DEFAULT_DESTINATION_CURRENCY,
+  isAllowedBridgeDestinationCurrency,
+} from '../bridge-destination-currencies';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
 import { simulateBridgeKybData } from './simulate-bridge-kyb-data';
 import { BankOnboardingError } from './errors';
 import { mapBridgeApiError } from './map-bridge-api-error';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
-import { syncBankCustomerKycFromBridge } from './sync-bank-customer-kyc-from-bridge';
 import { enrichBridgeDepositInstructions } from './enrich-bridge-deposit-instructions';
 import { requireSpaceTreasuryAddress } from './require-space-treasury-address';
+import {
+  resolveCustomerApproved,
+  syncProviderCustomerIdFromKycLink,
+} from './providers/bridge/banking-provider-state';
+import { updateBankCustomer } from './mutations';
 
 function mapBridgeTransferError(error: unknown): BankOnboardingError | null {
   if (!(error instanceof Error)) {
@@ -23,7 +31,7 @@ function mapBridgeTransferError(error: unknown): BankOnboardingError | null {
   if (status !== undefined && status >= 400 && status < 500) {
     console.error('Bridge transfer creation failed:', error);
     return new BankOnboardingError(
-      'Could not create payment request for this currency. Complete KYB for this corridor or try another currency.',
+      'Could not create payment request for this currency. Complete KYB for this rail or try another currency.',
       400,
     );
   }
@@ -33,9 +41,10 @@ function mapBridgeTransferError(error: unknown): BankOnboardingError | null {
 
 export type ExecuteBridgeBankTransferInput = {
   customer: BankCustomer;
-  space: Pick<Space, 'web3SpaceId'>;
+  space: Pick<Space, 'web3SpaceId' | 'title'>;
   currency: string;
   paymentRail: string;
+  destinationCurrency?: string;
   amount?: string;
 };
 
@@ -60,35 +69,44 @@ export async function executeBridgeBankTransfer(
   options?: ExecuteBridgeBankTransferOptions,
 ): Promise<ExecuteBridgeBankTransferResult> {
   const { customer, space, currency, paymentRail, amount } = input;
+  const destinationCurrency =
+    input.destinationCurrency?.toLowerCase() ??
+    BRIDGE_DEFAULT_DESTINATION_CURRENCY;
 
   if (!paymentRail.trim()) {
-    throw new BankOnboardingError('Unsupported payment corridor', 400);
+    throw new BankOnboardingError('Unsupported payment rail', 400);
+  }
+
+  if (
+    !isAllowedBridgeDestinationCurrency({
+      sourceRail: paymentRail,
+      destinationCurrency,
+    })
+  ) {
+    throw new BankOnboardingError(
+      'Destination currency is not supported for this rail',
+      400,
+    );
   }
 
   const treasuryAddress = await requireSpaceTreasuryAddress(space);
 
-  let resolvedCustomer = customer;
-
-  if (resolvedCustomer.kycStatus !== 'approved') {
-    const synced = await syncBankCustomerKycFromBridge(resolvedCustomer, {
-      db,
-    });
-    resolvedCustomer = synced.customer;
-    if (!synced.isApproved) {
-      throw new BankOnboardingError(
-        'KYB is not yet approved. Complete verification first.',
-        403,
-      );
-    }
+  if (!(await resolveCustomerApproved(customer))) {
+    throw new BankOnboardingError(
+      'KYB is not yet approved. Complete verification first.',
+      403,
+    );
   }
 
-  let customerId = resolvedCustomer.providerCustomerId;
+  let customerId = customer.providerCustomerId;
   if (!customerId) {
-    const synced = await syncBankCustomerKycFromBridge(resolvedCustomer, {
-      db,
-    });
-    resolvedCustomer = synced.customer;
-    customerId = resolvedCustomer.providerCustomerId ?? null;
+    customerId = await syncProviderCustomerIdFromKycLink(customer);
+    if (customerId) {
+      await updateBankCustomer(
+        { id: customer.id, providerCustomerId: customerId },
+        { db },
+      );
+    }
   }
 
   if (!customerId) {
@@ -101,7 +119,7 @@ export async function executeBridgeBankTransfer(
   if (isBridgeSandboxApi()) {
     try {
       await simulateBridgeKybData(customerId, {
-        businessLegalName: resolvedCustomer.name,
+        businessLegalName: space.title?.trim() || 'Hypha Space',
       });
     } catch (error) {
       const mapped = mapBridgeApiError(error, 'PUT /customers/{id}');
@@ -121,6 +139,7 @@ export async function executeBridgeBankTransfer(
       currency,
       paymentRail,
       destinationAddress: treasuryAddress,
+      destinationCurrency,
       amount,
       idempotencyKey: randomUUID(),
     });

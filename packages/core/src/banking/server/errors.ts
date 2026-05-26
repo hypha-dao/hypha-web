@@ -1,4 +1,12 @@
-export type BankOnboardingHttpStatus = 400 | 401 | 403 | 404 | 422 | 500 | 502;
+export type BankOnboardingHttpStatus =
+  | 400
+  | 401
+  | 403
+  | 404
+  | 409
+  | 422
+  | 500
+  | 502;
 
 /** User-facing fallback when bank account / corridor setup fails unexpectedly. */
 export const BANK_SETUP_FAILED_USER_MESSAGE =

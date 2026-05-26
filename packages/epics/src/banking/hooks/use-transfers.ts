@@ -4,7 +4,7 @@ import React from 'react';
 import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 
-import type { BankTransferPublic } from './types';
+import type { PaginatedBankTransfers } from './types';
 
 export function getTransfersEndpoint(spaceSlug: string): string {
   return `/api/v1/spaces/${spaceSlug}/banking/transfers`;
@@ -16,10 +16,12 @@ type UseTransfersOptions = {
 };
 
 type UseTransfersReturn = {
-  transfers: BankTransferPublic[];
+  transfers: PaginatedBankTransfers['transfers'];
+  hasMore: boolean;
+  nextCursor: string | null;
   isLoading: boolean;
   error: Error | undefined;
-  refresh: () => Promise<BankTransferPublic[] | undefined>;
+  refresh: () => Promise<PaginatedBankTransfers | undefined>;
 };
 
 export const useTransfers = ({
@@ -39,7 +41,7 @@ export const useTransfers = ({
     [endpoint, isAuthenticated, enabled],
   );
 
-  const { data, error, isLoading, mutate } = useSWR<BankTransferPublic[]>(
+  const { data, error, isLoading, mutate } = useSWR<PaginatedBankTransfers>(
     swrKey,
     async ([url]: [string, string]) => {
       const token = await getAccessToken();
@@ -57,14 +59,16 @@ export const useTransfers = ({
         throw new Error('Failed to fetch transfers');
       }
 
-      return (await res.json()) as BankTransferPublic[];
+      return (await res.json()) as PaginatedBankTransfers;
     },
   );
 
   const refresh = React.useCallback(() => mutate(), [mutate]);
 
   return {
-    transfers: data ?? [],
+    transfers: data?.transfers ?? [],
+    hasMore: data?.hasMore ?? false,
+    nextCursor: data?.nextCursor ?? null,
     isLoading: isAuthenticated && enabled && isLoading,
     error,
     refresh,

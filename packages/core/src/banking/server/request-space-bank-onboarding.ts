@@ -12,34 +12,10 @@ import { BankOnboardingError } from './errors';
 import { insertBankCustomer } from './mutations';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
-import { resolveBridgeKycEndorsements } from './providers/bridge/endorsements';
+import { currenciesToEndorsements } from '../constants';
+import { buildPublicStatusFromCustomer } from './get-space-bank-customer-public-status';
+import { buildCustomerValidations } from './providers/bridge/banking-provider-state';
 import { findBankCustomerBySpaceAndProvider } from './queries';
-
-function mapCustomerToResult(
-  customer: {
-    kycStatus: string;
-    kycLink: string | null;
-    tosLink: string | null;
-    name: string;
-    contactEmail: string;
-    endorsements: string[] | null;
-  },
-  created: boolean,
-  meta: { spaceTitle: string; requesterSlug: string | null },
-): BankOnboardingResult {
-  return {
-    kycStatus: customer.kycStatus,
-    kycLink: customer.kycLink,
-    tosLink: customer.tosLink,
-    legalName: customer.name,
-    contactEmail: customer.contactEmail,
-    endorsements: customer.endorsements ?? [],
-    provider: DEFAULT_BANK_PROVIDER,
-    created,
-    spaceTitle: meta.spaceTitle,
-    requesterSlug: meta.requesterSlug,
-  };
-}
 
 export type RequestSpaceBankOnboardingOptions = {
   kycProvider?: BankKycProvider;
@@ -50,7 +26,14 @@ export async function requestSpaceBankOnboarding(
   { db }: { db: DatabaseInstance },
   options?: RequestSpaceBankOnboardingOptions,
 ): Promise<BankOnboardingResult> {
-  const { spaceSlug, authToken, legalName, contactEmail, endorsements } = input;
+  const {
+    spaceSlug,
+    authToken,
+    legalName,
+    contactEmail,
+    requestedRails,
+    redirectUri,
+  } = input;
 
   const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!space) {
@@ -77,47 +60,67 @@ export async function requestSpaceBankOnboarding(
   );
 
   if (existing) {
-    return mapCustomerToResult(existing, false, emailMeta);
+    const status = await buildPublicStatusFromCustomer(existing, { db });
+    return {
+      provider: DEFAULT_BANK_PROVIDER,
+      created: false,
+      spaceTitle: emailMeta.spaceTitle,
+      requesterSlug: emailMeta.requesterSlug,
+      kycLink: status.procedures.kyc.action?.url ?? null,
+      tosLink: status.procedures.tos.action?.url ?? null,
+      procedures: status.procedures,
+    };
   }
+
+  const normalizedRails =
+    requestedRails?.map((r) => r.toLowerCase()) ??
+    [];
+  const endorsements = currenciesToEndorsements(normalizedRails);
 
   const idempotencyKey = randomUUID();
   const kycProvider =
     options?.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER);
-
-  const resolvedEndorsements = resolveBridgeKycEndorsements(endorsements);
-
-  console.log('[banking] requestSpaceBankOnboarding endorsements', {
-    spaceSlug,
-    requestedEndorsements: endorsements,
-    resolvedEndorsements,
-  });
 
   const kycLinkResult = await kycProvider.createKycLink({
     entityType: 'business',
     legalName,
     contactEmail,
     idempotencyKey,
-    endorsements: resolvedEndorsements,
+    endorsements,
+    redirectUri,
   });
 
-  const customer = await insertBankCustomer(
+  await insertBankCustomer(
     {
       spaceId: space.id,
       entityType: 'business',
       provider: DEFAULT_BANK_PROVIDER,
       providerCustomerId: kycLinkResult.providerCustomerId,
       providerKycLinkId: kycLinkResult.providerKycLinkId,
-      name: legalName,
-      contactEmail,
-      endorsements: resolvedEndorsements,
-      kycStatus: kycLinkResult.kycStatus,
-      tosStatus: kycLinkResult.tosStatus,
-      kycLink: kycLinkResult.kycLink,
-      tosLink: kycLinkResult.tosLink,
-      idempotencyKey,
+      requestedRails: normalizedRails,
     },
     { db },
   );
 
-  return mapCustomerToResult(customer, true, emailMeta);
+  const validations = buildCustomerValidations({
+    id: kycLinkResult.providerKycLinkId,
+    kyc_link: kycLinkResult.kycLink,
+    kyc_status: kycLinkResult.kycStatus,
+    tos_status: kycLinkResult.tosStatus,
+    tos_link: kycLinkResult.tosLink,
+    customer_id: kycLinkResult.providerCustomerId,
+  });
+
+  return {
+    provider: DEFAULT_BANK_PROVIDER,
+    created: true,
+    spaceTitle: emailMeta.spaceTitle,
+    requesterSlug: emailMeta.requesterSlug,
+    kycLink: validations.kycLink,
+    tosLink: validations.tosLink,
+    procedures: {
+      tos: validations.tos,
+      kyc: validations.kyc,
+    },
+  };
 }

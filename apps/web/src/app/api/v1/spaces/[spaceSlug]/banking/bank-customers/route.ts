@@ -70,7 +70,7 @@ export async function POST(
   }
 
   const { spaceSlug } = await params;
-  const { legalName, contactEmail, endorsements } = parsed.data;
+  const { legalName, contactEmail, requestedRails, endorsements } = parsed.data;
 
   try {
     const result = await requestSpaceBankOnboarding(
@@ -79,16 +79,16 @@ export async function POST(
         authToken,
         legalName,
         contactEmail,
-        endorsements,
+        requestedRails: requestedRails ?? endorsements,
       },
       { db },
     );
 
     if (result.created && result.kycLink) {
       await sendBankOnboardingEmail({
-        recipientEmail: result.contactEmail,
+        recipientEmail: contactEmail,
         spaceTitle: result.spaceTitle,
-        legalName: result.legalName,
+        legalName,
         kycLink: result.kycLink,
         tosLink: result.tosLink,
       });

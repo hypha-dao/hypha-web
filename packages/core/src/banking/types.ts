@@ -2,17 +2,56 @@ export type BankProvider = 'bridge';
 
 export type BankEntityType = 'business' | 'individual';
 
+export type BankValidationAction = {
+  type: 'link';
+  url: string;
+};
+
+export type BankValidationRequirement = {
+  key: string;
+  status: string | null;
+  isComplete: boolean;
+  action?: BankValidationAction;
+  linkDisabled?: boolean;
+};
+
+export type BankRailOperationalStatus =
+  | 'active'
+  | 'approved'
+  | 'pending'
+  | 'not_approved'
+  | 'not_requested';
+
+export type BankRailPublicStatus = {
+  railKey: string;
+  currency: string;
+  paymentRail: string;
+  endorsement: string;
+  endorsementStatus: string | null;
+  operationalStatus: BankRailOperationalStatus;
+  validation: BankValidationRequirement;
+  hasVirtualAccount: boolean;
+};
+
+/** Bridge KYC endorsement (base, sepa, spei, …) — one row per endorsement in settings UI. */
+export type BankEndorsementPublicStatus = {
+  endorsement: string;
+  endorsementStatus: string | null;
+  operationalStatus: BankRailOperationalStatus;
+  validation: BankValidationRequirement;
+};
+
 export type BankOnboardingResult = {
-  kycStatus: string;
-  kycLink: string | null;
-  tosLink: string | null;
-  legalName: string;
-  contactEmail: string;
-  endorsements: string[];
   provider: BankProvider;
   created: boolean;
   spaceTitle: string;
   requesterSlug: string | null;
+  kycLink: string | null;
+  tosLink: string | null;
+  procedures: {
+    tos: BankValidationRequirement;
+    kyc: BankValidationRequirement;
+  };
 };
 
 export type RequestSpaceBankOnboardingInput = {
@@ -20,58 +59,22 @@ export type RequestSpaceBankOnboardingInput = {
   authToken: string;
   legalName: string;
   contactEmail: string;
-  endorsements?: string[];
+  requestedRails?: string[];
+  redirectUri?: string;
 };
 
-export type BankOperationLifecycle =
-  | 'pending_kyb'
-  | 'pending_activation'
-  | 'active';
-
 export type BankVirtualAccountPublic = {
-  id: number;
+  id: string;
   currency: string;
   paymentRail: string;
   depositInstructions: Record<string, unknown>;
   destinationAddress: string;
   status: string;
-  isApproved: boolean;
-  approvalRegistered: boolean;
-  lifecycle: BankOperationLifecycle;
-  canActivate: boolean;
-  canContinueVerification: boolean;
-};
-
-export type BankCurrencyOperationalStatus =
-  | 'active'
-  | 'approved'
-  | 'pending'
-  | 'not_approved'
-  | 'not_opened';
-
-export type BankCurrencyPublicStatus = {
-  currency: string;
-  endorsement: string;
-  endorsementStatus: string | null;
-  /** DB row id when a corridor account was requested; null if not opened yet. */
-  virtualAccountId: number | null;
-  isApproved: boolean;
-  operationalStatus: BankCurrencyOperationalStatus;
-};
-
-export type ProvisionSpaceBankVirtualAccountResult =
-  BankVirtualAccountPublic & {
-    created: boolean;
-  };
-
-export type RequestSpaceBankVirtualAccountInput = {
-  spaceSlug: string;
-  authToken: string;
-  currency: string;
+  createdAt: string | null;
 };
 
 export type BankTransferPublic = {
-  id: number;
+  id: string;
   currency: string;
   paymentRail: string;
   amount: string | null;
@@ -80,9 +83,27 @@ export type BankTransferPublic = {
   depositInstructions: Record<string, unknown>;
   destinationAddress: string;
   createdAt: string;
-  lifecycle: BankOperationLifecycle;
-  canActivate: boolean;
-  canContinueVerification: boolean;
+};
+
+export type PaginatedBankTransfers = {
+  transfers: BankTransferPublic[];
+  hasMore: boolean;
+  nextCursor: string | null;
+};
+
+export type PaginatedBankVirtualAccounts = {
+  accounts: BankVirtualAccountPublic[];
+  hasMore: boolean;
+  nextCursor: string | null;
+};
+
+export type ProvisionSpaceBankVirtualAccountResult = BankVirtualAccountPublic;
+
+export type RequestSpaceBankVirtualAccountInput = {
+  spaceSlug: string;
+  authToken: string;
+  currency: string;
+  destinationCurrency?: string;
 };
 
 export type CreateSpaceBankTransferResult = BankTransferPublic;
@@ -90,24 +111,11 @@ export type CreateSpaceBankTransferResult = BankTransferPublic;
 export type RequestSpaceBankTransferInput = {
   spaceSlug: string;
   authToken: string;
-  /** Preferred — derives currency and paymentRail server-side. */
+  railKey?: string;
   corridorKey?: string;
-  /** Legacy fallback when corridorKey is omitted (USD defaults to ACH). */
   currency?: string;
   amount?: string;
-  legalName?: string;
-  contactEmail?: string;
-  endorsements?: string[];
-  redirectUri?: string;
-};
-
-export type RequestSpaceBankVirtualAccountsInput = {
-  spaceSlug: string;
-  authToken: string;
-  currencies: string[];
-  legalName?: string;
-  contactEmail?: string;
-  endorsements?: string[];
+  destinationCurrency?: string;
   redirectUri?: string;
 };
 
@@ -115,22 +123,60 @@ export type CreateSpaceBankVirtualAccountInput = {
   spaceSlug: string;
   authToken: string;
   currency: string;
+  destinationCurrency?: string;
 };
 
-export type CreateSpaceBankVirtualAccountResult =
-  | { action: 'provisioned'; account: BankVirtualAccountPublic }
-  | {
-      action: 'kyc_required';
-      currency: string;
-      account: BankVirtualAccountPublic;
-      kycLink: string | null;
-      tosLink: string | null;
-    }
-  | { action: 'already_active'; account: BankVirtualAccountPublic };
+export type CreateSpaceBankVirtualAccountResult = {
+  account: BankVirtualAccountPublic;
+};
+
+export type RequestEndorsementKycInput = {
+  spaceSlug: string;
+  authToken: string;
+  endorsement: string;
+};
 
 export type SyncSpaceBankingFromBridgeResult = {
-  kycStatus: string;
   isApproved: boolean;
-  transfersSynced: number;
-  transfers: BankTransferPublic[];
+  procedures: {
+    tos: BankValidationRequirement;
+    kyc: BankValidationRequirement;
+  };
+  railStatuses: BankRailPublicStatus[];
+};
+
+export type ListBankTransfersInput = {
+  spaceSlug: string;
+  limit?: number;
+  startingAfter?: string;
+  endingBefore?: string;
+};
+
+export type ListBankVirtualAccountsInput = {
+  spaceSlug: string;
+  limit?: number;
+  startingAfter?: string;
+};
+
+export type BankAddAccountRailOption = {
+  railKey: string;
+  currency: string;
+  paymentRail: string;
+  endorsement: string;
+  operationalStatus: BankRailOperationalStatus;
+  validation: BankValidationRequirement;
+  hasVirtualAccount: boolean;
+  destinationCurrencies: string[];
+  defaultDestinationCurrency: string;
+};
+
+export type BankTransferRailOption = {
+  railKey: string;
+  currency: string;
+  paymentRail: string;
+  endorsement: string;
+  operationalStatus: BankRailOperationalStatus;
+  validation: BankValidationRequirement;
+  destinationCurrencies: string[];
+  defaultDestinationCurrency: string;
 };

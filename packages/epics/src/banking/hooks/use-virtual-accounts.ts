@@ -4,7 +4,7 @@ import React from 'react';
 import useSWR from 'swr';
 import { useAuthentication } from '@hypha-platform/authentication';
 
-import type { BankVirtualAccountPublic } from './types';
+import type { PaginatedBankVirtualAccounts } from './types';
 
 export function getVirtualAccountsEndpoint(spaceSlug: string): string {
   return `/api/v1/spaces/${spaceSlug}/banking/accounts`;
@@ -16,10 +16,12 @@ type UseVirtualAccountsOptions = {
 };
 
 type UseVirtualAccountsReturn = {
-  accounts: BankVirtualAccountPublic[];
+  accounts: PaginatedBankVirtualAccounts['accounts'];
+  hasMore: boolean;
+  nextCursor: string | null;
   isLoading: boolean;
   error: Error | undefined;
-  refresh: () => Promise<BankVirtualAccountPublic[] | undefined>;
+  refresh: () => Promise<PaginatedBankVirtualAccounts | undefined>;
 };
 
 export const useVirtualAccounts = ({
@@ -41,7 +43,7 @@ export const useVirtualAccounts = ({
     [endpoint, isAuthenticated, enabled],
   );
 
-  const { data, error, isLoading, mutate } = useSWR<BankVirtualAccountPublic[]>(
+  const { data, error, isLoading, mutate } = useSWR<PaginatedBankVirtualAccounts>(
     swrKey,
     async ([url]: [string, string]) => {
       const token = await getAccessToken();
@@ -56,17 +58,23 @@ export const useVirtualAccounts = ({
       });
 
       if (!res.ok) {
-        throw new Error('Failed to fetch virtual accounts');
+        throw new Error('Failed to fetch bank accounts');
       }
 
-      return (await res.json()) as BankVirtualAccountPublic[];
+      return (await res.json()) as PaginatedBankVirtualAccounts;
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     },
   );
 
   const refresh = React.useCallback(() => mutate(), [mutate]);
 
   return {
-    accounts: data ?? [],
+    accounts: data?.accounts ?? [],
+    hasMore: data?.hasMore ?? false,
+    nextCursor: data?.nextCursor ?? null,
     isLoading: isAuthenticated && enabled && isLoading,
     error,
     refresh,

@@ -1,4 +1,5 @@
 import type { BankCustomerPublicStatus } from './hooks/types';
+import { procedureLink } from './banking-ui';
 
 export type BankVerificationLinks = {
   tosLink?: string | null;
@@ -16,13 +17,15 @@ function openFromStatus(status: BankCustomerPublicStatus): boolean {
   }
 
   const { tos, kyc } = status.procedures;
+  const tosUrl = procedureLink(tos);
+  const kycUrl = procedureLink(kyc);
 
-  if (tos.link && !tos.linkDisabled) {
-    return openLink(tos.link);
+  if (tosUrl && !tos.linkDisabled) {
+    return openLink(tosUrl);
   }
 
-  if (kyc.link && !kyc.linkDisabled) {
-    return openLink(kyc.link);
+  if (kycUrl && !kyc.linkDisabled) {
+    return openLink(kycUrl);
   }
 
   return false;
@@ -40,11 +43,6 @@ function openFromLinks(links: BankVerificationLinks): boolean {
   return false;
 }
 
-/**
- * Opens Bridge verification in a new tab. Prefers Terms of Service when still
- * pending; otherwise opens the KYB/KYC link. Bridge's hosted ToS flow continues
- * into the verification form after acceptance.
- */
 export function openBankVerificationFlowLink(
   source: BankCustomerPublicStatus | null | undefined | BankVerificationLinks,
 ): boolean {
@@ -59,7 +57,6 @@ export function openBankVerificationFlowLink(
   return openFromLinks(source);
 }
 
-/** @deprecated Use openBankVerificationFlowLink — kept for existing imports. */
 export function openBankVerificationTosLink(
   status: BankCustomerPublicStatus | null | undefined,
 ): boolean {

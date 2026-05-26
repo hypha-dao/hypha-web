@@ -21,6 +21,8 @@ type BankAccountsSectionProps = {
   onOpenSpaceAccount: () => void;
   openSpaceAccountDisabled?: boolean;
   openSpaceAccountDisabledReason?: OpenSpaceAccountDisabledReason;
+  /** Parent shows page skeleton while lists load. */
+  hideListLoadingState?: boolean;
 };
 
 export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
@@ -30,6 +32,7 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
   onOpenSpaceAccount,
   openSpaceAccountDisabled = false,
   openSpaceAccountDisabledReason = null,
+  hideListLoadingState = false,
 }) => {
   const t = useTranslations('BankingTab.sections.accounts');
   const tToolbar = useTranslations('BankingTab.toolbar');
@@ -55,7 +58,7 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
       onClick={onOpenSpaceAccount}
     >
       <Plus className="h-4 w-4" />
-      {tToolbar('openSpaceAccount')}
+      {tToolbar('addCurrency')}
     </Button>
   );
 
@@ -84,7 +87,10 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
       {!isAuthenticated ? (
         <p className="text-2 text-muted-foreground">{t('signInHint')}</p>
       ) : (
-        <ApprovedBankingDeposits {...depositsProps} />
+        <ApprovedBankingDeposits
+          {...depositsProps}
+          hideLoadingState={hideListLoadingState}
+        />
       )}
     </section>
   );

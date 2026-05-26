@@ -4,11 +4,8 @@ import { eq } from 'drizzle-orm';
 
 import {
   bankCustomers,
-  bankTransfers,
-  bankVirtualAccounts,
   type BankCustomer,
-  type BankTransfer,
-  type BankVirtualAccount,
+  type BankCustomerRequestedRails,
 } from '@hypha-platform/storage-postgres';
 
 export type InsertBankCustomerInput = {
@@ -17,14 +14,7 @@ export type InsertBankCustomerInput = {
   provider: BankProvider;
   providerCustomerId: string | null;
   providerKycLinkId: string;
-  name: string;
-  contactEmail: string;
-  endorsements: string[];
-  kycStatus: string;
-  tosStatus: string | null;
-  kycLink: string | null;
-  tosLink: string | null;
-  idempotencyKey: string;
+  requestedRails: BankCustomerRequestedRails;
 };
 
 export const insertBankCustomer = async (
@@ -42,247 +32,37 @@ export const insertBankCustomer = async (
 
 export type UpdateBankCustomerInput = {
   id: number;
-  kycStatus?: string;
   providerCustomerId?: string | null;
-};
-
-export type UpdateBankCustomerKycSessionInput = {
-  id: number;
-  providerKycLinkId: string;
-  providerCustomerId?: string | null;
-  kycLink: string | null;
-  tosLink: string | null;
-  kycStatus: string;
-  tosStatus: string | null;
-  endorsements: string[];
-  previousKycLinks: import('@hypha-platform/storage-postgres').BankCustomerPreviousKycLink[];
-};
-
-export const updateBankCustomerKycSession = async (
-  input: UpdateBankCustomerKycSessionInput,
-  { db }: DbConfig,
-): Promise<BankCustomer> => {
-  const [row] = await db
-    .update(bankCustomers)
-    .set({
-      providerKycLinkId: input.providerKycLinkId,
-      providerCustomerId: input.providerCustomerId,
-      kycLink: input.kycLink,
-      tosLink: input.tosLink,
-      kycStatus: input.kycStatus,
-      tosStatus: input.tosStatus,
-      endorsements: input.endorsements,
-      previousKycLinks: input.previousKycLinks,
-      updatedAt: new Date(),
-    })
-    .where(eq(bankCustomers.id, input.id))
-    .returning();
-
-  if (!row) {
-    throw new Error('Failed to update bank customer KYC session');
-  }
-
-  return row;
+  providerKycLinkId?: string;
+  requestedRails?: BankCustomerRequestedRails;
 };
 
 export const updateBankCustomer = async (
-  { id, kycStatus, providerCustomerId }: UpdateBankCustomerInput,
+  input: UpdateBankCustomerInput,
   { db }: DbConfig,
 ): Promise<BankCustomer> => {
   const patch: Partial<typeof bankCustomers.$inferInsert> = {
     updatedAt: new Date(),
   };
 
-  if (kycStatus !== undefined) {
-    patch.kycStatus = kycStatus;
+  if (input.providerCustomerId !== undefined) {
+    patch.providerCustomerId = input.providerCustomerId;
   }
-
-  if (providerCustomerId !== undefined) {
-    patch.providerCustomerId = providerCustomerId;
+  if (input.providerKycLinkId !== undefined) {
+    patch.providerKycLinkId = input.providerKycLinkId;
+  }
+  if (input.requestedRails !== undefined) {
+    patch.requestedRails = input.requestedRails;
   }
 
   const [row] = await db
     .update(bankCustomers)
     .set(patch)
-    .where(eq(bankCustomers.id, id))
+    .where(eq(bankCustomers.id, input.id))
     .returning();
 
   if (!row) {
     throw new Error('Failed to update bank customer');
-  }
-
-  return row;
-};
-
-export type InsertBankVirtualAccountInput = {
-  bankCustomerId: number;
-  provider: BankProvider;
-  providerVirtualAccountId: string | null;
-  currency: string;
-  paymentRail: string;
-  depositInstructions: Record<string, unknown>;
-  destinationAddress: string;
-  status: string;
-  isApproved?: boolean;
-};
-
-export const insertBankVirtualAccount = async (
-  input: InsertBankVirtualAccountInput,
-  { db }: DbConfig,
-): Promise<BankVirtualAccount> => {
-  const [row] = await db.insert(bankVirtualAccounts).values(input).returning();
-
-  if (!row) {
-    throw new Error('Failed to insert bank virtual account');
-  }
-
-  return row;
-};
-
-export type InsertBankTransferInput = {
-  bankCustomerId: number;
-  provider: BankProvider;
-  providerTransferId: string | null;
-  currency: string;
-  paymentRail: string;
-  amount: string | null;
-  depositMessage: string | null;
-  status: string;
-  depositInstructions: Record<string, unknown>;
-  destinationAddress: string;
-};
-
-export const insertBankTransfer = async (
-  input: InsertBankTransferInput,
-  { db }: DbConfig,
-): Promise<BankTransfer> => {
-  const [row] = await db.insert(bankTransfers).values(input).returning();
-
-  if (!row) {
-    throw new Error('Failed to insert bank transfer');
-  }
-
-  return row;
-};
-
-export type UpdateBankVirtualAccountInput = {
-  id: number;
-  providerVirtualAccountId?: string | null;
-  currency?: string;
-  paymentRail?: string;
-  depositInstructions?: Record<string, unknown>;
-  destinationAddress?: string;
-  status?: string;
-  isApproved?: boolean;
-};
-
-export const updateBankVirtualAccount = async (
-  input: UpdateBankVirtualAccountInput,
-  { db }: DbConfig,
-): Promise<BankVirtualAccount> => {
-  const {
-    id,
-    providerVirtualAccountId,
-    currency,
-    paymentRail,
-    depositInstructions,
-    destinationAddress,
-    status,
-    isApproved,
-  } = input;
-
-  const patch: Partial<typeof bankVirtualAccounts.$inferInsert> = {
-    updatedAt: new Date(),
-  };
-
-  if (providerVirtualAccountId !== undefined) {
-    patch.providerVirtualAccountId = providerVirtualAccountId;
-  }
-  if (currency !== undefined) {
-    patch.currency = currency;
-  }
-  if (paymentRail !== undefined) {
-    patch.paymentRail = paymentRail;
-  }
-  if (depositInstructions !== undefined) {
-    patch.depositInstructions = depositInstructions;
-  }
-  if (destinationAddress !== undefined) {
-    patch.destinationAddress = destinationAddress;
-  }
-  if (status !== undefined) {
-    patch.status = status;
-  }
-  if (isApproved !== undefined) {
-    patch.isApproved = isApproved;
-  }
-
-  const [row] = await db
-    .update(bankVirtualAccounts)
-    .set(patch)
-    .where(eq(bankVirtualAccounts.id, id))
-    .returning();
-
-  if (!row) {
-    throw new Error('Failed to update bank virtual account');
-  }
-
-  return row;
-};
-
-export type UpdateBankTransferInput = {
-  id: number;
-  providerTransferId?: string | null;
-  status?: string;
-  depositInstructions?: Record<string, unknown>;
-  depositMessage?: string | null;
-  amount?: string | null;
-  currency?: string;
-  paymentRail?: string;
-  destinationAddress?: string;
-};
-
-export const updateBankTransfer = async (
-  input: UpdateBankTransferInput,
-  { db }: DbConfig,
-): Promise<BankTransfer> => {
-  const patch: Partial<typeof bankTransfers.$inferInsert> = {
-    updatedAt: new Date(),
-  };
-
-  if (input.status !== undefined) {
-    patch.status = input.status;
-  }
-  if (input.depositInstructions !== undefined) {
-    patch.depositInstructions = input.depositInstructions;
-  }
-  if (input.depositMessage !== undefined) {
-    patch.depositMessage = input.depositMessage;
-  }
-  if (input.providerTransferId !== undefined) {
-    patch.providerTransferId = input.providerTransferId;
-  }
-  if (input.amount !== undefined) {
-    patch.amount = input.amount;
-  }
-  if (input.currency !== undefined) {
-    patch.currency = input.currency;
-  }
-  if (input.paymentRail !== undefined) {
-    patch.paymentRail = input.paymentRail;
-  }
-  if (input.destinationAddress !== undefined) {
-    patch.destinationAddress = input.destinationAddress;
-  }
-
-  const [row] = await db
-    .update(bankTransfers)
-    .set(patch)
-    .where(eq(bankTransfers.id, input.id))
-    .returning();
-
-  if (!row) {
-    throw new Error('Failed to update bank transfer');
   }
 
   return row;

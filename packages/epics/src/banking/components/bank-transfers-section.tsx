@@ -18,33 +18,28 @@ export type BankTransfersSectionProps = {
   transfers: BankTransferPublic[];
   transfersLoading: boolean;
   canManage: boolean;
+  hasBankCustomer?: boolean;
   newTransferDisabled?: boolean;
   newTransferDisabledReason?:
     | 'loadingTransfers'
     | 'finishVerificationFirst'
     | null;
-  activatingTransferId: number | null;
-  failedTransferId: number | null;
-  activateError: string | null;
-  onOpenVerificationDetails: () => void;
-  onActivateTransfer: (transferId: number) => void;
   onNewTransfer?: () => void;
+  hideListLoadingState?: boolean;
 };
 
 export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
   transfers,
   transfersLoading,
   canManage,
+  hasBankCustomer = true,
   newTransferDisabled = false,
   newTransferDisabledReason = null,
-  activatingTransferId,
-  failedTransferId,
-  activateError,
-  onOpenVerificationDetails,
-  onActivateTransfer,
   onNewTransfer,
+  hideListLoadingState = false,
 }) => {
   const t = useTranslations('BankingTab.sections.transfers');
+  const tNotStarted = useTranslations('BankingTab.notStarted');
   const tToolbar = useTranslations('BankingTab.toolbar');
   const [detailsTransfer, setDetailsTransfer] =
     useState<BankTransferPublic | null>(null);
@@ -101,7 +96,7 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
         ) : null}
       </div>
 
-      {transfersLoading ? (
+      {transfersLoading && !hideListLoadingState ? (
         <div className={BANKING_LOADING_STATE_CLASS}>
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           <p className="text-2 text-muted-foreground">{t('loading')}</p>
@@ -112,7 +107,9 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
             {t('emptyTitle')}
           </p>
           <p className="mx-auto max-w-md text-2 text-muted-foreground">
-            {t('emptyDescription')}
+            {hasBankCustomer
+              ? t('emptyDescription')
+              : tNotStarted('description')}
           </p>
         </div>
       ) : (
@@ -123,20 +120,6 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
                 key={transfer.id}
                 transfer={transfer}
                 onViewDetails={() => openDetails(transfer)}
-                onOpenVerificationDetails={
-                  canManage && transfer.lifecycle === 'pending_kyb'
-                    ? onOpenVerificationDetails
-                    : undefined
-                }
-                onActivate={
-                  canManage && transfer.canActivate
-                    ? () => onActivateTransfer(transfer.id)
-                    : undefined
-                }
-                isActivating={activatingTransferId === transfer.id}
-                activationError={
-                  failedTransferId === transfer.id ? activateError : null
-                }
               />
             ))}
           </div>

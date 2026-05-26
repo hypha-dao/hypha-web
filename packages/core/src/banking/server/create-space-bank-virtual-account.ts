@@ -1,49 +1,68 @@
+import { randomUUID } from 'node:crypto';
+
 import type { DatabaseInstance } from '../../common/server/types';
 import {
-  BANK_OPERATION_PENDING_KYB,
+  BRIDGE_DEFAULT_DESTINATION_CURRENCY,
+  isAllowedBridgeDestinationCurrency,
+} from '../bridge-destination-currencies';
+import {
   DEFAULT_BANK_PROVIDER,
   getPaymentRailForCurrency,
 } from '../constants';
 import type {
-  BankVirtualAccountPublic,
   CreateSpaceBankVirtualAccountInput,
   CreateSpaceBankVirtualAccountResult,
 } from '../types';
 import { findSpaceBySlug } from '../../space/server/queries';
 import { resolveSpaceExecutorAddress } from '../../space/server/resolve-space-executor-address';
-import { authorizeSpaceBankOnboarding } from './authorize-space-bank-onboarding';
 import { BankOnboardingError } from './errors';
-import { insertBankVirtualAccount } from './mutations';
-import { mapBankVirtualAccountToPublic } from './map-bank-virtual-account-public';
-import { provisionSpaceBankVirtualAccount } from './provision-space-bank-virtual-account';
-import { getEndorsementForCurrency } from './bridge-customer-endorsements';
+import { authorizeSpaceBankOnboarding } from './authorize-space-bank-onboarding';
+import { findBankCustomerBySpaceAndProvider } from './queries';
+import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import {
-  findBankCustomerBySpaceAndProvider,
-  findBankVirtualAccountByCorridorAndCustomer,
-} from './queries';
-import { requestBridgeEndorsementKycLink } from './request-bridge-endorsement-kyc-link';
-import { persistVirtualAccountEndorsementFromBridge } from './sync-bank-virtual-account-endorsement';
+  buildRailStatuses,
+  loadBankingProviderState,
+  resolveCustomerApproved,
+  syncProviderCustomerIdFromKycLink,
+} from './providers/bridge/banking-provider-state';
+import {
+  getEndorsementForCurrency,
+  isBridgeEndorsementApproved,
+} from './bridge-customer-endorsements';
+import { mapBridgeVirtualAccountToPublic } from './map-bridge-resources';
+import { updateBankCustomer } from './mutations';
+import { requireSpaceTreasuryAddress } from './require-space-treasury-address';
 
 export type CreateSpaceBankVirtualAccountOptions = {
   kycProvider?: BankKycProvider;
 };
 
-/**
- * Creates (or resumes) a space bank deposit account for one currency corridor.
- * Checks Bridge endorsement, requests endorsement-specific KYC when needed,
- * otherwise provisions the virtual account.
- */
 export async function createSpaceBankVirtualAccount(
   input: CreateSpaceBankVirtualAccountInput,
   { db }: { db: DatabaseInstance },
   options?: CreateSpaceBankVirtualAccountOptions,
 ): Promise<CreateSpaceBankVirtualAccountResult> {
   const { spaceSlug, authToken, currency } = input;
+  const destinationCurrency =
+    input.destinationCurrency?.toLowerCase() ??
+    BRIDGE_DEFAULT_DESTINATION_CURRENCY;
 
   const paymentRail = getPaymentRailForCurrency(currency);
   if (!paymentRail) {
     throw new BankOnboardingError('Unsupported currency', 400);
+  }
+
+  if (
+    !isAllowedBridgeDestinationCurrency({
+      sourceRail: paymentRail,
+      destinationCurrency,
+    })
+  ) {
+    throw new BankOnboardingError(
+      'Destination currency is not supported for this rail',
+      400,
+    );
   }
 
   const endorsement = getEndorsementForCurrency(currency);
@@ -61,7 +80,7 @@ export async function createSpaceBankVirtualAccount(
     throw new BankOnboardingError(auth.message, auth.httpStatus);
   }
 
-  let customer = await findBankCustomerBySpaceAndProvider(
+  const customer = await findBankCustomerBySpaceAndProvider(
     { spaceId: space.id, provider: DEFAULT_BANK_PROVIDER },
     { db },
   );
@@ -72,68 +91,72 @@ export async function createSpaceBankVirtualAccount(
     );
   }
 
-  let account = await findBankVirtualAccountByCorridorAndCustomer(
-    {
-      bankCustomerId: customer.id,
-      currency,
-      paymentRail,
-    },
-    { db },
-  );
-
-  if (account?.providerVirtualAccountId) {
-    return {
-      action: 'already_active',
-      account: mapBankVirtualAccountToPublic(account),
-    };
-  }
-
-  if (!account) {
-    const treasuryAddress = (await resolveSpaceExecutorAddress(space)) ?? '';
-    account = await insertBankVirtualAccount(
-      {
-        bankCustomerId: customer.id,
-        provider: DEFAULT_BANK_PROVIDER,
-        providerVirtualAccountId: null,
-        currency,
-        paymentRail,
-        depositInstructions: {},
-        destinationAddress: treasuryAddress,
-        status: BANK_OPERATION_PENDING_KYB,
-      },
-      { db },
+  if (!(await resolveCustomerApproved(customer))) {
+    throw new BankOnboardingError(
+      'Complete business verification before opening bank accounts',
+      403,
     );
   }
 
-  const persisted = await persistVirtualAccountEndorsementFromBridge(
-    account,
-    customer,
-    { db },
-  );
-  account = persisted.account;
-
-  if (!persisted.isApproved) {
-    customer = await requestBridgeEndorsementKycLink(customer, endorsement, {
-      db,
-    });
-
-    return {
-      action: 'kyc_required',
-      currency,
-      account: mapBankVirtualAccountToPublic(account),
-      kycLink: customer.kycLink,
-      tosLink: customer.tosLink,
-    };
+  let customerId = customer.providerCustomerId;
+  if (!customerId) {
+    customerId = await syncProviderCustomerIdFromKycLink(customer);
+    if (customerId) {
+      await updateBankCustomer(
+        { id: customer.id, providerCustomerId: customerId },
+        { db },
+      );
+    }
   }
 
-  const provisioned = await provisionSpaceBankVirtualAccount(
-    { spaceSlug, authToken, currency },
-    { db },
-    options,
+  if (!customerId) {
+    throw new BankOnboardingError(
+      'Bridge customer is not ready yet. Try again after KYB approval completes.',
+      422,
+    );
+  }
+
+  const state = await loadBankingProviderState(customer);
+  const rails = buildRailStatuses({ customer, state });
+  const rail = rails.find((r) => r.currency === currency.toLowerCase());
+  if (!rail || !isBridgeEndorsementApproved(rail.endorsementStatus)) {
+    throw new BankOnboardingError(
+      'This currency is not yet approved. Complete verification for this rail in Banking settings.',
+      403,
+    );
+  }
+
+  if (rail.hasVirtualAccount) {
+    throw new BankOnboardingError(
+      'A bank account already exists for this currency',
+      409,
+    );
+  }
+
+  const treasuryAddress = await requireSpaceTreasuryAddress(space);
+  const kycProvider =
+    options?.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER);
+
+  const created = await kycProvider.provisionVirtualAccount({
+    customerId,
+    currency,
+    destinationAddress: treasuryAddress,
+    destinationCurrency,
+    idempotencyKey: randomUUID(),
+  });
+
+  const account = mapBridgeVirtualAccountToPublic(
+    {
+      id: created.providerVirtualAccountId,
+      status: created.status,
+      source_deposit_instructions: created.depositInstructions,
+      destination: created.destination,
+      developer_fee_percent: created.developerFeePercent ?? undefined,
+      source: { currency: created.currency, payment_rail: created.paymentRail },
+    },
+    treasuryAddress,
+    paymentRail,
   );
 
-  return {
-    action: 'provisioned',
-    account: provisioned,
-  };
+  return { account };
 }

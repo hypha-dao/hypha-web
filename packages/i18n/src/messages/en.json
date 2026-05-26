@@ -560,7 +560,7 @@
         "title": "Bank Accounts",
         "description": "Permanent deposit details per currency.",
         "openAccountCta": "Open a space account",
-        "addCurrencyCta": "Add a currency",
+        "addCurrencyCta": "Add bank account",
         "emptyTitle": "No bank accounts yet",
         "emptyDescription": "Open a space account and choose which currencies you need. We'll set up deposit details for each one.",
         "pendingTitle": "Verification in progress",
@@ -572,25 +572,33 @@
     },
     "openAccount": {
       "title": "Open a space account",
-      "titleAddCurrency": "Add a currency",
+      "titleAddCurrency": "Add a bank account",
       "description": "Tell us about your organization and which currencies you need. We'll verify your space once, then create accounts for each currency.",
       "descriptionAddCurrency": "Choose additional currencies to add deposit accounts for your space.",
-      "descriptionAddCurrencySingle": "Choose the currency to add. Additional verification from the provider may be required.",
+      "descriptionAddCurrencySingle": "Choose the deposit currency for this bank account. Additional verification from the provider may be required.",
+      "bankAccountDepositLabel": "Deposit currency",
+      "bankAccountDepositHint": "Currency this bank account will receive.",
       "legalName": "Legal entity name",
       "contactEmail": "Contact email",
       "currenciesLabel": "Currencies",
       "currenciesHint": "Select every currency you want to receive bank transfers in.",
       "currenciesHintSingle": "Select a currency you want to receive bank transfers in.",
       "submit": "Open account",
-      "submitAddCurrency": "Add currencies",
+      "submitAddCurrency": "Add bank account",
       "submitting": "Working…",
-      "noCurrenciesAvailable": "All supported currencies already have accounts for this space.",
+      "noCurrenciesAvailable": "All supported bank accounts are already open for this space.",
+      "railLabel": "Payment rail",
+      "railPlaceholder": "Select a rail",
+      "requestRail": "Request",
+      "loadingOptions": "Loading…",
+      "railsNeedVerificationHint": "These rails need provider verification before you can use them.",
       "provisioningProgress": "Creating {currency} account…",
       "redirectPendingTitle": "Continue in Bridge",
       "redirectPendingDescription": "Accept terms and complete verification to activate your selected currencies."
     },
     "toolbar": {
       "add": "Add",
+      "addCurrency": "Add bank account",
       "openSpaceAccount": "Open a space account",
       "finishVerificationFirst": "Finish the current verification first",
       "allCurrenciesCovered": "All supported currencies already have accounts",
@@ -612,6 +620,7 @@
       "gearLabel": "Banking settings",
       "dialogTitle": "Banking settings",
       "dialogDescription": "Detailed information and technical configurations.",
+      "dataMinimizationNotice": "Deposit and verification details are loaded from our banking partner and are not saved on Hypha servers.",
       "noCustomer": "No bank customer record for this space yet.",
       "approvedSummary": "Verification is approved. Manage accounts in the Bank Accounts section below.",
       "providerValidationsTitle": "Provider validations",
@@ -631,6 +640,7 @@
         "approved": "Approved",
         "pending": "Pending verification",
         "not_approved": "Not approved",
+        "not_requested": "Not requested",
         "not_opened": "Not opened"
       },
       "syncStatus": "Sync status",
@@ -697,9 +707,17 @@
         "payoutMethod": "Bre-B"
       }
     },
+    "initialSetup": {
+      "organizationLegend": "Organization details",
+      "organizationHint": "Organization details are sent to our banking partner for verification and are not stored on Hypha.",
+      "currenciesTitle": "Currencies you want to use",
+      "currenciesDescription": "Select the currencies this space will accept by bank transfer. We verify your organization once with our banking partner.",
+      "currenciesHint": "You can add more currencies later from Banking settings.",
+      "submit": "Continue"
+    },
     "notStarted": {
-      "description": "Open a space account to receive bank transfers in the currencies you need.",
-      "enableCta": "Open a space account"
+      "description": "Banking is not set up for this space yet.",
+      "enableCta": "Continue"
     },
     "blockers": {
       "notOnChain": "This space must be deployed on-chain before a linked bank account can be set up.",
@@ -797,7 +815,9 @@
       "flexibleAmountHint": "The payer can send any amount.",
       "cancel": "Cancel",
       "submit": "Create transfer",
-      "submitting": "Creating…"
+      "submitting": "Creating…",
+      "loadingOptions": "Loading corridors…",
+      "noCorridorsAvailable": "No transfer corridors are available for this space."
     },
     "transferStatus": {
       "awaiting_funds": "Awaiting payment",

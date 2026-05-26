@@ -69,6 +69,32 @@ export const BANK_CURRENCY_TO_ENDORSEMENT: Record<
   cop: 'cop',
 };
 
+/** Maps a Bridge endorsement id to the primary deposit currency code. */
+export function getCurrencyForEndorsement(endorsement: string): string | null {
+  const normalized = endorsement.trim().toLowerCase();
+  for (const currency of BANK_VIRTUAL_ACCOUNT_CURRENCIES) {
+    if (BANK_CURRENCY_TO_ENDORSEMENT[currency] === normalized) {
+      return currency;
+    }
+  }
+  return null;
+}
+
+export function mergeRequestedRails(
+  current: readonly string[],
+  endorsement: string,
+): string[] {
+  const currency = getCurrencyForEndorsement(endorsement);
+  if (!currency) {
+    return [...current];
+  }
+  const normalized = currency.toLowerCase();
+  if (current.some((rail) => rail.toLowerCase() === normalized)) {
+    return [...current];
+  }
+  return [...current, normalized];
+}
+
 export function currenciesToEndorsements(
   currencies: readonly string[],
 ): string[] {

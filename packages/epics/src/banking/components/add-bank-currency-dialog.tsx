@@ -1,57 +1,126 @@
 'use client';
 
-import { FC } from 'react';
-import { Loader2 } from 'lucide-react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  Input,
-  Label,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
+import type { BankCurrencyCode } from '../bank-currency-display';
 import {
-  getBankCurrencyMeta,
-  type BankCurrencyCode,
-} from '../bank-currency-display';
-import { BANKING_READONLY_INPUT_CLASS } from '../banking-ui';
-import { CurrencyFlagBadge } from './currency-flag-badge';
+  getAddAccountRailOptionsFromStatus,
+  isBankRailSelectable,
+} from '../banking-ui';
+import { useRequestEndorsementKyc } from '../hooks/use-request-endorsement-kyc';
+import type { BankCustomerPublicStatus } from '../hooks/types';
 import {
   BANKING_DIALOG_CONTENT_CLASS,
   BANKING_DIALOG_HEADER_CLASS,
   BankingDialogBody,
 } from './banking-dialog-layout';
-import { cn } from '@hypha-platform/ui-utils';
+import {
+  BankRailActionPicker,
+  type BankRailPickerOption,
+} from './bank-rail-action-picker';
 
 type AddBankCurrencyDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  legalName: string;
-  contactEmail: string;
-  availableCurrencies: BankCurrencyCode[];
+  spaceSlug: string;
+  status: BankCustomerPublicStatus | null | undefined;
   submittingCurrency: BankCurrencyCode | null;
   error: string | null;
-  onAddCurrency: (currency: BankCurrencyCode) => Promise<void>;
+  onOpenGear: () => void;
+  onRefreshStatus?: () => Promise<unknown>;
+  onAddCurrency: (input: {
+    currency: BankCurrencyCode;
+    destinationCurrency?: string;
+  }) => Promise<void>;
 };
 
 export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
   open,
   onOpenChange,
-  legalName,
-  contactEmail,
-  availableCurrencies,
+  spaceSlug,
+  status,
   submittingCurrency,
   error,
+  onOpenGear,
+  onRefreshStatus,
   onAddCurrency,
 }) => {
   const t = useTranslations('BankingTab.openAccount');
-  const tCurrencies = useTranslations('BankingTab.currencies');
   const tOp = useTranslations('BankingTab.operationStatus');
+  const { requestEndorsementKyc, isLoading: isRequestingEndorsement } =
+    useRequestEndorsementKyc(spaceSlug);
+
+  const options = useMemo(
+    () => (status ? getAddAccountRailOptionsFromStatus(status) : []),
+    [status],
+  );
+
+  const pickerOptions = useMemo((): BankRailPickerOption[] => {
+    return options.map((option) => ({
+      id: option.railKey,
+      currency: option.currency as BankCurrencyCode,
+      endorsement: option.endorsement,
+      operationalStatus: option.operationalStatus,
+      destinationCurrencies: option.destinationCurrencies,
+      defaultDestinationCurrency: option.defaultDestinationCurrency,
+    }));
+  }, [options]);
+
+  const defaultSelectedId = useMemo(() => {
+    const approved = pickerOptions.find((option) =>
+      isBankRailSelectable(option.operationalStatus),
+    );
+    return approved?.id ?? pickerOptions[0]?.id ?? '';
+  }, [pickerOptions]);
+
+  const [selectedId, setSelectedId] = useState(defaultSelectedId);
+  const [destinationCurrency, setDestinationCurrency] = useState('usdc');
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setSelectedId(defaultSelectedId);
+    const selected = pickerOptions.find((option) => option.id === defaultSelectedId);
+    setDestinationCurrency(
+      selected?.defaultDestinationCurrency ??
+        selected?.destinationCurrencies[0] ??
+        'usdc',
+    );
+  }, [open, defaultSelectedId, pickerOptions]);
+
+  const selectedOption = options.find((option) => option.railKey === selectedId);
   const isSubmitting = submittingCurrency != null;
+
+  const handleRequestEndorsement = useCallback(
+    async (endorsement: string) => {
+      const { kycLinkUrl } = await requestEndorsementKyc(endorsement);
+      window.open(kycLinkUrl, '_blank', 'noopener,noreferrer');
+      onOpenChange(false);
+      onOpenGear();
+      void onRefreshStatus?.();
+    },
+    [onOpenChange, onOpenGear, onRefreshStatus, requestEndorsementKyc],
+  );
+
+  const handleAdd = async () => {
+    if (!selectedOption || !isBankRailSelectable(selectedOption.operationalStatus)) {
+      return;
+    }
+    await onAddCurrency({
+      currency: selectedOption.currency as BankCurrencyCode,
+      destinationCurrency,
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,86 +133,54 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
         </DialogHeader>
 
         <BankingDialogBody className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="add-currency-legal-name">{t('legalName')}</Label>
-            <Input
-              id="add-currency-legal-name"
-              value={legalName}
-              maxLength={1024}
-              readOnly
-              tabIndex={-1}
-              disabled={isSubmitting}
-              className={BANKING_READONLY_INPUT_CLASS}
-              onFocus={(event) => event.currentTarget.blur()}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="add-currency-email">{t('contactEmail')}</Label>
-            <Input
-              id="add-currency-email"
-              type="email"
-              value={contactEmail}
-              readOnly
-              tabIndex={-1}
-              disabled={isSubmitting}
-              className={BANKING_READONLY_INPUT_CLASS}
-              onFocus={(event) => event.currentTarget.blur()}
-            />
-          </div>
-
-          <fieldset className="flex flex-col gap-2">
-            <legend className="text-sm font-medium">
-              {t('currenciesLabel')}
-            </legend>
+          {!status ? (
+            <p className="text-2 text-muted-foreground">{t('loadingOptions')}</p>
+          ) : pickerOptions.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              {t('currenciesHintSingle')}
+              {t('noCurrenciesAvailable')}
             </p>
-            {availableCurrencies.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t('noCurrenciesAvailable')}
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {availableCurrencies.map((currency) => {
-                  const meta = getBankCurrencyMeta(currency);
-                  const isAdding = submittingCurrency === currency;
-
-                  return (
-                    <Button
-                      key={currency}
-                      type="button"
-                      colorVariant="accent"
-                      variant="outline"
-                      className="h-auto justify-start gap-3 px-3 py-3"
-                      disabled={isSubmitting}
-                      onClick={() => void onAddCurrency(currency)}
-                    >
-                      <CurrencyFlagBadge currency={currency} size="sm" />
-                      <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
-                        <span className="text-2 font-semibold">
-                          {meta
-                            ? tCurrencies(`${meta.nameKey}.code`)
-                            : currency.toUpperCase()}
-                        </span>
-                        <span className="text-1 font-normal text-muted-foreground">
-                          {meta
-                            ? tCurrencies(`${meta.nameKey}.payoutMethod`)
-                            : currency.toUpperCase()}
-                        </span>
-                      </span>
-                      {isAdding ? (
-                        <Loader2 className="ml-auto h-4 w-4 shrink-0 animate-spin" />
-                      ) : null}
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
-          </fieldset>
+          ) : (
+            <BankRailActionPicker
+              mode="account"
+              options={pickerOptions}
+              selectedId={selectedId}
+              onSelectedIdChange={(id) => {
+                setSelectedId(id);
+                const next = pickerOptions.find((option) => option.id === id);
+                setDestinationCurrency(
+                  next?.defaultDestinationCurrency ??
+                    next?.destinationCurrencies[0] ??
+                    'usdc',
+                );
+              }}
+              destinationCurrency={destinationCurrency}
+              onDestinationCurrencyChange={setDestinationCurrency}
+              primaryActionLabel={t('submitAddCurrency')}
+              alternateActionLabel={tOp('continueVerification')}
+              primaryActionLoading={
+                isSubmitting &&
+                submittingCurrency === selectedOption?.currency
+              }
+              onPrimaryAction={() => {
+                if (
+                  selectedOption &&
+                  isBankRailSelectable(selectedOption.operationalStatus)
+                ) {
+                  void handleAdd();
+                  return;
+                }
+                onOpenChange(false);
+                onOpenGear();
+              }}
+              requestEndorsementLoading={isRequestingEndorsement}
+              onRequestEndorsement={handleRequestEndorsement}
+              disabled={isSubmitting}
+            />
+          )}
 
           {error ? (
             <p className="text-sm text-destructive" role="alert">
-              {tOp('activateFailed')}
+              {error}
             </p>
           ) : null}
         </BankingDialogBody>

@@ -60,7 +60,11 @@ describe('simulateSpaceBankKycApproval', () => {
     vi.clearAllMocks();
     isBridgeSandboxApi.mockReturnValue(true);
     isBankingSandboxDemoEnabled.mockReturnValue(true);
-    findSpaceBySlug.mockResolvedValue({ id: 10, slug: 'acme' });
+    findSpaceBySlug.mockResolvedValue({
+      id: 10,
+      slug: 'acme',
+      title: 'Hypha Test Space',
+    });
     authorizeSpaceBankOnboarding.mockResolvedValue({ authorized: true });
     findBankCustomerBySpaceAndProvider.mockResolvedValue(bankCustomer);
     resolveBridgeCustomerId.mockResolvedValue({

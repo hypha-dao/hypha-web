@@ -17,24 +17,14 @@ export type ApprovedBankingDepositsProps = {
   virtualAccounts: BankVirtualAccountPublic[];
   virtualAccountsLoading: boolean;
   canManage: boolean;
-  activatingAccountId: number | null;
-  failedAccountId: number | null;
-  activateError: string | null;
-  provisionError: string | null;
-  onOpenVerificationDetails: () => void;
-  onActivateAccount: (accountId: number) => void;
+  hideLoadingState?: boolean;
 };
 
 export const ApprovedBankingDeposits: FC<ApprovedBankingDepositsProps> = ({
   virtualAccounts,
   virtualAccountsLoading,
   canManage,
-  activatingAccountId,
-  failedAccountId,
-  activateError,
-  provisionError,
-  onOpenVerificationDetails,
-  onActivateAccount,
+  hideLoadingState = false,
 }) => {
   const tAccounts = useTranslations('BankingTab.sections.accounts');
 
@@ -47,7 +37,7 @@ export const ApprovedBankingDeposits: FC<ApprovedBankingDepositsProps> = ({
     setDetailsOpen(true);
   };
 
-  if (virtualAccountsLoading) {
+  if (virtualAccountsLoading && !hideLoadingState) {
     return (
       <div className={BANKING_LOADING_STATE_CLASS}>
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -79,29 +69,9 @@ export const ApprovedBankingDeposits: FC<ApprovedBankingDepositsProps> = ({
             key={account.id}
             account={account}
             onViewDetails={() => openDetails(account)}
-            onOpenVerificationDetails={
-              canManage && account.lifecycle === 'pending_kyb'
-                ? onOpenVerificationDetails
-                : undefined
-            }
-            onActivate={
-              canManage && account.canActivate
-                ? () => onActivateAccount(account.id)
-                : undefined
-            }
-            isActivating={activatingAccountId === account.id}
-            activationError={
-              failedAccountId === account.id ? activateError : null
-            }
           />
         ))}
       </div>
-
-      {provisionError ? (
-        <p className="mt-4 rounded-md border border-error-6 bg-error-2 px-3 py-2 text-2 text-error-11">
-          {provisionError}
-        </p>
-      ) : null}
 
       <BankAccountDetailsDialog
         account={detailsAccount}

@@ -15,7 +15,7 @@ import {
 import { useMe, useSpaceBySlug } from '@hypha-platform/core/client';
 
 import { useRequestBankOnboarding } from '../hooks';
-import { DEFAULT_BRIDGE_ENDORSEMENT_VALUES } from './providers/bridge-endorsement-options';
+import { getDefaultBankCurrencyCodes } from '../bank-currency-display';
 import {
   DEFAULT_BANK_PROVIDER,
   providerFormRegistry,
@@ -27,8 +27,7 @@ type BankOnboardingDialogProps = {
   onOpenChange: (open: boolean) => void;
   onSuccess?: (result: {
     kycLink: string | null;
-    kycStatus: string;
-    isApproved?: boolean;
+    tosLink: string | null;
   }) => void;
 };
 
@@ -52,7 +51,7 @@ export const BankOnboardingDialog: FC<BankOnboardingDialogProps> = ({
     () => ({
       legalName: space?.title?.trim() ?? '',
       contactEmail: person?.email?.trim() ?? '',
-      endorsements: [...DEFAULT_BRIDGE_ENDORSEMENT_VALUES],
+      requestedRails: getDefaultBankCurrencyCodes(),
     }),
     [space?.title, person?.email],
   );
@@ -66,15 +65,14 @@ export const BankOnboardingDialog: FC<BankOnboardingDialogProps> = ({
   const handleSubmit = async (data: {
     legalName: string;
     contactEmail: string;
-    endorsements?: string[];
+    requestedRails?: string[];
   }) => {
     try {
       const result = await requestOnboarding(data);
       onOpenChange(false);
       onSuccess?.({
         kycLink: result.kycLink,
-        kycStatus: result.kycStatus,
-        isApproved: result.kycStatus === 'approved',
+        tosLink: result.tosLink,
       });
     } catch {
       // Error surfaced via hook state

@@ -101,7 +101,7 @@ export async function simulateSpaceBankKycApproval(
   if (includeKybData) {
     try {
       await simulateBridgeKybData(customerId, {
-        businessLegalName: customer.name,
+        businessLegalName: space.title?.trim() || 'Hypha Space',
         force: true,
       });
     } catch (error) {

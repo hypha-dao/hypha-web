@@ -14,11 +14,19 @@ export type BankKycStatus = (typeof BANK_KYC_STATUSES)[number];
 
 export type BankProvider = 'bridge';
 
+export type BankValidationAction = {
+  type: 'link';
+  url: string;
+};
+
 export type BankVerificationProcedurePublic = {
+  key: string;
   status: string | null;
   isComplete: boolean;
-  link: string | null;
-  linkDisabled: boolean;
+  action?: BankValidationAction;
+  linkDisabled?: boolean;
+  /** @deprecated use action.url */
+  link?: string | null;
 };
 
 export type BankCurrencyOperationalStatus =
@@ -26,25 +34,39 @@ export type BankCurrencyOperationalStatus =
   | 'approved'
   | 'pending'
   | 'not_approved'
+  | 'not_requested'
   | 'not_opened';
 
 export type BankCurrencyPublicStatus = {
   currency: string;
   endorsement: string;
   endorsementStatus: string | null;
-  /** DB row id when a corridor account was requested; null if not opened yet. */
-  virtualAccountId: number | null;
+  virtualAccountId: string | null;
   isApproved: boolean;
   operationalStatus: BankCurrencyOperationalStatus;
+  validation?: BankVerificationProcedurePublic;
+};
+
+export type BankRailPublicStatus = {
+  railKey: string;
+  currency: string;
+  paymentRail: string;
+  endorsement: string;
+  endorsementStatus: string | null;
+  operationalStatus: BankCurrencyOperationalStatus;
+  validation: BankVerificationProcedurePublic;
+  hasVirtualAccount: boolean;
+};
+
+export type BankEndorsementPublicStatus = {
+  endorsement: string;
+  endorsementStatus: string | null;
+  operationalStatus: BankCurrencyOperationalStatus;
+  validation: BankVerificationProcedurePublic;
 };
 
 export type BankCustomerPublicStatus = {
-  name: string;
-  contactEmail: string;
-  kycStatus: string;
-  tosStatus: string | null;
-  kycLink: string | null;
-  tosLink: string | null;
+  hasCustomer?: boolean;
   isApproved: boolean;
   approvalRegistered: boolean;
   procedures: {
@@ -52,25 +74,26 @@ export type BankCustomerPublicStatus = {
     kyc: BankVerificationProcedurePublic;
   };
   currencyStatuses: BankCurrencyPublicStatus[];
+  endorsementStatuses: BankEndorsementPublicStatus[];
+  railStatuses: BankRailPublicStatus[];
+  requestedRails: string[];
 };
 
 export type ProviderFormData = {
   legalName: string;
   contactEmail: string;
-  endorsements?: string[];
+  requestedRails?: string[];
 };
 
 export type BankOnboardingRequestInput = ProviderFormData;
 
 export type BankOnboardingRequestResult = {
-  kycStatus: string;
   kycLink: string | null;
   tosLink: string | null;
   created: boolean;
-  isApproved?: boolean;
+  procedures: BankCustomerPublicStatus['procedures'];
 };
 
-/** Mirrors @hypha-platform/core banking constants (client-safe duplicate). */
 export const BANK_VIRTUAL_ACCOUNT_CORRIDORS = [
   { currency: 'eur', paymentRail: 'sepa' },
   { currency: 'usd', paymentRail: 'ach' },
@@ -83,42 +106,28 @@ export const BANK_VIRTUAL_ACCOUNT_CORRIDORS = [
 export type BankVirtualAccountCurrency =
   (typeof BANK_VIRTUAL_ACCOUNT_CORRIDORS)[number]['currency'];
 
-export type BankOperationLifecycle =
-  | 'pending_kyb'
-  | 'pending_activation'
-  | 'active';
-
 export type BankVirtualAccountPublic = {
-  id: number;
+  id: string;
   currency: string;
   paymentRail: string;
   depositInstructions: Record<string, unknown>;
   destinationAddress: string;
   status: string;
-  isApproved: boolean;
-  approvalRegistered: boolean;
-  lifecycle: BankOperationLifecycle;
-  canActivate: boolean;
-  canContinueVerification: boolean;
+  createdAt: string | null;
 };
 
-export type ProvisionVirtualAccountResult = BankVirtualAccountPublic & {
-  created: boolean;
+export type PaginatedBankVirtualAccounts = {
+  accounts: BankVirtualAccountPublic[];
+  hasMore: boolean;
+  nextCursor: string | null;
 };
 
-export type CreateBankAccountResult =
-  | { action: 'provisioned'; account: BankVirtualAccountPublic }
-  | {
-      action: 'kyc_required';
-      currency: string;
-      account: BankVirtualAccountPublic;
-      kycLink: string | null;
-      tosLink: string | null;
-    }
-  | { action: 'already_active'; account: BankVirtualAccountPublic };
+export type CreateBankAccountResult = {
+  account: BankVirtualAccountPublic;
+};
 
 export type BankTransferPublic = {
-  id: number;
+  id: string;
   currency: string;
   paymentRail: string;
   amount: string | null;
@@ -127,14 +136,39 @@ export type BankTransferPublic = {
   depositInstructions: Record<string, unknown>;
   destinationAddress: string;
   createdAt: string;
-  lifecycle: BankOperationLifecycle;
-  canActivate: boolean;
-  canContinueVerification: boolean;
+};
+
+export type PaginatedBankTransfers = {
+  transfers: BankTransferPublic[];
+  hasMore: boolean;
+  nextCursor: string | null;
+};
+
+export type BankAddAccountRailOption = {
+  railKey: string;
+  currency: string;
+  paymentRail: string;
+  endorsement: string;
+  operationalStatus: BankCurrencyOperationalStatus;
+  validation: BankVerificationProcedurePublic;
+  hasVirtualAccount: boolean;
+  destinationCurrencies: string[];
+  defaultDestinationCurrency: string;
+};
+
+export type BankTransferRailOption = {
+  railKey: string;
+  currency: string;
+  paymentRail: string;
+  endorsement: string;
+  operationalStatus: BankCurrencyOperationalStatus;
+  validation: BankVerificationProcedurePublic;
+  destinationCurrencies: string[];
+  defaultDestinationCurrency: string;
 };
 
 export type SyncBankingResult = {
-  kycStatus: string;
   isApproved: boolean;
-  transfersSynced: number;
-  transfers: BankTransferPublic[];
+  procedures: BankCustomerPublicStatus['procedures'];
+  railStatuses: BankRailPublicStatus[];
 };

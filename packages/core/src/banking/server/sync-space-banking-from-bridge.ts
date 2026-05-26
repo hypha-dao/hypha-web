@@ -2,14 +2,14 @@ import type { DatabaseInstance } from '../../common/server/types';
 import type { Space } from '../../space/types';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
 import type { SyncSpaceBankingFromBridgeResult } from '../types';
-import { getSpaceBankTransfers } from './get-space-bank-transfers';
+import { BankOnboardingError } from './errors';
+import { buildPublicStatusFromCustomer } from './get-space-bank-customer-public-status';
 import { findBankCustomerBySpaceAndProvider } from './queries';
-import { syncBankCustomerKycFromBridge } from './sync-bank-customer-kyc-from-bridge';
-import { promotePendingBankOperations } from './promote-pending-bank-operations';
-import { syncBankTransfersFromBridge } from './sync-bank-transfers-from-bridge';
+import { updateBankCustomer } from './mutations';
+import { syncProviderCustomerIdFromKycLink } from './providers/bridge/banking-provider-state';
 
 export async function syncSpaceBankingFromBridge(
-  space: Pick<Space, 'id'>,
+  space: Pick<Space, 'id' | 'title'>,
   { db }: { db: DatabaseInstance },
 ): Promise<SyncSpaceBankingFromBridgeResult> {
   const customer = await findBankCustomerBySpaceAndProvider(
@@ -18,27 +18,30 @@ export async function syncSpaceBankingFromBridge(
   );
 
   if (!customer) {
-    return {
-      kycStatus: 'not_started',
-      isApproved: false,
-      transfersSynced: 0,
-      transfers: [],
-    };
+    throw new BankOnboardingError('Bank customer not found', 404);
   }
 
-  const synced = await syncBankCustomerKycFromBridge(customer, { db });
-  if (synced.isApproved) {
-    await promotePendingBankOperations(synced.customer, { db });
+  const providerCustomerId = await syncProviderCustomerIdFromKycLink(customer);
+  if (
+    providerCustomerId &&
+    providerCustomerId !== customer.providerCustomerId
+  ) {
+    await updateBankCustomer(
+      { id: customer.id, providerCustomerId },
+      { db },
+    );
   }
-  const transfersSynced = await syncBankTransfersFromBridge(synced.customer, {
-    db,
-  });
-  const transfers = await getSpaceBankTransfers(space, { db });
+
+  const status = await buildPublicStatusFromCustomer(
+    providerCustomerId
+      ? { ...customer, providerCustomerId }
+      : customer,
+    { db },
+  );
 
   return {
-    kycStatus: synced.customer.kycStatus,
-    isApproved: synced.isApproved,
-    transfersSynced,
-    transfers,
+    isApproved: status.isApproved,
+    procedures: status.procedures,
+    railStatuses: status.railStatuses,
   };
 }

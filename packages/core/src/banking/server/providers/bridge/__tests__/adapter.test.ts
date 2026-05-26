@@ -257,6 +257,25 @@ describe('createBridgeKycProvider', () => {
       );
     });
 
+    it('passes destinationCurrency when provided', async () => {
+      const provider = createBridgeKycProvider();
+      await provider.provisionVirtualAccount({
+        customerId: 'cust_1',
+        currency: 'eur',
+        destinationAddress: '0xtreasury',
+        destinationCurrency: 'eurc',
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440005',
+      });
+
+      expect(bridgeCreateVirtualAccount).toHaveBeenCalledWith(
+        'cust_1',
+        expect.objectContaining({
+          destination: expect.objectContaining({ currency: 'eurc' }),
+        }),
+        '550e8400-e29b-41d4-a716-446655440005',
+      );
+    });
+
     it('maps response to provider-agnostic result', async () => {
       const provider = createBridgeKycProvider();
       const result = await provider.provisionVirtualAccount({

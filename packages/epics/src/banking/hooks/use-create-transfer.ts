@@ -16,6 +16,7 @@ type UseCreateTransferReturn = {
   createTransfer: (input: {
     corridorKey: BankTransferCorridorKey;
     amount?: string;
+    destinationCurrency?: string;
     legalName?: string;
     contactEmail?: string;
   }) => Promise<BankTransferPublic>;
@@ -36,6 +37,7 @@ export const useCreateTransfer = ({
     async (input: {
       corridorKey: BankTransferCorridorKey;
       amount?: string;
+      destinationCurrency?: string;
       legalName?: string;
       contactEmail?: string;
     }): Promise<BankTransferPublic> => {

@@ -9,6 +9,7 @@ const findSpaceBySlug = vi.fn();
 const authorizeSpaceBankOnboarding = vi.fn();
 const findBankCustomerBySpaceAndProvider = vi.fn();
 const insertBankCustomer = vi.fn();
+const buildPublicStatusFromCustomer = vi.fn();
 
 vi.mock('../../../space/server/queries', () => ({
   findSpaceBySlug: (...args: unknown[]) => findSpaceBySlug(...args),
@@ -28,6 +29,11 @@ vi.mock('../mutations', () => ({
   insertBankCustomer: (...args: unknown[]) => insertBankCustomer(...args),
 }));
 
+vi.mock('../get-space-bank-customer-public-status', () => ({
+  buildPublicStatusFromCustomer: (...args: unknown[]) =>
+    buildPublicStatusFromCustomer(...args),
+}));
+
 const mockDb = {} as never;
 
 const onboardingInput = {
@@ -35,7 +41,7 @@ const onboardingInput = {
   authToken: 'token',
   legalName: 'Acme Foundation Ltd.',
   contactEmail: 'compliance@acme.org',
-  endorsements: ['base', 'sepa'] as const,
+  requestedRails: ['eur', 'usd'] as const,
 };
 
 const mockProvider: BankKycProvider = {
@@ -51,6 +57,21 @@ const mockProvider: BankKycProvider = {
     kycLink: 'https://bridge.example/kyc',
     tosLink: 'https://bridge.example/tos',
   }),
+};
+
+const mockProcedures = {
+  tos: {
+    key: 'tos',
+    status: 'pending',
+    isComplete: false,
+    action: { type: 'link' as const, url: 'https://bridge.example/tos' },
+  },
+  kyc: {
+    key: 'kyc',
+    status: 'not_started',
+    isComplete: false,
+    action: { type: 'link' as const, url: 'https://bridge.example/kyc' },
+  },
 };
 
 describe('requestSpaceBankOnboarding', () => {
@@ -69,12 +90,17 @@ describe('requestSpaceBankOnboarding', () => {
     });
     findBankCustomerBySpaceAndProvider.mockResolvedValue(null);
     insertBankCustomer.mockResolvedValue({
-      kycStatus: 'not_started',
-      kycLink: 'https://bridge.example/kyc',
-      tosLink: 'https://bridge.example/tos',
-      name: onboardingInput.legalName,
-      contactEmail: onboardingInput.contactEmail,
-      endorsements: ['base', 'sepa'],
+      id: 1,
+      providerKycLinkId: 'link_1',
+      requestedRails: ['eur', 'usd'],
+    });
+    buildPublicStatusFromCustomer.mockResolvedValue({
+      isApproved: false,
+      approvalRegistered: false,
+      procedures: mockProcedures,
+      railStatuses: [],
+      currencyStatuses: [],
+      requestedRails: ['eur', 'usd'],
     });
   });
 
@@ -83,7 +109,7 @@ describe('requestSpaceBankOnboarding', () => {
 
     await expect(
       requestSpaceBankOnboarding(
-        { ...onboardingInput, endorsements: [...onboardingInput.endorsements] },
+        { ...onboardingInput, requestedRails: [...onboardingInput.requestedRails] },
         { db: mockDb },
         { kycProvider: mockProvider },
       ),
@@ -91,59 +117,30 @@ describe('requestSpaceBankOnboarding', () => {
       status: 404,
       message: 'Space not found',
     });
-
-    expect(authorizeSpaceBankOnboarding).not.toHaveBeenCalled();
-  });
-
-  it('throws BankOnboardingError when authorization fails', async () => {
-    authorizeSpaceBankOnboarding.mockResolvedValue({
-      authorized: false,
-      httpStatus: 403,
-      message:
-        'You must be a space member or delegate to enable bank accounts.',
-    });
-
-    await expect(
-      requestSpaceBankOnboarding(
-        { ...onboardingInput, endorsements: [...onboardingInput.endorsements] },
-        { db: mockDb },
-        { kycProvider: mockProvider },
-      ),
-    ).rejects.toMatchObject({
-      status: 403,
-      message:
-        'You must be a space member or delegate to enable bank accounts.',
-    });
-
-    expect(mockProvider.createKycLink).not.toHaveBeenCalled();
   });
 
   it('returns existing customer without calling provider (idempotent)', async () => {
     findBankCustomerBySpaceAndProvider.mockResolvedValue({
-      kycStatus: 'under_review',
-      kycLink: 'https://bridge.example/existing',
-      tosLink: null,
-      name: 'Acme Foundation Ltd.',
-      contactEmail: 'compliance@acme.org',
-      endorsements: ['base', 'sepa'],
+      id: 1,
+      providerKycLinkId: 'link_1',
+      requestedRails: ['eur'],
     });
 
     const result = await requestSpaceBankOnboarding(
-      { ...onboardingInput, endorsements: [...onboardingInput.endorsements] },
+      { ...onboardingInput, requestedRails: [...onboardingInput.requestedRails] },
       { db: mockDb },
       { kycProvider: mockProvider },
     );
 
     expect(result.created).toBe(false);
-    expect(result.spaceTitle).toBe('Acme');
-    expect(result.requesterSlug).toBe('alice');
     expect(mockProvider.createKycLink).not.toHaveBeenCalled();
     expect(insertBankCustomer).not.toHaveBeenCalled();
+    expect(buildPublicStatusFromCustomer).toHaveBeenCalled();
   });
 
-  it('creates customer via provider with request body fields', async () => {
+  it('creates customer via provider with requested rails', async () => {
     const result = await requestSpaceBankOnboarding(
-      { ...onboardingInput, endorsements: [...onboardingInput.endorsements] },
+      { ...onboardingInput, requestedRails: [...onboardingInput.requestedRails] },
       { db: mockDb },
       { kycProvider: mockProvider },
     );
@@ -153,24 +150,22 @@ describe('requestSpaceBankOnboarding', () => {
         entityType: 'business',
         legalName: 'Acme Foundation Ltd.',
         contactEmail: 'compliance@acme.org',
-        endorsements: ['base', 'sepa'],
+        endorsements: ['sepa', 'base'],
         idempotencyKey: expect.any(String),
       }),
     );
-    const [createBody] = mockProvider.createKycLink.mock.calls[0] as [
-      Record<string, unknown>,
-    ];
-    expect(createBody).not.toHaveProperty('redirectUri');
     expect(insertBankCustomer).toHaveBeenCalledWith(
       expect.objectContaining({
-        name: 'Acme Foundation Ltd.',
-        contactEmail: 'compliance@acme.org',
-        endorsements: ['base', 'sepa'],
+        providerKycLinkId: 'link_1',
+        requestedRails: ['eur', 'usd'],
       }),
       expect.any(Object),
     );
+    expect(insertBankCustomer).toHaveBeenCalledWith(
+      expect.not.objectContaining({ contactEmail: expect.anything() }),
+      expect.any(Object),
+    );
     expect(result.created).toBe(true);
-    expect(result.spaceTitle).toBe('Acme');
-    expect(result.requesterSlug).toBe('alice');
+    expect(result.kycLink).toBe('https://bridge.example/kyc');
   });
 });

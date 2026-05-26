@@ -14,8 +14,6 @@ import { coherences } from './coherence';
 import { matrixUserLinks } from './matrix-user-link';
 import { tokenUpdates, tokenUpdateRelations } from './token-updates';
 import { bankCustomers } from './bank-customer';
-import { bankVirtualAccounts } from './bank-virtual-account';
-import { bankTransfers } from './bank-transfer';
 import {
   spaceCallRecordings,
   spaceCallTranscripts,
@@ -43,8 +41,6 @@ export * from './coherence';
 export * from './matrix-user-link';
 export * from './token-updates';
 export * from './bank-customer';
-export * from './bank-virtual-account';
-export * from './bank-transfer';
 export * from './call-artifacts';
 export * from './signal-orchestrator';
 
@@ -67,8 +63,6 @@ export const schema = {
   tokenUpdates,
   tokenUpdateRelations,
   bankCustomers,
-  bankVirtualAccounts,
-  bankTransfers,
   spaceCallRecordings,
   spaceCallTranscripts,
   spaceDiscussionSummaries,

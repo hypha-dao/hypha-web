@@ -72,6 +72,22 @@ describe('schemaProvisionVirtualAccount', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts eurc for sepa virtual accounts', () => {
+    const result = schemaProvisionVirtualAccount.safeParse({
+      currency: 'eur',
+      destinationCurrency: 'eurc',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects eurc for usd ach virtual accounts', () => {
+    const result = schemaProvisionVirtualAccount.safeParse({
+      currency: 'usd',
+      destinationCurrency: 'eurc',
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('schemaCreateBankTransfer', () => {
@@ -89,6 +105,22 @@ describe('schemaCreateBankTransfer', () => {
 
   it('requires corridorKey or currency', () => {
     const result = schemaCreateBankTransfer.safeParse({});
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts eurc for eur sepa transfers', () => {
+    const result = schemaCreateBankTransfer.safeParse({
+      corridorKey: 'eur',
+      destinationCurrency: 'eurc',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects eurc for usd wire transfers', () => {
+    const result = schemaCreateBankTransfer.safeParse({
+      corridorKey: 'usd-wire',
+      destinationCurrency: 'eurc',
+    });
     expect(result.success).toBe(false);
   });
 });

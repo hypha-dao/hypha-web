@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-import { bridgeCreateKycLink } from '../bridge-client';
+import {
+  bridgeCreateKycLink,
+  normalizeBridgeCustomerKycLinkResponse,
+} from '../bridge-client';
 
 const fetchMock = vi.fn();
 
@@ -47,6 +50,21 @@ describe('bridgeCreateKycLink', () => {
     );
 
     expect(result).toEqual(existing);
+  });
+
+  it('normalizes endorsement KYC link responses with only url', () => {
+    const normalized = normalizeBridgeCustomerKycLinkResponse(
+      {
+        url: 'https://bridge.withpersona.com/verify?reference-id=abc',
+      },
+      { customerId: 'cust_1', existingKycLinkId: 'link_1' },
+    );
+
+    expect(normalized.kyc_link).toBe(
+      'https://bridge.withpersona.com/verify?reference-id=abc',
+    );
+    expect(normalized.id).toBe('link_1');
+    expect(normalized.customer_id).toBe('cust_1');
   });
 
   it('still throws on 400 without existing_kyc_link', async () => {

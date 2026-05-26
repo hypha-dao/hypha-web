@@ -18,6 +18,7 @@ type UseProvisionVirtualAccountOptions = {
 type UseProvisionVirtualAccountReturn = {
   createAccount: (
     currency: BankVirtualAccountCurrency,
+    options?: { destinationCurrency?: string },
   ) => Promise<CreateBankAccountResult>;
   isCreating: boolean;
   creatingCurrency: BankVirtualAccountCurrency | null;
@@ -38,6 +39,7 @@ export const useProvisionVirtualAccount = ({
   const createAccount = React.useCallback(
     async (
       currency: BankVirtualAccountCurrency,
+      options?: { destinationCurrency?: string },
     ): Promise<CreateBankAccountResult> => {
       setIsCreating(true);
       setCreatingCurrency(currency);
@@ -56,7 +58,12 @@ export const useProvisionVirtualAccount = ({
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ currency }),
+          body: JSON.stringify({
+            currency,
+            ...(options?.destinationCurrency
+              ? { destinationCurrency: options.destinationCurrency }
+              : {}),
+          }),
         });
 
         const body = (await res.json().catch(() => ({}))) as
