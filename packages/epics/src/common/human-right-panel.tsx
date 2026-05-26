@@ -50,6 +50,7 @@ import {
   type MessageReaction,
   type Person,
   looksLikeTechnicalSpaceMemoryName,
+  formatSignalTeamUpdateDisplayBody,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -1780,22 +1781,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const removed = normalizeMatrixUserIds(
           options?.removedMemberMatrixUserIds,
         );
-        const addedLabels = added.map((id) => resolveMentionMemberLabel(id));
-        const removedLabels = removed.map((id) =>
-          resolveMentionMemberLabel(id),
-        );
-        const summaryParts: string[] = [];
-        if (addedLabels.length > 0) {
-          summaryParts.push(`added ${addedLabels.join(', ')}`);
-        }
-        if (removedLabels.length > 0) {
-          summaryParts.push(`removed ${removedLabels.join(', ')}`);
-        }
-        const summaryText =
-          summaryParts.length > 0 ? `: ${summaryParts.join('; ')}` : '';
+        const displayBody = formatSignalTeamUpdateDisplayBody(added, removed);
         await client.sendEvent(roomId, EventType.RoomMessage, {
           msgtype: MsgType.Notice,
-          body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team updated${summaryText}`,
+          body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} ${displayBody}`,
           coherenceSlug: coherenceSlug?.trim() || null,
           memberMatrixUserIds: deduped,
           ownerMatrixUserId: ownerId,
@@ -1825,7 +1814,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       coherenceSlug,
       currentUserId,
       signalTeamOwnerId,
-      resolveMentionMemberLabel,
       t,
     ],
   );

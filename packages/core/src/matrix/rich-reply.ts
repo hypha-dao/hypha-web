@@ -5,6 +5,7 @@ import type * as MatrixSdk from 'matrix-js-sdk';
 
 import type { Message, MessageMediaBundleItem } from './types';
 import { parseMentionUserIdsFromWireContent } from './mentions';
+import { resolveSignalTeamUpdateDisplayBody } from './signal-team-events';
 
 /** Element / Hypha custom HTML for `m.room.message` (with plaintext `body` fallback). */
 export const MATRIX_CUSTOM_HTML_FORMAT = 'org.matrix.custom.html';
@@ -353,6 +354,14 @@ export function messageFromRoomMessageEvent(
     typeof content.formatted_body === 'string'
   ) {
     formattedContentHtml = content.formatted_body;
+  }
+
+  const signalTeamDisplayBody = resolveSignalTeamUpdateDisplayBody(
+    content,
+    rawBody,
+  );
+  if (signalTeamDisplayBody) {
+    displayBody = signalTeamDisplayBody;
   }
 
   const id = event.getId();
