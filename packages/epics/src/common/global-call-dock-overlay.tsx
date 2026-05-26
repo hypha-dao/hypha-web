@@ -17,7 +17,7 @@ import {
   useMe,
   type SpaceGroupCallCaptureMode,
 } from '@hypha-platform/core/client';
-import { useIsMobile } from '@hypha-platform/ui';
+import { useIsMobile, MOBILE_BREAKPOINT_PX } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -61,7 +61,6 @@ type ResizeHandle =
 const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v2';
 const DOCK_MARGIN_PX = 16;
 const SNAP_EDGE_PX = 24;
-const DOCK_NARROW_VIEWPORT_PX = 768;
 // Minimum dock size (thumbnail mode baseline); resize can never go below this.
 const DOCK_MIN_WIDTH = 480;
 const DOCK_MIN_HEIGHT = 320;
@@ -310,7 +309,7 @@ function readDockMinSize(): Pick<DockGeometry, 'width' | 'height'> {
   if (typeof window === 'undefined') {
     return { width: DOCK_MIN_WIDTH, height: DOCK_MIN_HEIGHT };
   }
-  const narrow = window.innerWidth < DOCK_NARROW_VIEWPORT_PX;
+  const narrow = window.innerWidth < MOBILE_BREAKPOINT_PX;
   const viewportMinWidth = Math.max(0, window.innerWidth - 2 * DOCK_MARGIN_PX);
   const viewportMinHeight = Math.max(
     0,
