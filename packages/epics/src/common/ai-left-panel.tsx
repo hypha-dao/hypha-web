@@ -54,6 +54,7 @@ import {
 import {
   AiPanelHeader,
   AiPanelMessages,
+  AiPanelSuggestions,
   AiPanelChatBar,
   type AiPanelDraftAttachment,
 } from './ai-panel';
@@ -413,15 +414,40 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       .slice(0, MAX_VISIBLE_RECENT_SPACES);
   }, [recentSpaceSlugs, recentSpacesData, spaceSlug]);
 
-  const suggestions = useMemo(
-    () => [
-      t('suggestions.spaceHealth'),
-      t('suggestions.nextSignal'),
-      t('suggestions.blindSpot'),
-      t('suggestions.summarizeDiscussion'),
-      t('suggestions.spaceMemory'),
-      t('suggestions.valueFlows'),
-    ],
+  const suggestionItems = useMemo(
+    () =>
+      [
+        {
+          id: 'spaceHealth',
+          prompt: t('suggestions.spaceHealth'),
+          tagLabel: t('suggestionTags.spaceHealth'),
+        },
+        {
+          id: 'nextSignal',
+          prompt: t('suggestions.nextSignal'),
+          tagLabel: t('suggestionTags.nextSignal'),
+        },
+        {
+          id: 'blindSpot',
+          prompt: t('suggestions.blindSpot'),
+          tagLabel: t('suggestionTags.blindSpot'),
+        },
+        {
+          id: 'summarizeDiscussion',
+          prompt: t('suggestions.summarizeDiscussion'),
+          tagLabel: t('suggestionTags.summarizeDiscussion'),
+        },
+        {
+          id: 'spaceMemory',
+          prompt: t('suggestions.spaceMemory'),
+          tagLabel: t('suggestionTags.spaceMemory'),
+        },
+        {
+          id: 'valueFlows',
+          prompt: t('suggestions.valueFlows'),
+          tagLabel: t('suggestionTags.valueFlows'),
+        },
+      ] as const,
     [t],
   );
 
@@ -637,6 +663,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   });
 
   const isStreaming = status === 'streaming' || status === 'submitted';
+
+  const hasUserMessage = useMemo(
+    () =>
+      (messages as ChatUIMessage[]).some((message) => message.role === 'user'),
+    [messages],
+  );
 
   useEffect(() => {
     const nextSlug = spaceSlug?.trim() || null;
@@ -1529,8 +1561,8 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         ) : null}
         <AiPanelMessages
           messages={messages as ChatUIMessage[]}
-          suggestions={suggestions}
-          showSuggestions={true}
+          suggestionItems={suggestionItems}
+          showInlineSuggestions={!hasUserMessage}
           onSuggestionSelect={handleSuggestionSelect}
           onActionReplySelect={handleActionReplySelect}
           activeSpaceName={activeSpaceName}
@@ -1538,6 +1570,13 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         />
       </SidebarContent>
       <SidebarFooter className="bg-background-2 p-0">
+        {hasUserMessage ? (
+          <AiPanelSuggestions
+            items={suggestionItems}
+            onSelect={handleSuggestionSelect}
+            variant="tags"
+          />
+        ) : null}
         <AiPanelChatBar
           value={input}
           onChange={setInput}
