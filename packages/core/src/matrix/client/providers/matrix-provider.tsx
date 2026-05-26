@@ -2,6 +2,7 @@
 
 import React from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
+import { TokenRefreshLogoutError } from 'matrix-js-sdk/lib/http-api/errors';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { MatrixTokenData, useMatrixToken } from '../hooks';
@@ -47,6 +48,29 @@ import { useMatrixTabLeader } from '../hooks/use-matrix-tab-leader';
 import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
 
 const CALL_CAPTURE_NOTICE_TYPE = 'io.hypha.call_capture_notice.v1';
+/** Sentinel refresh token so matrix-js-sdk v40 invokes Hypha token rotation. */
+const HYPHA_MATRIX_REFRESH_TOKEN = 'hypha-managed-refresh';
+
+async function fetchHyphaMatrixAccessToken(
+  refreshMatrixToken: () => Promise<MatrixTokenData | undefined>,
+): Promise<MatrixTokenData> {
+  const data = await refreshMatrixToken();
+  if (!data?.accessToken?.trim()) {
+    throw new TokenRefreshLogoutError(
+      new Error('Hypha Matrix token refresh returned no access token'),
+    );
+  }
+  return data;
+}
+
+function retryMatrixClientSync(client: MatrixSdk.MatrixClient): void {
+  const clientWithRetry = client as MatrixSdk.MatrixClient & {
+    retryImmediately?: () => void;
+  };
+  if (typeof clientWithRetry.retryImmediately === 'function') {
+    clientWithRetry.retryImmediately();
+  }
+}
 
 function isCallCaptureNoticeEvent(event: MatrixSdk.MatrixEvent): boolean {
   if (event.getType() !== MatrixSdk.EventType.RoomMessage) return false;
@@ -564,6 +588,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     error: matrixTokenError,
     refreshMatrixToken,
   } = useMatrixToken();
+  const refreshMatrixTokenRef = React.useRef(refreshMatrixToken);
+  React.useEffect(() => {
+    refreshMatrixTokenRef.current = refreshMatrixToken;
+  }, [refreshMatrixToken]);
 
   const initializeMatrixClient = React.useCallback(
     async (matrixToken: MatrixTokenData) => {
@@ -579,6 +607,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           accessToken,
           userId,
           deviceId,
+          refreshToken: HYPHA_MATRIX_REFRESH_TOKEN,
+          tokenRefreshFunction: async () => {
+            const refreshed = await fetchHyphaMatrixAccessToken(() =>
+              refreshMatrixTokenRef.current(),
+            );
+            return {
+              accessToken: refreshed.accessToken,
+              refreshToken: HYPHA_MATRIX_REFRESH_TOKEN,
+            };
+          },
           /** Default matrix-js-sdk log level is extremely chatty in the browser. */
           logger: createHyphaMatrixClientLogger(),
           disableVoip: false,
@@ -693,8 +731,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const existingClient = clientRef.current;
         if (existingClient) {
           if (isGroupCallSessionActive()) {
-            pendingClientRecycleRef.current = true;
-            return false;
+            try {
+              existingClient.setAccessToken(freshToken.accessToken);
+              retryMatrixClientSync(existingClient);
+              await existingClient.setPresence({ presence: 'online' });
+              setConnectionStatus('connected');
+              return true;
+            } catch (error) {
+              console.warn(
+                '[MatrixProvider] In-call Matrix token refresh failed:',
+                error,
+              );
+              return false;
+            }
           }
           try {
             existingClient.stopClient();
