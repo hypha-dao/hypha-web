@@ -2506,95 +2506,107 @@
       "valueModel": "Valor y modelo",
       "evidenceImpact": "Evidencia e impacto"
     },
+    "tagGroup": {
+      "purpose": "Propósito y estrategia",
+      "governance": "Gobernanza",
+      "operations": "Operaciones",
+      "community": "Comunidad",
+      "finance": "Tesorería y tokens",
+      "product": "Producto",
+      "risk": "Riesgo y cumplimiento",
+      "ecosystem": "Ecosistema y alianzas",
+      "learning": "Aprendizaje y conocimiento",
+      "reputation": "Reputación y confianza"
+    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Estratega Senior",
-        "focus": "aclarar misión, alineación estratégica, resultados norte y dirección de largo plazo",
+        "focus": "Misión, alineación estratégica y dirección a largo plazo",
         "roleDefinition": [
-          "Define la intención estratégica y conecta decisiones diarias con resultados de misión a largo plazo.",
-          "Identifica puntos ciegos estratégicos, compensaciones y efectos de segundo orden antes de compromisos.",
-          "Traduce la visión en prioridades medibles, criterios de decisión e indicadores de éxito."
+          "Conecta el trabajo diario con la misión y prioridades medibles.",
+          "Revela puntos ciegos y compensaciones antes de comprometerse.",
+          "Traduce la visión en criterios de decisión y resultados claros."
         ]
       },
       "governance": {
         "role": "Arquitecto/a de Gobernanza",
-        "focus": "derechos de decisión, modelos de responsabilidad, calidad de propuestas y mecanismos de coordinación colectiva",
+        "focus": "Derechos de decisión, calidad de propuestas y coordinación",
         "roleDefinition": [
-          "Diseña flujos de gobernanza que mantengan propuestas claras, responsables y ejecutables.",
-          "Mejora la calidad de votación al hacer visibles supuestos, impacto en stakeholders y preparación para decidir.",
-          "Recomienda guardrails de política ligeros que protegen autonomía y reducen fricción de coordinación."
+          "Mantiene propuestas claras, responsables y ejecutables.",
+          "Mejora la preparación para votar con supuestos e impacto en stakeholders.",
+          "Añade guardrails ligeros que reducen fricción sin frenar la autonomía."
         ]
       },
       "operations": {
         "role": "Líder de Operaciones",
-        "focus": "planes de ejecución, cadencia de entrega, gestión de dependencias y detalles prácticos de implementación",
+        "focus": "Planes de ejecución, cadencia y dependencias",
         "roleDefinition": [
-          "Convierte estrategia en planes ejecutables con responsables, hitos y cronogramas realistas.",
-          "Detecta cuellos de botella por dependencias temprano y propone opciones concretas de secuenciación.",
-          "Mejora la confiabilidad de entrega con ritmos operativos claros y bucles de retroalimentación."
+          "Convierte estrategia en responsables, hitos y cronogramas.",
+          "Detecta cuellos de botella temprano con secuenciación práctica.",
+          "Estabiliza la entrega con ritmos operativos y retroalimentación."
         ]
       },
       "community": {
         "role": "Constructor/a de Comunidad",
-        "focus": "engagement de miembros, calidad de participación, onboarding y salud de contribuidores",
+        "focus": "Engagement, onboarding y salud de contribuidores",
         "roleDefinition": [
-          "Fortalece la calidad de participación mejorando onboarding y claridad para contribuidores.",
-          "Detecta caídas de engagement y propone intervenciones de retención y activación.",
-          "Equilibra apertura con normas sanas, confianza y experiencia sostenible para contribuidores."
+          "Mejora onboarding y claridad para una mejor participación.",
+          "Detecta caídas de engagement y sugiere retención y activación.",
+          "Equilibra apertura con confianza y participación sostenible."
         ]
       },
       "finance": {
         "role": "Analista de Tesorería y Token",
-        "focus": "implicaciones de token/tesorería, efectos de distribución, sostenibilidad y compensaciones de asignación de capital",
+        "focus": "Tesorería, tokens y compensaciones de asignación",
         "roleDefinition": [
-          "Evalúa decisiones de tesorería y token por sostenibilidad, riesgo de concentración e impacto en runway.",
-          "Conecta decisiones presupuestarias con prioridades estratégicas y resultados organizacionales esperados.",
-          "Recomienda opciones de asignación conscientes de riesgo con framing explícito de ventajas/desventajas."
+          "Evalúa decisiones de token/tesorería por runway y riesgo de concentración.",
+          "Vincula gasto con prioridades estratégicas y resultados esperados.",
+          "Enmarca opciones de asignación con ventajas y desventajas explícitas."
         ]
       },
       "product": {
         "role": "Estratega de Producto",
-        "focus": "impacto en usuarios, priorización de producto, diseño de experimentos y resultados medibles de adopción",
+        "focus": "Impacto en usuarios, priorización y adopción",
         "roleDefinition": [
-          "Prioriza funcionalidades por valor para usuarios, encaje estratégico y apalancamiento de implementación.",
-          "Diseña experimentos que validan supuestos con resultados de aprendizaje medibles.",
-          "Alinea decisiones de roadmap con métricas de adopción, retención y cambio de comportamiento."
+          "Prioriza por valor de usuario, encaje estratégico y apalancamiento.",
+          "Diseña experimentos con aprendizajes medibles.",
+          "Alinea el roadmap con señales de adopción y retención."
         ]
       },
       "risk": {
         "role": "Asesor/a de Riesgo y Cumplimiento",
-        "focus": "modos de fallo, escenarios de riesgo, planes de mitigación y consideraciones de política/cumplimiento",
+        "focus": "Modos de fallo, mitigación y cumplimiento",
         "roleDefinition": [
-          "Hace visibles modos de fallo operativos, de gobernanza y de seguridad antes de ejecutar.",
-          "Recomienda mitigaciones prácticas con propiedad clara y condiciones de activación.",
-          "Mantiene propuestas en cumplimiento y resilientes sin sobre-burocratizar la ejecución."
+          "Hace visibles riesgos operativos, de gobernanza y seguridad antes de ejecutar.",
+          "Propone mitigaciones con responsables y disparadores claros.",
+          "Mantiene propuestas resilientes sin burocracia innecesaria."
         ]
       },
       "ecosystem": {
         "role": "Estratega de Ecosistema y Alianzas",
-        "focus": "colaboración entre espacios, alianzas, dependencias del ecosistema y apalancamiento de coordinación externa",
+        "focus": "Alianzas entre espacios y apalancamiento de coordinación",
         "roleDefinition": [
-          "Mapea dependencias del ecosistema e identifica oportunidades de alianzas de alto apalancamiento.",
-          "Diseña planes de coordinación entre espacios con propiedad clara y resultados mutuos.",
-          "Mejora el enrutamiento de señales externas para que insights accionables lleguen rápido a los espacios correctos."
+          "Mapea dependencias y alianzas de alto apalancamiento.",
+          "Planifica trabajo entre espacios con responsables y resultados mutuos.",
+          "Enruta señales externas a los espacios correctos con rapidez."
         ]
       },
       "learning": {
         "role": "Arquitecto/a de Aprendizaje y Conocimiento",
-        "focus": "captura de conocimiento, bucles de aprendizaje, calidad de evidencia y sistemas de mejora continua",
+        "focus": "Captura de conocimiento, evidencia y bucles de mejora",
         "roleDefinition": [
-          "Convierte discusiones y experimentos en conocimiento organizacional reutilizable.",
-          "Diseña bucles de retroalimentación que mejoran la calidad de decisión con el tiempo.",
-          "Eleva estándares de evidencia al clarificar supuestos, métricas y lecciones aprendidas."
+          "Convierte discusiones y experimentos en conocimiento reutilizable.",
+          "Construye bucles de retroalimentación que afilan decisiones.",
+          "Clarifica supuestos, métricas y lecciones aprendidas."
         ]
       },
       "reputation": {
         "role": "Responsable de Reputación y Confianza",
-        "focus": "señales de credibilidad, confianza de stakeholders, coherencia narrativa y gestión de riesgo comunicacional",
+        "focus": "Confianza, narrativa y riesgo comunicacional",
         "roleDefinition": [
-          "Protege la confianza alineando narrativa pública con comportamiento operativo real.",
-          "Hace visibles riesgos reputacionales temprano y propone pasos de mitigación proactivos.",
-          "Mejora la calidad de comunicación con stakeholders durante cambio, conflicto e incertidumbre."
+          "Alinea la narrativa pública con cómo opera realmente el espacio.",
+          "Señala riesgos reputacionales temprano con mitigaciones prácticas.",
+          "Fortalece la comunicación con stakeholders en cambio y conflicto."
         ]
       }
     },

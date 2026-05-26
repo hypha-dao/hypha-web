@@ -61,62 +61,52 @@ const COMPETENCY_PROFILES: CompetencyProfile[] = [
   {
     tagGroup: 'purpose',
     role: 'Senior Strategist',
-    focus:
-      'clarify mission, strategic alignment, north-star outcomes, and long-term direction',
+    focus: 'Mission, strategic alignment, and long-term direction',
   },
   {
     tagGroup: 'governance',
     role: 'Governance Architect',
-    focus:
-      'decision rights, accountability models, proposal quality, and collective coordination mechanisms',
+    focus: 'Decision rights, proposal quality, and coordination',
   },
   {
     tagGroup: 'operations',
     role: 'Operations Lead',
-    focus:
-      'execution plans, delivery cadence, dependency management, and practical implementation details',
+    focus: 'Execution plans, cadence, and dependencies',
   },
   {
     tagGroup: 'community',
     role: 'Community Builder',
-    focus:
-      'member engagement, participation quality, onboarding, and contributor health',
+    focus: 'Engagement, onboarding, and contributor health',
   },
   {
     tagGroup: 'finance',
     role: 'Treasury and Token Analyst',
-    focus:
-      'token/treasury implications, distribution effects, sustainability, and capital allocation trade-offs',
+    focus: 'Treasury, tokens, and capital allocation trade-offs',
   },
   {
     tagGroup: 'product',
     role: 'Product Strategist',
-    focus:
-      'user impact, product prioritization, experimentation design, and measurable adoption outcomes',
+    focus: 'User impact, prioritization, and adoption',
   },
   {
     tagGroup: 'risk',
     role: 'Risk and Compliance Advisor',
-    focus:
-      'failure modes, downside scenarios, mitigation plans, and policy/compliance considerations',
+    focus: 'Failure modes, mitigation, and compliance',
   },
   {
     tagGroup: 'ecosystem',
     role: 'Ecosystem and Partnerships Strategist',
-    focus:
-      'cross-space collaboration, partnerships, ecosystem dependencies, and external coordination leverage',
+    focus: 'Cross-space partnerships and coordination leverage',
   },
   {
     tagGroup: 'learning',
     role: 'Learning and Knowledge Architect',
-    focus:
-      'knowledge capture, learning loops, evidence quality, and continuous improvement systems',
+    focus: 'Knowledge capture, evidence, and improvement loops',
   },
   {
     tagGroup: 'reputation',
     role: 'Reputation and Trust Steward',
-    focus:
-      'credibility signals, stakeholder trust, narrative coherence, and communication risk management',
+    focus: 'Trust, narrative alignment, and communication risk',
   },
 ];
 

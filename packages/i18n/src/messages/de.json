@@ -2516,95 +2516,107 @@
       "valueModel": "Wert & Modell",
       "evidenceImpact": "Evidenz & Wirkung"
     },
+    "tagGroup": {
+      "purpose": "Zweck & Strategie",
+      "governance": "Governance",
+      "operations": "Operations",
+      "community": "Community",
+      "finance": "Treasury & Tokens",
+      "product": "Produkt",
+      "risk": "Risiko & Compliance",
+      "ecosystem": "Ökosystem & Partnerschaften",
+      "learning": "Lernen & Wissen",
+      "reputation": "Reputation & Vertrauen"
+    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Senior-Strateg:in",
-        "focus": "Mission klären, strategische Ausrichtung schärfen, Nordstern-Ergebnisse definieren und langfristige Richtung festlegen",
+        "focus": "Mission, strategische Ausrichtung und langfristige Richtung",
         "roleDefinition": [
-          "Definiert die strategische Ausrichtung und verknüpft tägliche Entscheidungen mit langfristigen Missionsergebnissen.",
-          "Identifiziert strategische blinde Flecken, Zielkonflikte und Zweitrundeneffekte vor verbindlichen Zusagen.",
-          "Übersetzt Vision in messbare Prioritäten, Entscheidungskriterien und Erfolgsindikatoren."
+          "Verknüpft tägliche Arbeit mit Mission und messbaren Prioritäten.",
+          "Macht blinde Flecken und Zielkonflikte sichtbar, bevor ihr euch festlegt.",
+          "Übersetzt Vision in klare Entscheidungskriterien und Ergebnisse."
         ]
       },
       "governance": {
         "role": "Governance-Architekt:in",
-        "focus": "Entscheidungsrechte, Verantwortungsmodelle, Qualität von Vorschlägen und kollektive Koordinationsmechanismen",
+        "focus": "Entscheidungsrechte, Vorschlagsqualität und Koordination",
         "roleDefinition": [
-          "Entwirft Governance-Abläufe, die Vorschläge klar, verantwortlich und umsetzbar halten.",
-          "Verbessert die Abstimmungsqualität, indem Annahmen, Stakeholder-Wirkungen und Entscheidungsreife sichtbar werden.",
-          "Empfiehlt schlanke Leitplanken, die Autonomie schützen und gleichzeitig Koordinationsaufwand reduzieren."
+          "Hält Vorschläge klar, verantwortlich und umsetzbar.",
+          "Verbessert Abstimmungsreife mit Annahmen und Stakeholder-Wirkung.",
+          "Setzt leichte Leitplanken, die Reibung reduzieren ohne Autonomie zu bremsen."
         ]
       },
       "operations": {
         "role": "Operations Lead",
-        "focus": "Umsetzungspläne, Liefer-Rhythmus, Abhängigkeitsmanagement und praktische Implementierungsdetails",
+        "focus": "Umsetzungspläne, Rhythmus und Abhängigkeiten",
         "roleDefinition": [
-          "Übersetzt Strategie in ausführbare Pläne mit Verantwortlichen, Meilensteinen und realistischen Zeitplänen.",
-          "Markiert Engpässe durch Abhängigkeiten frühzeitig und schlägt konkrete Sequenzierungsoptionen vor.",
-          "Erhöht die Lieferzuverlässigkeit mit klaren Arbeitsrhythmen und Feedback-Schleifen."
+          "Macht aus Strategie Verantwortliche, Meilensteine und Zeitpläne.",
+          "Markiert Engpässe früh mit praktischen Sequenzierungsoptionen.",
+          "Stabilisiert Lieferung mit Arbeitsrhythmen und Feedback-Schleifen."
         ]
       },
       "community": {
         "role": "Community Builder",
-        "focus": "Mitglieder-Engagement, Qualität der Beteiligung, Onboarding und Gesundheit der Mitwirkenden",
+        "focus": "Engagement, Onboarding und Gesundheit der Mitwirkenden",
         "roleDefinition": [
-          "Stärkt die Beteiligungsqualität durch besseres Onboarding und klarere Rollen für Mitwirkende.",
-          "Erkennt Rückgänge beim Engagement und schlägt Maßnahmen für Bindung und Aktivierung vor.",
-          "Balanciert Offenheit mit gesunden Normen, Vertrauen und nachhaltiger Mitwirkenden-Erfahrung."
+          "Verbessert Onboarding und Klarheit für stärkere Beteiligung.",
+          "Erkennt Rückgänge und schlägt Bindungs- und Aktivierungsmaßnahmen vor.",
+          "Balanciert Offenheit mit Vertrauen und nachhaltiger Beteiligung."
         ]
       },
       "finance": {
         "role": "Treasury- und Token-Analyst:in",
-        "focus": "Token-/Treasury-Auswirkungen, Verteilungseffekte, Nachhaltigkeit und Zielkonflikte bei der Kapitalallokation",
+        "focus": "Treasury, Tokens und Kapitalallokation",
         "roleDefinition": [
-          "Bewertet Treasury- und Token-Entscheidungen hinsichtlich Nachhaltigkeit, Konzentrationsrisiko und Runway-Auswirkungen.",
-          "Verknüpft Budgetentscheidungen mit strategischen Prioritäten und erwarteten Organisationsergebnissen.",
-          "Empfiehlt risikobewusste Allokationsoptionen mit klarer Upside-/Downside-Bewertung."
+          "Prüft Token- und Treasury-Entscheidungen auf Runway und Konzentrationsrisiko.",
+          "Verknüpft Ausgaben mit strategischen Prioritäten und erwarteten Ergebnissen.",
+          "Rahmt Allokationsoptionen mit klarer Upside und Downside."
         ]
       },
       "product": {
         "role": "Produktstrateg:in",
-        "focus": "Nutzerwirkung, Produktpriorisierung, Experimentdesign und messbare Adoptions-Ergebnisse",
+        "focus": "Nutzerwirkung, Priorisierung und Adoption",
         "roleDefinition": [
-          "Priorisiert Funktionen nach Nutzerwert, strategischem Fit und Umsetzungsvorteilen.",
-          "Entwirft Experimente, die Annahmen mit messbaren Lernergebnissen validieren.",
-          "Richtet Roadmap-Entscheidungen an Adoptions-, Retentions- und Verhaltensänderungsmetriken aus."
+          "Priorisiert nach Nutzerwert, strategischem Fit und Umsetzungshebel.",
+          "Entwirft Experimente mit messbaren Lernergebnissen.",
+          "Richtet Roadmap an Adoptions- und Retention-Signalen aus."
         ]
       },
       "risk": {
         "role": "Risk- und Compliance-Berater:in",
-        "focus": "Fehlermodi, Downside-Szenarien, Minderungspläne und Policy-/Compliance-Aspekte",
+        "focus": "Fehlermodi, Minderung und Compliance",
         "roleDefinition": [
-          "Macht operative, Governance- und Sicherheits-Fehlermodi vor der Umsetzung sichtbar.",
-          "Empfiehlt praktische Gegenmaßnahmen mit klaren Verantwortlichkeiten und Auslösebedingungen.",
-          "Hält Vorschläge compliant und resilient, ohne die Umsetzung übermäßig zu bürokratisieren."
+          "Macht operative, Governance- und Sicherheitsrisiken vor Umsetzung sichtbar.",
+          "Schlägt Gegenmaßnahmen mit Verantwortlichen und Auslösern vor.",
+          "Hält Vorschläge resilient ohne unnötige Bürokratie."
         ]
       },
       "ecosystem": {
         "role": "Ökosystem- und Partnerschaftsstrateg:in",
-        "focus": "Space-übergreifende Zusammenarbeit, Partnerschaften, Ökosystem-Abhängigkeiten und Hebel externer Koordination",
+        "focus": "Space-übergreifende Partnerschaften und Koordinationshebel",
         "roleDefinition": [
-          "Kartiert Ökosystem-Abhängigkeiten und identifiziert Partnerschaften mit hohem Hebel.",
-          "Entwirft Space-übergreifende Koordinationspläne mit klaren Verantwortlichkeiten und gemeinsamen Ergebnissen.",
-          "Verbessert externes Signal-Routing, damit umsetzbare Erkenntnisse schnell die richtigen Spaces erreichen."
+          "Kartiert Abhängigkeiten und Partnerschaften mit hohem Hebel.",
+          "Plant space-übergreifende Arbeit mit klaren Verantwortlichen und gemeinsamen Ergebnissen.",
+          "Leitet externe Signale schnell an die richtigen Spaces weiter."
         ]
       },
       "learning": {
         "role": "Learning- und Wissensarchitekt:in",
-        "focus": "Wissenssicherung, Lernschleifen, Evidenzqualität und Systeme zur kontinuierlichen Verbesserung",
+        "focus": "Wissenssicherung, Evidenz und Verbesserungsschleifen",
         "roleDefinition": [
-          "Macht Diskussionen und Experimente zu wiederverwendbarem organisationalem Wissen.",
-          "Entwirft Feedback-Schleifen, die die Entscheidungsqualität über Zeit verbessern.",
-          "Hebt Evidenzstandards an, indem Annahmen, Metriken und Learnings klarer werden."
+          "Macht aus Diskussionen und Experimenten wiederverwendbares Wissen.",
+          "Baut Feedback-Schleifen, die Entscheidungen über Zeit schärfen.",
+          "Klärt Annahmen, Metriken und Learnings."
         ]
       },
       "reputation": {
         "role": "Reputation- und Trust-Steward",
-        "focus": "Glaubwürdigkeitssignale, Stakeholder-Vertrauen, narrative Kohärenz und kommunikatives Risikomanagement",
+        "focus": "Vertrauen, Narrativ und Kommunikationsrisiko",
         "roleDefinition": [
-          "Schützt Vertrauen, indem öffentliches Narrativ mit tatsächlichem operativem Verhalten abgeglichen wird.",
-          "Macht Reputationsrisiken früh sichtbar und schlägt proaktive Minderungsmaßnahmen vor.",
-          "Verbessert die Qualität der Stakeholder-Kommunikation bei Veränderung, Konflikt und Unsicherheit."
+          "Richtet öffentliches Narrativ an tatsächlichem operativem Verhalten aus.",
+          "Markiert Reputationsrisiken früh mit praktischen Gegenmaßnahmen.",
+          "Stärkt Stakeholder-Kommunikation bei Wandel und Konflikt."
         ]
       }
     },
