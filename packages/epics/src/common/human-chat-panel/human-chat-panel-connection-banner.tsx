@@ -14,8 +14,12 @@ type HumanChatPanelConnectionBannerProps = {
   onUseThisTab: () => void;
 };
 
+const accentBorder =
+  'border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_30%,transparent)]';
+const accentSurface =
+  'bg-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_12%,var(--background))]';
 const bannerButtonClassName =
-  'h-7 min-h-7 shrink-0 gap-1.5 self-center border-border bg-background/90 px-2.5 py-0 text-xs font-semibold leading-none whitespace-nowrap text-foreground hover:bg-muted disabled:opacity-50';
+  'h-7 min-h-7 shrink-0 gap-1.5 self-center border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_45%,var(--border))] bg-background/90 px-2.5 py-0 text-xs font-semibold leading-none whitespace-nowrap text-foreground hover:bg-accent-3 disabled:opacity-50';
 
 export function HumanChatPanelConnectionBanner({
   connectionStatus,
@@ -37,7 +41,9 @@ export function HumanChatPanelConnectionBanner({
       role="status"
       aria-live="polite"
       className={cn(
-        'mt-0 w-full border-y border-border/70 bg-muted/40 px-3 py-2 text-sm',
+        'mt-0 w-full border-y px-3 py-2 text-sm',
+        accentBorder,
+        accentSurface,
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">

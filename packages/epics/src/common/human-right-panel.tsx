@@ -3794,7 +3794,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 role="tabpanel"
                 id="chat-tabpanel-chat"
               >
-                {showSidebarCallUi && (
+                {showSidebarCallUi && !showFloatingDock && (
                   <div
                     className={
                       inSpaceCall
