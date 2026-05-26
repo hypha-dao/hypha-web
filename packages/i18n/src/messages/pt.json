@@ -1720,7 +1720,21 @@
     "exchangeDepositProposalConfirming": "Confirmando...",
     "exchangeDepositProposalTitle": "Depositar {amount} {symbol} – Liquidar escrow (#{escrowId})",
     "exchangeDepositProposalDescription": "Aprove e deposite {payAmount} {paySymbol} no escrow (#{escrowId}) para concluir a troca com {otherParty}. Em troca, {activeSpace} receberá {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Aprove e deposite {payAmount} {paySymbol} no escrow (#{escrowId}) para concluir o investimento em {otherParty}. Em troca, {activeSpace} receberá {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Aprove e deposite {payAmount} {paySymbol} no escrow (#{escrowId}) para concluir o investimento em {otherParty}. Em troca, {activeSpace} receberá {receiveAmount} {receiveSymbol}.",
+    "confirmInvestmentCta": "Confirmar investimento",
+    "acceptInvestmentTitle": "Aceitar investimento",
+    "acceptInvestmentBody": "{sellerLabel} aceitou o investimento do seu espaço de {buyerAmountLabel} e oferece {sellerAmountLabel} em troca.",
+    "acceptInvestmentBodyPersonal": "{sellerLabel} aceitou o seu investimento de {buyerAmountLabel} e oferece {sellerAmountLabel} em troca.",
+    "exchangeStakesAndTokensTitle": "Trocar participações e tokens",
+    "exchangeStakesAndTokensBody": "{sellerLabel} propôs trocar {sellerAmountLabel} por {buyerAmountLabel} do seu espaço.",
+    "exchangeStakesAndTokensBodyPersonal": "{sellerLabel} propôs trocar {sellerAmountLabel} por {buyerAmountLabel} consigo.",
+    "exchangeCounterpartyFallback": "a outra parte",
+    "escrowDepositRefuse": "Recusar",
+    "escrowDepositRefusing": "A recusar...",
+    "escrowConfirmExchange": "Confirmar troca",
+    "escrowDepositDepositing": "A depositar...",
+    "escrowDepositApproving": "A aprovar...",
+    "escrowDepositInsufficientWallet": "O saldo da sua carteira está abaixo do valor necessário."
   },
   "ProposalDetails": {
     "investment": {
@@ -1958,8 +1972,16 @@
       "spaceMemory": "O que é que o nosso espaço recorda?",
       "valueFlows": "Como flui o valor através dos nossos tokens?"
     },
+    "suggestionTags": {
+      "spaceHealth": "Saúde do espaço",
+      "nextSignal": "Próximo sinal",
+      "blindSpot": "Ponto cego",
+      "summarizeDiscussion": "Resumir discussão",
+      "spaceMemory": "Memória do espaço",
+      "valueFlows": "Fluxos de valor"
+    },
     "welcome": "Sou a sua AI de {spaceName}. Ajudo o seu espaço e o ecossistema mais amplo a pensar consigo—propósito, direção, operações, sinais de Coherence, memória org, impacto e fluxos de valor—com agentes de IA especialistas quando pergunta.",
-    "welcomeSpecialistsHint": "Os especialistas ativos também aparecem em Membros → AI Agents.",
+    "welcomeSpecialistsHint": "Os especialistas ativos também aparecem em Membros > AI Agents.",
     "specialistsResponding": "Especialistas a contribuir",
     "specialistsRespondingStreaming": "Especialistas a contribuir…",
     "placeholder": "Pergunte ao Hypha AI...",

@@ -1033,9 +1033,17 @@
     "confirmInvestmentCta": "Investition bestätigen",
     "acceptInvestmentTitle": "Investition annehmen",
     "acceptInvestmentBody": "{sellerLabel} hat die Investition deines Spaces über {buyerAmountLabel} angenommen und bietet im Gegenzug {sellerAmountLabel} an.",
+    "acceptInvestmentBodyPersonal": "{sellerLabel} hat deine Investition über {buyerAmountLabel} angenommen und bietet im Gegenzug {sellerAmountLabel} an.",
     "exchangeStakesAndTokensTitle": "Anteile & Tokens tauschen",
     "exchangeStakesAndTokensBody": "{sellerLabel} hat vorgeschlagen, {sellerAmountLabel} gegen {buyerAmountLabel} aus deinem Space zu tauschen.",
-    "exchangeCounterpartyFallback": "die andere Partei"
+    "exchangeStakesAndTokensBodyPersonal": "{sellerLabel} hat vorgeschlagen, {sellerAmountLabel} gegen {buyerAmountLabel} von dir zu tauschen.",
+    "exchangeCounterpartyFallback": "die andere Partei",
+    "escrowDepositRefuse": "Ablehnen",
+    "escrowDepositRefusing": "Wird abgelehnt...",
+    "escrowConfirmExchange": "Tausch bestätigen",
+    "escrowDepositDepositing": "Einzahlung läuft...",
+    "escrowDepositApproving": "Genehmigung läuft...",
+    "escrowDepositInsufficientWallet": "Dein Wallet-Guthaben liegt unter dem erforderlichen Betrag."
   },
   "AgreementFlow": {
     "labels": {
@@ -1964,8 +1972,16 @@
       "spaceMemory": "Was erinnert sich unser Space?",
       "valueFlows": "Wie fließen Werte durch unsere Tokens?"
     },
+    "suggestionTags": {
+      "spaceHealth": "Space-Gesundheit",
+      "nextSignal": "Nächstes Signal",
+      "blindSpot": "Blinder Fleck",
+      "summarizeDiscussion": "Diskussion zusammenfassen",
+      "spaceMemory": "Space-Memory",
+      "valueFlows": "Werteströme"
+    },
     "welcome": "Ich bin deine {spaceName} AI. Ich helfe deinem Space und dem breiteren Ökosystem, mit dir mitzudenken—Zweck, Ausrichtung, Operations, Coherence-Signale, Org-Memory, Impact und Werteströme—mit spezialisierten KI-Agent:innen, wenn du fragst.",
-    "welcomeSpecialistsHint": "Aktive Spezialist:innen findest du auch unter Mitglieder → AI Agents.",
+    "welcomeSpecialistsHint": "Aktive Spezialist:innen findest du auch unter Mitglieder > AI Agents.",
     "specialistsResponding": "Beitragende Spezialist:innen",
     "specialistsRespondingStreaming": "Spezialist:innen tragen bei…",
     "placeholder": "Frag Hypha AI etwas...",

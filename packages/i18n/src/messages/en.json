@@ -1032,9 +1032,17 @@
     "confirmInvestmentCta": "Confirm Investment",
     "acceptInvestmentTitle": "Accept Investment",
     "acceptInvestmentBody": "{sellerLabel} has accepted your space's investment of {buyerAmountLabel} and offers {sellerAmountLabel} in return.",
+    "acceptInvestmentBodyPersonal": "{sellerLabel} has accepted your investment of {buyerAmountLabel} and offers {sellerAmountLabel} in return.",
     "exchangeStakesAndTokensTitle": "Exchange Stakes & Tokens",
     "exchangeStakesAndTokensBody": "{sellerLabel} has proposed to exchange {sellerAmountLabel} for {buyerAmountLabel} from your space.",
-    "exchangeCounterpartyFallback": "the other party"
+    "exchangeStakesAndTokensBodyPersonal": "{sellerLabel} has proposed to exchange {sellerAmountLabel} for {buyerAmountLabel} from you.",
+    "exchangeCounterpartyFallback": "the other party",
+    "escrowDepositRefuse": "Refuse",
+    "escrowDepositRefusing": "Refusing...",
+    "escrowConfirmExchange": "Confirm Exchange",
+    "escrowDepositDepositing": "Depositing...",
+    "escrowDepositApproving": "Approving...",
+    "escrowDepositInsufficientWallet": "Your wallet balance is below the required amount."
   },
   "AgreementFlow": {
     "labels": {
@@ -1966,8 +1974,16 @@
       "spaceMemory": "What does our space remember?",
       "valueFlows": "How does value flow through our tokens?"
     },
+    "suggestionTags": {
+      "spaceHealth": "Space health",
+      "nextSignal": "Next signal",
+      "blindSpot": "Blind spot",
+      "summarizeDiscussion": "Summarize discussion",
+      "spaceMemory": "Space memory",
+      "valueFlows": "Value flows"
+    },
     "welcome": "I'm your {spaceName} AI. I help your space and the broader ecosystem think with you—purpose, direction, operations, coherence signals, org memory, impact, and value flows—with specialist AI agents when you ask.",
-    "welcomeSpecialistsHint": "Active specialists also appear under Members → AI Agents.",
+    "welcomeSpecialistsHint": "Active specialists also appear under Members > AI Agents.",
     "specialistsResponding": "Specialists contributing",
     "specialistsRespondingStreaming": "Specialists contributing…",
     "placeholder": "Ask Hypha AI anything...",
