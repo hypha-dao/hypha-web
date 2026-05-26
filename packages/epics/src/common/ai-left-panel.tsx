@@ -1160,44 +1160,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     try {
       clearError();
       const options = await buildMessageOptions();
-      let attachmentParts: Array<
-        | { type: 'text'; text: string }
-        | { type: 'file'; mediaType: string; url: string }
-      > = [];
-      if (
-        attachments.length > 0 &&
-        activeSpaceChatRoomId &&
-        matrix.isMatrixAvailable &&
-        matrix.isAuthenticated
-      ) {
-        const joinedRoomId = await matrix.joinRoom(activeSpaceChatRoomId);
-        await matrix.sendMessage({
-          roomId: joinedRoomId,
-          message: text.trim(),
-          attachments: attachments.map((att) => ({
-            file: att.file,
-            kind:
-              att.kind === 'image'
-                ? 'image'
-                : att.kind === 'audio'
-                ? 'audio'
-                : 'file',
-            spoiler: att.spoiler,
-          })),
-        });
-        attachmentParts = [
-          {
-            type: 'text',
-            text: `Uploaded files: ${attachments
-              .map((att) => att.file.name)
-              .join(', ')}`,
-          },
-        ];
-      } else if (attachments.length > 0) {
-        attachmentParts = await convertFilesToParts(
-          attachments.map((att) => att.file),
-        );
-      }
+      const attachmentParts =
+        attachments.length > 0
+          ? await convertFilesToParts(attachments.map((att) => att.file))
+          : [];
       const textParts = text.trim() ? [{ type: 'text' as const, text }] : [];
       if (onboardingContext?.mode === ONBOARDING_SETUP_MODE && text.trim()) {
         const nextContext: OnboardingConversationContext = {
@@ -1219,12 +1185,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           text,
           attachmentCount: attachments.length,
           spaceSlug,
-          persistedToMatrix: Boolean(
-            attachments.length &&
-              activeSpaceChatRoomId &&
-              matrix.isMatrixAvailable &&
-              matrix.isAuthenticated,
-          ),
         });
       await sendMessage(
         { role: 'user', parts: [...textParts, ...attachmentParts] },
@@ -1247,8 +1207,6 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     sendMessage,
     buildMessageOptions,
     clearError,
-    activeSpaceChatRoomId,
-    matrix,
     onboardingContext,
   ]);
 

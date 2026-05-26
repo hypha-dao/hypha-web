@@ -267,7 +267,6 @@ export function AiPanelMessageBubble({
   message,
   mobilizedAgents = [],
   isStreaming,
-  mobilizedAgents = [],
   onActionReplySelect,
 }: AiPanelMessageBubbleProps) {
   const t = useTranslations('AiPanel');
@@ -576,14 +575,19 @@ export function AiPanelMessageBubble({
             </div>
           )}
           {fileParts.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div
+              className={cn(
+                'flex flex-col gap-2',
+                hasVisibleText && 'mt-1',
+              )}
+            >
               {fileParts.map((part, i) =>
                 part.mediaType?.startsWith('image/') && part.url ? (
                   <img
                     key={i}
                     src={part.url}
                     alt={`Uploaded image ${i + 1}`}
-                    className="max-h-32 max-w-full rounded-lg object-contain"
+                    className="max-h-72 max-w-full rounded-lg object-contain"
                   />
                 ) : part.url ? (
                   <a
