@@ -208,10 +208,20 @@ function useGlobalCallDockValue() {
 
   React.useEffect(() => {
     if (inSession && activeRoomId) {
+      const prevSessionRoomId = callSessionRoomIdRef.current;
       callSessionRoomIdRef.current = activeRoomId;
-      callSessionSpaceSlugRef.current = activeSpaceSlug;
       callSessionAuthTokenRef.current = activeAuthToken;
-      setPinnedCallSpaceSlug(activeSpaceSlug);
+
+      if (prevSessionRoomId !== activeRoomId) {
+        const slugToPin = activeSpaceSlug?.trim() || null;
+        if (slugToPin) {
+          callSessionSpaceSlugRef.current = slugToPin;
+          setPinnedCallSpaceSlug(slugToPin);
+        }
+      } else if (!callSessionSpaceSlugRef.current && activeSpaceSlug?.trim()) {
+        callSessionSpaceSlugRef.current = activeSpaceSlug.trim();
+        setPinnedCallSpaceSlug(activeSpaceSlug.trim());
+      }
       return;
     }
     if (

@@ -1114,6 +1114,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const {
     bindRoomContext,
     activeRoomId: callSessionRoomId,
+    pinnedCallSpaceSlug,
     callState: spaceCallState,
     errorCode: spaceCallError,
     callKind: spaceCallKind,
@@ -2873,16 +2874,30 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       !roomId?.trim()
     )
       return;
+    if (
+      callSessionRoomId?.trim() === roomId.trim() &&
+      pinnedCallSpaceSlug?.trim() &&
+      pinnedCallSpaceSlug.trim() !== spaceSlug.trim()
+    ) {
+      return;
+    }
     rememberRoomToSpaceSlugSession(roomId, spaceSlug.trim());
-  }, [mode, spaceSlug, roomId]);
+  }, [callSessionRoomId, mode, pinnedCallSpaceSlug, roomId, spaceSlug]);
 
   useEffect(() => {
     const pathSlug = getDhoSpaceSlugFromPathname(pathname)?.trim();
     const rid = roomId?.trim() ?? null;
     if (pathSlug && rid && mode === 'space' && typeof window !== 'undefined') {
+      if (
+        callSessionRoomId?.trim() === rid &&
+        pinnedCallSpaceSlug?.trim() &&
+        pinnedCallSpaceSlug.trim() !== pathSlug
+      ) {
+        return;
+      }
       rememberRoomToSpaceSlugSession(rid, pathSlug);
     }
-  }, [pathname, roomId, mode]);
+  }, [callSessionRoomId, mode, pathname, pinnedCallSpaceSlug, roomId]);
 
   useEffect(() => {
     const rid = roomId?.trim() ?? null;

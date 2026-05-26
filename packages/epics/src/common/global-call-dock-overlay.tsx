@@ -94,18 +94,18 @@ function readCallSpaceSlug(
 ): string | null {
   const fromPinned = pinnedSpaceSlug?.trim();
   if (fromPinned) return fromPinned;
-  const fromState = activeSpaceSlug?.trim();
-  if (fromState) return fromState;
-  if (!activeRoomId?.trim() || typeof window === 'undefined') return null;
-  try {
-    return (
-      window.sessionStorage
-        .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${activeRoomId.trim()}`)
-        ?.trim() || null
-    );
-  } catch {
-    return null;
+  if (!activeRoomId?.trim() || typeof window === 'undefined') {
+    return activeSpaceSlug?.trim() || null;
   }
+  try {
+    const fromSession = window.sessionStorage
+      .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${activeRoomId.trim()}`)
+      ?.trim();
+    if (fromSession) return fromSession;
+  } catch {
+    // ignore session read failure
+  }
+  return activeSpaceSlug?.trim() || null;
 }
 
 /**
@@ -813,16 +813,18 @@ export function GlobalCallDockOverlay() {
     window.focus();
 
     const normalizedPath = (pathname.split('?')[0] ?? '').replace(/\/$/, '');
-    const signalTarget = await resolveSignalThreadByMatrixRoom(
-      activeRoomId.trim(),
-    );
-    const spaceSlug = signalTarget?.spaceSlug ?? callSpaceSlug;
-    const destinationHref = `/${locale}/dho/${spaceSlug}/coherence`.replace(
+    const destinationHref = `/${locale}/dho/${callSpaceSlug}/coherence`.replace(
       /\/$/,
       '',
     );
 
-    if (signalTarget) {
+    const signalTarget = await resolveSignalThreadByMatrixRoom(
+      activeRoomId.trim(),
+    );
+    if (
+      signalTarget &&
+      signalTarget.spaceSlug.trim() === callSpaceSlug.trim()
+    ) {
       openCoherenceChat(
         signalTarget.roomId,
         signalTarget.signalTitle,
