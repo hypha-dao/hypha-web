@@ -1,4 +1,5 @@
-import { MOBILE_BREAKPOINT_PX } from '@hypha-platform/ui';
+/** Tailwind `md` breakpoint — keep in sync with `packages/ui/src/breakpoints.ts`. */
+const MD_BREAKPOINT_PX = 768;
 
 /** Rows revealed per "Load more" — keeps the grid from ending mid-row. */
 export const SIGNAL_GRID_ROW_BATCH_COUNT = 3;
@@ -23,7 +24,7 @@ export function computeSignalGridColumns(
   containerWidthPx: number,
   viewportWidthPx: number,
 ): number {
-  if (viewportWidthPx < MOBILE_BREAKPOINT_PX) return 1;
+  if (viewportWidthPx < MD_BREAKPOINT_PX) return 1;
   const width = Math.max(0, containerWidthPx);
   const minColumnPx = Math.min(width, remPx(SIGNAL_GRID_MIN_COLUMN_REM));
   const gapPx = remPx(SIGNAL_GRID_GAP_REM);
