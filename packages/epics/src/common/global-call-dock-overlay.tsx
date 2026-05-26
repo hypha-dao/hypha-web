@@ -1002,7 +1002,7 @@ export function GlobalCallDockOverlay() {
           >
             {t('callTitle', { count: roomGroupCallDeviceCount })}
           </p>
-          {callSpaceHref && (
+          {!isMobile && callSpaceHref && (
             <button
               type="button"
               data-no-dock-drag
@@ -1024,7 +1024,8 @@ export function GlobalCallDockOverlay() {
               {t('spaceButton')}
             </button>
           )}
-          {dockStageLayout === 'fullView' &&
+          {!isMobile &&
+          dockStageLayout === 'fullView' &&
           isScreensharing &&
           roomGroupCallDeviceCount > 1 &&
           !dockCompact ? (
@@ -1034,89 +1035,91 @@ export function GlobalCallDockOverlay() {
               className="shrink-0"
             />
           ) : null}
-          <div
-            className={cn(
-              'flex items-center',
-              dockCompact ? 'gap-0.5' : 'gap-1',
-            )}
-          >
-            {isDocumentPipSupported && (
-              <button
-                type="button"
-                data-no-dock-drag
-                onClick={() => {
-                  void onToggleDocumentPip();
-                }}
-                className={cn(
-                  'inline-flex items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted',
-                  dockCompact ? 'h-6 w-6' : 'h-7 w-7',
-                  isDocumentPipOpen && 'border-primary/50 bg-primary/10',
-                )}
-                aria-label={
-                  isDocumentPipOpen
-                    ? t('closeFloatingWindowLabel')
-                    : t('openFloatingWindowLabel')
-                }
-                title={
-                  isDocumentPipOpen
-                    ? t('closeFloatingWindowLabel')
-                    : t('openFloatingWindowLabel')
-                }
-              >
-                <PictureInPicture2
-                  className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                />
-              </button>
-            )}
-            {!dockCompact && dockMode !== 'thumbnail' && (
-              <button
-                type="button"
-                data-no-dock-drag
-                onClick={() => applyDockMode('thumbnail')}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
-                aria-label={t('minimizeLabel')}
-                title={t('minimizeLabel')}
-              >
-                <Shrink className="h-3.5 w-3.5" />
-              </button>
-            )}
-            {!dockCompact && !modeIsFullscreen && dockMode !== 'expanded' && (
-              <button
-                type="button"
-                data-no-dock-drag
-                onClick={() => applyDockMode('expanded')}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
-                aria-label={t('expandLabel')}
-                title={t('expandLabel')}
-              >
-                <Expand className="h-3.5 w-3.5" />
-              </button>
-            )}
-            {!dockCompact && (
-              <button
-                type="button"
-                data-no-dock-drag
-                onClick={onToggleFullscreen}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
-                aria-label={
-                  modeIsFullscreen
-                    ? t('exitFullscreenLabel')
-                    : t('fullscreenLabel')
-                }
-                title={
-                  modeIsFullscreen
-                    ? t('exitFullscreenLabel')
-                    : t('fullscreenLabel')
-                }
-              >
-                {modeIsFullscreen ? (
-                  <Minimize2 className="h-3.5 w-3.5" />
-                ) : (
-                  <Maximize2 className="h-3.5 w-3.5" />
-                )}
-              </button>
-            )}
-          </div>
+          {!isMobile ? (
+            <div
+              className={cn(
+                'flex items-center',
+                dockCompact ? 'gap-0.5' : 'gap-1',
+              )}
+            >
+              {isDocumentPipSupported && (
+                <button
+                  type="button"
+                  data-no-dock-drag
+                  onClick={() => {
+                    void onToggleDocumentPip();
+                  }}
+                  className={cn(
+                    'inline-flex items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted',
+                    dockCompact ? 'h-6 w-6' : 'h-7 w-7',
+                    isDocumentPipOpen && 'border-primary/50 bg-primary/10',
+                  )}
+                  aria-label={
+                    isDocumentPipOpen
+                      ? t('closeFloatingWindowLabel')
+                      : t('openFloatingWindowLabel')
+                  }
+                  title={
+                    isDocumentPipOpen
+                      ? t('closeFloatingWindowLabel')
+                      : t('openFloatingWindowLabel')
+                  }
+                >
+                  <PictureInPicture2
+                    className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                  />
+                </button>
+              )}
+              {!dockCompact && dockMode !== 'thumbnail' && (
+                <button
+                  type="button"
+                  data-no-dock-drag
+                  onClick={() => applyDockMode('thumbnail')}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
+                  aria-label={t('minimizeLabel')}
+                  title={t('minimizeLabel')}
+                >
+                  <Shrink className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {!dockCompact && !modeIsFullscreen && dockMode !== 'expanded' && (
+                <button
+                  type="button"
+                  data-no-dock-drag
+                  onClick={() => applyDockMode('expanded')}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
+                  aria-label={t('expandLabel')}
+                  title={t('expandLabel')}
+                >
+                  <Expand className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {!dockCompact && (
+                <button
+                  type="button"
+                  data-no-dock-drag
+                  onClick={onToggleFullscreen}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
+                  aria-label={
+                    modeIsFullscreen
+                      ? t('exitFullscreenLabel')
+                      : t('fullscreenLabel')
+                  }
+                  title={
+                    modeIsFullscreen
+                      ? t('exitFullscreenLabel')
+                      : t('fullscreenLabel')
+                  }
+                >
+                  {modeIsFullscreen ? (
+                    <Minimize2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Maximize2 className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              )}
+            </div>
+          ) : null}
         </div>
 
         <div
