@@ -213,9 +213,12 @@ export function SignalTeamMemberPicker({
                 isOwner={isOwner}
                 onToggle={() => {
                   if (isOwner && selected) return;
+                  const memberIdsOnly = effectiveSelectedIds.filter(
+                    (id) => id !== ownerMatrixUserId,
+                  );
                   const next = selected
-                    ? selectedMemberIds.filter((id) => id !== member.userId)
-                    : [...selectedMemberIds, member.userId];
+                    ? memberIdsOnly.filter((id) => id !== member.userId)
+                    : [...memberIdsOnly, member.userId];
                   onSelectedMemberIdsChange(normalizeMatrixUserIds(next));
                 }}
               />
