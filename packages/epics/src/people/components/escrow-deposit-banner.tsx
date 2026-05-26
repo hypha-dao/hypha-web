@@ -209,23 +209,24 @@ export const EscrowDepositBanner = ({
     isSubmittingDeposit || isDepositing || isWaitingReceipt;
   const refuseInFlight = isSubmittingRefuse || isCancellingEscrow;
 
-  const actionLabel = isWaitingReceipt
-    ? t('exchangeDepositProposalConfirming')
-    : isDepositing
-    ? needsApprove
-      ? t('escrowDepositApproving')
-      : investment
-      ? t('exchangeDepositProposalConfirming')
-      : t('escrowDepositDepositing')
-    : isSubmittingDeposit
-    ? investment
-      ? t('exchangeDepositProposalConfirming')
-      : needsApprove
-      ? t('escrowDepositApproving')
-      : t('escrowDepositDepositing')
-    : investment
-    ? t('confirmInvestmentCta')
-    : t('escrowConfirmExchange');
+  const getActionLabel = () => {
+    if (isWaitingReceipt) {
+      return t('exchangeDepositProposalConfirming');
+    }
+    if (isDepositing) {
+      if (needsApprove) return t('escrowDepositApproving');
+      if (investment) return t('exchangeDepositProposalConfirming');
+      return t('escrowDepositDepositing');
+    }
+    if (isSubmittingDeposit) {
+      if (investment) return t('exchangeDepositProposalConfirming');
+      if (needsApprove) return t('escrowDepositApproving');
+      return t('escrowDepositDepositing');
+    }
+    return investment ? t('confirmInvestmentCta') : t('escrowConfirmExchange');
+  };
+
+  const actionLabel = getActionLabel();
 
   const refuseLabel = refuseInFlight
     ? t('escrowDepositRefusing')
