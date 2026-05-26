@@ -42,10 +42,9 @@ function parsePriority(raw: string | null): CoherencePriority | undefined {
 }
 
 function parseTags(url: URL): CoherenceTag[] | undefined {
-  const rawValues = [
-    ...url.searchParams.getAll('tags'),
-    ...(url.searchParams.get('tags')?.split(',') ?? []),
-  ]
+  const rawValues = url.searchParams
+    .getAll('tags')
+    .flatMap((value) => value.split(','))
     .map((value) => value.trim())
     .filter(Boolean);
   if (rawValues.length === 0) return undefined;
