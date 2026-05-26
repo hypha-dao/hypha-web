@@ -45,7 +45,6 @@ type AiPanelMessageBubbleProps = {
   };
   mobilizedAgents?: readonly AiCompetencyAgent[];
   isStreaming?: boolean;
-  mobilizedAgents?: readonly AiCompetencyAgent[];
   onActionReplySelect?: (text: string) => void;
 };
 
