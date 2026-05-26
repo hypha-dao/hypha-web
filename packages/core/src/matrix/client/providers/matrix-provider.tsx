@@ -538,7 +538,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const [isMatrixAvailable, setIsMatrixAvailable] = React.useState(false);
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [connectionStatus, setConnectionStatus] =
-    React.useState<MatrixConnectionStatus>('connected');
+    React.useState<MatrixConnectionStatus>(() =>
+      isSyncLeader ? 'disconnected' : 'follower',
+    );
   const [activeMatrixUserId, setActiveMatrixUserId] = React.useState<
     string | null
   >(null);
