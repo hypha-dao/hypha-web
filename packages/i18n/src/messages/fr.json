@@ -2283,6 +2283,11 @@
     "signalTeamRemoveMember": "Retirer",
     "signalTeamPendingRequests": "Demandes en attente",
     "signalTeamApproveRequester": "Ajouter à l’équipe",
+    "signalTeamUpdated": "Équipe Signal mise à jour",
+    "signalTeamAddedMembers": "ajouté {members}",
+    "signalTeamRemovedMembers": "retiré {members}",
+    "signalTeamAccessRequested": "Accès à l’équipe Signal demandé",
+    "signalTeamAccessApproved": "Accès à l’équipe Signal approuvé",
     "mentionOpenFallbackRoom": "Impossible de résoudre ce salon depuis votre contexte local. Ouvrez l'espace concerné puis réessayez.",
     "mentionOpenFallbackMissingMessage": "Ce message de mention n'est pas encore disponible dans la chronologie chargée. Réessayez dans un instant."
   },

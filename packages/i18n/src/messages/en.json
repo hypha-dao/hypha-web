@@ -2309,6 +2309,11 @@
     "signalTeamRemoveMember": "Remove",
     "signalTeamPendingRequests": "Pending requests",
     "signalTeamApproveRequester": "Add to team",
+    "signalTeamUpdated": "Signal team updated",
+    "signalTeamAddedMembers": "added {members}",
+    "signalTeamRemovedMembers": "removed {members}",
+    "signalTeamAccessRequested": "Signal team access requested",
+    "signalTeamAccessApproved": "Signal team access approved",
     "mentionOpenFallbackRoom": "We could not resolve that room from your local context. Open the related space and try again.",
     "mentionOpenFallbackMissingMessage": "That mention message is not available in the loaded timeline yet. Try again in a moment."
   },

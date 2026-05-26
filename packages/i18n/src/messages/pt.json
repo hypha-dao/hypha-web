@@ -2285,6 +2285,11 @@
     "signalTeamRemoveMember": "Remover",
     "signalTeamPendingRequests": "Solicitações pendentes",
     "signalTeamApproveRequester": "Adicionar à equipe",
+    "signalTeamUpdated": "Equipe Signal atualizada",
+    "signalTeamAddedMembers": "adicionado {members}",
+    "signalTeamRemovedMembers": "removido {members}",
+    "signalTeamAccessRequested": "Acesso à equipe Signal solicitado",
+    "signalTeamAccessApproved": "Acesso à equipe Signal aprovado",
     "mentionOpenFallbackRoom": "Não foi possível resolver essa sala no seu contexto local. Abra o espaço relacionado e tente novamente.",
     "mentionOpenFallbackMissingMessage": "Essa mensagem de menção ainda não está disponível na linha do tempo carregada. Tente novamente em instantes."
   },

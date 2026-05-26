@@ -1,4 +1,18 @@
 export const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
+export const SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER =
+  '[hypha:signal-team-request]';
+
+export type SignalTeamNoticeKind =
+  | 'updated'
+  | 'access_requested'
+  | 'access_approved'
+  | 'members_updated';
+
+export type SignalTeamNotice = {
+  kind: SignalTeamNoticeKind;
+  addedMemberMatrixUserIds: string[];
+  removedMemberMatrixUserIds: string[];
+};
 
 function normalizeMatrixUserIds(ids: unknown): string[] {
   if (!Array.isArray(ids)) return [];
@@ -42,6 +56,77 @@ export function parseSignalTeamMemberChangesFromWireContent(
   const removed = normalizeMatrixUserIds(content.removedMemberMatrixUserIds);
   if (added.length === 0 && removed.length === 0) return null;
   return { added, removed };
+}
+
+export function parseSignalTeamNoticeFromWireContent(
+  content: Record<string, unknown>,
+  body: string,
+): SignalTeamNotice | null {
+  const trimmedBody = body.trim();
+
+  if (trimmedBody.includes(SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER)) {
+    const status =
+      typeof content.status === 'string' ? content.status.trim() : '';
+    if (status === 'approved' || trimmedBody.includes('access approved')) {
+      return {
+        kind: 'access_approved',
+        addedMemberMatrixUserIds: [],
+        removedMemberMatrixUserIds: [],
+      };
+    }
+    return {
+      kind: 'access_requested',
+      addedMemberMatrixUserIds: [],
+      removedMemberMatrixUserIds: [],
+    };
+  }
+
+  if (!trimmedBody.includes(SIGNAL_TEAM_EVENT_BODY_MARKER)) return null;
+
+  const added = normalizeMatrixUserIds(content.addedMemberMatrixUserIds);
+  const removed = normalizeMatrixUserIds(content.removedMemberMatrixUserIds);
+  if (added.length > 0 || removed.length > 0) {
+    return {
+      kind: 'updated',
+      addedMemberMatrixUserIds: added,
+      removedMemberMatrixUserIds: removed,
+    };
+  }
+
+  const withoutMarker = trimmedBody
+    .replace(SIGNAL_TEAM_EVENT_BODY_MARKER, '')
+    .trim();
+
+  if (withoutMarker === 'signal team members updated') {
+    return {
+      kind: 'members_updated',
+      addedMemberMatrixUserIds: [],
+      removedMemberMatrixUserIds: [],
+    };
+  }
+
+  if (
+    withoutMarker.length > 0 &&
+    (withoutMarker.startsWith('signal team updated') ||
+      withoutMarker.includes('access requested') ||
+      withoutMarker.includes('access approved'))
+  ) {
+    return null;
+  }
+
+  if (Array.isArray(content.memberMatrixUserIds)) {
+    return {
+      kind: 'members_updated',
+      addedMemberMatrixUserIds: [],
+      removedMemberMatrixUserIds: [],
+    };
+  }
+
+  return {
+    kind: 'updated',
+    addedMemberMatrixUserIds: [],
+    removedMemberMatrixUserIds: [],
+  };
 }
 
 export function resolveSignalTeamUpdateDisplayBody(

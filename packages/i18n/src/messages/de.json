@@ -2295,6 +2295,11 @@
     "signalTeamRemoveMember": "Entfernen",
     "signalTeamPendingRequests": "Ausstehende Anfragen",
     "signalTeamApproveRequester": "Zum Team hinzufügen",
+    "signalTeamUpdated": "Signal-Team aktualisiert",
+    "signalTeamAddedMembers": "hinzugefügt {members}",
+    "signalTeamRemovedMembers": "entfernt {members}",
+    "signalTeamAccessRequested": "Signal-Team-Zugang angefragt",
+    "signalTeamAccessApproved": "Signal-Team-Zugang genehmigt",
     "mentionOpenFallbackRoom": "Dieser Raum konnte im lokalen Kontext nicht aufgelöst werden. Öffnen Sie den zugehörigen Space und versuchen Sie es erneut.",
     "mentionOpenFallbackMissingMessage": "Diese Erwähnung ist in der geladenen Timeline noch nicht verfügbar. Bitte versuchen Sie es gleich noch einmal."
   },

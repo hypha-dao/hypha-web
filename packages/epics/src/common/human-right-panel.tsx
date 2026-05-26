@@ -50,7 +50,7 @@ import {
   type MessageReaction,
   type Person,
   looksLikeTechnicalSpaceMemoryName,
-  formatSignalTeamUpdateDisplayBody,
+  type SignalTeamNotice,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -315,6 +315,49 @@ function toUserFriendlySignalSystemBody(body: string): string {
     return 'Signal team access approved';
   }
   return withoutMarker;
+}
+
+type SignalTeamNoticeFormatter = (notice: SignalTeamNotice) => string;
+
+function formatMatrixUserIdForSignalNotice(userId: string): string {
+  const trimmed = userId.trim();
+  return trimmed.startsWith('@') ? trimmed : `@${trimmed}`;
+}
+
+function createSignalTeamNoticeFormatter(
+  t: (key: string, values?: Record<string, string>) => string,
+): SignalTeamNoticeFormatter {
+  return (notice) => {
+    switch (notice.kind) {
+      case 'access_requested':
+        return t('signalTeamAccessRequested');
+      case 'access_approved':
+        return t('signalTeamAccessApproved');
+      case 'members_updated':
+        return t('signalTeamUpdated');
+      case 'updated': {
+        const added = notice.addedMemberMatrixUserIds.map(
+          formatMatrixUserIdForSignalNotice,
+        );
+        const removed = notice.removedMemberMatrixUserIds.map(
+          formatMatrixUserIdForSignalNotice,
+        );
+        const parts: string[] = [];
+        if (added.length > 0) {
+          parts.push(
+            t('signalTeamAddedMembers', { members: added.join(', ') }),
+          );
+        }
+        if (removed.length > 0) {
+          parts.push(
+            t('signalTeamRemovedMembers', { members: removed.join(', ') }),
+          );
+        }
+        if (parts.length === 0) return t('signalTeamUpdated');
+        return `${t('signalTeamUpdated')}: ${parts.join('; ')}`;
+      }
+    }
+  };
 }
 
 type PersistedUIMessage = Omit<UIMessage, 'timestamp'> & {
@@ -649,6 +692,7 @@ function toUIMessage(
   resolveMemberAvatar?: (userId: string | undefined) => string | undefined,
   roomIdForAvatars?: string | null,
   clientForAvatars?: MatrixClient | null,
+  formatSignalTeamNotice?: SignalTeamNoticeFormatter,
 ): UIMessage {
   const resolveAvatarForUser = (userId: string | undefined) => {
     if (!userId) return undefined;
@@ -742,6 +786,8 @@ function toUIMessage(
   const media = mediaSingle;
   const normalizedTextContent = isMedia
     ? msg.content
+    : msg.signalTeamNotice && formatSignalTeamNotice
+    ? formatSignalTeamNotice(msg.signalTeamNotice)
     : toUserFriendlySignalSystemBody(msg.content);
 
   const memberAvatar =
@@ -1793,10 +1839,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         const removed = normalizeMatrixUserIds(
           options?.removedMemberMatrixUserIds,
         );
-        const displayBody = formatSignalTeamUpdateDisplayBody(added, removed);
         await client.sendEvent(roomId, EventType.RoomMessage, {
           msgtype: MsgType.Notice,
-          body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} ${displayBody}`,
+          body: SIGNAL_TEAM_EVENT_BODY_MARKER,
           coherenceSlug: coherenceSlug?.trim() || null,
           memberMatrixUserIds: deduped,
           ownerMatrixUserId: ownerId,
@@ -1868,7 +1913,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     try {
       await client.sendEvent(roomId, EventType.RoomMessage, {
         msgtype: MsgType.Notice,
-        body: `${SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER} signal team access requested`,
+        body: SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER,
         coherenceSlug: coherenceSlug?.trim() || null,
         requesterMatrixUserId: currentUserId,
         status: 'pending',
@@ -1904,7 +1949,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         await Promise.all([
           client.sendEvent(roomId, EventType.RoomMessage, {
             msgtype: MsgType.Notice,
-            body: `${SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER} signal team access approved`,
+            body: SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER,
             coherenceSlug: coherenceSlug?.trim() || null,
             requesterMatrixUserId: requesterId,
             status: 'approved',
@@ -1912,7 +1957,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           } as SignalTeamEventContent),
           client.sendEvent(roomId, EventType.RoomMessage, {
             msgtype: MsgType.Notice,
-            body: `${SIGNAL_TEAM_EVENT_BODY_MARKER} signal team members updated`,
+            body: SIGNAL_TEAM_EVENT_BODY_MARKER,
             coherenceSlug: coherenceSlug?.trim() || null,
             memberMatrixUserIds: nextMembers,
             ownerMatrixUserId: ownerId,
@@ -1971,6 +2016,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
+  const formatSignalTeamNotice = useMemo(
+    () => createSignalTeamNoticeFormatter(t),
+    [t],
+  );
+  const formatSignalTeamNoticeRef = useRef(formatSignalTeamNotice);
+  formatSignalTeamNoticeRef.current = formatSignalTeamNotice;
 
   useEffect(() => {
     if (!roomId || !client) return;
@@ -2221,6 +2272,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 undefined,
                 targetRoomId,
                 matrixRef.current.client ?? null,
+                formatSignalTeamNoticeRef.current,
               ),
             ),
           );
@@ -2368,6 +2420,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 undefined,
                 targetRoomId,
                 matrixRef.current.client ?? null,
+                formatSignalTeamNoticeRef.current,
               ),
             ),
           );
@@ -2430,6 +2483,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               undefined,
               roomId,
               matrixRef.current.client ?? null,
+              formatSignalTeamNoticeRef.current,
             );
             const idx = next.findIndex((m) => m.id === ui.id);
             if (idx === -1) {
