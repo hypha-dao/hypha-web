@@ -138,6 +138,11 @@ function withAlpha(color: string, alpha: number): string {
   return parsed.formatRgb();
 }
 
+/** SVG rejects negative `r` / `width` / `height`; clamp during zoom transitions. */
+function clampSvgLength(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+
 export function SpaceVisualization({
   data,
   currentSpaceId,
@@ -382,7 +387,9 @@ export function SpaceVisualization({
         const maxOrbit = node.r! - childNode.r!;
 
         if (minOrbitRadius > maxOrbit) {
-          childNode.r = (node.r! - parentLogoRadiusWithStroke) / 2;
+          childNode.r = clampSvgLength(
+            (node.r! - parentLogoRadiusWithStroke) / 2,
+          );
         }
       });
 
@@ -414,7 +421,7 @@ export function SpaceVisualization({
         }
 
         children.forEach((childNode) => {
-          childNode.r = bestChildRadius;
+          childNode.r = clampSvgLength(bestChildRadius);
         });
 
         const adjustedRadii = children.map((c) => c.r!);
@@ -816,7 +823,7 @@ export function SpaceVisualization({
     }
 
     function zoomTo(v: [number, number, number]) {
-      const k = width / v[2];
+      const k = width / Math.max(v[2], 1);
       view = v;
 
       orbits
@@ -825,7 +832,7 @@ export function SpaceVisualization({
           (d: SpaceHierarchyNode) =>
             `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
         )
-        .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
+        .attr('r', (d: SpaceHierarchyNode) => clampSvgLength(d.r! * k))
         .style('fill', 'none')
         .attr('stroke', (d: SpaceHierarchyNode) => {
           const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
@@ -844,8 +851,9 @@ export function SpaceVisualization({
             `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
         )
         .each(function (d: SpaceHierarchyNode) {
-          const r = d.r! * k * VISUALIZATION_CONFIG.LOGO_RATIO;
+          const r = clampSvgLength(d.r! * k * VISUALIZATION_CONFIG.LOGO_RATIO);
           const clipId = `clip-${d.data.id}`;
+          const diameter = clampSvgLength(r * 2);
 
           d3.select(this)
             .select('circle')
@@ -859,8 +867,8 @@ export function SpaceVisualization({
             .select('image')
             .attr('x', -r)
             .attr('y', -r)
-            .attr('width', r * 2)
-            .attr('height', r * 2);
+            .attr('width', diameter)
+            .attr('height', diameter);
         });
     }
     let isCancelled = false;
