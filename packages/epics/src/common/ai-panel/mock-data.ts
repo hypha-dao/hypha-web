@@ -32,10 +32,12 @@ function getAiPanelMessages(locale?: string): AiPanelMessages {
 
 /** English defaults for tests and Storybook when translations are not wired. */
 export function getMockSuggestions(locale?: string): string[] {
-  const suggestions = getAiPanelMessages(locale).suggestions ?? {};
-  return SUGGESTION_FIELD_NAMES.map((key) => suggestions[key] ?? '').filter(
-    Boolean,
-  );
+  const localizedSuggestions = getAiPanelMessages(locale).suggestions ?? {};
+  const fallbackSuggestions = getAiPanelMessages('en').suggestions ?? {};
+
+  return SUGGESTION_FIELD_NAMES.map(
+    (key) => localizedSuggestions[key] ?? fallbackSuggestions[key] ?? '',
+  ).filter(Boolean);
 }
 
 export const MOCK_SUGGESTIONS = getMockSuggestions();
