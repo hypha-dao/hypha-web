@@ -17,7 +17,6 @@ import {
   RequirementMark,
   RichTextEditor,
   Separator,
-  AddAttachment,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { RefreshCw } from 'lucide-react';
@@ -31,15 +30,12 @@ import {
   COHERENCE_TYPE_OPTIONS,
   CoherenceTag,
   CoherenceType,
-  publishSignalTeamNotice,
   schemaCreateCoherenceForm,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMatrix,
   useMe,
 } from '@hypha-platform/core/client';
-import { UseMembers } from '../../spaces';
-import { SignalTeamMemberPicker } from './signal-team-member-picker';
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
 import { useRouter } from 'next/navigation';
@@ -59,8 +55,6 @@ type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
 export interface CreateSignalFormProps {
   spaceId: number;
-  spaceSlug?: string;
-  useMembers?: UseMembers;
   successfulUrl: string;
   closeUrl?: string;
   backUrl?: string;
@@ -68,10 +62,6 @@ export interface CreateSignalFormProps {
   signalSlug?: string;
   signalRoomId?: string | null;
   initialValues?: Partial<FormValues>;
-}
-
-function matrixAttachmentKind(file: File): 'file' | 'image' {
-  return file.type.startsWith('image/') ? 'image' : 'file';
 }
 
 const SIGNAL_TEAM_EVENT_KIND = 'io.hypha.signal.team.v1';
@@ -158,8 +148,6 @@ function normalizeSignalDescriptionForChat(
 
 export const CreateSignalForm = ({
   spaceId,
-  spaceSlug,
-  useMembers,
   successfulUrl,
   closeUrl,
   backUrl,
@@ -327,16 +315,6 @@ export const CreateSignalForm = ({
     resolver: zodResolver(schemaCreateCoherenceForm),
     defaultValues: formDefaults,
   });
-  const [teamMemberMatrixIds, setTeamMemberMatrixIds] = React.useState<
-    string[]
-  >([]);
-  const [attachments, setAttachments] = React.useState<File[]>([]);
-  const showCreateExtras =
-    mode === 'create' && Boolean(spaceSlug?.trim() && useMembers);
-  const attachmentLabel = tAgreementFlow(
-    'createAgreementBaseFields.addAttachmentLabel',
-  );
-
   React.useEffect(() => {
     if (mode !== 'edit') return;
     form.reset(formDefaults);
@@ -526,8 +504,6 @@ export const CreateSignalForm = ({
 
   const handleResetForm = React.useCallback(() => {
     form.reset(formDefaults);
-    setTeamMemberMatrixIds([]);
-    setAttachments([]);
   }, [form, formDefaults]);
 
   const setSignalProvisioningNotice = React.useCallback(
@@ -649,8 +625,6 @@ export const CreateSignalForm = ({
         const coherence = await createCoherence({ ...data });
         setSignalProvisioningNotice(null);
         const coherenceSlug = coherence.slug;
-        const teamIdsToSeed = normalizeMatrixUserIds(teamMemberMatrixIds);
-        const attachmentFiles = [...attachments];
         if (!isMatrixAvailable) {
           setSignalProvisioningNotice(t('provisioning.chatUnavailable'));
           console.warn('Matrix client is unavailable — skipping room creation');
@@ -673,65 +647,6 @@ export const CreateSignalForm = ({
                   'Signal room created but failed to seed description message:',
                   messageSeedError,
                 );
-              }
-
-              if (teamIdsToSeed.length > 0) {
-                if (!matrixClient || !currentUserMatrixId) {
-                  setSignalProvisioningNotice(
-                    t('provisioning.teamSeedSkipped'),
-                  );
-                } else {
-                  try {
-                    await publishSignalTeamNotice({
-                      client: matrixClient,
-                      roomId: canonicalRoomId,
-                      coherenceSlug,
-                      memberMatrixUserIds: teamIdsToSeed,
-                      ownerMatrixUserId: currentUserMatrixId,
-                      actorMatrixUserId: currentUserMatrixId,
-                      addedMemberMatrixUserIds: teamIdsToSeed,
-                    });
-                  } catch (teamSeedError) {
-                    const teamSeedErrorMessage =
-                      teamSeedError instanceof Error
-                        ? teamSeedError.message
-                        : String(teamSeedError);
-                    setSignalProvisioningNotice(
-                      t('provisioning.teamSeedFailed'),
-                      teamSeedErrorMessage,
-                    );
-                    console.warn(
-                      'Signal room created but failed to seed signal team:',
-                      teamSeedError,
-                    );
-                  }
-                }
-              }
-
-              if (attachmentFiles.length > 0) {
-                try {
-                  await sendMessage({
-                    roomId: canonicalRoomId,
-                    message: '',
-                    attachments: attachmentFiles.map((file) => ({
-                      file,
-                      kind: matrixAttachmentKind(file),
-                    })),
-                  });
-                } catch (attachmentUploadError) {
-                  const attachmentUploadErrorMessage =
-                    attachmentUploadError instanceof Error
-                      ? attachmentUploadError.message
-                      : String(attachmentUploadError);
-                  setSignalProvisioningNotice(
-                    t('provisioning.attachmentsUploadFailed'),
-                    attachmentUploadErrorMessage,
-                  );
-                  console.warn(
-                    'Signal room created but failed to upload attachments:',
-                    attachmentUploadError,
-                  );
-                }
               }
             } catch (matrixError) {
               const matrixErrorMessage =
@@ -778,17 +693,12 @@ export const CreateSignalForm = ({
       }
     },
     [
-      attachments,
       authToken,
       createCoherence,
       createRoom,
-      currentUserMatrixId,
       isEditAuthorized,
       joinRoom,
       loadRoomHistory,
-      matrixClient,
-      sendMessage,
-      teamMemberMatrixIds,
       updateCoherenceBySlug,
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
@@ -1083,41 +993,6 @@ export const CreateSignalForm = ({
                 )}
               />
             </section>
-
-            {showCreateExtras ? (
-              <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
-                <div className="flex flex-col gap-3">
-                  <FormLabel className="text-foreground">
-                    {t('signalTeamManageTitle')}
-                  </FormLabel>
-                  <SignalTeamMemberPicker
-                    spaceSlug={spaceSlug!.trim()}
-                    useMembers={useMembers!}
-                    ownerMatrixUserId={currentUserMatrixId}
-                    selectedMemberIds={teamMemberMatrixIds}
-                    onSelectedMemberIdsChange={setTeamMemberMatrixIds}
-                    disabled={isMutating}
-                  />
-                </div>
-              </section>
-            ) : null}
-
-            {showCreateExtras ? (
-              <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
-                <FormItem>
-                  <FormLabel className="mb-2 block gap-1 text-foreground">
-                    {t('createSignalAttachmentsTitle')}
-                  </FormLabel>
-                  <FormControl>
-                    <AddAttachment
-                      label={attachmentLabel}
-                      value={attachments.length > 0 ? attachments : undefined}
-                      onChange={setAttachments}
-                    />
-                  </FormControl>
-                </FormItem>
-              </section>
-            ) : null}
 
             <div className="flex w-full justify-end gap-2">
               {form.formState.errors.root?.message ? (

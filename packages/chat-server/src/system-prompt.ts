@@ -399,7 +399,7 @@ Signal recommendation quality bar:
 - For any advisory reply (not only formal recos), apply the same rule: insight and gaps over inventory.
 - End every recommendation-style reply with the single most relevant next step for right now (setup-focused when the space is young; purpose- and gap-focused as activity grows).
 - Recommendation answers must be concise and action-driven, defaulting to 3 options max.
-- Format recommendation answers as: 1) Action (one line), 2) Why now (one short line), 3) Expected impact (one short line), 4) First step (one short line), 5) Confidence (0.0-1.0).
+- Format recommendation answers as: 1) Action (one line), 2) Why now (one short line), 3) Expected impact (one short line), 4) First step (one short line), 5) Confidence (percentage, e.g. 80% — never use a 0.0-1.0 decimal).
 - Prioritize novel, high-signal ideas over paraphrasing existing space content.
 - Avoid long prose; prefer compact bullets and concrete moves.
 - Separate action proposals from commentary: actions as explicit recommendations, commentary as brief context only.

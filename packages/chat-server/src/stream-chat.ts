@@ -565,7 +565,7 @@ async function buildDeterministicSpaceFallback({
           `- First step: draft "Improve ${String(
             suggestedTag,
           )} execution loop", set one 2-week KPI, assign one owner.`,
-          '- Confidence: 0.74',
+          '- Confidence: 74%',
           'I used deterministic signal-board data because the external model provider is currently unavailable.',
         ].join('\n');
 

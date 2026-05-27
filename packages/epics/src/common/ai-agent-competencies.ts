@@ -306,8 +306,7 @@ export function getAgentAvatarInitials(roleLabel: string): string {
     .map((word) => word.replace(/[^\p{L}\p{N}]/gu, ''))
     .filter(
       (word) =>
-        word.length > 0 &&
-        !AVATAR_INITIAL_STOP_WORDS.has(word.toLowerCase()),
+        word.length > 0 && !AVATAR_INITIAL_STOP_WORDS.has(word.toLowerCase()),
     );
 
   if (words.length === 0) return '?';
