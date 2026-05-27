@@ -10,8 +10,8 @@ export default async function MyWalletPage(props: PageProps) {
   const { lang } = await props.params;
 
   return (
-    <Container className="flex w-full flex-col gap-4 py-4">
-      <h1 className="text-7 font-semibold tracking-tight text-foreground">
+    <Container className="flex w-full min-w-0 flex-col gap-4 py-4 sm:gap-5 sm:py-5">
+      <h1 className="text-5 font-semibold tracking-tight text-foreground sm:text-7">
         My Wallet
       </h1>
       <MyWalletTabs lang={lang} />
