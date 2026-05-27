@@ -625,7 +625,7 @@
       "dialogDescription": "Detailed information and technical configurations.",
       "dataMinimizationNotice": "Deposit and verification details are loaded from our banking partner and are not saved on Hypha servers.",
       "noCustomer": "No bank customer record for this space yet.",
-      "approvedSummary": "Verification is approved. Manage accounts in the Bank Accounts section below.",
+      "approvedSummary": "Verification is approved. Manage your supported currencies in the section below.",
       "providerValidationsTitle": "Provider validations",
       "legalNameLabel": "Legal entity name",
       "contactEmailLabel": "Contact email",
@@ -810,7 +810,7 @@
     },
     "createTransfer": {
       "title": "New one-time transfer",
-      "description": "Create deposit instructions for a single incoming transfer. Funds convert to USDC in your treasury.",
+      "description": "Create deposit instructions for a single incoming transfer. Funds are converted to a stablecoin (USDC or EURC) in your treasury.",
       "corridorLabel": "Rail",
       "corridorHint": "Select how the payer will send funds. This determines the deposit instructions.",
       "fixedAmountLabel": "Require a fixed amount",

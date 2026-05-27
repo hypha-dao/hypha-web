@@ -2751,7 +2751,7 @@
       "dialogDescription": "Informations détaillées et configurations techniques.",
       "dataMinimizationNotice": "Les détails de dépôt et de vérification sont chargés depuis notre partenaire bancaire et ne sont pas enregistrés sur les serveurs Hypha.",
       "noCustomer": "Aucun enregistrement client bancaire pour ce space pour le moment.",
-      "approvedSummary": "La vérification est approuvée. Gérez les comptes dans la section Comptes bancaires ci-dessous.",
+      "approvedSummary": "La vérification est approuvée. Gérez vos devises prises en charge dans la section ci-dessous.",
       "providerValidationsTitle": "Validations du fournisseur",
       "legalNameLabel": "Nom légal de l'entité",
       "contactEmailLabel": "E-mail de contact",
@@ -2936,7 +2936,7 @@
     },
     "createTransfer": {
       "title": "Nouveau virement ponctuel",
-      "description": "Créez des instructions de dépôt pour un seul virement entrant. Les fonds seront convertis en USDC dans votre trésorerie.",
+      "description": "Créez des instructions de dépôt pour un seul virement entrant. Les fonds sont convertis en stablecoin (USDC ou EURC) dans votre trésorerie.",
       "corridorLabel": "Corridor",
       "corridorHint": "Sélectionnez comment le payeur enverra les fonds. Cela détermine les instructions de dépôt.",
       "fixedAmountLabel": "Exiger un montant fixe",

@@ -701,7 +701,7 @@
       "dialogDescription": "Detaillierte Informationen und technische Konfigurationen.",
       "dataMinimizationNotice": "Einzahlungs- und Verifizierungsdetails werden von unserem Banking-Partner geladen und nicht auf Hypha-Servern gespeichert.",
       "noCustomer": "Für diesen Space existiert noch kein Bankkunden-Datensatz.",
-      "approvedSummary": "Die Verifizierung ist genehmigt. Verwalten Sie Konten im Abschnitt Bankkonten unten.",
+      "approvedSummary": "Die Verifizierung ist genehmigt. Verwalten Sie Ihre unterstützten Währungen im Abschnitt unten.",
       "providerValidationsTitle": "Anbieterprüfungen",
       "legalNameLabel": "Rechtlicher Name der Organisation",
       "contactEmailLabel": "Kontakt-E-Mail",
@@ -871,7 +871,7 @@
     },
     "createTransfer": {
       "title": "Neue einmalige Überweisung",
-      "description": "Erstellen Sie Einzahlungsanweisungen für eine einzelne eingehende Überweisung. Die Mittel werden in USDC in Ihrer Treasury umgewandelt.",
+      "description": "Erstellen Sie Einzahlungsanweisungen für eine einzelne eingehende Überweisung. Die Mittel werden in einen Stablecoin (USDC oder EURC) in Ihrer Treasury umgewandelt.",
       "corridorLabel": "Korridor",
       "corridorHint": "Wählen Sie, wie der Zahler Mittel sendet. Dies bestimmt die Einzahlungsanweisungen.",
       "fixedAmountLabel": "Festen Betrag verlangen",

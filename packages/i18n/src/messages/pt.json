@@ -2753,7 +2753,7 @@
       "dialogDescription": "Informações detalhadas e configurações técnicas.",
       "dataMinimizationNotice": "Detalhes de depósito e verificação são carregados do nosso parceiro bancário e não são salvos nos servidores da Hypha.",
       "noCustomer": "Ainda não há registro de cliente bancário para este space.",
-      "approvedSummary": "A verificação foi aprovada. Gerencie contas na seção Contas bancárias abaixo.",
+      "approvedSummary": "A verificação foi aprovada. Gerencie suas moedas suportadas na seção abaixo.",
       "providerValidationsTitle": "Validações do provedor",
       "legalNameLabel": "Nome legal da entidade",
       "contactEmailLabel": "E-mail de contato",
@@ -2938,7 +2938,7 @@
     },
     "createTransfer": {
       "title": "Nova transferência única",
-      "description": "Crie instruções de depósito para uma única transferência recebida. Os fundos serão convertidos em USDC na sua tesouraria.",
+      "description": "Crie instruções de depósito para uma única transferência recebida. Os fundos são convertidos em uma stablecoin (USDC ou EURC) na sua tesouraria.",
       "corridorLabel": "Corredor",
       "corridorHint": "Selecione como o pagador enviará os fundos. Isso determina as instruções de depósito.",
       "fixedAmountLabel": "Exigir valor fixo",
