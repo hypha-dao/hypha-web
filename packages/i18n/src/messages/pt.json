@@ -2007,8 +2007,6 @@
     "toolError": "Erro: {message}",
     "streamError": "Ocorreu um erro ao gerar a resposta.",
     "assistantExpiredSubtitle": "A sua contribuição para a rede Hypha expirou há {expiredElapsed}. Reative o seu espaço antes de usar a Hypha AI.",
-    "assistantTrialNotStartedTitle": "Teste gratuito ainda não iniciado",
-    "assistantTrialNotStartedSubtitle": "Envie a sua primeira proposta para iniciar o teste gratuito da rede Hypha para este espaço. A Hypha AI permanece disponível enquanto começa.",
     "attachment": "Anexo",
     "pendingAction": "Ação pendente",
     "confirmWith": "Confirmar com:",

@@ -2015,8 +2015,6 @@
     "showLess": "Show less",
     "streamError": "An error occurred while generating the response.",
     "assistantExpiredSubtitle": "Your Hypha Network contribution expired {expiredElapsed}. Please reactivate your space before using Hypha AI.",
-    "assistantTrialNotStartedTitle": "Free trial not started yet",
-    "assistantTrialNotStartedSubtitle": "Submit your first proposal to start the Hypha Network free trial for this space. Hypha AI stays available while you get started.",
     "attachment": "Attachment"
   },
   "HumanChatPanel": {

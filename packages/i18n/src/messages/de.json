@@ -2007,8 +2007,6 @@
     "toolError": "Fehler: {message}",
     "streamError": "Beim Generieren der Antwort ist ein Fehler aufgetreten.",
     "assistantExpiredSubtitle": "Ihr Hypha-Netzwerk-Beitrag ist vor {expiredElapsed} abgelaufen. Bitte reaktivieren Sie Ihren Space, bevor Sie Hypha AI nutzen.",
-    "assistantTrialNotStartedTitle": "Kostenlose Testphase noch nicht gestartet",
-    "assistantTrialNotStartedSubtitle": "Reichen Sie Ihren ersten Vorschlag ein, um die kostenlose Hypha-Netzwerk-Testphase für diesen Space zu starten. Hypha AI bleibt verfügbar, während Sie beginnen.",
     "attachment": "Anhang",
     "pendingAction": "Ausstehende Aktion",
     "confirmWith": "Bestätigen mit:",

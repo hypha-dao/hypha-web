@@ -1565,7 +1565,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         />
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
-        {spaceSlug ? (
+        {spaceSlug && blockSpaceAiForSubscription ? (
           <div className="mx-3 mt-3 shrink-0">
             <AiPanelSubscriptionBanner spaceSlug={spaceSlug} />
           </div>

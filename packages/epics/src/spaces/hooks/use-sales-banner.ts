@@ -81,7 +81,5 @@ export const useSalesBanner = ({ spaceId }: UseSalesBannerProps) => {
     setDismissedUntil(Date.now() + 24 * 60 * 60 * 1000);
   };
 
-  const trialNotStarted = Boolean(payments) && !freeTrialUsed;
-
-  return { status, daysLeft, onClose, isLoading, trialNotStarted };
+  return { status, daysLeft, onClose, isLoading };
 };
