@@ -40,12 +40,20 @@ export function normalizeSignalDescriptionForChat(
 
   // Rich text serialization may persist trailing spaces as HTML entities
   // (e.g. "&#x20;"), which Matrix then renders as literal text.
-  const decodeHtmlEntities = (value: string): string => {
-    if (typeof document === 'undefined') return value;
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = value;
-    return textarea.value;
-  };
+  const decodeHtmlEntities = (value: string): string =>
+    value
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+        String.fromCodePoint(Number.parseInt(hex, 16)),
+      )
+      .replace(/&#(\d+);/g, (_, dec) =>
+        String.fromCodePoint(Number.parseInt(dec, 10)),
+      )
+      .replace(/&nbsp;/gi, '\u00A0')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/g, "'");
 
   const decoded = decodeHtmlEntities(raw)
     .replace(/\u00A0/g, ' ')
