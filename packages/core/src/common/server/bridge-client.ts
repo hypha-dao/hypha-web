@@ -274,6 +274,9 @@ function getBridgeConfig() {
   return { apiKey, baseUrl };
 }
 
+/** Abort Bridge calls that hang so they fail fast instead of holding the serverless function to the platform timeout. */
+const BRIDGE_REQUEST_TIMEOUT_MS = 30_000;
+
 async function bridgeRequest(
   path: string,
   options: {
@@ -294,11 +297,32 @@ async function bridgeRequest(
     headers['Idempotency-Key'] = options.idempotencyKey;
   }
 
-  const response = await fetch(url, {
-    method: options.method,
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    BRIDGE_REQUEST_TIMEOUT_MS,
+  );
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: options.method,
+      headers,
+      body:
+        options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      const timeoutError = new Error(
+        `Bridge API request timed out after ${BRIDGE_REQUEST_TIMEOUT_MS}ms`,
+      ) as Error & { status: number };
+      timeoutError.status = 504;
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const text = await response.text();
   let parsed: unknown;

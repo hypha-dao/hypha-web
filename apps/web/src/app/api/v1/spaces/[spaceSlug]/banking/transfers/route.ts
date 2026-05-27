@@ -109,6 +109,7 @@ export async function POST(
         currency: parsed.data.currency,
         amount: parsed.data.amount,
         destinationCurrency: parsed.data.destinationCurrency,
+        idempotencyKey: parsed.data.idempotencyKey,
       },
       { db },
     );

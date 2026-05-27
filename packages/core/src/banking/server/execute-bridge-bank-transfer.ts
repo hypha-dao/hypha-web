@@ -49,6 +49,8 @@ export type ExecuteBridgeBankTransferInput = {
   paymentRail: string;
   destinationCurrency?: string;
   amount?: string;
+  /** Client-supplied idempotency key; falls back to a random UUID. */
+  idempotencyKey?: string;
 };
 
 export type ExecuteBridgeBankTransferResult = {
@@ -144,7 +146,7 @@ export async function executeBridgeBankTransfer(
       destinationAddress: treasuryAddress,
       destinationCurrency,
       amount,
-      idempotencyKey: randomUUID(),
+      idempotencyKey: input.idempotencyKey ?? randomUUID(),
     });
 
     return {

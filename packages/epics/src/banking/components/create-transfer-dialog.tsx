@@ -51,6 +51,7 @@ type CreateTransferDialogProps = {
     corridorKey: BankTransferCorridorKey;
     amount?: string;
     destinationCurrency?: string;
+    idempotencyKey?: string;
   }) => Promise<void>;
 };
 
@@ -97,6 +98,14 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
   const [destinationCurrency, setDestinationCurrency] = useState('usdc');
   const [useFixedAmount, setUseFixedAmount] = useState(true);
   const [amount, setAmount] = useState('');
+
+  // One key per (open session + transfer parameters): a retry of the same
+  // transfer reuses it so Bridge dedupes; changing any input mints a new key.
+  const idempotencyKey = useMemo(
+    () => crypto.randomUUID(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [open, selectedId, destinationCurrency, useFixedAmount, amount],
+  );
 
   const sanitizeAmountInput = (raw: string) => {
     const cleaned = raw.replace(/[^\d.]/g, '');
@@ -150,6 +159,7 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
       corridorKey: selectedOption.railKey as BankTransferCorridorKey,
       amount: useFixedAmount && amount.trim() ? amount.trim() : undefined,
       destinationCurrency,
+      idempotencyKey,
     });
   };
 

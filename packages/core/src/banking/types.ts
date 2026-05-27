@@ -117,6 +117,8 @@ export type RequestSpaceBankTransferInput = {
   amount?: string;
   destinationCurrency?: string;
   redirectUri?: string;
+  /** Client-supplied idempotency key; falls back to a random UUID server-side. */
+  idempotencyKey?: string;
 };
 
 export type CreateSpaceBankVirtualAccountInput = {

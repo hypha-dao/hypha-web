@@ -101,7 +101,15 @@ export async function createSpaceBankTransfer(
   }
 
   const bridgeResult = await executeBridgeBankTransfer(
-    { customer, space, currency, paymentRail, destinationCurrency, amount },
+    {
+      customer,
+      space,
+      currency,
+      paymentRail,
+      destinationCurrency,
+      amount,
+      idempotencyKey: input.idempotencyKey,
+    },
     { db },
   );
 

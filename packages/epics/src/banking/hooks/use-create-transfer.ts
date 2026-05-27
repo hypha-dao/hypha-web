@@ -19,6 +19,7 @@ type UseCreateTransferReturn = {
     destinationCurrency?: string;
     legalName?: string;
     contactEmail?: string;
+    idempotencyKey?: string;
   }) => Promise<BankTransferPublic>;
   isCreating: boolean;
   error: string | null;
@@ -40,6 +41,7 @@ export const useCreateTransfer = ({
       destinationCurrency?: string;
       legalName?: string;
       contactEmail?: string;
+      idempotencyKey?: string;
     }): Promise<BankTransferPublic> => {
       setIsCreating(true);
       setError(null);

@@ -77,6 +77,8 @@ export const schemaCreateBankTransfer = z
       .min(1)
       .regex(/^\d+(\.\d+)?$/, 'amount must be a positive decimal string')
       .optional(),
+    /** Client-supplied per-action key so retries dedupe at Bridge (24h window). */
+    idempotencyKey: z.string().uuid().optional(),
     ...optionalOnboardingFields,
   })
   .strict()
