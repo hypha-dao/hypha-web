@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 
-import { isBridgeSandboxApi } from '../../common/server/bridge-sandbox';
 import type { DatabaseInstance } from '../../common/server/types';
 import type { BankCustomer } from '@hypha-platform/storage-postgres';
 import type { Space } from '../../space/types';
@@ -9,9 +8,7 @@ import {
   isAllowedBridgeDestinationCurrency,
 } from '../bridge-destination-currencies';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
-import { simulateBridgeKybData } from './simulate-bridge-kyb-data';
 import { BankOnboardingError } from './errors';
-import { mapBridgeApiError } from './map-bridge-api-error';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import { enrichBridgeDepositInstructions } from './enrich-bridge-deposit-instructions';
@@ -119,20 +116,6 @@ export async function executeBridgeBankTransfer(
       'Bridge customer is not ready yet. Try again after KYB approval completes.',
       422,
     );
-  }
-
-  if (isBridgeSandboxApi()) {
-    try {
-      await simulateBridgeKybData(customerId, {
-        businessLegalName: space.title?.trim() || 'Hypha Space',
-      });
-    } catch (error) {
-      const mapped = mapBridgeApiError(error, 'PUT /customers/{id}');
-      if (mapped) {
-        throw mapped;
-      }
-      throw error;
-    }
   }
 
   const kycProvider =

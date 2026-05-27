@@ -12,7 +12,7 @@ export const BANK_KYC_STATUSES = [
 
 export type BankKycStatus = (typeof BANK_KYC_STATUSES)[number];
 
-export type BankProvider = 'bridge';
+export type { BankProvider } from '@hypha-platform/core/client';
 
 export type BankValidationAction = {
   type: 'link';

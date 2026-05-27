@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 
+import { DEFAULT_BANK_PROVIDER } from '@hypha-platform/core/client';
 import type { BankProvider, ProviderFormData } from '../../hooks/types';
 
 export type ProviderOnboardingFormProps = {
@@ -16,5 +17,4 @@ export type ProviderFormRegistry = Record<
   ProviderOnboardingFormComponent
 >;
 
-/** Must match `DEFAULT_BANK_PROVIDER` in `@hypha-platform/core` banking constants. */
-export const DEFAULT_BANK_PROVIDER: BankProvider = 'bridge';
+export { DEFAULT_BANK_PROVIDER };
