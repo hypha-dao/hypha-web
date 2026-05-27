@@ -131,7 +131,12 @@ export function mapBridgeTransferToPublic(
   const enriched = enrichBridgeDepositInstructions(
     response.source_deposit_instructions,
     {
-      developerFeePercent: response.developer_fee_percent ?? null,
+      // Fixed-amount transfers report `developer_fee` (an amount, always "0.0"
+      // for Hypha); flexible transfers report `developer_fee_percent`. Surface
+      // whichever is present so the fee shows (e.g. "0.0%") instead of
+      // "Not specified by provider".
+      developerFeePercent:
+        response.developer_fee_percent ?? response.developer_fee ?? null,
       destination: response.destination
         ? {
             currency: response.destination.currency ?? 'usdc',

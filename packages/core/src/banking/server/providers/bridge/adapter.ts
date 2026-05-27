@@ -187,6 +187,8 @@ export function createBridgeKycProvider(): BankKycProvider {
         developerFeePercent:
           typeof response.developer_fee_percent === 'string'
             ? response.developer_fee_percent
+            : typeof response.developer_fee === 'string'
+            ? response.developer_fee
             : null,
         destination: {
           currency: response.destination?.currency ?? 'usdc',
