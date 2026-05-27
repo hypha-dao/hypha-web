@@ -8,7 +8,10 @@ import {
   getBankCurrencyMeta,
   type BankCurrencyCode,
 } from '../bank-currency-display';
-import { getCardDepositCopyBlock } from '../deposit-instruction-display';
+import {
+  getCardDepositCopyBlock,
+  getDepositDestinationCurrencyCode,
+} from '../deposit-instruction-display';
 import type { BankVirtualAccountPublic } from '../hooks/types';
 import { InlineCopyRow } from './inline-copy-row';
 import { CurrencyFlagBadge } from './currency-flag-badge';
@@ -44,6 +47,12 @@ export const BankAccountCard: FC<BankAccountCardProps> = ({
   const tCurrencies = useTranslations('BankingTab.currencies');
   const currency = accountToCurrency(account);
   const meta = getBankCurrencyMeta(currency);
+  const sourceLabel = meta
+    ? tCurrencies(`${meta.nameKey}.code`)
+    : account.currency.toUpperCase();
+  const destinationCode = getDepositDestinationCurrencyCode(
+    account.depositInstructions,
+  );
 
   const cardCopyBlock = getCardDepositCopyBlock(
     account.paymentRail,
@@ -68,9 +77,7 @@ export const BankAccountCard: FC<BankAccountCardProps> = ({
         <CurrencyFlagBadge currency={currency} />
         <div className="min-w-0 flex-1">
           <p className="text-3 font-semibold text-foreground">
-            {meta
-              ? tCurrencies(`${meta.nameKey}.code`)
-              : account.currency.toUpperCase()}
+            {`${sourceLabel} → ${destinationCode}`}
           </p>
           <p className="mt-0.5 text-2 text-muted-foreground">
             {meta

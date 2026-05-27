@@ -13,6 +13,7 @@ import {
 import {
   formatCompletedTransferReferenceText,
   getCompletedTransferReferenceRows,
+  getDepositDestinationCurrencyCode,
   getDepositMessage,
   getTransferCardDepositCopyBlock,
 } from '../deposit-instruction-display';
@@ -95,6 +96,9 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
     : meta
     ? meta.currency.toUpperCase()
     : transfer.currency.toUpperCase();
+  const destinationCode = getDepositDestinationCurrencyCode(
+    transfer.depositInstructions,
+  );
 
   const amountLabel = transfer.amount
     ? `${transfer.amount} ${transfer.currency.toUpperCase()}`
@@ -159,7 +163,7 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
                 : 'text-foreground',
             )}
           >
-            {corridorLabel}
+            {`${corridorLabel} → ${destinationCode}`}
           </p>
           <p className="mt-0.5 text-2 text-muted-foreground">{amountLabel}</p>
         </div>

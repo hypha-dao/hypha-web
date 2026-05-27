@@ -20,6 +20,19 @@ export function combineInstructionLines(
   return lines.length > 0 ? lines.join('\n') : null;
 }
 
+/**
+ * Destination stablecoin code (e.g. "USDC" / "EURC") for card titles, read from
+ * the enriched deposit instructions (`destination_currency`). Falls back to USDC
+ * — the platform default when Bridge doesn't echo a destination currency.
+ */
+export function getDepositDestinationCurrencyCode(
+  instructions: Record<string, unknown>,
+): string {
+  return (
+    readInstructionString(instructions, ['destination_currency']) ?? 'usdc'
+  ).toUpperCase();
+}
+
 export type DepositIdentifierLabelKey =
   | 'iban'
   | 'routingNumber'
