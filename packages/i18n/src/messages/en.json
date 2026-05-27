@@ -631,9 +631,9 @@
       "kybProcedure": "Business verification (KYB)",
       "approvedOnBridgePendingRecord": "Bridge shows verification as approved. Activate a pending request below to record approval and finish setup.",
       "currencyValidationsTitle": "Currency validations",
-      "currencyStatusesTitle": "Currency corridors",
+      "currencyStatusesTitle": "Currency rails",
       "currencyStatusesDescription": "Per-currency endorsement status from Bridge and account setup progress.",
-      "currencyStatusesDescriptionAdd": "Add support for a currency corridor. Bridge may require additional verification for some regions.",
+      "currencyStatusesDescriptionAdd": "Add support for a currency rail. Bridge may require additional verification for some regions.",
       "addCurrencySupport": "Open {currency} account",
       "currencyStatus": {
         "active": "Active",
@@ -808,7 +808,7 @@
     "createTransfer": {
       "title": "New one-time transfer",
       "description": "Create deposit instructions for a single incoming transfer. Funds convert to USDC in your treasury.",
-      "corridorLabel": "Corridor",
+      "corridorLabel": "Rail",
       "corridorHint": "Select how the payer will send funds. This determines the deposit instructions.",
       "fixedAmountLabel": "Require a fixed amount",
       "amountPlaceholder": "e.g. 1000.00",
@@ -816,8 +816,8 @@
       "cancel": "Cancel",
       "submit": "Create transfer",
       "submitting": "Creating…",
-      "loadingOptions": "Loading corridors…",
-      "noCorridorsAvailable": "No transfer corridors are available for this space."
+      "loadingOptions": "Loading rails…",
+      "noCorridorsAvailable": "No transfer rails are available for this space."
     },
     "transferStatus": {
       "awaiting_funds": "Awaiting payment",
@@ -879,8 +879,8 @@
       "description": "We use this information to verify your organization. Once approved, your space will be set up to receive bank transfers.",
       "legalName": "Legal entity name",
       "contactEmail": "Contact email",
-      "endorsementsLabel": "Payment corridors",
-      "endorsementsHint": "These are Bridge KYB endorsements (e.g. base for USD, sepa for EUR). Each selected corridor is included in the verification link.",
+      "endorsementsLabel": "Payment rails",
+      "endorsementsHint": "These are Bridge KYB endorsements (e.g. base for USD, sepa for EUR). Each selected rail is included in the verification link.",
       "submit": "Start verification",
       "submitting": "Starting…"
     },

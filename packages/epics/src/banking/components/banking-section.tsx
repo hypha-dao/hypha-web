@@ -28,7 +28,7 @@ import {
 import type { BankCurrencyCode } from '../bank-currency-display';
 import { BankAccountsSection } from './bank-accounts-section';
 import { BankTransfersSection } from './bank-transfers-section';
-import { BankingToolbar } from './banking-toolbar';
+import { BankingAdvancedDialog } from './banking-advanced-dialog';
 import { AddBankCurrencyDialog } from './add-bank-currency-dialog';
 import { CreateTransferDialog } from './create-transfer-dialog';
 import { BankingInitialSetup } from './banking-initial-setup';
@@ -267,23 +267,24 @@ export const BankingSection: FC<BankingSectionProps> = ({
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <BankingToolbar
-        spaceSlug={spaceSlug}
-        status={status}
-        isLoading={false}
-        isRefreshing={false}
-        canManage={canManage}
-        blockerMessage={blockerMessage}
-        gearOpen={gearOpen}
-        onGearOpenChange={handleGearOpenChange}
-        onRefreshStatus={refreshBankingState}
-      />
-
       <BankAccountsSection
         isAuthenticated={isAuthenticated}
         canManage={canManage}
         openSpaceAccountDisabled={openSpaceAccountDisabled}
         openSpaceAccountDisabledReason={openSpaceAccountDisabledReason}
+        gearSlot={
+          <BankingAdvancedDialog
+            spaceSlug={spaceSlug}
+            status={status}
+            isLoading={false}
+            isRefreshing={false}
+            canManage={canManage}
+            blockerMessage={blockerMessage}
+            open={gearOpen}
+            onOpenChange={handleGearOpenChange}
+            onRefreshStatus={refreshBankingState}
+          />
+        }
         onOpenSpaceAccount={() => {
           clearCreateAccountError();
           setAddCurrencyDialogOpen(true);

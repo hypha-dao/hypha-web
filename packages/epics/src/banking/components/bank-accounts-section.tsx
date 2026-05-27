@@ -1,6 +1,6 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@hypha-platform/ui';
 
@@ -20,6 +20,8 @@ type BankAccountsSectionProps = {
   onOpenSpaceAccount: () => void;
   openSpaceAccountDisabled?: boolean;
   openSpaceAccountDisabledReason?: OpenSpaceAccountDisabledReason;
+  /** Advanced (gear) control, rendered to the right of the primary button. */
+  gearSlot?: ReactNode;
   /** Parent shows page skeleton while lists load. */
   hideListLoadingState?: boolean;
 };
@@ -31,6 +33,7 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
   onOpenSpaceAccount,
   openSpaceAccountDisabled = false,
   openSpaceAccountDisabledReason = null,
+  gearSlot,
   hideListLoadingState = false,
 }) => {
   const t = useTranslations('BankingTab.sections.accounts');
@@ -51,7 +54,7 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
     <Button
       type="button"
       colorVariant="accent"
-      size="sm"
+      variant="outline"
       className="shrink-0"
       disabled={buttonDisabled}
       onClick={onOpenSpaceAccount}
@@ -71,15 +74,18 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
             {t('description')}
           </p>
         </div>
-        {showOpenButton ? (
-          tooltipText && buttonDisabled ? (
-            <span className="inline-flex shrink-0" title={tooltipText}>
-              {openButton}
-            </span>
-          ) : (
-            openButton
-          )
-        ) : null}
+        <div className="flex shrink-0 items-center gap-2">
+          {showOpenButton ? (
+            tooltipText && buttonDisabled ? (
+              <span className="inline-flex" title={tooltipText}>
+                {openButton}
+              </span>
+            ) : (
+              openButton
+            )
+          ) : null}
+          {gearSlot}
+        </div>
       </div>
 
       {!isAuthenticated ? (
