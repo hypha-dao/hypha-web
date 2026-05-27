@@ -140,11 +140,10 @@ export async function getSpacePaymentEligibility(
   const daysLeft = Number.isFinite(expiryMs)
     ? Math.ceil((expiryMs - Date.now()) / (1000 * 60 * 60 * 24))
     : 0;
-  const paidOrTrialActive =
-    daysLeft > 0 && (Boolean(hasSpacePaid) || Boolean(freeTrialUsed));
+  const eligible = !freeTrialUsed || daysLeft > 0;
 
   return {
-    eligible: paidOrTrialActive,
+    eligible,
     hasSpacePaid: Boolean(hasSpacePaid),
     daysLeft,
   };

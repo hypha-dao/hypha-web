@@ -74,7 +74,7 @@ import { useSpaceDiscoverability } from '../spaces/hooks/use-space-discoverabili
 import { checkAccess } from '../spaces/utils/transparency-access';
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 import { AiPanelSubscriptionBanner } from '../spaces/components/ai-panel-subscription-banner';
-import { useSpaceAiAccess } from '../spaces/hooks/use-space-ai-access';
+import { useSalesBanner } from '../spaces/hooks/use-sales-banner';
 import {
   MAX_RECENT_SPACE_HISTORY,
   MAX_VISIBLE_RECENT_SPACES,
@@ -199,15 +199,17 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     !isUserSpaceStateLoading &&
     !isDiscoverabilityLoading &&
     !hasSpaceActivityAccess;
-  const { canUseAi: canUseSpaceAi, isLoading: isSpaceAiAccessLoading } =
-    useSpaceAiAccess({
-      spaceId: effectiveSpaceWeb3Id,
-    });
+  const {
+    status: spacePaymentStatus,
+    isLoading: isSpacePaymentStatusLoading,
+  } = useSalesBanner({
+    spaceId: effectiveSpaceWeb3Id,
+  });
   const blockSpaceAiForSubscription =
     Boolean(spaceSlug) &&
     Boolean(effectiveSpaceWeb3Id) &&
-    !isSpaceAiAccessLoading &&
-    !canUseSpaceAi;
+    !isSpacePaymentStatusLoading &&
+    spacePaymentStatus === 'expired';
   const {
     open: isAiOpen,
     overlayVisible,
@@ -1565,7 +1567,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         />
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
-        {spaceSlug && blockSpaceAiForSubscription ? (
+        {spaceSlug ? (
           <div className="mx-3 mt-3 shrink-0">
             <AiPanelSubscriptionBanner spaceSlug={spaceSlug} />
           </div>

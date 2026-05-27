@@ -7,10 +7,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 
-import { useSpaceAiAccess } from '../hooks/use-space-ai-access';
+import { useSalesBanner } from '../hooks/use-sales-banner';
 import { cleanPath } from '../utils/cleanPath';
 
 const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
+const PATH_SELECT_CREATE_ACTION = '/select-create-action';
 
 interface AiPanelSubscriptionBannerProps {
   spaceSlug: string;
@@ -23,59 +24,84 @@ export function AiPanelSubscriptionBanner({
 }: AiPanelSubscriptionBannerProps) {
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
   const {
-    isExpired,
-    needsActivation,
+    status,
     daysLeft,
-    isLoading: isAccessLoading,
-  } = useSpaceAiAccess({
+    trialNotStarted,
+    isLoading: isStatusLoading,
+  } = useSalesBanner({
     spaceId: space?.web3SpaceId ?? undefined,
   });
   const tSpaces = useTranslations('Spaces');
   const tAi = useTranslations('AiPanel');
+  const tModalAside = useTranslations('ModalAside');
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleAction = React.useCallback(() => {
-    const path = `${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`;
-    router.push(path);
+  const handleExpiredAction = React.useCallback(() => {
+    router.push(`${cleanPath(pathname)}${PATH_SELECT_ACTIVATE_ACTION}`);
   }, [router, pathname]);
 
-  if (isSpaceLoading || !space || isAccessLoading) {
+  const handleCreateProposal = React.useCallback(() => {
+    router.push(`${cleanPath(pathname)}${PATH_SELECT_CREATE_ACTION}`);
+  }, [router, pathname]);
+
+  if (isSpaceLoading || !space || isStatusLoading) {
     return null;
   }
 
-  if (!isExpired && !needsActivation) {
-    return null;
-  }
+  if (status === 'expired') {
+    const absDays = Math.abs(daysLeft);
+    const expiredElapsed =
+      daysLeft === 0
+        ? tSpaces('expiredToday')
+        : absDays === 1
+        ? tSpaces('expiredDayAgo')
+        : tSpaces('expiredDaysAgo', { count: absDays });
 
-  const absDays = Math.abs(daysLeft);
-  const expiredElapsed =
-    daysLeft === 0
-      ? tSpaces('expiredToday')
-      : absDays === 1
-      ? tSpaces('expiredDayAgo')
-      : tSpaces('expiredDaysAgo', { count: absDays });
-
-  const subtitle = isExpired
-    ? tAi('assistantExpiredSubtitle', { expiredElapsed })
-    : tAi('assistantActivationSubtitle');
-
-  return (
-    <div
-      className={cn(
-        'border-1 rounded-[8px] bg-center border-accent-6 bg-[color-mix(in_oklab,var(--color-accent-surface)_90%,var(--color-accent-9)_10%)]',
-        className,
-      )}
-    >
-      <div className="flex flex-col gap-4 p-5">
-        <span className="text-2 font-bold text-foreground">
-          {tAi('assistantDisabledTitle')}
-        </span>
-        <span className="text-2 text-foreground">{subtitle}</span>
-        <Button onClick={handleAction} className="w-fit">
-          {tSpaces('reactivateNow')}
-        </Button>
+    return (
+      <div
+        className={cn(
+          'border-1 rounded-[8px] bg-center border-accent-6 bg-[color-mix(in_oklab,var(--color-accent-surface)_90%,var(--color-accent-9)_10%)]',
+          className,
+        )}
+      >
+        <div className="flex flex-col gap-4 p-5">
+          <span className="text-2 font-bold text-foreground">
+            {tSpaces('proposalCreationDisabled')}
+          </span>
+          <span className="text-2 text-foreground">
+            {tAi('assistantExpiredSubtitle', { expiredElapsed })}
+          </span>
+          <Button onClick={handleExpiredAction} className="w-fit">
+            {tSpaces('reactivateNow')}
+          </Button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (trialNotStarted) {
+    return (
+      <div
+        className={cn(
+          'border-1 rounded-[8px] bg-center border-accent-6 bg-[color-mix(in_oklab,var(--color-accent-surface)_90%,var(--color-accent-9)_10%)]',
+          className,
+        )}
+      >
+        <div className="flex flex-col gap-4 p-5">
+          <span className="text-2 font-bold text-foreground">
+            {tAi('assistantTrialNotStartedTitle')}
+          </span>
+          <span className="text-2 text-foreground">
+            {tAi('assistantTrialNotStartedSubtitle')}
+          </span>
+          <Button onClick={handleCreateProposal} className="w-fit">
+            {tModalAside('createProposal')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
