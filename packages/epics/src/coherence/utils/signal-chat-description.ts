@@ -40,22 +40,25 @@ export function normalizeSignalDescriptionForChat(
 
   // Rich text serialization may persist trailing spaces as HTML entities
   // (e.g. "&#x20;"), which Matrix then renders as literal text.
-  const decodeHtmlEntities = (value: string): string =>
-    value
-      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
-        String.fromCodePoint(Number.parseInt(hex, 16)),
-      )
-      .replace(/&#(\d+);/g, (_, dec) =>
-        String.fromCodePoint(Number.parseInt(dec, 10)),
-      )
-      .replace(/&nbsp;/gi, '\u00A0')
-      .replace(/&amp;/gi, '&')
-      .replace(/&lt;/gi, '<')
-      .replace(/&gt;/gi, '>')
-      .replace(/&quot;/gi, '"')
-      .replace(/&#39;/g, "'");
+  const decodeRichTextSpaceEntities = (value: string): string => {
+    const fromCodePoint = (code: number, fallback: string): string => {
+      if (!Number.isFinite(code) || code < 0 || code > 0x10ffff) {
+        return fallback;
+      }
+      return String.fromCodePoint(code);
+    };
 
-  const decoded = decodeHtmlEntities(raw)
+    return value
+      .replace(/&#x([0-9a-fA-F]+);/g, (match, hex) =>
+        fromCodePoint(Number.parseInt(hex, 16), match),
+      )
+      .replace(/&#(\d+);/g, (match, dec) =>
+        fromCodePoint(Number.parseInt(dec, 10), match),
+      )
+      .replace(/&nbsp;/gi, '\u00A0');
+  };
+
+  const decoded = decodeRichTextSpaceEntities(raw)
     .replace(/\u00A0/g, ' ')
     .trim();
   return decoded.length > 0 ? decoded : null;
