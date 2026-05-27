@@ -278,27 +278,27 @@ function storageKey(spaceSlug: string): string {
 export function tagGroupAccentClass(tagGroup: string): string {
   switch (tagGroup) {
     case 'purpose':
-      return 'bg-accent-3 text-accent-12 border-accent-6';
+      return 'border-2 border-accent-8 bg-accent-3/30 text-accent-11';
     case 'governance':
-      return 'bg-info-3 text-info-12 border-info-6';
+      return 'border-2 border-info-8 bg-info-3/30 text-info-11';
     case 'operations':
-      return 'bg-success-3 text-success-12 border-success-6';
+      return 'border-2 border-success-8 bg-success-3/30 text-success-11';
     case 'community':
-      return 'bg-neutral-3 text-neutral-12 border-neutral-6';
+      return 'border-2 border-neutral-7 bg-neutral-3/30 text-neutral-11';
     case 'finance':
-      return 'bg-warning-3 text-warning-12 border-warning-6';
+      return 'border-2 border-warning-8 bg-warning-3/30 text-warning-11';
     case 'product':
-      return 'bg-accent-2 text-accent-11 border-accent-6';
+      return 'border-2 border-accent-8 bg-accent-3/30 text-accent-11';
     case 'risk':
-      return 'bg-error-3 text-error-12 border-error-6';
+      return 'border-2 border-error-8 bg-error-3/30 text-error-11';
     case 'ecosystem':
-      return 'bg-info-2 text-info-11 border-info-6';
+      return 'border-2 border-info-8 bg-info-3/30 text-info-11';
     case 'learning':
-      return 'bg-success-2 text-success-11 border-success-6';
+      return 'border-2 border-success-8 bg-success-3/30 text-success-11';
     case 'reputation':
-      return 'bg-warning-2 text-warning-11 border-warning-6';
+      return 'border-2 border-warning-8 bg-warning-3/30 text-warning-11';
     default:
-      return 'bg-muted text-foreground border-border';
+      return 'border-2 border-neutral-7 bg-neutral-3/30 text-neutral-11';
   }
 }
 

@@ -142,6 +142,7 @@ export function CoherenceBlock({
         signal.roomId ?? null,
         signal.title ?? '',
         signal.slug ?? '',
+        signal.description ?? null,
       );
     },
     [openCoherenceChat],
