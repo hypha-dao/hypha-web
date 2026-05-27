@@ -34,7 +34,6 @@ export function AiPanelMessages({
   suggestionItems,
   showInlineSuggestions = false,
   onSuggestionSelect,
-  activeSpaceName,
   isStreaming = false,
   onActionReplySelect,
 }: AiPanelMessagesProps) {
@@ -58,9 +57,7 @@ export function AiPanelMessages({
             parts: [
               {
                 type: 'text' as const,
-                text: t('welcome', {
-                  spaceName: activeSpaceName?.trim() || 'Hypha',
-                }),
+                text: t('welcome'),
               },
             ],
           },
@@ -94,11 +91,16 @@ export function AiPanelMessages({
         ))}
 
         {showInlineSuggestions && onSuggestionSelect ? (
-          <AiPanelSuggestions
-            items={suggestionItems}
-            onSelect={onSuggestionSelect}
-            variant="cards"
-          />
+          <div className="flex flex-col gap-2">
+            <AiPanelSuggestions
+              items={suggestionItems}
+              onSelect={onSuggestionSelect}
+              variant="cards"
+            />
+            <p className="px-1 text-xs leading-relaxed text-muted-foreground">
+              {t('welcomeSpecialistsHint')}
+            </p>
+          </div>
         ) : null}
       </div>
     </div>
