@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthentication } from '@hypha-platform/authentication';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import type { PaginatedResponse } from '@hypha-platform/core/client';
 import { CoherenceType } from '../../coherence-types';
 import { CoherenceTag } from '../../coherence-tags';
@@ -20,6 +20,21 @@ export interface CoherenceQuery {
 
 const COHERENCES_REFRESH_MS = 60_000;
 const COHERENCES_PAGE_SIZE = 100;
+
+export const COHERENCES_SWR_KEY = 'coherences' as const;
+
+/** Revalidate signal lists for a space (e.g. after create, edit, or delete). */
+export function revalidateCoherences(spaceSlug?: string) {
+  const normalizedSlug = spaceSlug?.trim() || null;
+  return mutate(
+    (key: unknown) =>
+      Array.isArray(key) &&
+      key[0] === COHERENCES_SWR_KEY &&
+      (normalizedSlug == null || key[1] === normalizedSlug),
+    undefined,
+    { revalidate: true },
+  );
+}
 
 function buildCoherencesUrl(
   spaceSlug: string,
@@ -88,7 +103,7 @@ export const useFindCoherences = ({
 
   const swrKey = slug
     ? ([
-        'coherences',
+        COHERENCES_SWR_KEY,
         slug,
         search ?? '',
         type ?? '',

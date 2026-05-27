@@ -31,6 +31,7 @@ import {
   CoherenceTag,
   CoherenceType,
   schemaCreateCoherenceForm,
+  revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMatrix,
@@ -38,7 +39,7 @@ import {
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { CoherenceTypeButton } from './coherence-type-button';
@@ -135,6 +136,8 @@ export const CreateSignalForm = ({
   signalRoomId,
   initialValues,
 }: CreateSignalFormProps) => {
+  const params = useParams<{ id?: string }>();
+  const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
   const t = useTranslations('CoherenceTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const translateEditor = React.useCallback(
@@ -550,6 +553,9 @@ export const CreateSignalForm = ({
               );
             }
           }
+          if (spaceSlug) {
+            await revalidateCoherences(spaceSlug);
+          }
           router.push(successfulUrl);
         } catch (error) {
           const rawMessage =
@@ -651,6 +657,9 @@ export const CreateSignalForm = ({
             'Signal created but coherence slug is missing — room linking skipped.',
           );
         }
+        if (spaceSlug) {
+          await revalidateCoherences(spaceSlug);
+        }
         router.push(successfulUrl);
       } catch (error) {
         console.warn('Could not create conversation:', error);
@@ -670,9 +679,11 @@ export const CreateSignalForm = ({
       mode,
       setSignalProvisioningNotice,
       signalSlug,
+      spaceSlug,
       t,
       router,
       successfulUrl,
+      revalidateCoherences,
     ],
   );
 
@@ -1005,6 +1016,9 @@ export const CreateSignalForm = ({
                     }
                     try {
                       await deleteCoherenceBySlug({ slug: signalSlug });
+                      if (spaceSlug) {
+                        await revalidateCoherences(spaceSlug);
+                      }
                       router.push(successfulUrl);
                     } catch (error) {
                       const message =
