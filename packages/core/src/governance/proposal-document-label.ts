@@ -93,6 +93,10 @@ export const LOCALIZED_PROPOSAL_LABEL_TO_CANONICAL: Record<string, string> = {
   'Nueva memoria': 'Space Memory',
   'Nouvelle mémoire': 'Space Memory',
   'Nova memória': 'Space Memory',
+  'Delegierten ändern': 'Change Delegate',
+  'Changer de délégué': 'Change Delegate',
+  'Cambiar delegado': 'Change Delegate',
+  'Alterar delegado': 'Change Delegate',
 };
 
 export function normalizeProposalDocumentLabel(

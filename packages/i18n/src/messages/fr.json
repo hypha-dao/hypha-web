@@ -367,6 +367,10 @@
         "title": "Adhésion espace-à-espace",
         "description": "Permettez à votre espace de rejoindre un autre espace en tant que membre, avec la possibilité de participer à la gouvernance et de voter sur les propositions."
       },
+      "changeSpaceDelegate": {
+        "title": "Changer de délégué",
+        "description": "Mettez à jour le membre qui vote au nom de votre espace dans un espace que vous avez déjà rejoint."
+      },
       "issueNewToken": {
         "title": "Émettre un nouveau token",
         "description": "Créez un nouveau token pour l'utilité, la propriété, l'impact, les crédits, la voix ou la monnaie communautaire au sein de votre espace."
@@ -1055,6 +1059,7 @@
       "membershipExit": "Sortie de membre",
       "spaceMemory": "Space Memory",
       "spaceToSpace": "Espace-à-espace",
+      "changeDelegate": "Changer de délégué",
       "issueNewToken": "Émettre un nouveau token",
       "treasuryMinting": "Frappe de trésorerie",
       "tokenBurning": "Combustion de tokens",
@@ -1122,6 +1127,7 @@
       "selectSpaceToActivate": "Veuillez sélectionner un espace à activer.",
       "monthsToActivateRequired": "Veuillez saisir le nombre de mois à activer.",
       "selectSpaceToJoin": "Veuillez sélectionner un espace à rejoindre",
+      "selectGovernanceSpace": "Veuillez sélectionner un espace de gouvernance",
       "selectDelegatedVotingMember": "Veuillez sélectionner un membre délégué pour le vote",
       "selectSpaceToExit": "Veuillez sélectionner un espace à quitter.",
       "selectMemberToRemove": "Veuillez sélectionner un membre à retirer",
@@ -1542,6 +1548,14 @@
         "delegationRules": "Règles de délégation",
         "delegatedVotingMemberDescription": "Le membre de vote délégué est la personne de votre espace officiellement autorisée à voter au nom de votre espace dans l’espace rejoint."
       },
+      "changeSpaceDelegate": {
+        "governanceSpace": "Espace de gouvernance",
+        "delegationRules": "Règles de délégation",
+        "delegatedVotingMemberDescription": "Sélectionnez le membre de votre espace qui doit recevoir le pouvoir de vote délégué de votre espace dans l’espace de gouvernance choisi."
+      },
+      "changeSpaceDelegateSelector": {
+        "governanceSpace": "Espace de gouvernance"
+      },
       "spaceTransparencySettings": {
         "title": "Transparence de l'espace",
         "description": "Définissez le niveau de transparence que vous souhaitez appliquer collectivement à votre espace. Veuillez noter que, quel que soit votre choix ci-dessous, seuls les membres directs peuvent agir dans l'espace.",
@@ -1786,6 +1800,7 @@
       "usdcAmount": "USDC Montant",
       "hyphaAmount": "HYPHA Montant",
       "joiningSpace": "Rejoindre l'espace",
+      "governanceSpace": "Espace de gouvernance",
       "delegatedVotingMember": "Membre votant délégué",
       "exitingMember": "Membre sortant",
       "exitFrom": "Quitter depuis",

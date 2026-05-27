@@ -11,6 +11,7 @@ type SpaceToSpaceMembershipSelectorProps = {
   spaceOptions?: Space[];
   value?: string;
   onChange?: (selected: Person | Space | null) => void;
+  variant?: 'join' | 'changeDelegate';
 };
 
 export const SpaceToSpaceMembershipSelector = ({
@@ -18,6 +19,7 @@ export const SpaceToSpaceMembershipSelector = ({
   spaceOptions = [],
   onChange,
   value,
+  variant = 'join',
 }: SpaceToSpaceMembershipSelectorProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const [selected, setSelected] = useState<Person | Space | null>(null);
@@ -39,7 +41,9 @@ export const SpaceToSpaceMembershipSelector = ({
     ? tAgreementFlow('plugins.spaceToSpaceMembershipSelector.findSpace')
     : tAgreementFlow('plugins.spaceToSpaceMembershipSelector.findMember');
   const title = isSpace
-    ? tAgreementFlow('plugins.spaceToSpaceMembershipSelector.spaceToJoin')
+    ? variant === 'changeDelegate'
+      ? tAgreementFlow('plugins.changeSpaceDelegateSelector.governanceSpace')
+      : tAgreementFlow('plugins.spaceToSpaceMembershipSelector.spaceToJoin')
     : tAgreementFlow(
         'plugins.spaceToSpaceMembershipSelector.delegatedVotingMember',
       );

@@ -366,6 +366,10 @@
         "title": "Space-to-Space Membership",
         "description": "Allow your space to join another space as a member, gaining the ability to participate in governance and vote on proposals."
       },
+      "changeSpaceDelegate": {
+        "title": "Change Delegate",
+        "description": "Update the member who votes on behalf of your space in a space you have already joined."
+      },
       "issueNewToken": {
         "title": "Issue New Token",
         "description": "Create a new token for utility, ownership, impact, cash credits, voice, or community currency within your space."
@@ -1451,6 +1455,7 @@
       "membershipExit": "Membership Exit",
       "spaceMemory": "Space Memory",
       "spaceToSpace": "Space to Space",
+      "changeDelegate": "Change Delegate",
       "issueNewToken": "Issue New Token",
       "treasuryMinting": "Treasury Minting",
       "tokenBurning": "Token Burning",
@@ -1516,6 +1521,7 @@
       "selectSpaceToActivate": "Please select a space to activate.",
       "monthsToActivateRequired": "Please enter the number of months to activate.",
       "selectSpaceToJoin": "Please select a space to join",
+      "selectGovernanceSpace": "Please select a governance space",
       "selectDelegatedVotingMember": "Please select a delegated voting member",
       "selectSpaceToExit": "Please select a space to exit.",
       "selectMemberToRemove": "Please select a member to remove",
@@ -1941,6 +1947,14 @@
         "delegationRules": "Delegation Rules",
         "delegatedVotingMemberDescription": "The Delegated Voting Member is the individual from your space who is formally authorised to cast votes on behalf of your space within the joining space."
       },
+      "changeSpaceDelegate": {
+        "governanceSpace": "Governance Space",
+        "delegationRules": "Delegation Rules",
+        "delegatedVotingMemberDescription": "Select the member from your space who should receive your space's delegated voting power in the chosen governance space."
+      },
+      "changeSpaceDelegateSelector": {
+        "governanceSpace": "Governance Space"
+      },
       "spaceTransparencySettings": {
         "title": "Space Transparency",
         "description": "Define the level of transparency you collectively want to apply to your space. Please note that, regardless of the choice you make below, only direct members can take action in the space.",
@@ -2185,6 +2199,7 @@
       "usdcAmount": "USDC Amount",
       "hyphaAmount": "HYPHA Amount",
       "joiningSpace": "Joining Space",
+      "governanceSpace": "Governance Space",
       "delegatedVotingMember": "Delegated Voting Member",
       "exitingMember": "Exiting Member",
       "exitFrom": "Exit From",

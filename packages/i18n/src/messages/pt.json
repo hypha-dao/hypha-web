@@ -95,6 +95,7 @@
       "selectSpaceToActivate": "Selecione um espaço para ativar.",
       "monthsToActivateRequired": "Digite o número de meses para ativar.",
       "selectSpaceToJoin": "Selecione um espaço para participar",
+      "selectGovernanceSpace": "Selecione um espaço de governança",
       "selectDelegatedVotingMember": "Selecione um membro delegado para votação",
       "selectSpaceToExit": "Selecione um espaço para sair.",
       "selectMemberToRemove": "Selecione um membro para remover",
@@ -428,6 +429,14 @@
         "delegationRules": "Regras de delegação",
         "delegatedVotingMemberDescription": "O Membro Votante Delegado é o indivíduo do seu espaço que está formalmente autorizado a votar em nome do seu espaço dentro do espaço de adesão."
       },
+      "changeSpaceDelegate": {
+        "governanceSpace": "Espaço de governança",
+        "delegationRules": "Regras de delegação",
+        "delegatedVotingMemberDescription": "Selecione o membro do seu espaço que deve receber o poder de voto delegado do seu espaço no espaço de governança escolhido."
+      },
+      "changeSpaceDelegateSelector": {
+        "governanceSpace": "Espaço de governança"
+      },
       "spaceTransparencySettings": {
         "title": "Transparência Espacial",
         "description": "Defina o nível de transparência que você deseja aplicar coletivamente ao seu espaço. Observe que, independentemente da escolha que você fizer abaixo, apenas membros diretos poderão realizar ações no espaço.",
@@ -610,6 +619,7 @@
       "membershipExit": "Saída de adesão",
       "spaceMemory": "Space Memory",
       "spaceToSpace": "Espaço para Espaço",
+      "changeDelegate": "Alterar delegado",
       "issueNewToken": "Emitir novo token",
       "treasuryMinting": "Cunhagem de Tesouro",
       "tokenBurning": "Queima de tokens",
@@ -1057,6 +1067,10 @@
       "spaceToSpaceMembership": {
         "title": "Associação Espaço-Espaço",
         "description": "Permita que seu espaço ingresse em outro espaço como membro, ganhando a possibilidade de participar da governança e votar propostas."
+      },
+      "changeSpaceDelegate": {
+        "title": "Alterar delegado",
+        "description": "Atualize o membro que vota em nome do seu espaço em um espaço que você já ingressou."
       },
       "issueNewToken": {
         "title": "Emitir novo token",
@@ -1786,6 +1800,7 @@
       "usdcAmount": "USDC Valor",
       "hyphaAmount": "HYPHA Valor",
       "joiningSpace": "Entrando no Espaço",
+      "governanceSpace": "Espaço de governança",
       "delegatedVotingMember": "Membro Votante Delegado",
       "exitingMember": "Membro Saindo",
       "exitFrom": "Sair de",

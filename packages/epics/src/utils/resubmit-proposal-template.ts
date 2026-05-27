@@ -24,6 +24,7 @@ export function getCreateRouteSegmentForProposalLabel(
     'Buy Hypha Tokens': 'buy-hypha-tokens',
     'Activate Spaces': 'activate-spaces',
     'Space To Space': 'space-to-space-membership',
+    'Change Delegate': 'change-space-delegate',
     'Treasury Minting': 'mint-tokens-to-space-treasury',
     'Redeem Tokens': 'redeem-tokens',
     'Token Burning': 'token-burning',
@@ -89,6 +90,12 @@ export function inferResubmitTemplateSegmentFromPayload(
   }
   if (parsed.spaceToSpaceTargetAddress || parsed.spaceToSpaceMemberAddress) {
     return 'space-to-space-membership';
+  }
+  if (
+    parsed.changeDelegateTargetAddress ||
+    parsed.changeDelegateMemberAddress
+  ) {
+    return 'change-space-delegate';
   }
   if (
     parsed.issueNewTokenForm &&

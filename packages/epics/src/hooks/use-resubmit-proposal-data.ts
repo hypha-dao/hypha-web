@@ -446,6 +446,15 @@ export const useResubmitProposalData = <
               shouldValidate: true,
             },
           );
+        } else if (parsed.changeDelegateTargetAddress !== undefined) {
+          form.setValue(
+            'space' as any,
+            parsed.changeDelegateTargetAddress as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
         } else if (typeof parsed.space === 'number') {
           form.setValue('space' as any, parsed.space as any, {
             shouldDirty: true,
@@ -457,6 +466,15 @@ export const useResubmitProposalData = <
           form.setValue(
             'member' as any,
             parsed.spaceToSpaceMemberAddress as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+        } else if (parsed.changeDelegateMemberAddress !== undefined) {
+          form.setValue(
+            'member' as any,
+            parsed.changeDelegateMemberAddress as any,
             {
               shouldDirty: true,
               shouldValidate: true,
@@ -715,6 +733,8 @@ export const useResubmitProposalData = <
           fieldsToTrigger.push('tokenBase');
         }
         if (parsed.spaceToSpaceTargetAddress !== undefined) {
+          fieldsToTrigger.push('space', 'member');
+        } else if (parsed.changeDelegateTargetAddress !== undefined) {
           fieldsToTrigger.push('space', 'member');
         } else {
           if (typeof parsed.space === 'number') {
