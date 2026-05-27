@@ -29,7 +29,10 @@ function mapBridgeTransferError(error: unknown): BankOnboardingError | null {
 
   const status = (error as Error & { status?: number }).status;
   if (status !== undefined && status >= 400 && status < 500) {
-    console.error('Bridge transfer creation failed:', error);
+    console.error(
+      'Bridge transfer creation failed:',
+      error instanceof Error ? error.message : error,
+    );
     return new BankOnboardingError(
       'Could not create payment request for this currency. Complete KYB for this rail or try another currency.',
       400,

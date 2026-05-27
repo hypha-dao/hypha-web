@@ -55,7 +55,10 @@ export async function POST(
       );
     }
 
-    console.error('banking/sandbox/simulate-kyc-approval failed:', error);
+    console.error(
+      'banking/sandbox/simulate-kyc-approval failed:',
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
       { error: 'Failed to simulate KYB approval' },
       { status: 500 },

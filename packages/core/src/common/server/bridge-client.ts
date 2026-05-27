@@ -210,13 +210,13 @@ export function normalizeBridgeCustomerKycLinkResponse(
           : null;
 
     if (link) {
-      const hasBridgeKycLinkId =
-        typeof record.id === 'string' &&
-        record.id.length > 0 &&
-        record.id !== fallback.customerId;
-
       return {
-        id: hasBridgeKycLinkId ? record.id : fallback.existingKycLinkId,
+        id:
+          typeof record.id === 'string' &&
+          record.id.length > 0 &&
+          record.id !== fallback.customerId
+            ? record.id
+            : fallback.existingKycLinkId,
         customer_id:
           typeof record.customer_id === 'string'
             ? record.customer_id
@@ -663,7 +663,6 @@ export async function bridgeListTransfers(
   params?: BridgeListPaginationParams,
 ): Promise<BridgeListResponse<BridgeTransferResponse>> {
   const path = `/v0/customers/${encodeURIComponent(customerId)}/transfers${buildListQuery(params)}`;
-  const { baseUrl } = getBridgeConfig();
 
   const parsed = await bridgeRequest(path, { method: 'GET' });
 

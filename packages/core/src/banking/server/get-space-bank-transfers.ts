@@ -37,15 +37,14 @@ export async function getSpaceBankTransfers(
 
   const treasuryAddress = await resolveSpaceExecutorAddress(space);
 
-  console.info('[banking] getSpaceBankTransfers', {
-    spaceId: space.id,
-    spaceSlug: input.spaceSlug,
-    bankCustomerId: customer.id,
-    providerCustomerIdDb: customer.providerCustomerId,
-    providerCustomerIdUsed: customerId,
-    providerKycLinkId: customer.providerKycLinkId,
-    treasuryAddress,
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    console.info('[banking] getSpaceBankTransfers', {
+      spaceId: space.id,
+      spaceSlug: input.spaceSlug,
+      bankCustomerId: customer.id,
+      treasuryAddress,
+    });
+  }
 
   const listed = await bridgeListTransfers(customerId, {
     limit: input.limit ?? 25,
@@ -57,22 +56,26 @@ export async function getSpaceBankTransfers(
     bridgeTransferTargetsSpace(row, treasuryAddress),
   );
 
-  console.info('[banking] getSpaceBankTransfers result', {
-    spaceSlug: input.spaceSlug,
-    providerCustomerIdUsed: customerId,
-    bridgeCount: listed.data.length,
-    afterTreasuryFilter: scoped.length,
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    console.info('[banking] getSpaceBankTransfers result', {
+      spaceSlug: input.spaceSlug,
+      bridgeCount: listed.data.length,
+      afterTreasuryFilter: scoped.length,
+    });
+  }
 
   const transfers = scoped.map((row) =>
     mapBridgeTransferToPublic(row, treasuryAddress ?? ''),
   );
 
-  const last = scoped.at(-1);
+  // Cursor must come from the raw Bridge page, not the treasury-filtered
+  // subset: if a page filters empty while Bridge still has_more, we must keep
+  // advancing or later transfers are silently hidden.
+  const lastRaw = listed.data.at(-1);
 
   return {
     transfers,
     hasMore: listed.has_more ?? false,
-    nextCursor: listed.has_more && last ? last.id : null,
+    nextCursor: listed.has_more && lastRaw ? lastRaw.id : null,
   };
 }

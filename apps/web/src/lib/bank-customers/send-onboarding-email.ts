@@ -36,13 +36,15 @@ export async function sendBankOnboardingEmail({
   }
 
   if (!templateId) {
-    console.log(
-      '[bank-kyb] Skipping OneSignal send — EMAIL_TEMPLATE_BANK_KYB_ONBOARDING is not set. Would send:',
-      {
-        recipientEmail,
-        customData,
-      },
-    );
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(
+        '[bank-kyb] Skipping OneSignal send — EMAIL_TEMPLATE_BANK_KYB_ONBOARDING is not set. Would send:',
+        {
+          recipientEmail,
+          customData,
+        },
+      );
+    }
     return;
   }
 

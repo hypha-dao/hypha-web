@@ -35,9 +35,14 @@ export async function GET(
     const status = await getSpaceBankCustomerPublicStatus(authResult.space, {
       db,
     });
-    return NextResponse.json(status);
+    return NextResponse.json(status, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
   } catch (error) {
-    console.error('banking/bank-customers GET failed:', error);
+    console.error(
+      'banking/bank-customers GET failed:',
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
       { error: 'Failed to fetch bank customer status' },
       { status: 500 },
@@ -94,7 +99,9 @@ export async function POST(
       });
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
   } catch (error) {
     if (error instanceof BankOnboardingError) {
       return NextResponse.json(
@@ -103,7 +110,10 @@ export async function POST(
       );
     }
 
-    console.error('banking/bank-customers onboarding failed:', error);
+    console.error(
+      'banking/bank-customers onboarding failed:',
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
       { error: 'Failed to start bank customer onboarding' },
       { status: 500 },

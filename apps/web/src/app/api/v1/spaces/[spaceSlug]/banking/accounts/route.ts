@@ -51,7 +51,9 @@ export async function GET(
       { db },
     );
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
   } catch (error) {
     if (error instanceof BankOnboardingError) {
       return NextResponse.json(
@@ -60,7 +62,10 @@ export async function GET(
       );
     }
 
-    console.error('banking/accounts GET failed:', error);
+    console.error(
+      'banking/accounts GET failed:',
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
       { error: 'Failed to fetch bank accounts' },
       { status: 500 },
@@ -110,7 +115,9 @@ export async function POST(
       { db },
     );
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
   } catch (error) {
     if (error instanceof BankOnboardingError) {
       return NextResponse.json(
@@ -119,7 +126,10 @@ export async function POST(
       );
     }
 
-    console.error('banking/accounts POST failed:', error);
+    console.error(
+      'banking/accounts POST failed:',
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
       { error: 'Failed to create bank account' },
       { status: 500 },

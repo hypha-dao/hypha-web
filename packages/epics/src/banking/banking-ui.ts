@@ -285,7 +285,7 @@ export function getTransferRailOptionsFromStatus(
   );
 
   return (BANK_TRANSFER_CORRIDOR_KEYS as readonly BankTransferCorridorKey[])
-    .map((corridorKey) => {
+    .map((corridorKey): BankTransferRailOption | null => {
       const meta = getTransferCorridorMeta(corridorKey);
       const rail = byCorridor.get(corridorKey);
       if (!meta || !rail) {

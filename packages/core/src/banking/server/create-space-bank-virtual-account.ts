@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import type { DatabaseInstance } from '../../common/server/types';
 import {
   BRIDGE_DEFAULT_DESTINATION_CURRENCY,
@@ -143,7 +141,10 @@ export async function createSpaceBankVirtualAccount(
     currency,
     destinationAddress: treasuryAddress,
     destinationCurrency,
-    idempotencyKey: randomUUID(),
+    // Deterministic per logical account (one VA per customer+currency+destination,
+    // enforced by virtualAccountPairs above) so a retry/double-click dedupes at
+    // Bridge instead of provisioning a duplicate account.
+    idempotencyKey: `va:${customerId}:${currency.toLowerCase()}:${destinationCurrency}`,
   });
 
   const account = mapBridgeVirtualAccountToPublic(

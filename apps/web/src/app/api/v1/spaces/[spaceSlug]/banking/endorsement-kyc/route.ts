@@ -56,7 +56,9 @@ export async function POST(
       { db },
     );
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
   } catch (error) {
     if (error instanceof BankOnboardingError) {
       return NextResponse.json(
@@ -65,7 +67,10 @@ export async function POST(
       );
     }
 
-    console.error('banking/endorsement-kyc POST failed:', error);
+    console.error(
+      'banking/endorsement-kyc POST failed:',
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
       { error: 'Failed to request endorsement verification' },
       { status: 500 },

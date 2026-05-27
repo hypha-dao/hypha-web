@@ -53,9 +53,14 @@ export async function GET(
       { db },
     );
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
   } catch (error) {
-    console.error('banking/transfers GET failed:', error);
+    console.error(
+      'banking/transfers GET failed:',
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
       { error: 'Failed to fetch transfers' },
       { status: 500 },
@@ -108,7 +113,9 @@ export async function POST(
       { db },
     );
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
   } catch (error) {
     if (error instanceof BankOnboardingError) {
       return NextResponse.json(
@@ -117,7 +124,10 @@ export async function POST(
       );
     }
 
-    console.error('banking/transfers POST failed:', error);
+    console.error(
+      'banking/transfers POST failed:',
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
       { error: 'Failed to create transfer' },
       { status: 500 },

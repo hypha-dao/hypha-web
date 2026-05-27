@@ -50,7 +50,7 @@ export async function getTransferRailOptions(
   );
 
   return (BANK_TRANSFER_CORRIDOR_KEYS as readonly BankTransferCorridorKey[])
-    .map((corridorKey) => {
+    .map((corridorKey): BankTransferRailOption | null => {
       const corridor = BANK_TRANSFER_CORRIDORS[corridorKey];
       const rail = byCorridor.get(corridorKey);
       if (!rail) {
@@ -71,7 +71,7 @@ export async function getTransferRailOptions(
           sourceCurrency: corridor.currency,
           sourceRail: corridor.paymentRail,
         }),
-      } satisfies BankTransferRailOption;
+      };
     })
     .filter((option): option is BankTransferRailOption => option != null)
     .sort(

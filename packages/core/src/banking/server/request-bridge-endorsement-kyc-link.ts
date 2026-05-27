@@ -23,6 +23,9 @@ export async function requestBridgeEndorsementKycLink(
   { db }: { db: DatabaseInstance },
 ): Promise<RequestBridgeEndorsementKycLinkResult> {
   const parsedEndorsement = parseBridgeEndorsements([endorsement])[0];
+  if (!parsedEndorsement) {
+    throw new BankOnboardingError('Unsupported endorsement', 400);
+  }
 
   let providerCustomerId = customer.providerCustomerId;
   if (!providerCustomerId) {

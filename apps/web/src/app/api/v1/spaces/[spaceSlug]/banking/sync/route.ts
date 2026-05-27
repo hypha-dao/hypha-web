@@ -36,7 +36,10 @@ export async function POST(
       );
     }
 
-    console.error('banking/sync POST failed:', error);
+    console.error(
+      'banking/sync POST failed:',
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
       { error: 'Failed to sync banking status' },
       { status: 500 },

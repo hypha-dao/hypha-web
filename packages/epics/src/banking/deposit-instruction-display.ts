@@ -410,7 +410,7 @@ const TREASURY_DESTINATION_TOKEN_ICONS: Record<string, string> = {
 /** Treasury wallet tab uses the same token icons (USDC / EURC). */
 export function getTreasuryDestinationTokenIcon(currency: string): string {
   const key = currency.trim().toLowerCase();
-  return TREASURY_DESTINATION_TOKEN_ICONS[key] ?? TREASURY_DESTINATION_TOKEN_ICONS.usdc;
+  return TREASURY_DESTINATION_TOKEN_ICONS[key] ?? '/placeholder/usdc-icon.svg';
 }
 
 export function formatPaymentRailLabel(rail: string): string {
