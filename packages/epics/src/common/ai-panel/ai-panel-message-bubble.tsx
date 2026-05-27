@@ -128,10 +128,13 @@ function parseHeadingLine(
 }
 
 function parseUnorderedListItem(line: string): string | null {
-  const bulletMatch = line.match(/^[-*•]\s+(.+)$/);
-  if (!bulletMatch) return null;
-  const text = bulletMatch[1]?.trim() ?? '';
-  return text || null;
+  const bulletPrefixes = ['- ', '* ', '• '] as const;
+  for (const prefix of bulletPrefixes) {
+    if (!line.startsWith(prefix)) continue;
+    const text = line.slice(prefix.length).trim();
+    return text || null;
+  }
+  return null;
 }
 
 function parseOrderedListItem(line: string): string | null {
