@@ -1,8 +1,16 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { SearchIcon } from 'lucide-react';
-import { Button, Input, Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import {
+  Button,
+  Input,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  useIsMobile,
+} from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 
 export type MemoryFilterValue =
@@ -30,6 +38,7 @@ export function MemoryFilters({
   counts,
 }: MemoryFiltersProps) {
   const t = useTranslations('CoherenceTab');
+  const isMobile = useIsMobile() ?? false;
 
   const tabItems: Array<{ value: MemoryFilterValue; label: string }> = [
     { value: 'general', label: t('spaceMemoryGeneral') },
@@ -39,6 +48,16 @@ export function MemoryFilters({
     { value: 'ai-chat', label: t('spaceMemoryAiChat') },
   ];
 
+  const visibleTabItems = isMobile
+    ? tabItems.filter((item) => item.value !== 'general')
+    : tabItems;
+
+  useEffect(() => {
+    if (isMobile && activeFilter === 'general') {
+      onFilterChange('proposals');
+    }
+  }, [activeFilter, isMobile, onFilterChange]);
+
   return (
     <div className="flex w-full flex-col gap-4">
       <Tabs
@@ -46,8 +65,8 @@ export function MemoryFilters({
         onValueChange={(value) => onFilterChange(value as MemoryFilterValue)}
         className="w-full"
       >
-        <TabsList triggerVariant="switch" className="w-fit">
-          {tabItems.map((item) => (
+        <TabsList triggerVariant="switch" className="w-fit max-w-full">
+          {visibleTabItems.map((item) => (
             <TabsTrigger
               key={item.value}
               variant="switch"

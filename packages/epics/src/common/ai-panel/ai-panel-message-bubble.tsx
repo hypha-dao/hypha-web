@@ -6,6 +6,9 @@ import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
 
+import { type AiCompetencyAgent } from '../ai-agent-competencies';
+import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
+
 type ConfirmationActionResult = {
   ok?: boolean;
   dry_run?: boolean;
@@ -40,15 +43,21 @@ type AiPanelMessageBubbleProps = {
     role: 'user' | 'assistant' | 'system';
     parts?: UIMessagePart[];
   };
+  mobilizedAgents?: readonly AiCompetencyAgent[];
   isStreaming?: boolean;
   onActionReplySelect?: (text: string) => void;
+};
+
+type OlListItem = {
+  text: string;
+  nestedUl?: string[];
 };
 
 type MarkdownBlock =
   | { type: 'heading'; level: 1 | 2 | 3 | 4; text: string }
   | { type: 'paragraph'; lines: string[] }
   | { type: 'ul'; items: string[] }
-  | { type: 'ol'; items: string[] };
+  | { type: 'ol'; items: OlListItem[] };
 
 function joinTextPartsWithSpacing(parts: Array<{ text: string }>): string {
   if (parts.length === 0) return '';
@@ -119,11 +128,9 @@ function parseHeadingLine(
 }
 
 function parseUnorderedListItem(line: string): string | null {
-  if (line.length < 3) return null;
-  const bullet = line[0];
-  if (bullet !== '-' && bullet !== '*') return null;
-  if (line[1] !== ' ') return null;
-  const text = line.slice(2).trim();
+  const bulletMatch = line.match(/^[-*•]\s+(.+)$/);
+  if (!bulletMatch) return null;
+  const text = bulletMatch[1]?.trim() ?? '';
   return text || null;
 }
 
@@ -143,18 +150,38 @@ function parseOrderedListItem(line: string): string | null {
   return text || null;
 }
 
+const CONFIDENCE_SCORE_PATTERN =
+  /(\*{0,2}Confidence\*{0,2}\s*:?\s*)(0?\.\d+|1(?:\.0+)?)\b/gi;
+
+function formatConfidenceScore(raw: string): string | null {
+  const num = Number.parseFloat(raw);
+  if (!Number.isFinite(num)) return null;
+  if (num >= 0 && num <= 1) return `${Math.round(num * 100)}%`;
+  if (num > 1 && num <= 100) return `${Math.round(num)}%`;
+  return null;
+}
+
+/** Show model confidence as a percentage (0.8 → 80%) in AI panel copy. */
+function formatConfidenceDisplay(text: string): string {
+  return text.replace(CONFIDENCE_SCORE_PATTERN, (match, prefix, raw) => {
+    const formatted = formatConfidenceScore(raw);
+    return formatted ? `${prefix}${formatted}` : match;
+  });
+}
+
 function renderInlineMarkdown(text: string): React.ReactNode {
+  const displayText = formatConfidenceDisplay(text);
   const nodes: React.ReactNode[] = [];
   const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
   let lastIndex = 0;
   let partIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = tokenRegex.exec(text)) !== null) {
+  while ((match = tokenRegex.exec(displayText)) !== null) {
     const token = match[0];
     const start = match.index;
     if (start > lastIndex) {
-      nodes.push(text.slice(lastIndex, start));
+      nodes.push(displayText.slice(lastIndex, start));
     }
     if (token.startsWith('**') && token.endsWith('**')) {
       nodes.push(
@@ -177,11 +204,27 @@ function renderInlineMarkdown(text: string): React.ReactNode {
     lastIndex = tokenRegex.lastIndex;
   }
 
-  if (lastIndex < text.length) {
-    nodes.push(text.slice(lastIndex));
+  if (lastIndex < displayText.length) {
+    nodes.push(displayText.slice(lastIndex));
   }
 
-  return nodes.length > 0 ? nodes : text;
+  return nodes.length > 0 ? nodes : displayText;
+}
+
+/** Merge split `ol` blocks so numbering continues after nested bullet sub-lists. */
+function mergeAdjacentOrderedListBlocks(
+  blocks: MarkdownBlock[],
+): MarkdownBlock[] {
+  const merged: MarkdownBlock[] = [];
+  for (const block of blocks) {
+    const previous = merged[merged.length - 1];
+    if (block.type === 'ol' && previous?.type === 'ol') {
+      previous.items.push(...block.items);
+      continue;
+    }
+    merged.push(block);
+  }
+  return merged;
 }
 
 function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
@@ -220,13 +263,23 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
       continue;
     }
 
-    const olItems: string[] = [];
+    const olItems: OlListItem[] = [];
     while (i < lines.length) {
       const line = lines[i]?.trim() ?? '';
       const item = parseOrderedListItem(line);
       if (!item) break;
-      olItems.push(item);
       i += 1;
+      const nestedUl: string[] = [];
+      while (i < lines.length) {
+        const nestedLine = lines[i]?.trim() ?? '';
+        const ulItem = parseUnorderedListItem(nestedLine);
+        if (!ulItem) break;
+        nestedUl.push(ulItem);
+        i += 1;
+      }
+      olItems.push(
+        nestedUl.length > 0 ? { text: item, nestedUl } : { text: item },
+      );
     }
     if (olItems.length > 0) {
       blocks.push({ type: 'ol', items: olItems });
@@ -255,11 +308,12 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
     i += 1;
   }
 
-  return blocks;
+  return mergeAdjacentOrderedListBlocks(blocks);
 }
 
 export function AiPanelMessageBubble({
   message,
+  mobilizedAgents = [],
   isStreaming,
   onActionReplySelect,
 }: AiPanelMessageBubbleProps) {
@@ -482,6 +536,12 @@ export function AiPanelMessageBubble({
               : 'rounded-tl-sm bg-transparent px-0 py-0 text-foreground',
           )}
         >
+          {!isUser && mobilizedAgents.length > 0 ? (
+            <AiPanelMobilizedAgents
+              agents={mobilizedAgents}
+              isStreaming={isStreaming}
+            />
+          ) : null}
           {hasVisibleText && (
             <div className="flex flex-col gap-1">
               <div
@@ -535,7 +595,21 @@ export function AiPanelMessageBubble({
                             key={`${message.id}-ol-item-${index}-${itemIndex}`}
                             className="list-decimal"
                           >
-                            {renderInlineMarkdown(item)}
+                            {renderInlineMarkdown(item.text)}
+                            {item.nestedUl && item.nestedUl.length > 0 ? (
+                              <ul className="mt-0.5 space-y-0.5 pl-4">
+                                {item.nestedUl.map(
+                                  (nestedItem, nestedIndex) => (
+                                    <li
+                                      key={`${message.id}-ol-item-${index}-${itemIndex}-ul-${nestedIndex}`}
+                                      className="list-disc"
+                                    >
+                                      {renderInlineMarkdown(nestedItem)}
+                                    </li>
+                                  ),
+                                )}
+                              </ul>
+                            ) : null}
                           </li>
                         ))}
                       </ol>

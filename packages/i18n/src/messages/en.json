@@ -1032,9 +1032,17 @@
     "confirmInvestmentCta": "Confirm Investment",
     "acceptInvestmentTitle": "Accept Investment",
     "acceptInvestmentBody": "{sellerLabel} has accepted your space's investment of {buyerAmountLabel} and offers {sellerAmountLabel} in return.",
+    "acceptInvestmentBodyPersonal": "{sellerLabel} has accepted your investment of {buyerAmountLabel} and offers {sellerAmountLabel} in return.",
     "exchangeStakesAndTokensTitle": "Exchange Stakes & Tokens",
     "exchangeStakesAndTokensBody": "{sellerLabel} has proposed to exchange {sellerAmountLabel} for {buyerAmountLabel} from your space.",
-    "exchangeCounterpartyFallback": "the other party"
+    "exchangeStakesAndTokensBodyPersonal": "{sellerLabel} has proposed to exchange {sellerAmountLabel} for {buyerAmountLabel} from you.",
+    "exchangeCounterpartyFallback": "the other party",
+    "escrowDepositRefuse": "Refuse",
+    "escrowDepositRefusing": "Refusing...",
+    "escrowConfirmExchange": "Confirm Exchange",
+    "escrowDepositDepositing": "Depositing...",
+    "escrowDepositApproving": "Approving...",
+    "escrowDepositInsufficientWallet": "Your wallet balance is below the required amount."
   },
   "AgreementFlow": {
     "labels": {
@@ -1959,12 +1967,24 @@
   "AiPanel": {
     "title": "Hypha AI",
     "suggestions": {
-      "aboutSpace": "Tell me about this space",
-      "memberCount": "How many members does this space have?",
-      "agreements": "What agreements exist in this space?",
-      "structure": "Describe the structure of this space"
+      "spaceHealth": "How is our space doing overall?",
+      "nextSignal": "What signal should we create or share next?",
+      "blindSpot": "What's our biggest blind spot?",
+      "summarizeDiscussion": "Summarize recent team discussion",
+      "spaceMemory": "What does our space remember?",
+      "valueFlows": "How does value flow through our tokens?"
+    },
+    "suggestionTags": {
+      "spaceHealth": "Space health",
+      "nextSignal": "Next signal",
+      "blindSpot": "Blind spot",
+      "summarizeDiscussion": "Summarize discussion",
+      "spaceMemory": "Space memory",
+      "valueFlows": "Value flows"
     },
     "welcome": "Hello! I'm your {spaceName} AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
+    "specialistsResponding": "Specialists contributing",
+    "specialistsRespondingStreaming": "Specialists contributing…",
     "placeholder": "Ask Hypha AI anything...",
     "sendButton": "Send",
     "stopButton": "Stop",

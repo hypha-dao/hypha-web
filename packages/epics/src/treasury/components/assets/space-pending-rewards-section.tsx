@@ -165,12 +165,12 @@ export const SpacePendingRewardsSection: FC<
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-3">
-      <div className="w-full flex justify-between">
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SectionFilter
           label={tTreasury('rewardsSection.title')}
           count={`${formatCurrencyValue(parsedRewardValue)} HYPHA`}
         />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {toolbarActions}
           <Button
             title={

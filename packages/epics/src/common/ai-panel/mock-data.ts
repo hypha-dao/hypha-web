@@ -1,17 +1,44 @@
+import { getLocaleMessagesSync } from '@hypha-platform/i18n/messages';
+
 export const MOCK_SUGGESTION_KEYS = [
-  'AiPanel.suggestions.aboutSpace',
-  'AiPanel.suggestions.memberCount',
-  'AiPanel.suggestions.agreements',
-  'AiPanel.suggestions.structure',
+  'AiPanel.suggestions.spaceHealth',
+  'AiPanel.suggestions.nextSignal',
+  'AiPanel.suggestions.blindSpot',
+  'AiPanel.suggestions.summarizeDiscussion',
+  'AiPanel.suggestions.spaceMemory',
+  'AiPanel.suggestions.valueFlows',
 ] as const;
 
-// Fallback values used when translations are not yet loaded
-export const MOCK_SUGGESTIONS = [
-  'Tell me about this space',
-  'How many members does this space have?',
-  'What agreements exist in this space?',
-  'Describe the structure of this space',
-];
+const SUGGESTION_FIELD_NAMES = [
+  'spaceHealth',
+  'nextSignal',
+  'blindSpot',
+  'summarizeDiscussion',
+  'spaceMemory',
+  'valueFlows',
+] as const;
+
+type AiPanelMessages = {
+  welcome?: string;
+  suggestions?: Partial<
+    Record<(typeof SUGGESTION_FIELD_NAMES)[number], string>
+  >;
+};
+
+function getAiPanelMessages(locale?: string): AiPanelMessages {
+  const { messages } = getLocaleMessagesSync(locale);
+  return (messages.AiPanel ?? {}) as AiPanelMessages;
+}
+
+/** English defaults for tests and Storybook when translations are not wired. */
+export function getMockSuggestions(locale?: string): string[] {
+  const suggestions = getAiPanelMessages(locale).suggestions ?? {};
+  return SUGGESTION_FIELD_NAMES.map((key) => suggestions[key] ?? '').filter(
+    Boolean,
+  );
+}
+
+export const MOCK_SUGGESTIONS = getMockSuggestions();
 
 export type Message = {
   id: string;
@@ -21,11 +48,19 @@ export type Message = {
   isStreaming?: boolean;
 };
 
-export function createMockWelcomeMessage(spaceName = 'Hypha'): Message {
+export function createMockWelcomeMessage(
+  spaceName = 'Hypha',
+  locale?: string,
+): Message {
+  const welcomeTemplate =
+    getAiPanelMessages(locale).welcome ??
+    getAiPanelMessages('en').welcome ??
+    '';
+
   return {
     id: 'welcome',
     role: 'assistant',
-    content: `Hello! I'm your ${spaceName} AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.`,
+    content: welcomeTemplate.replace('{spaceName}', spaceName),
     timestamp: new Date(),
   };
 }

@@ -54,6 +54,7 @@ import {
   SIGNAL_PROVISIONING_NOTICE_EVENT,
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
 } from '../constants';
+import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -132,28 +133,6 @@ function getSignalTeamMembersFromRoom(options: {
     }
   }
   return { hasPolicy, memberMatrixUserIds: members };
-}
-
-function normalizeSignalDescriptionForChat(
-  description?: string | null,
-): string | null {
-  if (!description) return null;
-  const raw = description.trim();
-  if (!raw) return null;
-
-  // Rich text serialization may persist trailing spaces as HTML entities
-  // (e.g. "&#x20;"), which Matrix then renders as literal text.
-  const decodeHtmlEntities = (value: string): string => {
-    if (typeof document === 'undefined') return value;
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = value;
-    return textarea.value;
-  };
-
-  const decoded = decodeHtmlEntities(raw)
-    .replace(/\u00A0/g, ' ')
-    .trim();
-  return decoded.length > 0 ? decoded : null;
 }
 
 export const CreateSignalForm = ({
@@ -246,31 +225,16 @@ export const CreateSignalForm = ({
       description?: string | null;
     }) => {
       if (!isMatrixAvailable || !roomId?.trim()) return;
-      const nextDescription = normalizeSignalDescriptionForChat(description);
-      if (!nextDescription) return;
-
-      // Ensure we can inspect the full room timeline before deciding whether to
-      // seed a message or update the earliest existing one.
-      const canonicalRoomId = await joinRoom(roomId);
-      await loadRoomHistory(canonicalRoomId);
-
-      const existingMessages = getRoomMessages(canonicalRoomId) ?? [];
-      const firstMessage = [...existingMessages].sort(
-        (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
-      )[0];
-
-      if (!firstMessage?.id) {
-        await sendMessage({
-          roomId: canonicalRoomId,
-          message: nextDescription,
-        });
-        return;
-      }
-
-      await editRoomMessage({
-        roomId: canonicalRoomId,
-        targetEventId: firstMessage.id,
-        message: nextDescription,
+      await upsertSignalDescriptionInRoom({
+        roomId,
+        description,
+        matrix: {
+          joinRoom,
+          loadRoomHistory,
+          getRoomMessages,
+          sendMessage,
+          editRoomMessage,
+        },
       });
     },
     [

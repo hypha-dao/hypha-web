@@ -22,34 +22,8 @@ import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import {
   readMobilizedAiAgents,
   subscribeMobilizedAiAgents,
+  tagGroupAccentClass,
 } from '../../common/ai-agent-competencies';
-
-function tagGroupAccentClass(tagGroup: string): string {
-  switch (tagGroup) {
-    case 'purpose':
-      return 'bg-accent-3 text-accent-12 border-accent-6';
-    case 'governance':
-      return 'bg-info-3 text-info-12 border-info-6';
-    case 'operations':
-      return 'bg-success-3 text-success-12 border-success-6';
-    case 'community':
-      return 'bg-neutral-3 text-neutral-12 border-neutral-6';
-    case 'finance':
-      return 'bg-warning-3 text-warning-12 border-warning-6';
-    case 'product':
-      return 'bg-accent-2 text-accent-11 border-accent-6';
-    case 'risk':
-      return 'bg-error-3 text-error-12 border-error-6';
-    case 'ecosystem':
-      return 'bg-info-2 text-info-11 border-info-6';
-    case 'learning':
-      return 'bg-success-2 text-success-11 border-success-6';
-    case 'reputation':
-      return 'bg-warning-2 text-warning-11 border-warning-6';
-    default:
-      return 'bg-muted text-foreground border-border';
-  }
-}
 
 type MemberSectionProps = {
   basePath: string;
@@ -201,7 +175,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
               >
                 <div className="mb-3 flex items-start gap-3">
                   <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${tagGroupAccentClass(
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${tagGroupAccentClass(
                       agent.tagGroup,
                     )}`}
                     aria-hidden="true"

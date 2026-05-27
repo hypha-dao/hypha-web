@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@hypha-platform/ui';
 import { ArrowRightIcon, Loader2, X } from 'lucide-react';
 import { formatUnits } from 'viem';
@@ -76,6 +77,7 @@ export const EscrowDepositBanner = ({
   onDeposited,
   onRefused,
 }: Props) => {
+  const t = useTranslations('Spaces');
   const {
     deposit: sendDeposit,
     isDepositing,
@@ -208,30 +210,26 @@ export const EscrowDepositBanner = ({
   const refuseInFlight = isSubmittingRefuse || isCancellingEscrow;
 
   const actionLabel = isWaitingReceipt
-    ? 'Confirming...'
+    ? t('exchangeDepositProposalConfirming')
     : isDepositing
     ? needsApprove
-      ? 'Approving...'
+      ? t('escrowDepositApproving')
       : investment
-      ? 'Confirming...'
-      : 'Depositing...'
+      ? t('exchangeDepositProposalConfirming')
+      : t('escrowDepositDepositing')
     : isSubmittingDeposit
-    ? // Click registered but the SWR mutation hasn't yet flipped its own
-      // `isMutating` flag (e.g. precheck readContract still running). Show
-      // a generic in-flight label so the user gets immediate feedback.
-      investment
-      ? 'Confirming...'
+    ? investment
+      ? t('exchangeDepositProposalConfirming')
       : needsApprove
-      ? 'Approving...'
-      : 'Depositing...'
+      ? t('escrowDepositApproving')
+      : t('escrowDepositDepositing')
     : investment
-    ? 'Confirm Investment'
-    : // Non-investment case == "Proposed Token Exchange". The CTA is the
-      // same label whether or not an ERC20 approve is needed first, so the
-      // user is not surprised by a label change after approval.
-      'Confirm Exchange';
+    ? t('confirmInvestmentCta')
+    : t('escrowConfirmExchange');
 
-  const refuseLabel = refuseInFlight ? 'Refusing...' : 'Refuse';
+  const refuseLabel = refuseInFlight
+    ? t('escrowDepositRefusing')
+    : t('escrowDepositRefuse');
 
   const mutationError =
     depositError && !isAlreadyFundedError(depositError)
@@ -246,7 +244,9 @@ export const EscrowDepositBanner = ({
     : null;
   const errorMessage = errorOverride ?? mutationError ?? cancelMutationError;
 
-  const title = investment ? 'Accept Investment' : 'Exchange Stakes & Tokens';
+  const title = investment
+    ? t('acceptInvestmentTitle')
+    : t('exchangeStakesAndTokensTitle');
 
   // Resolve partyA into a friendly name (person OR space). Handles both
   // investment proposals (partyA is always a space's executor) and ordinary
@@ -270,26 +270,21 @@ export const EscrowDepositBanner = ({
         <div className="flex flex-col gap-2 flex-1">
           <span className="text-2 text-foreground font-bold">{title}</span>
           <span className="text-2 text-foreground">
-            {investment ? (
-              <>
-                <span className="font-bold">{sellerLabel}</span> has accepted
-                your investment of{' '}
-                <span className="font-bold">{buyerAmountLabel}</span> and offers{' '}
-                <span className="font-bold">{sellerAmountLabel}</span> in
-                return.
-              </>
-            ) : (
-              <>
-                <span className="font-bold">{sellerLabel}</span> has proposed to
-                exchange <span className="font-bold">{sellerAmountLabel}</span>{' '}
-                for <span className="font-bold">{buyerAmountLabel}</span> from
-                you.
-              </>
-            )}
+            {investment
+              ? t('acceptInvestmentBodyPersonal', {
+                  sellerLabel,
+                  buyerAmountLabel,
+                  sellerAmountLabel,
+                })
+              : t('exchangeStakesAndTokensBodyPersonal', {
+                  sellerLabel,
+                  sellerAmountLabel,
+                  buyerAmountLabel,
+                })}
           </span>
           {insufficientBalance ? (
             <span className="text-2 text-error-11">
-              Your wallet balance is below the required amount.
+              {t('escrowDepositInsufficientWallet')}
             </span>
           ) : null}
           {errorMessage ? (

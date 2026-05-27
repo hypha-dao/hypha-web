@@ -40,6 +40,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Skeleton,
+  useIsMobile,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -623,6 +624,7 @@ export function HumanChatPanelChatBar({
   /** Avoid duplicate finalize if both `onerror` and `onend` run after abort. */
   const dictationSessionFinalizedRef = useRef(false);
   const [isDictating, setIsDictating] = useState(false);
+  const isMobile = useIsMobile() ?? false;
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const valueRef = useRef(value);
   valueRef.current = value;
@@ -2119,7 +2121,7 @@ export function HumanChatPanelChatBar({
           <div className="flex min-w-0 items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-0.5">
               <DropdownMenu
-                modal={false}
+                modal={isMobile}
                 open={attachMenuOpen}
                 onOpenChange={setAttachMenuOpen}
               >
@@ -2140,7 +2142,8 @@ export function HumanChatPanelChatBar({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="start"
-                  className="min-w-[200px]"
+                  side={isMobile ? 'top' : 'bottom'}
+                  className="z-[100] min-w-[200px]"
                   onKeyDownCapture={handleAttachMenuContentEnter}
                 >
                   <DropdownMenuItem

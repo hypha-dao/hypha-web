@@ -275,15 +275,81 @@ function storageKey(spaceSlug: string): string {
   return `hypha:ai-mobilized-agents:v1:${spaceSlug}`;
 }
 
+export function tagGroupAccentClass(tagGroup: string): string {
+  switch (tagGroup) {
+    case 'purpose':
+      return 'border-2 border-accent-8 bg-accent-3/30 text-accent-11';
+    case 'governance':
+      return 'border-2 border-info-8 bg-info-3/30 text-info-11';
+    case 'operations':
+      return 'border-2 border-success-8 bg-success-3/30 text-success-11';
+    case 'community':
+      return 'border-2 border-neutral-7 bg-neutral-3/30 text-neutral-11';
+    case 'finance':
+      return 'border-2 border-warning-8 bg-warning-3/30 text-warning-11';
+    case 'product':
+      return 'border-2 border-accent-8 bg-accent-3/30 text-accent-11';
+    case 'risk':
+      return 'border-2 border-error-8 bg-error-3/30 text-error-11';
+    case 'ecosystem':
+      return 'border-2 border-info-8 bg-info-3/30 text-info-11';
+    case 'learning':
+      return 'border-2 border-success-8 bg-success-3/30 text-success-11';
+    case 'reputation':
+      return 'border-2 border-warning-8 bg-warning-3/30 text-warning-11';
+    default:
+      return 'border-2 border-neutral-7 bg-neutral-3/30 text-neutral-11';
+  }
+}
+
+type ChatMessagePart = {
+  type?: string;
+  text?: string;
+};
+
+export function extractTextFromChatMessageParts(
+  parts?: ChatMessagePart[],
+): string {
+  if (!parts?.length) return '';
+  return parts
+    .filter(
+      (part): part is { type: 'text'; text: string } =>
+        part.type === 'text' && typeof part.text === 'string',
+    )
+    .map((part) => part.text)
+    .join('');
+}
+
+export function resolveMobilizedAgentsForAssistantMessage<
+  T extends { role: string; parts?: ChatMessagePart[] },
+>(messages: readonly T[], assistantIndex: number): AiCompetencyAgent[] {
+  const assistant = messages[assistantIndex];
+  if (!assistant || assistant.role !== 'assistant') return [];
+
+  for (let index = assistantIndex - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role !== 'user') continue;
+    const question = extractTextFromChatMessageParts(message.parts);
+    return question ? detectAiAgentsForQuestion(question) : [];
+  }
+
+  return [];
+}
+
 export function detectAiAgentsForQuestion(
   question: string,
 ): AiCompetencyAgent[] {
   const q = question.trim().toLowerCase();
   if (!q) return [];
 
+  const words = new Set(q.split(/[^a-z0-9]+/).filter(Boolean));
   const groups = new Set<string>();
   for (const entry of KEYWORDS) {
-    if (entry.keywords.some((keyword) => q.includes(keyword))) {
+    if (
+      entry.keywords.some((keyword) =>
+        keyword.includes(' ') ? q.includes(keyword) : words.has(keyword),
+      )
+    ) {
       groups.add(entry.tagGroup);
     }
   }

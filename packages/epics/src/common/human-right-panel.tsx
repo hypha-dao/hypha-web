@@ -104,6 +104,8 @@ import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname'
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
+import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
+import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
   sanitizeMentionDisplayLabel,
@@ -940,6 +942,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceRoomId,
     coherenceTitle,
     coherenceSlug,
+    coherenceDescription,
     closeCoherenceChat,
     openCoherenceChat,
     openHumanChatPanel,
@@ -2408,6 +2411,41 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setRoomId(targetRoomId);
         await matrixRef.current.loadRoomHistory(targetRoomId);
         if (cancelled) return;
+
+        try {
+          let description = coherenceDescription?.trim() || null;
+          if (!description && coherenceSlug?.trim()) {
+            const signal = await getCoherenceBySlug({
+              slug: coherenceSlug.trim(),
+            });
+            description = signal?.description?.trim() || null;
+          }
+          if (description) {
+            await upsertSignalDescriptionInRoom({
+              roomId: targetRoomId,
+              description,
+              mode: 'safe',
+              matrix: {
+                joinRoom: (id) => matrixRef.current.joinRoom(id),
+                loadRoomHistory: (id) => matrixRef.current.loadRoomHistory(id),
+                getRoomMessages: (id) => matrixRef.current.getRoomMessages(id),
+                sendMessage: (params) => matrixRef.current.sendMessage(params),
+                editRoomMessage: (params) =>
+                  matrixRef.current.editRoomMessage(params),
+              },
+            });
+            if (!cancelled) {
+              await matrixRef.current.loadRoomHistory(targetRoomId);
+            }
+          }
+        } catch (seedError) {
+          console.warn(
+            '[HumanRightPanel] Failed to seed signal description in chat:',
+            seedError,
+          );
+        }
+
+        if (cancelled) return;
         const existing = matrixRef.current.getRoomMessages(targetRoomId);
         if (existing) {
           setMessages(
@@ -2449,6 +2487,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceRoomId,
     coherenceTitle,
     coherenceSlug,
+    coherenceDescription,
     isMatrixAvailable,
     isMatrixAuthenticated,
   ]);

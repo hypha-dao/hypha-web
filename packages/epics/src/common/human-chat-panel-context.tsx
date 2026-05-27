@@ -54,10 +54,12 @@ export type HumanChatPanelContextValue = {
   coherenceRoomId: string | null;
   coherenceTitle: string | null;
   coherenceSlug: string | null;
+  coherenceDescription: string | null;
   openCoherenceChat: (
     roomId: string | null,
     title: string,
     slug: string,
+    description?: string | null,
   ) => void;
   closeCoherenceChat: () => void;
 };
@@ -70,6 +72,7 @@ const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   coherenceRoomId: null,
   coherenceTitle: null,
   coherenceSlug: null,
+  coherenceDescription: null,
   openCoherenceChat: () => {},
   closeCoherenceChat: () => {},
 });
@@ -94,12 +97,21 @@ export function HumanChatPanelProvider({
   const [coherenceRoomId, setCoherenceRoomId] = useState<string | null>(null);
   const [coherenceTitle, setCoherenceTitle] = useState<string | null>(null);
   const [coherenceSlug, setCoherenceSlug] = useState<string | null>(null);
+  const [coherenceDescription, setCoherenceDescription] = useState<
+    string | null
+  >(null);
 
   const openCoherenceChat = useCallback(
-    (roomId: string | null, title: string, slug: string) => {
+    (
+      roomId: string | null,
+      title: string,
+      slug: string,
+      description?: string | null,
+    ) => {
       setCoherenceRoomId(roomId);
       setCoherenceTitle(title);
       setCoherenceSlug(slug);
+      setCoherenceDescription(description?.trim() ? description.trim() : null);
       setMode('coherence');
       // Idempotently open the sidebar — avoids race condition with toggle()
       setOpen(true);
@@ -112,6 +124,7 @@ export function HumanChatPanelProvider({
     setCoherenceRoomId(null);
     setCoherenceTitle(null);
     setCoherenceSlug(null);
+    setCoherenceDescription(null);
   }, []);
 
   const openHumanChatPanel = useCallback(() => {
@@ -128,6 +141,7 @@ export function HumanChatPanelProvider({
         coherenceRoomId,
         coherenceTitle,
         coherenceSlug,
+        coherenceDescription,
         openCoherenceChat,
         closeCoherenceChat,
       }}
