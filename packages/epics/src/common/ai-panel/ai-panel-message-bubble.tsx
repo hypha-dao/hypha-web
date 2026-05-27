@@ -153,9 +153,6 @@ function parseOrderedListItem(line: string): string | null {
   return text || null;
 }
 
-const CONFIDENCE_SCORE_PATTERN =
-  /(\*{0,2}Confidence\*{0,2}\s*:?\s*)(0?\.\d+|1(?:\.0+)?)\b/gi;
-
 function formatConfidenceScore(raw: string): string | null {
   const num = Number.parseFloat(raw);
   if (!Number.isFinite(num)) return null;
@@ -164,12 +161,92 @@ function formatConfidenceScore(raw: string): string | null {
   return null;
 }
 
+function parseConfidenceScoreAt(
+  text: string,
+  pos: number,
+): { raw: string; length: number } | null {
+  if (pos >= text.length) return null;
+  const ch = text.charAt(pos);
+  if (ch === '0' && text.charAt(pos + 1) === '.') {
+    let end = pos + 2;
+    while (end < text.length) {
+      const digit = text.charAt(end);
+      if (digit < '0' || digit > '9') break;
+      end += 1;
+    }
+    const raw = text.slice(pos, end);
+    return raw.length > 2 ? { raw, length: raw.length } : null;
+  }
+  if (ch === '1') {
+    let end = pos + 1;
+    if (text.charAt(end) === '.') {
+      end += 1;
+      while (end < text.length && text.charAt(end) === '0') end += 1;
+    }
+    const next = text.charAt(end);
+    if (next.length > 0 && /[a-z0-9]/i.test(next)) return null;
+    return { raw: text.slice(pos, end), length: end - pos };
+  }
+  return null;
+}
+
 /** Show model confidence as a percentage (0.8 → 80%) in AI panel copy. */
 function formatConfidenceDisplay(text: string): string {
-  return text.replace(CONFIDENCE_SCORE_PATTERN, (match, prefix, raw) => {
-    const formatted = formatConfidenceScore(raw);
-    return formatted ? `${prefix}${formatted}` : match;
-  });
+  const lower = text.toLowerCase();
+  const marker = 'confidence';
+  let result = '';
+  let cursor = 0;
+
+  while (cursor < text.length) {
+    const hit = lower.indexOf(marker, cursor);
+    if (hit === -1) {
+      result += text.slice(cursor);
+      break;
+    }
+    if (hit > 0 && /[a-z0-9]/i.test(text.charAt(hit - 1))) {
+      result += text.slice(cursor, hit + 1);
+      cursor = hit + 1;
+      continue;
+    }
+
+    let prefixStart = hit;
+    let starsBefore = 0;
+    while (
+      prefixStart > 0 &&
+      text.charAt(prefixStart - 1) === '*' &&
+      starsBefore < 2
+    ) {
+      prefixStart -= 1;
+      starsBefore += 1;
+    }
+
+    let pos = hit + marker.length;
+    let starsAfter = 0;
+    while (pos < text.length && text.charAt(pos) === '*' && starsAfter < 2) {
+      pos += 1;
+      starsAfter += 1;
+    }
+    while (pos < text.length && text.charAt(pos) === ' ') pos += 1;
+    if (pos < text.length && text.charAt(pos) === ':') {
+      pos += 1;
+      while (pos < text.length && text.charAt(pos) === ' ') pos += 1;
+    }
+
+    const parsed = parseConfidenceScoreAt(text, pos);
+    const formatted = parsed ? formatConfidenceScore(parsed.raw) : null;
+    if (!parsed || !formatted) {
+      result += text.slice(cursor, hit + marker.length);
+      cursor = hit + marker.length;
+      continue;
+    }
+
+    result += text.slice(cursor, prefixStart);
+    result += text.slice(prefixStart, pos);
+    result += formatted;
+    cursor = pos + parsed.length;
+  }
+
+  return result;
 }
 
 function renderInlineMarkdown(text: string): React.ReactNode {
