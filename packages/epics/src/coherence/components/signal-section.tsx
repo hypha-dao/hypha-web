@@ -3,6 +3,7 @@
 import { FC, ReactNode } from 'react';
 import { Text } from '@radix-ui/themes';
 import { useSignalsSection } from '../hooks';
+import { useSignalGridColumns } from '../hooks/use-signal-grid-columns';
 import {
   Button,
   Checkbox,
@@ -161,8 +162,6 @@ type SignalSectionProps = {
   leadImage?: string;
   toolbarLeft?: ReactNode;
   isLoading: boolean;
-  firstPageSize?: number;
-  pageSize?: number;
   hideArchived: boolean;
   setHideArchived: (checked: boolean) => void;
   order?: string;
@@ -177,8 +176,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
   leadImage,
   toolbarLeft,
   isLoading,
-  firstPageSize = 10,
-  pageSize = 10,
   hideArchived,
   setHideArchived,
   refresh,
@@ -545,17 +542,19 @@ export const SignalSection: FC<SignalSectionProps> = ({
     [activeBoardId],
   );
 
+  const gridMeasureRef = React.useRef<HTMLDivElement | null>(null);
+  const { rowBatchSize } = useSignalGridColumns(gridMeasureRef);
+
   const {
-    pages,
     loadMore,
-    pagination,
+    hasMore,
+    visibleSignals,
     onUpdateSearch,
     searchTerm,
     filteredSignals,
   } = useSignalsSection({
     signals: boardFilteredSignals,
-    firstPageSize,
-    pageSize,
+    rowBatchSize,
   });
   const searchFilteredSignals = React.useMemo(() => {
     const query = searchTerm?.trim()?.toLowerCase();
@@ -576,14 +575,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
     }
     return byId;
   }, [activeBoards, filterSignalsByBoard, searchFilteredSignals]);
-  const visibleSignals = React.useMemo(() => {
-    const visibleCount =
-      pages <= 1 ? firstPageSize : firstPageSize + (pages - 1) * pageSize;
-    return filteredSignals.slice(0, visibleCount);
-  }, [filteredSignals, firstPageSize, pageSize, pages]);
 
   return (
-    <div className="flex w-full flex-col gap-4">
+    <div ref={gridMeasureRef} className="flex w-full flex-col gap-4">
       {toolbarLeft || activeBoards.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
           {toolbarLeft}
@@ -884,7 +878,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
         <ErrorAlert lines={provisioningNoticeLines} bgColor="bg-yellow-600" />
       ) : null}
 
-      {pagination?.totalPages === 0 ? (
+      {filteredSignals.length === 0 ? (
         <Empty>
           <p>{t('listIsEmpty')}</p>
         </Empty>
@@ -898,15 +892,14 @@ export const SignalSection: FC<SignalSectionProps> = ({
           onSignalClick={onSignalClick}
         />
       )}
-      {pagination?.totalPages === 0 ||
-      filteredSignals.length <= firstPageSize ? null : (
+      {filteredSignals.length <= rowBatchSize ? null : (
         <SectionLoadMore
           onClick={loadMore}
-          disabled={pagination?.totalPages === pages}
+          disabled={!hasMore}
           isLoading={isLoading}
         >
           <Text className="line-clamp-3 max-w-md text-center text-sm leading-snug">
-            {pagination?.totalPages === pages ? t('noMore') : t('loadMore')}
+            {!hasMore ? t('noMore') : t('loadMore')}
           </Text>
         </SectionLoadMore>
       )}

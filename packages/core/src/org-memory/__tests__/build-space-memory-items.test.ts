@@ -247,6 +247,27 @@ describe('buildSpaceMemoryItemsFromOrgMemoryPayload', () => {
     expect(rows[0]!.kind).toBe('video');
   });
 
+  it('uses room title instead of opaque media id for call recordings', () => {
+    const rows = buildSpaceMemoryItemsFromOrgMemoryPayload({
+      org_memory_assets: [
+        {
+          source: 'call_recording',
+          filename: '6MiOwFUJuAco8jasovTtxmqrbFV7No38vZBst2dA4lgwXT0y',
+          mxc_uri:
+            'mxc://example.org/6MiOwFUJuAco8jasovTtxmqrbFV7No38vZBst2dA4lgwXT0y',
+          mime: 'video/webm',
+          call_session_id: 'session-3',
+          call_recording_id: 11,
+          room_title: 'Hypha Core Team',
+          occurred_at: '2024-07-03T00:00:00.000Z',
+        },
+      ],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.name).toBe('Hypha Core Team');
+    expect(rows[0]!.context.roomTitle).toBe('Hypha Core Team');
+  });
+
   it('skips proposal rows without http(s) app_url', () => {
     const rows = buildSpaceMemoryItemsFromOrgMemoryPayload({
       org_memory_assets: [

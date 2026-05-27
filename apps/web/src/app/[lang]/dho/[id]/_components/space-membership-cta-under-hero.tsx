@@ -29,10 +29,16 @@ export function SpaceMembershipCtaUnderHero({
 
   const hasActivityAccess = checkAccess(access, userState);
 
+  const isLoggedInNonMember =
+    userState === UserSpaceState.LOGGED_IN ||
+    userState === UserSpaceState.LOGGED_IN_ORG;
+
+  // Under-hero CTA when activity is visible (public/network/org) but user is not
+  // a space member — same JoinSpace affordance as SpaceAccessDenied empty state.
   if (
     isLoading ||
     isAccessLoading ||
-    userState !== UserSpaceState.LOGGED_IN_ORG ||
+    !isLoggedInNonMember ||
     !hasActivityAccess
   ) {
     return null;

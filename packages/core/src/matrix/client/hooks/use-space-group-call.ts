@@ -6,6 +6,7 @@ import { ClientEvent, RoomEvent, RoomStateEvent } from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEventHandler';
 import { useMatrix } from '../providers/matrix-provider';
+import { matrixMemberDisplayLabel } from '../../matrix-member-display';
 import {
   isPermissionLikeGroupCallError,
   resolveMatrixSpeakerDisplayName,
@@ -136,6 +137,7 @@ export type SpaceGroupCallLaunchContext = {
   signalTitle?: string;
   signalSlug?: string;
   threadRootEventId?: string;
+  roomTitle?: string;
 };
 
 export type SpaceGroupCallOptions = {
@@ -261,7 +263,9 @@ function getLiveLocalVideoTrack(
   gc: MatrixSdk.GroupCall,
 ): MediaStreamTrack | null {
   const track = gc.localCallFeed?.stream.getVideoTracks()[0];
-  return track && track.readyState === 'live' ? track : null;
+  // Browsers mute (black-frame) camera tracks when the tab is backgrounded while
+  // keeping readyState `live`; treat that as unhealthy so recovery can republish.
+  return track && track.readyState === 'live' && !track.muted ? track : null;
 }
 
 async function waitForLiveLocalVideoTrack(
@@ -515,6 +519,7 @@ export function useSpaceGroupCall(
   const pendingRecordingUploadRef = useRef<PendingRecordingUpload | null>(null);
   const captureModeRef = useRef<SpaceGroupCallCaptureMode>('none');
   const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
+  const [isCallRecovering, setIsCallRecovering] = useState(false);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
 
   const dismissRemoteMediaStallBanner = useCallback(() => {
@@ -727,7 +732,9 @@ export function useSpaceGroupCall(
       let recorder: Awaited<ReturnType<typeof createCallRecording>> | null =
         null;
       if (mode === 'recording_with_transcript') {
-        recorder = await createCallRecording(gc);
+        recorder = await createCallRecording(
+          () => groupCallRef.current ?? groupCall,
+        );
         if (!recorder) {
           setRecordingStatus('error');
           setRecordingError(
@@ -1138,6 +1145,7 @@ export function useSpaceGroupCall(
     remoteMediaRecoverRequestedRef.current = false;
     remoteMediaRecoverAttemptedRef.current = false;
     remoteMediaRecoverInFlightRef.current = false;
+    setIsCallRecovering(false);
     setRemoteMediaStall(false);
     if (feedUpdateRafRef.current != null) {
       cancelAnimationFrame(feedUpdateRafRef.current);
@@ -1409,7 +1417,9 @@ export function useSpaceGroupCall(
       if (
         waitedMs >= REMOTE_MEDIA_AUTO_RECOVER_MS &&
         !remoteMediaRecoverAttemptedRef.current &&
-        !remoteMediaRecoverInFlightRef.current
+        !remoteMediaRecoverInFlightRef.current &&
+        typeof document !== 'undefined' &&
+        !document.hidden
       ) {
         remoteMediaRecoverAttemptedRef.current = true;
         remoteMediaRecoverRequestedRef.current = true;
@@ -2579,7 +2589,12 @@ export function useSpaceGroupCall(
       setActiveRoomCapture(
         resolveActiveRoomCaptureFromEvents(
           recent,
-          (senderId) => room.getMember(senderId)?.name || senderId,
+          (senderId) => {
+            const member = room.getMember(senderId);
+            return member
+              ? matrixMemberDisplayLabel(member, senderId)
+              : senderId;
+          },
           localUserId,
         ),
       );
@@ -2669,6 +2684,13 @@ export function useSpaceGroupCall(
 
   useEffect(() => {
     if (!groupCallRef.current) return;
+    const pinnedCallRoomId = activeGroupCallRoomIdRef.current;
+    if (pinnedCallRoomId) {
+      // Never tear down a pinned call when the hook room id changes or clears
+      // (e.g. navigating to another space while the dock keeps the call).
+      if (roomId !== pinnedCallRoomId) return;
+      return;
+    }
     if (activeGroupCallRoomIdRef.current === roomId) return;
     if (lastRoomIdForTelemetryRef.current) {
       logSpaceGroupCallEvent({
@@ -2759,13 +2781,84 @@ export function useSpaceGroupCall(
       setTabBackgroundWhileInCall(
         inCall && typeof document !== 'undefined' && document.hidden,
       );
+      if (document.hidden || !inCall) return;
+      const gc = groupCallRef.current;
+      if (!gc) return;
+      remoteMediaGapSinceRef.current = null;
+      remoteMediaStallLoggedRef.current = false;
+      remoteMediaRecoverAttemptedRef.current = false;
+      nudgeGroupCallPlaceOutgoing(gc);
+      scheduleLocalMediaBootstrap(gc);
+      scheduleFeedBatched();
+      refreshLocalPreview();
+      evalRemoteMediaStall();
     };
     document.addEventListener('visibilitychange', onVis);
     onVis();
     return () => {
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [callState]);
+  }, [
+    callState,
+    evalRemoteMediaStall,
+    refreshLocalPreview,
+    scheduleFeedBatched,
+    scheduleLocalMediaBootstrap,
+  ]);
+
+  /** Republish camera when the browser unmutes the track after tab foreground. */
+  useEffect(() => {
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    const gc = groupCallRef.current;
+    if (!gc || gc.isLocalVideoMuted()) return;
+
+    const recoverIfNeeded = () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (gc.isLocalVideoMuted() || getLiveLocalVideoTrack(gc)) return;
+      const kind = lastJoinKindRef.current ?? 'video';
+      void ensureLocalCallMediaPublished(gc, kind).then(() => {
+        scheduleFeedBatched();
+        refreshLocalPreview();
+      });
+    };
+
+    const attachToStream = (stream: MediaStream | undefined) => {
+      if (!stream) return () => undefined;
+      const onTrackChange = () => recoverIfNeeded();
+      stream.addEventListener('addtrack', onTrackChange);
+      stream.addEventListener('removetrack', onTrackChange);
+      for (const track of stream.getVideoTracks()) {
+        track.addEventListener('mute', onTrackChange);
+        track.addEventListener('unmute', onTrackChange);
+        track.addEventListener('ended', onTrackChange);
+      }
+      return () => {
+        stream.removeEventListener('addtrack', onTrackChange);
+        stream.removeEventListener('removetrack', onTrackChange);
+        for (const track of stream.getVideoTracks()) {
+          track.removeEventListener('mute', onTrackChange);
+          track.removeEventListener('unmute', onTrackChange);
+          track.removeEventListener('ended', onTrackChange);
+        }
+      };
+    };
+
+    let detachStream = attachToStream(gc.localCallFeed?.stream);
+    const onFeedsChanged = () => {
+      detachStream?.();
+      detachStream = attachToStream(
+        groupCallRef.current?.localCallFeed?.stream,
+      );
+      recoverIfNeeded();
+    };
+    gc.on(GroupCallEvent.UserMediaFeedsChanged, onFeedsChanged);
+    recoverIfNeeded();
+
+    return () => {
+      detachStream?.();
+      gc.off(GroupCallEvent.UserMediaFeedsChanged, onFeedsChanged);
+    };
+  }, [callState, groupCall, refreshLocalPreview, scheduleFeedBatched]);
 
   useEffect(() => {
     return () => {
@@ -2800,6 +2893,7 @@ export function useSpaceGroupCall(
     abortInFlightJoin(joinEpochRef, isJoiningRef);
     runCleanup();
     remoteMediaRecoverInFlightRef.current = true;
+    setIsCallRecovering(true);
     setCallState('idle');
     setErrorCode(null);
     setCallKind(null);
@@ -2815,6 +2909,7 @@ export function useSpaceGroupCall(
     void enterWithKind(retryKind, retryThreadRootEventId, {
       preserveRemoteMediaRecoverInFlight: true,
     }).finally(() => {
+      setIsCallRecovering(false);
       if (!groupCallRef.current) {
         remoteMediaRecoverAttemptedRef.current = false;
       }
@@ -3006,13 +3101,30 @@ export function useSpaceGroupCall(
     ? inCallUserIdsFromGroupCall(groupCall)
     : idleInCallUserIds;
 
-  const showRoomCallInProgress = useMemo(
+  const showRoomCallInProgressRaw = useMemo(
     () =>
       !inOurSession &&
       idleRoomParticipantCount > 0 &&
       (callState === 'idle' || callState === 'error'),
     [callState, inOurSession, idleRoomParticipantCount],
   );
+
+  /**
+   * Hysteresis: show quickly when a call appears, hide only after it stays empty.
+   * Prevents join-strip blink + repeated chimes when Matrix sync/token recovery flickers.
+   */
+  const [showRoomCallInProgress, setShowRoomCallInProgress] = useState(false);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (showRoomCallInProgressRaw) {
+      timer = setTimeout(() => setShowRoomCallInProgress(true), 250);
+    } else {
+      timer = setTimeout(() => setShowRoomCallInProgress(false), 2000);
+    }
+    return () => {
+      if (timer != null) clearTimeout(timer);
+    };
+  }, [showRoomCallInProgressRaw]);
 
   return {
     callState,
@@ -3048,6 +3160,7 @@ export function useSpaceGroupCall(
     remoteMediaStall,
     dismissRemoteMediaStallBanner,
     tabBackgroundWhileInCall,
+    isCallRecovering,
     activeSpeakerKey,
     threadContext,
     callKind,

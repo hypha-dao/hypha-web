@@ -1,4 +1,6 @@
 import type * as MatrixSdk from 'matrix-js-sdk';
+import { GroupCallEvent } from 'matrix-js-sdk';
+import type { CallFeed } from 'matrix-js-sdk/lib/webrtc/callFeed';
 
 import { uploadCallRecordingBlob } from '../../../assets/client/upload-call-recording';
 import { sleepMs } from '../../../assets/client/call-recording-local-backup';
@@ -202,15 +204,56 @@ const AUDIO_MIXER_REFRESH_MS = 400;
 
 type CallVideoSourceKind = 'screenshare' | 'camera';
 
-type CallVideoSource = {
+export type CallVideoSource = {
   track: MediaStreamTrack;
+  stream: MediaStream;
   kind: CallVideoSourceKind;
+};
+
+type CallVideoFeedLike = {
+  stream: MediaStream;
+  isVideoMuted: () => boolean;
+  isLocal?: () => boolean;
 };
 
 function isLiveVideoTrack(
   track: MediaStreamTrack | null | undefined,
 ): track is MediaStreamTrack {
   return Boolean(track && track.readyState === 'live');
+}
+
+function liveVideoFromFeed(
+  feed: CallVideoFeedLike,
+): { track: MediaStreamTrack; stream: MediaStream } | null {
+  if (feed.isVideoMuted()) return null;
+  const stream = feed.stream;
+  const track =
+    stream
+      .getVideoTracks()
+      .find((candidate) => candidate.readyState === 'live') ??
+    stream.getVideoTracks()[0];
+  if (!isLiveVideoTrack(track)) return null;
+  return { track, stream };
+}
+
+/** Every screenshare feed, including `localScreenshareFeed` when not yet listed. */
+export function iterCallScreenshareFeeds(
+  groupCall: MatrixSdk.GroupCall,
+): CallFeed[] {
+  const out: CallFeed[] = [];
+  const seen = new Set<string>();
+  const push = (feed: CallFeed | undefined) => {
+    if (!feed) return;
+    const key = `${feed.userId ?? ''}:${feed.deviceId ?? ''}:${feed.stream.id}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(feed);
+  };
+  for (const feed of groupCall.screenshareFeeds) push(feed);
+  push(groupCall.localScreenshareFeed);
+  return out.sort(
+    (a, b) => Number(a.isLocal?.() ?? false) - Number(b.isLocal?.() ?? false),
+  );
 }
 
 /** Collect every live camera + screenshare track from the active GroupCall. */
@@ -220,24 +263,27 @@ export function collectCallVideoSources(
   const out: CallVideoSource[] = [];
   const seen = new Set<string>();
 
-  for (const feed of groupCall.screenshareFeeds) {
-    const track = feed.stream.getVideoTracks()[0];
-    if (!isLiveVideoTrack(track) || seen.has(track.id)) continue;
-    seen.add(track.id);
-    out.push({ track, kind: 'screenshare' });
+  for (const feed of iterCallScreenshareFeeds(groupCall)) {
+    const live = liveVideoFromFeed(feed);
+    if (!live || seen.has(live.track.id)) continue;
+    seen.add(live.track.id);
+    out.push({ ...live, kind: 'screenshare' });
   }
 
-  const localTrack = groupCall.localCallFeed?.stream.getVideoTracks()[0];
-  if (isLiveVideoTrack(localTrack) && !seen.has(localTrack.id)) {
-    seen.add(localTrack.id);
-    out.push({ track: localTrack, kind: 'camera' });
+  const localFeed = groupCall.localCallFeed;
+  if (localFeed) {
+    const live = liveVideoFromFeed(localFeed);
+    if (live && !seen.has(live.track.id)) {
+      seen.add(live.track.id);
+      out.push({ ...live, kind: 'camera' });
+    }
   }
 
   for (const feed of groupCall.userMediaFeeds) {
-    const track = feed.stream.getVideoTracks()[0];
-    if (!isLiveVideoTrack(track) || seen.has(track.id)) continue;
-    seen.add(track.id);
-    out.push({ track, kind: 'camera' });
+    const live = liveVideoFromFeed(feed);
+    if (!live || seen.has(live.track.id)) continue;
+    seen.add(live.track.id);
+    out.push({ ...live, kind: 'camera' });
   }
 
   return out;
@@ -304,13 +350,14 @@ export function layoutCallRecordingTiles(
   });
 }
 
-function drawVideoCover(
+function drawVideoTile(
   ctx: CanvasRenderingContext2D,
   video: HTMLVideoElement,
   x: number,
   y: number,
   w: number,
   h: number,
+  fit: 'cover' | 'contain',
 ) {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
@@ -319,7 +366,8 @@ function drawVideoCover(
     ctx.fillRect(x, y, w, h);
     return;
   }
-  const scale = Math.max(w / vw, h / vh);
+  const scale =
+    fit === 'cover' ? Math.max(w / vw, h / vh) : Math.min(w / vw, h / vh);
   const dw = vw * scale;
   const dh = vh * scale;
   const dx = x + (w - dw) / 2;
@@ -327,12 +375,27 @@ function drawVideoCover(
   ctx.drawImage(video, dx, dy, dw, dh);
 }
 
+type ResolveGroupCall = () => MatrixSdk.GroupCall | null | undefined;
+
+function normalizeGroupCallResolver(
+  groupCallOrResolver:
+    | MatrixSdk.GroupCall
+    | null
+    | undefined
+    | ResolveGroupCall,
+): ResolveGroupCall {
+  if (typeof groupCallOrResolver === 'function') {
+    return groupCallOrResolver;
+  }
+  return () => groupCallOrResolver;
+}
+
 /**
  * Canvas compositor that redraws all participant feeds every frame. Keeps recording
  * in video/webm even when the call starts audio-only so camera can be enabled later.
  */
 function createCallVideoCompositor(
-  groupCall: MatrixSdk.GroupCall,
+  resolveGroupCall: ResolveGroupCall,
 ): { track: MediaStreamTrack; dispose: () => void } | null {
   if (typeof document === 'undefined') return null;
 
@@ -344,30 +407,56 @@ function createCallVideoCompositor(
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
+  const videoSink = document.createElement('div');
+  videoSink.setAttribute('aria-hidden', 'true');
+  videoSink.style.cssText =
+    'position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;pointer-events:none;opacity:0;';
+  document.body.appendChild(videoSink);
+
   const videoElements = new Map<string, HTMLVideoElement>();
   let disposed = false;
+  let drawTimer: number | null = null;
+  const disposers: Array<() => void> = [];
 
-  const ensureVideoElement = (track: MediaStreamTrack): HTMLVideoElement => {
-    let el = videoElements.get(track.id);
+  const bindGroupCallListeners = (groupCall: MatrixSdk.GroupCall) => {
+    const onFeedsChanged = () => drawFrame();
+    const events = [
+      GroupCallEvent.UserMediaFeedsChanged,
+      GroupCallEvent.ScreenshareFeedsChanged,
+      GroupCallEvent.LocalScreenshareStateChanged,
+    ] as const;
+    for (const eventName of events) {
+      groupCall.on(eventName, onFeedsChanged);
+      disposers.push(() => groupCall.off(eventName, onFeedsChanged));
+    }
+  };
+
+  const ensureVideoElement = (source: CallVideoSource): HTMLVideoElement => {
+    let el = videoElements.get(source.track.id);
     if (!el) {
       el = document.createElement('video');
       el.muted = true;
       el.playsInline = true;
-      el.srcObject = new MediaStream([track]);
+      el.autoplay = true;
+      el.srcObject = source.stream;
+      el.addEventListener('loadedmetadata', () => {
+        void el?.play().catch(() => undefined);
+      });
+      videoSink.appendChild(el);
       void el.play().catch(() => undefined);
-      videoElements.set(track.id, el);
-    } else if (el.srcObject !== null) {
-      const current = (el.srcObject as MediaStream).getVideoTracks()[0];
-      if (current?.id !== track.id) {
-        el.srcObject = new MediaStream([track]);
-        void el.play().catch(() => undefined);
-      }
+      videoElements.set(source.track.id, el);
+    } else if (el.srcObject !== source.stream) {
+      el.srcObject = source.stream;
+      void el.play().catch(() => undefined);
     }
     return el;
   };
 
   const drawFrame = () => {
     if (disposed) return;
+    const groupCall = resolveGroupCall();
+    if (!groupCall) return;
+
     ctx.fillStyle = '#000';
     ctx.fillRect(
       0,
@@ -379,10 +468,10 @@ function createCallVideoCompositor(
     const sources = collectCallVideoSources(groupCall);
     const activeIds = new Set(sources.map((s) => s.track.id));
     for (const [trackId, el] of videoElements) {
-      if (!activeIds.has(trackId)) {
-        el.srcObject = null;
-        videoElements.delete(trackId);
-      }
+      if (activeIds.has(trackId)) continue;
+      el.srcObject = null;
+      el.remove();
+      videoElements.delete(trackId);
     }
 
     const tiles = layoutCallRecordingTiles(
@@ -391,25 +480,39 @@ function createCallVideoCompositor(
       CALL_RECORDING_COMPOSITOR_HEIGHT,
     );
     for (const tile of tiles) {
-      const video = ensureVideoElement(tile.source.track);
+      const video = ensureVideoElement(tile.source);
       ctx.save();
       ctx.beginPath();
       ctx.rect(tile.x, tile.y, tile.w, tile.h);
       ctx.clip();
-      drawVideoCover(ctx, video, tile.x, tile.y, tile.w, tile.h);
+      drawVideoTile(
+        ctx,
+        video,
+        tile.x,
+        tile.y,
+        tile.w,
+        tile.h,
+        tile.source.kind === 'screenshare' ? 'contain' : 'cover',
+      );
       ctx.restore();
     }
   };
 
+  const initialGroupCall = resolveGroupCall();
+  if (initialGroupCall) {
+    bindGroupCallListeners(initialGroupCall);
+  }
+
   drawFrame();
-  const drawTimer = window.setInterval(
+  drawTimer = window.setInterval(
     drawFrame,
     Math.round(1000 / CALL_RECORDING_COMPOSITOR_FPS),
   );
   const capture = canvas.captureStream(CALL_RECORDING_COMPOSITOR_FPS);
   const track = capture.getVideoTracks()[0];
   if (!track) {
-    window.clearInterval(drawTimer);
+    if (drawTimer != null) window.clearInterval(drawTimer);
+    videoSink.remove();
     return null;
   }
 
@@ -417,11 +520,15 @@ function createCallVideoCompositor(
     track,
     dispose: () => {
       disposed = true;
-      window.clearInterval(drawTimer);
+      if (drawTimer != null) window.clearInterval(drawTimer);
+      for (const dispose of disposers) dispose();
+      disposers.length = 0;
       for (const el of videoElements.values()) {
         el.srcObject = null;
+        el.remove();
       }
       videoElements.clear();
+      videoSink.remove();
       track.stop();
     },
   };
@@ -444,7 +551,7 @@ function allLiveAudioTracks(
   for (const feed of groupCall.userMediaFeeds) {
     addFromStream(feed.stream);
   }
-  for (const feed of groupCall.screenshareFeeds) {
+  for (const feed of iterCallScreenshareFeeds(groupCall)) {
     addFromStream(feed.stream);
   }
   return tracks;
@@ -714,7 +821,7 @@ async function acquireLocalMicStream(): Promise<{
  * when streams change during camera or call-mode toggles.
  */
 function buildGroupCallRecordingStream(
-  groupCall: MatrixSdk.GroupCall,
+  resolveGroupCall: ResolveGroupCall,
 ): { stream: MediaStream; dispose: () => void } | null {
   const output = new MediaStream();
   const disposers: Array<() => void> = [];
@@ -722,15 +829,16 @@ function buildGroupCallRecordingStream(
     for (const dispose of disposers) dispose();
   };
 
-  const compositor = createCallVideoCompositor(groupCall);
+  const compositor = createCallVideoCompositor(resolveGroupCall);
   if (compositor?.track) {
     output.addTrack(compositor.track);
     disposers.push(() => compositor.dispose());
   }
 
-  const mixer = createDynamicMixedAudioTrack(() =>
-    allLiveAudioTracks(groupCall),
-  );
+  const mixer = createDynamicMixedAudioTrack(() => {
+    const groupCall = resolveGroupCall();
+    return groupCall ? allLiveAudioTracks(groupCall) : [];
+  });
   if (mixer?.track) {
     output.addTrack(mixer.track);
     disposers.push(() => mixer.dispose());
@@ -750,14 +858,20 @@ function buildGroupCallRecordingStream(
 }
 
 export async function createCallRecording(
-  groupCall: MatrixSdk.GroupCall | null | undefined,
+  groupCallOrResolver:
+    | MatrixSdk.GroupCall
+    | null
+    | undefined
+    | ResolveGroupCall,
 ): Promise<CallRecordingControls | null> {
   if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') {
     return null;
   }
 
+  const resolveGroupCall = normalizeGroupCallResolver(groupCallOrResolver);
+  const groupCall = resolveGroupCall();
   if (groupCall) {
-    const built = buildGroupCallRecordingStream(groupCall);
+    const built = buildGroupCallRecordingStream(resolveGroupCall);
     if (!built) return null;
     return startMediaStreamRecording(built.stream, built.dispose);
   }
@@ -802,7 +916,7 @@ export function startGroupCallRecording(groupCall: MatrixSdk.GroupCall) {
   if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') {
     return null;
   }
-  const built = buildGroupCallRecordingStream(groupCall);
+  const built = buildGroupCallRecordingStream(() => groupCall);
   if (!built) return null;
   return startMediaStreamRecording(built.stream, built.dispose);
 }
@@ -832,6 +946,7 @@ export async function uploadRecordedCallArtifact({
     signalTitle?: string;
     signalSlug?: string;
     threadRootEventId?: string;
+    roomTitle?: string;
   };
 }) {
   const resolvedMimeType = mimeType || blob?.type?.trim() || 'video/webm';
@@ -851,6 +966,7 @@ export async function uploadRecordedCallArtifact({
 
   const form = new FormData();
   form.set('room_id', roomId);
+  form.set('matrix_room_id', roomId);
   form.set('call_session_id', callSessionId);
   if (uploadedMediaUri) {
     form.set('media_uri', uploadedMediaUri);
@@ -864,6 +980,9 @@ export async function uploadRecordedCallArtifact({
   if (launchContext?.signalTitle?.trim()) {
     form.set('signal_title', launchContext.signalTitle.trim());
     form.set('context_title', launchContext.signalTitle.trim());
+  } else if (launchContext?.roomTitle?.trim()) {
+    form.set('room_title', launchContext.roomTitle.trim());
+    form.set('context_title', launchContext.roomTitle.trim());
   }
   if (launchContext?.signalSlug?.trim()) {
     form.set('signal_slug', launchContext.signalSlug.trim());

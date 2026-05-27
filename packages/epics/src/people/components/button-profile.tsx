@@ -34,6 +34,7 @@ import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
+import { useCompactPanelsMode, useIsMobile } from '@hypha-platform/ui';
 import { useFundWallet } from '../../treasury/hooks';
 
 export type ButtonProfileProps = {
@@ -115,6 +116,10 @@ export const ButtonProfile = ({
 
   const displayName = [person?.name, person?.surname].filter(Boolean).join(' ');
   const primaryLine = displayName.trim() || person?.nickname || t('myProfile');
+  const isCompactPanels = useCompactPanelsMode();
+  const isMobile = useIsMobile();
+  /** Full-width sheet menu only on narrow viewports or compact panel layout. */
+  const useSheetProfileMenu = compact && (isCompactPanels || isMobile === true);
 
   useEffect(() => {
     setProfileMenuOpen(false);
@@ -134,6 +139,218 @@ export const ButtonProfile = ({
         <Button className="h-10" onClick={onLogin}>
           {t('signIn')}
         </Button>
+      );
+    }
+
+    if (!useSheetProfileMenu) {
+      return (
+        <div className="flex items-center gap-2">
+          {trailingBeforeProfile}
+          <DropdownMenu
+            open={profileMenuOpen}
+            onOpenChange={setProfileMenuOpen}
+            modal={false}
+          >
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  'box-border flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center',
+                  'isolate overflow-hidden rounded-md bg-neutral-1 p-0 text-neutral-12 outline-none',
+                  'shadow-sm transition-colors duration-150',
+                  'hover:text-foreground',
+                  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                  'data-[state=open]:shadow-md',
+                )}
+                aria-label={t('openProfileMenu')}
+                aria-haspopup="menu"
+              >
+                <PersonAvatar
+                  size="toolbar"
+                  avatarSrc={person?.avatarUrl}
+                  userName={person?.nickname}
+                  shape="rounded"
+                  className="h-full w-full rounded-md ring-0"
+                />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              side="bottom"
+              sideOffset={6}
+              collisionPadding={12}
+              className={cn(
+                'w-[min(17.5rem,calc(100vw-1.5rem))] border border-border/90 p-1',
+                'bg-popover text-popover-foreground shadow-xl',
+              )}
+            >
+              <DropdownMenuLabel className="cursor-default px-2 pb-0 pt-1.5 font-normal">
+                <div className="flex gap-3">
+                  <PersonAvatar
+                    size="md"
+                    avatarSrc={person?.avatarUrl}
+                    userName={person?.nickname}
+                    shape="rounded"
+                    className="ring-1 ring-border/60"
+                  />
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="truncate text-2 font-semibold leading-snug text-foreground">
+                      {primaryLine}
+                    </span>
+                    {displayName.trim() && person?.nickname ? (
+                      <span className="truncate text-1 text-muted-foreground">
+                        {person.nickname}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </DropdownMenuLabel>
+              {address ? (
+                <div className="mt-2 w-full border-t border-border/50 pt-2 pb-1">
+                  <div
+                    className={cn(
+                      'w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5',
+                      'text-1 text-muted-foreground',
+                    )}
+                  >
+                    <EthAddress address={address} onClick={handleAddressCopy} />
+                  </div>
+                </div>
+              ) : null}
+              {navItems.length > 0 ? (
+                <>
+                  <DropdownMenuSeparator className="-mx-0 my-1" />
+                  <DropdownMenuGroup className="space-y-0.5">
+                    {navItems.map((item) =>
+                      item.href ? (
+                        <DropdownMenuItem
+                          key={item.href}
+                          className={menuItemClass}
+                          asChild
+                        >
+                          <Link href={item.href}>
+                            <span className="flex-1">{item.label}</span>
+                            <ChevronRight
+                              className="ml-auto size-4 opacity-60"
+                              aria-hidden
+                            />
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          key={`nav-action-${item.label}`}
+                          className={menuItemClass}
+                          onClick={item.onClick}
+                        >
+                          <span className="flex-1">{item.label}</span>
+                        </DropdownMenuItem>
+                      ),
+                    )}
+                  </DropdownMenuGroup>
+                </>
+              ) : null}
+              {(profileUrl || onboardingUrl || notificationCentrePath) && (
+                <>
+                  <DropdownMenuSeparator className="-mx-0 my-1" />
+                  <DropdownMenuGroup className="space-y-0.5">
+                    {profileUrl ? (
+                      <DropdownMenuItem className={menuItemClass} asChild>
+                        <Link href={profileUrl}>
+                          <UserRound className="size-4 shrink-0" aria-hidden />
+                          <span className="flex-1">{t('viewProfile')}</span>
+                          <ChevronRight
+                            className="ml-auto size-4 opacity-60"
+                            aria-hidden
+                          />
+                        </Link>
+                      </DropdownMenuItem>
+                    ) : null}
+                    {onboardingUrl ? (
+                      <DropdownMenuItem className={menuItemClass} asChild>
+                        <Link href={onboardingUrl}>
+                          <Compass className="size-4 shrink-0" aria-hidden />
+                          <span className="flex-1">
+                            {t('continueAdventure')}
+                          </span>
+                          <ChevronRight
+                            className="ml-auto size-4 opacity-60"
+                            aria-hidden
+                          />
+                        </Link>
+                      </DropdownMenuItem>
+                    ) : null}
+                    {notificationCentrePath ? (
+                      <DropdownMenuItem className={menuItemClass} asChild>
+                        <Link href={notificationCentrePath}>
+                          <Bell className="size-4 shrink-0" aria-hidden />
+                          <span className="flex-1">
+                            {t('notificationCentre')}
+                          </span>
+                          <ChevronRight
+                            className="ml-auto size-4 opacity-60"
+                            aria-hidden
+                          />
+                        </Link>
+                      </DropdownMenuItem>
+                    ) : null}
+                  </DropdownMenuGroup>
+                </>
+              )}
+              <DropdownMenuSeparator className="-mx-0 my-1" />
+              <DropdownMenuGroup className="space-y-0.5">
+                {onChangeThemeMode ? (
+                  <DropdownMenuItem
+                    className={menuItemClass}
+                    onClick={onChangeThemeMode}
+                  >
+                    <span className="flex-1">
+                      {resolvedTheme === 'dark'
+                        ? t('switchToLightMode')
+                        : t('switchToDarkMode')}
+                    </span>
+                    <Repeat className="size-4 shrink-0" aria-hidden />
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem
+                  className={menuItemClass}
+                  onClick={showMfaEnrollmentModal}
+                >
+                  <span className="flex-1">
+                    {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
+                  </span>
+                  <Shield className="size-4 shrink-0" aria-hidden />
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              {onDelete ? (
+                <>
+                  <DropdownMenuSeparator className="-mx-0 my-1" />
+                  <DropdownMenuItem
+                    onClick={onDelete}
+                    className={cn(
+                      menuItemClass,
+                      'text-error-11 focus:text-error-11',
+                    )}
+                    disabled
+                  >
+                    <span className="flex-1">{t('delete')}</span>
+                    <TrashIcon className="size-4 shrink-0" aria-hidden />
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+              <DropdownMenuSeparator className="-mx-0 my-1" />
+              <DropdownMenuItem
+                onClick={onLogout}
+                className={cn(
+                  menuItemClass,
+                  'text-error-11 focus:bg-error-3 focus:text-error-12 data-[highlighted]:bg-error-3',
+                )}
+              >
+                <span className="flex-1">{t('logout')}</span>
+                <LogOutIcon className="size-4 shrink-0" aria-hidden />
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       );
     }
 

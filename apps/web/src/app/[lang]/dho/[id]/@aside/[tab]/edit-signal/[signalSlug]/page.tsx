@@ -1,4 +1,5 @@
-import { CreateSignalForm, ProposalOverlayShell } from '@hypha-platform/epics';
+import { ConnectedCreateSignalForm } from '@web/components/connected-create-signal-form';
+import { ProposalOverlayShell } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../../../../@tab/coherence/constants';
 import { Locale } from '@hypha-platform/i18n';
 import {
@@ -43,7 +44,7 @@ export default async function EditSignalPage({ params }: PageProps) {
 
   return (
     <ProposalOverlayShell>
-      <CreateSignalForm
+      <ConnectedCreateSignalForm
         mode="edit"
         signalSlug={signal.slug}
         signalRoomId={signal.roomId}

@@ -20,7 +20,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'purpose',
     role: 'aiAgentsCatalog.purpose.role',
     focus: 'aiAgentsCatalog.purpose.focus',
-    avatarLabel: 'ST',
+    avatarLabel: 'SS',
     roleDefinition: [
       'aiAgentsCatalog.purpose.roleDefinition.0',
       'aiAgentsCatalog.purpose.roleDefinition.1',
@@ -32,7 +32,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'governance',
     role: 'aiAgentsCatalog.governance.role',
     focus: 'aiAgentsCatalog.governance.focus',
-    avatarLabel: 'GV',
+    avatarLabel: 'GA',
     roleDefinition: [
       'aiAgentsCatalog.governance.roleDefinition.0',
       'aiAgentsCatalog.governance.roleDefinition.1',
@@ -44,7 +44,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'operations',
     role: 'aiAgentsCatalog.operations.role',
     focus: 'aiAgentsCatalog.operations.focus',
-    avatarLabel: 'OP',
+    avatarLabel: 'OL',
     roleDefinition: [
       'aiAgentsCatalog.operations.roleDefinition.0',
       'aiAgentsCatalog.operations.roleDefinition.1',
@@ -56,7 +56,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'community',
     role: 'aiAgentsCatalog.community.role',
     focus: 'aiAgentsCatalog.community.focus',
-    avatarLabel: 'CM',
+    avatarLabel: 'CB',
     roleDefinition: [
       'aiAgentsCatalog.community.roleDefinition.0',
       'aiAgentsCatalog.community.roleDefinition.1',
@@ -68,7 +68,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'finance',
     role: 'aiAgentsCatalog.finance.role',
     focus: 'aiAgentsCatalog.finance.focus',
-    avatarLabel: 'FN',
+    avatarLabel: 'TT',
     roleDefinition: [
       'aiAgentsCatalog.finance.roleDefinition.0',
       'aiAgentsCatalog.finance.roleDefinition.1',
@@ -80,7 +80,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'product',
     role: 'aiAgentsCatalog.product.role',
     focus: 'aiAgentsCatalog.product.focus',
-    avatarLabel: 'PD',
+    avatarLabel: 'PS',
     roleDefinition: [
       'aiAgentsCatalog.product.roleDefinition.0',
       'aiAgentsCatalog.product.roleDefinition.1',
@@ -92,7 +92,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'risk',
     role: 'aiAgentsCatalog.risk.role',
     focus: 'aiAgentsCatalog.risk.focus',
-    avatarLabel: 'RK',
+    avatarLabel: 'SR',
     roleDefinition: [
       'aiAgentsCatalog.risk.roleDefinition.0',
       'aiAgentsCatalog.risk.roleDefinition.1',
@@ -104,7 +104,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'ecosystem',
     role: 'aiAgentsCatalog.ecosystem.role',
     focus: 'aiAgentsCatalog.ecosystem.focus',
-    avatarLabel: 'EC',
+    avatarLabel: 'EP',
     roleDefinition: [
       'aiAgentsCatalog.ecosystem.roleDefinition.0',
       'aiAgentsCatalog.ecosystem.roleDefinition.1',
@@ -116,7 +116,7 @@ const AGENT_CATALOG: AiCompetencyAgent[] = [
     tagGroup: 'learning',
     role: 'aiAgentsCatalog.learning.role',
     focus: 'aiAgentsCatalog.learning.focus',
-    avatarLabel: 'LN',
+    avatarLabel: 'LK',
     roleDefinition: [
       'aiAgentsCatalog.learning.roleDefinition.0',
       'aiAgentsCatalog.learning.roleDefinition.1',
@@ -149,6 +149,8 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'strategic',
       'long term',
       'direction',
+      'how is our',
+      'doing overall',
     ],
   },
   {
@@ -162,6 +164,8 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'decision-making',
       'accountability',
       'policy',
+      'signals',
+      'coherence',
     ],
   },
   {
@@ -187,12 +191,16 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'onboarding',
       'contributors',
       'participation',
+      'discussion',
+      'summarize',
+      'team discussion',
     ],
   },
   {
     tagGroup: 'finance',
     keywords: [
       'token',
+      'tokens',
       'treasury',
       'budget',
       'funding',
@@ -200,6 +208,7 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'holdings',
       'distribution',
       'economics',
+      'value flow',
     ],
   },
   {
@@ -226,6 +235,8 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'incident',
       'failure',
       'threat',
+      'blind spot',
+      'blindspot',
     ],
   },
   {
@@ -239,6 +250,7 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'network',
       'external',
       'market',
+      'relay',
     ],
   },
   {
@@ -252,6 +264,8 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
       'evidence',
       'insight',
       'memory',
+      'remember',
+      'recall',
     ],
   },
   {
@@ -271,6 +285,106 @@ const KEYWORDS: Array<{ tagGroup: string; keywords: string[] }> = [
 
 const AGENT_UPDATED_EVENT = 'hypha:ai-agents-updated';
 
+const AVATAR_INITIAL_STOP_WORDS = new Set([
+  'and',
+  'or',
+  'the',
+  'a',
+  'an',
+  'of',
+  'for',
+  'für',
+  'to',
+]);
+
+/** Two-letter initials from the first two meaningful words in a role title. */
+export function getAgentAvatarInitials(roleLabel: string): string {
+  const words = roleLabel
+    .replace(/&/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.replace(/[^\p{L}\p{N}]/gu, ''))
+    .filter(
+      (word) =>
+        word.length > 0 && !AVATAR_INITIAL_STOP_WORDS.has(word.toLowerCase()),
+    );
+
+  if (words.length === 0) return '?';
+  const first = words[0];
+  if (!first) return '?';
+  if (words.length === 1) {
+    return first.slice(0, 2).toUpperCase();
+  }
+  const second = words[1];
+  if (!second) return first.slice(0, 2).toUpperCase();
+  const a = first[0];
+  const b = second[0];
+  if (!a || !b) return first.slice(0, 2).toUpperCase();
+  return (a + b).toUpperCase();
+}
+
+export function tagGroupAccentClass(tagGroup: string): string {
+  switch (tagGroup) {
+    case 'purpose':
+      return 'border-2 border-accent-8 bg-accent-3/30 text-accent-11';
+    case 'governance':
+      return 'border-2 border-info-8 bg-info-3/30 text-info-11';
+    case 'operations':
+      return 'border-2 border-success-8 bg-success-3/30 text-success-11';
+    case 'community':
+      return 'border-2 border-neutral-7 bg-neutral-3/30 text-neutral-11';
+    case 'finance':
+      return 'border-2 border-warning-8 bg-warning-3/30 text-warning-11';
+    case 'product':
+      return 'border-2 border-accent-8 bg-accent-3/30 text-accent-11';
+    case 'risk':
+      return 'border-2 border-error-8 bg-error-3/30 text-error-11';
+    case 'ecosystem':
+      return 'border-2 border-info-8 bg-info-3/30 text-info-11';
+    case 'learning':
+      return 'border-2 border-success-8 bg-success-3/30 text-success-11';
+    case 'reputation':
+      return 'border-2 border-warning-8 bg-warning-3/30 text-warning-11';
+    default:
+      return 'border-2 border-neutral-7 bg-neutral-3/30 text-neutral-11';
+  }
+}
+
+type ChatMessagePart = {
+  type?: string;
+  text?: string;
+};
+
+export function extractTextFromChatMessageParts(
+  parts?: ChatMessagePart[],
+): string {
+  if (!parts?.length) return '';
+  return parts
+    .filter(
+      (part): part is { type: 'text'; text: string } =>
+        part.type === 'text' && typeof part.text === 'string',
+    )
+    .map((part) => part.text.trim())
+    .filter(Boolean)
+    .join(' ');
+}
+
+export function resolveMobilizedAgentsForAssistantMessage<
+  T extends { role: string; parts?: ChatMessagePart[] },
+>(messages: readonly T[], assistantIndex: number): AiCompetencyAgent[] {
+  const assistant = messages[assistantIndex];
+  if (!assistant || assistant.role !== 'assistant') return [];
+
+  for (let index = assistantIndex - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role !== 'user') continue;
+    const question = extractTextFromChatMessageParts(message.parts);
+    return question ? detectAiAgentsForQuestion(question) : [];
+  }
+
+  return [];
+}
+
 function storageKey(spaceSlug: string): string {
   return `hypha:ai-mobilized-agents:v1:${spaceSlug}`;
 }
@@ -281,9 +395,14 @@ export function detectAiAgentsForQuestion(
   const q = question.trim().toLowerCase();
   if (!q) return [];
 
+  const words = new Set(q.split(/[^a-z0-9]+/).filter(Boolean));
   const groups = new Set<string>();
   for (const entry of KEYWORDS) {
-    if (entry.keywords.some((keyword) => q.includes(keyword))) {
+    if (
+      entry.keywords.some((keyword) =>
+        /[^a-z0-9]/.test(keyword) ? q.includes(keyword) : words.has(keyword),
+      )
+    ) {
       groups.add(entry.tagGroup);
     }
   }

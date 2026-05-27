@@ -110,6 +110,7 @@ type CallLaunchContext = {
   signalTitle?: string;
   signalSlug?: string;
   threadRootEventId?: string;
+  roomTitle?: string;
 };
 
 type GlobalCallDockContextValue = ReturnType<typeof useGlobalCallDockValue>;
@@ -129,6 +130,9 @@ function useGlobalCallDockValue() {
   const [activeSpaceSlug, setActiveSpaceSlug] = React.useState<string | null>(
     null,
   );
+  const [pinnedCallSpaceSlug, setPinnedCallSpaceSlug] = React.useState<
+    string | null
+  >(null);
   const [activeAuthToken, setActiveAuthToken] = React.useState<string | null>(
     null,
   );
@@ -141,6 +145,10 @@ function useGlobalCallDockValue() {
   const restoreInProgressRef = React.useRef(false);
   const restoreTimerRef = React.useRef<number | null>(null);
   const callLaunchContextRef = React.useRef<CallLaunchContext | null>(null);
+  /** Room pinned for the active call — survives chat panel room/null transitions. */
+  const callSessionRoomIdRef = React.useRef<string | null>(null);
+  const callSessionSpaceSlugRef = React.useRef<string | null>(null);
+  const callSessionAuthTokenRef = React.useRef<string | null>(null);
 
   const onCallArtifactsUploaded = React.useCallback(
     ({ spaceSlug: slug }: { spaceSlug: string }) => {
@@ -175,7 +183,11 @@ function useGlobalCallDockValue() {
       authToken?: string | null,
     ) => {
       if (!roomId) {
-        if (inSessionRef.current || restoreInProgressRef.current) {
+        if (
+          inSessionRef.current ||
+          restoreInProgressRef.current ||
+          callSessionRoomIdRef.current
+        ) {
           return;
         }
       }
@@ -185,7 +197,7 @@ function useGlobalCallDockValue() {
       setBoundRoomId(roomId);
       setBoundSpaceSlug(spaceSlug);
       setBoundAuthToken(authToken?.trim() || null);
-      if (!inSessionRef.current) {
+      if (!inSessionRef.current && !callSessionRoomIdRef.current) {
         setActiveRoomId(roomId);
         setActiveSpaceSlug(spaceSlug);
         setActiveAuthToken(authToken?.trim() || null);
@@ -195,12 +207,65 @@ function useGlobalCallDockValue() {
   );
 
   React.useEffect(() => {
-    if (!inSession) {
-      setActiveRoomId(boundRoomId);
-      setActiveSpaceSlug(boundSpaceSlug);
-      setActiveAuthToken(boundAuthToken);
+    if (inSession && activeRoomId) {
+      const prevSessionRoomId = callSessionRoomIdRef.current;
+      callSessionRoomIdRef.current = activeRoomId;
+      callSessionAuthTokenRef.current = activeAuthToken;
+
+      if (prevSessionRoomId !== activeRoomId) {
+        const slugToPin = activeSpaceSlug?.trim() || null;
+        if (slugToPin) {
+          callSessionSpaceSlugRef.current = slugToPin;
+          setPinnedCallSpaceSlug(slugToPin);
+        }
+      } else if (!callSessionSpaceSlugRef.current && activeSpaceSlug?.trim()) {
+        callSessionSpaceSlugRef.current = activeSpaceSlug.trim();
+        setPinnedCallSpaceSlug(activeSpaceSlug.trim());
+      }
+      return;
     }
-  }, [inSession, boundAuthToken, boundRoomId, boundSpaceSlug]);
+    if (
+      call.callState === 'idle' &&
+      !pendingJoin &&
+      !call.isCallRecovering &&
+      !restoreInProgressRef.current
+    ) {
+      callSessionRoomIdRef.current = null;
+      callSessionSpaceSlugRef.current = null;
+      callSessionAuthTokenRef.current = null;
+      setPinnedCallSpaceSlug(null);
+    }
+  }, [
+    activeAuthToken,
+    activeRoomId,
+    activeSpaceSlug,
+    call.callState,
+    call.isCallRecovering,
+    inSession,
+    pendingJoin,
+  ]);
+
+  React.useEffect(() => {
+    if (
+      inSession ||
+      pendingJoin ||
+      restoreInProgressRef.current ||
+      call.isCallRecovering ||
+      callSessionRoomIdRef.current
+    ) {
+      return;
+    }
+    setActiveRoomId(boundRoomId);
+    setActiveSpaceSlug(boundSpaceSlug);
+    setActiveAuthToken(boundAuthToken);
+  }, [
+    boundAuthToken,
+    boundRoomId,
+    boundSpaceSlug,
+    call.isCallRecovering,
+    inSession,
+    pendingJoin,
+  ]);
 
   React.useEffect(() => {
     if (!activeRoomId || !boundRoomId || activeRoomId !== boundRoomId) return;
@@ -233,6 +298,7 @@ function useGlobalCallDockValue() {
     setBoundSpaceSlug(snapshot.spaceSlug);
     setActiveRoomId(snapshot.roomId);
     setActiveSpaceSlug(snapshot.spaceSlug);
+    setPinnedCallSpaceSlug(snapshot.spaceSlug);
     setPendingJoin({
       kind: snapshot.callKind,
       roomId: snapshot.roomId,
@@ -330,13 +396,20 @@ function useGlobalCallDockValue() {
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
-      callLaunchContextRef.current = launchContext?.signalTitle?.trim()
-        ? launchContext
-        : threadRootEventId?.trim()
-        ? { threadRootEventId: threadRootEventId.trim() }
-        : null;
+      callLaunchContextRef.current =
+        launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
+          ? launchContext
+          : threadRootEventId?.trim()
+          ? { threadRootEventId: threadRootEventId.trim() }
+          : null;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
       const targetAuthToken = authToken?.trim() || boundAuthToken;
+      const pinnedCallRoomId =
+        callSessionRoomIdRef.current ??
+        (inSessionRef.current ? activeRoomId : null);
+      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
+        return;
+      }
       if (activeRoomId !== targetRoomId) {
         setBoundRoomId(targetRoomId);
         setBoundSpaceSlug(targetSpaceSlug);
@@ -366,13 +439,20 @@ function useGlobalCallDockValue() {
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
-      callLaunchContextRef.current = launchContext?.signalTitle?.trim()
-        ? launchContext
-        : threadRootEventId?.trim()
-        ? { threadRootEventId: threadRootEventId.trim() }
-        : null;
+      callLaunchContextRef.current =
+        launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
+          ? launchContext
+          : threadRootEventId?.trim()
+          ? { threadRootEventId: threadRootEventId.trim() }
+          : null;
       const targetSpaceSlug = spaceSlug?.trim() ?? null;
       const targetAuthToken = authToken?.trim() || boundAuthToken;
+      const pinnedCallRoomId =
+        callSessionRoomIdRef.current ??
+        (inSessionRef.current ? activeRoomId : null);
+      if (pinnedCallRoomId && pinnedCallRoomId !== targetRoomId) {
+        return;
+      }
       if (activeRoomId !== targetRoomId) {
         setBoundRoomId(targetRoomId);
         setBoundSpaceSlug(targetSpaceSlug);
@@ -393,19 +473,29 @@ function useGlobalCallDockValue() {
   );
 
   const showFloatingDock = inSession || call.recordingStatus === 'uploading';
+  const holdsMatrixSyncForCall =
+    inSession ||
+    call.recordingStatus === 'uploading' ||
+    pendingJoin != null ||
+    restoreInProgressRef.current ||
+    call.isCallRecovering;
 
   React.useEffect(() => {
-    setGroupCallSessionActive(showFloatingDock);
+    setGroupCallSessionActive(holdsMatrixSyncForCall);
+  }, [holdsMatrixSyncForCall]);
+
+  React.useEffect(() => {
     return () => {
       setGroupCallSessionActive(false);
     };
-  }, [showFloatingDock]);
+  }, []);
 
   return {
     bindRoomContext,
     boundRoomId,
     activeRoomId,
     activeSpaceSlug,
+    pinnedCallSpaceSlug,
     dockMode,
     setDockMode,
     showFloatingDock,

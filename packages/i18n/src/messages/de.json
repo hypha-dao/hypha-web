@@ -35,6 +35,9 @@
     "notFoundDescription": "Die Seite, die Sie suchen, wurde möglicherweise entfernt, umbenannt oder ist vorübergehend nicht verfügbar.",
     "errorTryAgain": "Erneut versuchen",
     "errorRefreshPage": "Seite aktualisieren",
+    "errorConnectionLostTitle": "Verbindung unterbrochen",
+    "errorConnectionLostDescription": "Ihre Netzwerkverbindung wurde unterbrochen. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "errorConnectionLostRetry": "Erneut versuchen",
     "errorMaintenanceTitle": "Wir sind gleich zurück!",
     "errorMaintenanceDescription": "Hypha macht eine kurze Pause, während wir Updates ausrollen. Wir sind bald mit spannenden Verbesserungen zurück!",
     "errorLoadOverviewTab": "Ups, etwas ist schiefgelaufen. Der Überblick-Tab konnte nicht geladen werden.",
@@ -1420,9 +1423,17 @@
     "confirmInvestmentCta": "Investition bestätigen",
     "acceptInvestmentTitle": "Investition annehmen",
     "acceptInvestmentBody": "{sellerLabel} hat die Investition deines Spaces über {buyerAmountLabel} angenommen und bietet im Gegenzug {sellerAmountLabel} an.",
+    "acceptInvestmentBodyPersonal": "{sellerLabel} hat deine Investition über {buyerAmountLabel} angenommen und bietet im Gegenzug {sellerAmountLabel} an.",
     "exchangeStakesAndTokensTitle": "Anteile & Tokens tauschen",
     "exchangeStakesAndTokensBody": "{sellerLabel} hat vorgeschlagen, {sellerAmountLabel} gegen {buyerAmountLabel} aus deinem Space zu tauschen.",
-    "exchangeCounterpartyFallback": "die andere Partei"
+    "exchangeStakesAndTokensBodyPersonal": "{sellerLabel} hat vorgeschlagen, {sellerAmountLabel} gegen {buyerAmountLabel} von dir zu tauschen.",
+    "exchangeCounterpartyFallback": "die andere Partei",
+    "escrowDepositRefuse": "Ablehnen",
+    "escrowDepositRefusing": "Wird abgelehnt...",
+    "escrowConfirmExchange": "Tausch bestätigen",
+    "escrowDepositDepositing": "Einzahlung läuft...",
+    "escrowDepositApproving": "Genehmigung läuft...",
+    "escrowDepositInsufficientWallet": "Dein Wallet-Guthaben liegt unter dem erforderlichen Betrag."
   },
   "AgreementFlow": {
     "labels": {
@@ -2344,13 +2355,25 @@
   "AiPanel": {
     "title": "Hypha AI",
     "suggestions": {
-      "aboutSpace": "Erzähl mir etwas über diesen Space",
-      "memberCount": "Wie viele Mitglieder hat dieser Space?",
-      "agreements": "Welche Vereinbarungen gibt es in diesem Space?",
-      "structure": "Beschreibe die Struktur dieses Spaces"
+      "spaceHealth": "Wie steht unser Space insgesamt da?",
+      "nextSignal": "Welches Signal sollen wir als Nächstes erstellen oder teilen?",
+      "blindSpot": "Was ist unser größter blinder Fleck?",
+      "summarizeDiscussion": "Fasse die letzte Teamdiskussion zusammen",
+      "spaceMemory": "Was erinnert sich unser Space?",
+      "valueFlows": "Wie fließen Werte durch unsere Tokens?"
     },
-    "welcome": "Hallo! Ich bin dein AI-Assistent für {spaceName}. Ich kann Space-Details wie Mitgliederzahlen, Vereinbarungen und Strukturen nachschlagen. Frag mich alles über den Space, den du gerade ansiehst.",
-    "placeholder": "Frag Hypha AI etwas...",
+    "suggestionTags": {
+      "spaceHealth": "Space-Gesundheit",
+      "nextSignal": "Nächstes Signal",
+      "blindSpot": "Blinder Fleck",
+      "summarizeDiscussion": "Diskussion zusammenfassen",
+      "spaceMemory": "Space-Memory",
+      "valueFlows": "Werteströme"
+    },
+    "welcome": "Ich bin deine Space-KI für Kohärenz in der Strategie, Bewegung in den Operations und Sinn im Impact—Spezialist:innen gleiten herein, sobald du sie rufst.",
+    "specialistsResponding": "Beitragende Spezialisten",
+    "specialistsRespondingStreaming": "Beitragende Spezialisten…",
+    "placeholder": "Einfach fragen...",
     "sendButton": "Senden",
     "stopButton": "Stoppen",
     "newlineHint": "Shift+Enter für neue Zeile",
@@ -2373,13 +2396,15 @@
     "toolTokens": "{count} Token(s) für Space \"{slug}\" abgerufen.",
     "toolError": "Fehler: {message}",
     "streamError": "Beim Generieren der Antwort ist ein Fehler aufgetreten.",
+    "assistantExpiredSubtitle": "Ihr Hypha-Netzwerk-Beitrag ist vor {expiredElapsed} abgelaufen. Bitte reaktivieren Sie Ihren Space, bevor Sie Hypha AI nutzen.",
     "attachment": "Anhang",
     "pendingAction": "Ausstehende Aktion",
     "confirmWith": "Bestätigen mit:",
     "confirm": "Bestätigen",
     "cancel": "Abbrechen",
     "showMore": "Mehr anzeigen",
-    "showLess": "Weniger anzeigen"
+    "showLess": "Weniger anzeigen",
+    "welcomeSpecialistsHint": "Aktive Spezialist:innen findest du auch unter Mitglieder > KI-Agenten."
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -2389,6 +2414,13 @@
     "sendButton": "Senden",
     "newlineHint": "Enter zum Senden · Shift+Enter für neue Zeile · :emoji:",
     "loading": "Laden...",
+    "connectionLostTitle": "Verbindung unterbrochen",
+    "connectionLostDescription": "Die Chat-Synchronisation wurde wegen eines Netzwerkfehlers pausiert. Versuchen Sie es erneut, sobald Sie wieder online sind.",
+    "connectionReconnectingDescription": "Chat wird wieder verbunden…",
+    "connectionLostRetry": "Erneut versuchen",
+    "connectionFollowerTitle": "Chat ist in einem anderen Tab geöffnet",
+    "connectionFollowerDescription": "Human Chat synchronisiert jeweils nur in einem Browser-Tab, damit Anrufe stabil bleiben.",
+    "connectionFollowerUseTab": "Diesen Tab verwenden",
     "openPanel": "Chat-Panel öffnen",
     "hidePanel": "Chat-Panel ausblenden",
     "closePanel": "Panel schließen",
@@ -2527,6 +2559,9 @@
     "callJoinCallAlertsAria": "Anruf-Hinweise: Signalton und optionaler Hinweis bei laufendem Anruf",
     "callJoinCallAlertsMuteAction": "Anruf-Hinweise stummschalten (kein Signalton bei neuen Anrufen)",
     "callJoinCallAlertsUnmuteAction": "Anruf-Hinweise wieder einschalten",
+    "callGalleryPage": "Seite {current} von {total}",
+    "callGalleryPreviousPage": "Vorherige Seite",
+    "callGalleryNextPage": "Nächste Seite",
     "callJoinWithAudio": "Am Space-Sprachanruf teilnehmen (Mikrofon)",
     "callJoinWithVideo": "Am Space-Videoanruf teilnehmen (Kamera und Mikrofon)",
     "callJoinWithAudioShort": "Audio beitreten",
@@ -2649,6 +2684,7 @@
     "callCaptureConsentRemote": "{actor} zeichnet diesen Anruf auf ({mode}).",
     "callCaptureConsentJoin": "Dieser Anruf wird aufgezeichnet ({mode}) von {actor}. Beitritt gilt als Zustimmung.",
     "callCaptureConsentLegalNote": "Aufzeichnung und Transkript können im Space-Gedächtnis gespeichert werden.",
+    "callCaptureConsentActorFallback": "Ein Teilnehmer",
     "callCaptureConsentPausedSuffix": " Aufzeichnung ist pausiert.",
     "callCaptureVoiceStartedRecordingTranscript": "Dieser Anruf wird jetzt aufgezeichnet und transkribiert.",
     "callCaptureVoiceStoppedRecordingTranscript": "Aufzeichnung und Transkription wurden beendet.",
@@ -2667,6 +2703,11 @@
     "signalTeamRemoveMember": "Entfernen",
     "signalTeamPendingRequests": "Ausstehende Anfragen",
     "signalTeamApproveRequester": "Zum Team hinzufügen",
+    "signalTeamUpdated": "Signal-Team aktualisiert",
+    "signalTeamAddedMembers": "hinzugefügt {members}",
+    "signalTeamRemovedMembers": "entfernt {members}",
+    "signalTeamAccessRequested": "Signal-Team-Zugang angefragt",
+    "signalTeamAccessApproved": "Signal-Team-Zugang genehmigt",
     "mentionOpenFallbackRoom": "Dieser Raum konnte im lokalen Kontext nicht aufgelöst werden. Öffnen Sie den zugehörigen Space und versuchen Sie es erneut.",
     "mentionOpenFallbackMissingMessage": "Diese Erwähnung ist in der geladenen Timeline noch nicht verfügbar. Bitte versuchen Sie es gleich noch einmal."
   },
@@ -2871,95 +2912,107 @@
       "valueModel": "Wert & Modell",
       "evidenceImpact": "Evidenz & Wirkung"
     },
+    "tagGroup": {
+      "purpose": "Zweck & Strategie",
+      "governance": "Governance",
+      "operations": "Operations",
+      "community": "Community",
+      "finance": "Treasury & Tokens",
+      "product": "Produkt",
+      "risk": "Verantwortung & Resilienz",
+      "ecosystem": "Ökosystem & Partnerschaften",
+      "learning": "Lernen & Wissen",
+      "reputation": "Reputation & Vertrauen"
+    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Senior-Strateg:in",
-        "focus": "Mission klären, strategische Ausrichtung schärfen, Nordstern-Ergebnisse definieren und langfristige Richtung festlegen",
+        "focus": "Mission, strategische Ausrichtung und langfristige Richtung",
         "roleDefinition": [
-          "Definiert die strategische Ausrichtung und verknüpft tägliche Entscheidungen mit langfristigen Missionsergebnissen.",
-          "Identifiziert strategische blinde Flecken, Zielkonflikte und Zweitrundeneffekte vor verbindlichen Zusagen.",
-          "Übersetzt Vision in messbare Prioritäten, Entscheidungskriterien und Erfolgsindikatoren."
+          "Verknüpft tägliche Arbeit mit Mission und messbaren Prioritäten.",
+          "Macht blinde Flecken und Zielkonflikte sichtbar, bevor ihr euch festlegt.",
+          "Übersetzt Vision in klare Entscheidungskriterien und Ergebnisse."
         ]
       },
       "governance": {
         "role": "Governance-Architekt:in",
-        "focus": "Entscheidungsrechte, Verantwortungsmodelle, Qualität von Vorschlägen und kollektive Koordinationsmechanismen",
+        "focus": "Entscheidungsrechte, Vorschlagsqualität und Koordination",
         "roleDefinition": [
-          "Entwirft Governance-Abläufe, die Vorschläge klar, verantwortlich und umsetzbar halten.",
-          "Verbessert die Abstimmungsqualität, indem Annahmen, Stakeholder-Wirkungen und Entscheidungsreife sichtbar werden.",
-          "Empfiehlt schlanke Leitplanken, die Autonomie schützen und gleichzeitig Koordinationsaufwand reduzieren."
+          "Hält Vorschläge klar, verantwortlich und umsetzbar.",
+          "Verbessert Abstimmungsreife mit Annahmen und Stakeholder-Wirkung.",
+          "Setzt leichte Leitplanken, die Reibung reduzieren ohne Autonomie zu bremsen."
         ]
       },
       "operations": {
         "role": "Operations Lead",
-        "focus": "Umsetzungspläne, Liefer-Rhythmus, Abhängigkeitsmanagement und praktische Implementierungsdetails",
+        "focus": "Umsetzungspläne, Rhythmus und Abhängigkeiten",
         "roleDefinition": [
-          "Übersetzt Strategie in ausführbare Pläne mit Verantwortlichen, Meilensteinen und realistischen Zeitplänen.",
-          "Markiert Engpässe durch Abhängigkeiten frühzeitig und schlägt konkrete Sequenzierungsoptionen vor.",
-          "Erhöht die Lieferzuverlässigkeit mit klaren Arbeitsrhythmen und Feedback-Schleifen."
+          "Macht aus Strategie Verantwortliche, Meilensteine und Zeitpläne.",
+          "Markiert Engpässe früh mit praktischen Sequenzierungsoptionen.",
+          "Stabilisiert Lieferung mit Arbeitsrhythmen und Feedback-Schleifen."
         ]
       },
       "community": {
         "role": "Community Builder",
-        "focus": "Mitglieder-Engagement, Qualität der Beteiligung, Onboarding und Gesundheit der Mitwirkenden",
+        "focus": "Engagement, Onboarding und Gesundheit der Mitwirkenden",
         "roleDefinition": [
-          "Stärkt die Beteiligungsqualität durch besseres Onboarding und klarere Rollen für Mitwirkende.",
-          "Erkennt Rückgänge beim Engagement und schlägt Maßnahmen für Bindung und Aktivierung vor.",
-          "Balanciert Offenheit mit gesunden Normen, Vertrauen und nachhaltiger Mitwirkenden-Erfahrung."
+          "Verbessert Onboarding und Klarheit für stärkere Beteiligung.",
+          "Erkennt Rückgänge und schlägt Bindungs- und Aktivierungsmaßnahmen vor.",
+          "Balanciert Offenheit mit Vertrauen und nachhaltiger Beteiligung."
         ]
       },
       "finance": {
         "role": "Treasury- und Token-Analyst:in",
-        "focus": "Token-/Treasury-Auswirkungen, Verteilungseffekte, Nachhaltigkeit und Zielkonflikte bei der Kapitalallokation",
+        "focus": "Treasury, Tokens und Kapitalallokation",
         "roleDefinition": [
-          "Bewertet Treasury- und Token-Entscheidungen hinsichtlich Nachhaltigkeit, Konzentrationsrisiko und Runway-Auswirkungen.",
-          "Verknüpft Budgetentscheidungen mit strategischen Prioritäten und erwarteten Organisationsergebnissen.",
-          "Empfiehlt risikobewusste Allokationsoptionen mit klarer Upside-/Downside-Bewertung."
+          "Prüft Token- und Treasury-Entscheidungen auf Runway und Konzentrationsrisiko.",
+          "Verknüpft Ausgaben mit strategischen Prioritäten und erwarteten Ergebnissen.",
+          "Rahmt Allokationsoptionen mit klarer Upside und Downside."
         ]
       },
       "product": {
         "role": "Produktstrateg:in",
-        "focus": "Nutzerwirkung, Produktpriorisierung, Experimentdesign und messbare Adoptions-Ergebnisse",
+        "focus": "Nutzerwirkung, Priorisierung und Adoption",
         "roleDefinition": [
-          "Priorisiert Funktionen nach Nutzerwert, strategischem Fit und Umsetzungsvorteilen.",
-          "Entwirft Experimente, die Annahmen mit messbaren Lernergebnissen validieren.",
-          "Richtet Roadmap-Entscheidungen an Adoptions-, Retentions- und Verhaltensänderungsmetriken aus."
+          "Priorisiert nach Nutzerwert, strategischem Fit und Umsetzungshebel.",
+          "Entwirft Experimente mit messbaren Lernergebnissen.",
+          "Richtet Roadmap an Adoptions- und Retention-Signalen aus."
         ]
       },
       "risk": {
-        "role": "Risk- und Compliance-Berater:in",
-        "focus": "Fehlermodi, Downside-Szenarien, Minderungspläne und Policy-/Compliance-Aspekte",
+        "role": "Berater:in für Verantwortung & Resilienz",
+        "focus": "Frühe Signale, Schutzmechanismen und langfristige Resilienz",
         "roleDefinition": [
-          "Macht operative, Governance- und Sicherheits-Fehlermodi vor der Umsetzung sichtbar.",
-          "Empfiehlt praktische Gegenmaßnahmen mit klaren Verantwortlichkeiten und Auslösebedingungen.",
-          "Hält Vorschläge compliant und resilient, ohne die Umsetzung übermäßig zu bürokratisieren."
+          "Erkennt Belastung und schwache Signale früh, damit der Space sich anpassen kann, bevor Schaden entsteht.",
+          "Schlägt wertschätzende Schutzmechanismen mit klaren Verantwortlichen vor—resilient ohne Bürokratie.",
+          "Hält Zusagen an Werte und Verantwortung ausgerichtet, während der Space wächst."
         ]
       },
       "ecosystem": {
         "role": "Ökosystem- und Partnerschaftsstrateg:in",
-        "focus": "Space-übergreifende Zusammenarbeit, Partnerschaften, Ökosystem-Abhängigkeiten und Hebel externer Koordination",
+        "focus": "Space-übergreifende Partnerschaften und Koordinationshebel",
         "roleDefinition": [
-          "Kartiert Ökosystem-Abhängigkeiten und identifiziert Partnerschaften mit hohem Hebel.",
-          "Entwirft Space-übergreifende Koordinationspläne mit klaren Verantwortlichkeiten und gemeinsamen Ergebnissen.",
-          "Verbessert externes Signal-Routing, damit umsetzbare Erkenntnisse schnell die richtigen Spaces erreichen."
+          "Kartiert Abhängigkeiten und Partnerschaften mit hohem Hebel.",
+          "Plant space-übergreifende Arbeit mit klaren Verantwortlichen und gemeinsamen Ergebnissen.",
+          "Leitet externe Signale schnell an die richtigen Spaces weiter."
         ]
       },
       "learning": {
         "role": "Learning- und Wissensarchitekt:in",
-        "focus": "Wissenssicherung, Lernschleifen, Evidenzqualität und Systeme zur kontinuierlichen Verbesserung",
+        "focus": "Wissenssicherung, Evidenz und Verbesserungsschleifen",
         "roleDefinition": [
-          "Macht Diskussionen und Experimente zu wiederverwendbarem organisationalem Wissen.",
-          "Entwirft Feedback-Schleifen, die die Entscheidungsqualität über Zeit verbessern.",
-          "Hebt Evidenzstandards an, indem Annahmen, Metriken und Learnings klarer werden."
+          "Macht aus Diskussionen und Experimenten wiederverwendbares Wissen.",
+          "Baut Feedback-Schleifen, die Entscheidungen über Zeit schärfen.",
+          "Klärt Annahmen, Metriken und Learnings."
         ]
       },
       "reputation": {
         "role": "Reputation- und Trust-Steward",
-        "focus": "Glaubwürdigkeitssignale, Stakeholder-Vertrauen, narrative Kohärenz und kommunikatives Risikomanagement",
+        "focus": "Vertrauen, Narrativ und Kommunikationsrisiko",
         "roleDefinition": [
-          "Schützt Vertrauen, indem öffentliches Narrativ mit tatsächlichem operativem Verhalten abgeglichen wird.",
-          "Macht Reputationsrisiken früh sichtbar und schlägt proaktive Minderungsmaßnahmen vor.",
-          "Verbessert die Qualität der Stakeholder-Kommunikation bei Veränderung, Konflikt und Unsicherheit."
+          "Richtet öffentliches Narrativ an tatsächlichem operativem Verhalten aus.",
+          "Markiert Reputationsrisiken früh mit praktischen Gegenmaßnahmen.",
+          "Stärkt Stakeholder-Kommunikation bei Wandel und Konflikt."
         ]
       }
     },

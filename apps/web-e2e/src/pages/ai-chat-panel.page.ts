@@ -33,7 +33,7 @@ export class AiChatPanelPage extends BasePage {
       name: 'Sign In',
       exact: true,
     });
-    this.chatInput = page.getByPlaceholder('Ask Hypha AI anything...');
+    this.chatInput = page.getByPlaceholder('Ask Anything...');
     this.sendButton = page.getByRole('button', { name: 'Send' });
     // Scope to the left sidebar to avoid collision with Human Chat panel
     this.resizeHandle = page.locator(

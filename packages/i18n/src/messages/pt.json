@@ -35,6 +35,9 @@
     "notFoundDescription": "A página que você procura pode ter sido removida, renomeada ou está temporariamente indisponível.",
     "errorTryAgain": "Tentar novamente",
     "errorRefreshPage": "Atualizar página",
+    "errorConnectionLostTitle": "Conexão perdida",
+    "errorConnectionLostDescription": "Sua conexão de rede foi interrompida. Verifique sua conexão e tente novamente.",
+    "errorConnectionLostRetry": "Tentar novamente",
     "errorMaintenanceTitle": "Voltaremos em breve!",
     "errorMaintenanceDescription": "A Hypha está fazendo uma breve pausa enquanto aplicamos atualizações. Voltaremos em breve com melhorias empolgantes!",
     "errorLoadOverviewTab": "Ops, algo deu errado. Não foi possível carregar a aba de visão geral.",
@@ -1719,7 +1722,21 @@
     "exchangeDepositProposalConfirming": "Confirmando...",
     "exchangeDepositProposalTitle": "Depositar {amount} {symbol} – Liquidar escrow (#{escrowId})",
     "exchangeDepositProposalDescription": "Aprove e deposite {payAmount} {paySymbol} no escrow (#{escrowId}) para concluir a troca com {otherParty}. Em troca, {activeSpace} receberá {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Aprove e deposite {payAmount} {paySymbol} no escrow (#{escrowId}) para concluir o investimento em {otherParty}. Em troca, {activeSpace} receberá {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Aprove e deposite {payAmount} {paySymbol} no escrow (#{escrowId}) para concluir o investimento em {otherParty}. Em troca, {activeSpace} receberá {receiveAmount} {receiveSymbol}.",
+    "confirmInvestmentCta": "Confirmar investimento",
+    "acceptInvestmentTitle": "Aceitar investimento",
+    "acceptInvestmentBody": "{sellerLabel} aceitou o investimento do seu espaço de {buyerAmountLabel} e oferece {sellerAmountLabel} em troca.",
+    "acceptInvestmentBodyPersonal": "{sellerLabel} aceitou o seu investimento de {buyerAmountLabel} e oferece {sellerAmountLabel} em troca.",
+    "exchangeStakesAndTokensTitle": "Trocar participações e tokens",
+    "exchangeStakesAndTokensBody": "{sellerLabel} propôs trocar {sellerAmountLabel} por {buyerAmountLabel} do seu espaço.",
+    "exchangeStakesAndTokensBodyPersonal": "{sellerLabel} propôs trocar {sellerAmountLabel} por {buyerAmountLabel} consigo.",
+    "exchangeCounterpartyFallback": "a outra parte",
+    "escrowDepositRefuse": "Recusar",
+    "escrowDepositRefusing": "A recusar...",
+    "escrowConfirmExchange": "Confirmar troca",
+    "escrowDepositDepositing": "A depositar...",
+    "escrowDepositApproving": "A aprovar...",
+    "escrowDepositInsufficientWallet": "O saldo da sua carteira está abaixo do valor necessário."
   },
   "ProposalDetails": {
     "investment": {
@@ -1950,13 +1967,25 @@
   "AiPanel": {
     "title": "Hypha AI",
     "suggestions": {
-      "aboutSpace": "Conte-me sobre este espaço",
-      "memberCount": "Quantos membros este espaço tem?",
-      "agreements": "Quais acordos existem neste espaço?",
-      "structure": "Descreva a estrutura deste espaço"
+      "spaceHealth": "Como está o nosso espaço no geral?",
+      "nextSignal": "Que sinal devemos criar ou partilhar a seguir?",
+      "blindSpot": "Qual é o nosso maior ponto cego?",
+      "summarizeDiscussion": "Resuma a discussão recente da equipa",
+      "spaceMemory": "O que é que o nosso espaço recorda?",
+      "valueFlows": "Como flui o valor através dos nossos tokens?"
     },
-    "welcome": "Olá! Sou seu assistente AI de {spaceName}. Posso buscar detalhes do espaço como número de membros, acordos e estrutura. Pergunte-me qualquer coisa sobre o espaço que você está visualizando.",
-    "placeholder": "Pergunte ao Hypha AI...",
+    "suggestionTags": {
+      "spaceHealth": "Saúde do espaço",
+      "nextSignal": "Próximo sinal",
+      "blindSpot": "Ponto cego",
+      "summarizeDiscussion": "Resumir discussão",
+      "spaceMemory": "Memória do espaço",
+      "valueFlows": "Fluxos de valor"
+    },
+    "welcome": "Sou a IA do teu espaço para trazer coerência à estratégia, movimento às operações e significado ao impacto—agentes especialistas entram suavemente sempre que os chamas.",
+    "specialistsResponding": "Especialistas contribuindo",
+    "specialistsRespondingStreaming": "Especialistas contribuindo…",
+    "placeholder": "Pergunte o que quiser...",
     "sendButton": "Enviar",
     "stopButton": "Parar",
     "newlineHint": "Shift+Enter para nova linha",
@@ -1979,13 +2008,15 @@
     "toolTokens": "{count} token(s) obtido(s) para o espaço \"{slug}\".",
     "toolError": "Erro: {message}",
     "streamError": "Ocorreu um erro ao gerar a resposta.",
+    "assistantExpiredSubtitle": "A sua contribuição para a rede Hypha expirou há {expiredElapsed}. Reative o seu espaço antes de usar a Hypha AI.",
     "attachment": "Anexo",
     "pendingAction": "Ação pendente",
     "confirmWith": "Confirmar com:",
     "confirm": "Confirmar",
     "cancel": "Cancelar",
     "showMore": "Ler mais",
-    "showLess": "Mostrar menos"
+    "showLess": "Mostrar menos",
+    "welcomeSpecialistsHint": "Os especialistas ativos também aparecem em Membros > Agentes de IA."
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -1995,6 +2026,13 @@
     "sendButton": "Enviar",
     "newlineHint": "Enter para enviar · Shift+Enter para nova linha · :emoji:",
     "loading": "Carregando...",
+    "connectionLostTitle": "Conexão perdida",
+    "connectionLostDescription": "A sincronização do chat foi pausada por uma falha de rede. Tente novamente quando estiver online.",
+    "connectionReconnectingDescription": "Reconectando o chat…",
+    "connectionLostRetry": "Tentar novamente",
+    "connectionFollowerTitle": "O chat está aberto em outra aba",
+    "connectionFollowerDescription": "O Human Chat sincroniza em uma aba do navegador por vez para manter as chamadas estáveis.",
+    "connectionFollowerUseTab": "Usar esta aba",
     "openPanel": "Abrir painel de chat",
     "hidePanel": "Ocultar painel de chat",
     "closePanel": "Fechar painel",
@@ -2133,6 +2171,9 @@
     "callJoinCallAlertsAria": "Alertas de chamada: sinal e notificação opcional",
     "callJoinCallAlertsMuteAction": "Silenciar alertas de chamada (sem sinal nem notificação para novas chamadas)",
     "callJoinCallAlertsUnmuteAction": "Reativar alertas de chamada",
+    "callGalleryPage": "Página {current} de {total}",
+    "callGalleryPreviousPage": "Página anterior",
+    "callGalleryNextPage": "Próxima página",
     "callJoinWithAudio": "Entrar na chamada do espaço com o microfone",
     "callJoinWithVideo": "Entrar na chamada do espaço com câmara e microfone",
     "callJoinWithAudioShort": "Entrar (áudio)",
@@ -2255,6 +2296,7 @@
     "callCaptureConsentRemote": "{actor} está a capturar esta chamada ({mode}).",
     "callCaptureConsentJoin": "Esta chamada está a ser capturada ({mode}) por {actor}. Entrar implica o seu consentimento.",
     "callCaptureConsentLegalNote": "A gravação e a transcrição podem ser guardadas na memória do espaço.",
+    "callCaptureConsentActorFallback": "Um participante",
     "callCaptureConsentPausedSuffix": " A captura está em pausa.",
     "callCaptureVoiceStartedRecordingTranscript": "Esta chamada está a ser gravada e transcrita.",
     "callCaptureVoiceStoppedRecordingTranscript": "A gravação e a transcrição foram interrompidas.",
@@ -2273,6 +2315,11 @@
     "signalTeamRemoveMember": "Remover",
     "signalTeamPendingRequests": "Solicitações pendentes",
     "signalTeamApproveRequester": "Adicionar à equipe",
+    "signalTeamUpdated": "Equipe Signal atualizada",
+    "signalTeamAddedMembers": "adicionado {members}",
+    "signalTeamRemovedMembers": "removido {members}",
+    "signalTeamAccessRequested": "Acesso à equipe Signal solicitado",
+    "signalTeamAccessApproved": "Acesso à equipe Signal aprovado",
     "mentionOpenFallbackRoom": "Não foi possível resolver essa sala no seu contexto local. Abra o espaço relacionado e tente novamente.",
     "mentionOpenFallbackMissingMessage": "Essa mensagem de menção ainda não está disponível na linha do tempo carregada. Tente novamente em instantes."
   },
@@ -2475,95 +2522,107 @@
       "valueModel": "Valor e modelo",
       "evidenceImpact": "Evidências e impacto"
     },
+    "tagGroup": {
+      "purpose": "Propósito e estratégia",
+      "governance": "Governança",
+      "operations": "Operações",
+      "community": "Comunidade",
+      "finance": "Tesouraria e tokens",
+      "product": "Produto",
+      "risk": "Cuidado e resiliência",
+      "ecosystem": "Ecossistema e parcerias",
+      "learning": "Aprendizagem e conhecimento",
+      "reputation": "Reputação e confiança"
+    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Estratega Sénior",
-        "focus": "clarificar missão, alinhamento estratégico, resultados north-star e direção de longo prazo",
+        "focus": "Missão, alinhamento estratégico e direção de longo prazo",
         "roleDefinition": [
-          "Define intenção estratégica e liga decisões diárias a resultados de missão de longo prazo.",
-          "Identifica pontos cegos estratégicos, trade-offs e efeitos de segunda ordem antes de compromissos.",
-          "Traduz visão em prioridades mensuráveis, critérios de decisão e indicadores de sucesso."
+          "Liga o trabalho diário à missão e prioridades mensuráveis.",
+          "Revela pontos cegos e trade-offs antes de se comprometer.",
+          "Traduz visão em critérios de decisão e resultados claros."
         ]
       },
       "governance": {
         "role": "Arquiteto/a de Governança",
-        "focus": "direitos de decisão, modelos de responsabilidade, qualidade de propostas e mecanismos de coordenação coletiva",
+        "focus": "Direitos de decisão, qualidade de propostas e coordenação",
         "roleDefinition": [
-          "Desenha fluxos de governança que mantêm propostas claras, responsáveis e executáveis.",
-          "Melhora a qualidade de votação ao tornar visíveis pressupostos, impacto em stakeholders e prontidão para decisão.",
-          "Recomenda guardrails de política leves que protegem autonomia e reduzem fricção de coordenação."
+          "Mantém propostas claras, responsáveis e executáveis.",
+          "Melhora a prontidão para votar com pressupostos e impacto em stakeholders.",
+          "Adiciona guardrails leves que reduzem fricção sem travar a autonomia."
         ]
       },
       "operations": {
         "role": "Líder de Operações",
-        "focus": "planos de execução, cadência de entrega, gestão de dependências e detalhes práticos de implementação",
+        "focus": "Planos de execução, cadência e dependências",
         "roleDefinition": [
-          "Transforma estratégia em planos executáveis com responsáveis, marcos e cronogramas realistas.",
-          "Sinaliza cedo gargalos de dependências e propõe opções concretas de sequenciação.",
-          "Melhora a fiabilidade de entrega com ritmos operacionais claros e loops de feedback."
+          "Transforma estratégia em responsáveis, marcos e cronogramas.",
+          "Sinaliza cedo gargalos com sequenciação prática.",
+          "Estabiliza entrega com ritmos operacionais e feedback."
         ]
       },
       "community": {
         "role": "Construtor/a de Comunidade",
-        "focus": "engajamento de membros, qualidade de participação, onboarding e saúde de contribuidores",
+        "focus": "Engajamento, onboarding e saúde de contribuidores",
         "roleDefinition": [
-          "Fortalece a qualidade de participação ao melhorar onboarding e clareza para contribuidores.",
-          "Deteta quedas de engajamento e propõe intervenções de retenção e ativação.",
-          "Equilibra abertura com normas saudáveis, confiança e experiência sustentável para contribuidores."
+          "Melhora onboarding e clareza para melhor participação.",
+          "Deteta quedas de engajamento e sugere retenção e ativação.",
+          "Equilibra abertura com confiança e participação sustentável."
         ]
       },
       "finance": {
         "role": "Analista de Tesouraria e Token",
-        "focus": "implicações de token/tesouraria, efeitos de distribuição, sustentabilidade e trade-offs de alocação de capital",
+        "focus": "Tesouraria, tokens e trade-offs de alocação",
         "roleDefinition": [
-          "Avalia decisões de tesouraria e token por sustentabilidade, risco de concentração e impacto no runway.",
-          "Liga escolhas orçamentais a prioridades estratégicas e resultados organizacionais esperados.",
-          "Recomenda opções de alocação com consciência de risco e framing explícito de upside/downside."
+          "Avalia decisões de token/tesouraria por runway e risco de concentração.",
+          "Liga gastos a prioridades estratégicas e resultados esperados.",
+          "Enquadra opções de alocação com upside e downside explícitos."
         ]
       },
       "product": {
         "role": "Estratega de Produto",
-        "focus": "impacto no utilizador, priorização de produto, desenho de experimentação e resultados mensuráveis de adoção",
+        "focus": "Impacto no utilizador, priorização e adoção",
         "roleDefinition": [
-          "Prioriza funcionalidades por valor para utilizador, alinhamento estratégico e alavancagem de implementação.",
-          "Desenha experiências que validam pressupostos com resultados de aprendizagem mensuráveis.",
-          "Alinha escolhas de roadmap com métricas de adoção, retenção e mudança de comportamento."
+          "Prioriza por valor para utilizador, alinhamento estratégico e alavancagem.",
+          "Desenha experiências com aprendizagens mensuráveis.",
+          "Alinha roadmap a sinais de adoção e retenção."
         ]
       },
       "risk": {
-        "role": "Consultor/a de Risco e Compliance",
-        "focus": "modos de falha, cenários de risco, planos de mitigação e considerações de política/compliance",
+        "role": "Consultor/a de Cuidado e Resiliência",
+        "focus": "Sinais fracos, salvaguardas e resiliência a longo prazo",
         "roleDefinition": [
-          "Torna visíveis modos de falha operacionais, de governança e de segurança antes da execução.",
-          "Recomenda mitigação prática com ownership claro e condições de disparo.",
-          "Mantém propostas em compliance e resilientes sem burocratizar em excesso a execução."
+          "Deteta tensão e sinais fracos cedo para o espaço se adaptar antes de o dano crescer.",
+          "Propõe salvaguardas cuidadosas com responsáveis claros—resiliência sem burocracia.",
+          "Mantém compromissos alinhados com os vossos valores e cuidado à medida que o espaço cresce."
         ]
       },
       "ecosystem": {
         "role": "Estratega de Ecossistema e Parcerias",
-        "focus": "colaboração entre espaços, parcerias, dependências do ecossistema e alavancagem de coordenação externa",
+        "focus": "Parcerias entre espaços e alavancagem de coordenação",
         "roleDefinition": [
-          "Mapeia dependências do ecossistema e identifica oportunidades de parceria de alta alavancagem.",
-          "Desenha planos de coordenação entre espaços com ownership claro e resultados mútuos.",
-          "Melhora o roteamento de sinais externos para que insights acionáveis cheguem rapidamente aos espaços certos."
+          "Mapeia dependências e parcerias de alta alavancagem.",
+          "Planeia trabalho entre espaços com responsáveis e resultados mútuos.",
+          "Encaminha sinais externos para os espaços certos rapidamente."
         ]
       },
       "learning": {
         "role": "Arquiteto/a de Aprendizagem e Conhecimento",
-        "focus": "captura de conhecimento, loops de aprendizagem, qualidade de evidência e sistemas de melhoria contínua",
+        "focus": "Captura de conhecimento, evidência e loops de melhoria",
         "roleDefinition": [
-          "Transforma discussões e experiências em conhecimento organizacional reutilizável.",
-          "Desenha loops de feedback que melhoram a qualidade de decisão ao longo do tempo.",
-          "Eleva padrões de evidência ao clarificar pressupostos, métricas e lições aprendidas."
+          "Transforma discussões e experiências em conhecimento reutilizável.",
+          "Constrói loops de feedback que afiam decisões.",
+          "Clarifica pressupostos, métricas e lições aprendidas."
         ]
       },
       "reputation": {
         "role": "Responsável por Reputação e Confiança",
-        "focus": "sinais de credibilidade, confiança de stakeholders, coerência narrativa e gestão de risco de comunicação",
+        "focus": "Confiança, narrativa e risco de comunicação",
         "roleDefinition": [
-          "Protege a confiança alinhando narrativa pública com comportamento operacional real.",
-          "Torna visíveis riscos reputacionais cedo e propõe passos de mitigação proativos.",
-          "Melhora a qualidade de comunicação com stakeholders durante mudança, conflito e incerteza."
+          "Alinha narrativa pública com como o espaço opera na prática.",
+          "Sinaliza riscos reputacionais cedo com mitigação prática.",
+          "Fortalece comunicação com stakeholders em mudança e conflito."
         ]
       }
     },

@@ -103,7 +103,7 @@ export function CoherenceBlock({
     isLoading: isSignalsLoading,
     refresh: refreshSignals,
   } = useFindCoherences({
-    spaceId: space?.id,
+    spaceSlug,
     includeArchived: !hideArchived,
     orderBy: order,
   });
@@ -142,6 +142,7 @@ export function CoherenceBlock({
         signal.roomId ?? null,
         signal.title ?? '',
         signal.slug ?? '',
+        signal.description ?? null,
       );
     },
     [openCoherenceChat],
@@ -200,8 +201,6 @@ export function CoherenceBlock({
             signals={filteredSignals}
             leadImage={space?.leadImage ?? undefined}
             isLoading={isSpaceLoading || isSignalsLoading}
-            firstPageSize={4}
-            pageSize={4}
             hideArchived={hideArchived}
             setHideArchived={setHideArchived}
             refresh={refresh}

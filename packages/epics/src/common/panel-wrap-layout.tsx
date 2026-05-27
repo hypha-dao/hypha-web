@@ -200,7 +200,8 @@ export function HumanSidebarTrigger() {
   const isSpace = useIsSpaceContext();
   const isCompactHeader = useCompactHeaderMode();
 
-  if (!isSpace || (open && !isCompactHeader)) return null;
+  // Hide header trigger while the chat panel is open — the panel has its own chrome.
+  if (!isSpace || open) return null;
 
   return (
     <button

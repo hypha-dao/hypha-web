@@ -54,6 +54,7 @@ import {
 import {
   AiPanelHeader,
   AiPanelMessages,
+  AiPanelSuggestions,
   AiPanelChatBar,
   type AiPanelDraftAttachment,
 } from './ai-panel';
@@ -72,6 +73,8 @@ import {
 import { useSpaceDiscoverability } from '../spaces/hooks/use-space-discoverability';
 import { checkAccess } from '../spaces/utils/transparency-access';
 import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
+import { AiPanelSubscriptionBanner } from '../spaces/components/ai-panel-subscription-banner';
+import { useSalesBanner } from '../spaces/hooks/use-sales-banner';
 import {
   MAX_RECENT_SPACE_HISTORY,
   MAX_VISIBLE_RECENT_SPACES,
@@ -196,6 +199,15 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     !isUserSpaceStateLoading &&
     !isDiscoverabilityLoading &&
     !hasSpaceActivityAccess;
+  const { status: spacePaymentStatus, isLoading: isSpacePaymentStatusLoading } =
+    useSalesBanner({
+      spaceId: effectiveSpaceWeb3Id,
+    });
+  const blockSpaceAiForSubscription =
+    Boolean(spaceSlug) &&
+    Boolean(effectiveSpaceWeb3Id) &&
+    !isSpacePaymentStatusLoading &&
+    spacePaymentStatus === 'expired';
   const {
     open: isAiOpen,
     overlayVisible,
@@ -413,13 +425,40 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       .slice(0, MAX_VISIBLE_RECENT_SPACES);
   }, [recentSpaceSlugs, recentSpacesData, spaceSlug]);
 
-  const suggestions = useMemo(
-    () => [
-      t('suggestions.aboutSpace'),
-      t('suggestions.memberCount'),
-      t('suggestions.agreements'),
-      t('suggestions.structure'),
-    ],
+  const suggestionItems = useMemo(
+    () =>
+      [
+        {
+          id: 'spaceHealth',
+          prompt: t('suggestions.spaceHealth'),
+          tagLabel: t('suggestionTags.spaceHealth'),
+        },
+        {
+          id: 'nextSignal',
+          prompt: t('suggestions.nextSignal'),
+          tagLabel: t('suggestionTags.nextSignal'),
+        },
+        {
+          id: 'blindSpot',
+          prompt: t('suggestions.blindSpot'),
+          tagLabel: t('suggestionTags.blindSpot'),
+        },
+        {
+          id: 'summarizeDiscussion',
+          prompt: t('suggestions.summarizeDiscussion'),
+          tagLabel: t('suggestionTags.summarizeDiscussion'),
+        },
+        {
+          id: 'spaceMemory',
+          prompt: t('suggestions.spaceMemory'),
+          tagLabel: t('suggestionTags.spaceMemory'),
+        },
+        {
+          id: 'valueFlows',
+          prompt: t('suggestions.valueFlows'),
+          tagLabel: t('suggestionTags.valueFlows'),
+        },
+      ] as const,
     [t],
   );
 
@@ -635,6 +674,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   });
 
   const isStreaming = status === 'streaming' || status === 'submitted';
+
+  const hasUserMessage = useMemo(
+    () =>
+      (messages as ChatUIMessage[]).some((message) => message.role === 'user'),
+    [messages],
+  );
 
   useEffect(() => {
     const nextSlug = spaceSlug?.trim() || null;
@@ -1085,7 +1130,14 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
   }, [createSpaceWithWalletFlow, messages, onboardingContext, pathname]);
 
   useEffect(() => {
-    if (!error || status !== 'error' || autoRetryingRef.current) return;
+    if (
+      blockSpaceAiForSubscription ||
+      !error ||
+      status !== 'error' ||
+      autoRetryingRef.current
+    ) {
+      return;
+    }
 
     const errorMessage =
       error instanceof Error ? error.message.toLowerCase() : String(error);
@@ -1115,9 +1167,24 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         autoRetryingRef.current = false;
       }
     })();
-  }, [buildMessageOptions, clearError, error, messages, sendMessage, status]);
+  }, [
+    blockSpaceAiForSubscription,
+    buildMessageOptions,
+    clearError,
+    error,
+    messages,
+    sendMessage,
+    status,
+  ]);
+
+  useEffect(() => {
+    if (blockSpaceAiForSubscription) {
+      clearError();
+    }
+  }, [blockSpaceAiForSubscription, clearError]);
 
   const handleSend = useCallback(async () => {
+    if (blockSpaceAiForSubscription) return;
     if ((!input.trim() && draftAttachments.length === 0) || isStreaming) return;
     const text = input;
     const attachments = [...draftAttachments];
@@ -1216,6 +1283,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     activeSpaceChatRoomId,
     matrix,
     onboardingContext,
+    blockSpaceAiForSubscription,
   ]);
 
   const handleStop = useCallback(() => {
@@ -1234,6 +1302,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
 
   const handleSuggestionSelect = useCallback(
     async (text: string) => {
+      if (blockSpaceAiForSubscription) return;
       try {
         clearError();
         if (spaceSlug && text.trim()) {
@@ -1263,6 +1332,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
       }
     },
     [
+      blockSpaceAiForSubscription,
       sendMessage,
       buildMessageOptions,
       clearError,
@@ -1495,7 +1565,12 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         />
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
-        {error && (
+        {spaceSlug && blockSpaceAiForSubscription ? (
+          <div className="mx-3 mt-3 shrink-0">
+            <AiPanelSubscriptionBanner spaceSlug={spaceSlug} />
+          </div>
+        ) : null}
+        {error && !blockSpaceAiForSubscription ? (
           <div
             role="alert"
             className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -1507,7 +1582,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
               </div>
             ) : null}
           </div>
-        )}
+        ) : null}
         {isCreateSpaceWithWalletFlowError ? (
           <div
             role="alert"
@@ -1527,15 +1602,28 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
         ) : null}
         <AiPanelMessages
           messages={messages as ChatUIMessage[]}
-          suggestions={suggestions}
-          showSuggestions={true}
-          onSuggestionSelect={handleSuggestionSelect}
-          onActionReplySelect={handleActionReplySelect}
+          suggestionItems={suggestionItems}
+          showInlineSuggestions={
+            !hasUserMessage && !blockSpaceAiForSubscription
+          }
+          onSuggestionSelect={
+            blockSpaceAiForSubscription ? undefined : handleSuggestionSelect
+          }
+          onActionReplySelect={
+            blockSpaceAiForSubscription ? undefined : handleActionReplySelect
+          }
           activeSpaceName={activeSpaceName}
           isStreaming={isStreaming}
         />
       </SidebarContent>
       <SidebarFooter className="bg-background-2 p-0">
+        {hasUserMessage && !blockSpaceAiForSubscription ? (
+          <AiPanelSuggestions
+            items={suggestionItems}
+            onSelect={handleSuggestionSelect}
+            variant="tags"
+          />
+        ) : null}
         <AiPanelChatBar
           value={input}
           onChange={setInput}
@@ -1544,6 +1632,7 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
           onDraftAttachmentsChange={setDraftAttachments}
           onStop={handleStop}
           isStreaming={isStreaming}
+          composerDisabled={blockSpaceAiForSubscription}
         />
       </SidebarFooter>
     </>

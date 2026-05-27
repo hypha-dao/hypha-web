@@ -1,93 +1,93 @@
 'use client';
 
 import {
-  looksLikeTechnicalMatrixDisplayName,
-  looksLikeTechnicalSpeakerLabel,
-  matrixMemberDisplayLabelFromRoom,
-  speakerLabelToCanonicalPrivySub,
+  splitSpeakerLabeledTranscriptLine,
   useMatrix,
-  usePersonBySub,
-  useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
-import { useMemo } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import { useResolvedMatrixMemberLabel } from '../../common/human-chat-panel/use-resolved-matrix-member-label';
 
-function formatHyphaPersonName(p: {
-  name?: string | null;
-  surname?: string | null;
-  nickname?: string | null;
-}): string {
-  const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
-  if (full) return full;
-  return p.nickname?.trim() ?? '';
-}
+const SpeakerLabelContext = createContext<ReadonlyMap<string, string>>(
+  new Map(),
+);
 
-function useResolvedCallSpeakerLabel(
-  speaker: string,
-  roomId: string | null | undefined,
-): string {
-  const trimmed = speaker.trim();
-  const { client } = useMatrix();
-  const matrixUserId = trimmed.startsWith('@') ? trimmed : null;
-  const privySubFromLabel = speakerLabelToCanonicalPrivySub(trimmed);
-  const needsMatrixLink = Boolean(
-    matrixUserId &&
-      looksLikeTechnicalSpeakerLabel(trimmed) &&
-      !privySubFromLabel,
-  );
-
-  const syncLabel = useMemo(() => {
-    if (!looksLikeTechnicalSpeakerLabel(trimmed)) return trimmed;
-    if (matrixUserId) {
-      return matrixMemberDisplayLabelFromRoom(
-        client,
-        roomId ?? null,
-        matrixUserId,
-      );
-    }
-    return trimmed;
-  }, [client, matrixUserId, roomId, trimmed]);
-
-  const { privyUserId: linkedSub } = useUserPrivyIdByMatrixId({
-    matrixUserId: needsMatrixLink ? matrixUserId ?? undefined : undefined,
-  });
-  const resolvedSub = privySubFromLabel ?? linkedSub;
-  const needsPerson = Boolean(
-    looksLikeTechnicalSpeakerLabel(trimmed) && resolvedSub,
-  );
-  const { person } = usePersonBySub({
-    sub: needsPerson ? resolvedSub : undefined,
-  });
-
-  const personName = person ? formatHyphaPersonName(person) : '';
-  if (personName) return personName;
-  if (
-    matrixUserId &&
-    syncLabel &&
-    !looksLikeTechnicalMatrixDisplayName(syncLabel, matrixUserId)
-  ) {
-    return syncLabel;
-  }
-  if (!looksLikeTechnicalSpeakerLabel(trimmed)) return trimmed;
-  return syncLabel || trimmed;
-}
-
-function ResolvedCallTranscriptLine({
-  line,
+function CallTranscriptSpeakerResolver({
+  speaker,
   roomId,
+  onResolved,
 }: {
-  line: string;
+  speaker: string;
   roomId?: string | null;
+  onResolved: (speaker: string, label: string) => void;
 }) {
-  const colonIdx = line.indexOf(':');
-  if (colonIdx <= 0) {
+  const isMatrixUserId = speaker.startsWith('@');
+  const label = useResolvedMatrixMemberLabel({
+    matrixUserId: isMatrixUserId ? speaker : undefined,
+    roomId,
+    fallbackLabel: speaker,
+  });
+
+  useEffect(() => {
+    onResolved(speaker, label);
+  }, [label, onResolved, speaker]);
+
+  return null;
+}
+
+function CallTranscriptSpeakerRegistry({
+  speakers,
+  roomId,
+  children,
+}: {
+  speakers: string[];
+  roomId?: string | null;
+  children: ReactNode;
+}) {
+  const [labels, setLabels] = useState<ReadonlyMap<string, string>>(
+    () => new Map(),
+  );
+  const onResolved = useCallback((speaker: string, label: string) => {
+    setLabels((prev) => {
+      if (prev.get(speaker) === label) return prev;
+      const next = new Map(prev);
+      next.set(speaker, label);
+      return next;
+    });
+  }, []);
+
+  return (
+    <SpeakerLabelContext.Provider value={labels}>
+      {speakers.map((speaker) => (
+        <CallTranscriptSpeakerResolver
+          key={speaker}
+          speaker={speaker}
+          roomId={roomId}
+          onResolved={onResolved}
+        />
+      ))}
+      {children}
+    </SpeakerLabelContext.Provider>
+  );
+}
+
+function ResolvedCallTranscriptLine({ line }: { line: string }) {
+  const labels = useContext(SpeakerLabelContext);
+  const parsed = splitSpeakerLabeledTranscriptLine(line);
+  if (!parsed) {
     return <>{line}</>;
   }
-  const speaker = line.slice(0, colonIdx).trim();
-  const body = line.slice(colonIdx + 1);
-  const resolvedSpeaker = useResolvedCallSpeakerLabel(speaker, roomId);
+  const resolvedSpeaker = labels.get(parsed.speaker) ?? parsed.speaker;
   return (
     <>
-      {resolvedSpeaker}:{body}
+      {resolvedSpeaker}:{parsed.body}
     </>
   );
 }
@@ -107,15 +107,27 @@ export function ResolvedCallTranscriptExcerpt({
   roomId = null,
   className,
 }: ResolvedCallTranscriptExcerptProps) {
-  const lines = excerpt.split('\n');
+  useMatrix();
+  const lines = useMemo(() => excerpt.split('\n'), [excerpt]);
+  const speakers = useMemo(() => {
+    const unique = new Set<string>();
+    for (const line of lines) {
+      const parsed = splitSpeakerLabeledTranscriptLine(line);
+      if (parsed) unique.add(parsed.speaker);
+    }
+    return [...unique];
+  }, [lines]);
+
   return (
-    <p className={className}>
-      {lines.map((line, index) => (
-        <span key={`${index}-${line.slice(0, 24)}`}>
-          {index > 0 ? '\n' : null}
-          <ResolvedCallTranscriptLine line={line} roomId={roomId} />
-        </span>
-      ))}
-    </p>
+    <CallTranscriptSpeakerRegistry speakers={speakers} roomId={roomId}>
+      <p className={className}>
+        {lines.map((line, index) => (
+          <span key={`${index}-${line.slice(0, 24)}`}>
+            {index > 0 ? '\n' : null}
+            <ResolvedCallTranscriptLine line={line} />
+          </span>
+        ))}
+      </p>
+    </CallTranscriptSpeakerRegistry>
   );
 }

@@ -8,7 +8,10 @@ import type {
 export const CALL_CAPTURE_NOTICE_TYPE = 'io.hypha.call_capture_notice.v1';
 
 export type SpaceGroupCallCaptureConsent = {
+  /** Matrix display label fallback while Hypha profile resolves in UI. */
   actor: string;
+  /** Matrix user id of the capture initiator (for Hypha name resolution). */
+  actorUserId: string;
   mode: Exclude<SpaceGroupCallCaptureMode, 'none'>;
   isLocalInitiator: boolean;
   paused?: boolean;
@@ -48,6 +51,7 @@ export function resolveActiveRoomCaptureFromEvents(
     const sender = event.getSender() ?? '';
     return {
       actor: resolveActor(sender) || sender || 'A participant',
+      actorUserId: sender,
       mode: content.mode,
       isLocalInitiator: Boolean(localUserId && sender === localUserId),
     };
@@ -70,6 +74,7 @@ export function resolveLocalCaptureConsent(params: {
   }
   return {
     actor: '',
+    actorUserId: '',
     mode: captureMode,
     isLocalInitiator: true,
     paused: recordingStatus === 'paused',

@@ -17,6 +17,7 @@ import {
   useMe,
   type SpaceGroupCallCaptureMode,
 } from '@hypha-platform/core/client';
+import { useIsMobile, MOBILE_BREAKPOINT_PX } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -35,6 +36,7 @@ import {
   persistCallFullViewPaneSplit,
 } from './human-chat-panel';
 import { matrixMemberDisplayLabelFromRoom } from './human-chat-panel/matrix-room-member-display';
+import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { getLocaleFromPath } from './get-locale-from-path';
@@ -58,12 +60,14 @@ type ResizeHandle =
   | 'bottom'
   | 'left';
 
-const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v1';
+const DOCK_GEOMETRY_KEY = 'hypha-global-call-dock-geometry-v2';
 const DOCK_MARGIN_PX = 16;
 const SNAP_EDGE_PX = 24;
 // Minimum dock size (thumbnail mode baseline); resize can never go below this.
-const DOCK_MIN_WIDTH = 360;
-const DOCK_MIN_HEIGHT = 260;
+const DOCK_MIN_WIDTH = 480;
+const DOCK_MIN_HEIGHT = 320;
+const DOCK_MIN_WIDTH_NARROW = 280;
+const DOCK_MIN_HEIGHT_NARROW = 220;
 /** Keep the dock in a usable video-call aspect range and avoid extreme sizes. */
 const DOCK_MAX_WIDTH = 880;
 const DOCK_MAX_HEIGHT = 640;
@@ -85,21 +89,24 @@ const DEFAULT_PANE_SPLIT: Record<CallFullViewPaneSplit, number> = {
 const SESSION_ROOM_TO_SPACE_PREFIX = 'hypha-room-to-space-';
 
 function readCallSpaceSlug(
+  pinnedSpaceSlug: string | null,
   activeSpaceSlug: string | null,
   activeRoomId: string | null,
 ): string | null {
-  const fromState = activeSpaceSlug?.trim();
-  if (fromState) return fromState;
-  if (!activeRoomId?.trim() || typeof window === 'undefined') return null;
-  try {
-    return (
-      window.sessionStorage
-        .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${activeRoomId.trim()}`)
-        ?.trim() || null
-    );
-  } catch {
-    return null;
+  const fromPinned = pinnedSpaceSlug?.trim();
+  if (fromPinned) return fromPinned;
+  if (!activeRoomId?.trim() || typeof window === 'undefined') {
+    return activeSpaceSlug?.trim() || null;
   }
+  try {
+    const fromSession = window.sessionStorage
+      .getItem(`${SESSION_ROOM_TO_SPACE_PREFIX}${activeRoomId.trim()}`)
+      ?.trim();
+    if (fromSession) return fromSession;
+  } catch {
+    // ignore session read failure
+  }
+  return activeSpaceSlug?.trim() || null;
 }
 
 /**
@@ -300,19 +307,40 @@ function getDockOffsetBounds(width: number, height: number) {
   return { minX, maxX, minY, maxY };
 }
 
+function readDockMinSize(): Pick<DockGeometry, 'width' | 'height'> {
+  if (typeof window === 'undefined') {
+    return { width: DOCK_MIN_WIDTH, height: DOCK_MIN_HEIGHT };
+  }
+  const narrow = window.innerWidth < MOBILE_BREAKPOINT_PX;
+  const viewportMinWidth = Math.max(0, window.innerWidth - 2 * DOCK_MARGIN_PX);
+  const viewportMinHeight = Math.max(
+    0,
+    window.innerHeight - 2 * DOCK_MARGIN_PX,
+  );
+  return {
+    width: narrow
+      ? Math.min(DOCK_MIN_WIDTH_NARROW, viewportMinWidth)
+      : DOCK_MIN_WIDTH,
+    height: narrow
+      ? Math.min(DOCK_MIN_HEIGHT_NARROW, viewportMinHeight)
+      : DOCK_MIN_HEIGHT,
+  };
+}
+
 function clampDockGeometry(next: DockGeometry): DockGeometry {
+  const dockMinSize = readDockMinSize();
   const viewportMaxWidth =
     typeof window === 'undefined'
       ? DOCK_MAX_WIDTH
-      : Math.max(DOCK_MIN_WIDTH, window.innerWidth - 2 * DOCK_MARGIN_PX);
+      : Math.max(dockMinSize.width, window.innerWidth - 2 * DOCK_MARGIN_PX);
   const viewportMaxHeight =
     typeof window === 'undefined'
       ? DOCK_MAX_HEIGHT
-      : Math.max(DOCK_MIN_HEIGHT, window.innerHeight - 2 * DOCK_MARGIN_PX);
+      : Math.max(dockMinSize.height, window.innerHeight - 2 * DOCK_MARGIN_PX);
   const maxWidth = Math.min(DOCK_MAX_WIDTH, viewportMaxWidth);
   const maxHeight = Math.min(DOCK_MAX_HEIGHT, viewportMaxHeight);
-  const minWidth = Math.min(DOCK_MIN_WIDTH, maxWidth);
-  const minHeight = Math.min(DOCK_MIN_HEIGHT, maxHeight);
+  const minWidth = Math.min(dockMinSize.width, maxWidth);
+  const minHeight = Math.min(dockMinSize.height, maxHeight);
   const safeWidth = Number.isFinite(next.width) ? next.width : minWidth;
   const safeHeight = Number.isFinite(next.height) ? next.height : minHeight;
   const safeX = Number.isFinite(next.x) ? next.x : 0;
@@ -399,14 +427,16 @@ function persistDockGeometry(next: DockGeometry): void {
 export function GlobalCallDockOverlay() {
   const t = useTranslations('GlobalCallDock');
   const tCapture = useTranslations('HumanChatPanel');
+  const isMobile = useIsMobile() ?? false;
   const router = useRouter();
   const pathname = usePathname() ?? '';
-  const { openHumanChatPanel, closeCoherenceChat } = useHumanChatPanel();
+  const { openHumanChatPanel, openCoherenceChat } = useHumanChatPanel();
   const { client } = useMatrix();
   const { person: me } = useMe();
   const {
     activeRoomId,
     activeSpaceSlug,
+    pinnedCallSpaceSlug,
     showFloatingDock,
     dockMode,
     setDockMode,
@@ -605,6 +635,15 @@ export function GlobalCallDockOverlay() {
   }, [dockMode]);
 
   React.useEffect(() => {
+    if (!isMobile || !showFloatingDock || isDocumentPipOpen) return;
+    if (dockMode === 'fullscreen') return;
+    if (dockMode === 'thumbnail' || dockMode === 'expanded') {
+      lastNonFullscreenModeRef.current = dockMode;
+    }
+    setDockMode('fullscreen');
+  }, [dockMode, isDocumentPipOpen, isMobile, setDockMode, showFloatingDock]);
+
+  React.useEffect(() => {
     if (dockMode === 'fullscreen') return;
     modeGeometryRef.current[dockMode] = clampDockGeometry(geometry);
   }, [dockMode, geometry]);
@@ -759,39 +798,53 @@ export function GlobalCallDockOverlay() {
   );
   const locale = React.useMemo(() => getLocaleFromPath(pathname), [pathname]);
   const callSpaceSlug = React.useMemo(
-    () => readCallSpaceSlug(activeSpaceSlug, activeRoomId),
-    [activeRoomId, activeSpaceSlug],
+    () => readCallSpaceSlug(pinnedCallSpaceSlug, activeSpaceSlug, activeRoomId),
+    [activeRoomId, activeSpaceSlug, pinnedCallSpaceSlug],
   );
   const callSpaceHref = callSpaceSlug
     ? `/${locale}/dho/${callSpaceSlug}/coherence`
     : null;
 
-  const onOpenCallSpace = React.useCallback(() => {
-    if (!callSpaceHref) return;
+  const onOpenCallSpace = React.useCallback(async () => {
+    if (!callSpaceSlug || !activeRoomId?.trim()) return;
 
     if (isDocumentPipOpen) {
       closePip();
     }
     window.focus();
 
-    closeCoherenceChat();
-
     const normalizedPath = (pathname.split('?')[0] ?? '').replace(/\/$/, '');
-    const normalizedHref = callSpaceHref.replace(/\/$/, '');
-    const alreadyOnCallSpacePage = normalizedPath === normalizedHref;
+    const destinationHref = `/${locale}/dho/${callSpaceSlug}/coherence`.replace(
+      /\/$/,
+      '',
+    );
 
-    if (alreadyOnCallSpacePage) {
-      openHumanChatPanel();
-      return;
+    const signalTarget = await resolveSignalThreadByMatrixRoom(
+      activeRoomId.trim(),
+    );
+    if (
+      signalTarget &&
+      signalTarget.spaceSlug.trim() === callSpaceSlug.trim()
+    ) {
+      openCoherenceChat(
+        signalTarget.roomId,
+        signalTarget.signalTitle,
+        signalTarget.signalSlug,
+      );
     }
 
-    router.push(callSpaceHref);
     openHumanChatPanel();
+
+    if (normalizedPath !== destinationHref) {
+      router.push(destinationHref);
+    }
   }, [
-    callSpaceHref,
-    closeCoherenceChat,
+    activeRoomId,
+    callSpaceSlug,
     closePip,
     isDocumentPipOpen,
+    locale,
+    openCoherenceChat,
     openHumanChatPanel,
     pathname,
     router,
@@ -812,10 +865,10 @@ export function GlobalCallDockOverlay() {
     ? { width: '100%', height: '100%' }
     : modeIsFullscreen
     ? {
-        left: 16,
-        right: 16,
-        top: 72,
-        bottom: 16,
+        left: isMobile ? 8 : 16,
+        right: isMobile ? 8 : 16,
+        top: isMobile ? 8 : 72,
+        bottom: isMobile ? 8 : 16,
       }
     : {
         width: geometry.width,
@@ -862,6 +915,21 @@ export function GlobalCallDockOverlay() {
   };
   const showDockBanner =
     errorCode != null || screenshareErrorCode != null || remoteMediaStall;
+  /** Mobile dock is always edge-to-edge; panel layout avoids full-view splitters eating taps. */
+  const dockStageLayout = isMobile
+    ? 'panel'
+    : modeIsFullscreen
+    ? 'fullView'
+    : 'panel';
+  const dockControlsVariant =
+    isMobile || !modeIsFullscreen ? 'inBanner' : 'fullView';
+  const dockControlsLayout = isMobile
+    ? 'centered'
+    : dockCompact
+    ? 'inline'
+    : modeIsFullscreen
+    ? 'inline'
+    : 'centered';
 
   const dockContent = (
     <div
@@ -870,12 +938,18 @@ export function GlobalCallDockOverlay() {
       className={cn(
         inDocumentPip
           ? 'relative flex h-full w-full min-h-0 min-w-0 select-none flex-col overflow-hidden rounded-lg border border-border/60 bg-background/95 shadow-lg'
-          : 'fixed z-[130] flex min-h-[260px] min-w-[360px] select-none flex-col overflow-visible rounded-xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur-sm',
+          : cn(
+              'fixed z-[130] flex select-none flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl',
+              isMobile ? '' : 'backdrop-blur-sm',
+              isMobile || modeIsFullscreen
+                ? 'min-h-0 min-w-0'
+                : 'min-h-[320px] min-w-[480px]',
+            ),
         modeIsFullscreen ? 'rounded-2xl' : '',
       )}
       style={{ ...spaceAccentStyles, ...containerStyle }}
     >
-      {!modeIsFullscreen && !inDocumentPip && (
+      {!modeIsFullscreen && !inDocumentPip && !isMobile && (
         <>
           <DockResizeHandle
             handle="top-left"
@@ -898,18 +972,8 @@ export function GlobalCallDockOverlay() {
             onResizeStart={onResizeStart}
           />
           <DockResizeHandle
-            handle="bottom-right"
-            ariaLabel={t('resizeBottomRightLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
             handle="bottom"
             ariaLabel={t('resizeBottomLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="bottom-left"
-            ariaLabel={t('resizeBottomLeftLabel')}
             onResizeStart={onResizeStart}
           />
           <DockResizeHandle
@@ -919,10 +983,10 @@ export function GlobalCallDockOverlay() {
           />
         </>
       )}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
+      <div className="relative z-[5] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
         <div
           className={cn(
-            'flex shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45',
+            'pointer-events-auto flex shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45',
             dockCompact ? 'px-1.5 py-1' : 'px-2.5 py-2',
             modeIsFullscreen || inDocumentPip
               ? 'cursor-default'
@@ -938,11 +1002,13 @@ export function GlobalCallDockOverlay() {
           >
             {t('callTitle', { count: roomGroupCallDeviceCount })}
           </p>
-          {callSpaceHref && (
+          {!isMobile && callSpaceHref && (
             <button
               type="button"
               data-no-dock-drag
-              onClick={onOpenCallSpace}
+              onClick={() => {
+                void onOpenCallSpace();
+              }}
               className={cn(
                 'inline-flex items-center rounded-md border border-border/60 bg-background hover:bg-muted',
                 dockCompact
@@ -958,103 +1024,111 @@ export function GlobalCallDockOverlay() {
               {t('spaceButton')}
             </button>
           )}
-          {isScreensharing && roomGroupCallDeviceCount > 1 && !dockCompact ? (
+          {!isMobile &&
+          dockStageLayout === 'fullView' &&
+          isScreensharing &&
+          roomGroupCallDeviceCount > 1 &&
+          !dockCompact ? (
             <HumanChatPanelCallFullViewLayoutMenu
               value={layoutMode}
               onValueChange={onShareLayoutModeChange}
               className="shrink-0"
             />
           ) : null}
-          <div
-            className={cn(
-              'flex items-center',
-              dockCompact ? 'gap-0.5' : 'gap-1',
-            )}
-          >
-            {isDocumentPipSupported && (
-              <button
-                type="button"
-                data-no-dock-drag
-                onClick={() => {
-                  void onToggleDocumentPip();
-                }}
-                className={cn(
-                  'inline-flex items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted',
-                  dockCompact ? 'h-6 w-6' : 'h-7 w-7',
-                  isDocumentPipOpen && 'border-primary/50 bg-primary/10',
-                )}
-                aria-label={
-                  isDocumentPipOpen
-                    ? t('closeFloatingWindowLabel')
-                    : t('openFloatingWindowLabel')
-                }
-                title={
-                  isDocumentPipOpen
-                    ? t('closeFloatingWindowLabel')
-                    : t('openFloatingWindowLabel')
-                }
-              >
-                <PictureInPicture2
-                  className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                />
-              </button>
-            )}
-            {!dockCompact && dockMode !== 'thumbnail' && (
-              <button
-                type="button"
-                data-no-dock-drag
-                onClick={() => applyDockMode('thumbnail')}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
-                aria-label={t('minimizeLabel')}
-                title={t('minimizeLabel')}
-              >
-                <Shrink className="h-3.5 w-3.5" />
-              </button>
-            )}
-            {!dockCompact && !modeIsFullscreen && dockMode !== 'expanded' && (
-              <button
-                type="button"
-                data-no-dock-drag
-                onClick={() => applyDockMode('expanded')}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
-                aria-label={t('expandLabel')}
-                title={t('expandLabel')}
-              >
-                <Expand className="h-3.5 w-3.5" />
-              </button>
-            )}
-            {!dockCompact && (
-              <button
-                type="button"
-                data-no-dock-drag
-                onClick={onToggleFullscreen}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
-                aria-label={
-                  modeIsFullscreen
-                    ? t('exitFullscreenLabel')
-                    : t('fullscreenLabel')
-                }
-                title={
-                  modeIsFullscreen
-                    ? t('exitFullscreenLabel')
-                    : t('fullscreenLabel')
-                }
-              >
-                {modeIsFullscreen ? (
-                  <Minimize2 className="h-3.5 w-3.5" />
-                ) : (
-                  <Maximize2 className="h-3.5 w-3.5" />
-                )}
-              </button>
-            )}
-          </div>
+          {!isMobile ? (
+            <div
+              className={cn(
+                'flex items-center',
+                dockCompact ? 'gap-0.5' : 'gap-1',
+              )}
+            >
+              {isDocumentPipSupported && (
+                <button
+                  type="button"
+                  data-no-dock-drag
+                  onClick={() => {
+                    void onToggleDocumentPip();
+                  }}
+                  className={cn(
+                    'inline-flex items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted',
+                    dockCompact ? 'h-6 w-6' : 'h-7 w-7',
+                    isDocumentPipOpen && 'border-primary/50 bg-primary/10',
+                  )}
+                  aria-label={
+                    isDocumentPipOpen
+                      ? t('closeFloatingWindowLabel')
+                      : t('openFloatingWindowLabel')
+                  }
+                  title={
+                    isDocumentPipOpen
+                      ? t('closeFloatingWindowLabel')
+                      : t('openFloatingWindowLabel')
+                  }
+                >
+                  <PictureInPicture2
+                    className={dockCompact ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                  />
+                </button>
+              )}
+              {!dockCompact && dockMode !== 'thumbnail' && (
+                <button
+                  type="button"
+                  data-no-dock-drag
+                  onClick={() => applyDockMode('thumbnail')}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
+                  aria-label={t('minimizeLabel')}
+                  title={t('minimizeLabel')}
+                >
+                  <Shrink className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {!dockCompact && !modeIsFullscreen && dockMode !== 'expanded' && (
+                <button
+                  type="button"
+                  data-no-dock-drag
+                  onClick={() => applyDockMode('expanded')}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
+                  aria-label={t('expandLabel')}
+                  title={t('expandLabel')}
+                >
+                  <Expand className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {!dockCompact && (
+                <button
+                  type="button"
+                  data-no-dock-drag
+                  onClick={onToggleFullscreen}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background hover:bg-muted"
+                  aria-label={
+                    modeIsFullscreen
+                      ? t('exitFullscreenLabel')
+                      : t('fullscreenLabel')
+                  }
+                  title={
+                    modeIsFullscreen
+                      ? t('exitFullscreenLabel')
+                      : t('fullscreenLabel')
+                  }
+                >
+                  {modeIsFullscreen ? (
+                    <Minimize2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Maximize2 className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              )}
+            </div>
+          ) : null}
         </div>
 
         <div
           ref={splitContainerRef}
           className={cn(
-            'min-h-0 min-w-0',
-            inDocumentPip ? 'max-h-[72px] shrink-0' : 'flex-1',
+            'pointer-events-none min-h-0 min-w-0 overflow-hidden',
+            inDocumentPip
+              ? 'max-h-[72px] shrink-0'
+              : 'flex min-h-0 flex-1 flex-col',
           )}
         >
           {captureUploadFinalizing ? (
@@ -1081,10 +1155,14 @@ export function GlobalCallDockOverlay() {
               remoteMediaStall={remoteMediaStall}
               currentUserProfileAvatarUrl={me?.avatarUrl ?? null}
               resolveMemberLabel={resolveMemberLabel}
-              layout={modeIsFullscreen ? 'fullView' : 'panel'}
-              panelVideoFit="cover"
-              panelFlush={!modeIsFullscreen}
-              fullViewOpen={modeIsFullscreen}
+              layout={dockStageLayout}
+              panelVideoFit={
+                dockStageLayout === 'panel' && dockMode === 'thumbnail'
+                  ? 'contain'
+                  : 'cover'
+              }
+              panelFlush={dockStageLayout === 'panel'}
+              fullViewOpen={dockStageLayout === 'fullView'}
               fullViewLayoutMode={layoutMode}
               fullViewPaneSplit={paneSplit}
               onFullViewPaneSplitChange={onPaneSplitChange}
@@ -1095,7 +1173,7 @@ export function GlobalCallDockOverlay() {
 
         <div
           className={cn(
-            'relative z-10 shrink-0 overflow-visible border-t border-border/50 bg-muted/35',
+            'pointer-events-auto relative isolate z-30 shrink-0 touch-manipulation overflow-visible border-t border-border/50 bg-muted/35',
             dockCompact ? 'px-1 py-1' : 'px-2 py-2',
           )}
         >
@@ -1110,6 +1188,7 @@ export function GlobalCallDockOverlay() {
               !showDockBanner ? (
                 <HumanChatPanelCaptureConsentBanner
                   consent={captureConsent}
+                  roomId={activeRoomId}
                   variant="inCall"
                   className={cn(
                     'rounded-none border-x-0 border-t-0',
@@ -1155,6 +1234,7 @@ export function GlobalCallDockOverlay() {
                   canRetryRecordingUpload={canRetryRecordingUpload}
                   onRetryRecordingUpload={() => void retryRecordingUpload()}
                   captureConsent={captureConsent}
+                  roomId={activeRoomId}
                   onDismissScreenshareError={dismissScreenshareError}
                   onRetryCall={retryFromError}
                   onDismissCallError={dismissCallError}
@@ -1187,24 +1267,14 @@ export function GlobalCallDockOverlay() {
                     void leave();
                   }}
                   density={dockCompact ? 'compact' : 'default'}
-                  variant={modeIsFullscreen ? 'fullView' : 'inBanner'}
-                  inBannerLayout={
-                    dockCompact
-                      ? 'inline'
-                      : modeIsFullscreen
-                      ? 'inline'
-                      : 'centered'
-                  }
+                  variant={dockControlsVariant}
+                  inBannerLayout={dockControlsLayout}
                 />
               )}
             </>
           )}
         </div>
       </div>
-
-      {modeIsFullscreen && (
-        <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-black/5" />
-      )}
 
       <HumanChatPanelScreenshareTakeoverDialog
         incoming={screenshareTakeoverIncoming}
@@ -1224,9 +1294,10 @@ export function GlobalCallDockOverlay() {
     </div>
   );
 
-  if (pipWindow) {
-    return createPortal(dockContent, pipWindow.document.body);
+  if (typeof document === 'undefined') {
+    return dockContent;
   }
 
-  return dockContent;
+  const portalTarget = pipWindow?.document.body ?? document.body;
+  return createPortal(dockContent, portalTarget);
 }

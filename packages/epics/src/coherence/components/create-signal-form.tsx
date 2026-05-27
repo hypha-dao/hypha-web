@@ -31,6 +31,7 @@ import {
   CoherenceTag,
   CoherenceType,
   schemaCreateCoherenceForm,
+  revalidateCoherences,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMatrix,
@@ -38,7 +39,7 @@ import {
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { CoherenceTypeButton } from './coherence-type-button';
@@ -50,10 +51,11 @@ import {
   SIGNAL_PROVISIONING_NOTICE_EVENT,
   SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
 } from '../constants';
+import { upsertSignalDescriptionInRoom } from '../utils/signal-chat-description';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
-interface CreateSignalFormProps {
+export interface CreateSignalFormProps {
   spaceId: number;
   successfulUrl: string;
   closeUrl?: string;
@@ -124,28 +126,6 @@ function getSignalTeamMembersFromRoom(options: {
   return { hasPolicy, memberMatrixUserIds: members };
 }
 
-function normalizeSignalDescriptionForChat(
-  description?: string | null,
-): string | null {
-  if (!description) return null;
-  const raw = description.trim();
-  if (!raw) return null;
-
-  // Rich text serialization may persist trailing spaces as HTML entities
-  // (e.g. "&#x20;"), which Matrix then renders as literal text.
-  const decodeHtmlEntities = (value: string): string => {
-    if (typeof document === 'undefined') return value;
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = value;
-    return textarea.value;
-  };
-
-  const decoded = decodeHtmlEntities(raw)
-    .replace(/\u00A0/g, ' ')
-    .trim();
-  return decoded.length > 0 ? decoded : null;
-}
-
 export const CreateSignalForm = ({
   spaceId,
   successfulUrl,
@@ -156,6 +136,8 @@ export const CreateSignalForm = ({
   signalRoomId,
   initialValues,
 }: CreateSignalFormProps) => {
+  const params = useParams<{ id?: string }>();
+  const spaceSlug = typeof params?.id === 'string' ? params.id.trim() : '';
   const t = useTranslations('CoherenceTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const translateEditor = React.useCallback(
@@ -234,31 +216,16 @@ export const CreateSignalForm = ({
       description?: string | null;
     }) => {
       if (!isMatrixAvailable || !roomId?.trim()) return;
-      const nextDescription = normalizeSignalDescriptionForChat(description);
-      if (!nextDescription) return;
-
-      // Ensure we can inspect the full room timeline before deciding whether to
-      // seed a message or update the earliest existing one.
-      const canonicalRoomId = await joinRoom(roomId);
-      await loadRoomHistory(canonicalRoomId);
-
-      const existingMessages = getRoomMessages(canonicalRoomId) ?? [];
-      const firstMessage = [...existingMessages].sort(
-        (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
-      )[0];
-
-      if (!firstMessage?.id) {
-        await sendMessage({
-          roomId: canonicalRoomId,
-          message: nextDescription,
-        });
-        return;
-      }
-
-      await editRoomMessage({
-        roomId: canonicalRoomId,
-        targetEventId: firstMessage.id,
-        message: nextDescription,
+      await upsertSignalDescriptionInRoom({
+        roomId,
+        description,
+        matrix: {
+          joinRoom,
+          loadRoomHistory,
+          getRoomMessages,
+          sendMessage,
+          editRoomMessage,
+        },
       });
     },
     [
@@ -315,7 +282,6 @@ export const CreateSignalForm = ({
     resolver: zodResolver(schemaCreateCoherenceForm),
     defaultValues: formDefaults,
   });
-
   React.useEffect(() => {
     if (mode !== 'edit') return;
     form.reset(formDefaults);
@@ -515,7 +481,16 @@ export const CreateSignalForm = ({
         window.dispatchEvent(new Event(SIGNAL_PROVISIONING_NOTICE_EVENT));
         return;
       }
-      const lines = details ? [message, details] : [message];
+      const previous = JSON.parse(
+        sessionStorage.getItem(SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY) ?? '[]',
+      );
+      const existing = Array.isArray(previous)
+        ? previous.filter(
+            (line): line is string =>
+              typeof line === 'string' && line.trim().length > 0,
+          )
+        : [];
+      const lines = [...existing, message, ...(details ? [details] : [])];
       sessionStorage.setItem(
         SIGNAL_PROVISIONING_NOTICE_STORAGE_KEY,
         JSON.stringify(lines),
@@ -578,6 +553,9 @@ export const CreateSignalForm = ({
               );
             }
           }
+          if (spaceSlug) {
+            await revalidateCoherences(spaceSlug);
+          }
           router.push(successfulUrl);
         } catch (error) {
           const rawMessage =
@@ -627,9 +605,11 @@ export const CreateSignalForm = ({
             try {
               const roomCreationResult = await createRoom(coherence.title);
               roomId = roomCreationResult.roomId;
+              const canonicalRoomId = await joinRoom(roomId);
+              await loadRoomHistory(canonicalRoomId);
               try {
                 await upsertSignalDescriptionMessage({
-                  roomId,
+                  roomId: canonicalRoomId,
                   description: coherence.description,
                 });
               } catch (messageSeedError) {
@@ -677,6 +657,9 @@ export const CreateSignalForm = ({
             'Signal created but coherence slug is missing — room linking skipped.',
           );
         }
+        if (spaceSlug) {
+          await revalidateCoherences(spaceSlug);
+        }
         router.push(successfulUrl);
       } catch (error) {
         console.warn('Could not create conversation:', error);
@@ -687,6 +670,8 @@ export const CreateSignalForm = ({
       createCoherence,
       createRoom,
       isEditAuthorized,
+      joinRoom,
+      loadRoomHistory,
       updateCoherenceBySlug,
       updateCoherenceSignalBySlug,
       isMatrixAvailable,
@@ -694,9 +679,11 @@ export const CreateSignalForm = ({
       mode,
       setSignalProvisioningNotice,
       signalSlug,
+      spaceSlug,
       t,
       router,
       successfulUrl,
+      revalidateCoherences,
     ],
   );
 
@@ -1029,6 +1016,9 @@ export const CreateSignalForm = ({
                     }
                     try {
                       await deleteCoherenceBySlug({ slug: signalSlug });
+                      if (spaceSlug) {
+                        await revalidateCoherences(spaceSlug);
+                      }
                       router.push(successfulUrl);
                     } catch (error) {
                       const message =
