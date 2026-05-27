@@ -2424,6 +2424,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             await upsertSignalDescriptionInRoom({
               roomId: targetRoomId,
               description,
+              mode: 'safe',
               matrix: {
                 joinRoom: (id) => matrixRef.current.joinRoom(id),
                 loadRoomHistory: (id) => matrixRef.current.loadRoomHistory(id),
