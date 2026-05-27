@@ -310,10 +310,17 @@ export function getAgentAvatarInitials(roleLabel: string): string {
     );
 
   if (words.length === 0) return '?';
+  const first = words[0];
+  if (!first) return '?';
   if (words.length === 1) {
-    return words[0].slice(0, 2).toUpperCase();
+    return first.slice(0, 2).toUpperCase();
   }
-  return (words[0][0] + words[1][0]).toUpperCase();
+  const second = words[1];
+  if (!second) return first.slice(0, 2).toUpperCase();
+  const a = first[0];
+  const b = second[0];
+  if (!a || !b) return first.slice(0, 2).toUpperCase();
+  return (a + b).toUpperCase();
 }
 
 export function tagGroupAccentClass(tagGroup: string): string {
