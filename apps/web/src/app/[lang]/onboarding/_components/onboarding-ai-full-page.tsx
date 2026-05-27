@@ -468,11 +468,21 @@ export function OnboardingAiFullPage({
     ],
   );
 
-  const suggestions = [
-    t('aiHero.rotating.createSpace'),
-    t('aiHero.rotating.governance'),
-    t('aiHero.rotating.joinSpace'),
-  ] as const;
+  const suggestionItems = useMemo(
+    () =>
+      (
+        [
+          { id: 'createSpace', key: 'createSpace' },
+          { id: 'governance', key: 'governance' },
+          { id: 'joinSpace', key: 'joinSpace' },
+        ] as const
+      ).map(({ id, key }) => {
+        const prompt = t(`aiHero.rotating.${key}`);
+        return { id, prompt, tagLabel: prompt };
+      }),
+    [t],
+  );
+  const hasUserMessage = messages.some((message) => message.role === 'user');
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 md:px-8 lg:px-12">
@@ -501,8 +511,8 @@ export function OnboardingAiFullPage({
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background/70">
             <AiPanelMessages
               messages={messages as ChatMessage[]}
-              suggestions={suggestions}
-              showSuggestions={!isStreaming}
+              suggestionItems={suggestionItems}
+              showInlineSuggestions={!isStreaming && !hasUserMessage}
               onSuggestionSelect={(text) => setInput(text)}
               isStreaming={isStreaming}
               onActionReplySelect={handleActionReplySelect}

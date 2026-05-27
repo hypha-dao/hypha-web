@@ -23,6 +23,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  useIsMobile,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { type ChatDraftAttachment } from '../human-chat-panel/human-chat-panel-chat-bar';
@@ -121,6 +122,7 @@ type AiPanelChatBarProps = {
   onStop?: () => void;
   isStreaming?: boolean;
   placeholder?: string;
+  composerDisabled?: boolean;
 };
 
 function formatFileSize(bytes: number): string {
@@ -279,6 +281,7 @@ export function AiPanelChatBar({
   onStop,
   isStreaming = false,
   placeholder,
+  composerDisabled = false,
 }: AiPanelChatBarProps) {
   const t = useTranslations('AiPanel');
   const tHuman = useTranslations('HumanChatPanel');
@@ -295,6 +298,7 @@ export function AiPanelChatBar({
   const valueRef = useRef(value);
   const [isDictating, setIsDictating] = useState(false);
   const [dictationError, setDictationError] = useState<string | null>(null);
+  const isMobile = useIsMobile() ?? false;
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [composerDragDepth, setComposerDragDepth] = useState(0);
   const isComposerDropActive = composerDragDepth > 0;
@@ -487,7 +491,8 @@ export function AiPanelChatBar({
   }, []);
 
   const canStop = isStreaming && typeof onStop === 'function';
-  const canAttachDrafts = typeof onDraftAttachmentsChange === 'function';
+  const canAttachDrafts =
+    !composerDisabled && typeof onDraftAttachmentsChange === 'function';
   const pushDrafts = useCallback(
     (files: FileList | null) => {
       if (!files || files.length === 0 || !onDraftAttachmentsChange) return;
@@ -756,7 +761,8 @@ export function AiPanelChatBar({
         <textarea
           ref={textareaRef}
           value={value}
-          readOnly={isDictating}
+          readOnly={isDictating || composerDisabled}
+          disabled={composerDisabled}
           onChange={(e) => {
             onChange(e.target.value);
             autoResize();
@@ -823,7 +829,7 @@ export function AiPanelChatBar({
             <div className="flex min-w-0 flex-1 items-center gap-0.5">
               {canAttachDrafts ? (
                 <DropdownMenu
-                  modal={false}
+                  modal={isMobile}
                   open={attachMenuOpen}
                   onOpenChange={(open) => {
                     if (!canAttachDrafts) return;
@@ -841,7 +847,12 @@ export function AiPanelChatBar({
                       <Plus className="h-4 w-4" strokeWidth={2} />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[200px]">
+                  <DropdownMenuContent
+                    align="start"
+                    side={isMobile ? 'top' : 'bottom'}
+                    collisionPadding={8}
+                    className="z-[100] min-w-[200px]"
+                  >
                     <DropdownMenuItem
                       className="cursor-pointer gap-2"
                       onSelect={() => {
@@ -892,7 +903,7 @@ export function AiPanelChatBar({
               <button
                 type="button"
                 onClick={startDictation}
-                disabled={isStreaming}
+                disabled={isStreaming || composerDisabled}
                 className={cn(
                   isDictating ? recordingStopButtonClass : iconButtonClass,
                   !isDictating &&
@@ -923,7 +934,10 @@ export function AiPanelChatBar({
             <button
               type="button"
               onClick={isStreaming ? () => onStop?.() : sendMessage}
-              disabled={isStreaming ? !canStop : !canSendWithAttachments}
+              disabled={
+                composerDisabled ||
+                (isStreaming ? !canStop : !canSendWithAttachments)
+              }
               className={cn(
                 'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',

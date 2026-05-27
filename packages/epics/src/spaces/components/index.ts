@@ -1,4 +1,5 @@
 export * from './activate-proposals-banner';
+export * from './ai-panel-subscription-banner';
 export * from './compact-space-banner';
 export * from './space-accent-from-images';
 export * from './space-accent-portal-context';

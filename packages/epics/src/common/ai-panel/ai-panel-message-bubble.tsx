@@ -6,6 +6,9 @@ import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
 
+import { type AiCompetencyAgent } from '../ai-agent-competencies';
+import { AiPanelMobilizedAgents } from './ai-panel-mobilized-agents';
+
 type ConfirmationActionResult = {
   ok?: boolean;
   dry_run?: boolean;
@@ -40,15 +43,21 @@ type AiPanelMessageBubbleProps = {
     role: 'user' | 'assistant' | 'system';
     parts?: UIMessagePart[];
   };
+  mobilizedAgents?: readonly AiCompetencyAgent[];
   isStreaming?: boolean;
   onActionReplySelect?: (text: string) => void;
+};
+
+type OlListItem = {
+  text: string;
+  nestedUl?: string[];
 };
 
 type MarkdownBlock =
   | { type: 'heading'; level: 1 | 2 | 3 | 4; text: string }
   | { type: 'paragraph'; lines: string[] }
   | { type: 'ul'; items: string[] }
-  | { type: 'ol'; items: string[] };
+  | { type: 'ol'; items: OlListItem[] };
 
 function joinTextPartsWithSpacing(parts: Array<{ text: string }>): string {
   if (parts.length === 0) return '';
@@ -119,12 +128,13 @@ function parseHeadingLine(
 }
 
 function parseUnorderedListItem(line: string): string | null {
-  if (line.length < 3) return null;
-  const bullet = line[0];
-  if (bullet !== '-' && bullet !== '*') return null;
-  if (line[1] !== ' ') return null;
-  const text = line.slice(2).trim();
-  return text || null;
+  const bulletPrefixes = ['- ', '* ', '• '] as const;
+  for (const prefix of bulletPrefixes) {
+    if (!line.startsWith(prefix)) continue;
+    const text = line.slice(prefix.length).trim();
+    return text || null;
+  }
+  return null;
 }
 
 function parseOrderedListItem(line: string): string | null {
@@ -143,18 +153,115 @@ function parseOrderedListItem(line: string): string | null {
   return text || null;
 }
 
+function formatConfidenceScore(raw: string): string | null {
+  const num = Number.parseFloat(raw);
+  if (!Number.isFinite(num)) return null;
+  if (num >= 0 && num <= 1) return `${Math.round(num * 100)}%`;
+  if (num > 1 && num <= 100) return `${Math.round(num)}%`;
+  return null;
+}
+
+function parseConfidenceScoreAt(
+  text: string,
+  pos: number,
+): { raw: string; length: number } | null {
+  if (pos >= text.length) return null;
+  const ch = text.charAt(pos);
+  if (ch === '0' && text.charAt(pos + 1) === '.') {
+    let end = pos + 2;
+    while (end < text.length) {
+      const digit = text.charAt(end);
+      if (digit < '0' || digit > '9') break;
+      end += 1;
+    }
+    const raw = text.slice(pos, end);
+    return raw.length > 2 ? { raw, length: raw.length } : null;
+  }
+  if (ch === '1') {
+    let end = pos + 1;
+    if (text.charAt(end) === '.') {
+      end += 1;
+      while (end < text.length && text.charAt(end) === '0') end += 1;
+    }
+    const next = text.charAt(end);
+    if (next.length > 0 && /[a-z0-9]/i.test(next)) return null;
+    return { raw: text.slice(pos, end), length: end - pos };
+  }
+  return null;
+}
+
+/** Show model confidence as a percentage (0.8 → 80%) in AI panel copy. */
+function formatConfidenceDisplay(text: string): string {
+  const lower = text.toLowerCase();
+  const marker = 'confidence';
+  let result = '';
+  let cursor = 0;
+
+  while (cursor < text.length) {
+    const hit = lower.indexOf(marker, cursor);
+    if (hit === -1) {
+      result += text.slice(cursor);
+      break;
+    }
+    if (hit > 0 && /[a-z0-9]/i.test(text.charAt(hit - 1))) {
+      result += text.slice(cursor, hit + 1);
+      cursor = hit + 1;
+      continue;
+    }
+
+    let prefixStart = hit;
+    let starsBefore = 0;
+    while (
+      prefixStart > 0 &&
+      text.charAt(prefixStart - 1) === '*' &&
+      starsBefore < 2
+    ) {
+      prefixStart -= 1;
+      starsBefore += 1;
+    }
+
+    let pos = hit + marker.length;
+    let starsAfter = 0;
+    while (pos < text.length && text.charAt(pos) === '*' && starsAfter < 2) {
+      pos += 1;
+      starsAfter += 1;
+    }
+    while (pos < text.length && text.charAt(pos) === ' ') pos += 1;
+    if (pos < text.length && text.charAt(pos) === ':') {
+      pos += 1;
+      while (pos < text.length && text.charAt(pos) === ' ') pos += 1;
+    }
+
+    const parsed = parseConfidenceScoreAt(text, pos);
+    const formatted = parsed ? formatConfidenceScore(parsed.raw) : null;
+    if (!parsed || !formatted) {
+      result += text.slice(cursor, hit + marker.length);
+      cursor = hit + marker.length;
+      continue;
+    }
+
+    result += text.slice(cursor, prefixStart);
+    result += text.slice(prefixStart, pos);
+    result += formatted;
+    cursor = pos + parsed.length;
+  }
+
+  return result;
+}
+
 function renderInlineMarkdown(text: string): React.ReactNode {
+  const displayText = formatConfidenceDisplay(text);
   const nodes: React.ReactNode[] = [];
   const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
   let lastIndex = 0;
   let partIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = tokenRegex.exec(text)) !== null) {
+  while ((match = tokenRegex.exec(displayText)) !== null) {
     const token = match[0];
     const start = match.index;
     if (start > lastIndex) {
-      nodes.push(text.slice(lastIndex, start));
+      nodes.push(displayText.slice(lastIndex, start));
     }
     if (token.startsWith('**') && token.endsWith('**')) {
       nodes.push(
@@ -177,11 +284,27 @@ function renderInlineMarkdown(text: string): React.ReactNode {
     lastIndex = tokenRegex.lastIndex;
   }
 
-  if (lastIndex < text.length) {
-    nodes.push(text.slice(lastIndex));
+  if (lastIndex < displayText.length) {
+    nodes.push(displayText.slice(lastIndex));
   }
 
-  return nodes.length > 0 ? nodes : text;
+  return nodes.length > 0 ? nodes : displayText;
+}
+
+/** Merge split `ol` blocks so numbering continues after nested bullet sub-lists. */
+function mergeAdjacentOrderedListBlocks(
+  blocks: MarkdownBlock[],
+): MarkdownBlock[] {
+  const merged: MarkdownBlock[] = [];
+  for (const block of blocks) {
+    const previous = merged[merged.length - 1];
+    if (block.type === 'ol' && previous?.type === 'ol') {
+      previous.items.push(...block.items);
+      continue;
+    }
+    merged.push(block);
+  }
+  return merged;
 }
 
 function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
@@ -220,13 +343,23 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
       continue;
     }
 
-    const olItems: string[] = [];
+    const olItems: OlListItem[] = [];
     while (i < lines.length) {
       const line = lines[i]?.trim() ?? '';
       const item = parseOrderedListItem(line);
       if (!item) break;
-      olItems.push(item);
       i += 1;
+      const nestedUl: string[] = [];
+      while (i < lines.length) {
+        const nestedLine = lines[i]?.trim() ?? '';
+        const ulItem = parseUnorderedListItem(nestedLine);
+        if (!ulItem) break;
+        nestedUl.push(ulItem);
+        i += 1;
+      }
+      olItems.push(
+        nestedUl.length > 0 ? { text: item, nestedUl } : { text: item },
+      );
     }
     if (olItems.length > 0) {
       blocks.push({ type: 'ol', items: olItems });
@@ -255,11 +388,12 @@ function parseMarkdownBlocks(raw: string): MarkdownBlock[] {
     i += 1;
   }
 
-  return blocks;
+  return mergeAdjacentOrderedListBlocks(blocks);
 }
 
 export function AiPanelMessageBubble({
   message,
+  mobilizedAgents = [],
   isStreaming,
   onActionReplySelect,
 }: AiPanelMessageBubbleProps) {
@@ -482,6 +616,12 @@ export function AiPanelMessageBubble({
               : 'rounded-tl-sm bg-transparent px-0 py-0 text-foreground',
           )}
         >
+          {!isUser && mobilizedAgents.length > 0 ? (
+            <AiPanelMobilizedAgents
+              agents={mobilizedAgents}
+              isStreaming={isStreaming}
+            />
+          ) : null}
           {hasVisibleText && (
             <div className="flex flex-col gap-1">
               <div
@@ -535,7 +675,21 @@ export function AiPanelMessageBubble({
                             key={`${message.id}-ol-item-${index}-${itemIndex}`}
                             className="list-decimal"
                           >
-                            {renderInlineMarkdown(item)}
+                            {renderInlineMarkdown(item.text)}
+                            {item.nestedUl && item.nestedUl.length > 0 ? (
+                              <ul className="mt-0.5 space-y-0.5 pl-4">
+                                {item.nestedUl.map(
+                                  (nestedItem, nestedIndex) => (
+                                    <li
+                                      key={`${message.id}-ol-item-${index}-${itemIndex}-ul-${nestedIndex}`}
+                                      className="list-disc"
+                                    >
+                                      {renderInlineMarkdown(nestedItem)}
+                                    </li>
+                                  ),
+                                )}
+                              </ul>
+                            ) : null}
                           </li>
                         ))}
                       </ol>
@@ -563,14 +717,16 @@ export function AiPanelMessageBubble({
             </div>
           )}
           {fileParts.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div
+              className={cn('flex flex-col gap-2', hasVisibleText && 'mt-1')}
+            >
               {fileParts.map((part, i) =>
                 part.mediaType?.startsWith('image/') && part.url ? (
                   <img
                     key={i}
                     src={part.url}
-                    alt={`Uploaded image ${i + 1}`}
-                    className="max-h-32 max-w-full rounded-lg object-contain"
+                    alt={t('uploadedImageAlt', { index: i + 1 })}
+                    className="max-h-72 max-w-full rounded-lg object-contain"
                   />
                 ) : part.url ? (
                   <a

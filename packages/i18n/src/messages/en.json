@@ -1032,9 +1032,17 @@
     "confirmInvestmentCta": "Confirm Investment",
     "acceptInvestmentTitle": "Accept Investment",
     "acceptInvestmentBody": "{sellerLabel} has accepted your space's investment of {buyerAmountLabel} and offers {sellerAmountLabel} in return.",
+    "acceptInvestmentBodyPersonal": "{sellerLabel} has accepted your investment of {buyerAmountLabel} and offers {sellerAmountLabel} in return.",
     "exchangeStakesAndTokensTitle": "Exchange Stakes & Tokens",
     "exchangeStakesAndTokensBody": "{sellerLabel} has proposed to exchange {sellerAmountLabel} for {buyerAmountLabel} from your space.",
-    "exchangeCounterpartyFallback": "the other party"
+    "exchangeStakesAndTokensBodyPersonal": "{sellerLabel} has proposed to exchange {sellerAmountLabel} for {buyerAmountLabel} from you.",
+    "exchangeCounterpartyFallback": "the other party",
+    "escrowDepositRefuse": "Refuse",
+    "escrowDepositRefusing": "Refusing...",
+    "escrowConfirmExchange": "Confirm Exchange",
+    "escrowDepositDepositing": "Depositing...",
+    "escrowDepositApproving": "Approving...",
+    "escrowDepositInsufficientWallet": "Your wallet balance is below the required amount."
   },
   "AgreementFlow": {
     "labels": {
@@ -1959,13 +1967,25 @@
   "AiPanel": {
     "title": "Hypha AI",
     "suggestions": {
-      "aboutSpace": "Tell me about this space",
-      "memberCount": "How many members does this space have?",
-      "agreements": "What agreements exist in this space?",
-      "structure": "Describe the structure of this space"
+      "spaceHealth": "How is our space doing overall?",
+      "nextSignal": "What signal should we create or share next?",
+      "blindSpot": "What's our biggest blind spot?",
+      "summarizeDiscussion": "Summarize recent team discussion",
+      "spaceMemory": "What does our space remember?",
+      "valueFlows": "How does value flow through our tokens?"
     },
-    "welcome": "Hello! I'm your {spaceName} AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
-    "placeholder": "Ask Hypha AI anything...",
+    "suggestionTags": {
+      "spaceHealth": "Space health",
+      "nextSignal": "Next signal",
+      "blindSpot": "Blind spot",
+      "summarizeDiscussion": "Summarize discussion",
+      "spaceMemory": "Space memory",
+      "valueFlows": "Value flows"
+    },
+    "welcome": "I'm your space AI for bringing coherence to strategy, motion to operations, and meaning to impact, with specialist agents gliding in whenever you call for them.",
+    "specialistsResponding": "Specialists contributing",
+    "specialistsRespondingStreaming": "Specialists contributing…",
+    "placeholder": "Ask Anything...",
     "sendButton": "Send",
     "stopButton": "Stop",
     "newlineHint": "Shift+Enter for newline",
@@ -1994,7 +2014,9 @@
     "showMore": "Read more",
     "showLess": "Show less",
     "streamError": "An error occurred while generating the response.",
-    "attachment": "Attachment"
+    "assistantExpiredSubtitle": "Your Hypha Network contribution expired {expiredElapsed}. Please reactivate your space before using Hypha AI.",
+    "attachment": "Attachment",
+    "welcomeSpecialistsHint": "Active specialists also appear under Members > AI Agents."
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -2402,95 +2424,107 @@
     "newMemoryUploadingFiles": "Uploading space memories...",
     "newMemoryAttachmentsRequired": "Please upload at least one document for this memory.",
     "newMemory": "New memory",
+    "tagGroup": {
+      "purpose": "Purpose & strategy",
+      "governance": "Governance",
+      "operations": "Operations",
+      "community": "Community",
+      "finance": "Treasury & tokens",
+      "product": "Product",
+      "risk": "Stewardship & resilience",
+      "ecosystem": "Ecosystem & partnerships",
+      "learning": "Learning & knowledge",
+      "reputation": "Reputation & trust"
+    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Senior Strategist",
-        "focus": "clarify mission, strategic alignment, north-star outcomes, and long-term direction",
+        "focus": "Mission, strategic alignment, and long-term direction",
         "roleDefinition": [
-          "Defines strategic intent and links daily decisions to long-term mission outcomes.",
-          "Identifies strategic blindspots, trade-offs, and second-order effects before commitments.",
-          "Translates vision into measurable priorities, decision criteria, and success indicators."
+          "Links daily work to mission and measurable priorities.",
+          "Surfaces blindspots and trade-offs before you commit.",
+          "Turns vision into clear decision criteria and outcomes."
         ]
       },
       "governance": {
         "role": "Governance Architect",
-        "focus": "decision rights, accountability models, proposal quality, and collective coordination mechanisms",
+        "focus": "Decision rights, proposal quality, and coordination",
         "roleDefinition": [
-          "Designs governance flows that keep proposals clear, accountable, and executable.",
-          "Improves voting quality by surfacing assumptions, stakeholder impact, and decision readiness.",
-          "Recommends lightweight policy guardrails that protect autonomy while reducing coordination drag."
+          "Keeps proposals clear, accountable, and executable.",
+          "Improves vote readiness with assumptions and stakeholder impact.",
+          "Adds light guardrails that reduce drag without killing autonomy."
         ]
       },
       "operations": {
         "role": "Operations Lead",
-        "focus": "execution plans, delivery cadence, dependency management, and practical implementation details",
+        "focus": "Execution plans, cadence, and dependencies",
         "roleDefinition": [
-          "Turns strategy into executable plans with owners, milestones, and realistic timelines.",
-          "Flags dependency bottlenecks early and proposes concrete sequencing options.",
-          "Improves delivery reliability with clear operating rhythms and feedback loops."
+          "Turns strategy into owners, milestones, and timelines.",
+          "Flags bottlenecks early with practical sequencing options.",
+          "Steadies delivery with operating rhythms and feedback loops."
         ]
       },
       "community": {
         "role": "Community Builder",
-        "focus": "member engagement, participation quality, onboarding, and contributor health",
+        "focus": "Engagement, onboarding, and contributor health",
         "roleDefinition": [
-          "Strengthens participation quality by improving onboarding and contributor clarity.",
-          "Detects engagement drop-offs and proposes retention and activation interventions.",
-          "Balances openness with healthy norms, trust, and sustainable contributor experience."
+          "Improves onboarding and clarity so more people contribute well.",
+          "Spots drop-offs and suggests retention and activation moves.",
+          "Balances openness with trust and sustainable participation."
         ]
       },
       "finance": {
         "role": "Treasury and Token Analyst",
-        "focus": "token/treasury implications, distribution effects, sustainability, and capital allocation trade-offs",
+        "focus": "Treasury, tokens, and capital allocation trade-offs",
         "roleDefinition": [
-          "Evaluates treasury and token decisions for sustainability, concentration risk, and runway impact.",
-          "Connects budget choices to strategic priorities and expected organizational outcomes.",
-          "Recommends risk-aware allocation options with explicit upside/downside framing."
+          "Stress-tests token and treasury choices for runway and concentration risk.",
+          "Ties spend to strategic priorities and expected outcomes.",
+          "Frames allocation options with explicit upside and downside."
         ]
       },
       "product": {
         "role": "Product Strategist",
-        "focus": "user impact, product prioritization, experimentation design, and measurable adoption outcomes",
+        "focus": "User impact, prioritization, and adoption",
         "roleDefinition": [
-          "Prioritizes features by user value, strategic fit, and implementation leverage.",
-          "Designs experiments that validate assumptions with measurable learning outcomes.",
-          "Aligns roadmap choices with adoption, retention, and behavior-change metrics."
+          "Prioritizes by user value, strategic fit, and build leverage.",
+          "Designs experiments with measurable learning outcomes.",
+          "Aligns roadmap bets with adoption and retention signals."
         ]
       },
       "risk": {
-        "role": "Risk and Compliance Advisor",
-        "focus": "failure modes, downside scenarios, mitigation plans, and policy/compliance considerations",
+        "role": "Stewardship & Resilience Advisor",
+        "focus": "Weak signals, safeguards, and long-term resilience",
         "roleDefinition": [
-          "Surfaces operational, governance, and security failure modes before execution.",
-          "Recommends practical mitigations with clear ownership and trigger conditions.",
-          "Keeps proposals compliant and resilient without over-bureaucratizing execution."
+          "Notices strain and weak signals early so the space can adapt before harm builds.",
+          "Proposes caring safeguards with clear owners—enough to stay resilient, not bureaucratic drag.",
+          "Keeps commitments aligned with your values and stewardship as the space grows."
         ]
       },
       "ecosystem": {
         "role": "Ecosystem and Partnerships Strategist",
-        "focus": "cross-space collaboration, partnerships, ecosystem dependencies, and external coordination leverage",
+        "focus": "Cross-space partnerships and coordination leverage",
         "roleDefinition": [
-          "Maps ecosystem dependencies and identifies high-leverage partnership opportunities.",
-          "Designs cross-space coordination plans with clear ownership and mutual outcomes.",
-          "Improves external signal routing so actionable insights reach the right spaces quickly."
+          "Maps dependencies and high-leverage partnership opportunities.",
+          "Plans cross-space work with clear owners and mutual outcomes.",
+          "Routes external signals to the right spaces quickly."
         ]
       },
       "learning": {
         "role": "Learning and Knowledge Architect",
-        "focus": "knowledge capture, learning loops, evidence quality, and continuous improvement systems",
+        "focus": "Knowledge capture, evidence, and improvement loops",
         "roleDefinition": [
-          "Turns discussions and experiments into reusable organizational knowledge.",
-          "Designs feedback loops that improve decision quality over time.",
-          "Raises evidence standards by clarifying assumptions, metrics, and lessons learned."
+          "Turns discussions and experiments into reusable knowledge.",
+          "Builds feedback loops that sharpen decisions over time.",
+          "Clarifies assumptions, metrics, and lessons learned."
         ]
       },
       "reputation": {
         "role": "Reputation and Trust Steward",
-        "focus": "credibility signals, stakeholder trust, narrative coherence, and communication risk management",
+        "focus": "Trust, narrative alignment, and communication risk",
         "roleDefinition": [
-          "Protects trust by aligning public narrative with actual operational behavior.",
-          "Surfaces reputation risks early and proposes proactive mitigation steps.",
-          "Improves stakeholder communication quality during change, conflict, and uncertainty."
+          "Aligns public narrative with how the space actually operates.",
+          "Flags reputation risks early with practical mitigation steps.",
+          "Strengthens stakeholder communication in change and conflict."
         ]
       }
     },
@@ -2540,17 +2574,10 @@
     "editSignalMissingSlug": "Signal identifier is missing. Please close and reopen the edit form.",
     "editSignalSaveFailed": "Could not save signal changes. Please try again.",
     "keepWindowOpenWhileCreating": "Keep this window open until we're finished.",
-    "createSignalAttachmentsTitle": "Attachments",
-    "createSignalTeamOwner": "Owner",
-    "createSignalTeamNoMembers": "No space members with chat accounts are available yet.",
-    "loading": "Loading...",
     "provisioning": {
       "chatUnavailable": "Signal created but chat is currently unavailable.",
       "roomProvisionFailed": "Signal created but chat room provisioning failed.",
-      "roomLinkFailedRetry": "Signal created but chat room could not be linked. Please retry.",
-      "teamSeedSkipped": "Signal created but selected team members could not be added to chat yet.",
-      "teamSeedFailed": "Signal created but selected team members could not be added to chat.",
-      "attachmentsUploadFailed": "Signal created but attachments could not be uploaded to chat."
+      "roomLinkFailedRetry": "Signal created but chat room could not be linked. Please retry."
     },
     "tagLabels": {
       "Purpose": "Purpose",

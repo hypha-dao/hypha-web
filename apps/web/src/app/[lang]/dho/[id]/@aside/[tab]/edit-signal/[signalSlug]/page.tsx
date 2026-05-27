@@ -48,7 +48,6 @@ export default async function EditSignalPage({ params }: PageProps) {
         mode="edit"
         signalSlug={signal.slug}
         signalRoomId={signal.roomId}
-        spaceSlug={id}
         initialValues={{
           title: signal.title,
           description: signal.description,

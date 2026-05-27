@@ -51,6 +51,7 @@ export * from './sheet';
 export * from './breakpoints';
 export * from './hooks/use-mobile';
 export * from './hooks/use-compact-header-mode';
+export * from './hooks/use-compact-panels-mode';
 
 export * from './organisms/editor';
 export * from './organisms/menu-top';

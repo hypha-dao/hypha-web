@@ -40,7 +40,6 @@ export default async function NewSignalPage({
         closeUrl={successfulUrl}
         backUrl={successfulUrl}
         spaceId={spaceFromDb.id}
-        spaceSlug={id}
         initialValues={
           inheritedBoardTags.length > 0
             ? { tags: inheritedBoardTags }
