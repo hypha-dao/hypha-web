@@ -5,10 +5,7 @@ import type {
   BridgeTransferResponse,
 } from '../../common/server/bridge-client';
 import { enrichBridgeDepositInstructions } from './enrich-bridge-deposit-instructions';
-import type {
-  BankTransferPublic,
-  BankVirtualAccountPublic,
-} from '../types';
+import type { BankTransferPublic, BankVirtualAccountPublic } from '../types';
 
 export function normalizeExecutorAddress(
   address: string | null | undefined,
@@ -116,8 +113,7 @@ export function mapBridgeVirtualAccountToPublic(
     currency,
     paymentRail,
     depositInstructions: enriched,
-    destinationAddress:
-      response.destination?.address ?? destinationAddress,
+    destinationAddress: response.destination?.address ?? destinationAddress,
     status: response.status,
     createdAt: null,
   };
@@ -157,8 +153,7 @@ export function mapBridgeTransferToPublic(
     depositMessage: readDepositMessage(enriched),
     status: response.state,
     depositInstructions: enriched,
-    destinationAddress:
-      response.destination?.to_address ?? destinationAddress,
+    destinationAddress: response.destination?.to_address ?? destinationAddress,
     createdAt: response.created_at ?? new Date().toISOString(),
   };
 }

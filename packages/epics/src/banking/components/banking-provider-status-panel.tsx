@@ -177,9 +177,7 @@ function getEndorsementLabel(
   endorsement: string,
   tEndorsements: ReturnType<typeof useTranslations<'BankingTab.endorsements'>>,
 ): string {
-  if (
-    (KNOWN_BRIDGE_ENDORSEMENTS as readonly string[]).includes(endorsement)
-  ) {
+  if ((KNOWN_BRIDGE_ENDORSEMENTS as readonly string[]).includes(endorsement)) {
     return tEndorsements(
       endorsement as (typeof KNOWN_BRIDGE_ENDORSEMENTS)[number],
     );
@@ -364,7 +362,9 @@ function ProviderValidationsSection({
   );
 }
 
-export const BankingProviderStatusPanel: FC<BankingProviderStatusPanelProps> = ({
+export const BankingProviderStatusPanel: FC<
+  BankingProviderStatusPanelProps
+> = ({
   spaceSlug,
   status,
   isLoading,

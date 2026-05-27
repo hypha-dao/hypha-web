@@ -279,7 +279,9 @@ export function getTransferRailOptionsFromStatus(
   const byCorridor = new Map(
     status.railStatuses
       .filter((rail) =>
-        (BANK_TRANSFER_CORRIDOR_KEYS as readonly string[]).includes(rail.railKey),
+        (BANK_TRANSFER_CORRIDOR_KEYS as readonly string[]).includes(
+          rail.railKey,
+        ),
       )
       .map((rail) => [rail.railKey, rail]),
   );

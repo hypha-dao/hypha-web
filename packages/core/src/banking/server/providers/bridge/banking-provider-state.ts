@@ -54,7 +54,10 @@ function vaKey(currency: string, paymentRail: string): string {
   return `${currency.toLowerCase()}:${paymentRail.toLowerCase()}`;
 }
 
-export function vaPairKey(currency: string, destinationCurrency: string): string {
+export function vaPairKey(
+  currency: string,
+  destinationCurrency: string,
+): string {
   return `${currency.toLowerCase()}:${destinationCurrency.toLowerCase()}`;
 }
 
@@ -64,8 +67,7 @@ export async function loadBankingProviderState(
   const kycLink = await bridgeGetKycLink(customer.providerKycLinkId);
 
   let bridgeCustomer: BridgeGetCustomerResponse | null = null;
-  const customerId =
-    customer.providerCustomerId ?? kycLink.customer_id ?? null;
+  const customerId = customer.providerCustomerId ?? kycLink.customer_id ?? null;
 
   if (customerId) {
     bridgeCustomer = await bridgeGetCustomer(customerId);
@@ -230,8 +232,7 @@ export function buildRailStatuses(input: {
     });
 
     const needsAction =
-      operationalStatus === 'not_approved' ||
-      operationalStatus === 'pending';
+      operationalStatus === 'not_approved' || operationalStatus === 'pending';
 
     rails.push({
       railKey: currency,
@@ -244,7 +245,8 @@ export function buildRailStatuses(input: {
       validation: {
         key: endorsement,
         status: endorsementStatus,
-        isComplete: operationalStatus === 'active' || operationalStatus === 'approved',
+        isComplete:
+          operationalStatus === 'active' || operationalStatus === 'approved',
         action:
           needsAction && validations.kyc.action
             ? validations.kyc.action
@@ -258,7 +260,13 @@ export function buildRailStatuses(input: {
     BANK_TRANSFER_CORRIDORS,
   ) as BankTransferCorridorKey[]) {
     const corridor = BANK_TRANSFER_CORRIDORS[corridorKey];
-    if (rails.some((r) => r.currency === corridor.currency && r.paymentRail === corridor.paymentRail)) {
+    if (
+      rails.some(
+        (r) =>
+          r.currency === corridor.currency &&
+          r.paymentRail === corridor.paymentRail,
+      )
+    ) {
       continue;
     }
 

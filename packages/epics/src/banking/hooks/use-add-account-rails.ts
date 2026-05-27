@@ -34,25 +34,24 @@ export function useAddAccountRails({
     [endpoint, isAuthenticated, enabled],
   );
 
-  const { data, error, isLoading, mutate } = useSWR<{ options: BankAddAccountRailOption[] }>(
-    swrKey,
-    async ([url]: [string, string]) => {
-      const token = await getAccessToken();
-      if (!token) {
-        throw new Error('Unauthorized');
-      }
+  const { data, error, isLoading, mutate } = useSWR<{
+    options: BankAddAccountRailOption[];
+  }>(swrKey, async ([url]: [string, string]) => {
+    const token = await getAccessToken();
+    if (!token) {
+      throw new Error('Unauthorized');
+    }
 
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      if (!res.ok) {
-        throw new Error('Failed to fetch add-account options');
-      }
+    if (!res.ok) {
+      throw new Error('Failed to fetch add-account options');
+    }
 
-      return (await res.json()) as { options: BankAddAccountRailOption[] };
-    },
-  );
+    return (await res.json()) as { options: BankAddAccountRailOption[] };
+  });
 
   return {
     options: data?.options ?? [],

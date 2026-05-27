@@ -60,9 +60,7 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
           <Settings className="h-5 w-5 text-muted-foreground" />
         </Button>
       </DialogTrigger>
-      <DialogContent
-        className={cn(BANKING_DIALOG_CONTENT_CLASS, 'max-w-lg')}
-      >
+      <DialogContent className={cn(BANKING_DIALOG_CONTENT_CLASS, 'max-w-lg')}>
         <DialogHeader className={cn(BANKING_DIALOG_HEADER_CLASS, 'pr-10')}>
           <DialogTitle>{tAdvanced('dialogTitle')}</DialogTitle>
           <DialogDescription>

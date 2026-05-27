@@ -1,6 +1,13 @@
 'use client';
 
-import { FC, FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  FC,
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -123,7 +130,9 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
       return;
     }
     setSelectedId(defaultSelectedId);
-    const selected = pickerOptions.find((option) => option.id === defaultSelectedId);
+    const selected = pickerOptions.find(
+      (option) => option.id === defaultSelectedId,
+    );
     setDestinationCurrency(
       selected?.defaultDestinationCurrency ??
         selected?.destinationCurrencies[0] ??
@@ -133,7 +142,9 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
     setAmount('');
   }, [open, defaultSelectedId, pickerOptions]);
 
-  const selectedOption = options.find((option) => option.railKey === selectedId);
+  const selectedOption = options.find(
+    (option) => option.railKey === selectedId,
+  );
 
   const handleRequestEndorsement = useCallback(
     async (endorsement: string) => {
@@ -180,7 +191,9 @@ export const CreateTransferDialog: FC<CreateTransferDialogProps> = ({
             className="flex flex-col gap-4"
           >
             {!status ? (
-              <p className="text-2 text-muted-foreground">{t('loadingOptions')}</p>
+              <p className="text-2 text-muted-foreground">
+                {t('loadingOptions')}
+              </p>
             ) : pickerOptions.length === 0 ? (
               <p className="text-2 text-muted-foreground">
                 {t('noCorridorsAvailable')}

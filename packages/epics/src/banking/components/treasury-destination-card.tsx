@@ -3,7 +3,10 @@
 import { FC } from 'react';
 import { Card, Image } from '@hypha-platform/ui';
 
-import { getTreasuryDestinationTokenIcon, truncateAddress } from '../deposit-instruction-display';
+import {
+  getTreasuryDestinationTokenIcon,
+  truncateAddress,
+} from '../deposit-instruction-display';
 
 type TreasuryDestinationCardProps = {
   address: string;

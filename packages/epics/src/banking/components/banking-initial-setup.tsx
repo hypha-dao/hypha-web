@@ -55,11 +55,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (
-      selected.length === 0 ||
-      !legalName.trim() ||
-      !contactEmail.trim()
-    ) {
+    if (selected.length === 0 || !legalName.trim() || !contactEmail.trim()) {
       return;
     }
 
@@ -94,11 +90,15 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
           >
             {t('organizationLegend')}
           </h2>
-          <p className="text-2 text-muted-foreground">{t('organizationHint')}</p>
+          <p className="text-2 text-muted-foreground">
+            {t('organizationHint')}
+          </p>
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="banking-setup-legal-name">{tOpen('legalName')}</Label>
+            <Label htmlFor="banking-setup-legal-name">
+              {tOpen('legalName')}
+            </Label>
             <Input
               id="banking-setup-legal-name"
               value={legalName}

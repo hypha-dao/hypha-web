@@ -72,9 +72,7 @@ export async function requestSpaceBankOnboarding(
     };
   }
 
-  const normalizedRails =
-    requestedRails?.map((r) => r.toLowerCase()) ??
-    [];
+  const normalizedRails = requestedRails?.map((r) => r.toLowerCase()) ?? [];
   const endorsements = currenciesToEndorsements(normalizedRails);
 
   const idempotencyKey = randomUUID();

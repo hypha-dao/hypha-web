@@ -97,7 +97,9 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
       return;
     }
     setSelectedId(defaultSelectedId);
-    const selected = pickerOptions.find((option) => option.id === defaultSelectedId);
+    const selected = pickerOptions.find(
+      (option) => option.id === defaultSelectedId,
+    );
     setDestinationCurrency(
       selected?.defaultDestinationCurrency ??
         selected?.destinationCurrencies[0] ??
@@ -105,7 +107,9 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
     );
   }, [open, defaultSelectedId, pickerOptions]);
 
-  const selectedOption = options.find((option) => option.railKey === selectedId);
+  const selectedOption = options.find(
+    (option) => option.railKey === selectedId,
+  );
   const isSubmitting = submittingCurrency != null;
 
   const handleRequestEndorsement = useCallback(
@@ -120,7 +124,10 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
   );
 
   const handleAdd = async () => {
-    if (!selectedOption || !isBankRailSelectable(selectedOption.operationalStatus)) {
+    if (
+      !selectedOption ||
+      !isBankRailSelectable(selectedOption.operationalStatus)
+    ) {
       return;
     }
     await onAddCurrency({
@@ -141,7 +148,9 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
 
         <BankingDialogBody className="flex flex-col gap-4">
           {!status ? (
-            <p className="text-2 text-muted-foreground">{t('loadingOptions')}</p>
+            <p className="text-2 text-muted-foreground">
+              {t('loadingOptions')}
+            </p>
           ) : pickerOptions.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {t('noCurrenciesAvailable')}
@@ -165,8 +174,7 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
               primaryActionLabel={t('submitAddCurrency')}
               alternateActionLabel={tOp('continueVerification')}
               primaryActionLoading={
-                isSubmitting &&
-                submittingCurrency === selectedOption?.currency
+                isSubmitting && submittingCurrency === selectedOption?.currency
               }
               onPrimaryAction={() => {
                 if (

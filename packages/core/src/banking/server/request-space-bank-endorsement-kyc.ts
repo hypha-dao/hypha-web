@@ -40,11 +40,8 @@ export async function requestSpaceBankEndorsementKyc(
     throw new BankOnboardingError('endorsement is required', 400);
   }
 
-  const { customer: updated, kycLinkUrl } = await requestBridgeEndorsementKycLink(
-    customer,
-    endorsement,
-    { db },
-  );
+  const { customer: updated, kycLinkUrl } =
+    await requestBridgeEndorsementKycLink(customer, endorsement, { db });
 
   const status = await buildPublicStatusFromCustomer(updated, { db });
   return { status, kycLinkUrl };

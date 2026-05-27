@@ -146,11 +146,11 @@ export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
                         void onRequestEndorsement(option.endorsement)
                       }
                     >
-                    {requestEndorsementLoading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      tOpenAccount('requestRail')
-                    )}
+                      {requestEndorsementLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        tOpenAccount('requestRail')
+                      )}
                     </Button>
                   </div>
                 ) : null}

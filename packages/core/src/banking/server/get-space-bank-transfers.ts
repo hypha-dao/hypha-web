@@ -28,8 +28,7 @@ export async function getSpaceBankTransfers(
   const customerIdFromKycLink = customer.providerCustomerId
     ? null
     : await syncProviderCustomerIdFromKycLink(customer);
-  const customerId =
-    customer.providerCustomerId ?? customerIdFromKycLink;
+  const customerId = customer.providerCustomerId ?? customerIdFromKycLink;
 
   if (!customerId) {
     return { transfers: [], hasMore: false, nextCursor: null };

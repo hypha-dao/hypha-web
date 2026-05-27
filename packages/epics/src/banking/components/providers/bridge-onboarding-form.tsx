@@ -87,7 +87,9 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
         />
       </div>
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium">{t('endorsementsLabel')}</legend>
+        <legend className="text-sm font-medium">
+          {t('endorsementsLabel')}
+        </legend>
         <p className="text-sm text-muted-foreground">{t('endorsementsHint')}</p>
         <div className="flex flex-col gap-2">
           {BANK_CURRENCY_METAS.map((meta) => {

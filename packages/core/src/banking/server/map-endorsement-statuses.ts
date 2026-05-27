@@ -1,4 +1,7 @@
-import type { BankEndorsementPublicStatus, BankRailPublicStatus } from '../types';
+import type {
+  BankEndorsementPublicStatus,
+  BankRailPublicStatus,
+} from '../types';
 
 const BRIDGE_ENDORSEMENT_DISPLAY_ORDER = [
   'base',
@@ -39,7 +42,8 @@ export function mapEndorsementStatuses(
         right as (typeof BRIDGE_ENDORSEMENT_DISPLAY_ORDER)[number],
       );
       return (
-        (leftIndex === -1 ? 99 : leftIndex) - (rightIndex === -1 ? 99 : rightIndex)
+        (leftIndex === -1 ? 99 : leftIndex) -
+        (rightIndex === -1 ? 99 : rightIndex)
       );
     })
     .map(([endorsement, group]) => {

@@ -48,7 +48,9 @@ export function useRequestEndorsementKyc(spaceSlug: string) {
         return (await res.json()) as RequestEndorsementKycResult;
       } catch (err) {
         const next =
-          err instanceof Error ? err : new Error('Failed to request verification');
+          err instanceof Error
+            ? err
+            : new Error('Failed to request verification');
         setError(next);
         throw next;
       } finally {

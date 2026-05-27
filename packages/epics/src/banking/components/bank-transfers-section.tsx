@@ -6,7 +6,10 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@hypha-platform/ui';
 
 import { Empty } from '../../common';
-import { BANKING_LOADING_STATE_CLASS, TREASURY_CARD_GRID_CLASS } from '../banking-ui';
+import {
+  BANKING_LOADING_STATE_CLASS,
+  TREASURY_CARD_GRID_CLASS,
+} from '../banking-ui';
 import type { BankTransferPublic } from '../hooks/types';
 import { BankTransferCard } from './bank-transfer-card';
 import { BankTransferDetailsDialog } from './bank-transfer-details-dialog';

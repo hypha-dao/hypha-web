@@ -26,16 +26,11 @@ export async function syncSpaceBankingFromBridge(
     providerCustomerId &&
     providerCustomerId !== customer.providerCustomerId
   ) {
-    await updateBankCustomer(
-      { id: customer.id, providerCustomerId },
-      { db },
-    );
+    await updateBankCustomer({ id: customer.id, providerCustomerId }, { db });
   }
 
   const status = await buildPublicStatusFromCustomer(
-    providerCustomerId
-      ? { ...customer, providerCustomerId }
-      : customer,
+    providerCustomerId ? { ...customer, providerCustomerId } : customer,
     { db },
   );
 

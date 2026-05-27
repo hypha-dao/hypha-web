@@ -131,7 +131,11 @@ describe('getAvailableAddAccountRailOptions (per-(currency,destination) dedup)',
 
   it('offers a currency with no accounts using all its destinations', () => {
     const status = statusWith([
-      rail({ currency: 'eur', paymentRail: 'sepa', operationalStatus: 'approved' }),
+      rail({
+        currency: 'eur',
+        paymentRail: 'sepa',
+        operationalStatus: 'approved',
+      }),
     ]);
 
     const options = getAvailableAddAccountRailOptions(status, []);

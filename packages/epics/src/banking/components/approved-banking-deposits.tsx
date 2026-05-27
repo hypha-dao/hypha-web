@@ -5,7 +5,10 @@ import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Empty } from '../../common';
-import { BANKING_LOADING_STATE_CLASS, TREASURY_CARD_GRID_CLASS } from '../banking-ui';
+import {
+  BANKING_LOADING_STATE_CLASS,
+  TREASURY_CARD_GRID_CLASS,
+} from '../banking-ui';
 import type { BankVirtualAccountPublic } from '../hooks/types';
 import { BankAccountCard } from './bank-account-card';
 import { BankAccountDetailsDialog } from './bank-account-details-dialog';

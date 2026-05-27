@@ -2,7 +2,10 @@ import { and, eq } from 'drizzle-orm';
 
 import type { DbConfig } from '../../common/server/types';
 import type { BankProvider } from '../types';
-import { bankCustomers, type BankCustomer } from '@hypha-platform/storage-postgres';
+import {
+  bankCustomers,
+  type BankCustomer,
+} from '@hypha-platform/storage-postgres';
 
 type FindBankCustomerBySpaceAndProviderInput = {
   spaceId: number;

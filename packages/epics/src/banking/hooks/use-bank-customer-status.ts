@@ -68,17 +68,16 @@ export const useBankCustomerStatus = ({
     [endpoint, isAuthenticated],
   );
 
-  const { data, isLoading, isValidating, mutate } = useSWR<
-    BankCustomerPublicStatus | null
-  >(
-    swrKey,
-    ([url]: [string, string]) => fetchBankCustomerStatus(url, getAccessToken),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      shouldRetryOnError: false,
-    },
-  );
+  const { data, isLoading, isValidating, mutate } =
+    useSWR<BankCustomerPublicStatus | null>(
+      swrKey,
+      ([url]: [string, string]) => fetchBankCustomerStatus(url, getAccessToken),
+      {
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        shouldRetryOnError: false,
+      },
+    );
 
   const refresh = React.useCallback(() => mutate(), [mutate]);
 

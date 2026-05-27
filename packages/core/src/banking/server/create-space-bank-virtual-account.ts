@@ -3,10 +3,7 @@ import {
   BRIDGE_DEFAULT_DESTINATION_CURRENCY,
   isAllowedBridgeDestinationCurrency,
 } from '../bridge-destination-currencies';
-import {
-  DEFAULT_BANK_PROVIDER,
-  getPaymentRailForCurrency,
-} from '../constants';
+import { DEFAULT_BANK_PROVIDER, getPaymentRailForCurrency } from '../constants';
 import type {
   CreateSpaceBankVirtualAccountInput,
   CreateSpaceBankVirtualAccountResult,

@@ -114,8 +114,7 @@ export const BankTransferCard: FC<BankTransferCardProps> = ({
               ? `${amount} ${cur.toUpperCase()}`
               : t('transferCard.flexibleAmount'),
           ),
-          (key) =>
-            key === 'amount' ? tDetails('amountLabel') : tFields(key),
+          (key) => (key === 'amount' ? tDetails('amountLabel') : tFields(key)),
         );
         return referenceText
           ? {

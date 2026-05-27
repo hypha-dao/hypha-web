@@ -75,7 +75,11 @@ describe('bridgeVirtualAccountTargetsSpace', () => {
           id: 'va_1',
           status: 'activated',
           source_deposit_instructions: { currency: 'usd' },
-          destination: { address: SPACE_TREASURY, currency: 'usdc', payment_rail: 'base' },
+          destination: {
+            address: SPACE_TREASURY,
+            currency: 'usdc',
+            payment_rail: 'base',
+          },
         },
         SPACE_TREASURY,
       ),

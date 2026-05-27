@@ -4,7 +4,8 @@ import type { BankRailPublicStatus } from '../../types';
 import { mapEndorsementStatuses } from '../map-endorsement-statuses';
 
 function rail(
-  partial: Partial<BankRailPublicStatus> & Pick<BankRailPublicStatus, 'railKey'>,
+  partial: Partial<BankRailPublicStatus> &
+    Pick<BankRailPublicStatus, 'railKey'>,
 ): BankRailPublicStatus {
   return {
     currency: 'usd',
@@ -56,7 +57,10 @@ describe('mapEndorsementStatuses', () => {
     ]);
 
     expect(statuses).toHaveLength(2);
-    expect(statuses.map((entry) => entry.endorsement)).toEqual(['base', 'sepa']);
+    expect(statuses.map((entry) => entry.endorsement)).toEqual([
+      'base',
+      'sepa',
+    ]);
     expect(statuses[0]?.operationalStatus).toBe('approved');
     expect(statuses[1]?.operationalStatus).toBe('pending');
   });

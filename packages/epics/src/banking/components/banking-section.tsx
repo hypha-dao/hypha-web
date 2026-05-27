@@ -59,8 +59,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
   } = useBankCustomerStatus({ spaceSlug });
 
   const hasCustomer = status != null;
-  const showBankingListings =
-    hasCustomer && hasApprovedBankCurrencies(status);
+  const showBankingListings = hasCustomer && hasApprovedBankCurrencies(status);
 
   const {
     accounts: virtualAccounts,
@@ -161,11 +160,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
       void refreshVirtualAccounts();
       void refreshTransfers();
     }
-  }, [
-    showBankingListings,
-    refreshTransfers,
-    refreshVirtualAccounts,
-  ]);
+  }, [showBankingListings, refreshTransfers, refreshVirtualAccounts]);
 
   const verificationInProgress = isBankVerificationInProgress(status);
 
@@ -211,9 +206,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
   );
 
   if (!isAuthenticated) {
-    return (
-      <p className="text-2 text-muted-foreground">{tCommon('signIn')}</p>
-    );
+    return <p className="text-2 text-muted-foreground">{tCommon('signIn')}</p>;
   }
 
   if (isStatusLoading) {
@@ -242,9 +235,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
 
   if (!showBankingListings) {
     if (!canManage && blockerMessage) {
-      return (
-        <p className="text-2 text-muted-foreground">{blockerMessage}</p>
-      );
+      return <p className="text-2 text-muted-foreground">{blockerMessage}</p>;
     }
 
     return (
@@ -330,10 +321,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
             void refreshTransfers();
             void refresh();
           } catch (err) {
-            if (
-              err instanceof Error &&
-              err.message.includes('verification')
-            ) {
+            if (err instanceof Error && err.message.includes('verification')) {
               openVerificationGear();
             }
             throw err;

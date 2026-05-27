@@ -206,8 +206,8 @@ export function normalizeBridgeCustomerKycLinkResponse(
       typeof record.url === 'string'
         ? record.url
         : typeof record.kyc_link === 'string'
-          ? record.kyc_link
-          : null;
+        ? record.kyc_link
+        : null;
 
     if (link) {
       return {
@@ -464,7 +464,9 @@ export async function bridgeGetCustomerKycLink(
   fallback?: { existingKycLinkId: string },
 ): Promise<BridgeCreateKycLinkResponse> {
   const parsed = await bridgeRequest(
-    `/v0/customers/${encodeURIComponent(customerId)}/kyc_link${buildCustomerKycLinkQuery(options)}`,
+    `/v0/customers/${encodeURIComponent(
+      customerId,
+    )}/kyc_link${buildCustomerKycLinkQuery(options)}`,
     { method: 'GET' },
   );
 
@@ -675,7 +677,9 @@ export async function bridgeListVirtualAccounts(
   params?: BridgeListPaginationParams,
 ): Promise<BridgeListResponse<BridgeCreateVirtualAccountResponse>> {
   const parsed = await bridgeRequest(
-    `/v0/customers/${encodeURIComponent(customerId)}/virtual_accounts${buildListQuery(params)}`,
+    `/v0/customers/${encodeURIComponent(
+      customerId,
+    )}/virtual_accounts${buildListQuery(params)}`,
     { method: 'GET' },
   );
 
@@ -686,7 +690,9 @@ export async function bridgeListTransfers(
   customerId: string,
   params?: BridgeListPaginationParams,
 ): Promise<BridgeListResponse<BridgeTransferResponse>> {
-  const path = `/v0/customers/${encodeURIComponent(customerId)}/transfers${buildListQuery(params)}`;
+  const path = `/v0/customers/${encodeURIComponent(
+    customerId,
+  )}/transfers${buildListQuery(params)}`;
 
   const parsed = await bridgeRequest(path, { method: 'GET' });
 
@@ -700,7 +706,9 @@ export async function bridgeGetVirtualAccount(
   virtualAccountId: string,
 ): Promise<BridgeCreateVirtualAccountResponse> {
   const parsed = await bridgeRequest(
-    `/v0/customers/${encodeURIComponent(customerId)}/virtual_accounts/${encodeURIComponent(virtualAccountId)}`,
+    `/v0/customers/${encodeURIComponent(
+      customerId,
+    )}/virtual_accounts/${encodeURIComponent(virtualAccountId)}`,
     { method: 'GET' },
   );
 

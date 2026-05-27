@@ -43,31 +43,32 @@ export const useVirtualAccounts = ({
     [endpoint, isAuthenticated, enabled],
   );
 
-  const { data, error, isLoading, mutate } = useSWR<PaginatedBankVirtualAccounts>(
-    swrKey,
-    async ([url]: [string, string]) => {
-      const token = await getAccessToken();
-      if (!token) {
-        throw new Error('Unauthorized');
-      }
+  const { data, error, isLoading, mutate } =
+    useSWR<PaginatedBankVirtualAccounts>(
+      swrKey,
+      async ([url]: [string, string]) => {
+        const token = await getAccessToken();
+        if (!token) {
+          throw new Error('Unauthorized');
+        }
 
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      if (!res.ok) {
-        throw new Error('Failed to fetch bank accounts');
-      }
+        if (!res.ok) {
+          throw new Error('Failed to fetch bank accounts');
+        }
 
-      return (await res.json()) as PaginatedBankVirtualAccounts;
-    },
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    },
-  );
+        return (await res.json()) as PaginatedBankVirtualAccounts;
+      },
+      {
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+      },
+    );
 
   const refresh = React.useCallback(() => mutate(), [mutate]);
 

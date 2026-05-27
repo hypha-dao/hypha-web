@@ -109,7 +109,10 @@ describe('requestSpaceBankOnboarding', () => {
 
     await expect(
       requestSpaceBankOnboarding(
-        { ...onboardingInput, requestedRails: [...onboardingInput.requestedRails] },
+        {
+          ...onboardingInput,
+          requestedRails: [...onboardingInput.requestedRails],
+        },
         { db: mockDb },
         { kycProvider: mockProvider },
       ),
@@ -127,7 +130,10 @@ describe('requestSpaceBankOnboarding', () => {
     });
 
     const result = await requestSpaceBankOnboarding(
-      { ...onboardingInput, requestedRails: [...onboardingInput.requestedRails] },
+      {
+        ...onboardingInput,
+        requestedRails: [...onboardingInput.requestedRails],
+      },
       { db: mockDb },
       { kycProvider: mockProvider },
     );
@@ -140,7 +146,10 @@ describe('requestSpaceBankOnboarding', () => {
 
   it('creates customer via provider with requested rails', async () => {
     const result = await requestSpaceBankOnboarding(
-      { ...onboardingInput, requestedRails: [...onboardingInput.requestedRails] },
+      {
+        ...onboardingInput,
+        requestedRails: [...onboardingInput.requestedRails],
+      },
       { db: mockDb },
       { kycProvider: mockProvider },
     );
