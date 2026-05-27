@@ -72,6 +72,12 @@ export const ChangeSpaceDelegateForm = ({
     },
   });
 
+  React.useEffect(() => {
+    if (person?.id) {
+      form.setValue('creatorId', person.id, { shouldValidate: true });
+    }
+  }, [person?.id, form]);
+
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(
     form,
@@ -104,6 +110,10 @@ export const ChangeSpaceDelegateForm = ({
   const handleCreate = async (data: FormValues) => {
     if (!data.space || !data.member) return;
 
+    if (spaceId == null || web3SpaceId == null) {
+      return;
+    }
+
     if (hasTokenRequirements && !hasEnoughTokens) {
       console.warn('Cannot submit proposal: not enough tokens.');
       return;
@@ -112,8 +122,8 @@ export const ChangeSpaceDelegateForm = ({
     try {
       await changeSpaceDelegateAction({
         ...data,
-        spaceId: spaceId as number,
-        web3SpaceId: web3SpaceId as number,
+        spaceId,
+        web3SpaceId,
         space: data.space,
         member: data.member,
       });

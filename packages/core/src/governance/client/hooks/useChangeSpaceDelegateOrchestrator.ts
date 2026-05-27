@@ -168,13 +168,20 @@ export const useChangeSpaceDelegateOrchestrator = ({
 
       const web2Slug = createdAgreement?.slug;
 
-      const space = spaces?.find((s) => s.address == arg.space);
+      const space = spaces?.find(
+        (s) => s.address?.toLowerCase() === arg.space.toLowerCase(),
+      );
 
       try {
         if (config) {
+          if (space?.web3SpaceId == null) {
+            throw new Error(
+              'Selected governance space not found or missing web3SpaceId',
+            );
+          }
           startTask('CREATE_WEB3_AGREEMENT');
           await web3.changeSpaceDelegate({
-            space: space?.web3SpaceId as number,
+            space: space.web3SpaceId,
             member: arg.member,
             spaceId: arg.web3SpaceId,
           });

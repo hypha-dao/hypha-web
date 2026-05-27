@@ -53,6 +53,8 @@ export type ResubmitProposalSessionPayload = {
   member?: string;
   spaceToSpaceTargetAddress?: string;
   spaceToSpaceMemberAddress?: string;
+  changeDelegateTargetAddress?: string;
+  changeDelegateMemberAddress?: string;
   issueNewTokenForm?: Record<string, unknown>;
   tokenBackingVault?: Record<string, unknown>;
   spaceTokenPurchaseForm?: Record<string, unknown>;
