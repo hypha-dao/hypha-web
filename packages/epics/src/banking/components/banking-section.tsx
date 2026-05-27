@@ -21,7 +21,6 @@ import {
   useVirtualAccounts,
 } from '../hooks';
 import {
-  getAvailableBankCurrencyCodes,
   hasAddAccountRailAvailable,
   hasApprovedBankCurrencies,
   isBankVerificationInProgress,
@@ -180,13 +179,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const fallbackLegalName = space?.title?.trim() ?? '';
   const fallbackContactEmail = person?.email?.trim() ?? '';
 
-  const availableCurrencyCodes = useMemo(
-    () => getAvailableBankCurrencyCodes(virtualAccounts),
-    [virtualAccounts],
-  );
-
-  const canAddAccount =
-    hasAddAccountRailAvailable(status) || availableCurrencyCodes.length > 0;
+  const canAddAccount = hasAddAccountRailAvailable(status, virtualAccounts);
 
   const isListsLoading =
     showBankingListings && (virtualAccountsLoading || transfersLoading);
@@ -352,6 +345,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
         onOpenChange={setAddCurrencyDialogOpen}
         spaceSlug={spaceSlug}
         status={status}
+        existingAccounts={virtualAccounts}
         submittingCurrency={creatingCurrency}
         error={createAccountError}
         onOpenGear={openVerificationGear}

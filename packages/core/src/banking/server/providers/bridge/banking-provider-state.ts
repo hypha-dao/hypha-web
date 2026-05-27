@@ -16,6 +16,7 @@ import {
   type BankTransferCorridorKey,
   type BankVirtualAccountCurrency,
 } from '../../../constants';
+import { BRIDGE_DEFAULT_DESTINATION_CURRENCY } from '../../../bridge-destination-currencies';
 import {
   isBridgeEndorsementApproved,
   parseBridgeCustomerEndorsements,
@@ -45,10 +46,16 @@ export type BankingProviderState = {
   kycLink: BridgeCreateKycLinkResponse;
   customer: BridgeGetCustomerResponse | null;
   virtualAccountKeys: Set<string>;
+  /** Provisioned `${currency}:${destinationCurrency}` pairs — dedup key for account creation. */
+  virtualAccountPairs: Set<string>;
 };
 
 function vaKey(currency: string, paymentRail: string): string {
   return `${currency.toLowerCase()}:${paymentRail.toLowerCase()}`;
+}
+
+export function vaPairKey(currency: string, destinationCurrency: string): string {
+  return `${currency.toLowerCase()}:${destinationCurrency.toLowerCase()}`;
 }
 
 export async function loadBankingProviderState(
@@ -65,6 +72,7 @@ export async function loadBankingProviderState(
   }
 
   const virtualAccountKeys = new Set<string>();
+  const virtualAccountPairs = new Set<string>();
   if (customerId) {
     const listed = await bridgeListVirtualAccounts(customerId, { limit: 100 });
     for (const account of listed.data) {
@@ -82,6 +90,11 @@ export async function loadBankingProviderState(
       if (currency && rail) {
         virtualAccountKeys.add(vaKey(currency, rail));
       }
+      if (currency) {
+        const destinationCurrency =
+          account.destination?.currency ?? BRIDGE_DEFAULT_DESTINATION_CURRENCY;
+        virtualAccountPairs.add(vaPairKey(currency, destinationCurrency));
+      }
     }
   }
 
@@ -89,6 +102,7 @@ export async function loadBankingProviderState(
     kycLink,
     customer: bridgeCustomer,
     virtualAccountKeys,
+    virtualAccountPairs,
   };
 }
 

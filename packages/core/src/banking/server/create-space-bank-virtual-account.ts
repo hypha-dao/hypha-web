@@ -25,6 +25,7 @@ import {
   loadBankingProviderState,
   resolveCustomerApproved,
   syncProviderCustomerIdFromKycLink,
+  vaPairKey,
 } from './providers/bridge/banking-provider-state';
 import {
   getEndorsementForCurrency,
@@ -126,9 +127,9 @@ export async function createSpaceBankVirtualAccount(
     );
   }
 
-  if (rail.hasVirtualAccount) {
+  if (state.virtualAccountPairs.has(vaPairKey(currency, destinationCurrency))) {
     throw new BankOnboardingError(
-      'A bank account already exists for this currency',
+      'A bank account already exists for this currency and destination currency',
       409,
     );
   }

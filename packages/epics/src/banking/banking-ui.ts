@@ -194,8 +194,7 @@ export function getAddAccountRailOptionsFromStatus(
     .filter(
       (rail) =>
         VA_CURRENCY_SET.has(rail.currency as BankCurrencyCode) &&
-        rail.railKey === rail.currency &&
-        !rail.hasVirtualAccount,
+        rail.railKey === rail.currency,
     )
     .map((rail) => ({
       railKey: rail.railKey,
@@ -218,6 +217,51 @@ export function getAddAccountRailOptionsFromStatus(
         (sortOrder[a.operationalStatus] ?? 99) -
         (sortOrder[b.operationalStatus] ?? 99),
     );
+}
+
+/** Provisioned (source currency, destination currency) pairs, keyed `${currency}:${destination}`. */
+export function getCoveredAccountPairs(
+  virtualAccounts: BankVirtualAccountPublic[],
+): Set<string> {
+  const covered = new Set<string>();
+  for (const account of virtualAccounts) {
+    const destination = account.depositInstructions.destination_currency;
+    if (typeof destination === 'string') {
+      covered.add(
+        `${account.currency.toLowerCase()}:${destination.toLowerCase()}`,
+      );
+    }
+  }
+  return covered;
+}
+
+/**
+ * Add-account options with already-provisioned (currency, destination) pairs
+ * removed. A currency drops out of the list only once every destination
+ * currency it supports has an account; otherwise it stays, with the remaining
+ * destination currencies offered.
+ */
+export function getAvailableAddAccountRailOptions(
+  status: BankCustomerPublicStatus,
+  virtualAccounts: BankVirtualAccountPublic[],
+): BankAddAccountRailOption[] {
+  const covered = getCoveredAccountPairs(virtualAccounts);
+  return getAddAccountRailOptionsFromStatus(status)
+    .map((option) => {
+      const destinationCurrencies = option.destinationCurrencies.filter(
+        (destination) =>
+          !covered.has(
+            `${option.currency.toLowerCase()}:${destination.toLowerCase()}`,
+          ),
+      );
+      const defaultDestinationCurrency = destinationCurrencies.includes(
+        option.defaultDestinationCurrency,
+      )
+        ? option.defaultDestinationCurrency
+        : destinationCurrencies[0] ?? option.defaultDestinationCurrency;
+      return { ...option, destinationCurrencies, defaultDestinationCurrency };
+    })
+    .filter((option) => option.destinationCurrencies.length > 0);
 }
 
 /** One-time transfer corridors — derived from bank-customers status (no extra Bridge fetch). */
@@ -274,11 +318,12 @@ export function getTransferRailOptionsFromStatus(
 
 export function hasAddAccountRailAvailable(
   status: BankCustomerPublicStatus | null | undefined,
+  virtualAccounts: BankVirtualAccountPublic[],
 ): boolean {
   if (!status) {
     return false;
   }
-  return getAddAccountRailOptionsFromStatus(status).length > 0;
+  return getAvailableAddAccountRailOptions(status, virtualAccounts).length > 0;
 }
 
 export function isBankRailSelectable(

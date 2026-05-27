@@ -624,7 +624,7 @@
     }
   },
   "TreasuryTab": {
-    "bankAccounts": "Bankeinzahlungen",
+    "bankAccounts": "Bankkonten",
     "balance": "Kontostand",
     "wallet": "Wallet",
     "searchTokens": "Tokens suchen",

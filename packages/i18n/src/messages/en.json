@@ -928,7 +928,7 @@
     }
   },
   "TreasuryTab": {
-    "bankAccounts": "Bank Transfers",
+    "bankAccounts": "Bank Accounts",
     "balance": "Balance",
     "wallet": "Wallet",
     "searchTokens": "Search tokens",

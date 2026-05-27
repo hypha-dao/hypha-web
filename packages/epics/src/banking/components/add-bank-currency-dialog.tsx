@@ -13,11 +13,14 @@ import { cn } from '@hypha-platform/ui-utils';
 
 import type { BankCurrencyCode } from '../bank-currency-display';
 import {
-  getAddAccountRailOptionsFromStatus,
+  getAvailableAddAccountRailOptions,
   isBankRailSelectable,
 } from '../banking-ui';
 import { useRequestEndorsementKyc } from '../hooks/use-request-endorsement-kyc';
-import type { BankCustomerPublicStatus } from '../hooks/types';
+import type {
+  BankCustomerPublicStatus,
+  BankVirtualAccountPublic,
+} from '../hooks/types';
 import {
   BANKING_DIALOG_CONTENT_CLASS,
   BANKING_DIALOG_HEADER_CLASS,
@@ -33,6 +36,8 @@ type AddBankCurrencyDialogProps = {
   onOpenChange: (open: boolean) => void;
   spaceSlug: string;
   status: BankCustomerPublicStatus | null | undefined;
+  /** Existing virtual accounts — used to hide already-provisioned (currency, destination) pairs. */
+  existingAccounts: BankVirtualAccountPublic[];
   submittingCurrency: BankCurrencyCode | null;
   error: string | null;
   onOpenGear: () => void;
@@ -48,6 +53,7 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
   onOpenChange,
   spaceSlug,
   status,
+  existingAccounts,
   submittingCurrency,
   error,
   onOpenGear,
@@ -60,8 +66,9 @@ export const AddBankCurrencyDialog: FC<AddBankCurrencyDialogProps> = ({
     useRequestEndorsementKyc(spaceSlug);
 
   const options = useMemo(
-    () => (status ? getAddAccountRailOptionsFromStatus(status) : []),
-    [status],
+    () =>
+      status ? getAvailableAddAccountRailOptions(status, existingAccounts) : [],
+    [status, existingAccounts],
   );
 
   const pickerOptions = useMemo((): BankRailPickerOption[] => {
