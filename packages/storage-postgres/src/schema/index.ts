@@ -13,6 +13,7 @@ import { transfers } from './transfers';
 import { coherences } from './coherence';
 import { matrixUserLinks } from './matrix-user-link';
 import { tokenUpdates, tokenUpdateRelations } from './token-updates';
+import { bankCustomers } from './bank-customer';
 import {
   spaceCallRecordings,
   spaceCallTranscripts,
@@ -39,6 +40,7 @@ export * from './transfers';
 export * from './coherence';
 export * from './matrix-user-link';
 export * from './token-updates';
+export * from './bank-customer';
 export * from './call-artifacts';
 export * from './signal-orchestrator';
 
@@ -60,6 +62,7 @@ export const schema = {
   matrixUserLinks,
   tokenUpdates,
   tokenUpdateRelations,
+  bankCustomers,
   spaceCallRecordings,
   spaceCallTranscripts,
   spaceDiscussionSummaries,

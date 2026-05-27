@@ -5,6 +5,7 @@ export * from './proposals';
 export * from './people';
 export * from './spaces';
 export * from './treasury';
+export * from './banking';
 export * from './notifications';
 export * from './hooks';
 
