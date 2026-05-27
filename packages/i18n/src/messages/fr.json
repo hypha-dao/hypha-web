@@ -2517,6 +2517,18 @@
       "valueModel": "Valeur & modèle",
       "evidenceImpact": "Preuves & impact"
     },
+    "tagGroup": {
+      "purpose": "Objectif & stratégie",
+      "governance": "Gouvernance",
+      "operations": "Opérations",
+      "community": "Communauté",
+      "finance": "Trésorerie & tokens",
+      "product": "Produit",
+      "risk": "Responsabilité & résilience",
+      "ecosystem": "Écosystème & partenariats",
+      "learning": "Apprentissage & connaissance",
+      "reputation": "Réputation & confiance"
+    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Stratège Senior",
@@ -2573,12 +2585,12 @@
         ]
       },
       "risk": {
-        "role": "Conseiller Risque et Conformité",
-        "focus": "modes de défaillance, scénarios de risque, plans de mitigation et considérations politique/conformité",
+        "role": "Conseiller·ère responsabilité & résilience",
+        "focus": "Signaux faibles, garde-fous et résilience à long terme",
         "roleDefinition": [
-          "Fait émerger les modes de défaillance opérationnels, de gouvernance et de sécurité avant exécution.",
-          "Recommande des mitigations pratiques avec ownership clair et conditions de déclenchement.",
-          "Maintient les propositions conformes et résilientes sans sur-bureaucratiser l'exécution."
+          "Repère les tensions et signaux faibles tôt pour que l'espace s'adapte avant que les dommages s'accumulent.",
+          "Propose des garde-fous attentifs avec des responsables clairs—résilience sans bureaucratie.",
+          "Garde les engagements alignés sur vos valeurs et votre responsabilité à mesure que l'espace grandit."
         ]
       },
       "ecosystem": {

@@ -2521,6 +2521,18 @@
       "valueModel": "Valor y modelo",
       "evidenceImpact": "Evidencia e impacto"
     },
+    "tagGroup": {
+      "purpose": "Propósito y estrategia",
+      "governance": "Gobernanza",
+      "operations": "Operaciones",
+      "community": "Comunidad",
+      "finance": "Tesorería y tokens",
+      "product": "Producto",
+      "risk": "Cuidado y resiliencia",
+      "ecosystem": "Ecosistema y alianzas",
+      "learning": "Aprendizaje y conocimiento",
+      "reputation": "Reputación y confianza"
+    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Estratega Senior",
@@ -2577,12 +2589,12 @@
         ]
       },
       "risk": {
-        "role": "Asesor/a de Riesgo y Cumplimiento",
-        "focus": "modos de fallo, escenarios de riesgo, planes de mitigación y consideraciones de política/cumplimiento",
+        "role": "Asesor/a de Cuidado y Resiliencia",
+        "focus": "Señales débiles, salvaguardas y resiliencia a largo plazo",
         "roleDefinition": [
-          "Hace visibles modos de fallo operativos, de gobernanza y de seguridad antes de ejecutar.",
-          "Recomienda mitigaciones prácticas con propiedad clara y condiciones de activación.",
-          "Mantiene propuestas en cumplimiento y resilientes sin sobre-burocratizar la ejecución."
+          "Detecta tensión y señales débiles pronto para que el espacio se adapte antes de que el daño crezca.",
+          "Propone salvaguardas conscientes con responsables claros—resiliencia sin burocracia.",
+          "Mantiene compromisos alineados con vuestros valores y cuidado a medida que el espacio crece."
         ]
       },
       "ecosystem": {

@@ -2423,6 +2423,18 @@
     "newMemoryUploadingFiles": "Uploading space memories...",
     "newMemoryAttachmentsRequired": "Please upload at least one document for this memory.",
     "newMemory": "New memory",
+    "tagGroup": {
+      "purpose": "Purpose & strategy",
+      "governance": "Governance",
+      "operations": "Operations",
+      "community": "Community",
+      "finance": "Treasury & tokens",
+      "product": "Product",
+      "risk": "Stewardship & resilience",
+      "ecosystem": "Ecosystem & partnerships",
+      "learning": "Learning & knowledge",
+      "reputation": "Reputation & trust"
+    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Senior Strategist",
@@ -2479,12 +2491,12 @@
         ]
       },
       "risk": {
-        "role": "Risk and Compliance Advisor",
-        "focus": "failure modes, downside scenarios, mitigation plans, and policy/compliance considerations",
+        "role": "Stewardship & Resilience Advisor",
+        "focus": "Weak signals, safeguards, and long-term resilience",
         "roleDefinition": [
-          "Surfaces operational, governance, and security failure modes before execution.",
-          "Recommends practical mitigations with clear ownership and trigger conditions.",
-          "Keeps proposals compliant and resilient without over-bureaucratizing execution."
+          "Notices strain and weak signals early so the space can adapt before harm builds.",
+          "Proposes caring safeguards with clear owners—enough to stay resilient, not bureaucratic drag.",
+          "Keeps commitments aligned with your values and stewardship as the space grows."
         ]
       },
       "ecosystem": {

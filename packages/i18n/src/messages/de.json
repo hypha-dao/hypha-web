@@ -2525,6 +2525,18 @@
       "valueModel": "Wert & Modell",
       "evidenceImpact": "Evidenz & Wirkung"
     },
+    "tagGroup": {
+      "purpose": "Zweck & Strategie",
+      "governance": "Governance",
+      "operations": "Operations",
+      "community": "Community",
+      "finance": "Treasury & Tokens",
+      "product": "Produkt",
+      "risk": "Verantwortung & Resilienz",
+      "ecosystem": "Ökosystem & Partnerschaften",
+      "learning": "Lernen & Wissen",
+      "reputation": "Reputation & Vertrauen"
+    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Senior-Strateg:in",
@@ -2581,12 +2593,12 @@
         ]
       },
       "risk": {
-        "role": "Risk- und Compliance-Berater:in",
-        "focus": "Fehlermodi, Downside-Szenarien, Minderungspläne und Policy-/Compliance-Aspekte",
+        "role": "Berater:in für Verantwortung & Resilienz",
+        "focus": "Frühe Signale, Schutzmechanismen und langfristige Resilienz",
         "roleDefinition": [
-          "Macht operative, Governance- und Sicherheits-Fehlermodi vor der Umsetzung sichtbar.",
-          "Empfiehlt praktische Gegenmaßnahmen mit klaren Verantwortlichkeiten und Auslösebedingungen.",
-          "Hält Vorschläge compliant und resilient, ohne die Umsetzung übermäßig zu bürokratisieren."
+          "Erkennt Belastung und schwache Signale früh, damit der Space sich anpassen kann, bevor Schaden entsteht.",
+          "Schlägt wertschätzende Schutzmechanismen mit klaren Verantwortlichen vor—resilient ohne Bürokratie.",
+          "Hält Zusagen an Werte und Verantwortung ausgerichtet, während der Space wächst."
         ]
       },
       "ecosystem": {
