@@ -23,7 +23,7 @@ type AiPanelMessagesProps = {
   suggestionItems: readonly AiPanelSuggestionItem[];
   /** Large suggestion cards below welcome — only before the user sends a message. */
   showInlineSuggestions?: boolean;
-  onSuggestionSelect: (text: string) => void;
+  onSuggestionSelect?: (text: string) => void;
   activeSpaceName?: string;
   isStreaming?: boolean;
   onActionReplySelect?: (text: string) => void;
@@ -58,7 +58,9 @@ export function AiPanelMessages({
             parts: [
               {
                 type: 'text' as const,
-                text: t('welcome'),
+                text: t('welcome', {
+                  spaceName: activeSpaceName?.trim() || 'Hypha',
+                }),
               },
             ],
           },
@@ -91,18 +93,13 @@ export function AiPanelMessages({
           />
         ))}
 
-        {showInlineSuggestions && (
-          <div className="flex flex-col gap-2">
-            <AiPanelSuggestions
-              items={suggestionItems}
-              onSelect={onSuggestionSelect}
-              variant="cards"
-            />
-            <p className="px-1 text-xs leading-relaxed text-muted-foreground">
-              {t('welcomeSpecialistsHint')}
-            </p>
-          </div>
-        )}
+        {showInlineSuggestions && onSuggestionSelect ? (
+          <AiPanelSuggestions
+            items={suggestionItems}
+            onSelect={onSuggestionSelect}
+            variant="cards"
+          />
+        ) : null}
       </div>
     </div>
   );

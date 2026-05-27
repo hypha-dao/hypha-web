@@ -135,14 +135,16 @@ export async function getSpacePaymentEligibility(
     };
   }
 
-  const [expiryTime] = payments as readonly [bigint, boolean];
+  const [expiryTime, freeTrialUsed] = payments as readonly [bigint, boolean];
   const expiryMs = Number(expiryTime) * 1000;
   const daysLeft = Number.isFinite(expiryMs)
     ? Math.ceil((expiryMs - Date.now()) / (1000 * 60 * 60 * 24))
     : 0;
+  const paidOrTrialActive =
+    daysLeft > 0 && (Boolean(hasSpacePaid) || Boolean(freeTrialUsed));
 
   return {
-    eligible: Boolean(hasSpacePaid) && daysLeft > 0,
+    eligible: paidOrTrialActive,
     hasSpacePaid: Boolean(hasSpacePaid),
     daysLeft,
   };

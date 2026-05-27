@@ -1982,11 +1982,10 @@
       "spaceMemory": "Space memory",
       "valueFlows": "Value flows"
     },
-    "welcome": "I'm your space AI for bringing coherence to strategy, motion to operations, and meaning to impact, with specialist agents gliding in whenever you call for them.",
-    "welcomeSpecialistsHint": "Active specialists also appear under Members > AI Agents.",
+    "welcome": "Hello! I'm your {spaceName} AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
     "specialistsResponding": "Specialists contributing",
     "specialistsRespondingStreaming": "Specialists contributing…",
-    "placeholder": "Ask Anything...",
+    "placeholder": "Ask Hypha AI anything...",
     "sendButton": "Send",
     "stopButton": "Stop",
     "newlineHint": "Shift+Enter for newline",
@@ -2015,8 +2014,10 @@
     "showMore": "Read more",
     "showLess": "Show less",
     "streamError": "An error occurred while generating the response.",
-    "attachment": "Attachment",
-    "uploadedImageAlt": "Uploaded image {index}"
+    "assistantDisabledTitle": "AI assistant disabled",
+    "assistantExpiredSubtitle": "Your Hypha Network contribution expired {expiredElapsed}. Please reactivate your space before using Hypha AI.",
+    "assistantActivationSubtitle": "Activate your Hypha Network contribution to unlock Hypha AI for this space.",
+    "attachment": "Attachment"
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -2424,107 +2425,95 @@
     "newMemoryUploadingFiles": "Uploading space memories...",
     "newMemoryAttachmentsRequired": "Please upload at least one document for this memory.",
     "newMemory": "New memory",
-    "tagGroup": {
-      "purpose": "Purpose & strategy",
-      "governance": "Governance",
-      "operations": "Operations",
-      "community": "Community",
-      "finance": "Treasury & tokens",
-      "product": "Product",
-      "risk": "Stewardship & resilience",
-      "ecosystem": "Ecosystem & partnerships",
-      "learning": "Learning & knowledge",
-      "reputation": "Reputation & trust"
-    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Senior Strategist",
-        "focus": "Mission, strategic alignment, and long-term direction",
+        "focus": "clarify mission, strategic alignment, north-star outcomes, and long-term direction",
         "roleDefinition": [
-          "Links daily work to mission and measurable priorities.",
-          "Surfaces blindspots and trade-offs before you commit.",
-          "Turns vision into clear decision criteria and outcomes."
+          "Defines strategic intent and links daily decisions to long-term mission outcomes.",
+          "Identifies strategic blindspots, trade-offs, and second-order effects before commitments.",
+          "Translates vision into measurable priorities, decision criteria, and success indicators."
         ]
       },
       "governance": {
         "role": "Governance Architect",
-        "focus": "Decision rights, proposal quality, and coordination",
+        "focus": "decision rights, accountability models, proposal quality, and collective coordination mechanisms",
         "roleDefinition": [
-          "Keeps proposals clear, accountable, and executable.",
-          "Improves vote readiness with assumptions and stakeholder impact.",
-          "Adds light guardrails that reduce drag without killing autonomy."
+          "Designs governance flows that keep proposals clear, accountable, and executable.",
+          "Improves voting quality by surfacing assumptions, stakeholder impact, and decision readiness.",
+          "Recommends lightweight policy guardrails that protect autonomy while reducing coordination drag."
         ]
       },
       "operations": {
         "role": "Operations Lead",
-        "focus": "Execution plans, cadence, and dependencies",
+        "focus": "execution plans, delivery cadence, dependency management, and practical implementation details",
         "roleDefinition": [
-          "Turns strategy into owners, milestones, and timelines.",
-          "Flags bottlenecks early with practical sequencing options.",
-          "Steadies delivery with operating rhythms and feedback loops."
+          "Turns strategy into executable plans with owners, milestones, and realistic timelines.",
+          "Flags dependency bottlenecks early and proposes concrete sequencing options.",
+          "Improves delivery reliability with clear operating rhythms and feedback loops."
         ]
       },
       "community": {
         "role": "Community Builder",
-        "focus": "Engagement, onboarding, and contributor health",
+        "focus": "member engagement, participation quality, onboarding, and contributor health",
         "roleDefinition": [
-          "Improves onboarding and clarity so more people contribute well.",
-          "Spots drop-offs and suggests retention and activation moves.",
-          "Balances openness with trust and sustainable participation."
+          "Strengthens participation quality by improving onboarding and contributor clarity.",
+          "Detects engagement drop-offs and proposes retention and activation interventions.",
+          "Balances openness with healthy norms, trust, and sustainable contributor experience."
         ]
       },
       "finance": {
         "role": "Treasury and Token Analyst",
-        "focus": "Treasury, tokens, and capital allocation trade-offs",
+        "focus": "token/treasury implications, distribution effects, sustainability, and capital allocation trade-offs",
         "roleDefinition": [
-          "Stress-tests token and treasury choices for runway and concentration risk.",
-          "Ties spend to strategic priorities and expected outcomes.",
-          "Frames allocation options with explicit upside and downside."
+          "Evaluates treasury and token decisions for sustainability, concentration risk, and runway impact.",
+          "Connects budget choices to strategic priorities and expected organizational outcomes.",
+          "Recommends risk-aware allocation options with explicit upside/downside framing."
         ]
       },
       "product": {
         "role": "Product Strategist",
-        "focus": "User impact, prioritization, and adoption",
+        "focus": "user impact, product prioritization, experimentation design, and measurable adoption outcomes",
         "roleDefinition": [
-          "Prioritizes by user value, strategic fit, and build leverage.",
-          "Designs experiments with measurable learning outcomes.",
-          "Aligns roadmap bets with adoption and retention signals."
+          "Prioritizes features by user value, strategic fit, and implementation leverage.",
+          "Designs experiments that validate assumptions with measurable learning outcomes.",
+          "Aligns roadmap choices with adoption, retention, and behavior-change metrics."
         ]
       },
       "risk": {
-        "role": "Stewardship & Resilience Advisor",
-        "focus": "Weak signals, safeguards, and long-term resilience",
+        "role": "Risk and Compliance Advisor",
+        "focus": "failure modes, downside scenarios, mitigation plans, and policy/compliance considerations",
         "roleDefinition": [
-          "Notices strain and weak signals early so the space can adapt before harm builds.",
-          "Proposes caring safeguards with clear owners—enough to stay resilient, not bureaucratic drag.",
-          "Keeps commitments aligned with your values and stewardship as the space grows."
+          "Surfaces operational, governance, and security failure modes before execution.",
+          "Recommends practical mitigations with clear ownership and trigger conditions.",
+          "Keeps proposals compliant and resilient without over-bureaucratizing execution."
         ]
       },
       "ecosystem": {
         "role": "Ecosystem and Partnerships Strategist",
-        "focus": "Cross-space partnerships and coordination leverage",
+        "focus": "cross-space collaboration, partnerships, ecosystem dependencies, and external coordination leverage",
         "roleDefinition": [
-          "Maps dependencies and high-leverage partnership opportunities.",
-          "Plans cross-space work with clear owners and mutual outcomes.",
-          "Routes external signals to the right spaces quickly."
+          "Maps ecosystem dependencies and identifies high-leverage partnership opportunities.",
+          "Designs cross-space coordination plans with clear ownership and mutual outcomes.",
+          "Improves external signal routing so actionable insights reach the right spaces quickly."
         ]
       },
       "learning": {
         "role": "Learning and Knowledge Architect",
-        "focus": "Knowledge capture, evidence, and improvement loops",
+        "focus": "knowledge capture, learning loops, evidence quality, and continuous improvement systems",
         "roleDefinition": [
-          "Turns discussions and experiments into reusable knowledge.",
-          "Builds feedback loops that sharpen decisions over time.",
-          "Clarifies assumptions, metrics, and lessons learned."
+          "Turns discussions and experiments into reusable organizational knowledge.",
+          "Designs feedback loops that improve decision quality over time.",
+          "Raises evidence standards by clarifying assumptions, metrics, and lessons learned."
         ]
       },
       "reputation": {
         "role": "Reputation and Trust Steward",
-        "focus": "Trust, narrative alignment, and communication risk",
+        "focus": "credibility signals, stakeholder trust, narrative coherence, and communication risk management",
         "roleDefinition": [
-          "Aligns public narrative with how the space actually operates.",
-          "Flags reputation risks early with practical mitigation steps.",
-          "Strengthens stakeholder communication in change and conflict."
+          "Protects trust by aligning public narrative with actual operational behavior.",
+          "Surfaces reputation risks early and proposes proactive mitigation steps.",
+          "Improves stakeholder communication quality during change, conflict, and uncertainty."
         ]
       }
     },
@@ -2574,17 +2563,10 @@
     "editSignalMissingSlug": "Signal identifier is missing. Please close and reopen the edit form.",
     "editSignalSaveFailed": "Could not save signal changes. Please try again.",
     "keepWindowOpenWhileCreating": "Keep this window open until we're finished.",
-    "createSignalAttachmentsTitle": "Attachments",
-    "createSignalTeamOwner": "Owner",
-    "createSignalTeamNoMembers": "No space members with chat accounts are available yet.",
-    "loading": "Loading...",
     "provisioning": {
       "chatUnavailable": "Signal created but chat is currently unavailable.",
       "roomProvisionFailed": "Signal created but chat room provisioning failed.",
-      "roomLinkFailedRetry": "Signal created but chat room could not be linked. Please retry.",
-      "teamSeedSkipped": "Signal created but selected team members could not be added to chat yet.",
-      "teamSeedFailed": "Signal created but selected team members could not be added to chat.",
-      "attachmentsUploadFailed": "Signal created but attachments could not be uploaded to chat."
+      "roomLinkFailedRetry": "Signal created but chat room could not be linked. Please retry."
     },
     "tagLabels": {
       "Purpose": "Purpose",

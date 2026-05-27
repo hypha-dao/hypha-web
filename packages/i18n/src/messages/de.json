@@ -1980,11 +1980,10 @@
       "spaceMemory": "Space-Memory",
       "valueFlows": "Werteströme"
     },
-    "welcome": "Ich bin deine Space-KI für Kohärenz in der Strategie, Bewegung in den Operations und Sinn im Impact—Spezialist:innen gleiten herein, sobald du sie rufst.",
-    "welcomeSpecialistsHint": "Aktive Spezialist:innen findest du auch unter Mitglieder > KI-Agenten.",
-    "specialistsResponding": "Beitragende Spezialist:innen",
-    "specialistsRespondingStreaming": "Spezialist:innen tragen bei…",
-    "placeholder": "Einfach fragen...",
+    "welcome": "Hallo! Ich bin dein AI-Assistent für {spaceName}. Ich kann Space-Details wie Mitgliederzahlen, Vereinbarungen und Strukturen nachschlagen. Frag mich alles über den Space, den du gerade ansiehst.",
+    "specialistsResponding": "Beitragende Spezialisten",
+    "specialistsRespondingStreaming": "Beitragende Spezialisten…",
+    "placeholder": "Frag Hypha AI etwas...",
     "sendButton": "Senden",
     "stopButton": "Stoppen",
     "newlineHint": "Shift+Enter für neue Zeile",
@@ -2007,8 +2006,10 @@
     "toolTokens": "{count} Token(s) für Space \"{slug}\" abgerufen.",
     "toolError": "Fehler: {message}",
     "streamError": "Beim Generieren der Antwort ist ein Fehler aufgetreten.",
+    "assistantDisabledTitle": "KI-Assistent deaktiviert",
+    "assistantExpiredSubtitle": "Ihr Hypha-Netzwerk-Beitrag ist vor {expiredElapsed} abgelaufen. Bitte reaktivieren Sie Ihren Space, bevor Sie Hypha AI nutzen.",
+    "assistantActivationSubtitle": "Aktivieren Sie Ihren Hypha-Netzwerk-Beitrag, um Hypha AI für diesen Space freizuschalten.",
     "attachment": "Anhang",
-    "uploadedImageAlt": "Hochgeladenes Bild {index}",
     "pendingAction": "Ausstehende Aktion",
     "confirmWith": "Bestätigen mit:",
     "confirm": "Bestätigen",
@@ -2456,17 +2457,10 @@
     "savingSignal": "Signal wird gespeichert",
     "saveChanges": "Änderungen speichern",
     "keepWindowOpenWhileCreating": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind.",
-    "createSignalAttachmentsTitle": "Anhänge",
-    "createSignalTeamOwner": "Inhaber",
-    "createSignalTeamNoMembers": "Noch keine Space-Mitglieder mit Chat-Konten verfügbar.",
-    "loading": "Wird geladen...",
     "provisioning": {
       "chatUnavailable": "Signal erstellt, aber der Chat ist derzeit nicht verfügbar.",
       "roomProvisionFailed": "Signal erstellt, aber die Bereitstellung des Chatraums ist fehlgeschlagen.",
-      "roomLinkFailedRetry": "Signal erstellt, aber der Chatraum konnte nicht verknüpft werden. Bitte versuchen Sie es erneut.",
-      "teamSeedSkipped": "Signal erstellt, aber ausgewählte Teammitglieder konnten dem Chat noch nicht hinzugefügt werden.",
-      "teamSeedFailed": "Signal erstellt, aber ausgewählte Teammitglieder konnten dem Chat nicht hinzugefügt werden.",
-      "attachmentsUploadFailed": "Signal erstellt, aber Anhänge konnten nicht in den Chat hochgeladen werden."
+      "roomLinkFailedRetry": "Signal erstellt, aber der Chatraum konnte nicht verknüpft werden. Bitte versuchen Sie es erneut."
     },
     "tagLabels": {
       "Purpose": "Zweck",
@@ -2533,107 +2527,95 @@
       "valueModel": "Wert & Modell",
       "evidenceImpact": "Evidenz & Wirkung"
     },
-    "tagGroup": {
-      "purpose": "Zweck & Strategie",
-      "governance": "Governance",
-      "operations": "Operations",
-      "community": "Community",
-      "finance": "Treasury & Tokens",
-      "product": "Produkt",
-      "risk": "Verantwortung & Resilienz",
-      "ecosystem": "Ökosystem & Partnerschaften",
-      "learning": "Lernen & Wissen",
-      "reputation": "Reputation & Vertrauen"
-    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Senior-Strateg:in",
-        "focus": "Mission, strategische Ausrichtung und langfristige Richtung",
+        "focus": "Mission klären, strategische Ausrichtung schärfen, Nordstern-Ergebnisse definieren und langfristige Richtung festlegen",
         "roleDefinition": [
-          "Verknüpft tägliche Arbeit mit Mission und messbaren Prioritäten.",
-          "Macht blinde Flecken und Zielkonflikte sichtbar, bevor ihr euch festlegt.",
-          "Übersetzt Vision in klare Entscheidungskriterien und Ergebnisse."
+          "Definiert die strategische Ausrichtung und verknüpft tägliche Entscheidungen mit langfristigen Missionsergebnissen.",
+          "Identifiziert strategische blinde Flecken, Zielkonflikte und Zweitrundeneffekte vor verbindlichen Zusagen.",
+          "Übersetzt Vision in messbare Prioritäten, Entscheidungskriterien und Erfolgsindikatoren."
         ]
       },
       "governance": {
         "role": "Governance-Architekt:in",
-        "focus": "Entscheidungsrechte, Vorschlagsqualität und Koordination",
+        "focus": "Entscheidungsrechte, Verantwortungsmodelle, Qualität von Vorschlägen und kollektive Koordinationsmechanismen",
         "roleDefinition": [
-          "Hält Vorschläge klar, verantwortlich und umsetzbar.",
-          "Verbessert Abstimmungsreife mit Annahmen und Stakeholder-Wirkung.",
-          "Setzt leichte Leitplanken, die Reibung reduzieren ohne Autonomie zu bremsen."
+          "Entwirft Governance-Abläufe, die Vorschläge klar, verantwortlich und umsetzbar halten.",
+          "Verbessert die Abstimmungsqualität, indem Annahmen, Stakeholder-Wirkungen und Entscheidungsreife sichtbar werden.",
+          "Empfiehlt schlanke Leitplanken, die Autonomie schützen und gleichzeitig Koordinationsaufwand reduzieren."
         ]
       },
       "operations": {
         "role": "Operations Lead",
-        "focus": "Umsetzungspläne, Rhythmus und Abhängigkeiten",
+        "focus": "Umsetzungspläne, Liefer-Rhythmus, Abhängigkeitsmanagement und praktische Implementierungsdetails",
         "roleDefinition": [
-          "Macht aus Strategie Verantwortliche, Meilensteine und Zeitpläne.",
-          "Markiert Engpässe früh mit praktischen Sequenzierungsoptionen.",
-          "Stabilisiert Lieferung mit Arbeitsrhythmen und Feedback-Schleifen."
+          "Übersetzt Strategie in ausführbare Pläne mit Verantwortlichen, Meilensteinen und realistischen Zeitplänen.",
+          "Markiert Engpässe durch Abhängigkeiten frühzeitig und schlägt konkrete Sequenzierungsoptionen vor.",
+          "Erhöht die Lieferzuverlässigkeit mit klaren Arbeitsrhythmen und Feedback-Schleifen."
         ]
       },
       "community": {
         "role": "Community Builder",
-        "focus": "Engagement, Onboarding und Gesundheit der Mitwirkenden",
+        "focus": "Mitglieder-Engagement, Qualität der Beteiligung, Onboarding und Gesundheit der Mitwirkenden",
         "roleDefinition": [
-          "Verbessert Onboarding und Klarheit für stärkere Beteiligung.",
-          "Erkennt Rückgänge und schlägt Bindungs- und Aktivierungsmaßnahmen vor.",
-          "Balanciert Offenheit mit Vertrauen und nachhaltiger Beteiligung."
+          "Stärkt die Beteiligungsqualität durch besseres Onboarding und klarere Rollen für Mitwirkende.",
+          "Erkennt Rückgänge beim Engagement und schlägt Maßnahmen für Bindung und Aktivierung vor.",
+          "Balanciert Offenheit mit gesunden Normen, Vertrauen und nachhaltiger Mitwirkenden-Erfahrung."
         ]
       },
       "finance": {
         "role": "Treasury- und Token-Analyst:in",
-        "focus": "Treasury, Tokens und Kapitalallokation",
+        "focus": "Token-/Treasury-Auswirkungen, Verteilungseffekte, Nachhaltigkeit und Zielkonflikte bei der Kapitalallokation",
         "roleDefinition": [
-          "Prüft Token- und Treasury-Entscheidungen auf Runway und Konzentrationsrisiko.",
-          "Verknüpft Ausgaben mit strategischen Prioritäten und erwarteten Ergebnissen.",
-          "Rahmt Allokationsoptionen mit klarer Upside und Downside."
+          "Bewertet Treasury- und Token-Entscheidungen hinsichtlich Nachhaltigkeit, Konzentrationsrisiko und Runway-Auswirkungen.",
+          "Verknüpft Budgetentscheidungen mit strategischen Prioritäten und erwarteten Organisationsergebnissen.",
+          "Empfiehlt risikobewusste Allokationsoptionen mit klarer Upside-/Downside-Bewertung."
         ]
       },
       "product": {
         "role": "Produktstrateg:in",
-        "focus": "Nutzerwirkung, Priorisierung und Adoption",
+        "focus": "Nutzerwirkung, Produktpriorisierung, Experimentdesign und messbare Adoptions-Ergebnisse",
         "roleDefinition": [
-          "Priorisiert nach Nutzerwert, strategischem Fit und Umsetzungshebel.",
-          "Entwirft Experimente mit messbaren Lernergebnissen.",
-          "Richtet Roadmap an Adoptions- und Retention-Signalen aus."
+          "Priorisiert Funktionen nach Nutzerwert, strategischem Fit und Umsetzungsvorteilen.",
+          "Entwirft Experimente, die Annahmen mit messbaren Lernergebnissen validieren.",
+          "Richtet Roadmap-Entscheidungen an Adoptions-, Retentions- und Verhaltensänderungsmetriken aus."
         ]
       },
       "risk": {
-        "role": "Berater:in für Verantwortung & Resilienz",
-        "focus": "Frühe Signale, Schutzmechanismen und langfristige Resilienz",
+        "role": "Risk- und Compliance-Berater:in",
+        "focus": "Fehlermodi, Downside-Szenarien, Minderungspläne und Policy-/Compliance-Aspekte",
         "roleDefinition": [
-          "Erkennt Belastung und schwache Signale früh, damit der Space sich anpassen kann, bevor Schaden entsteht.",
-          "Schlägt wertschätzende Schutzmechanismen mit klaren Verantwortlichen vor—resilient ohne Bürokratie.",
-          "Hält Zusagen an Werte und Verantwortung ausgerichtet, während der Space wächst."
+          "Macht operative, Governance- und Sicherheits-Fehlermodi vor der Umsetzung sichtbar.",
+          "Empfiehlt praktische Gegenmaßnahmen mit klaren Verantwortlichkeiten und Auslösebedingungen.",
+          "Hält Vorschläge compliant und resilient, ohne die Umsetzung übermäßig zu bürokratisieren."
         ]
       },
       "ecosystem": {
         "role": "Ökosystem- und Partnerschaftsstrateg:in",
-        "focus": "Space-übergreifende Partnerschaften und Koordinationshebel",
+        "focus": "Space-übergreifende Zusammenarbeit, Partnerschaften, Ökosystem-Abhängigkeiten und Hebel externer Koordination",
         "roleDefinition": [
-          "Kartiert Abhängigkeiten und Partnerschaften mit hohem Hebel.",
-          "Plant space-übergreifende Arbeit mit klaren Verantwortlichen und gemeinsamen Ergebnissen.",
-          "Leitet externe Signale schnell an die richtigen Spaces weiter."
+          "Kartiert Ökosystem-Abhängigkeiten und identifiziert Partnerschaften mit hohem Hebel.",
+          "Entwirft Space-übergreifende Koordinationspläne mit klaren Verantwortlichkeiten und gemeinsamen Ergebnissen.",
+          "Verbessert externes Signal-Routing, damit umsetzbare Erkenntnisse schnell die richtigen Spaces erreichen."
         ]
       },
       "learning": {
         "role": "Learning- und Wissensarchitekt:in",
-        "focus": "Wissenssicherung, Evidenz und Verbesserungsschleifen",
+        "focus": "Wissenssicherung, Lernschleifen, Evidenzqualität und Systeme zur kontinuierlichen Verbesserung",
         "roleDefinition": [
-          "Macht aus Diskussionen und Experimenten wiederverwendbares Wissen.",
-          "Baut Feedback-Schleifen, die Entscheidungen über Zeit schärfen.",
-          "Klärt Annahmen, Metriken und Learnings."
+          "Macht Diskussionen und Experimente zu wiederverwendbarem organisationalem Wissen.",
+          "Entwirft Feedback-Schleifen, die die Entscheidungsqualität über Zeit verbessern.",
+          "Hebt Evidenzstandards an, indem Annahmen, Metriken und Learnings klarer werden."
         ]
       },
       "reputation": {
         "role": "Reputation- und Trust-Steward",
-        "focus": "Vertrauen, Narrativ und Kommunikationsrisiko",
+        "focus": "Glaubwürdigkeitssignale, Stakeholder-Vertrauen, narrative Kohärenz und kommunikatives Risikomanagement",
         "roleDefinition": [
-          "Richtet öffentliches Narrativ an tatsächlichem operativem Verhalten aus.",
-          "Markiert Reputationsrisiken früh mit praktischen Gegenmaßnahmen.",
-          "Stärkt Stakeholder-Kommunikation bei Wandel und Konflikt."
+          "Schützt Vertrauen, indem öffentliches Narrativ mit tatsächlichem operativem Verhalten abgeglichen wird.",
+          "Macht Reputationsrisiken früh sichtbar und schlägt proaktive Minderungsmaßnahmen vor.",
+          "Verbessert die Qualität der Stakeholder-Kommunikation bei Veränderung, Konflikt und Unsicherheit."
         ]
       }
     },

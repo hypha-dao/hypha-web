@@ -1980,11 +1980,10 @@
       "spaceMemory": "Mémoire de l'espace",
       "valueFlows": "Flux de valeur"
     },
-    "welcome": "Je suis l'IA de votre espace pour apporter de la cohérence à la stratégie, du mouvement aux opérations et du sens à l'impact—des agents spécialistes glissent à l'appel quand vous en avez besoin.",
-    "welcomeSpecialistsHint": "Les spécialistes actifs apparaissent aussi sous Membres > Agents IA.",
-    "specialistsResponding": "Spécialistes mobilisés",
-    "specialistsRespondingStreaming": "Spécialistes mobilisés…",
-    "placeholder": "Posez votre question...",
+    "welcome": "Bonjour ! Je suis votre assistant AI pour {spaceName}. Je peux rechercher les détails de l'espace comme le nombre de membres, les accords et la structure. Posez-moi n'importe quelle question sur l'espace que vous consultez.",
+    "specialistsResponding": "Spécialistes contributeurs",
+    "specialistsRespondingStreaming": "Spécialistes contributeurs…",
+    "placeholder": "Demandez à Hypha AI...",
     "sendButton": "Envoyer",
     "stopButton": "Arrêter",
     "newlineHint": "Shift+Entrée pour nouvelle ligne",
@@ -2007,8 +2006,10 @@
     "toolTokens": "{count} jeton(s) récupéré(s) pour l'espace \"{slug}\".",
     "toolError": "Erreur : {message}",
     "streamError": "Une erreur est survenue lors de la génération de la réponse.",
+    "assistantDisabledTitle": "Assistant IA désactivé",
+    "assistantExpiredSubtitle": "Votre contribution au réseau Hypha a expiré {expiredElapsed}. Réactivez votre espace avant d'utiliser Hypha AI.",
+    "assistantActivationSubtitle": "Activez votre contribution au réseau Hypha pour débloquer Hypha AI pour cet espace.",
     "attachment": "Pièce jointe",
-    "uploadedImageAlt": "Image téléversée {index}",
     "pendingAction": "Action en attente",
     "confirmWith": "Confirmer avec :",
     "confirm": "Confirmer",
@@ -2448,17 +2449,10 @@
     "editSignalMissingSlug": "L'identifiant du signal est manquant. Fermez puis rouvrez le formulaire d'édition.",
     "editSignalSaveFailed": "Impossible d'enregistrer les modifications du signal. Veuillez réessayer.",
     "keepWindowOpenWhileCreating": "Gardez cette fenêtre ouverte jusqu’à la fin.",
-    "createSignalAttachmentsTitle": "Pièces jointes",
-    "createSignalTeamOwner": "Propriétaire",
-    "createSignalTeamNoMembers": "Aucun membre de l'espace avec un compte de chat n'est disponible pour le moment.",
-    "loading": "Chargement...",
     "provisioning": {
       "chatUnavailable": "Signal créé, mais le chat est actuellement indisponible.",
       "roomProvisionFailed": "Signal créé, mais l’approvisionnement de la salle de chat a échoué.",
-      "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer.",
-      "teamSeedSkipped": "Signal créé, mais les membres d’équipe sélectionnés n’ont pas encore pu être ajoutés au chat.",
-      "teamSeedFailed": "Signal créé, mais les membres d’équipe sélectionnés n’ont pas pu être ajoutés au chat.",
-      "attachmentsUploadFailed": "Signal créé, mais les pièces jointes n’ont pas pu être téléversées dans le chat."
+      "roomLinkFailedRetry": "Signal créé, mais la salle de chat n’a pas pu être liée. Veuillez réessayer."
     },
     "tagLabels": {
       "Purpose": "Raison d'être",
@@ -2525,107 +2519,95 @@
       "valueModel": "Valeur & modèle",
       "evidenceImpact": "Preuves & impact"
     },
-    "tagGroup": {
-      "purpose": "Objectif & stratégie",
-      "governance": "Gouvernance",
-      "operations": "Opérations",
-      "community": "Communauté",
-      "finance": "Trésorerie & tokens",
-      "product": "Produit",
-      "risk": "Responsabilité & résilience",
-      "ecosystem": "Écosystème & partenariats",
-      "learning": "Apprentissage & connaissance",
-      "reputation": "Réputation & confiance"
-    },
     "aiAgentsCatalog": {
       "purpose": {
         "role": "Stratège Senior",
-        "focus": "Mission, alignement stratégique et direction long terme",
+        "focus": "clarifier la mission, l'alignement stratégique, les résultats nord-star et la direction à long terme",
         "roleDefinition": [
-          "Relie le travail quotidien à la mission et aux priorités mesurables.",
-          "Fait émerger angles morts et arbitrages avant engagement.",
-          "Traduit la vision en critères de décision et résultats clairs."
+          "Définit l'intention stratégique et relie les décisions quotidiennes aux résultats de mission à long terme.",
+          "Identifie les angles morts stratégiques, les arbitrages et les effets de second ordre avant les engagements.",
+          "Traduit la vision en priorités mesurables, critères de décision et indicateurs de succès."
         ]
       },
       "governance": {
         "role": "Architecte de Gouvernance",
-        "focus": "Droits de décision, qualité des propositions et coordination",
+        "focus": "droits de décision, modèles de responsabilité, qualité des propositions et mécanismes de coordination collective",
         "roleDefinition": [
-          "Garde les propositions claires, responsables et exécutables.",
-          "Renforce la maturité des votes avec hypothèses et impact parties prenantes.",
-          "Ajoute des garde-fous légers qui réduisent la friction sans étouffer l'autonomie."
+          "Conçoit des flux de gouvernance qui gardent les propositions claires, responsables et exécutables.",
+          "Améliore la qualité des votes en rendant visibles hypothèses, impact parties prenantes et maturité décisionnelle.",
+          "Recommande des garde-fous de politique légers qui protègent l'autonomie tout en réduisant la friction de coordination."
         ]
       },
       "operations": {
         "role": "Responsable Opérations",
-        "focus": "Plans d'exécution, cadence et dépendances",
+        "focus": "plans d'exécution, cadence de livraison, gestion des dépendances et détails pratiques d'implémentation",
         "roleDefinition": [
-          "Transforme la stratégie en responsables, jalons et calendriers.",
-          "Signale tôt les goulots et propose des séquencements concrets.",
-          "Stabilise la livraison avec rythmes opératoires et feedback."
+          "Transforme la stratégie en plans exécutables avec responsables, jalons et calendriers réalistes.",
+          "Signale tôt les goulots d'étranglement de dépendances et propose des options de séquencement concrètes.",
+          "Améliore la fiabilité de livraison grâce à des rythmes opératoires clairs et des boucles de feedback."
         ]
       },
       "community": {
         "role": "Bâtisseur de Communauté",
-        "focus": "Engagement, onboarding et santé des contributeurs",
+        "focus": "engagement des membres, qualité de participation, onboarding et santé des contributeurs",
         "roleDefinition": [
-          "Améliore onboarding et clarté pour une meilleure participation.",
-          "Détecte les baisses d'engagement et propose rétention et activation.",
-          "Équilibre ouverture, confiance et participation durable."
+          "Renforce la qualité de participation en améliorant l'onboarding et la clarté pour les contributeurs.",
+          "Détecte les baisses d'engagement et propose des interventions de rétention et d'activation.",
+          "Équilibre ouverture, normes saines, confiance et expérience contributeur durable."
         ]
       },
       "finance": {
         "role": "Analyste Trésorerie et Token",
-        "focus": "Trésorerie, tokens et arbitrages d'allocation",
+        "focus": "implications token/trésorerie, effets de distribution, durabilité et arbitrages d'allocation du capital",
         "roleDefinition": [
-          "Teste choix token/trésorerie sur runway et risque de concentration.",
-          "Relie dépenses aux priorités stratégiques et résultats attendus.",
-          "Cadre les options d'allocation avec upside et downside explicites."
+          "Évalue les décisions trésorerie/token sur la durabilité, le risque de concentration et l'impact sur le runway.",
+          "Relie les choix budgétaires aux priorités stratégiques et aux résultats organisationnels attendus.",
+          "Recommande des options d'allocation conscientes du risque avec cadrage explicite upside/downside."
         ]
       },
       "product": {
         "role": "Stratège Produit",
-        "focus": "Impact utilisateur, priorisation et adoption",
+        "focus": "impact utilisateur, priorisation produit, design d'expérimentation et résultats d'adoption mesurables",
         "roleDefinition": [
-          "Priorise par valeur utilisateur, alignement stratégique et levier.",
-          "Conçoit des expériences avec apprentissages mesurables.",
-          "Aligne la roadmap aux signaux d'adoption et de rétention."
+          "Priorise les fonctionnalités selon la valeur utilisateur, l'alignement stratégique et l'effet de levier d'implémentation.",
+          "Conçoit des expériences qui valident les hypothèses avec des apprentissages mesurables.",
+          "Aligne les choix de roadmap avec des métriques d'adoption, de rétention et de changement de comportement."
         ]
       },
       "risk": {
-        "role": "Conseiller·ère responsabilité & résilience",
-        "focus": "Signaux faibles, garde-fous et résilience à long terme",
+        "role": "Conseiller Risque et Conformité",
+        "focus": "modes de défaillance, scénarios de risque, plans de mitigation et considérations politique/conformité",
         "roleDefinition": [
-          "Repère les tensions et signaux faibles tôt pour que l'espace s'adapte avant que les dommages s'accumulent.",
-          "Propose des garde-fous attentifs avec des responsables clairs—résilience sans bureaucratie.",
-          "Garde les engagements alignés sur vos valeurs et votre responsabilité à mesure que l'espace grandit."
+          "Fait émerger les modes de défaillance opérationnels, de gouvernance et de sécurité avant exécution.",
+          "Recommande des mitigations pratiques avec ownership clair et conditions de déclenchement.",
+          "Maintient les propositions conformes et résilientes sans sur-bureaucratiser l'exécution."
         ]
       },
       "ecosystem": {
         "role": "Stratège Écosystème et Partenariats",
-        "focus": "Partenariats inter-espaces et levier de coordination",
+        "focus": "collaboration inter-espaces, partenariats, dépendances écosystème et levier de coordination externe",
         "roleDefinition": [
-          "Cartographie dépendances et partenariats à fort levier.",
-          "Planifie le travail inter-espaces avec responsables et résultats mutuels.",
-          "Route les signaux externes vers les bons espaces rapidement."
+          "Cartographie les dépendances de l'écosystème et identifie les opportunités de partenariat à fort levier.",
+          "Conçoit des plans de coordination inter-espaces avec ownership clair et résultats mutuels.",
+          "Améliore le routage des signaux externes pour que les insights actionnables atteignent vite les bons espaces."
         ]
       },
       "learning": {
         "role": "Architecte Apprentissage et Connaissance",
-        "focus": "Capture de connaissance, preuves et boucles d'amélioration",
+        "focus": "capture de connaissance, boucles d'apprentissage, qualité des preuves et systèmes d'amélioration continue",
         "roleDefinition": [
-          "Transforme discussions et expériences en connaissance réutilisable.",
-          "Construit des boucles de feedback qui affûtent les décisions.",
-          "Clarifie hypothèses, métriques et leçons apprises."
+          "Transforme discussions et expériences en connaissance organisationnelle réutilisable.",
+          "Conçoit des boucles de feedback qui améliorent la qualité des décisions dans le temps.",
+          "Élève les standards de preuve en clarifiant hypothèses, métriques et leçons apprises."
         ]
       },
       "reputation": {
         "role": "Référent Réputation et Confiance",
-        "focus": "Confiance, alignement narratif et risque de communication",
+        "focus": "signaux de crédibilité, confiance des parties prenantes, cohérence narrative et gestion du risque de communication",
         "roleDefinition": [
-          "Aligne le narratif public sur le fonctionnement réel de l'espace.",
-          "Signale tôt les risques réputationnels avec mitigations pratiques.",
-          "Renforce la communication parties prenantes en changement et conflit."
+          "Protège la confiance en alignant le narratif public avec le comportement opérationnel réel.",
+          "Fait remonter tôt les risques réputationnels et propose des étapes de mitigation proactives.",
+          "Améliore la qualité de communication avec les parties prenantes en période de changement, conflit et incertitude."
         ]
       }
     },
