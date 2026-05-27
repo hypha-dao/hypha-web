@@ -27,13 +27,11 @@ type BankingAdvancedDialogProps = {
   status: BankCustomerPublicStatus | null | undefined;
   isLoading: boolean;
   isRefreshing: boolean;
-  isSyncingBanking?: boolean;
   canManage: boolean;
   blockerMessage: string | null;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onRefreshStatus: () => Promise<BankCustomerPublicStatus | null | undefined>;
-  onSyncBanking?: () => void;
 };
 
 export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
@@ -41,13 +39,11 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
   status,
   isLoading,
   isRefreshing,
-  isSyncingBanking = false,
   canManage,
   blockerMessage,
   open,
   onOpenChange,
   onRefreshStatus,
-  onSyncBanking,
 }) => {
   const tAdvanced = useTranslations('BankingTab.advanced');
 
@@ -64,8 +60,10 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
           <Settings className="h-5 w-5 text-muted-foreground" />
         </Button>
       </DialogTrigger>
-      <DialogContent className={cn(BANKING_DIALOG_CONTENT_CLASS, 'max-w-lg')}>
-        <DialogHeader className={BANKING_DIALOG_HEADER_CLASS}>
+      <DialogContent
+        className={cn(BANKING_DIALOG_CONTENT_CLASS, 'max-w-lg')}
+      >
+        <DialogHeader className={cn(BANKING_DIALOG_HEADER_CLASS, 'pr-10')}>
           <DialogTitle>{tAdvanced('dialogTitle')}</DialogTitle>
           <DialogDescription>
             {tAdvanced('dialogDescription')}
@@ -78,11 +76,9 @@ export const BankingAdvancedDialog: FC<BankingAdvancedDialogProps> = ({
             status={status}
             isLoading={isLoading}
             isRefreshing={isRefreshing}
-            isSyncingBanking={isSyncingBanking}
             canManage={canManage}
             blockerMessage={blockerMessage}
             onRefreshStatus={onRefreshStatus}
-            onSyncBanking={onSyncBanking}
             onOpenGear={() => onOpenChange?.(true)}
           />
         </BankingDialogBody>

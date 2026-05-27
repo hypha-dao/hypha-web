@@ -43,6 +43,8 @@ type BankRailActionPickerProps = {
   onRequestEndorsement: (endorsement: string) => Promise<void>;
   disabled?: boolean;
   showPrimaryAction?: boolean;
+  /** Gear dialog uses compact; add-account / transfer dialogs match rail row height. */
+  endorsementActionSize?: 'row' | 'compact';
 };
 
 export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
@@ -61,6 +63,7 @@ export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
   onRequestEndorsement,
   disabled = false,
   showPrimaryAction = true,
+  endorsementActionSize = 'row',
 }) => {
   const tOpenAccount = useTranslations('BankingTab.openAccount');
   const tCreateTransfer = useTranslations('BankingTab.createTransfer');
@@ -128,19 +131,28 @@ export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
                   />
                 </div>
                 {bankRailNeedsEndorsementRequest(option.operationalStatus) ? (
-                  <Button
-                    type="button"
-                    colorVariant="accent"
-                    className="h-auto min-h-0 shrink-0 self-center px-2.5 py-1 text-1 leading-tight"
-                    disabled={requestEndorsementLoading || disabled}
-                    onClick={() => void onRequestEndorsement(option.endorsement)}
-                  >
+                  <div className="flex shrink-0 items-stretch self-stretch">
+                    <Button
+                      type="button"
+                      size="sm"
+                      colorVariant="accent"
+                      className={
+                        endorsementActionSize === 'row'
+                          ? '!min-h-0 h-full shrink-0 rounded-lg px-3 py-0 text-2'
+                          : 'h-auto !min-h-0 shrink-0 px-2.5 py-1 text-1 leading-tight'
+                      }
+                      disabled={requestEndorsementLoading || disabled}
+                      onClick={() =>
+                        void onRequestEndorsement(option.endorsement)
+                      }
+                    >
                     {requestEndorsementLoading ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       tOpenAccount('requestRail')
                     )}
-                  </Button>
+                    </Button>
+                  </div>
                 ) : null}
               </div>
             );
@@ -166,7 +178,7 @@ export const BankRailActionPicker: FC<BankRailActionPickerProps> = ({
                   className={cn(
                     'rounded-md border px-3 py-2 text-2 font-medium transition-colors',
                     isActive
-                      ? 'border-accent-9 bg-accent-3 text-accent-11'
+                      ? 'border-accent-9 bg-accent-9 text-accent-contrast shadow-sm'
                       : 'border-border bg-card text-foreground hover:bg-background-2/80',
                     (disabled || primaryActionLoading || !canSubmit) &&
                       'cursor-not-allowed opacity-60',

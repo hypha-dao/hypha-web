@@ -1,15 +1,12 @@
 'use client';
 
 import { FC, useState } from 'react';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@hypha-platform/ui';
 
-import {
-  BANKING_EMPTY_STATE_CLASS,
-  BANKING_LOADING_STATE_CLASS,
-  TREASURY_CARD_GRID_CLASS,
-} from '../banking-ui';
+import { Empty } from '../../common';
+import { BANKING_LOADING_STATE_CLASS, TREASURY_CARD_GRID_CLASS } from '../banking-ui';
 import type { BankTransferPublic } from '../hooks/types';
 import { BankTransferCard } from './bank-transfer-card';
 import { BankTransferDetailsDialog } from './bank-transfer-details-dialog';
@@ -65,11 +62,10 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
       type="button"
       colorVariant="accent"
       size="sm"
-      className="shrink-0 gap-1.5"
+      className="shrink-0"
       disabled={newTransferDisabled}
       onClick={newTransferDisabled ? undefined : onNewTransfer}
     >
-      <Plus className="h-4 w-4" />
       {t('newTransferCta')}
     </Button>
   );
@@ -102,16 +98,14 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
           <p className="text-2 text-muted-foreground">{t('loading')}</p>
         </div>
       ) : transfers.length === 0 ? (
-        <div className={BANKING_EMPTY_STATE_CLASS}>
-          <p className="text-3 font-medium text-foreground">
-            {t('emptyTitle')}
-          </p>
-          <p className="mx-auto max-w-md text-2 text-muted-foreground">
+        <Empty className="w-full">
+          <p>{t('emptyTitle')}</p>
+          <p className="text-muted-foreground">
             {hasBankCustomer
               ? t('emptyDescription')
               : tNotStarted('description')}
           </p>
-        </div>
+        </Empty>
       ) : (
         <div className="w-full">
           <div className={TREASURY_CARD_GRID_CLASS}>

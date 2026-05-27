@@ -18,7 +18,6 @@ import {
   useCreateTransfer,
   useProvisionVirtualAccount,
   useRequestBankOnboarding,
-  useSyncBanking,
   useVirtualAccounts,
 } from '../hooks';
 import {
@@ -53,8 +52,12 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const { isAuthenticated } = useAuthentication();
   const { space } = useSpaceBySlug(spaceSlug);
   const { person } = useMe();
-  const { status, isLoading: isStatusLoading, refresh } =
-    useBankCustomerStatus({ spaceSlug });
+  const {
+    status,
+    isLoading: isStatusLoading,
+    isRefreshing: isStatusRefreshing,
+    refresh,
+  } = useBankCustomerStatus({ spaceSlug });
 
   const hasCustomer = status != null;
   const showBankingListings =
@@ -98,10 +101,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
     clearError: clearCreateAccountError,
   } = useProvisionVirtualAccount({ spaceSlug });
 
-  const { syncBanking, isSyncing: isSyncingBanking } = useSyncBanking({
-    spaceSlug,
-  });
-
   const [gearOpen, setGearOpen] = useState(false);
   const [createTransferOpen, setCreateTransferOpen] = useState(false);
   const [addCurrencyDialogOpen, setAddCurrencyDialogOpen] = useState(false);
@@ -117,11 +116,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
     }
     return updated;
   }, [refresh, refreshTransfers, refreshVirtualAccounts]);
-
-  const handleSyncBanking = useCallback(async () => {
-    await syncBanking();
-    await refreshBankingState();
-  }, [refreshBankingState, syncBanking]);
 
   const handleGearOpenChange = useCallback(
     (open: boolean) => {
@@ -266,11 +260,9 @@ export const BankingSection: FC<BankingSectionProps> = ({
         status={status}
         isLoading={false}
         isRefreshing={false}
-        isSyncingBanking={isSyncingBanking}
         canManage={canManage}
         blockerMessage={blockerMessage}
         onRefreshStatus={refreshBankingState}
-        onSyncBanking={() => void handleSyncBanking()}
         showPageHeader
       />
     );
@@ -281,7 +273,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
   }
 
   return (
-    <div className="flex w-full flex-col gap-8">
+    <div className="flex w-full flex-col gap-6">
       <BankingToolbar
         spaceSlug={spaceSlug}
         status={status}
@@ -292,8 +284,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
         gearOpen={gearOpen}
         onGearOpenChange={handleGearOpenChange}
         onRefreshStatus={refreshBankingState}
-        onSyncBanking={() => void handleSyncBanking()}
-        isSyncingBanking={isSyncingBanking}
       />
 
       <BankAccountsSection

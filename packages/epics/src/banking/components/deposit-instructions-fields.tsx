@@ -276,6 +276,7 @@ export const DepositInstructionsPanel: FC<DepositInstructionsPanelProps> = (
               <TreasuryDestinationCard
                 address={destination.address}
                 currencyLabel={destination.currency.toUpperCase()}
+                destinationCurrency={destination.currency}
               />
               <div className="flex flex-col justify-center gap-2 py-1">
                 <p className="text-2 font-semibold text-foreground">

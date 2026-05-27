@@ -3,23 +3,27 @@
 import { FC } from 'react';
 import { Card, Image } from '@hypha-platform/ui';
 
-import { truncateAddress } from '../deposit-instruction-display';
+import { getTreasuryDestinationTokenIcon, truncateAddress } from '../deposit-instruction-display';
 
 type TreasuryDestinationCardProps = {
   address: string;
   currencyLabel: string;
+  destinationCurrency: string;
 };
 
 export const TreasuryDestinationCard: FC<TreasuryDestinationCardProps> = ({
   address,
   currencyLabel,
+  destinationCurrency,
 }) => {
+  const iconSrc = getTreasuryDestinationTokenIcon(destinationCurrency);
+
   return (
     <Card className="flex h-full w-full flex-row items-center gap-3 p-4">
       <div className="shrink-0">
         <Image
           className="rounded-full"
-          src="/placeholder/usdc-icon.svg"
+          src={iconSrc}
           height={40}
           width={40}
           alt={currencyLabel}

@@ -7,7 +7,10 @@ import { useTranslations } from 'next-intl';
 import { Badge, Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
-import { bankRailNeedsEndorsementRequest } from '../banking-ui';
+import {
+  bankRailNeedsEndorsementRequest,
+  getBankEndorsementStatusesForPanel,
+} from '../banking-ui';
 import { useRequestEndorsementKyc } from '../hooks/use-request-endorsement-kyc';
 import {
   BANK_KYC_STATUSES,
@@ -24,11 +27,9 @@ export type BankingProviderStatusPanelProps = {
   status: BankCustomerPublicStatus | null | undefined;
   isLoading: boolean;
   isRefreshing: boolean;
-  isSyncingBanking?: boolean;
   canManage: boolean;
   blockerMessage: string | null;
   onRefreshStatus: () => Promise<BankCustomerPublicStatus | null | undefined>;
-  onSyncBanking?: () => void;
   /** Full-page verification view (banking tab before any rail is approved). */
   showPageHeader?: boolean;
   onOpenGear?: () => void;
@@ -325,7 +326,7 @@ function ProviderValidationsSection({
       </p>
 
       <div className="mt-3 flex flex-col gap-3">
-        {showProcedures ? (
+        {showProcedures && status.procedures ? (
           <>
             <ProcedureRow
               kind="tos"
@@ -350,20 +351,7 @@ function ProviderValidationsSection({
 
         <EndorsementValidationsList
           spaceSlug={spaceSlug}
-          endorsements={
-            status.endorsementStatuses.length > 0
-              ? status.endorsementStatuses
-              : status.currencyStatuses.map((entry) => ({
-                  endorsement: entry.endorsement,
-                  endorsementStatus: entry.endorsementStatus,
-                  operationalStatus: entry.operationalStatus,
-                  validation: entry.validation ?? {
-                    key: entry.endorsement,
-                    status: entry.endorsementStatus,
-                    isComplete: entry.isApproved,
-                  },
-                }))
-          }
+          endorsements={getBankEndorsementStatusesForPanel(status)}
           t={t}
           tAdvanced={tAdvanced}
           tOpenAccount={tOpenAccount}
@@ -381,11 +369,9 @@ export const BankingProviderStatusPanel: FC<BankingProviderStatusPanelProps> = (
   status,
   isLoading,
   isRefreshing,
-  isSyncingBanking = false,
   canManage,
   blockerMessage,
   onRefreshStatus,
-  onSyncBanking,
   showPageHeader = false,
   onOpenGear,
 }) => {
@@ -459,25 +445,6 @@ export const BankingProviderStatusPanel: FC<BankingProviderStatusPanelProps> = (
       ) : null}
 
       {renderBody()}
-
-      {!isLoading && status != null && canManage && onSyncBanking ? (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-fit"
-          disabled={isSyncingBanking || isRefreshing}
-          onClick={() => onSyncBanking()}
-        >
-          {isSyncingBanking ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {tAdvanced('syncingStatus')}
-            </>
-          ) : (
-            tAdvanced('syncStatus')
-          )}
-        </Button>
-      ) : null}
 
       {!isLoading &&
       status != null &&

@@ -4,11 +4,8 @@ import { FC, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import {
-  BANKING_EMPTY_STATE_CLASS,
-  BANKING_LOADING_STATE_CLASS,
-  TREASURY_CARD_GRID_CLASS,
-} from '../banking-ui';
+import { Empty } from '../../common';
+import { BANKING_LOADING_STATE_CLASS, TREASURY_CARD_GRID_CLASS } from '../banking-ui';
 import type { BankVirtualAccountPublic } from '../hooks/types';
 import { BankAccountCard } from './bank-account-card';
 import { BankAccountDetailsDialog } from './bank-account-details-dialog';
@@ -50,14 +47,10 @@ export const ApprovedBankingDeposits: FC<ApprovedBankingDepositsProps> = ({
 
   if (virtualAccounts.length === 0) {
     return (
-      <div className={BANKING_EMPTY_STATE_CLASS}>
-        <p className="text-3 font-medium text-foreground">
-          {tAccounts('emptyTitle')}
-        </p>
-        <p className="mx-auto max-w-md text-2 text-muted-foreground">
-          {tAccounts('emptyDescription')}
-        </p>
-      </div>
+      <Empty className="w-full">
+        <p>{tAccounts('emptyTitle')}</p>
+        <p className="text-muted-foreground">{tAccounts('emptyDescription')}</p>
+      </Empty>
     );
   }
 

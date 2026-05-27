@@ -4,6 +4,7 @@ import { FC, FormEvent, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button, Input, Label } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 import {
   BANK_CURRENCY_METAS,
@@ -69,12 +70,23 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
     });
   };
 
+  const canSubmit =
+    selected.length > 0 &&
+    Boolean(legalName.trim()) &&
+    Boolean(contactEmail.trim());
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-full max-w-xl flex-col gap-6"
+      className={cn(
+        'grid w-full max-w-xl grid-cols-1 gap-6',
+        'lg:max-w-5xl lg:grid-cols-2 lg:gap-x-10 lg:items-start',
+      )}
     >
-      <section className="flex flex-col gap-4" aria-labelledby="banking-setup-org">
+      <section
+        className="order-1 flex flex-col gap-4 lg:col-start-1 lg:row-start-1"
+        aria-labelledby="banking-setup-org"
+      >
         <div className="flex flex-col gap-1">
           <h2
             id="banking-setup-org"
@@ -111,7 +123,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
       </section>
 
       <section
-        className="flex flex-col gap-3"
+        className="order-2 flex flex-col gap-3 lg:col-start-2 lg:row-start-1"
         aria-labelledby="banking-setup-currencies"
       >
         <div className="flex flex-col gap-1">
@@ -124,7 +136,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
           <p className="text-2 text-muted-foreground">
             {t('currenciesDescription')}
           </p>
-          <p className="text-2 text-muted-foreground">{t('currenciesHint')}</p>
+          <p className="text-1 text-muted-foreground">{t('currenciesHint')}</p>
         </div>
         <div className="flex flex-col gap-2">
           {BANK_CURRENCY_METAS.map((meta) => (
@@ -141,18 +153,17 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
         </div>
       </section>
 
-      <div className="flex flex-col gap-3">
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <div className="order-3 flex flex-col gap-3 lg:col-span-2 lg:row-start-2 lg:items-end">
+        {error ? (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
         <Button
           type="submit"
           colorVariant="accent"
-          className="w-fit"
-          disabled={
-            isSubmitting ||
-            selected.length === 0 ||
-            !legalName.trim() ||
-            !contactEmail.trim()
-          }
+          className="w-full sm:w-fit"
+          disabled={isSubmitting || !canSubmit}
         >
           {isSubmitting ? (
             <>

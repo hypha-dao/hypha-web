@@ -13,6 +13,8 @@ import {
 import type {
   BankAddAccountRailOption,
   BankCustomerPublicStatus,
+  BankEndorsementPublicStatus,
+  BankRailPublicStatus,
   BankTransferRailOption,
   BankTransferPublic,
   BankVirtualAccountPublic,
@@ -63,7 +65,64 @@ export function isBankVerificationInProgress(
   if (!status || status.isApproved || status.approvalRegistered) {
     return false;
   }
-  return !status.procedures.tos.isComplete || !status.procedures.kyc.isComplete;
+  const { procedures } = status;
+  if (!procedures) {
+    return true;
+  }
+  return !procedures.tos?.isComplete || !procedures.kyc?.isComplete;
+}
+
+function groupRailStatusesByEndorsement(
+  rails: BankRailPublicStatus[],
+): BankEndorsementPublicStatus[] {
+  const groups = new Map<string, BankRailPublicStatus[]>();
+
+  for (const rail of rails) {
+    const list = groups.get(rail.endorsement) ?? [];
+    list.push(rail);
+    groups.set(rail.endorsement, list);
+  }
+
+  return [...groups.entries()].map(([endorsement, group]) => {
+    const primary =
+      group.find((rail) => rail.railKey === rail.currency) ?? group[0]!;
+    return {
+      endorsement,
+      endorsementStatus: primary.endorsementStatus,
+      operationalStatus: primary.operationalStatus,
+      validation: primary.validation,
+    };
+  });
+}
+
+/** Endorsement rows for gear / status UI — tolerates partial API payloads. */
+export function getBankEndorsementStatusesForPanel(
+  status: BankCustomerPublicStatus,
+): BankEndorsementPublicStatus[] {
+  if (status.endorsementStatuses?.length) {
+    return status.endorsementStatuses;
+  }
+
+  const currencies = status.currencyStatuses ?? [];
+  if (currencies.length > 0) {
+    return currencies.map((entry) => ({
+      endorsement: entry.endorsement,
+      endorsementStatus: entry.endorsementStatus,
+      operationalStatus: entry.operationalStatus,
+      validation: entry.validation ?? {
+        key: entry.endorsement,
+        status: entry.endorsementStatus,
+        isComplete: entry.isApproved,
+      },
+    }));
+  }
+
+  const rails = status.railStatuses ?? [];
+  if (rails.length > 0) {
+    return groupRailStatusesByEndorsement(rails);
+  }
+
+  return [];
 }
 
 export function isCustomerReadyForBankOperations(
@@ -82,7 +141,15 @@ export function hasApprovedBankCurrencies(
   if (!status) {
     return false;
   }
-  return status.currencyStatuses.some((entry) => entry.isApproved);
+  if (status.currencyStatuses?.some((entry) => entry.isApproved)) {
+    return true;
+  }
+
+  return getBankEndorsementStatusesForPanel(status).some(
+    (entry) =>
+      entry.operationalStatus === 'approved' ||
+      entry.operationalStatus === 'active',
+  );
 }
 
 export function getCoveredBankCurrencyCodes(

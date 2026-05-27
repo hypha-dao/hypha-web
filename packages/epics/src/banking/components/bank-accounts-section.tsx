@@ -1,7 +1,6 @@
 'use client';
 
 import { FC } from 'react';
-import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@hypha-platform/ui';
 
@@ -53,11 +52,10 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
       type="button"
       colorVariant="accent"
       size="sm"
-      className="shrink-0 gap-1.5"
+      className="shrink-0"
       disabled={buttonDisabled}
       onClick={onOpenSpaceAccount}
     >
-      <Plus className="h-4 w-4" />
       {tToolbar('addCurrency')}
     </Button>
   );

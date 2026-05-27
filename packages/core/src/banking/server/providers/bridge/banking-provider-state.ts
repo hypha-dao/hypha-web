@@ -207,8 +207,7 @@ export function buildRailStatuses(input: {
     const hasVirtualAccount = input.state.virtualAccountKeys.has(
       vaKey(currency, paymentRail),
     );
-    const enabled =
-      enabledSet.size === 0 || enabledSet.has(currency.toLowerCase());
+    const enabled = enabledSet.has(currency.toLowerCase());
 
     const operationalStatus = resolveRailOperationalStatus({
       endorsementStatus,
@@ -254,10 +253,11 @@ export function buildRailStatuses(input: {
         corridor.currency as BankVirtualAccountCurrency
       ];
     const endorsementStatus = endorsementMap.get(endorsement) ?? null;
+    const enabled = enabledSet.has(corridor.currency.toLowerCase());
     const operationalStatus = resolveRailOperationalStatus({
       endorsementStatus,
       hasVirtualAccount: false,
-      enabled: true,
+      enabled,
     });
 
     rails.push({

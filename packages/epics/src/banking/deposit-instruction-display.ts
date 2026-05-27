@@ -402,6 +402,17 @@ export function getDestinationFromInstructions(
   };
 }
 
+const TREASURY_DESTINATION_TOKEN_ICONS: Record<string, string> = {
+  usdc: '/placeholder/usdc-icon.svg',
+  eurc: '/placeholder/eurc-icon.svg',
+};
+
+/** Treasury wallet tab uses the same token icons (USDC / EURC). */
+export function getTreasuryDestinationTokenIcon(currency: string): string {
+  const key = currency.trim().toLowerCase();
+  return TREASURY_DESTINATION_TOKEN_ICONS[key] ?? TREASURY_DESTINATION_TOKEN_ICONS.usdc;
+}
+
 export function formatPaymentRailLabel(rail: string): string {
   if (rail.toLowerCase() === 'base') {
     return 'Base';
