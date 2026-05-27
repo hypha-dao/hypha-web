@@ -199,12 +199,10 @@ export function AiLeftPanel({ enableSpaceMemory = false }: AiLeftPanelProps) {
     !isUserSpaceStateLoading &&
     !isDiscoverabilityLoading &&
     !hasSpaceActivityAccess;
-  const {
-    status: spacePaymentStatus,
-    isLoading: isSpacePaymentStatusLoading,
-  } = useSalesBanner({
-    spaceId: effectiveSpaceWeb3Id,
-  });
+  const { status: spacePaymentStatus, isLoading: isSpacePaymentStatusLoading } =
+    useSalesBanner({
+      spaceId: effectiveSpaceWeb3Id,
+    });
   const blockSpaceAiForSubscription =
     Boolean(spaceSlug) &&
     Boolean(effectiveSpaceWeb3Id) &&
