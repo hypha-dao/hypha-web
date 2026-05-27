@@ -104,6 +104,8 @@ import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname'
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
+import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
+import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
 import { matrixRoomShortLabel } from './human-chat-panel/matrix-chat-unread';
 import {
   sanitizeMentionDisplayLabel,
@@ -940,6 +942,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceRoomId,
     coherenceTitle,
     coherenceSlug,
+    coherenceDescription,
     closeCoherenceChat,
     openCoherenceChat,
     openHumanChatPanel,
@@ -1114,7 +1117,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const {
     bindRoomContext,
     activeRoomId: callSessionRoomId,
-    pinnedCallSpaceSlug,
     callState: spaceCallState,
     errorCode: spaceCallError,
     callKind: spaceCallKind,
@@ -1212,8 +1214,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return sessionRoomId === chatRoomId;
   }, [callSessionRoomId, roomId]);
 
-  /** Sidebar call chrome for the chat room that owns the active session. */
-  const showSidebarCallUi = callUiEnabled && callAppliesToCurrentChatRoom;
+  /** Sidebar call chrome only for the chat room that owns the active session. */
+  const showSidebarCallUi =
+    callUiEnabled && callAppliesToCurrentChatRoom && !showFloatingDock;
 
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
   const showAuthedUi = !isAuthLoading && isAuthenticated;
@@ -2408,6 +2411,40 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setRoomId(targetRoomId);
         await matrixRef.current.loadRoomHistory(targetRoomId);
         if (cancelled) return;
+
+        try {
+          let description = coherenceDescription?.trim() || null;
+          if (!description && coherenceSlug?.trim()) {
+            const signal = await getCoherenceBySlug({
+              slug: coherenceSlug.trim(),
+            });
+            description = signal?.description?.trim() || null;
+          }
+          if (description) {
+            await upsertSignalDescriptionInRoom({
+              roomId: targetRoomId,
+              description,
+              matrix: {
+                joinRoom: (id) => matrixRef.current.joinRoom(id),
+                loadRoomHistory: (id) => matrixRef.current.loadRoomHistory(id),
+                getRoomMessages: (id) => matrixRef.current.getRoomMessages(id),
+                sendMessage: (params) => matrixRef.current.sendMessage(params),
+                editRoomMessage: (params) =>
+                  matrixRef.current.editRoomMessage(params),
+              },
+            });
+            if (!cancelled) {
+              await matrixRef.current.loadRoomHistory(targetRoomId);
+            }
+          }
+        } catch (seedError) {
+          console.warn(
+            '[HumanRightPanel] Failed to seed signal description in chat:',
+            seedError,
+          );
+        }
+
+        if (cancelled) return;
         const existing = matrixRef.current.getRoomMessages(targetRoomId);
         if (existing) {
           setMessages(
@@ -2449,6 +2486,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceRoomId,
     coherenceTitle,
     coherenceSlug,
+    coherenceDescription,
     isMatrixAvailable,
     isMatrixAuthenticated,
   ]);
@@ -2873,30 +2911,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       !roomId?.trim()
     )
       return;
-    if (
-      callSessionRoomId?.trim() === roomId.trim() &&
-      pinnedCallSpaceSlug?.trim() &&
-      pinnedCallSpaceSlug.trim() !== spaceSlug.trim()
-    ) {
-      return;
-    }
     rememberRoomToSpaceSlugSession(roomId, spaceSlug.trim());
-  }, [callSessionRoomId, mode, pinnedCallSpaceSlug, roomId, spaceSlug]);
+  }, [mode, spaceSlug, roomId]);
 
   useEffect(() => {
     const pathSlug = getDhoSpaceSlugFromPathname(pathname)?.trim();
     const rid = roomId?.trim() ?? null;
     if (pathSlug && rid && mode === 'space' && typeof window !== 'undefined') {
-      if (
-        callSessionRoomId?.trim() === rid &&
-        pinnedCallSpaceSlug?.trim() &&
-        pinnedCallSpaceSlug.trim() !== pathSlug
-      ) {
-        return;
-      }
       rememberRoomToSpaceSlugSession(rid, pathSlug);
     }
-  }, [callSessionRoomId, mode, pathname, pinnedCallSpaceSlug, roomId]);
+  }, [pathname, roomId, mode]);
 
   useEffect(() => {
     const rid = roomId?.trim() ?? null;
@@ -3794,7 +3818,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 role="tabpanel"
                 id="chat-tabpanel-chat"
               >
-                {showSidebarCallUi && !showFloatingDock && (
+                {showSidebarCallUi && (
                   <div
                     className={
                       inSpaceCall
