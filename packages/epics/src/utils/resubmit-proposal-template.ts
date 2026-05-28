@@ -7,7 +7,12 @@ export type ResubmitProposalTemplateSegment = string;
 export const RESUBMIT_PROPOSAL_DATA_KEY = 'resubmitProposalData';
 export const RESUBMIT_FORM_DATA_KEY = 'resubmitFormData';
 
-/** Same mapping as create routes under `agreements/create/{segment}`. */
+/**
+ * Map a human-readable proposal label to its create-route URL segment.
+ *
+ * @param label - The proposal label to map; may be undefined or falsy
+ * @returns The corresponding URL segment (the part after `/agreements/create/`), or `''` when `label` is falsy or has no known mapping
+ */
 export function getCreateRouteSegmentForProposalLabel(
   label: string | undefined,
 ): ResubmitProposalTemplateSegment {
@@ -58,7 +63,15 @@ export function getProposalTemplateSegmentFromPathname(
   return tail.split('/')[0] ?? '';
 }
 
-/** For session payloads saved before template scoping was added. */
+/**
+ * Infers a resubmit proposal template segment from a legacy session payload.
+ *
+ * Examines properties commonly present in pre-scoped resubmit payloads and returns
+ * the matching create-route segment string when a recognizable shape is found.
+ *
+ * @param parsed - The parsed session payload object to inspect for identifying fields
+ * @returns A template segment string such as `"mint-tokens-to-space-treasury"`, `"change-space-delegate"`, `"space-to-space-membership"`, etc., or `undefined` if no match is found
+ */
 export function inferResubmitTemplateSegmentFromPayload(
   parsed: Record<string, unknown>,
 ): ResubmitProposalTemplateSegment | undefined {

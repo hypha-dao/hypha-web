@@ -19,6 +19,16 @@ type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
 };
 
+/**
+ * Renders the page for creating a "change-space-delegate" proposal for the specified space.
+ *
+ * Loads translations and the current space, attempts to load other spaces for selection,
+ * and renders either an inline error message (when spaces fail to load) or the
+ * ChangeSpaceDelegateForm (including the `change-space-delegate` Plugin).
+ *
+ * @param params - A promise resolving to an object with `lang` (locale) and `id` (space slug).
+ * @returns The page React element that displays the form or an error message.
+ */
 export default async function ChangeSpaceDelegatePage({ params }: PageProps) {
   const tAgreementFlow = await getTranslations('AgreementFlow');
   const { lang, id } = await params;

@@ -99,6 +99,12 @@ export const LOCALIZED_PROPOSAL_LABEL_TO_CANONICAL: Record<string, string> = {
   'Alterar delegado': 'Change Delegate',
 };
 
+/**
+ * Normalize a proposal document label to its English canonical form.
+ *
+ * @param label - Localized or canonical label string; may be `null` or `undefined`.
+ * @returns `''` if `label` is `null`, `undefined`, or contains only whitespace; otherwise the mapped English canonical label when known, or the trimmed original label.
+ */
 export function normalizeProposalDocumentLabel(
   label: string | null | undefined,
 ): string {
