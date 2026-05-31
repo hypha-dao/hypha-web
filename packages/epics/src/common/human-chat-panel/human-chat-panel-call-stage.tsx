@@ -520,10 +520,16 @@ function HumanChatPanelCallStageMain({
     isVideoCall,
   });
   const activeShareLayoutKey = shareFeedLayoutKey(rawShareFeeds);
+  const shareLayoutResetKey = [
+    activeShareLayoutKey,
+    localShareActive ? 'local' : '',
+    presenterShareOnly ? 'presenter' : '',
+    hasPendingRemoteShare ? 'pending' : '',
+  ].join('|');
 
   useEffect(() => {
     setGalleryPage(0);
-  }, [galleryParticipantCount, activeShareLayoutKey]);
+  }, [galleryParticipantCount, shareLayoutResetKey]);
   const hasRemotesOrShare =
     remoteUserMedia.length > 0 ||
     missingRemoteUserIds.length > 0 ||
