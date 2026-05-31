@@ -8,6 +8,7 @@ import {
   useState,
   useCallback,
 } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 
 import { Button } from '@hypha-platform/ui';
@@ -158,6 +159,14 @@ type HumanChatPanelMessagesProps = {
   scrollTargetEventId?: string | null;
   onConsumedScrollTarget?: () => void;
   onScrollTargetNotFound?: (eventId: string) => void;
+  hasMoreOlderMessages?: boolean;
+  loadingOlderMessages?: boolean;
+  /** When false, the top sentinel will not auto-trigger history loads (follower tabs). */
+  enableAutoLoadOlderMessages?: boolean;
+  onLoadOlderMessages?: (source?: 'auto' | 'manual') => void | Promise<void | {
+    addedEvents: number;
+    hasMoreOlder: boolean;
+  }>;
 };
 
 export function HumanChatPanelMessages({
@@ -182,6 +191,10 @@ export function HumanChatPanelMessages({
   scrollTargetEventId,
   onConsumedScrollTarget,
   onScrollTargetNotFound,
+  hasMoreOlderMessages = false,
+  loadingOlderMessages = false,
+  enableAutoLoadOlderMessages = true,
+  onLoadOlderMessages,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
   const formatter = useFormatter();
@@ -200,6 +213,13 @@ export function HumanChatPanelMessages({
   const initialUnreadScrollDoneRef = useRef(false);
   const prevRoomIdRef = useRef<string | null | undefined>(undefined);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
+  const loadOlderInFlightRef = useRef(false);
+  /** Blocks auto-load after a zero-progress attempt; manual button clears this. */
+  const lastAutoLoadAddedEventsRef = useRef<number | undefined>(undefined);
+  const scrollPreserveRef = useRef<{ height: number; top: number } | null>(
+    null,
+  );
   /** Avoid calling onConsumedScrollTarget repeatedly while scrollTargetEventId is unchanged. */
   const scrollTargetConsumedRef = useRef<string | null>(null);
   /** Retry deep-link target lookup across timeline growth before falling back. */
@@ -270,8 +290,83 @@ export function HumanChatPanelMessages({
     if (roomId !== prevRoomIdRef.current) {
       prevRoomIdRef.current = roomId;
       initialUnreadScrollDoneRef.current = false;
+      scrollPreserveRef.current = null;
+      lastAutoLoadAddedEventsRef.current = undefined;
     }
   }, [roomId]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (loadingOlderMessages && el) {
+      scrollPreserveRef.current = {
+        height: el.scrollHeight,
+        top: el.scrollTop,
+      };
+    }
+  }, [loadingOlderMessages]);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    const preserve = scrollPreserveRef.current;
+    if (!loadingOlderMessages && preserve && el) {
+      el.scrollTop = el.scrollHeight - preserve.height + preserve.top;
+      scrollPreserveRef.current = null;
+    }
+  }, [loadingOlderMessages, messages.length]);
+
+  useEffect(() => {
+    const root = containerRef.current;
+    const sentinel = topSentinelRef.current;
+    if (
+      !root ||
+      !sentinel ||
+      !onLoadOlderMessages ||
+      !enableAutoLoadOlderMessages ||
+      !hasMoreOlderMessages ||
+      loadingOlderMessages
+    ) {
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting || loadOlderInFlightRef.current) continue;
+          if (lastAutoLoadAddedEventsRef.current === 0) continue;
+          loadOlderInFlightRef.current = true;
+          void Promise.resolve(onLoadOlderMessages('auto'))
+            .then((result) => {
+              if (
+                !result ||
+                typeof result !== 'object' ||
+                !('addedEvents' in result)
+              ) {
+                return;
+              }
+              if (result.addedEvents === 0 && result.hasMoreOlder) {
+                lastAutoLoadAddedEventsRef.current = 0;
+                return;
+              }
+              if (result.addedEvents > 0) {
+                lastAutoLoadAddedEventsRef.current = result.addedEvents;
+              }
+            })
+            .finally(() => {
+              loadOlderInFlightRef.current = false;
+            });
+        }
+      },
+      { root, threshold: 0.1 },
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [
+    enableAutoLoadOlderMessages,
+    hasMoreOlderMessages,
+    loadingOlderMessages,
+    onLoadOlderMessages,
+    timelineRows.length,
+  ]);
 
   useEffect(() => {
     if (!scrollTargetEventId) {
@@ -440,6 +535,45 @@ export function HumanChatPanelMessages({
         className="narrow-scrollbar flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
       >
         <div className="flex flex-col gap-4">
+          {messages.length > 0 ? (
+            <div
+              ref={topSentinelRef}
+              className="flex min-h-8 flex-col items-center justify-center gap-1 py-1"
+            >
+              {hasMoreOlderMessages ? (
+                loadingOlderMessages ? (
+                  <div
+                    className="flex items-center gap-2 text-xs text-muted-foreground"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <Loader2
+                      className="h-3.5 w-3.5 animate-spin text-[color:var(--space-accent,#4a65d8)]"
+                      aria-hidden
+                    />
+                    {t('loadingOlderMessages')}
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      lastAutoLoadAddedEventsRef.current = undefined;
+                      void onLoadOlderMessages?.('manual');
+                    }}
+                  >
+                    {t('loadOlderMessages')}
+                  </Button>
+                )
+              ) : (
+                <p className="text-center text-[11px] text-muted-foreground">
+                  {t('historyStartReached')}
+                </p>
+              )}
+            </div>
+          ) : null}
           {timelineRows.map((row) => {
             if (row.kind === 'date') {
               return (

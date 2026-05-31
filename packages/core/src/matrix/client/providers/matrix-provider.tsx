@@ -500,6 +500,12 @@ export type MatrixConnectionStatus =
   | 'disconnected'
   | 'follower';
 
+export type LoadRoomHistoryResult = {
+  /** False when scrollback returned no additional timeline events. */
+  hasMoreOlder: boolean;
+  addedEvents: number;
+};
+
 interface MatrixContextType {
   client: MatrixSdk.MatrixClient | null;
   isMatrixAvailable: boolean;
@@ -521,7 +527,7 @@ interface MatrixContextType {
   loadRoomHistory: (
     roomId: string,
     options?: { pageSize?: number; maxBatches?: number; force?: boolean },
-  ) => Promise<void>;
+  ) => Promise<LoadRoomHistoryResult>;
   getPinnedMessageIds: (roomId: string) => string[];
   togglePinnedMessage: (roomId: string, messageId: string) => Promise<void>;
   getRoomMembers: (roomId: string) => Promise<ChatMember[]>;
@@ -575,10 +581,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   const registeredRoomListenersRef = React.useRef<RoomMessageListenerRecord[]>(
     [],
   );
-  const roomHistoryLoadRef = React.useRef<Map<string, Promise<void>>>(
-    new Map(),
-  );
-  const roomHistoryLoadedRef = React.useRef<Set<string>>(new Set());
+  const roomHistoryLoadRef = React.useRef<
+    Map<string, Promise<LoadRoomHistoryResult>>
+  >(new Map());
+  const roomHistoryExhaustedRef = React.useRef<Set<string>>(new Set());
   const [registeredRoomListeners, setRegisteredRoomListeners] = React.useState<
     RoomMessageListenerRecord[]
   >([]);
@@ -595,6 +601,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
   const initializeMatrixClient = React.useCallback(
     async (matrixToken: MatrixTokenData) => {
+      roomHistoryLoadRef.current.clear();
+      roomHistoryExhaustedRef.current.clear();
       if (!matrixToken) {
         return;
       }
@@ -697,6 +705,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   }, [isSyncLeader]);
 
   const recycleMatrixClient = React.useCallback(() => {
+    roomHistoryLoadRef.current.clear();
+    roomHistoryExhaustedRef.current.clear();
     const existingClient = clientRef.current;
     if (!existingClient) {
       return;
@@ -1625,7 +1635,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     async (
       roomId: string,
       options?: { pageSize?: number; maxBatches?: number; force?: boolean },
-    ): Promise<void> => {
+    ): Promise<LoadRoomHistoryResult> => {
       if (!client) {
         throw new Error('Client should be specified');
       }
@@ -1634,19 +1644,23 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('Room not found');
       }
 
-      if (!options?.force && roomHistoryLoadedRef.current.has(roomId)) {
-        return;
+      if (options?.force) {
+        roomHistoryExhaustedRef.current.delete(roomId);
+      } else if (roomHistoryExhaustedRef.current.has(roomId)) {
+        return { hasMoreOlder: false, addedEvents: 0 };
       }
 
       const existingLoad = roomHistoryLoadRef.current.get(roomId);
       if (existingLoad) {
-        await existingLoad;
-        return;
+        return existingLoad;
       }
 
       const pageSize = Math.max(10, options?.pageSize ?? 50);
       const maxBatches = Math.max(1, options?.maxBatches ?? 10);
-      const loadPromise = (async () => {
+      const loadPromise = (async (): Promise<LoadRoomHistoryResult> => {
+        let addedEvents = 0;
+        let hasMoreOlder = true;
+
         for (let i = 0; i < maxBatches; i++) {
           if (i > 0) {
             await delay(MATRIX_SCROLLBACK_STAGGER_MS);
@@ -1669,7 +1683,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                     '[MatrixProvider] Paused room history scrollback after rate limit (will retry later):',
                     error,
                   );
-                  return;
+                  return { hasMoreOlder: true, addedEvents };
                 }
                 await delay(matrixRateLimitBackoffMs(error, attempt));
                 continue;
@@ -1678,23 +1692,32 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                 '[MatrixProvider] Failed while loading room history:',
                 error,
               );
-              return;
+              return { hasMoreOlder: true, addedEvents };
             }
           }
           if (!scrollbackSucceeded) {
-            return;
+            return { hasMoreOlder: true, addedEvents };
           }
           const afterCount = room.getLiveTimeline().getEvents().length;
           if (afterCount <= beforeCount) {
+            hasMoreOlder = false;
             break;
           }
+          addedEvents += afterCount - beforeCount;
         }
-        roomHistoryLoadedRef.current.add(roomId);
+
+        if (!hasMoreOlder) {
+          roomHistoryExhaustedRef.current.add(roomId);
+        } else {
+          roomHistoryExhaustedRef.current.delete(roomId);
+        }
+
+        return { hasMoreOlder, addedEvents };
       })();
 
       roomHistoryLoadRef.current.set(roomId, loadPromise);
       try {
-        await loadPromise;
+        return await loadPromise;
       } finally {
         roomHistoryLoadRef.current.delete(roomId);
       }
@@ -2106,7 +2129,7 @@ const noopMatrixContext: MatrixContextType = {
     throw new Error('Matrix unavailable');
   },
   getRoomMessages: () => null,
-  loadRoomHistory: async () => {},
+  loadRoomHistory: async () => ({ hasMoreOlder: false, addedEvents: 0 }),
   joinRoom: async (): Promise<string> => {
     throw new Error('Matrix unavailable');
   },

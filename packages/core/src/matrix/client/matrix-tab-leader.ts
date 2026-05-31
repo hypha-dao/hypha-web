@@ -1,11 +1,14 @@
+import { isRemoteGroupCallHoldActive } from './hooks/active-group-call-registry';
+
 const CHANNEL_NAME = 'hypha-matrix-sync-leader-v1';
 const HEARTBEAT_INTERVAL_MS = 2_000;
 const LEADER_STALE_MS = 6_000;
+const LEADER_STALE_DURING_CALL_MS = 45_000;
 const INITIAL_CLAIM_DELAY_MS = 750;
 
 type LeaderMessage =
   | { type: 'heartbeat'; tabId: string; at: number }
-  | { type: 'claim'; tabId: string; at: number }
+  | { type: 'claim'; tabId: string; at: number; force?: boolean }
   | { type: 'resign'; tabId: string; at: number };
 
 export type MatrixTabLeaderSnapshot = {
@@ -98,7 +101,7 @@ export class MatrixTabLeaderCoordinator {
   }
 
   claimSyncLeadership(): void {
-    this.evaluateLeadership({ force: true });
+    this.evaluateLeadership({ force: true, userInitiated: true });
   }
 
   dispose(): void {
@@ -157,9 +160,28 @@ export class MatrixTabLeaderCoordinator {
 
   private handleVisibilityChange = (): void => {
     if (typeof document === 'undefined') return;
+    if (this.isSyncLeader) {
+      this.reassertLeadershipSignal();
+    }
     if (document.visibilityState !== 'visible') return;
     this.evaluateLeadership({ force: false });
   };
+
+  /** Re-broadcast leadership while blocking stale follower claims (e.g. during a call). */
+  private reassertLeadershipHold(): void {
+    const at = Date.now();
+    this.lastLeaderSignalAt = at;
+    this.leaderTabId = this.tabId;
+    this.broadcast({ type: 'claim', tabId: this.tabId, at, force: true });
+  }
+
+  /** Broadcast a fresh leader signal (resists background timer throttling on the call tab). */
+  private reassertLeadershipSignal(): void {
+    const at = Date.now();
+    this.lastLeaderSignalAt = at;
+    this.leaderTabId = this.tabId;
+    this.broadcast({ type: 'heartbeat', tabId: this.tabId, at });
+  }
 
   private handleMessage(message: LeaderMessage): void {
     if (message.tabId === this.tabId) return;
@@ -177,11 +199,39 @@ export class MatrixTabLeaderCoordinator {
       }
 
       if (this.isSyncLeader && message.type === 'claim') {
-        if (this.holdLeadershipWhile()) return;
+        if (
+          message.force &&
+          message.tabId !== this.tabId &&
+          (remoteWins || this.leaderTabId === this.tabId)
+        ) {
+          this.relinquishLeadership();
+          return;
+        }
+        if (this.holdLeadershipWhile()) {
+          this.reassertLeadershipHold();
+          return;
+        }
         if (message.tabId !== this.tabId && remoteWins) {
           this.relinquishLeadership();
         }
-      } else if (!this.isSyncLeader && remoteWins) {
+        return;
+      }
+
+      if (
+        this.isSyncLeader &&
+        message.type === 'heartbeat' &&
+        message.tabId !== this.tabId &&
+        remoteWins
+      ) {
+        if (this.holdLeadershipWhile()) {
+          this.reassertLeadershipHold();
+          return;
+        }
+        this.relinquishLeadership();
+        return;
+      }
+
+      if (!this.isSyncLeader && remoteWins) {
         this.notify();
       }
       return;
@@ -197,10 +247,16 @@ export class MatrixTabLeaderCoordinator {
   private leaderIsStale(now = Date.now()): boolean {
     if (!this.leaderTabId) return true;
     if (this.leaderTabId === this.tabId) return false;
-    return now - this.lastLeaderSignalAt > LEADER_STALE_MS;
+    const staleMs = isRemoteGroupCallHoldActive(now)
+      ? LEADER_STALE_DURING_CALL_MS
+      : LEADER_STALE_MS;
+    return now - this.lastLeaderSignalAt > staleMs;
   }
 
-  private evaluateLeadership(options: { force: boolean }): void {
+  private evaluateLeadership(options: {
+    force: boolean;
+    userInitiated?: boolean;
+  }): void {
     if (this.disposed) return;
 
     const now = Date.now();
@@ -221,14 +277,14 @@ export class MatrixTabLeaderCoordinator {
       return;
     }
 
-    this.becomeLeader(now);
+    this.becomeLeader(now, Boolean(options.userInitiated));
   }
 
-  private becomeLeader(now: number): void {
+  private becomeLeader(now: number, force = false): void {
     this.isSyncLeader = true;
     this.leaderTabId = this.tabId;
     this.lastLeaderSignalAt = now;
-    this.broadcast({ type: 'claim', tabId: this.tabId, at: now });
+    this.broadcast({ type: 'claim', tabId: this.tabId, at: now, force });
     this.startHeartbeat();
     this.notify();
   }

@@ -67,6 +67,7 @@ import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 
 import {
   HumanChatPanelHeader,
+  HumanChatPanelLoader,
   HumanChatPanelMessages,
   HumanChatPanelChatBar,
   HumanChatPanelTabs,
@@ -1032,16 +1033,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [roomId, setRoomId] = useState<string | null>(null);
 
   useEffect(() => {
-    setMentionDisplayOverride({});
-  }, [roomId]);
-
-  useEffect(() => {
     if (mode !== 'coherence') {
       setSignalTeamPanelOpen(false);
     }
   }, [mode]);
 
   const [isJoining, setIsJoining] = useState(false);
+  const [hasMoreOlderMessages, setHasMoreOlderMessages] = useState(false);
+  const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
+  const [autoLoadOlderPaused, setAutoLoadOlderPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState<string | null>(null);
   const [composerError, setComposerError] = useState<string | null>(null);
@@ -1059,6 +1059,30 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     uploadedCount?: number;
   }>(null);
   const joinedRef = useRef<string | null>(null);
+  const wasMatrixSyncLeaderRef = useRef(isMatrixSyncLeader);
+
+  useEffect(() => {
+    setMentionDisplayOverride({});
+    setHasMoreOlderMessages(false);
+    setLoadingOlderMessages(false);
+    setAutoLoadOlderPaused(false);
+  }, [roomId]);
+
+  useEffect(() => {
+    const wasLeader = wasMatrixSyncLeaderRef.current;
+    if (wasLeader && !isMatrixSyncLeader) {
+      setHasMoreOlderMessages(false);
+      setLoadingOlderMessages(false);
+      setAutoLoadOlderPaused(false);
+    }
+    if (!wasLeader && isMatrixSyncLeader) {
+      joinedRef.current = null;
+      setHasMoreOlderMessages(false);
+      setLoadingOlderMessages(false);
+      setAutoLoadOlderPaused(false);
+    }
+    wasMatrixSyncLeaderRef.current = isMatrixSyncLeader;
+  }, [isMatrixSyncLeader]);
   const [unreadBump, setUnreadBump] = useState(0);
   const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
@@ -1169,9 +1193,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     dismissRemoteMediaStallBanner: dismissSpaceCallRemoteMediaStall,
     showFloatingDock,
   } = useGlobalCallDock();
-  const showFloatingDockRef = useRef(showFloatingDock);
-  showFloatingDockRef.current = showFloatingDock;
-
   useEffect(() => {
     const activeRoomId = roomId?.trim() || null;
     const activeSpaceSlug = spaceSlug?.trim() || null;
@@ -1181,24 +1202,25 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       bindRoomContext(activeRoomId, activeSpaceSlug, activeAuthToken);
       return;
     }
-    if (!showFloatingDockRef.current) {
+    if (!showFloatingDock) {
       bindRoomContext(null, null, null);
     }
-
-    return () => {
-      if (!showFloatingDockRef.current) {
-        bindRoomContext(null, null, null);
-      }
-    };
-  }, [authToken, bindRoomContext, roomId, spaceSlug]);
+  }, [authToken, bindRoomContext, roomId, showFloatingDock, spaceSlug]);
 
   const callUiEnabled = useMemo(
     () =>
       Boolean(roomId) &&
       isMatrixAvailable &&
       isMatrixAuthenticated &&
+      isSpaceMember &&
+      isMatrixSyncLeader,
+    [
+      roomId,
+      isMatrixAvailable,
+      isMatrixAuthenticated,
       isSpaceMember,
-    [roomId, isMatrixAvailable, isMatrixAuthenticated, isSpaceMember],
+      isMatrixSyncLeader,
+    ],
   );
 
   const inSpaceCall =
@@ -1214,9 +1236,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return sessionRoomId === chatRoomId;
   }, [callSessionRoomId, roomId]);
 
-  /** Sidebar call chrome only for the chat room that owns the active session. */
-  const showSidebarCallUi =
-    callUiEnabled && callAppliesToCurrentChatRoom && !showFloatingDock;
+  /** Banner, join strip, and toolbar for the chat room that owns the active session. */
+  const showSidebarCallChrome = callUiEnabled && callAppliesToCurrentChatRoom;
+  /** In-chat video tiles stay in the floating dock once a session is active. */
+  const showSidebarCallVideo = showSidebarCallChrome && !showFloatingDock;
 
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
   const showAuthedUi = !isAuthLoading && isAuthenticated;
@@ -1270,8 +1293,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const spaceCallShowJoinChime = useMemo(
-    () => showSidebarCallUi && spaceCallShowJoinStrip && !inSpaceCall,
-    [showSidebarCallUi, spaceCallShowJoinStrip, inSpaceCall],
+    () => showSidebarCallChrome && spaceCallShowJoinStrip && !inSpaceCall,
+    [showSidebarCallChrome, spaceCallShowJoinStrip, inSpaceCall],
   );
 
   const joinChimeNotification = useMemo(
@@ -1758,6 +1781,76 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return resolveMentionMemberLabel(id);
     },
     [resolveMentionMemberLabel, t],
+  );
+
+  const syncRoomMessages = useCallback((targetRoomId: string) => {
+    const existing = matrixRef.current.getRoomMessages(targetRoomId);
+    if (!existing) return;
+    setMessages(
+      existing.map((m) =>
+        toUIMessage(
+          m,
+          currentUserIdRef.current,
+          resolveMemberLabelRef.current,
+          currentUserAvatarUrlRef.current,
+          undefined,
+          targetRoomId,
+          matrixRef.current.client ?? null,
+          formatSignalTeamNoticeRef.current,
+        ),
+      ),
+    );
+  }, []);
+
+  const handleLoadOlderMessages = useCallback(
+    async (source: 'auto' | 'manual' = 'manual') => {
+      const targetRoomId = roomId?.trim();
+      if (
+        !targetRoomId ||
+        !isMatrixSyncLeader ||
+        loadingOlderMessages ||
+        !hasMoreOlderMessages
+      ) {
+        return;
+      }
+      setLoadingOlderMessages(true);
+      try {
+        const result = await matrixRef.current.loadRoomHistory(targetRoomId, {
+          force: true,
+          maxBatches: 5,
+        });
+        syncRoomMessages(targetRoomId);
+        setHasMoreOlderMessages(result.hasMoreOlder);
+        if (
+          source === 'auto' &&
+          result.addedEvents === 0 &&
+          result.hasMoreOlder
+        ) {
+          setAutoLoadOlderPaused(true);
+        } else if (result.addedEvents > 0) {
+          setAutoLoadOlderPaused(false);
+        }
+        return result;
+      } catch (err) {
+        console.warn(
+          '[HumanRightPanel] Failed to load older chat history:',
+          err,
+        );
+        if (source === 'auto') {
+          setAutoLoadOlderPaused(true);
+        }
+        return undefined;
+      } finally {
+        setLoadingOlderMessages(false);
+      }
+    },
+    [
+      hasMoreOlderMessages,
+      isMatrixSyncLeader,
+      loadingOlderMessages,
+      roomId,
+      syncRoomMessages,
+    ],
   );
 
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
@@ -2261,8 +2354,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         joinedRef.current = spaceSlug;
         setRoomId(targetRoomId);
 
-        await loadRoomHistory(targetRoomId);
+        const historyResult = await loadRoomHistory(targetRoomId);
         if (cancelled) return;
+        setHasMoreOlderMessages(historyResult.hasMoreOlder);
         const existing = getRoomMessages(targetRoomId);
         if (existing && !cancelled) {
           setMessages(
@@ -2409,7 +2503,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         if (cancelled) return;
         setRoomId(targetRoomId);
-        await matrixRef.current.loadRoomHistory(targetRoomId);
+        let historyResult = await matrixRef.current.loadRoomHistory(
+          targetRoomId,
+        );
         if (cancelled) return;
 
         try {
@@ -2435,7 +2531,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               },
             });
             if (!cancelled) {
-              await matrixRef.current.loadRoomHistory(targetRoomId);
+              historyResult = await matrixRef.current.loadRoomHistory(
+                targetRoomId,
+                { force: true },
+              );
             }
           }
         } catch (seedError) {
@@ -2446,6 +2545,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
 
         if (cancelled) return;
+        setHasMoreOlderMessages(historyResult.hasMoreOlder);
         const existing = matrixRef.current.getRoomMessages(targetRoomId);
         if (existing) {
           setMessages(
@@ -2850,11 +2950,42 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, []);
 
   const handleScrollTargetNotFound = useCallback(
-    (_eventId: string) => {
+    async (eventId: string) => {
+      const targetRoomId = roomId?.trim();
+      if (!targetRoomId) {
+        setMentionNavigationNotice(t('mentionOpenFallbackMissingMessage'));
+        setScrollToEventId(null);
+        return;
+      }
+
+      let hasMore = hasMoreOlderMessages;
+      for (let attempt = 0; attempt < 12 && hasMore; attempt += 1) {
+        const result = await matrixRef.current.loadRoomHistory(targetRoomId, {
+          force: true,
+          maxBatches: 3,
+        });
+        syncRoomMessages(targetRoomId);
+        hasMore = result.hasMoreOlder;
+        setHasMoreOlderMessages(hasMore);
+
+        const escaped =
+          typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+            ? CSS.escape(eventId)
+            : eventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        if (
+          document.querySelector(`[data-matrix-event-id="${escaped}"]`) != null
+        ) {
+          setScrollToEventId(eventId);
+          return;
+        }
+
+        if (!hasMore) break;
+      }
+
       setMentionNavigationNotice(t('mentionOpenFallbackMissingMessage'));
       setScrollToEventId(null);
     },
-    [t],
+    [hasMoreOlderMessages, roomId, syncRoomMessages, t],
   );
 
   const mergedMessages = useMemo(() => {
@@ -3664,7 +3795,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionTabBadgeCount={bellMentionCount}
           mentionTabBadgeCapped={bellMentionCapped}
           tabRowEnd={
-            showSidebarCallUi ? (
+            showSidebarCallChrome ? (
               <HumanChatPanelCallToolbar
                 callState={spaceCallState}
                 callKind={spaceCallKind}
@@ -3691,7 +3822,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {showSidebarCallUi && !inSpaceCall && spaceCallShowJoinStrip && (
+        {showSidebarCallChrome && !inSpaceCall && spaceCallShowJoinStrip && (
           <HumanChatPanelCallJoinStrip
             deviceCount={spaceCallRoomGroupDeviceCount}
             disabled={!callUiEnabled}
@@ -3714,7 +3845,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             }}
           />
         )}
-        {showSidebarCallUi &&
+        {showSidebarCallChrome &&
           (inSpaceCall ||
             spaceCallState === 'error' ||
             spaceCallState === 'disconnecting') && (
@@ -3762,7 +3893,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onDismissCallError={dismissSpaceCallError}
             />
           )}
-        {showSidebarCallUi ? (
+        {showSidebarCallChrome && !showFloatingDock ? (
           <HumanChatPanelScreenshareTakeoverDialog
             incoming={spaceCallScreenshareTakeoverIncoming}
             pending={Boolean(spaceCallScreenshareTakeoverPendingId)}
@@ -3786,9 +3917,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         className="flex min-h-0 flex-col overflow-hidden bg-background-2"
       >
         {isAuthLoading ? (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="text-sm text-muted-foreground">{t('loading')}</div>
-          </div>
+          <HumanChatPanelLoader />
         ) : showAuthPrompt ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <Empty>
@@ -3819,7 +3948,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 role="tabpanel"
                 id="chat-tabpanel-chat"
               >
-                {showSidebarCallUi && (
+                {showSidebarCallVideo && (
                   <div
                     className={
                       inSpaceCall
@@ -4060,11 +4189,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   </div>
                 )}
                 {isJoining ? (
-                  <div className="flex flex-1 items-center justify-center">
-                    <div className="text-sm text-muted-foreground">
-                      {t('loading')}
-                    </div>
-                  </div>
+                  <HumanChatPanelLoader showPreview />
                 ) : (
                   <HumanChatPanelMessages
                     messages={mergedMessages}
@@ -4091,6 +4216,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     scrollTargetEventId={scrollToEventId}
                     onConsumedScrollTarget={handleConsumedScrollTarget}
                     onScrollTargetNotFound={handleScrollTargetNotFound}
+                    hasMoreOlderMessages={hasMoreOlderMessages}
+                    loadingOlderMessages={loadingOlderMessages}
+                    enableAutoLoadOlderMessages={
+                      isMatrixSyncLeader &&
+                      connectionStatus === 'connected' &&
+                      !autoLoadOlderPaused
+                    }
+                    onLoadOlderMessages={handleLoadOlderMessages}
                   />
                 )}
               </div>

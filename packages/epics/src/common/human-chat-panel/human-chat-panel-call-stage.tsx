@@ -42,6 +42,10 @@ import {
   callGalleryGridStyle,
   sliceCallGalleryPage,
 } from './call-gallery-grid';
+import {
+  resolveCallStageShareLayout,
+  shareFeedLayoutKey,
+} from './call-stage-share-layout';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
 
@@ -492,19 +496,6 @@ function HumanChatPanelCallStageMain({
   }, [model.localUserMedia, remoteUserTiles]);
   const galleryParticipantCount =
     remoteUserTiles.length + (model.localUserMedia.length > 0 ? 1 : 0);
-  useEffect(() => {
-    setGalleryPage(0);
-  }, [galleryParticipantCount]);
-  const isLiveAndUnmuted = useCallback((feed: CallFeed): boolean => {
-    const stream = feed.stream;
-    if (!stream) return false;
-    const liveVideoTrack = stream
-      .getVideoTracks()
-      .find((track) => track.readyState === 'live' && !track.muted);
-    if (!liveVideoTrack) return false;
-    return !feed.isVideoMuted();
-  }, []);
-
   const {
     isVideoCall,
     shareFeeds: rawShareFeeds,
@@ -517,17 +508,28 @@ function HumanChatPanelCallStageMain({
   } = model;
 
   const isFull = layout === 'fullView';
-  /**
-   * Never mirror the sharer's own capture back to them (Zoom/Meet pattern) — avoids
-   * hall-of-mirrors when sharing this tab, window, or monitor.
-   */
-  const liveShareFeeds = rawShareFeeds.filter(isLiveAndUnmuted);
-  const shareFeeds = liveShareFeeds.filter((feed) => !feed.isLocal());
-  const localShareActive =
-    isScreensharing && liveShareFeeds.some((feed) => feed.isLocal());
-  /** Presenter is sharing — hide the local mirror/placeholder (Zoom-style). */
-  const presenterShareOnly = localShareActive && shareFeeds.length === 0;
-  const hasRenderableShare = shareFeeds.length > 0 || localShareActive;
+  const {
+    shareFeeds,
+    localShareActive,
+    presenterShareOnly,
+    hasRenderableShare,
+    hasPendingRemoteShare,
+  } = resolveCallStageShareLayout({
+    rawShareFeeds,
+    isScreensharing,
+    isVideoCall,
+  });
+  const activeShareLayoutKey = shareFeedLayoutKey(rawShareFeeds);
+  const shareLayoutResetKey = [
+    activeShareLayoutKey,
+    localShareActive ? 'local' : '',
+    presenterShareOnly ? 'presenter' : '',
+    hasPendingRemoteShare ? 'pending' : '',
+  ].join('|');
+
+  useEffect(() => {
+    setGalleryPage(0);
+  }, [galleryParticipantCount, shareLayoutResetKey]);
   const hasRemotesOrShare =
     remoteUserMedia.length > 0 ||
     missingRemoteUserIds.length > 0 ||
@@ -674,6 +676,16 @@ function HumanChatPanelCallStageMain({
 
   const renderSharePane = (keyOffset: number) => {
     if (presenterShareOnly) return null;
+    if (shareFeeds.length === 0 && hasPendingRemoteShare) {
+      return (
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-2 bg-black px-3 py-6">
+          <Loader2 className="h-5 w-5 motion-reduce:animate-none animate-spin text-zinc-400" />
+          <p className="text-center text-xs text-zinc-400">
+            {t('callScreenShareActive')}
+          </p>
+        </div>
+      );
+    }
     return shareFeeds.map((feed, i) => (
       <div
         key={feedKey(feed, keyOffset + i)}
@@ -1174,35 +1186,44 @@ function HumanChatPanelCallStageMain({
             )}
             data-feed-tick={_feedVersion}
           >
-            {shareFeeds.map((feed, i) => (
-              <div
-                key={feedKey(feed, i)}
-                className={cn(
-                  'w-full max-w-full',
-                  isFull && 'flex min-h-0 min-w-0 flex-1 flex-col',
-                )}
-              >
-                <CallFeedTile
-                  client={client}
-                  roomId={roomId}
-                  currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
-                  feed={feed}
-                  isShare
-                  isFullView={isFull}
-                  panelVideoFit={panelVideoFit}
-                  panelFlush={panelFlush}
-                  isActiveSpeaker={
-                    activeSpeakerKey != null &&
-                    activeSpeakerKey === feedKeyForActive(feed)
-                  }
-                  room={room}
-                  currentUserId={currentUserId}
-                  resolveMemberLabel={resolveMemberLabel}
-                  isMicrophoneMuted={isMicrophoneMuted}
-                  t={t}
-                />
+            {shareFeeds.length === 0 && hasPendingRemoteShare ? (
+              <div className="flex min-h-[4.5rem] flex-1 flex-col items-center justify-center gap-2 bg-black px-3 py-6">
+                <Loader2 className="h-5 w-5 motion-reduce:animate-none animate-spin text-zinc-400" />
+                <p className="text-center text-xs text-zinc-400">
+                  {t('callScreenShareActive')}
+                </p>
               </div>
-            ))}
+            ) : (
+              shareFeeds.map((feed, i) => (
+                <div
+                  key={feedKey(feed, i)}
+                  className={cn(
+                    'w-full max-w-full',
+                    isFull && 'flex min-h-0 min-w-0 flex-1 flex-col',
+                  )}
+                >
+                  <CallFeedTile
+                    client={client}
+                    roomId={roomId}
+                    currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
+                    feed={feed}
+                    isShare
+                    isFullView={isFull}
+                    panelVideoFit={panelVideoFit}
+                    panelFlush={panelFlush}
+                    isActiveSpeaker={
+                      activeSpeakerKey != null &&
+                      activeSpeakerKey === feedKeyForActive(feed)
+                    }
+                    room={room}
+                    currentUserId={currentUserId}
+                    resolveMemberLabel={resolveMemberLabel}
+                    isMicrophoneMuted={isMicrophoneMuted}
+                    t={t}
+                  />
+                </div>
+              ))
+            )}
           </div>
         )
       )}

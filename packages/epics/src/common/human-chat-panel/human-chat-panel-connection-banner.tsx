@@ -29,7 +29,7 @@ export function HumanChatPanelConnectionBanner({
 }: HumanChatPanelConnectionBannerProps) {
   const t = useTranslations('HumanChatPanel');
 
-  if (connectionStatus === 'connected') {
+  if (connectionStatus === 'connected' && isMatrixSyncLeader) {
     return null;
   }
 
