@@ -1188,8 +1188,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       Boolean(roomId) &&
       isMatrixAvailable &&
       isMatrixAuthenticated &&
+      isSpaceMember &&
+      isMatrixSyncLeader,
+    [
+      roomId,
+      isMatrixAvailable,
+      isMatrixAuthenticated,
       isSpaceMember,
-    [roomId, isMatrixAvailable, isMatrixAuthenticated, isSpaceMember],
+      isMatrixSyncLeader,
+    ],
   );
 
   const inSpaceCall =

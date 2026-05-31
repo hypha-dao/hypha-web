@@ -5,7 +5,7 @@ const INITIAL_CLAIM_DELAY_MS = 750;
 
 type LeaderMessage =
   | { type: 'heartbeat'; tabId: string; at: number }
-  | { type: 'claim'; tabId: string; at: number }
+  | { type: 'claim'; tabId: string; at: number; force?: boolean }
   | { type: 'resign'; tabId: string; at: number };
 
 export type MatrixTabLeaderSnapshot = {
@@ -98,7 +98,7 @@ export class MatrixTabLeaderCoordinator {
   }
 
   claimSyncLeadership(): void {
-    this.evaluateLeadership({ force: true });
+    this.evaluateLeadership({ force: true, userInitiated: true });
   }
 
   dispose(): void {
@@ -177,6 +177,14 @@ export class MatrixTabLeaderCoordinator {
       }
 
       if (this.isSyncLeader && message.type === 'claim') {
+        if (
+          message.force &&
+          message.tabId !== this.tabId &&
+          (remoteWins || this.leaderTabId === this.tabId)
+        ) {
+          this.relinquishLeadership();
+          return;
+        }
         if (this.holdLeadershipWhile()) return;
         if (message.tabId !== this.tabId && remoteWins) {
           this.relinquishLeadership();
@@ -200,7 +208,10 @@ export class MatrixTabLeaderCoordinator {
     return now - this.lastLeaderSignalAt > LEADER_STALE_MS;
   }
 
-  private evaluateLeadership(options: { force: boolean }): void {
+  private evaluateLeadership(options: {
+    force: boolean;
+    userInitiated?: boolean;
+  }): void {
     if (this.disposed) return;
 
     const now = Date.now();
@@ -221,14 +232,14 @@ export class MatrixTabLeaderCoordinator {
       return;
     }
 
-    this.becomeLeader(now);
+    this.becomeLeader(now, Boolean(options.userInitiated));
   }
 
-  private becomeLeader(now: number): void {
+  private becomeLeader(now: number, force = false): void {
     this.isSyncLeader = true;
     this.leaderTabId = this.tabId;
     this.lastLeaderSignalAt = now;
-    this.broadcast({ type: 'claim', tabId: this.tabId, at: now });
+    this.broadcast({ type: 'claim', tabId: this.tabId, at: now, force });
     this.startHeartbeat();
     this.notify();
   }

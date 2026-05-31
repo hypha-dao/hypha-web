@@ -74,4 +74,21 @@ describe('MatrixTabLeaderCoordinator', () => {
     leaderA.dispose();
     leaderB.dispose();
   });
+
+  it('force claim dethrones leader even while holdLeadershipWhile is active', () => {
+    const leaderA = new MatrixTabLeaderCoordinator({
+      holdLeadershipWhile: () => true,
+    });
+    const leaderB = new MatrixTabLeaderCoordinator();
+    vi.advanceTimersByTime(1_000);
+
+    expect(leaderA.getSnapshot().isSyncLeader).toBe(true);
+
+    leaderB.claimSyncLeadership();
+    expect(leaderB.getSnapshot().isSyncLeader).toBe(true);
+    expect(leaderA.getSnapshot().isSyncLeader).toBe(false);
+
+    leaderA.dispose();
+    leaderB.dispose();
+  });
 });

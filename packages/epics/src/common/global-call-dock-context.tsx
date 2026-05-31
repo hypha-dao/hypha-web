@@ -3,6 +3,7 @@
 import React from 'react';
 import {
   setGroupCallSessionActive,
+  useMatrix,
   useSpaceGroupCall,
 } from '@hypha-platform/core/client';
 import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
@@ -124,7 +125,57 @@ type GlobalCallDockContextValue = ReturnType<typeof useGlobalCallDockValue>;
 const GlobalCallDockContext =
   React.createContext<GlobalCallDockContextValue | null>(null);
 
+function applyCallResumeSnapshot(
+  snapshot: CallResumeSnapshot,
+  apply: {
+    setBoundRoomId: (roomId: string) => void;
+    setBoundSpaceSlug: (spaceSlug: string | null) => void;
+    setActiveRoomId: (roomId: string) => void;
+    setActiveSpaceSlug: (spaceSlug: string | null) => void;
+    setPinnedCallSpaceSlug: (spaceSlug: string | null) => void;
+    setPendingJoin: (join: PendingJoin) => void;
+    setDockMode: (mode: GlobalCallDockMode) => void;
+    callLaunchContextRef: React.MutableRefObject<CallLaunchContext | null>;
+    restoreInProgressRef: React.MutableRefObject<boolean>;
+    restoreTimerRef: React.MutableRefObject<number | null>;
+  },
+): void {
+  apply.restoreInProgressRef.current = true;
+  apply.setBoundRoomId(snapshot.roomId);
+  apply.setBoundSpaceSlug(snapshot.spaceSlug);
+  apply.setActiveRoomId(snapshot.roomId);
+  apply.setActiveSpaceSlug(snapshot.spaceSlug);
+  apply.setPinnedCallSpaceSlug(snapshot.spaceSlug);
+  apply.setPendingJoin({
+    kind: snapshot.callKind,
+    roomId: snapshot.roomId,
+    threadRootEventId: snapshot.threadRootEventId,
+  });
+  if (
+    snapshot.signalTitle?.trim() ||
+    snapshot.signalSlug?.trim() ||
+    snapshot.roomTitle?.trim() ||
+    snapshot.threadRootEventId?.trim()
+  ) {
+    apply.callLaunchContextRef.current = {
+      signalTitle: snapshot.signalTitle?.trim() || undefined,
+      signalSlug: snapshot.signalSlug?.trim() || undefined,
+      roomTitle: snapshot.roomTitle?.trim() || undefined,
+      threadRootEventId: snapshot.threadRootEventId?.trim() || undefined,
+    };
+  }
+  apply.setDockMode(snapshot.dockMode);
+  if (apply.restoreTimerRef.current != null) {
+    window.clearTimeout(apply.restoreTimerRef.current);
+  }
+  apply.restoreTimerRef.current = window.setTimeout(() => {
+    apply.restoreInProgressRef.current = false;
+    apply.restoreTimerRef.current = null;
+  }, 15_000);
+}
+
 function useGlobalCallDockValue() {
+  const { isMatrixSyncLeader } = useMatrix();
   const [boundRoomId, setBoundRoomId] = React.useState<string | null>(null);
   const [boundSpaceSlug, setBoundSpaceSlug] = React.useState<string | null>(
     null,
@@ -150,6 +201,8 @@ function useGlobalCallDockValue() {
   const [dockModeHydrated, setDockModeHydrated] = React.useState(false);
   const restoreInProgressRef = React.useRef(false);
   const restoreTimerRef = React.useRef<number | null>(null);
+  const resumeAttemptAtRef = React.useRef<number | null>(null);
+  const wasMatrixSyncLeaderRef = React.useRef(isMatrixSyncLeader);
   const callLaunchContextRef = React.useRef<CallLaunchContext | null>(null);
   /** Room pinned for the active call — survives chat panel room/null transitions. */
   const callSessionRoomIdRef = React.useRef<string | null>(null);
@@ -297,41 +350,35 @@ function useGlobalCallDockValue() {
   }, [call.callState, call.recordingStatus]);
 
   React.useEffect(() => {
+    if (!isMatrixSyncLeader) return;
+    if (inSession || pendingJoin) return;
     const snapshot = readCallResumeSnapshot();
     if (!snapshot) return;
-    restoreInProgressRef.current = true;
-    setBoundRoomId(snapshot.roomId);
-    setBoundSpaceSlug(snapshot.spaceSlug);
-    setActiveRoomId(snapshot.roomId);
-    setActiveSpaceSlug(snapshot.spaceSlug);
-    setPinnedCallSpaceSlug(snapshot.spaceSlug);
-    setPendingJoin({
-      kind: snapshot.callKind,
-      roomId: snapshot.roomId,
-      threadRootEventId: snapshot.threadRootEventId,
+    if (resumeAttemptAtRef.current === snapshot.updatedAt) return;
+    resumeAttemptAtRef.current = snapshot.updatedAt;
+    applyCallResumeSnapshot(snapshot, {
+      setBoundRoomId,
+      setBoundSpaceSlug,
+      setActiveRoomId,
+      setActiveSpaceSlug,
+      setPinnedCallSpaceSlug,
+      setPendingJoin,
+      setDockMode,
+      callLaunchContextRef,
+      restoreInProgressRef,
+      restoreTimerRef,
     });
-    if (
-      snapshot.signalTitle?.trim() ||
-      snapshot.signalSlug?.trim() ||
-      snapshot.roomTitle?.trim() ||
-      snapshot.threadRootEventId?.trim()
-    ) {
-      callLaunchContextRef.current = {
-        signalTitle: snapshot.signalTitle?.trim() || undefined,
-        signalSlug: snapshot.signalSlug?.trim() || undefined,
-        roomTitle: snapshot.roomTitle?.trim() || undefined,
-        threadRootEventId: snapshot.threadRootEventId?.trim() || undefined,
-      };
+  }, [inSession, isMatrixSyncLeader, pendingJoin]);
+
+  React.useEffect(() => {
+    if (wasMatrixSyncLeaderRef.current && !isMatrixSyncLeader) {
+      resumeAttemptAtRef.current = null;
+      if (inSessionRef.current) {
+        void call.releaseLocalCallForTabTransfer();
+      }
     }
-    setDockMode(snapshot.dockMode);
-    if (restoreTimerRef.current != null) {
-      window.clearTimeout(restoreTimerRef.current);
-    }
-    restoreTimerRef.current = window.setTimeout(() => {
-      restoreInProgressRef.current = false;
-      restoreTimerRef.current = null;
-    }, 15_000);
-  }, []);
+    wasMatrixSyncLeaderRef.current = isMatrixSyncLeader;
+  }, [call.releaseLocalCallForTabTransfer, isMatrixSyncLeader]);
 
   React.useEffect(() => {
     if (restoreInProgressRef.current) return;
@@ -372,7 +419,7 @@ function useGlobalCallDockValue() {
   React.useEffect(() => {
     const callKind = pendingJoin?.kind ?? call.callKind;
     if (!activeRoomId || !callKind) {
-      if (call.callState === 'idle' && !pendingJoin) {
+      if (isMatrixSyncLeader && call.callState === 'idle' && !pendingJoin) {
         clearCallResumeSnapshot();
       }
       return;
@@ -398,6 +445,7 @@ function useGlobalCallDockValue() {
     call.callState,
     call.threadContext?.threadRootEventId,
     dockMode,
+    isMatrixSyncLeader,
     pendingJoin,
   ]);
 
@@ -495,13 +543,15 @@ function useGlobalCallDockValue() {
     [activeRoomId, boundAuthToken, call],
   );
 
-  const showFloatingDock = inSession || call.recordingStatus === 'uploading';
+  const showFloatingDock =
+    isMatrixSyncLeader && (inSession || call.recordingStatus === 'uploading');
   const holdsMatrixSyncForCall =
-    inSession ||
-    call.recordingStatus === 'uploading' ||
-    pendingJoin != null ||
-    restoreInProgressRef.current ||
-    call.isCallRecovering;
+    isMatrixSyncLeader &&
+    (inSession ||
+      call.recordingStatus === 'uploading' ||
+      pendingJoin != null ||
+      restoreInProgressRef.current ||
+      call.isCallRecovering);
 
   React.useEffect(() => {
     setGroupCallSessionActive(holdsMatrixSyncForCall);
