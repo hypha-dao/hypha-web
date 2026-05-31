@@ -264,20 +264,20 @@ function DockResizeHandle({
     handle === 'bottom-right';
   const positionClass =
     handle === 'top-left'
-      ? 'left-0 top-0 z-[4] h-4 w-4 cursor-nwse-resize'
+      ? 'left-0 top-0 z-[60] h-5 w-5 cursor-nwse-resize'
       : handle === 'top-right'
-      ? 'right-0 top-0 z-[4] h-4 w-4 cursor-nesw-resize'
+      ? 'right-0 top-0 z-[60] h-5 w-5 cursor-nesw-resize'
       : handle === 'bottom-left'
-      ? 'left-0 bottom-0 z-[4] h-4 w-4 cursor-nesw-resize'
+      ? 'left-0 bottom-0 z-[60] h-5 w-5 cursor-nesw-resize'
       : handle === 'bottom-right'
-      ? 'right-0 bottom-0 z-[4] h-4 w-4 cursor-nwse-resize'
+      ? 'right-0 bottom-0 z-[60] h-5 w-5 cursor-nwse-resize'
       : handle === 'top'
-      ? 'left-4 right-4 top-0 z-[3] h-2 cursor-ns-resize'
+      ? 'left-5 right-5 top-0 z-[55] h-2.5 cursor-ns-resize'
       : handle === 'bottom'
-      ? 'left-4 right-4 bottom-0 z-[3] h-2 cursor-ns-resize'
+      ? 'left-5 right-5 bottom-0 z-[55] h-2.5 cursor-ns-resize'
       : handle === 'left'
-      ? 'bottom-4 left-0 top-4 z-[3] w-2 cursor-ew-resize'
-      : 'bottom-4 right-0 top-4 z-[3] w-2 cursor-ew-resize';
+      ? 'bottom-5 left-0 top-5 z-[55] w-2.5 cursor-ew-resize'
+      : 'bottom-5 right-0 top-5 z-[55] w-2.5 cursor-ew-resize';
 
   return (
     <div
@@ -698,7 +698,11 @@ export function GlobalCallDockOverlay() {
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (dockMode === 'fullscreen') return;
       const target = e.target as HTMLElement;
-      if (target.closest('button,[data-no-dock-drag]')) return;
+      if (
+        target.closest('button,[data-no-dock-drag],[data-resize-handle]')
+      ) {
+        return;
+      }
       dragRef.current = {
         pointerId: e.pointerId,
         startX: e.clientX,
@@ -716,6 +720,7 @@ export function GlobalCallDockOverlay() {
       if (dockMode === 'fullscreen') return;
       e.preventDefault();
       e.stopPropagation();
+      e.currentTarget.setPointerCapture(e.pointerId);
       resizeRef.current = {
         pointerId: e.pointerId,
         handle,
@@ -939,50 +944,16 @@ export function GlobalCallDockOverlay() {
         inDocumentPip
           ? 'relative flex h-full w-full min-h-0 min-w-0 select-none flex-col overflow-hidden rounded-lg border border-border/60 bg-background/95 shadow-lg'
           : cn(
-              'fixed z-[130] flex select-none flex-col overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-2xl',
+              'fixed z-[130] flex select-none flex-col rounded-xl border border-border/60 bg-background/95 shadow-2xl',
               isMobile ? '' : 'backdrop-blur-sm',
               isMobile || modeIsFullscreen
-                ? 'min-h-0 min-w-0'
-                : 'min-h-[320px] min-w-[480px]',
+                ? 'min-h-0 min-w-0 overflow-hidden'
+                : 'min-h-[320px] min-w-[480px] overflow-visible',
             ),
         modeIsFullscreen ? 'rounded-2xl' : '',
       )}
       style={{ ...spaceAccentStyles, ...containerStyle }}
     >
-      {!modeIsFullscreen && !inDocumentPip && !isMobile && (
-        <>
-          <DockResizeHandle
-            handle="top-left"
-            ariaLabel={t('resizeTopLeftLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="top"
-            ariaLabel={t('resizeTopLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="top-right"
-            ariaLabel={t('resizeTopRightLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="right"
-            ariaLabel={t('resizeRightLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="bottom"
-            ariaLabel={t('resizeBottomLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="left"
-            ariaLabel={t('resizeLeftLabel')}
-            onResizeStart={onResizeStart}
-          />
-        </>
-      )}
       <div className="relative z-[5] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
         <div
           className={cn(
@@ -1126,9 +1097,7 @@ export function GlobalCallDockOverlay() {
           ref={splitContainerRef}
           className={cn(
             'pointer-events-none min-h-0 min-w-0 overflow-hidden',
-            inDocumentPip
-              ? 'max-h-[72px] shrink-0'
-              : 'flex min-h-0 flex-1 flex-col',
+            'flex min-h-0 flex-1 flex-col',
           )}
         >
           {captureUploadFinalizing ? (
@@ -1174,7 +1143,7 @@ export function GlobalCallDockOverlay() {
         <div
           className={cn(
             'pointer-events-auto relative isolate z-30 shrink-0 touch-manipulation overflow-visible border-t border-border/50 bg-muted/35',
-            dockCompact ? 'px-1 py-1' : 'px-2 py-2',
+            dockCompact ? 'px-1 py-0.5' : 'px-2 py-2',
           )}
         >
           {captureUploadFinalizing ? (
@@ -1266,7 +1235,7 @@ export function GlobalCallDockOverlay() {
                   onLeave={() => {
                     void leave();
                   }}
-                  density={dockCompact ? 'compact' : 'default'}
+                  density={dockCompact ? 'pip' : 'default'}
                   variant={dockControlsVariant}
                   inBannerLayout={dockControlsLayout}
                 />
@@ -1275,6 +1244,51 @@ export function GlobalCallDockOverlay() {
           )}
         </div>
       </div>
+
+      {!modeIsFullscreen && !inDocumentPip && !isMobile && (
+        <>
+          <DockResizeHandle
+            handle="top-left"
+            ariaLabel={t('resizeTopLeftLabel')}
+            onResizeStart={onResizeStart}
+          />
+          <DockResizeHandle
+            handle="top"
+            ariaLabel={t('resizeTopLabel')}
+            onResizeStart={onResizeStart}
+          />
+          <DockResizeHandle
+            handle="top-right"
+            ariaLabel={t('resizeTopRightLabel')}
+            onResizeStart={onResizeStart}
+          />
+          <DockResizeHandle
+            handle="right"
+            ariaLabel={t('resizeRightLabel')}
+            onResizeStart={onResizeStart}
+          />
+          <DockResizeHandle
+            handle="bottom"
+            ariaLabel={t('resizeBottomLabel')}
+            onResizeStart={onResizeStart}
+          />
+          <DockResizeHandle
+            handle="bottom-left"
+            ariaLabel={t('resizeBottomLeftLabel')}
+            onResizeStart={onResizeStart}
+          />
+          <DockResizeHandle
+            handle="bottom-right"
+            ariaLabel={t('resizeBottomRightLabel')}
+            onResizeStart={onResizeStart}
+          />
+          <DockResizeHandle
+            handle="left"
+            ariaLabel={t('resizeLeftLabel')}
+            onResizeStart={onResizeStart}
+          />
+        </>
+      )}
 
       <HumanChatPanelScreenshareTakeoverDialog
         incoming={screenshareTakeoverIncoming}

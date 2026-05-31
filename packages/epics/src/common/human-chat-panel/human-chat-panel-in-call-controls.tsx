@@ -73,7 +73,7 @@ type HumanChatPanelInCallControlsProps = {
   /** Compact row alignment for dock/banner usage. */
   inBannerLayout?: 'inline' | 'balanced' | 'centered';
   /** Tighter controls for Document Picture-in-Picture floating window. */
-  density?: 'default' | 'compact';
+  density?: 'default' | 'compact' | 'pip';
   /** Leave-only mode for in-chat convenience controls. */
   controlsMode?: 'full' | 'leave_only';
 };
@@ -115,7 +115,8 @@ export function HumanChatPanelInCallControls({
   const isMobile = useIsMobile() ?? false;
   const showAdvancedCallControls = !isMobile;
   const { controlsDisabled } = getCallControlsPhase(callState);
-  const isCompact = density === 'compact';
+  const isCompact = density === 'compact' || density === 'pip';
+  const isPipDensity = density === 'pip';
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
   const audioMenuRef = useRef<HTMLDivElement | null>(null);
   const [isCaptureMenuOpen, setIsCaptureMenuOpen] = useState(false);
@@ -132,8 +133,9 @@ export function HumanChatPanelInCallControls({
    * `text-foreground` on near-black / green where Lucide would read as black).
    */
   const fullViewIcon = 'h-5 w-5 text-white stroke-white';
-  const compactBtn =
-    'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+  const compactBtn = isPipDensity
+    ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
+    : 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const baseBtn = isFull
     ? 'h-10 min-w-10 sm:h-11 sm:min-w-11 inline-flex items-center justify-center rounded-full border border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
     : isCompact
@@ -146,6 +148,8 @@ export function HumanChatPanelInCallControls({
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const leaveIcon = isFull
     ? fullViewIcon
+    : isPipDensity
+    ? 'h-3 w-3'
     : isCompact
     ? 'h-3.5 w-3.5'
     : 'h-4 w-4';
@@ -155,6 +159,8 @@ export function HumanChatPanelInCallControls({
    */
   const leaveBtn = isFull
     ? 'inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center rounded-full border border-red-800/25 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/50 disabled:opacity-50'
+    : isPipDensity
+    ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
     : isCompact
     ? 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40';
@@ -180,7 +186,13 @@ export function HumanChatPanelInCallControls({
         'border-destructive/30 bg-destructive/12 text-destructive hover:bg-destructive/20',
       )
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20';
-  const icon = isFull ? fullViewIcon : isCompact ? 'h-3.5 w-3.5' : 'h-4 w-4';
+  const icon = isFull
+    ? fullViewIcon
+    : isPipDensity
+    ? 'h-3 w-3'
+    : isCompact
+    ? 'h-3.5 w-3.5'
+    : 'h-4 w-4';
   const audioSettingsBtn = isFull
     ? 'inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center gap-1 rounded-full border border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
     : isCompact
