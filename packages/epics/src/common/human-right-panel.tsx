@@ -1169,9 +1169,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     dismissRemoteMediaStallBanner: dismissSpaceCallRemoteMediaStall,
     showFloatingDock,
   } = useGlobalCallDock();
-  const showFloatingDockRef = useRef(showFloatingDock);
-  showFloatingDockRef.current = showFloatingDock;
-
   useEffect(() => {
     const activeRoomId = roomId?.trim() || null;
     const activeSpaceSlug = spaceSlug?.trim() || null;
@@ -1181,16 +1178,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       bindRoomContext(activeRoomId, activeSpaceSlug, activeAuthToken);
       return;
     }
-    if (!showFloatingDockRef.current) {
+    if (!showFloatingDock) {
       bindRoomContext(null, null, null);
     }
-
-    return () => {
-      if (!showFloatingDockRef.current) {
-        bindRoomContext(null, null, null);
-      }
-    };
-  }, [authToken, bindRoomContext, roomId, spaceSlug]);
+  }, [authToken, bindRoomContext, roomId, showFloatingDock, spaceSlug]);
 
   const callUiEnabled = useMemo(
     () =>
@@ -1214,9 +1205,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return sessionRoomId === chatRoomId;
   }, [callSessionRoomId, roomId]);
 
-  /** Sidebar call chrome only for the chat room that owns the active session. */
-  const showSidebarCallUi =
-    callUiEnabled && callAppliesToCurrentChatRoom && !showFloatingDock;
+  /** Banner, join strip, and toolbar for the chat room that owns the active session. */
+  const showSidebarCallChrome =
+    callUiEnabled && callAppliesToCurrentChatRoom;
+  /** In-chat video tiles stay in the floating dock once a session is active. */
+  const showSidebarCallVideo =
+    showSidebarCallChrome && !showFloatingDock;
 
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
   const showAuthedUi = !isAuthLoading && isAuthenticated;
@@ -1270,8 +1264,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const spaceCallShowJoinChime = useMemo(
-    () => showSidebarCallUi && spaceCallShowJoinStrip && !inSpaceCall,
-    [showSidebarCallUi, spaceCallShowJoinStrip, inSpaceCall],
+    () => showSidebarCallChrome && spaceCallShowJoinStrip && !inSpaceCall,
+    [showSidebarCallChrome, spaceCallShowJoinStrip, inSpaceCall],
   );
 
   const joinChimeNotification = useMemo(
@@ -3664,7 +3658,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionTabBadgeCount={bellMentionCount}
           mentionTabBadgeCapped={bellMentionCapped}
           tabRowEnd={
-            showSidebarCallUi ? (
+            showSidebarCallChrome ? (
               <HumanChatPanelCallToolbar
                 callState={spaceCallState}
                 callKind={spaceCallKind}
@@ -3691,7 +3685,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {showSidebarCallUi && !inSpaceCall && spaceCallShowJoinStrip && (
+        {showSidebarCallChrome && !inSpaceCall && spaceCallShowJoinStrip && (
           <HumanChatPanelCallJoinStrip
             deviceCount={spaceCallRoomGroupDeviceCount}
             disabled={!callUiEnabled}
@@ -3714,7 +3708,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             }}
           />
         )}
-        {showSidebarCallUi &&
+        {showSidebarCallChrome &&
           (inSpaceCall ||
             spaceCallState === 'error' ||
             spaceCallState === 'disconnecting') && (
@@ -3762,7 +3756,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onDismissCallError={dismissSpaceCallError}
             />
           )}
-        {showSidebarCallUi ? (
+        {showSidebarCallChrome && !showFloatingDock ? (
           <HumanChatPanelScreenshareTakeoverDialog
             incoming={spaceCallScreenshareTakeoverIncoming}
             pending={Boolean(spaceCallScreenshareTakeoverPendingId)}
@@ -3819,7 +3813,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 role="tabpanel"
                 id="chat-tabpanel-chat"
               >
-                {showSidebarCallUi && (
+                {showSidebarCallVideo && (
                   <div
                     className={
                       inSpaceCall

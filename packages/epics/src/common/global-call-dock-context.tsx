@@ -26,6 +26,9 @@ type CallResumeSnapshot = {
   threadRootEventId?: string;
   dockMode: GlobalCallDockMode;
   updatedAt: number;
+  signalTitle?: string;
+  signalSlug?: string;
+  roomTitle?: string;
 };
 
 function readDockModeFromStorage(): GlobalCallDockMode {
@@ -99,6 +102,9 @@ function readCallResumeSnapshot(): CallResumeSnapshot | null {
       threadRootEventId: parsed.threadRootEventId?.trim() || undefined,
       dockMode: parsed.dockMode,
       updatedAt: parsed.updatedAt,
+      signalTitle: parsed.signalTitle?.trim() || undefined,
+      signalSlug: parsed.signalSlug?.trim() || undefined,
+      roomTitle: parsed.roomTitle?.trim() || undefined,
     };
   } catch {
     clearCallResumeSnapshot();
@@ -304,6 +310,19 @@ function useGlobalCallDockValue() {
       roomId: snapshot.roomId,
       threadRootEventId: snapshot.threadRootEventId,
     });
+    if (
+      snapshot.signalTitle?.trim() ||
+      snapshot.signalSlug?.trim() ||
+      snapshot.roomTitle?.trim() ||
+      snapshot.threadRootEventId?.trim()
+    ) {
+      callLaunchContextRef.current = {
+        signalTitle: snapshot.signalTitle?.trim() || undefined,
+        signalSlug: snapshot.signalSlug?.trim() || undefined,
+        roomTitle: snapshot.roomTitle?.trim() || undefined,
+        threadRootEventId: snapshot.threadRootEventId?.trim() || undefined,
+      };
+    }
     setDockMode(snapshot.dockMode);
     if (restoreTimerRef.current != null) {
       window.clearTimeout(restoreTimerRef.current);
@@ -358,6 +377,7 @@ function useGlobalCallDockValue() {
       }
       return;
     }
+    const launchContext = callLaunchContextRef.current;
     persistCallResumeSnapshot({
       version: 1,
       roomId: activeRoomId,
@@ -367,6 +387,9 @@ function useGlobalCallDockValue() {
         pendingJoin?.threadRootEventId ?? call.threadContext?.threadRootEventId,
       dockMode,
       updatedAt: Date.now(),
+      signalTitle: launchContext?.signalTitle?.trim() || undefined,
+      signalSlug: launchContext?.signalSlug?.trim() || undefined,
+      roomTitle: launchContext?.roomTitle?.trim() || undefined,
     });
   }, [
     activeRoomId,
