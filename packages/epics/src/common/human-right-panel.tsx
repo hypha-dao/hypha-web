@@ -1830,6 +1830,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         } else if (result.addedEvents > 0) {
           setAutoLoadOlderPaused(false);
         }
+        return result;
       } catch (err) {
         console.warn(
           '[HumanRightPanel] Failed to load older chat history:',
@@ -1838,6 +1839,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (source === 'auto') {
           setAutoLoadOlderPaused(true);
         }
+        return undefined;
       } finally {
         setLoadingOlderMessages(false);
       }

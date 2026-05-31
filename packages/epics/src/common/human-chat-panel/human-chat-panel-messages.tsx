@@ -163,7 +163,10 @@ type HumanChatPanelMessagesProps = {
   loadingOlderMessages?: boolean;
   /** When false, the top sentinel will not auto-trigger history loads (follower tabs). */
   enableAutoLoadOlderMessages?: boolean;
-  onLoadOlderMessages?: (source?: 'auto' | 'manual') => void | Promise<void>;
+  onLoadOlderMessages?: (source?: 'auto' | 'manual') => void | Promise<void | {
+    addedEvents: number;
+    hasMoreOlder: boolean;
+  }>;
 };
 
 export function HumanChatPanelMessages({
@@ -212,6 +215,8 @@ export function HumanChatPanelMessages({
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const loadOlderInFlightRef = useRef(false);
+  /** Blocks auto-load after a zero-progress attempt; manual button clears this. */
+  const lastAutoLoadAddedEventsRef = useRef<number | undefined>(undefined);
   const scrollPreserveRef = useRef<{ height: number; top: number } | null>(
     null,
   );
@@ -286,6 +291,7 @@ export function HumanChatPanelMessages({
       prevRoomIdRef.current = roomId;
       initialUnreadScrollDoneRef.current = false;
       scrollPreserveRef.current = null;
+      lastAutoLoadAddedEventsRef.current = undefined;
     }
   }, [roomId]);
 
@@ -326,10 +332,28 @@ export function HumanChatPanelMessages({
       (entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting || loadOlderInFlightRef.current) continue;
+          if (lastAutoLoadAddedEventsRef.current === 0) continue;
           loadOlderInFlightRef.current = true;
-          void Promise.resolve(onLoadOlderMessages('auto')).finally(() => {
-            loadOlderInFlightRef.current = false;
-          });
+          void Promise.resolve(onLoadOlderMessages('auto'))
+            .then((result) => {
+              if (
+                !result ||
+                typeof result !== 'object' ||
+                !('addedEvents' in result)
+              ) {
+                return;
+              }
+              if (result.addedEvents === 0 && result.hasMoreOlder) {
+                lastAutoLoadAddedEventsRef.current = 0;
+                return;
+              }
+              if (result.addedEvents > 0) {
+                lastAutoLoadAddedEventsRef.current = result.addedEvents;
+              }
+            })
+            .finally(() => {
+              loadOlderInFlightRef.current = false;
+            });
         }
       },
       { root, threshold: 0.1 },
@@ -536,6 +560,7 @@ export function HumanChatPanelMessages({
                     size="sm"
                     className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
                     onClick={() => {
+                      lastAutoLoadAddedEventsRef.current = undefined;
                       void onLoadOlderMessages?.('manual');
                     }}
                   >
