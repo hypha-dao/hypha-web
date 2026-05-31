@@ -1,6 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MatrixTabLeaderCoordinator } from '../client/matrix-tab-leader';
+import {
+  resetGroupCallSessionRegistryForTests,
+  setGroupCallSessionActive,
+} from '../client/hooks/active-group-call-registry';
+
+const LEADER_STALE_MS = 6_000;
+const LEADER_STALE_DURING_CALL_MS = 45_000;
+
+function stopLeaderHeartbeats(coordinator: MatrixTabLeaderCoordinator): void {
+  (coordinator as unknown as { stopHeartbeat: () => void }).stopHeartbeat();
+}
 
 class MockBroadcastChannel {
   static instances: MockBroadcastChannel[] = [];
@@ -34,6 +45,7 @@ describe('MatrixTabLeaderCoordinator', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+    resetGroupCallSessionRegistryForTests();
   });
 
   it('elects a single leader across tabs', () => {
@@ -100,9 +112,33 @@ describe('MatrixTabLeaderCoordinator', () => {
     vi.advanceTimersByTime(1_000);
     expect(leaderA.getSnapshot().isSyncLeader).toBe(true);
 
-    vi.advanceTimersByTime(8_000);
+    stopLeaderHeartbeats(leaderA);
+    vi.advanceTimersByTime(LEADER_STALE_MS + 2_000);
+
     expect(leaderA.getSnapshot().isSyncLeader).toBe(true);
     expect(leaderB.getSnapshot().isSyncLeader).toBe(false);
+
+    leaderA.dispose();
+    leaderB.dispose();
+  });
+
+  it('extends stale threshold while a remote group call hold is active', () => {
+    const leaderA = new MatrixTabLeaderCoordinator();
+    const leaderB = new MatrixTabLeaderCoordinator();
+    vi.advanceTimersByTime(1_000);
+    expect(leaderA.getSnapshot().isSyncLeader).toBe(true);
+
+    stopLeaderHeartbeats(leaderA);
+    setGroupCallSessionActive(true);
+
+    vi.advanceTimersByTime(LEADER_STALE_MS + 2_000);
+    expect(leaderA.getSnapshot().isSyncLeader).toBe(true);
+    expect(leaderB.getSnapshot().isSyncLeader).toBe(false);
+
+    setGroupCallSessionActive(false);
+    vi.advanceTimersByTime(LEADER_STALE_DURING_CALL_MS + 2_000);
+
+    expect(leaderB.getSnapshot().isSyncLeader).toBe(true);
 
     leaderA.dispose();
     leaderB.dispose();

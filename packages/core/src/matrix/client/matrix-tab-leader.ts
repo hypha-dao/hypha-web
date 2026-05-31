@@ -167,6 +167,14 @@ export class MatrixTabLeaderCoordinator {
     this.evaluateLeadership({ force: false });
   };
 
+  /** Re-broadcast leadership while blocking stale follower claims (e.g. during a call). */
+  private reassertLeadershipHold(): void {
+    const at = Date.now();
+    this.lastLeaderSignalAt = at;
+    this.leaderTabId = this.tabId;
+    this.broadcast({ type: 'claim', tabId: this.tabId, at, force: true });
+  }
+
   /** Broadcast a fresh leader signal (resists background timer throttling on the call tab). */
   private reassertLeadershipSignal(): void {
     const at = Date.now();
@@ -200,7 +208,7 @@ export class MatrixTabLeaderCoordinator {
           return;
         }
         if (this.holdLeadershipWhile()) {
-          this.reassertLeadershipSignal();
+          this.reassertLeadershipHold();
           return;
         }
         if (message.tabId !== this.tabId && remoteWins) {
@@ -215,6 +223,10 @@ export class MatrixTabLeaderCoordinator {
         message.tabId !== this.tabId &&
         remoteWins
       ) {
+        if (this.holdLeadershipWhile()) {
+          this.reassertLeadershipHold();
+          return;
+        }
         this.relinquishLeadership();
         return;
       }
