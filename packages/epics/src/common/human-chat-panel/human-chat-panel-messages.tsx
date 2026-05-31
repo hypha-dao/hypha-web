@@ -161,7 +161,9 @@ type HumanChatPanelMessagesProps = {
   onScrollTargetNotFound?: (eventId: string) => void;
   hasMoreOlderMessages?: boolean;
   loadingOlderMessages?: boolean;
-  onLoadOlderMessages?: () => void | Promise<void>;
+  /** When false, the top sentinel will not auto-trigger history loads (follower tabs). */
+  enableAutoLoadOlderMessages?: boolean;
+  onLoadOlderMessages?: (source?: 'auto' | 'manual') => void | Promise<void>;
 };
 
 export function HumanChatPanelMessages({
@@ -188,6 +190,7 @@ export function HumanChatPanelMessages({
   onScrollTargetNotFound,
   hasMoreOlderMessages = false,
   loadingOlderMessages = false,
+  enableAutoLoadOlderMessages = true,
   onLoadOlderMessages,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
@@ -312,6 +315,7 @@ export function HumanChatPanelMessages({
       !root ||
       !sentinel ||
       !onLoadOlderMessages ||
+      !enableAutoLoadOlderMessages ||
       !hasMoreOlderMessages ||
       loadingOlderMessages
     ) {
@@ -323,7 +327,7 @@ export function HumanChatPanelMessages({
         for (const entry of entries) {
           if (!entry.isIntersecting || loadOlderInFlightRef.current) continue;
           loadOlderInFlightRef.current = true;
-          void Promise.resolve(onLoadOlderMessages()).finally(() => {
+          void Promise.resolve(onLoadOlderMessages('auto')).finally(() => {
             loadOlderInFlightRef.current = false;
           });
         }
@@ -333,6 +337,7 @@ export function HumanChatPanelMessages({
     io.observe(sentinel);
     return () => io.disconnect();
   }, [
+    enableAutoLoadOlderMessages,
     hasMoreOlderMessages,
     loadingOlderMessages,
     onLoadOlderMessages,
@@ -531,7 +536,7 @@ export function HumanChatPanelMessages({
                     size="sm"
                     className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
                     onClick={() => {
-                      void onLoadOlderMessages?.();
+                      void onLoadOlderMessages?.('manual');
                     }}
                   >
                     {t('loadOlderMessages')}

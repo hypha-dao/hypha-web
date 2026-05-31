@@ -419,6 +419,9 @@ function useGlobalCallDockValue() {
   }, [call.callState]);
 
   React.useEffect(() => {
+    if (restoreInProgressRef.current) {
+      return;
+    }
     const callKind = pendingJoin?.kind ?? call.callKind;
     if (!activeRoomId || !callKind) {
       if (isMatrixSyncLeader && call.callState === 'idle' && !pendingJoin) {

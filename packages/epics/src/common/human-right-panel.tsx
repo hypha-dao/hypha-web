@@ -1033,12 +1033,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [roomId, setRoomId] = useState<string | null>(null);
 
   useEffect(() => {
-    setMentionDisplayOverride({});
-    setHasMoreOlderMessages(false);
-    setLoadingOlderMessages(false);
-  }, [roomId]);
-
-  useEffect(() => {
     if (mode !== 'coherence') {
       setSignalTeamPanelOpen(false);
     }
@@ -1047,6 +1041,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [isJoining, setIsJoining] = useState(false);
   const [hasMoreOlderMessages, setHasMoreOlderMessages] = useState(false);
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
+  const [autoLoadOlderPaused, setAutoLoadOlderPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState<string | null>(null);
   const [composerError, setComposerError] = useState<string | null>(null);
@@ -1064,6 +1059,30 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     uploadedCount?: number;
   }>(null);
   const joinedRef = useRef<string | null>(null);
+  const wasMatrixSyncLeaderRef = useRef(isMatrixSyncLeader);
+
+  useEffect(() => {
+    setMentionDisplayOverride({});
+    setHasMoreOlderMessages(false);
+    setLoadingOlderMessages(false);
+    setAutoLoadOlderPaused(false);
+  }, [roomId]);
+
+  useEffect(() => {
+    const wasLeader = wasMatrixSyncLeaderRef.current;
+    if (wasLeader && !isMatrixSyncLeader) {
+      setHasMoreOlderMessages(false);
+      setLoadingOlderMessages(false);
+      setAutoLoadOlderPaused(false);
+    }
+    if (!wasLeader && isMatrixSyncLeader) {
+      joinedRef.current = null;
+      setHasMoreOlderMessages(false);
+      setLoadingOlderMessages(false);
+      setAutoLoadOlderPaused(false);
+    }
+    wasMatrixSyncLeaderRef.current = isMatrixSyncLeader;
+  }, [isMatrixSyncLeader]);
   const [unreadBump, setUnreadBump] = useState(0);
   const [aggregateMentionBump, setAggregateMentionBump] = useState(0);
   const lastAutoMarkReadAtRef = useRef(0);
@@ -1783,23 +1802,54 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     );
   }, []);
 
-  const handleLoadOlderMessages = useCallback(async () => {
-    const targetRoomId = roomId?.trim();
-    if (!targetRoomId || loadingOlderMessages || !hasMoreOlderMessages) return;
-    setLoadingOlderMessages(true);
-    try {
-      const result = await matrixRef.current.loadRoomHistory(targetRoomId, {
-        force: true,
-        maxBatches: 5,
-      });
-      syncRoomMessages(targetRoomId);
-      setHasMoreOlderMessages(result.hasMoreOlder);
-    } catch (err) {
-      console.warn('[HumanRightPanel] Failed to load older chat history:', err);
-    } finally {
-      setLoadingOlderMessages(false);
-    }
-  }, [hasMoreOlderMessages, loadingOlderMessages, roomId, syncRoomMessages]);
+  const handleLoadOlderMessages = useCallback(
+    async (source: 'auto' | 'manual' = 'manual') => {
+      const targetRoomId = roomId?.trim();
+      if (
+        !targetRoomId ||
+        !isMatrixSyncLeader ||
+        loadingOlderMessages ||
+        !hasMoreOlderMessages
+      ) {
+        return;
+      }
+      setLoadingOlderMessages(true);
+      try {
+        const result = await matrixRef.current.loadRoomHistory(targetRoomId, {
+          force: true,
+          maxBatches: 5,
+        });
+        syncRoomMessages(targetRoomId);
+        setHasMoreOlderMessages(result.hasMoreOlder);
+        if (
+          source === 'auto' &&
+          result.addedEvents === 0 &&
+          result.hasMoreOlder
+        ) {
+          setAutoLoadOlderPaused(true);
+        } else if (result.addedEvents > 0) {
+          setAutoLoadOlderPaused(false);
+        }
+      } catch (err) {
+        console.warn(
+          '[HumanRightPanel] Failed to load older chat history:',
+          err,
+        );
+        if (source === 'auto') {
+          setAutoLoadOlderPaused(true);
+        }
+      } finally {
+        setLoadingOlderMessages(false);
+      }
+    },
+    [
+      hasMoreOlderMessages,
+      isMatrixSyncLeader,
+      loadingOlderMessages,
+      roomId,
+      syncRoomMessages,
+    ],
+  );
 
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
   const mentionPickerEnabled =
@@ -4166,6 +4216,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     onScrollTargetNotFound={handleScrollTargetNotFound}
                     hasMoreOlderMessages={hasMoreOlderMessages}
                     loadingOlderMessages={loadingOlderMessages}
+                    enableAutoLoadOlderMessages={
+                      isMatrixSyncLeader &&
+                      connectionStatus === 'connected' &&
+                      !autoLoadOlderPaused
+                    }
                     onLoadOlderMessages={handleLoadOlderMessages}
                   />
                 )}

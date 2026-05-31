@@ -601,6 +601,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
   const initializeMatrixClient = React.useCallback(
     async (matrixToken: MatrixTokenData) => {
+      roomHistoryLoadRef.current.clear();
+      roomHistoryExhaustedRef.current.clear();
       if (!matrixToken) {
         return;
       }
@@ -703,6 +705,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   }, [isSyncLeader]);
 
   const recycleMatrixClient = React.useCallback(() => {
+    roomHistoryLoadRef.current.clear();
+    roomHistoryExhaustedRef.current.clear();
     const existingClient = clientRef.current;
     if (!existingClient) {
       return;
@@ -1640,7 +1644,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('Room not found');
       }
 
-      if (!options?.force && roomHistoryExhaustedRef.current.has(roomId)) {
+      if (options?.force) {
+        roomHistoryExhaustedRef.current.delete(roomId);
+      } else if (roomHistoryExhaustedRef.current.has(roomId)) {
         return { hasMoreOlder: false, addedEvents: 0 };
       }
 
@@ -1702,6 +1708,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
         if (!hasMoreOlder) {
           roomHistoryExhaustedRef.current.add(roomId);
+        } else {
+          roomHistoryExhaustedRef.current.delete(roomId);
         }
 
         return { hasMoreOlder, addedEvents };
