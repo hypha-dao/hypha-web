@@ -296,6 +296,31 @@ async function recoverLocalCameraFeed(gc: MatrixSdk.GroupCall): Promise<void> {
   await waitForLiveLocalVideoTrack(gc, 400);
 }
 
+/** Stop local A/V publish without leaving the room GroupCall (tab transfer). */
+async function stopGroupCallLocalPublishing(
+  gc: MatrixSdk.GroupCall,
+): Promise<void> {
+  const steps: Array<() => void | Promise<void>> = [
+    () => gc.setScreensharingEnabled(false),
+    () => gc.setMicrophoneMuted(true),
+    () => gc.setLocalVideoMuted(true),
+    () =>
+      (gc as MatrixSdk.GroupCall & { terminate?: () => void }).terminate?.(),
+  ];
+  for (const step of steps) {
+    try {
+      await Promise.resolve(step());
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(
+          '[hypha.group_call] stopGroupCallLocalPublishing step rejected',
+          err,
+        );
+      }
+    }
+  }
+}
+
 function getLiveLocalAudioTrack(
   gc: MatrixSdk.GroupCall,
 ): MediaStreamTrack | null {
@@ -1187,6 +1212,8 @@ export function useSpaceGroupCall(
               leaveInFlightRef.current = null;
             }
           });
+        } else {
+          void stopGroupCallLocalPublishing(gc);
         }
         groupCallRef.current = null;
       }
@@ -2128,6 +2155,10 @@ export function useSpaceGroupCall(
     if (callState === 'idle' || callState === 'disconnecting') return;
     setCallState('disconnecting');
     abortInFlightJoin(joinEpochRef, isJoiningRef);
+    const gc = groupCallRef.current;
+    if (gc) {
+      await stopGroupCallLocalPublishing(gc);
+    }
     runCleanup({ skipGroupCallLeave: true });
     setCallState('idle');
     setErrorCode(null);
