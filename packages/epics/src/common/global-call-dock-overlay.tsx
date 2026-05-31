@@ -698,9 +698,7 @@ export function GlobalCallDockOverlay() {
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (dockMode === 'fullscreen') return;
       const target = e.target as HTMLElement;
-      if (
-        target.closest('button,[data-no-dock-drag],[data-resize-handle]')
-      ) {
+      if (target.closest('button,[data-no-dock-drag],[data-resize-handle]')) {
         return;
       }
       dragRef.current = {
