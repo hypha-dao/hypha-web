@@ -67,6 +67,7 @@ import { SpaceAccessDenied } from '../spaces/components/space-access-denied';
 
 import {
   HumanChatPanelHeader,
+  HumanChatPanelLoader,
   HumanChatPanelMessages,
   HumanChatPanelChatBar,
   HumanChatPanelTabs,
@@ -3785,9 +3786,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         className="flex min-h-0 flex-col overflow-hidden bg-background-2"
       >
         {isAuthLoading ? (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="text-sm text-muted-foreground">{t('loading')}</div>
-          </div>
+          <HumanChatPanelLoader />
         ) : showAuthPrompt ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <Empty>
@@ -4059,11 +4058,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   </div>
                 )}
                 {isJoining ? (
-                  <div className="flex flex-1 items-center justify-center">
-                    <div className="text-sm text-muted-foreground">
-                      {t('loading')}
-                    </div>
-                  </div>
+                  <HumanChatPanelLoader showPreview />
                 ) : (
                   <HumanChatPanelMessages
                     messages={mergedMessages}
