@@ -86,8 +86,7 @@ export function HumanChatPanelLoader({
   return (
     <div
       className={cn(
-        'flex min-h-0 flex-1 flex-col',
-        showPreview ? 'justify-end' : 'items-center justify-center',
+        'relative flex min-h-0 flex-1 flex-col items-center justify-center',
         className,
       )}
       role="status"
@@ -96,17 +95,13 @@ export function HumanChatPanelLoader({
       aria-label={message}
     >
       {showPreview ? (
-        <div className="flex w-full flex-1 flex-col justify-end gap-6 pb-8 pt-12">
-          <div className="pointer-events-none space-y-5 opacity-45">
-            <ChatLoaderSkeletonRow align="start" bubbleWidth={200} />
-            <ChatLoaderSkeletonRow align="end" bubbleWidth={152} />
-            <ChatLoaderSkeletonRow align="start" bubbleWidth={176} />
-          </div>
-          <LoaderIndicator label={message} />
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-center gap-5 px-4 opacity-45">
+          <ChatLoaderSkeletonRow align="start" bubbleWidth={200} />
+          <ChatLoaderSkeletonRow align="end" bubbleWidth={152} />
+          <ChatLoaderSkeletonRow align="start" bubbleWidth={176} />
         </div>
-      ) : (
-        <LoaderIndicator label={message} />
-      )}
+      ) : null}
+      <LoaderIndicator label={message} />
     </div>
   );
 }
