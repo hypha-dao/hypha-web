@@ -1,3 +1,4 @@
+import type { CallFeed } from 'matrix-js-sdk/lib/webrtc/callFeed';
 import { describe, expect, it } from 'vitest';
 import {
   hasWarmingRemoteShareFeed,
@@ -40,7 +41,7 @@ function mockFeed(args: {
     stream,
     userId: args.userId ?? (args.local ? '@me:hs' : '@remote:hs'),
     deviceId: 'dev',
-  };
+  } as CallFeed;
 }
 
 describe('resolveCallStageShareLayout', () => {
