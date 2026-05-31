@@ -300,7 +300,7 @@ async function recoverLocalCameraFeed(gc: MatrixSdk.GroupCall): Promise<void> {
 async function stopGroupCallLocalPublishing(
   gc: MatrixSdk.GroupCall,
 ): Promise<void> {
-  const steps: Array<() => void | Promise<void>> = [
+  const steps: Array<() => unknown> = [
     () => gc.setScreensharingEnabled(false),
     () => gc.setMicrophoneMuted(true),
     () => gc.setLocalVideoMuted(true),
