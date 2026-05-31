@@ -1034,6 +1034,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   useEffect(() => {
     setMentionDisplayOverride({});
+    setHasMoreOlderMessages(false);
+    setLoadingOlderMessages(false);
   }, [roomId]);
 
   useEffect(() => {
@@ -1043,6 +1045,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [mode]);
 
   const [isJoining, setIsJoining] = useState(false);
+  const [hasMoreOlderMessages, setHasMoreOlderMessages] = useState(false);
+  const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState<string | null>(null);
   const [composerError, setComposerError] = useState<string | null>(null);
@@ -1760,6 +1764,43 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [resolveMentionMemberLabel, t],
   );
 
+  const syncRoomMessages = useCallback((targetRoomId: string) => {
+    const existing = matrixRef.current.getRoomMessages(targetRoomId);
+    if (!existing) return;
+    setMessages(
+      existing.map((m) =>
+        toUIMessage(
+          m,
+          currentUserIdRef.current,
+          resolveMemberLabelRef.current,
+          currentUserAvatarUrlRef.current,
+          undefined,
+          targetRoomId,
+          matrixRef.current.client ?? null,
+          formatSignalTeamNoticeRef.current,
+        ),
+      ),
+    );
+  }, []);
+
+  const handleLoadOlderMessages = useCallback(async () => {
+    const targetRoomId = roomId?.trim();
+    if (!targetRoomId || loadingOlderMessages || !hasMoreOlderMessages) return;
+    setLoadingOlderMessages(true);
+    try {
+      const result = await matrixRef.current.loadRoomHistory(targetRoomId, {
+        force: true,
+        maxBatches: 5,
+      });
+      syncRoomMessages(targetRoomId);
+      setHasMoreOlderMessages(result.hasMoreOlder);
+    } catch (err) {
+      console.warn('[HumanRightPanel] Failed to load older chat history:', err);
+    } finally {
+      setLoadingOlderMessages(false);
+    }
+  }, [hasMoreOlderMessages, loadingOlderMessages, roomId, syncRoomMessages]);
+
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
   const mentionPickerEnabled =
     canInteractWithSignalThread && mentionCandidates.length > 0;
@@ -2261,8 +2302,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         joinedRef.current = spaceSlug;
         setRoomId(targetRoomId);
 
-        await loadRoomHistory(targetRoomId);
+        const historyResult = await loadRoomHistory(targetRoomId);
         if (cancelled) return;
+        setHasMoreOlderMessages(historyResult.hasMoreOlder);
         const existing = getRoomMessages(targetRoomId);
         if (existing && !cancelled) {
           setMessages(
@@ -2409,7 +2451,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         if (cancelled) return;
         setRoomId(targetRoomId);
-        await matrixRef.current.loadRoomHistory(targetRoomId);
+        let historyResult = await matrixRef.current.loadRoomHistory(
+          targetRoomId,
+        );
         if (cancelled) return;
 
         try {
@@ -2435,7 +2479,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               },
             });
             if (!cancelled) {
-              await matrixRef.current.loadRoomHistory(targetRoomId);
+              historyResult = await matrixRef.current.loadRoomHistory(
+                targetRoomId,
+                { force: true },
+              );
             }
           }
         } catch (seedError) {
@@ -2446,6 +2493,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         }
 
         if (cancelled) return;
+        setHasMoreOlderMessages(historyResult.hasMoreOlder);
         const existing = matrixRef.current.getRoomMessages(targetRoomId);
         if (existing) {
           setMessages(
@@ -2850,11 +2898,42 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, []);
 
   const handleScrollTargetNotFound = useCallback(
-    (_eventId: string) => {
+    async (eventId: string) => {
+      const targetRoomId = roomId?.trim();
+      if (!targetRoomId) {
+        setMentionNavigationNotice(t('mentionOpenFallbackMissingMessage'));
+        setScrollToEventId(null);
+        return;
+      }
+
+      let hasMore = hasMoreOlderMessages;
+      for (let attempt = 0; attempt < 12 && hasMore; attempt += 1) {
+        const result = await matrixRef.current.loadRoomHistory(targetRoomId, {
+          force: true,
+          maxBatches: 3,
+        });
+        syncRoomMessages(targetRoomId);
+        hasMore = result.hasMoreOlder;
+        setHasMoreOlderMessages(hasMore);
+
+        const escaped =
+          typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+            ? CSS.escape(eventId)
+            : eventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        if (
+          document.querySelector(`[data-matrix-event-id="${escaped}"]`) != null
+        ) {
+          setScrollToEventId(eventId);
+          return;
+        }
+
+        if (!hasMore) break;
+      }
+
       setMentionNavigationNotice(t('mentionOpenFallbackMissingMessage'));
       setScrollToEventId(null);
     },
-    [t],
+    [hasMoreOlderMessages, roomId, syncRoomMessages, t],
   );
 
   const mergedMessages = useMemo(() => {
@@ -4085,6 +4164,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     scrollTargetEventId={scrollToEventId}
                     onConsumedScrollTarget={handleConsumedScrollTarget}
                     onScrollTargetNotFound={handleScrollTargetNotFound}
+                    hasMoreOlderMessages={hasMoreOlderMessages}
+                    loadingOlderMessages={loadingOlderMessages}
+                    onLoadOlderMessages={handleLoadOlderMessages}
                   />
                 )}
               </div>
