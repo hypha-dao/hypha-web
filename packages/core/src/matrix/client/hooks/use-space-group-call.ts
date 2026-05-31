@@ -2265,6 +2265,7 @@ export function useSpaceGroupCall(
         localUserId,
       );
       scheduleFeedBatched();
+      window.setTimeout(scheduleFeedBatched, 350);
     },
     [
       client,
@@ -2648,7 +2649,11 @@ export function useSpaceGroupCall(
           screenshareTakeoverPendingIdRef.current = null;
           setScreenshareTakeoverPendingId(null);
           setScreenshareTakeoverDenied(false);
-          void enableLocalScreenshareDirect(gc);
+          void enableLocalScreenshareDirect(gc).then(() => {
+            scheduleFeedBatched();
+            window.setTimeout(scheduleFeedBatched, 350);
+            window.setTimeout(scheduleFeedBatched, 900);
+          });
         } else if (outcome === 'denied') {
           screenshareTakeoverPendingIdRef.current = null;
           setScreenshareTakeoverPendingId(null);
@@ -2672,6 +2677,7 @@ export function useSpaceGroupCall(
     feedVersion,
     isScreensharing,
     roomId,
+    scheduleFeedBatched,
   ]);
 
   const captureConsent = useMemo(() => {
