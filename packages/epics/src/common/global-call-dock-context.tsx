@@ -545,6 +545,14 @@ function useGlobalCallDockValue() {
     [activeRoomId, boundAuthToken, call],
   );
 
+  const leaveCall = React.useCallback(async () => {
+    clearCallResumeSnapshot();
+    resumeAttemptAtRef.current = null;
+    restoreInProgressRef.current = false;
+    setPendingJoin(null);
+    await call.leave();
+  }, [call]);
+
   const showFloatingDock =
     isMatrixSyncLeader && (inSession || call.recordingStatus === 'uploading');
   const holdsMatrixSyncForCall =
@@ -577,6 +585,7 @@ function useGlobalCallDockValue() {
     startAudioForRoom,
     startVideoForRoom,
     ...call,
+    leave: leaveCall,
   };
 }
 
