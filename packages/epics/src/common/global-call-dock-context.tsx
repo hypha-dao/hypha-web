@@ -373,6 +373,8 @@ function useGlobalCallDockValue() {
   React.useEffect(() => {
     if (wasMatrixSyncLeaderRef.current && !isMatrixSyncLeader) {
       resumeAttemptAtRef.current = null;
+      restoreInProgressRef.current = false;
+      setPendingJoin(null);
       if (inSessionRef.current) {
         void call.releaseLocalCallForTabTransfer();
       }
