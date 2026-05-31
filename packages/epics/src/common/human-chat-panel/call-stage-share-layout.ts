@@ -1,4 +1,4 @@
-import type { CallFeed } from '@hypha-platform/core/client';
+import type { CallFeed } from 'matrix-js-sdk/lib/webrtc/callFeed';
 
 export type CallStageShareLayoutState = {
   /** Remote share feeds with a live, unmuted video track — safe to render. */
@@ -19,7 +19,9 @@ export function isLiveUnmutedShareFeed(feed: CallFeed): boolean {
   if (!stream || feed.isVideoMuted()) return false;
   const liveVideoTrack = stream
     .getVideoTracks()
-    .find((track) => track.readyState === 'live' && !track.muted);
+    .find(
+      (track: MediaStreamTrack) => track.readyState === 'live' && !track.muted,
+    );
   return Boolean(liveVideoTrack);
 }
 
@@ -31,9 +33,10 @@ export function hasWarmingRemoteShareFeed(feed: CallFeed): boolean {
   if (feed.isLocal() || feed.isVideoMuted()) return false;
   const stream = feed.stream;
   if (!stream) return false;
-  return stream
-    .getVideoTracks()
-    .some((track) => track.readyState === 'live' || track.readyState === 'new');
+  return stream.getVideoTracks().some((track: MediaStreamTrack) => {
+    const state = track.readyState as string;
+    return state === 'live' || state === 'new';
+  });
 }
 
 export function resolveCallStageShareLayout(args: {
@@ -56,7 +59,8 @@ export function resolveCallStageShareLayout(args: {
     isVideoCall &&
     shareFeeds.length === 0 &&
     rawShareFeeds.some(
-      (feed) => hasWarmingRemoteShareFeed(feed) && !isLiveUnmutedShareFeed(feed),
+      (feed) =>
+        hasWarmingRemoteShareFeed(feed) && !isLiveUnmutedShareFeed(feed),
     );
 
   const presenterShareOnly = localShareActive && shareFeeds.length === 0;

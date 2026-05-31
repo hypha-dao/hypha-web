@@ -7,7 +7,7 @@ import {
 } from '../call-stage-share-layout';
 
 type MockTrack = {
-  readyState: MediaStreamTrackState;
+  readyState: MediaStreamTrackState | 'new';
   muted: boolean;
 };
 
@@ -29,7 +29,7 @@ function mockFeed(args: {
                 ({
                   readyState: track.readyState,
                   muted: track.muted,
-                }) as MediaStreamTrack,
+                } as MediaStreamTrack),
             ),
         } as MediaStream)
       : undefined;

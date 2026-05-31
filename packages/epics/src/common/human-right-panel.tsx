@@ -1206,11 +1206,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [callSessionRoomId, roomId]);
 
   /** Banner, join strip, and toolbar for the chat room that owns the active session. */
-  const showSidebarCallChrome =
-    callUiEnabled && callAppliesToCurrentChatRoom;
+  const showSidebarCallChrome = callUiEnabled && callAppliesToCurrentChatRoom;
   /** In-chat video tiles stay in the floating dock once a session is active. */
-  const showSidebarCallVideo =
-    showSidebarCallChrome && !showFloatingDock;
+  const showSidebarCallVideo = showSidebarCallChrome && !showFloatingDock;
 
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
   const showAuthedUi = !isAuthLoading && isAuthenticated;
