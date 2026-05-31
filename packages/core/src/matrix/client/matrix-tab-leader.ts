@@ -1,6 +1,9 @@
+import { isRemoteGroupCallHoldActive } from './hooks/active-group-call-registry';
+
 const CHANNEL_NAME = 'hypha-matrix-sync-leader-v1';
 const HEARTBEAT_INTERVAL_MS = 2_000;
 const LEADER_STALE_MS = 6_000;
+const LEADER_STALE_DURING_CALL_MS = 45_000;
 const INITIAL_CLAIM_DELAY_MS = 750;
 
 type LeaderMessage =
@@ -157,9 +160,20 @@ export class MatrixTabLeaderCoordinator {
 
   private handleVisibilityChange = (): void => {
     if (typeof document === 'undefined') return;
+    if (this.isSyncLeader) {
+      this.reassertLeadershipSignal();
+    }
     if (document.visibilityState !== 'visible') return;
     this.evaluateLeadership({ force: false });
   };
+
+  /** Broadcast a fresh leader signal (resists background timer throttling on the call tab). */
+  private reassertLeadershipSignal(): void {
+    const at = Date.now();
+    this.lastLeaderSignalAt = at;
+    this.leaderTabId = this.tabId;
+    this.broadcast({ type: 'heartbeat', tabId: this.tabId, at });
+  }
 
   private handleMessage(message: LeaderMessage): void {
     if (message.tabId === this.tabId) return;
@@ -185,11 +199,27 @@ export class MatrixTabLeaderCoordinator {
           this.relinquishLeadership();
           return;
         }
-        if (this.holdLeadershipWhile()) return;
+        if (this.holdLeadershipWhile()) {
+          this.reassertLeadershipSignal();
+          return;
+        }
         if (message.tabId !== this.tabId && remoteWins) {
           this.relinquishLeadership();
         }
-      } else if (!this.isSyncLeader && remoteWins) {
+        return;
+      }
+
+      if (
+        this.isSyncLeader &&
+        message.type === 'heartbeat' &&
+        message.tabId !== this.tabId &&
+        remoteWins
+      ) {
+        this.relinquishLeadership();
+        return;
+      }
+
+      if (!this.isSyncLeader && remoteWins) {
         this.notify();
       }
       return;
@@ -205,7 +235,10 @@ export class MatrixTabLeaderCoordinator {
   private leaderIsStale(now = Date.now()): boolean {
     if (!this.leaderTabId) return true;
     if (this.leaderTabId === this.tabId) return false;
-    return now - this.lastLeaderSignalAt > LEADER_STALE_MS;
+    const staleMs = isRemoteGroupCallHoldActive(now)
+      ? LEADER_STALE_DURING_CALL_MS
+      : LEADER_STALE_MS;
+    return now - this.lastLeaderSignalAt > staleMs;
   }
 
   private evaluateLeadership(options: {

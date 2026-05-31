@@ -202,6 +202,9 @@ function useGlobalCallDockValue() {
   const restoreInProgressRef = React.useRef(false);
   const restoreTimerRef = React.useRef<number | null>(null);
   const resumeAttemptAtRef = React.useRef<number | null>(null);
+  const resumeAttemptKeyRef = React.useRef<string | null>(null);
+  const releasingForTransferRef = React.useRef(false);
+  const lastPersistedResumeSignatureRef = React.useRef<string | null>(null);
   const wasMatrixSyncLeaderRef = React.useRef(isMatrixSyncLeader);
   const callLaunchContextRef = React.useRef<CallLaunchContext | null>(null);
   /** Room pinned for the active call — survives chat panel room/null transitions. */
@@ -354,7 +357,9 @@ function useGlobalCallDockValue() {
     if (inSession || pendingJoin) return;
     const snapshot = readCallResumeSnapshot();
     if (!snapshot) return;
-    if (resumeAttemptAtRef.current === snapshot.updatedAt) return;
+    const attemptKey = `${snapshot.roomId}:${snapshot.callKind}:${snapshot.updatedAt}`;
+    if (resumeAttemptKeyRef.current === attemptKey) return;
+    resumeAttemptKeyRef.current = attemptKey;
     resumeAttemptAtRef.current = snapshot.updatedAt;
     applyCallResumeSnapshot(snapshot, {
       setBoundRoomId,
@@ -371,12 +376,21 @@ function useGlobalCallDockValue() {
   }, [inSession, isMatrixSyncLeader, pendingJoin]);
 
   React.useEffect(() => {
+    if (isMatrixSyncLeader && !wasMatrixSyncLeaderRef.current) {
+      resumeAttemptKeyRef.current = null;
+    }
     if (wasMatrixSyncLeaderRef.current && !isMatrixSyncLeader) {
       resumeAttemptAtRef.current = null;
+      resumeAttemptKeyRef.current = null;
       restoreInProgressRef.current = false;
       setPendingJoin(null);
       if (inSessionRef.current) {
-        void call.releaseLocalCallForTabTransfer();
+        setIsReleasingForTransfer(true);
+        releasingForTransferRef.current = true;
+        void call.releaseLocalCallForTabTransfer().finally(() => {
+          releasingForTransferRef.current = false;
+          setIsReleasingForTransfer(false);
+        });
       }
     }
     wasMatrixSyncLeaderRef.current = isMatrixSyncLeader;
@@ -393,6 +407,9 @@ function useGlobalCallDockValue() {
     persistDockMode(dockMode);
   }, [dockMode, dockModeHydrated]);
 
+  const enterAudio = call.enterAudio;
+  const enterVideo = call.enterVideo;
+
   React.useEffect(() => {
     if (!pendingJoin) return;
     if (activeRoomId !== pendingJoin.roomId) return;
@@ -401,11 +418,11 @@ function useGlobalCallDockValue() {
     setPendingJoin(null);
     restoreInProgressRef.current = false;
     if (pendingJoin.kind === 'audio') {
-      void call.enterAudio(pendingJoin.threadRootEventId);
+      void enterAudio(pendingJoin.threadRootEventId);
       return;
     }
-    void call.enterVideo(pendingJoin.threadRootEventId);
-  }, [pendingJoin, activeAuthToken, activeRoomId, call]);
+    void enterVideo(pendingJoin.threadRootEventId);
+  }, [pendingJoin, activeAuthToken, activeRoomId, enterAudio, enterVideo]);
 
   React.useEffect(() => {
     if (
@@ -430,13 +447,25 @@ function useGlobalCallDockValue() {
       return;
     }
     const launchContext = callLaunchContextRef.current;
+    const threadRootEventId =
+      pendingJoin?.threadRootEventId ?? call.threadContext?.threadRootEventId;
+    const persistSignature = [
+      activeRoomId,
+      callKind,
+      activeSpaceSlug ?? '',
+      dockMode,
+      threadRootEventId ?? '',
+    ].join('|');
+    if (lastPersistedResumeSignatureRef.current === persistSignature) {
+      return;
+    }
+    lastPersistedResumeSignatureRef.current = persistSignature;
     persistCallResumeSnapshot({
       version: 1,
       roomId: activeRoomId,
       spaceSlug: activeSpaceSlug,
       callKind,
-      threadRootEventId:
-        pendingJoin?.threadRootEventId ?? call.threadContext?.threadRootEventId,
+      threadRootEventId,
       dockMode,
       updatedAt: Date.now(),
       signalTitle: launchContext?.signalTitle?.trim() || undefined,
@@ -551,15 +580,20 @@ function useGlobalCallDockValue() {
   const leaveCall = React.useCallback(async () => {
     clearCallResumeSnapshot();
     resumeAttemptAtRef.current = null;
+    resumeAttemptKeyRef.current = null;
+    lastPersistedResumeSignatureRef.current = null;
     restoreInProgressRef.current = false;
     setPendingJoin(null);
     await call.leave();
   }, [call]);
 
+  const [isReleasingForTransfer, setIsReleasingForTransfer] =
+    React.useState(false);
+
   const showFloatingDock =
     isMatrixSyncLeader && (inSession || call.recordingStatus === 'uploading');
   const holdsMatrixSyncForCall =
-    isMatrixSyncLeader &&
+    (isMatrixSyncLeader || isReleasingForTransfer) &&
     (inSession ||
       call.recordingStatus === 'uploading' ||
       pendingJoin != null ||

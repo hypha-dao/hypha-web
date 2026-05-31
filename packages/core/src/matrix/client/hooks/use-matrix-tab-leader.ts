@@ -28,7 +28,16 @@ export function useMatrixTabLeader(): {
     coordinatorRef.current = coordinator;
     const unsubscribe = coordinator.subscribe(setSnapshot);
     const unsubscribeCallGuard = subscribeGroupCallSessionActive(() => {
-      setSnapshot(coordinator.getSnapshot());
+      setSnapshot((prev) => {
+        const next = coordinator.getSnapshot();
+        if (
+          prev.isSyncLeader === next.isSyncLeader &&
+          prev.leaderTabId === next.leaderTabId
+        ) {
+          return prev;
+        }
+        return next;
+      });
     });
     return () => {
       unsubscribeCallGuard();

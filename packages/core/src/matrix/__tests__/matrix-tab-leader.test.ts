@@ -91,4 +91,20 @@ describe('MatrixTabLeaderCoordinator', () => {
     leaderA.dispose();
     leaderB.dispose();
   });
+
+  it('blocks stale leadership claims while holdLeadershipWhile is active', () => {
+    const leaderA = new MatrixTabLeaderCoordinator({
+      holdLeadershipWhile: () => true,
+    });
+    const leaderB = new MatrixTabLeaderCoordinator();
+    vi.advanceTimersByTime(1_000);
+    expect(leaderA.getSnapshot().isSyncLeader).toBe(true);
+
+    vi.advanceTimersByTime(8_000);
+    expect(leaderA.getSnapshot().isSyncLeader).toBe(true);
+    expect(leaderB.getSnapshot().isSyncLeader).toBe(false);
+
+    leaderA.dispose();
+    leaderB.dispose();
+  });
 });
