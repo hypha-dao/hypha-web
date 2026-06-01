@@ -2797,14 +2797,14 @@
           "offboarded": "La verificación bancaria ya no está disponible para este cliente. Contacte con soporte."
         }
       },
-      "requestRailDisabledInitialSetup": "Complete your current verification before requesting additional currency rails",
-      "sofProcedure": "Source of Funds Questionnaire",
-      "sofProcedureLink": "Complete Questionnaire",
-      "sofProcedureHint": "This step requires a source of funds questionnaire. Click the link to complete it in the Bridge verification portal.",
-      "uboPendingTitle": "UBO Verification Pending",
-      "uboPendingDescription": "{count, plural, one {# associated person still needs} other {# associated persons still need}} to provide additional information.",
-      "uboPendingTooltip": "Bridge sends verification emails directly to associated persons. Ask them to check their inbox (and spam folder) for an email from Bridge or Persona.",
-      "uboPendingEmailsLabel": "Pending:"
+      "requestRailDisabledInitialSetup": "Complete su verificación actual antes de solicitar corredores de moneda adicionales",
+      "sofProcedure": "Cuestionario sobre el origen de los fondos",
+      "sofProcedureLink": "Completar cuestionario",
+      "sofProcedureHint": "Este paso requiere un cuestionario sobre el origen de los fondos. Haga clic en el enlace para completarlo en el portal de verificación de Bridge.",
+      "uboPendingTitle": "Verificación UBO pendiente",
+      "uboPendingDescription": "{count, plural, one {# persona asociada aún necesita} other {# personas asociadas aún necesitan}} proporcionar información adicional.",
+      "uboPendingTooltip": "Bridge envía correos de verificación directamente a las personas asociadas. Pídales que revisen su bandeja de entrada (y spam) para encontrar un correo de Bridge o Persona.",
+      "uboPendingEmailsLabel": "Pendiente:"
     },
     "tosStatus": {
       "pending": {
@@ -2997,7 +2997,7 @@
       "copyInstructionsCopied": "Copiado",
       "copy": "Copiar",
       "copied": "Copiado",
-      "beneficiaryName": "Beneficiary name"
+      "beneficiaryName": "Nombre del beneficiario"
     },
     "sandboxDemo": {
       "title": "Sandbox / Dev — Simulación KYB",

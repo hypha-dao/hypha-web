@@ -5,6 +5,7 @@ import {
   type BridgeAssociatedPerson,
   type BridgeCustomerEndorsement,
 } from '../../common/server/bridge-client';
+import { type BankPendingUbo } from '../types';
 import {
   BANK_CURRENCY_TO_ENDORSEMENT,
   BANK_VIRTUAL_ACCOUNT_CURRENCIES,
@@ -37,11 +38,6 @@ export function parseBridgeCustomerEndorsements(
   }
   return map;
 }
-
-export type BankPendingUbo = {
-  id: string;
-  email: string | null;
-};
 
 export type CustomerMissingFlags = {
   sofMissing: boolean;

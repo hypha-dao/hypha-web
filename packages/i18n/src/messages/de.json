@@ -743,14 +743,14 @@
           "offboarded": "Die Banking-Verifizierung ist für diesen Kunden nicht mehr verfügbar. Kontaktieren Sie den Support."
         }
       },
-      "requestRailDisabledInitialSetup": "Complete your current verification before requesting additional currency rails",
-      "sofProcedure": "Source of Funds Questionnaire",
-      "sofProcedureLink": "Complete Questionnaire",
-      "sofProcedureHint": "This step requires a source of funds questionnaire. Click the link to complete it in the Bridge verification portal.",
-      "uboPendingTitle": "UBO Verification Pending",
-      "uboPendingDescription": "{count, plural, one {# associated person still needs} other {# associated persons still need}} to provide additional information.",
-      "uboPendingTooltip": "Bridge sends verification emails directly to associated persons. Ask them to check their inbox (and spam folder) for an email from Bridge or Persona.",
-      "uboPendingEmailsLabel": "Pending:"
+      "requestRailDisabledInitialSetup": "Schließen Sie Ihre aktuelle Verifizierung ab, bevor Sie weitere Währungskorridore anfordern",
+      "sofProcedure": "Fragebogen zur Mittelherkunft",
+      "sofProcedureLink": "Fragebogen ausfüllen",
+      "sofProcedureHint": "Dieser Schritt erfordert einen Fragebogen zur Mittelherkunft. Klicken Sie auf den Link, um ihn im Bridge-Verifizierungsportal auszufüllen.",
+      "uboPendingTitle": "UBO-Verifizierung ausstehend",
+      "uboPendingDescription": "{count, plural, one {# assoziierte Person muss noch} other {# assoziierte Personen müssen noch}} zusätzliche Informationen bereitstellen.",
+      "uboPendingTooltip": "Bridge sendet Verifizierungs-E-Mails direkt an die assoziierten Personen. Bitten Sie sie, ihren Posteingang (und Spam-Ordner) auf eine E-Mail von Bridge oder Persona zu überprüfen.",
+      "uboPendingEmailsLabel": "Ausstehend:"
     },
     "tosStatus": {
       "pending": {
@@ -928,7 +928,7 @@
       "copyInstructionsCopied": "Kopiert",
       "copy": "Kopieren",
       "copied": "Kopiert",
-      "beneficiaryName": "Beneficiary name"
+      "beneficiaryName": "Name des Begünstigten"
     },
     "sandboxDemo": {
       "title": "Sandbox / Dev — KYB-Simulation",
