@@ -32,13 +32,6 @@ function getFieldsForRail(paymentRail: string): FieldDef[] {
         { key: 'bank_account_number', labelKey: 'accountNumber' },
         { key: 'bank_name', labelKey: 'bankName' },
       ];
-    case 'wire':
-      return [
-        { key: 'bank_routing_number', labelKey: 'routingNumber' },
-        { key: 'bank_account_number', labelKey: 'accountNumber' },
-        { key: 'bank_beneficiary_name', labelKey: 'beneficiaryName' },
-        { key: 'bank_name', labelKey: 'bankName' },
-      ];
     case 'faster_payments':
       return [
         { key: 'account_number', labelKey: 'accountNumber' },
