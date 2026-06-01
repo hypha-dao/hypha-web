@@ -1,3 +1,5 @@
+import type { LoadRoomHistoryResult } from '@hypha-platform/core/client';
+
 const SIGNAL_TEAM_EVENT_BODY_MARKER = '[hypha:signal-team]';
 const SIGNAL_TEAM_REQUEST_EVENT_BODY_MARKER = '[hypha:signal-team-request]';
 
@@ -10,7 +12,7 @@ export type SignalChatMatrixMessage = {
 
 export type SignalChatMatrixOps = {
   joinRoom: (roomId: string) => Promise<string>;
-  loadRoomHistory: (roomId: string) => Promise<void>;
+  loadRoomHistory: (roomId: string) => Promise<LoadRoomHistoryResult>;
   getRoomMessages: (roomId: string) => SignalChatMatrixMessage[] | null;
   sendMessage: (params: {
     roomId: string;
