@@ -104,6 +104,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
             </Label>
             <Input
               id="banking-setup-legal-name"
+              className="text-foreground"
               value={legalName}
               onChange={(e) => setLegalName(e.target.value)}
               required
@@ -117,6 +118,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
             </Label>
             <Input
               id="banking-setup-email"
+              className="text-foreground"
               type="email"
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}
