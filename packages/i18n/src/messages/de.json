@@ -742,7 +742,15 @@
           "paused": "Die Verifizierung ist pausiert. Kontaktieren Sie den Support.",
           "offboarded": "Die Banking-Verifizierung ist für diesen Kunden nicht mehr verfügbar. Kontaktieren Sie den Support."
         }
-      }
+      },
+      "requestRailDisabledInitialSetup": "Complete your current verification before requesting additional currency rails",
+      "sofProcedure": "Source of Funds Questionnaire",
+      "sofProcedureLink": "Complete Questionnaire",
+      "sofProcedureHint": "This step requires a source of funds questionnaire. Click the link to complete it in the Bridge verification portal.",
+      "uboPendingTitle": "UBO Verification Pending",
+      "uboPendingDescription": "{count, plural, one {# associated person still needs} other {# associated persons still need}} to provide additional information.",
+      "uboPendingTooltip": "Bridge sends verification emails directly to associated persons. Ask them to check their inbox (and spam folder) for an email from Bridge or Persona.",
+      "uboPendingEmailsLabel": "Pending:"
     },
     "tosStatus": {
       "pending": {
@@ -919,7 +927,8 @@
       "copyInstructions": "Anweisungen kopieren",
       "copyInstructionsCopied": "Kopiert",
       "copy": "Kopieren",
-      "copied": "Kopiert"
+      "copied": "Kopiert",
+      "beneficiaryName": "Beneficiary name"
     },
     "sandboxDemo": {
       "title": "Sandbox / Dev — KYB-Simulation",

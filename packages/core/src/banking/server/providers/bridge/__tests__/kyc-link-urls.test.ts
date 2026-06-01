@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildBridgeSofUrl,
   mapBridgeKycLinkUrls,
   rewriteBridgeTosLinkRedirectUri,
 } from '../kyc-link-urls';
@@ -30,6 +31,54 @@ describe('rewriteBridgeTosLinkRedirectUri', () => {
     expect(rewriteBridgeTosLinkRedirectUri('not-a-url', kycLink)).toBe(
       'not-a-url',
     );
+  });
+});
+
+describe('buildBridgeSofUrl', () => {
+  const kycLink =
+    'https://bridge.withpersona.com/verify' +
+    '?fields%5Bdeveloper_id%5D=e737a8eb-8501-4b83-9424-9a6e29553666' +
+    '&fields%5Bemail_address%5D=user%40example.com' +
+    '&fields%5Biqt_token%5D=WwzmNl3bpmDX' +
+    '&inquiry-template-id=itmpl_wKuJEFST4JKViF2zcfmNJJJs' +
+    '&reference-id=65bef635-f95e-46e3-a6c7-48820e77fb66';
+
+  it('constructs the SoF URL using the default template ID', () => {
+    const result = buildBridgeSofUrl(kycLink);
+    expect(result).not.toBeNull();
+    const url = new URL(result!);
+    expect(url.searchParams.get('fields[developer_id]')).toBe(
+      'e737a8eb-8501-4b83-9424-9a6e29553666',
+    );
+    expect(url.searchParams.get('reference-id')).toBe(
+      '65bef635-f95e-46e3-a6c7-48820e77fb66',
+    );
+    expect(url.searchParams.get('inquiry-template-id')).toBe(
+      'itmpl_SymuEkuKMNbTaPmuz8Rr3Nhu6jSD',
+    );
+  });
+
+  it('strips session-specific params (email_address, iqt_token) from the SoF URL', () => {
+    const result = buildBridgeSofUrl(kycLink);
+    const url = new URL(result!);
+    expect(url.searchParams.get('fields[email_address]')).toBeNull();
+    expect(url.searchParams.get('fields[iqt_token]')).toBeNull();
+  });
+
+  it('returns null when the KYC URL is missing developer_id', () => {
+    const noDevId =
+      'https://bridge.withpersona.com/verify?reference-id=abc&inquiry-template-id=itmpl_123';
+    expect(buildBridgeSofUrl(noDevId)).toBeNull();
+  });
+
+  it('returns null when the KYC URL is missing reference-id', () => {
+    const noRef =
+      'https://bridge.withpersona.com/verify?fields%5Bdeveloper_id%5D=dev123&inquiry-template-id=itmpl_123';
+    expect(buildBridgeSofUrl(noRef)).toBeNull();
+  });
+
+  it('returns null when the KYC URL is not a valid URL', () => {
+    expect(buildBridgeSofUrl('not-a-url')).toBeNull();
   });
 });
 
