@@ -112,9 +112,10 @@ export async function buildPublicStatusFromCustomer(
     state.customer?.endorsements,
     state.customer?.associated_persons,
   );
-  const sofLink = missing.sofMissing
-    ? buildBridgeSofUrl(state.kycLink.kyc_link)
-    : null;
+  const sofLink =
+    missing.sofMissing && state.customer?.status !== 'not_started'
+      ? buildBridgeSofUrl(state.kycLink.kyc_link)
+      : null;
 
   return {
     hasCustomer: true,

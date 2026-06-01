@@ -90,6 +90,7 @@ export type BridgeAssociatedPerson = {
 export type BridgeGetCustomerResponse = {
   id: string;
   type: 'individual' | 'business';
+  status?: string;
   email?: string;
   physical_address?: BridgeCustomerAddress | null;
   residential_address?: BridgeCustomerAddress | null;
