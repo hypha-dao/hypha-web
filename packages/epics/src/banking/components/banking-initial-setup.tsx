@@ -96,7 +96,10 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="banking-setup-legal-name">
+            <Label
+              htmlFor="banking-setup-legal-name"
+              className="text-foreground"
+            >
               {tOpen('legalName')}
             </Label>
             <Input
@@ -109,7 +112,9 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="banking-setup-email">{tOpen('contactEmail')}</Label>
+            <Label htmlFor="banking-setup-email" className="text-foreground">
+              {tOpen('contactEmail')}
+            </Label>
             <Input
               id="banking-setup-email"
               type="email"

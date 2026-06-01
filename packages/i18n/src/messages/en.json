@@ -852,6 +852,7 @@
       "bankName": "Bank name",
       "accountHolder": "Account holder name",
       "bankNameAndAddress": "Bank name and address",
+      "beneficiaryName": "Beneficiary name",
       "beneficiaryNameAndAddress": "Beneficiary name and address",
       "activeBadge": "Active",
       "depositMessage": "Reference message (required)",
