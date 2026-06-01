@@ -4,6 +4,7 @@ import type { BankCustomer } from '@hypha-platform/storage-postgres';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
 import type {
   BankEndorsementPublicStatus,
+  BankPendingRequirements,
   BankRailPublicStatus,
   BankValidationRequirement,
 } from '../types';
@@ -18,6 +19,8 @@ import {
   resolveCustomerApproved,
   syncProviderCustomerIdFromKycLink,
 } from './providers/bridge/banking-provider-state';
+import { buildBridgeSofUrl } from './providers/bridge/kyc-link-urls';
+import { extractCustomerMissingFlags } from './bridge-customer-endorsements';
 import { findBankCustomerBySpaceAndProvider } from './queries';
 import { updateBankCustomer } from './mutations';
 
@@ -44,6 +47,8 @@ export type SpaceBankCustomerPublicStatus = {
     validation: BankValidationRequirement;
   }>;
   requestedRails: string[];
+  /** Missing requirements that need user action beyond the main KYB flow. */
+  pendingRequirements?: BankPendingRequirements;
 };
 
 function mapCurrencyStatuses(
@@ -103,6 +108,15 @@ export async function buildPublicStatusFromCustomer(
   const railStatuses = buildRailStatuses({ customer, state });
   const isApproved = await resolveCustomerApproved(customer);
 
+  const missing = extractCustomerMissingFlags(
+    state.customer?.endorsements,
+    state.customer?.associated_persons,
+  );
+  const sofLink =
+    missing.sofMissing && state.customer?.status !== 'not_started'
+      ? buildBridgeSofUrl(state.kycLink.kyc_link)
+      : null;
+
   return {
     hasCustomer: true,
     isApproved,
@@ -115,5 +129,9 @@ export async function buildPublicStatusFromCustomer(
     endorsementStatuses: mapEndorsementStatuses(railStatuses),
     currencyStatuses: mapCurrencyStatuses(railStatuses),
     requestedRails: customer.requestedRails ?? [],
+    pendingRequirements: {
+      sofQuestionnaire: sofLink ? { link: sofLink } : null,
+      pendingUbos: missing.pendingUbos,
+    },
   };
 }

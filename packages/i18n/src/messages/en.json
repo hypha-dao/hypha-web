@@ -648,6 +648,14 @@
       },
       "syncStatus": "Sync status",
       "syncingStatus": "Syncing…",
+      "requestRailDisabledInitialSetup": "Complete your current verification before requesting additional currency rails",
+      "sofProcedure": "Source of Funds Questionnaire",
+      "sofProcedureLink": "Complete Questionnaire",
+      "sofProcedureHint": "This step requires a source of funds questionnaire. Click the link to complete it in the Bridge verification portal.",
+      "uboPendingTitle": "UBO Verification Pending",
+      "uboPendingDescription": "{count, plural, one {# associated person still needs} other {# associated persons still need}} to provide additional information.",
+      "uboPendingTooltip": "Bridge sends verification emails directly to associated persons. Ask them to check their inbox (and spam folder) for an email from Bridge or Persona.",
+      "uboPendingEmailsLabel": "Pending:",
       "procedureHints": {
         "fallback": "No further action is required for this step in Bridge right now.",
         "tos": {
@@ -844,6 +852,7 @@
       "bankName": "Bank name",
       "accountHolder": "Account holder name",
       "bankNameAndAddress": "Bank name and address",
+      "beneficiaryName": "Beneficiary name",
       "beneficiaryNameAndAddress": "Beneficiary name and address",
       "activeBadge": "Active",
       "depositMessage": "Reference message (required)",

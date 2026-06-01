@@ -1,5 +1,17 @@
 export type BankProvider = 'bridge';
 
+export type BankPendingUbo = {
+  id: string;
+  email: string | null;
+};
+
+export type BankPendingRequirements = {
+  /** Link to the Persona-hosted SoF questionnaire, or null if not constructable. */
+  sofQuestionnaire: { link: string } | null;
+  /** UBOs whose required fields are still missing. */
+  pendingUbos: BankPendingUbo[];
+};
+
 export type BankEntityType = 'business' | 'individual';
 
 export type BankValidationAction = {

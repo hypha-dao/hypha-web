@@ -1,3 +1,13 @@
+export type BankPendingUbo = {
+  id: string;
+  email: string | null;
+};
+
+export type BankPendingRequirements = {
+  sofQuestionnaire: { link: string } | null;
+  pendingUbos: BankPendingUbo[];
+};
+
 export const BANK_KYC_STATUSES = [
   'not_started',
   'incomplete',
@@ -77,6 +87,7 @@ export type BankCustomerPublicStatus = {
   endorsementStatuses: BankEndorsementPublicStatus[];
   railStatuses: BankRailPublicStatus[];
   requestedRails: string[];
+  pendingRequirements?: BankPendingRequirements;
 };
 
 export type ProviderFormData = {

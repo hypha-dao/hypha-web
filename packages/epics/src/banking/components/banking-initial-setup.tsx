@@ -96,11 +96,15 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="banking-setup-legal-name">
+            <Label
+              htmlFor="banking-setup-legal-name"
+              className="text-foreground"
+            >
               {tOpen('legalName')}
             </Label>
             <Input
               id="banking-setup-legal-name"
+              className="text-foreground"
               value={legalName}
               onChange={(e) => setLegalName(e.target.value)}
               required
@@ -109,9 +113,12 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="banking-setup-email">{tOpen('contactEmail')}</Label>
+            <Label htmlFor="banking-setup-email" className="text-foreground">
+              {tOpen('contactEmail')}
+            </Label>
             <Input
               id="banking-setup-email"
+              className="text-foreground"
               type="email"
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}

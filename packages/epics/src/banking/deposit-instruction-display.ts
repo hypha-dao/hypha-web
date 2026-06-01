@@ -90,7 +90,8 @@ export function getCardDepositIdentifiers(
       const iban = readInstructionString(instructions, ['iban']);
       return iban ? [{ labelKey: 'iban', value: iban }] : [];
     }
-    case 'ach': {
+    case 'ach':
+    case 'wire': {
       const rows: DepositIdentifierRow[] = [];
       const routing = readRoutingNumber(instructions);
       if (routing) {
@@ -231,7 +232,7 @@ export function splitInstructionBlocksForTransferReference(
 } {
   const rail = normalizePaymentRailForDisplay(paymentRail);
   const anchorId =
-    rail === 'ach' || rail === 'faster_payments'
+    rail === 'ach' || rail === 'wire' || rail === 'faster_payments'
       ? 'accountNumber'
       : 'primaryAccount';
 
@@ -287,7 +288,7 @@ export function getBankInstructionBlocks(
     });
   }
 
-  if (rail === 'ach') {
+  if (rail === 'ach' || rail === 'wire') {
     const routing = readRoutingNumber(instructions);
     if (routing) {
       blocks.push({

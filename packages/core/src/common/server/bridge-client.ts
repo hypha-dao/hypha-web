@@ -64,21 +64,39 @@ export type BridgeCustomerAddress = {
   country: string;
 };
 
+export type BridgeMissingRequirementItem =
+  | string
+  | { object_type: string; object_id: string; all_of: string[] };
+
+export type BridgeEndorsementRequirements = {
+  complete?: string[];
+  pending?: string[];
+  missing?: { all_of?: BridgeMissingRequirementItem[] } | null;
+  issues?: (string | Record<string, unknown>)[];
+};
+
 export type BridgeCustomerEndorsement = {
   name: string;
   status: string;
   additionalRequirements?: unknown[];
-  requirements?: Record<string, unknown>;
+  requirements?: BridgeEndorsementRequirements;
+};
+
+export type BridgeAssociatedPerson = {
+  id: string;
+  email?: string;
 };
 
 export type BridgeGetCustomerResponse = {
   id: string;
   type: 'individual' | 'business';
+  status?: string;
   email?: string;
   physical_address?: BridgeCustomerAddress | null;
   residential_address?: BridgeCustomerAddress | null;
   registered_address?: BridgeCustomerAddress | null;
   endorsements?: BridgeCustomerEndorsement[];
+  associated_persons?: BridgeAssociatedPerson[];
 };
 
 export type BridgeUpdateCustomerRequest = {

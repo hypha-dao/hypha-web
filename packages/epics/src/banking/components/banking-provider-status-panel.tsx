@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Badge, Button } from '@hypha-platform/ui';
@@ -17,6 +17,7 @@ import {
   type BankCustomerPublicStatus,
   type BankEndorsementPublicStatus,
   type BankKycStatus,
+  type BankPendingUbo,
   type BankVerificationProcedurePublic,
 } from '../hooks/types';
 import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
@@ -36,11 +37,14 @@ export type BankingProviderStatusPanelProps = {
 };
 
 function getInProgressStatusLabel(
-  kind: 'tos' | 'kyc',
+  kind: 'tos' | 'kyc' | 'sof',
   value: string | null | undefined,
   t: ReturnType<typeof useTranslations<'BankingTab'>>,
   tTos: ReturnType<typeof useTranslations<'BankingTab.tosStatus'>>,
 ): string {
+  if (kind === 'sof') {
+    return tTos('pending.title');
+  }
   if (!value) {
     return '—';
   }
@@ -71,10 +75,14 @@ const KYB_PROCEDURE_HINT_STATUSES = [
 type KybProcedureHintStatus = (typeof KYB_PROCEDURE_HINT_STATUSES)[number];
 
 function getProcedureLinkHint(
-  kind: 'tos' | 'kyc',
+  kind: 'tos' | 'kyc' | 'sof',
   procedure: BankVerificationProcedurePublic,
   tAdvanced: ReturnType<typeof useTranslations<'BankingTab.advanced'>>,
 ): string {
+  if (kind === 'sof') {
+    return tAdvanced('sofProcedureHint');
+  }
+
   if (procedure.isComplete) {
     return kind === 'tos'
       ? tAdvanced('procedureHints.tos.complete')
@@ -111,7 +119,7 @@ function ProcedureRow({
   tTos,
   tAdvanced,
 }: {
-  kind: 'tos' | 'kyc';
+  kind: 'tos' | 'kyc' | 'sof';
   title: string;
   procedure: BankVerificationProcedurePublic;
   openLinkLabel: string;
@@ -194,6 +202,7 @@ function EndorsementValidationsList({
   tEndorsements,
   onOpenGear,
   onRefreshStatus,
+  disableNewEndorsementRequests = false,
 }: {
   spaceSlug: string;
   endorsements: BankEndorsementPublicStatus[];
@@ -203,6 +212,8 @@ function EndorsementValidationsList({
   tEndorsements: ReturnType<typeof useTranslations<'BankingTab.endorsements'>>;
   onOpenGear?: () => void;
   onRefreshStatus: () => Promise<BankCustomerPublicStatus | null | undefined>;
+  /** When true, "Request Rail" buttons for not-yet-requested currencies are disabled. */
+  disableNewEndorsementRequests?: boolean;
 }) {
   const { requestEndorsementKyc, isLoading: isVerifying } =
     useRequestEndorsementKyc(spaceSlug);
@@ -257,15 +268,31 @@ function EndorsementValidationsList({
                 )}
               </Badge>
               {bankRailNeedsEndorsementRequest(entry.operationalStatus) ? (
-                <Button
-                  type="button"
-                  colorVariant="accent"
-                  className="h-auto min-h-0 shrink-0 px-2.5 py-1 text-1 leading-tight"
-                  disabled={isVerifying}
-                  onClick={() => void handleVerify(entry.endorsement)}
-                >
-                  {tOpenAccount('requestRail')}
-                </Button>
+                disableNewEndorsementRequests ? (
+                  <span
+                    className="inline-flex shrink-0"
+                    title={tAdvanced('requestRailDisabledInitialSetup')}
+                  >
+                    <Button
+                      type="button"
+                      colorVariant="accent"
+                      className="h-auto min-h-0 shrink-0 px-2.5 py-1 text-1 leading-tight"
+                      disabled
+                    >
+                      {tOpenAccount('requestRail')}
+                    </Button>
+                  </span>
+                ) : (
+                  <Button
+                    type="button"
+                    colorVariant="accent"
+                    className="h-auto min-h-0 shrink-0 px-2.5 py-1 text-1 leading-tight"
+                    disabled={isVerifying}
+                    onClick={() => void handleVerify(entry.endorsement)}
+                  >
+                    {tOpenAccount('requestRail')}
+                  </Button>
+                )
               ) : entry.validation?.action?.url &&
                 !entry.validation.linkDisabled ? (
                 <Button
@@ -286,6 +313,43 @@ function EndorsementValidationsList({
           </div>
         ))}
       </dl>
+    </div>
+  );
+}
+
+function UboPendingNotice({
+  ubos,
+  tAdvanced,
+}: {
+  ubos: BankPendingUbo[];
+  tAdvanced: ReturnType<typeof useTranslations<'BankingTab.advanced'>>;
+}) {
+  const count = ubos.length;
+  const emails = ubos.map((u) => u.email).filter(Boolean) as string[];
+
+  return (
+    <div className="rounded-lg border border-border/80 bg-background-2/30 px-3 py-3">
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-2 font-medium text-foreground">
+            {tAdvanced('uboPendingTitle')}
+          </p>
+          <p className="mt-1 text-1 text-muted-foreground">
+            {tAdvanced('uboPendingDescription', { count })}
+          </p>
+          {emails.length > 0 ? (
+            <p className="mt-1 text-1 text-muted-foreground">
+              {tAdvanced('uboPendingEmailsLabel')} {emails.join(', ')}
+            </p>
+          ) : null}
+        </div>
+        <span
+          title={tAdvanced('uboPendingTooltip')}
+          className="mt-0.5 shrink-0 cursor-help"
+        >
+          <Info className="h-4 w-4 text-muted-foreground" />
+        </span>
+      </div>
     </div>
   );
 }
@@ -313,6 +377,24 @@ function ProviderValidationsSection({
   onOpenGear?: () => void;
   onRefreshStatus: () => Promise<BankCustomerPublicStatus | null | undefined>;
 }) {
+  const sofQuestionnaire = showProcedures
+    ? status.pendingRequirements?.sofQuestionnaire
+    : null;
+  const pendingUbos =
+    showProcedures && status.pendingRequirements?.pendingUbos?.length
+      ? status.pendingRequirements.pendingUbos
+      : null;
+
+  const sofProcedure: BankVerificationProcedurePublic | null = sofQuestionnaire
+    ? {
+        key: 'sof',
+        status: 'pending',
+        isComplete: false,
+        action: { type: 'link', url: sofQuestionnaire.link },
+        linkDisabled: false,
+      }
+    : null;
+
   return (
     <section className="rounded-lg border border-border bg-card p-4">
       <h3 className="text-2 font-semibold text-foreground">
@@ -344,6 +426,17 @@ function ProviderValidationsSection({
               tTos={tTos}
               tAdvanced={tAdvanced}
             />
+            {sofProcedure ? (
+              <ProcedureRow
+                kind="sof"
+                title={tAdvanced('sofProcedure')}
+                procedure={sofProcedure}
+                openLinkLabel={tAdvanced('sofProcedureLink')}
+                t={t}
+                tTos={tTos}
+                tAdvanced={tAdvanced}
+              />
+            ) : null}
           </>
         ) : null}
 
@@ -356,7 +449,12 @@ function ProviderValidationsSection({
           tEndorsements={tEndorsements}
           onOpenGear={onOpenGear}
           onRefreshStatus={onRefreshStatus}
+          disableNewEndorsementRequests={showProcedures}
         />
+
+        {pendingUbos ? (
+          <UboPendingNotice ubos={pendingUbos} tAdvanced={tAdvanced} />
+        ) : null}
       </div>
     </section>
   );
