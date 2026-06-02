@@ -1032,15 +1032,9 @@ export function GlobalCallDockOverlay() {
     isDocumentPip: isDocumentPipOpen,
     stageLayout: dockStageLayout,
   });
-  const dockControlsVariant =
-    isMobile || !modeIsFullscreen ? 'inBanner' : 'fullView';
-  const dockControlsLayout = isMobile
-    ? 'centered'
-    : inDocumentPip
-    ? 'centered'
-    : modeIsFullscreen
-    ? 'inline'
-    : 'centered';
+  /** Match fullscreen chrome on all desktop dock sizes (thumbnail, PiP, expanded). */
+  const dockControlsVariant = isMobile ? 'inBanner' : 'fullView';
+  const dockControlsLayout = isMobile ? 'centered' : 'inline';
 
   const dockContent = (
     <div
@@ -1245,8 +1239,11 @@ export function GlobalCallDockOverlay() {
 
         <div
           className={cn(
-            'pointer-events-auto relative isolate z-30 shrink-0 touch-manipulation overflow-visible border-t border-border/50 bg-muted/35',
+            'pointer-events-auto relative isolate z-30 shrink-0 touch-manipulation overflow-visible border-t',
             dockCompact ? 'px-1 py-0.5' : 'px-2 py-2',
+            isMobile
+              ? 'border-border/50 bg-muted/35'
+              : 'border-white/10 bg-zinc-950/90',
           )}
         >
           {captureUploadFinalizing ? (
