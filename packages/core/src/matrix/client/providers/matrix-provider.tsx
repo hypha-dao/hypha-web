@@ -613,9 +613,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   }, [refreshMatrixToken]);
 
   React.useEffect(() => {
-    if (typeof matrixToken?.expiresInSec === 'number') {
-      matrixTokenExpiresInSecRef.current = matrixToken.expiresInSec;
-    }
+    matrixTokenExpiresInSecRef.current =
+      typeof matrixToken?.expiresInSec === 'number'
+        ? matrixToken.expiresInSec
+        : undefined;
   }, [matrixToken?.expiresInSec]);
 
   const initializeMatrixClient = React.useCallback(
@@ -757,9 +758,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         if (!freshToken) {
           return false;
         }
-        if (typeof freshToken.expiresInSec === 'number') {
-          matrixTokenExpiresInSecRef.current = freshToken.expiresInSec;
-        }
+        matrixTokenExpiresInSecRef.current =
+          typeof freshToken.expiresInSec === 'number'
+            ? freshToken.expiresInSec
+            : undefined;
         const existingClient = clientRef.current;
         if (existingClient) {
           if (isGroupCallSessionActive()) {
