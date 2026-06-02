@@ -53,7 +53,7 @@ This document defines normative requirements (`WCUX-*`) traceable to code paths 
 
 1. **Share audio playback:** `FeedContent` renders `<audio>` only when `!feed.isLocal() && !isShare` — remote screenshare streams never attach to an audio element (`human-chat-panel-call-stage.tsx` ~2078).
 2. **Share muted badge:** `feedReportsAudioMuted()` is applied to share tiles; share feeds typically have no microphone track, so UI shows **Muted** incorrectly.
-3. **PiP portal regression on `main`:** when `pipWindow` is set, dock returns **only** `createPortal(..., pipWindow.document.body)` and **does not** also portal to `document.body`. Remote `<audio>` elements unmount from the main document → audio stops. Fix branch `fix/call-banner-regression` uses `pipWindow?.document.body ?? document.body` (single portal, always main doc when PiP closed).
+3. **PiP audio:** PR #2284 merged the portal pattern (`pipWindow?.document.body ?? document.body`). Stakeholder reports PiP audio still failing in production — **verify on current `main`** during W1; implement `WCUX-PIP-*` if regression persists.
 4. **Voice waves colour:** `call-audio-voice-waves.tsx` hard-codes emerald; space accent is available via `useSpaceAccentPortalStyles()` on the dock shell.
 
 ---
@@ -372,6 +372,6 @@ WebRTC media cannot be asserted in CI; cover toolbar states, reaction popover op
 - [call-stability-hardening-spec.md](./call-stability-hardening-spec.md) — `CSH-*` stability requirements (PR #2285)
 - [call-consolidated-implementation-plan.md](./call-consolidated-implementation-plan.md) — single implementation PR plan
 - [group-chat-emoji requirements](./Features/group-chat-emoji/requirements.md)
-- PR [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) — hotfix prerequisite
+- PR [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) — merged to `main`
 - PR [#2285](https://github.com/hypha-dao/hypha-web/pull/2285) — stability spec (absorbed into #2297)
 - Matrix display media: [MDN getDisplayMedia audio](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia)

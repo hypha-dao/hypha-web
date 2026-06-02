@@ -111,7 +111,7 @@
 
 | Step | Action | Done when |
 | ---- | ------ | --------- |
-| 7.0  | Merge PR #2284 (banner + share handoff hotfix) | Production banner visible with floating dock |
+| 7.0  | Merge PR #2284 (banner + share handoff hotfix) | ✅ Merged — verify on consolidated branch |
 | 7.1  | Chrome guardrails, join modal, scale warnings (P1) | CSH-CHROME / CSH-DISCOVER / CSH-SCALE acceptance |
 | 7.2  | Mesh reliability + recording stability (P2–P4) | Manual QA script (spec §9.2) passes on staging |
 | 7.3  | SFU epic for community calls (P5) | LiveKit or vendor; 50+ participant load test |

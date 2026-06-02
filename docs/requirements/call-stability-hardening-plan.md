@@ -8,14 +8,14 @@
 | **Spec** | [call-stability-hardening-spec.md](./call-stability-hardening-spec.md) |
 | **Companion spec** | [call-world-class-ux-spec.md](./call-world-class-ux-spec.md) |
 | **Parent plans** | [voice-video-call-implementation-plan.md](./voice-video-call-implementation-plan.md) (Phases 1–6 baseline) |
-| **Hotfix** | PR [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) — prerequisite for consolidated implementation PR |
+| **Hotfix** | PR [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) — **merged** to `main` |
 | **Origin** | PR [#2285](https://github.com/hypha-dao/hypha-web/pull/2285) — absorbed into PR [#2297](https://github.com/hypha-dao/hypha-web/pull/2297) |
 
 ---
 
 ## 1) Guiding principles
 
-1. **Restore before extend** — Ship PR #2284 (banner + share handoff) before new features.
+1. **Build on merged baseline** — PR #2284 is on `main`; verify CSH-CHROME/SHARE before extending.
 2. **Mesh honesty** — Document and UI-warn participant limits; do not market community-scale until SFU ships.
 3. **Vertical slices** — Each phase leaves calling demoable with updated manual QA script (spec §9.2).
 4. **One surface for video** — Sidebar OR dock stage, never duplicate takeover dialogs.
@@ -27,7 +27,7 @@
 
 | Phase | Name | Goal | Depends on |
 | ----- | ---- | ---- | ---------- |
-| **P0** | Hotfix merge | Banner + share handoff regression fix | PR #2284 CI green |
+| **P0** | Hotfix merge | Banner + share handoff regression fix | **Done** — #2284 merged |
 | **P1** | Chrome & discoverability | Dock/sidebar contract guardrails, join modal, deep-link retry, scale warning | P0 |
 | **P2** | Screen share hardening | Mobile policy, handoff QA, gallery reset tests | P0 |
 | **P3** | Mesh reliability | Multi-tab UX, keepalive fix, stall copy, optional 20s pairwise retry | P0 |
@@ -39,15 +39,15 @@
 
 ## 3) Phase 0 — Hotfix merge (PR #2284)
 
-**Status:** Implemented on branch `fix/call-banner-regression`; awaiting merge.
+**Status:** **Merged to `main`.** Re-verify during consolidated implementation W1 smoke (see [call-consolidated-implementation-plan.md](./call-consolidated-implementation-plan.md) §W1).
 
 | Step | Action | Spec IDs | Done when |
 | ---- | ------ | -------- | --------- |
-| 0.1 | Merge PR #2284 to `main` | CSH-CHROME-1–7, CSH-SHARE-1–3 | Production banner visible with dock open |
-| 0.2 | Verify CI: `check-types`, `format:check`, `matrix-sdk`, `i18n-verify` | CSH-QA-* | All green on merge commit |
-| 0.3 | Run manual QA script rows 1–2 (spec §9.2) | CSH-QA-* | Signed off in PR test plan |
+| 0.1 | Merge PR #2284 to `main` | CSH-CHROME-1–7, CSH-SHARE-1–3 | ✅ Merged |
+| 0.2 | Verify CI on `main` | CSH-QA-* | All green |
+| 0.3 | Run manual QA script rows 1–2 (spec §9.2) | CSH-QA-* | Re-run on consolidated branch before impl PR merge |
 
-**Deliverables already on branch:**
+**Deliverables on `main`:**
 
 - `showSidebarCallChrome` / `showSidebarCallVideo` split in `human-right-panel.tsx`
 - Dock resume snapshot fields in `global-call-dock-context.tsx`
@@ -179,7 +179,7 @@ These supplement [voice-video-call-implementation-plan.md §3](./voice-video-cal
 
 ### Functional
 
-- [ ] **CSH-CHROME-1–5** enforced; PR #2284 merged
+- [x] **CSH-CHROME-1–5** enforced; PR #2284 merged
 - [ ] Share handoff stable (CSH-SHARE-1–3)
 - [ ] Join modal shipped (CSH-DISCOVER-1) OR explicitly deferred with product sign-off
 - [ ] Scale warning visible above 12 devices (CSH-SCALE-2)
@@ -205,7 +205,7 @@ These supplement [voice-video-call-implementation-plan.md §3](./voice-video-cal
 
 | PR | Branch prefix | Phase | Scope |
 | -- | ------------- | ----- | ----- |
-| 1 | `fix/call-banner-regression` | P0 | **Existing PR #2284** |
+| 1 | `fix/call-banner-regression` | P0 | **Merged — PR #2284** |
 | 2–8 | *(merged into one impl PR)* | P1–P4, P6 | See consolidated plan |
 | Epic | `feat/livekit-group-calls` | P5 | SFU integration (out of scope for consolidated PR) |
 
@@ -216,7 +216,7 @@ These supplement [voice-video-call-implementation-plan.md §3](./voice-video-cal
 | Risk | Impact | Mitigation |
 | ---- | ------ | ---------- |
 | Mesh overload at 15+ devices | Poor UX, support load | CSH-SCALE-2 warning; honest product bounds |
-| PR #2284 merge delay | Banner regression persists in prod | Prioritize CI fix + merge |
+| ~~PR #2284 merge delay~~ | ~~Banner regression persists in prod~~ | **Resolved** — merged to `main` |
 | Mobile presenter stuck | User cannot stop share | CSH-SHARE-6 auto-stop or explicit stop affordance |
 | Client recording CPU at tier M | Tab freeze during capture | CSH-RECORD-5; cap compositor participant tiles in recording layout |
 | SFU infra delay | Cannot serve community calls | Phase 5 epic; do not block P0–P4 |

@@ -152,8 +152,7 @@
 
 ## 11) Dependencies
 
-- Merge PR [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) first or include as opening commits on consolidated branch.
-- CSH-SHARE-1–3 from #2284 / stability spec are prerequisite for share audio work.
+- **Baseline on `main`:** [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) is merged — CSH-SHARE-1–3 and chrome split are already shipped; consolidated branch rebases from `main`.
 - Emoji Mart assets already bundled for chat — no new dependency for P6.
 - 45-min soak test requires two test accounts and stable TURN (see [matrix-voip-turn-server-setup.md](./matrix-voip-turn-server-setup.md)).
 

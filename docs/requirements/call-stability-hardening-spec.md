@@ -10,7 +10,7 @@
 | **Implementation plan** | [call-consolidated-implementation-plan.md](./call-consolidated-implementation-plan.md) (single PR — supersedes [call-stability-hardening-plan.md](./call-stability-hardening-plan.md) §11) |
 | **Historical plan** | [call-stability-hardening-plan.md](./call-stability-hardening-plan.md) (phased reference from PR [#2285](https://github.com/hypha-dao/hypha-web/pull/2285)) |
 | **ADR** | [0001 — recording pipeline](../adr/0001-voice-video-recording-pipeline.md) |
-| **Hotfix context** | PR [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) (`fix/call-banner-regression`) — banner + share handoff regressions from PRs #2273 / #2276 |
+| **Hotfix context** | PR [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) — **merged** to `main` (banner + share handoff regressions from PRs #2273 / #2276) |
 | **Architecture (v1)** | Matrix `GroupCall` with **mesh WebRTC** (`useLivekitForGroupCalls: false`) |
 
 ---
@@ -298,7 +298,7 @@ Reference: [voice-video-call-matrix-tech-spec.md Option C](./voice-video-call-ma
 
 ## 12) References
 
-- PR #2284 — hotfix branch `fix/call-banner-regression`
+- PR #2284 — merged to `main` (`fix/call-banner-regression`)
 - PRs #2273, #2275, #2276 — tightening regressions (May 2026)
 - `packages/core/src/matrix/client/hooks/use-space-group-call.ts`
 - `packages/epics/src/common/human-chat-panel/call-gallery-grid.ts`

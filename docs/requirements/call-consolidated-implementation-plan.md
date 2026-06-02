@@ -18,7 +18,7 @@ Deliver **all Human panel call fixes** from stakeholder review (June 2026) **and
 
 **In scope for the single PR:** all `WCUX-*` requirements + `CSH-*` requirements **except** `CSH-SFU-*` (LiveKit epic remains separate).
 
-**Prerequisite:** Merge [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) (`fix/call-banner-regression`) to `main` first, **or** cherry-pick its commits onto the consolidated branch as the opening commits.
+**Baseline on `main`:** [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) (`fix/call-banner-regression`) is **merged** — banner/dock split, share layout module, and dock resume snapshot are already on `main`. The consolidated branch **SHALL** rebase from current `main` (no cherry-pick needed).
 
 ---
 
@@ -43,13 +43,13 @@ Where specs overlap, apply this precedence in the consolidated PR:
 ## 3) Single PR structure
 
 **Branch:** `feat/call-world-class-consolidated`  
-**Base:** `main` (with #2284 merged)
+**Base:** `main` (includes merged #2284)
 
 ### 3.1 Workstreams (implement in this order)
 
 | # | Workstream | Spec IDs | Est. |
 | - | ---------- | -------- | ---- |
-| **W1** | Hotfix baseline (#2284 if not on main) | CSH-CHROME-*, CSH-SHARE-1–3 | — |
+| **W1** | Verify #2284 baseline on `main` (smoke only) | CSH-CHROME-*, CSH-SHARE-1–3 | — |
 | **W2** | Share audio + PiP audio | WCUX-SHARE-AUDIO-*, WCUX-PIP-* | 2–3 d |
 | **W3** | Presenter voice + session stability | WCUX-SHARE-VOICE-*, WCUX-SESSION-* | 2 d |
 | **W4** | Layout engine (full-screen + dock) | WCUX-LAYOUT-* | 3–4 d |
@@ -88,14 +88,17 @@ docs/requirements/voice-video-call-phase-0-runbook.md                    (CSH-QA
 
 ## 4) Workstream detail
 
-### W1 — Hotfix baseline (PR #2284)
+### W1 — Baseline verification (PR #2284 — merged)
+
+Confirm on current `main` before starting W2:
 
 | Step | Action | IDs |
 | ---- | ------ | --- |
-| 1.1 | Ensure `showSidebarCallChrome` / `showSidebarCallVideo` split | CSH-CHROME-1–2 |
-| 1.2 | Dock resume snapshot fields | CSH-CHROME-7 |
-| 1.3 | `call-stage-share-layout.ts` + tests | CSH-SHARE-1–3 |
-| 1.4 | Feed batching after screenshare takeover | CSH-SHARE-3 |
+| 1.1 | Sidebar banner visible when floating dock open | CSH-CHROME-1–3 |
+| 1.2 | `call-stage-share-layout.ts` + share handoff QA row 2 | CSH-SHARE-1–3 |
+| 1.3 | Dock resume snapshot fields present | CSH-CHROME-7 |
+
+No re-implementation unless regression found during W2+ work.
 
 ### W2 — Share audio + PiP audio
 
@@ -230,5 +233,5 @@ session stability, stability hardening (CSH), reactions, video quality.
 
 - PR [#2285](https://github.com/hypha-dao/hypha-web/pull/2285) — stability spec (absorbed)
 - PR [#2297](https://github.com/hypha-dao/hypha-web/pull/2297) — consolidated spec PR
-- PR [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) — hotfix prerequisite
+- PR [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) — merged to `main` (banner, share layout, dock snapshot)
 - [call-world-class-ux-implementation-plan.md](./call-world-class-ux-implementation-plan.md) — original WCUX phase breakdown (reference)
