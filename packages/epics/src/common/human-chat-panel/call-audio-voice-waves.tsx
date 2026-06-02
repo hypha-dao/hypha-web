@@ -72,8 +72,8 @@ function sizeBounds(size: 'sm' | 'md' | 'lg'): {
 }
 
 /**
- * In-call “camera off” / audio-only bars: frequency energy in 12 slices,
- * smoothed with fast attack / slower decay in rAF — uses `--space-accent`.
+ * In-call “camera off” / audio-only bars: overall speech energy drives all bars
+ * with per-bar seed + phase wobble — uses `--space-accent`.
  */
 export function CallAudioVoiceWaves({
   mediaStream,
@@ -91,6 +91,7 @@ export function CallAudioVoiceWaves({
   const analysisRef = useRef<AnalysisHandle | null>(null);
   const rafRef = useRef<number | null>(null);
   const freqBufRef = useRef<Uint8Array | null>(null);
+  const timeBufRef = useRef<Uint8Array | null>(null);
   const smoothRef = useRef(WAVE_BARS_SEED.map(() => 0));
   const lastTRef = useRef(0);
   const phaseRef = useRef(0);
@@ -128,6 +129,7 @@ export function CallAudioVoiceWaves({
       analyser.maxDecibels = -10;
       source.connect(analyser);
       freqBufRef.current = new Uint8Array(analyser.frequencyBinCount);
+      timeBufRef.current = new Uint8Array(analyser.fftSize);
       return { ctx, source, analyser } satisfies AnalysisHandle;
     } catch {
       return null;
@@ -153,6 +155,7 @@ export function CallAudioVoiceWaves({
       analysisRef.current = null;
     }
     freqBufRef.current = null;
+    timeBufRef.current = null;
     smoothRef.current = WAVE_BARS_SEED.map(() => 0);
     phaseRef.current = 0;
   }, [stopLoop]);
@@ -187,7 +190,11 @@ export function CallAudioVoiceWaves({
     if (!data || data.length !== analyser.frequencyBinCount) {
       freqBufRef.current = new Uint8Array(analyser.frequencyBinCount);
     }
+    if (!timeBufRef.current || timeBufRef.current.length !== analyser.fftSize) {
+      timeBufRef.current = new Uint8Array(analyser.fftSize);
+    }
     const buf = freqBufRef.current!;
+    const timeBuf = timeBufRef.current!;
 
     const run = (now: number) => {
       rafRef.current = requestAnimationFrame(run);
@@ -196,23 +203,46 @@ export function CallAudioVoiceWaves({
       }
       const dt = Math.min(48, now - lastTRef.current);
       lastTRef.current = now;
-      phaseRef.current += dt * 0.004;
+      phaseRef.current += dt * 0.005;
 
       resumeAudioContextIfNeeded(handle.ctx);
       analyser.getByteFrequencyData(buf);
+      analyser.getByteTimeDomainData(timeBuf);
+
+      /** Speech energy lives in low bins — linear slices leave right bars flat. */
+      const speechBins = Math.max(1, Math.floor(buf.length * 0.42));
+      let freqPeak = 0;
+      let freqSum = 0;
+      for (let j = 0; j < speechBins; j += 1) {
+        const v = buf[j]! / 255;
+        freqSum += v;
+        freqPeak = Math.max(freqPeak, v);
+      }
+      const freqAvg = freqSum / speechBins;
+
+      let rms = 0;
+      for (let j = 0; j < timeBuf.length; j += 1) {
+        const sample = (timeBuf[j]! - 128) / 128;
+        rms += sample * sample;
+      }
+      rms = Math.sqrt(rms / timeBuf.length);
+
+      const voiceLevel = Math.min(
+        1,
+        freqPeak * 0.55 + freqAvg * 0.85 + rms * 1.15,
+      );
 
       const out: number[] = [];
       for (let i = 0; i < WAVE_BARS; i += 1) {
-        const from = Math.floor((i / WAVE_BARS) * buf.length * 0.85);
-        const to = Math.floor(((i + 1) / WAVE_BARS) * buf.length * 0.85);
-        let peak = 0;
-        for (let j = from; j < to; j += 1) {
-          peak = Math.max(peak, buf[j]! / 255);
-        }
+        const seed = WAVE_BARS_SEED[i] ?? 0.5;
         const gain = BAR_GAIN[i] ?? 1;
         const wobble =
-          0.04 * Math.sin(phaseRef.current + i * 0.55) * (peak + 0.15);
-        const frame = Math.min(1, peak * gain * 1.35 + wobble);
+          0.18 * Math.sin(phaseRef.current + i * 0.72) +
+          0.1 * Math.sin(phaseRef.current * 1.65 + i * 0.38);
+        const frame = Math.min(
+          1,
+          voiceLevel * seed * gain * (0.68 + wobble) * 1.25,
+        );
         const prev = smoothRef.current[i] ?? 0;
         const attack = frame > prev ? 0.62 : 0.28;
         const mix = attack * frame + (1 - attack) * prev;

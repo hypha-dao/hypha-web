@@ -34,6 +34,7 @@ import {
   type CallFullViewPaneSplit,
   readCallFullViewPaneSplit,
   persistCallFullViewPaneSplit,
+  resolveCallViewportTier,
 } from './human-chat-panel';
 import { matrixMemberDisplayLabelFromRoom } from './human-chat-panel/matrix-room-member-display';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
@@ -464,7 +465,7 @@ export function GlobalCallDockOverlay() {
     isMicrophoneMuted,
     setMicrophoneMuted,
     setCameraMuted,
-    setScreensharingEnabled,
+    toggleScreensharing,
     screenshareTakeoverIncoming,
     screenshareTakeoverPendingId,
     screenshareTakeoverDenied,
@@ -894,7 +895,7 @@ export function GlobalCallDockOverlay() {
   };
 
   const onToggleScreenshare = () => {
-    void setScreensharingEnabled(!isScreensharing);
+    toggleScreensharing();
   };
   const onVoiceProcessingPresetChange = (
     preset: 'standard' | 'voice_isolation' | 'music',
@@ -932,12 +933,17 @@ export function GlobalCallDockOverlay() {
     : modeIsFullscreen
     ? 'fullView'
     : 'panel';
+  const dockViewportTier = resolveCallViewportTier({
+    dockMode,
+    isDocumentPip: isDocumentPipOpen,
+    stageLayout: dockStageLayout,
+  });
   const dockControlsVariant =
     isMobile || !modeIsFullscreen ? 'inBanner' : 'fullView';
   const dockControlsLayout = isMobile
     ? 'centered'
-    : dockCompact
-    ? 'inline'
+    : inDocumentPip
+    ? 'centered'
     : modeIsFullscreen
     ? 'inline'
     : 'centered';
@@ -1131,11 +1137,7 @@ export function GlobalCallDockOverlay() {
               currentUserProfileAvatarUrl={me?.avatarUrl ?? null}
               resolveMemberLabel={resolveMemberLabel}
               layout={dockStageLayout}
-              panelVideoFit={
-                dockStageLayout === 'panel' && dockMode === 'thumbnail'
-                  ? 'contain'
-                  : 'cover'
-              }
+              viewportTier={dockViewportTier}
               panelFlush={dockStageLayout === 'panel'}
               fullViewOpen={dockStageLayout === 'fullView'}
               fullViewLayoutMode={layoutMode}
@@ -1176,6 +1178,7 @@ export function GlobalCallDockOverlay() {
               ) : null}
               {showDockBanner ? (
                 <HumanChatPanelCallBanner
+                  alertsOnly
                   callState={callState}
                   callKind={callKind}
                   errorCode={errorCode}
@@ -1226,39 +1229,38 @@ export function GlobalCallDockOverlay() {
                   onRetryCall={retryFromError}
                   onDismissCallError={dismissCallError}
                 />
-              ) : (
-                <HumanChatPanelInCallControls
-                  callState={callState}
-                  isMicrophoneMuted={isMicrophoneMuted}
-                  isLocalVideoMuted={isLocalVideoMuted}
-                  isScreensharing={isScreensharing}
-                  onToggleMic={onToggleMic}
-                  onToggleCamera={onToggleCamera}
-                  onToggleScreenshare={onToggleScreenshare}
-                  voiceProcessingPreset={voiceProcessingPreset}
-                  onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
-                  presenterVoiceBoostActive={presenterVoiceBoostActive}
-                  captureMode={captureMode}
-                  capturePreference={capturePreference}
-                  capturePreferenceSelected={capturePreferenceSelected}
-                  onCapturePreferenceChange={onCapturePreferenceChange}
-                  onStartCapture={onStartCaptureWithMode}
-                  onPauseCapture={onPauseCapture}
-                  onResumeCapture={onResumeCapture}
-                  onStopCapture={onStopCapture}
-                  recordingStatus={recordingStatus}
-                  recordingError={recordingError}
-                  recordingWarning={recordingWarning}
-                  canRetryRecordingUpload={canRetryRecordingUpload}
-                  onRetryRecordingUpload={() => void retryRecordingUpload()}
-                  onLeave={() => {
-                    void leave();
-                  }}
-                  density={dockCompact ? 'pip' : 'default'}
-                  variant={dockControlsVariant}
-                  inBannerLayout={dockControlsLayout}
-                />
-              )}
+              ) : null}
+              <HumanChatPanelInCallControls
+                callState={callState}
+                isMicrophoneMuted={isMicrophoneMuted}
+                isLocalVideoMuted={isLocalVideoMuted}
+                isScreensharing={isScreensharing}
+                onToggleMic={onToggleMic}
+                onToggleCamera={onToggleCamera}
+                onToggleScreenshare={onToggleScreenshare}
+                voiceProcessingPreset={voiceProcessingPreset}
+                onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+                presenterVoiceBoostActive={presenterVoiceBoostActive}
+                captureMode={captureMode}
+                capturePreference={capturePreference}
+                capturePreferenceSelected={capturePreferenceSelected}
+                onCapturePreferenceChange={onCapturePreferenceChange}
+                onStartCapture={onStartCaptureWithMode}
+                onPauseCapture={onPauseCapture}
+                onResumeCapture={onResumeCapture}
+                onStopCapture={onStopCapture}
+                recordingStatus={recordingStatus}
+                recordingError={recordingError}
+                recordingWarning={recordingWarning}
+                canRetryRecordingUpload={canRetryRecordingUpload}
+                onRetryRecordingUpload={() => void retryRecordingUpload()}
+                onLeave={() => {
+                  void leave();
+                }}
+                density={dockCompact ? 'pip' : 'default'}
+                variant={dockControlsVariant}
+                inBannerLayout={dockControlsLayout}
+              />
             </>
           )}
         </div>

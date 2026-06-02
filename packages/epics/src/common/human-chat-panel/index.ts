@@ -14,6 +14,12 @@ export {
   callGalleryGridStyle,
   sliceCallGalleryPage,
 } from './call-gallery-grid';
+export {
+  resolveCallStageLayout,
+  resolveCallStageParticipantVideoFit,
+  resolveCallViewportTier,
+  type CallViewportTier,
+} from './call-stage-layout-engine';
 export { HumanChatPanelCallFullViewLayoutMenu } from './human-chat-panel-call-full-view-layout-menu';
 export {
   type CallFullViewLayoutMode,

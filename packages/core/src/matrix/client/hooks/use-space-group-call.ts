@@ -450,6 +450,9 @@ export function useSpaceGroupCall(
   const [callKind, setCallKind] = useState<'audio' | 'video' | null>(null);
   const [participantCount, setParticipantCount] = useState(0);
   const [isScreensharing, setIsScreensharing] = useState(false);
+  const isScreensharingRef = useRef(false);
+  isScreensharingRef.current = isScreensharing;
+  const screenshareMutationRef = useRef<Promise<void>>(Promise.resolve());
   const [screenshareTakeoverIncoming, setScreenshareTakeoverIncoming] =
     useState<ScreenshareTakeoverIncoming | null>(null);
   const [screenshareTakeoverPendingId, setScreenshareTakeoverPendingId] =
@@ -2388,52 +2391,63 @@ export function useSpaceGroupCall(
   );
 
   const setScreensharingEnabled = useCallback(
-    async (enabled: boolean) => {
-      const gc = groupCallRef.current;
-      if (!gc) return;
-      setScreenshareErrorCode(null);
+    (enabled: boolean) => {
+      const run = async () => {
+        const gc = groupCallRef.current;
+        if (!gc) return;
+        setScreenshareErrorCode(null);
 
-      const sdkSharing = gc.isScreensharing();
-      if (enabled === sdkSharing) {
-        setIsScreensharing(sdkSharing);
-        return;
-      }
-
-      if (enabled) {
-        const localUserId = client?.getUserId()?.trim() ?? null;
-        const remoteOwner = getRemoteScreenshareOwner(gc);
-        if (
-          remoteOwner &&
-          localUserId &&
-          remoteOwner.userId !== localUserId &&
-          !sdkSharing
-        ) {
-          const requestId = crypto.randomUUID();
-          screenshareTakeoverPendingIdRef.current = requestId;
-          setScreenshareTakeoverPendingId(requestId);
-          setScreenshareTakeoverDenied(false);
-          await sendScreenshareTakeoverEvent(
-            'request',
-            requestId,
-            localUserId,
-            remoteOwner.userId,
-          );
+        const sdkSharing = gc.isScreensharing();
+        if (enabled) {
+          if (sdkSharing) {
+            setIsScreensharing(true);
+            return;
+          }
+          const localUserId = client?.getUserId()?.trim() ?? null;
+          const remoteOwner = getRemoteScreenshareOwner(gc);
+          if (
+            remoteOwner &&
+            localUserId &&
+            remoteOwner.userId !== localUserId &&
+            !sdkSharing
+          ) {
+            const requestId = crypto.randomUUID();
+            screenshareTakeoverPendingIdRef.current = requestId;
+            setScreenshareTakeoverPendingId(requestId);
+            setScreenshareTakeoverDenied(false);
+            await sendScreenshareTakeoverEvent(
+              'request',
+              requestId,
+              localUserId,
+              remoteOwner.userId,
+            );
+            return;
+          }
+          await enableLocalScreenshareDirect(gc);
           return;
         }
-        await enableLocalScreenshareDirect(gc);
-        return;
-      }
 
-      try {
-        await gc.setScreensharingEnabled(false);
-      } catch {
-        // user-initiated stop — reconcile UI even when SDK throws
-      }
-      syncLocalScreenshareState(gc);
-      await restorePresenterVoiceAfterScreenshare(gc);
-      setScreenshareTabAudioMissing(false);
-      setScreenshareTakeoverIncoming(null);
-      scheduleFeedBatched();
+        if (!sdkSharing && !isScreensharingRef.current) {
+          setIsScreensharing(false);
+          setScreenshareTabAudioMissing(false);
+          return;
+        }
+
+        try {
+          await gc.setScreensharingEnabled(false);
+        } catch {
+          // user-initiated stop — reconcile UI even when SDK throws
+        }
+        syncLocalScreenshareState(gc);
+        await restorePresenterVoiceAfterScreenshare(gc);
+        setScreenshareTabAudioMissing(false);
+        setScreenshareTakeoverIncoming(null);
+        scheduleFeedBatched();
+      };
+
+      const next = screenshareMutationRef.current.then(run, run);
+      screenshareMutationRef.current = next;
+      return next;
     },
     [
       client,
@@ -2444,6 +2458,14 @@ export function useSpaceGroupCall(
       syncLocalScreenshareState,
     ],
   );
+
+  const toggleScreensharing = useCallback(() => {
+    const gc = groupCallRef.current;
+    if (!gc) return;
+    const sdkSharing = gc.isScreensharing();
+    const sharing = sdkSharing || isScreensharingRef.current;
+    void setScreensharingEnabled(!sharing);
+  }, [setScreensharingEnabled]);
 
   const approveScreenshareTakeover = useCallback(
     async (request: ScreenshareTakeoverIncoming) => {
@@ -3392,6 +3414,7 @@ export function useSpaceGroupCall(
     setMicrophoneMuted,
     setCameraMuted,
     setScreensharingEnabled,
+    toggleScreensharing,
     voiceProcessingPreset,
     setVoiceProcessingPreset,
     /** WCUX-SHARE-VOICE-5: auto voice boost while presenting from Speech preset. */

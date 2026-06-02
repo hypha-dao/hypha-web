@@ -71,6 +71,8 @@ type HumanChatPanelCallBannerProps = {
   onRetryCall: () => void;
   onDismissCallError: () => void;
   controlsMode?: 'full' | 'leave_only';
+  /** Alerts and consent only — omit participant row and toolbar (e.g. floating dock footer). */
+  alertsOnly?: boolean;
 };
 
 function errorKey(code: SpaceGroupCallErrorCode): string {
@@ -142,6 +144,7 @@ export function HumanChatPanelCallBanner({
   onRetryCall,
   onDismissCallError,
   controlsMode = 'full',
+  alertsOnly = false,
 }: HumanChatPanelCallBannerProps) {
   const t = useTranslations('HumanChatPanel');
   const showRetryOnError =
@@ -309,85 +312,89 @@ export function HumanChatPanelCallBanner({
           variant="inCall"
         />
       ) : null}
-      <div className="flex min-h-[44px] flex-wrap items-center gap-2 px-4 py-2">
-        <div className="min-w-0 flex-1 basis-0 pr-1 sm:pr-2">
-          {callState === 'connected' ? (
-            othersInRoomCallCount === 0 ? (
-              <p className="text-xs font-medium leading-tight text-foreground">
-                <span className="block max-w-full">
-                  {t('callBannerInCallSoloLine1', { count: participantCount })}
-                </span>
-                <span className="mt-0.5 block text-[11px] text-muted-foreground sm:text-xs">
-                  {t('callBannerInCallSoloLine2')}
-                </span>
-              </p>
+      {alertsOnly ? null : (
+        <div className="flex min-h-[44px] flex-wrap items-center gap-2 px-4 py-2">
+          <div className="min-w-0 flex-1 basis-0 pr-1 sm:pr-2">
+            {callState === 'connected' ? (
+              othersInRoomCallCount === 0 ? (
+                <p className="text-xs font-medium leading-tight text-foreground">
+                  <span className="block max-w-full">
+                    {t('callBannerInCallSoloLine1', {
+                      count: participantCount,
+                    })}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-muted-foreground sm:text-xs">
+                    {t('callBannerInCallSoloLine2')}
+                  </span>
+                </p>
+              ) : (
+                <p
+                  className="text-xs font-medium leading-tight text-foreground"
+                  title={t('callBannerInCallWithOthers', {
+                    count: participantCount,
+                    otherCount: othersInRoomCallCount,
+                  })}
+                >
+                  {t('callBannerInCallWithOthers', {
+                    count: participantCount,
+                    otherCount: othersInRoomCallCount,
+                  })}
+                </p>
+              )
             ) : (
-              <p
-                className="text-xs font-medium leading-tight text-foreground"
-                title={t('callBannerInCallWithOthers', {
-                  count: participantCount,
-                  otherCount: othersInRoomCallCount,
-                })}
-              >
-                {t('callBannerInCallWithOthers', {
-                  count: participantCount,
-                  otherCount: othersInRoomCallCount,
-                })}
+              <p className="text-xs font-medium leading-tight text-foreground">
+                {t('callActiveInSpace')}
               </p>
-            )
-          ) : (
-            <p className="text-xs font-medium leading-tight text-foreground">
-              {t('callActiveInSpace')}
-            </p>
-          )}
-          {isDisconnecting && (
-            <p className="text-xs text-muted-foreground">
-              {t('callDisconnecting')}
-            </p>
-          )}
+            )}
+            {isDisconnecting && (
+              <p className="text-xs text-muted-foreground">
+                {t('callDisconnecting')}
+              </p>
+            )}
+            {isConnectingPhase && (
+              <p className="text-xs text-muted-foreground">
+                {t('callConnecting')}
+              </p>
+            )}
+          </div>
           {isConnectingPhase && (
-            <p className="text-xs text-muted-foreground">
-              {t('callConnecting')}
-            </p>
+            <Loader2
+              className="h-4 w-4 shrink-0 motion-reduce:animate-none animate-spin text-muted-foreground"
+              aria-hidden
+            />
           )}
+          <div className="shrink-0">
+            <HumanChatPanelInCallControls
+              callState={callState}
+              isMicrophoneMuted={isMicrophoneMuted}
+              isLocalVideoMuted={isLocalVideoMuted}
+              isScreensharing={isScreensharing}
+              onToggleMic={onToggleMic}
+              onToggleCamera={onToggleCamera}
+              onToggleScreenshare={onToggleScreenshare}
+              voiceProcessingPreset={voiceProcessingPreset}
+              onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+              presenterVoiceBoostActive={presenterVoiceBoostActive}
+              captureMode={captureMode}
+              capturePreference={capturePreference}
+              capturePreferenceSelected={capturePreferenceSelected}
+              onCapturePreferenceChange={onCapturePreferenceChange}
+              onStartCapture={onStartCapture}
+              onPauseCapture={onPauseCapture}
+              onResumeCapture={onResumeCapture}
+              onStopCapture={onStopCapture}
+              recordingStatus={recordingStatus}
+              recordingError={recordingError}
+              recordingWarning={recordingWarning}
+              canRetryRecordingUpload={canRetryRecordingUpload}
+              onRetryRecordingUpload={onRetryRecordingUpload}
+              onLeave={onLeave}
+              variant="inBanner"
+              controlsMode={controlsMode}
+            />
+          </div>
         </div>
-        {isConnectingPhase && (
-          <Loader2
-            className="h-4 w-4 shrink-0 motion-reduce:animate-none animate-spin text-muted-foreground"
-            aria-hidden
-          />
-        )}
-        <div className="shrink-0">
-          <HumanChatPanelInCallControls
-            callState={callState}
-            isMicrophoneMuted={isMicrophoneMuted}
-            isLocalVideoMuted={isLocalVideoMuted}
-            isScreensharing={isScreensharing}
-            onToggleMic={onToggleMic}
-            onToggleCamera={onToggleCamera}
-            onToggleScreenshare={onToggleScreenshare}
-            voiceProcessingPreset={voiceProcessingPreset}
-            onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
-            presenterVoiceBoostActive={presenterVoiceBoostActive}
-            captureMode={captureMode}
-            capturePreference={capturePreference}
-            capturePreferenceSelected={capturePreferenceSelected}
-            onCapturePreferenceChange={onCapturePreferenceChange}
-            onStartCapture={onStartCapture}
-            onPauseCapture={onPauseCapture}
-            onResumeCapture={onResumeCapture}
-            onStopCapture={onStopCapture}
-            recordingStatus={recordingStatus}
-            recordingError={recordingError}
-            recordingWarning={recordingWarning}
-            canRetryRecordingUpload={canRetryRecordingUpload}
-            onRetryRecordingUpload={onRetryRecordingUpload}
-            onLeave={onLeave}
-            variant="inBanner"
-            controlsMode={controlsMode}
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 }

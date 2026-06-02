@@ -175,7 +175,7 @@ function applyCallResumeSnapshot(
 }
 
 function useGlobalCallDockValue() {
-  const { isMatrixSyncLeader } = useMatrix();
+  const { isMatrixSyncLeader, client } = useMatrix();
   const [boundRoomId, setBoundRoomId] = React.useState<string | null>(null);
   const [boundSpaceSlug, setBoundSpaceSlug] = React.useState<string | null>(
     null,
@@ -378,6 +378,9 @@ function useGlobalCallDockValue() {
   React.useEffect(() => {
     if (isMatrixSyncLeader && !wasMatrixSyncLeaderRef.current) {
       resumeAttemptKeyRef.current = null;
+      if (call.callState === 'error' && call.errorCode === 'NO_CLIENT') {
+        call.dismissCallError();
+      }
     }
     if (wasMatrixSyncLeaderRef.current && !isMatrixSyncLeader) {
       resumeAttemptAtRef.current = null;
@@ -394,7 +397,13 @@ function useGlobalCallDockValue() {
       }
     }
     wasMatrixSyncLeaderRef.current = isMatrixSyncLeader;
-  }, [call.releaseLocalCallForTabTransfer, isMatrixSyncLeader]);
+  }, [
+    call.dismissCallError,
+    call.callState,
+    call.errorCode,
+    call.releaseLocalCallForTabTransfer,
+    isMatrixSyncLeader,
+  ]);
 
   React.useEffect(() => {
     if (restoreInProgressRef.current) return;
@@ -412,17 +421,27 @@ function useGlobalCallDockValue() {
 
   React.useEffect(() => {
     if (!pendingJoin) return;
+    if (!isMatrixSyncLeader || !client) return;
     if (activeRoomId !== pendingJoin.roomId) return;
     if (!activeAuthToken) return;
 
+    const join = pendingJoin;
     setPendingJoin(null);
     restoreInProgressRef.current = false;
-    if (pendingJoin.kind === 'audio') {
-      void enterAudio(pendingJoin.threadRootEventId);
+    if (join.kind === 'audio') {
+      void enterAudio(join.threadRootEventId);
       return;
     }
-    void enterVideo(pendingJoin.threadRootEventId);
-  }, [pendingJoin, activeAuthToken, activeRoomId, enterAudio, enterVideo]);
+    void enterVideo(join.threadRootEventId);
+  }, [
+    pendingJoin,
+    activeAuthToken,
+    activeRoomId,
+    client,
+    enterAudio,
+    enterVideo,
+    isMatrixSyncLeader,
+  ]);
 
   React.useEffect(() => {
     if (

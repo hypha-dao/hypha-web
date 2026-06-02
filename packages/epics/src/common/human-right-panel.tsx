@@ -1187,7 +1187,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     cancelScreenshareTakeoverRequest: cancelSpaceCallScreenshareTakeoverRequest,
     dismissScreenshareTakeoverPrompt: dismissSpaceCallScreenshareTakeoverPrompt,
     activeSpeakerKey: spaceCallActiveSpeakerKey,
-    setScreensharingEnabled: setSpaceCallScreensharing,
+    toggleScreensharing: toggleSpaceCallScreensharing,
     voiceProcessingPreset: spaceCallVoiceProcessingPreset,
     setVoiceProcessingPreset: setSpaceCallVoiceProcessingPreset,
     presenterVoiceBoostActive: spaceCallPresenterVoiceBoostActive,
@@ -1422,8 +1422,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [setSpaceCallCameraMuted, spaceCallVideoMuted]);
 
   const handleCallToggleScreenshare = useCallback(() => {
-    void setSpaceCallScreensharing(!spaceCallScreensharing);
-  }, [setSpaceCallScreensharing, spaceCallScreensharing]);
+    toggleSpaceCallScreensharing();
+  }, [toggleSpaceCallScreensharing]);
 
   const handleCallVoiceProcessingPresetChange = useCallback(
     (preset: 'standard' | 'voice_isolation' | 'music') => {
@@ -1697,6 +1697,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const canInteractWithSignalThread =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
+  const isChatFollowerTab =
+    !isMatrixSyncLeader || connectionStatus === 'follower';
+  const chatComposerLocked = !canInteractWithSignalThread || isChatFollowerTab;
+  const chatComposerLockedMessage = !canInteractWithSignalThread
+    ? t('signalTeamInteractionRestricted')
+    : isChatFollowerTab
+    ? t('connectionFollowerTitle')
+    : undefined;
   const canJoinSignalThreadCall =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
 
@@ -1860,7 +1868,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
   const mentionPickerEnabled =
-    canInteractWithSignalThread && mentionCandidates.length > 0;
+    canInteractWithSignalThread &&
+    !isChatFollowerTab &&
+    mentionCandidates.length > 0;
   const signalTeamSelectableMembers = useMemo((): ChatMentionCandidate[] => {
     const byUserId = new Map<string, ChatMentionCandidate>();
     for (const member of rawMentionCandidates) {
@@ -3501,6 +3511,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const handleSend = useCallback(async () => {
     if (!roomId) return;
+    if (isChatFollowerTab) return;
     if (!canInteractWithSignalThread) {
       setComposerError(t('signalTeamInteractionRestricted'));
       return;
@@ -3749,6 +3760,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [
     input,
     roomId,
+    isChatFollowerTab,
     canInteractWithSignalThread,
     replyDraft,
     editDraft,
@@ -4302,8 +4314,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onSend={handleSend}
               mentionCandidates={mentionCandidates}
               mentionPickerEnabled={mentionPickerEnabled}
-              composerLocked={!canInteractWithSignalThread}
-              composerLockedMessage={t('signalTeamInteractionRestricted')}
+              composerLocked={chatComposerLocked}
+              composerLockedMessage={chatComposerLockedMessage}
               getMentionComposerLabel={getMentionComposerLabel}
               onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
               draftAttachments={draftAttachments}

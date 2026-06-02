@@ -206,8 +206,10 @@ export function HumanChatPanelInCallControls({
     : 'h-4 w-4 text-foreground';
   const useSideAudioSettings =
     showAdvancedCallControls &&
-    !isCompact &&
-    (isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered');
+    (isFull ||
+      inBannerLayout === 'balanced' ||
+      inBannerLayout === 'centered') &&
+    (!isCompact || (isPipDensity && inBannerLayout === 'centered'));
   const captureActive = captureMode !== 'none' && recordingStatus !== 'error';
   const capturePending =
     captureActive && recordingStatus === 'idle' && !controlsDisabled;
