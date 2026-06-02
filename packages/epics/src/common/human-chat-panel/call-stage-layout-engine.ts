@@ -169,58 +169,6 @@ export function resolveCallGalleryTilePlacements(
     return placements;
   }
 
-  if (mode === 'seven' && n === 7) {
-    placements[speaker] = {
-      index: speaker,
-      gridColumnStart: 1,
-      gridRowStart: 1,
-      gridColumnEnd: 3,
-      gridRowEnd: 3,
-    };
-    let col = 3;
-    let row = 1;
-    for (let i = 0; i < n; i++) {
-      if (i === speaker) continue;
-      placements[i] = {
-        index: i,
-        gridColumnStart: col,
-        gridRowStart: row,
-      };
-      col += 1;
-      if (col > 3) {
-        col = 1;
-        row += 1;
-      }
-    }
-    return placements;
-  }
-
-  if (mode === 'eight' && n === 8) {
-    placements[speaker] = {
-      index: speaker,
-      gridColumnStart: 1,
-      gridRowStart: 1,
-      gridColumnEnd: 3,
-      gridRowEnd: 3,
-    };
-    let col = 3;
-    let row = 1;
-    for (let i = 0; i < n; i++) {
-      if (i === speaker) continue;
-      placements[i] = {
-        index: i,
-        gridColumnStart: col,
-        gridRowStart: row,
-      };
-      col += 1;
-      if (col > 3) {
-        col = 1;
-        row += 1;
-      }
-    }
-    return placements;
-  }
-
   return placements;
 }
 

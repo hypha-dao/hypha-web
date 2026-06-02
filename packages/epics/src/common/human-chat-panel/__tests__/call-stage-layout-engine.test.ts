@@ -200,14 +200,15 @@ describe('resolveCallGalleryTilePlacements', () => {
     });
   });
 
-  it('promotes active speaker in seven layout', () => {
-    const placements = resolveCallGalleryTilePlacements('seven', 7, 4);
-    expect(placements[4]).toMatchObject({
-      gridColumnStart: 1,
-      gridRowStart: 1,
-      gridColumnEnd: 3,
-      gridRowEnd: 3,
-    });
+  it('uses default gallery placements for seven and eight participants', () => {
+    for (const mode of ['seven', 'eight'] as const) {
+      const n = mode === 'seven' ? 7 : 8;
+      const placements = resolveCallGalleryTilePlacements(mode, n, 4);
+      expect(placements).toHaveLength(n);
+      for (let i = 0; i < n; i += 1) {
+        expect(placements[i]).toEqual({ index: i });
+      }
+    }
   });
 });
 
