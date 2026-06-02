@@ -1697,8 +1697,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const canInteractWithSignalThread =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
-  const isChatFollowerTab =
-    !isMatrixSyncLeader || connectionStatus === 'follower';
+  const isChatFollowerTab = connectionStatus === 'follower';
   const chatComposerLocked = !canInteractWithSignalThread || isChatFollowerTab;
   const chatComposerLockedMessage = !canInteractWithSignalThread
     ? t('signalTeamInteractionRestricted')
