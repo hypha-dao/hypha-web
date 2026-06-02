@@ -2243,6 +2243,7 @@
     "callVoiceProcessingStandard": "Voix",
     "callVoiceProcessingIsolation": "Isolation",
     "callVoiceProcessingMusic": "Musique",
+    "callVoiceBoostWhilePresenting": "Amplification vocale active pendant la présentation",
     "callCameraOn": "Allumer la caméra",
     "callCameraOff": "Éteindre la caméra",
     "callErrorPermission": "Accès refusé à la caméra ou au micro. Vérifiez les paramètres du navigateur.",

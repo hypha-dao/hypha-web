@@ -2640,6 +2640,7 @@
     "callVoiceProcessingStandard": "Sprache",
     "callVoiceProcessingIsolation": "Isolierung",
     "callVoiceProcessingMusic": "Musik",
+    "callVoiceBoostWhilePresenting": "Sprachverstärkung ist während der Präsentation aktiv",
     "callCameraOn": "Kamera einschalten",
     "callCameraOff": "Kamera ausschalten",
     "callErrorPermission": "Kamera- oder Mikrofonzugriff verweigert. Bitte Browsereinstellungen prüfen.",

@@ -2644,6 +2644,7 @@
     "callVoiceProcessingStandard": "Speech",
     "callVoiceProcessingIsolation": "Isolation",
     "callVoiceProcessingMusic": "Music",
+    "callVoiceBoostWhilePresenting": "Voice boost active while presenting",
     "callCameraOn": "Turn camera on",
     "callCameraOff": "Turn camera off",
     "callErrorPermission": "Call start was blocked by permissions (camera/microphone or room call permissions).",

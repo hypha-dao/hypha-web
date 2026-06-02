@@ -52,6 +52,8 @@ type HumanChatPanelInCallControlsProps = {
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
+  /** True when auto voice isolation is active during screen share (WCUX-SHARE-VOICE-5). */
+  presenterVoiceBoostActive?: boolean;
   captureMode: SpaceGroupCallCaptureMode;
   capturePreference: Exclude<SpaceGroupCallCaptureMode, 'none'>;
   capturePreferenceSelected: boolean;
@@ -92,6 +94,7 @@ export function HumanChatPanelInCallControls({
   onToggleScreenshare,
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
+  presenterVoiceBoostActive = false,
   captureMode,
   capturePreference,
   capturePreferenceSelected,
@@ -389,6 +392,16 @@ export function HumanChatPanelInCallControls({
           <p className="px-2 py-1.5 text-sm font-semibold">
             {t('callVoiceProcessingLabel')}
           </p>
+          {presenterVoiceBoostActive ? (
+            <p
+              className={cn(
+                'px-2 pb-1.5 text-[11px] leading-snug',
+                isFull ? 'text-zinc-400' : 'text-muted-foreground',
+              )}
+            >
+              {t('callVoiceBoostWhilePresenting')}
+            </p>
+          ) : null}
           <div className="-mx-0 my-1 h-px bg-neutral-6" />
           <button
             type="button"

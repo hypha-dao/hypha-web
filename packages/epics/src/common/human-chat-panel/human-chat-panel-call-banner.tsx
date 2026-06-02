@@ -46,6 +46,7 @@ type HumanChatPanelCallBannerProps = {
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => void;
+  presenterVoiceBoostActive?: boolean;
   captureMode: SpaceGroupCallCaptureMode;
   capturePreference: Exclude<SpaceGroupCallCaptureMode, 'none'>;
   capturePreferenceSelected: boolean;
@@ -120,6 +121,7 @@ export function HumanChatPanelCallBanner({
   onToggleScreenshare,
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
+  presenterVoiceBoostActive = false,
   captureMode,
   capturePreference,
   capturePreferenceSelected,
@@ -366,6 +368,7 @@ export function HumanChatPanelCallBanner({
             onToggleScreenshare={onToggleScreenshare}
             voiceProcessingPreset={voiceProcessingPreset}
             onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+            presenterVoiceBoostActive={presenterVoiceBoostActive}
             captureMode={captureMode}
             capturePreference={capturePreference}
             capturePreferenceSelected={capturePreferenceSelected}

@@ -474,6 +474,7 @@ export function GlobalCallDockOverlay() {
     dismissScreenshareTakeoverPrompt,
     voiceProcessingPreset,
     setVoiceProcessingPreset,
+    presenterVoiceBoostActive,
     captureMode,
     capturePreference,
     capturePreferenceSelected,
@@ -1205,6 +1206,7 @@ export function GlobalCallDockOverlay() {
                   onToggleScreenshare={onToggleScreenshare}
                   voiceProcessingPreset={voiceProcessingPreset}
                   onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+                  presenterVoiceBoostActive={presenterVoiceBoostActive}
                   captureMode={captureMode}
                   capturePreference={capturePreference}
                   capturePreferenceSelected={capturePreferenceSelected}
@@ -1235,6 +1237,7 @@ export function GlobalCallDockOverlay() {
                   onToggleScreenshare={onToggleScreenshare}
                   voiceProcessingPreset={voiceProcessingPreset}
                   onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+                  presenterVoiceBoostActive={presenterVoiceBoostActive}
                   captureMode={captureMode}
                   capturePreference={capturePreference}
                   capturePreferenceSelected={capturePreferenceSelected}

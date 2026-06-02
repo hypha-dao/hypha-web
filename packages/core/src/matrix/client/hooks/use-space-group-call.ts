@@ -465,6 +465,8 @@ export function useSpaceGroupCall(
     useRef<SpaceGroupCallVoiceProcessingPreset>('standard');
   const voicePresetRestoreAfterScreenshareRef =
     useRef<SpaceGroupCallVoiceProcessingPreset | null>(null);
+  const [presenterVoiceBoostActive, setPresenterVoiceBoostActive] =
+    useState(false);
   const [isMicrophoneMuted, setIsMicrophoneMuted] = useState(false);
   const [isLocalVideoMuted, setIsLocalVideoMuted] = useState(true);
   /** Active GroupCall for UI (tiles); cleared on leave. */
@@ -1386,6 +1388,7 @@ export function useSpaceGroupCall(
         voiceProcessingPresetRef.current,
       );
       voicePresetRestoreAfterScreenshareRef.current = plan.restorePreset;
+      setPresenterVoiceBoostActive(plan.restorePreset !== null);
       if (plan.effectivePreset !== voiceProcessingPresetRef.current) {
         setVoiceProcessingPresetState(plan.effectivePreset);
         voiceProcessingPresetRef.current = plan.effectivePreset;
@@ -1417,6 +1420,7 @@ export function useSpaceGroupCall(
     async (gc: MatrixSdk.GroupCall) => {
       const restore = voicePresetRestoreAfterScreenshareRef.current;
       voicePresetRestoreAfterScreenshareRef.current = null;
+      setPresenterVoiceBoostActive(false);
       const targetPreset = restore ?? voiceProcessingPresetRef.current;
       if (restore) {
         setVoiceProcessingPresetState(restore);
@@ -2255,6 +2259,7 @@ export function useSpaceGroupCall(
   const leave = useCallback(async () => {
     if (callState === 'idle' || callState === 'disconnecting') return;
     setCallState('disconnecting');
+    setPresenterVoiceBoostActive(false);
     if (lastRoomIdForTelemetryRef.current) {
       emitCallSessionEnd('user');
       logSpaceGroupCallEvent({
@@ -2507,6 +2512,7 @@ export function useSpaceGroupCall(
   const setVoiceProcessingPreset = useCallback(
     async (preset: SpaceGroupCallVoiceProcessingPreset) => {
       voicePresetRestoreAfterScreenshareRef.current = null;
+      setPresenterVoiceBoostActive(false);
       setVoiceProcessingPresetState(preset);
       persistVoiceProcessingPreset(preset);
       const gc = groupCallRef.current;
@@ -3388,6 +3394,8 @@ export function useSpaceGroupCall(
     setScreensharingEnabled,
     voiceProcessingPreset,
     setVoiceProcessingPreset,
+    /** WCUX-SHARE-VOICE-5: auto voice boost while presenting from Speech preset. */
+    presenterVoiceBoostActive,
     isScreensharing,
     localPreviewStream,
     /** Devices in the room’s GroupCall (or 0 if none). */
