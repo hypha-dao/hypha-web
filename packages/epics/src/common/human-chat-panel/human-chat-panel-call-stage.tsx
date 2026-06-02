@@ -66,6 +66,7 @@ import {
   resolveCallFeedLiveVideoTrack,
 } from './call-feed-tile-video';
 import { registerCallPlaybackElement } from './call-playback-registry';
+import { callAccentAlertOnDarkText } from './call-accent-alert-styles';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
 
@@ -1836,7 +1837,10 @@ function CallParticipantPlaceholderTile({
       </p>
       <p
         className={cn(
-          'max-w-[min(100%,18rem)] text-muted-foreground/90',
+          'max-w-[min(100%,18rem)]',
+          remoteMediaStall
+            ? cn('font-medium', callAccentAlertOnDarkText)
+            : 'text-muted-foreground/90',
           isPip ? 'text-[9px]' : 'text-xs',
         )}
       >

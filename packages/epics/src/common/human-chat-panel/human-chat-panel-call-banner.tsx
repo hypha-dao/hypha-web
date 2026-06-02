@@ -13,6 +13,15 @@ import {
 } from '@hypha-platform/core/client';
 import { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
 import { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
+import {
+  callAccentAlertActionButtonClassName,
+  callAccentAlertCompactRowClassName,
+  callAccentAlertDismissClassName,
+  callAccentAlertIconButtonClassName,
+  callAccentAlertRowClassName,
+  callAccentAlertSecondaryText,
+  callAccentAlertText,
+} from './call-accent-alert-styles';
 
 type HumanChatPanelCallBannerProps = {
   callState: SpaceGroupCallState;
@@ -102,13 +111,6 @@ function screenshareErrorKey(code: SpaceGroupCallErrorCode): string {
     : 'callErrorScreenshare';
 }
 
-const accentHintBorder =
-  'border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_30%,transparent)]';
-const accentHintSurface =
-  'bg-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_12%,var(--background))]';
-const accentHintDismissClassName =
-  'shrink-0 text-xs font-medium text-foreground underline-offset-2 hover:underline';
-
 /**
  * In-call strip: space-wide label, connection state, mute, camera, leave.
  */
@@ -170,15 +172,20 @@ export function HumanChatPanelCallBanner({
     return (
       <div
         role="alert"
-        className="flex min-h-9 items-center gap-2 border-b border-destructive/20 bg-destructive/10 px-3 py-1.5 sm:min-h-10 sm:px-3.5"
+        className={callAccentAlertCompactRowClassName()}
         aria-live="assertive"
       >
-        <p className="min-w-0 flex-1 text-xs leading-snug text-destructive sm:text-sm">
+        <p
+          className={cn(
+            'min-w-0 flex-1 text-xs leading-snug sm:text-sm',
+            callAccentAlertText,
+          )}
+        >
           {t(errorKey(errorCode))}
           {errorCode === 'PERMISSION_DENIED' ? (
             <>
               {' '}
-              <span className="text-destructive/90">
+              <span className={callAccentAlertSecondaryText}>
                 {t('callErrorPermissionGuidance')}
               </span>
             </>
@@ -189,7 +196,7 @@ export function HumanChatPanelCallBanner({
             <button
               type="button"
               onClick={onRetryCall}
-              className="inline-flex h-7 items-center rounded-md border border-border/80 bg-background/90 px-2 text-xs font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+              className={callAccentAlertActionButtonClassName}
             >
               {t('callErrorRetry')}
             </button>
@@ -197,7 +204,7 @@ export function HumanChatPanelCallBanner({
           <button
             type="button"
             onClick={onDismissCallError}
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-destructive transition-colors hover:bg-destructive/15 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+            className={callAccentAlertIconButtonClassName}
             title={t('callErrorDismiss')}
             aria-label={t('callErrorDismiss')}
           >
@@ -269,18 +276,20 @@ export function HumanChatPanelCallBanner({
         </p>
       ) : null}
       {showRemoteMediaStallAlert ? (
-        <div
-          role="alert"
-          className="flex items-start gap-2 border-b border-amber-500/25 bg-amber-500/10 px-4 py-1.5"
-        >
-          <p className="min-w-0 flex-1 text-xs text-amber-950 dark:text-amber-100">
+        <div role="alert" className={callAccentAlertRowClassName()}>
+          <p
+            className={cn(
+              'min-w-0 flex-1 text-xs leading-snug',
+              callAccentAlertText,
+            )}
+          >
             {t('callRemoteMediaStallHint')}
           </p>
           {onDismissRemoteMediaStall && (
             <button
               type="button"
               onClick={onDismissRemoteMediaStall}
-              className="shrink-0 text-xs font-medium text-amber-900 underline-offset-2 hover:underline dark:text-amber-50"
+              className={callAccentAlertDismissClassName}
             >
               {t('callLeftBannerDismiss')}
             </button>
@@ -288,11 +297,8 @@ export function HumanChatPanelCallBanner({
         </div>
       ) : null}
       {showSessionRefreshAlert ? (
-        <div
-          role="alert"
-          className="flex items-start gap-2 border-b border-border/60 bg-destructive/10 px-4 py-1.5"
-        >
-          <p className="min-w-0 flex-1 text-xs text-destructive">
+        <div role="alert" className={callAccentAlertRowClassName()}>
+          <p className={cn('min-w-0 flex-1 text-xs', callAccentAlertText)}>
             {t('callSessionRefreshFailedDescription')}
           </p>
           {onReconnectMatrixSession ? (
@@ -301,7 +307,7 @@ export function HumanChatPanelCallBanner({
               onClick={() => {
                 void onReconnectMatrixSession();
               }}
-              className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+              className={callAccentAlertDismissClassName}
             >
               {t('callSessionRefreshFailedReconnect')}
             </button>
@@ -309,39 +315,34 @@ export function HumanChatPanelCallBanner({
         </div>
       ) : null}
       {showScreenshareErrorAlert ? (
-        <div
-          role="alert"
-          className="flex items-start gap-2 border-b border-border/60 bg-destructive/10 px-4 py-1.5"
-        >
-          <p className="min-w-0 flex-1 text-xs text-destructive">
+        <div role="alert" className={callAccentAlertRowClassName()}>
+          <p className={cn('min-w-0 flex-1 text-xs', callAccentAlertText)}>
             {t(screenshareErrorKey(screenshareErrorCode))}
           </p>
           <button
             type="button"
             onClick={onDismissScreenshareError}
-            className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+            className={callAccentAlertDismissClassName}
           >
             {t('callScreenshareDismiss')}
           </button>
         </div>
       ) : null}
       {showScreenshareTabAudioAlert ? (
-        <div
-          role="status"
-          className={cn(
-            'flex items-start gap-2 border-b px-4 py-1.5',
-            accentHintBorder,
-            accentHintSurface,
-          )}
-        >
-          <p className="min-w-0 flex-1 text-xs leading-snug text-foreground">
+        <div role="status" className={callAccentAlertRowClassName()}>
+          <p
+            className={cn(
+              'min-w-0 flex-1 text-xs leading-snug',
+              callAccentAlertText,
+            )}
+          >
             {t('callShareTabAudioNotShared')}
           </p>
           {onDismissScreenshareTabAudioHint ? (
             <button
               type="button"
               onClick={onDismissScreenshareTabAudioHint}
-              className={accentHintDismissClassName}
+              className={callAccentAlertDismissClassName}
             >
               {t('callScreenshareDismiss')}
             </button>
@@ -349,13 +350,10 @@ export function HumanChatPanelCallBanner({
         </div>
       ) : null}
       {showCameraAccessBlockedAlert ? (
-        <div
-          role="alert"
-          className="flex items-start gap-2 border-b border-border/60 bg-destructive/10 px-4 py-1.5"
-        >
-          <p className="min-w-0 flex-1 text-xs text-destructive">
+        <div role="alert" className={callAccentAlertRowClassName()}>
+          <p className={cn('min-w-0 flex-1 text-xs', callAccentAlertText)}>
             {t('callErrorPermission')}{' '}
-            <span className="text-destructive/90">
+            <span className={callAccentAlertSecondaryText}>
               {t('callErrorPermissionGuidance')}
             </span>
           </p>
@@ -363,7 +361,7 @@ export function HumanChatPanelCallBanner({
             <button
               type="button"
               onClick={onDismissCameraAccessBlocked}
-              className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+              className={callAccentAlertDismissClassName}
             >
               {t('callScreenshareDismiss')}
             </button>

@@ -40,6 +40,10 @@ import {
   type SpaceGroupCallRecordingStatus,
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
+import {
+  callAccentAlertActionButtonClassName,
+  callAccentAlertText,
+} from './call-accent-alert-styles';
 
 type HumanChatPanelInCallControlsProps = {
   callState: SpaceGroupCallState;
@@ -846,7 +850,7 @@ export function HumanChatPanelInCallControls({
             className={cn(
               'mt-1 text-[11px]',
               recordingWarning?.code.endsWith('_critical')
-                ? 'text-amber-600 dark:text-amber-400'
+                ? callAccentAlertText
                 : 'text-muted-foreground',
             )}
           >
@@ -856,7 +860,7 @@ export function HumanChatPanelInCallControls({
           recordingStatus === 'error' &&
           recordingError?.trim() ? (
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <p className={cn('text-[11px] text-destructive')}>
+            <p className={cn('text-[11px]', callAccentAlertText)}>
               {recordingError}
             </p>
             {canRetryRecordingUpload && onRetryRecordingUpload ? (
@@ -864,7 +868,10 @@ export function HumanChatPanelInCallControls({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-6 px-2 text-[10px]"
+                className={cn(
+                  'h-6 px-2 text-[10px]',
+                  callAccentAlertActionButtonClassName,
+                )}
                 onClick={() => void onRetryRecordingUpload()}
               >
                 {t('callCaptureRetryUpload')}

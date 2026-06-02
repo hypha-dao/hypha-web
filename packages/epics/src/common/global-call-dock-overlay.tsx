@@ -48,6 +48,7 @@ import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallDockDocumentPip } from './use-call-dock-document-pip';
 import { useCallDocumentKeepalive } from './use-call-document-keepalive';
 import { useSpaceAccentPortalStyles } from '../spaces/components/space-accent-portal-context';
+import { callAccentAlertText } from './human-chat-panel/call-accent-alert-styles';
 
 type DockGeometry = {
   x: number;
@@ -1260,7 +1261,9 @@ export function GlobalCallDockOverlay() {
         >
           {captureUploadFinalizing ? (
             recordingError?.trim() ? (
-              <p className="text-[11px] text-destructive">{recordingError}</p>
+              <p className={cn('text-[11px]', callAccentAlertText)}>
+                {recordingError}
+              </p>
             ) : null
           ) : (
             <>
