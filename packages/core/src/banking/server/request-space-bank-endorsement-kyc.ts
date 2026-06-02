@@ -27,7 +27,7 @@ export async function requestSpaceBankEndorsementKyc(
     throw new BankOnboardingError(auth.message, auth.httpStatus);
   }
 
-  let customer = await findBankCustomerBySpaceAndProvider(
+  const customer = await findBankCustomerBySpaceAndProvider(
     { spaceId: space.id, provider: DEFAULT_BANK_PROVIDER },
     { db },
   );
