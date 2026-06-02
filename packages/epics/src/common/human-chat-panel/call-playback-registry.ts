@@ -1,3 +1,5 @@
+'use client';
+
 const playbackElements = new Set<HTMLMediaElement>();
 
 export function registerCallPlaybackElement(
