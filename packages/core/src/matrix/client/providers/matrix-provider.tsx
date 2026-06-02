@@ -595,6 +595,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   >(new Map());
   const roomHistoryExhaustedRef = React.useRef<Set<string>>(new Set());
   const proactiveRefreshTimerRef = React.useRef<number | null>(null);
+  const matrixTokenExpiresInSecRef = React.useRef<number | undefined>(
+    undefined,
+  );
   const [registeredRoomListeners, setRegisteredRoomListeners] = React.useState<
     RoomMessageListenerRecord[]
   >([]);
@@ -608,6 +611,12 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   React.useEffect(() => {
     refreshMatrixTokenRef.current = refreshMatrixToken;
   }, [refreshMatrixToken]);
+
+  React.useEffect(() => {
+    if (typeof matrixToken?.expiresInSec === 'number') {
+      matrixTokenExpiresInSecRef.current = matrixToken.expiresInSec;
+    }
+  }, [matrixToken?.expiresInSec]);
 
   const initializeMatrixClient = React.useCallback(
     async (matrixToken: MatrixTokenData) => {
@@ -748,6 +757,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         if (!freshToken) {
           return false;
         }
+        if (typeof freshToken.expiresInSec === 'number') {
+          matrixTokenExpiresInSecRef.current = freshToken.expiresInSec;
+        }
         const existingClient = clientRef.current;
         if (existingClient) {
           if (isGroupCallSessionActive()) {
@@ -806,7 +818,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     if (typeof window === 'undefined') return;
     clearProactiveRefreshTimer();
     if (!isGroupCallSessionActive()) return;
-    const intervalMs = resolveMatrixCallProactiveRefreshIntervalMs(undefined);
+    const intervalMs = resolveMatrixCallProactiveRefreshIntervalMs(
+      matrixTokenExpiresInSecRef.current,
+    );
     proactiveRefreshTimerRef.current = window.setTimeout(() => {
       proactiveRefreshTimerRef.current = null;
       void recoverMatrixSession().finally(() => {

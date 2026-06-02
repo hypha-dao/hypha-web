@@ -9,6 +9,8 @@ export interface MatrixTokenData {
   userId: string;
   homeserverUrl: string;
   deviceId?: string;
+  /** Seconds until access token expiry when returned by `/api/matrix/token`. */
+  expiresInSec?: number;
   elementConfig: {
     defaultRoomId?: string;
     theme: string;
