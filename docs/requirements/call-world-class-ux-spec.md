@@ -9,6 +9,7 @@
 | **Parent specs** | [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md), [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md), [call-stability-hardening-spec.md](./call-stability-hardening-spec.md) |
 | **Implementation plan** | [call-consolidated-implementation-plan.md](./call-consolidated-implementation-plan.md) (**single PR**) |
 | **WCUX phase reference** | [call-world-class-ux-implementation-plan.md](./call-world-class-ux-implementation-plan.md) |
+| **Regression plan** | [call-regression-test-plan.md](./call-regression-test-plan.md) |
 | **CSH origin** | PR [#2285](https://github.com/hypha-dao/hypha-web/pull/2285) — merged into spec PR [#2297](https://github.com/hypha-dao/hypha-web/pull/2297) |
 | **Architecture (v1)** | Matrix `GroupCall` mesh WebRTC (`useLivekitForGroupCalls: false`) |
 | **Stakeholder evidence** | Screenshots attached to the originating request (2026-06-01/02) |
@@ -336,7 +337,7 @@ When PiP open, **also** render hidden `aria-hidden` media sink in main document 
 
 ### 11.3 Playwright
 
-WebRTC media cannot be asserted in CI; cover toolbar states, reaction popover open, raise-hand UI, layout DOM structure with mocked `useSpaceGroupCall`.
+WebRTC media cannot be asserted in CI; cover toolbar states, reaction popover open, raise-hand UI, layout DOM structure with mocked `useSpaceGroupCall`. See [call-regression-test-plan.md §4](./call-regression-test-plan.md).
 
 ---
 

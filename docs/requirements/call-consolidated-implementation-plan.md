@@ -9,6 +9,7 @@
 | **Parent** | [voice-video-call-implementation-plan.md](./voice-video-call-implementation-plan.md) |
 | **Spec PR** | [#2297](https://github.com/hypha-dao/hypha-web/pull/2297) (includes content from [#2285](https://github.com/hypha-dao/hypha-web/pull/2285)) |
 | **Implementation PR** | `feat/call-world-class-consolidated` → `main` (one PR) |
+| **Regression plan** | [call-regression-test-plan.md](./call-regression-test-plan.md) |
 
 ---
 
@@ -221,9 +222,10 @@ session stability, stability hardening (CSH), reactions, video quality.
 - Plan: call-consolidated-implementation-plan.md
 
 ## Test plan
+- [ ] [call-regression-test-plan.md](./call-regression-test-plan.md) — CI commands §2, Vitest §3, manual checklist §5
 - [ ] Manual QA checklist §5 (15 rows)
 - [ ] Vitest: layout engine, share layout, chrome guard, feed labels
-- [ ] Playwright: reaction popover, raise hand toggle
+- [ ] Playwright: reaction popover, raise hand toggle, unfix dock persistence
 - [ ] 45-min soak (staging, two browsers)
 ```
 
@@ -231,7 +233,7 @@ session stability, stability hardening (CSH), reactions, video quality.
 
 ## 8) References
 
-- PR [#2285](https://github.com/hypha-dao/hypha-web/pull/2285) — stability spec (absorbed)
+- [call-regression-test-plan.md](./call-regression-test-plan.md) — CI, Vitest, Playwright, manual checklist
 - PR [#2297](https://github.com/hypha-dao/hypha-web/pull/2297) — consolidated spec PR
 - PR [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) — merged to `main` (banner, share layout, dock snapshot)
 - [call-world-class-ux-implementation-plan.md](./call-world-class-ux-implementation-plan.md) — original WCUX phase breakdown (reference)

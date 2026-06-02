@@ -267,8 +267,10 @@ Reference: [voice-video-call-matrix-tech-spec.md Option C](./voice-video-call-ma
 | Area | Test type | File / note |
 | ---- | --------- | ----------- |
 | Share layout pure functions | Unit (vitest) | `call-stage-share-layout.test.ts` |
-| Chrome visibility flags | Unit or component | Mock `showFloatingDock` / `showSidebarCallChrome` |
-| WebRTC media | Manual only | Playwright cannot assert real media (document in plan) |
+| Chrome visibility flags | Unit or component | `show-sidebar-call-chrome.test.ts` |
+| WebRTC media | Manual only | [call-regression-test-plan.md §5](./call-regression-test-plan.md) |
+
+Full Vitest/Playwright inventory: [call-regression-test-plan.md §3–4](./call-regression-test-plan.md).
 
 ---
 
