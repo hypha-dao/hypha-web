@@ -244,7 +244,10 @@ function CallParticipantGalleryGrid({
         style={gridStyle}
       >
         {visibleTiles.map((item, i) => {
-          const placement = tilePlacements?.[i];
+          const tileIndex = showPagination ? galleryPage * pageSize + i : i;
+          const placement =
+            tilePlacements?.find((entry) => entry.index === tileIndex) ??
+            tilePlacements?.[tileIndex];
           const colStart =
             placement?.gridColumnStart ??
             getCallGalleryTileColumnStart(i, visibleTiles.length, layout);

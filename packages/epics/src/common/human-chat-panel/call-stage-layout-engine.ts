@@ -125,6 +125,30 @@ export function resolveCallGalleryTilePlacements(
     }),
   );
 
+  if (mode === 'five' && n === 5) {
+    for (let i = 0; i < 3; i += 1) {
+      placements[i] = {
+        index: i,
+        gridColumnStart: i + 1,
+        gridRowStart: 1,
+      };
+    }
+    /** Bottom row: two tiles span all three columns — no empty grid cell (WCUX-LAYOUT-2). */
+    placements[3] = {
+      index: 3,
+      gridColumnStart: 1,
+      gridColumnEnd: 2,
+      gridRowStart: 2,
+    };
+    placements[4] = {
+      index: 4,
+      gridColumnStart: 2,
+      gridColumnEnd: 4,
+      gridRowStart: 2,
+    };
+    return placements;
+  }
+
   if (mode === 'trio' && n === 3) {
     placements[speaker] = {
       index: speaker,

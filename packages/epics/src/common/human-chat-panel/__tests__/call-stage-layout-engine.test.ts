@@ -73,6 +73,16 @@ describe('resolveCallStageLayout', () => {
     expect(plan.renderer).toBe('thresholdGallery');
     expect(plan.fullScreenMode).toBe('five');
     expect(plan.galleryLayout).toEqual({ cols: 3, rows: 2, slots: 6 });
+    expect(plan.tilePlacements[3]).toMatchObject({
+      gridColumnStart: 1,
+      gridColumnEnd: 2,
+      gridRowStart: 2,
+    });
+    expect(plan.tilePlacements[4]).toMatchObject({
+      gridColumnStart: 2,
+      gridColumnEnd: 4,
+      gridRowStart: 2,
+    });
   });
 
   it('uses paginated gallery for full-screen N=9', () => {
@@ -124,9 +134,63 @@ describe('resolveCallStageLayout', () => {
     });
     expect(plan.renderer).toBe('legacyGrid');
   });
+
+  it('keeps pagination reset key stable across viewport tiers (WCUX-LAYOUT-7)', () => {
+    const shared = {
+      participantDeviceCount: 25,
+      hasActiveShare: false,
+      activeSpeakerIndex: 3,
+      galleryPage: 2,
+    };
+    const vS = resolveCallStageLayout({ ...shared, viewportTier: 'V-S' });
+    const vM = resolveCallStageLayout({ ...shared, viewportTier: 'V-M' });
+    const vL = resolveCallStageLayout({ ...shared, viewportTier: 'V-L' });
+    expect(vS.galleryPaginationResetKey).toBe(vM.galleryPaginationResetKey);
+    expect(vM.galleryPaginationResetKey).toBe(vL.galleryPaginationResetKey);
+  });
+
+  it('does not change pagination reset key when active speaker changes (WCUX-LAYOUT-4)', () => {
+    const base = {
+      viewportTier: 'V-L' as const,
+      participantDeviceCount: 25,
+      hasActiveShare: false,
+      galleryPage: 0,
+    };
+    const a = resolveCallStageLayout({ ...base, activeSpeakerIndex: 1 });
+    const b = resolveCallStageLayout({ ...base, activeSpeakerIndex: 8 });
+    expect(a.galleryPaginationResetKey).toBe(b.galleryPaginationResetKey);
+  });
+
+  it('uses 0.75 speaker ratio for seven participants in medium dock (QA row 6)', () => {
+    const plan = resolveCallStageLayout({
+      viewportTier: 'V-M',
+      participantDeviceCount: 7,
+      hasActiveShare: false,
+      activeSpeakerIndex: 2,
+      galleryPage: 0,
+    });
+    expect(plan.renderer).toBe('speakerPrimaryStrip');
+    expect(plan.participantVideoFit).toBe('contain');
+    expect(plan.speakerPrimaryRatio).toBe(0.75);
+    expect(plan.stripMaxVisible).toBe(6);
+  });
 });
 
 describe('resolveCallGalleryTilePlacements', () => {
+  it('fills the bottom row for five participants without empty cells', () => {
+    const placements = resolveCallGalleryTilePlacements('five', 5, 0);
+    expect(placements[3]).toMatchObject({
+      gridColumnStart: 1,
+      gridColumnEnd: 2,
+      gridRowStart: 2,
+    });
+    expect(placements[4]).toMatchObject({
+      gridColumnStart: 2,
+      gridColumnEnd: 4,
+      gridRowStart: 2,
+    });
+  });
+
   it('promotes active speaker in trio layout', () => {
     const placements = resolveCallGalleryTilePlacements('trio', 3, 2);
     expect(placements[2]).toMatchObject({
