@@ -58,6 +58,8 @@ import {
 } from './screenshare-takeover';
 import {
   MATRIX_SCREENSHARE_CAPTURE_OPTS,
+  bindScreenshareStreamStopHandlers,
+  clearOrphanedMatrixScreenshareStreams,
   screenshareStreamHasTabAudio,
 } from './screenshare-capture';
 import {
@@ -457,6 +459,10 @@ export function useSpaceGroupCall(
   const isScreensharingRef = useRef(false);
   isScreensharingRef.current = isScreensharing;
   const screenshareMutationRef = useRef<Promise<void>>(Promise.resolve());
+  const screenshareStopHandlersCleanupRef = useRef<(() => void) | null>(null);
+  const setScreensharingEnabledRef = useRef<
+    (enabled: boolean) => Promise<void>
+  >(async () => undefined);
   const [screenshareTakeoverIncoming, setScreenshareTakeoverIncoming] =
     useState<ScreenshareTakeoverIncoming | null>(null);
   const [screenshareTakeoverPendingId, setScreenshareTakeoverPendingId] =
@@ -1206,6 +1212,8 @@ export function useSpaceGroupCall(
         cancelAnimationFrame(feedUpdateRafRef.current);
         feedUpdateRafRef.current = null;
       }
+      screenshareStopHandlersCleanupRef.current?.();
+      screenshareStopHandlersCleanupRef.current = null;
       const gc = groupCallRef.current;
       if (gc) {
         if (!options?.skipGroupCallLeave) {
@@ -1391,12 +1399,14 @@ export function useSpaceGroupCall(
   const enableLocalScreenshareDirect = useCallback(
     async (gc: MatrixSdk.GroupCall) => {
       try {
+        clearOrphanedMatrixScreenshareStreams(client);
         const ok = await gc.setScreensharingEnabled(
           true,
           MATRIX_SCREENSHARE_CAPTURE_OPTS,
         );
         syncLocalScreenshareState(gc);
         if (ok === false) {
+          clearOrphanedMatrixScreenshareStreams(client);
           setScreenshareTabAudioMissing(false);
           setScreenshareErrorCode('WEBRTC_FAILED');
         } else {
@@ -1407,8 +1417,17 @@ export function useSpaceGroupCall(
           void applyScreenShareCaptureRootRestrictionWithRetry(
             gc.localScreenshareFeed?.stream,
           );
+          screenshareStopHandlersCleanupRef.current?.();
+          screenshareStopHandlersCleanupRef.current =
+            bindScreenshareStreamStopHandlers(
+              gc.localScreenshareFeed?.stream,
+              () => {
+                void setScreensharingEnabledRef.current(false);
+              },
+            );
         }
       } catch (e) {
+        clearOrphanedMatrixScreenshareStreams(client);
         syncLocalScreenshareState(gc);
         setScreenshareTabAudioMissing(false);
         if (isPermissionLikeGroupCallError(e)) {
@@ -1420,6 +1439,7 @@ export function useSpaceGroupCall(
       scheduleFeedBatched();
     },
     [
+      client,
       scheduleFeedBatched,
       syncLocalScreenshareState,
       applyPresenterVoiceBoostForScreenshare,
@@ -1449,6 +1469,49 @@ export function useSpaceGroupCall(
       applyVoiceProcessingPresetToGroupCall,
       refreshLocalPreview,
       scheduleFeedBatched,
+    ],
+  );
+
+  const reconcileLocalScreenshareStop = useCallback(
+    async (
+      gc: MatrixSdk.GroupCall | null | undefined,
+      stream?: MediaStream | null,
+    ) => {
+      screenshareStopHandlersCleanupRef.current?.();
+      screenshareStopHandlersCleanupRef.current = null;
+
+      const streamToClear = stream ?? gc?.localScreenshareFeed?.stream ?? null;
+      try {
+        await clearScreenShareCaptureRootRestriction(streamToClear);
+      } catch {
+        // track may already be stopped
+      }
+
+      if (gc?.isScreensharing()) {
+        try {
+          await gc.setScreensharingEnabled(false);
+        } catch {
+          // user-initiated or browser stop — reconcile UI anyway
+        }
+      }
+
+      clearOrphanedMatrixScreenshareStreams(client);
+
+      if (gc) {
+        syncLocalScreenshareState(gc);
+        await restorePresenterVoiceAfterScreenshare(gc);
+      } else {
+        setIsScreensharing(false);
+      }
+      setScreenshareTabAudioMissing(false);
+      setScreenshareTakeoverIncoming(null);
+      scheduleFeedBatched();
+    },
+    [
+      client,
+      restorePresenterVoiceAfterScreenshare,
+      scheduleFeedBatched,
+      syncLocalScreenshareState,
     ],
   );
 
@@ -1707,9 +1770,17 @@ export function useSpaceGroupCall(
         }
       };
       gc.on(GroupCallEvent.GroupCallStateChanged, onState);
-      const onLocalScreenshareStateChanged = (sharing: boolean) => {
+      const onLocalScreenshareStateChanged = () => {
         const gcNow = groupCallRef.current;
-        setIsScreensharing(gcNow ? gcNow.isScreensharing() : sharing);
+        if (!gcNow) {
+          setIsScreensharing(false);
+          return;
+        }
+        const sdkSharing = gcNow.isScreensharing();
+        setIsScreensharing(sdkSharing);
+        if (!sdkSharing) {
+          void setScreensharingEnabledRef.current(false);
+        }
       };
       gc.on(
         GroupCallEvent.LocalScreenshareStateChanged,
@@ -2440,19 +2511,7 @@ export function useSpaceGroupCall(
           return;
         }
 
-        try {
-          await clearScreenShareCaptureRootRestriction(
-            gc.localScreenshareFeed?.stream,
-          );
-          await gc.setScreensharingEnabled(false);
-        } catch {
-          // user-initiated stop — reconcile UI even when SDK throws
-        }
-        syncLocalScreenshareState(gc);
-        await restorePresenterVoiceAfterScreenshare(gc);
-        setScreenshareTabAudioMissing(false);
-        setScreenshareTakeoverIncoming(null);
-        scheduleFeedBatched();
+        await reconcileLocalScreenshareStop(gc);
       };
 
       const next = screenshareMutationRef.current.then(run, run);
@@ -2462,12 +2521,12 @@ export function useSpaceGroupCall(
     [
       client,
       enableLocalScreenshareDirect,
-      restorePresenterVoiceAfterScreenshare,
-      scheduleFeedBatched,
+      reconcileLocalScreenshareStop,
       sendScreenshareTakeoverEvent,
-      syncLocalScreenshareState,
     ],
   );
+
+  setScreensharingEnabledRef.current = setScreensharingEnabled;
 
   const toggleScreensharing = useCallback(() => {
     const gc = groupCallRef.current;
@@ -3024,8 +3083,14 @@ export function useSpaceGroupCall(
         callState === 'connected' ||
         callState === 'awaiting_media' ||
         callState === 'initializing';
+      const pipWindowOpen =
+        typeof window !== 'undefined' &&
+        Boolean(window.documentPictureInPicture?.window);
       setTabBackgroundWhileInCall(
-        inCall && typeof document !== 'undefined' && document.hidden,
+        inCall &&
+          typeof document !== 'undefined' &&
+          document.hidden &&
+          !pipWindowOpen,
       );
       if (document.hidden || !inCall) return;
       const gc = groupCallRef.current;

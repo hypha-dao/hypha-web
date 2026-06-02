@@ -357,7 +357,7 @@ function CallSpeakerPrimaryStrip({
         {stripTiles.map(({ item, index }) => (
           <div
             key={galleryTileKey(item, index)}
-            className="min-h-0 w-full shrink-0"
+            className="aspect-video min-h-[3.5rem] w-full min-w-0 shrink-0"
           >
             {renderTile(item, index)}
           </div>
@@ -673,7 +673,7 @@ function HumanChatPanelCallStageMain({
       resolveCallStageLayout({
         viewportTier: resolvedViewportTier,
         participantDeviceCount: mainGalleryTiles.length,
-        hasActiveShare: hasRenderableShare,
+        hasActiveShare: hasRenderableShare || isScreensharing,
         activeSpeakerIndex,
         galleryPage,
       }),
@@ -681,6 +681,7 @@ function HumanChatPanelCallStageMain({
       resolvedViewportTier,
       mainGalleryTiles.length,
       hasRenderableShare,
+      isScreensharing,
       activeSpeakerIndex,
       galleryPage,
     ],
@@ -728,29 +729,42 @@ function HumanChatPanelCallStageMain({
 
   const showExpand = layout === 'panel' && !fullViewOpen && onRequestFullView;
 
-  const userTilesForFullViewShare: RemoteTileItem[] = (() => {
+  const shareParticipantTiles = useMemo(() => {
+    /** Presenter dock: all in-call tiles (feeds + placeholders + local). */
+    if (presenterShareOnly) {
+      return mainGalleryTiles;
+    }
     const out: RemoteTileItem[] = [...remoteUserTiles];
     const localFeed = localUserMedia[0];
-    const appendLocalTile = () => {
-      if (!localFeed) return;
+    if (showLocalPip && localFeed) {
       const hasLocal = out.some(
         (x) => x.kind === 'feed' && x.feed.isLocal() && x.feed === localFeed,
       );
       if (!hasLocal) {
         out.push({ kind: 'feed', feed: localFeed });
       }
-    };
-    /** Presenter sees participants only (incl. self) — no share mirror pane. */
-    if (presenterShareOnly) {
-      appendLocalTile();
-    } else if (showLocalPip) {
-      appendLocalTile();
     }
     return out;
-  })();
+  }, [
+    mainGalleryTiles,
+    presenterShareOnly,
+    remoteUserTiles,
+    showLocalPip,
+    localUserMedia,
+  ]);
+
+  const shareActiveSpeakerIndex = useMemo(() => {
+    if (!activeSpeakerKey) return 0;
+    const idx = shareParticipantTiles.findIndex(
+      (item) =>
+        item.kind === 'feed' &&
+        feedKeyForActive(item.feed) === activeSpeakerKey,
+    );
+    return idx >= 0 ? idx : 0;
+  }, [activeSpeakerKey, shareParticipantTiles]);
 
   const useShareWithParticipantsLayout =
-    hasRenderableShare && userTilesForFullViewShare.length > 0;
+    (hasRenderableShare || isScreensharing) && shareParticipantTiles.length > 0;
   const effectiveShareLayoutMode: CallFullViewLayoutMode = isFull
     ? fullViewLayoutMode
     : 'sideBySide';
@@ -765,10 +779,11 @@ function HumanChatPanelCallStageMain({
 
   const useSpeakerPrimaryStripLayout =
     !useShareWithParticipantsLayout &&
+    !isScreensharing &&
     layoutPlan.renderer === 'speakerPrimaryStrip';
 
   const useShareParticipantGallery =
-    useShareWithParticipantsLayout && userTilesForFullViewShare.length >= 4;
+    useShareWithParticipantsLayout && shareParticipantTiles.length >= 4;
 
   /** One camera tile only, no share: flex column fill (no empty grid track / FV-1). */
   const useFullViewSingleMainTile =
@@ -894,7 +909,7 @@ function HumanChatPanelCallStageMain({
     if (useShareParticipantGallery) {
       return (
         <CallParticipantGalleryGrid
-          tiles={userTilesForFullViewShare}
+          tiles={shareParticipantTiles}
           isFull={isFull}
           galleryPage={galleryPage}
           onGalleryPageChange={setGalleryPage}
@@ -931,7 +946,7 @@ function HumanChatPanelCallStageMain({
         role="group"
         aria-label={t('callLayoutSideBySide')}
       >
-        {userTilesForFullViewShare.map((item, i) => (
+        {shareParticipantTiles.map((item, i) => (
           <div
             key={
               item.kind === 'feed'
@@ -1002,26 +1017,45 @@ function HumanChatPanelCallStageMain({
           data-feed-tick={_feedVersion}
         >
           {presenterShareOnly ? (
-            <div
-              className={cn(
-                'flex min-h-0 min-w-0 flex-1 overflow-hidden bg-black',
-                isFull ? 'flex-col' : 'flex-row justify-end',
-              )}
-            >
-              {userTilesForFullViewShare.length > 0 ? (
+            <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-black">
+              {shareParticipantTiles.length === 0 ? (
+                <div className="flex flex-1 items-center justify-center px-3 py-4">
+                  <p className="text-center text-xs text-zinc-400">
+                    {t('callScreenShareActive')}
+                  </p>
+                </div>
+              ) : isFull && shareParticipantTiles.length >= 2 ? (
+                <CallSpeakerPrimaryStrip
+                  tiles={shareParticipantTiles}
+                  activeSpeakerIndex={shareActiveSpeakerIndex}
+                  speakerPrimaryRatio={0.7}
+                  stripMaxVisible={5}
+                  cellClassName="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col"
+                  renderTile={renderRemoteUserTile}
+                  overflowLabel={(count) => `+${count}`}
+                />
+              ) : shareParticipantTiles.length === 1 ? (
+                <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
+                  <div
+                    className={cn(
+                      'w-full shrink-0',
+                      isFull
+                        ? 'min-h-[4.5rem] flex-1'
+                        : 'aspect-video min-h-[4rem] flex-1',
+                    )}
+                  >
+                    {renderRemoteUserTile(shareParticipantTiles[0]!, 1000)}
+                  </div>
+                </div>
+              ) : (
                 renderParticipantShareSidebar(
                   1000,
                   cn(
                     'w-full shrink-0',
                     isFull ? 'min-h-[4.5rem]' : 'aspect-video min-h-[4rem]',
                   ),
+                  true,
                 )
-              ) : (
-                <div className="flex flex-1 items-center justify-center px-3 py-4">
-                  <p className="text-center text-xs text-zinc-400">
-                    {t('callScreenShareActive')}
-                  </p>
-                </div>
               )}
             </div>
           ) : (
@@ -1081,7 +1115,7 @@ function HumanChatPanelCallStageMain({
                       >
                         {useShareParticipantGallery ? (
                           <CallParticipantGalleryGrid
-                            tiles={userTilesForFullViewShare}
+                            tiles={shareParticipantTiles}
                             isFull={isFull}
                             galleryPage={galleryPage}
                             onGalleryPageChange={setGalleryPage}
@@ -1101,7 +1135,7 @@ function HumanChatPanelCallStageMain({
                             nextPageLabel={t('callGalleryNextPage')}
                           />
                         ) : (
-                          userTilesForFullViewShare.map((item, i) => (
+                          shareParticipantTiles.map((item, i) => (
                             <div
                               key={
                                 item.kind === 'feed'
@@ -1158,7 +1192,7 @@ function HumanChatPanelCallStageMain({
                       >
                         {useShareParticipantGallery ? (
                           <CallParticipantGalleryGrid
-                            tiles={userTilesForFullViewShare}
+                            tiles={shareParticipantTiles}
                             isFull={isFull}
                             galleryPage={galleryPage}
                             onGalleryPageChange={setGalleryPage}
@@ -1173,7 +1207,7 @@ function HumanChatPanelCallStageMain({
                             nextPageLabel={t('callGalleryNextPage')}
                           />
                         ) : (
-                          userTilesForFullViewShare.map((item, i) => (
+                          shareParticipantTiles.map((item, i) => (
                             <div
                               key={
                                 item.kind === 'feed'
@@ -1214,7 +1248,7 @@ function HumanChatPanelCallStageMain({
                         >
                           {useShareParticipantGallery ? (
                             <CallParticipantGalleryGrid
-                              tiles={userTilesForFullViewShare}
+                              tiles={shareParticipantTiles}
                               isFull={isFull}
                               galleryPage={galleryPage}
                               onGalleryPageChange={setGalleryPage}
@@ -1310,7 +1344,7 @@ function HumanChatPanelCallStageMain({
                   >
                     {useShareParticipantGallery ? (
                       <CallParticipantGalleryGrid
-                        tiles={userTilesForFullViewShare}
+                        tiles={shareParticipantTiles}
                         isFull={isFull}
                         maxCols={2}
                         galleryPage={galleryPage}
@@ -1327,7 +1361,7 @@ function HumanChatPanelCallStageMain({
                         nextPageLabel={t('callGalleryNextPage')}
                       />
                     ) : (
-                      userTilesForFullViewShare.map((item, i) => (
+                      shareParticipantTiles.map((item, i) => (
                         <div
                           key={
                             item.kind === 'feed'

@@ -3879,7 +3879,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onReconnectMatrixSession={() => {
                 void refreshSession();
               }}
-              tabBackgroundWhileInCall={spaceCallTabBackground}
+              tabBackgroundWhileInCall={
+                showFloatingDock ? false : spaceCallTabBackground
+              }
               isMicrophoneMuted={spaceCallMicMuted}
               isLocalVideoMuted={spaceCallVideoMuted}
               participantCount={spaceCallRoomGroupDeviceCount}

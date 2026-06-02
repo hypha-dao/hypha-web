@@ -2,6 +2,7 @@
 
 import { Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
 import {
   getCallControlsPhase,
   type SpaceGroupCallCaptureConsent,
@@ -97,6 +98,13 @@ function screenshareErrorKey(code: SpaceGroupCallErrorCode): string {
     ? 'callErrorPermission'
     : 'callErrorScreenshare';
 }
+
+const accentHintBorder =
+  'border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_30%,transparent)]';
+const accentHintSurface =
+  'bg-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_12%,var(--background))]';
+const accentHintDismissClassName =
+  'shrink-0 text-xs font-medium text-foreground underline-offset-2 hover:underline';
 
 /**
  * In-call strip: space-wide label, connection state, mute, camera, leave.
@@ -208,6 +216,31 @@ export function HumanChatPanelCallBanner({
   const { isConnectingPhase, isDisconnecting } =
     getCallControlsPhase(callState);
 
+  const showTabBackgroundHint =
+    callState === 'connected' && tabBackgroundWhileInCall && !alertsOnly;
+  const showRemoteMediaStallAlert =
+    remoteMediaStall && callState === 'connected';
+  const showSessionRefreshAlert =
+    sessionRefreshFailedDuringCall && callState === 'connected';
+  const showScreenshareErrorAlert =
+    Boolean(screenshareErrorCode) && callState === 'connected';
+  const showScreenshareTabAudioAlert =
+    screenshareTabAudioMissing && isScreensharing && callState === 'connected';
+  const showCaptureConsentAlert =
+    callState === 'connected' && captureConsent != null;
+
+  if (alertsOnly) {
+    const hasDockAlerts =
+      showRemoteMediaStallAlert ||
+      showSessionRefreshAlert ||
+      showScreenshareErrorAlert ||
+      showScreenshareTabAudioAlert ||
+      showCaptureConsentAlert;
+    if (!hasDockAlerts) {
+      return null;
+    }
+  }
+
   return (
     <div className="border-b border-border bg-muted/30">
       <div
@@ -222,12 +255,12 @@ export function HumanChatPanelCallBanner({
           ? t('callActiveInSpace')
           : null}
       </div>
-      {callState === 'connected' && tabBackgroundWhileInCall && (
+      {showTabBackgroundHint ? (
         <p className="border-b border-border/60 bg-muted/50 px-4 py-1.5 text-xs text-muted-foreground">
           {t('callTabBackgroundHint')}
         </p>
-      )}
-      {remoteMediaStall && callState === 'connected' && (
+      ) : null}
+      {showRemoteMediaStallAlert ? (
         <div
           role="alert"
           className="flex items-start gap-2 border-b border-amber-500/25 bg-amber-500/10 px-4 py-1.5"
@@ -245,8 +278,8 @@ export function HumanChatPanelCallBanner({
             </button>
           )}
         </div>
-      )}
-      {sessionRefreshFailedDuringCall && callState === 'connected' && (
+      ) : null}
+      {showSessionRefreshAlert ? (
         <div
           role="alert"
           className="flex items-start gap-2 border-b border-border/60 bg-destructive/10 px-4 py-1.5"
@@ -266,8 +299,8 @@ export function HumanChatPanelCallBanner({
             </button>
           ) : null}
         </div>
-      )}
-      {screenshareErrorCode && callState === 'connected' && (
+      ) : null}
+      {showScreenshareErrorAlert ? (
         <div
           role="alert"
           className="flex items-start gap-2 border-b border-border/60 bg-destructive/10 px-4 py-1.5"
@@ -283,29 +316,31 @@ export function HumanChatPanelCallBanner({
             {t('callScreenshareDismiss')}
           </button>
         </div>
-      )}
-      {screenshareTabAudioMissing &&
-        isScreensharing &&
-        callState === 'connected' && (
-          <div
-            role="status"
-            className="flex items-start gap-2 border-b border-border/60 bg-amber-500/10 px-4 py-1.5"
-          >
-            <p className="min-w-0 flex-1 text-xs text-amber-950 dark:text-amber-100">
-              {t('callShareTabAudioNotShared')}
-            </p>
-            {onDismissScreenshareTabAudioHint ? (
-              <button
-                type="button"
-                onClick={onDismissScreenshareTabAudioHint}
-                className="shrink-0 text-xs font-medium text-amber-950 underline-offset-2 hover:underline dark:text-amber-100"
-              >
-                {t('callScreenshareDismiss')}
-              </button>
-            ) : null}
-          </div>
-        )}
-      {callState === 'connected' && captureConsent ? (
+      ) : null}
+      {showScreenshareTabAudioAlert ? (
+        <div
+          role="status"
+          className={cn(
+            'flex items-start gap-2 border-b px-4 py-1.5',
+            accentHintBorder,
+            accentHintSurface,
+          )}
+        >
+          <p className="min-w-0 flex-1 text-xs leading-snug text-foreground">
+            {t('callShareTabAudioNotShared')}
+          </p>
+          {onDismissScreenshareTabAudioHint ? (
+            <button
+              type="button"
+              onClick={onDismissScreenshareTabAudioHint}
+              className={accentHintDismissClassName}
+            >
+              {t('callScreenshareDismiss')}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {showCaptureConsentAlert ? (
         <HumanChatPanelCaptureConsentBanner
           consent={captureConsent}
           roomId={roomId}

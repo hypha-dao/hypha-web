@@ -504,7 +504,6 @@ export function GlobalCallDockOverlay() {
     retryFromError,
     isLocalVideoMuted,
     isScreensharing,
-    tabBackgroundWhileInCall,
     othersInRoomCallCount,
     remoteMediaStall,
     dismissRemoteMediaStallBanner,
@@ -1019,7 +1018,7 @@ export function GlobalCallDockOverlay() {
     errorCode != null ||
     screenshareErrorCode != null ||
     remoteMediaStall ||
-    screenshareTabAudioMissing ||
+    (screenshareTabAudioMissing && isScreensharing) ||
     sessionRefreshFailedDuringCall;
   /** Mobile dock is always edge-to-edge; panel layout avoids full-view splitters eating taps. */
   const dockStageLayout = isMobile
@@ -1285,7 +1284,7 @@ export function GlobalCallDockOverlay() {
                   onReconnectMatrixSession={() => {
                     void refreshSession();
                   }}
-                  tabBackgroundWhileInCall={tabBackgroundWhileInCall}
+                  tabBackgroundWhileInCall={false}
                   isMicrophoneMuted={isMicrophoneMuted}
                   isLocalVideoMuted={isLocalVideoMuted}
                   participantCount={roomGroupCallDeviceCount}
