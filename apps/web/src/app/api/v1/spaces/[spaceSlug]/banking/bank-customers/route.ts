@@ -12,6 +12,7 @@ import {
   extractBearerToken,
 } from '@web/lib/bank-customers/authenticate-bank-customer-request';
 import { sendBankOnboardingEmail } from '@web/lib/bank-customers/send-onboarding-email';
+import { sendEmailConfirmation } from '@web/lib/bank-customers/send-email-confirmation';
 
 type Params = { spaceSlug: string };
 
@@ -78,7 +79,7 @@ export async function POST(
   const { legalName, contactEmail, requestedRails, endorsements } = parsed.data;
 
   try {
-    const result = await requestSpaceBankOnboarding(
+    const output = await requestSpaceBankOnboarding(
       {
         spaceSlug,
         authToken,
@@ -89,17 +90,30 @@ export async function POST(
       { db },
     );
 
-    if (result.created && result.kycLink) {
-      await sendBankOnboardingEmail({
-        recipientEmail: contactEmail,
-        spaceTitle: result.spaceTitle,
-        legalName,
-        kycLink: result.kycLink,
-        tosLink: result.tosLink,
+    if (output.status === 'pending_email_confirmation') {
+      await sendEmailConfirmation({
+        recipientEmail: output.initiate.contactEmail,
+        spaceTitle: output.initiate.spaceTitle,
+        signedJwt: output.initiate.signedJwt,
+      });
+
+      return NextResponse.json(output.result, {
+        status: 202,
+        headers: { 'Cache-Control': 'private, no-store' },
       });
     }
 
-    return NextResponse.json(result, {
+    if (output.kybEmail) {
+      await sendBankOnboardingEmail({
+        recipientEmail: output.kybEmail.recipientEmail,
+        spaceTitle: output.result.spaceTitle,
+        legalName: output.kybEmail.legalName,
+        kycLink: output.result.kycLink ?? '',
+        tosLink: output.result.tosLink,
+      });
+    }
+
+    return NextResponse.json(output.result, {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (error) {

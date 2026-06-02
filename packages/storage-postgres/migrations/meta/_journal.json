@@ -372,6 +372,13 @@
       "when": 1779214317322,
       "tag": "0052_bank_customers",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1779300000000,
+      "tag": "0053_bank_customers_email_confirmation",
+      "breakpoints": true
     }
   ]
 }

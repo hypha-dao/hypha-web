@@ -56,7 +56,7 @@ export const useRequestBankOnboarding = ({
 
         const body = (await res.json().catch(() => ({}))) as
           | BankOnboardingRequestResult
-          | { error?: string };
+          | { error?: string; status?: string };
 
         if (!res.ok) {
           const message =
@@ -66,9 +66,17 @@ export const useRequestBankOnboarding = ({
           throw new Error(message);
         }
 
-        const result = body as BankOnboardingRequestResult;
         await mutate(endpoint);
-        return result;
+
+        if (res.status === 202) {
+          return {
+            kycLink: null,
+            tosLink: null,
+            pendingEmailConfirmation: true,
+          };
+        }
+
+        return body as BankOnboardingRequestResult;
       } catch (err) {
         const message =
           err instanceof Error

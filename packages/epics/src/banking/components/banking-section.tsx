@@ -34,6 +34,7 @@ import { CreateTransferDialog } from './create-transfer-dialog';
 import { BankingInitialSetup } from './banking-initial-setup';
 import { BankingPageSkeleton } from './banking-page-skeleton';
 import { BankingProviderStatusPanel } from './banking-provider-status-panel';
+import { PendingEmailConfirmationCard } from './pending-email-confirmation-card';
 import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
 
 type BankingSectionProps = {
@@ -194,13 +195,28 @@ export const BankingSection: FC<BankingSectionProps> = ({
       currencies: BankCurrencyCode[];
     }) => {
       clearOnboardingError();
-      await requestOnboarding({
+      const result = await requestOnboarding({
         legalName: input.legalName,
         contactEmail: input.contactEmail,
         requestedRails: input.currencies,
       });
       const updated = await refresh();
-      openBankVerificationFlowLink(updated ?? undefined);
+      if (!result.pendingEmailConfirmation) {
+        openBankVerificationFlowLink(updated ?? undefined);
+      }
+    },
+    [clearOnboardingError, refresh, requestOnboarding],
+  );
+
+  const handlePendingResendSubmit = useCallback(
+    async (input: {
+      legalName: string;
+      contactEmail: string;
+      requestedRails: BankCurrencyCode[];
+    }) => {
+      clearOnboardingError();
+      await requestOnboarding(input);
+      await refresh();
     },
     [clearOnboardingError, refresh, requestOnboarding],
   );
@@ -211,6 +227,26 @@ export const BankingSection: FC<BankingSectionProps> = ({
 
   if (isStatusLoading) {
     return <BankingPageSkeleton />;
+  }
+
+  if (status?.pendingEmailConfirmation) {
+    if (!canManage) {
+      return (
+        <p className="text-2 text-muted-foreground">
+          {blockerMessage ?? tNotStarted('description')}
+        </p>
+      );
+    }
+
+    return (
+      <PendingEmailConfirmationCard
+        pending={status.pendingEmailConfirmation}
+        initialLegalName={fallbackLegalName}
+        isSubmitting={isOnboarding}
+        error={onboardingError}
+        onSubmit={handlePendingResendSubmit}
+      />
+    );
   }
 
   if (!hasCustomer) {
@@ -226,6 +262,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
       <BankingInitialSetup
         initialLegalName={fallbackLegalName}
         initialContactEmail={fallbackContactEmail}
+        submitterEmail={person?.email}
         isSubmitting={isOnboarding}
         error={onboardingError}
         onSubmit={handleInitialSetupSubmit}

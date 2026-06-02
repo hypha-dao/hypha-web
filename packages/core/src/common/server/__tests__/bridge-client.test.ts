@@ -19,37 +19,35 @@ describe('bridgeCreateKycLink', () => {
     process.env.BRIDGE_API_BASE_URL = 'https://api.sandbox.bridge.xyz';
   });
 
-  it('returns existing_kyc_link from 400 as a successful response', async () => {
-    const existing = {
-      id: 'kyc_existing_1',
-      customer_id: 'cust_existing',
-      kyc_link: 'https://bridge.example/kyc/existing',
-      tos_link: 'https://bridge.example/tos/existing',
-      kyc_status: 'under_review',
-      tos_status: 'approved',
-      created_at: '2026-05-18T00:00:00Z',
-    };
-
+  it('throws on 400 with existing_kyc_link (pre-check handles duplicates)', async () => {
     fetchMock.mockResolvedValue({
       ok: false,
       status: 400,
       text: async () =>
         JSON.stringify({
           code: 'duplicate',
-          existing_kyc_link: existing,
+          existing_kyc_link: {
+            id: 'kyc_existing_1',
+            customer_id: 'cust_existing',
+            kyc_link: 'https://bridge.example/kyc/existing',
+            tos_link: 'https://bridge.example/tos/existing',
+            kyc_status: 'under_review',
+            tos_status: 'approved',
+            created_at: '2026-05-18T00:00:00Z',
+          },
         }),
     });
 
-    const result = await bridgeCreateKycLink(
-      {
-        full_name: 'Acme Foundation Ltd.',
-        email: 'compliance@acme.org',
-        type: 'business',
-      },
-      '550e8400-e29b-41d4-a716-446655440000',
-    );
-
-    expect(result).toEqual(existing);
+    await expect(
+      bridgeCreateKycLink(
+        {
+          full_name: 'Acme Foundation Ltd.',
+          email: 'compliance@acme.org',
+          type: 'business',
+        },
+        '550e8400-e29b-41d4-a716-446655440000',
+      ),
+    ).rejects.toThrow(/Bridge API error \(400\)/);
   });
 
   it('normalizes endorsement KYC link responses with only url', () => {

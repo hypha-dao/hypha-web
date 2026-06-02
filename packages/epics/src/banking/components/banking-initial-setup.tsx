@@ -1,9 +1,10 @@
 'use client';
 
-import { FC, FormEvent, useEffect, useState } from 'react';
+import { FC, FormEvent, useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button, Input, Label } from '@hypha-platform/ui';
+import { emailsMatchForBypass } from '@hypha-platform/core/client';
+import { Button, Checkbox, Input, Label } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import {
@@ -16,6 +17,7 @@ import { CurrencyOptionRow } from './currency-option-row';
 export type BankingInitialSetupProps = {
   initialLegalName: string;
   initialContactEmail: string;
+  submitterEmail?: string | null;
   isSubmitting: boolean;
   error: string | null;
   onSubmit: (input: {
@@ -28,24 +30,37 @@ export type BankingInitialSetupProps = {
 export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
   initialLegalName,
   initialContactEmail,
+  submitterEmail,
   isSubmitting,
   error,
   onSubmit,
 }) => {
   const t = useTranslations('BankingTab.initialSetup');
   const tOpen = useTranslations('BankingTab.openAccount');
+  const tDialog = useTranslations('BankingTab.onboardingDialog');
 
   const [legalName, setLegalName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [selected, setSelected] = useState<BankCurrencyCode[]>(() => [
     ...getDefaultBankCurrencyCodes(),
   ]);
+  const [authorizeOwnEmail, setAuthorizeOwnEmail] = useState(false);
 
   useEffect(() => {
     setLegalName(initialLegalName.trim());
     setContactEmail(initialContactEmail.trim());
     setSelected([...getDefaultBankCurrencyCodes()]);
+    setAuthorizeOwnEmail(false);
   }, [initialContactEmail, initialLegalName]);
+
+  const requiresBypassAuthorization = useMemo(() => {
+    const submitter = submitterEmail?.trim();
+    const contact = contactEmail.trim();
+    if (!submitter || !contact) {
+      return false;
+    }
+    return emailsMatchForBypass(submitter, contact);
+  }, [contactEmail, submitterEmail]);
 
   const toggleCurrency = (currency: BankCurrencyCode, checked: boolean) => {
     setSelected((current) =>
@@ -53,9 +68,20 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
     );
   };
 
+  const canSubmit =
+    selected.length > 0 &&
+    Boolean(legalName.trim()) &&
+    Boolean(contactEmail.trim()) &&
+    (!requiresBypassAuthorization || authorizeOwnEmail);
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (selected.length === 0 || !legalName.trim() || !contactEmail.trim()) {
+    if (
+      selected.length === 0 ||
+      !legalName.trim() ||
+      !contactEmail.trim() ||
+      !canSubmit
+    ) {
       return;
     }
 
@@ -65,11 +91,6 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
       currencies: selected,
     });
   };
-
-  const canSubmit =
-    selected.length > 0 &&
-    Boolean(legalName.trim()) &&
-    Boolean(contactEmail.trim());
 
   return (
     <form
@@ -114,7 +135,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="banking-setup-email" className="text-foreground">
-              {tOpen('contactEmail')}
+              {tDialog('contactEmail')}
             </Label>
             <Input
               id="banking-setup-email"
@@ -125,7 +146,20 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
               required
               disabled={isSubmitting}
             />
+            <p className="text-1 text-muted-foreground">
+              {tDialog('contactEmailHelper')}
+            </p>
           </div>
+          {requiresBypassAuthorization ? (
+            <label className="flex cursor-pointer items-start gap-2 text-sm">
+              <Checkbox
+                checked={authorizeOwnEmail}
+                disabled={isSubmitting}
+                onCheckedChange={(value) => setAuthorizeOwnEmail(value === true)}
+              />
+              <span>{tDialog('authorizeOwnEmail')}</span>
+            </label>
+          ) : null}
         </div>
       </section>
 

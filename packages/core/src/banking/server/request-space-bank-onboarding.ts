@@ -1,31 +1,51 @@
-import { randomUUID } from 'node:crypto';
-
 import type { DatabaseInstance } from '../../common/server/types';
-import { DEFAULT_BANK_PROVIDER } from '../constants';
+import { findPersonById } from '../../people/server/queries';
 import { findSpaceBySlug } from '../../space/server/queries';
 import type {
   BankOnboardingResult,
+  PendingEmailConfirmationResult,
   RequestSpaceBankOnboardingInput,
 } from '../types';
+import { DEFAULT_BANK_PROVIDER } from '../constants';
 import { authorizeSpaceBankOnboarding } from './authorize-space-bank-onboarding';
 import { BankOnboardingError } from './errors';
-import { insertBankCustomer } from './mutations';
-import { getBankKycProvider } from './providers';
-import type { BankKycProvider } from './providers/types';
-import { currenciesToEndorsements } from '../constants';
 import { buildPublicStatusFromCustomer } from './get-space-bank-customer-public-status';
-import { buildCustomerValidations } from './providers/bridge/banking-provider-state';
+import { initiateEmailConfirmation } from './initiate-email-confirmation';
+import { emailsMatchForBypass } from '../normalize-email-for-bypass';
+import { insertBankCustomer } from './mutations';
+import {
+  buildBankOnboardingResultFromKycLink,
+  performKycLinkAndInsert,
+} from './perform-kyc-link-and-insert';
 import { findBankCustomerBySpaceAndProvider } from './queries';
+import type { BankKycProvider } from './providers/types';
+import { getBankKycProvider } from './providers';
+import type { InitiateEmailConfirmationResult } from './initiate-email-confirmation';
 
 export type RequestSpaceBankOnboardingOptions = {
   kycProvider?: BankKycProvider;
 };
 
+export type RequestSpaceBankOnboardingOutput =
+  | {
+      status: 'existing' | 'created';
+      result: BankOnboardingResult;
+      kybEmail?: {
+        recipientEmail: string;
+        legalName: string;
+      };
+    }
+  | {
+      status: 'pending_email_confirmation';
+      result: PendingEmailConfirmationResult;
+      initiate: InitiateEmailConfirmationResult;
+    };
+
 export async function requestSpaceBankOnboarding(
   input: RequestSpaceBankOnboardingInput,
   { db }: { db: DatabaseInstance },
   options?: RequestSpaceBankOnboardingOptions,
-): Promise<BankOnboardingResult> {
+): Promise<RequestSpaceBankOnboardingOutput> {
   const {
     spaceSlug,
     authToken,
@@ -59,66 +79,95 @@ export async function requestSpaceBankOnboarding(
     { db },
   );
 
-  if (existing) {
+  const normalizedRails = requestedRails?.map((rail) => rail.toLowerCase()) ?? [];
+
+  if (existing?.providerKycLinkId) {
     const status = await buildPublicStatusFromCustomer(existing, { db });
     return {
-      provider: DEFAULT_BANK_PROVIDER,
-      created: false,
-      spaceTitle: emailMeta.spaceTitle,
-      requesterSlug: emailMeta.requesterSlug,
-      kycLink: status.procedures.kyc.action?.url ?? null,
-      tosLink: status.procedures.tos.action?.url ?? null,
-      procedures: status.procedures,
+      status: 'existing',
+      result: {
+        provider: DEFAULT_BANK_PROVIDER,
+        created: false,
+        spaceTitle: emailMeta.spaceTitle,
+        requesterSlug: emailMeta.requesterSlug,
+        kycLink: status.procedures.kyc.action?.url ?? null,
+        tosLink: status.procedures.tos.action?.url ?? null,
+        procedures: status.procedures,
+      },
     };
   }
 
-  const normalizedRails = requestedRails?.map((r) => r.toLowerCase()) ?? [];
-  const endorsements = currenciesToEndorsements(normalizedRails);
+  const initiate = async () =>
+    initiateEmailConfirmation(
+      {
+        space,
+        person: auth.person,
+        legalName,
+        bridgeCustomerEmail: contactEmail,
+        requestedRails: normalizedRails,
+        redirectUri,
+      },
+      { db },
+    );
 
-  const idempotencyKey = randomUUID();
-  const kycProvider =
-    options?.kycProvider ?? getBankKycProvider(DEFAULT_BANK_PROVIDER);
+  if (existing?.jwtNonce && !existing.providerKycLinkId) {
+    const initiateResult = await initiate();
+    return {
+      status: 'pending_email_confirmation',
+      result: { status: 'pending_email_confirmation' },
+      initiate: initiateResult,
+    };
+  }
 
-  const kycLinkResult = await kycProvider.createKycLink({
-    entityType: 'business',
-    legalName,
-    contactEmail,
-    idempotencyKey,
-    endorsements,
-    redirectUri,
-  });
+  const submitter = await findPersonById({ id: auth.person.id }, { db });
+  const submitterEmail = submitter?.email?.trim();
 
-  await insertBankCustomer(
-    {
-      spaceId: space.id,
-      entityType: 'business',
-      provider: DEFAULT_BANK_PROVIDER,
-      providerCustomerId: kycLinkResult.providerCustomerId,
-      providerKycLinkId: kycLinkResult.providerKycLinkId,
-      requestedRails: normalizedRails,
-    },
-    { db },
-  );
+  if (
+    submitterEmail &&
+    emailsMatchForBypass(submitterEmail, contactEmail)
+  ) {
+    const performResult = await performKycLinkAndInsert(
+      {
+        legalName,
+        contactEmail,
+        requestedRails: normalizedRails,
+        redirectUri,
+      },
+      { db },
+      options,
+    );
 
-  const validations = buildCustomerValidations({
-    id: kycLinkResult.providerKycLinkId,
-    kyc_link: kycLinkResult.kycLink,
-    kyc_status: kycLinkResult.kycStatus,
-    tos_status: kycLinkResult.tosStatus,
-    tos_link: kycLinkResult.tosLink,
-    customer_id: kycLinkResult.providerCustomerId,
-  });
+    await insertBankCustomer(
+      {
+        spaceId: space.id,
+        entityType: 'business',
+        provider: DEFAULT_BANK_PROVIDER,
+        providerCustomerId: performResult.kycLinkResult.providerCustomerId,
+        providerKycLinkId: performResult.kycLinkResult.providerKycLinkId,
+        requestedRails: normalizedRails,
+      },
+      { db },
+    );
 
+    return {
+      status: 'created',
+      result: buildBankOnboardingResultFromKycLink({
+        kycLinkResult: performResult.kycLinkResult,
+        created: performResult.created,
+        spaceTitle: emailMeta.spaceTitle,
+        requesterSlug: emailMeta.requesterSlug,
+      }),
+      kybEmail: {
+        recipientEmail: contactEmail,
+        legalName,
+      },
+    };
+  }
+
+  const initiateResult = await initiate();
   return {
-    provider: DEFAULT_BANK_PROVIDER,
-    created: true,
-    spaceTitle: emailMeta.spaceTitle,
-    requesterSlug: emailMeta.requesterSlug,
-    kycLink: validations.kycLink,
-    tosLink: validations.tosLink,
-    procedures: {
-      tos: validations.tos,
-      kyc: validations.kyc,
-    },
+    status: 'pending_email_confirmation',
+    result: { status: 'pending_email_confirmation' },
+    initiate: initiateResult,
   };
 }

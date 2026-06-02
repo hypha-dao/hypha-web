@@ -45,6 +45,13 @@ export async function ensureSpaceBankCustomer(
     );
   }
 
+  if (customer.jwtNonce && !customer.providerKycLinkId) {
+    throw new BankOnboardingError(
+      'Confirm the Bridge customer email before using banking',
+      409,
+    );
+  }
+
   const status = await buildPublicStatusFromCustomer(customer, { db });
 
   return {

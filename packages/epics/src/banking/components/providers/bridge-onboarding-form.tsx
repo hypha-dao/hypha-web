@@ -1,7 +1,8 @@
 'use client';
 
-import { FC, FormEvent, useEffect, useState } from 'react';
+import { FC, FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { emailsMatchForBypass } from '@hypha-platform/core/client';
 import { Checkbox, Input, Label } from '@hypha-platform/ui';
 
 import {
@@ -16,6 +17,8 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
   onSubmit,
   isSubmitting,
   initialValues,
+  submitterEmail,
+  onSubmitDisabledChange,
 }) => {
   const t = useTranslations('BankingTab.onboardingDialog');
   const tCurrencies = useTranslations('BankingTab.currencies');
@@ -25,6 +28,7 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
   const [requestedRails, setRequestedRails] = useState<BankCurrencyCode[]>([
     ...getDefaultBankCurrencyCodes(),
   ]);
+  const [authorizeOwnEmail, setAuthorizeOwnEmail] = useState(false);
 
   useEffect(() => {
     setLegalName(initialValues?.legalName?.trim() ?? '');
@@ -34,7 +38,27 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
         ? (initialValues.requestedRails as BankCurrencyCode[])
         : [...getDefaultBankCurrencyCodes()];
     setRequestedRails(nextRails);
+    setAuthorizeOwnEmail(false);
   }, [initialValues]);
+
+  const requiresBypassAuthorization = useMemo(() => {
+    const submitter = submitterEmail?.trim();
+    const contact = contactEmail.trim();
+    if (!submitter || !contact) {
+      return false;
+    }
+    return emailsMatchForBypass(submitter, contact);
+  }, [contactEmail, submitterEmail]);
+
+  const canSubmit =
+    Boolean(legalName.trim()) &&
+    Boolean(contactEmail.trim()) &&
+    requestedRails.length > 0 &&
+    (!requiresBypassAuthorization || authorizeOwnEmail);
+
+  useEffect(() => {
+    onSubmitDisabledChange?.(!canSubmit);
+  }, [canSubmit, onSubmitDisabledChange]);
 
   const toggleRail = (currency: BankCurrencyCode, checked: boolean) => {
     setRequestedRails((current) =>
@@ -47,7 +71,12 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
     const trimmedName = legalName.trim();
     const trimmedEmail = contactEmail.trim();
 
-    if (!trimmedName || !trimmedEmail || requestedRails.length === 0) {
+    if (
+      !trimmedName ||
+      !trimmedEmail ||
+      requestedRails.length === 0 ||
+      !canSubmit
+    ) {
       return;
     }
 
@@ -85,7 +114,18 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
           required
           disabled={isSubmitting}
         />
+        <p className="text-sm text-muted-foreground">{t('contactEmailHelper')}</p>
       </div>
+      {requiresBypassAuthorization ? (
+        <label className="flex cursor-pointer items-start gap-2 text-sm">
+          <Checkbox
+            checked={authorizeOwnEmail}
+            disabled={isSubmitting}
+            onCheckedChange={(value) => setAuthorizeOwnEmail(value === true)}
+          />
+          <span>{t('authorizeOwnEmail')}</span>
+        </label>
+      ) : null}
       <fieldset className="flex flex-col gap-2">
         <legend className="text-sm font-medium">
           {t('endorsementsLabel')}

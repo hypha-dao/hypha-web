@@ -19,6 +19,7 @@
     "@hypha-platform/ui-utils": "workspace:*",
     "@privy-io/node": "^0.12.0",
     "@wagmi/cli": "^2.2.0",
+    "jose": "^5.9.6",
     "matrix-js-sdk": "^40.0.0",
     "pdf-parse": "^1.1.1"
   },
