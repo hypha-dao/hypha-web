@@ -61,7 +61,7 @@
 | Step | Action | Spec IDs | Done when |
 | ---- | ------ | -------- | --------- |
 | 1.1 | Add code comment + unit test guarding `showSidebarCallChrome` against `showFloatingDock` | CSH-CHROME-6 | Test fails if regression reintroduced |
-| 1.2 | Implement join invitation modal (spec §1.2.2) | CSH-DISCOVER-1 | Modal opens once per join opportunity; i18n all locales |
+| 1.2 | Implement join invitation modal (spec §6.1) | CSH-DISCOVER-1 | Modal opens once per join opportunity; i18n all locales |
 | 1.3 | Signal deep-link auth retry with backoff | CSH-DISCOVER-2, CSH-DISCOVER-3 | Deep link resolves after auth without error flash |
 | 1.4 | Participant count warning banner (default threshold: 12 devices) | CSH-SCALE-2 | Banner shows in sidebar + dock when over threshold |
 
