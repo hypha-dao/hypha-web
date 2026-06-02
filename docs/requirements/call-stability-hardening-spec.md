@@ -276,13 +276,15 @@ Full Vitest/Playwright inventory: [call-regression-test-plan.md §3–4](./call-
 
 ## 10) Traceability matrix
 
+Phase column lists the **primary delivery phase** for each requirement family (see §2 phase overview).
+
 | ID | Phase | Primary files |
 | -- | ----- | ------------- |
 | CSH-CHROME-* | P0–P1 | `human-right-panel.tsx`, `global-call-dock-overlay.tsx`, `global-call-dock-context.tsx` |
 | CSH-SHARE-* | P0–P2 | `call-stage-share-layout.ts`, `human-chat-panel-call-stage.tsx`, `use-space-group-call.ts`, `screenshare-takeover.ts` |
-| CSH-MESH-* | P2–P3 | `use-space-group-call.ts`, `matrix-tab-leader.ts`, `use-call-document-keepalive.ts`, `matrix-provider.tsx` |
+| CSH-MESH-* | P3 | `use-space-group-call.ts`, `matrix-tab-leader.ts`, `use-call-document-keepalive.ts`, `matrix-provider.tsx` |
 | CSH-DISCOVER-* | P1 | `human-right-panel.tsx`, join modal (new), `use-call-join-chime.ts` |
-| CSH-RECORD-* | P3–P4 | `call-recording.ts`, `use-space-group-call.ts` |
+| CSH-RECORD-* | P4 | `call-recording.ts`, `use-space-group-call.ts` |
 | CSH-SCALE-* | P1, P5 | `call-gallery-grid.ts`, new warning banner component |
 | CSH-SFU-* | P5 | `matrix-provider.tsx`, new LiveKit integration package |
 | CSH-QA-* | All | Test files, runbook additions |
