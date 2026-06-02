@@ -76,6 +76,8 @@ export function CompactSpaceBannerLead({ src }: Props) {
   const parallaxY = reduceMotion ? 0 : clampParallaxScrollY(mainScrollY);
   const imageVisible = ready && !imageFailed;
   const loadedOverlayOpacity = imageVisible ? 1 : 0;
+  /** Remote uploads (e.g. UploadThing) — serve the stored original, not a downscaled `/_next/image` proxy. */
+  const isRemoteSrc = src.startsWith('http://') || src.startsWith('https://');
   const predecodePlateStyle = {
     backgroundImage:
       'radial-gradient(ellipse 140% 100% at 12% -5%, rgb(14,17,25) 0%, rgb(10,13,20) 42%, rgb(7,9,15) 68%, rgb(4,6,11) 100%)',
@@ -131,7 +133,9 @@ export function CompactSpaceBannerLead({ src }: Props) {
             alt=""
             fill
             priority
-            sizes="(max-width: 1280px) 100vw, min(1280px, 100vw)"
+            unoptimized={isRemoteSrc}
+            quality={92}
+            sizes="100vw"
             className={cn(
               'object-cover object-center transition-opacity duration-320 ease-out',
               imageFailed

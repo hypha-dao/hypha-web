@@ -4,6 +4,8 @@ export async function getCroppedImg(
   imageSrc: string,
   crop: CropRect,
   outputMimeType: 'image/jpeg' | 'image/png' = 'image/jpeg',
+  /** JPEG only — preserve banner detail on upload (default 0.95). */
+  outputQuality = 0.95,
 ): Promise<string> {
   const image: HTMLImageElement = await new Promise((resolve, reject) => {
     const img = new Image();
@@ -34,5 +36,7 @@ export async function getCroppedImg(
     crop.height,
   );
 
-  return canvas.toDataURL(outputMimeType);
+  return outputMimeType === 'image/jpeg'
+    ? canvas.toDataURL(outputMimeType, outputQuality)
+    : canvas.toDataURL(outputMimeType);
 }
