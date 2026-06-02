@@ -49,6 +49,7 @@ import { useGlobalCallDock } from './global-call-dock-context';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallDockDocumentPip } from './use-call-dock-document-pip';
+import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 import { useCallDocumentKeepalive } from './use-call-document-keepalive';
 import { useSpaceAccentPortalStyles } from '../spaces/components/space-accent-portal-context';
 import { callAccentAlertText } from './human-chat-panel/call-accent-alert-styles';
@@ -514,6 +515,7 @@ export function GlobalCallDockOverlay() {
     dismissScreenshareError,
     screenshareTabAudioMissing,
     dismissScreenshareTabAudioHint,
+    retryScreenshareWithTabAudio,
     cameraAccessBlocked,
     dismissCameraAccessBlocked,
     dismissCallError,
@@ -532,6 +534,7 @@ export function GlobalCallDockOverlay() {
     setMicrophoneMuted,
     setCameraMuted,
     toggleScreensharing,
+    setScreensharingEnabled,
     screenshareTakeoverIncoming,
     screenshareTakeoverPendingId,
     screenshareTakeoverDenied,
@@ -558,6 +561,13 @@ export function GlobalCallDockOverlay() {
     captureConsent,
     leave,
   } = useGlobalCallDock();
+
+  const { onToggleScreenshare, screenshareTabAudioPromptDialog } =
+    useScreenshareTabAudioPrompt({
+      isScreensharing,
+      setScreensharingEnabled,
+      toggleScreensharing,
+    });
 
   const [layoutMode, setLayoutMode] = React.useState<CallFullViewLayoutMode>(
     DEFAULT_CALL_FULL_VIEW_LAYOUT,
@@ -1081,9 +1091,6 @@ export function GlobalCallDockOverlay() {
     void setCameraMuted(!isLocalVideoMuted);
   };
 
-  const onToggleScreenshare = () => {
-    toggleScreensharing();
-  };
   const onVoiceProcessingPresetChange = (
     preset: 'standard' | 'voice_isolation' | 'music',
   ) => {
@@ -1359,6 +1366,9 @@ export function GlobalCallDockOverlay() {
                   onDismissScreenshareTabAudioHint={
                     dismissScreenshareTabAudioHint
                   }
+                  onRetryScreenshareWithTabAudio={() => {
+                    void retryScreenshareWithTabAudio();
+                  }}
                   cameraAccessBlocked={cameraAccessBlocked}
                   onDismissCameraAccessBlocked={dismissCameraAccessBlocked}
                   sessionRefreshFailedDuringCall={
@@ -1501,9 +1511,19 @@ export function GlobalCallDockOverlay() {
   );
 
   if (typeof document === 'undefined') {
-    return dockContent;
+    return (
+      <>
+        {screenshareTabAudioPromptDialog}
+        {dockContent}
+      </>
+    );
   }
 
   const portalTarget = pipWindow?.document.body ?? document.body;
-  return createPortal(dockContent, portalTarget);
+  return (
+    <>
+      {screenshareTabAudioPromptDialog}
+      {createPortal(dockContent, portalTarget)}
+    </>
+  );
 }

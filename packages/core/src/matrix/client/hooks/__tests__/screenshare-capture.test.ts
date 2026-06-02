@@ -2,8 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   MATRIX_SCREENSHARE_CAPTURE_OPTS,
   bindScreenshareStreamStopHandlers,
+  buildDisplayMediaConstraints,
   clearOrphanedMatrixScreenshareStreams,
   screenshareStreamHasTabAudio,
+  withEnhancedScreenshareCapture,
 } from '../screenshare-capture';
 
 describe('screenshare capture opts', () => {
@@ -12,6 +14,50 @@ describe('screenshare capture opts', () => {
       audio: {
         suppressLocalAudioPlayback: false,
       },
+    });
+  });
+});
+
+describe('buildDisplayMediaConstraints', () => {
+  it('requests tab and system audio hints for Chrome display media', () => {
+    expect(buildDisplayMediaConstraints()).toEqual({
+      video: true,
+      audio: {
+        suppressLocalAudioPlayback: false,
+      },
+      preferCurrentTab: true,
+      selfBrowserSurface: 'include',
+      systemAudio: 'include',
+    });
+  });
+
+  it('respects audio: false in opts', () => {
+    expect(buildDisplayMediaConstraints({ audio: false })).toEqual({
+      video: true,
+      audio: false,
+      preferCurrentTab: true,
+      selfBrowserSurface: 'include',
+      systemAudio: 'include',
+    });
+  });
+});
+
+describe('withEnhancedScreenshareCapture', () => {
+  it('patches getScreenshareContraints for the duration of run', async () => {
+    const handler = {
+      getScreenshareContraints: vi.fn(() => ({ video: true, audio: false })),
+    };
+    const client = { getMediaHandler: () => handler };
+
+    await withEnhancedScreenshareCapture(client, async () => {
+      expect(handler.getScreenshareContraints({ audio: true })).toEqual(
+        buildDisplayMediaConstraints({ audio: true }),
+      );
+    });
+
+    expect(handler.getScreenshareContraints({ audio: true })).toEqual({
+      video: true,
+      audio: false,
     });
   });
 });

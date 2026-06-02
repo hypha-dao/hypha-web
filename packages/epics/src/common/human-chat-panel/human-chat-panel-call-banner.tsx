@@ -34,6 +34,8 @@ type HumanChatPanelCallBannerProps = {
   /** Presenter started share without tab/window audio (WCUX-SHARE-AUDIO-2). */
   screenshareTabAudioMissing?: boolean;
   onDismissScreenshareTabAudioHint?: () => void;
+  /** Re-open the browser picker and request tab/window audio. */
+  onRetryScreenshareWithTabAudio?: () => void;
   /** Camera permission denied when unmuting video mid audio call. */
   cameraAccessBlocked?: boolean;
   onDismissCameraAccessBlocked?: () => void;
@@ -122,6 +124,7 @@ export function HumanChatPanelCallBanner({
   screenshareErrorCode,
   screenshareTabAudioMissing = false,
   onDismissScreenshareTabAudioHint,
+  onRetryScreenshareWithTabAudio,
   cameraAccessBlocked = false,
   onDismissCameraAccessBlocked,
   sessionRefreshFailedDuringCall = false,
@@ -336,17 +339,33 @@ export function HumanChatPanelCallBanner({
               callAccentAlertText,
             )}
           >
-            {t('callShareTabAudioNotShared')}
+            {t('callShareTabAudioNotShared')}{' '}
+            <span className={callAccentAlertSecondaryText}>
+              {t('callShareTabAudioPickerHint')}
+            </span>
           </p>
-          {onDismissScreenshareTabAudioHint ? (
-            <button
-              type="button"
-              onClick={onDismissScreenshareTabAudioHint}
-              className={callAccentAlertDismissClassName}
-            >
-              {t('callScreenshareDismiss')}
-            </button>
-          ) : null}
+          <div className="flex shrink-0 items-center gap-2">
+            {onRetryScreenshareWithTabAudio ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void onRetryScreenshareWithTabAudio();
+                }}
+                className={callAccentAlertActionButtonClassName}
+              >
+                {t('callShareTabAudioRetry')}
+              </button>
+            ) : null}
+            {onDismissScreenshareTabAudioHint ? (
+              <button
+                type="button"
+                onClick={onDismissScreenshareTabAudioHint}
+                className={callAccentAlertDismissClassName}
+              >
+                {t('callScreenshareDismiss')}
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {showCameraAccessBlockedAlert ? (

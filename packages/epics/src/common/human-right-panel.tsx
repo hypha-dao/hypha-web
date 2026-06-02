@@ -117,6 +117,7 @@ import {
 } from './human-chat-panel/human-chat-display-mention';
 import { Empty } from './empty';
 import { useGlobalCallDock } from './global-call-dock-context';
+import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -1169,6 +1170,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     screenshareErrorCode: spaceCallScreenshareError,
     screenshareTabAudioMissing: spaceCallScreenshareTabAudioMissing,
     dismissScreenshareTabAudioHint: dismissSpaceCallScreenshareTabAudioHint,
+    retryScreenshareWithTabAudio: retrySpaceCallScreenshareWithTabAudio,
     cameraAccessBlocked: spaceCallCameraAccessBlocked,
     dismissCameraAccessBlocked: dismissSpaceCallCameraAccessBlocked,
     captureMode: spaceCallCaptureMode,
@@ -1195,6 +1197,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     dismissScreenshareTakeoverPrompt: dismissSpaceCallScreenshareTakeoverPrompt,
     activeSpeakerKey: spaceCallActiveSpeakerKey,
     toggleScreensharing: toggleSpaceCallScreensharing,
+    setScreensharingEnabled: setSpaceCallScreensharingEnabled,
     voiceProcessingPreset: spaceCallVoiceProcessingPreset,
     setVoiceProcessingPreset: setSpaceCallVoiceProcessingPreset,
     presenterVoiceBoostActive: spaceCallPresenterVoiceBoostActive,
@@ -1452,9 +1455,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     void setSpaceCallCameraMuted(!spaceCallVideoMuted);
   }, [setSpaceCallCameraMuted, spaceCallVideoMuted]);
 
-  const handleCallToggleScreenshare = useCallback(() => {
-    toggleSpaceCallScreensharing();
-  }, [toggleSpaceCallScreensharing]);
+  const {
+    onToggleScreenshare: handleCallToggleScreenshare,
+    screenshareTabAudioPromptDialog,
+  } = useScreenshareTabAudioPrompt({
+    isScreensharing: spaceCallScreensharing,
+    setScreensharingEnabled: setSpaceCallScreensharingEnabled,
+    toggleScreensharing: toggleSpaceCallScreensharing,
+  });
 
   const handleCallVoiceProcessingPresetChange = useCallback(
     (preset: 'standard' | 'voice_isolation' | 'music') => {
@@ -3911,6 +3919,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   return (
     <>
+      {screenshareTabAudioPromptDialog}
       <SidebarHeader className="bg-background-2 gap-0 p-0">
         <HumanChatPanelHeader
           title={mode === 'coherence' ? coherenceTitle ?? undefined : ''}
@@ -4002,6 +4011,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onDismissScreenshareTabAudioHint={
                 dismissSpaceCallScreenshareTabAudioHint
               }
+              onRetryScreenshareWithTabAudio={() => {
+                void retrySpaceCallScreenshareWithTabAudio();
+              }}
               cameraAccessBlocked={spaceCallCameraAccessBlocked}
               onDismissCameraAccessBlocked={dismissSpaceCallCameraAccessBlocked}
               sessionRefreshFailedDuringCall={sessionRefreshFailedDuringCall}

@@ -62,6 +62,7 @@ import {
   bindScreenshareStreamStopHandlers,
   clearOrphanedMatrixScreenshareStreams,
   screenshareStreamHasTabAudio,
+  withEnhancedScreenshareCapture,
 } from './screenshare-capture';
 import { requestLocalCameraAccess } from './call-camera-access';
 import { applyOutboundLocalVideoOrientation } from './call-local-video-orientation';
@@ -1452,9 +1453,8 @@ export function useSpaceGroupCall(
     async (gc: MatrixSdk.GroupCall) => {
       try {
         clearOrphanedMatrixScreenshareStreams(client);
-        const ok = await gc.setScreensharingEnabled(
-          true,
-          MATRIX_SCREENSHARE_CAPTURE_OPTS,
+        const ok = await withEnhancedScreenshareCapture(client, () =>
+          gc.setScreensharingEnabled(true, MATRIX_SCREENSHARE_CAPTURE_OPTS),
         );
         syncLocalScreenshareState(gc);
         if (ok === false) {
@@ -3451,6 +3451,23 @@ export function useSpaceGroupCall(
     setScreenshareTabAudioMissing(false);
   }, []);
 
+  const retryScreenshareWithTabAudio = useCallback(() => {
+    const gc = groupCallRef.current;
+    if (!gc?.isScreensharing()) {
+      return Promise.resolve();
+    }
+
+    const run = async () => {
+      setScreenshareTabAudioMissing(false);
+      await reconcileLocalScreenshareStop(gc);
+      await enableLocalScreenshareDirect(gc);
+    };
+
+    const next = screenshareMutationRef.current.then(run, run);
+    screenshareMutationRef.current = next;
+    return next;
+  }, [enableLocalScreenshareDirect, reconcileLocalScreenshareStop]);
+
   const dismissCameraAccessBlocked = useCallback(() => {
     setCameraAccessBlocked(false);
   }, []);
@@ -3563,6 +3580,7 @@ export function useSpaceGroupCall(
     captureConsent,
     dismissScreenshareError,
     dismissScreenshareTabAudioHint,
+    retryScreenshareWithTabAudio,
     cameraAccessBlocked,
     dismissCameraAccessBlocked,
     screenshareTakeoverIncoming,
