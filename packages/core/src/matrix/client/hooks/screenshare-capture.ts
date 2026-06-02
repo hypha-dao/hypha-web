@@ -49,18 +49,21 @@ type MediaHandlerWithConstraints = {
   getScreenshareContraints?: (opts: IScreensharingOpts) => unknown;
 };
 
+type MatrixClientWithMediaHandler = {
+  getMediaHandler?: () => unknown;
+};
+
 /**
  * Matrix `MediaHandler.getScreenshareContraints` omits Chrome display-media hints.
  * Patch for the duration of `run` so tab audio is requested by default in the picker.
  */
 export async function withEnhancedScreenshareCapture<T>(
-  client:
-    | { getMediaHandler?: () => MediaHandlerWithConstraints }
-    | null
-    | undefined,
+  client: MatrixClientWithMediaHandler | null | undefined,
   run: () => Promise<T>,
 ): Promise<T> {
-  const handler = client?.getMediaHandler?.();
+  const handler = client?.getMediaHandler?.() as
+    | MediaHandlerWithConstraints
+    | undefined;
   if (!handler?.getScreenshareContraints) {
     return run();
   }
@@ -92,9 +95,11 @@ type MatrixMediaHandlerLike = {
  * next request. Clear orphaned entries before a fresh `getDisplayMedia` prompt.
  */
 export function clearOrphanedMatrixScreenshareStreams(
-  client: { getMediaHandler?: () => MatrixMediaHandlerLike } | null | undefined,
+  client: MatrixClientWithMediaHandler | null | undefined,
 ): void {
-  const handler = client?.getMediaHandler?.();
+  const handler = client?.getMediaHandler?.() as
+    | MatrixMediaHandlerLike
+    | undefined;
   const cached = handler?.screensharingStreams;
   if (!handler || !cached?.length) return;
   for (const stream of [...cached]) {

@@ -2,10 +2,17 @@
 
 import { useCallback, useEffect, useState, type RefObject } from 'react';
 
+import {
+  clampCallDocumentPipWindowSize,
+  type CallDocumentPipWindowMode,
+  type CallDocumentPipWindowSize,
+} from './human-chat-panel/call-document-pip-window-geometry';
+
 type DocumentPictureInPicture = {
   requestWindow: (options: {
     width: number;
     height: number;
+    preferInitialWindowPlacement?: boolean;
   }) => Promise<Window>;
   window: Window | null;
 };
@@ -16,12 +23,42 @@ declare global {
   }
 }
 
-const PIP_WINDOW_DEFAULT = { width: 480, height: 320 };
+export type CallDockPipWindowSize = CallDocumentPipWindowSize;
 
-export type CallDockPipWindowSize = {
-  width: number;
-  height: number;
-};
+function clampPipWindowSize(
+  size: CallDockPipWindowSize,
+  mode: CallDocumentPipWindowMode,
+): CallDockPipWindowSize {
+  return clampCallDocumentPipWindowSize(size, mode);
+}
+
+function readPipWindowSize(pipWindow: Window): CallDockPipWindowSize {
+  return {
+    width: pipWindow.innerWidth,
+    height: pipWindow.innerHeight,
+  };
+}
+
+function applyPipWindowSize(
+  pipWindow: Window,
+  size: CallDockPipWindowSize,
+  mode: CallDocumentPipWindowMode,
+): CallDockPipWindowSize {
+  const clamped = clampPipWindowSize(size, mode);
+  const current = readPipWindowSize(pipWindow);
+  if (
+    Math.abs(clamped.width - current.width) <= 1 &&
+    Math.abs(clamped.height - current.height) <= 1
+  ) {
+    return clamped;
+  }
+  try {
+    pipWindow.resizeTo(clamped.width, clamped.height);
+  } catch {
+    // resizeTo is best-effort for Document PiP windows.
+  }
+  return clamped;
+}
 
 /** Mirror theme tokens and typography so portaled dock matches the main app. */
 function copyDocumentAppearance(source: Document, target: Document) {
@@ -110,7 +147,8 @@ function copyStylesIntoWindow(target: Window) {
  */
 export function useCallDockDocumentPip(
   dockRef: RefObject<HTMLElement | null>,
-  windowSize: CallDockPipWindowSize = PIP_WINDOW_DEFAULT,
+  windowSize: CallDockPipWindowSize,
+  windowMode: CallDocumentPipWindowMode = 'call',
 ) {
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
   const [isSupported, setIsSupported] = useState(false);
@@ -131,25 +169,44 @@ export function useCallDockDocumentPip(
 
   useEffect(() => {
     if (!pipWindow || pipWindow.closed) return;
-    try {
-      pipWindow.resizeTo(windowSize.width, windowSize.height);
-    } catch {
-      // resizeTo is best-effort for Document PiP windows.
-    }
-  }, [pipWindow, windowSize.height, windowSize.width]);
+    applyPipWindowSize(pipWindow, windowSize, windowMode);
+  }, [pipWindow, windowMode, windowSize.height, windowSize.width]);
+
+  useEffect(() => {
+    if (!pipWindow || pipWindow.closed) return;
+
+    let frameId = 0;
+    const onResize = () => {
+      window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(() => {
+        if (pipWindow.closed) return;
+        applyPipWindowSize(pipWindow, readPipWindowSize(pipWindow), windowMode);
+      });
+    };
+
+    pipWindow.addEventListener('resize', onResize);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      pipWindow.removeEventListener('resize', onResize);
+    };
+  }, [pipWindow, windowMode]);
 
   const openPip = useCallback(async () => {
     const api = window.documentPictureInPicture;
     if (!api?.requestWindow) return false;
     if (pipWindow) return true;
 
-    const width = windowSize.width;
-    const height = windowSize.height;
-    const win = await api.requestWindow({ width, height });
+    const initialSize = clampPipWindowSize(windowSize, windowMode);
+    const win = await api.requestWindow({
+      width: initialSize.width,
+      height: initialSize.height,
+      preferInitialWindowPlacement: true,
+    });
     copyStylesIntoWindow(win);
+    applyPipWindowSize(win, initialSize, windowMode);
     setPipWindow(win);
     return true;
-  }, [pipWindow, windowSize.height, windowSize.width]);
+  }, [pipWindow, windowMode, windowSize.height, windowSize.width]);
 
   const closePip = useCallback(() => {
     if (pipWindow && !pipWindow.closed) {

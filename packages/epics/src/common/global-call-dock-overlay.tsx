@@ -43,6 +43,11 @@ import {
   resolveScreenshareDockHeight,
   SCREENSHARE_FILMSTRIP_DOCK_WIDTH,
 } from './human-chat-panel/call-screenshare-filmstrip-geometry';
+import {
+  CALL_DOCUMENT_PIP_CALL,
+  clampCallDocumentPipWindowSize,
+  type CallDocumentPipWindowMode,
+} from './human-chat-panel/call-document-pip-window-geometry';
 import { matrixMemberDisplayLabelFromRoom } from './human-chat-panel/matrix-room-member-display';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import { useGlobalCallDock } from './global-call-dock-context';
@@ -626,20 +631,30 @@ export function GlobalCallDockOverlay() {
     1,
     roomGroupCallDeviceCount - 1,
   );
+  const documentPipWindowMode: CallDocumentPipWindowMode = isScreensharing
+    ? 'filmstrip'
+    : 'call';
   const documentPipWindowSize = React.useMemo(
     () =>
-      isScreensharing
-        ? {
-            width: SCREENSHARE_FILMSTRIP_DOCK_WIDTH,
-            height: resolveScreenshareDockHeight({
-              participantCount: screenshareFilmstripTileCount,
-              documentPip: true,
-              showBanner: screenshareTabAudioMissing,
-              compactBanner: true,
-            }),
-          }
-        : { width: 480, height: 320 },
+      clampCallDocumentPipWindowSize(
+        isScreensharing
+          ? {
+              width: SCREENSHARE_FILMSTRIP_DOCK_WIDTH,
+              height: resolveScreenshareDockHeight({
+                participantCount: screenshareFilmstripTileCount,
+                documentPip: true,
+                showBanner: screenshareTabAudioMissing,
+                compactBanner: true,
+              }),
+            }
+          : {
+              width: CALL_DOCUMENT_PIP_CALL.width,
+              height: CALL_DOCUMENT_PIP_CALL.height,
+            },
+        documentPipWindowMode,
+      ),
     [
+      documentPipWindowMode,
       isScreensharing,
       screenshareFilmstripTileCount,
       screenshareTabAudioMissing,
@@ -651,7 +666,11 @@ export function GlobalCallDockOverlay() {
     isOpen: isDocumentPipOpen,
     openPip,
     closePip,
-  } = useCallDockDocumentPip(dockRef, documentPipWindowSize);
+  } = useCallDockDocumentPip(
+    dockRef,
+    documentPipWindowSize,
+    documentPipWindowMode,
+  );
   const spaceAccentStyles = useSpaceAccentPortalStyles();
   const callMediaActive =
     callState === 'connected' ||
