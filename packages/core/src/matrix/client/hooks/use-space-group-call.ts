@@ -61,6 +61,10 @@ import {
   screenshareStreamHasTabAudio,
 } from './screenshare-capture';
 import {
+  applyScreenShareCaptureRootRestrictionWithRetry,
+  clearScreenShareCaptureRootRestriction,
+} from './screenshare-capture-exclusion';
+import {
   applyScreenshareTrackContentHints,
   resolveScreenshareVoicePresetPlan,
 } from './screenshare-voice-boost';
@@ -1400,6 +1404,9 @@ export function useSpaceGroupCall(
             !screenshareStreamHasTabAudio(gc.localScreenshareFeed?.stream),
           );
           await applyPresenterVoiceBoostForScreenshare(gc);
+          void applyScreenShareCaptureRootRestrictionWithRetry(
+            gc.localScreenshareFeed?.stream,
+          );
         }
       } catch (e) {
         syncLocalScreenshareState(gc);
@@ -2434,6 +2441,9 @@ export function useSpaceGroupCall(
         }
 
         try {
+          await clearScreenShareCaptureRootRestriction(
+            gc.localScreenshareFeed?.stream,
+          );
           await gc.setScreensharingEnabled(false);
         } catch {
           // user-initiated stop — reconcile UI even when SDK throws

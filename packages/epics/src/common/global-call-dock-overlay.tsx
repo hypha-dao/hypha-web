@@ -82,6 +82,13 @@ const EXPANDED_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
   width: 640,
   height: 420,
 };
+/** Narrow strip docked to the screen edge while presenting — stays out of capture. */
+const SCREENSHARE_DOCK_GEOMETRY: Pick<DockGeometry, 'width' | 'height'> = {
+  width: 196,
+  height: 480,
+};
+const SCREENSHARE_DOCK_MIN_WIDTH = 168;
+const SCREENSHARE_DOCK_MAX_WIDTH = 240;
 const DEFAULT_PANE_SPLIT: Record<CallFullViewPaneSplit, number> = {
   sideBySide: 0.68,
   filmstrip: 0.72,
@@ -376,6 +383,50 @@ function snapDockGeometry(next: DockGeometry): DockGeometry {
   return { ...next, x, y };
 }
 
+function clampScreenshareDockGeometry(next: DockGeometry): DockGeometry {
+  const viewportMaxHeight =
+    typeof window === 'undefined'
+      ? SCREENSHARE_DOCK_GEOMETRY.height
+      : Math.max(280, window.innerHeight - 2 * DOCK_MARGIN_PX);
+  const width = Math.min(
+    SCREENSHARE_DOCK_MAX_WIDTH,
+    Math.max(
+      SCREENSHARE_DOCK_MIN_WIDTH,
+      Number.isFinite(next.width)
+        ? next.width
+        : SCREENSHARE_DOCK_GEOMETRY.width,
+    ),
+  );
+  const height = Math.min(
+    viewportMaxHeight,
+    Math.max(
+      280,
+      Number.isFinite(next.height)
+        ? next.height
+        : SCREENSHARE_DOCK_GEOMETRY.height,
+    ),
+  );
+  const bounds = getDockOffsetBounds(width, height);
+  return {
+    width,
+    height,
+    x: bounds.maxX,
+    y: Math.min(
+      Math.max(Number.isFinite(next.y) ? next.y : bounds.maxY, bounds.minY),
+      bounds.maxY,
+    ),
+  };
+}
+
+function resolveScreenshareDockGeometry(): DockGeometry {
+  return clampScreenshareDockGeometry({
+    x: 0,
+    y: 0,
+    width: SCREENSHARE_DOCK_GEOMETRY.width,
+    height: SCREENSHARE_DOCK_GEOMETRY.height,
+  });
+}
+
 function readDockGeometry(): DockGeometry {
   if (typeof window === 'undefined') {
     return {
@@ -510,6 +561,10 @@ export function GlobalCallDockOverlay() {
     }),
   );
   const [dockStorageHydrated, setDockStorageHydrated] = React.useState(false);
+  const preScreenshareDockRef = React.useRef<{
+    geometry: DockGeometry;
+    dockMode: 'thumbnail' | 'expanded' | 'fullscreen';
+  } | null>(null);
   const splitContainerRef = React.useRef<HTMLDivElement | null>(null);
   const dockRef = React.useRef<HTMLDivElement | null>(null);
   const lastNonFullscreenModeRef = React.useRef<'thumbnail' | 'expanded'>(
@@ -633,11 +688,15 @@ export function GlobalCallDockOverlay() {
   React.useEffect(() => {
     if (dockMode === 'fullscreen') return;
     const onResize = () => {
-      setGeometry((prev) => clampDockGeometry(prev));
+      setGeometry((prev) =>
+        isScreensharing
+          ? clampScreenshareDockGeometry(prev)
+          : clampDockGeometry(prev),
+      );
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [dockMode]);
+  }, [dockMode, isScreensharing]);
 
   React.useEffect(() => {
     if (!isMobile || !showFloatingDock || isDocumentPipOpen) return;
@@ -652,6 +711,41 @@ export function GlobalCallDockOverlay() {
     if (dockMode === 'fullscreen') return;
     modeGeometryRef.current[dockMode] = clampDockGeometry(geometry);
   }, [dockMode, geometry]);
+
+  React.useEffect(() => {
+    if (!showFloatingDock || isMobile || isDocumentPipOpen) return;
+
+    if (isScreensharing) {
+      setGeometry((prev) => {
+        if (!preScreenshareDockRef.current) {
+          preScreenshareDockRef.current = {
+            geometry: clampDockGeometry(prev),
+            dockMode,
+          };
+        }
+        return resolveScreenshareDockGeometry();
+      });
+      if (dockMode === 'fullscreen') {
+        setDockMode('thumbnail');
+      }
+      return;
+    }
+
+    const saved = preScreenshareDockRef.current;
+    if (!saved) return;
+    preScreenshareDockRef.current = null;
+    setGeometry(clampDockGeometry(saved.geometry));
+    if (saved.dockMode !== dockMode) {
+      setDockMode(saved.dockMode);
+    }
+  }, [
+    dockMode,
+    isDocumentPipOpen,
+    isMobile,
+    isScreensharing,
+    setDockMode,
+    showFloatingDock,
+  ]);
 
   React.useEffect(() => {
     if (!isDragging && !isResizing) return;
@@ -701,7 +795,7 @@ export function GlobalCallDockOverlay() {
 
   const onDragStart = React.useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (dockMode === 'fullscreen') return;
+      if (dockMode === 'fullscreen' || isScreensharing) return;
       const target = e.target as HTMLElement;
       if (target.closest('button,[data-no-dock-drag],[data-resize-handle]')) {
         return;
@@ -715,12 +809,12 @@ export function GlobalCallDockOverlay() {
       };
       setIsDragging(true);
     },
-    [dockMode, geometry.x, geometry.y],
+    [dockMode, geometry.x, geometry.y, isScreensharing],
   );
 
   const onResizeStart = React.useCallback(
     (handle: ResizeHandle) => (e: React.PointerEvent<HTMLDivElement>) => {
-      if (dockMode === 'fullscreen') return;
+      if (dockMode === 'fullscreen' || isScreensharing) return;
       e.preventDefault();
       e.stopPropagation();
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -733,7 +827,7 @@ export function GlobalCallDockOverlay() {
       };
       setIsResizing(true);
     },
-    [dockMode, geometry],
+    [dockMode, geometry, isScreensharing],
   );
 
   const applyDockMode = React.useCallback(
@@ -1266,7 +1360,7 @@ export function GlobalCallDockOverlay() {
         </div>
       </div>
 
-      {!modeIsFullscreen && !inDocumentPip && !isMobile && (
+      {!modeIsFullscreen && !inDocumentPip && !isMobile && !isScreensharing && (
         <>
           <DockResizeHandle
             handle="top-left"

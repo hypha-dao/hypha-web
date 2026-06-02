@@ -28,4 +28,9 @@ export {
   setGroupCallSessionActive,
   subscribeGroupCallSessionActive,
 } from './active-group-call-registry';
-export { useMatrixTabLeader } from './use-matrix-tab-leader';
+export {
+  HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID,
+  applyScreenShareCaptureRootRestriction,
+  applyScreenShareCaptureRootRestrictionWithRetry,
+  clearScreenShareCaptureRootRestriction,
+} from './screenshare-capture-exclusion';
