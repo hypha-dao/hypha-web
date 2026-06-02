@@ -1201,18 +1201,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     showFloatingDock,
   } = useGlobalCallDock();
   useEffect(() => {
-    const activeRoomId = roomId?.trim() || null;
     const activeSpaceSlug = spaceSlug?.trim() || null;
     const activeAuthToken = authToken?.trim() || null;
+    const activeRoomId = roomId?.trim() || null;
+    const canonicalRoomId =
+      mode === 'space' ? space?.chatRoomId?.trim() || null : null;
+    const bindRoomId = activeRoomId ?? canonicalRoomId;
 
-    if (activeRoomId) {
-      bindRoomContext(activeRoomId, activeSpaceSlug, activeAuthToken);
+    if (bindRoomId) {
+      bindRoomContext(bindRoomId, activeSpaceSlug, activeAuthToken);
       return;
     }
     if (!showFloatingDock) {
       bindRoomContext(null, null, null);
     }
-  }, [authToken, bindRoomContext, roomId, showFloatingDock, spaceSlug]);
+  }, [
+    authToken,
+    bindRoomContext,
+    mode,
+    roomId,
+    showFloatingDock,
+    space?.chatRoomId,
+    spaceSlug,
+  ]);
 
   const callUiEnabled = useMemo(
     () =>
@@ -3840,29 +3851,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {showSidebarCallChrome && !inSpaceCall && spaceCallShowJoinStrip && (
-          <HumanChatPanelCallJoinStrip
-            deviceCount={spaceCallRoomGroupDeviceCount}
-            disabled={!callUiEnabled}
-            busy={spaceCallBusyJoining}
-            captureConsent={spaceCallCaptureConsent}
-            roomId={roomId}
-            onJoinAudio={() => {
-              if (!canJoinSignalThreadCall && isSignalThread) {
-                void requestSignalTeamAccess();
-                return;
-              }
-              handleCallAudio();
-            }}
-            onJoinVideo={() => {
-              if (!canJoinSignalThreadCall && isSignalThread) {
-                void requestSignalTeamAccess();
-                return;
-              }
-              handleCallVideo();
-            }}
-          />
-        )}
+        {showSidebarCallChrome &&
+          !inSpaceCall &&
+          spaceCallShowJoinStrip &&
+          mode !== 'space' && (
+            <HumanChatPanelCallJoinStrip
+              deviceCount={spaceCallRoomGroupDeviceCount}
+              disabled={!callUiEnabled}
+              busy={spaceCallBusyJoining}
+              captureConsent={spaceCallCaptureConsent}
+              roomId={roomId}
+              onJoinAudio={() => {
+                if (!canJoinSignalThreadCall && isSignalThread) {
+                  void requestSignalTeamAccess();
+                  return;
+                }
+                handleCallAudio();
+              }}
+              onJoinVideo={() => {
+                if (!canJoinSignalThreadCall && isSignalThread) {
+                  void requestSignalTeamAccess();
+                  return;
+                }
+                handleCallVideo();
+              }}
+            />
+          )}
         {showSidebarCallChrome &&
           (inSpaceCall ||
             spaceCallState === 'error' ||

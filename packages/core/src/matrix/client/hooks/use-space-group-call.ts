@@ -64,6 +64,7 @@ import {
   screenshareStreamHasTabAudio,
 } from './screenshare-capture';
 import { requestLocalCameraAccess } from './call-camera-access';
+import { applyOutboundLocalVideoOrientation } from './call-local-video-orientation';
 import {
   applyScreenShareCaptureRootRestrictionWithRetry,
   clearScreenShareCaptureRootRestriction,
@@ -321,6 +322,32 @@ async function recoverLocalCameraFeed(gc: MatrixSdk.GroupCall): Promise<void> {
   await waitForLiveLocalVideoTrack(gc, 400);
 }
 
+async function ensureOutboundLocalVideoOrientationForGroupCall(
+  gc: MatrixSdk.GroupCall,
+  processedSourceTrackIds: Set<string>,
+  flippedTrackDisposers: Array<() => void>,
+): Promise<void> {
+  try {
+    await applyOutboundLocalVideoOrientation(
+      (stream) => gc.updateLocalUsermediaStream(stream),
+      gc.localCallFeed?.stream,
+      {
+        processedSourceTrackIds,
+        onFlippedTrackDispose: (dispose) => {
+          flippedTrackDisposers.push(dispose);
+        },
+      },
+    );
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(
+        '[hypha.group_call] ensureOutboundLocalVideoOrientation failed',
+        error,
+      );
+    }
+  }
+}
+
 /** Stop local A/V publish without leaving the room GroupCall (tab transfer). */
 async function stopGroupCallLocalPublishing(
   gc: MatrixSdk.GroupCall,
@@ -566,6 +593,8 @@ export function useSpaceGroupCall(
   const remoteMediaRecoverRequestedRef = useRef(false);
   const remoteMediaRecoverAttemptedRef = useRef(false);
   const remoteMediaRecoverInFlightRef = useRef(false);
+  const outboundVideoOrientationProcessedRef = useRef<Set<string>>(new Set());
+  const outboundVideoOrientationDisposersRef = useRef<Array<() => void>>([]);
   const recordingGenerationRef = useRef(0);
   const recordingFinalizeInFlightRef = useRef(false);
   const recordingFinalizeGenerationRef = useRef<number | null>(null);
@@ -688,6 +717,20 @@ export function useSpaceGroupCall(
       localMediaBootstrapTimerRefs.current = [];
     }
   }, []);
+
+  const ensurePublishedLocalMediaWithOrientation = useCallback(
+    async (gc: MatrixSdk.GroupCall, kind: 'audio' | 'video') => {
+      await ensureLocalCallMediaPublished(gc, kind);
+      if (kind === 'video' && !gc.isLocalVideoMuted()) {
+        await ensureOutboundLocalVideoOrientationForGroupCall(
+          gc,
+          outboundVideoOrientationProcessedRef.current,
+          outboundVideoOrientationDisposersRef.current,
+        );
+      }
+    },
+    [],
+  );
 
   const syncLocalScreenshareState = useCallback(
     (gc: MatrixSdk.GroupCall | null | undefined) => {
@@ -1275,6 +1318,11 @@ export function useSpaceGroupCall(
       }
       loggedStatsForGroupCallIdRef.current = null;
       lastRoomIdForTelemetryRef.current = null;
+      outboundVideoOrientationProcessedRef.current.clear();
+      for (const dispose of outboundVideoOrientationDisposersRef.current) {
+        dispose();
+      }
+      outboundVideoOrientationDisposersRef.current = [];
     },
     [
       beginCaptureRuntimeAsync,
@@ -1564,18 +1612,21 @@ export function useSpaceGroupCall(
     [readParticipantsFromGroupCall],
   );
 
-  const scheduleLocalMediaBootstrap = useCallback((gc: MatrixSdk.GroupCall) => {
-    if (typeof window === 'undefined') return;
-    if (localMediaBootstrapDebounceRef.current != null) {
-      clearTimeout(localMediaBootstrapDebounceRef.current);
-    }
-    localMediaBootstrapDebounceRef.current = window.setTimeout(() => {
-      localMediaBootstrapDebounceRef.current = null;
-      if (groupCallRef.current !== gc) return;
-      const kind = lastJoinKindRef.current ?? 'audio';
-      void ensureLocalCallMediaPublished(gc, kind);
-    }, 350);
-  }, []);
+  const scheduleLocalMediaBootstrap = useCallback(
+    (gc: MatrixSdk.GroupCall) => {
+      if (typeof window === 'undefined') return;
+      if (localMediaBootstrapDebounceRef.current != null) {
+        clearTimeout(localMediaBootstrapDebounceRef.current);
+      }
+      localMediaBootstrapDebounceRef.current = window.setTimeout(() => {
+        localMediaBootstrapDebounceRef.current = null;
+        if (groupCallRef.current !== gc) return;
+        const kind = lastJoinKindRef.current ?? 'audio';
+        void ensurePublishedLocalMediaWithOrientation(gc, kind);
+      }, 350);
+    },
+    [ensurePublishedLocalMediaWithOrientation],
+  );
 
   const startLocalMediaBootstrapSeries = useCallback(
     (gc: MatrixSdk.GroupCall) => {
@@ -1586,11 +1637,11 @@ export function useSpaceGroupCall(
         (delayMs) =>
           window.setTimeout(() => {
             if (groupCallRef.current !== gc) return;
-            void ensureLocalCallMediaPublished(gc, kind);
+            void ensurePublishedLocalMediaWithOrientation(gc, kind);
           }, delayMs),
       );
     },
-    [clearLocalMediaBootstrapTimers],
+    [clearLocalMediaBootstrapTimers, ensurePublishedLocalMediaWithOrientation],
   );
 
   /** Stall detection: others in participant map but no remote userMedia CallFeed (WebRTC lag). */
@@ -2216,7 +2267,7 @@ export function useSpaceGroupCall(
        * are live and retry pairwise call placement so remote peers receive A/V.
        */
       try {
-        await ensureLocalCallMediaPublished(gc, kind);
+        await ensurePublishedLocalMediaWithOrientation(gc, kind);
       } catch {
         /* best-effort local media bootstrap */
       }
@@ -2228,7 +2279,7 @@ export function useSpaceGroupCall(
         placeOutgoingNudgeTimerRef.current = window.setTimeout(() => {
           placeOutgoingNudgeTimerRef.current = null;
           if (groupCallRef.current !== gc) return;
-          void ensureLocalCallMediaPublished(gc, kind);
+          void ensurePublishedLocalMediaWithOrientation(gc, kind);
         }, PLACE_OUTGOING_DELAYED_MS);
         placeOutgoingRetryTimerRefs.current = PLACE_OUTGOING_RETRY_MS.map(
           (delayMs) =>
@@ -2484,6 +2535,13 @@ export function useSpaceGroupCall(
           } catch {
             /* camera permission / hardware — remain in call with video off */
           }
+        }
+        if (!gc.isLocalVideoMuted()) {
+          await ensureOutboundLocalVideoOrientationForGroupCall(
+            gc,
+            outboundVideoOrientationProcessedRef.current,
+            outboundVideoOrientationDisposersRef.current,
+          );
         }
       }
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
@@ -3157,7 +3215,7 @@ export function useSpaceGroupCall(
       if (typeof document !== 'undefined' && document.hidden) return;
       if (gc.isLocalVideoMuted() || getLiveLocalVideoTrack(gc)) return;
       const kind = lastJoinKindRef.current ?? 'video';
-      void ensureLocalCallMediaPublished(gc, kind).then(() => {
+      void ensurePublishedLocalMediaWithOrientation(gc, kind).then(() => {
         scheduleFeedBatched();
         refreshLocalPreview();
       });
@@ -3199,7 +3257,13 @@ export function useSpaceGroupCall(
       detachStream?.();
       gc.off(GroupCallEvent.UserMediaFeedsChanged, onFeedsChanged);
     };
-  }, [callState, groupCall, refreshLocalPreview, scheduleFeedBatched]);
+  }, [
+    callState,
+    ensurePublishedLocalMediaWithOrientation,
+    groupCall,
+    refreshLocalPreview,
+    scheduleFeedBatched,
+  ]);
 
   useEffect(() => {
     return () => {

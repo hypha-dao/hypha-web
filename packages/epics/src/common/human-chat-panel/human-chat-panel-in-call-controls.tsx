@@ -151,8 +151,8 @@ export function HumanChatPanelInCallControls({
     ? 'h-3.5 w-3.5 text-white stroke-white'
     : 'h-5 w-5 text-white stroke-white';
   const compactBtn = isPipDensity
-    ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
-    : 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+    ? 'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
+    : 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const baseBtn = isFull
     ? cn(
         fullViewControlSize,
@@ -175,9 +175,9 @@ export function HumanChatPanelInCallControls({
   const leaveIcon = isFull
     ? fullViewIcon
     : isPipDensity
-    ? 'h-3 w-3'
+    ? 'h-2.5 w-2.5'
     : isCompact
-    ? 'h-3.5 w-3.5'
+    ? 'h-3 w-3'
     : 'h-4 w-4';
   /**
    * End call — classic “hang up” red (explicit red-600/700, not `destructive` token
@@ -189,9 +189,9 @@ export function HumanChatPanelInCallControls({
         'inline-flex items-center justify-center rounded-full border border-red-800/25 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/50 disabled:opacity-50',
       )
     : isPipDensity
-    ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
+    ? 'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
     : isCompact
-    ? 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
+    ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
     : cn(
         'inline-flex shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40',
         bannerCircleSize,
@@ -212,6 +212,11 @@ export function HumanChatPanelInCallControls({
         baseBtn,
         'ring-2 ring-white/25 border-emerald-500/60 bg-emerald-600/90 hover:bg-emerald-500/90',
       )
+    : isCompact
+    ? cn(
+        compactBtn,
+        'border-emerald-500/55 bg-emerald-600/90 text-white ring-2 ring-emerald-500/25 hover:bg-emerald-500/90',
+      )
     : cn(
         'inline-flex shrink-0 items-center justify-center rounded-full border border-emerald-500/55 bg-emerald-600/90 text-white shadow-sm ring-2 ring-emerald-500/25 transition-colors hover:bg-emerald-500/90',
         bannerCircleSize,
@@ -230,9 +235,9 @@ export function HumanChatPanelInCallControls({
   const icon = isFull
     ? fullViewIcon
     : isPipDensity
-    ? 'h-3 w-3'
+    ? 'h-2.5 w-2.5'
     : isCompact
-    ? 'h-3.5 w-3.5'
+    ? 'h-3 w-3'
     : 'h-4 w-4';
   const audioSettingsBtn = isFull
     ? cn(
@@ -241,7 +246,9 @@ export function HumanChatPanelInCallControls({
         isPipDensity ? 'px-1.5' : 'px-2.5',
       )
     : isCompact
-    ? 'inline-flex h-7 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-1.5 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
+    ? isPipDensity
+      ? 'inline-flex h-5 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-1 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
+      : 'inline-flex h-6 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-1.5 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
     : cn(
         'inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-border/60 bg-background px-2 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
         bannerBarHeight,
@@ -269,7 +276,13 @@ export function HumanChatPanelInCallControls({
       : capturePending
       ? t('callCaptureStatusStarting')
       : t('callCaptureStatusIdle');
-  const captureIconClass = isFull ? fullViewIcon : 'h-4 w-4';
+  const captureIconClass = isFull
+    ? fullViewIcon
+    : isPipDensity
+    ? 'h-2.5 w-2.5'
+    : isCompact
+    ? 'h-3 w-3'
+    : 'h-4 w-4';
   const captureIdleIconClass = cn(
     captureIconClass,
     isFull
@@ -291,7 +304,13 @@ export function HumanChatPanelInCallControls({
     <span
       className={cn(
         'relative inline-flex items-center justify-center',
-        isFull ? 'h-5 w-5' : 'h-4 w-4',
+        isFull
+          ? 'h-5 w-5'
+          : isPipDensity
+          ? 'h-3 w-3'
+          : isCompact
+          ? 'h-3.5 w-3.5'
+          : 'h-4 w-4',
       )}
       aria-hidden
     >

@@ -16,8 +16,12 @@ declare global {
   }
 }
 
-const PIP_WINDOW_WIDTH = 480;
-const PIP_WINDOW_HEIGHT = 320;
+const PIP_WINDOW_DEFAULT = { width: 480, height: 320 };
+
+export type CallDockPipWindowSize = {
+  width: number;
+  height: number;
+};
 
 /** Mirror theme tokens and typography so portaled dock matches the main app. */
 function copyDocumentAppearance(source: Document, target: Document) {
@@ -104,7 +108,10 @@ function copyStylesIntoWindow(target: Window) {
  * separate always-on-top browser window because a fixed in-tab overlay is
  * hidden when the Hypha tab is in the background.
  */
-export function useCallDockDocumentPip(dockRef: RefObject<HTMLElement | null>) {
+export function useCallDockDocumentPip(
+  dockRef: RefObject<HTMLElement | null>,
+  windowSize: CallDockPipWindowSize = PIP_WINDOW_DEFAULT,
+) {
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
   const [isSupported, setIsSupported] = useState(false);
 
@@ -127,13 +134,13 @@ export function useCallDockDocumentPip(dockRef: RefObject<HTMLElement | null>) {
     if (!api?.requestWindow) return false;
     if (pipWindow) return true;
 
-    const width = PIP_WINDOW_WIDTH;
-    const height = PIP_WINDOW_HEIGHT;
+    const width = windowSize.width;
+    const height = windowSize.height;
     const win = await api.requestWindow({ width, height });
     copyStylesIntoWindow(win);
     setPipWindow(win);
     return true;
-  }, [dockRef, pipWindow]);
+  }, [pipWindow, windowSize.height, windowSize.width]);
 
   const closePip = useCallback(() => {
     if (pipWindow && !pipWindow.closed) {

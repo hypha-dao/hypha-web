@@ -229,6 +229,29 @@ export function resolveCallStageLayout(
       };
     }
 
+    /** Small dock: equal grid tiles fill the stage; strip layout wastes strip width (WCUX). */
+    if (participantCount <= 6) {
+      const fullScreenMode = resolveCallFullScreenLayoutMode(participantCount);
+      const galleryLayout = computeCallGalleryGrid(participantCount, 2);
+      return {
+        renderer: 'thresholdGallery',
+        fullScreenMode,
+        participantVideoFit,
+        galleryMaxCols: 2,
+        galleryLayout,
+        showGalleryPagination: false,
+        speakerPrimaryRatio: 1,
+        stripMaxVisible: 0,
+        stripOverflowCount: 0,
+        tilePlacements: resolveCallGalleryTilePlacements(
+          fullScreenMode,
+          participantCount,
+          speakerIndex,
+        ),
+        galleryPaginationResetKey,
+      };
+    }
+
     const stripMaxVisible = participantCount >= 7 ? 6 : 5;
     const stripOverflowCount =
       participantCount > stripMaxVisible + 1

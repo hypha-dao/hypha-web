@@ -111,17 +111,41 @@ describe('resolveCallStageLayout', () => {
     expect(plan.stripOverflowCount).toBe(17);
   });
 
-  it('uses speaker-primary strip in dock tiers when N>=2', () => {
-    const plan = resolveCallStageLayout({
+  it('uses equal gallery grid in dock tiers for small calls', () => {
+    const duo = resolveCallStageLayout({
+      viewportTier: 'V-S',
+      participantDeviceCount: 2,
+      hasActiveShare: false,
+      activeSpeakerIndex: 0,
+      galleryPage: 0,
+    });
+    expect(duo.renderer).toBe('thresholdGallery');
+    expect(duo.fullScreenMode).toBe('duo');
+    expect(duo.galleryLayout).toEqual({ cols: 2, rows: 1, slots: 2 });
+
+    const quad = resolveCallStageLayout({
       viewportTier: 'V-M',
       participantDeviceCount: 4,
       hasActiveShare: false,
       activeSpeakerIndex: 1,
       galleryPage: 0,
     });
+    expect(quad.renderer).toBe('thresholdGallery');
+    expect(quad.fullScreenMode).toBe('quad');
+    expect(quad.participantVideoFit).toBe('contain');
+  });
+
+  it('uses speaker-primary strip in dock tiers when N>=7', () => {
+    const plan = resolveCallStageLayout({
+      viewportTier: 'V-M',
+      participantDeviceCount: 7,
+      hasActiveShare: false,
+      activeSpeakerIndex: 1,
+      galleryPage: 0,
+    });
     expect(plan.renderer).toBe('speakerPrimaryStrip');
     expect(plan.participantVideoFit).toBe('contain');
-    expect(plan.speakerPrimaryRatio).toBe(0.7);
+    expect(plan.speakerPrimaryRatio).toBe(0.75);
   });
 
   it('defers to share layout when hasActiveShare', () => {

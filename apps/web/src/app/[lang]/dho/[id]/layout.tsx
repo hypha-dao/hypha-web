@@ -1,6 +1,7 @@
 import {
   SalesBanner,
   SpaceEscrowDepositBanners,
+  SpaceCallJoinHeroBanner,
   SpaceModeLabel,
   SubscriptionBadge,
   CompactSpaceBanner,
@@ -129,6 +130,12 @@ export default async function DhoLayout({
             logoSrc={accentLogoHref}
             className="pt-0"
           >
+            <SpaceCallJoinHeroBanner
+              spaceSlug={daoSlug}
+              chatRoomId={spaceFromDb.chatRoomId}
+              web3SpaceId={web3SpaceId}
+              spaceTitle={spaceFromDb.title}
+            />
             <CompactSpaceBanner
               showSpaceStats
               title={spaceFromDb.title}

@@ -22,6 +22,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import { Loader2, Maximize2, MicOff, User } from 'lucide-react';
 import {
+  shouldMirrorCallFeedVideoForDisplay,
   usePersonBySub,
   useUserPrivyIdByMatrixId,
   type SpaceGroupCallState,
@@ -44,6 +45,8 @@ import {
   sliceCallGalleryPage,
   type CallGalleryGridLayout,
 } from './call-gallery-grid';
+import { CallDockAspectTileShell } from './call-dock-tile-shell';
+import { CallPresenterParticipantFilmstrip } from './call-presenter-participant-filmstrip';
 import {
   resolveCallStageLayout,
   resolveSpeakerPrimaryStripIndices,
@@ -62,6 +65,7 @@ import {
 } from './call-feed-tile-audio';
 import {
   createCallFeedVideoStream,
+  hasWarmingCallFeedVideoTrack,
   isCallFeedVideoSurfaceReady,
   resolveCallFeedLiveVideoTrack,
 } from './call-feed-tile-video';
@@ -233,19 +237,26 @@ function CallParticipantGalleryGrid({
     galleryLayoutOverride ??
     computeCallGalleryGrid(visibleTiles.length, colCap);
   const pageCount = getCallGalleryPageCount(tiles.length, pageSize);
-  const gridStyle = callGalleryGridStyle(layout);
+  const fullGridStyle = callGalleryGridStyle(layout);
+  const dockPanel = !isFull;
+  const gridStyle = dockPanel
+    ? { gridTemplateColumns: fullGridStyle.gridTemplateColumns }
+    : fullGridStyle;
 
   return (
     <div
       className={cn(
-        'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+        'flex min-h-0 min-w-0 flex-1 flex-col',
+        dockPanel ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden',
         className,
       )}
     >
       <div
         className={cn(
-          'grid min-h-0 w-full min-w-0 flex-1 gap-1.5',
-          'content-stretch items-stretch [grid-auto-rows:minmax(0,1fr)]',
+          'grid w-full min-w-0 gap-1.5',
+          dockPanel
+            ? 'min-h-0 flex-1 content-start [grid-auto-rows:auto]'
+            : 'min-h-0 flex-1 content-stretch items-stretch [grid-auto-rows:minmax(0,1fr)]',
         )}
         style={gridStyle}
       >
@@ -258,16 +269,33 @@ function CallParticipantGalleryGrid({
             placement?.gridColumnStart ??
             getCallGalleryTileColumnStart(i, visibleTiles.length, layout);
           const placementStyle = callGalleryTilePlacementStyle(placement);
+          const rowSpan =
+            placement?.gridRowStart != null && placement?.gridRowEnd != null
+              ? placement.gridRowEnd - placement.gridRowStart
+              : 1;
+          const tile = renderTile(item, keyPrefix + i);
           return (
             <div
               key={galleryTileKey(item, keyPrefix + i)}
-              className={cellClassName}
+              className={cn(
+                cellClassName,
+                dockPanel && rowSpan > 1 && 'min-h-0 self-stretch',
+              )}
               style={
                 placementStyle ??
                 (colStart ? { gridColumnStart: colStart } : undefined)
               }
             >
-              {renderTile(item, keyPrefix + i)}
+              {dockPanel ? (
+                <CallDockAspectTileShell
+                  sizing={rowSpan > 1 ? 'fit' : 'width'}
+                  className={rowSpan > 1 ? 'h-full' : undefined}
+                >
+                  {tile}
+                </CallDockAspectTileShell>
+              ) : (
+                tile
+              )}
             </div>
           );
         })}
@@ -313,6 +341,8 @@ type CallSpeakerPrimaryStripProps = {
   renderTile: (item: RemoteTileItem, keyIdx: number) => ReactNode;
   overflowLabel: (count: number) => string;
   isPortrait?: boolean;
+  /** Resizable dock panel — preserve 16:9 tiles; scroll strip instead of clipping. */
+  panelDock?: boolean;
 };
 
 function CallSpeakerPrimaryStrip({
@@ -325,6 +355,7 @@ function CallSpeakerPrimaryStrip({
   renderTile,
   overflowLabel,
   isPortrait = false,
+  panelDock = false,
 }: CallSpeakerPrimaryStripProps) {
   const { speakerIndex, stripIndices, overflowCount } =
     resolveSpeakerPrimaryStripIndices(
@@ -348,14 +379,25 @@ function CallSpeakerPrimaryStrip({
       )}
     >
       <div
-        className={cn('min-h-0 min-w-0', cellClassName)}
+        className={cn('flex min-h-0 min-w-0 flex-col', cellClassName)}
         style={{ flex: `${speakerPrimaryRatio} 1 0%` }}
       >
-        {speakerTile ? renderTile(speakerTile, speakerIndex) : null}
+        {speakerTile ? (
+          panelDock ? (
+            <CallDockAspectTileShell className="h-full">
+              {renderTile(speakerTile, speakerIndex)}
+            </CallDockAspectTileShell>
+          ) : (
+            renderTile(speakerTile, speakerIndex)
+          )
+        ) : null}
       </div>
       <div
         className={cn(
-          'flex min-h-0 min-w-0 flex-col gap-1.5 overflow-y-auto',
+          'min-h-0 min-w-0 gap-1.5 overscroll-contain',
+          panelDock
+            ? 'flex flex-col overflow-y-auto'
+            : 'flex flex-col overflow-y-auto',
           cellClassName,
         )}
         style={{ flex: `${1 - speakerPrimaryRatio} 1 0%` }}
@@ -363,11 +405,21 @@ function CallSpeakerPrimaryStrip({
         {stripTiles.map(({ item, index }) => (
           <div
             key={galleryTileKey(item, index)}
-            className="relative aspect-video min-h-[3.5rem] w-full min-w-0 shrink-0 overflow-hidden"
+            className={cn(
+              panelDock
+                ? 'min-w-0 shrink-0'
+                : 'relative min-h-0 w-full min-w-0 flex-1 overflow-hidden',
+            )}
           >
-            <div className="absolute inset-0 min-h-0 min-w-0">
-              {renderTile(item, index)}
-            </div>
+            {panelDock ? (
+              <CallDockAspectTileShell sizing="width">
+                {renderTile(item, index)}
+              </CallDockAspectTileShell>
+            ) : (
+              <div className="absolute inset-0 min-h-0 min-w-0">
+                {renderTile(item, index)}
+              </div>
+            )}
           </div>
         ))}
         {overflowCount > 0 ? (
@@ -978,8 +1030,10 @@ function HumanChatPanelCallStageMain({
     ? 'flex h-full min-h-0 w-full min-w-0 flex-col'
     : panelFlush && userGridTileCount <= 1
     ? 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col'
+    : userGridTileCount > 1 && !isFull
+    ? 'relative flex h-full min-h-0 w-full min-w-0'
     : userGridTileCount > 1
-    ? 'flex h-full min-h-[min(40vh,280px)] w-full min-w-0 flex-1 flex-col'
+    ? 'relative flex h-full min-h-0 w-full min-w-0 flex-1 flex-col'
     : 'min-w-0';
 
   return (
@@ -1055,13 +1109,20 @@ function HumanChatPanelCallStageMain({
                     {renderRemoteUserTile(shareParticipantTiles[0]!, 1000)}
                   </div>
                 </div>
+              ) : !isFull ? (
+                <CallPresenterParticipantFilmstrip
+                  tiles={shareParticipantTiles}
+                  renderTile={renderRemoteUserTile}
+                  pageLabel={(current, total) =>
+                    t('callGalleryPage', { current, total })
+                  }
+                  previousPageLabel={t('callGalleryPreviousPage')}
+                  nextPageLabel={t('callGalleryNextPage')}
+                />
               ) : (
                 renderParticipantShareSidebar(
                   1000,
-                  cn(
-                    'w-full shrink-0',
-                    isFull ? 'min-h-[4.5rem]' : 'aspect-video min-h-[4rem]',
-                  ),
+                  cn('w-full shrink-0', 'min-h-[4.5rem]'),
                   true,
                 )
               )}
@@ -1459,6 +1520,7 @@ function HumanChatPanelCallStageMain({
               speakerPrimaryRatio={layoutPlan.speakerPrimaryRatio}
               stripMaxVisible={layoutPlan.stripMaxVisible}
               cellClassName={userGridCellClass}
+              panelDock={!isFull}
               renderTile={renderRemoteUserTile}
               overflowLabel={(count) => `+${count}`}
             />
@@ -1477,6 +1539,7 @@ function HumanChatPanelCallStageMain({
               speakerPrimaryRatio={layoutPlan.speakerPrimaryRatio}
               stripMaxVisible={layoutPlan.stripMaxVisible}
               cellClassName={userGridCellClass}
+              panelDock={!isFull}
               renderTile={renderRemoteUserTile}
               overflowLabel={(count) => `+${count}`}
             />
@@ -2056,12 +2119,19 @@ const FeedContent = ({
     isShare && !isPip ? shareOverlayLabel : isPip ? t('callYou') : resolvedName;
   const mountRemoteAudio = shouldMountRemoteCallAudioSink(feed, isShare);
   const mountRemoteAudioInMainDocument = isDocumentPipOpen && mountRemoteAudio;
-  const mirrorLocalPreview = !isShare && feed.isLocal();
 
   const ref = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stream = feed.stream ?? null;
   const liveVideoTrack = resolveCallFeedLiveVideoTrack(feed);
+  const mirrorLocalPreview =
+    Boolean(currentUserId && feed.userId === currentUserId) &&
+    shouldMirrorCallFeedVideoForDisplay({
+      isShare,
+      isLocalFeed: feed.isLocal(),
+      videoTrack: liveVideoTrack,
+    });
+  const warmingVideoTrack = hasWarmingCallFeedVideoTrack(feed);
   const hasVideo = liveVideoTrack !== null;
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
@@ -2104,7 +2174,7 @@ const FeedContent = ({
     let frameCallbackId: number | undefined;
     if ('requestVideoFrameCallback' in el) {
       frameCallbackId = el.requestVideoFrameCallback(() => {
-        setVideoSurfaceReady(true);
+        markReady();
       });
     }
 
@@ -2122,6 +2192,17 @@ const FeedContent = ({
       }
     }, 4000);
 
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => {
+            if (el.clientWidth > 0 && el.clientHeight > 0) {
+              playVideo();
+              markReady();
+            }
+          })
+        : null;
+    resizeObserver?.observe(el);
+
     return () => {
       el.removeEventListener('loadedmetadata', markReady);
       el.removeEventListener('resize', markReady);
@@ -2131,11 +2212,12 @@ const FeedContent = ({
       }
       window.clearInterval(retryTimer);
       window.clearTimeout(giveUpTimer);
+      resizeObserver?.disconnect();
       el.srcObject = null;
     };
   }, [liveVideoTrack?.id, streamBindVersion]);
 
-  const showVideoSurface = hasVideo && videoSurfaceReady;
+  const showVideoSurface = hasVideo && videoSurfaceReady && !warmingVideoTrack;
 
   useEffect(() => {
     const el = audioRef.current;
