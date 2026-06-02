@@ -2236,11 +2236,13 @@ const FeedContent = ({
           {!isPip && (
             <div
               className={cn(
-                'absolute start-1 z-[1] flex max-w-[90%] min-h-[1.75rem] flex-col justify-end rounded bg-background/80 px-1.5 py-0.5 text-xs',
-                isFullView ? 'bottom-2' : 'bottom-1',
+                'absolute start-1 z-10 flex max-w-[calc(100%-0.5rem)] min-h-[1.75rem] rounded bg-background/80 px-1.5 py-0.5 text-xs',
+                isFullView
+                  ? 'bottom-2 flex-col justify-end'
+                  : 'top-1 flex-row items-center gap-1.5',
               )}
             >
-              <span className="truncate">
+              <span className="min-w-0 truncate">
                 {showSkeleton ? (
                   <Skeleton loading width={88} height={14} />
                 ) : (
@@ -2248,13 +2250,25 @@ const FeedContent = ({
                 )}
               </span>
               {audioMuted ? (
-                <span className="mt-0.5 inline-flex items-center gap-1 text-destructive">
+                <span
+                  className={cn(
+                    'inline-flex shrink-0 items-center gap-0.5 text-destructive',
+                    isFullView && 'mt-0.5',
+                  )}
+                >
                   <MicOff
                     className="h-3.5 w-3.5"
                     strokeWidth={2.25}
                     aria-hidden
                   />
-                  {t('callParticipantMuted')}
+                  <span
+                    className={cn(
+                      'font-medium leading-none',
+                      isFullView ? 'text-xs' : 'text-[10px]',
+                    )}
+                  >
+                    {t('callParticipantMuted')}
+                  </span>
                 </span>
               ) : null}
             </div>
@@ -2263,10 +2277,14 @@ const FeedContent = ({
       ) : (
         <div
           className={cn(
-            'flex h-full w-full flex-col items-center justify-center gap-3 p-4 text-center',
+            'flex h-full w-full flex-col text-center',
             /* Fixed dark scrim: always pair with light glyphs (not theme `foreground`). */
             'bg-gradient-to-b from-zinc-900/95 to-black text-zinc-50',
-            isPip && 'gap-1.5 p-2',
+            isPip
+              ? 'items-center justify-center gap-1.5 p-2'
+              : isFullView
+              ? 'items-center justify-center gap-3 p-4'
+              : 'items-start justify-start gap-2 p-2 pt-3',
           )}
           aria-label={ariaLabel}
         >
