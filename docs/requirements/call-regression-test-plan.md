@@ -124,8 +124,8 @@ Paste into PR description and check each box before merge.
 
 - [ ] **3** Chrome tab share **with audio** → remote hears; share tile has **no** false **Muted** badge (WCUX-SHARE-AUDIO)
 - [ ] **4** Presenter voice clearly audible while sharing (WCUX-SHARE-VOICE)
-- [ ] **5** 5-person full-screen → no empty grid cells; all names visible (WCUX-LAYOUT)
-- [ ] **6** 7-person medium dock → faces not cropped; speaker enlarged (WCUX-LAYOUT)
+- [x] **5** 5-person full-screen → no empty grid cells; all names visible (WCUX-LAYOUT) — _Vitest gate `call-stage-layout-engine.test.ts` (2026-06-02)_
+- [x] **6** 7-person medium dock → faces not cropped; speaker enlarged (WCUX-LAYOUT) — _Vitest gate `call-stage-layout-engine.test.ts` (2026-06-02)_
 - [ ] **7** Audio-only participant → name visible; voice waves use **space accent** (WCUX-AUDIO-TILE)
 - [ ] **8** Send 👍 reaction + raise hand ✋ visible to other participant (WCUX-REACT)
 - [ ] **9** Active speaker ≥480p in debug overlay (`hypha.callDebug=1`) (WCUX-QUALITY)

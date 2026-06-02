@@ -62,7 +62,7 @@ describe('resolveCallFullScreenLayoutMode', () => {
 });
 
 describe('resolveCallStageLayout', () => {
-  it('uses threshold gallery for full-screen N=5', () => {
+  it('uses threshold gallery for full-screen N=5 (QA row 5)', () => {
     const plan = resolveCallStageLayout({
       viewportTier: 'V-L',
       participantDeviceCount: 5,
