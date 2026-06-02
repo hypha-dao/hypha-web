@@ -6,8 +6,10 @@
 | ----- | ----- |
 | **Status** | Ready to implement (spec only) |
 | **Scope** | Nine production defects and UX gaps in the floating call dock, full-screen stage, screen share, reactions, media quality, session stability, and Document Picture-in-Picture (PiP) |
-| **Parent specs** | [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md), [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md), [call-stability-hardening-spec.md](./call-stability-hardening-spec.md) (when merged) |
-| **Plan** | [call-world-class-ux-implementation-plan.md](./call-world-class-ux-implementation-plan.md) |
+| **Parent specs** | [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md), [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md), [call-stability-hardening-spec.md](./call-stability-hardening-spec.md) |
+| **Implementation plan** | [call-consolidated-implementation-plan.md](./call-consolidated-implementation-plan.md) (**single PR**) |
+| **WCUX phase reference** | [call-world-class-ux-implementation-plan.md](./call-world-class-ux-implementation-plan.md) |
+| **CSH origin** | PR [#2285](https://github.com/hypha-dao/hypha-web/pull/2285) — merged into spec PR [#2297](https://github.com/hypha-dao/hypha-web/pull/2297) |
 | **Architecture (v1)** | Matrix `GroupCall` mesh WebRTC (`useLivekitForGroupCalls: false`) |
 | **Stakeholder evidence** | Screenshots attached to the originating request (2026-06-01/02) |
 
@@ -349,8 +351,9 @@ WebRTC media cannot be asserted in CI; cover toolbar states, reaction popover op
 | 5 | WCUX-AUDIO-TILE-* | `call-audio-voice-waves.tsx`, `human-chat-panel-call-stage.tsx` |
 | 6 | WCUX-REACT-* | `human-chat-panel-in-call-controls.tsx`, `matrix-provider.tsx`, emoji modules |
 | 7 | WCUX-QUALITY-* | `use-space-group-call.ts`, `matrix-webrtc-env.ts` |
-| 8 | WCUX-SESSION-* | `matrix-provider.tsx`, `use-call-document-keepalive.ts`, `use-space-group-call.ts` |
+| 8 | WCUX-SESSION-*, CSH-MESH-9 | `matrix-provider.tsx`, `use-call-document-keepalive.ts`, `use-space-group-call.ts` |
 | 9 | WCUX-PIP-* | `global-call-dock-overlay.tsx`, `use-call-dock-document-pip.ts` |
+| — | CSH-CHROME-*, CSH-DISCOVER-*, CSH-MESH-*, CSH-RECORD-*, CSH-SCALE-* | See [call-stability-hardening-spec.md §10](./call-stability-hardening-spec.md) |
 
 ---
 
@@ -366,6 +369,9 @@ WebRTC media cannot be asserted in CI; cover toolbar states, reaction popover op
 ## 14) References
 
 - Stakeholder screenshots (2026-06-01/02) — call dock, gallery cropping, audio-only tile, reactions reference (Zoom)
+- [call-stability-hardening-spec.md](./call-stability-hardening-spec.md) — `CSH-*` stability requirements (PR #2285)
+- [call-consolidated-implementation-plan.md](./call-consolidated-implementation-plan.md) — single implementation PR plan
 - [group-chat-emoji requirements](./Features/group-chat-emoji/requirements.md)
-- PR `#2284` / branch `fix/call-banner-regression` — PiP portal + accent waves partial fixes
+- PR [#2284](https://github.com/hypha-dao/hypha-web/pull/2284) — hotfix prerequisite
+- PR [#2285](https://github.com/hypha-dao/hypha-web/pull/2285) — stability spec (absorbed into #2297)
 - Matrix display media: [MDN getDisplayMedia audio](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia)
