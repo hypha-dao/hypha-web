@@ -1046,7 +1046,7 @@ export function GlobalCallDockOverlay() {
           : cn(
               'fixed z-[130] flex select-none flex-col rounded-xl border border-border/60 bg-background/95 shadow-2xl',
               isMobile ? '' : 'backdrop-blur-sm',
-              isMobile || modeIsFullscreen
+              isMobile || modeIsFullscreen || isScreensharing
                 ? 'min-h-0 min-w-0 overflow-hidden'
                 : 'min-h-[320px] min-w-[480px] overflow-visible',
             ),
