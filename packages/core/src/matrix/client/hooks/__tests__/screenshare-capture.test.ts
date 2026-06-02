@@ -5,9 +5,9 @@ import {
 } from '../screenshare-capture';
 
 describe('screenshare capture opts', () => {
-  it('requests display media audio with local playback enabled', () => {
+  it('requests display media audio when supported', () => {
     expect(MATRIX_SCREENSHARE_CAPTURE_OPTS).toEqual({
-      audio: { suppressLocalAudioPlayback: false },
+      audio: true,
     });
   });
 });

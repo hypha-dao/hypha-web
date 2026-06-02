@@ -125,7 +125,7 @@ describe('PiP portal targets', () => {
   it('allows dock chrome to portal into the PiP window', () => {
     const mainBody = { tagName: 'BODY' } as HTMLBodyElement;
     const pipBody = { tagName: 'BODY' } as HTMLBodyElement;
-    const pipWindow = { document: { body: pipBody } } as Window;
+    const pipWindow = { document: { body: pipBody } } as unknown as Window;
     expect(resolveCallDockPortalTarget(pipWindow, { body: mainBody })).toBe(
       pipBody,
     );

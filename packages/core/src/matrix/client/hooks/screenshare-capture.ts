@@ -1,6 +1,6 @@
 /** Matrix `GroupCall.setScreensharingEnabled` opts — request tab/window audio when supported. */
 export const MATRIX_SCREENSHARE_CAPTURE_OPTS = {
-  audio: { suppressLocalAudioPlayback: false },
+  audio: true,
 } as const;
 
 export function screenshareStreamHasTabAudio(

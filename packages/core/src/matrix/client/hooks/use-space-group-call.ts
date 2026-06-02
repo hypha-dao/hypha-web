@@ -711,41 +711,6 @@ export function useSpaceGroupCall(
     [client, roomId],
   );
 
-  const enableLocalScreenshareDirect = useCallback(
-    async (gc: MatrixSdk.GroupCall) => {
-      try {
-        const ok = await gc.setScreensharingEnabled(
-          true,
-          MATRIX_SCREENSHARE_CAPTURE_OPTS,
-        );
-        syncLocalScreenshareState(gc);
-        if (ok === false) {
-          setScreenshareTabAudioMissing(false);
-          setScreenshareErrorCode('WEBRTC_FAILED');
-        } else {
-          setScreenshareTabAudioMissing(
-            !screenshareStreamHasTabAudio(gc.localScreenshareFeed?.stream),
-          );
-          await applyPresenterVoiceBoostForScreenshare(gc);
-        }
-      } catch (e) {
-        syncLocalScreenshareState(gc);
-        setScreenshareTabAudioMissing(false);
-        if (isPermissionLikeGroupCallError(e)) {
-          setScreenshareErrorCode('PERMISSION_DENIED');
-        } else {
-          setScreenshareErrorCode('WEBRTC_FAILED');
-        }
-      }
-      scheduleFeedBatched();
-    },
-    [
-      scheduleFeedBatched,
-      syncLocalScreenshareState,
-      applyPresenterVoiceBoostForScreenshare,
-    ],
-  );
-
   const announceCaptureNotice = useCallback(
     async (
       action: 'started' | 'stopped',
@@ -1413,6 +1378,41 @@ export function useSpaceGroupCall(
       applyVoiceProcessingPresetToGroupCall,
       refreshLocalPreview,
       scheduleFeedBatched,
+    ],
+  );
+
+  const enableLocalScreenshareDirect = useCallback(
+    async (gc: MatrixSdk.GroupCall) => {
+      try {
+        const ok = await gc.setScreensharingEnabled(
+          true,
+          MATRIX_SCREENSHARE_CAPTURE_OPTS,
+        );
+        syncLocalScreenshareState(gc);
+        if (ok === false) {
+          setScreenshareTabAudioMissing(false);
+          setScreenshareErrorCode('WEBRTC_FAILED');
+        } else {
+          setScreenshareTabAudioMissing(
+            !screenshareStreamHasTabAudio(gc.localScreenshareFeed?.stream),
+          );
+          await applyPresenterVoiceBoostForScreenshare(gc);
+        }
+      } catch (e) {
+        syncLocalScreenshareState(gc);
+        setScreenshareTabAudioMissing(false);
+        if (isPermissionLikeGroupCallError(e)) {
+          setScreenshareErrorCode('PERMISSION_DENIED');
+        } else {
+          setScreenshareErrorCode('WEBRTC_FAILED');
+        }
+      }
+      scheduleFeedBatched();
+    },
+    [
+      scheduleFeedBatched,
+      syncLocalScreenshareState,
+      applyPresenterVoiceBoostForScreenshare,
     ],
   );
 
