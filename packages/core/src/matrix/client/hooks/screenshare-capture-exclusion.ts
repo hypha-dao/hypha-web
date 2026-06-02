@@ -2,8 +2,11 @@
 export const HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID =
   'hypha-screen-share-capture-root';
 
+/** Opaque handle from Element Capture `RestrictionTarget.fromElement` (not in all TS DOM libs). */
+type ScreenShareRestrictionTarget = object;
+
 type RestrictableMediaStreamTrack = MediaStreamTrack & {
-  restrictTo?: (target: RestrictionTarget | null) => Promise<void>;
+  restrictTo?: (target: ScreenShareRestrictionTarget | null) => Promise<void>;
 };
 
 function getCaptureRootElement(): HTMLElement | null {
@@ -32,7 +35,9 @@ export async function applyScreenShareCaptureRootRestriction(
   const RestrictionTargetCtor = (
     globalThis as typeof globalThis & {
       RestrictionTarget?: {
-        fromElement: (element: Element) => Promise<RestrictionTarget>;
+        fromElement: (
+          element: Element,
+        ) => Promise<ScreenShareRestrictionTarget>;
       };
     }
   ).RestrictionTarget;

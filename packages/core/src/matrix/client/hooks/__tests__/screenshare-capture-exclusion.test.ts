@@ -14,12 +14,12 @@ describe('screenshare capture exclusion', () => {
     document.body.appendChild(root);
 
     const restrictTo = vi.fn().mockResolvedValue(undefined);
-    const target = {} as RestrictionTarget;
+    const target = {};
     const fromElement = vi.fn().mockResolvedValue(target);
     (
       globalThis as typeof globalThis & {
         RestrictionTarget: {
-          fromElement: (element: Element) => Promise<RestrictionTarget>;
+          fromElement: (element: Element) => Promise<object>;
         };
       }
     ).RestrictionTarget = { fromElement };
@@ -59,7 +59,7 @@ describe('screenshare capture exclusion', () => {
     (
       globalThis as typeof globalThis & {
         RestrictionTarget: {
-          fromElement: (element: Element) => Promise<RestrictionTarget>;
+          fromElement: (element: Element) => Promise<object>;
         };
       }
     ).RestrictionTarget = {
