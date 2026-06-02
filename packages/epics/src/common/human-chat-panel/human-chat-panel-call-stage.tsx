@@ -2062,7 +2062,12 @@ const FeedContent = ({
     return () => {
       el.srcObject = null;
     };
-  }, [mountRemoteAudio, stream, streamBindVersion]);
+  }, [
+    mountRemoteAudio,
+    mountRemoteAudioInMainDocument,
+    stream,
+    streamBindVersion,
+  ]);
 
   useEffect(() => {
     return registerCallPlaybackElement(ref.current);
@@ -2070,7 +2075,12 @@ const FeedContent = ({
 
   useEffect(() => {
     return registerCallPlaybackElement(audioRef.current);
-  }, [mountRemoteAudio, stream, streamBindVersion]);
+  }, [
+    mountRemoteAudio,
+    mountRemoteAudioInMainDocument,
+    stream,
+    streamBindVersion,
+  ]);
 
   useEffect(() => {
     const onFeedVisualChange = () => {
