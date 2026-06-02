@@ -119,7 +119,7 @@
 | 5.3 | Thumbnail downscale when N≥5 | WCUX-QUALITY-4 | new helper in call stage |
 | 5.4 | Debug overlay frame size | WCUX-QUALITY-5 | `group-call-webrtc-diagnostics.ts` |
 
-**Done when:** Manual QA row **9** pass.
+**Done when:** Video quality acceptance scenarios **Q1/Q2** (spec §8.4) pass in debug mode.
 
 ---
 
