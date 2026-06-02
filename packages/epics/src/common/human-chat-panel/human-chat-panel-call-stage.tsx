@@ -848,6 +848,9 @@ function HumanChatPanelCallStageMain({
   /** One camera tile only, no share: flex column fill (no empty grid track / FV-1). */
   const useFullViewSingleMainTile =
     !useShareWithParticipantsLayout && layoutPlan.renderer === 'soloTile';
+  const centerSoloTileInStage =
+    useFullViewSingleMainTile &&
+    (isDocumentPipOpen || (!isFull && userGridTileCount <= 1));
 
   /** Skip corner PiP when gallery grid already includes the local tile. */
   const showFloatingLocalPip =
@@ -1578,12 +1581,18 @@ function HumanChatPanelCallStageMain({
           <div
             className={cn(
               'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col',
+              centerSoloTileInStage && 'items-center justify-center',
               panelFlush ? 'p-0' : 'px-2 pb-2 pt-0',
             )}
             data-feed-tick={_feedVersion}
           >
             {remoteUserMedia[0] ? (
-              <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
+              <div
+                className={cn(
+                  'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col',
+                  centerSoloTileInStage && 'max-h-full',
+                )}
+              >
                 <CallFeedTile
                   client={client}
                   roomId={roomId}
@@ -1601,6 +1610,7 @@ function HumanChatPanelCallStageMain({
                   resolveMemberLabel={resolveMemberLabel}
                   isMicrophoneMuted={isMicrophoneMuted}
                   isDocumentPipOpen={isDocumentPipOpen}
+                  centerContent={centerSoloTileInStage}
                   t={t}
                 />
               </div>
@@ -1638,6 +1648,7 @@ function HumanChatPanelCallStageMain({
                   resolveMemberLabel={resolveMemberLabel}
                   isMicrophoneMuted={isMicrophoneMuted}
                   isDocumentPipOpen={isDocumentPipOpen}
+                  centerContent={centerSoloTileInStage}
                   t={t}
                 />
               </div>
@@ -2014,6 +2025,7 @@ const CallFeedTile = ({
   resolveMemberLabel,
   isMicrophoneMuted,
   isDocumentPipOpen = false,
+  centerContent = false,
   t,
 }: {
   client: MatrixClient | null;
@@ -2031,6 +2043,7 @@ const CallFeedTile = ({
   resolveMemberLabel: (userId: string | undefined) => string;
   isMicrophoneMuted?: boolean;
   isDocumentPipOpen?: boolean;
+  centerContent?: boolean;
   t: (key: string) => string;
 }) => {
   const nameFallback = isShare
@@ -2054,6 +2067,7 @@ const CallFeedTile = ({
       panelFlush={panelFlush}
       isMicrophoneMuted={isMicrophoneMuted}
       isDocumentPipOpen={isDocumentPipOpen}
+      centerContent={centerContent}
       t={t}
     />
   );
@@ -2076,6 +2090,7 @@ const FeedContent = ({
   nameFallback,
   isMicrophoneMuted,
   isDocumentPipOpen = false,
+  centerContent = false,
   t,
 }: {
   client: MatrixClient | null;
@@ -2094,8 +2109,11 @@ const FeedContent = ({
   nameFallback: string;
   isMicrophoneMuted?: boolean;
   isDocumentPipOpen?: boolean;
+  centerContent?: boolean;
   t: (key: string) => string;
 }) => {
+  const compactTileLayout = isPip || isDocumentPipOpen;
+  const centeredLayout = compactTileLayout || centerContent;
   const audioMuted = feedReportsAudioMutedForTile(
     feed,
     isMicrophoneMuted,
@@ -2329,7 +2347,11 @@ const FeedContent = ({
     (feed.isLocal() ||
       (!feed.isAudioMuted() && (stream?.getAudioTracks().length ?? 0) > 0));
 
-  const tileAvatarSizePx = isPip ? 48 : isFullView && !isPip ? 128 : 80;
+  const tileAvatarSizePx = compactTileLayout
+    ? 48
+    : isFullView && !isPip
+    ? 128
+    : 80;
   const tileAvatarUrl = useMemo(() => {
     if (isShare) return undefined;
     if (feed.isLocal() && currentUserId) {
@@ -2366,8 +2388,8 @@ const FeedContent = ({
         panelFlush && !isPip && !isFullView ? 'rounded-none' : 'rounded-md',
         isFullView && !isPip
           ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col'
-          : isPip
-          ? 'flex h-full min-h-0 w-full min-w-0'
+          : compactTileLayout
+          ? 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col'
           : 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col',
         isShare && !isFullView && 'min-h-[min(42vh,360px)] w-full',
         isShare && isFullView && 'h-full min-h-0 w-full',
@@ -2406,6 +2428,8 @@ const FeedContent = ({
             'bg-gradient-to-b from-zinc-900/95 to-black text-zinc-50',
             isPip
               ? 'items-center justify-center gap-1.5 p-2'
+              : centeredLayout
+              ? 'items-center justify-center gap-2 p-3'
               : isFullView
               ? 'items-center justify-center gap-3 p-4'
               : 'items-start justify-start gap-2 p-2 pt-3',
@@ -2417,6 +2441,8 @@ const FeedContent = ({
               'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-zinc-200 ring-1 ring-white/20',
               isPip
                 ? 'h-8 w-8'
+                : centeredLayout && !isFullView
+                ? 'h-14 w-14'
                 : isFullView
                 ? 'h-20 w-20 sm:h-24 sm:w-24'
                 : 'h-14 w-14',
@@ -2436,6 +2462,8 @@ const FeedContent = ({
                 className={cn(
                   isPip
                     ? 'h-4 w-4'
+                    : centeredLayout && !isFullView
+                    ? 'h-7 w-7'
                     : isFullView
                     ? 'h-10 w-10 sm:h-12 sm:w-12'
                     : 'h-7 w-7',
@@ -2448,7 +2476,7 @@ const FeedContent = ({
             className={cn(
               'line-clamp-2 max-w-full font-medium text-zinc-50',
               isFullView && !isPip ? 'text-base sm:text-lg' : 'text-sm',
-              isPip && 'text-[10px] leading-tight',
+              compactTileLayout && 'text-[10px] leading-tight',
             )}
           >
             {showSkeleton ? (
@@ -2466,7 +2494,11 @@ const FeedContent = ({
             <p
               className={cn(
                 'inline-flex items-center gap-1 font-medium text-destructive',
-                isPip ? 'text-[9px]' : 'text-xs',
+                isPip
+                  ? 'text-[9px]'
+                  : isDocumentPipOpen
+                  ? 'text-xs'
+                  : 'text-xs',
               )}
             >
               <MicOff
@@ -2481,9 +2513,21 @@ const FeedContent = ({
             mediaStream={stream}
             active={canVoiceWave}
             onDarkScrim
-            size={isPip ? 'sm' : isFullView && !isPip ? 'lg' : 'md'}
+            size={
+              isPip
+                ? 'sm'
+                : centeredLayout && !isFullView
+                ? 'md'
+                : isFullView && !isPip
+                ? 'lg'
+                : 'md'
+            }
             className={
-              isPip ? 'max-w-[5.5rem]' : 'w-full max-w-[min(24rem,96%)]'
+              isPip
+                ? 'max-w-[5.5rem]'
+                : centeredLayout && !isFullView
+                ? 'max-w-[min(16rem,90%)]'
+                : 'w-full max-w-[min(24rem,96%)]'
             }
           />
         </div>

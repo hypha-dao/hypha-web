@@ -88,6 +88,8 @@ type HumanChatPanelCallBannerProps = {
   controlsMode?: 'full' | 'leave_only';
   /** Alerts and consent only — omit participant row and toolbar (e.g. floating dock footer). */
   alertsOnly?: boolean;
+  /** Tighter alert rows for Document PiP. */
+  alertDensity?: 'default' | 'pip';
 };
 
 function errorKey(code: SpaceGroupCallErrorCode): string {
@@ -163,8 +165,17 @@ export function HumanChatPanelCallBanner({
   onDismissCallError,
   controlsMode = 'full',
   alertsOnly = false,
+  alertDensity = 'default',
 }: HumanChatPanelCallBannerProps) {
   const t = useTranslations('HumanChatPanel');
+  const isPipAlertDensity = alertDensity === 'pip';
+  const alertRowClassName = isPipAlertDensity
+    ? callAccentAlertCompactRowClassName
+    : callAccentAlertRowClassName;
+  const alertTextClassName = cn(
+    isPipAlertDensity ? 'text-[10px] leading-tight' : 'text-xs leading-snug',
+    callAccentAlertText,
+  );
   const showRetryOnError =
     errorCode != null &&
     (errorCode === 'CONNECT_STALL' ||
@@ -240,7 +251,10 @@ export function HumanChatPanelCallBanner({
   const showScreenshareErrorAlert =
     screenshareErrorCode != null && callState === 'connected';
   const showScreenshareTabAudioAlert =
-    screenshareTabAudioMissing && isScreensharing && callState === 'connected';
+    !isPipAlertDensity &&
+    screenshareTabAudioMissing &&
+    isScreensharing &&
+    callState === 'connected';
   const showCameraAccessBlockedAlert =
     cameraAccessBlocked && callState === 'connected';
   const showCaptureConsentAlert =
@@ -279,13 +293,8 @@ export function HumanChatPanelCallBanner({
         </p>
       ) : null}
       {showRemoteMediaStallAlert ? (
-        <div role="alert" className={callAccentAlertRowClassName()}>
-          <p
-            className={cn(
-              'min-w-0 flex-1 text-xs leading-snug',
-              callAccentAlertText,
-            )}
-          >
+        <div role="alert" className={alertRowClassName()}>
+          <p className={cn('min-w-0 flex-1', alertTextClassName)}>
             {t('callRemoteMediaStallHint')}
           </p>
           {onDismissRemoteMediaStall && (
@@ -300,8 +309,8 @@ export function HumanChatPanelCallBanner({
         </div>
       ) : null}
       {showSessionRefreshAlert ? (
-        <div role="alert" className={callAccentAlertRowClassName()}>
-          <p className={cn('min-w-0 flex-1 text-xs', callAccentAlertText)}>
+        <div role="alert" className={alertRowClassName()}>
+          <p className={cn('min-w-0 flex-1', alertTextClassName)}>
             {t('callSessionRefreshFailedDescription')}
           </p>
           {onReconnectMatrixSession ? (
@@ -318,8 +327,8 @@ export function HumanChatPanelCallBanner({
         </div>
       ) : null}
       {showScreenshareErrorAlert ? (
-        <div role="alert" className={callAccentAlertRowClassName()}>
-          <p className={cn('min-w-0 flex-1 text-xs', callAccentAlertText)}>
+        <div role="alert" className={alertRowClassName()}>
+          <p className={cn('min-w-0 flex-1', alertTextClassName)}>
             {t(screenshareErrorKey(screenshareErrorCode))}
           </p>
           <button
@@ -332,7 +341,7 @@ export function HumanChatPanelCallBanner({
         </div>
       ) : null}
       {showScreenshareTabAudioAlert ? (
-        <div role="status" className={callAccentAlertRowClassName()}>
+        <div role="status" className={alertRowClassName()}>
           <p
             className={cn(
               'min-w-0 flex-1 text-xs leading-snug',
@@ -369,8 +378,8 @@ export function HumanChatPanelCallBanner({
         </div>
       ) : null}
       {showCameraAccessBlockedAlert ? (
-        <div role="alert" className={callAccentAlertRowClassName()}>
-          <p className={cn('min-w-0 flex-1 text-xs', callAccentAlertText)}>
+        <div role="alert" className={alertRowClassName()}>
+          <p className={cn('min-w-0 flex-1', alertTextClassName)}>
             {t('callErrorPermission')}{' '}
             <span className={callAccentAlertSecondaryText}>
               {t('callErrorPermissionGuidance')}

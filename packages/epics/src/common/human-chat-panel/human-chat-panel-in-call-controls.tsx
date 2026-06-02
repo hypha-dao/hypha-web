@@ -152,7 +152,7 @@ export function HumanChatPanelInCallControls({
     : 'h-5 w-5 text-white stroke-white';
   const compactBtn = isPipDensity
     ? 'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
-    : 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+    : 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const baseBtn = isFull
     ? cn(
         fullViewControlSize,
@@ -191,7 +191,7 @@ export function HumanChatPanelInCallControls({
     : isPipDensity
     ? 'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
     : isCompact
-    ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
+    ? 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
     : cn(
         'inline-flex shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40',
         bannerCircleSize,
@@ -211,6 +211,11 @@ export function HumanChatPanelInCallControls({
     ? cn(
         baseBtn,
         'ring-2 ring-white/25 border-emerald-500/60 bg-emerald-600/90 hover:bg-emerald-500/90',
+      )
+    : isPipDensity
+    ? cn(
+        compactBtn,
+        'border-emerald-500/55 bg-emerald-600/90 text-white ring-2 ring-emerald-500/25 hover:bg-emerald-500/90',
       )
     : isCompact
     ? cn(
@@ -237,7 +242,7 @@ export function HumanChatPanelInCallControls({
     : isPipDensity
     ? 'h-2.5 w-2.5'
     : isCompact
-    ? 'h-3 w-3'
+    ? 'h-3.5 w-3.5'
     : 'h-4 w-4';
   const audioSettingsBtn = isFull
     ? cn(
@@ -248,7 +253,7 @@ export function HumanChatPanelInCallControls({
     : isCompact
     ? isPipDensity
       ? 'inline-flex h-5 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-1 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
-      : 'inline-flex h-6 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-1.5 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
+      : 'inline-flex h-7 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-1.5 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
     : cn(
         'inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-border/60 bg-background px-2 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
         bannerBarHeight,
@@ -258,9 +263,8 @@ export function HumanChatPanelInCallControls({
     : 'h-4 w-4 text-foreground';
   const useSideAudioSettings =
     showAdvancedCallControls &&
-    (isFull ||
-      (!isCompact &&
-        (inBannerLayout === 'balanced' || inBannerLayout === 'centered')));
+    !isCompact &&
+    (isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered');
   const captureActive = captureMode !== 'none' && recordingStatus !== 'error';
   const capturePending =
     captureActive && recordingStatus === 'idle' && !controlsDisabled;
@@ -439,7 +443,10 @@ export function HumanChatPanelInCallControls({
         aria-label={t('callVoiceProcessingLabel')}
         aria-haspopup="menu"
         aria-expanded={isAudioMenuOpen}
-        onClick={() => setIsAudioMenuOpen((open) => !open)}
+        onClick={() => {
+          setIsCaptureMenuOpen(false);
+          setIsAudioMenuOpen((open) => !open);
+        }}
       >
         <SlidersHorizontal className={icon} />
         <ChevronDown
@@ -520,7 +527,10 @@ export function HumanChatPanelInCallControls({
         aria-label={`${t('callCaptureLabel')}: ${captureModeLabel}`}
         aria-haspopup="menu"
         aria-expanded={isCaptureMenuOpen}
-        onClick={() => setIsCaptureMenuOpen((open) => !open)}
+        onClick={() => {
+          setIsAudioMenuOpen(false);
+          setIsCaptureMenuOpen((open) => !open);
+        }}
       >
         {captureLive ? (
           renderCaptureOnAirIcon
@@ -715,23 +725,32 @@ export function HumanChatPanelInCallControls({
           className={cn(
             useMobileCenteredToolbar
               ? 'flex w-full items-center justify-center gap-2.5'
+              : isPipDensity
+              ? 'flex w-full items-center'
               : useSideAudioSettings
               ? 'grid w-full grid-cols-[1fr_auto_1fr] items-center'
               : 'flex w-auto items-center',
           )}
         >
-          {!useMobileCenteredToolbar && useSideAudioSettings ? <div /> : null}
+          {!useMobileCenteredToolbar &&
+          useSideAudioSettings &&
+          !isPipDensity ? (
+            <div />
+          ) : null}
           <div
             className={cn(
               'flex items-center',
-              isCenteredInBanner
+              isPipDensity
+                ? 'w-full justify-evenly gap-1'
+                : isCenteredInBanner
                 ? 'gap-2.5 sm:gap-3'
                 : isCompact
                 ? 'gap-1'
                 : 'gap-1.5 sm:gap-2',
-              useMobileCenteredToolbar || useSideAudioSettings
-                ? 'justify-center'
-                : 'justify-start',
+              !isPipDensity &&
+                (useMobileCenteredToolbar || useSideAudioSettings
+                  ? 'justify-center'
+                  : 'justify-start'),
             )}
           >
             {!leaveOnly ? (
@@ -844,27 +863,39 @@ export function HumanChatPanelInCallControls({
             >
               <CallHangUpIcon className={leaveIcon} />
             </button>
-            {!leaveOnly && showAdvancedCallControls && !useSideAudioSettings
+            {!leaveOnly &&
+            showAdvancedCallControls &&
+            !useSideAudioSettings &&
+            !isPipDensity
               ? renderCaptureMenu
               : null}
-            {!leaveOnly && showAdvancedCallControls && !useSideAudioSettings
+            {!leaveOnly &&
+            showAdvancedCallControls &&
+            !useSideAudioSettings &&
+            !isPipDensity
               ? renderAudioSettingsMenu
               : null}
           </div>
-          {useSideAudioSettings && !leaveOnly && showAdvancedCallControls ? (
+          {useSideAudioSettings &&
+          !leaveOnly &&
+          showAdvancedCallControls &&
+          !isPipDensity ? (
             <div className="justify-self-end flex items-center gap-2">
               {renderCaptureMenu}
               {renderAudioSettingsMenu}
             </div>
           ) : null}
         </div>
-        {!isCompact &&
+        {!isPipDensity &&
+        !isCompact &&
         showAdvancedCallControls &&
         recordingStatus === 'uploading' ? (
           <p className={cn('mt-1 text-[11px] text-muted-foreground')}>
             {t('callCaptureStatusSaving')}
           </p>
-        ) : showAdvancedCallControls && recordingWarningMessage ? (
+        ) : !isPipDensity &&
+          showAdvancedCallControls &&
+          recordingWarningMessage ? (
           <p
             className={cn(
               'mt-1 text-[11px]',
@@ -875,7 +906,8 @@ export function HumanChatPanelInCallControls({
           >
             {recordingWarningMessage}
           </p>
-        ) : showAdvancedCallControls &&
+        ) : !isPipDensity &&
+          showAdvancedCallControls &&
           recordingStatus === 'error' &&
           recordingError?.trim() ? (
           <div className="mt-1 flex flex-wrap items-center gap-2">

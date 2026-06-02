@@ -52,4 +52,12 @@ describe('call-screenshare-filmstrip-geometry', () => {
       }),
     ).toBe(3);
   });
+
+  it('defines compact PiP chrome without a title row', () => {
+    expect(SCREENSHARE_FILMSTRIP.pipHeaderPx).toBe(0);
+    expect(
+      SCREENSHARE_FILMSTRIP.pipFooterBannerPx -
+        SCREENSHARE_FILMSTRIP.pipFooterPx,
+    ).toBe(32);
+  });
 });

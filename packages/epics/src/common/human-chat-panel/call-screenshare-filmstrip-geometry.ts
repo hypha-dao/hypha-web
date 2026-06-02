@@ -7,6 +7,11 @@ export const SCREENSHARE_FILMSTRIP = {
   headerPx: 36,
   footerPx: 72,
   footerWithBannerPx: 124,
+  /** Document PiP — no title row. */
+  pipHeaderPx: 0,
+  pipFooterPx: 40,
+  /** PiP footer + compact tab-audio action strip. */
+  pipFooterBannerPx: 72,
   paginationPx: 28,
   minDockHeight: 280,
   /** Default PiP window height when opening during screen share. */
@@ -48,6 +53,10 @@ export function resolveScreenshareFilmstripTilesPerPage(input: {
 export function resolveScreenshareDockHeight(input: {
   participantCount: number;
   showBanner?: boolean;
+  /** Document PiP — omit dock title row from chrome. */
+  documentPip?: boolean;
+  /** Single-line / action-only banner (PiP tab audio strip). */
+  compactBanner?: boolean;
   viewportMaxHeight?: number;
   dockWidth?: number;
 }): number {
@@ -56,11 +65,17 @@ export function resolveScreenshareDockHeight(input: {
   const contentWidth = resolveScreenshareFilmstripContentWidth(dockWidth);
   const tileHeight = computeScreenshareFilmstripTileHeight(contentWidth);
   const tileBlock = tileHeight + SCREENSHARE_FILMSTRIP.tileGapPx;
-  const chrome =
-    SCREENSHARE_FILMSTRIP.headerPx +
-    (input.showBanner
-      ? SCREENSHARE_FILMSTRIP.footerWithBannerPx
-      : SCREENSHARE_FILMSTRIP.footerPx);
+  const header = input.documentPip
+    ? SCREENSHARE_FILMSTRIP.pipHeaderPx
+    : SCREENSHARE_FILMSTRIP.headerPx;
+  const footer = input.showBanner
+    ? input.compactBanner
+      ? SCREENSHARE_FILMSTRIP.pipFooterBannerPx
+      : SCREENSHARE_FILMSTRIP.footerWithBannerPx
+    : input.documentPip
+    ? SCREENSHARE_FILMSTRIP.pipFooterPx
+    : SCREENSHARE_FILMSTRIP.footerPx;
+  const chrome = header + footer;
   const viewportMax =
     input.viewportMaxHeight ??
     (typeof window !== 'undefined'
