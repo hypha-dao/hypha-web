@@ -10,6 +10,11 @@ import {
   isGroupCallSessionActive,
   subscribeGroupCallSessionActive,
 } from '../hooks/active-group-call-registry';
+import {
+  recordMatrixCallTokenRefreshFailure,
+  recordMatrixCallTokenRefreshSuccess,
+  resolveMatrixCallProactiveRefreshIntervalMs,
+} from '../hooks/matrix-call-session-metrics';
 import { isMatrixRateLimitedError } from '../hooks/space-group-call-utils';
 import type { Message, MessageMediaInfo } from '../../types';
 import { attachReactionsToMessage, isValidReactionKey } from '../../reactions';
@@ -547,6 +552,8 @@ interface MatrixContextType {
   markRoomRead: (roomId: string, eventId: string) => Promise<void>;
   /** Force refresh Matrix auth/session after UNKNOWN_TOKEN or soft logout. */
   refreshSession: () => Promise<boolean>;
+  /** In-call proactive Matrix token refresh failed — show reconnect banner (WCUX-SESSION-3). */
+  sessionRefreshFailedDuringCall: boolean;
 }
 
 const MatrixContext = React.createContext<MatrixContextType | null>(null);
@@ -571,6 +578,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     React.useState<MatrixConnectionStatus>(() =>
       isSyncLeader ? 'disconnected' : 'follower',
     );
+  const [sessionRefreshFailedDuringCall, setSessionRefreshFailedDuringCall] =
+    React.useState(false);
   const [activeMatrixUserId, setActiveMatrixUserId] = React.useState<
     string | null
   >(null);
@@ -585,6 +594,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     Map<string, Promise<LoadRoomHistoryResult>>
   >(new Map());
   const roomHistoryExhaustedRef = React.useRef<Set<string>>(new Set());
+  const proactiveRefreshTimerRef = React.useRef<number | null>(null);
   const [registeredRoomListeners, setRegisteredRoomListeners] = React.useState<
     RoomMessageListenerRecord[]
   >([]);
@@ -745,9 +755,13 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               existingClient.setAccessToken(freshToken.accessToken);
               retryMatrixClientSync(existingClient);
               await existingClient.setPresence({ presence: 'online' });
+              recordMatrixCallTokenRefreshSuccess();
+              setSessionRefreshFailedDuringCall(false);
               setConnectionStatus('connected');
               return true;
             } catch (error) {
+              recordMatrixCallTokenRefreshFailure(error);
+              setSessionRefreshFailedDuringCall(true);
               console.warn(
                 '[MatrixProvider] In-call Matrix token refresh failed:',
                 error,
@@ -781,6 +795,41 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     sessionRecoveryPromiseRef.current = recovery;
     return recovery;
   }, [initializeMatrixClient, refreshMatrixToken]);
+
+  const clearProactiveRefreshTimer = React.useCallback(() => {
+    if (proactiveRefreshTimerRef.current == null) return;
+    window.clearTimeout(proactiveRefreshTimerRef.current);
+    proactiveRefreshTimerRef.current = null;
+  }, []);
+
+  const scheduleProactiveMatrixTokenRefresh = React.useCallback(() => {
+    if (typeof window === 'undefined') return;
+    clearProactiveRefreshTimer();
+    if (!isGroupCallSessionActive()) return;
+    const intervalMs = resolveMatrixCallProactiveRefreshIntervalMs(undefined);
+    proactiveRefreshTimerRef.current = window.setTimeout(() => {
+      proactiveRefreshTimerRef.current = null;
+      void recoverMatrixSession().finally(() => {
+        if (isGroupCallSessionActive()) {
+          scheduleProactiveMatrixTokenRefresh();
+        }
+      });
+    }, intervalMs);
+  }, [clearProactiveRefreshTimer, recoverMatrixSession]);
+
+  React.useEffect(() => {
+    const syncProactiveRefresh = () => {
+      if (isGroupCallSessionActive()) {
+        setSessionRefreshFailedDuringCall(false);
+        scheduleProactiveMatrixTokenRefresh();
+        return;
+      }
+      clearProactiveRefreshTimer();
+      setSessionRefreshFailedDuringCall(false);
+    };
+    syncProactiveRefresh();
+    return subscribeGroupCallSessionActive(syncProactiveRefresh);
+  }, [clearProactiveRefreshTimer, scheduleProactiveMatrixTokenRefresh]);
 
   React.useEffect(() => {
     if (!client) {
@@ -2099,6 +2148,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     registeredRoomListeners,
     markRoomRead,
     refreshSession: recoverMatrixSession,
+    sessionRefreshFailedDuringCall,
   };
   return (
     <MatrixContext.Provider value={value}>{children}</MatrixContext.Provider>
@@ -2143,6 +2193,7 @@ const noopMatrixContext: MatrixContextType = {
     throw new Error('Matrix unavailable');
   },
   refreshSession: async () => false,
+  sessionRefreshFailedDuringCall: false,
 };
 
 export const useMatrix = () => {

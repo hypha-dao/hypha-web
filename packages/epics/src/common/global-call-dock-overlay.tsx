@@ -431,7 +431,8 @@ export function GlobalCallDockOverlay() {
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const { openHumanChatPanel, openCoherenceChat } = useHumanChatPanel();
-  const { client } = useMatrix();
+  const { client, refreshSession, sessionRefreshFailedDuringCall } =
+    useMatrix();
   const { person: me } = useMe();
   const {
     activeRoomId,
@@ -445,6 +446,8 @@ export function GlobalCallDockOverlay() {
     errorCode,
     screenshareErrorCode,
     dismissScreenshareError,
+    screenshareTabAudioMissing,
+    dismissScreenshareTabAudioHint,
     dismissCallError,
     retryFromError,
     isLocalVideoMuted,
@@ -917,7 +920,11 @@ export function GlobalCallDockOverlay() {
     stopCapture();
   };
   const showDockBanner =
-    errorCode != null || screenshareErrorCode != null || remoteMediaStall;
+    errorCode != null ||
+    screenshareErrorCode != null ||
+    remoteMediaStall ||
+    screenshareTabAudioMissing ||
+    sessionRefreshFailedDuringCall;
   /** Mobile dock is always edge-to-edge; panel layout avoids full-view splitters eating taps. */
   const dockStageLayout = isMobile
     ? 'panel'
@@ -1134,6 +1141,7 @@ export function GlobalCallDockOverlay() {
               fullViewPaneSplit={paneSplit}
               onFullViewPaneSplitChange={onPaneSplitChange}
               fullViewSplitContainerRef={splitContainerRef}
+              isDocumentPipOpen={isDocumentPipOpen}
             />
           )}
         </div>
@@ -1172,6 +1180,16 @@ export function GlobalCallDockOverlay() {
                   errorCode={errorCode}
                   isScreensharing={isScreensharing}
                   screenshareErrorCode={screenshareErrorCode}
+                  screenshareTabAudioMissing={screenshareTabAudioMissing}
+                  onDismissScreenshareTabAudioHint={
+                    dismissScreenshareTabAudioHint
+                  }
+                  sessionRefreshFailedDuringCall={
+                    sessionRefreshFailedDuringCall
+                  }
+                  onReconnectMatrixSession={() => {
+                    void refreshSession();
+                  }}
                   tabBackgroundWhileInCall={tabBackgroundWhileInCall}
                   isMicrophoneMuted={isMicrophoneMuted}
                   isLocalVideoMuted={isLocalVideoMuted}

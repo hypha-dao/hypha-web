@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
+import { resumeCallPlayback } from './human-chat-panel/call-playback-registry';
 
 type WakeLockSentinelLike = {
   release: () => Promise<void>;
+  addEventListener?: (type: 'release', listener: () => void) => void;
+  removeEventListener?: (type: 'release', listener: () => void) => void;
 };
 
 /**
@@ -50,6 +53,13 @@ export function useCallDocumentKeepalive(
       audioContext = null;
     };
 
+    const onWakeLockReleased = () => {
+      wakeLock = null;
+      if (active) {
+        void requestWakeLock();
+      }
+    };
+
     const requestWakeLock = async () => {
       try {
         const nav = navigator as Navigator & {
@@ -59,6 +69,7 @@ export function useCallDocumentKeepalive(
         };
         if (nav.wakeLock?.request) {
           wakeLock = await nav.wakeLock.request('screen');
+          wakeLock.addEventListener?.('release', onWakeLockReleased);
         }
       } catch {
         // unsupported or denied
@@ -66,6 +77,7 @@ export function useCallDocumentKeepalive(
     };
 
     const releaseWakeLock = () => {
+      wakeLock?.removeEventListener?.('release', onWakeLockReleased);
       void wakeLock?.release().catch(() => undefined);
       wakeLock = null;
     };
@@ -74,16 +86,20 @@ export function useCallDocumentKeepalive(
       if (document.hidden || documentPipOpen) {
         startSilentKeepalive();
         void audioContext?.resume();
+        void resumeCallPlayback();
         return;
       }
       void requestWakeLock();
       void audioContext?.resume();
+      void resumeCallPlayback();
     };
 
     void requestWakeLock();
     if (document.hidden || documentPipOpen) {
       startSilentKeepalive();
     }
+
+    void resumeCallPlayback();
 
     document.addEventListener('visibilitychange', onVisibility);
 
@@ -92,5 +108,10 @@ export function useCallDocumentKeepalive(
       stopSilentKeepalive();
       releaseWakeLock();
     };
+  }, [active, documentPipOpen]);
+
+  useEffect(() => {
+    if (!active) return;
+    void resumeCallPlayback();
   }, [active, documentPipOpen]);
 }

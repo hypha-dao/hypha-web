@@ -931,6 +931,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     connectionStatus,
     claimMatrixSyncLeadership,
     retryMatrixConnection,
+    refreshSession,
+    sessionRefreshFailedDuringCall,
     markRoomRead,
   } = matrix;
 
@@ -1160,6 +1162,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     groupCall: spaceGroupCall,
     feedVersion: spaceCallFeedVersion,
     screenshareErrorCode: spaceCallScreenshareError,
+    screenshareTabAudioMissing: spaceCallScreenshareTabAudioMissing,
+    dismissScreenshareTabAudioHint: dismissSpaceCallScreenshareTabAudioHint,
     captureMode: spaceCallCaptureMode,
     capturePreference: spaceCallCapturePreference,
     capturePreferenceSelected: spaceCallCapturePreferenceSelected,
@@ -3855,6 +3859,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               errorCode={spaceCallError}
               isScreensharing={spaceCallScreensharing}
               screenshareErrorCode={spaceCallScreenshareError}
+              screenshareTabAudioMissing={spaceCallScreenshareTabAudioMissing}
+              onDismissScreenshareTabAudioHint={
+                dismissSpaceCallScreenshareTabAudioHint
+              }
+              sessionRefreshFailedDuringCall={sessionRefreshFailedDuringCall}
+              onReconnectMatrixSession={() => {
+                void refreshSession();
+              }}
               tabBackgroundWhileInCall={spaceCallTabBackground}
               isMicrophoneMuted={spaceCallMicMuted}
               isLocalVideoMuted={spaceCallVideoMuted}

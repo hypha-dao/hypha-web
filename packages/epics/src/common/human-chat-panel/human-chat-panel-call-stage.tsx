@@ -11,6 +11,7 @@ import {
   type RefObject,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import type { MatrixClient, GroupCall, Room } from 'matrix-js-sdk';
 import {
   CallFeedEvent,
@@ -46,6 +47,13 @@ import {
   resolveCallStageShareLayout,
   shareFeedLayoutKey,
 } from './call-stage-share-layout';
+import {
+  feedReportsAudioMutedForTile,
+  formatCallShareTileLabel,
+  resolveCallAudioPortalTarget,
+  shouldMountRemoteCallAudioSink,
+} from './call-feed-tile-audio';
+import { registerCallPlaybackElement } from './call-playback-registry';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
 
@@ -106,6 +114,8 @@ type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
     value: number,
   ) => void;
   fullViewSplitContainerRef?: RefObject<HTMLDivElement | null>;
+  /** Document PiP open — remote audio sinks mount on the main page (WCUX-PIP-1). */
+  isDocumentPipOpen?: boolean;
 };
 
 function feedKeyForActive(feed: CallFeed): string {
@@ -471,6 +481,7 @@ function HumanChatPanelCallStageMain({
   },
   onFullViewPaneSplitChange,
   fullViewSplitContainerRef,
+  isDocumentPipOpen = false,
 }: HumanChatPanelCallStageMainProps) {
   const t = useTranslations('HumanChatPanel');
   const labelId = useId();
@@ -649,6 +660,7 @@ function HumanChatPanelCallStageMain({
       currentUserId={currentUserId}
       resolveMemberLabel={resolveMemberLabel}
       isMicrophoneMuted={isMicrophoneMuted}
+      isDocumentPipOpen={isDocumentPipOpen}
       t={t}
     />
   );
@@ -708,6 +720,7 @@ function HumanChatPanelCallStageMain({
           currentUserId={currentUserId}
           resolveMemberLabel={resolveMemberLabel}
           isMicrophoneMuted={isMicrophoneMuted}
+          isDocumentPipOpen={isDocumentPipOpen}
           t={t}
         />
       </div>
@@ -1078,6 +1091,7 @@ function HumanChatPanelCallStageMain({
                                   currentUserId={currentUserId}
                                   resolveMemberLabel={resolveMemberLabel}
                                   isMicrophoneMuted={isMicrophoneMuted}
+                                  isDocumentPipOpen={isDocumentPipOpen}
                                   t={t}
                                 />
                               ) : speakerTopPlaceholderId ? (
@@ -1219,6 +1233,7 @@ function HumanChatPanelCallStageMain({
                     currentUserId={currentUserId}
                     resolveMemberLabel={resolveMemberLabel}
                     isMicrophoneMuted={isMicrophoneMuted}
+                    isDocumentPipOpen={isDocumentPipOpen}
                     t={t}
                   />
                 </div>
@@ -1279,6 +1294,7 @@ function HumanChatPanelCallStageMain({
                   currentUserId={currentUserId}
                   resolveMemberLabel={resolveMemberLabel}
                   isMicrophoneMuted={isMicrophoneMuted}
+                  isDocumentPipOpen={isDocumentPipOpen}
                   t={t}
                 />
               </div>
@@ -1315,6 +1331,7 @@ function HumanChatPanelCallStageMain({
                   currentUserId={currentUserId}
                   resolveMemberLabel={resolveMemberLabel}
                   isMicrophoneMuted={isMicrophoneMuted}
+                  isDocumentPipOpen={isDocumentPipOpen}
                   t={t}
                 />
               </div>
@@ -1383,6 +1400,7 @@ function HumanChatPanelCallStageMain({
                     currentUserId={currentUserId}
                     resolveMemberLabel={resolveMemberLabel}
                     isMicrophoneMuted={isMicrophoneMuted}
+                    isDocumentPipOpen={isDocumentPipOpen}
                     t={t}
                   />
                 </div>
@@ -1420,6 +1438,7 @@ function HumanChatPanelCallStageMain({
                 currentUserId={currentUserId}
                 resolveMemberLabel={resolveMemberLabel}
                 isMicrophoneMuted={isMicrophoneMuted}
+                isDocumentPipOpen={isDocumentPipOpen}
                 t={t}
               />
             ))}
@@ -1670,16 +1689,6 @@ function useCallParticipantDisplayName(
   return { text, showSkeleton };
 }
 
-function feedReportsAudioMuted(
-  feed: CallFeed,
-  isMicrophoneMuted: boolean | undefined,
-): boolean {
-  if (feed.isLocal() && isMicrophoneMuted !== undefined) {
-    return isMicrophoneMuted;
-  }
-  return feed.isAudioMuted();
-}
-
 const CallFeedTile = ({
   client,
   roomId,
@@ -1695,6 +1704,7 @@ const CallFeedTile = ({
   currentUserId,
   resolveMemberLabel,
   isMicrophoneMuted,
+  isDocumentPipOpen = false,
   t,
 }: {
   client: MatrixClient | null;
@@ -1711,6 +1721,7 @@ const CallFeedTile = ({
   currentUserId: string | null;
   resolveMemberLabel: (userId: string | undefined) => string;
   isMicrophoneMuted?: boolean;
+  isDocumentPipOpen?: boolean;
   t: (key: string) => string;
 }) => {
   const nameFallback = isShare
@@ -1733,6 +1744,7 @@ const CallFeedTile = ({
       panelVideoFit={panelVideoFit}
       panelFlush={panelFlush}
       isMicrophoneMuted={isMicrophoneMuted}
+      isDocumentPipOpen={isDocumentPipOpen}
       t={t}
     />
   );
@@ -1754,6 +1766,7 @@ const FeedContent = ({
   resolveMemberLabel,
   nameFallback,
   isMicrophoneMuted,
+  isDocumentPipOpen = false,
   t,
 }: {
   client: MatrixClient | null;
@@ -1771,9 +1784,14 @@ const FeedContent = ({
   resolveMemberLabel: (userId: string | undefined) => string;
   nameFallback: string;
   isMicrophoneMuted?: boolean;
+  isDocumentPipOpen?: boolean;
   t: (key: string) => string;
 }) => {
-  const audioMuted = feedReportsAudioMuted(feed, isMicrophoneMuted);
+  const audioMuted = feedReportsAudioMutedForTile(
+    feed,
+    isMicrophoneMuted,
+    isShare,
+  );
   const { text: resolvedName, showSkeleton } = useCallParticipantDisplayName(
     room,
     feed,
@@ -1783,9 +1801,15 @@ const FeedContent = ({
     isPip,
     isShare,
   );
-  const overlayLabel = isPip ? t('callYou') : resolvedName;
+  const shareOverlayLabel =
+    isShare && !isPip
+      ? formatCallShareTileLabel(resolvedName, nameFallback)
+      : resolvedName;
+  const overlayLabel = isPip ? t('callYou') : shareOverlayLabel;
   const ariaLabel =
-    isShare && !isPip ? nameFallback : isPip ? t('callYou') : resolvedName;
+    isShare && !isPip ? shareOverlayLabel : isPip ? t('callYou') : resolvedName;
+  const mountRemoteAudio = shouldMountRemoteCallAudioSink(feed, isShare);
+  const mountRemoteAudioInMainDocument = isDocumentPipOpen && mountRemoteAudio;
 
   const ref = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -1826,7 +1850,7 @@ const FeedContent = ({
 
   useEffect(() => {
     const el = audioRef.current;
-    if (!el || !stream) return;
+    if (!el || !stream || !mountRemoteAudio) return;
     el.srcObject = stream;
     el.play().catch((err) => {
       if (process.env.NODE_ENV === 'development') {
@@ -1837,7 +1861,15 @@ const FeedContent = ({
     return () => {
       el.srcObject = null;
     };
-  }, [stream, streamBindVersion]);
+  }, [mountRemoteAudio, stream, streamBindVersion]);
+
+  useEffect(() => {
+    return registerCallPlaybackElement(ref.current);
+  }, [showVideo, stream, streamBindVersion]);
+
+  useEffect(() => {
+    return registerCallPlaybackElement(audioRef.current);
+  }, [mountRemoteAudio, stream, streamBindVersion]);
 
   useEffect(() => {
     const onFeedVisualChange = () => {
@@ -1896,12 +1928,17 @@ const FeedContent = ({
         el.srcObject = stream;
         void el.play().catch(() => undefined);
       }
+      const audioEl = audioRef.current;
+      if (audioEl && mountRemoteAudio && stream) {
+        audioEl.srcObject = stream;
+        void audioEl.play().catch(() => undefined);
+      }
     };
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [showVideo, stream]);
+  }, [mountRemoteAudio, showVideo, stream]);
 
   /** Analyse mic/remote line whenever the tile has a live audio track (not just Matrix `isSpeaking`, which lags and hid real levels). */
   const canVoiceWave =
@@ -2096,9 +2133,33 @@ const FeedContent = ({
           />
         </div>
       )}
-      {!feed.isLocal() && !isShare ? (
-        <audio ref={audioRef} autoPlay playsInline aria-hidden />
-      ) : null}
+      {mountRemoteAudio
+        ? (() => {
+            const audioSink = (
+              <audio
+                ref={audioRef}
+                autoPlay
+                playsInline
+                aria-hidden
+                className={
+                  mountRemoteAudioInMainDocument
+                    ? 'pointer-events-none fixed size-0 overflow-hidden opacity-0'
+                    : undefined
+                }
+              />
+            );
+            if (
+              mountRemoteAudioInMainDocument &&
+              typeof document !== 'undefined'
+            ) {
+              return createPortal(
+                audioSink,
+                resolveCallAudioPortalTarget(document),
+              );
+            }
+            return audioSink;
+          })()
+        : null}
     </div>
   );
 };

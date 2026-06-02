@@ -21,6 +21,12 @@ type HumanChatPanelCallBannerProps = {
   isScreensharing: boolean;
   /** Non-fatal display-capture error; does not end the call. */
   screenshareErrorCode: SpaceGroupCallErrorCode | null;
+  /** Presenter started share without tab/window audio (WCUX-SHARE-AUDIO-2). */
+  screenshareTabAudioMissing?: boolean;
+  onDismissScreenshareTabAudioHint?: () => void;
+  /** Matrix token refresh failed mid-call — blocking reconnect (WCUX-SESSION-3). */
+  sessionRefreshFailedDuringCall?: boolean;
+  onReconnectMatrixSession?: () => void;
   /** True when document is hidden during an active call (Phase 5.1). */
   tabBackgroundWhileInCall: boolean;
   isMicrophoneMuted: boolean;
@@ -98,6 +104,10 @@ export function HumanChatPanelCallBanner({
   errorCode,
   isScreensharing,
   screenshareErrorCode,
+  screenshareTabAudioMissing = false,
+  onDismissScreenshareTabAudioHint,
+  sessionRefreshFailedDuringCall = false,
+  onReconnectMatrixSession,
   isMicrophoneMuted,
   isLocalVideoMuted,
   participantCount,
@@ -231,6 +241,27 @@ export function HumanChatPanelCallBanner({
           )}
         </div>
       )}
+      {sessionRefreshFailedDuringCall && callState === 'connected' && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 border-b border-border/60 bg-destructive/10 px-4 py-1.5"
+        >
+          <p className="min-w-0 flex-1 text-xs text-destructive">
+            {t('callSessionRefreshFailedDescription')}
+          </p>
+          {onReconnectMatrixSession ? (
+            <button
+              type="button"
+              onClick={() => {
+                void onReconnectMatrixSession();
+              }}
+              className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+            >
+              {t('callSessionRefreshFailedReconnect')}
+            </button>
+          ) : null}
+        </div>
+      )}
       {screenshareErrorCode && callState === 'connected' && (
         <div
           role="alert"
@@ -248,6 +279,27 @@ export function HumanChatPanelCallBanner({
           </button>
         </div>
       )}
+      {screenshareTabAudioMissing &&
+        isScreensharing &&
+        callState === 'connected' && (
+          <div
+            role="status"
+            className="flex items-start gap-2 border-b border-border/60 bg-amber-500/10 px-4 py-1.5"
+          >
+            <p className="min-w-0 flex-1 text-xs text-amber-950 dark:text-amber-100">
+              {t('callShareTabAudioNotShared')}
+            </p>
+            {onDismissScreenshareTabAudioHint ? (
+              <button
+                type="button"
+                onClick={onDismissScreenshareTabAudioHint}
+                className="shrink-0 text-xs font-medium text-amber-950 underline-offset-2 hover:underline dark:text-amber-100"
+              >
+                {t('callScreenshareDismiss')}
+              </button>
+            ) : null}
+          </div>
+        )}
       {callState === 'connected' && captureConsent ? (
         <HumanChatPanelCaptureConsentBanner
           consent={captureConsent}

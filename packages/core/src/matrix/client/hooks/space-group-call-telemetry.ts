@@ -6,6 +6,12 @@
  */
 
 import { matrixWebRtcDebugFromEnv } from '../matrix-webrtc-env';
+import {
+  getMatrixCallSessionMetrics,
+  resetMatrixCallSessionMetrics,
+} from './matrix-call-session-metrics';
+
+export type GroupCallSessionEndReason = 'user' | 'error' | 'room' | 'unmount';
 
 export type SpaceGroupCallTelemetryEvent = {
   name:
@@ -21,7 +27,8 @@ export type SpaceGroupCallTelemetryEvent = {
     | 'hypha.group_call.ice_gather_probe'
     | 'hypha.group_call.webrtc_summary'
     | 'hypha.group_call.room_type_sync'
-    | 'hypha.group_call.capture_started';
+    | 'hypha.group_call.capture_started'
+    | 'hypha.group_call.session_end';
   roomId: string;
   kind?: 'audio' | 'video';
   captureMode?: string;
@@ -33,7 +40,13 @@ export type SpaceGroupCallTelemetryEvent = {
   roomGroupCallType?: string;
   joinMs?: number;
   errorCode?: string;
-  reason?: 'user' | 'error' | 'room' | 'unmount';
+  reason?: GroupCallSessionEndReason;
+  /** Active call duration at session end (WCUX-SESSION-6). */
+  durationMs?: number;
+  /** Successful in-call Matrix token refreshes during the session. */
+  tokenRefreshCount?: number;
+  /** Last Matrix token/sync error observed during the session. */
+  lastMatrixError?: string;
   /** Matrix group call id (opaque); helps confirm both peers share one session. */
   groupCallId?: string;
   userMediaFeedCount?: number;
@@ -91,4 +104,27 @@ export function logSpaceGroupCallEvent(
   } catch {
     // ignore
   }
+}
+
+export function logGroupCallSessionEnd(params: {
+  roomId: string;
+  kind?: 'audio' | 'video';
+  reason: GroupCallSessionEndReason;
+  startedAtMs: number | null;
+}): void {
+  const metrics = getMatrixCallSessionMetrics();
+  const durationMs =
+    params.startedAtMs != null
+      ? Math.max(0, Math.round(Date.now() - params.startedAtMs))
+      : undefined;
+  logSpaceGroupCallEvent({
+    name: 'hypha.group_call.session_end',
+    roomId: params.roomId,
+    kind: params.kind,
+    reason: params.reason,
+    durationMs,
+    tokenRefreshCount: metrics.tokenRefreshCount,
+    lastMatrixError: metrics.lastMatrixError ?? undefined,
+  });
+  resetMatrixCallSessionMetrics();
 }
