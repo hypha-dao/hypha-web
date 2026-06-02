@@ -61,10 +61,11 @@ export const useMatrixToken = () => {
           typeof data.homeserverUrl !== 'string' ||
           !data.elementConfig ||
           typeof data.elementConfig !== 'object' ||
-          typeof data.elementConfig.theme !== 'string'
+          typeof data.elementConfig.theme !== 'string' ||
+          (data.expiresInSec != null && typeof data.expiresInSec !== 'number')
         ) {
           throw new Error(
-            'Invalid Matrix token response: missing required fields or elementConfig',
+            'Invalid Matrix token response: missing required fields, invalid elementConfig, or invalid expiresInSec',
           );
         }
         return data as MatrixTokenData;
