@@ -89,8 +89,8 @@ export function useCallDocumentKeepalive(
         void resumeCallPlayback();
         return;
       }
+      stopSilentKeepalive();
       void requestWakeLock();
-      void audioContext?.resume();
       void resumeCallPlayback();
     };
 
