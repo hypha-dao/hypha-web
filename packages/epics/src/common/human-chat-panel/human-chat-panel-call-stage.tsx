@@ -1002,19 +1002,19 @@ function HumanChatPanelCallStageMain({
           data-feed-tick={_feedVersion}
         >
           {presenterShareOnly ? (
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-black">
+            <div
+              className={cn(
+                'flex min-h-0 min-w-0 flex-1 overflow-hidden bg-black',
+                isFull ? 'flex-col' : 'flex-row justify-end',
+              )}
+            >
               {userTilesForFullViewShare.length > 0 ? (
                 renderParticipantShareSidebar(
                   1000,
                   cn(
                     'w-full shrink-0',
-                    isFull
-                      ? 'min-h-[4.5rem] flex-1'
-                      : userTilesForFullViewShare.length === 1
-                      ? 'min-h-0 flex-1'
-                      : 'aspect-video min-h-[4rem]',
+                    isFull ? 'min-h-[4.5rem]' : 'aspect-video min-h-[4rem]',
                   ),
-                  true,
                 )
               ) : (
                 <div className="flex flex-1 items-center justify-center px-3 py-4">
@@ -2011,6 +2011,7 @@ const FeedContent = ({
     isShare && !isPip ? shareOverlayLabel : isPip ? t('callYou') : resolvedName;
   const mountRemoteAudio = shouldMountRemoteCallAudioSink(feed, isShare);
   const mountRemoteAudioInMainDocument = isDocumentPipOpen && mountRemoteAudio;
+  const mirrorLocalPreview = !isShare && feed.isLocal();
 
   const ref = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -2211,6 +2212,7 @@ const FeedContent = ({
             ref={ref}
             className={cn(
               'min-h-0 w-full',
+              mirrorLocalPreview && '-scale-x-100',
               isPip && 'h-full flex-1',
               (isFullView && !isPip) || (panelFlush && !isPip && !isFullView)
                 ? 'absolute inset-0 h-full w-full'
