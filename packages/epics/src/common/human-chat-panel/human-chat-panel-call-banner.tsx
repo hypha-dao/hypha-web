@@ -25,6 +25,9 @@ type HumanChatPanelCallBannerProps = {
   /** Presenter started share without tab/window audio (WCUX-SHARE-AUDIO-2). */
   screenshareTabAudioMissing?: boolean;
   onDismissScreenshareTabAudioHint?: () => void;
+  /** Camera permission denied when unmuting video mid audio call. */
+  cameraAccessBlocked?: boolean;
+  onDismissCameraAccessBlocked?: () => void;
   /** Matrix token refresh failed mid-call — blocking reconnect (WCUX-SESSION-3). */
   sessionRefreshFailedDuringCall?: boolean;
   onReconnectMatrixSession?: () => void;
@@ -117,6 +120,8 @@ export function HumanChatPanelCallBanner({
   screenshareErrorCode,
   screenshareTabAudioMissing = false,
   onDismissScreenshareTabAudioHint,
+  cameraAccessBlocked = false,
+  onDismissCameraAccessBlocked,
   sessionRefreshFailedDuringCall = false,
   onReconnectMatrixSession,
   isMicrophoneMuted,
@@ -223,9 +228,11 @@ export function HumanChatPanelCallBanner({
   const showSessionRefreshAlert =
     sessionRefreshFailedDuringCall && callState === 'connected';
   const showScreenshareErrorAlert =
-    Boolean(screenshareErrorCode) && callState === 'connected';
+    screenshareErrorCode != null && callState === 'connected';
   const showScreenshareTabAudioAlert =
     screenshareTabAudioMissing && isScreensharing && callState === 'connected';
+  const showCameraAccessBlockedAlert =
+    cameraAccessBlocked && callState === 'connected';
   const showCaptureConsentAlert =
     callState === 'connected' && captureConsent != null;
 
@@ -235,6 +242,7 @@ export function HumanChatPanelCallBanner({
       showSessionRefreshAlert ||
       showScreenshareErrorAlert ||
       showScreenshareTabAudioAlert ||
+      showCameraAccessBlockedAlert ||
       showCaptureConsentAlert;
     if (!hasDockAlerts) {
       return null;
@@ -334,6 +342,28 @@ export function HumanChatPanelCallBanner({
               type="button"
               onClick={onDismissScreenshareTabAudioHint}
               className={accentHintDismissClassName}
+            >
+              {t('callScreenshareDismiss')}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {showCameraAccessBlockedAlert ? (
+        <div
+          role="alert"
+          className="flex items-start gap-2 border-b border-border/60 bg-destructive/10 px-4 py-1.5"
+        >
+          <p className="min-w-0 flex-1 text-xs text-destructive">
+            {t('callErrorPermission')}{' '}
+            <span className="text-destructive/90">
+              {t('callErrorPermissionGuidance')}
+            </span>
+          </p>
+          {onDismissCameraAccessBlocked ? (
+            <button
+              type="button"
+              onClick={onDismissCameraAccessBlocked}
+              className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
             >
               {t('callScreenshareDismiss')}
             </button>

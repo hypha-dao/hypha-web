@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
   Button,
   useIsMobile,
+  usePrefersCoarsePointer,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
@@ -116,6 +117,10 @@ export function HumanChatPanelInCallControls({
 }: HumanChatPanelInCallControlsProps) {
   const t = useTranslations('HumanChatPanel');
   const isMobile = useIsMobile() ?? false;
+  const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
+  const isTouchToolbar = isMobile || prefersCoarsePointer;
+  const bannerCircleSize = isTouchToolbar ? 'h-11 w-11' : 'h-8 w-8';
+  const bannerBarHeight = isTouchToolbar ? 'h-11' : 'h-8';
   const showAdvancedCallControls = !isMobile;
   const { controlsDisabled } = getCallControlsPhase(callState);
   const isCompact = density === 'compact' || density === 'pip';
@@ -151,12 +156,18 @@ export function HumanChatPanelInCallControls({
       )
     : isCompact
     ? compactBtn
-    : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+    : cn(
+        'inline-flex shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
+        bannerCircleSize,
+      );
   const neutralBtn = isFull
     ? baseBtn
     : isCompact
     ? compactBtn
-    : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+    : cn(
+        'inline-flex shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
+        bannerCircleSize,
+      );
   const leaveIcon = isFull
     ? fullViewIcon
     : isPipDensity
@@ -177,7 +188,10 @@ export function HumanChatPanelInCallControls({
     ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
     : isCompact
     ? 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40'
-    : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40';
+    : cn(
+        'inline-flex shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40',
+        bannerCircleSize,
+      );
   const micMutedBtn = isFull
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : isCompact
@@ -185,13 +199,19 @@ export function HumanChatPanelInCallControls({
         compactBtn,
         'border-destructive/30 bg-destructive/12 text-destructive hover:bg-destructive/20',
       )
-    : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20';
+    : cn(
+        'inline-flex shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20',
+        bannerCircleSize,
+      );
   const shareActiveBtn = isFull
     ? cn(
         baseBtn,
         'ring-2 ring-white/25 border-emerald-500/60 bg-emerald-600/90 hover:bg-emerald-500/90',
       )
-    : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-500/55 bg-emerald-600/90 text-white shadow-sm ring-2 ring-emerald-500/25 transition-colors hover:bg-emerald-500/90';
+    : cn(
+        'inline-flex shrink-0 items-center justify-center rounded-full border border-emerald-500/55 bg-emerald-600/90 text-white shadow-sm ring-2 ring-emerald-500/25 transition-colors hover:bg-emerald-500/90',
+        bannerCircleSize,
+      );
   const camOffBtn = isFull
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : isCompact
@@ -199,7 +219,10 @@ export function HumanChatPanelInCallControls({
         compactBtn,
         'border-destructive/30 bg-destructive/12 text-destructive hover:bg-destructive/20',
       )
-    : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20';
+    : cn(
+        'inline-flex shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20',
+        bannerCircleSize,
+      );
   const icon = isFull
     ? fullViewIcon
     : isPipDensity
@@ -215,7 +238,10 @@ export function HumanChatPanelInCallControls({
       )
     : isCompact
     ? 'inline-flex h-7 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-1.5 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
-    : 'inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border border-border/60 bg-background px-2 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+    : cn(
+        'inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-border/60 bg-background px-2 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
+        bannerBarHeight,
+      );
   const menuCheckIcon = isFull
     ? 'h-4 w-4 text-white'
     : 'h-4 w-4 text-foreground';
@@ -654,7 +680,13 @@ export function HumanChatPanelInCallControls({
       <div
         role="group"
         aria-label={t('callToolbarLabel')}
-        className={cn(useMobileCenteredToolbar && 'w-full')}
+        className={cn(
+          useMobileCenteredToolbar && 'w-full',
+          'touch-manipulation',
+        )}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+        }}
       >
         <div
           className={cn(

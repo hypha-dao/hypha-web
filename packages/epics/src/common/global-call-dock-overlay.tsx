@@ -17,7 +17,11 @@ import {
   useMe,
   type SpaceGroupCallCaptureMode,
 } from '@hypha-platform/core/client';
-import { useIsMobile, MOBILE_BREAKPOINT_PX } from '@hypha-platform/ui';
+import {
+  useIsMobile,
+  usePrefersCoarsePointer,
+  MOBILE_BREAKPOINT_PX,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -284,8 +288,8 @@ function DockResizeHandle({
       : handle === 'bottom'
       ? 'left-5 right-5 bottom-0 z-[55] h-2.5 cursor-ns-resize'
       : handle === 'left'
-      ? 'bottom-5 left-0 top-5 z-[55] w-2.5 cursor-ew-resize'
-      : 'bottom-5 right-0 top-5 z-[55] w-2.5 cursor-ew-resize';
+      ? 'bottom-20 left-0 top-5 z-[55] w-2.5 cursor-ew-resize'
+      : 'bottom-20 right-0 top-5 z-[55] w-2.5 cursor-ew-resize';
 
   return (
     <div
@@ -480,6 +484,9 @@ export function GlobalCallDockOverlay() {
   const t = useTranslations('GlobalCallDock');
   const tCapture = useTranslations('HumanChatPanel');
   const isMobile = useIsMobile() ?? false;
+  const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
+  /** iPad and other touch tablets often exceed the mobile width breakpoint. */
+  const isTouchDock = isMobile || prefersCoarsePointer;
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const { openHumanChatPanel, openCoherenceChat } = useHumanChatPanel();
@@ -500,6 +507,8 @@ export function GlobalCallDockOverlay() {
     dismissScreenshareError,
     screenshareTabAudioMissing,
     dismissScreenshareTabAudioHint,
+    cameraAccessBlocked,
+    dismissCameraAccessBlocked,
     dismissCallError,
     retryFromError,
     isLocalVideoMuted,
@@ -1019,6 +1028,7 @@ export function GlobalCallDockOverlay() {
     screenshareErrorCode != null ||
     remoteMediaStall ||
     (screenshareTabAudioMissing && isScreensharing) ||
+    cameraAccessBlocked ||
     sessionRefreshFailedDuringCall;
   /** Mobile dock is always edge-to-edge; panel layout avoids full-view splitters eating taps. */
   const dockStageLayout = isMobile
@@ -1053,16 +1063,16 @@ export function GlobalCallDockOverlay() {
       )}
       style={{ ...spaceAccentStyles, ...containerStyle }}
     >
-      <div className="relative z-[5] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
         <div
           className={cn(
-            'pointer-events-auto flex shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45',
+            'pointer-events-auto flex shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45 touch-manipulation',
             dockCompact ? 'px-1.5 py-1' : 'px-2.5 py-2',
-            modeIsFullscreen || inDocumentPip
+            modeIsFullscreen || inDocumentPip || isTouchDock
               ? 'cursor-default'
               : 'cursor-grab active:cursor-grabbing',
           )}
-          onPointerDown={onDragStart}
+          onPointerDown={isTouchDock ? undefined : onDragStart}
         >
           <p
             className={cn(
@@ -1195,7 +1205,7 @@ export function GlobalCallDockOverlay() {
         <div
           ref={splitContainerRef}
           className={cn(
-            'pointer-events-none min-h-0 min-w-0 overflow-hidden',
+            'pointer-events-none min-h-0 min-w-0 overflow-hidden [&_*]:pointer-events-none',
             'flex min-h-0 flex-1 flex-col',
           )}
         >
@@ -1237,8 +1247,11 @@ export function GlobalCallDockOverlay() {
         </div>
 
         <div
+          onPointerDown={(event) => {
+            event.stopPropagation();
+          }}
           className={cn(
-            'pointer-events-auto relative isolate z-30 shrink-0 touch-manipulation overflow-visible border-t',
+            'pointer-events-auto relative isolate z-40 shrink-0 touch-manipulation overflow-visible border-t',
             dockCompact ? 'px-1 py-0.5' : 'px-2 py-2',
             isMobile
               ? 'border-border/50 bg-muted/35'
@@ -1278,6 +1291,8 @@ export function GlobalCallDockOverlay() {
                   onDismissScreenshareTabAudioHint={
                     dismissScreenshareTabAudioHint
                   }
+                  cameraAccessBlocked={cameraAccessBlocked}
+                  onDismissCameraAccessBlocked={dismissCameraAccessBlocked}
                   sessionRefreshFailedDuringCall={
                     sessionRefreshFailedDuringCall
                   }
@@ -1356,50 +1371,48 @@ export function GlobalCallDockOverlay() {
         </div>
       </div>
 
-      {!modeIsFullscreen && !inDocumentPip && !isMobile && !isScreensharing && (
-        <>
-          <DockResizeHandle
-            handle="top-left"
-            ariaLabel={t('resizeTopLeftLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="top"
-            ariaLabel={t('resizeTopLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="top-right"
-            ariaLabel={t('resizeTopRightLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="right"
-            ariaLabel={t('resizeRightLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="bottom"
-            ariaLabel={t('resizeBottomLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="bottom-left"
-            ariaLabel={t('resizeBottomLeftLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="bottom-right"
-            ariaLabel={t('resizeBottomRightLabel')}
-            onResizeStart={onResizeStart}
-          />
-          <DockResizeHandle
-            handle="left"
-            ariaLabel={t('resizeLeftLabel')}
-            onResizeStart={onResizeStart}
-          />
-        </>
-      )}
+      {!modeIsFullscreen &&
+        !inDocumentPip &&
+        !isTouchDock &&
+        !isScreensharing && (
+          <>
+            <DockResizeHandle
+              handle="top-left"
+              ariaLabel={t('resizeTopLeftLabel')}
+              onResizeStart={onResizeStart}
+            />
+            <DockResizeHandle
+              handle="top"
+              ariaLabel={t('resizeTopLabel')}
+              onResizeStart={onResizeStart}
+            />
+            <DockResizeHandle
+              handle="top-right"
+              ariaLabel={t('resizeTopRightLabel')}
+              onResizeStart={onResizeStart}
+            />
+            <DockResizeHandle
+              handle="right"
+              ariaLabel={t('resizeRightLabel')}
+              onResizeStart={onResizeStart}
+            />
+            <DockResizeHandle
+              handle="bottom-left"
+              ariaLabel={t('resizeBottomLeftLabel')}
+              onResizeStart={onResizeStart}
+            />
+            <DockResizeHandle
+              handle="bottom-right"
+              ariaLabel={t('resizeBottomRightLabel')}
+              onResizeStart={onResizeStart}
+            />
+            <DockResizeHandle
+              handle="left"
+              ariaLabel={t('resizeLeftLabel')}
+              onResizeStart={onResizeStart}
+            />
+          </>
+        )}
 
       <HumanChatPanelScreenshareTakeoverDialog
         incoming={screenshareTakeoverIncoming}

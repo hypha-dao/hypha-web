@@ -1164,6 +1164,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     screenshareErrorCode: spaceCallScreenshareError,
     screenshareTabAudioMissing: spaceCallScreenshareTabAudioMissing,
     dismissScreenshareTabAudioHint: dismissSpaceCallScreenshareTabAudioHint,
+    cameraAccessBlocked: spaceCallCameraAccessBlocked,
+    dismissCameraAccessBlocked: dismissSpaceCallCameraAccessBlocked,
     captureMode: spaceCallCaptureMode,
     capturePreference: spaceCallCapturePreference,
     capturePreferenceSelected: spaceCallCapturePreferenceSelected,
@@ -3875,6 +3877,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onDismissScreenshareTabAudioHint={
                 dismissSpaceCallScreenshareTabAudioHint
               }
+              cameraAccessBlocked={spaceCallCameraAccessBlocked}
+              onDismissCameraAccessBlocked={dismissSpaceCallCameraAccessBlocked}
               sessionRefreshFailedDuringCall={sessionRefreshFailedDuringCall}
               onReconnectMatrixSession={() => {
                 void refreshSession();

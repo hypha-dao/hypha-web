@@ -60,6 +60,11 @@ import {
   resolveCallAudioPortalTarget,
   shouldMountRemoteCallAudioSink,
 } from './call-feed-tile-audio';
+import {
+  createCallFeedVideoStream,
+  isCallFeedVideoSurfaceReady,
+  resolveCallFeedLiveVideoTrack,
+} from './call-feed-tile-video';
 import { registerCallPlaybackElement } from './call-playback-registry';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
@@ -357,9 +362,11 @@ function CallSpeakerPrimaryStrip({
         {stripTiles.map(({ item, index }) => (
           <div
             key={galleryTileKey(item, index)}
-            className="aspect-video min-h-[3.5rem] w-full min-w-0 shrink-0"
+            className="relative aspect-video min-h-[3.5rem] w-full min-w-0 shrink-0 overflow-hidden"
           >
-            {renderTile(item, index)}
+            <div className="absolute inset-0 min-h-0 min-w-0">
+              {renderTile(item, index)}
+            </div>
           </div>
         ))}
         {overflowCount > 0 ? (
@@ -2050,39 +2057,81 @@ const FeedContent = ({
   const ref = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stream = feed.stream ?? null;
-  const liveVideoTrack =
-    stream
-      ?.getVideoTracks()
-      .find((track) => track.readyState === 'live' && !track.muted) ?? null;
-  const hasVideo = !feed.isVideoMuted() && liveVideoTrack !== null;
+  const liveVideoTrack = resolveCallFeedLiveVideoTrack(feed);
+  const hasVideo = liveVideoTrack !== null;
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
   const [streamBindVersion, rebindStream] = useReducer((n: number) => n + 1, 0);
+  const [videoSurfaceReady, setVideoSurfaceReady] = useState(false);
 
-  const [showVideo, setShowVideo] = useState(hasVideo);
   useEffect(() => {
-    if (hasVideo) {
-      setShowVideo(true);
-      return;
-    }
-    const hideTimer = window.setTimeout(() => setShowVideo(false), 450);
-    return () => window.clearTimeout(hideTimer);
-  }, [hasVideo]);
+    setVideoSurfaceReady(false);
+  }, [liveVideoTrack?.id, streamBindVersion]);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || !showVideo || !liveVideoTrack) return;
-    el.srcObject = stream;
-    void el.play().catch((err) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.debug('[CallFeedTile] video play rejected', err);
+    if (!el || !liveVideoTrack) return;
+
+    const videoStream = createCallFeedVideoStream(liveVideoTrack);
+    el.srcObject = videoStream;
+
+    const markReady = () => {
+      if (isCallFeedVideoSurfaceReady(el)) {
+        setVideoSurfaceReady(true);
       }
-    });
+    };
+
+    const playVideo = () => {
+      void el
+        .play()
+        .then(markReady)
+        .catch((err) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('[CallFeedTile] video play rejected', err);
+          }
+          window.setTimeout(() => rebindStream(), 300);
+        });
+    };
+
+    el.addEventListener('loadedmetadata', markReady);
+    el.addEventListener('resize', markReady);
+    el.addEventListener('loadeddata', markReady);
+
+    let frameCallbackId: number | undefined;
+    if ('requestVideoFrameCallback' in el) {
+      frameCallbackId = el.requestVideoFrameCallback(() => {
+        setVideoSurfaceReady(true);
+      });
+    }
+
+    playVideo();
+    const retryTimer = window.setInterval(() => {
+      if (isCallFeedVideoSurfaceReady(el)) {
+        setVideoSurfaceReady(true);
+        return;
+      }
+      playVideo();
+    }, 750);
+    const giveUpTimer = window.setTimeout(() => {
+      if (!isCallFeedVideoSurfaceReady(el)) {
+        rebindStream();
+      }
+    }, 4000);
 
     return () => {
+      el.removeEventListener('loadedmetadata', markReady);
+      el.removeEventListener('resize', markReady);
+      el.removeEventListener('loadeddata', markReady);
+      if (frameCallbackId != null && 'cancelVideoFrameCallback' in el) {
+        el.cancelVideoFrameCallback(frameCallbackId);
+      }
+      window.clearInterval(retryTimer);
+      window.clearTimeout(giveUpTimer);
       el.srcObject = null;
     };
-  }, [stream, streamBindVersion, liveVideoTrack?.id, showVideo]);
+  }, [liveVideoTrack?.id, streamBindVersion]);
+
+  const showVideoSurface = hasVideo && videoSurfaceReady;
 
   useEffect(() => {
     const el = audioRef.current;
@@ -2106,7 +2155,7 @@ const FeedContent = ({
 
   useEffect(() => {
     return registerCallPlaybackElement(ref.current);
-  }, [showVideo, stream, streamBindVersion]);
+  }, [hasVideo, liveVideoTrack?.id, streamBindVersion]);
 
   useEffect(() => {
     return registerCallPlaybackElement(audioRef.current);
@@ -2170,8 +2219,8 @@ const FeedContent = ({
       rebindStream();
       rerenderOnFeed();
       const el = ref.current;
-      if (el && showVideo && stream) {
-        el.srcObject = stream;
+      if (el && liveVideoTrack) {
+        el.srcObject = createCallFeedVideoStream(liveVideoTrack);
         void el.play().catch(() => undefined);
       }
       const audioEl = audioRef.current;
@@ -2184,11 +2233,11 @@ const FeedContent = ({
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [mountRemoteAudio, showVideo, stream]);
+  }, [liveVideoTrack?.id, mountRemoteAudio, stream]);
 
   /** Analyse mic/remote line whenever the tile has a live audio track (not just Matrix `isSpeaking`, which lags and hid real levels). */
   const canVoiceWave =
-    !showVideo &&
+    !showVideoSurface &&
     !isShare &&
     !audioMuted &&
     (feed.isLocal() ||
@@ -2240,78 +2289,33 @@ const FeedContent = ({
           'ring-2 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_70%,transparent)]',
       )}
     >
-      {showVideo ? (
-        <>
-          <video
-            ref={ref}
-            className={cn(
-              'min-h-0 w-full',
-              mirrorLocalPreview && '-scale-x-100',
-              isPip && 'h-full flex-1',
-              (isFullView && !isPip) || (panelFlush && !isPip && !isFullView)
-                ? 'absolute inset-0 h-full w-full'
-                : null,
-              !isPip && !isFullView && !panelFlush && 'h-full min-h-0 flex-1',
-              isFullView && !isPip
-                ? 'object-contain'
-                : isShare
-                ? 'object-contain'
-                : panelFlush && !isPip && !isFullView
-                ? 'object-cover'
-                : !isPip && panelVideoFit === 'contain'
-                ? 'object-contain'
-                : 'object-cover',
-            )}
-            autoPlay
-            playsInline
-            muted
-            aria-label={ariaLabel}
-          />
-          {!isPip && (
-            <div
-              className={cn(
-                'absolute start-1 z-10 flex max-w-[calc(100%-0.5rem)] min-h-[1.75rem] rounded bg-background/80 px-1.5 py-0.5 text-xs',
-                isFullView
-                  ? 'bottom-2 flex-col justify-end'
-                  : 'top-1 flex-row items-center gap-1.5',
-              )}
-            >
-              <span className="min-w-0 truncate">
-                {showSkeleton ? (
-                  <Skeleton loading width={88} height={14} />
-                ) : (
-                  overlayLabel
-                )}
-              </span>
-              {audioMuted ? (
-                <span
-                  className={cn(
-                    'inline-flex shrink-0 items-center gap-0.5 text-destructive',
-                    isFullView && 'mt-0.5',
-                  )}
-                >
-                  <MicOff
-                    className="h-3.5 w-3.5"
-                    strokeWidth={2.25}
-                    aria-hidden
-                  />
-                  <span
-                    className={cn(
-                      'font-medium leading-none',
-                      isFullView ? 'text-xs' : 'text-[10px]',
-                    )}
-                  >
-                    {t('callParticipantMuted')}
-                  </span>
-                </span>
-              ) : null}
-            </div>
+      {hasVideo ? (
+        <video
+          ref={ref}
+          className={cn(
+            'absolute inset-0 z-[1] h-full w-full min-h-0',
+            mirrorLocalPreview && '-scale-x-100',
+            !showVideoSurface && 'opacity-0',
+            isFullView && !isPip
+              ? 'object-contain'
+              : isShare
+              ? 'object-contain'
+              : panelFlush && !isPip && !isFullView
+              ? 'object-cover'
+              : !isPip && panelVideoFit === 'contain'
+              ? 'object-contain'
+              : 'object-cover',
           )}
-        </>
-      ) : (
+          autoPlay
+          playsInline
+          muted
+          aria-label={ariaLabel}
+        />
+      ) : null}
+      {!showVideoSurface ? (
         <div
           className={cn(
-            'flex h-full w-full flex-col text-center',
+            'relative z-[2] flex h-full w-full flex-col text-center',
             /* Fixed dark scrim: always pair with light glyphs (not theme `foreground`). */
             'bg-gradient-to-b from-zinc-900/95 to-black text-zinc-50',
             isPip
@@ -2397,7 +2401,43 @@ const FeedContent = ({
             }
           />
         </div>
-      )}
+      ) : null}
+      {showVideoSurface && !isPip ? (
+        <div
+          className={cn(
+            'absolute start-1 z-10 flex max-w-[calc(100%-0.5rem)] min-h-[1.75rem] rounded bg-background/80 px-1.5 py-0.5 text-xs',
+            isFullView
+              ? 'bottom-2 flex-col justify-end'
+              : 'top-1 flex-row items-center gap-1.5',
+          )}
+        >
+          <span className="min-w-0 truncate">
+            {showSkeleton ? (
+              <Skeleton loading width={88} height={14} />
+            ) : (
+              overlayLabel
+            )}
+          </span>
+          {audioMuted ? (
+            <span
+              className={cn(
+                'inline-flex shrink-0 items-center gap-0.5 text-destructive',
+                isFullView && 'mt-0.5',
+              )}
+            >
+              <MicOff className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+              <span
+                className={cn(
+                  'font-medium leading-none',
+                  isFullView ? 'text-xs' : 'text-[10px]',
+                )}
+              >
+                {t('callParticipantMuted')}
+              </span>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       {mountRemoteAudio
         ? (() => {
             const audioSink = (

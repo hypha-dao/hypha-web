@@ -94,6 +94,10 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     ].join(';') + ';';
 
   response.headers.set('Content-Security-Policy', cspHeaderValue);
+  response.headers.set(
+    'Permissions-Policy',
+    'camera=(self), microphone=(self)',
+  );
 
   return response;
 }

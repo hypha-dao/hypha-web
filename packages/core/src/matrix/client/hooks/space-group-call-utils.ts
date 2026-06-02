@@ -93,3 +93,14 @@ export function shouldIgnoreGroupCallErrorDuringCapture(
   if (isMatrixRateLimitedError(err)) return true;
   return captureActive;
 }
+
+/** Document Picture-in-Picture (Chrome) — not in default TS lib.dom yet. */
+export function isDocumentPictureInPictureWindowOpen(): boolean {
+  if (typeof window === 'undefined') return false;
+  const api = (
+    window as Window & {
+      documentPictureInPicture?: { window?: Window | null };
+    }
+  ).documentPictureInPicture;
+  return Boolean(api?.window);
+}

@@ -8,6 +8,7 @@ import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEv
 import { useMatrix } from '../providers/matrix-provider';
 import { matrixMemberDisplayLabel } from '../../matrix-member-display';
 import {
+  isDocumentPictureInPictureWindowOpen,
   isPermissionLikeGroupCallError,
   resolveMatrixSpeakerDisplayName,
   shouldIgnoreGroupCallErrorDuringCapture,
@@ -62,6 +63,7 @@ import {
   clearOrphanedMatrixScreenshareStreams,
   screenshareStreamHasTabAudio,
 } from './screenshare-capture';
+import { requestLocalCameraAccess } from './call-camera-access';
 import {
   applyScreenShareCaptureRootRestrictionWithRetry,
   clearScreenShareCaptureRootRestriction,
@@ -496,6 +498,7 @@ export function useSpaceGroupCall(
     useState<SpaceGroupCallErrorCode | null>(null);
   const [screenshareTabAudioMissing, setScreenshareTabAudioMissing] =
     useState(false);
+  const [cameraAccessBlocked, setCameraAccessBlocked] = useState(false);
   const [recordingStatus, setRecordingStatus] =
     useState<SpaceGroupCallRecordingStatus>('idle');
   const [recordingError, setRecordingError] = useState<string | null>(null);
@@ -1264,6 +1267,7 @@ export function useSpaceGroupCall(
       setActiveSpeakerKey(null);
       setCallSessionId(null);
       setScreenshareErrorCode(null);
+      setCameraAccessBlocked(false);
       setCapturePreferenceSelected(false);
       if (!recordingFinalizeInFlightRef.current) {
         setRecordingStatus('idle');
@@ -2418,6 +2422,24 @@ export function useSpaceGroupCall(
     async (muted: boolean) => {
       const gc = groupCallRef.current;
       if (!gc) return;
+      if (muted) {
+        setCameraAccessBlocked(false);
+      } else {
+        const access = await requestLocalCameraAccess();
+        if (!access.ok) {
+          try {
+            await gc.setLocalVideoMuted(true);
+          } catch {
+            /* keep UI aligned with SDK */
+          }
+          setIsLocalVideoMuted(true);
+          if (access.reason === 'permission_denied') {
+            setCameraAccessBlocked(true);
+          }
+          return;
+        }
+        setCameraAccessBlocked(false);
+      }
       if (!muted && gc.type !== GroupCallType.Video) {
         const prevType = gc.type;
         const gcSync = gc as unknown as {
@@ -2437,8 +2459,18 @@ export function useSpaceGroupCall(
               roomGroupCallType: String(GroupCallType.Video),
             });
           }
-        } catch {
+        } catch (e) {
           gcSync.type = prevType;
+          if (isPermissionLikeGroupCallError(e)) {
+            setCameraAccessBlocked(true);
+          }
+          try {
+            await gc.setLocalVideoMuted(true);
+          } catch {
+            /* keep call connected */
+          }
+          setIsLocalVideoMuted(true);
+          return;
         }
       }
       await gc.setLocalVideoMuted(muted);
@@ -3083,9 +3115,7 @@ export function useSpaceGroupCall(
         callState === 'connected' ||
         callState === 'awaiting_media' ||
         callState === 'initializing';
-      const pipWindowOpen =
-        typeof window !== 'undefined' &&
-        Boolean(window.documentPictureInPicture?.window);
+      const pipWindowOpen = isDocumentPictureInPictureWindowOpen();
       setTabBackgroundWhileInCall(
         inCall &&
           typeof document !== 'undefined' &&
@@ -3357,6 +3387,10 @@ export function useSpaceGroupCall(
     setScreenshareTabAudioMissing(false);
   }, []);
 
+  const dismissCameraAccessBlocked = useCallback(() => {
+    setCameraAccessBlocked(false);
+  }, []);
+
   useEffect(() => {
     if (!recordingRuntimeRef.current) return;
     if (callState === 'idle' || callState === 'error') {
@@ -3465,6 +3499,8 @@ export function useSpaceGroupCall(
     captureConsent,
     dismissScreenshareError,
     dismissScreenshareTabAudioHint,
+    cameraAccessBlocked,
+    dismissCameraAccessBlocked,
     screenshareTakeoverIncoming,
     screenshareTakeoverPendingId,
     screenshareTakeoverDenied,
