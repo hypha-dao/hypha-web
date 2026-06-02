@@ -41,9 +41,11 @@ async function sendPush(params: Partial<Notification>) {
 
   Object.assign(notification, params);
   notification.target_channel = 'push';
-  notification.headings = {
-    en: 'Hypha',
-  };
+  if (!notification.headings) {
+    notification.headings = {
+      en: 'Hypha',
+    };
+  }
 
   return await notify(notification);
 }

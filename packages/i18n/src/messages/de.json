@@ -221,8 +221,8 @@
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
       "mentionOnChatMessage": {
-        "title": "Sie werden in einer Chat-Nachricht erwähnt",
-        "description": "In jedem Thread oder Chat, in dem Erwähnungen für Sie aktiviert sind."
+        "title": "Chat-Erwähnungen @ und Anrufbenachrichtigungen",
+        "description": "Wenn Sie jemand @erwähnt oder einen Anruf in einem Space oder Signal-Thread startet, dem Sie angehören."
       }
     },
     "actions": {

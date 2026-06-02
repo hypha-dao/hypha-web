@@ -221,8 +221,8 @@
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
       "mentionOnChatMessage": {
-        "title": "Vous êtes mentionné dans un message du chat",
-        "description": "Dans tout fil ou chat où les mentions sont activées pour vous."
+        "title": "Mentions @ et alertes d'appel",
+        "description": "Lorsque quelqu'un vous @mentionne ou démarre un appel dans un espace ou un fil signal dont vous faites partie."
       }
     },
     "actions": {

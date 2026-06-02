@@ -103,7 +103,10 @@ import {
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 import { getLocaleFromPath } from './get-locale-from-path';
-import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
+import {
+  useCallJoinChime,
+  buildCallJoinHref,
+} from './human-chat-panel/use-call-join-chime';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
 import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
@@ -952,7 +955,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
   const { useSendNotifications } = useHookRegistry();
-  const { notifyChatMention } = useSendNotifications({ authToken });
+  const { notifyChatMention, notifyCallStarted } = useSendNotifications({
+    authToken,
+  });
   const { person: me } = useMe();
   const { persons: spaceMembersResult } = useMembers({
     spaceSlug,
@@ -1347,12 +1352,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     matrixSessionReady: isMatrixAuthenticated && Boolean(client),
   });
 
+  const pendingCallStartNotifyRef = useRef(false);
+  const callStartedNotifyRoomRef = useRef<string | null>(null);
+
+  const markPendingCallStartNotify = useCallback(() => {
+    if (!spaceCallShowJoinStrip) {
+      pendingCallStartNotifyRef.current = true;
+    }
+  }, [spaceCallShowJoinStrip]);
+
   const spaceCallBusyJoining =
     spaceCallState === 'initializing' ||
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'connecting';
 
   const handleCallAudio = useCallback(() => {
+    markPendingCallStartNotify();
     const launchContext =
       mode === 'coherence' && coherenceTitle?.trim()
         ? {
@@ -1385,9 +1400,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     space?.title,
     spaceSlug,
     startAudioForRoom,
+    markPendingCallStartNotify,
   ]);
 
   const handleCallVideo = useCallback(() => {
+    markPendingCallStartNotify();
     const launchContext =
       mode === 'coherence' && coherenceTitle?.trim()
         ? {
@@ -1420,6 +1437,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     space?.title,
     spaceSlug,
     startVideoForRoom,
+    markPendingCallStartNotify,
   ]);
 
   const handleCallLeave = useCallback(() => {
@@ -1719,6 +1737,99 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     : undefined;
   const canJoinSignalThreadCall =
     !isSignalThread || !hasSignalTeamPolicy || isCurrentUserSignalTeamMember;
+
+  useEffect(() => {
+    if (spaceCallState !== 'connected') return;
+    if (!pendingCallStartNotifyRef.current) return;
+    if (!callUiEnabled || !roomId?.trim() || !spaceSlug?.trim() || !authToken) {
+      return;
+    }
+    if (!isMatrixSyncLeader) return;
+
+    const stableRoomId = roomId.trim();
+    if (callStartedNotifyRoomRef.current === stableRoomId) return;
+
+    pendingCallStartNotifyRef.current = false;
+    callStartedNotifyRoomRef.current = stableRoomId;
+
+    const lang = getLocaleFromPath(pathname);
+    const target = callJoinNotificationTarget;
+    const relativePath =
+      target?.spaceSlug?.trim() && target.lang?.trim()
+        ? buildCallJoinHref(target)
+        : buildCallJoinHref({
+            lang,
+            spaceSlug: spaceSlug.trim(),
+            roomId: stableRoomId,
+            signalSlug:
+              mode === 'coherence' ? coherenceSlug?.trim() || null : null,
+          });
+    const deepLink =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}${relativePath}`
+        : relativePath;
+    const actorDisplayName =
+      [me?.name, me?.surname].filter(Boolean).join(' ').trim() ||
+      me?.nickname?.trim() ||
+      t('you');
+    const contextLabel =
+      mode === 'coherence'
+        ? coherenceTitle?.trim() || coherenceSlug?.trim() || space?.title
+        : space?.title?.trim() || spaceSlug.trim();
+
+    void notifyCallStarted({
+      actorSlug: me?.slug,
+      actorDisplayName,
+      spaceSlug: spaceSlug.trim(),
+      contextLabel,
+      scope:
+        isSignalThread && hasSignalTeamPolicy ? 'signal_team' : 'space_members',
+      targetMatrixUserIds:
+        isSignalThread && hasSignalTeamPolicy
+          ? signalTeamMemberIds.filter((id) => id !== currentUserId)
+          : undefined,
+      url: deepLink,
+    }).catch((notifyErr) => {
+      console.warn(
+        '[HumanRightPanel] Call-start notification dispatch failed:',
+        notifyErr,
+      );
+    });
+  }, [
+    authToken,
+    callJoinNotificationTarget,
+    callUiEnabled,
+    coherenceSlug,
+    coherenceTitle,
+    currentUserId,
+    hasSignalTeamPolicy,
+    isMatrixSyncLeader,
+    isSignalThread,
+    me?.name,
+    me?.nickname,
+    me?.slug,
+    me?.surname,
+    mode,
+    notifyCallStarted,
+    pathname,
+    roomId,
+    signalTeamMemberIds,
+    space?.title,
+    spaceCallState,
+    spaceSlug,
+    t,
+  ]);
+
+  useEffect(() => {
+    if (
+      spaceCallState === 'idle' ||
+      spaceCallState === 'error' ||
+      spaceCallState === 'disconnecting'
+    ) {
+      pendingCallStartNotifyRef.current = false;
+      callStartedNotifyRoomRef.current = null;
+    }
+  }, [spaceCallState]);
 
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
     if (!isSignalThread) return rawMentionCandidates;
@@ -3639,16 +3750,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           if (!hasSignalTeamPolicy) return true;
           return signalTeamMemberIdSet.has(matrixId);
         });
-        if (
-          mentionTargets.length > 0 &&
-          sendResult.eventId &&
-          mode === 'space'
-        ) {
+        if (mentionTargets.length > 0 && sendResult.eventId) {
           const params = new URLSearchParams(
             searchParams?.toString() ?? undefined,
           );
           params.set('msg', sendResult.eventId);
           params.set('chat', roomId);
+          if (mode === 'coherence' && coherenceSlug?.trim()) {
+            params.set('signal', coherenceSlug.trim());
+          }
           const query = params.toString();
           const lang = getLocaleFromPath(pathname);
           const mappedSpaceSlug = roomId
@@ -3786,6 +3896,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     me?.nickname,
     me?.slug,
     spaceSlug,
+    coherenceSlug,
     notifyChatMention,
     hasSignalTeamPolicy,
     signalTeamMemberIdSet,
@@ -4309,14 +4420,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   onSelectMessage={handleSelectMentionFromInbox}
                   aggregatedMentions={mode === 'space'}
                   callJoinAlertsUnmuted={
-                    callUiEnabled && mode === 'space'
-                      ? joinAlertSoundEnabled
-                      : undefined
+                    callUiEnabled ? joinAlertSoundEnabled : undefined
                   }
                   onCallJoinAlertsUnmutedChange={
-                    callUiEnabled && mode === 'space'
-                      ? setJoinAlertSoundEnabled
-                      : undefined
+                    callUiEnabled ? setJoinAlertSoundEnabled : undefined
                   }
                 />
               </div>

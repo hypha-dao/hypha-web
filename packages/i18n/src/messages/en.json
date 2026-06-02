@@ -220,8 +220,8 @@
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
       "mentionOnChatMessage": {
-        "title": "You are mentioned in a chat message",
-        "description": "In any thread or chat where mentions are enabled for you."
+        "title": "Chat @mentions and call alerts",
+        "description": "When someone @mentions you or starts a call in a space or signal thread you belong to."
       }
     },
     "actions": {

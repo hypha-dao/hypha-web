@@ -928,8 +928,8 @@
       },
       "labelWithComingSoon": "{title} ({comingSoon})",
       "mentionOnChatMessage": {
-        "title": "Se te menciona en un mensaje de chat",
-        "description": "En cualquier hilo o chat donde las menciones estén habilitadas para ti."
+        "title": "Menciones @ y alertas de llamada",
+        "description": "Cuando alguien te @menciona o inicia una llamada en un espacio o hilo de señal al que perteneces."
       }
     },
     "actions": {
