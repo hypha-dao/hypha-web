@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.error(
-      'banking/email-confirmation failed:',
+      'banking/token-confirmation failed:',
       error instanceof Error ? error.message : error,
     );
     return NextResponse.json(
