@@ -17,6 +17,24 @@ function stemLooksLikeBridgedPrivyLocalpart(stem: string): boolean {
   return false;
 }
 
+/**
+ * First label safe to show in UI for a Matrix member.
+ * Never returns bridged Privy slugs, raw MXIDs, or synthetic shortened locals.
+ */
+export function pickUserVisibleMemberLabel(
+  matrixUserId: string,
+  ...candidates: Array<string | undefined | null>
+): string | null {
+  const id = matrixUserId.trim();
+  if (!id) return null;
+  for (const candidate of candidates) {
+    const label = candidate?.trim();
+    if (!label) continue;
+    if (!looksLikeTechnicalMatrixDisplayName(label, id)) return label;
+  }
+  return null;
+}
+
 /** Matrix `m.room.member` displayname can mirror the ugly localpart — treat as absent. */
 export function looksLikeTechnicalMatrixDisplayName(
   label: string | undefined,

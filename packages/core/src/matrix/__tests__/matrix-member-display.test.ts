@@ -1,9 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import {
   matrixUserIdToCanonicalPrivySub,
+  pickUserVisibleMemberLabel,
   speakerLabelToCanonicalPrivySub,
   splitSpeakerLabeledTranscriptLine,
 } from '../matrix-member-display';
+
+const PROD_MXID = '@prod_privy_did_privy_cmabc123:srv1294735.hstgr.cloud';
+
+describe('pickUserVisibleMemberLabel', () => {
+  it('returns the first non-technical candidate', () => {
+    expect(
+      pickUserVisibleMemberLabel(
+        PROD_MXID,
+        'prod_privy_did_privy_cmabc123',
+        'Alex Prate',
+      ),
+    ).toBe('Alex Prate');
+  });
+
+  it('returns null when every candidate is a bridged Privy slug', () => {
+    expect(
+      pickUserVisibleMemberLabel(
+        PROD_MXID,
+        'prod_privy_did_privy_cmabc123',
+        '@prod_privy_did_privy_cmabc123:srv1294735.hstgr.cloud',
+      ),
+    ).toBeNull();
+  });
+});
 
 describe('matrixUserIdToCanonicalPrivySub', () => {
   it('maps bridged prod localparts to did:privy subs', () => {

@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
+import { Button } from '@hypha-platform/ui';
 import type { SpaceGroupCallCaptureConsent } from '@hypha-platform/core/client';
 import { Phone, Video, X } from 'lucide-react';
 import { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
@@ -23,8 +24,11 @@ type HumanChatPanelCallJoinStripProps = {
   variant?: 'sidebar' | 'hero';
 };
 
+const joinBannerSurfaceClass =
+  'rounded-[8px] border border-accent-6 bg-accent-surface-mix bg-center';
+
 /**
- * Idle: others are in the room GroupCall — one row, aligned with the in-call banner.
+ * Idle: others are in the room GroupCall — join CTA aligned with subscription/sales banners.
  */
 export function HumanChatPanelCallJoinStrip({
   deviceCount,
@@ -40,8 +44,14 @@ export function HumanChatPanelCallJoinStrip({
 }: HumanChatPanelCallJoinStripProps) {
   const t = useTranslations('HumanChatPanel');
   const isHero = variant === 'hero';
-  const statusLine = t('callJoinStripLine', { count: deviceCount });
+  const isJoinOpportunity = deviceCount > 0;
   const hasDurable = Boolean(durableMessage);
+  const statusLine = t('callJoinStripLine', { count: deviceCount });
+  const title = hasDurable
+    ? durableMessage ?? t('callJoinStripTitle')
+    : isJoinOpportunity
+    ? t('callJoinStripTitle')
+    : statusLine;
   const audioLabel =
     deviceCount > 0
       ? t('callJoinWithAudioShort')
@@ -55,13 +65,70 @@ export function HumanChatPanelCallJoinStrip({
   const videoTitle =
     deviceCount > 0 ? t('callJoinWithVideo') : t('callStartWithVideo');
   const showAudioButton = deviceCount > 0 || Boolean(onJoinAudio);
+  const useProminentJoinBanner = isJoinOpportunity && !hasDurable;
+
+  const actionButtons = (
+    <div
+      className={cn(
+        'flex shrink-0 flex-wrap items-center justify-end gap-2',
+        isHero ? 'w-full lg:w-auto' : 'ms-auto',
+      )}
+    >
+      {hasDurable && onDismissDurable ? (
+        <button
+          type="button"
+          onClick={onDismissDurable}
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/80 transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+          title={t('callLeftBannerDismiss')}
+          aria-label={t('callLeftBannerDismiss')}
+        >
+          <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+        </button>
+      ) : null}
+
+      {showAudioButton ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onJoinAudio}
+          disabled={disabled || busy || !onJoinAudio}
+          className={cn(
+            'gap-1.5',
+            isHero ? 'flex-1 lg:flex-none' : 'h-8 px-2.5 text-xs',
+          )}
+          title={audioTitle}
+          aria-label={audioTitle}
+        >
+          <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          {audioLabel}
+        </Button>
+      ) : null}
+      <Button
+        type="button"
+        variant={useProminentJoinBanner ? 'default' : 'outline'}
+        size="sm"
+        onClick={onJoinVideo}
+        disabled={disabled || busy}
+        className={cn(
+          'gap-1.5',
+          isHero ? 'flex-1 lg:flex-none' : 'h-8 px-2.5 text-xs',
+        )}
+        title={videoTitle}
+        aria-label={videoTitle}
+      >
+        <Video className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        {videoLabel}
+      </Button>
+    </div>
+  );
 
   return (
     <div
       className={cn(
-        isHero
-          ? 'mb-2 rounded-lg border border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_30%,transparent)] bg-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_12%,var(--background))]'
-          : 'border-b border-border bg-muted/30',
+        isHero ? cn('mb-2', joinBannerSurfaceClass) : 'border-b border-border',
+        useProminentJoinBanner && !isHero && joinBannerSurfaceClass,
+        !useProminentJoinBanner && !isHero && 'bg-muted/30',
       )}
     >
       {captureConsent ? (
@@ -70,89 +137,76 @@ export function HumanChatPanelCallJoinStrip({
           roomId={roomId}
           variant="join"
           className={
-            isHero ? 'rounded-none border-x-0 border-t-0' : 'border-border/60'
+            isHero || useProminentJoinBanner
+              ? 'rounded-none border-x-0 border-t-0'
+              : 'border-border/60'
           }
         />
       ) : null}
       <div role="status" aria-live="polite">
-        <div
-          className={cn(
-            'flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5',
-            isHero
-              ? 'min-h-10 px-3 py-1.5 sm:px-4'
-              : 'min-h-11 px-3 py-1.5 sm:gap-3 sm:px-4',
-          )}
-        >
-          <p
+        {useProminentJoinBanner ? (
+          <div
             className={cn(
-              'min-w-0 flex-1 basis-full text-xs font-medium leading-tight sm:basis-auto',
+              'flex flex-col gap-4',
               isHero
-                ? 'text-[color:var(--color-accent-12,var(--foreground))]'
-                : 'text-foreground',
-              hasDurable &&
-                'shrink-0 whitespace-nowrap sm:max-w-[min(100%,32rem)]',
+                ? 'p-5 lg:flex-row lg:items-center lg:justify-between'
+                : 'px-4 py-3 sm:flex-row sm:items-center sm:justify-between',
             )}
-            title={hasDurable ? durableMessage ?? undefined : statusLine}
           >
-            {hasDurable && durableMessage ? (
-              <span className="text-foreground">{durableMessage}</span>
-            ) : (
-              statusLine
-            )}
-          </p>
-
-          <div className="ms-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-            {hasDurable && onDismissDurable && (
-              <button
-                type="button"
-                onClick={onDismissDurable}
-                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-foreground/80 transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
-                title={t('callLeftBannerDismiss')}
-                aria-label={t('callLeftBannerDismiss')}
-              >
-                <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-              </button>
-            )}
-
-            {showAudioButton ? (
-              <button
-                type="button"
-                onClick={onJoinAudio}
-                disabled={disabled || busy || !onJoinAudio}
-                className={cn(
-                  'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors',
-                  isHero
-                    ? 'border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_45%,var(--border))] bg-background/90 text-[color:var(--color-accent-12,var(--foreground))] hover:bg-accent-3'
-                    : 'border-border bg-background/90 text-foreground hover:bg-muted',
-                  (disabled || busy || !onJoinAudio) &&
-                    'cursor-not-allowed opacity-50',
-                )}
-                title={audioTitle}
-                aria-label={audioTitle}
-              >
-                <Phone className="h-3.5 w-3.5 shrink-0" />
-                {audioLabel}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={onJoinVideo}
-              disabled={disabled || busy}
+            <div
               className={cn(
-                'inline-flex h-8 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors',
-                isHero
-                  ? 'border-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_45%,var(--border))] bg-background/90 text-[color:var(--color-accent-12,var(--foreground))] hover:bg-accent-3'
-                  : 'border-border bg-background/90 text-foreground hover:bg-muted',
-                (disabled || busy) && 'cursor-not-allowed opacity-50',
+                'flex min-w-0 items-start gap-3',
+                isHero && 'lg:gap-5',
               )}
-              title={videoTitle}
-              aria-label={videoTitle}
             >
-              <Video className="h-3.5 w-3.5 shrink-0" />
-              {videoLabel}
-            </button>
+              <div
+                className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-9 text-accent-contrast shadow-sm ring-2 ring-accent-9/25"
+                aria-hidden
+              >
+                <Phone className="h-4 w-4" strokeWidth={2.25} />
+              </div>
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <span
+                  className={cn(
+                    'font-bold text-foreground',
+                    isHero ? 'text-2' : 'text-sm',
+                  )}
+                >
+                  {title}
+                </span>
+              </div>
+            </div>
+            {actionButtons}
           </div>
-        </div>
+        ) : (
+          <div
+            className={cn(
+              'flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5',
+              isHero
+                ? 'min-h-10 px-3 py-1.5 sm:px-4'
+                : 'min-h-11 px-3 py-1.5 sm:gap-3 sm:px-4',
+            )}
+          >
+            <p
+              className={cn(
+                'min-w-0 flex-1 basis-full text-xs font-medium leading-tight sm:basis-auto',
+                isHero
+                  ? 'text-[color:var(--color-accent-12,var(--foreground))]'
+                  : 'text-foreground',
+                hasDurable &&
+                  'shrink-0 whitespace-nowrap sm:max-w-[min(100%,32rem)]',
+              )}
+              title={hasDurable ? durableMessage ?? undefined : statusLine}
+            >
+              {hasDurable && durableMessage ? (
+                <span className="text-foreground">{durableMessage}</span>
+              ) : (
+                statusLine
+              )}
+            </p>
+            {actionButtons}
+          </div>
+        )}
       </div>
     </div>
   );

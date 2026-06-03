@@ -75,11 +75,35 @@ describe('createCallFeedVideoStream', () => {
 
 describe('isCallFeedVideoSurfaceReady', () => {
   it('requires non-zero dimensions', () => {
-    expect(isCallFeedVideoSurfaceReady({ videoWidth: 0, videoHeight: 0 })).toBe(
-      false,
-    );
     expect(
-      isCallFeedVideoSurfaceReady({ videoWidth: 640, videoHeight: 360 }),
+      isCallFeedVideoSurfaceReady({
+        videoWidth: 0,
+        videoHeight: 0,
+        clientWidth: 0,
+        clientHeight: 0,
+        readyState: 0,
+      }),
+    ).toBe(false);
+    expect(
+      isCallFeedVideoSurfaceReady({
+        videoWidth: 640,
+        videoHeight: 360,
+        clientWidth: 320,
+        clientHeight: 180,
+        readyState: 4,
+      }),
+    ).toBe(true);
+  });
+
+  it('accepts sized elements before videoWidth is populated (Safari dock tiles)', () => {
+    expect(
+      isCallFeedVideoSurfaceReady({
+        videoWidth: 0,
+        videoHeight: 0,
+        clientWidth: 240,
+        clientHeight: 135,
+        readyState: 2,
+      }),
     ).toBe(true);
   });
 });

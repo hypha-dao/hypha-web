@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isMatrixRateLimitedError,
   isPermissionLikeGroupCallError,
+  resolveGroupCallErrorDuringScreenshare,
   shouldIgnoreGroupCallErrorDuringCapture,
 } from '../client/hooks/space-group-call-utils';
 
@@ -89,5 +90,25 @@ describe('shouldIgnoreGroupCallErrorDuringCapture', () => {
     expect(
       shouldIgnoreGroupCallErrorDuringCapture(new Error('ICE failed'), false),
     ).toBe(false);
+  });
+});
+
+describe('resolveGroupCallErrorDuringScreenshare', () => {
+  it('scopes permission errors to screenshare only', () => {
+    const err = new DOMException('denied', 'NotAllowedError');
+    expect(resolveGroupCallErrorDuringScreenshare(err)).toBe(
+      'screenshare_only',
+    );
+  });
+
+  it('ignores transient errors during screenshare', () => {
+    const err = new Error('[429] too many requests');
+    expect(resolveGroupCallErrorDuringScreenshare(err)).toBe('ignore');
+  });
+
+  it('scopes WebRTC failures to screenshare only', () => {
+    expect(
+      resolveGroupCallErrorDuringScreenshare(new Error('ICE failed')),
+    ).toBe('screenshare_only');
   });
 });

@@ -2187,6 +2187,7 @@
     "markAsRead": "Marcar como leído",
     "callToolbarLabel": "Llamada de voz y vídeo",
     "callJoinStripLine": "Llamada en curso — {count, plural, one {1 miembro} other {# miembros}}",
+    "callJoinStripTitle": "Llamada en curso",
     "callJoinInProgressCta": "Unirse | En curso",
     "callJoinInProgressCtaTitle": "Unirse a la llamada del espacio (en curso)",
     "callJoinCallAlerts": "Avisos de llamada",

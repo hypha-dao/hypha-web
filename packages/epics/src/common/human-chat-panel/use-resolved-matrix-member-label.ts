@@ -12,6 +12,7 @@ import {
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabelFromRoom,
   matrixUserIdToCanonicalPrivySub,
+  pickUserVisibleMemberLabel,
   speakerLabelToCanonicalPrivySub,
 } from './matrix-room-member-display';
 
@@ -77,32 +78,26 @@ export function useResolvedMatrixMemberLabel({
 
   return useMemo(() => {
     const fromPerson = person ? formatHyphaPersonName(person) : '';
-    if (fromPerson) return fromPerson;
-    if (
+    if (trimmedId) {
+      const visible = pickUserVisibleMemberLabel(
+        trimmedId,
+        fromPerson,
+        trimmedFallback,
+        syncLabel,
+      );
+      if (visible) return visible;
+    } else if (
       trimmedFallback &&
-      trimmedId &&
-      !looksLikeTechnicalMatrixDisplayName(trimmedFallback, trimmedId)
-    ) {
-      return trimmedFallback;
-    }
-    if (
-      syncLabel &&
-      trimmedId &&
-      !looksLikeTechnicalMatrixDisplayName(syncLabel, trimmedId)
-    ) {
-      return syncLabel;
-    }
-    if (
-      trimmedFallback &&
-      !trimmedId &&
       !looksLikeTechnicalMatrixDisplayName(trimmedFallback, trimmedFallback)
     ) {
       return trimmedFallback;
+    } else if (fromPerson) {
+      return fromPerson;
     }
     if (resolvedSub && user && isLoadingJwt && !jwt) {
-      return syncLabel || trimmedFallback;
+      return '';
     }
-    return syncLabel || trimmedFallback;
+    return '';
   }, [
     isLoadingJwt,
     jwt,

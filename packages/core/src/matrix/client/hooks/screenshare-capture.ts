@@ -11,6 +11,22 @@ export const MATRIX_SCREENSHARE_CAPTURE_OPTS = {
   },
 } as unknown as IScreensharingOpts;
 
+/** iPadOS 13+ may report MacIntel; iOS Chrome (CriOS) still uses WebKit capture. */
+export function isIOSTouchDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+}
+
+/** Matrix `setScreensharingEnabled` opts — iOS has no tab/system display audio. */
+export function resolveMatrixScreenshareCaptureOpts(): IScreensharingOpts {
+  if (isIOSTouchDevice()) {
+    return { audio: false } as IScreensharingOpts;
+  }
+  return MATRIX_SCREENSHARE_CAPTURE_OPTS;
+}
+
 type DisplayMediaConstraints = {
   video: boolean | MediaTrackConstraints;
   audio: boolean | MediaTrackConstraints;
@@ -29,6 +45,10 @@ type ScreenshareConstraintOpts = Pick<IScreensharingOpts, 'audio'>;
 export function buildDisplayMediaConstraints(
   opts: ScreenshareConstraintOpts = MATRIX_SCREENSHARE_CAPTURE_OPTS,
 ): DisplayMediaConstraints {
+  if (isIOSTouchDevice()) {
+    return { video: true, audio: false };
+  }
+
   const audio =
     opts.audio === undefined || opts.audio === false
       ? false

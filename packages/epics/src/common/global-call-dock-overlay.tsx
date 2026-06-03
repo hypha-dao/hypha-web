@@ -133,7 +133,7 @@ function readCallSpaceSlug(
 }
 
 /**
- * Resize a dock anchored with `right`/`bottom` plus `translate(x, y)`.
+ * Resize a dock anchored with `right`/`bottom` offsets (`x`/`y` move toward bottom-right).
  * Positive x/y moves the dock toward the viewport bottom-right corner.
  */
 function applyDockResize(
@@ -1129,9 +1129,9 @@ export function GlobalCallDockOverlay() {
     : {
         width: geometry.width,
         height: geometry.height,
-        right: 16,
-        bottom: 16,
-        transform: `translate(${geometry.x}px, ${geometry.y}px)`,
+        /** Avoid `transform` on the dock root — Safari/iOS WebRTC video fails to paint inside transformed ancestors. */
+        right: DOCK_MARGIN_PX - geometry.x,
+        bottom: DOCK_MARGIN_PX - geometry.y,
       };
 
   const onToggleMic = () => {
@@ -1215,9 +1215,10 @@ export function GlobalCallDockOverlay() {
           : cn(
               'fixed z-[130] flex select-none flex-col rounded-xl border border-border/60 bg-background/95 shadow-2xl',
               isMobile ? '' : 'backdrop-blur-sm',
-              isMobile || modeIsFullscreen || isScreensharing
-                ? 'min-h-0 min-w-0 overflow-hidden'
-                : 'min-h-[320px] min-w-[480px] overflow-visible',
+              'min-h-0 min-w-0 overflow-hidden',
+              !isMobile && !modeIsFullscreen && !isScreensharing
+                ? 'min-h-[320px] min-w-[480px]'
+                : '',
             ),
         modeIsFullscreen ? 'rounded-2xl' : '',
       )}

@@ -11,6 +11,7 @@ import {
   isDocumentPictureInPictureWindowOpen,
   isPermissionLikeGroupCallError,
   resolveMatrixSpeakerDisplayName,
+  resolveGroupCallErrorDuringScreenshare,
   shouldIgnoreGroupCallErrorDuringCapture,
 } from './space-group-call-utils';
 import {
@@ -69,9 +70,10 @@ import {
   type ScreenshareTakeoverIncoming,
 } from './screenshare-takeover';
 import {
-  MATRIX_SCREENSHARE_CAPTURE_OPTS,
   bindScreenshareStreamStopHandlers,
   clearOrphanedMatrixScreenshareStreams,
+  isIOSTouchDevice,
+  resolveMatrixScreenshareCaptureOpts,
   screenshareStreamHasTabAudio,
   withEnhancedScreenshareCapture,
 } from './screenshare-capture';
@@ -1443,14 +1445,17 @@ export function useSpaceGroupCall(
         setVoiceProcessingPresetState(plan.effectivePreset);
         voiceProcessingPresetRef.current = plan.effectivePreset;
       }
-      try {
-        await applyVoiceProcessingPresetToGroupCall(
-          gc,
-          plan.effectivePreset,
-          true,
-        );
-      } catch {
-        // keep call connected if constraints fail
+      // iOS WebKit: concurrent getUserMedia while display capture starts can drop the call.
+      if (!isIOSTouchDevice()) {
+        try {
+          await applyVoiceProcessingPresetToGroupCall(
+            gc,
+            plan.effectivePreset,
+            true,
+          );
+        } catch {
+          // keep call connected if constraints fail
+        }
       }
       applyScreenshareTrackContentHints({
         micTrack: gc.localCallFeed?.stream?.getAudioTracks()[0],
@@ -1471,7 +1476,10 @@ export function useSpaceGroupCall(
       try {
         clearOrphanedMatrixScreenshareStreams(client);
         const ok = await withEnhancedScreenshareCapture(client, () =>
-          gc.setScreensharingEnabled(true, MATRIX_SCREENSHARE_CAPTURE_OPTS),
+          gc.setScreensharingEnabled(
+            true,
+            resolveMatrixScreenshareCaptureOpts(),
+          ),
         );
         syncLocalScreenshareState(gc);
         if (ok === false) {
@@ -1598,9 +1606,9 @@ export function useSpaceGroupCall(
   }, []);
 
   /**
-   * @param excludeUserId — when the local user is **not** in-session (idle path),
-   *   omit their row so a stale `participants` entry after `leave()` does not
-   *   keep "call in progress" / Join UI visible (see Hypha join strip).
+   * @param excludeUserId — omit a user when computing “others” counts; idle
+   *   subscription uses the full participant map so an active room GroupCall
+   *   is detected even when the only devices belong to the local user (e.g. another tab).
    */
   const readParticipantsFromGroupCall = useCallback(
     (gc: MatrixSdk.GroupCall, excludeUserId?: string | null) => {
@@ -1775,10 +1783,36 @@ export function useSpaceGroupCall(
       groupCallListenerCleanupRef.current = null;
 
       const onError = (err: unknown) => {
+        const screenshareActive =
+          isScreensharingRef.current ||
+          groupCallRef.current?.isScreensharing() === true;
+        if (screenshareActive) {
+          const action = resolveGroupCallErrorDuringScreenshare(err);
+          if (action === 'ignore') {
+            if (roomId) {
+              logSpaceGroupCallEvent({
+                name: 'hypha.group_call.error_ignored',
+                roomId,
+                kind: lastJoinKindRef.current ?? undefined,
+                errorCode: 'WEBRTC_FAILED',
+              });
+            }
+            return;
+          }
+          setScreenshareErrorCode(
+            isPermissionLikeGroupCallError(err)
+              ? 'PERMISSION_DENIED'
+              : 'WEBRTC_FAILED',
+          );
+          void reconcileLocalScreenshareStop(groupCallRef.current);
+          return;
+        }
+
         const captureActive =
           captureModeRef.current !== 'none' ||
           recordingRuntimeRef.current != null ||
-          recordingFinalizeInFlightRef.current;
+          recordingFinalizeInFlightRef.current ||
+          isScreensharingRef.current;
         if (isJoiningRef.current && !isPermissionLikeGroupCallError(err)) {
           if (process.env.NODE_ENV === 'development') {
             console.warn(
@@ -1930,6 +1964,7 @@ export function useSpaceGroupCall(
       updateParticipantCount,
       evalRemoteMediaStall,
       syncLocalScreenshareState,
+      reconcileLocalScreenshareStop,
     ],
   );
 
@@ -2007,9 +2042,8 @@ export function useSpaceGroupCall(
       const type = kind === 'video' ? GroupCallType.Video : GroupCallType.Voice;
       let gc = client.getGroupCallForRoom(roomId);
       if (gc) {
-        const myId = client.getUserId() ?? null;
-        const activeOthers = readParticipantsFromGroupCall(gc, myId).count;
-        if (activeOthers === 0) {
+        const activeDevices = readParticipantsFromGroupCall(gc).count;
+        if (activeDevices === 0) {
           try {
             await Promise.resolve(
               (
@@ -2023,6 +2057,7 @@ export function useSpaceGroupCall(
           // still carry a different groupCallId ("multiple calls" warning).
           gc = null;
         }
+        // activeDevices > 0: always join the room GroupCall (same space, one session).
       }
 
       if (!gc) {
@@ -3414,7 +3449,7 @@ export function useSpaceGroupCall(
         setIdleInCallUserIds([]);
         return;
       }
-      const p = readParticipantsFromGroupCall(current, myId);
+      const p = readParticipantsFromGroupCall(current);
       if (p.count === 0) {
         setIdleRoomParticipantCount(0);
         setIdleInCallUserIds([]);

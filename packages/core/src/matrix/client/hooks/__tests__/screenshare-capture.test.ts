@@ -4,6 +4,8 @@ import {
   bindScreenshareStreamStopHandlers,
   buildDisplayMediaConstraints,
   clearOrphanedMatrixScreenshareStreams,
+  isIOSTouchDevice,
+  resolveMatrixScreenshareCaptureOpts,
   screenshareStreamHasTabAudio,
   withEnhancedScreenshareCapture,
 } from '../screenshare-capture';
@@ -15,6 +17,18 @@ describe('screenshare capture opts', () => {
         suppressLocalAudioPlayback: false,
       },
     });
+  });
+
+  it('disables display audio on iOS touch devices', () => {
+    vi.stubGlobal('navigator', {
+      userAgent:
+        'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+      platform: 'MacIntel',
+      maxTouchPoints: 5,
+    });
+    expect(resolveMatrixScreenshareCaptureOpts()).toEqual({ audio: false });
+    expect(isIOSTouchDevice()).toBe(true);
+    vi.unstubAllGlobals();
   });
 });
 
@@ -29,6 +43,20 @@ describe('buildDisplayMediaConstraints', () => {
       selfBrowserSurface: 'include',
       systemAudio: 'include',
     });
+  });
+
+  it('uses minimal video-only constraints on iOS touch devices', () => {
+    vi.stubGlobal('navigator', {
+      userAgent:
+        'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+      platform: 'MacIntel',
+      maxTouchPoints: 5,
+    });
+    expect(buildDisplayMediaConstraints()).toEqual({
+      video: true,
+      audio: false,
+    });
+    vi.unstubAllGlobals();
   });
 
   it('respects audio: false in opts', () => {

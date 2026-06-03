@@ -43,7 +43,14 @@ export function createCallFeedVideoStream(
 }
 
 export function isCallFeedVideoSurfaceReady(
-  video: Pick<HTMLVideoElement, 'videoWidth' | 'videoHeight'>,
+  video: Pick<
+    HTMLVideoElement,
+    'videoWidth' | 'videoHeight' | 'clientWidth' | 'clientHeight' | 'readyState'
+  >,
 ): boolean {
-  return video.videoWidth > 0 && video.videoHeight > 0;
+  if (video.videoWidth > 0 && video.videoHeight > 0) return true;
+  /** Safari / iOS can paint frames before `videoWidth` is populated in dock tiles. */
+  return (
+    video.clientWidth >= 2 && video.clientHeight >= 2 && video.readyState >= 2
+  );
 }

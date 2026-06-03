@@ -380,17 +380,22 @@ function CallSpeakerPrimaryStrip({
     <div
       className={cn(
         'flex min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden',
+        panelDock && 'min-h-[5.5rem]',
         isPortrait ? 'flex-col' : 'flex-row',
         className,
       )}
     >
       <div
-        className={cn('flex min-h-0 min-w-0 flex-col', cellClassName)}
+        className={cn(
+          'flex min-h-0 min-w-0 flex-col',
+          panelDock && 'min-h-[4.5rem] flex-1',
+          cellClassName,
+        )}
         style={{ flex: `${speakerPrimaryRatio} 1 0%` }}
       >
         {speakerTile ? (
           panelDock ? (
-            <CallDockAspectTileShell className="h-full">
+            <CallDockAspectTileShell className="h-full min-h-[4.5rem]">
               {renderTile(speakerTile, speakerIndex)}
             </CallDockAspectTileShell>
           ) : (
@@ -1050,7 +1055,7 @@ function HumanChatPanelCallStageMain({
     : panelFlush && userGridTileCount <= 1
     ? 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col'
     : userGridTileCount > 1 && !isFull
-    ? 'relative flex h-full min-h-0 w-full min-w-0'
+    ? 'relative flex h-full min-h-0 w-full min-w-0 flex-1 flex-col'
     : userGridTileCount > 1
     ? 'relative flex h-full min-h-0 w-full min-w-0 flex-1 flex-col'
     : 'min-w-0';
@@ -2488,7 +2493,7 @@ const FeedContent = ({
         <video
           ref={ref}
           className={cn(
-            'absolute inset-0 z-[1] h-full w-full min-h-0',
+            'absolute inset-0 z-[1] h-full w-full min-h-0 translate-z-0',
             mirrorLocalPreview && '-scale-x-100',
             !showVideoSurface && 'opacity-0',
             isFullView && !isPip

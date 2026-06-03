@@ -94,6 +94,18 @@ export function shouldIgnoreGroupCallErrorDuringCapture(
   return captureActive;
 }
 
+/**
+ * While presenting, GroupCall errors must not tear down the whole session —
+ * stop share and surface `screenshareErrorCode` instead (see WCUX share spec).
+ */
+export function resolveGroupCallErrorDuringScreenshare(
+  err: unknown,
+): 'ignore' | 'screenshare_only' {
+  if (isPermissionLikeGroupCallError(err)) return 'screenshare_only';
+  if (isMatrixRateLimitedError(err)) return 'ignore';
+  return 'screenshare_only';
+}
+
 /** Document Picture-in-Picture (Chrome) — not in default TS lib.dom yet. */
 export function isDocumentPictureInPictureWindowOpen(): boolean {
   if (typeof window === 'undefined') return false;

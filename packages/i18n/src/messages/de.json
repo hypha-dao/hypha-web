@@ -2584,6 +2584,7 @@
     "markAsRead": "Als gelesen markieren",
     "callToolbarLabel": "Sprach- und Videoanruf",
     "callJoinStripLine": "Anruf läuft — {count, plural, one {1 Mitglied} other {# Mitglieder}}",
+    "callJoinStripTitle": "Anruf läuft",
     "callJoinInProgressCta": "Beitreten | Läuft",
     "callJoinInProgressCtaTitle": "Am Space-Anruf teilnehmen (läuft)",
     "callJoinCallAlerts": "Anruf-Hinweise",

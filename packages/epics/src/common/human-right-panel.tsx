@@ -98,7 +98,7 @@ import {
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   matrixUserIdToCanonicalPrivySub,
-  shortenMatrixIdForDisplay,
+  pickUserVisibleMemberLabel,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
@@ -1267,7 +1267,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   /** In-chat video tiles stay in the floating dock once a session is active. */
   const showSidebarCallVideo = showSidebarCallChrome && !showFloatingDock;
 
-  const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
+  const spaceCallToolbarJoinHint =
+    callUiEnabled &&
+    (spaceCallShowJoinStrip || spaceCallRoomGroupDeviceCount > 0);
   const showAuthedUi = !isAuthLoading && isAuthenticated;
   const showAuthPrompt = !isAuthLoading && !isAuthenticated;
   const sidebarContentRef = useRef<HTMLDivElement | null>(null);
@@ -1310,13 +1312,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     restoreSidebarWidth();
     return restoreSidebarWidth;
   }, [isSidebarMobile, showAuthPrompt, sidebarOpen]);
-
-  /** Distinct Matrix users in the room call besides the current user (not device count). */
-  const spaceCallOtherMemberCount = useMemo(
-    () =>
-      spaceCallInCallUserIds.filter((id) => id && id !== currentUserId).length,
-    [spaceCallInCallUserIds, currentUserId],
-  );
 
   const spaceCallShowJoinChime = useMemo(
     () => showSidebarCallChrome && spaceCallShowJoinStrip && !inSpaceCall,
@@ -1477,6 +1472,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
+  /** Bumps on tab focus / visibility to re-resolve sender labels after idle JWT or roster revalidation. */
+  const [memberLabelEpoch, setMemberLabelEpoch] = useState(0);
   const [matrixProfileLabelByUserId, setMatrixProfileLabelByUserId] = useState<
     Record<string, string>
   >({});
@@ -1557,7 +1554,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }
         }
       }
-      return shortenMatrixIdForDisplay(userId);
+      return pickUserVisibleMemberLabel(userId, profileLabel) ?? '';
     },
     [
       client,
@@ -1903,16 +1900,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (!id) return t('unknownMember');
       const mentionLabel = mentionLabelByUserId.get(id)?.trim();
       const resolved = resolveMemberLabel(id);
-      if (
-        mentionLabel &&
-        !looksLikeTechnicalMatrixDisplayName(mentionLabel, id)
-      ) {
-        return mentionLabel;
-      }
-      if (!looksLikeTechnicalMatrixDisplayName(resolved, id)) {
-        return resolved;
-      }
-      return mentionLabel || resolved;
+      return pickUserVisibleMemberLabel(id, mentionLabel, resolved) ?? '';
     },
     [mentionLabelByUserId, resolveMemberLabel, t],
   );
@@ -2348,10 +2336,34 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     currentUserId,
     currentUserAvatarUrl,
     matrixUserIdToPersonLabel,
+    matrixProfileLabelByUserId,
+    subToMatrixUserId,
+    memberLabelEpoch,
     me?.name,
     me?.surname,
     t,
   ]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const refreshMemberLabelsAfterIdle = () => {
+      if (document.visibilityState !== 'visible') return;
+      profileLookupAttemptedRef.current.clear();
+      profileLookupInFlightRef.current.clear();
+      setMemberLabelEpoch((n) => n + 1);
+      const rid = roomIdRef.current?.trim();
+      if (rid) syncRoomMessages(rid);
+    };
+    document.addEventListener('visibilitychange', refreshMemberLabelsAfterIdle);
+    window.addEventListener('focus', refreshMemberLabelsAfterIdle);
+    return () => {
+      document.removeEventListener(
+        'visibilitychange',
+        refreshMemberLabelsAfterIdle,
+      );
+      window.removeEventListener('focus', refreshMemberLabelsAfterIdle);
+    };
+  }, [syncRoomMessages]);
 
   // Backfill avatar on self-authored messages after useMe() resolves
   useEffect(() => {
@@ -3944,15 +3956,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionTabBadgeCount={bellMentionCount}
           mentionTabBadgeCapped={bellMentionCapped}
           tabRowEnd={
-            showSidebarCallChrome ? (
+            showSidebarCallChrome &&
+            (inSpaceCall || spaceCallRoomGroupDeviceCount === 0) ? (
               <HumanChatPanelCallToolbar
                 callState={spaceCallState}
                 callKind={spaceCallKind}
                 disabled={!callUiEnabled}
                 roomCallInProgressToJoin={spaceCallToolbarJoinHint}
-                onlyLocalInRoomCall={
-                  spaceCallShowJoinStrip && spaceCallOtherMemberCount === 0
-                }
                 onAudio={() => {
                   if (!canJoinSignalThreadCall && isSignalThread) {
                     void requestSignalTeamAccess();
@@ -3971,32 +3981,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {showSidebarCallChrome &&
-          !inSpaceCall &&
-          spaceCallShowJoinStrip &&
-          mode !== 'space' && (
-            <HumanChatPanelCallJoinStrip
-              deviceCount={spaceCallRoomGroupDeviceCount}
-              disabled={!callUiEnabled}
-              busy={spaceCallBusyJoining}
-              captureConsent={spaceCallCaptureConsent}
-              roomId={roomId}
-              onJoinAudio={() => {
-                if (!canJoinSignalThreadCall && isSignalThread) {
-                  void requestSignalTeamAccess();
-                  return;
-                }
-                handleCallAudio();
-              }}
-              onJoinVideo={() => {
-                if (!canJoinSignalThreadCall && isSignalThread) {
-                  void requestSignalTeamAccess();
-                  return;
-                }
-                handleCallVideo();
-              }}
-            />
-          )}
+        {showSidebarCallChrome && !inSpaceCall && spaceCallShowJoinStrip && (
+          <HumanChatPanelCallJoinStrip
+            deviceCount={spaceCallRoomGroupDeviceCount}
+            disabled={!callUiEnabled}
+            busy={spaceCallBusyJoining}
+            captureConsent={spaceCallCaptureConsent}
+            roomId={roomId}
+            onJoinAudio={() => {
+              if (!canJoinSignalThreadCall && isSignalThread) {
+                void requestSignalTeamAccess();
+                return;
+              }
+              handleCallAudio();
+            }}
+            onJoinVideo={() => {
+              if (!canJoinSignalThreadCall && isSignalThread) {
+                void requestSignalTeamAccess();
+                return;
+              }
+              handleCallVideo();
+            }}
+          />
+        )}
         {showSidebarCallChrome &&
           (inSpaceCall ||
             spaceCallState === 'error' ||

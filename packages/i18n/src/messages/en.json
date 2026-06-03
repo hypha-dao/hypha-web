@@ -2588,6 +2588,7 @@
     "markAsRead": "Mark as read",
     "callToolbarLabel": "Voice and video call",
     "callJoinStripLine": "Call in progress — {count, plural, one {1 member} other {# members}}",
+    "callJoinStripTitle": "Call in progress",
     "callJoinInProgressCta": "Join call | In progress",
     "callJoinInProgressCtaTitle": "Join the space call (in progress)",
     "callJoinCallAlerts": "Call alerts",
