@@ -1,3 +1,4 @@
+import { MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS } from './call-video-capture-constraints';
 import { isPermissionLikeGroupCallError } from './space-group-call-utils';
 
 export type LocalCameraAccessResult =
@@ -17,7 +18,7 @@ export async function requestLocalCameraAccess(): Promise<LocalCameraAccessResul
   }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user' },
+      video: MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
       audio: false,
     });
     for (const track of stream.getTracks()) {

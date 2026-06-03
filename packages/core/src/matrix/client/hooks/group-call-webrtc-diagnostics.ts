@@ -208,6 +208,65 @@ export async function probeMatrixTurnServerReadiness(options: {
 
 export type GroupCallDiagnosticsCleanup = () => void;
 
+type InboundRtpVideoStats = {
+  frameWidth?: number;
+  frameHeight?: number;
+  ssrc?: number;
+};
+
+export function readInboundRtpVideoFrameSizes(
+  stats: RTCStatsReport,
+): InboundRtpVideoStats[] {
+  const rows: InboundRtpVideoStats[] = [];
+  stats.forEach((report) => {
+    if (report.type !== 'inbound-rtp' || report.kind !== 'video') return;
+    const frameWidth = report.frameWidth;
+    const frameHeight = report.frameHeight;
+    if (
+      typeof frameWidth !== 'number' ||
+      typeof frameHeight !== 'number' ||
+      frameWidth <= 0 ||
+      frameHeight <= 0
+    ) {
+      return;
+    }
+    rows.push({
+      frameWidth,
+      frameHeight,
+      ssrc: typeof report.ssrc === 'number' ? report.ssrc : undefined,
+    });
+  });
+  return rows;
+}
+
+async function logInboundRtpFrameSizesForPeerConnection(options: {
+  roomId: string;
+  groupCallId: string;
+  userId: string | null;
+  peerConnection: RTCPeerConnection;
+  activeSpeakerUserId: string | null;
+}): Promise<void> {
+  const { roomId, groupCallId, userId, peerConnection, activeSpeakerUserId } =
+    options;
+  const stats = await peerConnection.getStats();
+  const frames = readInboundRtpVideoFrameSizes(stats);
+  for (const frame of frames) {
+    logSpaceGroupCallEvent({
+      name: 'hypha.group_call.inbound_rtp_frame_size',
+      roomId,
+      groupCallId,
+      remoteUserId: userId ?? undefined,
+      activeSpeaker:
+        userId != null &&
+        activeSpeakerUserId != null &&
+        userId === activeSpeakerUserId,
+      frameWidth: frame.frameWidth,
+      frameHeight: frame.frameHeight,
+      ssrc: frame.ssrc,
+    });
+  }
+}
+
 /**
  * Enables Matrix SDK summary stats on the group call and forwards a privacy-safe subset to console telemetry.
  */
@@ -215,8 +274,20 @@ export function attachGroupCallWebRtcDiagnostics(options: {
   gc: GroupCall;
   roomId: string;
   summaryStatsIntervalMs: number;
+  inboundRtpFrameLogIntervalMs?: number;
+  resolveActiveSpeakerUserId?: () => string | null;
+  enumeratePeerConnections?: (
+    gc: GroupCall,
+  ) => Array<{ userId: string | null; peerConnection: RTCPeerConnection }>;
 }): GroupCallDiagnosticsCleanup {
-  const { gc, roomId, summaryStatsIntervalMs } = options;
+  const {
+    gc,
+    roomId,
+    summaryStatsIntervalMs,
+    inboundRtpFrameLogIntervalMs = 0,
+    resolveActiveSpeakerUserId,
+    enumeratePeerConnections,
+  } = options;
 
   if (summaryStatsIntervalMs > 0) {
     gc.setGroupCallStatsInterval(summaryStatsIntervalMs);
@@ -243,10 +314,34 @@ export function attachGroupCallWebRtcDiagnostics(options: {
 
   gc.on(GroupCallStatsReportEvent.SummaryStats, onSummary);
 
+  let frameLogInterval: ReturnType<typeof setInterval> | null = null;
+  const logFrameSizes = () => {
+    if (!enumeratePeerConnections) return;
+    const activeSpeakerUserId = resolveActiveSpeakerUserId?.() ?? null;
+    for (const { userId, peerConnection } of enumeratePeerConnections(gc)) {
+      void logInboundRtpFrameSizesForPeerConnection({
+        roomId,
+        groupCallId: gc.groupCallId,
+        userId,
+        peerConnection,
+        activeSpeakerUserId,
+      });
+    }
+  };
+
+  if (inboundRtpFrameLogIntervalMs > 0 && enumeratePeerConnections) {
+    logFrameSizes();
+    frameLogInterval = setInterval(logFrameSizes, inboundRtpFrameLogIntervalMs);
+  }
+
   return () => {
     gc.removeListener(GroupCallStatsReportEvent.SummaryStats, onSummary);
     if (summaryStatsIntervalMs > 0) {
       gc.setGroupCallStatsInterval(0);
+    }
+    if (frameLogInterval != null) {
+      clearInterval(frameLogInterval);
+      frameLogInterval = null;
     }
   };
 }

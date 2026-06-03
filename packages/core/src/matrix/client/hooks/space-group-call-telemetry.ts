@@ -26,6 +26,8 @@ export type SpaceGroupCallTelemetryEvent = {
     | 'hypha.group_call.turn_probe'
     | 'hypha.group_call.ice_gather_probe'
     | 'hypha.group_call.webrtc_summary'
+    | 'hypha.group_call.inbound_rtp_frame_size'
+    | 'hypha.group_call.simulcast_audit'
     | 'hypha.group_call.room_type_sync'
     | 'hypha.group_call.capture_started'
     | 'hypha.group_call.session_end';
@@ -83,6 +85,16 @@ export type SpaceGroupCallTelemetryEvent = {
   opponentDevicesInCall?: number;
   diffDevicesToPeerConnections?: number;
   ratioPeerConnectionToDevices?: number;
+  /** WCUX-QUALITY-2 audit — mesh group calls lack simulcast layer APIs in SDK 40. */
+  simulcastAvailable?: boolean;
+  meshGroupCall?: boolean;
+  note?: string;
+  /** Remote Matrix user id for inbound RTP frame diagnostics. */
+  remoteUserId?: string;
+  activeSpeaker?: boolean;
+  frameWidth?: number;
+  frameHeight?: number;
+  ssrc?: number;
 };
 
 export function logSpaceGroupCallEvent(

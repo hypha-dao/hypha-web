@@ -72,3 +72,9 @@ export function matrixGroupCallSummaryStatsMsFromEnv(): number {
     0,
   );
 }
+
+/** Thumbnail receiver downscale when N ≥ 5 — default true (WCUX-QUALITY-4). */
+export function callThumbnailDownscaleFromEnv(): boolean {
+  if (typeof process === 'undefined') return true;
+  return parseBool(process.env['NEXT_PUBLIC_CALL_THUMBNAIL_DOWNSCALE'], true);
+}

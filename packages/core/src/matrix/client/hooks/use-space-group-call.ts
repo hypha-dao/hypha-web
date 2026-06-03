@@ -21,11 +21,22 @@ import {
   recordMatrixCallSessionError,
   resetMatrixCallSessionMetrics,
 } from './matrix-call-session-metrics';
-import { matrixGroupCallSummaryStatsMsFromEnv } from '../matrix-webrtc-env';
+import {
+  matrixGroupCallSummaryStatsMsFromEnv,
+  matrixWebRtcDebugFromEnv,
+  callThumbnailDownscaleFromEnv,
+} from '../matrix-webrtc-env';
 import {
   attachGroupCallWebRtcDiagnostics,
   probeMatrixTurnServerReadiness,
 } from './group-call-webrtc-diagnostics';
+import {
+  applyCallThumbnailReceiverDownscale,
+  enumerateGroupCallPeerConnections,
+  parseActiveSpeakerUserId,
+} from './call-thumbnail-receiver-downscale';
+import { installMatrixCameraCaptureConstraints } from './call-video-capture-constraints';
+import { logGroupCallSimulcastCapabilityAudit } from './call-video-simulcast-audit';
 import {
   createCallRecording,
   startBrowserCallTranscription,
@@ -431,6 +442,9 @@ async function ensureLocalCallMediaPublished(
 
 /** Matrix SDK group-call summary stats interval (`NEXT_PUBLIC_MATRIX_WEBRTC_GROUP_STATS_MS`). */
 const GROUP_WEBRTC_SUMMARY_STATS_MS = matrixGroupCallSummaryStatsMsFromEnv();
+const GROUP_WEBRTC_DEBUG_ENABLED = matrixWebRtcDebugFromEnv();
+const GROUP_WEBRTC_FRAME_LOG_INTERVAL_MS = 30_000;
+const CALL_THUMBNAIL_DOWNSCALE_ENABLED = callThumbnailDownscaleFromEnv();
 
 /** `callSessionId` for correlation; must not use `Math.random()` (CodeQL / GAS-weak-randomness). */
 function newCallSessionId(): string {
@@ -563,6 +577,7 @@ export function useSpaceGroupCall(
   const activeGroupCallRoomIdRef = useRef<string | null>(null);
   const loggedStatsForGroupCallIdRef = useRef<string | null>(null);
   const webRtcDiagCleanupRef = useRef<(() => void) | null>(null);
+  const cameraCaptureConstraintsCleanupRef = useRef<(() => void) | null>(null);
   const groupCallListenerCleanupRef = useRef<(() => void) | null>(null);
   /** Cleared in runCleanup — delayed second `placeOutgoingCalls` nudge after enter(). */
   const placeOutgoingNudgeTimerRef = useRef<number | null>(null);
@@ -1241,6 +1256,8 @@ export function useSpaceGroupCall(
       clearLocalMediaBootstrapTimers();
       webRtcDiagCleanupRef.current?.();
       webRtcDiagCleanupRef.current = null;
+      cameraCaptureConstraintsCleanupRef.current?.();
+      cameraCaptureConstraintsCleanupRef.current = null;
       groupCallListenerCleanupRef.current?.();
       groupCallListenerCleanupRef.current = null;
       remoteMediaGapSinceRef.current = null;
@@ -2213,6 +2230,9 @@ export function useSpaceGroupCall(
       }, CONNECT_STALL_ABORT_MS);
 
       try {
+        cameraCaptureConstraintsCleanupRef.current?.();
+        cameraCaptureConstraintsCleanupRef.current =
+          installMatrixCameraCaptureConstraints(client);
         await gc.enter();
       } catch (e) {
         clearConnectingStallTimer();
@@ -2298,11 +2318,23 @@ export function useSpaceGroupCall(
 
       webRtcDiagCleanupRef.current?.();
       webRtcDiagCleanupRef.current = null;
-      if (GROUP_WEBRTC_SUMMARY_STATS_MS > 0) {
+      if (GROUP_WEBRTC_SUMMARY_STATS_MS > 0 || GROUP_WEBRTC_DEBUG_ENABLED) {
         webRtcDiagCleanupRef.current = attachGroupCallWebRtcDiagnostics({
           gc,
           roomId,
           summaryStatsIntervalMs: GROUP_WEBRTC_SUMMARY_STATS_MS,
+          inboundRtpFrameLogIntervalMs: GROUP_WEBRTC_DEBUG_ENABLED
+            ? GROUP_WEBRTC_FRAME_LOG_INTERVAL_MS
+            : 0,
+          resolveActiveSpeakerUserId: () =>
+            parseActiveSpeakerUserId(activeSpeakerKeyRef.current),
+          enumeratePeerConnections: enumerateGroupCallPeerConnections,
+        });
+      }
+      if (roomId) {
+        logGroupCallSimulcastCapabilityAudit({
+          roomId,
+          groupCallId: gc.groupCallId,
         });
       }
 
@@ -3142,6 +3174,19 @@ export function useSpaceGroupCall(
       room.off(RoomStateEvent.Update, bump);
     };
   }, [client, roomId, callState, updateParticipantCount, evalRemoteMediaStall]);
+
+  /** WCUX-QUALITY-4: downscale thumbnail receivers when N ≥ 5. */
+  useEffect(() => {
+    if (callState !== 'connected') return;
+    const gc = groupCallRef.current;
+    if (!gc) return;
+    void applyCallThumbnailReceiverDownscale({
+      gc,
+      participantCount,
+      activeSpeakerUserId: parseActiveSpeakerUserId(activeSpeakerKey),
+      enabled: CALL_THUMBNAIL_DOWNSCALE_ENABLED,
+    });
+  }, [callState, participantCount, activeSpeakerKey]);
 
   /** Dev: periodic feed vs participant-map snapshots while connected. */
   useEffect(() => {
