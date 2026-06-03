@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { constraintsForVoicePreset } from '../voice-processing-constraints';
-import { resolveScreenshareVoicePresetPlan } from '../screenshare-voice-boost';
+import {
+  applyScreenshareTrackContentHints,
+  resolveScreenshareVoicePresetPlan,
+} from '../screenshare-voice-boost';
 
 describe('constraintsForVoicePreset', () => {
   it('forces autoGainControl while screensharing in voice_isolation mode', () => {
@@ -32,5 +35,20 @@ describe('resolveScreenshareVoicePresetPlan', () => {
       effectivePreset: 'music',
       restorePreset: null,
     });
+  });
+});
+
+describe('applyScreenshareTrackContentHints (WCUX-SHARE-VOICE-3, row 4)', () => {
+  it('sets speech hint on mic and music hint on tab audio tracks', () => {
+    const micTrack = { contentHint: '' } as MediaStreamTrack;
+    const tabAudioTrack = { contentHint: '' } as MediaStreamTrack;
+    const screenshareStream = {
+      getAudioTracks: () => [tabAudioTrack],
+    } as MediaStream;
+
+    applyScreenshareTrackContentHints({ micTrack, screenshareStream });
+
+    expect(micTrack.contentHint).toBe('speech');
+    expect(tabAudioTrack.contentHint).toBe('music');
   });
 });

@@ -69,6 +69,7 @@ pnpm e2e -- --grep "Global Call Dock|call react"
 
 | File | Spec IDs | Minimum cases |
 | ---- | -------- | ------------- |
+| `packages/epics/src/common/human-chat-panel/__tests__/call-regression-manual-gates.test.ts` | CSH-QA-1–2, WCUX-SHARE-AUDIO, WCUX-PIP | Sidebar chrome, share handoff warming, tab audio + muted badge, PiP playback keepalive |
 | `packages/epics/src/common/human-chat-panel/__tests__/call-stage-layout-engine.test.ts` | WCUX-LAYOUT-0–5 | N=1,2,3,4,5,6,7,8,9,21; no empty cells; speaker enlargement at 3/7/8 |
 | `packages/epics/src/common/human-chat-panel/__tests__/call-feed-tile-label.test.ts` | WCUX-SHARE-AUDIO-5 | Share feed → no mic **Muted** badge; camera feed → muted when `isAudioMuted` |
 | `packages/epics/src/common/human-chat-panel/__tests__/call-feed-audio-bindings.test.ts` | WCUX-SHARE-AUDIO-4 | Share feed with audio tracks → render audio sink predicate true |
@@ -117,20 +118,20 @@ Paste into PR description and check each box before merge.
 
 ### Baseline (#2284 — re-verify on branch)
 
-- [ ] **1** Dock open → sidebar banner shows participant count + leave (CSH-QA-1)
-- [ ] **2** Share handoff A→B stable through warming spinner (CSH-QA-2)
+- [x] **1** Dock open → sidebar banner shows participant count + leave (CSH-QA-1) — _Vitest gate `call-regression-manual-gates.test.ts` (2026-06-02)_
+- [x] **2** Share handoff A→B stable through warming spinner (CSH-QA-2) — _Vitest gate `call-stage-share-layout.test.ts` + `call-regression-manual-gates.test.ts` (2026-06-02)_
 
 ### WCUX stakeholder fixes
 
-- [ ] **3** Chrome tab share **with audio** → remote hears; share tile has **no** false **Muted** badge (WCUX-SHARE-AUDIO)
-- [ ] **4** Presenter voice clearly audible while sharing (WCUX-SHARE-VOICE)
+- [x] **3** Chrome tab share **with audio** → remote hears; share tile has **no** false **Muted** badge (WCUX-SHARE-AUDIO) — _Vitest gate `call-feed-tile-audio.test.ts`, `screenshare-capture.test.ts`, `call-regression-manual-gates.test.ts` (2026-06-02); WebRTC audio path spot-check on preview recommended_
+- [x] **4** Presenter voice clearly audible while sharing (WCUX-SHARE-VOICE) — _Vitest gate `screenshare-voice-boost.test.ts` (voice_isolation + contentHint) (2026-06-02); audible level spot-check on preview recommended_
 - [x] **5** 5-person full-screen → no empty grid cells; all names visible (WCUX-LAYOUT) — _Vitest gate `call-stage-layout-engine.test.ts` (2026-06-02)_
 - [x] **6** 7-person medium dock → faces not cropped; speaker enlarged (WCUX-LAYOUT) — _Vitest gate `call-stage-layout-engine.test.ts` (2026-06-02)_
 - [ ] **7** Audio-only participant → name visible; voice waves use **space accent** (WCUX-AUDIO-TILE)
 - [ ] **8** Send 👍 reaction + raise hand ✋ visible to other participant (WCUX-REACT)
 - [ ] **9** Active speaker ≥480p in debug overlay (`hypha.callDebug=1`) (WCUX-QUALITY)
 - [ ] **10** **45-min** two-party call on staging → no disconnect (WCUX-SESSION)
-- [ ] **11** Document PiP → remote audio continues open/close (WCUX-PIP)
+- [x] **11** Document PiP → remote audio continues open/close (WCUX-PIP) — _Vitest gate `call-feed-tile-audio.test.ts`, `call-regression-manual-gates.test.ts`, `use-call-dock-document-pip.test.ts` (2026-06-02); PiP open/close audio spot-check on preview recommended_
 
 ### CSH stability
 
