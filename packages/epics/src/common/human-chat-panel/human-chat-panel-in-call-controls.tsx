@@ -145,7 +145,7 @@ export function HumanChatPanelInCallControls({
    * `text-foreground` on near-black / green where Lucide would read as black).
    */
   const fullViewControlSize = isPipDensity
-    ? 'h-7 min-w-7'
+    ? 'h-8 w-8 min-w-8 max-w-8 shrink-0 p-0'
     : 'h-10 min-w-10 sm:h-11 sm:min-w-11';
   const fullViewIcon = isPipDensity
     ? 'h-3.5 w-3.5 text-white stroke-white'
@@ -156,7 +156,8 @@ export function HumanChatPanelInCallControls({
   const baseBtn = isFull
     ? cn(
         fullViewControlSize,
-        'inline-flex items-center justify-center rounded-full border border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
+        'inline-flex items-center justify-center rounded-full border border-zinc-600/80 bg-zinc-900/90 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
+        !isPipDensity && 'px-2.5',
       )
     : isCompact
     ? compactBtn
@@ -210,7 +211,9 @@ export function HumanChatPanelInCallControls({
   const shareActiveBtn = isFull
     ? cn(
         baseBtn,
-        'ring-2 ring-white/25 border-emerald-500/60 bg-emerald-600/90 hover:bg-emerald-500/90',
+        isPipDensity
+          ? 'border-emerald-500/60 bg-emerald-600/90 ring-2 ring-inset ring-emerald-400/40 hover:bg-emerald-500/90'
+          : 'ring-2 ring-white/25 border-emerald-500/60 bg-emerald-600/90 hover:bg-emerald-500/90',
       )
     : isPipDensity
     ? cn(
@@ -433,6 +436,12 @@ export function HumanChatPanelInCallControls({
     : captureMode === 'transcript_only'
     ? t('callCaptureModeTranscriptOnly')
     : t('callCaptureModeRecordingWithTranscript');
+
+  const pipToolbarButtonCount = leaveOnly
+    ? 1
+    : showAdvancedCallControls
+    ? 4
+    : 3;
 
   const renderAudioSettingsMenu = (
     <div className="relative" ref={audioMenuRef}>
@@ -726,7 +735,14 @@ export function HumanChatPanelInCallControls({
             useMobileCenteredToolbar
               ? 'flex w-full items-center justify-center gap-2.5'
               : isPipDensity
-              ? 'flex w-full items-center'
+              ? cn(
+                  'grid w-full max-w-full min-w-0',
+                  pipToolbarButtonCount === 4
+                    ? 'grid-cols-4 gap-1'
+                    : pipToolbarButtonCount === 3
+                    ? 'grid-cols-3 gap-1'
+                    : 'grid-cols-1',
+                )
               : useSideAudioSettings
               ? 'grid w-full grid-cols-[1fr_auto_1fr] items-center'
               : 'flex w-auto items-center',
@@ -741,7 +757,7 @@ export function HumanChatPanelInCallControls({
             className={cn(
               'flex items-center',
               isPipDensity
-                ? 'w-full justify-evenly gap-1'
+                ? 'contents'
                 : isCenteredInBanner
                 ? 'gap-2.5 sm:gap-3'
                 : isCompact

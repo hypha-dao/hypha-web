@@ -179,25 +179,6 @@ export function useCallDockDocumentPip(
     applyPipWindowSize(pipWindow, windowSize, windowMode);
   }, [pipWindow, windowMode, windowSize.height, windowSize.width]);
 
-  useEffect(() => {
-    if (!pipWindow || pipWindow.closed) return;
-
-    let frameId = 0;
-    const onResize = () => {
-      window.cancelAnimationFrame(frameId);
-      frameId = window.requestAnimationFrame(() => {
-        if (pipWindow.closed) return;
-        applyPipWindowSize(pipWindow, readPipWindowSize(pipWindow), windowMode);
-      });
-    };
-
-    pipWindow.addEventListener('resize', onResize);
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      pipWindow.removeEventListener('resize', onResize);
-    };
-  }, [pipWindow, windowMode]);
-
   const openPip = useCallback(async () => {
     const api = window.documentPictureInPicture;
     if (!api?.requestWindow) return false;

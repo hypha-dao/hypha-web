@@ -1,7 +1,4 @@
-import {
-  SCREENSHARE_FILMSTRIP,
-  SCREENSHARE_FILMSTRIP_DOCK_WIDTH,
-} from './call-screenshare-filmstrip-geometry';
+import { SCREENSHARE_FILMSTRIP } from './call-screenshare-filmstrip-geometry';
 
 /** Default Document PiP size when not in screenshare filmstrip mode. */
 export const CALL_DOCUMENT_PIP_CALL = {
@@ -15,10 +12,13 @@ export const CALL_DOCUMENT_PIP_CALL = {
   aspectRatio: 480 / 320,
 } as const;
 
-/** Narrow vertical strip while presenting — width bounded, height flexible. */
+/** Narrow vertical Document PiP while presenting — wide enough for 4 control buttons. */
+export const CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH = 224;
+
+/** Filmstrip PiP window bounds (height follows participant count). */
 export const CALL_DOCUMENT_PIP_FILMSTRIP = {
-  width: SCREENSHARE_FILMSTRIP_DOCK_WIDTH,
-  minWidth: 168,
+  width: CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH,
+  minWidth: CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH,
   maxWidth: 240,
   minHeight: SCREENSHARE_FILMSTRIP.minDockHeight,
 } as const;

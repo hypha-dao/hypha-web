@@ -36,7 +36,7 @@ describe('call-document-pip-window-geometry', () => {
       'filmstrip',
       900,
     );
-    expect(clamped.width).toBe(168);
+    expect(clamped.width).toBe(224);
     expect(clamped.height).toBeGreaterThanOrEqual(280);
   });
 });

@@ -39,12 +39,10 @@ import {
   persistCallFullViewPaneSplit,
   resolveCallViewportTier,
 } from './human-chat-panel';
-import {
-  resolveScreenshareDockHeight,
-  SCREENSHARE_FILMSTRIP_DOCK_WIDTH,
-} from './human-chat-panel/call-screenshare-filmstrip-geometry';
+import { resolveScreenshareDockHeight } from './human-chat-panel/call-screenshare-filmstrip-geometry';
 import {
   CALL_DOCUMENT_PIP_CALL,
+  CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH,
   clampCallDocumentPipWindowSize,
   type CallDocumentPipWindowMode,
 } from './human-chat-panel/call-document-pip-window-geometry';
@@ -640,12 +638,13 @@ export function GlobalCallDockOverlay() {
       clampCallDocumentPipWindowSize(
         isScreensharing
           ? {
-              width: SCREENSHARE_FILMSTRIP_DOCK_WIDTH,
+              width: CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH,
               height: resolveScreenshareDockHeight({
                 participantCount: screenshareFilmstripTileCount,
                 documentPip: true,
                 showBanner: screenshareTabAudioMissing,
                 compactBanner: true,
+                dockWidth: CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH,
               }),
             }
           : {
@@ -867,20 +866,6 @@ export function GlobalCallDockOverlay() {
     screenshareFilmstripTileCount,
     showFloatingDock,
   ]);
-
-  React.useEffect(() => {
-    if (!isDocumentPipOpen || !pipWindow || pipWindow.closed) {
-      return;
-    }
-    try {
-      pipWindow.resizeTo(
-        documentPipWindowSize.width,
-        documentPipWindowSize.height,
-      );
-    } catch {
-      // resizeTo is best-effort for Document PiP windows.
-    }
-  }, [documentPipWindowSize, isDocumentPipOpen, pipWindow]);
 
   React.useEffect(() => {
     if (!isScreensharing) {
@@ -1206,8 +1191,10 @@ export function GlobalCallDockOverlay() {
   });
   /** Dark video-style chrome on dock footer — desktop and mobile (matches full-view). */
   const dockControlsVariant = 'fullView';
-  /** Center primary controls in the dock footer; PiP/fullscreen stay inline. */
+  /** PiP: compact centered toolbar; dock/fullscreen keep production layout. */
   const dockControlsLayout = isMobile
+    ? 'centered'
+    : inDocumentPip
     ? 'centered'
     : dockCompact
     ? 'inline'
@@ -1237,7 +1224,33 @@ export function GlobalCallDockOverlay() {
       style={{ ...spaceAccentStyles, ...containerStyle }}
     >
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
-        {!inDocumentPip ? (
+        {inDocumentPip ? (
+          <div className="pointer-events-auto flex shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45 px-1.5 py-1">
+            <p
+              className="min-w-0 flex-1 truncate text-[10px] font-medium leading-tight text-foreground"
+              title={t('callTitle', { count: roomGroupCallDeviceCount })}
+            >
+              {t('callTitle', { count: roomGroupCallDeviceCount })}
+            </p>
+            {callSpaceHref ? (
+              <button
+                type="button"
+                data-no-dock-drag
+                onClick={() => {
+                  void onOpenCallSpace();
+                }}
+                className="inline-flex h-6 shrink-0 items-center justify-center gap-0.5 rounded-md border border-border/60 bg-background px-1.5 text-[10px] hover:bg-muted"
+                aria-label={t('openSpaceLabel')}
+                title={t('openSpaceLabel')}
+              >
+                <ArrowUpRight className="h-3 w-3 shrink-0" />
+                <span className="max-w-[3.25rem] truncate">
+                  {t('spaceButton')}
+                </span>
+              </button>
+            ) : null}
+          </div>
+        ) : (
           <div
             className={cn(
               'pointer-events-auto flex shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45 touch-manipulation',
@@ -1349,7 +1362,7 @@ export function GlobalCallDockOverlay() {
               </div>
             ) : null}
           </div>
-        ) : null}
+        )}
 
         <div
           ref={splitContainerRef}
@@ -1402,10 +1415,10 @@ export function GlobalCallDockOverlay() {
             event.stopPropagation();
           }}
           className={cn(
-            'pointer-events-auto relative isolate shrink-0 touch-manipulation overflow-visible border-t border-border/50',
+            'pointer-events-auto relative isolate shrink-0 touch-manipulation border-t border-border/50',
             inDocumentPip
-              ? 'z-40 bg-background/95 backdrop-blur-sm px-1 py-0.5'
-              : 'z-30 bg-muted/35 px-2 py-2',
+              ? 'z-40 overflow-hidden bg-background/95 px-1.5 py-1 backdrop-blur-sm'
+              : 'z-30 overflow-visible bg-muted/35 px-2 py-2',
           )}
         >
           {captureUploadFinalizing ? (
