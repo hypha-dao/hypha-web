@@ -52,6 +52,7 @@ export function HumanChatPanelCallReactPopover({
         <button
           type="button"
           disabled={disabled}
+          data-testid="call-react-trigger"
           className={triggerClassName}
           title={t('callReactButton')}
           aria-label={t('callReactButtonAria')}
@@ -69,6 +70,7 @@ export function HumanChatPanelCallReactPopover({
         side="top"
         sideOffset={8}
         collisionPadding={16}
+        data-testid="call-react-popover-content"
         className="z-[140] w-[min(100vw-2rem,320px)] space-y-3 border-border p-3 shadow-xl"
       >
         <div>
@@ -108,6 +110,7 @@ export function HumanChatPanelCallReactPopover({
             size="sm"
             variant={localHandRaised ? 'default' : 'outline'}
             disabled={disabled}
+            data-testid="call-raise-hand-button"
             className="shrink-0"
             onClick={() => {
               void onToggleRaiseHand();

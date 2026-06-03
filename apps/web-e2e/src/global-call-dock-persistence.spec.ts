@@ -43,7 +43,9 @@ test.describe('Global Call Dock - navigation persistence', () => {
       const panel = page.locator(
         '[data-side="right"] [data-sidebar="sidebar"]',
       );
-      await panel.getByRole('button', { name: /video/i }).first().click();
+      await panel
+        .getByRole('button', { name: /start video call in this space/i })
+        .click();
 
       const dock = page.getByTestId('global-call-dock');
       await expect(dock).toBeVisible();
@@ -62,7 +64,9 @@ test.describe('Global Call Dock - navigation persistence', () => {
       const panel = page.locator(
         '[data-side="right"] [data-sidebar="sidebar"]',
       );
-      await panel.getByRole('button', { name: /video/i }).first().click();
+      await panel
+        .getByRole('button', { name: /start video call in this space/i })
+        .click();
 
       const dock = page.getByTestId('global-call-dock');
       await expect(dock).toBeVisible();
@@ -77,7 +81,9 @@ test.describe('Global Call Dock - navigation persistence', () => {
     await openSpaceChat(page, SPACE_A);
 
     const panel = page.locator('[data-side="right"] [data-sidebar="sidebar"]');
-    await panel.getByRole('button', { name: /video/i }).first().click();
+    await panel
+      .getByRole('button', { name: /start video call in this space/i })
+      .click();
 
     const dock = page.getByTestId('global-call-dock');
     await expect(dock).toBeVisible();

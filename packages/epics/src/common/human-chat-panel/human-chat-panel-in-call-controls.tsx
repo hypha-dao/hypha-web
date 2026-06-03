@@ -290,6 +290,7 @@ export function HumanChatPanelInCallControls({
     showAdvancedCallControls &&
     !isCompact &&
     (isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered');
+  const leaveOnly = controlsMode === 'leave_only';
   /** Floating dock / full-view footer — spread primary controls across the bar. */
   const useDockSpreadToolbar = isFull && !isPipDensity && !leaveOnly;
   const useWideToolbar =
@@ -332,7 +333,6 @@ export function HumanChatPanelInCallControls({
   const captureLive = captureActive;
   const captureMenuActive = captureActive;
   const capturePulsing = recordingStatus === 'recording';
-  const leaveOnly = controlsMode === 'leave_only';
   const showCallReactions =
     canSendCallReactions &&
     Boolean(onSendReaction && onToggleRaiseHand) &&

@@ -95,6 +95,7 @@ Extract **pure functions** from components where needed (e.g. `shouldShowMutedBa
 | File | Status |
 | ---- | ------ |
 | `apps/web-e2e/src/global-call-dock-persistence.spec.ts` | Dock hidden when no call ✅; persistence tests **fixme** |
+| `apps/web-e2e/src/call-in-call-controls.spec.ts` | Dev harness popover + raise hand ✅; live dock popover **fixme** (auth) |
 
 ### 4.2 Implementation PR — unfix / add
 
@@ -103,7 +104,7 @@ Extract **pure functions** from components where needed (e.g. `shouldShowMutedBa
 | `global-call-dock-persistence.spec.ts` | Call stays connected navigating within space | CSH-CHROME-7 |
 | `global-call-dock-persistence.spec.ts` | Call stays connected navigating to another space | CSH-CHROME-7 |
 | `global-call-dock-persistence.spec.ts` | Dock geometry persists after drag + reload | WCUX-LAYOUT |
-| `call-in-call-controls.spec.ts` *(new)* | React popover opens; raise hand toggle visible | WCUX-REACT-4 |
+| `call-in-call-controls.spec.ts` | React popover opens; raise hand toggle visible (dev harness + no-call guard) | WCUX-REACT-4 |
 | `call-dock-layout.spec.ts` *(new)* | With mocked/stubbed multi-participant state: no clipped name labels in DOM | WCUX-LAYOUT-5 |
 
 **Cookie:** `HYPHA_ENABLE_HUMAN_CHAT=true` (see existing e2e pattern).
@@ -119,7 +120,7 @@ Paste into PR description and check each box before merge.
 ### Baseline (#2284 — re-verify on branch)
 
 - [x] **1** Dock open → sidebar banner shows participant count + leave (CSH-QA-1) — _Vitest gate `call-regression-manual-gates.test.ts` (2026-06-02)_
-- [x] **2** Share handoff A→B stable through warming spinner (CSH-QA-2) — _Vitest gate `call-stage-share-layout.test.ts` + `call-regression-manual-gates.test.ts` (2026-06-02)_
+- [x] **2** Single presenter: second sharer blocked while remote share active; no takeover handoff (CSH-SHARE + product) — _Vitest gate `screenshare-takeover.test.ts`, `call-regression-manual-gates.test.ts`; spot-check share modes on preview recommended_
 
 ### WCUX stakeholder fixes
 
@@ -128,10 +129,10 @@ Paste into PR description and check each box before merge.
 - [ ] **5** 5-person full-screen → no empty grid cells; all names visible (WCUX-LAYOUT) — _Vitest gate `call-stage-layout-engine.test.ts` (2026-06-02)_
 - [ ] **6** 7-person medium dock → faces not cropped; speaker enlarged (WCUX-LAYOUT) — _Vitest gate `call-stage-layout-engine.test.ts` (2026-06-02)_
 - [x] **7** Audio-only participant → name visible; voice waves use **space accent** (WCUX-AUDIO-TILE) — _Vitest gate `call-participant-display-name.test.ts`, `call-audio-voice-waves.test.ts`, `use-call-dock-document-pip.test.ts` (2026-06-03)_
-- [ ] **8** Send 👍 reaction + raise hand ✋ visible to other participant (WCUX-REACT)
-- [ ] **9** Active speaker ≥480p in debug overlay (`hypha.callDebug=1`) (WCUX-QUALITY)
+- [ ] **8** Send 👍 reaction + raise hand ✋ visible to other participant (WCUX-REACT) — _Playwright `call-in-call-controls.spec.ts` covers popover UI (2026-06-03); two-party remote visibility still manual_
+- [ ] **9** Active speaker video quality acceptable (≥480p target) — _On-tile debug overlay removed; use preview spot-check or `hypha.callDebug` telemetry when enabled (WCUX-QUALITY)_
 - [ ] **10** **45-min** two-party call on staging → no disconnect (WCUX-SESSION)
-- [x] **11** Document PiP → remote audio continues open/close (WCUX-PIP) — _Vitest gate `call-feed-tile-audio.test.ts`, `call-regression-manual-gates.test.ts`, `use-call-dock-document-pip.test.ts` (2026-06-02); PiP open/close audio spot-check on preview recommended_
+- [ ] **11** Document PiP → remote audio continues open/close (WCUX-PIP) — _**Deferred:** `CALL_DOCUMENT_PIP_ENABLED = false`; re-test when PiP is re-enabled_
 
 ### CSH stability
 
@@ -143,7 +144,7 @@ Paste into PR description and check each box before merge.
 ### Browsers
 
 - [ ] Chrome (latest)
-- [ ] Safari or Firefox (one WebKit/Gecko pass for rows 3, 7, 11)
+- [ ] Safari or Firefox (one WebKit/Gecko pass for rows 3, 7; row 11 when PiP re-enabled)
 
 ---
 
@@ -154,7 +155,7 @@ After each workstream in [call-consolidated-implementation-plan.md](./call-conso
 | After | Re-run |
 | ----- | ------ |
 | **W1** (baseline smoke) | Manual rows **1–2** |
-| **W2** (share/PiP audio) | Manual **3, 11** + `call-feed-tile-label.test.ts` + `call-feed-audio-bindings.test.ts` |
+| **W2** (share/PiP audio) | Manual **3** + `call-feed-tile-audio.test.ts` (row **11** when PiP re-enabled) |
 | **W3** (voice/session) | Start **45-min soak** (row 10); unit tests for token timer |
 | **W4–W5** (layout/accent) | Manual **5–7** + `call-stage-layout-engine.test.ts` |
 | **W6** (quality) | Manual **9** |

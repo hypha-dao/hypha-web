@@ -390,6 +390,15 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('raisedHands.length > 0');
   });
 
+  it('react popover exposes stable e2e test ids', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-react-popover.tsx',
+    );
+    expect(source).toContain('data-testid="call-react-trigger"');
+    expect(source).toContain('data-testid="call-react-popover-content"');
+    expect(source).toContain('data-testid="call-raise-hand-button"');
+  });
+
   it('reaction i18n keys exist in all locales', () => {
     const keys = ['callReactButton', 'callRaiseHand', 'callRaisedHandsTitle'];
     for (const locale of ['en', 'de', 'es', 'fr', 'pt']) {
