@@ -28,7 +28,13 @@ export {
   isGroupCallSessionActive,
   setGroupCallSessionActive,
   subscribeGroupCallSessionActive,
+  isRemoteGroupCallHoldActive,
 } from './active-group-call-registry';
+export {
+  isCallPairwiseRetry20sEnabled,
+  resolvePlaceOutgoingRetryDelaysMs,
+} from './call-pairwise-retry-env';
+export { isCallMobileViewport } from './call-mobile-screenshare-policy';
 export {
   HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID,
   applyScreenShareCaptureRootRestriction,

@@ -108,6 +108,11 @@ import {
   useCallJoinChime,
   buildCallJoinHref,
 } from './human-chat-panel/use-call-join-chime';
+import { useCallJoinInvitation } from './human-chat-panel/use-call-join-invitation';
+import { HumanChatPanelCallJoinInvitation } from './human-chat-panel/human-chat-panel-call-join-invitation';
+import { useActiveCallInAnotherTab } from './human-chat-panel/use-active-call-in-another-tab';
+import { shouldShowCallScaleWarning } from './human-chat-panel/call-scale-warning';
+import { resolveSignalDeepLinkWithRetry } from './human-chat-panel/resolve-signal-deep-link';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
 import { upsertSignalDescriptionInRoom } from '../coherence/utils/signal-chat-description';
@@ -1206,7 +1211,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     retryFromError: retrySpaceCall,
     dismissCallError: dismissSpaceCallError,
     remoteMediaStall: spaceCallRemoteMediaStall,
+    remoteMediaWarming: spaceCallRemoteMediaWarming,
     dismissRemoteMediaStallBanner: dismissSpaceCallRemoteMediaStall,
+    retryRemoteMediaConnection: retrySpaceCallRemoteMedia,
     showFloatingDock,
   } = useGlobalCallDock();
   useEffect(() => {
@@ -1350,6 +1357,24 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     notificationTarget: callJoinNotificationTarget,
     matrixSessionReady: isMatrixAuthenticated && Boolean(client),
   });
+
+  const showJoinInvitationOpportunity =
+    showSidebarCallChrome && spaceCallShowJoinStrip && !inSpaceCall;
+  const {
+    open: joinInviteOpen,
+    dismiss: dismissJoinInvite,
+    setOpen: setJoinInviteOpen,
+  } = useCallJoinInvitation({
+    roomId,
+    showJoinOpportunity: showJoinInvitationOpportunity,
+  });
+  const activeCallInAnotherTab = useActiveCallInAnotherTab();
+  const showCallScaleWarning = shouldShowCallScaleWarning(
+    spaceCallRoomGroupDeviceCount,
+  );
+  const [signalDeepLinkNotice, setSignalDeepLinkNotice] = useState<
+    string | null
+  >(null);
 
   const pendingCallStartNotifyRef = useRef(false);
   const callStartedNotifyRoomRef = useRef<string | null>(null);
@@ -3405,56 +3430,47 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     };
 
     void (async () => {
-      const headers: HeadersInit = {};
-      const token = authTokenRef.current?.trim();
-      if (token) headers.Authorization = `Bearer ${token}`;
+      const result = await resolveSignalDeepLinkWithRetry({
+        signalId: qpSignal,
+        expectedSpaceSlug: spaceSlug.trim(),
+        getAuthToken: () => authTokenRef.current,
+        fetchSignal: (signalId, token) => {
+          const headers: HeadersInit = {};
+          if (token) headers.Authorization = `Bearer ${token}`;
+          return fetch(`/api/v1/signals/${encodeURIComponent(signalId)}`, {
+            headers,
+          });
+        },
+      });
+      if (cancelled) return;
 
-      try {
-        const res = await fetch(
-          `/api/v1/signals/${encodeURIComponent(qpSignal)}`,
-          { headers },
-        );
-        if (cancelled || !res.ok) return;
-
-        const data = (await res.json()) as {
-          signalSlug?: string;
-          signalTitle?: string;
-          spaceSlug?: string;
-          roomId?: string;
-        };
-        const resolvedSlug = data.signalSlug?.trim();
-        const resolvedSpaceSlug = data.spaceSlug?.trim();
-        const resolvedRoomId = data.roomId?.trim();
-        if (
-          !resolvedSlug ||
-          !resolvedSpaceSlug ||
-          !resolvedRoomId ||
-          resolvedSpaceSlug !== spaceSlug.trim()
-        ) {
-          return;
-        }
-
-        rememberRoomToCoherenceSession(
-          resolvedRoomId,
-          resolvedSlug,
-          data.signalTitle,
-          resolvedSpaceSlug,
-        );
-        openCoherenceChat(
-          resolvedRoomId,
-          data.signalTitle?.trim() || resolvedSlug,
-          resolvedSlug,
-        );
-        openHumanChatPanel();
-        setActiveTab('chat');
-        if (qpMsg) setScrollToEventId(qpMsg);
+      if (!result.ok) {
+        const messageKey =
+          result.reason === 'auth_not_ready'
+            ? 'signalDeepLinkAuthNotReady'
+            : result.reason === 'not_found'
+            ? 'signalDeepLinkNotFound'
+            : 'signalDeepLinkNetworkError';
+        setSignalDeepLinkNotice(t(messageKey));
         stripSignalQueryFromUrl();
-      } catch (error) {
-        console.warn(
-          '[HumanRightPanel] signal deep-link lookup failed:',
-          error,
-        );
+        return;
       }
+
+      rememberRoomToCoherenceSession(
+        result.roomId,
+        result.signalSlug,
+        result.signalTitle,
+        result.spaceSlug,
+      );
+      openCoherenceChat(
+        result.roomId,
+        result.signalTitle?.trim() || result.signalSlug,
+        result.signalSlug,
+      );
+      openHumanChatPanel();
+      setActiveTab('chat');
+      if (qpMsg) setScrollToEventId(qpMsg);
+      stripSignalQueryFromUrl();
     })();
 
     return () => {
@@ -3468,6 +3484,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     searchParams,
     openCoherenceChat,
     openHumanChatPanel,
+    t,
   ]);
 
   useEffect(() => {
@@ -4005,6 +4022,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             }}
           />
         )}
+        <HumanChatPanelCallJoinInvitation
+          open={joinInviteOpen}
+          deviceCount={spaceCallRoomGroupDeviceCount}
+          busy={spaceCallBusyJoining}
+          disabled={!callUiEnabled}
+          onOpenChange={setJoinInviteOpen}
+          onJoinAudio={
+            canJoinSignalThreadCall
+              ? () => {
+                  handleCallAudio();
+                }
+              : undefined
+          }
+          onJoinVideo={() => {
+            if (!canJoinSignalThreadCall && isSignalThread) {
+              void requestSignalTeamAccess();
+              return;
+            }
+            handleCallVideo();
+          }}
+          onDismiss={dismissJoinInvite}
+        />
         {showSidebarCallChrome &&
           (inSpaceCall ||
             spaceCallState === 'error' ||
@@ -4036,7 +4075,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               participantCount={spaceCallRoomGroupDeviceCount}
               othersInRoomCallCount={spaceCallOthersInRoom}
               remoteMediaStall={spaceCallRemoteMediaStall}
+              remoteMediaWarming={spaceCallRemoteMediaWarming}
               onDismissRemoteMediaStall={dismissSpaceCallRemoteMediaStall}
+              onRetryRemoteMedia={retrySpaceCallRemoteMedia}
+              showScaleWarning={showCallScaleWarning}
               onLeave={handleCallLeave}
               onToggleMic={handleCallToggleMic}
               onToggleCamera={handleCallToggleCamera}
@@ -4180,11 +4222,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 <HumanChatPanelConnectionBanner
                   connectionStatus={connectionStatus}
                   isMatrixSyncLeader={isMatrixSyncLeader}
+                  activeCallInAnotherTab={activeCallInAnotherTab}
                   onRetry={() => {
                     void retryMatrixConnection();
                   }}
                   onUseThisTab={claimMatrixSyncLeadership}
                 />
+                {signalDeepLinkNotice ? (
+                  <div
+                    role="alert"
+                    className="mt-0 w-full border-y border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {signalDeepLinkNotice}
+                  </div>
+                ) : null}
                 {isSignalThread &&
                   hasSignalTeamPolicy &&
                   !canInteractWithSignalThread && (

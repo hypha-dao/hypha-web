@@ -10,6 +10,8 @@ import type { MatrixConnectionStatus } from '@hypha-platform/core/client';
 type HumanChatPanelConnectionBannerProps = {
   connectionStatus: MatrixConnectionStatus;
   isMatrixSyncLeader: boolean;
+  /** Another tab holds the live group-call session (CSH-MESH-5). */
+  activeCallInAnotherTab?: boolean;
   onRetry: () => void;
   onUseThisTab: () => void;
 };
@@ -24,6 +26,7 @@ const bannerButtonClassName =
 export function HumanChatPanelConnectionBanner({
   connectionStatus,
   isMatrixSyncLeader,
+  activeCallInAnotherTab = false,
   onRetry,
   onUseThisTab,
 }: HumanChatPanelConnectionBannerProps) {
@@ -35,6 +38,7 @@ export function HumanChatPanelConnectionBanner({
 
   const isFollower = !isMatrixSyncLeader || connectionStatus === 'follower';
   const isReconnecting = connectionStatus === 'reconnecting';
+  const showCallFollowerCopy = isFollower && activeCallInAnotherTab;
 
   return (
     <div
@@ -49,12 +53,16 @@ export function HumanChatPanelConnectionBanner({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="font-medium text-foreground">
-            {isFollower
+            {showCallFollowerCopy
+              ? t('callActiveInAnotherTabTitle')
+              : isFollower
               ? t('connectionFollowerTitle')
               : t('connectionLostTitle')}
           </p>
           <p className="mt-0.5 text-muted-foreground">
-            {isFollower
+            {showCallFollowerCopy
+              ? t('callFollowerSyncPausedDescription')
+              : isFollower
               ? t('connectionFollowerDescription')
               : isReconnecting
               ? t('connectionReconnectingDescription')
@@ -69,7 +77,9 @@ export function HumanChatPanelConnectionBanner({
             className={bannerButtonClassName}
             onClick={onUseThisTab}
           >
-            {t('connectionFollowerUseTab')}
+            {showCallFollowerCopy
+              ? t('callActiveInAnotherTabSwitch')
+              : t('connectionFollowerUseTab')}
           </Button>
         ) : (
           <Button

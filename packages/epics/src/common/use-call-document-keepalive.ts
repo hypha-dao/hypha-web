@@ -12,6 +12,7 @@ type WakeLockSentinelLike = {
 /**
  * Keep mic/WebRTC alive when the Hypha tab is backgrounded — especially with
  * Document Picture-in-Picture, where the main document is still `hidden`.
+ * CSH-MESH-7/8: wake lock only while hidden or PiP is open.
  */
 export function useCallDocumentKeepalive(
   active: boolean,
@@ -55,12 +56,13 @@ export function useCallDocumentKeepalive(
 
     const onWakeLockReleased = () => {
       wakeLock = null;
-      if (active) {
+      if (active && (document.hidden || documentPipOpen)) {
         void requestWakeLock();
       }
     };
 
     const requestWakeLock = async () => {
+      if (!document.hidden && !documentPipOpen) return;
       try {
         const nav = navigator as Navigator & {
           wakeLock?: {
@@ -82,29 +84,25 @@ export function useCallDocumentKeepalive(
       wakeLock = null;
     };
 
-    const onVisibility = () => {
-      if (document.hidden || documentPipOpen) {
+    const syncBackgroundKeepalive = () => {
+      const backgrounded = document.hidden || documentPipOpen;
+      if (backgrounded) {
         startSilentKeepalive();
         void audioContext?.resume();
+        void requestWakeLock();
         void resumeCallPlayback();
         return;
       }
       stopSilentKeepalive();
-      void requestWakeLock();
+      releaseWakeLock();
       void resumeCallPlayback();
     };
 
-    void requestWakeLock();
-    if (document.hidden || documentPipOpen) {
-      startSilentKeepalive();
-    }
-
-    void resumeCallPlayback();
-
-    document.addEventListener('visibilitychange', onVisibility);
+    syncBackgroundKeepalive();
+    document.addEventListener('visibilitychange', syncBackgroundKeepalive);
 
     return () => {
-      document.removeEventListener('visibilitychange', onVisibility);
+      document.removeEventListener('visibilitychange', syncBackgroundKeepalive);
       stopSilentKeepalive();
       releaseWakeLock();
     };

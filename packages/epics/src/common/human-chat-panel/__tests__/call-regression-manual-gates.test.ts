@@ -203,5 +203,51 @@ describe('WCUX-PIP remote audio on PiP open/close (row 11)', () => {
     const source = readCommonSource('use-call-document-keepalive.ts');
     expect(source).toContain('resumeCallPlayback');
     expect(source).toMatch(/\[active, documentPipOpen\]/);
+    expect(source).toContain('document.hidden || documentPipOpen');
+    expect(source).not.toMatch(
+      /void requestWakeLock\(\);\s*\n\s*if \(document\.hidden/,
+    );
+  });
+});
+
+describe('CSH-QA-3–5 stability hardening (W7)', () => {
+  it('stall banner distinguishes warming vs connection problem', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-banner.tsx',
+    );
+    expect(source).toContain('callRemoteMediaWarmingHint');
+    expect(source).toContain('callRemoteMediaStallHint');
+    expect(source).toContain('callRemoteMediaStallRetry');
+  });
+
+  it('scale warning banner is wired in sidebar and dock', () => {
+    const sidebar = readCommonSource('human-right-panel.tsx');
+    const dock = readCommonSource('global-call-dock-overlay.tsx');
+    expect(sidebar).toContain('shouldShowCallScaleWarning');
+    expect(sidebar).toContain('showScaleWarning={showCallScaleWarning}');
+    expect(dock).toContain('showScaleWarning={showCallScaleWarning}');
+  });
+
+  it('join invitation modal opens from Human panel', () => {
+    const source = readCommonSource('human-right-panel.tsx');
+    expect(source).toContain('HumanChatPanelCallJoinInvitation');
+    expect(source).toContain('useCallJoinInvitation');
+  });
+
+  it('follower tab shows call-specific leadership prompt', () => {
+    const panel = readCommonSource('human-right-panel.tsx');
+    const banner = readCommonSource(
+      'human-chat-panel/human-chat-panel-connection-banner.tsx',
+    );
+    expect(panel).toContain('useActiveCallInAnotherTab');
+    expect(panel).toContain('activeCallInAnotherTab={activeCallInAnotherTab}');
+    expect(banner).toContain('callActiveInAnotherTabTitle');
+    expect(banner).toContain('callFollowerSyncPausedDescription');
+  });
+
+  it('signal deep-link lookup retries before surfacing errors', () => {
+    const source = readCommonSource('human-right-panel.tsx');
+    expect(source).toContain('resolveSignalDeepLinkWithRetry');
+    expect(source).toContain('signalDeepLinkAuthNotReady');
   });
 });

@@ -56,6 +56,7 @@ import { getLocaleFromPath } from './get-locale-from-path';
 import { useCallDockDocumentPip } from './use-call-dock-document-pip';
 import { useScreenshareTabAudioPrompt } from './human-chat-panel/use-screenshare-tab-audio-prompt';
 import { CallScreenshareTabAudioPipStrip } from './human-chat-panel/call-screenshare-tab-audio-pip-strip';
+import { shouldShowCallScaleWarning } from './human-chat-panel/call-scale-warning';
 import { useCallDocumentKeepalive } from './use-call-document-keepalive';
 import { useSpaceAccentPortalStyles } from '../spaces/components/space-accent-portal-context';
 import { callAccentAlertText } from './human-chat-panel/call-accent-alert-styles';
@@ -531,7 +532,9 @@ export function GlobalCallDockOverlay() {
     isScreensharing,
     othersInRoomCallCount,
     remoteMediaStall,
+    remoteMediaWarming,
     dismissRemoteMediaStallBanner,
+    retryRemoteMediaConnection,
     feedVersion,
     activeSpeakerKey,
     inCallUserIdsForRoster,
@@ -1144,10 +1147,15 @@ export function GlobalCallDockOverlay() {
     screenshareTabAudioMissing &&
     isScreensharing &&
     callState === 'connected';
+  const showCallScaleWarning = shouldShowCallScaleWarning(
+    roomGroupCallDeviceCount,
+  );
   const showDockBanner =
     errorCode != null ||
     screenshareErrorCode != null ||
     remoteMediaStall ||
+    remoteMediaWarming ||
+    showCallScaleWarning ||
     (!inDocumentPip && screenshareTabAudioMissing && isScreensharing) ||
     cameraAccessBlocked ||
     sessionRefreshFailedDuringCall;
@@ -1456,7 +1464,10 @@ export function GlobalCallDockOverlay() {
                   participantCount={roomGroupCallDeviceCount}
                   othersInRoomCallCount={othersInRoomCallCount}
                   remoteMediaStall={remoteMediaStall}
+                  remoteMediaWarming={remoteMediaWarming}
                   onDismissRemoteMediaStall={dismissRemoteMediaStallBanner}
+                  onRetryRemoteMedia={retryRemoteMediaConnection}
+                  showScaleWarning={showCallScaleWarning}
                   onLeave={() => {
                     void leave();
                   }}

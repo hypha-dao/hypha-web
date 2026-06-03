@@ -52,7 +52,12 @@ type HumanChatPanelCallBannerProps = {
   othersInRoomCallCount: number;
   /** Others appear in Matrix state but remote video/audio feed never attached (WebRTC/signaling). */
   remoteMediaStall?: boolean;
+  /** Remote feeds still warming (CSH-MESH-3). */
+  remoteMediaWarming?: boolean;
   onDismissRemoteMediaStall?: () => void;
+  onRetryRemoteMedia?: () => void;
+  /** CSH-SCALE-2 — many participants may reduce mesh quality. */
+  showScaleWarning?: boolean;
   onLeave: () => void;
   onToggleMic: () => void;
   onToggleCamera: () => void;
@@ -136,7 +141,10 @@ export function HumanChatPanelCallBanner({
   participantCount,
   othersInRoomCallCount,
   remoteMediaStall = false,
+  remoteMediaWarming = false,
   onDismissRemoteMediaStall,
+  onRetryRemoteMedia,
+  showScaleWarning = false,
   onLeave,
   onToggleMic,
   onToggleCamera,
@@ -244,6 +252,8 @@ export function HumanChatPanelCallBanner({
 
   const showTabBackgroundHint =
     callState === 'connected' && tabBackgroundWhileInCall && !alertsOnly;
+  const showRemoteMediaWarmingAlert =
+    remoteMediaWarming && !remoteMediaStall && callState === 'connected';
   const showRemoteMediaStallAlert =
     remoteMediaStall && callState === 'connected';
   const showSessionRefreshAlert =
@@ -262,6 +272,8 @@ export function HumanChatPanelCallBanner({
 
   if (alertsOnly) {
     const hasDockAlerts =
+      showScaleWarning ||
+      showRemoteMediaWarmingAlert ||
       showRemoteMediaStallAlert ||
       showSessionRefreshAlert ||
       showScreenshareErrorAlert ||
@@ -292,12 +304,19 @@ export function HumanChatPanelCallBanner({
           {t('callTabBackgroundHint')}
         </p>
       ) : null}
-      {showRemoteMediaStallAlert ? (
-        <div role="alert" className={alertRowClassName()}>
+      {showScaleWarning ? (
+        <div role="status" className={alertRowClassName()}>
           <p className={cn('min-w-0 flex-1', alertTextClassName)}>
-            {t('callRemoteMediaStallHint')}
+            {t('callScaleWarningMessage')}
           </p>
-          {onDismissRemoteMediaStall && (
+        </div>
+      ) : null}
+      {showRemoteMediaWarmingAlert ? (
+        <div role="status" className={alertRowClassName()} aria-busy="true">
+          <p className={cn('min-w-0 flex-1', alertTextClassName)}>
+            {t('callRemoteMediaWarmingHint')}
+          </p>
+          {onDismissRemoteMediaStall ? (
             <button
               type="button"
               onClick={onDismissRemoteMediaStall}
@@ -305,7 +324,34 @@ export function HumanChatPanelCallBanner({
             >
               {t('callLeftBannerDismiss')}
             </button>
-          )}
+          ) : null}
+        </div>
+      ) : null}
+      {showRemoteMediaStallAlert ? (
+        <div role="alert" className={alertRowClassName()}>
+          <p className={cn('min-w-0 flex-1', alertTextClassName)}>
+            {t('callRemoteMediaStallHint')}
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            {onRetryRemoteMedia ? (
+              <button
+                type="button"
+                onClick={onRetryRemoteMedia}
+                className={callAccentAlertActionButtonClassName}
+              >
+                {t('callRemoteMediaStallRetry')}
+              </button>
+            ) : null}
+            {onDismissRemoteMediaStall ? (
+              <button
+                type="button"
+                onClick={onDismissRemoteMediaStall}
+                className={callAccentAlertDismissClassName}
+              >
+                {t('callLeftBannerDismiss')}
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {showSessionRefreshAlert ? (

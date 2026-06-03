@@ -89,9 +89,21 @@ import {
   resolveScreenshareVoicePresetPlan,
 } from './screenshare-voice-boost';
 import {
+  clearPersistedPendingRecordingUpload,
+  persistPendingRecordingUpload,
+  restorePendingRecordingUpload,
+} from './call-recording-upload-persistence';
+import { resolvePlaceOutgoingRetryDelaysMs } from './call-pairwise-retry-env';
+import {
+  CALL_MOBILE_VIEWPORT_MAX_PX,
+  isCallMobileViewport,
+} from './call-mobile-screenshare-policy';
+import {
   constraintsForVoicePreset,
   type SpaceGroupCallVoiceProcessingPreset,
 } from './voice-processing-constraints';
+
+const PLACE_OUTGOING_RETRY_MS = resolvePlaceOutgoingRetryDelaysMs();
 export type { SpaceGroupCallState } from './space-group-call-state';
 export type {
   SpaceGroupCallCaptureMode,
@@ -111,7 +123,7 @@ export type SpaceGroupCallErrorCode =
 const { GroupCallEvent, GroupCallIntent, GroupCallType, GroupCallState } =
   MatrixSdk;
 
-const CAPTURE_START_STALL_MS = 8_000;
+const CAPTURE_START_STALL_MS = 10_000;
 /** Minimum time capture must run before finalize produces a non-empty blob. */
 const CAPTURE_MIN_DURATION_MS = 2_000;
 const CAPTURE_LIMIT_CHECK_MS = 15_000;
@@ -169,7 +181,6 @@ const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
  * side with media until reload. Nudge once after enter + optional delayed retry.
  */
 const PLACE_OUTGOING_DELAYED_MS = 600;
-const PLACE_OUTGOING_RETRY_MS = [1500, 4000, 8000, 12000] as const;
 /** WCUX-SESSION-5: refresh pairwise WebRTC paths during long calls. */
 const PLACE_OUTGOING_PERIODIC_MS = 15 * 60 * 1000;
 /** Re-verify local tracks + nudge pairwise calls while WebRTC settles after join. */
@@ -646,10 +657,23 @@ export function useSpaceGroupCall(
   const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
   const [isCallRecovering, setIsCallRecovering] = useState(false);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
+  const [remoteMediaWarming, setRemoteMediaWarming] = useState(false);
+
+  const retryRemoteMediaConnection = useCallback(() => {
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    remoteMediaStallBannerDismissedRef.current = false;
+    remoteMediaStallLoggedRef.current = false;
+    remoteMediaRecoverAttemptedRef.current = false;
+    remoteMediaRecoverRequestedRef.current = true;
+    setRemoteMediaStall(false);
+    setRemoteMediaWarming(false);
+    setRemoteMediaRecoverNonce((value) => value + 1);
+  }, [callState]);
 
   const dismissRemoteMediaStallBanner = useCallback(() => {
     remoteMediaStallBannerDismissedRef.current = true;
     setRemoteMediaStall(false);
+    setRemoteMediaWarming(false);
   }, []);
   const [tabBackgroundWhileInCall, setTabBackgroundWhileInCall] =
     useState(false);
@@ -699,6 +723,35 @@ export function useSpaceGroupCall(
   useEffect(() => {
     captureModeRef.current = captureMode;
   }, [captureMode]);
+
+  useEffect(() => {
+    const restored = restorePendingRecordingUpload();
+    if (!restored) return;
+    pendingRecordingUploadRef.current = restored;
+    setCanRetryRecordingUpload(true);
+    setRecordingStatus('error');
+    setRecordingError(
+      'Recording upload did not complete. Use Retry upload to send it again.',
+    );
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (callState !== 'connected') return;
+    const mediaQuery = window.matchMedia(
+      `(max-width: ${CALL_MOBILE_VIEWPORT_MAX_PX}px)`,
+    );
+    const stopShareOnMobile = () => {
+      const sharing =
+        isScreensharingRef.current ||
+        groupCallRef.current?.isScreensharing() === true;
+      if (!sharing || !isCallMobileViewport()) return;
+      void setScreensharingEnabledRef.current(false);
+    };
+    stopShareOnMobile();
+    mediaQuery.addEventListener('change', stopShareOnMobile);
+    return () => mediaQuery.removeEventListener('change', stopShareOnMobile);
+  }, [callState]);
 
   const setActiveKeyFromGroupCall = useCallback((gc: MatrixSdk.GroupCall) => {
     const f = gc.activeSpeaker;
@@ -1059,6 +1112,7 @@ export function useSpaceGroupCall(
         }
         if (options?.pending) {
           pendingRecordingUploadRef.current = options.pending;
+          persistPendingRecordingUpload(options.pending);
           setCanRetryRecordingUpload(true);
         }
         if (recordingFinalizeGenerationRef.current === cleanupGeneration) {
@@ -1133,6 +1187,7 @@ export function useSpaceGroupCall(
               return;
             }
             pendingRecordingUploadRef.current = null;
+            clearPersistedPendingRecordingUpload();
             setCanRetryRecordingUpload(false);
           } catch (error) {
             const baseMessage =
@@ -1284,6 +1339,7 @@ export function useSpaceGroupCall(
       remoteMediaRecoverInFlightRef.current = false;
       setIsCallRecovering(false);
       setRemoteMediaStall(false);
+      setRemoteMediaWarming(false);
       if (feedUpdateRafRef.current != null) {
         cancelAnimationFrame(feedUpdateRafRef.current);
         feedUpdateRafRef.current = null;
@@ -1716,6 +1772,13 @@ export function useSpaceGroupCall(
       scheduleLocalMediaBootstrap(gc);
       const waitedMs = now - remoteMediaGapSinceRef.current;
       if (
+        !remoteMediaStallBannerDismissedRef.current &&
+        waitedMs < REMOTE_MEDIA_STALL_MS
+      ) {
+        setRemoteMediaWarming(true);
+        setRemoteMediaStall(false);
+      }
+      if (
         waitedMs >= REMOTE_MEDIA_STALL_MS &&
         !remoteMediaStallLoggedRef.current
       ) {
@@ -1729,6 +1792,7 @@ export function useSpaceGroupCall(
           waitedMs,
         });
         if (!remoteMediaStallBannerDismissedRef.current) {
+          setRemoteMediaWarming(false);
           setRemoteMediaStall(true);
         }
       }
@@ -1752,6 +1816,7 @@ export function useSpaceGroupCall(
         remoteMediaRepairNudgeIntervalRef.current = null;
       }
       setRemoteMediaStall(false);
+      setRemoteMediaWarming(false);
     }
   }, [client, roomId, inCallUserIdsFromGroupCall, scheduleLocalMediaBootstrap]);
 
@@ -2932,6 +2997,7 @@ export function useSpaceGroupCall(
         throw new Error('Recording upload did not persist media.');
       }
       pendingRecordingUploadRef.current = null;
+      clearPersistedPendingRecordingUpload();
       setCanRetryRecordingUpload(false);
       setRecordingStatus('idle');
       setRecordingError(null);
@@ -3697,7 +3763,10 @@ export function useSpaceGroupCall(
     retryFromError,
     /** Matrix lists others in-call but no remote media after threshold — likely WebRTC/signaling. */
     remoteMediaStall,
+    /** Feeds still warming — first ~45s after others appear in the call map. */
+    remoteMediaWarming,
     dismissRemoteMediaStallBanner,
+    retryRemoteMediaConnection,
     tabBackgroundWhileInCall,
     isCallRecovering,
     activeSpeakerKey,
