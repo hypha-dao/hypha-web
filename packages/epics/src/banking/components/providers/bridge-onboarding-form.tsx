@@ -114,7 +114,9 @@ export const BridgeOnboardingForm: FC<ProviderOnboardingFormProps> = ({
           required
           disabled={isSubmitting}
         />
-        <p className="text-sm text-muted-foreground">{t('contactEmailHelper')}</p>
+        <p className="text-sm text-muted-foreground">
+          {t('contactEmailHelper')}
+        </p>
       </div>
       {requiresBypassAuthorization ? (
         <label className="flex cursor-pointer items-start gap-2 text-sm">

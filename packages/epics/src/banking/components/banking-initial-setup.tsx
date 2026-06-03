@@ -136,7 +136,6 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
               {tDialog('contactEmailHelper')}
             </p>
           </div>
-
         </div>
       </section>
 

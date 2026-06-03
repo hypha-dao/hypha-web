@@ -9,8 +9,7 @@ export function normalizeEmailForBypassComparison(email: string): string {
   const local = trimmed.slice(0, atIndex);
   const domain = trimmed.slice(atIndex + 1);
   const plusIndex = local.indexOf('+');
-  const normalizedLocal =
-    plusIndex >= 0 ? local.slice(0, plusIndex) : local;
+  const normalizedLocal = plusIndex >= 0 ? local.slice(0, plusIndex) : local;
 
   return `${normalizedLocal}@${domain}`;
 }

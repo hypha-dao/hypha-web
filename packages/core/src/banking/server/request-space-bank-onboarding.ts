@@ -79,7 +79,8 @@ export async function requestSpaceBankOnboarding(
     { db },
   );
 
-  const normalizedRails = requestedRails?.map((rail) => rail.toLowerCase()) ?? [];
+  const normalizedRails =
+    requestedRails?.map((rail) => rail.toLowerCase()) ?? [];
 
   if (existing?.providerKycLinkId) {
     const status = await buildPublicStatusFromCustomer(existing, { db });
@@ -122,10 +123,7 @@ export async function requestSpaceBankOnboarding(
   const submitter = await findPersonById({ id: auth.person.id }, { db });
   const submitterEmail = submitter?.email?.trim();
 
-  if (
-    submitterEmail &&
-    emailsMatchForBypass(submitterEmail, contactEmail)
-  ) {
+  if (submitterEmail && emailsMatchForBypass(submitterEmail, contactEmail)) {
     const performResult = await performKycLinkAndInsert(
       {
         legalName,

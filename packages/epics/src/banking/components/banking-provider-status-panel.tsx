@@ -482,9 +482,9 @@ function ProviderValidationsSection({
                   return {
                     endorsement: meta.endorsement,
                     endorsementStatus: isRequested ? 'pending' : null,
-                    operationalStatus: (
-                      isRequested ? 'pending' : 'not_requested'
-                    ) as BankEndorsementPublicStatus['operationalStatus'],
+                    operationalStatus: (isRequested
+                      ? 'pending'
+                      : 'not_requested') as BankEndorsementPublicStatus['operationalStatus'],
                     validation: {
                       key: meta.endorsement,
                       status: isRequested ? 'pending' : null,
@@ -501,7 +501,9 @@ function ProviderValidationsSection({
           tEndorsements={tEndorsements}
           onOpenGear={onOpenGear}
           onRefreshStatus={onRefreshStatus}
-          disableNewEndorsementRequests={showProcedures || Boolean(emailConfirmation)}
+          disableNewEndorsementRequests={
+            showProcedures || Boolean(emailConfirmation)
+          }
         />
 
         {pendingUbos ? (

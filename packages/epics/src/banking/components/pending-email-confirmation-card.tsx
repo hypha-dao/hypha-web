@@ -119,7 +119,11 @@ export const PendingEmailConfirmationCard: FC<
                 {error}
               </p>
             ) : null}
-            <Button type="submit" className="mt-auto" disabled={isSubmitting || !canSubmit}>
+            <Button
+              type="submit"
+              className="mt-auto"
+              disabled={isSubmitting || !canSubmit}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />

@@ -32,7 +32,10 @@ export async function validateAndConfirmBankEmail(
     return { ok: false, reason: 'invalid' };
   }
 
-  const customer = await findBankCustomerByNonce({ nonce: payload.jti }, { db });
+  const customer = await findBankCustomerByNonce(
+    { nonce: payload.jti },
+    { db },
+  );
   if (!customer || customer.id !== payload.spaceBankCustomerId) {
     return { ok: false, reason: 'not_found' };
   }

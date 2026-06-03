@@ -30,16 +30,22 @@ export async function sendEmailConfirmation({
   const customData: Record<string, string> = {
     space_title: spaceTitle,
     confirmation_link: confirmationLink,
-    expires_in: '72 hours',
+    expires_in:
+      process.env.BANK_EMAIL_CONFIRMATION_TOKEN_EXPIRY?.trim() || '7 days',
   };
 
   if (!templateId) {
     if (process.env.NODE_ENV !== 'production') {
       console.log(
         '[bank-email-confirm] EMAIL_TEMPLATE_BANK_EMAIL_CONFIRMATION not set — email not sent.\n' +
-          '  Recipient:         ' + recipientEmail + '\n' +
-          '  Confirmation link: ' + confirmationLink + '\n' +
-          '  Raw token:         ' + signedJwt,
+          '  Recipient:         ' +
+          recipientEmail +
+          '\n' +
+          '  Confirmation link: ' +
+          confirmationLink +
+          '\n' +
+          '  Raw token:         ' +
+          signedJwt,
       );
     }
     return;

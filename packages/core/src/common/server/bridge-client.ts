@@ -502,8 +502,7 @@ function parseBridgeCustomersByEmailResponse(
   const data = Array.isArray(rawData)
     ? rawData.filter(isBridgeCustomerRecord)
     : [];
-  const count =
-    typeof record.count === 'number' ? record.count : data.length;
+  const count = typeof record.count === 'number' ? record.count : data.length;
 
   return { count, data };
 }

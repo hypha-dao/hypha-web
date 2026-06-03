@@ -4,7 +4,9 @@ type PageProps = {
   searchParams: Promise<{ token?: string | string[] }>;
 };
 
-export default async function BankingEmailVerifyPage({ searchParams }: PageProps) {
+export default async function BankingEmailVerifyPage({
+  searchParams,
+}: PageProps) {
   const params = await searchParams;
   const rawToken = params.token;
   const token =

@@ -7,15 +7,12 @@ import {
 
 describe('normalizeEmailForBypassComparison', () => {
   it('strips plus-address suffix before comparing', () => {
-    expect(
-      emailsMatchForBypass(
-        'user+test@gmail.com',
-        'user@gmail.com',
-      ),
-    ).toBe(true);
-    expect(
-      normalizeEmailForBypassComparison('User+Tag@Example.com'),
-    ).toBe('user@example.com');
+    expect(emailsMatchForBypass('user+test@gmail.com', 'user@gmail.com')).toBe(
+      true,
+    );
+    expect(normalizeEmailForBypassComparison('User+Tag@Example.com')).toBe(
+      'user@example.com',
+    );
   });
 
   it('does not treat different local parts as equal', () => {

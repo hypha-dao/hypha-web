@@ -3023,7 +3023,9 @@
       "endorsementsLabel": "Corridors de paiement",
       "endorsementsHint": "Il s'agit d'approbations KYB Bridge (p. ex. base pour USD, sepa pour EUR). Chaque corridor sélectionné est inclus dans le lien de vérification.",
       "submit": "Démarrer la vérification",
-      "submitting": "Démarrage…"
+      "submitting": "Démarrage…",
+      "contactEmailHelper": "This email will be registered with our provider (Bridge).",
+      "authorizeOwnEmail": "I confirm I am authorized to register this email for Bridge bank integration on behalf of this space."
     },
     "status": {
       "not_started": {
@@ -3065,6 +3067,26 @@
       "unknown": {
         "title": "Statut indisponible",
         "description": "Impossible de déterminer le statut de vérification actuel. Essayez d'actualiser."
+      }
+    },
+    "pendingEmailConfirmation": {
+      "title": "Authorize contact email",
+      "statusPending": "Pending confirmation",
+      "contactEmailLabel": "Space or administrator contact email",
+      "railsLabel": "Payment rails",
+      "resendCheckbox": "Send a new confirmation email",
+      "resendHelper": "Sending a new email will invalidate the previous confirmation link.",
+      "submit": "Send",
+      "submitting": "Sending…"
+    },
+    "emailConfirmation": {
+      "verifyPage": {
+        "loading": "Confirming your email…",
+        "missingToken": "This confirmation link is invalid.",
+        "successTitle": "Email confirmed",
+        "successBody": "Thank you. Bank verification can continue for the space.",
+        "failureTitle": "Confirmation failed",
+        "failureBody": "This link is invalid or has expired. Ask the space admin to send a new confirmation email."
       }
     }
   }

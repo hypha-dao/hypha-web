@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
 
 import type { DatabaseInstance } from '../../common/server/types';
-import { bridgeGetCustomersByEmail, bridgeGetKycLink } from '../../common/server/bridge-client';
+import {
+  bridgeGetCustomersByEmail,
+  bridgeGetKycLink,
+} from '../../common/server/bridge-client';
 import { DEFAULT_BANK_PROVIDER } from '../constants';
 import type { BankEntityType, BankOnboardingResult } from '../types';
 import { currenciesToEndorsements } from '../constants';
@@ -9,9 +12,7 @@ import { BankOnboardingError } from './errors';
 import { getBankKycProvider } from './providers';
 import type { BankKycProvider } from './providers/types';
 import { buildCustomerValidations } from './providers/bridge/banking-provider-state';
-import {
-  findBankCustomerByProviderCustomerId,
-} from './queries';
+import { findBankCustomerByProviderCustomerId } from './queries';
 import type { CreateKycLinkResult } from './providers/types';
 
 export type PerformKycLinkAndInsertInput = {

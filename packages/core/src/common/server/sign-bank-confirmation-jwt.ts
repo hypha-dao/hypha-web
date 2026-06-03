@@ -62,7 +62,10 @@ function parsePayload(
   if (typeof spaceSlug !== 'string' || spaceSlug.length === 0) {
     throw new Error('Invalid bank confirmation token');
   }
-  if (typeof spaceBankCustomerId !== 'number' || !Number.isFinite(spaceBankCustomerId)) {
+  if (
+    typeof spaceBankCustomerId !== 'number' ||
+    !Number.isFinite(spaceBankCustomerId)
+  ) {
     throw new Error('Invalid bank confirmation token');
   }
   if (typeof provider !== 'string' || provider.length === 0) {
