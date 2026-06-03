@@ -169,6 +169,60 @@ export function resolveCallGalleryTilePlacements(
     return placements;
   }
 
+  if (mode === 'seven' && n === 7) {
+    placements[speaker] = {
+      index: speaker,
+      gridColumnStart: 1,
+      gridColumnEnd: 3,
+      gridRowStart: 1,
+      gridRowEnd: 3,
+    };
+    const slots: Array<{ gridColumnStart: number; gridRowStart: number }> = [
+      { gridColumnStart: 3, gridRowStart: 1 },
+      { gridColumnStart: 3, gridRowStart: 2 },
+      { gridColumnStart: 3, gridRowStart: 3 },
+      { gridColumnStart: 1, gridRowStart: 3 },
+      { gridColumnStart: 2, gridRowStart: 3 },
+    ];
+    let slot = 0;
+    for (let i = 0; i < n; i++) {
+      if (i === speaker) continue;
+      const target = slots[slot];
+      if (!target) break;
+      placements[i] = { index: i, ...target };
+      slot += 1;
+    }
+    return placements;
+  }
+
+  if (mode === 'eight' && n === 8) {
+    placements[speaker] = {
+      index: speaker,
+      gridColumnStart: 2,
+      gridColumnEnd: 4,
+      gridRowStart: 2,
+      gridRowEnd: 4,
+    };
+    const slots: Array<{ gridColumnStart: number; gridRowStart: number }> = [
+      { gridColumnStart: 1, gridRowStart: 1 },
+      { gridColumnStart: 2, gridRowStart: 1 },
+      { gridColumnStart: 3, gridRowStart: 1 },
+      { gridColumnStart: 1, gridRowStart: 2 },
+      { gridColumnStart: 1, gridRowStart: 3 },
+      { gridColumnStart: 2, gridRowStart: 3 },
+      { gridColumnStart: 3, gridRowStart: 3 },
+    ];
+    let slot = 0;
+    for (let i = 0; i < n; i++) {
+      if (i === speaker) continue;
+      const target = slots[slot];
+      if (!target) break;
+      placements[i] = { index: i, ...target };
+      slot += 1;
+    }
+    return placements;
+  }
+
   return placements;
 }
 
@@ -229,30 +283,9 @@ export function resolveCallStageLayout(
       };
     }
 
-    /** Small dock: equal grid tiles fill the stage; strip layout wastes strip width (WCUX). */
-    if (participantCount <= 6) {
-      const fullScreenMode = resolveCallFullScreenLayoutMode(participantCount);
-      const galleryLayout = computeCallGalleryGrid(participantCount, 2);
-      return {
-        renderer: 'thresholdGallery',
-        fullScreenMode,
-        participantVideoFit,
-        galleryMaxCols: 2,
-        galleryLayout,
-        showGalleryPagination: false,
-        speakerPrimaryRatio: 1,
-        stripMaxVisible: 0,
-        stripOverflowCount: 0,
-        tilePlacements: resolveCallGalleryTilePlacements(
-          fullScreenMode,
-          participantCount,
-          speakerIndex,
-        ),
-        galleryPaginationResetKey,
-      };
-    }
-
-    const stripMaxVisible = participantCount >= 7 ? 6 : 5;
+    /** WCUX §3.3 — dock tiers use speaker-primary strip for N ≥ 2. */
+    const stripMaxVisible =
+      participantCount >= 7 ? 6 : Math.min(5, participantCount - 1);
     const stripOverflowCount =
       participantCount > stripMaxVisible + 1
         ? participantCount - stripMaxVisible - 1
@@ -262,7 +295,7 @@ export function resolveCallStageLayout(
 
     return {
       renderer: 'speakerPrimaryStrip',
-      fullScreenMode: null,
+      fullScreenMode: resolveCallFullScreenLayoutMode(participantCount),
       participantVideoFit,
       galleryMaxCols: 2,
       galleryLayout: null,
@@ -365,4 +398,14 @@ export function resolveSpeakerPrimaryStripIndices(
   const stripIndices = others.slice(0, stripMaxVisible);
   const overflowCount = Math.max(0, others.length - stripIndices.length);
   return { speakerIndex, stripIndices, overflowCount };
+}
+
+/** WCUX-LAYOUT-3 — dock share panes with ≤3 participants use speaker strip. */
+export function resolveShareParticipantDockLayout(
+  participantCount: number,
+): 'solo' | 'speakerStrip' | 'gallery' {
+  const n = Math.max(0, Math.floor(participantCount));
+  if (n <= 1) return 'solo';
+  if (n <= 3) return 'speakerStrip';
+  return 'gallery';
 }

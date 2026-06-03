@@ -49,6 +49,7 @@ import { CallDockAspectTileShell } from './call-dock-tile-shell';
 import { CallPresenterParticipantFilmstrip } from './call-presenter-participant-filmstrip';
 import {
   resolveCallStageLayout,
+  resolveShareParticipantDockLayout,
   resolveSpeakerPrimaryStripIndices,
   type CallGalleryTilePlacement,
   type CallViewportTier,
@@ -844,6 +845,11 @@ function HumanChatPanelCallStageMain({
 
   const useShareParticipantGallery =
     useShareWithParticipantsLayout && shareParticipantTiles.length >= 4;
+  const useShareParticipantSpeakerStrip =
+    useShareWithParticipantsLayout &&
+    !isFull &&
+    resolveShareParticipantDockLayout(shareParticipantTiles.length) ===
+      'speakerStrip';
 
   /** One camera tile only, no share: flex column fill (no empty grid track / FV-1). */
   const useFullViewSingleMainTile =
@@ -1205,6 +1211,22 @@ function HumanChatPanelCallStageMain({
                             }
                             previousPageLabel={t('callGalleryPreviousPage')}
                             nextPageLabel={t('callGalleryNextPage')}
+                          />
+                        ) : useShareParticipantSpeakerStrip ? (
+                          <CallSpeakerPrimaryStrip
+                            tiles={shareParticipantTiles}
+                            activeSpeakerIndex={shareActiveSpeakerIndex}
+                            speakerPrimaryRatio={
+                              shareParticipantTiles.length === 2 ? 0.65 : 0.7
+                            }
+                            stripMaxVisible={Math.min(
+                              5,
+                              shareParticipantTiles.length - 1,
+                            )}
+                            cellClassName="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col"
+                            panelDock
+                            renderTile={renderRemoteUserTile}
+                            overflowLabel={(count) => `+${count}`}
                           />
                         ) : (
                           shareParticipantTiles.map((item, i) => (
@@ -2537,7 +2559,7 @@ const FeedContent = ({
           className={cn(
             'absolute start-1 z-10 flex max-w-[calc(100%-0.5rem)] min-h-[1.75rem] rounded bg-background/80 px-1.5 py-0.5 text-xs',
             isFullView
-              ? 'bottom-2 flex-col justify-end'
+              ? 'bottom-2 items-center gap-1.5'
               : 'top-1 flex-row items-center gap-1.5',
           )}
         >

@@ -6,6 +6,7 @@ import {
   resolveCallStageLayout,
   resolveCallStageParticipantVideoFit,
   resolveCallViewportTier,
+  resolveShareParticipantDockLayout,
   resolveSpeakerPrimaryStripIndices,
 } from '../call-stage-layout-engine';
 
@@ -111,7 +112,7 @@ describe('resolveCallStageLayout', () => {
     expect(plan.stripOverflowCount).toBe(17);
   });
 
-  it('uses equal gallery grid in dock tiers for small calls', () => {
+  it('uses speaker-primary strip in dock tiers for multi-participant calls', () => {
     const duo = resolveCallStageLayout({
       viewportTier: 'V-S',
       participantDeviceCount: 2,
@@ -119,9 +120,10 @@ describe('resolveCallStageLayout', () => {
       activeSpeakerIndex: 0,
       galleryPage: 0,
     });
-    expect(duo.renderer).toBe('thresholdGallery');
+    expect(duo.renderer).toBe('speakerPrimaryStrip');
     expect(duo.fullScreenMode).toBe('duo');
-    expect(duo.galleryLayout).toEqual({ cols: 2, rows: 1, slots: 2 });
+    expect(duo.speakerPrimaryRatio).toBe(0.65);
+    expect(duo.stripMaxVisible).toBe(1);
 
     const quad = resolveCallStageLayout({
       viewportTier: 'V-M',
@@ -130,9 +132,11 @@ describe('resolveCallStageLayout', () => {
       activeSpeakerIndex: 1,
       galleryPage: 0,
     });
-    expect(quad.renderer).toBe('thresholdGallery');
+    expect(quad.renderer).toBe('speakerPrimaryStrip');
     expect(quad.fullScreenMode).toBe('quad');
     expect(quad.participantVideoFit).toBe('contain');
+    expect(quad.speakerPrimaryRatio).toBe(0.7);
+    expect(quad.stripMaxVisible).toBe(3);
   });
 
   it('uses speaker-primary strip in dock tiers when N>=7', () => {
@@ -146,6 +150,40 @@ describe('resolveCallStageLayout', () => {
     expect(plan.renderer).toBe('speakerPrimaryStrip');
     expect(plan.participantVideoFit).toBe('contain');
     expect(plan.speakerPrimaryRatio).toBe(0.75);
+  });
+
+  it('uses threshold gallery with speaker spans for full-screen seven and eight', () => {
+    const seven = resolveCallStageLayout({
+      viewportTier: 'V-L',
+      participantDeviceCount: 7,
+      hasActiveShare: false,
+      activeSpeakerIndex: 4,
+      galleryPage: 0,
+    });
+    expect(seven.renderer).toBe('thresholdGallery');
+    expect(seven.fullScreenMode).toBe('seven');
+    expect(seven.tilePlacements[4]).toMatchObject({
+      gridColumnStart: 1,
+      gridColumnEnd: 3,
+      gridRowStart: 1,
+      gridRowEnd: 3,
+    });
+
+    const eight = resolveCallStageLayout({
+      viewportTier: 'V-L',
+      participantDeviceCount: 8,
+      hasActiveShare: false,
+      activeSpeakerIndex: 2,
+      galleryPage: 0,
+    });
+    expect(eight.renderer).toBe('thresholdGallery');
+    expect(eight.fullScreenMode).toBe('eight');
+    expect(eight.tilePlacements[2]).toMatchObject({
+      gridColumnStart: 2,
+      gridColumnEnd: 4,
+      gridRowStart: 2,
+      gridRowEnd: 4,
+    });
   });
 
   it('defers to share layout when hasActiveShare', () => {
@@ -224,15 +262,32 @@ describe('resolveCallGalleryTilePlacements', () => {
     });
   });
 
-  it('uses default gallery placements for seven and eight participants', () => {
-    for (const mode of ['seven', 'eight'] as const) {
-      const n = mode === 'seven' ? 7 : 8;
-      const placements = resolveCallGalleryTilePlacements(mode, n, 4);
-      expect(placements).toHaveLength(n);
-      for (let i = 0; i < n; i += 1) {
-        expect(placements[i]).toEqual({ index: i });
-      }
-    }
+  it('promotes active speaker in seven and eight participant grids', () => {
+    const seven = resolveCallGalleryTilePlacements('seven', 7, 4);
+    expect(seven[4]).toMatchObject({
+      gridColumnStart: 1,
+      gridColumnEnd: 3,
+      gridRowStart: 1,
+      gridRowEnd: 3,
+    });
+    expect(seven.filter((p) => p.gridColumnStart === 3)).toHaveLength(3);
+
+    const eight = resolveCallGalleryTilePlacements('eight', 8, 2);
+    expect(eight[2]).toMatchObject({
+      gridColumnStart: 2,
+      gridColumnEnd: 4,
+      gridRowStart: 2,
+      gridRowEnd: 4,
+    });
+  });
+});
+
+describe('resolveShareParticipantDockLayout', () => {
+  it('uses speaker strip for two or three participants in dock share panes', () => {
+    expect(resolveShareParticipantDockLayout(1)).toBe('solo');
+    expect(resolveShareParticipantDockLayout(2)).toBe('speakerStrip');
+    expect(resolveShareParticipantDockLayout(3)).toBe('speakerStrip');
+    expect(resolveShareParticipantDockLayout(4)).toBe('gallery');
   });
 });
 

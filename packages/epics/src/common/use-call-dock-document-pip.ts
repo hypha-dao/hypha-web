@@ -61,6 +61,13 @@ function applyPipWindowSize(
 }
 
 /** Mirror theme tokens and typography so portaled dock matches the main app. */
+export function copyCallDocumentPipAppearance(
+  source: Document,
+  target: Document,
+) {
+  copyDocumentAppearance(source, target);
+}
+
 function copyDocumentAppearance(source: Document, target: Document) {
   const sourceHtml = source.documentElement;
   const targetHtml = target.documentElement;

@@ -48,6 +48,7 @@ import {
   clampCallDocumentPipWindowSize,
   type CallDocumentPipWindowMode,
 } from './human-chat-panel/call-document-pip-window-geometry';
+import { resolveCallDockPortalTarget } from './human-chat-panel/call-feed-tile-audio';
 import { matrixMemberDisplayLabelFromRoom } from './human-chat-panel/matrix-room-member-display';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import { useGlobalCallDock } from './global-call-dock-context';
@@ -1598,7 +1599,7 @@ export function GlobalCallDockOverlay() {
     );
   }
 
-  const portalTarget = pipWindow?.document.body ?? document.body;
+  const portalTarget = resolveCallDockPortalTarget(pipWindow, document);
   return (
     <>
       {screenshareTabAudioPromptDialog}
