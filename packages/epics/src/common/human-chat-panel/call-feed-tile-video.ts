@@ -3,7 +3,7 @@ import { isLocalCallFeedForTile } from './call-feed-tile-audio';
 
 /** Live, enabled video track suitable for rendering a participant tile. */
 export function isCallFeedVideoMutedForTile(
-  feed: Pick<CallFeed, 'isVideoMuted' | 'userId'>,
+  feed: Pick<CallFeed, 'isVideoMuted' | 'userId' | 'isLocal'>,
   options?: {
     isShare?: boolean;
     isLocalVideoMuted?: boolean;
@@ -22,7 +22,7 @@ export function isCallFeedVideoMutedForTile(
 
 /** Live, enabled video track suitable for rendering a participant tile. */
 export function resolveCallFeedLiveVideoTrack(
-  feed: Pick<CallFeed, 'isVideoMuted' | 'stream' | 'userId'>,
+  feed: Pick<CallFeed, 'isVideoMuted' | 'stream' | 'userId' | 'isLocal'>,
   options?: {
     isShare?: boolean;
     isLocalVideoMuted?: boolean;
@@ -58,7 +58,7 @@ export function resolveCallFeedLiveVideoTrack(
  * black `<video>` surface while WebRTC warms up.
  */
 export function hasWarmingCallFeedVideoTrack(
-  feed: Pick<CallFeed, 'isVideoMuted' | 'stream' | 'userId'>,
+  feed: Pick<CallFeed, 'isVideoMuted' | 'stream' | 'userId' | 'isLocal'>,
   options?: {
     isShare?: boolean;
     isLocalVideoMuted?: boolean;

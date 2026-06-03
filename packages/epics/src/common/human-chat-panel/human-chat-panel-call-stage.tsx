@@ -1166,6 +1166,7 @@ function HumanChatPanelCallStageMain({
                   galleryLayout={shareDuoGalleryLayout}
                   galleryPage={galleryPage}
                   onGalleryPageChange={setGalleryPage}
+                  showPagination={false}
                   keyPrefix={1000}
                   cellClassName="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col"
                   renderTile={renderRemoteUserTile}
