@@ -3,12 +3,26 @@
  * Hypha patches it for the call session to request 720p capture (WCUX-QUALITY-1).
  */
 
+import { isIOSTouchDevice } from './screenshare-capture';
+
 export const MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
   width: { ideal: 1280, max: 1920 },
   height: { ideal: 720, max: 1080 },
   frameRate: { ideal: 24, max: 30 },
   facingMode: 'user',
 };
+
+/** iPad/iPhone front cameras reject aggressive width/height caps — keep facingMode only. */
+export const IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS: MediaTrackConstraints =
+  {
+    facingMode: 'user',
+  };
+
+export function resolveMatrixCameraVideoConstraints(): MediaTrackConstraints {
+  return isIOSTouchDevice()
+    ? IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS
+    : MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS;
+}
 
 type MediaHandlerWithConstraints = {
   getUserMediaContraints?: (
@@ -25,9 +39,10 @@ type MatrixClientWithMediaHandler = {
 export function mergeMatrixCameraVideoConstraints(
   baseVideo: MediaTrackConstraints,
 ): MediaTrackConstraints {
+  const target = resolveMatrixCameraVideoConstraints();
   return {
     ...baseVideo,
-    ...MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
+    ...target,
     deviceId: baseVideo.deviceId,
   };
 }
@@ -52,7 +67,7 @@ export function installMatrixCameraCaptureConstraints(
     if (constraints.video === true || constraints.video == null) {
       return {
         ...constraints,
-        video: { ...MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS },
+        video: { ...resolveMatrixCameraVideoConstraints() },
       };
     }
     if (typeof constraints.video === 'object') {

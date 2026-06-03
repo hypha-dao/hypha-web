@@ -23,9 +23,10 @@ import {
   resetMatrixCallSessionMetrics,
 } from './matrix-call-session-metrics';
 import {
-  matrixGroupCallSummaryStatsMsFromEnv,
-  matrixWebRtcDebugFromEnv,
   callThumbnailDownscaleFromEnv,
+  isMatrixCallDebugEnabled,
+  isMatrixCallSupportDebugEnabled,
+  matrixGroupCallSummaryStatsMsFromEnv,
 } from '../matrix-webrtc-env';
 import {
   attachGroupCallWebRtcDiagnostics,
@@ -299,26 +300,33 @@ function startPlaceOutgoingPeriodicNudge(
   }, PLACE_OUTGOING_PERIODIC_MS);
 }
 
-function getLiveLocalVideoTrack(
+function getLocalVideoTrackPresence(
   gc: MatrixSdk.GroupCall,
 ): MediaStreamTrack | null {
   const track = gc.localCallFeed?.stream.getVideoTracks()[0];
-  // Browsers mute (black-frame) camera tracks when the tab is backgrounded while
-  // keeping readyState `live`; treat that as unhealthy so recovery can republish.
-  return track && track.readyState === 'live' && !track.muted ? track : null;
+  return track && track.readyState === 'live' ? track : null;
 }
 
-async function waitForLiveLocalVideoTrack(
+function getPublishableLocalVideoTrack(
+  gc: MatrixSdk.GroupCall,
+): MediaStreamTrack | null {
+  const track = getLocalVideoTrackPresence(gc);
+  // Browsers mute (black-frame) camera tracks when the tab is backgrounded while
+  // keeping readyState `live`; treat that as unhealthy so recovery can republish.
+  return track && !track.muted ? track : null;
+}
+
+async function waitForPublishableLocalVideoTrack(
   gc: MatrixSdk.GroupCall,
   timeoutMs = 400,
 ): Promise<boolean> {
-  if (getLiveLocalVideoTrack(gc)) return true;
+  if (getPublishableLocalVideoTrack(gc)) return true;
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 50);
     });
-    if (getLiveLocalVideoTrack(gc)) return true;
+    if (getPublishableLocalVideoTrack(gc)) return true;
   }
   return false;
 }
@@ -326,14 +334,17 @@ async function waitForLiveLocalVideoTrack(
 /** Matrix SDK can leave a stale or missing track after camera off→on. */
 async function recoverLocalCameraFeed(gc: MatrixSdk.GroupCall): Promise<void> {
   if (gc.isLocalVideoMuted()) return;
-  if (getLiveLocalVideoTrack(gc)) return;
+  if (getPublishableLocalVideoTrack(gc)) return;
+  if (getLocalVideoTrackPresence(gc)) {
+    if (await waitForPublishableLocalVideoTrack(gc, 1200)) return;
+  }
 
   await gc.setLocalVideoMuted(false);
-  if (await waitForLiveLocalVideoTrack(gc, 220)) return;
+  if (await waitForPublishableLocalVideoTrack(gc, 220)) return;
 
   await gc.setLocalVideoMuted(true);
   await gc.setLocalVideoMuted(false);
-  await waitForLiveLocalVideoTrack(gc, 400);
+  await waitForPublishableLocalVideoTrack(gc, 400);
 }
 
 async function ensureOutboundLocalVideoOrientationForGroupCall(
@@ -444,7 +455,6 @@ async function ensureLocalCallMediaPublished(
 
 /** Matrix SDK group-call summary stats interval (`NEXT_PUBLIC_MATRIX_WEBRTC_GROUP_STATS_MS`). */
 const GROUP_WEBRTC_SUMMARY_STATS_MS = matrixGroupCallSummaryStatsMsFromEnv();
-const GROUP_WEBRTC_DEBUG_ENABLED = matrixWebRtcDebugFromEnv();
 const GROUP_WEBRTC_FRAME_LOG_INTERVAL_MS = 30_000;
 const CALL_THUMBNAIL_DOWNSCALE_ENABLED = callThumbnailDownscaleFromEnv();
 
@@ -2353,12 +2363,13 @@ export function useSpaceGroupCall(
 
       webRtcDiagCleanupRef.current?.();
       webRtcDiagCleanupRef.current = null;
-      if (GROUP_WEBRTC_SUMMARY_STATS_MS > 0 || GROUP_WEBRTC_DEBUG_ENABLED) {
+      const supportDebugEnabled = isMatrixCallSupportDebugEnabled();
+      if (GROUP_WEBRTC_SUMMARY_STATS_MS > 0 || supportDebugEnabled) {
         webRtcDiagCleanupRef.current = attachGroupCallWebRtcDiagnostics({
           gc,
           roomId,
           summaryStatsIntervalMs: GROUP_WEBRTC_SUMMARY_STATS_MS,
-          inboundRtpFrameLogIntervalMs: GROUP_WEBRTC_DEBUG_ENABLED
+          inboundRtpFrameLogIntervalMs: supportDebugEnabled
             ? GROUP_WEBRTC_FRAME_LOG_INTERVAL_MS
             : 0,
           resolveActiveSpeakerUserId: () =>
@@ -2393,7 +2404,9 @@ export function useSpaceGroupCall(
           groupCallId: gc.groupCallId,
         });
       }
-      logDevMediaSnapshot();
+      if (isMatrixCallDebugEnabled()) {
+        logDevMediaSnapshot();
+      }
       evalRemoteMediaStall();
 
       const t1 =
@@ -2596,7 +2609,7 @@ export function useSpaceGroupCall(
         setCallKind('video');
         lastJoinKindRef.current = 'video';
         nudgeGroupCallPlaceOutgoing(gc);
-        if (!(await waitForLiveLocalVideoTrack(gc))) {
+        if (!(await waitForPublishableLocalVideoTrack(gc))) {
           try {
             await recoverLocalCameraFeed(gc);
           } catch {
@@ -2768,7 +2781,7 @@ export function useSpaceGroupCall(
       try {
         const applied = await applyVoiceProcessingPresetToGroupCall(gc, preset);
         if (applied) {
-          if (!gc.isLocalVideoMuted() && !getLiveLocalVideoTrack(gc)) {
+          if (!gc.isLocalVideoMuted() && !getPublishableLocalVideoTrack(gc)) {
             try {
               await recoverLocalCameraFeed(gc);
             } catch {
@@ -3233,11 +3246,17 @@ export function useSpaceGroupCall(
       clearMediaDebugInterval();
       return;
     }
-    logDevMediaSnapshot();
-    mediaDebugIntervalRef.current = setInterval(() => {
-      logDevMediaSnapshot();
+    const tickMediaDebug = () => {
+      if (isMatrixCallDebugEnabled()) {
+        logDevMediaSnapshot();
+      }
       evalRemoteMediaStall();
-    }, MEDIA_SNAPSHOT_INTERVAL_MS);
+    };
+    tickMediaDebug();
+    mediaDebugIntervalRef.current = setInterval(
+      tickMediaDebug,
+      MEDIA_SNAPSHOT_INTERVAL_MS,
+    );
     return () => {
       clearMediaDebugInterval();
     };
@@ -3297,7 +3316,7 @@ export function useSpaceGroupCall(
 
     const recoverIfNeeded = () => {
       if (typeof document !== 'undefined' && document.hidden) return;
-      if (gc.isLocalVideoMuted() || getLiveLocalVideoTrack(gc)) return;
+      if (gc.isLocalVideoMuted() || getPublishableLocalVideoTrack(gc)) return;
       const kind = lastJoinKindRef.current ?? 'video';
       void ensurePublishedLocalMediaWithOrientation(gc, kind).then(() => {
         scheduleFeedBatched();

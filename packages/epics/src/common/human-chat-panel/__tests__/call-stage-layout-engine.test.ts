@@ -112,7 +112,7 @@ describe('resolveCallStageLayout', () => {
     expect(plan.stripOverflowCount).toBe(17);
   });
 
-  it('uses speaker-primary strip in dock tiers for multi-participant calls', () => {
+  it('uses equal duo gallery in dock tiers for two participants', () => {
     const duo = resolveCallStageLayout({
       viewportTier: 'V-S',
       participantDeviceCount: 2,
@@ -120,11 +120,23 @@ describe('resolveCallStageLayout', () => {
       activeSpeakerIndex: 0,
       galleryPage: 0,
     });
-    expect(duo.renderer).toBe('speakerPrimaryStrip');
+    expect(duo.renderer).toBe('thresholdGallery');
     expect(duo.fullScreenMode).toBe('duo');
-    expect(duo.speakerPrimaryRatio).toBe(0.65);
-    expect(duo.stripMaxVisible).toBe(1);
+    expect(duo.galleryLayout).toEqual({ cols: 2, rows: 1, slots: 2 });
+    expect(duo.participantVideoFit).toBe('contain');
 
+    const duoMedium = resolveCallStageLayout({
+      viewportTier: 'V-M',
+      participantDeviceCount: 2,
+      hasActiveShare: false,
+      activeSpeakerIndex: 1,
+      galleryPage: 0,
+    });
+    expect(duoMedium.renderer).toBe('thresholdGallery');
+    expect(duoMedium.fullScreenMode).toBe('duo');
+  });
+
+  it('uses speaker-primary strip in dock tiers for three or more participants', () => {
     const quad = resolveCallStageLayout({
       viewportTier: 'V-M',
       participantDeviceCount: 4,
@@ -150,6 +162,19 @@ describe('resolveCallStageLayout', () => {
     expect(plan.renderer).toBe('speakerPrimaryStrip');
     expect(plan.participantVideoFit).toBe('contain');
     expect(plan.speakerPrimaryRatio).toBe(0.75);
+  });
+
+  it('uses threshold gallery duo for full-screen two participants', () => {
+    const plan = resolveCallStageLayout({
+      viewportTier: 'V-L',
+      participantDeviceCount: 2,
+      hasActiveShare: false,
+      activeSpeakerIndex: 0,
+      galleryPage: 0,
+    });
+    expect(plan.renderer).toBe('thresholdGallery');
+    expect(plan.fullScreenMode).toBe('duo');
+    expect(plan.galleryLayout).toEqual({ cols: 2, rows: 1, slots: 2 });
   });
 
   it('uses threshold gallery with speaker spans for full-screen seven and eight', () => {
@@ -282,10 +307,10 @@ describe('resolveCallGalleryTilePlacements', () => {
   });
 });
 
-describe('resolveShareParticipantDockLayout', () => {
-  it('uses speaker strip for two or three participants in dock share panes', () => {
+describe('resolveShareParticipantBandLayout', () => {
+  it('uses duo for two participants and speaker strip for three', () => {
     expect(resolveShareParticipantDockLayout(1)).toBe('solo');
-    expect(resolveShareParticipantDockLayout(2)).toBe('speakerStrip');
+    expect(resolveShareParticipantDockLayout(2)).toBe('duo');
     expect(resolveShareParticipantDockLayout(3)).toBe('speakerStrip');
     expect(resolveShareParticipantDockLayout(4)).toBe('gallery');
   });

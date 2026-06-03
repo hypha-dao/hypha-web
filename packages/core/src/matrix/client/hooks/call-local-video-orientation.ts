@@ -16,12 +16,19 @@ export function isUserFacingCallVideoTrack(
   return true;
 }
 
+import { isIOSTouchDevice } from './screenshare-capture';
+
 /** WebKit user-facing capture is mirrored in the encoded track; peers need a flip. */
 export function shouldCorrectOutboundUserFacingVideoTrack(
   track: MediaStreamTrack,
 ): boolean {
   if (!isUserFacingCallVideoTrack(track)) return false;
   if (typeof navigator === 'undefined') return false;
+  /**
+   * Canvas `captureStream` publish is unreliable on iPad/iPhone (Safari and CriOS).
+   * Keep the native camera track; local preview stays mirrored via CSS.
+   */
+  if (isIOSTouchDevice()) return false;
   const ua = navigator.userAgent;
   const isIOS = /iPad|iPhone|iPod/.test(ua);
   const isWebKit =

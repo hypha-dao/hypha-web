@@ -59,6 +59,7 @@ import { CallScreenshareTabAudioPipStrip } from './human-chat-panel/call-screens
 import { useCallDocumentKeepalive } from './use-call-document-keepalive';
 import { useSpaceAccentPortalStyles } from '../spaces/components/space-accent-portal-context';
 import { callAccentAlertText } from './human-chat-panel/call-accent-alert-styles';
+import { resolveDockGeometryForModeButton } from './call-dock-mode-geometry';
 
 type DockGeometry = {
   x: number;
@@ -816,25 +817,6 @@ export function GlobalCallDockOverlay() {
     }
 
     if (isDocumentPipOpen) return;
-
-    const restoreMode =
-      dockMode === 'expanded'
-        ? 'expanded'
-        : dockMode === 'fullscreen'
-        ? 'thumbnail'
-        : 'thumbnail';
-    const preset =
-      restoreMode === 'expanded' ? EXPANDED_GEOMETRY : THUMBNAIL_GEOMETRY;
-    const modeSaved = modeGeometryRef.current[restoreMode];
-    setGeometry((prev) =>
-      clampDockGeometry(
-        modeSaved ?? {
-          ...prev,
-          width: preset.width,
-          height: preset.height,
-        },
-      ),
-    );
   }, [
     dockMode,
     isDocumentPipOpen,
@@ -998,26 +980,13 @@ export function GlobalCallDockOverlay() {
 
   const applyDockMode = React.useCallback(
     (nextMode: 'thumbnail' | 'expanded') => {
-      const preset =
-        nextMode === 'thumbnail' ? THUMBNAIL_GEOMETRY : EXPANDED_GEOMETRY;
-      const saved = modeGeometryRef.current[nextMode];
-      setGeometry((prev) =>
-        clampDockGeometry(
-          nextMode === 'thumbnail'
-            ? {
-                ...(saved ?? prev),
-                width: preset.width,
-                height: preset.height,
-              }
-            : saved
-            ? saved
-            : {
-                ...prev,
-                width: preset.width,
-                height: preset.height,
-              },
-        ),
-      );
+      setGeometry((prev) => {
+        const next = clampDockGeometry(
+          resolveDockGeometryForModeButton(prev, nextMode),
+        );
+        modeGeometryRef.current[nextMode] = next;
+        return next;
+      });
       setDockMode(nextMode);
       lastNonFullscreenModeRef.current = nextMode;
     },

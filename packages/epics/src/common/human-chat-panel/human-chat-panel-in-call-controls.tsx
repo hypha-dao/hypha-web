@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
+  AudioLines,
   Check,
   ChevronDown,
   Circle,
@@ -9,8 +10,10 @@ import {
   FileText,
   Mic,
   MicOff,
+  MicVocal,
   Monitor,
   MonitorOff,
+  Music2,
   Pause,
   Play,
   SlidersHorizontal,
@@ -463,8 +466,8 @@ export function HumanChatPanelInCallControls({
         <div
           role="menu"
           className={cn(
-            'absolute bottom-full right-0 z-[60] mb-2 min-w-40 rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
-            isFull && 'min-w-44 border-zinc-700 bg-zinc-900 text-white',
+            'absolute bottom-full right-0 z-[60] mb-2 min-w-52 rounded-xl border bg-popover px-2 py-2 text-popover-foreground shadow-xl',
+            isFull && 'border-zinc-700 bg-zinc-900 text-white',
           )}
         >
           <p className="px-2 py-1.5 text-sm font-semibold">
@@ -488,7 +491,10 @@ export function HumanChatPanelInCallControls({
             onClick={() => selectVoicePreset('standard')}
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
           >
-            <span>{t('callVoiceProcessingStandard')}</span>
+            <span className="inline-flex items-center gap-2">
+              <AudioLines className="h-4 w-4" />
+              {t('callVoiceProcessingStandard')}
+            </span>
             {voiceProcessingPreset === 'standard' ? (
               <Check className={menuCheckIcon} />
             ) : null}
@@ -500,7 +506,10 @@ export function HumanChatPanelInCallControls({
             onClick={() => selectVoicePreset('voice_isolation')}
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
           >
-            <span>{t('callVoiceProcessingIsolation')}</span>
+            <span className="inline-flex items-center gap-2">
+              <MicVocal className="h-4 w-4" />
+              {t('callVoiceProcessingIsolation')}
+            </span>
             {voiceProcessingPreset === 'voice_isolation' ? (
               <Check className={menuCheckIcon} />
             ) : null}
@@ -512,7 +521,10 @@ export function HumanChatPanelInCallControls({
             onClick={() => selectVoicePreset('music')}
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-1 transition-colors hover:bg-muted/80"
           >
-            <span>{t('callVoiceProcessingMusic')}</span>
+            <span className="inline-flex items-center gap-2">
+              <Music2 className="h-4 w-4" />
+              {t('callVoiceProcessingMusic')}
+            </span>
             {voiceProcessingPreset === 'music' ? (
               <Check className={menuCheckIcon} />
             ) : null}

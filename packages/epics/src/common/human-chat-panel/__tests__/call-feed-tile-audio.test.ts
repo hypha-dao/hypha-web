@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   feedReportsAudioMutedForTile,
   formatCallShareTileLabel,
+  isLocalCallFeedForTile,
   resolveCallAudioPortalTarget,
   resolveCallDockPortalTarget,
   shouldMountRemoteCallAudioSink,
@@ -11,12 +12,14 @@ import {
 
 function mockFeed(args: {
   local?: boolean;
+  userId?: string;
   audioMuted?: boolean;
   audioTracks?: number;
 }) {
   const audioTracks = Array.from({ length: args.audioTracks ?? 0 }, () => ({}));
   return {
     isLocal: () => args.local ?? false,
+    userId: args.userId ?? '@remote:hs',
     isAudioMuted: () => args.audioMuted ?? false,
     stream:
       audioTracks.length > 0
@@ -26,6 +29,17 @@ function mockFeed(args: {
         : undefined,
   } as CallFeed;
 }
+
+describe('isLocalCallFeedForTile', () => {
+  it('matches the signed-in Matrix user even when CallFeed.isLocal is false', () => {
+    expect(
+      isLocalCallFeedForTile(
+        mockFeed({ local: false, userId: '@me:hs' }),
+        '@me:hs',
+      ),
+    ).toBe(true);
+  });
+});
 
 describe('shouldShowCallFeedMutedBadge', () => {
   it('never shows muted badge on share tiles', () => {
@@ -55,8 +69,20 @@ describe('shouldShowCallFeedMutedBadge', () => {
         isLocal: false,
         isShare: false,
         feedAudioMuted: true,
+        hasAudioTrack: true,
       }),
     ).toBe(true);
+  });
+
+  it('suppresses muted badge on video-only remote feeds', () => {
+    expect(
+      shouldShowCallFeedMutedBadge({
+        isLocal: false,
+        isShare: false,
+        feedAudioMuted: true,
+        hasAudioTrack: false,
+      }),
+    ).toBe(false);
   });
 });
 
@@ -67,6 +93,22 @@ describe('feedReportsAudioMutedForTile', () => {
         mockFeed({ audioMuted: true }),
         undefined,
         true,
+      ),
+    ).toBe(false);
+  });
+
+  it('uses GroupCall mic state when deviceId mismatch hides local feed', () => {
+    expect(
+      feedReportsAudioMutedForTile(
+        mockFeed({
+          local: false,
+          userId: '@me:hs',
+          audioMuted: true,
+          audioTracks: 0,
+        }),
+        false,
+        false,
+        '@me:hs',
       ),
     ).toBe(false);
   });
@@ -99,6 +141,16 @@ describe('shouldMountRemoteCallAudioSink', () => {
       shouldMountRemoteCallAudioSink(
         mockFeed({ local: true, audioTracks: 1 }),
         true,
+      ),
+    ).toBe(false);
+  });
+
+  it('never mounts self feed matched by user id', () => {
+    expect(
+      shouldMountRemoteCallAudioSink(
+        mockFeed({ local: false, userId: '@me:hs', audioTracks: 1 }),
+        false,
+        '@me:hs',
       ),
     ).toBe(false);
   });

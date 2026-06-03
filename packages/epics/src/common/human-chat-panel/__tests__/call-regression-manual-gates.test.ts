@@ -119,6 +119,64 @@ describe('WCUX-SHARE-AUDIO tab share + muted badge (row 3)', () => {
   });
 });
 
+describe('WCUX-QUALITY debug overlay and capture (row 9)', () => {
+  it('supports hypha.callDebug localStorage for support sessions', () => {
+    const source = readFileSync(
+      resolve(
+        commonDir,
+        '../../../core/src/matrix/client/matrix-webrtc-env.ts',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('hypha.callDebug');
+    expect(source).toContain('isMatrixCallDebugLocalStorageEnabled');
+  });
+
+  it('renders frame dimension debug overlay on video tiles', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-stage.tsx',
+    );
+    expect(source).toContain('useCallFeedVideoDebugDimensions');
+    expect(source).toContain('useMatrixCallDebugOverlayEnabled');
+  });
+
+  it('requests 720p ideal camera capture on join', () => {
+    const source = readFileSync(
+      resolve(
+        commonDir,
+        '../../../core/src/matrix/client/hooks/call-video-capture-constraints.ts',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('ideal: 1280');
+    expect(source).toContain('ideal: 720');
+  });
+
+  it('downscales thumbnail receivers when N ≥ 5', () => {
+    const source = readFileSync(
+      resolve(
+        commonDir,
+        '../../../core/src/matrix/client/hooks/call-thumbnail-receiver-downscale.ts',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('scaleResolutionDownBy');
+  });
+
+  it('logs inbound RTP frame sizes when support debug is enabled', () => {
+    const source = readFileSync(
+      resolve(
+        commonDir,
+        '../../../core/src/matrix/client/hooks/group-call-webrtc-diagnostics.ts',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('hypha.group_call.inbound_rtp_frame_size');
+    expect(source).toContain('frameWidth');
+    expect(source).toContain('frameHeight');
+  });
+});
+
 describe('WCUX-PIP remote audio on PiP open/close (row 11)', () => {
   beforeEach(() => {
     resetCallPlaybackRegistryForTests();

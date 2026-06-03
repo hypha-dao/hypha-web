@@ -2585,6 +2585,7 @@
     "callToolbarLabel": "Sprach- und Videoanruf",
     "callJoinStripLine": "Anruf läuft — {count, plural, one {1 Mitglied} other {# Mitglieder}}",
     "callJoinStripTitle": "Anruf läuft",
+    "callJoinStripMemberCount": "{count, plural, one {1 Mitglied} other {# Mitglieder}}",
     "callJoinInProgressCta": "Beitreten | Läuft",
     "callJoinInProgressCtaTitle": "Am Space-Anruf teilnehmen (läuft)",
     "callJoinCallAlerts": "Anruf-Hinweise",

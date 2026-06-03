@@ -35,3 +35,9 @@ export {
   applyScreenShareCaptureRootRestrictionWithRetry,
   clearScreenShareCaptureRootRestriction,
 } from './screenshare-capture-exclusion';
+export {
+  isMatrixCallDebugEnabled,
+  isMatrixCallDebugLocalStorageEnabled,
+  isMatrixCallSupportDebugEnabled,
+  MATRIX_CALL_DEBUG_LOCAL_STORAGE_KEYS,
+} from '../matrix-webrtc-env';

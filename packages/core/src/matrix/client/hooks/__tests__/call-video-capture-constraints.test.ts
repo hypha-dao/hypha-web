@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
   MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
   installMatrixCameraCaptureConstraints,
   mergeMatrixCameraVideoConstraints,
+  resolveMatrixCameraVideoConstraints,
 } from '../call-video-capture-constraints';
 
 describe('MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS', () => {
@@ -13,6 +15,21 @@ describe('MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS', () => {
       frameRate: { ideal: 24, max: 30 },
       facingMode: 'user',
     });
+  });
+});
+
+describe('resolveMatrixCameraVideoConstraints', () => {
+  it('uses minimal facingMode constraints on iPad', () => {
+    vi.stubGlobal('navigator', {
+      userAgent:
+        'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+      platform: 'MacIntel',
+      maxTouchPoints: 5,
+    });
+    expect(resolveMatrixCameraVideoConstraints()).toEqual(
+      IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
+    );
+    vi.unstubAllGlobals();
   });
 });
 

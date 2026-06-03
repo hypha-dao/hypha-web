@@ -3,8 +3,10 @@ import { describe, expect, it } from 'vitest';
 import {
   createCallFeedVideoStream,
   hasWarmingCallFeedVideoTrack,
+  isCallFeedVideoMutedForTile,
   isCallFeedVideoSurfaceReady,
   resolveCallFeedLiveVideoTrack,
+  resolveCallFeedVideoSurfaceClassName,
 } from '../call-feed-tile-video';
 
 function mockTrack(args: {
@@ -19,10 +21,17 @@ function mockTrack(args: {
   } as MediaStreamTrack;
 }
 
-function mockFeed(args: { videoMuted?: boolean; tracks?: MediaStreamTrack[] }) {
+function mockFeed(args: {
+  videoMuted?: boolean;
+  userId?: string;
+  local?: boolean;
+  tracks?: MediaStreamTrack[];
+}) {
   const tracks = args.tracks ?? [];
   return {
+    isLocal: () => args.local ?? false,
     isVideoMuted: () => args.videoMuted ?? false,
+    userId: args.userId ?? '@remote:hs',
     stream:
       tracks.length > 0
         ? ({
@@ -32,6 +41,17 @@ function mockFeed(args: { videoMuted?: boolean; tracks?: MediaStreamTrack[] }) {
   } as CallFeed;
 }
 
+describe('isCallFeedVideoMutedForTile', () => {
+  it('uses GroupCall camera state for self feed when deviceId mismatch hides local', () => {
+    expect(
+      isCallFeedVideoMutedForTile(
+        mockFeed({ videoMuted: true, userId: '@me:hs' }),
+        { isLocalVideoMuted: false, currentUserId: '@me:hs' },
+      ),
+    ).toBe(false);
+  });
+});
+
 describe('resolveCallFeedLiveVideoTrack', () => {
   it('returns a live unmuted enabled track', () => {
     const track = mockTrack({});
@@ -40,12 +60,11 @@ describe('resolveCallFeedLiveVideoTrack', () => {
     );
   });
 
-  it('ignores muted camera tracks', () => {
-    expect(
-      resolveCallFeedLiveVideoTrack(
-        mockFeed({ tracks: [mockTrack({ muted: true })] }),
-      ),
-    ).toBeNull();
+  it('binds live muted camera tracks before the first frame (iOS warming)', () => {
+    const track = mockTrack({ muted: true });
+    expect(resolveCallFeedLiveVideoTrack(mockFeed({ tracks: [track] }))).toBe(
+      track,
+    );
   });
 
   it('binds live muted screen-share tracks before the first frame', () => {
@@ -59,12 +78,12 @@ describe('resolveCallFeedLiveVideoTrack', () => {
 });
 
 describe('hasWarmingCallFeedVideoTrack', () => {
-  it('is true when a new track exists but is not renderable yet', () => {
+  it('does not warm when a new camera track can bind immediately', () => {
     expect(
       hasWarmingCallFeedVideoTrack(
         mockFeed({ tracks: [mockTrack({ readyState: 'new', muted: true })] }),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('is false when a live track is renderable', () => {
@@ -114,5 +133,39 @@ describe('isCallFeedVideoSurfaceReady', () => {
         readyState: 2,
       }),
     ).toBe(true);
+  });
+});
+
+describe('resolveCallFeedVideoSurfaceClassName', () => {
+  it('uses max-width containment and object-contain by default (WCUX-QUALITY-3)', () => {
+    const className = resolveCallFeedVideoSurfaceClassName({
+      mirrorLocalPreview: false,
+      showVideoSurface: true,
+      isFullView: false,
+      isPip: false,
+      isShare: false,
+      panelFlush: true,
+      panelVideoFit: 'contain',
+    });
+
+    expect(className).toContain('max-w-full');
+    expect(className).toContain('max-h-full');
+    expect(className).toContain('object-contain');
+    expect(className).not.toContain('object-cover');
+  });
+
+  it('allows mirror transform without upscaling scale transforms', () => {
+    const className = resolveCallFeedVideoSurfaceClassName({
+      mirrorLocalPreview: true,
+      showVideoSurface: true,
+      isFullView: false,
+      isPip: false,
+      isShare: false,
+      panelFlush: false,
+      panelVideoFit: 'contain',
+    });
+
+    expect(className).toContain('-scale-x-100');
+    expect(className).not.toMatch(/\bscale-\d+/);
   });
 });

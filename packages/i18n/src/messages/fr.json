@@ -2188,6 +2188,7 @@
     "callToolbarLabel": "Appel vocal et vidéo",
     "callJoinStripLine": "Appel en cours — {count, plural, one {1 membre} other {# membres}}",
     "callJoinStripTitle": "Appel en cours",
+    "callJoinStripMemberCount": "{count, plural, one {1 membre} other {# membres}}",
     "callJoinInProgressCta": "Rejoindre | En cours",
     "callJoinInProgressCtaTitle": "Rejoindre l’appel de l’espace (en cours)",
     "callJoinCallAlerts": "Alertes d’appel",

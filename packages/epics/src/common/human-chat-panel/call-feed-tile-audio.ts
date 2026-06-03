@@ -5,7 +5,21 @@ export type CallFeedMutedBadgeInput = {
   isShare: boolean;
   isMicrophoneMuted?: boolean;
   feedAudioMuted: boolean;
+  /** Matrix reports muted when a userMedia feed has zero audio tracks (video-only). */
+  hasAudioTrack?: boolean;
 };
+
+/**
+ * iPad/WebKit can mismatch `deviceId`, so `CallFeed.isLocal()` is false for self.
+ * Prefer Matrix user id match when deciding local tile chrome.
+ */
+export function isLocalCallFeedForTile(
+  feed: Pick<CallFeed, 'isLocal' | 'userId'>,
+  currentUserId: string | null | undefined,
+): boolean {
+  if (feed.isLocal()) return true;
+  return Boolean(currentUserId && feed.userId === currentUserId);
+}
 
 /** Share tiles never show mic-muted; camera tiles use GroupCall mic state for local feeds. */
 export function shouldShowCallFeedMutedBadge(
@@ -15,27 +29,32 @@ export function shouldShowCallFeedMutedBadge(
   if (input.isLocal && input.isMicrophoneMuted !== undefined) {
     return input.isMicrophoneMuted;
   }
+  if (input.hasAudioTrack === false) return false;
   return input.feedAudioMuted;
 }
 
 export function feedReportsAudioMutedForTile(
-  feed: Pick<CallFeed, 'isLocal' | 'isAudioMuted'>,
+  feed: Pick<CallFeed, 'isLocal' | 'isAudioMuted' | 'userId' | 'stream'>,
   isMicrophoneMuted: boolean | undefined,
   isShare: boolean,
+  currentUserId?: string | null,
 ): boolean {
+  const hasAudioTrack = (feed.stream?.getAudioTracks().length ?? 0) > 0;
   return shouldShowCallFeedMutedBadge({
-    isLocal: feed.isLocal(),
+    isLocal: isLocalCallFeedForTile(feed, currentUserId),
     isShare,
     isMicrophoneMuted,
+    hasAudioTrack,
     feedAudioMuted: feed.isAudioMuted(),
   });
 }
 
 export function shouldMountRemoteCallAudioSink(
-  feed: Pick<CallFeed, 'isLocal' | 'stream'>,
+  feed: Pick<CallFeed, 'isLocal' | 'stream' | 'userId'>,
   isShare: boolean,
+  currentUserId?: string | null,
 ): boolean {
-  if (feed.isLocal()) return false;
+  if (isLocalCallFeedForTile(feed, currentUserId)) return false;
   if (!isShare) return true;
   return (feed.stream?.getAudioTracks().length ?? 0) > 0;
 }

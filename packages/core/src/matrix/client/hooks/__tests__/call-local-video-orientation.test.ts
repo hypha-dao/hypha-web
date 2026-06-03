@@ -58,6 +58,22 @@ describe('call-local-video-orientation', () => {
     vi.unstubAllGlobals();
   });
 
+  it('skips canvas outbound correction on iPad', () => {
+    vi.stubGlobal('navigator', {
+      userAgent:
+        'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+      platform: 'MacIntel',
+      maxTouchPoints: 5,
+    });
+    const track = {
+      kind: 'video',
+      readyState: 'live',
+      getSettings: () => ({ facingMode: 'user' }),
+    } as MediaStreamTrack;
+    expect(shouldCorrectOutboundUserFacingVideoTrack(track)).toBe(false);
+    vi.unstubAllGlobals();
+  });
+
   it('skips outbound correction on desktop Chrome', () => {
     vi.stubGlobal('navigator', {
       userAgent:

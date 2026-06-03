@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS } from '../call-video-capture-constraints';
+import { resolveMatrixCameraVideoConstraints } from '../call-video-capture-constraints';
 import { requestLocalCameraAccess } from '../call-camera-access';
 
 describe('requestLocalCameraAccess', () => {
@@ -30,7 +30,7 @@ describe('requestLocalCameraAccess', () => {
     });
     await expect(requestLocalCameraAccess()).resolves.toEqual({ ok: true });
     expect(getUserMedia).toHaveBeenCalledWith({
-      video: MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
+      video: resolveMatrixCameraVideoConstraints(),
       audio: false,
     });
     expect(stop).toHaveBeenCalledTimes(1);

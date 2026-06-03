@@ -2188,6 +2188,7 @@
     "callToolbarLabel": "Chamada de voz e vídeo",
     "callJoinStripLine": "Chamada a decorrer — {count, plural, one {1 membro} other {# membros}}",
     "callJoinStripTitle": "Chamada a decorrer",
+    "callJoinStripMemberCount": "{count, plural, one {1 membro} other {# membros}}",
     "callJoinInProgressCta": "Aderir | Em curso",
     "callJoinInProgressCtaTitle": "Aderir à chamada do espaço (em curso)",
     "callJoinCallAlerts": "Alertas de chamada",

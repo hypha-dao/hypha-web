@@ -1,11 +1,11 @@
 /**
  * Privacy-safe, client-only telemetry for group calls. No PII; room id is
- * a Matrix opaque id. Enable debug logs in dev, or in preview with
- * `NEXT_PUBLIC_MATRIX_WEBRTC_DEBUG=true`, via the browser console filter
- * "hypha.group_call".
+ * a Matrix opaque id. Enable debug logs in dev, with
+ * `NEXT_PUBLIC_MATRIX_WEBRTC_DEBUG=true`, or via `localStorage hypha.callDebug=1`
+ * (support sessions), via the browser console filter "hypha.group_call".
  */
 
-import { matrixWebRtcDebugFromEnv } from '../matrix-webrtc-env';
+import { isMatrixCallDebugEnabled } from '../matrix-webrtc-env';
 import {
   getMatrixCallSessionMetrics,
   resetMatrixCallSessionMetrics,
@@ -104,13 +104,7 @@ export function logSpaceGroupCallEvent(
     return;
   }
   try {
-    const debugOverrideEnabled =
-      typeof window !== 'undefined' &&
-      window.localStorage.getItem('hypha.group_call.debug') === '1';
-    if (
-      process.env.NODE_ENV === 'development' ||
-      (matrixWebRtcDebugFromEnv() && debugOverrideEnabled)
-    ) {
+    if (isMatrixCallDebugEnabled()) {
       console.info('[hypha.group_call]', event);
     }
   } catch {

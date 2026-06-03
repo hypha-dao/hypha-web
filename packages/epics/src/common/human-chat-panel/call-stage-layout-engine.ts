@@ -283,15 +283,31 @@ export function resolveCallStageLayout(
       };
     }
 
-    /** WCUX §3.3 — dock tiers use speaker-primary strip for N ≥ 2. */
+    /** N=2 — equal duo split (same as V-L §3.2); speaker strip starts at N=3. */
+    if (participantCount === 2) {
+      return {
+        renderer: 'thresholdGallery',
+        fullScreenMode: 'duo',
+        participantVideoFit,
+        galleryMaxCols: 2,
+        galleryLayout: computeCallGalleryGrid(2, 2),
+        showGalleryPagination: false,
+        speakerPrimaryRatio: 1,
+        stripMaxVisible: 0,
+        stripOverflowCount: 0,
+        tilePlacements: [],
+        galleryPaginationResetKey,
+      };
+    }
+
+    /** WCUX §3.3 — dock tiers use speaker-primary strip for N ≥ 3. */
     const stripMaxVisible =
       participantCount >= 7 ? 6 : Math.min(5, participantCount - 1);
     const stripOverflowCount =
       participantCount > stripMaxVisible + 1
         ? participantCount - stripMaxVisible - 1
         : 0;
-    const speakerPrimaryRatio =
-      participantCount >= 7 ? 0.75 : participantCount === 2 ? 0.65 : 0.7;
+    const speakerPrimaryRatio = participantCount >= 7 ? 0.75 : 0.7;
 
     return {
       renderer: 'speakerPrimaryStrip',
@@ -400,12 +416,23 @@ export function resolveSpeakerPrimaryStripIndices(
   return { speakerIndex, stripIndices, overflowCount };
 }
 
-/** WCUX-LAYOUT-3 — dock share panes with ≤3 participants use speaker strip. */
-export function resolveShareParticipantDockLayout(
+export type ShareParticipantBandLayout =
+  | 'solo'
+  | 'duo'
+  | 'speakerStrip'
+  | 'gallery';
+
+/** Share participant band beside the screen tile (dock + full-screen). */
+export function resolveShareParticipantBandLayout(
   participantCount: number,
-): 'solo' | 'speakerStrip' | 'gallery' {
+): ShareParticipantBandLayout {
   const n = Math.max(0, Math.floor(participantCount));
   if (n <= 1) return 'solo';
+  if (n === 2) return 'duo';
   if (n <= 3) return 'speakerStrip';
   return 'gallery';
 }
+
+/** @deprecated Use {@link resolveShareParticipantBandLayout}. */
+export const resolveShareParticipantDockLayout =
+  resolveShareParticipantBandLayout;

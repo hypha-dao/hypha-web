@@ -58,7 +58,7 @@ import { CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH } from './call-document-pip-window-ge
 import { resolveScreenshareFilmstripContentWidth } from './call-screenshare-filmstrip-geometry';
 import {
   resolveCallStageLayout,
-  resolveShareParticipantDockLayout,
+  resolveShareParticipantBandLayout,
   resolveSpeakerPrimaryStripIndices,
   type CallGalleryTilePlacement,
   type CallViewportTier,
@@ -78,7 +78,12 @@ import {
   hasWarmingCallFeedVideoTrack,
   isCallFeedVideoSurfaceReady,
   resolveCallFeedLiveVideoTrack,
+  resolveCallFeedVideoSurfaceClassName,
 } from './call-feed-tile-video';
+import {
+  useCallFeedVideoDebugDimensions,
+  useMatrixCallDebugOverlayEnabled,
+} from './use-call-feed-video-debug-overlay';
 import { registerCallPlaybackElement } from './call-playback-registry';
 import { callAccentAlertOnDarkText } from './call-accent-alert-styles';
 
@@ -379,6 +384,8 @@ function CallSpeakerPrimaryStrip({
     .filter((entry): entry is { index: number; item: RemoteTileItem } =>
       Boolean(entry.item),
     );
+  /** One thumbnail in the strip (N=2 dock): fill column height instead of letterboxing with void. */
+  const singleStripTileInDock = panelDock && stripTiles.length === 1;
 
   return (
     <div
@@ -411,7 +418,9 @@ function CallSpeakerPrimaryStrip({
         className={cn(
           'min-h-0 min-w-0 gap-1.5 overscroll-contain',
           panelDock
-            ? 'flex flex-col overflow-y-auto'
+            ? singleStripTileInDock
+              ? 'flex min-h-0 flex-1 flex-col'
+              : 'flex flex-col overflow-y-auto'
             : 'flex flex-col overflow-y-auto',
           cellClassName,
         )}
@@ -422,12 +431,19 @@ function CallSpeakerPrimaryStrip({
             key={galleryTileKey(item, index)}
             className={cn(
               panelDock
-                ? 'min-w-0 shrink-0'
+                ? singleStripTileInDock
+                  ? 'flex min-h-0 min-w-0 flex-1 flex-col'
+                  : 'min-w-0 shrink-0'
                 : 'relative min-h-0 w-full min-w-0 flex-1 overflow-hidden',
             )}
           >
             {panelDock ? (
-              <CallDockAspectTileShell sizing="width">
+              <CallDockAspectTileShell
+                sizing={singleStripTileInDock ? 'fit' : 'width'}
+                className={
+                  singleStripTileInDock ? 'h-full min-h-0 flex-1' : undefined
+                }
+              >
                 {renderTile(item, index)}
               </CallDockAspectTileShell>
             ) : (
@@ -648,7 +664,7 @@ function HumanChatPanelCallStageMain({
   roomId,
   groupCall: _groupCall,
   callKind: _callKind,
-  isLocalVideoMuted: _isLocalVideoMuted,
+  isLocalVideoMuted,
   isMicrophoneMuted,
   isScreensharing,
   callState: _callState,
@@ -691,15 +707,6 @@ function HumanChatPanelCallStageMain({
       buildRemoteUserTiles(model.remoteUserMedia, model.missingRemoteUserIds),
     [model.missingRemoteUserIds, model.remoteUserMedia],
   );
-  const mainGalleryTiles = useMemo(() => {
-    const tiles: RemoteTileItem[] = [...remoteUserTiles];
-    if (model.localUserMedia[0]) {
-      tiles.push({ kind: 'feed', feed: model.localUserMedia[0] });
-    }
-    return tiles;
-  }, [model.localUserMedia, remoteUserTiles]);
-  const galleryParticipantCount =
-    remoteUserTiles.length + (model.localUserMedia.length > 0 ? 1 : 0);
   const {
     isVideoCall,
     shareFeeds: rawShareFeeds,
@@ -725,6 +732,21 @@ function HumanChatPanelCallStageMain({
     isScreensharing,
     isVideoCall,
   });
+  const hasRemotesOrShare =
+    remoteUserMedia.length > 0 ||
+    missingRemoteUserIds.length > 0 ||
+    hasRenderableShare;
+  const showLocalInMainGrid =
+    rawShowLocalInMainGrid || (!hasRemotesOrShare && localUserMedia.length > 0);
+  const showLocalPip = rawShowLocalPip && hasRemotesOrShare;
+  /** Tiles visible in the main participant grid (excludes local when shown as corner PiP only). */
+  const layoutParticipantTiles = useMemo(() => {
+    const tiles: RemoteTileItem[] = [...remoteUserTiles];
+    if (showLocalInMainGrid && localUserMedia[0]) {
+      tiles.push({ kind: 'feed', feed: localUserMedia[0] });
+    }
+    return tiles;
+  }, [localUserMedia, remoteUserTiles, showLocalInMainGrid]);
   const activeShareLayoutKey = shareFeedLayoutKey(rawShareFeeds);
   const shareLayoutResetKey = [
     activeShareLayoutKey,
@@ -735,26 +757,26 @@ function HumanChatPanelCallStageMain({
 
   const activeSpeakerIndex = useMemo(() => {
     if (!activeSpeakerKey) return 0;
-    const idx = mainGalleryTiles.findIndex(
+    const idx = layoutParticipantTiles.findIndex(
       (item) =>
         item.kind === 'feed' &&
         feedKeyForActive(item.feed) === activeSpeakerKey,
     );
     return idx >= 0 ? idx : 0;
-  }, [activeSpeakerKey, mainGalleryTiles]);
+  }, [activeSpeakerKey, layoutParticipantTiles]);
 
   const layoutPlan = useMemo(
     () =>
       resolveCallStageLayout({
         viewportTier: resolvedViewportTier,
-        participantDeviceCount: mainGalleryTiles.length,
+        participantDeviceCount: layoutParticipantTiles.length,
         hasActiveShare: hasRenderableShare || isScreensharing,
         activeSpeakerIndex,
         galleryPage,
       }),
     [
       resolvedViewportTier,
-      mainGalleryTiles.length,
+      layoutParticipantTiles.length,
       hasRenderableShare,
       isScreensharing,
       activeSpeakerIndex,
@@ -770,13 +792,6 @@ function HumanChatPanelCallStageMain({
     layout === 'panel' && !isFull
       ? layoutPlan.participantVideoFit
       : panelVideoFit;
-  const hasRemotesOrShare =
-    remoteUserMedia.length > 0 ||
-    missingRemoteUserIds.length > 0 ||
-    hasRenderableShare;
-  const showLocalInMainGrid =
-    rawShowLocalInMainGrid || (!hasRemotesOrShare && localUserMedia.length > 0);
-  const showLocalPip = rawShowLocalPip && hasRemotesOrShare;
   const userGridTileCount =
     remoteUserMedia.length +
     missingRemoteUserIds.length +
@@ -812,7 +827,7 @@ function HumanChatPanelCallStageMain({
   const shareParticipantTiles = useMemo(() => {
     /** Presenter dock: all in-call tiles (feeds + placeholders + local). */
     if (presenterShareOnly) {
-      return mainGalleryTiles;
+      return layoutParticipantTiles;
     }
     const out: RemoteTileItem[] = [...remoteUserTiles];
     const localFeed = localUserMedia[0];
@@ -826,12 +841,17 @@ function HumanChatPanelCallStageMain({
     }
     return out;
   }, [
-    mainGalleryTiles,
+    layoutParticipantTiles,
     presenterShareOnly,
     remoteUserTiles,
     showLocalPip,
     localUserMedia,
   ]);
+
+  const shareBandLayout = resolveShareParticipantBandLayout(
+    shareParticipantTiles.length,
+  );
+  const shareDuoGalleryLayout = useMemo(() => computeCallGalleryGrid(2, 2), []);
 
   const shareActiveSpeakerIndex = useMemo(() => {
     if (!activeSpeakerKey) return 0;
@@ -854,21 +874,20 @@ function HumanChatPanelCallStageMain({
     (layoutPlan.renderer === 'thresholdGallery' ||
       layoutPlan.renderer === 'paginatedGallery');
 
-  const useSpeakerGalleryLayout =
-    !useShareWithParticipantsLayout && layoutPlan.renderer === 'speakerGallery';
-
-  const useSpeakerPrimaryStripLayout =
+  const useSpeakerStripLayout =
     !useShareWithParticipantsLayout &&
     !isScreensharing &&
-    layoutPlan.renderer === 'speakerPrimaryStrip';
+    (layoutPlan.renderer === 'speakerPrimaryStrip' ||
+      layoutPlan.renderer === 'speakerGallery');
 
   const useShareParticipantGallery =
-    useShareWithParticipantsLayout && shareParticipantTiles.length >= 4;
+    useShareWithParticipantsLayout && shareBandLayout === 'gallery';
+  const useShareParticipantDuo =
+    useShareWithParticipantsLayout && shareBandLayout === 'duo';
   const useShareParticipantSpeakerStrip =
-    useShareWithParticipantsLayout &&
-    !isFull &&
-    resolveShareParticipantDockLayout(shareParticipantTiles.length) ===
-      'speakerStrip';
+    useShareWithParticipantsLayout && shareBandLayout === 'speakerStrip';
+  const useShareParticipantGridBand =
+    useShareParticipantGallery || useShareParticipantDuo;
 
   /** One camera tile only, no share: flex column fill (no empty grid track / FV-1). */
   const useFullViewSingleMainTile =
@@ -885,8 +904,7 @@ function HumanChatPanelCallStageMain({
     showLocalPip &&
     !useShareWithParticipantsLayout &&
     !useMainGalleryLayout &&
-    !useSpeakerGalleryLayout &&
-    !useSpeakerPrimaryStripLayout;
+    !useSpeakerStripLayout;
 
   const speakerFeedForTopMode = (() => {
     if (remoteUserMedia.length > 0) {
@@ -922,6 +940,7 @@ function HumanChatPanelCallStageMain({
       currentUserId={currentUserId}
       resolveMemberLabel={resolveMemberLabel}
       isMicrophoneMuted={isMicrophoneMuted}
+      isLocalVideoMuted={isLocalVideoMuted}
       isDocumentPipOpen={isDocumentPipOpen}
       t={t}
     />
@@ -982,6 +1001,7 @@ function HumanChatPanelCallStageMain({
           currentUserId={currentUserId}
           resolveMemberLabel={resolveMemberLabel}
           isMicrophoneMuted={isMicrophoneMuted}
+          isLocalVideoMuted={isLocalVideoMuted}
           isDocumentPipOpen={isDocumentPipOpen}
           t={t}
         />
@@ -993,24 +1013,28 @@ function HumanChatPanelCallStageMain({
     keyPrefix: number,
     tileClassName: string,
     presenterOnly = false,
+    panelDock = false,
   ) => {
-    if (useShareParticipantGallery) {
+    const bandClassName = presenterOnly
+      ? 'h-full w-full flex-1'
+      : isFull
+      ? 'min-h-[4.5rem] w-full flex-1 lg:max-w-none'
+      : 'ml-auto w-[min(44%,13rem)] min-w-[8.5rem] shrink-0 border-l border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]';
+
+    if (useShareParticipantGallery || useShareParticipantDuo) {
       return (
         <CallParticipantGalleryGrid
           tiles={shareParticipantTiles}
           isFull={isFull}
+          galleryLayout={
+            useShareParticipantDuo ? shareDuoGalleryLayout : undefined
+          }
           galleryPage={galleryPage}
           onGalleryPageChange={setGalleryPage}
-          showPagination={isFull}
+          showPagination={isFull && useShareParticipantGallery}
           keyPrefix={keyPrefix}
           cellClassName={tileClassName}
-          className={
-            presenterOnly
-              ? 'h-full w-full flex-1'
-              : isFull
-              ? 'min-h-[4.5rem] w-full flex-1'
-              : 'ml-auto w-full min-w-0 shrink-0 border-l border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]'
-          }
+          className={bandClassName}
           renderTile={renderRemoteUserTile}
           pageLabel={(current, total) =>
             t('callGalleryPage', { current, total })
@@ -1021,15 +1045,26 @@ function HumanChatPanelCallStageMain({
       );
     }
 
+    if (useShareParticipantSpeakerStrip) {
+      return (
+        <CallSpeakerPrimaryStrip
+          tiles={shareParticipantTiles}
+          activeSpeakerIndex={shareActiveSpeakerIndex}
+          speakerPrimaryRatio={0.7}
+          stripMaxVisible={Math.min(5, shareParticipantTiles.length - 1)}
+          cellClassName="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col"
+          panelDock={panelDock || !isFull}
+          renderTile={renderRemoteUserTile}
+          overflowLabel={(count) => `+${count}`}
+        />
+      );
+    }
+
     return (
       <div
         className={cn(
           'flex min-h-0 flex-col gap-1.5 overflow-y-auto p-1.5',
-          presenterOnly
-            ? 'h-full w-full flex-1'
-            : isFull
-            ? 'min-h-[4.5rem] w-full flex-1 lg:max-w-none'
-            : 'ml-auto w-[min(44%,13rem)] min-w-[8.5rem] shrink-0 border-l border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]',
+          bandClassName,
         )}
         role="group"
         aria-label={t('callLayoutSideBySide')}
@@ -1114,7 +1149,7 @@ function HumanChatPanelCallStageMain({
                     {t('callScreenShareActive')}
                   </p>
                 </div>
-              ) : isFull && shareParticipantTiles.length >= 2 ? (
+              ) : isFull && shareParticipantTiles.length >= 3 ? (
                 <CallSpeakerPrimaryStrip
                   tiles={shareParticipantTiles}
                   activeSpeakerIndex={shareActiveSpeakerIndex}
@@ -1123,6 +1158,22 @@ function HumanChatPanelCallStageMain({
                   cellClassName="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col"
                   renderTile={renderRemoteUserTile}
                   overflowLabel={(count) => `+${count}`}
+                />
+              ) : isFull && shareParticipantTiles.length === 2 ? (
+                <CallParticipantGalleryGrid
+                  tiles={shareParticipantTiles}
+                  isFull
+                  galleryLayout={shareDuoGalleryLayout}
+                  galleryPage={galleryPage}
+                  onGalleryPageChange={setGalleryPage}
+                  keyPrefix={1000}
+                  cellClassName="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col"
+                  renderTile={renderRemoteUserTile}
+                  pageLabel={(current, total) =>
+                    t('callGalleryPage', { current, total })
+                  }
+                  previousPageLabel={t('callGalleryPreviousPage')}
+                  nextPageLabel={t('callGalleryNextPage')}
                 />
               ) : shareParticipantTiles.length === 1 ? (
                 <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
@@ -1218,13 +1269,21 @@ function HumanChatPanelCallStageMain({
                         role="group"
                         aria-label={t('callLayoutSideBySide')}
                       >
-                        {useShareParticipantGallery ? (
+                        {useShareParticipantGallery ||
+                        useShareParticipantDuo ? (
                           <CallParticipantGalleryGrid
                             tiles={shareParticipantTiles}
                             isFull={isFull}
+                            galleryLayout={
+                              useShareParticipantDuo
+                                ? shareDuoGalleryLayout
+                                : undefined
+                            }
                             galleryPage={galleryPage}
                             onGalleryPageChange={setGalleryPage}
-                            showPagination={isFull}
+                            showPagination={
+                              isFull && useShareParticipantGallery
+                            }
                             keyPrefix={1000}
                             cellClassName={cn(
                               'w-full shrink-0 min-h-0',
@@ -1243,9 +1302,7 @@ function HumanChatPanelCallStageMain({
                           <CallSpeakerPrimaryStrip
                             tiles={shareParticipantTiles}
                             activeSpeakerIndex={shareActiveSpeakerIndex}
-                            speakerPrimaryRatio={
-                              shareParticipantTiles.length === 2 ? 0.65 : 0.7
-                            }
+                            speakerPrimaryRatio={0.7}
                             stripMaxVisible={Math.min(
                               5,
                               shareParticipantTiles.length - 1,
@@ -1303,7 +1360,7 @@ function HumanChatPanelCallStageMain({
                       <div
                         className={cn(
                           'w-full min-h-0 shrink-0 border-t border-border/30 p-2',
-                          useShareParticipantGallery
+                          useShareParticipantGridBand
                             ? 'flex min-h-[8rem] flex-1 flex-col'
                             : 'flex min-h-[3.5rem] items-stretch gap-2 overflow-x-auto',
                         )}
@@ -1311,13 +1368,18 @@ function HumanChatPanelCallStageMain({
                         role="group"
                         aria-label={t('callLayoutFilmstrip')}
                       >
-                        {useShareParticipantGallery ? (
+                        {useShareParticipantGridBand ? (
                           <CallParticipantGalleryGrid
                             tiles={shareParticipantTiles}
                             isFull={isFull}
+                            galleryLayout={
+                              useShareParticipantDuo
+                                ? shareDuoGalleryLayout
+                                : undefined
+                            }
                             galleryPage={galleryPage}
                             onGalleryPageChange={setGalleryPage}
-                            showPagination
+                            showPagination={useShareParticipantGallery}
                             keyPrefix={2000}
                             cellClassName="min-h-0 w-full min-w-0"
                             renderTile={renderRemoteUserTile}
@@ -1326,6 +1388,19 @@ function HumanChatPanelCallStageMain({
                             }
                             previousPageLabel={t('callGalleryPreviousPage')}
                             nextPageLabel={t('callGalleryNextPage')}
+                          />
+                        ) : useShareParticipantSpeakerStrip ? (
+                          <CallSpeakerPrimaryStrip
+                            tiles={shareParticipantTiles}
+                            activeSpeakerIndex={shareActiveSpeakerIndex}
+                            speakerPrimaryRatio={0.7}
+                            stripMaxVisible={Math.min(
+                              5,
+                              shareParticipantTiles.length - 1,
+                            )}
+                            cellClassName="min-h-0 w-full min-w-0"
+                            renderTile={renderRemoteUserTile}
+                            overflowLabel={(count) => `+${count}`}
                           />
                         ) : (
                           shareParticipantTiles.map((item, i) => (
@@ -1351,7 +1426,8 @@ function HumanChatPanelCallStageMain({
                   const r = fullViewPaneSplit.speakerOnTop;
                   const a = Math.max(0, Math.min(1, r));
                   const hasSpeakerTopPane =
-                    useShareParticipantGallery ||
+                    useShareParticipantGridBand ||
+                    useShareParticipantSpeakerStrip ||
                     Boolean(speakerFeedForTopMode || speakerTopPlaceholderId);
                   return (
                     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -1359,7 +1435,7 @@ function HumanChatPanelCallStageMain({
                         <div
                           className={cn(
                             'w-full min-h-0 shrink-0 border-b border-border/30 p-2',
-                            useShareParticipantGallery
+                            useShareParticipantGridBand
                               ? 'flex min-h-[8rem] max-h-[min(45dvh,20rem)] flex-col'
                               : 'min-h-[3.5rem] max-h-[min(40dvh,16rem)]',
                           )}
@@ -1367,13 +1443,18 @@ function HumanChatPanelCallStageMain({
                           role="group"
                           aria-label={t('callLayoutSpeakerOnTop')}
                         >
-                          {useShareParticipantGallery ? (
+                          {useShareParticipantGridBand ? (
                             <CallParticipantGalleryGrid
                               tiles={shareParticipantTiles}
                               isFull={isFull}
+                              galleryLayout={
+                                useShareParticipantDuo
+                                  ? shareDuoGalleryLayout
+                                  : undefined
+                              }
                               galleryPage={galleryPage}
                               onGalleryPageChange={setGalleryPage}
-                              showPagination
+                              showPagination={useShareParticipantGallery}
                               keyPrefix={2100}
                               cellClassName="min-h-0 w-full min-w-0"
                               className="h-full w-full flex-1"
@@ -1383,6 +1464,20 @@ function HumanChatPanelCallStageMain({
                               }
                               previousPageLabel={t('callGalleryPreviousPage')}
                               nextPageLabel={t('callGalleryNextPage')}
+                            />
+                          ) : useShareParticipantSpeakerStrip ? (
+                            <CallSpeakerPrimaryStrip
+                              tiles={shareParticipantTiles}
+                              activeSpeakerIndex={shareActiveSpeakerIndex}
+                              speakerPrimaryRatio={0.7}
+                              stripMaxVisible={Math.min(
+                                5,
+                                shareParticipantTiles.length - 1,
+                              )}
+                              cellClassName="min-h-0 w-full min-w-0"
+                              className="h-full w-full flex-1"
+                              renderTile={renderRemoteUserTile}
+                              overflowLabel={(count) => `+${count}`}
                             />
                           ) : (
                             <div
@@ -1405,6 +1500,7 @@ function HumanChatPanelCallStageMain({
                                   currentUserId={currentUserId}
                                   resolveMemberLabel={resolveMemberLabel}
                                   isMicrophoneMuted={isMicrophoneMuted}
+                                  isLocalVideoMuted={isLocalVideoMuted}
                                   isDocumentPipOpen={isDocumentPipOpen}
                                   t={t}
                                 />
@@ -1456,21 +1552,26 @@ function HumanChatPanelCallStageMain({
                   <div
                     className={cn(
                       'pointer-events-none absolute end-4 bottom-4 z-10 flex flex-col',
-                      useShareParticipantGallery
+                      useShareParticipantGridBand
                         ? 'max-h-[min(50dvh,22rem)] w-[min(44%,18rem)] min-w-[8rem]'
                         : 'w-[min(38%,12rem)] min-w-[6rem] gap-2',
                     )}
                     role="group"
                     aria-label={t('callLayoutPip')}
                   >
-                    {useShareParticipantGallery ? (
+                    {useShareParticipantGridBand ? (
                       <CallParticipantGalleryGrid
                         tiles={shareParticipantTiles}
                         isFull={isFull}
                         maxCols={2}
+                        galleryLayout={
+                          useShareParticipantDuo
+                            ? shareDuoGalleryLayout
+                            : undefined
+                        }
                         galleryPage={galleryPage}
                         onGalleryPageChange={setGalleryPage}
-                        showPagination
+                        showPagination={useShareParticipantGallery}
                         keyPrefix={3000}
                         cellClassName="pointer-events-auto min-h-0 w-full min-w-0"
                         className="pointer-events-auto min-h-0 flex-1 overflow-hidden rounded-md border border-border/40 bg-black/80 shadow-lg backdrop-blur-sm"
@@ -1480,6 +1581,20 @@ function HumanChatPanelCallStageMain({
                         }
                         previousPageLabel={t('callGalleryPreviousPage')}
                         nextPageLabel={t('callGalleryNextPage')}
+                      />
+                    ) : useShareParticipantSpeakerStrip ? (
+                      <CallSpeakerPrimaryStrip
+                        tiles={shareParticipantTiles}
+                        activeSpeakerIndex={shareActiveSpeakerIndex}
+                        speakerPrimaryRatio={0.7}
+                        stripMaxVisible={Math.min(
+                          5,
+                          shareParticipantTiles.length - 1,
+                        )}
+                        cellClassName="pointer-events-auto min-h-0 w-full min-w-0"
+                        className="pointer-events-auto min-h-0 flex-1 overflow-hidden rounded-md border border-border/40 bg-black/80 shadow-lg backdrop-blur-sm"
+                        renderTile={renderRemoteUserTile}
+                        overflowLabel={(count) => `+${count}`}
                       />
                     ) : (
                       shareParticipantTiles.map((item, i) => (
@@ -1547,6 +1662,7 @@ function HumanChatPanelCallStageMain({
                     currentUserId={currentUserId}
                     resolveMemberLabel={resolveMemberLabel}
                     isMicrophoneMuted={isMicrophoneMuted}
+                    isLocalVideoMuted={isLocalVideoMuted}
                     isDocumentPipOpen={isDocumentPipOpen}
                     t={t}
                   />
@@ -1558,7 +1674,7 @@ function HumanChatPanelCallStageMain({
       )}
       {(hasRemotesOrShare || showLocalInMainGrid) &&
         !skipUserGridWithShareLayout &&
-        (useSpeakerPrimaryStripLayout ? (
+        (useSpeakerStripLayout ? (
           <div
             className={cn(
               'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col',
@@ -1567,27 +1683,7 @@ function HumanChatPanelCallStageMain({
             data-feed-tick={_feedVersion}
           >
             <CallSpeakerPrimaryStrip
-              tiles={mainGalleryTiles}
-              activeSpeakerIndex={activeSpeakerIndex}
-              speakerPrimaryRatio={layoutPlan.speakerPrimaryRatio}
-              stripMaxVisible={layoutPlan.stripMaxVisible}
-              cellClassName={userGridCellClass}
-              panelDock={!isFull}
-              isPortrait={isDocumentPipOpen}
-              renderTile={renderRemoteUserTile}
-              overflowLabel={(count) => `+${count}`}
-            />
-          </div>
-        ) : useSpeakerGalleryLayout ? (
-          <div
-            className={cn(
-              'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col',
-              panelFlush && !isFull ? 'p-0' : 'px-2 pb-2 pt-0',
-            )}
-            data-feed-tick={_feedVersion}
-          >
-            <CallSpeakerPrimaryStrip
-              tiles={mainGalleryTiles}
+              tiles={layoutParticipantTiles}
               activeSpeakerIndex={activeSpeakerIndex}
               speakerPrimaryRatio={layoutPlan.speakerPrimaryRatio}
               stripMaxVisible={layoutPlan.stripMaxVisible}
@@ -1607,7 +1703,7 @@ function HumanChatPanelCallStageMain({
             data-feed-tick={_feedVersion}
           >
             <CallParticipantGalleryGrid
-              tiles={mainGalleryTiles}
+              tiles={layoutParticipantTiles}
               isFull={isFull}
               galleryLayout={layoutPlan.galleryLayout ?? undefined}
               tilePlacements={layoutPlan.tilePlacements}
@@ -1616,7 +1712,8 @@ function HumanChatPanelCallStageMain({
               showPagination={
                 layoutPlan.showGalleryPagination ||
                 (isFull &&
-                  mainGalleryTiles.length > CALL_GALLERY_MAX_TILES_PER_PAGE)
+                  layoutParticipantTiles.length >
+                    CALL_GALLERY_MAX_TILES_PER_PAGE)
               }
               keyPrefix={0}
               cellClassName={userGridCellClass}
@@ -1660,6 +1757,7 @@ function HumanChatPanelCallStageMain({
                   currentUserId={currentUserId}
                   resolveMemberLabel={resolveMemberLabel}
                   isMicrophoneMuted={isMicrophoneMuted}
+                  isLocalVideoMuted={isLocalVideoMuted}
                   isDocumentPipOpen={isDocumentPipOpen}
                   centerContent={centerSoloTileInStage}
                   t={t}
@@ -1698,6 +1796,7 @@ function HumanChatPanelCallStageMain({
                   currentUserId={currentUserId}
                   resolveMemberLabel={resolveMemberLabel}
                   isMicrophoneMuted={isMicrophoneMuted}
+                  isLocalVideoMuted={isLocalVideoMuted}
                   isDocumentPipOpen={isDocumentPipOpen}
                   centerContent={centerSoloTileInStage}
                   t={t}
@@ -1768,6 +1867,7 @@ function HumanChatPanelCallStageMain({
                     currentUserId={currentUserId}
                     resolveMemberLabel={resolveMemberLabel}
                     isMicrophoneMuted={isMicrophoneMuted}
+                    isLocalVideoMuted={isLocalVideoMuted}
                     isDocumentPipOpen={isDocumentPipOpen}
                     t={t}
                   />
@@ -1806,6 +1906,7 @@ function HumanChatPanelCallStageMain({
                 currentUserId={currentUserId}
                 resolveMemberLabel={resolveMemberLabel}
                 isMicrophoneMuted={isMicrophoneMuted}
+                isLocalVideoMuted={isLocalVideoMuted}
                 isDocumentPipOpen={isDocumentPipOpen}
                 t={t}
               />
@@ -2130,6 +2231,7 @@ const CallFeedTile = ({
   currentUserId,
   resolveMemberLabel,
   isMicrophoneMuted,
+  isLocalVideoMuted,
   isDocumentPipOpen = false,
   centerContent = false,
   t,
@@ -2148,6 +2250,7 @@ const CallFeedTile = ({
   currentUserId: string | null;
   resolveMemberLabel: (userId: string | undefined) => string;
   isMicrophoneMuted?: boolean;
+  isLocalVideoMuted?: boolean;
   isDocumentPipOpen?: boolean;
   centerContent?: boolean;
   t: (key: string) => string;
@@ -2172,6 +2275,7 @@ const CallFeedTile = ({
       panelVideoFit={panelVideoFit}
       panelFlush={panelFlush}
       isMicrophoneMuted={isMicrophoneMuted}
+      isLocalVideoMuted={isLocalVideoMuted}
       isDocumentPipOpen={isDocumentPipOpen}
       centerContent={centerContent}
       t={t}
@@ -2195,6 +2299,7 @@ const FeedContent = ({
   resolveMemberLabel,
   nameFallback,
   isMicrophoneMuted,
+  isLocalVideoMuted,
   isDocumentPipOpen = false,
   centerContent = false,
   t,
@@ -2214,6 +2319,7 @@ const FeedContent = ({
   resolveMemberLabel: (userId: string | undefined) => string;
   nameFallback: string;
   isMicrophoneMuted?: boolean;
+  isLocalVideoMuted?: boolean;
   isDocumentPipOpen?: boolean;
   centerContent?: boolean;
   t: (key: string) => string;
@@ -2224,8 +2330,14 @@ const FeedContent = ({
     feed,
     isMicrophoneMuted,
     isShare,
+    currentUserId,
   );
-  const liveVideoTrack = resolveCallFeedLiveVideoTrack(feed, { isShare });
+  const feedVideoOptions = {
+    isShare,
+    isLocalVideoMuted,
+    currentUserId,
+  };
+  const liveVideoTrack = resolveCallFeedLiveVideoTrack(feed, feedVideoOptions);
   const hasVideo = liveVideoTrack !== null;
   const isAudioOnlyTile = !isShare && !hasVideo;
   const { text: resolvedName, showSkeleton } = useCallParticipantDisplayName(
@@ -2245,7 +2357,11 @@ const FeedContent = ({
   const overlayLabel = isPip ? t('callYou') : shareOverlayLabel;
   const ariaLabel =
     isShare && !isPip ? shareOverlayLabel : isPip ? t('callYou') : resolvedName;
-  const mountRemoteAudio = shouldMountRemoteCallAudioSink(feed, isShare);
+  const mountRemoteAudio = shouldMountRemoteCallAudioSink(
+    feed,
+    isShare,
+    currentUserId,
+  );
   const mountRemoteAudioInMainDocument = isDocumentPipOpen && mountRemoteAudio;
 
   const ref = useRef<HTMLVideoElement | null>(null);
@@ -2258,7 +2374,11 @@ const FeedContent = ({
       isLocalFeed: feed.isLocal(),
       videoTrack: liveVideoTrack,
     });
-  const warmingVideoTrack = hasWarmingCallFeedVideoTrack(feed, { isShare });
+  const warmingVideoTrack = hasWarmingCallFeedVideoTrack(
+    feed,
+    feedVideoOptions,
+  );
+  const showVideoDebugOverlay = useMatrixCallDebugOverlayEnabled();
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
   const [streamBindVersion, rebindStream] = useReducer((n: number) => n + 1, 0);
@@ -2344,6 +2464,10 @@ const FeedContent = ({
   }, [liveVideoTrack?.id, streamBindVersion]);
 
   const showVideoSurface = hasVideo && videoSurfaceReady && !warmingVideoTrack;
+  const videoDebugDimensions = useCallFeedVideoDebugDimensions(
+    ref,
+    showVideoDebugOverlay && showVideoSurface,
+  );
 
   useEffect(() => {
     const el = audioRef.current;
@@ -2508,26 +2632,26 @@ const FeedContent = ({
       {hasVideo ? (
         <video
           ref={ref}
-          className={cn(
-            'absolute inset-0 z-[1] h-full w-full min-h-0 translate-z-0',
-            mirrorLocalPreview && '-scale-x-100',
-            !showVideoSurface && 'opacity-0',
-            isFullView && !isPip
-              ? 'object-contain'
-              : isShare
-              ? 'object-contain'
-              : panelFlush && !isPip && !isFullView
-              ? 'object-cover'
-              : !isPip && panelVideoFit === 'contain'
-              ? 'object-contain'
-              : 'object-cover',
-          )}
+          className={resolveCallFeedVideoSurfaceClassName({
+            mirrorLocalPreview,
+            showVideoSurface,
+            isFullView,
+            isPip,
+            isShare,
+            panelFlush,
+            panelVideoFit,
+          })}
           autoPlay
           playsInline
           disablePictureInPicture
           muted
           aria-label={ariaLabel}
         />
+      ) : null}
+      {showVideoDebugOverlay && showVideoSurface && videoDebugDimensions ? (
+        <span className="absolute bottom-1 left-1 z-[3] rounded bg-black/75 px-1 py-0.5 font-mono text-[9px] leading-none tabular-nums text-zinc-200">
+          {videoDebugDimensions}
+        </span>
       ) : null}
       {!showVideoSurface ? (
         <div

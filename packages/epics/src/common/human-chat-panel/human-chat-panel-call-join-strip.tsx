@@ -70,8 +70,10 @@ export function HumanChatPanelCallJoinStrip({
   const actionButtons = (
     <div
       className={cn(
-        'flex shrink-0 flex-wrap items-center justify-end gap-2',
-        isHero ? 'w-full lg:w-auto' : 'ms-auto',
+        'flex shrink-0 flex-wrap items-center gap-2',
+        isHero
+          ? 'w-full justify-end lg:w-auto'
+          : 'w-full min-w-0 sm:justify-end',
       )}
     >
       {hasDurable && onDismissDurable ? (
@@ -95,13 +97,13 @@ export function HumanChatPanelCallJoinStrip({
           disabled={disabled || busy || !onJoinAudio}
           className={cn(
             'gap-1.5',
-            isHero ? 'flex-1 lg:flex-none' : 'h-8 px-2.5 text-xs',
+            isHero ? 'flex-1 lg:flex-none' : 'h-8 min-w-0 flex-1 px-2 text-xs',
           )}
           title={audioTitle}
           aria-label={audioTitle}
         >
           <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          {audioLabel}
+          <span className="truncate">{audioLabel}</span>
         </Button>
       ) : null}
       <Button
@@ -112,13 +114,13 @@ export function HumanChatPanelCallJoinStrip({
         disabled={disabled || busy}
         className={cn(
           'gap-1.5',
-          isHero ? 'flex-1 lg:flex-none' : 'h-8 px-2.5 text-xs',
+          isHero ? 'flex-1 lg:flex-none' : 'h-8 min-w-0 flex-1 px-2 text-xs',
         )}
         title={videoTitle}
         aria-label={videoTitle}
       >
         <Video className="h-3.5 w-3.5 shrink-0" aria-hidden />
-        {videoLabel}
+        <span className="truncate">{videoLabel}</span>
       </Button>
     </div>
   );
@@ -147,10 +149,10 @@ export function HumanChatPanelCallJoinStrip({
         {useProminentJoinBanner ? (
           <div
             className={cn(
-              'flex flex-col gap-4',
+              'flex flex-col gap-3',
               isHero
-                ? 'p-5 lg:flex-row lg:items-center lg:justify-between'
-                : 'px-4 py-3 sm:flex-row sm:items-center sm:justify-between',
+                ? 'gap-4 p-5 lg:flex-row lg:items-center lg:justify-between'
+                : 'px-4 py-3',
             )}
           >
             <div
@@ -165,14 +167,22 @@ export function HumanChatPanelCallJoinStrip({
               >
                 <Phone className="h-4 w-4" strokeWidth={2.25} />
               </div>
-              <div className="flex min-w-0 flex-col gap-1.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span
                   className={cn(
-                    'font-bold text-foreground',
+                    'font-bold leading-snug text-foreground',
                     isHero ? 'text-2' : 'text-sm',
                   )}
                 >
                   {title}
+                </span>
+                <span
+                  className={cn(
+                    'leading-snug text-foreground/70',
+                    isHero ? 'text-1' : 'text-xs',
+                  )}
+                >
+                  {t('callJoinStripMemberCount', { count: deviceCount })}
                 </span>
               </div>
             </div>
@@ -181,20 +191,19 @@ export function HumanChatPanelCallJoinStrip({
         ) : (
           <div
             className={cn(
-              'flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5',
+              'flex min-w-0 flex-col gap-2',
               isHero
                 ? 'min-h-10 px-3 py-1.5 sm:px-4'
-                : 'min-h-11 px-3 py-1.5 sm:gap-3 sm:px-4',
+                : 'min-h-11 px-3 py-1.5 sm:px-4',
             )}
           >
             <p
               className={cn(
-                'min-w-0 flex-1 basis-full text-xs font-medium leading-tight sm:basis-auto',
+                'min-w-0 text-xs font-medium leading-snug',
                 isHero
                   ? 'text-[color:var(--color-accent-12,var(--foreground))]'
                   : 'text-foreground',
-                hasDurable &&
-                  'shrink-0 whitespace-nowrap sm:max-w-[min(100%,32rem)]',
+                hasDurable && 'text-foreground',
               )}
               title={hasDurable ? durableMessage ?? undefined : statusLine}
             >
