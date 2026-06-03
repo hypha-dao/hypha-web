@@ -40,12 +40,21 @@ describe('resolveCallFeedLiveVideoTrack', () => {
     );
   });
 
-  it('ignores muted tracks', () => {
+  it('ignores muted camera tracks', () => {
     expect(
       resolveCallFeedLiveVideoTrack(
         mockFeed({ tracks: [mockTrack({ muted: true })] }),
       ),
     ).toBeNull();
+  });
+
+  it('binds live muted screen-share tracks before the first frame', () => {
+    const track = mockTrack({ muted: true });
+    expect(
+      resolveCallFeedLiveVideoTrack(mockFeed({ tracks: [track] }), {
+        isShare: true,
+      }),
+    ).toBe(track);
   });
 });
 

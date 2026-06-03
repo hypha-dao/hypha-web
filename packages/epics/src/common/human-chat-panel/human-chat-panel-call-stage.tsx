@@ -30,7 +30,9 @@ import {
 import { Skeleton } from '@hypha-platform/ui';
 import {
   matrixMemberDisplayLabel,
+  matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
+  looksLikeTechnicalMatrixDisplayName,
 } from './matrix-room-member-display';
 import { CallAudioVoiceWaves } from './call-audio-voice-waves';
 import {
@@ -52,6 +54,8 @@ import {
 } from './call-gallery-grid';
 import { CallDockAspectTileShell } from './call-dock-tile-shell';
 import { CallPresenterParticipantFilmstrip } from './call-presenter-participant-filmstrip';
+import { CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH } from './call-document-pip-window-geometry';
+import { resolveScreenshareFilmstripContentWidth } from './call-screenshare-filmstrip-geometry';
 import {
   resolveCallStageLayout,
   resolveShareParticipantDockLayout,
@@ -1142,6 +1146,14 @@ function HumanChatPanelCallStageMain({
                   }
                   previousPageLabel={t('callGalleryPreviousPage')}
                   nextPageLabel={t('callGalleryNextPage')}
+                  contentWidth={
+                    isDocumentPipOpen
+                      ? resolveScreenshareFilmstripContentWidth(
+                          CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH,
+                        )
+                      : undefined
+                  }
+                  stackAllTiles={isDocumentPipOpen}
                 />
               ) : (
                 renderParticipantShareSidebar(
@@ -1561,6 +1573,7 @@ function HumanChatPanelCallStageMain({
               stripMaxVisible={layoutPlan.stripMaxVisible}
               cellClassName={userGridCellClass}
               panelDock={!isFull}
+              isPortrait={isDocumentPipOpen}
               renderTile={renderRemoteUserTile}
               overflowLabel={(count) => `+${count}`}
             />
@@ -1580,6 +1593,7 @@ function HumanChatPanelCallStageMain({
               stripMaxVisible={layoutPlan.stripMaxVisible}
               cellClassName={userGridCellClass}
               panelDock={!isFull}
+              isPortrait={isDocumentPipOpen}
               renderTile={renderRemoteUserTile}
               overflowLabel={(count) => `+${count}`}
             />
@@ -2017,10 +2031,12 @@ function useCallParticipantDisplayName(
     }
     /** Roster/Hypha merge first — avoid Privy slug from raw Matrix member displayname. */
     const roster = resolveMemberLabel(uid)?.trim();
-    if (roster) return roster;
+    if (roster && !looksLikeTechnicalMatrixDisplayName(roster, uid)) {
+      return roster;
+    }
     const m = room?.getMember(uid) ?? null;
     if (m) return matrixMemberDisplayLabel(m, uid);
-    return resolveMemberLabel(uid)?.trim() || fallback;
+    return fallback;
   }, [
     room,
     uid,
@@ -2033,17 +2049,17 @@ function useCallParticipantDisplayName(
   ]);
 
   const needsProfile =
-    !isPip &&
-    !isShare &&
-    !isLocalFeed &&
-    needsHyphaResolutionForCallLabel(syncLabel, uid);
+    !isPip && !isLocalFeed && needsHyphaResolutionForCallLabel(syncLabel, uid);
 
+  const canonicalSub = uid ? matrixUserIdToCanonicalPrivySub(uid) : null;
+  const needsMatrixLinkLookup = needsProfile && !canonicalSub;
   const { privyUserId: linkedSub, isLoading: loadingLink } =
     useUserPrivyIdByMatrixId({
-      matrixUserId: needsProfile ? uid : undefined,
+      matrixUserId: needsMatrixLinkLookup ? uid : undefined,
     });
+  const resolvedSub = canonicalSub ?? linkedSub;
   const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: linkedSub,
+    sub: resolvedSub,
   });
 
   useEffect(() => {
@@ -2209,7 +2225,7 @@ const FeedContent = ({
     isMicrophoneMuted,
     isShare,
   );
-  const liveVideoTrack = resolveCallFeedLiveVideoTrack(feed);
+  const liveVideoTrack = resolveCallFeedLiveVideoTrack(feed, { isShare });
   const hasVideo = liveVideoTrack !== null;
   const isAudioOnlyTile = !isShare && !hasVideo;
   const { text: resolvedName, showSkeleton } = useCallParticipantDisplayName(
@@ -2242,7 +2258,7 @@ const FeedContent = ({
       isLocalFeed: feed.isLocal(),
       videoTrack: liveVideoTrack,
     });
-  const warmingVideoTrack = hasWarmingCallFeedVideoTrack(feed);
+  const warmingVideoTrack = hasWarmingCallFeedVideoTrack(feed, { isShare });
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
   const [streamBindVersion, rebindStream] = useReducer((n: number) => n + 1, 0);

@@ -3089,7 +3089,11 @@ export function useSpaceGroupCall(
         recent,
         localUserId,
         gc.isScreensharing(),
-        (senderId) => room.getMember(senderId)?.name || senderId,
+        (senderId) => {
+          const member = room.getMember(senderId);
+          if (member) return matrixMemberDisplayLabel(member, senderId);
+          return senderId;
+        },
       );
       setScreenshareTakeoverIncoming(incoming);
 

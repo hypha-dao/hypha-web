@@ -30,6 +30,8 @@ type CallPresenterParticipantFilmstripProps = {
   nextPageLabel: string;
   className?: string;
   contentWidth?: number;
+  /** Document PiP — show every participant by splitting stage height evenly. */
+  stackAllTiles?: boolean;
 };
 
 /**
@@ -44,6 +46,7 @@ export function CallPresenterParticipantFilmstrip({
   nextPageLabel,
   className,
   contentWidth: contentWidthProp,
+  stackAllTiles = false,
 }: CallPresenterParticipantFilmstripProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [stageHeight, setStageHeight] = useState(0);
@@ -51,12 +54,14 @@ export function CallPresenterParticipantFilmstrip({
   const contentWidth =
     contentWidthProp ?? resolveScreenshareFilmstripContentWidth();
   const tileHeight = computeScreenshareFilmstripTileHeight(contentWidth);
+  const useStackLayout = stackAllTiles && tiles.length > 0 && tiles.length <= 3;
 
   useEffect(() => {
     setGalleryPage(0);
   }, [tiles.length]);
 
   useEffect(() => {
+    if (useStackLayout) return;
     const element = stageRef.current;
     if (!element) return;
     const update = () => {
@@ -66,9 +71,10 @@ export function CallPresenterParticipantFilmstrip({
     const observer = new ResizeObserver(update);
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [useStackLayout]);
 
   const pageCount = useMemo(() => {
+    if (useStackLayout) return 1;
     if (stageHeight <= 0) return 1;
     const tentativePageSize = resolveScreenshareFilmstripTilesPerPage({
       stageHeight,
@@ -76,26 +82,54 @@ export function CallPresenterParticipantFilmstrip({
       needsPagination: false,
     });
     return Math.max(1, Math.ceil(tiles.length / tentativePageSize));
-  }, [contentWidth, stageHeight, tiles.length]);
+  }, [contentWidth, stageHeight, tiles.length, useStackLayout]);
 
   const tilesPerPage = useMemo(() => {
+    if (useStackLayout) return tiles.length;
     if (stageHeight <= 0) return Math.max(1, tiles.length);
     return resolveScreenshareFilmstripTilesPerPage({
       stageHeight,
       contentWidth,
       needsPagination: pageCount > 1,
     });
-  }, [contentWidth, pageCount, stageHeight, tiles.length]);
+  }, [contentWidth, pageCount, stageHeight, tiles.length, useStackLayout]);
 
   useEffect(() => {
     setGalleryPage((page) => Math.min(page, Math.max(0, pageCount - 1)));
   }, [pageCount]);
 
   const visibleTiles = useMemo(() => {
-    if (pageCount <= 1) return tiles;
+    if (useStackLayout || pageCount <= 1) return tiles;
     const start = galleryPage * tilesPerPage;
     return tiles.slice(start, start + tilesPerPage);
-  }, [galleryPage, pageCount, tiles, tilesPerPage]);
+  }, [galleryPage, pageCount, tiles, tilesPerPage, useStackLayout]);
+
+  if (useStackLayout) {
+    return (
+      <div
+        className={cn(
+          'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+          className,
+        )}
+        role="group"
+        aria-label="Participants"
+      >
+        <div
+          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-1.5"
+          style={{ gap: SCREENSHARE_FILMSTRIP.tileGapPx }}
+        >
+          {tiles.map((item, index) => (
+            <div
+              key={filmstripTileKey(item, index)}
+              className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-sm bg-black"
+            >
+              {renderTile(item, 1000 + index)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

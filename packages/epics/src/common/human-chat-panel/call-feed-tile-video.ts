@@ -1,18 +1,28 @@
 import type { CallFeed } from 'matrix-js-sdk/lib/webrtc/callFeed';
 
-/** Live, enabled, unmuted video track suitable for rendering a participant tile. */
+/** Live, enabled video track suitable for rendering a participant tile. */
 export function resolveCallFeedLiveVideoTrack(
   feed: Pick<CallFeed, 'isVideoMuted' | 'stream'>,
+  options?: { isShare?: boolean },
 ): MediaStreamTrack | null {
   if (feed.isVideoMuted()) return null;
   const stream = feed.stream;
   if (!stream) return null;
+  const tracks = stream.getVideoTracks().filter((track) => track.enabled);
+  if (options?.isShare) {
+    /**
+     * Screen-share tracks often stay `muted: true` until the first frame arrives.
+     * Bind them anyway so `<video>` can paint as soon as WebRTC delivers pixels.
+     */
+    return (
+      tracks.find((track) => track.readyState === 'live' && !track.muted) ??
+      tracks.find((track) => track.readyState === 'live') ??
+      tracks.find((track) => (track.readyState as string) === 'new') ??
+      null
+    );
+  }
   return (
-    stream
-      .getVideoTracks()
-      .find(
-        (track) => track.readyState === 'live' && track.enabled && !track.muted,
-      ) ?? null
+    tracks.find((track) => track.readyState === 'live' && !track.muted) ?? null
   );
 }
 
@@ -22,11 +32,13 @@ export function resolveCallFeedLiveVideoTrack(
  */
 export function hasWarmingCallFeedVideoTrack(
   feed: Pick<CallFeed, 'isVideoMuted' | 'stream'>,
+  options?: { isShare?: boolean },
 ): boolean {
+  if (options?.isShare) return false;
   if (feed.isVideoMuted()) return false;
   const stream = feed.stream;
   if (!stream) return false;
-  if (resolveCallFeedLiveVideoTrack(feed)) return false;
+  if (resolveCallFeedLiveVideoTrack(feed, options)) return false;
   return stream.getVideoTracks().some((track) => {
     if (!track.enabled) return false;
     const state = track.readyState as string;

@@ -4070,6 +4070,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           )}
         {showSidebarCallChrome && !showFloatingDock ? (
           <HumanChatPanelScreenshareTakeoverDialog
+            roomId={roomId}
             incoming={spaceCallScreenshareTakeoverIncoming}
             pending={Boolean(spaceCallScreenshareTakeoverPendingId)}
             denied={spaceCallScreenshareTakeoverDenied}

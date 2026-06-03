@@ -63,6 +63,7 @@ describe('CSH-QA-2 share handoff through warming (row 2)', () => {
               {
                 readyState: 'new',
                 muted: false,
+                enabled: true,
               } as unknown as MediaStreamTrack,
             ],
           },
@@ -71,7 +72,8 @@ describe('CSH-QA-2 share handoff through warming (row 2)', () => {
       isScreensharing: false,
       isVideoCall: true,
     });
-    expect(layout.hasPendingRemoteShare).toBe(true);
+    expect(layout.shareFeeds).toHaveLength(1);
+    expect(layout.hasPendingRemoteShare).toBe(false);
     expect(layout.hasRenderableShare).toBe(true);
   });
 

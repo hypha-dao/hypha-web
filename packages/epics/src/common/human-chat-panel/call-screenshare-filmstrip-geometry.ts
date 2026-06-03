@@ -8,10 +8,14 @@ export const SCREENSHARE_FILMSTRIP = {
   footerPx: 72,
   footerWithBannerPx: 124,
   /** Document PiP — compact title row with Space action. */
-  pipHeaderPx: 28,
-  pipFooterPx: 36,
+  pipHeaderPx: 24,
+  pipFooterPx: 32,
   /** PiP footer + compact tab-audio action strip. */
-  pipFooterBannerPx: 72,
+  pipFooterBannerPx: 68,
+  /** Chrome Document PiP toolbar — not controllable by the page. */
+  pipBrowserChromePx: 40,
+  /** Minimum tile height when PiP stacks ≤3 participants without pagination. */
+  pipStackMinTilePx: 80,
   paginationPx: 28,
   minDockHeight: 280,
   /** Default PiP window height when opening during screen share. */
@@ -75,18 +79,36 @@ export function resolveScreenshareDockHeight(input: {
     : input.documentPip
     ? SCREENSHARE_FILMSTRIP.pipFooterPx
     : SCREENSHARE_FILMSTRIP.footerPx;
-  const chrome = header + footer;
+  const browserChrome = input.documentPip
+    ? SCREENSHARE_FILMSTRIP.pipBrowserChromePx
+    : 0;
+  const chrome = header + footer + browserChrome;
   const viewportMax =
     input.viewportMaxHeight ??
     (typeof window !== 'undefined'
       ? Math.max(280, window.innerHeight - 32)
       : 560);
 
+  /** PiP: stack all tiles vertically for small groups — avoids "Page 1 of 2". */
+  if (input.documentPip && participantCount <= 3) {
+    const stackTile = SCREENSHARE_FILMSTRIP.pipStackMinTilePx;
+    const stackHeight =
+      chrome +
+      participantCount * stackTile +
+      Math.max(0, participantCount - 1) * SCREENSHARE_FILMSTRIP.tileGapPx;
+    const minHeight = chrome + stackTile;
+    return Math.max(minHeight, Math.min(viewportMax, stackHeight));
+  }
+
   const idealHeight =
     chrome + participantCount * tileBlock - SCREENSHARE_FILMSTRIP.tileGapPx;
 
+  const minHeight = input.documentPip
+    ? chrome + tileHeight
+    : SCREENSHARE_FILMSTRIP.minDockHeight;
+
   if (idealHeight <= viewportMax) {
-    return Math.max(SCREENSHARE_FILMSTRIP.minDockHeight, idealHeight);
+    return Math.max(minHeight, idealHeight);
   }
 
   const stageMax = viewportMax - chrome - SCREENSHARE_FILMSTRIP.paginationPx;

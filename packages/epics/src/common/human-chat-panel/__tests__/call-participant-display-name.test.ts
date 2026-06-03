@@ -57,6 +57,38 @@ describe('resolveCallParticipantDisplayText (WCUX-AUDIO-TILE-1)', () => {
       }),
     ).toBe('Carol Hypha');
   });
+
+  it('skips bridged Privy slugs and uses fallback until profile resolves', () => {
+    expect(
+      resolveCallParticipantDisplayText({
+        isPip: false,
+        isLocalFeed: false,
+        currentUserId: null,
+        syncLabel: '@prod_privy…ha77ll:srv1294735.hstgr.cloud',
+        personName: '',
+        matrixUserId:
+          '@prod_privy_did_privy_cmdj8gqv30011l80j8qha77ll:srv1294735.hstgr.cloud',
+        matrixMemberLabel: '@prod_privy…ha77ll:srv1294735.hstgr.cloud',
+        fallback: 'Screen share',
+      }),
+    ).toBe('Screen share');
+  });
+
+  it('shows resolved presenter name for share overlay once profile loads', () => {
+    expect(
+      resolveCallParticipantDisplayText({
+        isPip: false,
+        isLocalFeed: false,
+        currentUserId: null,
+        syncLabel: 'prod_privy_did_privy_abc',
+        personName: 'Martin Prate',
+        matrixUserId:
+          '@prod_privy_did_privy_cmdj8gqv30011l80j8qha77ll:srv1294735.hstgr.cloud',
+        matrixMemberLabel: '@prod_privy…ha77ll:srv1294735.hstgr.cloud',
+        fallback: 'Screen share',
+      }),
+    ).toBe('Martin Prate');
+  });
 });
 
 describe('shouldShowCallParticipantNameSkeleton (WCUX-AUDIO-TILE-2)', () => {

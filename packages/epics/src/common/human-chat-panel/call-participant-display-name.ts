@@ -1,3 +1,8 @@
+import {
+  looksLikeTechnicalMatrixDisplayName,
+  pickUserVisibleMemberLabel,
+} from './matrix-room-member-display';
+
 /** WCUX-AUDIO-TILE-1: profile resolution timeout before Matrix fallback. */
 export const CALL_PARTICIPANT_PROFILE_TIMEOUT_MS = 4000;
 
@@ -57,9 +62,20 @@ export function resolveCallParticipantDisplayText(
     return args.syncLabel.trim() || args.fallback.trim();
   }
   if (args.personName.trim()) return args.personName.trim();
-  if (args.syncLabel.trim()) return args.syncLabel.trim();
-  if (args.matrixMemberLabel.trim()) return args.matrixMemberLabel.trim();
+  const matrixUserId = args.matrixUserId?.trim() ?? '';
+  const visible = pickUserVisibleMemberLabel(
+    matrixUserId,
+    args.syncLabel,
+    args.matrixMemberLabel,
+    args.fallback,
+  );
+  if (visible) return visible;
   const localpart = matrixUserLocalpartFallback(args.matrixUserId);
-  if (localpart) return localpart;
+  if (
+    localpart &&
+    !looksLikeTechnicalMatrixDisplayName(localpart, matrixUserId)
+  ) {
+    return localpart;
+  }
   return args.fallback.trim();
 }

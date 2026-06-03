@@ -174,6 +174,11 @@ export function useCallDockDocumentPip(
     return () => pipWindow.removeEventListener('pagehide', onPageHide);
   }, [pipWindow]);
 
+  useEffect(() => {
+    if (!pipWindow) return;
+    applyPipWindowSize(pipWindow, windowSize, windowMode);
+  }, [pipWindow, windowMode, windowSize.height, windowSize.width]);
+
   const openPip = useCallback(async () => {
     const api = window.documentPictureInPicture;
     if (!api?.requestWindow) return false;

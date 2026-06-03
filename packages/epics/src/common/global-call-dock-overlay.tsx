@@ -44,6 +44,7 @@ import {
   CALL_DOCUMENT_PIP_CALL,
   CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH,
   clampCallDocumentPipWindowSize,
+  resolveCallDocumentPipViewportMaxHeight,
   type CallDocumentPipWindowMode,
 } from './human-chat-panel/call-document-pip-window-geometry';
 import { resolveCallDockPortalTarget } from './human-chat-panel/call-feed-tile-audio';
@@ -626,9 +627,9 @@ export function GlobalCallDockOverlay() {
   } | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isResizing, setIsResizing] = React.useState(false);
-  const screenshareFilmstripTileCount = Math.max(
+  const screenshareFilmstripParticipantCount = Math.max(
     1,
-    roomGroupCallDeviceCount - 1,
+    roomGroupCallDeviceCount,
   );
   const documentPipWindowMode: CallDocumentPipWindowMode = isScreensharing
     ? 'filmstrip'
@@ -640,11 +641,12 @@ export function GlobalCallDockOverlay() {
           ? {
               width: CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH,
               height: resolveScreenshareDockHeight({
-                participantCount: screenshareFilmstripTileCount,
+                participantCount: screenshareFilmstripParticipantCount,
                 documentPip: true,
                 showBanner: screenshareTabAudioMissing,
                 compactBanner: true,
                 dockWidth: CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH,
+                viewportMaxHeight: resolveCallDocumentPipViewportMaxHeight(),
               }),
             }
           : {
@@ -656,7 +658,7 @@ export function GlobalCallDockOverlay() {
     [
       documentPipWindowMode,
       isScreensharing,
-      screenshareFilmstripTileCount,
+      screenshareFilmstripParticipantCount,
       screenshareTabAudioMissing,
     ],
   );
@@ -793,7 +795,9 @@ export function GlobalCallDockOverlay() {
           };
         }
         if (isDocumentPipOpen) return prev;
-        return resolveScreenshareDockGeometry(screenshareFilmstripTileCount);
+        return resolveScreenshareDockGeometry(
+          screenshareFilmstripParticipantCount,
+        );
       });
       if (dockMode === 'fullscreen') {
         setDockMode('thumbnail');
@@ -836,7 +840,7 @@ export function GlobalCallDockOverlay() {
     isDocumentPipOpen,
     isMobile,
     isScreensharing,
-    screenshareFilmstripTileCount,
+    screenshareFilmstripParticipantCount,
     setDockMode,
     showFloatingDock,
   ]);
@@ -855,7 +859,7 @@ export function GlobalCallDockOverlay() {
         ...prev,
         width: SCREENSHARE_DOCK_GEOMETRY.width,
         height: resolveScreenshareDockHeight({
-          participantCount: screenshareFilmstripTileCount,
+          participantCount: screenshareFilmstripParticipantCount,
         }),
       }),
     );
@@ -863,7 +867,7 @@ export function GlobalCallDockOverlay() {
     isDocumentPipOpen,
     isMobile,
     isScreensharing,
-    screenshareFilmstripTileCount,
+    screenshareFilmstripParticipantCount,
     showFloatingDock,
   ]);
 
@@ -1226,7 +1230,7 @@ export function GlobalCallDockOverlay() {
     >
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
         {inDocumentPip ? (
-          <div className="pointer-events-auto flex h-7 shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45 px-1 py-0.5">
+          <div className="pointer-events-auto flex h-6 shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45 px-1 py-0">
             <p
               className="min-w-0 flex-1 truncate text-[9px] font-medium leading-none text-foreground"
               title={t('callTitle', { count: roomGroupCallDeviceCount })}
@@ -1418,7 +1422,7 @@ export function GlobalCallDockOverlay() {
           className={cn(
             'pointer-events-auto relative isolate shrink-0 touch-manipulation border-t border-border/50',
             inDocumentPip
-              ? 'z-40 h-9 overflow-hidden bg-background/95 px-1 py-0.5 backdrop-blur-sm'
+              ? 'z-40 h-8 overflow-hidden bg-background/95 px-1 py-0 backdrop-blur-sm'
               : 'z-30 overflow-visible bg-muted/35 px-2 py-2',
           )}
         >
@@ -1593,6 +1597,7 @@ export function GlobalCallDockOverlay() {
         )}
 
       <HumanChatPanelScreenshareTakeoverDialog
+        roomId={activeRoomId}
         incoming={screenshareTakeoverIncoming}
         pending={Boolean(screenshareTakeoverPendingId)}
         denied={screenshareTakeoverDenied}
