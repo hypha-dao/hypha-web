@@ -36,6 +36,22 @@ export {
 } from './call-pairwise-retry-env';
 export { isCallMobileViewport } from './call-mobile-screenshare-policy';
 export {
+  aggregateCallRaisedHands,
+  CALL_FLOATING_REACTION_MAX_PER_TILE,
+  CALL_FLOATING_REACTION_MS,
+  CALL_RAISE_HAND_FIELD,
+  CALL_RAISE_HAND_NOTICE_TYPE,
+  CALL_SESSION_ANCHOR_TYPE,
+  parseCallRaiseHandNotice,
+  parseCallReactionAnnotation,
+  type CallRaisedHandEntry,
+} from './call-reactions';
+export {
+  publishCallSessionAnchor,
+  sendCallRaiseHandNotice,
+  sendCallReactionAnnotation,
+} from './call-reactions-client';
+export {
   HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID,
   applyScreenShareCaptureRootRestriction,
   applyScreenShareCaptureRootRestrictionWithRetry,

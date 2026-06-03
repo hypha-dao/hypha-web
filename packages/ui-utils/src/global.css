@@ -403,3 +403,8 @@
   flex: none;
   padding: 0;
 }
+
+/* Call feeds — hide Chrome's native video PiP control (Hypha uses Document PiP). */
+[data-hypha-call-feed-video]::-webkit-media-controls-picture-in-picture-button {
+  display: none !important;
+}

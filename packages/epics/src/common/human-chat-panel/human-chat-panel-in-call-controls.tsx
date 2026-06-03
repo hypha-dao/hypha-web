@@ -43,6 +43,7 @@ import {
   type SpaceGroupCallRecordingStatus,
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
+import { HumanChatPanelCallReactPopover } from './human-chat-panel-call-react-popover';
 import {
   callAccentAlertActionButtonClassName,
   callAccentAlertText,
@@ -86,6 +87,10 @@ type HumanChatPanelInCallControlsProps = {
   density?: 'default' | 'compact' | 'pip';
   /** Leave-only mode for in-chat convenience controls. */
   controlsMode?: 'full' | 'leave_only';
+  canSendCallReactions?: boolean;
+  localHandRaised?: boolean;
+  onSendReaction?: (emoji: string) => void | Promise<void>;
+  onToggleRaiseHand?: () => void | Promise<void>;
 };
 
 /**
@@ -121,6 +126,10 @@ export function HumanChatPanelInCallControls({
   inBannerLayout = 'inline',
   density = 'default',
   controlsMode = 'full',
+  canSendCallReactions = false,
+  localHandRaised = false,
+  onSendReaction,
+  onToggleRaiseHand,
 }: HumanChatPanelInCallControlsProps) {
   const t = useTranslations('HumanChatPanel');
   const isMobile = useIsMobile() ?? false;
@@ -306,6 +315,10 @@ export function HumanChatPanelInCallControls({
   const captureMenuActive = captureActive;
   const capturePulsing = recordingStatus === 'recording';
   const leaveOnly = controlsMode === 'leave_only';
+  const showCallReactions =
+    !leaveOnly &&
+    canSendCallReactions &&
+    Boolean(onSendReaction && onToggleRaiseHand);
   const captureSettingsBtn = cn(
     audioSettingsBtn,
     captureLive &&
@@ -866,6 +879,20 @@ export function HumanChatPanelInCallControls({
                       <Monitor className={icon} />
                     )}
                   </button>
+                ) : null}
+                {showCallReactions ? (
+                  <HumanChatPanelCallReactPopover
+                    disabled={controlsDisabled}
+                    localHandRaised={localHandRaised}
+                    onSendReaction={(emoji) => {
+                      void onSendReaction?.(emoji);
+                    }}
+                    onToggleRaiseHand={() => {
+                      void onToggleRaiseHand?.();
+                    }}
+                    variant={variant}
+                    density={density}
+                  />
                 ) : null}
               </>
             ) : null}

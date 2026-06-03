@@ -30,6 +30,7 @@ import {
   HumanChatPanelCallStage,
   HumanChatPanelCallFullViewLayoutMenu,
   HumanChatPanelInCallControls,
+  HumanChatPanelCallRaisedHandsStrip,
   HumanChatPanelScreenshareTakeoverDialog,
   readCallFullViewLayoutFromStorage,
   persistCallFullViewLayout,
@@ -570,6 +571,14 @@ export function GlobalCallDockOverlay() {
     retryRecordingUpload,
     captureConsent,
     leave,
+    canSendCallReactions,
+    localHandRaised,
+    sendReaction,
+    toggleRaiseHand,
+    raisedHands,
+    getFloatingReactions,
+    isHandRaised,
+    floatingReactionsVersion,
   } = useGlobalCallDock();
 
   const { onToggleScreenshare, screenshareTabAudioPromptDialog } =
@@ -1388,6 +1397,9 @@ export function GlobalCallDockOverlay() {
               onFullViewPaneSplitChange={onPaneSplitChange}
               fullViewSplitContainerRef={splitContainerRef}
               isDocumentPipOpen={isDocumentPipOpen}
+              getFloatingReactions={getFloatingReactions}
+              isHandRaised={isHandRaised}
+              floatingReactionsVersion={floatingReactionsVersion}
             />
           )}
         </div>
@@ -1497,6 +1509,13 @@ export function GlobalCallDockOverlay() {
                   onDismissCallError={dismissCallError}
                 />
               ) : null}
+              {raisedHands.length > 0 && !inDocumentPip ? (
+                <HumanChatPanelCallRaisedHandsStrip
+                  raisedHands={raisedHands}
+                  resolveMemberLabel={resolveMemberLabel}
+                  className={cn(dockCompact && '-mx-2 -mt-2 mb-1 border-x-0')}
+                />
+              ) : null}
               <HumanChatPanelInCallControls
                 callState={callState}
                 isMicrophoneMuted={isMicrophoneMuted}
@@ -1524,6 +1543,10 @@ export function GlobalCallDockOverlay() {
                 onLeave={() => {
                   void leave();
                 }}
+                canSendCallReactions={canSendCallReactions}
+                localHandRaised={localHandRaised}
+                onSendReaction={sendReaction}
+                onToggleRaiseHand={toggleRaiseHand}
                 density={dockControlsDensity}
                 variant={dockControlsVariant}
                 inBannerLayout={dockControlsLayout}

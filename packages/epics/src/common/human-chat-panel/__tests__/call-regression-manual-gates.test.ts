@@ -251,3 +251,57 @@ describe('CSH-QA-3–5 stability hardening (W7)', () => {
     expect(source).toContain('signalDeepLinkAuthNotReady');
   });
 });
+
+describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
+  it('publishes call-session anchor on connect', () => {
+    const source = readFileSync(
+      resolve(
+        __dirname,
+        '../../../../../core/src/matrix/client/hooks/use-space-group-call.ts',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('publishCallSessionAnchor');
+    expect(source).toContain('callSessionAnchorEventId');
+  });
+
+  it('react popover sits between screen share and leave in in-call controls', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(source).toContain('HumanChatPanelCallReactPopover');
+    expect(source).toContain('showCallReactions');
+    const toolbarBlock = source.slice(
+      source.indexOf('onClick={onToggleScreenshare}'),
+      source.indexOf('onClick={onLeave}'),
+    );
+    expect(toolbarBlock).toContain('HumanChatPanelCallReactPopover');
+  });
+
+  it('floating reactions and raised-hand badge render on call tiles', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-stage.tsx',
+    );
+    expect(source).toContain('CallFloatingReactionOverlay');
+    expect(source).toContain('callRaiseHandBadge');
+  });
+
+  it('raised-hands strip is wired above dock controls', () => {
+    const source = readCommonSource('global-call-dock-overlay.tsx');
+    expect(source).toContain('HumanChatPanelCallRaisedHandsStrip');
+    expect(source).toContain('raisedHands.length > 0');
+  });
+
+  it('reaction i18n keys exist in all locales', () => {
+    const keys = ['callReactButton', 'callRaiseHand', 'callRaisedHandsTitle'];
+    for (const locale of ['en', 'de', 'es', 'fr', 'pt']) {
+      const raw = readFileSync(
+        resolve(__dirname, `../../../../../i18n/src/messages/${locale}.json`),
+        'utf8',
+      );
+      for (const key of keys) {
+        expect(raw).toContain(`"${key}"`);
+      }
+    }
+  });
+});

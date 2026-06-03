@@ -39,6 +39,7 @@ import {
 } from './call-thumbnail-receiver-downscale';
 import { installMatrixCameraCaptureConstraints } from './call-video-capture-constraints';
 import { logGroupCallSimulcastCapabilityAudit } from './call-video-simulcast-audit';
+import { publishCallSessionAnchor } from './call-reactions-client';
 import {
   createCallRecording,
   startBrowserCallTranscription,
@@ -555,6 +556,9 @@ export function useSpaceGroupCall(
   const [feedVersion, setFeedVersion] = useState(0);
   /** `userId::deviceId` for GroupCall.activeSpeaker; Phase 4 optional UI highlight. */
   const [callSessionId, setCallSessionId] = useState<string | null>(null);
+  const [callSessionAnchorEventId, setCallSessionAnchorEventId] = useState<
+    string | null
+  >(null);
   const [activeSpeakerKey, setActiveSpeakerKey] = useState<string | null>(null);
   /** Latest active speaker for transcript attribution (avoids stale closure in SR). */
   const activeSpeakerKeyRef = useRef<string | null>(null);
@@ -1395,6 +1399,7 @@ export function useSpaceGroupCall(
       activeSpeakerKeyRef.current = null;
       setActiveSpeakerKey(null);
       setCallSessionId(null);
+      setCallSessionAnchorEventId(null);
       setScreenshareErrorCode(null);
       setCameraAccessBlocked(false);
       setCapturePreferenceSelected(false);
@@ -2450,6 +2455,25 @@ export function useSpaceGroupCall(
       }
 
       setCallState('connected');
+      void (async () => {
+        if (!client || !roomId?.trim()) return;
+        try {
+          const anchorEventId = await publishCallSessionAnchor({
+            client,
+            roomId: roomId.trim(),
+            callSessionId: newSessionId,
+          });
+          if (
+            joinEpoch !== joinEpochRef.current ||
+            groupCallRef.current !== gc
+          ) {
+            return;
+          }
+          setCallSessionAnchorEventId(anchorEventId);
+        } catch {
+          /* reactions unavailable if anchor publish fails */
+        }
+      })();
       resetMatrixCallSessionMetrics();
       callSessionStartedAtRef.current = Date.now();
       refreshLocalPreview();
@@ -3729,6 +3753,7 @@ export function useSpaceGroupCall(
   return {
     callState,
     callSessionId,
+    callSessionAnchorEventId,
     errorCode,
     screenshareErrorCode,
     screenshareTabAudioMissing,

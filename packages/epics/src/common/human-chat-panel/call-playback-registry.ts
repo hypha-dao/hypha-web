@@ -2,12 +2,41 @@
 
 const playbackElements = new Set<HTMLMediaElement>();
 
+/**
+ * Chrome/Edge show a native `<video>` PiP affordance that opens an OS-level
+ * floating window — outside Hypha's dock frame. Calls use Document PiP instead;
+ * block native video PiP on every registered call feed surface.
+ */
+export function hardenCallVideoAgainstNativePictureInPicture(
+  element: HTMLMediaElement,
+): () => void {
+  if (!(element instanceof HTMLVideoElement)) {
+    return () => undefined;
+  }
+
+  element.disablePictureInPicture = true;
+  element.setAttribute('disablePictureInPicture', '');
+  element.setAttribute('controlsList', 'nodownload noremoteplayback');
+
+  const onEnterNativePip = () => {
+    void document.exitPictureInPicture?.().catch(() => undefined);
+  };
+  element.addEventListener('enterpictureinpicture', onEnterNativePip);
+
+  return () => {
+    element.removeEventListener('enterpictureinpicture', onEnterNativePip);
+  };
+}
+
 export function registerCallPlaybackElement(
   element: HTMLMediaElement | null,
 ): () => void {
   if (!element) return () => undefined;
   playbackElements.add(element);
+  const releaseNativePipGuard =
+    hardenCallVideoAgainstNativePictureInPicture(element);
   return () => {
+    releaseNativePipGuard();
     playbackElements.delete(element);
   };
 }

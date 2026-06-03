@@ -7,6 +7,7 @@ import {
   useSpaceGroupCall,
 } from '@hypha-platform/core/client';
 import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
+import { useCallReactions } from './human-chat-panel/use-call-reactions';
 
 type PendingJoin = {
   kind: 'audio' | 'video';
@@ -224,6 +225,14 @@ function useGlobalCallDockValue() {
     spaceSlug: activeSpaceSlug,
     onCallArtifactsUploaded,
     getCallLaunchContext: () => callLaunchContextRef.current,
+  });
+  const currentUserId = client?.getUserId() ?? null;
+  const callReactions = useCallReactions({
+    client,
+    roomId: activeRoomId,
+    anchorEventId: call.callSessionAnchorEventId,
+    callState: call.callState,
+    currentUserId,
   });
 
   const inSession =
@@ -641,6 +650,7 @@ function useGlobalCallDockValue() {
     startAudioForRoom,
     startVideoForRoom,
     ...call,
+    ...callReactions,
     leave: leaveCall,
   };
 }

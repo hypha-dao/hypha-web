@@ -86,6 +86,8 @@ import {
 } from './use-call-feed-video-debug-overlay';
 import { registerCallPlaybackElement } from './call-playback-registry';
 import { callAccentAlertOnDarkText } from './call-accent-alert-styles';
+import { CallFloatingReactionOverlay } from './call-floating-reaction-overlay';
+import type { CallFloatingReaction } from './use-call-reactions';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
 
@@ -113,6 +115,12 @@ type HumanChatPanelCallStageBaseProps = {
   inCallUserIds?: string[] | null;
   /** True when remote participant map has users but feeds never attached (show stall copy). */
   remoteMediaStall?: boolean;
+  getFloatingReactions?: (
+    userId: string | null | undefined,
+  ) => CallFloatingReaction[];
+  isHandRaised?: (userId: string | null | undefined) => boolean;
+  /** Bumps when floating reaction overlays change. */
+  floatingReactionsVersion?: number;
 };
 
 type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
@@ -691,6 +699,9 @@ function HumanChatPanelCallStageMain({
   fullViewSplitContainerRef,
   isDocumentPipOpen = false,
   viewportTier: viewportTierProp,
+  getFloatingReactions,
+  isHandRaised,
+  floatingReactionsVersion = 0,
 }: HumanChatPanelCallStageMainProps) {
   const t = useTranslations('HumanChatPanel');
   const labelId = useId();
@@ -923,9 +934,14 @@ function HumanChatPanelCallStageMain({
       ? missingRemoteUserIds[0]
       : null;
 
+  const reactionPropsForFeed = (feed: CallFeed) => ({
+    floatingReactions: getFloatingReactions?.(feed.userId) ?? [],
+    handRaised: isHandRaised?.(feed.userId) ?? false,
+  });
+
   const renderUserTile = (feed: CallFeed, keyIdx: number) => (
     <CallFeedTile
-      key={feedKey(feed, keyIdx)}
+      key={`${feedKey(feed, keyIdx)}:${floatingReactionsVersion}`}
       client={client}
       roomId={roomId}
       currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
@@ -942,6 +958,7 @@ function HumanChatPanelCallStageMain({
       isMicrophoneMuted={isMicrophoneMuted}
       isLocalVideoMuted={isLocalVideoMuted}
       isDocumentPipOpen={isDocumentPipOpen}
+      {...reactionPropsForFeed(feed)}
       t={t}
     />
   );
@@ -961,6 +978,7 @@ function HumanChatPanelCallStageMain({
         isPip={false}
         resolveMemberLabel={resolveMemberLabel}
         remoteMediaStall={remoteMediaStall}
+        handRaised={isHandRaised?.(item.userId) ?? false}
         t={t}
       />
     );
@@ -1503,6 +1521,9 @@ function HumanChatPanelCallStageMain({
                                   isMicrophoneMuted={isMicrophoneMuted}
                                   isLocalVideoMuted={isLocalVideoMuted}
                                   isDocumentPipOpen={isDocumentPipOpen}
+                                  {...reactionPropsForFeed(
+                                    speakerFeedForTopMode,
+                                  )}
                                   t={t}
                                 />
                               ) : speakerTopPlaceholderId ? (
@@ -1518,6 +1539,10 @@ function HumanChatPanelCallStageMain({
                                   isPip={false}
                                   resolveMemberLabel={resolveMemberLabel}
                                   remoteMediaStall={remoteMediaStall}
+                                  handRaised={
+                                    isHandRaised?.(speakerTopPlaceholderId) ??
+                                    false
+                                  }
                                   t={t}
                                 />
                               ) : null}
@@ -1761,6 +1786,7 @@ function HumanChatPanelCallStageMain({
                   isLocalVideoMuted={isLocalVideoMuted}
                   isDocumentPipOpen={isDocumentPipOpen}
                   centerContent={centerSoloTileInStage}
+                  {...reactionPropsForFeed(remoteUserMedia[0]!)}
                   t={t}
                 />
               </div>
@@ -1776,6 +1802,7 @@ function HumanChatPanelCallStageMain({
                   isPip={false}
                   resolveMemberLabel={resolveMemberLabel}
                   remoteMediaStall={remoteMediaStall}
+                  handRaised={isHandRaised?.(missingRemoteUserIds[0]) ?? false}
                   t={t}
                 />
               </div>
@@ -1800,6 +1827,7 @@ function HumanChatPanelCallStageMain({
                   isLocalVideoMuted={isLocalVideoMuted}
                   isDocumentPipOpen={isDocumentPipOpen}
                   centerContent={centerSoloTileInStage}
+                  {...reactionPropsForFeed(localUserMedia[0]!)}
                   t={t}
                 />
               </div>
@@ -1870,6 +1898,7 @@ function HumanChatPanelCallStageMain({
                     isMicrophoneMuted={isMicrophoneMuted}
                     isLocalVideoMuted={isLocalVideoMuted}
                     isDocumentPipOpen={isDocumentPipOpen}
+                    {...reactionPropsForFeed(feed)}
                     t={t}
                   />
                 </div>
@@ -1909,6 +1938,7 @@ function HumanChatPanelCallStageMain({
                 isMicrophoneMuted={isMicrophoneMuted}
                 isLocalVideoMuted={isLocalVideoMuted}
                 isDocumentPipOpen={isDocumentPipOpen}
+                {...reactionPropsForFeed(feed)}
                 t={t}
               />
             ))}
@@ -1975,6 +2005,7 @@ function CallParticipantPlaceholderTile({
   isPip,
   resolveMemberLabel,
   remoteMediaStall = false,
+  handRaised = false,
   t,
 }: {
   client: MatrixClient | null;
@@ -1986,6 +2017,7 @@ function CallParticipantPlaceholderTile({
   isPip: boolean;
   resolveMemberLabel: (userId: string | undefined) => string;
   remoteMediaStall?: boolean;
+  handRaised?: boolean;
   t: (key: string) => string;
 }) {
   const room: Room | null =
@@ -2017,6 +2049,15 @@ function CallParticipantPlaceholderTile({
       aria-busy={!remoteMediaStall}
       aria-label={`${label} — ${statusLine}`}
     >
+      {handRaised ? (
+        <span
+          className="absolute end-2 top-2 z-[2] rounded-full bg-black/70 px-1.5 py-0.5 text-sm leading-none"
+          aria-label={t('callRaiseHandBadge')}
+          title={t('callRaiseHandBadge')}
+        >
+          ✋
+        </span>
+      ) : null}
       <div
         className={cn(
           'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-zinc-200 ring-1 ring-white/20',
@@ -2235,6 +2276,8 @@ const CallFeedTile = ({
   isLocalVideoMuted,
   isDocumentPipOpen = false,
   centerContent = false,
+  floatingReactions = [],
+  handRaised = false,
   t,
 }: {
   client: MatrixClient | null;
@@ -2254,6 +2297,8 @@ const CallFeedTile = ({
   isLocalVideoMuted?: boolean;
   isDocumentPipOpen?: boolean;
   centerContent?: boolean;
+  floatingReactions?: CallFloatingReaction[];
+  handRaised?: boolean;
   t: (key: string) => string;
 }) => {
   const nameFallback = isShare
@@ -2279,6 +2324,8 @@ const CallFeedTile = ({
       isLocalVideoMuted={isLocalVideoMuted}
       isDocumentPipOpen={isDocumentPipOpen}
       centerContent={centerContent}
+      floatingReactions={floatingReactions}
+      handRaised={handRaised}
       t={t}
     />
   );
@@ -2303,6 +2350,8 @@ const FeedContent = ({
   isLocalVideoMuted,
   isDocumentPipOpen = false,
   centerContent = false,
+  floatingReactions = [],
+  handRaised = false,
   t,
 }: {
   client: MatrixClient | null;
@@ -2323,6 +2372,8 @@ const FeedContent = ({
   isLocalVideoMuted?: boolean;
   isDocumentPipOpen?: boolean;
   centerContent?: boolean;
+  floatingReactions?: CallFloatingReaction[];
+  handRaised?: boolean;
   t: (key: string) => string;
 }) => {
   const compactTileLayout = isPip || isDocumentPipOpen;
@@ -2395,6 +2446,7 @@ const FeedContent = ({
 
     const videoStream = createCallFeedVideoStream(liveVideoTrack);
     el.srcObject = videoStream;
+    el.disablePictureInPicture = true;
 
     const markReady = () => {
       if (isCallFeedVideoSurfaceReady(el)) {
@@ -2630,9 +2682,20 @@ const FeedContent = ({
           'ring-2 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_70%,transparent)]',
       )}
     >
+      {handRaised ? (
+        <span
+          className="absolute end-1 top-1 z-[5] rounded-full bg-black/70 px-1.5 py-0.5 text-sm leading-none"
+          aria-label={t('callRaiseHandBadge')}
+          title={t('callRaiseHandBadge')}
+        >
+          ✋
+        </span>
+      ) : null}
+      <CallFloatingReactionOverlay reactions={floatingReactions} />
       {hasVideo ? (
         <video
           ref={ref}
+          data-hypha-call-feed-video=""
           className={resolveCallFeedVideoSurfaceClassName({
             mirrorLocalPreview,
             showVideoSurface,
@@ -2645,6 +2708,8 @@ const FeedContent = ({
           autoPlay
           playsInline
           disablePictureInPicture
+          disableRemotePlayback
+          controlsList="nodownload noremoteplayback"
           muted
           aria-label={ariaLabel}
         />

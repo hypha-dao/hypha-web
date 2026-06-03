@@ -1215,6 +1215,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     dismissRemoteMediaStallBanner: dismissSpaceCallRemoteMediaStall,
     retryRemoteMediaConnection: retrySpaceCallRemoteMedia,
     showFloatingDock,
+    canSendCallReactions,
+    localHandRaised,
+    sendReaction,
+    toggleRaiseHand,
+    raisedHands,
+    getFloatingReactions,
+    isHandRaised,
+    floatingReactionsVersion,
   } = useGlobalCallDock();
   useEffect(() => {
     const activeSpaceSlug = spaceSlug?.trim() || null;
@@ -4192,6 +4200,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       currentUserProfileAvatarUrl={currentUserAvatarUrl}
                       resolveMemberLabel={resolveMemberLabel}
                       layout="panel"
+                      getFloatingReactions={getFloatingReactions}
+                      isHandRaised={isHandRaised}
+                      floatingReactionsVersion={floatingReactionsVersion}
                     />
                   </div>
                 )}
