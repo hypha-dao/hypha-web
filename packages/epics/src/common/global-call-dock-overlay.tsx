@@ -1225,9 +1225,9 @@ export function GlobalCallDockOverlay() {
     >
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
         {inDocumentPip ? (
-          <div className="pointer-events-auto flex shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45 px-1.5 py-1">
+          <div className="pointer-events-auto flex h-7 shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45 px-1 py-0.5">
             <p
-              className="min-w-0 flex-1 truncate text-[10px] font-medium leading-tight text-foreground"
+              className="min-w-0 flex-1 truncate text-[9px] font-medium leading-none text-foreground"
               title={t('callTitle', { count: roomGroupCallDeviceCount })}
             >
               {t('callTitle', { count: roomGroupCallDeviceCount })}
@@ -1239,7 +1239,7 @@ export function GlobalCallDockOverlay() {
                 onClick={() => {
                   void onOpenCallSpace();
                 }}
-                className="inline-flex h-6 shrink-0 items-center justify-center gap-0.5 rounded-md border border-border/60 bg-background px-1.5 text-[10px] hover:bg-muted"
+                className="inline-flex h-5 shrink-0 items-center justify-center gap-0.5 rounded border border-border/60 bg-background px-1 text-[8px] leading-none hover:bg-muted"
                 aria-label={t('openSpaceLabel')}
                 title={t('openSpaceLabel')}
               >
@@ -1302,7 +1302,7 @@ export function GlobalCallDockOverlay() {
                 className="shrink-0"
               />
             ) : null}
-            {!isMobile ? (
+            {!isMobile && !isScreensharing && !isDocumentPipOpen ? (
               <div
                 className={cn(
                   'flex items-center',
@@ -1417,7 +1417,7 @@ export function GlobalCallDockOverlay() {
           className={cn(
             'pointer-events-auto relative isolate shrink-0 touch-manipulation border-t border-border/50',
             inDocumentPip
-              ? 'z-40 overflow-hidden bg-background/95 px-1.5 py-1 backdrop-blur-sm'
+              ? 'z-40 h-9 overflow-hidden bg-background/95 px-1 py-0.5 backdrop-blur-sm'
               : 'z-30 overflow-visible bg-muted/35 px-2 py-2',
           )}
         >

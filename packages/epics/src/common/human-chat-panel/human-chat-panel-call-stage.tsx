@@ -793,7 +793,12 @@ function HumanChatPanelCallStageMain({
   const room: Room | null =
     roomId && client ? client.getRoom(roomId) ?? null : null;
 
-  const showExpand = layout === 'panel' && !fullViewOpen && onRequestFullView;
+  const showExpand =
+    layout === 'panel' &&
+    !fullViewOpen &&
+    !isDocumentPipOpen &&
+    !isScreensharing &&
+    onRequestFullView;
 
   const shareParticipantTiles = useMemo(() => {
     /** Presenter dock: all in-call tiles (feeds + placeholders + local). */
@@ -2498,6 +2503,7 @@ const FeedContent = ({
           )}
           autoPlay
           playsInline
+          disablePictureInPicture
           muted
           aria-label={ariaLabel}
         />

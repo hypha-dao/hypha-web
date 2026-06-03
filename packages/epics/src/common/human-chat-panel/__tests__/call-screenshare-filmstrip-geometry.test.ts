@@ -55,10 +55,10 @@ describe('call-screenshare-filmstrip-geometry', () => {
 
   it('reserves compact PiP chrome for title row and footer toolbar', () => {
     expect(SCREENSHARE_FILMSTRIP.pipHeaderPx).toBe(28);
-    expect(SCREENSHARE_FILMSTRIP.pipFooterPx).toBe(48);
+    expect(SCREENSHARE_FILMSTRIP.pipFooterPx).toBe(36);
     expect(
       SCREENSHARE_FILMSTRIP.pipFooterBannerPx -
         SCREENSHARE_FILMSTRIP.pipFooterPx,
-    ).toBe(24);
+    ).toBe(36);
   });
 });

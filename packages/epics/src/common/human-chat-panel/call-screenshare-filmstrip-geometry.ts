@@ -9,7 +9,7 @@ export const SCREENSHARE_FILMSTRIP = {
   footerWithBannerPx: 124,
   /** Document PiP — compact title row with Space action. */
   pipHeaderPx: 28,
-  pipFooterPx: 48,
+  pipFooterPx: 36,
   /** PiP footer + compact tab-audio action strip. */
   pipFooterBannerPx: 72,
   paginationPx: 28,
