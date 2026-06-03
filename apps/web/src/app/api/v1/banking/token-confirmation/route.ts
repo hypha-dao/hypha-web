@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     if (result.result.kycLink) {
       await sendBankOnboardingEmail({
-        recipientEmail: result.bridgeCustomerEmail,
+        recipientEmail: result.providerCustomerEmail,
         spaceTitle: result.result.spaceTitle,
         legalName: result.legalName,
         kycLink: result.result.kycLink,

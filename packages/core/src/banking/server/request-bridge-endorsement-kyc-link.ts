@@ -53,7 +53,9 @@ export async function requestBridgeEndorsementKycLink(
         endorsement: parsedEndorsement,
         email: bridgeEmail,
       },
-      { existingKycLinkId: customer.providerKycLinkId },
+      customer.providerKycLinkId
+        ? { existingKycLinkId: customer.providerKycLinkId }
+        : undefined,
     );
 
     const shouldUpdateKycLinkId =

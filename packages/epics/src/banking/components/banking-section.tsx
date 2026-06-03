@@ -241,7 +241,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
       <BankingInitialSetup
         initialLegalName={fallbackLegalName}
         initialContactEmail={fallbackContactEmail}
-        submitterEmail={person?.email}
         isSubmitting={isOnboarding}
         error={onboardingError}
         onSubmit={handleInitialSetupSubmit}

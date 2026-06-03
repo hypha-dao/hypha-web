@@ -16,7 +16,6 @@ import { CurrencyOptionRow } from './currency-option-row';
 export type BankingInitialSetupProps = {
   initialLegalName: string;
   initialContactEmail: string;
-  submitterEmail?: string | null;
   isSubmitting: boolean;
   error: string | null;
   onSubmit: (input: {
@@ -29,7 +28,6 @@ export type BankingInitialSetupProps = {
 export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
   initialLegalName,
   initialContactEmail,
-  submitterEmail,
   isSubmitting,
   error,
   onSubmit,

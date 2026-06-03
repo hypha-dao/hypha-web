@@ -64,6 +64,9 @@ export function vaPairKey(
 export async function loadBankingProviderState(
   customer: BankCustomer,
 ): Promise<BankingProviderState> {
+  if (!customer.providerKycLinkId) {
+    throw new Error('Cannot load banking provider state: KYC link ID not available');
+  }
   const kycLink = await bridgeGetKycLink(customer.providerKycLinkId);
 
   let bridgeCustomer: BridgeGetCustomerResponse | null = null;
