@@ -99,6 +99,7 @@ import {
   matrixMemberDisplayLabel,
   matrixUserIdToCanonicalPrivySub,
   pickUserVisibleMemberLabel,
+  shortenMatrixIdForDisplay,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
