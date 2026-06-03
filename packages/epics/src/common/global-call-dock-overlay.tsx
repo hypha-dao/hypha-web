@@ -1207,7 +1207,14 @@ export function GlobalCallDockOverlay() {
   /** Fullscreen dock keeps large on-video controls; Document PiP stays minimal. */
   const dockControlsVariant =
     modeIsFullscreen && !isMobile ? 'fullView' : 'inBanner';
-  const dockControlsLayout = isMobile ? 'centered' : 'inline';
+  /** Center primary controls in the dock footer; PiP/fullscreen stay inline. */
+  const dockControlsLayout = isMobile
+    ? 'centered'
+    : dockCompact
+    ? 'inline'
+    : modeIsFullscreen
+    ? 'inline'
+    : 'centered';
   const dockControlsDensity = inDocumentPip ? 'pip' : 'default';
   const lockStagePointerEvents =
     !isScreensharing && !inDocumentPip && !isTouchDock;
