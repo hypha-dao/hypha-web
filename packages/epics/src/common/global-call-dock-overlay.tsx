@@ -1168,6 +1168,14 @@ export function GlobalCallDockOverlay() {
     (!inDocumentPip && screenshareTabAudioMissing && isScreensharing) ||
     cameraAccessBlocked ||
     sessionRefreshFailedDuringCall;
+  const dockCallSessionActive =
+    callState === 'connected' ||
+    callState === 'connecting' ||
+    callState === 'awaiting_media' ||
+    callState === 'initializing';
+  /** Full-screen mobile dock: mirror sidebar in-call status row (CSH-QA-1 on touch). */
+  const showTouchDockCallStatusBanner =
+    isTouchDock && !inDocumentPip && !showDockBanner && dockCallSessionActive;
   /** Mobile dock is always edge-to-edge; panel layout avoids full-view splitters eating taps. */
   const dockStageLayout = isMobile
     ? 'panel'
@@ -1508,6 +1516,77 @@ export function GlobalCallDockOverlay() {
                   onRetryCall={retryFromError}
                   onDismissCallError={dismissCallError}
                 />
+              ) : null}
+              {showTouchDockCallStatusBanner ? (
+                <div
+                  className={cn(
+                    'border-b border-border/50 bg-muted/30',
+                    dockCompact ? 'px-2 py-1' : 'px-2 py-1.5',
+                  )}
+                >
+                  <HumanChatPanelCallBanner
+                    participantRowOnly
+                    callState={callState}
+                    callKind={callKind}
+                    errorCode={errorCode}
+                    isScreensharing={isScreensharing}
+                    screenshareErrorCode={screenshareErrorCode}
+                    screenshareTabAudioMissing={screenshareTabAudioMissing}
+                    onDismissScreenshareTabAudioHint={
+                      dismissScreenshareTabAudioHint
+                    }
+                    onRetryScreenshareWithTabAudio={() => {
+                      void retryScreenshareWithTabAudio();
+                    }}
+                    cameraAccessBlocked={cameraAccessBlocked}
+                    onDismissCameraAccessBlocked={dismissCameraAccessBlocked}
+                    sessionRefreshFailedDuringCall={
+                      sessionRefreshFailedDuringCall
+                    }
+                    onReconnectMatrixSession={() => {
+                      void refreshSession();
+                    }}
+                    tabBackgroundWhileInCall={false}
+                    isMicrophoneMuted={isMicrophoneMuted}
+                    isLocalVideoMuted={isLocalVideoMuted}
+                    participantCount={roomGroupCallDeviceCount}
+                    othersInRoomCallCount={othersInRoomCallCount}
+                    remoteMediaStall={remoteMediaStall}
+                    remoteMediaWarming={remoteMediaWarming}
+                    onDismissRemoteMediaStall={dismissRemoteMediaStallBanner}
+                    onRetryRemoteMedia={retryRemoteMediaConnection}
+                    showScaleWarning={showCallScaleWarning}
+                    onLeave={() => {
+                      void leave();
+                    }}
+                    onToggleMic={onToggleMic}
+                    onToggleCamera={onToggleCamera}
+                    onToggleScreenshare={onToggleScreenshare}
+                    voiceProcessingPreset={voiceProcessingPreset}
+                    onVoiceProcessingPresetChange={
+                      onVoiceProcessingPresetChange
+                    }
+                    presenterVoiceBoostActive={presenterVoiceBoostActive}
+                    captureMode={captureMode}
+                    capturePreference={capturePreference}
+                    capturePreferenceSelected={capturePreferenceSelected}
+                    onCapturePreferenceChange={onCapturePreferenceChange}
+                    onStartCapture={onStartCaptureWithMode}
+                    onPauseCapture={onPauseCapture}
+                    onResumeCapture={onResumeCapture}
+                    onStopCapture={onStopCapture}
+                    recordingStatus={recordingStatus}
+                    recordingError={recordingError}
+                    recordingWarning={recordingWarning}
+                    canRetryRecordingUpload={canRetryRecordingUpload}
+                    onRetryRecordingUpload={() => void retryRecordingUpload()}
+                    captureConsent={captureConsent}
+                    roomId={activeRoomId}
+                    onDismissScreenshareError={dismissScreenshareError}
+                    onRetryCall={retryFromError}
+                    onDismissCallError={dismissCallError}
+                  />
+                </div>
               ) : null}
               {raisedHands.length > 0 && !inDocumentPip ? (
                 <HumanChatPanelCallRaisedHandsStrip

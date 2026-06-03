@@ -93,8 +93,15 @@ type HumanChatPanelCallBannerProps = {
   controlsMode?: 'full' | 'leave_only';
   /** Alerts and consent only — omit participant row and toolbar (e.g. floating dock footer). */
   alertsOnly?: boolean;
+  /** Participant status text only — no in-banner controls (mobile dock footer). */
+  participantRowOnly?: boolean;
   /** Tighter alert rows for Document PiP. */
   alertDensity?: 'default' | 'pip';
+  canSendCallReactions?: boolean;
+  localHandRaised?: boolean;
+  onSendReaction?: (emoji: string) => void | Promise<void>;
+  onToggleRaiseHand?: () => void | Promise<void>;
+  includeReactionsWhenLeaveOnly?: boolean;
 };
 
 function errorKey(code: SpaceGroupCallErrorCode): string {
@@ -173,7 +180,13 @@ export function HumanChatPanelCallBanner({
   onDismissCallError,
   controlsMode = 'full',
   alertsOnly = false,
+  participantRowOnly = false,
   alertDensity = 'default',
+  canSendCallReactions = false,
+  localHandRaised = false,
+  onSendReaction,
+  onToggleRaiseHand,
+  includeReactionsWhenLeaveOnly = false,
 }: HumanChatPanelCallBannerProps) {
   const t = useTranslations('HumanChatPanel');
   const isPipAlertDensity = alertDensity === 'pip';
@@ -500,36 +513,43 @@ export function HumanChatPanelCallBanner({
               aria-hidden
             />
           )}
-          <div className="shrink-0">
-            <HumanChatPanelInCallControls
-              callState={callState}
-              isMicrophoneMuted={isMicrophoneMuted}
-              isLocalVideoMuted={isLocalVideoMuted}
-              isScreensharing={isScreensharing}
-              onToggleMic={onToggleMic}
-              onToggleCamera={onToggleCamera}
-              onToggleScreenshare={onToggleScreenshare}
-              voiceProcessingPreset={voiceProcessingPreset}
-              onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
-              presenterVoiceBoostActive={presenterVoiceBoostActive}
-              captureMode={captureMode}
-              capturePreference={capturePreference}
-              capturePreferenceSelected={capturePreferenceSelected}
-              onCapturePreferenceChange={onCapturePreferenceChange}
-              onStartCapture={onStartCapture}
-              onPauseCapture={onPauseCapture}
-              onResumeCapture={onResumeCapture}
-              onStopCapture={onStopCapture}
-              recordingStatus={recordingStatus}
-              recordingError={recordingError}
-              recordingWarning={recordingWarning}
-              canRetryRecordingUpload={canRetryRecordingUpload}
-              onRetryRecordingUpload={onRetryRecordingUpload}
-              onLeave={onLeave}
-              variant="inBanner"
-              controlsMode={controlsMode}
-            />
-          </div>
+          {!participantRowOnly ? (
+            <div className="shrink-0">
+              <HumanChatPanelInCallControls
+                callState={callState}
+                isMicrophoneMuted={isMicrophoneMuted}
+                isLocalVideoMuted={isLocalVideoMuted}
+                isScreensharing={isScreensharing}
+                onToggleMic={onToggleMic}
+                onToggleCamera={onToggleCamera}
+                onToggleScreenshare={onToggleScreenshare}
+                voiceProcessingPreset={voiceProcessingPreset}
+                onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+                presenterVoiceBoostActive={presenterVoiceBoostActive}
+                captureMode={captureMode}
+                capturePreference={capturePreference}
+                capturePreferenceSelected={capturePreferenceSelected}
+                onCapturePreferenceChange={onCapturePreferenceChange}
+                onStartCapture={onStartCapture}
+                onPauseCapture={onPauseCapture}
+                onResumeCapture={onResumeCapture}
+                onStopCapture={onStopCapture}
+                recordingStatus={recordingStatus}
+                recordingError={recordingError}
+                recordingWarning={recordingWarning}
+                canRetryRecordingUpload={canRetryRecordingUpload}
+                onRetryRecordingUpload={onRetryRecordingUpload}
+                onLeave={onLeave}
+                variant="inBanner"
+                controlsMode={controlsMode}
+                canSendCallReactions={canSendCallReactions}
+                localHandRaised={localHandRaised}
+                onSendReaction={onSendReaction}
+                onToggleRaiseHand={onToggleRaiseHand}
+                includeReactionsWhenLeaveOnly={includeReactionsWhenLeaveOnly}
+              />
+            </div>
+          ) : null}
         </div>
       )}
     </div>

@@ -67,7 +67,9 @@ export function HumanChatPanelCallReactPopover({
       <PopoverContent
         align="end"
         side="top"
-        className="w-[min(100vw-2rem,320px)] space-y-3 border-border p-3"
+        sideOffset={8}
+        collisionPadding={16}
+        className="z-[140] w-[min(100vw-2rem,320px)] space-y-3 border-border p-3 shadow-xl"
       >
         <div>
           <p className="mb-2 text-xs font-medium text-foreground">

@@ -24,6 +24,8 @@ import {
   useSidebar,
   Button,
   Skeleton,
+  useIsMobile,
+  usePrefersCoarsePointer,
 } from '@hypha-platform/ui';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
@@ -926,6 +928,9 @@ type HumanRightPanelProps = {
 export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
   const tSpaces = useTranslations('Spaces');
+  const isMobile = useIsMobile() ?? false;
+  const prefersCoarsePointer = usePrefersCoarsePointer() ?? false;
+  const isTouchCallChrome = isMobile || prefersCoarsePointer;
   const params = useParams<{ id?: string }>();
   const pathname = usePathname() ?? '';
   const router = useRouter();
@@ -1399,6 +1404,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'connecting';
 
   const handleCallAudio = useCallback(() => {
+    if (inSpaceCall) return;
     markPendingCallStartNotify();
     const launchContext =
       mode === 'coherence' && coherenceTitle?.trim()
@@ -1433,9 +1439,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceSlug,
     startAudioForRoom,
     markPendingCallStartNotify,
+    inSpaceCall,
   ]);
 
   const handleCallVideo = useCallback(() => {
+    if (inSpaceCall) return;
     markPendingCallStartNotify();
     const launchContext =
       mode === 'coherence' && coherenceTitle?.trim()
@@ -1470,6 +1478,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceSlug,
     startVideoForRoom,
     markPendingCallStartNotify,
+    inSpaceCall,
   ]);
 
   const handleCallLeave = useCallback(() => {
@@ -3982,8 +3991,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionTabBadgeCount={bellMentionCount}
           mentionTabBadgeCapped={bellMentionCapped}
           tabRowEnd={
-            showSidebarCallChrome &&
-            (inSpaceCall || spaceCallRoomGroupDeviceCount === 0) ? (
+            showSidebarCallChrome && !inSpaceCall && !spaceCallShowJoinStrip ? (
               <HumanChatPanelCallToolbar
                 callState={spaceCallState}
                 callKind={spaceCallKind}
@@ -4114,6 +4122,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               captureConsent={spaceCallCaptureConsent}
               roomId={roomId}
               controlsMode="leave_only"
+              canSendCallReactions={canSendCallReactions}
+              localHandRaised={localHandRaised}
+              onSendReaction={sendReaction}
+              onToggleRaiseHand={toggleRaiseHand}
+              includeReactionsWhenLeaveOnly={isTouchCallChrome}
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
               onRetryCall={handleRetrySpaceCall}
               onDismissCallError={dismissSpaceCallError}

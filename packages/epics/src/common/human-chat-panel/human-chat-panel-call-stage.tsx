@@ -907,15 +907,14 @@ function HumanChatPanelCallStageMain({
     useFullViewSingleMainTile &&
     (isDocumentPipOpen || (!isFull && userGridTileCount <= 1));
 
-  /** Skip corner PiP when gallery grid already includes the local tile. */
+  /** Corner PiP when local is excluded from the main participant grid (multi-party calls). */
   const showFloatingLocalPip =
     isVideoCall &&
     localUserMedia.length > 0 &&
     hasLocalWebcam &&
     showLocalPip &&
     !useShareWithParticipantsLayout &&
-    !useMainGalleryLayout &&
-    !useSpeakerStripLayout;
+    !showLocalInMainGrid;
 
   const speakerFeedForTopMode = (() => {
     if (remoteUserMedia.length > 0) {
@@ -2665,12 +2664,15 @@ const FeedContent = ({
     tileAvatarSizePx,
   ]);
 
+  const tileCornerClass =
+    panelFlush && !isPip && !isFullView ? 'rounded-none' : 'rounded-md';
+
   return (
     <div
       className={cn(
         /* `rounded-md` = button-like corners; solid black so letterboxing (if any) is never a light “white” gap in light mode */
         'relative min-w-0 overflow-hidden bg-black',
-        panelFlush && !isPip && !isFullView ? 'rounded-none' : 'rounded-md',
+        tileCornerClass,
         isFullView && !isPip
           ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col'
           : compactTileLayout
@@ -2678,8 +2680,6 @@ const FeedContent = ({
           : 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col',
         isShare && !isFullView && 'min-h-[min(42vh,360px)] w-full',
         isShare && isFullView && 'h-full min-h-0 w-full',
-        isActiveSpeaker &&
-          'ring-2 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_70%,transparent)]',
       )}
     >
       {handRaised ? (
@@ -2894,6 +2894,15 @@ const FeedContent = ({
             return audioSink;
           })()
         : null}
+      {isActiveSpeaker ? (
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-0 z-[6] border-2 border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_70%,transparent)]',
+            tileCornerClass,
+          )}
+          aria-hidden
+        />
+      ) : null}
     </div>
   );
 };

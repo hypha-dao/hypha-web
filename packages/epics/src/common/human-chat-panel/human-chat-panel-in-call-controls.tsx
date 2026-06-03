@@ -91,6 +91,8 @@ type HumanChatPanelInCallControlsProps = {
   localHandRaised?: boolean;
   onSendReaction?: (emoji: string) => void | Promise<void>;
   onToggleRaiseHand?: () => void | Promise<void>;
+  /** Sidebar leave-only chrome on mobile still exposes reactions (WCUX-REACT-4). */
+  includeReactionsWhenLeaveOnly?: boolean;
 };
 
 /**
@@ -130,6 +132,7 @@ export function HumanChatPanelInCallControls({
   localHandRaised = false,
   onSendReaction,
   onToggleRaiseHand,
+  includeReactionsWhenLeaveOnly = false,
 }: HumanChatPanelInCallControlsProps) {
   const t = useTranslations('HumanChatPanel');
   const isMobile = useIsMobile() ?? false;
@@ -316,9 +319,9 @@ export function HumanChatPanelInCallControls({
   const capturePulsing = recordingStatus === 'recording';
   const leaveOnly = controlsMode === 'leave_only';
   const showCallReactions =
-    !leaveOnly &&
     canSendCallReactions &&
-    Boolean(onSendReaction && onToggleRaiseHand);
+    Boolean(onSendReaction && onToggleRaiseHand) &&
+    (!leaveOnly || includeReactionsWhenLeaveOnly);
   const captureSettingsBtn = cn(
     audioSettingsBtn,
     captureLive &&
@@ -880,21 +883,21 @@ export function HumanChatPanelInCallControls({
                     )}
                   </button>
                 ) : null}
-                {showCallReactions ? (
-                  <HumanChatPanelCallReactPopover
-                    disabled={controlsDisabled}
-                    localHandRaised={localHandRaised}
-                    onSendReaction={(emoji) => {
-                      void onSendReaction?.(emoji);
-                    }}
-                    onToggleRaiseHand={() => {
-                      void onToggleRaiseHand?.();
-                    }}
-                    variant={variant}
-                    density={density}
-                  />
-                ) : null}
               </>
+            ) : null}
+            {showCallReactions ? (
+              <HumanChatPanelCallReactPopover
+                disabled={controlsDisabled}
+                localHandRaised={localHandRaised}
+                onSendReaction={(emoji) => {
+                  void onSendReaction?.(emoji);
+                }}
+                onToggleRaiseHand={() => {
+                  void onToggleRaiseHand?.();
+                }}
+                variant={variant}
+                density={density}
+              />
             ) : null}
             <button
               type="button"

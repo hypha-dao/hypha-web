@@ -20,6 +20,24 @@ describe('CSH-QA-1 sidebar banner with floating dock (row 1)', () => {
     expect(match?.[1]).not.toContain('showFloatingDock');
   });
 
+  it('hides start-call toolbar while in session or when join strip is shown', () => {
+    const source = readCommonSource('human-right-panel.tsx');
+    expect(source).toContain('!inSpaceCall');
+    expect(source).toContain('!spaceCallShowJoinStrip');
+    const tabRow = source.slice(
+      source.indexOf('tabRowEnd={'),
+      source.indexOf('<HumanChatPanelCallJoinStrip'),
+    );
+    expect(tabRow).toContain('!inSpaceCall');
+    expect(tabRow).toContain('!spaceCallShowJoinStrip');
+  });
+
+  it('touch dock shows in-call status banner above controls', () => {
+    const source = readCommonSource('global-call-dock-overlay.tsx');
+    expect(source).toContain('showTouchDockCallStatusBanner');
+    expect(source).toContain('participantRowOnly');
+  });
+
   it('sidebar call banner stays visible while the dock is open', () => {
     const source = readCommonSource('human-right-panel.tsx');
     const bannerStart = source.indexOf('{showSidebarCallChrome &&');
@@ -140,6 +158,17 @@ describe('WCUX-QUALITY debug overlay and capture (row 9)', () => {
     expect(source).toContain('useMatrixCallDebugOverlayEnabled');
   });
 
+  it('paints active speaker highlight above video, not under it', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-stage.tsx',
+    );
+    const feedStart = source.indexOf('const FeedContent =');
+    expect(feedStart).toBeGreaterThan(-1);
+    const feedBlock = source.slice(feedStart);
+    expect(feedBlock).toContain('absolute inset-0 z-[6] border-2');
+    expect(feedBlock).toContain('{isActiveSpeaker ? (');
+  });
+
   it('requests 720p ideal camera capture on join', () => {
     const source = readFileSync(
       resolve(
@@ -249,6 +278,21 @@ describe('CSH-QA-3–5 stability hardening (W7)', () => {
     const source = readCommonSource('human-right-panel.tsx');
     expect(source).toContain('resolveSignalDeepLinkWithRetry');
     expect(source).toContain('signalDeepLinkAuthNotReady');
+  });
+});
+
+describe('WCUX-LAYOUT local self-view (corner PiP)', () => {
+  it('keeps corner PiP when gallery or speaker strip excludes local from the grid', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-stage.tsx',
+    );
+    const block = source.slice(
+      source.indexOf('const showFloatingLocalPip ='),
+      source.indexOf('const speakerFeedForTopMode'),
+    );
+    expect(block).toContain('!showLocalInMainGrid');
+    expect(block).not.toContain('!useMainGalleryLayout');
+    expect(block).not.toContain('!useSpeakerStripLayout');
   });
 });
 
