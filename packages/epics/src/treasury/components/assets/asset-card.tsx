@@ -77,9 +77,9 @@ export const AssetCard: React.FC<AssetCardProps> = ({
       : type;
 
   return (
-    <Card className="w-full h-full p-5 mb-2 flex flex-col justify-between">
-      <div className="w-full flex flex-row items-center mb-2">
-        <div className="mr-3">
+    <Card className="mb-2 flex h-full w-full min-w-0 flex-col justify-between p-4 sm:p-5">
+      <div className="mb-2 flex w-full min-w-0 flex-row items-start gap-3">
+        <div className="shrink-0">
           <Skeleton
             width="40px"
             height="40px"
@@ -87,7 +87,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             className="rounded-full"
           >
             <Image
-              className="rounded-full min-w-7 min-h-7"
+              className="min-h-7 min-w-7 rounded-full"
               src={icon ? icon : ''}
               height={32}
               width={32}
@@ -95,35 +95,35 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             />
           </Skeleton>
         </div>
-        <div className="flex flex-col justify-center">
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
           <Skeleton
             width="80px"
             height="16px"
             loading={isLoading}
-            className="mb-1 flex gap-1"
+            className="mb-0 flex gap-1"
           >
-            <Text className="text-4 font-medium text-secondary-foreground">
+            <Text className="truncate text-3 font-medium text-secondary-foreground sm:text-4">
               {valueDisplay ?? formatCurrencyValue(value ?? 0, lang)}
             </Text>
           </Skeleton>
           <Skeleton width="80px" height="16px" loading={isLoading}>
-            <span className="flex gap-2 items-center">
-              <span className="flex gap-2 items-center">
+            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="flex flex-wrap items-center gap-2">
                 <Text className="text-1 text-gray-500">{symbol}</Text>
-                {type && (
+                {type ? (
                   <Badge
                     colorVariant="accent"
                     variant="outline"
-                    className="w-fit h-fit"
+                    className="h-fit w-fit max-w-full truncate"
                   >
                     {tokenTypeLabel}
                   </Badge>
-                )}
+                ) : null}
               </span>
               {space?.title ? (
                 <Link
                   href={getDhoPathAgreements(lang as Locale, space.slug)}
-                  className="text-accent-11 text-1 text-ellipsis overflow-hidden hover:underline"
+                  className="min-w-0 max-w-full truncate text-1 text-accent-11 hover:underline"
                 >
                   {tTreasury('assetCard.fromSpace', {
                     spaceTitle: space.title,
@@ -134,22 +134,22 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           </Skeleton>
         </div>
       </div>
-      <div className="w-full flex flex-row gap-1">
-        <Text className="text-1">{name}</Text>
-        {tokenPrice !== undefined && tokenPrice > 0 && (
-          <Text className="text-1 text-neutral-11">
+      <div className="flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+        <Text className="min-w-0 text-1">{name}</Text>
+        {tokenPrice !== undefined && tokenPrice > 0 ? (
+          <Text className="shrink-0 text-1 text-neutral-11">
             {`${formatCurrencyValue(tokenPrice)} ${
               referenceCurrency?.trim() || 'USD'
             }`}
           </Text>
-        )}
-        {supply?.total !== undefined && (
+        ) : null}
+        {supply?.total !== undefined ? (
           <Text className="text-1 text-neutral-11">
             {tTreasury('assetCard.totalIssuance', {
               value: formatCurrencyValue(supply.total, lang),
             })}
           </Text>
-        )}
+        ) : null}
       </div>
       {mutualCredit && symbol ? (
         <div className="w-full flex flex-row gap-2 flex-wrap items-center mt-1">
