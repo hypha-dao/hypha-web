@@ -127,7 +127,7 @@ Paste into PR description and check each box before merge.
 - [x] **4** Presenter voice clearly audible while sharing (WCUX-SHARE-VOICE) — _Vitest gate `screenshare-voice-boost.test.ts` (voice_isolation + contentHint) (2026-06-02); audible level spot-check on preview recommended_
 - [x] **5** 5-person full-screen → no empty grid cells; all names visible (WCUX-LAYOUT) — _Vitest gate `call-stage-layout-engine.test.ts` (2026-06-02)_
 - [x] **6** 7-person medium dock → faces not cropped; speaker enlarged (WCUX-LAYOUT) — _Vitest gate `call-stage-layout-engine.test.ts` (2026-06-02)_
-- [ ] **7** Audio-only participant → name visible; voice waves use **space accent** (WCUX-AUDIO-TILE)
+- [x] **7** Audio-only participant → name visible; voice waves use **space accent** (WCUX-AUDIO-TILE) — _Vitest gate `call-participant-display-name.test.ts`, `call-audio-voice-waves.test.ts`, `use-call-dock-document-pip.test.ts` (2026-06-03)_
 - [ ] **8** Send 👍 reaction + raise hand ✋ visible to other participant (WCUX-REACT)
 - [ ] **9** Active speaker ≥480p in debug overlay (`hypha.callDebug=1`) (WCUX-QUALITY)
 - [ ] **10** **45-min** two-party call on staging → no disconnect (WCUX-SESSION)

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
+import { resolveCallAudioVoiceWaveBarStyle } from './call-audio-voice-wave-styles';
+
 /** Match {@link ChatVoiceAudioRow} bar count for a consistent “voice” readout. */
 const WAVE_BARS = 12;
 
@@ -101,7 +103,7 @@ export function CallAudioVoiceWaves({
     size === 'lg'
       ? 'w-1 min-w-[3px] max-w-[4px]'
       : 'w-0.5 min-w-[2px] max-w-[3px]';
-  const barIdle = onDarkScrim ? 'bg-zinc-500/55' : 'bg-muted-foreground/30';
+  const barIdle = onDarkScrim ? '' : 'bg-muted-foreground/30';
   const rowH =
     size === 'sm' ? 'h-4' : size === 'lg' ? 'h-16 min-h-[3rem] sm:h-20' : 'h-7';
 
@@ -285,6 +287,11 @@ export function CallAudioVoiceWaves({
     >
       {WAVE_BARS_SEED.map((h, i) => {
         const heightPx = Math.round(levels[i] ?? minPx + h * (maxPx - minPx));
+        const barStyle = resolveCallAudioVoiceWaveBarStyle({
+          active,
+          reduceMotion,
+          onDarkScrim,
+        });
         return (
           <span
             key={`${id}bar${String(i)}`}
@@ -295,14 +302,7 @@ export function CallAudioVoiceWaves({
             )}
             style={{
               height: `${heightPx}px`,
-              backgroundColor:
-                active && !reduceMotion
-                  ? 'color-mix(in srgb, var(--space-accent, hsl(var(--primary))) 88%, white)'
-                  : undefined,
-              boxShadow:
-                active && !reduceMotion && onDarkScrim
-                  ? '0 0 10px color-mix(in srgb, var(--space-accent, hsl(var(--primary))) 35%, transparent)'
-                  : undefined,
+              ...barStyle,
               opacity: active && !reduceMotion ? 0.92 + (i % 3) * 0.02 : 1,
             }}
           />

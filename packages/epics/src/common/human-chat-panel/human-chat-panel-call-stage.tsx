@@ -33,6 +33,11 @@ import {
   needsHyphaProfileResolutionForMatrixLabel,
 } from './matrix-room-member-display';
 import { CallAudioVoiceWaves } from './call-audio-voice-waves';
+import {
+  CALL_PARTICIPANT_PROFILE_TIMEOUT_MS,
+  resolveCallParticipantDisplayText,
+  shouldShowCallParticipantNameSkeleton,
+} from './call-participant-display-name';
 import type { CallFullViewLayoutMode } from './call-full-view-layout';
 import { CallFullViewPaneSplitter } from './human-chat-panel-call-full-view-pane-splitter';
 import type { CallFullViewPaneSplit } from './call-full-view-split';
@@ -1812,12 +1817,24 @@ function usePlaceholderParticipantName(
 
   const text = useMemo(() => {
     const fromPerson = person ? formatHyphaPersonName(person) : '';
-    if (fromPerson) return fromPerson;
-    return syncLabel;
-  }, [person, syncLabel]);
+    const matrixMemberLabel = (() => {
+      const m = room?.getMember(userId) ?? null;
+      if (m) return matrixMemberDisplayLabel(m, userId);
+      return '';
+    })();
+    return resolveCallParticipantDisplayText({
+      isPip: false,
+      isLocalFeed: false,
+      currentUserId: null,
+      syncLabel,
+      personName: fromPerson,
+      matrixUserId: userId,
+      matrixMemberLabel,
+      fallback,
+    });
+  }, [room, userId, person, syncLabel, fallback]);
 
-  const showSkeleton =
-    needsProfile && (loadingLink || (Boolean(linkedSub) && loadingPerson));
+  const showSkeleton = false;
 
   return { text, showSkeleton };
 }
@@ -1977,9 +1994,11 @@ function useCallParticipantDisplayName(
   fallback: string,
   isPip: boolean,
   isShare: boolean,
+  isAudioOnlyTile: boolean,
 ): { text: string; showSkeleton: boolean } {
   const uid = feed.userId;
   const isLocalFeed = feed.isLocal();
+  const [profileTimedOut, setProfileTimedOut] = useState(false);
 
   const syncLabel = useMemo(() => {
     if (isPip) return ''; // caller uses "You"
@@ -2017,16 +2036,55 @@ function useCallParticipantDisplayName(
     sub: linkedSub,
   });
 
-  const text = useMemo(() => {
-    if (isPip) return ''; // overlay uses callYou
-    if (isLocalFeed && currentUserId) return syncLabel;
-    const fromPerson = person ? formatHyphaPersonName(person) : '';
-    if (fromPerson) return fromPerson;
-    return syncLabel;
-  }, [isPip, isLocalFeed, currentUserId, person, syncLabel]);
+  useEffect(() => {
+    setProfileTimedOut(false);
+    if (!needsProfile) return;
+    const timer = window.setTimeout(() => {
+      setProfileTimedOut(true);
+    }, CALL_PARTICIPANT_PROFILE_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [needsProfile, uid]);
 
-  const showSkeleton =
-    needsProfile && (loadingLink || (Boolean(linkedSub) && loadingPerson));
+  const matrixMemberLabel = useMemo(() => {
+    const m = room?.getMember(uid) ?? null;
+    if (m) return matrixMemberDisplayLabel(m, uid);
+    return '';
+  }, [room, uid]);
+
+  const text = useMemo(
+    () =>
+      resolveCallParticipantDisplayText({
+        isPip,
+        isLocalFeed,
+        currentUserId,
+        syncLabel,
+        personName: person ? formatHyphaPersonName(person) : '',
+        matrixUserId: uid,
+        matrixMemberLabel,
+        fallback,
+      }),
+    [
+      isPip,
+      isLocalFeed,
+      currentUserId,
+      syncLabel,
+      person,
+      uid,
+      matrixMemberLabel,
+      fallback,
+    ],
+  );
+
+  const showSkeleton = shouldShowCallParticipantNameSkeleton({
+    isPip,
+    isShare,
+    isAudioOnlyTile,
+    needsProfile,
+    loadingLink,
+    loadingPerson,
+    linkedSub,
+    profileTimedOut,
+  });
 
   return { text, showSkeleton };
 }
@@ -2141,6 +2199,9 @@ const FeedContent = ({
     isMicrophoneMuted,
     isShare,
   );
+  const liveVideoTrack = resolveCallFeedLiveVideoTrack(feed);
+  const hasVideo = liveVideoTrack !== null;
+  const isAudioOnlyTile = !isShare && !hasVideo;
   const { text: resolvedName, showSkeleton } = useCallParticipantDisplayName(
     room,
     feed,
@@ -2149,6 +2210,7 @@ const FeedContent = ({
     nameFallback,
     isPip,
     isShare,
+    isAudioOnlyTile,
   );
   const shareOverlayLabel =
     isShare && !isPip
@@ -2163,7 +2225,6 @@ const FeedContent = ({
   const ref = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stream = feed.stream ?? null;
-  const liveVideoTrack = resolveCallFeedLiveVideoTrack(feed);
   const mirrorLocalPreview =
     Boolean(currentUserId && feed.userId === currentUserId) &&
     shouldMirrorCallFeedVideoForDisplay({
@@ -2172,7 +2233,6 @@ const FeedContent = ({
       videoTrack: liveVideoTrack,
     });
   const warmingVideoTrack = hasWarmingCallFeedVideoTrack(feed);
-  const hasVideo = liveVideoTrack !== null;
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
   const [streamBindVersion, rebindStream] = useReducer((n: number) => n + 1, 0);
