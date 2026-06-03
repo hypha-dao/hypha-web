@@ -1,10 +1,9 @@
 'use client';
 
-import { FC, FormEvent, useEffect, useMemo, useState } from 'react';
+import { FC, FormEvent, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { emailsMatchForBypass } from '@hypha-platform/core/client';
-import { Button, Checkbox, Input, Label } from '@hypha-platform/ui';
+import { Button, Input, Label } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import {
@@ -44,23 +43,11 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
   const [selected, setSelected] = useState<BankCurrencyCode[]>(() => [
     ...getDefaultBankCurrencyCodes(),
   ]);
-  const [authorizeOwnEmail, setAuthorizeOwnEmail] = useState(false);
-
   useEffect(() => {
     setLegalName(initialLegalName.trim());
     setContactEmail(initialContactEmail.trim());
     setSelected([...getDefaultBankCurrencyCodes()]);
-    setAuthorizeOwnEmail(false);
   }, [initialContactEmail, initialLegalName]);
-
-  const requiresBypassAuthorization = useMemo(() => {
-    const submitter = submitterEmail?.trim();
-    const contact = contactEmail.trim();
-    if (!submitter || !contact) {
-      return false;
-    }
-    return emailsMatchForBypass(submitter, contact);
-  }, [contactEmail, submitterEmail]);
 
   const toggleCurrency = (currency: BankCurrencyCode, checked: boolean) => {
     setSelected((current) =>
@@ -71,8 +58,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
   const canSubmit =
     selected.length > 0 &&
     Boolean(legalName.trim()) &&
-    Boolean(contactEmail.trim()) &&
-    (!requiresBypassAuthorization || authorizeOwnEmail);
+    Boolean(contactEmail.trim());
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -150,16 +136,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
               {tDialog('contactEmailHelper')}
             </p>
           </div>
-          {requiresBypassAuthorization ? (
-            <label className="flex cursor-pointer items-start gap-2 text-sm">
-              <Checkbox
-                checked={authorizeOwnEmail}
-                disabled={isSubmitting}
-                onCheckedChange={(value) => setAuthorizeOwnEmail(value === true)}
-              />
-              <span>{tDialog('authorizeOwnEmail')}</span>
-            </label>
-          ) : null}
+
         </div>
       </section>
 

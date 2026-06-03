@@ -1,8 +1,9 @@
 'use client';
 
 import { FC, useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { CircleCheck, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Empty } from '@hypha-platform/epics';
 
 type VerifyBankingPageProps = {
   token: string | null;
@@ -69,21 +70,20 @@ export const VerifyBankingPage: FC<VerifyBankingPageProps> = ({ token }) => {
         ) : null}
 
         {state.kind === 'success' ? (
-          <>
-            <h1 className="text-4 font-semibold text-foreground">
-              {t('successTitle')}
-            </h1>
-            <p className="text-2 text-muted-foreground">{t('successBody')}</p>
-          </>
+          <div className="flex flex-col items-center gap-2 py-7 text-center text-success-11">
+            <CircleCheck className="size-7" />
+            <div className="flex flex-col gap-1 text-1">
+              <p className="font-semibold">{t('successTitle')}</p>
+              <p className="text-muted-foreground">{t('successBody')}</p>
+            </div>
+          </div>
         ) : null}
 
         {state.kind === 'failure' ? (
-          <>
-            <h1 className="text-4 font-semibold text-foreground">
-              {t('failureTitle')}
-            </h1>
-            <p className="text-2 text-muted-foreground">{t('failureBody')}</p>
-          </>
+          <Empty>
+            <p className="font-semibold text-foreground">{t('failureTitle')}</p>
+            <p className="text-muted-foreground">{t('failureBody')}</p>
+          </Empty>
         ) : null}
       </div>
     </div>

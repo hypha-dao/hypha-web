@@ -34,7 +34,6 @@ import { CreateTransferDialog } from './create-transfer-dialog';
 import { BankingInitialSetup } from './banking-initial-setup';
 import { BankingPageSkeleton } from './banking-page-skeleton';
 import { BankingProviderStatusPanel } from './banking-provider-status-panel';
-import { PendingEmailConfirmationCard } from './pending-email-confirmation-card';
 import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
 
 type BankingSectionProps = {
@@ -229,26 +228,6 @@ export const BankingSection: FC<BankingSectionProps> = ({
     return <BankingPageSkeleton />;
   }
 
-  if (status?.pendingEmailConfirmation) {
-    if (!canManage) {
-      return (
-        <p className="text-2 text-muted-foreground">
-          {blockerMessage ?? tNotStarted('description')}
-        </p>
-      );
-    }
-
-    return (
-      <PendingEmailConfirmationCard
-        pending={status.pendingEmailConfirmation}
-        initialLegalName={fallbackLegalName}
-        isSubmitting={isOnboarding}
-        error={onboardingError}
-        onSubmit={handlePendingResendSubmit}
-      />
-    );
-  }
-
   if (!hasCustomer) {
     if (!canManage) {
       return (
@@ -285,6 +264,17 @@ export const BankingSection: FC<BankingSectionProps> = ({
         blockerMessage={blockerMessage}
         onRefreshStatus={refreshBankingState}
         showPageHeader
+        emailConfirmation={
+          status?.pendingEmailConfirmation && canManage
+            ? {
+                pending: status.pendingEmailConfirmation,
+                initialLegalName: fallbackLegalName,
+                isSubmitting: isOnboarding,
+                error: onboardingError,
+                onSubmit: handlePendingResendSubmit,
+              }
+            : undefined
+        }
       />
     );
   }

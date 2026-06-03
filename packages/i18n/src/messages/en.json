@@ -890,8 +890,8 @@
       "title": "Enable bank deposits",
       "description": "We use this information to verify your organization. Once approved, your space will be set up to receive bank transfers.",
       "legalName": "Legal entity name",
-      "contactEmail": "Bridge customer email",
-      "contactEmailHelper": "This email will be registered with Bridge. It doesn't need to be your own email.",
+      "contactEmail": "Space or administrator contact email",
+      "contactEmailHelper": "This email will be registered with our provider (Bridge).",
       "authorizeOwnEmail": "I confirm I am authorized to register this email for Bridge bank integration on behalf of this space.",
       "endorsementsLabel": "Payment rails",
       "endorsementsHint": "These are Bridge KYB endorsements (e.g. base for USD, sepa for EUR). Each selected rail is included in the verification link.",
@@ -899,13 +899,12 @@
       "submitting": "Starting…"
     },
     "pendingEmailConfirmation": {
-      "title": "Confirm your Bridge customer email",
-      "statusPending": "Pending",
-      "description": "A confirmation email has been sent. The recipient must click the link to authorize use of this email for bank integration.",
-      "contactEmailLabel": "Bridge customer email",
+      "title": "Authorize contact email",
+      "statusPending": "Pending confirmation",
+      "contactEmailLabel": "Space or administrator contact email",
       "railsLabel": "Payment rails",
       "resendCheckbox": "Send a new confirmation email",
-      "resendHelper": "A new email will invalidate the previous confirmation link.",
+      "resendHelper": "Sending a new email will invalidate the previous confirmation link.",
       "submit": "Send",
       "submitting": "Sending…"
     },
@@ -914,7 +913,7 @@
         "loading": "Confirming your email…",
         "missingToken": "This confirmation link is invalid.",
         "successTitle": "Email confirmed",
-        "successBody": "Thank you. Bank verification can continue for this space.",
+        "successBody": "Thank you. Bank verification can continue for the space.",
         "failureTitle": "Confirmation failed",
         "failureBody": "This link is invalid or has expired. Ask the space admin to send a new confirmation email."
       }

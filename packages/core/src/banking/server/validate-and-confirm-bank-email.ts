@@ -13,7 +13,7 @@ export type ValidateAndConfirmBankEmailResult =
       ok: true;
       result: BankOnboardingResult;
       spaceSlug: string;
-      bridgeCustomerEmail: string;
+      providerCustomerEmail: string;
       legalName: string;
     }
   | {
@@ -33,7 +33,7 @@ export async function validateAndConfirmBankEmail(
   }
 
   const customer = await findBankCustomerByNonce({ nonce: payload.jti }, { db });
-  if (!customer) {
+  if (!customer || customer.id !== payload.spaceBankCustomerId) {
     return { ok: false, reason: 'not_found' };
   }
 
@@ -44,7 +44,7 @@ export async function validateAndConfirmBankEmail(
   const performResult = await performKycLinkAndInsert(
     {
       legalName: payload.legalName,
-      contactEmail: payload.bridgeCustomerEmail,
+      contactEmail: payload.providerCustomerEmail,
       requestedRails: payload.requestedRails,
       redirectUri: payload.redirectUri,
     },
@@ -72,7 +72,7 @@ export async function validateAndConfirmBankEmail(
     ok: true,
     result,
     spaceSlug: payload.spaceSlug,
-    bridgeCustomerEmail: payload.bridgeCustomerEmail,
+    providerCustomerEmail: payload.providerCustomerEmail,
     legalName: payload.legalName,
   };
 }

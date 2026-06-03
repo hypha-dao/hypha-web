@@ -103,7 +103,7 @@ export async function requestSpaceBankOnboarding(
         space,
         person: auth.person,
         legalName,
-        bridgeCustomerEmail: contactEmail,
+        providerCustomerEmail: contactEmail,
         requestedRails: normalizedRails,
         redirectUri,
       },

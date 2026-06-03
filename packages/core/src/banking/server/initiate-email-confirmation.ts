@@ -16,7 +16,7 @@ export type InitiateEmailConfirmationInput = {
   space: Pick<Space, 'id' | 'slug' | 'title'>;
   person: AuthorizedBankOnboardingPerson;
   legalName: string;
-  bridgeCustomerEmail: string;
+  providerCustomerEmail: string;
   requestedRails: string[];
   redirectUri?: string | null;
   entityType?: BankEntityType;
@@ -36,7 +36,7 @@ export async function initiateEmailConfirmation(
     space,
     person,
     legalName,
-    bridgeCustomerEmail,
+    providerCustomerEmail,
     requestedRails,
     redirectUri,
     entityType = 'business',
@@ -45,12 +45,35 @@ export async function initiateEmailConfirmation(
   const normalizedRails = requestedRails.map((rail) => rail.toLowerCase());
   const jti = randomUUID();
   const spaceSlug = space.slug ?? '';
+
+  const pending = await findPendingBankCustomerForSpace(
+    { spaceId: space.id, provider: DEFAULT_BANK_PROVIDER },
+    { db },
+  );
+
+  const row = pending
+    ? await rotatePendingBankCustomerNonce(
+        { id: pending.id, jwtNonce: jti, requestedRails: normalizedRails },
+        { db },
+      )
+    : await insertPendingBankCustomer(
+        {
+          spaceId: space.id,
+          entityType,
+          provider: DEFAULT_BANK_PROVIDER,
+          jwtNonce: jti,
+          requestedRails: normalizedRails,
+        },
+        { db },
+      );
+
   const signedJwt = await signBankConfirmationJwt({
     jti,
     spaceId: space.id,
     spaceSlug,
+    spaceBankCustomerId: row.id,
     provider: DEFAULT_BANK_PROVIDER,
-    bridgeCustomerEmail,
+    providerCustomerEmail: providerCustomerEmail,
     legalName,
     requestedRails: normalizedRails,
     personSlug: person.slug ?? null,
@@ -58,36 +81,9 @@ export async function initiateEmailConfirmation(
     redirectUri: redirectUri ?? null,
   });
 
-  const pending = await findPendingBankCustomerForSpace(
-    { spaceId: space.id, provider: DEFAULT_BANK_PROVIDER },
-    { db },
-  );
-
-  if (pending) {
-    await rotatePendingBankCustomerNonce(
-      {
-        id: pending.id,
-        jwtNonce: jti,
-        requestedRails: normalizedRails,
-      },
-      { db },
-    );
-  } else {
-    await insertPendingBankCustomer(
-      {
-        spaceId: space.id,
-        entityType,
-        provider: DEFAULT_BANK_PROVIDER,
-        jwtNonce: jti,
-        requestedRails: normalizedRails,
-      },
-      { db },
-    );
-  }
-
   return {
     signedJwt,
-    contactEmail: bridgeCustomerEmail,
+    contactEmail: providerCustomerEmail,
     spaceTitle: space.title,
   };
 }

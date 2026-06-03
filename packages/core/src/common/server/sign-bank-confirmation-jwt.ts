@@ -3,15 +3,19 @@ import 'server-only';
 import { SignJWT, jwtVerify } from 'jose';
 
 const JWT_SUBJECT = 'bank-email-confirmation';
-const JWT_EXPIRY = '72h';
+
+function getJwtExpiry(): string {
+  return process.env.BANK_EMAIL_CONFIRMATION_TOKEN_EXPIRY?.trim() || '168h';
+}
 
 export type BankConfirmationJwtPayload = {
   sub: typeof JWT_SUBJECT;
   jti: string;
   spaceId: number;
   spaceSlug: string;
+  spaceBankCustomerId: number;
   provider: string;
-  bridgeCustomerEmail: string;
+  providerCustomerEmail: string;
   legalName: string;
   requestedRails: string[];
   personSlug: string | null;
@@ -40,8 +44,9 @@ function parsePayload(
   const jti = payload.jti;
   const spaceId = payload.spaceId;
   const spaceSlug = payload.spaceSlug;
+  const spaceBankCustomerId = payload.spaceBankCustomerId;
   const provider = payload.provider;
-  const bridgeCustomerEmail = payload.bridgeCustomerEmail;
+  const providerCustomerEmail = payload.providerCustomerEmail;
   const legalName = payload.legalName;
   const requestedRails = payload.requestedRails;
   const personSlug = payload.personSlug;
@@ -57,12 +62,15 @@ function parsePayload(
   if (typeof spaceSlug !== 'string' || spaceSlug.length === 0) {
     throw new Error('Invalid bank confirmation token');
   }
+  if (typeof spaceBankCustomerId !== 'number' || !Number.isFinite(spaceBankCustomerId)) {
+    throw new Error('Invalid bank confirmation token');
+  }
   if (typeof provider !== 'string' || provider.length === 0) {
     throw new Error('Invalid bank confirmation token');
   }
   if (
-    typeof bridgeCustomerEmail !== 'string' ||
-    bridgeCustomerEmail.length === 0
+    typeof providerCustomerEmail !== 'string' ||
+    providerCustomerEmail.length === 0
   ) {
     throw new Error('Invalid bank confirmation token');
   }
@@ -90,8 +98,9 @@ function parsePayload(
     jti,
     spaceId,
     spaceSlug,
+    spaceBankCustomerId,
     provider,
-    bridgeCustomerEmail,
+    providerCustomerEmail,
     legalName,
     requestedRails,
     personSlug: personSlug ?? null,
@@ -108,8 +117,9 @@ export async function signBankConfirmationJwt(
   return new SignJWT({
     spaceId: payload.spaceId,
     spaceSlug: payload.spaceSlug,
+    spaceBankCustomerId: payload.spaceBankCustomerId,
     provider: payload.provider,
-    bridgeCustomerEmail: payload.bridgeCustomerEmail,
+    providerCustomerEmail: payload.providerCustomerEmail,
     legalName: payload.legalName,
     requestedRails: payload.requestedRails,
     personSlug: payload.personSlug,
@@ -119,7 +129,7 @@ export async function signBankConfirmationJwt(
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(JWT_SUBJECT)
     .setJti(payload.jti)
-    .setExpirationTime(JWT_EXPIRY)
+    .setExpirationTime(getJwtExpiry())
     .sign(secret);
 }
 

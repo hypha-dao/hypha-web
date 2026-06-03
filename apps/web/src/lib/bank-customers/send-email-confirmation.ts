@@ -36,11 +36,10 @@ export async function sendEmailConfirmation({
   if (!templateId) {
     if (process.env.NODE_ENV !== 'production') {
       console.log(
-        '[bank-email-confirm] Skipping OneSignal send — EMAIL_TEMPLATE_BANK_EMAIL_CONFIRMATION is not set. Would send:',
-        {
-          recipientEmail,
-          customData,
-        },
+        '[bank-email-confirm] EMAIL_TEMPLATE_BANK_EMAIL_CONFIRMATION not set — email not sent.\n' +
+          '  Recipient:         ' + recipientEmail + '\n' +
+          '  Confirmation link: ' + confirmationLink + '\n' +
+          '  Raw token:         ' + signedJwt,
       );
     }
     return;

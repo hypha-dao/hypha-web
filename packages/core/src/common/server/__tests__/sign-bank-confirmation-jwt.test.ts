@@ -21,8 +21,9 @@ describe('sign-bank-confirmation-jwt', () => {
       jti: '11111111-1111-1111-1111-111111111111',
       spaceId: 1,
       spaceSlug: 'acme',
+      spaceBankCustomerId: 42,
       provider: 'bridge',
-      bridgeCustomerEmail: 'compliance@acme.org',
+      providerCustomerEmail: 'compliance@acme.org',
       legalName: 'Acme Foundation Ltd.',
       requestedRails: ['eur', 'usd'],
       personSlug: 'alice',
@@ -34,7 +35,8 @@ describe('sign-bank-confirmation-jwt', () => {
 
     expect(payload.jti).toBe('11111111-1111-1111-1111-111111111111');
     expect(payload.spaceId).toBe(1);
-    expect(payload.bridgeCustomerEmail).toBe('compliance@acme.org');
+    expect(payload.spaceBankCustomerId).toBe(42);
+    expect(payload.providerCustomerEmail).toBe('compliance@acme.org');
     expect(payload.requestedRails).toEqual(['eur', 'usd']);
   });
 });
