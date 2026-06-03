@@ -2452,6 +2452,8 @@
     "connectionLostTitle": "Connection lost",
     "connectionLostDescription": "Chat sync paused because the network dropped. Retry when you're back online.",
     "connectionReconnectingDescription": "Reconnecting chat…",
+    "connectionRetryFailedDescription": "Could not reconnect. Check your network and try again.",
+    "connectionRetryingLabel": "Retrying…",
     "connectionLostRetry": "Retry",
     "connectionFollowerTitle": "Chat is open in another tab",
     "connectionFollowerDescription": "Human Chat syncs in one browser tab at a time to stay reliable during calls.",

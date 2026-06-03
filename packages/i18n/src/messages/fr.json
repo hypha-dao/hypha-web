@@ -2053,6 +2053,8 @@
     "connectionLostTitle": "Connexion perdue",
     "connectionLostDescription": "La synchronisation du chat est en pause à cause d'un problème réseau. Réessayez lorsque vous serez de nouveau en ligne.",
     "connectionReconnectingDescription": "Reconnexion du chat…",
+    "connectionRetryFailedDescription": "Impossible de se reconnecter. Vérifiez votre réseau et réessayez.",
+    "connectionRetryingLabel": "Nouvelle tentative…",
     "connectionLostRetry": "Réessayer",
     "connectionFollowerTitle": "Le chat est ouvert dans un autre onglet",
     "connectionFollowerDescription": "Human Chat se synchronise dans un seul onglet du navigateur à la fois pour rester fiable pendant les appels.",

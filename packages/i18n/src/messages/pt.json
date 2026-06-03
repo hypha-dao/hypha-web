@@ -2053,6 +2053,8 @@
     "connectionLostTitle": "Conexão perdida",
     "connectionLostDescription": "A sincronização do chat foi pausada por uma falha de rede. Tente novamente quando estiver online.",
     "connectionReconnectingDescription": "Reconectando o chat…",
+    "connectionRetryFailedDescription": "Não foi possível reconectar. Verifique a sua rede e tente novamente.",
+    "connectionRetryingLabel": "A tentar novamente…",
     "connectionLostRetry": "Tentar novamente",
     "connectionFollowerTitle": "O chat está aberto em outra aba",
     "connectionFollowerDescription": "O Human Chat sincroniza em uma aba do navegador por vez para manter as chamadas estáveis.",

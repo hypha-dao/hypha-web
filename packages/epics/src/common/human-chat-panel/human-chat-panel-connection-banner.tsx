@@ -12,6 +12,8 @@ type HumanChatPanelConnectionBannerProps = {
   isMatrixSyncLeader: boolean;
   /** Another tab holds the live group-call session (CSH-MESH-5). */
   activeCallInAnotherTab?: boolean;
+  /** Set after an explicit Retry click fails. */
+  connectionRetryFailed?: boolean;
   onRetry: () => void;
   onUseThisTab: () => void;
 };
@@ -27,6 +29,7 @@ export function HumanChatPanelConnectionBanner({
   connectionStatus,
   isMatrixSyncLeader,
   activeCallInAnotherTab = false,
+  connectionRetryFailed = false,
   onRetry,
   onUseThisTab,
 }: HumanChatPanelConnectionBannerProps) {
@@ -66,6 +69,8 @@ export function HumanChatPanelConnectionBanner({
               ? t('connectionFollowerDescription')
               : isReconnecting
               ? t('connectionReconnectingDescription')
+              : connectionRetryFailed
+              ? t('connectionRetryFailedDescription')
               : t('connectionLostDescription')}
           </p>
         </div>
@@ -88,10 +93,15 @@ export function HumanChatPanelConnectionBanner({
             colorVariant="neutral"
             className={bannerButtonClassName}
             disabled={isReconnecting}
+            aria-busy={isReconnecting}
             onClick={onRetry}
           >
-            <ReloadIcon className="h-3.5 w-3.5" />
-            {t('connectionLostRetry')}
+            <ReloadIcon
+              className={cn('h-3.5 w-3.5', isReconnecting && 'animate-spin')}
+            />
+            {isReconnecting
+              ? t('connectionRetryingLabel')
+              : t('connectionLostRetry')}
           </Button>
         )}
       </div>

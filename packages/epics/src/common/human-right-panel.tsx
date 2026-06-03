@@ -945,6 +945,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     connectionStatus,
     claimMatrixSyncLeadership,
     retryMatrixConnection,
+    connectionRetryFailed,
     refreshSession,
     sessionRefreshFailedDuringCall,
     markRoomRead,
@@ -4226,6 +4227,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   connectionStatus={connectionStatus}
                   isMatrixSyncLeader={isMatrixSyncLeader}
                   activeCallInAnotherTab={activeCallInAnotherTab}
+                  connectionRetryFailed={connectionRetryFailed}
                   onRetry={() => {
                     void retryMatrixConnection();
                   }}

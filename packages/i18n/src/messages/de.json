@@ -2450,6 +2450,8 @@
     "connectionLostTitle": "Verbindung unterbrochen",
     "connectionLostDescription": "Die Chat-Synchronisation wurde wegen eines Netzwerkfehlers pausiert. Versuchen Sie es erneut, sobald Sie wieder online sind.",
     "connectionReconnectingDescription": "Chat wird wieder verbunden…",
+    "connectionRetryFailedDescription": "Verbindung fehlgeschlagen. Prüfen Sie Ihr Netzwerk und versuchen Sie es erneut.",
+    "connectionRetryingLabel": "Wird erneut versucht…",
     "connectionLostRetry": "Erneut versuchen",
     "connectionFollowerTitle": "Chat ist in einem anderen Tab geöffnet",
     "connectionFollowerDescription": "Human Chat synchronisiert jeweils nur in einem Browser-Tab, damit Anrufe stabil bleiben.",
