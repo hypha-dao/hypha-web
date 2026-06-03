@@ -60,7 +60,10 @@ describe('CSH-QA-2 share handoff through warming (row 2)', () => {
           stream: {
             id: 'stream-1',
             getVideoTracks: () => [
-              { readyState: 'new', muted: false } as MediaStreamTrack,
+              {
+                readyState: 'new',
+                muted: false,
+              } as unknown as MediaStreamTrack,
             ],
           },
         } as never,
