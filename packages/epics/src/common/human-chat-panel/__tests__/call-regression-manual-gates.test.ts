@@ -104,6 +104,33 @@ describe('CSH-QA-2 share handoff through warming (row 2)', () => {
   });
 });
 
+describe('CSH-SHARE-3 single presenter (one share at a time)', () => {
+  it('blocks local share start when another participant is presenting', () => {
+    const source = readFileSync(
+      resolve(
+        commonDir,
+        '../../../core/src/matrix/client/hooks/use-space-group-call.ts',
+      ),
+      'utf8',
+    );
+    expect(source).toContain('isRemoteScreenshareActive(gc)');
+    expect(source).not.toContain(
+      "sendScreenshareTakeoverEvent(\n              'request'",
+    );
+  });
+
+  it('disables share menu while remote share is active', () => {
+    const controls = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    const menu = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-screenshare-menu.tsx',
+    );
+    expect(controls).toContain('remoteScreenshareActive');
+    expect(menu).toContain('callScreenshareBlockedRemoteActive');
+  });
+});
+
 describe('WCUX-SHARE-AUDIO tab share + muted badge (row 3)', () => {
   it('requests tab audio in display-media constraints', () => {
     const source = readFileSync(
@@ -115,7 +142,9 @@ describe('WCUX-SHARE-AUDIO tab share + muted badge (row 3)', () => {
     );
     expect(source).toContain('suppressLocalAudioPlayback: false');
     expect(source).toContain('systemAudio:');
-    expect(source).toContain('preferCurrentTab: true');
+    expect(source).toContain("case 'tab':");
+    expect(source).toContain("case 'window':");
+    expect(source).toContain("case 'monitor':");
   });
 
   it('mounts remote share audio sinks and suppresses false muted badges', async () => {
@@ -150,12 +179,22 @@ describe('WCUX-QUALITY debug overlay and capture (row 9)', () => {
     expect(source).toContain('isMatrixCallDebugLocalStorageEnabled');
   });
 
-  it('renders frame dimension debug overlay on video tiles', () => {
+  it('does not render frame dimension labels on video tiles', () => {
     const source = readCommonSource(
       'human-chat-panel/human-chat-panel-call-stage.tsx',
     );
-    expect(source).toContain('useCallFeedVideoDebugDimensions');
-    expect(source).toContain('useMatrixCallDebugOverlayEnabled');
+    expect(source).not.toContain('useCallFeedVideoDebugDimensions');
+    expect(source).not.toContain('videoDebugDimensions');
+  });
+
+  it('keeps participant name labels inside tiles without top-edge clipping', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-stage.tsx',
+    );
+    const feedStart = source.indexOf('const FeedContent =');
+    const feedBlock = source.slice(feedStart);
+    expect(feedBlock).toContain('bottom-1 text-[10px] leading-4');
+    expect(feedBlock).not.toMatch(/top-1 flex-row items-center gap-1\.5/);
   });
 
   it('paints active speaker highlight above video, not under it', () => {
@@ -314,12 +353,27 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
       'human-chat-panel/human-chat-panel-in-call-controls.tsx',
     );
     expect(source).toContain('HumanChatPanelCallReactPopover');
+    expect(source).toContain('HumanChatPanelCallScreenshareMenu');
     expect(source).toContain('showCallReactions');
     const toolbarBlock = source.slice(
-      source.indexOf('onClick={onToggleScreenshare}'),
+      source.indexOf('HumanChatPanelCallScreenshareMenu'),
       source.indexOf('onClick={onLeave}'),
     );
     expect(toolbarBlock).toContain('HumanChatPanelCallReactPopover');
+  });
+
+  it('hides Document PiP while share UX is stabilized', () => {
+    const source = readCommonSource('global-call-dock-overlay.tsx');
+    expect(source).toContain('CALL_DOCUMENT_PIP_ENABLED');
+    expect(source).toContain('!CALL_DOCUMENT_PIP_ENABLED');
+  });
+
+  it('spreads dock footer controls evenly across the bar', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(source).toContain('useDockSpreadToolbar');
+    expect(source).toContain('justify-evenly');
   });
 
   it('floating reactions and raised-hand badge render on call tiles', () => {

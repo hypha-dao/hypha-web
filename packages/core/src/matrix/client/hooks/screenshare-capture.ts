@@ -27,13 +27,19 @@ export function resolveMatrixScreenshareCaptureOpts(): IScreensharingOpts {
   return MATRIX_SCREENSHARE_CAPTURE_OPTS;
 }
 
+/** Hypha share picker — maps to Chrome Tab / Window / Entire screen tabs. */
+export type CallScreenshareSurfaceMode = 'tab' | 'window' | 'monitor';
+
 type DisplayMediaConstraints = {
   video: boolean | MediaTrackConstraints;
   audio: boolean | MediaTrackConstraints;
   preferCurrentTab?: boolean;
   selfBrowserSurface?: 'include' | 'exclude';
   systemAudio?: 'include' | 'exclude';
+  monitorTypeSurfaces?: 'include' | 'exclude';
 };
+
+const DEFAULT_SCREENSHARE_SURFACE_MODE: CallScreenshareSurfaceMode = 'tab';
 
 type ScreenshareConstraintOpts = Pick<IScreensharingOpts, 'audio'>;
 
@@ -44,6 +50,7 @@ type ScreenshareConstraintOpts = Pick<IScreensharingOpts, 'audio'>;
  */
 export function buildDisplayMediaConstraints(
   opts: ScreenshareConstraintOpts = MATRIX_SCREENSHARE_CAPTURE_OPTS,
+  surfaceMode: CallScreenshareSurfaceMode = DEFAULT_SCREENSHARE_SURFACE_MODE,
 ): DisplayMediaConstraints {
   if (isIOSTouchDevice()) {
     return { video: true, audio: false };
@@ -56,13 +63,35 @@ export function buildDisplayMediaConstraints(
       ? true
       : opts.audio;
 
-  return {
+  const base = {
     video: true,
     audio,
-    preferCurrentTab: true,
-    selfBrowserSurface: 'include',
-    systemAudio: 'include',
+    systemAudio: 'include' as const,
   };
+
+  switch (surfaceMode) {
+    case 'window':
+      return {
+        ...base,
+        preferCurrentTab: false,
+        selfBrowserSurface: 'exclude',
+        monitorTypeSurfaces: 'exclude',
+      };
+    case 'monitor':
+      return {
+        ...base,
+        preferCurrentTab: false,
+        selfBrowserSurface: 'exclude',
+        monitorTypeSurfaces: 'include',
+      };
+    case 'tab':
+    default:
+      return {
+        ...base,
+        preferCurrentTab: true,
+        selfBrowserSurface: 'include',
+      };
+  }
 }
 
 type MediaHandlerWithConstraints = {
@@ -80,6 +109,7 @@ type MatrixClientWithMediaHandler = {
 export async function withEnhancedScreenshareCapture<T>(
   client: MatrixClientWithMediaHandler | null | undefined,
   run: () => Promise<T>,
+  surfaceMode: CallScreenshareSurfaceMode = DEFAULT_SCREENSHARE_SURFACE_MODE,
 ): Promise<T> {
   const handler = client?.getMediaHandler?.() as
     | MediaHandlerWithConstraints
@@ -90,7 +120,7 @@ export async function withEnhancedScreenshareCapture<T>(
 
   const original = handler.getScreenshareContraints.bind(handler);
   handler.getScreenshareContraints = (opts) =>
-    buildDisplayMediaConstraints(opts);
+    buildDisplayMediaConstraints(opts, surfaceMode);
 
   try {
     return await run();

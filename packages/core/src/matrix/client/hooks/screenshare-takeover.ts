@@ -49,6 +49,20 @@ export function getRemoteScreenshareOwner(
   return null;
 }
 
+/** True when another participant is presenting — only one share at a time (CSH-SHARE-3). */
+export function isRemoteScreenshareActive(
+  groupCall: MatrixSdk.GroupCall | null | undefined,
+): boolean {
+  return getRemoteScreenshareOwner(groupCall) != null;
+}
+
+export function canStartLocalScreenshare(
+  groupCall: MatrixSdk.GroupCall | null | undefined,
+): boolean {
+  if (!groupCall || groupCall.isScreensharing()) return true;
+  return !isRemoteScreenshareActive(groupCall);
+}
+
 function isRecentTakeoverEvent(event: MatrixSdk.MatrixEvent): boolean {
   const ts = event.getTs();
   if (!ts) return false;

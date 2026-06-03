@@ -78,7 +78,6 @@ import {
   HumanChatPanelMentionTab,
   HumanChatPanelCallToolbar,
   HumanChatPanelCallBanner,
-  HumanChatPanelScreenshareTakeoverDialog,
   HumanChatPanelCallJoinStrip,
   HumanChatPanelConnectionBanner,
   HumanChatPanelCallStage,
@@ -1176,6 +1175,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isMicrophoneMuted: spaceCallMicMuted,
     isLocalVideoMuted: spaceCallVideoMuted,
     isScreensharing: spaceCallScreensharing,
+    remoteScreenshareActive: spaceCallRemoteScreenshareActive,
     groupCall: spaceGroupCall,
     feedVersion: spaceCallFeedVersion,
     screenshareErrorCode: spaceCallScreenshareError,
@@ -1199,13 +1199,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     retryRecordingUpload: retrySpaceCallRecordingUpload,
     captureConsent: spaceCallCaptureConsent,
     dismissScreenshareError: dismissSpaceCallScreenshareError,
-    screenshareTakeoverIncoming: spaceCallScreenshareTakeoverIncoming,
-    screenshareTakeoverPendingId: spaceCallScreenshareTakeoverPendingId,
-    screenshareTakeoverDenied: spaceCallScreenshareTakeoverDenied,
-    approveScreenshareTakeover: approveSpaceCallScreenshareTakeover,
-    denyScreenshareTakeover: denySpaceCallScreenshareTakeover,
-    cancelScreenshareTakeoverRequest: cancelSpaceCallScreenshareTakeoverRequest,
-    dismissScreenshareTakeoverPrompt: dismissSpaceCallScreenshareTakeoverPrompt,
     activeSpeakerKey: spaceCallActiveSpeakerKey,
     toggleScreensharing: toggleSpaceCallScreensharing,
     setScreensharingEnabled: setSpaceCallScreensharingEnabled,
@@ -1494,10 +1487,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [setSpaceCallCameraMuted, spaceCallVideoMuted]);
 
   const {
-    onToggleScreenshare: handleCallToggleScreenshare,
+    onStartScreenshare: handleCallStartScreenshare,
+    onStopScreenshare: handleCallStopScreenshare,
     screenshareTabAudioPromptDialog,
   } = useScreenshareTabAudioPrompt({
     isScreensharing: spaceCallScreensharing,
+    remoteScreenshareActive: spaceCallRemoteScreenshareActive,
     setScreensharingEnabled: setSpaceCallScreensharingEnabled,
     toggleScreensharing: toggleSpaceCallScreensharing,
   });
@@ -4069,6 +4064,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               callKind={spaceCallKind}
               errorCode={spaceCallError}
               isScreensharing={spaceCallScreensharing}
+              remoteScreenshareActive={spaceCallRemoteScreenshareActive}
               screenshareErrorCode={spaceCallScreenshareError}
               screenshareTabAudioMissing={spaceCallScreenshareTabAudioMissing}
               onDismissScreenshareTabAudioHint={
@@ -4098,7 +4094,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onLeave={handleCallLeave}
               onToggleMic={handleCallToggleMic}
               onToggleCamera={handleCallToggleCamera}
-              onToggleScreenshare={handleCallToggleScreenshare}
+              onStartScreenshare={handleCallStartScreenshare}
+              onStopScreenshare={handleCallStopScreenshare}
               voiceProcessingPreset={spaceCallVoiceProcessingPreset}
               onVoiceProcessingPresetChange={
                 handleCallVoiceProcessingPresetChange
@@ -4132,24 +4129,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onDismissCallError={dismissSpaceCallError}
             />
           )}
-        {showSidebarCallChrome && !showFloatingDock ? (
-          <HumanChatPanelScreenshareTakeoverDialog
-            roomId={roomId}
-            incoming={spaceCallScreenshareTakeoverIncoming}
-            pending={Boolean(spaceCallScreenshareTakeoverPendingId)}
-            denied={spaceCallScreenshareTakeoverDenied}
-            onApprove={(request) => {
-              void approveSpaceCallScreenshareTakeover(request);
-            }}
-            onDeny={(request) => {
-              void denySpaceCallScreenshareTakeover(request);
-            }}
-            onCancelPending={() => {
-              void cancelSpaceCallScreenshareTakeoverRequest();
-            }}
-            onDismissDenied={dismissSpaceCallScreenshareTakeoverPrompt}
-          />
-        ) : null}
       </SidebarHeader>
       {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
       <SidebarContent

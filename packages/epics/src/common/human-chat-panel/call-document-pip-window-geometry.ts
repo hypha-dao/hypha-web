@@ -1,6 +1,9 @@
 import { SCREENSHARE_FILMSTRIP } from './call-screenshare-filmstrip-geometry';
 
 /** Default Document PiP size when not in screenshare filmstrip mode. */
+/** Document PiP auto-open is disabled while we stabilize share UX — re-enable later. */
+export const CALL_DOCUMENT_PIP_ENABLED = false;
+
 export const CALL_DOCUMENT_PIP_CALL = {
   width: 480,
   height: 320,

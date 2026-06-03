@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { EventType } from 'matrix-js-sdk';
 import {
   SCREENSHARE_TAKEOVER_TYPE,
+  canStartLocalScreenshare,
+  isRemoteScreenshareActive,
   resolveIncomingScreenshareTakeover,
   resolveScreenshareTakeoverOutcome,
 } from '../client/hooks/screenshare-takeover';
@@ -65,5 +67,27 @@ describe('resolveScreenshareTakeoverOutcome', () => {
       requestId,
     );
     expect(outcome).toBe('approved');
+  });
+});
+
+describe('single-presenter share policy', () => {
+  it('detects remote screenshare feeds', () => {
+    const groupCall = {
+      isScreensharing: () => false,
+      screenshareFeeds: [
+        { isLocal: () => false, userId: '@bob:hs', deviceId: 'd1' },
+      ],
+    } as never;
+    expect(isRemoteScreenshareActive(groupCall)).toBe(true);
+    expect(canStartLocalScreenshare(groupCall)).toBe(false);
+  });
+
+  it('allows local share start when nobody else is presenting', () => {
+    const groupCall = {
+      isScreensharing: () => false,
+      screenshareFeeds: [],
+    } as never;
+    expect(isRemoteScreenshareActive(groupCall)).toBe(false);
+    expect(canStartLocalScreenshare(groupCall)).toBe(true);
   });
 });

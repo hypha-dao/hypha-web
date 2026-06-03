@@ -1,48 +1,66 @@
 'use client';
 
-import { useCallback, useState, type ReactElement } from 'react';
+import { useCallback, useRef, useState, type ReactElement } from 'react';
+import type { CallScreenshareSurfaceMode } from '@hypha-platform/core/client';
 import { CallScreenshareTabAudioPromptDialog } from './call-screenshare-tab-audio-prompt-dialog';
 import {
   markScreenshareTabAudioPromptSeen,
   shouldShowScreenshareTabAudioPrompt,
 } from './call-screenshare-tab-audio-prompt';
 
+type SetScreensharingEnabled = (
+  enabled: boolean,
+  options?: { surfaceMode?: CallScreenshareSurfaceMode },
+) => void | Promise<void>;
+
 type UseScreenshareTabAudioPromptOptions = {
   isScreensharing: boolean;
-  setScreensharingEnabled: (enabled: boolean) => void | Promise<void>;
+  remoteScreenshareActive?: boolean;
+  setScreensharingEnabled: SetScreensharingEnabled;
   toggleScreensharing: () => void;
 };
 
 export function useScreenshareTabAudioPrompt({
   isScreensharing,
+  remoteScreenshareActive = false,
   setScreensharingEnabled,
   toggleScreensharing,
 }: UseScreenshareTabAudioPromptOptions): {
-  onToggleScreenshare: () => void;
+  onStartScreenshare: (mode: CallScreenshareSurfaceMode) => void;
+  onStopScreenshare: () => void;
   screenshareTabAudioPromptDialog: ReactElement;
 } {
   const [open, setOpen] = useState(false);
+  const pendingSurfaceModeRef = useRef<CallScreenshareSurfaceMode>('tab');
 
   const proceedToShare = useCallback(() => {
     markScreenshareTabAudioPromptSeen();
     setOpen(false);
-    void setScreensharingEnabled(true);
+    void setScreensharingEnabled(true, {
+      surfaceMode: pendingSurfaceModeRef.current,
+    });
   }, [setScreensharingEnabled]);
 
-  const onToggleScreenshare = useCallback(() => {
-    if (isScreensharing) {
-      toggleScreensharing();
-      return;
-    }
-    if (shouldShowScreenshareTabAudioPrompt()) {
-      setOpen(true);
-      return;
-    }
+  const onStartScreenshare = useCallback(
+    (mode: CallScreenshareSurfaceMode) => {
+      if (isScreensharing || remoteScreenshareActive) return;
+      pendingSurfaceModeRef.current = mode;
+      if (shouldShowScreenshareTabAudioPrompt()) {
+        setOpen(true);
+        return;
+      }
+      void setScreensharingEnabled(true, { surfaceMode: mode });
+    },
+    [isScreensharing, remoteScreenshareActive, setScreensharingEnabled],
+  );
+
+  const onStopScreenshare = useCallback(() => {
     toggleScreensharing();
-  }, [isScreensharing, toggleScreensharing]);
+  }, [toggleScreensharing]);
 
   return {
-    onToggleScreenshare,
+    onStartScreenshare,
+    onStopScreenshare,
     screenshareTabAudioPromptDialog: (
       <CallScreenshareTabAudioPromptDialog
         open={open}

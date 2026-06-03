@@ -21,6 +21,11 @@ export {
   shouldIgnoreGroupCallErrorDuringCapture,
 } from './space-group-call-utils';
 export type { ScreenshareTakeoverIncoming } from './screenshare-takeover';
+export {
+  canStartLocalScreenshare,
+  getRemoteScreenshareOwner,
+  isRemoteScreenshareActive,
+} from './screenshare-takeover';
 export type { CallRecordingCaptureWarning } from '../../../assets/call-recording-limits';
 export { logSpaceGroupCallEvent } from './space-group-call-telemetry';
 export type { SpaceGroupCallTelemetryEvent } from './space-group-call-telemetry';
@@ -57,6 +62,7 @@ export {
   applyScreenShareCaptureRootRestrictionWithRetry,
   clearScreenShareCaptureRootRestriction,
 } from './screenshare-capture-exclusion';
+export type { CallScreenshareSurfaceMode } from './screenshare-capture';
 export {
   isMatrixCallDebugEnabled,
   isMatrixCallDebugLocalStorageEnabled,

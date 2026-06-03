@@ -10,6 +10,7 @@ import {
   type SpaceGroupCallErrorCode,
   type SpaceGroupCallRecordingStatus,
   type SpaceGroupCallState,
+  type CallScreenshareSurfaceMode,
 } from '@hypha-platform/core/client';
 import { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
 import { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
@@ -29,6 +30,8 @@ type HumanChatPanelCallBannerProps = {
   errorCode: SpaceGroupCallErrorCode | null;
   /** Local screen share; Phase 4 Share / Stop control. */
   isScreensharing: boolean;
+  /** Another participant is presenting — local share start is disabled. */
+  remoteScreenshareActive?: boolean;
   /** Non-fatal display-capture error; does not end the call. */
   screenshareErrorCode: SpaceGroupCallErrorCode | null;
   /** Presenter started share without tab/window audio (WCUX-SHARE-AUDIO-2). */
@@ -61,7 +64,8 @@ type HumanChatPanelCallBannerProps = {
   onLeave: () => void;
   onToggleMic: () => void;
   onToggleCamera: () => void;
-  onToggleScreenshare: () => void;
+  onStartScreenshare: (mode: CallScreenshareSurfaceMode) => void;
+  onStopScreenshare: () => void;
   voiceProcessingPreset: 'standard' | 'voice_isolation' | 'music';
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
@@ -135,6 +139,7 @@ export function HumanChatPanelCallBanner({
   callKind,
   errorCode,
   isScreensharing,
+  remoteScreenshareActive = false,
   screenshareErrorCode,
   screenshareTabAudioMissing = false,
   onDismissScreenshareTabAudioHint,
@@ -155,7 +160,8 @@ export function HumanChatPanelCallBanner({
   onLeave,
   onToggleMic,
   onToggleCamera,
-  onToggleScreenshare,
+  onStartScreenshare,
+  onStopScreenshare,
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
   presenterVoiceBoostActive = false,
@@ -520,9 +526,11 @@ export function HumanChatPanelCallBanner({
                 isMicrophoneMuted={isMicrophoneMuted}
                 isLocalVideoMuted={isLocalVideoMuted}
                 isScreensharing={isScreensharing}
+                remoteScreenshareActive={remoteScreenshareActive}
                 onToggleMic={onToggleMic}
                 onToggleCamera={onToggleCamera}
-                onToggleScreenshare={onToggleScreenshare}
+                onStartScreenshare={onStartScreenshare}
+                onStopScreenshare={onStopScreenshare}
                 voiceProcessingPreset={voiceProcessingPreset}
                 onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
                 presenterVoiceBoostActive={presenterVoiceBoostActive}

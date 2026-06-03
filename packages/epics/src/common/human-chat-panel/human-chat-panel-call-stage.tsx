@@ -80,10 +80,6 @@ import {
   resolveCallFeedLiveVideoTrack,
   resolveCallFeedVideoSurfaceClassName,
 } from './call-feed-tile-video';
-import {
-  useCallFeedVideoDebugDimensions,
-  useMatrixCallDebugOverlayEnabled,
-} from './use-call-feed-video-debug-overlay';
 import { registerCallPlaybackElement } from './call-playback-registry';
 import { callAccentAlertOnDarkText } from './call-accent-alert-styles';
 import { CallFloatingReactionOverlay } from './call-floating-reaction-overlay';
@@ -2429,7 +2425,6 @@ const FeedContent = ({
     feed,
     feedVideoOptions,
   );
-  const showVideoDebugOverlay = useMatrixCallDebugOverlayEnabled();
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
   const [streamBindVersion, rebindStream] = useReducer((n: number) => n + 1, 0);
@@ -2516,10 +2511,6 @@ const FeedContent = ({
   }, [liveVideoTrack?.id, streamBindVersion]);
 
   const showVideoSurface = hasVideo && videoSurfaceReady && !warmingVideoTrack;
-  const videoDebugDimensions = useCallFeedVideoDebugDimensions(
-    ref,
-    showVideoDebugOverlay && showVideoSurface,
-  );
 
   useEffect(() => {
     const el = audioRef.current;
@@ -2714,11 +2705,6 @@ const FeedContent = ({
           aria-label={ariaLabel}
         />
       ) : null}
-      {showVideoDebugOverlay && showVideoSurface && videoDebugDimensions ? (
-        <span className="absolute bottom-1 left-1 z-[3] rounded bg-black/75 px-1 py-0.5 font-mono text-[9px] leading-none tabular-nums text-zinc-200">
-          {videoDebugDimensions}
-        </span>
-      ) : null}
       {!showVideoSurface ? (
         <div
           className={cn(
@@ -2834,13 +2820,13 @@ const FeedContent = ({
       {showVideoSurface && !isPip ? (
         <div
           className={cn(
-            'absolute start-1 z-10 flex max-w-[calc(100%-0.5rem)] min-h-[1.75rem] rounded bg-background/80 px-1.5 py-0.5 text-xs',
-            isFullView
-              ? 'bottom-2 items-center gap-1.5'
-              : 'top-1 flex-row items-center gap-1.5',
+            'absolute start-1 z-10 flex max-w-[calc(100%-0.5rem)] items-center gap-1 rounded-md bg-black/75 px-1.5 py-1 shadow-sm backdrop-blur-[2px]',
+            !isFullView || compactTileLayout
+              ? 'bottom-1 text-[10px] leading-4'
+              : 'bottom-2 text-xs leading-normal',
           )}
         >
-          <span className="min-w-0 truncate">
+          <span className="min-w-0 flex-1 truncate leading-[inherit]">
             {showSkeleton ? (
               <Skeleton loading width={88} height={14} />
             ) : (
@@ -2848,19 +2834,9 @@ const FeedContent = ({
             )}
           </span>
           {audioMuted ? (
-            <span
-              className={cn(
-                'inline-flex shrink-0 items-center gap-0.5 text-destructive',
-                isFullView && 'mt-0.5',
-              )}
-            >
-              <MicOff className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-              <span
-                className={cn(
-                  'font-medium leading-none',
-                  isFullView ? 'text-xs' : 'text-[10px]',
-                )}
-              >
+            <span className="inline-flex shrink-0 items-center gap-0.5 text-destructive">
+              <MicOff className="h-3 w-3" strokeWidth={2.25} aria-hidden />
+              <span className="font-medium leading-[inherit]">
                 {t('callParticipantMuted')}
               </span>
             </span>

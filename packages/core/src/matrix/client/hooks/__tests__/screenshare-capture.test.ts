@@ -33,7 +33,7 @@ describe('screenshare capture opts', () => {
 });
 
 describe('buildDisplayMediaConstraints', () => {
-  it('requests tab and system audio hints for Chrome display media', () => {
+  it('requests tab capture hints by default', () => {
     expect(buildDisplayMediaConstraints()).toEqual({
       video: true,
       audio: {
@@ -41,6 +41,36 @@ describe('buildDisplayMediaConstraints', () => {
       },
       preferCurrentTab: true,
       selfBrowserSurface: 'include',
+      systemAudio: 'include',
+    });
+  });
+
+  it('limits the picker to windows when sharing a window', () => {
+    expect(
+      buildDisplayMediaConstraints(MATRIX_SCREENSHARE_CAPTURE_OPTS, 'window'),
+    ).toEqual({
+      video: true,
+      audio: {
+        suppressLocalAudioPlayback: false,
+      },
+      preferCurrentTab: false,
+      selfBrowserSurface: 'exclude',
+      monitorTypeSurfaces: 'exclude',
+      systemAudio: 'include',
+    });
+  });
+
+  it('includes monitor surfaces for entire-screen share', () => {
+    expect(
+      buildDisplayMediaConstraints(MATRIX_SCREENSHARE_CAPTURE_OPTS, 'monitor'),
+    ).toEqual({
+      video: true,
+      audio: {
+        suppressLocalAudioPlayback: false,
+      },
+      preferCurrentTab: false,
+      selfBrowserSurface: 'exclude',
+      monitorTypeSurfaces: 'include',
       systemAudio: 'include',
     });
   });
@@ -60,11 +90,12 @@ describe('buildDisplayMediaConstraints', () => {
   });
 
   it('respects audio: false in opts', () => {
-    expect(buildDisplayMediaConstraints({ audio: false })).toEqual({
+    expect(buildDisplayMediaConstraints({ audio: false }, 'window')).toEqual({
       video: true,
       audio: false,
-      preferCurrentTab: true,
-      selfBrowserSurface: 'include',
+      preferCurrentTab: false,
+      selfBrowserSurface: 'exclude',
+      monitorTypeSurfaces: 'exclude',
       systemAudio: 'include',
     });
   });

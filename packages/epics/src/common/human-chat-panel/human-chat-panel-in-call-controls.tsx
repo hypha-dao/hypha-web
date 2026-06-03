@@ -11,8 +11,6 @@ import {
   Mic,
   MicOff,
   MicVocal,
-  Monitor,
-  MonitorOff,
   Music2,
   Pause,
   Play,
@@ -44,19 +42,23 @@ import {
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
 import { HumanChatPanelCallReactPopover } from './human-chat-panel-call-react-popover';
+import { HumanChatPanelCallScreenshareMenu } from './human-chat-panel-call-screenshare-menu';
 import {
   callAccentAlertActionButtonClassName,
   callAccentAlertText,
 } from './call-accent-alert-styles';
+import type { CallScreenshareSurfaceMode } from '@hypha-platform/core/client';
 
 type HumanChatPanelInCallControlsProps = {
   callState: SpaceGroupCallState;
   isMicrophoneMuted: boolean;
   isLocalVideoMuted: boolean;
   isScreensharing: boolean;
+  remoteScreenshareActive?: boolean;
   onToggleMic: () => void;
   onToggleCamera: () => void;
-  onToggleScreenshare: () => void;
+  onStartScreenshare: (mode: CallScreenshareSurfaceMode) => void;
+  onStopScreenshare: () => void;
   voiceProcessingPreset: 'standard' | 'voice_isolation' | 'music';
   onVoiceProcessingPresetChange: (
     preset: 'standard' | 'voice_isolation' | 'music',
@@ -104,9 +106,11 @@ export function HumanChatPanelInCallControls({
   isMicrophoneMuted,
   isLocalVideoMuted,
   isScreensharing,
+  remoteScreenshareActive = false,
   onToggleMic,
   onToggleCamera,
-  onToggleScreenshare,
+  onStartScreenshare,
+  onStopScreenshare,
   voiceProcessingPreset,
   onVoiceProcessingPresetChange,
   presenterVoiceBoostActive = false,
@@ -286,6 +290,17 @@ export function HumanChatPanelInCallControls({
     showAdvancedCallControls &&
     !isCompact &&
     (isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered');
+  /** Floating dock / full-view footer — spread primary controls across the bar. */
+  const useDockSpreadToolbar = isFull && !isPipDensity && !leaveOnly;
+  const useWideToolbar =
+    useDockSpreadToolbar || useMobileCenteredToolbar || useSideAudioSettings;
+  const toolbarButtonGap = isPipDensity
+    ? 'gap-1'
+    : isCenteredInBanner
+    ? 'gap-2.5 sm:gap-3'
+    : isCompact
+    ? 'gap-1'
+    : 'gap-1.5 sm:gap-2';
   const captureActive = captureMode !== 'none' && recordingStatus !== 'error';
   const capturePending =
     captureActive && recordingStatus === 'idle' && !controlsDisabled;
@@ -748,8 +763,7 @@ export function HumanChatPanelInCallControls({
         role="group"
         aria-label={t('callToolbarLabel')}
         className={cn(
-          useMobileCenteredToolbar && 'w-full',
-          isPipDensity && 'w-full',
+          (useWideToolbar || isPipDensity) && 'w-full',
           'touch-manipulation',
         )}
         data-call-pip-toolbar={isPipDensity ? '' : undefined}
@@ -759,7 +773,9 @@ export function HumanChatPanelInCallControls({
       >
         <div
           className={cn(
-            useMobileCenteredToolbar
+            useDockSpreadToolbar
+              ? 'flex w-full items-center gap-2'
+              : useMobileCenteredToolbar
               ? 'flex w-full items-center justify-center gap-2.5'
               : isPipDensity
               ? 'flex w-full items-center justify-center gap-1'
@@ -768,7 +784,8 @@ export function HumanChatPanelInCallControls({
               : 'flex w-auto items-center',
           )}
         >
-          {!useMobileCenteredToolbar &&
+          {!useDockSpreadToolbar &&
+          !useMobileCenteredToolbar &&
           useSideAudioSettings &&
           !isPipDensity ? (
             <div />
@@ -776,17 +793,13 @@ export function HumanChatPanelInCallControls({
           <div
             className={cn(
               'flex items-center',
-              isPipDensity
-                ? 'gap-1'
-                : isCenteredInBanner
-                ? 'gap-2.5 sm:gap-3'
-                : isCompact
-                ? 'gap-1'
-                : 'gap-1.5 sm:gap-2',
-              !isPipDensity &&
-                (useMobileCenteredToolbar || useSideAudioSettings
-                  ? 'justify-center'
-                  : 'justify-start'),
+              toolbarButtonGap,
+              useDockSpreadToolbar
+                ? 'min-w-0 flex-1 justify-evenly'
+                : !isPipDensity &&
+                    (useMobileCenteredToolbar || useSideAudioSettings
+                      ? 'justify-center'
+                      : 'justify-start'),
             )}
           >
             {!leaveOnly ? (
@@ -852,11 +865,13 @@ export function HumanChatPanelInCallControls({
                   )}
                 </button>
                 {showAdvancedCallControls ? (
-                  <button
-                    type="button"
-                    onClick={onToggleScreenshare}
+                  <HumanChatPanelCallScreenshareMenu
+                    isScreensharing={isScreensharing}
                     disabled={controlsDisabled}
-                    className={cn(
+                    remoteScreenshareActive={remoteScreenshareActive}
+                    onStartScreenshare={onStartScreenshare}
+                    onStopScreenshare={onStopScreenshare}
+                    triggerClassName={cn(
                       isFull
                         ? isScreensharing
                           ? shareActiveBtn
@@ -869,19 +884,21 @@ export function HumanChatPanelInCallControls({
                       'disabled:cursor-not-allowed',
                       !isFull && controlsDisabled && 'opacity-50',
                     )}
-                    title={t('callControlsScreenshare')}
-                    aria-label={
-                      isScreensharing
-                        ? t('callControlsScreenshareActiveAria')
-                        : t('callControlsScreenshareInactiveAria')
+                    activeTriggerClassName={
+                      isFull || isScreensharing
+                        ? 'inline-flex items-center justify-center'
+                        : undefined
                     }
-                  >
-                    {isScreensharing ? (
-                      <MonitorOff className={icon} />
-                    ) : (
-                      <Monitor className={icon} />
+                    iconClassName={icon}
+                    chevronClassName={cn(
+                      isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5',
                     )}
-                  </button>
+                    menuClassName={
+                      isFull
+                        ? 'border-zinc-700 bg-zinc-900 text-white'
+                        : undefined
+                    }
+                  />
                 ) : null}
               </>
             ) : null}
@@ -930,7 +947,12 @@ export function HumanChatPanelInCallControls({
           !leaveOnly &&
           showAdvancedCallControls &&
           !isPipDensity ? (
-            <div className="justify-self-end flex items-center gap-2">
+            <div
+              className={cn(
+                'flex shrink-0 items-center gap-2',
+                !useDockSpreadToolbar && 'justify-self-end',
+              )}
+            >
               {renderCaptureMenu}
               {renderAudioSettingsMenu}
             </div>

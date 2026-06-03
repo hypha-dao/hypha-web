@@ -31,7 +31,6 @@ import {
   HumanChatPanelCallFullViewLayoutMenu,
   HumanChatPanelInCallControls,
   HumanChatPanelCallRaisedHandsStrip,
-  HumanChatPanelScreenshareTakeoverDialog,
   readCallFullViewLayoutFromStorage,
   persistCallFullViewLayout,
   type CallFullViewLayoutMode,
@@ -43,6 +42,7 @@ import {
 import { resolveScreenshareDockHeight } from './human-chat-panel/call-screenshare-filmstrip-geometry';
 import {
   CALL_DOCUMENT_PIP_CALL,
+  CALL_DOCUMENT_PIP_ENABLED,
   CALL_DOCUMENT_PIP_FILMSTRIP_WIDTH,
   clampCallDocumentPipWindowSize,
   resolveCallDocumentPipViewportMaxHeight,
@@ -531,6 +531,7 @@ export function GlobalCallDockOverlay() {
     retryFromError,
     isLocalVideoMuted,
     isScreensharing,
+    remoteScreenshareActive,
     othersInRoomCallCount,
     remoteMediaStall,
     remoteMediaWarming,
@@ -546,13 +547,6 @@ export function GlobalCallDockOverlay() {
     setCameraMuted,
     toggleScreensharing,
     setScreensharingEnabled,
-    screenshareTakeoverIncoming,
-    screenshareTakeoverPendingId,
-    screenshareTakeoverDenied,
-    approveScreenshareTakeover,
-    denyScreenshareTakeover,
-    cancelScreenshareTakeoverRequest,
-    dismissScreenshareTakeoverPrompt,
     voiceProcessingPreset,
     setVoiceProcessingPreset,
     presenterVoiceBoostActive,
@@ -581,12 +575,16 @@ export function GlobalCallDockOverlay() {
     floatingReactionsVersion,
   } = useGlobalCallDock();
 
-  const { onToggleScreenshare, screenshareTabAudioPromptDialog } =
-    useScreenshareTabAudioPrompt({
-      isScreensharing,
-      setScreensharingEnabled,
-      toggleScreensharing,
-    });
+  const {
+    onStartScreenshare,
+    onStopScreenshare,
+    screenshareTabAudioPromptDialog,
+  } = useScreenshareTabAudioPrompt({
+    isScreensharing,
+    remoteScreenshareActive,
+    setScreensharingEnabled,
+    toggleScreensharing,
+  });
 
   const [layoutMode, setLayoutMode] = React.useState<CallFullViewLayoutMode>(
     DEFAULT_CALL_FULL_VIEW_LAYOUT,
@@ -676,9 +674,9 @@ export function GlobalCallDockOverlay() {
     ],
   );
   const {
-    pipWindow,
-    isSupported: isDocumentPipSupported,
-    isOpen: isDocumentPipOpen,
+    pipWindow: pipWindowRaw,
+    isSupported: isDocumentPipSupportedRaw,
+    isOpen: isDocumentPipOpenRaw,
     openPip,
     closePip,
   } = useCallDockDocumentPip(
@@ -686,6 +684,10 @@ export function GlobalCallDockOverlay() {
     documentPipWindowSize,
     documentPipWindowMode,
   );
+  const pipWindow = CALL_DOCUMENT_PIP_ENABLED ? pipWindowRaw : null;
+  const isDocumentPipSupported =
+    CALL_DOCUMENT_PIP_ENABLED && isDocumentPipSupportedRaw;
+  const isDocumentPipOpen = CALL_DOCUMENT_PIP_ENABLED && isDocumentPipOpenRaw;
   const spaceAccentStyles = useSpaceAccentPortalStyles();
   const callMediaActive =
     callState === 'connected' ||
@@ -888,6 +890,7 @@ export function GlobalCallDockOverlay() {
 
   React.useEffect(() => {
     if (
+      !CALL_DOCUMENT_PIP_ENABLED ||
       !isScreensharing ||
       isMobile ||
       !isDocumentPipSupported ||
@@ -1462,6 +1465,7 @@ export function GlobalCallDockOverlay() {
                   callKind={callKind}
                   errorCode={errorCode}
                   isScreensharing={isScreensharing}
+                  remoteScreenshareActive={remoteScreenshareActive}
                   screenshareErrorCode={screenshareErrorCode}
                   screenshareTabAudioMissing={screenshareTabAudioMissing}
                   onDismissScreenshareTabAudioHint={
@@ -1493,7 +1497,8 @@ export function GlobalCallDockOverlay() {
                   }}
                   onToggleMic={onToggleMic}
                   onToggleCamera={onToggleCamera}
-                  onToggleScreenshare={onToggleScreenshare}
+                  onStartScreenshare={onStartScreenshare}
+                  onStopScreenshare={onStopScreenshare}
                   voiceProcessingPreset={voiceProcessingPreset}
                   onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
                   presenterVoiceBoostActive={presenterVoiceBoostActive}
@@ -1530,6 +1535,7 @@ export function GlobalCallDockOverlay() {
                     callKind={callKind}
                     errorCode={errorCode}
                     isScreensharing={isScreensharing}
+                    remoteScreenshareActive={remoteScreenshareActive}
                     screenshareErrorCode={screenshareErrorCode}
                     screenshareTabAudioMissing={screenshareTabAudioMissing}
                     onDismissScreenshareTabAudioHint={
@@ -1561,7 +1567,8 @@ export function GlobalCallDockOverlay() {
                     }}
                     onToggleMic={onToggleMic}
                     onToggleCamera={onToggleCamera}
-                    onToggleScreenshare={onToggleScreenshare}
+                    onStartScreenshare={onStartScreenshare}
+                    onStopScreenshare={onStopScreenshare}
                     voiceProcessingPreset={voiceProcessingPreset}
                     onVoiceProcessingPresetChange={
                       onVoiceProcessingPresetChange
@@ -1600,9 +1607,11 @@ export function GlobalCallDockOverlay() {
                 isMicrophoneMuted={isMicrophoneMuted}
                 isLocalVideoMuted={isLocalVideoMuted}
                 isScreensharing={isScreensharing}
+                remoteScreenshareActive={remoteScreenshareActive}
                 onToggleMic={onToggleMic}
                 onToggleCamera={onToggleCamera}
-                onToggleScreenshare={onToggleScreenshare}
+                onStartScreenshare={onStartScreenshare}
+                onStopScreenshare={onStopScreenshare}
                 voiceProcessingPreset={voiceProcessingPreset}
                 onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
                 presenterVoiceBoostActive={presenterVoiceBoostActive}
@@ -1677,23 +1686,6 @@ export function GlobalCallDockOverlay() {
             />
           </>
         )}
-
-      <HumanChatPanelScreenshareTakeoverDialog
-        roomId={activeRoomId}
-        incoming={screenshareTakeoverIncoming}
-        pending={Boolean(screenshareTakeoverPendingId)}
-        denied={screenshareTakeoverDenied}
-        onApprove={(request) => {
-          void approveScreenshareTakeover(request);
-        }}
-        onDeny={(request) => {
-          void denyScreenshareTakeover(request);
-        }}
-        onCancelPending={() => {
-          void cancelScreenshareTakeoverRequest();
-        }}
-        onDismissDenied={dismissScreenshareTakeoverPrompt}
-      />
     </div>
   );
 
