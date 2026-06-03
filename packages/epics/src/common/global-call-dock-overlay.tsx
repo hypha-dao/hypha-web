@@ -1204,9 +1204,8 @@ export function GlobalCallDockOverlay() {
     isDocumentPip: isDocumentPipOpen,
     stageLayout: dockStageLayout,
   });
-  /** Fullscreen dock keeps large on-video controls; Document PiP stays minimal. */
-  const dockControlsVariant =
-    modeIsFullscreen && !isMobile ? 'fullView' : 'inBanner';
+  /** Dark video-style chrome on dock footer — desktop and mobile (matches full-view). */
+  const dockControlsVariant = 'fullView';
   /** Center primary controls in the dock footer; PiP/fullscreen stay inline. */
   const dockControlsLayout = isMobile
     ? 'centered'
