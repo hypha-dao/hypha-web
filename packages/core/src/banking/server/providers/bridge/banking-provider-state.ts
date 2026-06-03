@@ -65,7 +65,9 @@ export async function loadBankingProviderState(
   customer: BankCustomer,
 ): Promise<BankingProviderState> {
   if (!customer.providerKycLinkId) {
-    throw new Error('Cannot load banking provider state: KYC link ID not available');
+    throw new Error(
+      'Cannot load banking provider state: KYC link ID not available',
+    );
   }
   const kycLink = await bridgeGetKycLink(customer.providerKycLinkId);
 

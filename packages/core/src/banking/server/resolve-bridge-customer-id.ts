@@ -13,7 +13,9 @@ export async function resolveBridgeCustomerId(
   }
 
   if (!customer.providerKycLinkId) {
-    throw new Error('Cannot resolve Bridge customer ID: KYC link ID not available');
+    throw new Error(
+      'Cannot resolve Bridge customer ID: KYC link ID not available',
+    );
   }
   const link = await bridgeGetKycLink(customer.providerKycLinkId);
   const customerId = link.customer_id ?? null;

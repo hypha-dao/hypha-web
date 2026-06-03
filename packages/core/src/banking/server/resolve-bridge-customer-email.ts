@@ -28,7 +28,9 @@ export async function resolveBridgeCustomerEmail(
   customer: Pick<BankCustomer, 'providerKycLinkId' | 'providerCustomerId'>,
 ): Promise<string> {
   if (!customer.providerKycLinkId) {
-    throw new Error('Cannot resolve Bridge customer email: KYC link ID not available');
+    throw new Error(
+      'Cannot resolve Bridge customer email: KYC link ID not available',
+    );
   }
   const kycLink = await bridgeGetKycLink(customer.providerKycLinkId);
   const fromLink = readEmailFromRecord(kycLink);

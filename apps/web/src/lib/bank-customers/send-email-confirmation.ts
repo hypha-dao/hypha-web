@@ -31,7 +31,8 @@ export async function sendEmailConfirmation({
     space_title: spaceTitle,
     confirmation_link: confirmationLink,
     expires_in:
-      process.env.BANK_EMAIL_CONFIRMATION_EXPIRES_IN_DISPLAY?.trim() || '7 days',
+      process.env.BANK_EMAIL_CONFIRMATION_EXPIRES_IN_DISPLAY?.trim() ||
+      '7 days',
   };
 
   if (!templateId) {
