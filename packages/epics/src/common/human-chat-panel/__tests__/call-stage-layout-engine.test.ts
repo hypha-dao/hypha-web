@@ -107,12 +107,14 @@ describe('resolveCallStageLayout', () => {
       activeSpeakerIndex: 3,
       galleryPage: 0,
     });
-    expect(plan.renderer).toBe('speakerGallery');
+    expect(plan.renderer).toBe('speakerPrimaryStrip');
     expect(plan.fullScreenMode).toBe('speakerGallery');
-    expect(plan.stripOverflowCount).toBe(17);
+    expect(plan.showGalleryPagination).toBe(true);
+    expect(plan.stripOverflowCount).toBe(0);
+    expect(plan.stripMaxVisible).toBe(7);
   });
 
-  it('uses equal duo gallery in dock tiers for two participants', () => {
+  it('uses 65/35 speaker strip in dock tiers for two participants', () => {
     const duo = resolveCallStageLayout({
       viewportTier: 'V-S',
       participantDeviceCount: 2,
@@ -120,9 +122,10 @@ describe('resolveCallStageLayout', () => {
       activeSpeakerIndex: 0,
       galleryPage: 0,
     });
-    expect(duo.renderer).toBe('thresholdGallery');
+    expect(duo.renderer).toBe('speakerPrimaryStrip');
     expect(duo.fullScreenMode).toBe('duo');
-    expect(duo.galleryLayout).toEqual({ cols: 2, rows: 1, slots: 2 });
+    expect(duo.speakerPrimaryRatio).toBe(0.65);
+    expect(duo.stripMaxVisible).toBe(1);
     expect(duo.participantVideoFit).toBe('contain');
 
     const duoMedium = resolveCallStageLayout({
@@ -132,8 +135,8 @@ describe('resolveCallStageLayout', () => {
       activeSpeakerIndex: 1,
       galleryPage: 0,
     });
-    expect(duoMedium.renderer).toBe('thresholdGallery');
-    expect(duoMedium.fullScreenMode).toBe('duo');
+    expect(duoMedium.renderer).toBe('speakerPrimaryStrip');
+    expect(duoMedium.speakerPrimaryRatio).toBe(0.65);
   });
 
   it('uses speaker-primary strip in dock tiers for three or more participants', () => {
@@ -177,7 +180,7 @@ describe('resolveCallStageLayout', () => {
     expect(plan.galleryLayout).toEqual({ cols: 2, rows: 1, slots: 2 });
   });
 
-  it('uses threshold gallery with speaker spans for full-screen seven and eight', () => {
+  it('uses speaker-primary strip for full-screen seven and eight participants', () => {
     const seven = resolveCallStageLayout({
       viewportTier: 'V-L',
       participantDeviceCount: 7,
@@ -185,14 +188,10 @@ describe('resolveCallStageLayout', () => {
       activeSpeakerIndex: 4,
       galleryPage: 0,
     });
-    expect(seven.renderer).toBe('thresholdGallery');
+    expect(seven.renderer).toBe('speakerPrimaryStrip');
     expect(seven.fullScreenMode).toBe('seven');
-    expect(seven.tilePlacements[4]).toMatchObject({
-      gridColumnStart: 1,
-      gridColumnEnd: 3,
-      gridRowStart: 1,
-      gridRowEnd: 3,
-    });
+    expect(seven.speakerPrimaryRatio).toBe(0.68);
+    expect(seven.stripMaxVisible).toBe(6);
 
     const eight = resolveCallStageLayout({
       viewportTier: 'V-L',
@@ -201,14 +200,9 @@ describe('resolveCallStageLayout', () => {
       activeSpeakerIndex: 2,
       galleryPage: 0,
     });
-    expect(eight.renderer).toBe('thresholdGallery');
+    expect(eight.renderer).toBe('speakerPrimaryStrip');
     expect(eight.fullScreenMode).toBe('eight');
-    expect(eight.tilePlacements[2]).toMatchObject({
-      gridColumnStart: 2,
-      gridColumnEnd: 4,
-      gridRowStart: 2,
-      gridRowEnd: 4,
-    });
+    expect(eight.stripMaxVisible).toBe(7);
   });
 
   it('defers to share layout when hasActiveShare', () => {
@@ -286,25 +280,6 @@ describe('resolveCallGalleryTilePlacements', () => {
       gridRowEnd: 3,
     });
   });
-
-  it('promotes active speaker in seven and eight participant grids', () => {
-    const seven = resolveCallGalleryTilePlacements('seven', 7, 4);
-    expect(seven[4]).toMatchObject({
-      gridColumnStart: 1,
-      gridColumnEnd: 3,
-      gridRowStart: 1,
-      gridRowEnd: 3,
-    });
-    expect(seven.filter((p) => p.gridColumnStart === 3)).toHaveLength(3);
-
-    const eight = resolveCallGalleryTilePlacements('eight', 8, 2);
-    expect(eight[2]).toMatchObject({
-      gridColumnStart: 2,
-      gridColumnEnd: 4,
-      gridRowStart: 2,
-      gridRowEnd: 4,
-    });
-  });
 });
 
 describe('resolveShareParticipantBandLayout', () => {
@@ -348,6 +323,22 @@ describe('resolveSpeakerPrimaryStripIndices', () => {
       speakerIndex: 2,
       stripIndices: [0, 1, 3, 4, 5, 6],
       overflowCount: 1,
+      stripPageCount: 1,
+    });
+  });
+
+  it('paginates strip thumbnails when others exceed strip cap', () => {
+    expect(resolveSpeakerPrimaryStripIndices(25, 3, 7, 0, true)).toEqual({
+      speakerIndex: 3,
+      stripIndices: [0, 1, 2, 4, 5, 6, 7],
+      overflowCount: 0,
+      stripPageCount: 4,
+    });
+    expect(resolveSpeakerPrimaryStripIndices(25, 3, 7, 1, true)).toEqual({
+      speakerIndex: 3,
+      stripIndices: [8, 9, 10, 11, 12, 13, 14],
+      overflowCount: 0,
+      stripPageCount: 4,
     });
   });
 });

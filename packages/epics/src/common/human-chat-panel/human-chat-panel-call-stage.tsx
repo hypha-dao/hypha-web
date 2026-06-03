@@ -34,6 +34,10 @@ import {
   needsHyphaProfileResolutionForMatrixLabel,
   looksLikeTechnicalMatrixDisplayName,
 } from './matrix-room-member-display';
+import {
+  resolveCallFeedAudioScrimLayout,
+  resolveCallFeedVideoParticipantLabelLayout,
+} from './call-feed-tile-chrome';
 import { CallAudioVoiceWaves } from './call-audio-voice-waves';
 import {
   CALL_PARTICIPANT_PROFILE_TIMEOUT_MS,
@@ -362,6 +366,12 @@ type CallSpeakerPrimaryStripProps = {
   isPortrait?: boolean;
   /** Resizable dock panel — preserve 16:9 tiles; scroll strip instead of clipping. */
   panelDock?: boolean;
+  stripPage?: number;
+  onStripPageChange?: (page: number) => void;
+  showStripPagination?: boolean;
+  pageLabel?: (current: number, total: number) => string;
+  previousPageLabel?: string;
+  nextPageLabel?: string;
 };
 
 function CallSpeakerPrimaryStrip({
@@ -375,12 +385,20 @@ function CallSpeakerPrimaryStrip({
   overflowLabel,
   isPortrait = false,
   panelDock = false,
+  stripPage = 0,
+  onStripPageChange,
+  showStripPagination = false,
+  pageLabel,
+  previousPageLabel,
+  nextPageLabel,
 }: CallSpeakerPrimaryStripProps) {
-  const { speakerIndex, stripIndices, overflowCount } =
+  const { speakerIndex, stripIndices, overflowCount, stripPageCount } =
     resolveSpeakerPrimaryStripIndices(
       tiles.length,
       activeSpeakerIndex,
       stripMaxVisible,
+      stripPage,
+      showStripPagination,
     );
   const speakerTile = tiles[speakerIndex];
   const stripTiles = stripIndices
@@ -394,75 +412,113 @@ function CallSpeakerPrimaryStrip({
   return (
     <div
       className={cn(
-        'flex min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden',
-        panelDock && 'min-h-[5.5rem]',
-        isPortrait ? 'flex-col' : 'flex-row',
+        'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
         className,
       )}
     >
       <div
         className={cn(
-          'flex min-h-0 min-w-0 flex-col',
-          panelDock && 'min-h-[4.5rem] flex-1',
-          cellClassName,
+          'flex min-h-0 min-w-0 flex-1 gap-1.5 overflow-hidden',
+          panelDock && 'min-h-[5.5rem]',
+          isPortrait ? 'flex-col' : 'flex-row',
         )}
-        style={{ flex: `${speakerPrimaryRatio} 1 0%` }}
       >
-        {speakerTile ? (
-          panelDock ? (
-            <CallDockAspectTileShell className="h-full min-h-[4.5rem]">
-              {renderTile(speakerTile, speakerIndex)}
-            </CallDockAspectTileShell>
-          ) : (
-            renderTile(speakerTile, speakerIndex)
-          )
-        ) : null}
-      </div>
-      <div
-        className={cn(
-          'min-h-0 min-w-0 gap-1.5 overscroll-contain',
-          panelDock
-            ? singleStripTileInDock
-              ? 'flex min-h-0 flex-1 flex-col'
-              : 'flex flex-col overflow-y-auto'
-            : 'flex flex-col overflow-y-auto',
-          cellClassName,
-        )}
-        style={{ flex: `${1 - speakerPrimaryRatio} 1 0%` }}
-      >
-        {stripTiles.map(({ item, index }) => (
-          <div
-            key={galleryTileKey(item, index)}
-            className={cn(
-              panelDock
-                ? singleStripTileInDock
-                  ? 'flex min-h-0 min-w-0 flex-1 flex-col'
-                  : 'min-w-0 shrink-0'
-                : 'relative min-h-0 w-full min-w-0 flex-1 overflow-hidden',
-            )}
-          >
-            {panelDock ? (
-              <CallDockAspectTileShell
-                sizing={singleStripTileInDock ? 'fit' : 'width'}
-                className={
-                  singleStripTileInDock ? 'h-full min-h-0 flex-1' : undefined
-                }
-              >
-                {renderTile(item, index)}
+        <div
+          className={cn(
+            'flex min-h-0 min-w-0 flex-col',
+            panelDock && 'min-h-[4.5rem] flex-1',
+            cellClassName,
+          )}
+          style={{ flex: `${speakerPrimaryRatio} 1 0%` }}
+        >
+          {speakerTile ? (
+            panelDock ? (
+              <CallDockAspectTileShell className="h-full min-h-[4.5rem]">
+                {renderTile(speakerTile, speakerIndex)}
               </CallDockAspectTileShell>
             ) : (
-              <div className="absolute inset-0 min-h-0 min-w-0">
-                {renderTile(item, index)}
-              </div>
-            )}
-          </div>
-        ))}
-        {overflowCount > 0 ? (
-          <div className="flex min-h-[1.75rem] items-center justify-center rounded-md bg-background/80 px-2 text-xs text-zinc-200">
-            {overflowLabel(overflowCount)}
-          </div>
-        ) : null}
+              renderTile(speakerTile, speakerIndex)
+            )
+          ) : null}
+        </div>
+        <div
+          className={cn(
+            'min-h-0 min-w-0 gap-1.5 overscroll-contain',
+            panelDock
+              ? singleStripTileInDock
+                ? 'flex min-h-0 flex-1 flex-col'
+                : 'flex flex-col overflow-y-auto'
+              : 'flex flex-col overflow-y-auto',
+            cellClassName,
+          )}
+          style={{ flex: `${1 - speakerPrimaryRatio} 1 0%` }}
+        >
+          {stripTiles.map(({ item, index }) => (
+            <div
+              key={galleryTileKey(item, index)}
+              className={cn(
+                panelDock
+                  ? singleStripTileInDock
+                    ? 'flex min-h-0 min-w-0 flex-1 flex-col'
+                    : 'min-w-0 shrink-0'
+                  : 'relative min-h-0 w-full min-w-0 flex-1 overflow-hidden',
+              )}
+            >
+              {panelDock ? (
+                <CallDockAspectTileShell
+                  sizing={singleStripTileInDock ? 'fit' : 'width'}
+                  className={
+                    singleStripTileInDock ? 'h-full min-h-0 flex-1' : undefined
+                  }
+                >
+                  {renderTile(item, index)}
+                </CallDockAspectTileShell>
+              ) : (
+                <div className="absolute inset-0 min-h-0 min-w-0">
+                  {renderTile(item, index)}
+                </div>
+              )}
+            </div>
+          ))}
+          {overflowCount > 0 ? (
+            <div className="flex min-h-[1.75rem] items-center justify-center rounded-md bg-background/80 px-2 text-xs text-zinc-200">
+              {overflowLabel(overflowCount)}
+            </div>
+          ) : null}
+        </div>
       </div>
+      {showStripPagination &&
+      stripPageCount > 1 &&
+      onStripPageChange &&
+      pageLabel &&
+      previousPageLabel &&
+      nextPageLabel ? (
+        <div className="flex shrink-0 items-center justify-center gap-2 border-t border-border/30 px-2 py-1.5 text-xs text-zinc-300">
+          <button
+            type="button"
+            className="rounded-md border border-border/40 px-2 py-0.5 transition hover:bg-white/10 disabled:opacity-40"
+            disabled={stripPage <= 0}
+            onClick={() => onStripPageChange(Math.max(0, stripPage - 1))}
+            aria-label={previousPageLabel}
+          >
+            ‹
+          </button>
+          <span aria-live="polite">
+            {pageLabel(stripPage + 1, stripPageCount)}
+          </span>
+          <button
+            type="button"
+            className="rounded-md border border-border/40 px-2 py-0.5 transition hover:bg-white/10 disabled:opacity-40"
+            disabled={stripPage >= stripPageCount - 1}
+            onClick={() =>
+              onStripPageChange(Math.min(stripPageCount - 1, stripPage + 1))
+            }
+            aria-label={nextPageLabel}
+          >
+            ›
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -884,8 +940,7 @@ function HumanChatPanelCallStageMain({
   const useSpeakerStripLayout =
     !useShareWithParticipantsLayout &&
     !isScreensharing &&
-    (layoutPlan.renderer === 'speakerPrimaryStrip' ||
-      layoutPlan.renderer === 'speakerGallery');
+    layoutPlan.renderer === 'speakerPrimaryStrip';
 
   const useShareParticipantGallery =
     useShareWithParticipantsLayout && shareBandLayout === 'gallery';
@@ -1713,6 +1768,14 @@ function HumanChatPanelCallStageMain({
               isPortrait={isDocumentPipOpen}
               renderTile={renderRemoteUserTile}
               overflowLabel={(count) => `+${count}`}
+              stripPage={galleryPage}
+              onStripPageChange={setGalleryPage}
+              showStripPagination={layoutPlan.showGalleryPagination}
+              pageLabel={(current, total) =>
+                t('callGalleryPage', { current, total })
+              }
+              previousPageLabel={t('callGalleryPreviousPage')}
+              nextPageLabel={t('callGalleryNextPage')}
             />
           </div>
         ) : useMainGalleryLayout ? (
@@ -2270,7 +2333,7 @@ const CallFeedTile = ({
   isMicrophoneMuted,
   isLocalVideoMuted,
   isDocumentPipOpen = false,
-  centerContent = false,
+  centerContent: _centerContent = false,
   floatingReactions = [],
   handRaised = false,
   t,
@@ -2344,7 +2407,7 @@ const FeedContent = ({
   isMicrophoneMuted,
   isLocalVideoMuted,
   isDocumentPipOpen = false,
-  centerContent = false,
+  centerContent: _centerContent = false,
   floatingReactions = [],
   handRaised = false,
   t,
@@ -2372,7 +2435,15 @@ const FeedContent = ({
   t: (key: string) => string;
 }) => {
   const compactTileLayout = isPip || isDocumentPipOpen;
-  const centeredLayout = compactTileLayout || centerContent;
+  const audioScrimLayout = resolveCallFeedAudioScrimLayout({
+    isPip,
+    isFullView,
+    isDocumentPipOpen,
+  });
+  const videoLabelLayout = resolveCallFeedVideoParticipantLabelLayout({
+    isFullView,
+    compactTileLayout,
+  });
   const audioMuted = feedReportsAudioMutedForTile(
     feed,
     isMicrophoneMuted,
@@ -2626,6 +2697,8 @@ const FeedContent = ({
     ? 48
     : isFullView && !isPip
     ? 128
+    : audioScrimLayout.panelDockTile
+    ? 64
     : 80;
   const tileAvatarUrl = useMemo(() => {
     if (isShare) return undefined;
@@ -2706,126 +2779,59 @@ const FeedContent = ({
         />
       ) : null}
       {!showVideoSurface ? (
-        <div
-          className={cn(
-            'relative z-[2] flex h-full w-full flex-col text-center',
-            /* Fixed dark scrim: always pair with light glyphs (not theme `foreground`). */
-            'bg-gradient-to-b from-zinc-900/95 to-black text-zinc-50',
-            isPip
-              ? 'items-center justify-center gap-1.5 p-2'
-              : centeredLayout
-              ? 'items-center justify-center gap-2 p-3'
-              : isFullView
-              ? 'items-center justify-center gap-3 p-4'
-              : 'items-start justify-start gap-2 p-2 pt-3',
-          )}
-          aria-label={ariaLabel}
-        >
-          <div
-            className={cn(
-              'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-zinc-200 ring-1 ring-white/20',
-              isPip
-                ? 'h-8 w-8'
-                : centeredLayout && !isFullView
-                ? 'h-14 w-14'
-                : isFullView
-                ? 'h-20 w-20 sm:h-24 sm:w-24'
-                : 'h-14 w-14',
-            )}
-          >
-            {tileAvatarUrl ? (
-              <img
-                src={tileAvatarUrl}
-                alt=""
-                className="h-full w-full object-cover"
-                loading="eager"
-                decoding="async"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <User
-                className={cn(
-                  isPip
-                    ? 'h-4 w-4'
-                    : centeredLayout && !isFullView
-                    ? 'h-7 w-7'
-                    : isFullView
-                    ? 'h-10 w-10 sm:h-12 sm:w-12'
-                    : 'h-7 w-7',
-                )}
-                aria-hidden
-              />
-            )}
-          </div>
-          <p
-            className={cn(
-              'line-clamp-2 max-w-full font-medium text-zinc-50',
-              isFullView && !isPip ? 'text-base sm:text-lg' : 'text-sm',
-              compactTileLayout && 'text-[10px] leading-tight',
-            )}
-          >
-            {showSkeleton ? (
-              <Skeleton
-                loading
-                width={100}
-                height={16}
-                className="mx-auto rounded"
-              />
-            ) : (
-              overlayLabel
-            )}
-          </p>
-          {audioMuted ? (
-            <p
-              className={cn(
-                'inline-flex items-center gap-1 font-medium text-destructive',
-                isPip
-                  ? 'text-[9px]'
-                  : isDocumentPipOpen
-                  ? 'text-xs'
-                  : 'text-xs',
+        <div className={audioScrimLayout.scrimClass} aria-label={ariaLabel}>
+          <div className={audioScrimLayout.contentClass}>
+            <div className={audioScrimLayout.avatarClass}>
+              {tileAvatarUrl ? (
+                <img
+                  src={tileAvatarUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  loading="eager"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <User
+                  className={audioScrimLayout.avatarIconClass}
+                  aria-hidden
+                />
               )}
-            >
-              <MicOff
-                className={isPip ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                strokeWidth={2.25}
-                aria-hidden
-              />
-              {t('callParticipantMuted')}
+            </div>
+            <p className={audioScrimLayout.nameClass}>
+              {showSkeleton ? (
+                <Skeleton
+                  loading
+                  width={100}
+                  height={16}
+                  className="mx-auto rounded"
+                />
+              ) : (
+                overlayLabel
+              )}
             </p>
-          ) : null}
-          <CallAudioVoiceWaves
-            mediaStream={stream}
-            active={canVoiceWave}
-            onDarkScrim
-            size={
-              isPip
-                ? 'sm'
-                : centeredLayout && !isFullView
-                ? 'md'
-                : isFullView && !isPip
-                ? 'lg'
-                : 'md'
-            }
-            className={
-              isPip
-                ? 'max-w-[5.5rem]'
-                : centeredLayout && !isFullView
-                ? 'max-w-[min(16rem,90%)]'
-                : 'w-full max-w-[min(24rem,96%)]'
-            }
-          />
+            {audioMuted ? (
+              <p className={audioScrimLayout.mutedClass}>
+                <MicOff
+                  className={isPip ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+                {t('callParticipantMuted')}
+              </p>
+            ) : null}
+            <CallAudioVoiceWaves
+              mediaStream={stream}
+              active={canVoiceWave}
+              onDarkScrim
+              size={audioScrimLayout.waveSize}
+              className={audioScrimLayout.waveClass}
+            />
+          </div>
         </div>
       ) : null}
       {showVideoSurface && !isPip ? (
-        <div
-          className={cn(
-            'absolute start-1 z-10 flex max-w-[calc(100%-0.5rem)] items-center gap-1 rounded-md bg-black/75 px-1.5 py-1 shadow-sm backdrop-blur-[2px]',
-            !isFullView || compactTileLayout
-              ? 'bottom-1 text-[10px] leading-4'
-              : 'bottom-2 text-xs leading-normal',
-          )}
-        >
+        <div className={videoLabelLayout.barClass}>
           <span className="min-w-0 flex-1 truncate leading-[inherit]">
             {showSkeleton ? (
               <Skeleton loading width={88} height={14} />
@@ -2834,9 +2840,17 @@ const FeedContent = ({
             )}
           </span>
           {audioMuted ? (
-            <span className="inline-flex shrink-0 items-center gap-0.5 text-destructive">
+            <span
+              className="inline-flex shrink-0 items-center gap-0.5 text-destructive"
+              title={t('callParticipantMuted')}
+            >
               <MicOff className="h-3 w-3" strokeWidth={2.25} aria-hidden />
-              <span className="font-medium leading-[inherit]">
+              <span
+                className={cn(
+                  'font-medium leading-[inherit]',
+                  videoLabelLayout.muteTextSrOnly && 'sr-only',
+                )}
+              >
                 {t('callParticipantMuted')}
               </span>
             </span>

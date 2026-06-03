@@ -169,61 +169,30 @@ export function resolveCallGalleryTilePlacements(
     return placements;
   }
 
-  if (mode === 'seven' && n === 7) {
-    placements[speaker] = {
-      index: speaker,
-      gridColumnStart: 1,
-      gridColumnEnd: 3,
-      gridRowStart: 1,
-      gridRowEnd: 3,
-    };
-    const slots: Array<{ gridColumnStart: number; gridRowStart: number }> = [
-      { gridColumnStart: 3, gridRowStart: 1 },
-      { gridColumnStart: 3, gridRowStart: 2 },
-      { gridColumnStart: 3, gridRowStart: 3 },
-      { gridColumnStart: 1, gridRowStart: 3 },
-      { gridColumnStart: 2, gridRowStart: 3 },
-    ];
-    let slot = 0;
-    for (let i = 0; i < n; i++) {
-      if (i === speaker) continue;
-      const target = slots[slot];
-      if (!target) break;
-      placements[i] = { index: i, ...target };
-      slot += 1;
-    }
-    return placements;
-  }
-
-  if (mode === 'eight' && n === 8) {
-    placements[speaker] = {
-      index: speaker,
-      gridColumnStart: 2,
-      gridColumnEnd: 4,
-      gridRowStart: 2,
-      gridRowEnd: 4,
-    };
-    const slots: Array<{ gridColumnStart: number; gridRowStart: number }> = [
-      { gridColumnStart: 1, gridRowStart: 1 },
-      { gridColumnStart: 2, gridRowStart: 1 },
-      { gridColumnStart: 3, gridRowStart: 1 },
-      { gridColumnStart: 1, gridRowStart: 2 },
-      { gridColumnStart: 1, gridRowStart: 3 },
-      { gridColumnStart: 2, gridRowStart: 3 },
-      { gridColumnStart: 3, gridRowStart: 3 },
-    ];
-    let slot = 0;
-    for (let i = 0; i < n; i++) {
-      if (i === speaker) continue;
-      const target = slots[slot];
-      if (!target) break;
-      placements[i] = { index: i, ...target };
-      slot += 1;
-    }
-    return placements;
-  }
-
   return placements;
+}
+
+/** Full-screen speaker + strip for N=7–8 (avoids broken 3×3 span grids). */
+function resolveFullScreenSpeakerStripPlan(input: {
+  participantCount: number;
+  fullScreenMode: CallFullScreenLayoutMode;
+  participantVideoFit: 'cover' | 'contain';
+  galleryPaginationResetKey: string;
+}): CallStageLayoutPlan {
+  const stripMaxVisible = Math.min(7, Math.max(0, input.participantCount - 1));
+  return {
+    renderer: 'speakerPrimaryStrip',
+    fullScreenMode: input.fullScreenMode,
+    participantVideoFit: input.participantVideoFit,
+    galleryMaxCols: 5,
+    galleryLayout: null,
+    showGalleryPagination: false,
+    speakerPrimaryRatio: 0.68,
+    stripMaxVisible,
+    stripOverflowCount: 0,
+    tilePlacements: [],
+    galleryPaginationResetKey: input.galleryPaginationResetKey,
+  };
 }
 
 export function resolveCallStageLayout(
@@ -283,17 +252,17 @@ export function resolveCallStageLayout(
       };
     }
 
-    /** N=2 — equal duo split (same as V-L §3.2); speaker strip starts at N=3. */
+    /** N=2 — spec §3.3 65/35 speaker-primary split. */
     if (participantCount === 2) {
       return {
-        renderer: 'thresholdGallery',
+        renderer: 'speakerPrimaryStrip',
         fullScreenMode: 'duo',
         participantVideoFit,
         galleryMaxCols: 2,
-        galleryLayout: computeCallGalleryGrid(2, 2),
+        galleryLayout: null,
         showGalleryPagination: false,
-        speakerPrimaryRatio: 1,
-        stripMaxVisible: 0,
+        speakerPrimaryRatio: 0.65,
+        stripMaxVisible: 1,
         stripOverflowCount: 0,
         tilePlacements: [],
         galleryPaginationResetKey,
@@ -343,19 +312,30 @@ export function resolveCallStageLayout(
   }
 
   if (fullScreenMode === 'speakerGallery') {
+    const stripMaxVisible = 7;
+    const othersCount = Math.max(0, participantCount - 1);
     return {
-      renderer: 'speakerGallery',
+      renderer: 'speakerPrimaryStrip',
       fullScreenMode,
       participantVideoFit,
       galleryMaxCols: 5,
       galleryLayout: null,
-      showGalleryPagination: true,
+      showGalleryPagination: othersCount > stripMaxVisible,
       speakerPrimaryRatio: 0.68,
-      stripMaxVisible: 7,
-      stripOverflowCount: Math.max(0, participantCount - 8),
+      stripMaxVisible,
+      stripOverflowCount: 0,
       tilePlacements: [],
       galleryPaginationResetKey,
     };
+  }
+
+  if (fullScreenMode === 'seven' || fullScreenMode === 'eight') {
+    return resolveFullScreenSpeakerStripPlan({
+      participantCount,
+      fullScreenMode,
+      participantVideoFit,
+      galleryPaginationResetKey,
+    });
   }
 
   if (fullScreenMode === 'gallery') {
@@ -402,18 +382,47 @@ export function resolveSpeakerPrimaryStripIndices(
   tileCount: number,
   activeSpeakerIndex: number,
   stripMaxVisible: number,
-): { speakerIndex: number; stripIndices: number[]; overflowCount: number } {
+  stripPage = 0,
+  paginateStrip = false,
+): {
+  speakerIndex: number;
+  stripIndices: number[];
+  overflowCount: number;
+  stripPageCount: number;
+} {
   const n = Math.max(0, Math.floor(tileCount));
   if (n === 0) {
-    return { speakerIndex: 0, stripIndices: [], overflowCount: 0 };
+    return {
+      speakerIndex: 0,
+      stripIndices: [],
+      overflowCount: 0,
+      stripPageCount: 1,
+    };
   }
   const speakerIndex = clampSpeakerIndex(activeSpeakerIndex, n);
   const others = Array.from({ length: n }, (_, i) => i).filter(
     (i) => i !== speakerIndex,
   );
-  const stripIndices = others.slice(0, stripMaxVisible);
+  const safeStripMax = Math.max(1, Math.floor(stripMaxVisible));
+  const stripPageCount = Math.max(1, Math.ceil(others.length / safeStripMax));
+  const safePage = Math.max(
+    0,
+    Math.min(Math.floor(stripPage), stripPageCount - 1),
+  );
+
+  if (paginateStrip && others.length > safeStripMax) {
+    const start = safePage * safeStripMax;
+    return {
+      speakerIndex,
+      stripIndices: others.slice(start, start + safeStripMax),
+      overflowCount: 0,
+      stripPageCount,
+    };
+  }
+
+  const stripIndices = others.slice(0, safeStripMax);
   const overflowCount = Math.max(0, others.length - stripIndices.length);
-  return { speakerIndex, stripIndices, overflowCount };
+  return { speakerIndex, stripIndices, overflowCount, stripPageCount: 1 };
 }
 
 export type ShareParticipantBandLayout =

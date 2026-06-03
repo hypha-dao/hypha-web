@@ -193,8 +193,23 @@ describe('WCUX-QUALITY debug overlay and capture (row 9)', () => {
     );
     const feedStart = source.indexOf('const FeedContent =');
     const feedBlock = source.slice(feedStart);
-    expect(feedBlock).toContain('bottom-1 text-[10px] leading-4');
+    expect(feedBlock).toContain('resolveCallFeedVideoParticipantLabelLayout');
     expect(feedBlock).not.toMatch(/top-1 flex-row items-center gap-1\.5/);
+  });
+
+  it('centers audio-only tile chrome inside the tile box', () => {
+    const source = readCommonSource(
+      'human-chat-panel/call-feed-tile-chrome.ts',
+    );
+    expect(source).toContain('items-center justify-center');
+    expect(source).not.toContain('items-start justify-start');
+  });
+
+  it('enforces minimum video participant label bar height (WCUX-LAYOUT-5)', () => {
+    const source = readCommonSource(
+      'human-chat-panel/call-feed-tile-chrome.ts',
+    );
+    expect(source).toContain('min-h-[1.75rem]');
   });
 
   it('paints active speaker highlight above video, not under it', () => {
