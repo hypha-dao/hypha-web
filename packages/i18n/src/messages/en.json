@@ -899,7 +899,7 @@
       "submitting": "Starting…"
     },
     "pendingEmailConfirmation": {
-      "title": "Authorize contact email",
+      "title": "Confirm contact email",
       "statusPending": "Pending confirmation",
       "contactEmailLabel": "Space or administrator contact email",
       "railsLabel": "Payment rails",

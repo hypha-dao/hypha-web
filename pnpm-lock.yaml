@@ -981,6 +981,9 @@ importers:
       '@wagmi/cli':
         specifier: ^2.2.0
         version: 2.2.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      jose:
+        specifier: ^5.9.6
+        version: 5.10.0
       matrix-js-sdk:
         specifier: ^40.0.0
         version: 40.2.0

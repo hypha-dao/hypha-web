@@ -3028,8 +3028,8 @@
       "endorsementsHint": "Estos son respaldos KYB de Bridge (p. ej., base para USD, sepa para EUR). Cada corredor seleccionado se incluye en el enlace de verificación.",
       "submit": "Iniciar verificación",
       "submitting": "Iniciando…",
-      "contactEmailHelper": "This email will be registered with our provider (Bridge).",
-      "authorizeOwnEmail": "I confirm I am authorized to register this email for Bridge bank integration on behalf of this space."
+      "contactEmailHelper": "Este email será registrado con nuestro proveedor (Bridge).",
+      "authorizeOwnEmail": "Confirmo que estoy autorizado a registrar este email para la integración bancaria de Bridge en nombre de este espacio."
     },
     "status": {
       "not_started": {
@@ -3074,23 +3074,23 @@
       }
     },
     "pendingEmailConfirmation": {
-      "title": "Authorize contact email",
-      "statusPending": "Pending confirmation",
-      "contactEmailLabel": "Space or administrator contact email",
-      "railsLabel": "Payment rails",
-      "resendCheckbox": "Send a new confirmation email",
-      "resendHelper": "Sending a new email will invalidate the previous confirmation link.",
-      "submit": "Send",
-      "submitting": "Sending…"
+      "title": "Confirmar email de contacto",
+      "statusPending": "Confirmación pendiente",
+      "contactEmailLabel": "Email de contacto del espacio o administrador",
+      "railsLabel": "Corredores de pago",
+      "resendCheckbox": "Enviar un nuevo email de confirmación",
+      "resendHelper": "Enviar un nuevo email invalidará el enlace de confirmación anterior.",
+      "submit": "Enviar",
+      "submitting": "Enviando…"
     },
     "emailConfirmation": {
       "verifyPage": {
-        "loading": "Confirming your email…",
-        "missingToken": "This confirmation link is invalid.",
-        "successTitle": "Email confirmed",
-        "successBody": "Thank you. Bank verification can continue for the space.",
-        "failureTitle": "Confirmation failed",
-        "failureBody": "This link is invalid or has expired. Ask the space admin to send a new confirmation email."
+        "loading": "Confirmando tu email…",
+        "missingToken": "Este enlace de confirmación no es válido.",
+        "successTitle": "Email confirmado",
+        "successBody": "Gracias. La verificación bancaria puede continuar para el espacio.",
+        "failureTitle": "Confirmación fallida",
+        "failureBody": "Este enlace no es válido o ha expirado. Pide al administrador del espacio que envíe un nuevo email de confirmación."
       }
     }
   }
