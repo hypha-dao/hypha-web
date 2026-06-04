@@ -80,10 +80,20 @@ export function useCallReactions({
     reactionsApplyToPinnedSpace &&
     Boolean(anchorEventId?.trim());
 
+  const inCallUserIdsRef = useRef(inCallUserIds);
+  inCallUserIdsRef.current = inCallUserIds;
+  /** Roster array identity changes every feed tick — stable string key avoids effect loops. */
+  const inCallUserIdsKey = inCallUserIds?.length
+    ? [...inCallUserIds].sort().join('\u0000')
+    : '';
+
   const applyInCallFilter = useCallback(
     (entries: CallRaisedHandEntry[]) =>
-      filterCallRaisedHandsToInCallParticipants(entries, inCallUserIds),
-    [inCallUserIds],
+      filterCallRaisedHandsToInCallParticipants(
+        entries,
+        inCallUserIdsRef.current,
+      ),
+    [inCallUserIdsKey],
   );
 
   const seedRaisedHands = useCallback(() => {
@@ -116,8 +126,21 @@ export function useCallReactions({
   }, [seedRaisedHands, anchorEventId]);
 
   useEffect(() => {
-    setRaisedHands((prev) => applyInCallFilter(prev));
-  }, [applyInCallFilter]);
+    setRaisedHands((prev) => {
+      const next = applyInCallFilter(prev);
+      if (
+        prev.length === next.length &&
+        prev.every(
+          (entry, index) =>
+            entry.userId === next[index]?.userId &&
+            entry.raisedAt === next[index]?.raisedAt,
+        )
+      ) {
+        return prev;
+      }
+      return next;
+    });
+  }, [applyInCallFilter, inCallUserIdsKey]);
 
   useEffect(() => {
     if (callState === 'idle') {
@@ -238,7 +261,6 @@ export function useCallReactions({
       floatingTimersRef.current.clear();
       floatingByUserRef.current.clear();
       pushFloatingReactionRef.current = () => {};
-      bumpFloatingReactions();
     };
   }, [
     anchorEventId,
