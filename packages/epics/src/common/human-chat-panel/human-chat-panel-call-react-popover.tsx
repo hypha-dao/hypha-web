@@ -19,6 +19,11 @@ import {
   type CallFeedbackReactionId,
   type CallFloatingReactionStyle,
 } from './call-zoom-reaction-catalog';
+import {
+  callAccentToolbarMenuRowActive,
+  callAccentToolbarTriggerActive,
+  callAccentToolbarTriggerIdle,
+} from './call-accent-alert-styles';
 
 type HumanChatPanelCallReactPopoverProps = {
   disabled?: boolean;
@@ -174,14 +179,10 @@ export function HumanChatPanelCallReactPopover({
       : isPip
       ? 'h-5 w-5 border-border/60 bg-background/95 px-0 text-foreground'
       : cn(
-          'border-border/60 bg-background text-foreground hover:bg-muted',
+          callAccentToolbarTriggerIdle,
           isTouchToolbar ? 'h-11 w-11' : 'h-8 w-8',
         ),
-    open && !isFull && 'border-primary/40 bg-muted',
-    localHandRaised &&
-      !isFull &&
-      !open &&
-      'border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    (open || localHandRaised) && !isFull && callAccentToolbarTriggerActive,
   );
 
   return (
@@ -332,10 +333,7 @@ export function HumanChatPanelCallReactPopover({
                 data-testid="call-raise-hand-button"
                 className={cn(
                   actionRowBtn,
-                  localHandRaised &&
-                    (isFull
-                      ? 'ring-1 ring-amber-500/50 bg-amber-950/50'
-                      : 'ring-1 ring-amber-500/40 bg-amber-500/15'),
+                  localHandRaised && callAccentToolbarMenuRowActive,
                 )}
                 onClick={() => {
                   onToggleRaiseHand();

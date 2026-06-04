@@ -476,6 +476,16 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('data-testid="call-be-right-back-button"');
   });
 
+  it('react trigger uses space accent tokens instead of amber', () => {
+    const popover = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-react-popover.tsx',
+    );
+    expect(popover).toContain('callAccentToolbarTriggerIdle');
+    expect(popover).toContain('callAccentToolbarTriggerActive');
+    expect(popover).not.toContain('amber-500');
+    expect(popover).not.toContain('border-primary/40');
+  });
+
   it('react trigger is icon-only with animated chevron', () => {
     const popover = readCommonSource(
       'human-chat-panel/human-chat-panel-call-react-popover.tsx',

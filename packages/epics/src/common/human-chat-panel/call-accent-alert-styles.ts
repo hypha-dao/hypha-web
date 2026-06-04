@@ -43,3 +43,13 @@ export function callAccentAlertCompactRowClassName(extra?: string) {
 /** Status copy on dark video tiles (participant waiting / stalled). */
 export const callAccentAlertOnDarkText =
   'text-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9,#4a65d8))_72%,white)]';
+
+/** Circular in-banner / dock toolbar triggers (reactions, etc.). */
+export const callAccentToolbarTriggerIdle =
+  'border border-accent-9/40 bg-background text-accent-9 shadow-sm hover:bg-accent-3/80 hover:text-accent-11';
+
+export const callAccentToolbarTriggerActive =
+  'border-accent-9/50 bg-accent-9/15 text-foreground ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/20 dark:text-foreground';
+
+export const callAccentToolbarMenuRowActive =
+  'ring-1 ring-inset ring-accent-9/30 bg-accent-9/12';
