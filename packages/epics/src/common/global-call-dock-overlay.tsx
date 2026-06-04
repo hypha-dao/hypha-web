@@ -190,76 +190,14 @@ function applyDockResize(
 }
 
 function DockCornerGrip({ corner }: { corner: ResizeHandle }) {
-  const grip =
-    corner === 'top-left' ? (
-      <>
-        <path
-          d="M2 10V2h8"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M3.5 10V3.5h6.5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </>
-    ) : corner === 'top-right' ? (
-      <>
-        <path
-          d="M10 10V2H2"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M8.5 10V3.5H2"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </>
-    ) : corner === 'bottom-left' ? (
-      <>
-        <path
-          d="M2 2v8h8"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M3.5 3.5v6.5h6.5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </>
-    ) : (
-      <>
-        <path
-          d="M10 2v8H2"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M8.5 3.5v6.5H2"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </>
-    );
+  const pathD =
+    corner === 'top-left'
+      ? 'M2 10V2h8'
+      : corner === 'top-right'
+      ? 'M10 10V2H2'
+      : corner === 'bottom-left'
+      ? 'M2 2v8h8'
+      : 'M10 2v8H2';
 
   return (
     <svg
@@ -269,7 +207,13 @@ function DockCornerGrip({ corner }: { corner: ResizeHandle }) {
       className="pointer-events-none text-foreground/60"
       aria-hidden
     >
-      {grip}
+      <path
+        d={pathD}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

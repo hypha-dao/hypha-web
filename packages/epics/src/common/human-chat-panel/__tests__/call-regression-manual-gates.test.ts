@@ -211,6 +211,17 @@ describe('WCUX-QUALITY debug overlay and capture (row 9)', () => {
     expect(source).toContain('min-h-[1.75rem]');
   });
 
+  it('dock resize corners use a single grip path (no double L)', () => {
+    const source = readCommonSource('global-call-dock-overlay.tsx');
+    const gripBlock = source.slice(
+      source.indexOf('function DockCornerGrip'),
+      source.indexOf('function DockResizeHandle'),
+    );
+    expect(gripBlock).toContain('const pathD =');
+    expect(gripBlock.match(/<path/g)?.length ?? 0).toBe(1);
+    expect(gripBlock).not.toContain('M3.5 10V3.5h6.5');
+  });
+
   it('uses a single inset ring for active speaker (no duplicate corner borders)', () => {
     const source = readCommonSource(
       'human-chat-panel/human-chat-panel-call-stage.tsx',
