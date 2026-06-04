@@ -539,6 +539,9 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     const source = readCommonSource(
       'human-chat-panel/human-chat-panel-call-react-popover.tsx',
     );
+    expect(source).toContain('rounded-xl');
+    expect(source).toContain('CallReactMenuSection');
+    expect(source).toContain('sectionDivider');
     expect(source).toContain('callReactSendWithEffect');
     expect(source).toContain('callReactReactionsSection');
     expect(source).toContain('CALL_SEND_WITH_EFFECT_EMOJIS');
