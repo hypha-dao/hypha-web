@@ -7,7 +7,7 @@ import {
   useMatrixUserIdsByPrivySubs,
   useMe,
 } from '@hypha-platform/core/client';
-import type { UseMembers } from '../../people/hooks/types';
+import type { UseMembers } from '../../spaces';
 import {
   looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,

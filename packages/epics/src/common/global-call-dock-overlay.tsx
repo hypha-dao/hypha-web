@@ -50,7 +50,7 @@ import {
 } from './human-chat-panel/call-document-pip-window-geometry';
 import { resolveCallDockPortalTarget } from './human-chat-panel/call-feed-tile-audio';
 import { useCallMemberLabelResolver } from './human-chat-panel/use-call-member-label-resolver';
-import type { UseMembers } from '../people/hooks/types';
+import type { UseMembers } from '../spaces';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useHumanChatPanel } from './human-chat-panel-context';
