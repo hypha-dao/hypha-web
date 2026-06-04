@@ -342,6 +342,7 @@ export function HumanChatPanelInCallControls({
       : 'fill-none stroke-muted-foreground text-muted-foreground',
   );
   const captureLive = captureActive;
+  const capturePaused = recordingStatus === 'paused';
   const captureMenuActive = captureActive;
   const capturePulsing = recordingStatus === 'recording';
   const showCallReactions =
@@ -591,7 +592,18 @@ export function HumanChatPanelInCallControls({
         }}
       >
         {captureLive ? (
-          renderCaptureOnAirIcon
+          capturePaused ? (
+            <Pause
+              className={cn(
+                captureIconClass,
+                isFull ? 'text-rose-400' : 'text-rose-600 dark:text-rose-400',
+              )}
+              strokeWidth={lucideStroke}
+              aria-hidden
+            />
+          ) : (
+            renderCaptureOnAirIcon
+          )
         ) : (
           <Disc className={captureIdleIconClass} />
         )}

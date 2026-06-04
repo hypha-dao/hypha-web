@@ -476,6 +476,16 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('data-testid="call-be-right-back-button"');
   });
 
+  it('shows pause icon on capture toolbar button when recording is paused', () => {
+    const controls = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(controls).toContain(
+      "const capturePaused = recordingStatus === 'paused'",
+    );
+    expect(controls).toMatch(/capturePaused\s*\?[\s\S]*<Pause/);
+  });
+
   it('react trigger uses space accent tokens instead of amber', () => {
     const popover = readCommonSource(
       'human-chat-panel/human-chat-panel-call-react-popover.tsx',
