@@ -1,18 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  ChevronUp,
-  CircleHelp,
-  Ellipsis,
-  Heart,
-} from 'lucide-react';
+import { ChevronUp, CircleHelp, Ellipsis, Heart } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@hypha-platform/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { HumanChatPanelEmojiMartSurface } from './human-chat-panel-emoji-mart-surface';
 import {
@@ -104,8 +95,7 @@ function FeedbackReactionButton({
     no: 'border-rose-600/40 bg-rose-950/80 text-rose-400 hover:bg-rose-900/80',
     slower:
       'border-zinc-600/50 bg-zinc-800/90 text-zinc-200 hover:bg-zinc-700/90',
-    faster:
-      'border-sky-600/40 bg-sky-950/80 text-sky-300 hover:bg-sky-900/80',
+    faster: 'border-sky-600/40 bg-sky-950/80 text-sky-300 hover:bg-sky-900/80',
     away: 'border-zinc-600/50 bg-zinc-800/90 text-zinc-200 hover:bg-zinc-700/90',
   };
   const icons: Record<CallFeedbackReactionId, string> = {
@@ -145,7 +135,10 @@ export function HumanChatPanelCallReactPopover({
   const isPip = density === 'pip';
   const showReactLabel = !isPip;
 
-  const handleSend = (emoji: string, style: CallFloatingReactionStyle = 'default') => {
+  const handleSend = (
+    emoji: string,
+    style: CallFloatingReactionStyle = 'default',
+  ) => {
     onSendReaction(emoji, style);
     setOpen(false);
     setEmojiPicker(null);
@@ -173,9 +166,7 @@ export function HumanChatPanelCallReactPopover({
       : isPip
       ? 'h-5 w-5 border-border/60 bg-background/95 px-0 text-foreground'
       : 'h-8 border-border/60 bg-background px-2.5 text-foreground hover:bg-muted',
-    open &&
-      !isFull &&
-      'border-primary/40 bg-muted',
+    open && !isFull && 'border-primary/40 bg-muted',
     localHandRaised &&
       !isFull &&
       !open &&
