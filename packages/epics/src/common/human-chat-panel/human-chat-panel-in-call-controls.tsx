@@ -254,8 +254,8 @@ export function HumanChatPanelInCallControls({
         'inline-flex shrink-0 items-center justify-center rounded-full border border-emerald-500/55 bg-emerald-600/90 text-white shadow-sm ring-2 ring-emerald-500/25 transition-colors hover:bg-emerald-500/90',
         bannerCircleSize,
       );
-  /** Production share affordance — green even before share starts (opens browser picker). */
-  const shareIdleBtn = shareActiveBtn;
+  /** Share is neutral until local screenshare is active; green matches “presenting” state. */
+  const shareIdleBtn = neutralBtn;
   const camOffBtn = isFull
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : isCompact

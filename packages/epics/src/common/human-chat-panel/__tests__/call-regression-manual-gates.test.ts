@@ -404,7 +404,7 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).not.toContain("? 'inBanner' : 'fullView'");
   });
 
-  it('uses a single green share button that opens the native picker', () => {
+  it('uses a neutral share button that turns green only while presenting', () => {
     const controls = readCommonSource(
       'human-chat-panel/human-chat-panel-in-call-controls.tsx',
     );
@@ -421,7 +421,7 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
       ),
       'utf8',
     );
-    expect(controls).toContain('shareIdleBtn');
+    expect(controls).toContain('shareIdleBtn = neutralBtn');
     expect(controls).toContain(
       'isScreensharing ? shareActiveBtn : shareIdleBtn',
     );
