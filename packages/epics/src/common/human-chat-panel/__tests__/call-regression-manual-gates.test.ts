@@ -422,6 +422,20 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).not.toContain('justify-evenly');
   });
 
+  it('closes other toolbar menus when reactions capture or audio opens', () => {
+    const controls = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(controls).toContain('closeOtherToolbarMenus');
+    expect(controls).toContain('isReactMenuOpen');
+    expect(controls).toContain("closeOtherToolbarMenus('react')");
+    expect(controls).toContain("closeOtherToolbarMenus('capture')");
+    expect(controls).toContain("closeOtherToolbarMenus('audio')");
+    expect(controls).toMatch(
+      /setIsCaptureMenuOpen\(false\)[\s\S]*setIsReactMenuOpen/,
+    );
+  });
+
   it('uses in-banner toolbar chrome on desktop fullscreen dock', () => {
     const source = readCommonSource('global-call-dock-overlay.tsx');
     expect(source).toContain("const dockControlsVariant = 'inBanner'");

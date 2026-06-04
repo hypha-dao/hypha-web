@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AudioLines,
   Check,
@@ -155,6 +155,9 @@ export function HumanChatPanelInCallControls({
   const audioMenuRef = useRef<HTMLDivElement | null>(null);
   const [isCaptureMenuOpen, setIsCaptureMenuOpen] = useState(false);
   const captureMenuRef = useRef<HTMLDivElement | null>(null);
+  const [isReactMenuOpen, setIsReactMenuOpen] = useState(false);
+  const reactMenuContentRef = useRef<HTMLDivElement | null>(null);
+  const reactMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [stopConfirmStep, setStopConfirmStep] = useState<
     'none' | 'recording' | 'transcript'
   >('none');
@@ -401,6 +404,42 @@ export function HumanChatPanelInCallControls({
     </span>
   );
 
+  const closeOtherToolbarMenus = useCallback(
+    (except?: 'audio' | 'capture' | 'react') => {
+      if (except !== 'audio') setIsAudioMenuOpen(false);
+      if (except !== 'capture') setIsCaptureMenuOpen(false);
+      if (except !== 'react') setIsReactMenuOpen(false);
+    },
+    [],
+  );
+
+  const handleReactMenuOpenChange = useCallback(
+    (next: boolean) => {
+      if (next) {
+        closeOtherToolbarMenus('react');
+      }
+      setIsReactMenuOpen(next);
+    },
+    [closeOtherToolbarMenus],
+  );
+
+  const callReactPopoverProps = {
+    open: isReactMenuOpen,
+    onOpenChange: handleReactMenuOpenChange,
+    menuContentRef: reactMenuContentRef,
+    triggerRef: reactMenuTriggerRef,
+    localHandRaised,
+    onSendReaction: (emoji: string, style?: CallFloatingReactionStyle) => {
+      void onSendReaction?.(emoji, style);
+    },
+    onToggleRaiseHand: () => {
+      void onToggleRaiseHand?.();
+    },
+    variant,
+    density,
+    iconStrokeWidth: lucideStroke,
+  };
+
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null;
@@ -411,22 +450,29 @@ export function HumanChatPanelInCallControls({
       if (!captureMenuRef.current?.contains(target)) {
         setIsCaptureMenuOpen(false);
       }
+      if (
+        !reactMenuContentRef.current?.contains(target) &&
+        !reactMenuTriggerRef.current?.contains(target)
+      ) {
+        setIsReactMenuOpen(false);
+      }
     };
     window.addEventListener('pointerdown', onPointerDown);
     return () => window.removeEventListener('pointerdown', onPointerDown);
   }, []);
 
   useEffect(() => {
-    if (!isAudioMenuOpen && !isCaptureMenuOpen) return;
+    if (!isAudioMenuOpen && !isCaptureMenuOpen && !isReactMenuOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsAudioMenuOpen(false);
         setIsCaptureMenuOpen(false);
+        setIsReactMenuOpen(false);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isAudioMenuOpen, isCaptureMenuOpen]);
+  }, [isAudioMenuOpen, isCaptureMenuOpen, isReactMenuOpen]);
 
   const selectVoicePreset = (
     preset: 'standard' | 'voice_isolation' | 'music',
@@ -501,7 +547,7 @@ export function HumanChatPanelInCallControls({
         aria-haspopup="menu"
         aria-expanded={isAudioMenuOpen}
         onClick={() => {
-          setIsCaptureMenuOpen(false);
+          closeOtherToolbarMenus('audio');
           setIsAudioMenuOpen((open) => !open);
         }}
       >
@@ -592,7 +638,7 @@ export function HumanChatPanelInCallControls({
         aria-haspopup="menu"
         aria-expanded={isCaptureMenuOpen}
         onClick={() => {
-          setIsAudioMenuOpen(false);
+          closeOtherToolbarMenus('capture');
           setIsCaptureMenuOpen((open) => !open);
         }}
       >
@@ -899,17 +945,8 @@ export function HumanChatPanelInCallControls({
                 ) : null}
                 {leaveOnly && showCallReactions ? (
                   <HumanChatPanelCallReactPopover
+                    {...callReactPopoverProps}
                     disabled={controlsDisabled || !callReactionsReady}
-                    localHandRaised={localHandRaised}
-                    onSendReaction={(emoji, style) => {
-                      void onSendReaction?.(emoji, style);
-                    }}
-                    onToggleRaiseHand={() => {
-                      void onToggleRaiseHand?.();
-                    }}
-                    variant={variant}
-                    density={density}
-                    iconStrokeWidth={lucideStroke}
                   />
                 ) : null}
                 <button
@@ -931,17 +968,8 @@ export function HumanChatPanelInCallControls({
                 </button>
                 {!leaveOnly && showCallReactions ? (
                   <HumanChatPanelCallReactPopover
+                    {...callReactPopoverProps}
                     disabled={controlsDisabled || !callReactionsReady}
-                    localHandRaised={localHandRaised}
-                    onSendReaction={(emoji, style) => {
-                      void onSendReaction?.(emoji, style);
-                    }}
-                    onToggleRaiseHand={() => {
-                      void onToggleRaiseHand?.();
-                    }}
-                    variant={variant}
-                    density={density}
-                    iconStrokeWidth={lucideStroke}
                   />
                 ) : null}
               </div>
@@ -1049,17 +1077,8 @@ export function HumanChatPanelInCallControls({
                   ) : null}
                   {showCallReactions ? (
                     <HumanChatPanelCallReactPopover
+                      {...callReactPopoverProps}
                       disabled={controlsDisabled || !callReactionsReady}
-                      localHandRaised={localHandRaised}
-                      onSendReaction={(emoji, style) => {
-                        void onSendReaction?.(emoji, style);
-                      }}
-                      onToggleRaiseHand={() => {
-                        void onToggleRaiseHand?.();
-                      }}
-                      variant={variant}
-                      density={density}
-                      iconStrokeWidth={lucideStroke}
                     />
                   ) : null}
                   {showAdvancedCallControls && !isPipDensity
@@ -1072,17 +1091,8 @@ export function HumanChatPanelInCallControls({
               ) : null}
               {leaveOnly && showCallReactions ? (
                 <HumanChatPanelCallReactPopover
+                  {...callReactPopoverProps}
                   disabled={controlsDisabled || !callReactionsReady}
-                  localHandRaised={localHandRaised}
-                  onSendReaction={(emoji, style) => {
-                    void onSendReaction?.(emoji, style);
-                  }}
-                  onToggleRaiseHand={() => {
-                    void onToggleRaiseHand?.();
-                  }}
-                  variant={variant}
-                  density={density}
-                  iconStrokeWidth={lucideStroke}
                 />
               ) : null}
               <button
