@@ -1190,10 +1190,16 @@ export function GlobalCallDockOverlay() {
     isDocumentPip: isDocumentPipOpen,
     stageLayout: dockStageLayout,
   });
-  /** Dark video-style chrome on dock footer — desktop and mobile (matches full-view). */
-  const dockControlsVariant = 'fullView';
-  /** PiP: compact centered toolbar; dock/fullscreen keep production layout. */
-  const dockControlsLayout = isMobile ? 'centered' : 'centered';
+  /** Production: light in-banner circles on dock/panel; dark chrome only in fullscreen. */
+  const dockControlsVariant =
+    isMobile || !modeIsFullscreen ? 'inBanner' : 'fullView';
+  const dockControlsLayout = isMobile
+    ? 'centered'
+    : dockCompact
+    ? 'inline'
+    : modeIsFullscreen
+    ? 'inline'
+    : 'centered';
   const dockControlsDensity = 'default';
   const lockStagePointerEvents =
     !isScreensharing && !inDocumentPip && !isTouchDock;

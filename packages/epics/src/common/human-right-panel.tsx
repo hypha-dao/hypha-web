@@ -1343,10 +1343,21 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return restoreSidebarWidth;
   }, [isSidebarMobile, showAuthPrompt, sidebarOpen]);
 
-  const spaceCallShowJoinChime = useMemo(
-    () => showSidebarCallChrome && spaceCallShowJoinStrip && !inSpaceCall,
-    [showSidebarCallChrome, spaceCallShowJoinStrip, inSpaceCall],
+  const spaceCallShowJoinUi = useMemo(
+    () =>
+      showSidebarCallChrome &&
+      spaceCallShowJoinStrip &&
+      spaceCallRoomGroupDeviceCount > 0 &&
+      !inSpaceCall,
+    [
+      showSidebarCallChrome,
+      spaceCallShowJoinStrip,
+      spaceCallRoomGroupDeviceCount,
+      inSpaceCall,
+    ],
   );
+
+  const spaceCallShowJoinChime = spaceCallShowJoinUi;
 
   const joinChimeNotification = useMemo(
     () => ({
@@ -1380,8 +1391,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     matrixSessionReady: isMatrixAuthenticated && Boolean(client),
   });
 
-  const showJoinInvitationOpportunity =
-    showSidebarCallChrome && spaceCallShowJoinStrip && !inSpaceCall;
+  const showJoinInvitationOpportunity = spaceCallShowJoinUi;
   const {
     open: joinInviteOpen,
     dismiss: dismissJoinInvite,
@@ -4033,7 +4043,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {showSidebarCallChrome && !inSpaceCall && spaceCallShowJoinStrip && (
+        {spaceCallShowJoinUi && (
           <HumanChatPanelCallJoinStrip
             deviceCount={spaceCallRoomGroupDeviceCount}
             disabled={!callUiEnabled}

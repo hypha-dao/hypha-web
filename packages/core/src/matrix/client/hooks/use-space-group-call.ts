@@ -3669,12 +3669,14 @@ export function useSpaceGroupCall(
     if (showRoomCallInProgressRaw) {
       timer = setTimeout(() => setShowRoomCallInProgress(true), 250);
     } else {
-      timer = setTimeout(() => setShowRoomCallInProgress(false), 2000);
+      /** Hide immediately when the room is empty — avoid "Call in progress — 0 members". */
+      const hideDelayMs = idleRoomParticipantCount > 0 ? 2000 : 0;
+      timer = setTimeout(() => setShowRoomCallInProgress(false), hideDelayMs);
     }
     return () => {
       if (timer != null) clearTimeout(timer);
     };
-  }, [showRoomCallInProgressRaw]);
+  }, [showRoomCallInProgressRaw, idleRoomParticipantCount]);
 
   return {
     callState,

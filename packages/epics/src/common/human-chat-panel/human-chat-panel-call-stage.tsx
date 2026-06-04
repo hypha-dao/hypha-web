@@ -27,7 +27,7 @@ import {
   useUserPrivyIdByMatrixId,
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
-import { Skeleton } from '@hypha-platform/ui';
+import { Skeleton, useIsMobile } from '@hypha-platform/ui';
 import {
   matrixMemberDisplayLabel,
   matrixUserIdToCanonicalPrivySub,
@@ -71,6 +71,7 @@ import {
   resolveCallStageShareLayout,
   shareFeedLayoutKey,
 } from './call-stage-share-layout';
+import { getCallPanelMobileGridLayout } from './call-panel-mobile-grid';
 import {
   feedReportsAudioMutedForTile,
   formatCallShareTileLabel,
@@ -782,6 +783,9 @@ function HumanChatPanelCallStageMain({
   } = model;
 
   const isFull = layout === 'fullView';
+  const isMobileViewport = useIsMobile() ?? false;
+  /** Phone dock/panel call stage — not tablet (`md`) or desktop. */
+  const isMobilePanelStage = panelFlush && !isFull && isMobileViewport;
   const resolvedViewportTier: CallViewportTier =
     viewportTierProp ?? (isFull ? 'V-L' : isDocumentPipOpen ? 'V-PiP' : 'V-M');
   const {
@@ -882,6 +886,9 @@ function HumanChatPanelCallStageMain({
       : userGridTileCount === 2
       ? 'grid-cols-1 @min-[22rem]:grid-cols-2'
       : 'grid-cols-1 @min-[22rem]:grid-cols-2 @min-[32rem]:grid-cols-3';
+  const mobilePanelGrid = isMobilePanelStage
+    ? getCallPanelMobileGridLayout(userGridTileCount)
+    : null;
 
   const room: Room | null =
     roomId && client ? client.getRoom(roomId) ?? null : null;
@@ -1159,6 +1166,8 @@ function HumanChatPanelCallStageMain({
    */
   const userGridCellClass = isFull
     ? 'flex h-full min-h-0 w-full min-w-0 flex-col'
+    : mobilePanelGrid
+    ? mobilePanelGrid.cellClass
     : panelFlush && userGridTileCount <= 1
     ? 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col'
     : userGridTileCount > 1 && !isFull
@@ -1839,6 +1848,8 @@ function HumanChatPanelCallStageMain({
                       ? 'max-h-[min(40dvh,320px)] shrink-0'
                       : null,
                   )
+                : mobilePanelGrid
+                ? mobilePanelGrid.gridClass
                 : cn(
                     hasRenderableShare ? 'max-h-[min(50vh,420px)]' : null,
                     !isFull && userGridTileCount > 1

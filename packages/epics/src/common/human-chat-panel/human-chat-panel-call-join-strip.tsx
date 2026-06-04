@@ -67,6 +67,11 @@ export function HumanChatPanelCallJoinStrip({
   const showAudioButton = deviceCount > 0 || Boolean(onJoinAudio);
   const useProminentJoinBanner = isJoinOpportunity && !hasDurable;
 
+  /** No active room call to join — avoid empty "Call in progress — 0 members" chrome. */
+  if (!hasDurable && deviceCount <= 0) {
+    return null;
+  }
+
   const actionButtons = (
     <div
       className={cn(

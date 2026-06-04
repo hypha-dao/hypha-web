@@ -275,6 +275,8 @@ export function HumanChatPanelInCallControls({
     : isCompact
     ? 'h-3.5 w-3.5'
     : 'h-4 w-4';
+  /** Production in-banner toolbar uses lighter Lucide strokes than full-view chrome. */
+  const lucideStroke = isFull ? 2 : 1.75;
   const audioSettingsBtn = isFull
     ? cn(
         fullViewControlSize,
@@ -492,7 +494,7 @@ export function HumanChatPanelInCallControls({
           setIsAudioMenuOpen((open) => !open);
         }}
       >
-        <SlidersHorizontal className={icon} />
+        <SlidersHorizontal className={icon} strokeWidth={lucideStroke} />
         <ChevronDown
           className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
         />
@@ -828,9 +830,9 @@ export function HumanChatPanelInCallControls({
                   }
                 >
                   {isMicrophoneMuted ? (
-                    <MicOff className={icon} />
+                    <MicOff className={icon} strokeWidth={lucideStroke} />
                   ) : (
-                    <Mic className={icon} />
+                    <Mic className={icon} strokeWidth={lucideStroke} />
                   )}
                 </button>
                 <button
@@ -858,9 +860,9 @@ export function HumanChatPanelInCallControls({
                   }
                 >
                   {isLocalVideoMuted ? (
-                    <VideoOff className={icon} />
+                    <VideoOff className={icon} strokeWidth={lucideStroke} />
                   ) : (
-                    <Video className={icon} />
+                    <Video className={icon} strokeWidth={lucideStroke} />
                   )}
                 </button>
                 {showAdvancedCallControls ? (
@@ -878,6 +880,7 @@ export function HumanChatPanelInCallControls({
                     )}
                     activeTriggerClassName="inline-flex items-center justify-center"
                     iconClassName={icon}
+                    iconStrokeWidth={lucideStroke}
                   />
                 ) : null}
               </>
@@ -894,7 +897,10 @@ export function HumanChatPanelInCallControls({
               title={t('callLeave')}
               aria-label={t('callLeave')}
             >
-              <CallHangUpIcon className={leaveIcon} />
+              <CallHangUpIcon
+                className={leaveIcon}
+                strokeWidth={isFull ? 2.25 : 1.75}
+              />
             </button>
             {showCallReactions ? (
               <HumanChatPanelCallReactPopover

@@ -195,6 +195,7 @@ export function HumanChatPanelCallReactPopover({
               isFull ? 'h-4 w-4' : isPip ? 'h-2.5 w-2.5' : 'h-4 w-4',
               open && 'fill-current',
             )}
+            strokeWidth={isFull ? 2 : 1.75}
             aria-hidden
           />
           {showReactLabel ? (

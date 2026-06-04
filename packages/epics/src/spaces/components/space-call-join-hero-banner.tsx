@@ -89,6 +89,7 @@ export function SpaceCallJoinHeroBanner({
     appliesToThisSpace &&
     roomMatches &&
     showRoomCallInProgress &&
+    roomGroupCallDeviceCount > 0 &&
     !inSpaceCall;
 
   const launchContext = useMemo(() => {

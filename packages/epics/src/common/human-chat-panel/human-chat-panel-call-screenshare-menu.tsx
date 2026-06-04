@@ -14,6 +14,7 @@ type HumanChatPanelCallScreenshareMenuProps = {
   onStopScreenshare: () => void;
   triggerClassName?: string;
   iconClassName?: string;
+  iconStrokeWidth?: number;
   activeTriggerClassName?: string;
   title?: string;
   activeAriaLabel?: string;
@@ -31,6 +32,7 @@ export function HumanChatPanelCallScreenshareMenu({
   onStopScreenshare,
   triggerClassName,
   iconClassName,
+  iconStrokeWidth,
   activeTriggerClassName,
   title,
   activeAriaLabel,
@@ -51,7 +53,7 @@ export function HumanChatPanelCallScreenshareMenu({
         title={title ?? t('callControlsScreenshare')}
         aria-label={activeAriaLabel ?? t('callControlsScreenshareActiveAria')}
       >
-        <MonitorOff className={iconClassName} />
+        <MonitorOff className={iconClassName} strokeWidth={iconStrokeWidth} />
       </button>
     );
   }
@@ -76,7 +78,7 @@ export function HumanChatPanelCallScreenshareMenu({
         onStartScreenshare(DEFAULT_SHARE_SURFACE_MODE);
       }}
     >
-      <Monitor className={iconClassName} />
+      <Monitor className={iconClassName} strokeWidth={iconStrokeWidth} />
     </button>
   );
 }
