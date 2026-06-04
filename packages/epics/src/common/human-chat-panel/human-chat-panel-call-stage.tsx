@@ -2762,10 +2762,8 @@ const FeedContent = ({
   return (
     <div
       className={cn(
-        /* `rounded-md` = button-like corners; solid black so letterboxing (if any) is never a light “white” gap in light mode */
-        'relative min-w-0 overflow-hidden bg-black',
-        tileCornerClass,
-        isActiveSpeaker && activeSpeakerRingClass,
+        /* Outer shell: no overflow clip — active-speaker ring renders above video. */
+        'relative min-w-0 bg-black',
         isFullView && !isPip
           ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col'
           : compactTileLayout
@@ -2775,90 +2773,107 @@ const FeedContent = ({
         isShare && isFullView && 'h-full min-h-0 w-full',
       )}
     >
-      {handRaised ? (
-        <span
-          className="absolute end-1 top-1 z-[5] rounded-full bg-black/70 px-1.5 py-0.5 text-sm leading-none"
-          aria-label={t('callRaiseHandBadge')}
-          title={t('callRaiseHandBadge')}
-        >
-          ✋
-        </span>
-      ) : null}
-      <CallFloatingReactionOverlay reactions={floatingReactions} />
-      {hasVideo ? (
-        <video
-          ref={ref}
-          data-hypha-call-feed-video=""
-          className={resolveCallFeedVideoSurfaceClassName({
-            mirrorLocalPreview,
-            showVideoSurface,
-            isFullView,
-            isPip,
-            isShare,
-            panelFlush,
-            panelVideoFit,
-          })}
-          autoPlay
-          playsInline
-          disablePictureInPicture
-          disableRemotePlayback
-          controlsList="nodownload noremoteplayback"
-          muted
-          aria-label={ariaLabel}
-        />
-      ) : null}
-      {!showVideoSurface ? (
-        <div className={audioScrimLayout.scrimClass} aria-label={ariaLabel}>
-          <div className={audioScrimLayout.contentClass}>
-            <div className={audioScrimLayout.avatarClass}>
-              {tileAvatarUrl ? (
-                <img
-                  src={tileAvatarUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  loading="eager"
-                  decoding="async"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <User
-                  className={audioScrimLayout.avatarIconClass}
-                  aria-hidden
-                />
-              )}
-            </div>
-            <p className={audioScrimLayout.nameClass}>
-              {showSkeleton ? (
-                <Skeleton
-                  loading
-                  width={100}
-                  height={16}
-                  className="mx-auto rounded"
-                />
-              ) : (
-                overlayLabel
-              )}
-            </p>
-            {audioMuted ? (
-              <p className={audioScrimLayout.mutedClass}>
-                <MicOff
-                  className={isPip ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                  strokeWidth={2.25}
-                  aria-hidden
-                />
-                {t('callParticipantMuted')}
+      <div
+        className={cn(
+          'relative min-h-0 min-w-0 flex-1 overflow-hidden bg-black',
+          tileCornerClass,
+        )}
+      >
+        {handRaised ? (
+          <span
+            className="absolute end-1 top-1 z-[5] rounded-full bg-black/70 px-1.5 py-0.5 text-sm leading-none"
+            aria-label={t('callRaiseHandBadge')}
+            title={t('callRaiseHandBadge')}
+          >
+            ✋
+          </span>
+        ) : null}
+        <CallFloatingReactionOverlay reactions={floatingReactions} />
+        {hasVideo ? (
+          <video
+            ref={ref}
+            data-hypha-call-feed-video=""
+            className={resolveCallFeedVideoSurfaceClassName({
+              mirrorLocalPreview,
+              showVideoSurface,
+              isFullView,
+              isPip,
+              isShare,
+              panelFlush,
+              panelVideoFit,
+            })}
+            autoPlay
+            playsInline
+            disablePictureInPicture
+            disableRemotePlayback
+            controlsList="nodownload noremoteplayback"
+            muted
+            aria-label={ariaLabel}
+          />
+        ) : null}
+        {!showVideoSurface ? (
+          <div className={audioScrimLayout.scrimClass} aria-label={ariaLabel}>
+            <div className={audioScrimLayout.contentClass}>
+              <div className={audioScrimLayout.avatarClass}>
+                {tileAvatarUrl ? (
+                  <img
+                    src={tileAvatarUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="eager"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <User
+                    className={audioScrimLayout.avatarIconClass}
+                    aria-hidden
+                  />
+                )}
+              </div>
+              <p className={audioScrimLayout.nameClass}>
+                {showSkeleton ? (
+                  <Skeleton
+                    loading
+                    width={100}
+                    height={16}
+                    className="mx-auto rounded"
+                  />
+                ) : (
+                  overlayLabel
+                )}
               </p>
-            ) : null}
-            <CallAudioVoiceWaves
-              mediaStream={stream}
-              active={canVoiceWave}
-              onDarkScrim
-              size={audioScrimLayout.waveSize}
-              className={audioScrimLayout.waveClass}
-            />
+              {audioMuted ? (
+                <p className={audioScrimLayout.mutedClass}>
+                  <MicOff
+                    className={isPip ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                  {t('callParticipantMuted')}
+                </p>
+              ) : null}
+              <CallAudioVoiceWaves
+                mediaStream={stream}
+                active={canVoiceWave}
+                onDarkScrim
+                size={audioScrimLayout.waveSize}
+                className={audioScrimLayout.waveClass}
+              />
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+        {isActiveSpeaker ? (
+          <div
+            className={cn(
+              'pointer-events-none absolute inset-0 z-[8]',
+              tileCornerClass,
+              activeSpeakerRingClass,
+            )}
+            aria-hidden
+          />
+        ) : null}
+      </div>
       {showVideoSurface && !isPip ? (
         <div className={videoLabelLayout.barClass}>
           <span className="min-w-0 max-w-[min(12rem,42vw)] truncate leading-[inherit]">

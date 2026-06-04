@@ -231,8 +231,10 @@ describe('WCUX-QUALITY debug overlay and capture (row 9)', () => {
     const feedStart = source.indexOf('const FeedContent =');
     expect(feedStart).toBeGreaterThan(-1);
     const feedBlock = source.slice(feedStart);
-    expect(feedBlock).toContain('isActiveSpeaker && activeSpeakerRingClass');
+    expect(feedBlock).toContain('activeSpeakerRingClass');
     expect(feedBlock).toContain('ring-2 ring-inset');
+    expect(feedBlock).toContain('pointer-events-none absolute inset-0 z-[8]');
+    expect(feedBlock).toContain('active-speaker ring renders above video');
     expect(feedBlock).not.toContain('absolute inset-0 z-[6] border-2');
   });
 
