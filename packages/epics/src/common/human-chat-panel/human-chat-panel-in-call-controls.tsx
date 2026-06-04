@@ -899,7 +899,7 @@ export function HumanChatPanelInCallControls({
             >
               <CallHangUpIcon
                 className={leaveIcon}
-                strokeWidth={isFull ? 2.25 : 1.75}
+                strokeWidth={lucideStroke}
               />
             </button>
             {showCallReactions ? (

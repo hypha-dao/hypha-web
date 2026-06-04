@@ -67,7 +67,11 @@ export function HumanChatPanelCallJoinInvitation({
                 onDismiss();
               }}
             >
-              <Phone className="h-4 w-4 shrink-0" aria-hidden />
+              <Phone
+                className="h-4 w-4 shrink-0"
+                strokeWidth={1.75}
+                aria-hidden
+              />
               {t('callJoinInviteJoinAudio')}
             </Button>
           ) : null}
@@ -80,7 +84,11 @@ export function HumanChatPanelCallJoinInvitation({
               onDismiss();
             }}
           >
-            <Video className="h-4 w-4 shrink-0" aria-hidden />
+            <Video
+              className="h-4 w-4 shrink-0"
+              strokeWidth={1.75}
+              aria-hidden
+            />
             {t('callJoinInviteJoinVideo')}
           </Button>
         </AlertDialogFooter>

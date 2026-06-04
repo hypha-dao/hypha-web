@@ -7,7 +7,7 @@ import { cn } from '@hypha-platform/ui-utils';
  */
 export function CallHangUpIcon({
   className,
-  strokeWidth = 2.25,
+  strokeWidth = 1.75,
   'aria-hidden': ariaHidden = true,
 }: {
   className?: string;
