@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { middleware as i18nMiddleware } from '@hypha-platform/i18n';
+import { matrixTurnConnectSourcesFromEnv } from './lib/matrix-connect-src';
 
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const CONNECT_SOURCES =
@@ -63,6 +64,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
 
   const connectSrc = [
     ...CONNECT_SOURCES,
+    ...matrixTurnConnectSourcesFromEnv(),
     UPLOADTHING_UFS_HOST,
     process.env.NEXT_PUBLIC_RPC_URL ?? '',
     process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL ?? '',
