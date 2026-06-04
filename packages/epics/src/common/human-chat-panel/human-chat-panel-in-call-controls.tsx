@@ -304,8 +304,11 @@ export function HumanChatPanelInCallControls({
     !isCompact &&
     !isFull &&
     (inBannerLayout === 'balanced' || inBannerLayout === 'centered');
+  /** Dock / fullscreen in-banner: mic+cam | share+hang up+react | record+sound. */
+  const useSymmetricalDockToolbar = useSideAudioSettings;
   const leaveOnly = controlsMode === 'leave_only';
-  const useWideToolbar = useMobileCenteredToolbar || useSideAudioSettings;
+  const useWideToolbar = useMobileCenteredToolbar || useSymmetricalDockToolbar;
+  const dockToolbarGroupGap = isCenteredInBanner ? 'gap-2.5' : 'gap-2';
   const toolbarButtonGap = isPipDensity
     ? 'gap-1'
     : isCenteredInBanner
@@ -345,10 +348,12 @@ export function HumanChatPanelInCallControls({
   const capturePaused = recordingStatus === 'paused';
   const captureMenuActive = captureActive;
   const capturePulsing = recordingStatus === 'recording';
+  /** Visible as soon as the call is connected; stays disabled until Matrix anchor is ready. */
   const showCallReactions =
-    canSendCallReactions &&
+    callState === 'connected' &&
     Boolean(onSendReaction && onToggleRaiseHand) &&
     (!leaveOnly || includeReactionsWhenLeaveOnly);
+  const callReactionsReady = canSendCallReactions;
   const captureSettingsBtn = cn(
     audioSettingsBtn,
     captureLive &&
@@ -797,91 +802,84 @@ export function HumanChatPanelInCallControls({
           className={cn(
             isFull
               ? 'flex w-full items-center justify-center'
+              : useSymmetricalDockToolbar
+              ? cn(
+                  'grid w-full min-w-0 grid-cols-[1fr_auto_1fr] items-center',
+                  'gap-x-3 px-3 sm:gap-x-5 sm:px-5',
+                )
               : useMobileCenteredToolbar
-              ? 'flex w-full items-center justify-center gap-2.5'
+              ? 'flex w-full items-center justify-center gap-2.5 px-2'
               : isPipDensity
               ? 'flex w-full items-center justify-center gap-1'
-              : useSideAudioSettings
-              ? 'grid w-full grid-cols-[1fr_auto_1fr] items-center'
               : 'flex w-auto items-center',
           )}
         >
-          {!useMobileCenteredToolbar &&
-          useSideAudioSettings &&
-          !isPipDensity ? (
-            <div />
-          ) : null}
-          <div
-            className={cn(
-              'flex items-center',
-              toolbarButtonGap,
-              (isFull || useMobileCenteredToolbar || useSideAudioSettings) &&
-                'justify-center',
-            )}
-          >
-            {!leaveOnly ? (
-              <>
-                <button
-                  type="button"
-                  onClick={onToggleMic}
-                  disabled={controlsDisabled}
-                  className={cn(
-                    isFull
-                      ? isMicrophoneMuted
-                        ? micMutedBtn
-                        : baseBtn
-                      : isMicrophoneMuted
-                      ? micMutedBtn
-                      : neutralBtn,
-                    (isFull || isMicrophoneMuted) &&
-                      'inline-flex items-center justify-center',
-                    'disabled:cursor-not-allowed',
-                    !isFull && controlsDisabled && 'opacity-50',
-                  )}
-                  title={t('callControlsMicrophone')}
-                  aria-label={
-                    isMicrophoneMuted
-                      ? t('callControlsMicrophoneMutedAria')
-                      : t('callControlsMicrophoneUnmutedAria')
-                  }
-                >
-                  {isMicrophoneMuted ? (
-                    <MicOff className={icon} strokeWidth={lucideStroke} />
-                  ) : (
-                    <Mic className={icon} strokeWidth={lucideStroke} />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={onToggleCamera}
-                  disabled={controlsDisabled}
-                  className={cn(
-                    isFull
-                      ? isLocalVideoMuted
-                        ? camOffBtn
-                        : baseBtn
-                      : isLocalVideoMuted
-                      ? camOffBtn
-                      : neutralBtn,
-                    (isFull || isLocalVideoMuted) &&
-                      'inline-flex items-center justify-center',
-                    'disabled:cursor-not-allowed',
-                    !isFull && controlsDisabled && 'opacity-50',
-                  )}
-                  title={t('callControlsCamera')}
-                  aria-label={
-                    isLocalVideoMuted
-                      ? t('callControlsCameraOffAria')
-                      : t('callControlsCameraOnAria')
-                  }
-                >
-                  {isLocalVideoMuted ? (
-                    <VideoOff className={icon} strokeWidth={lucideStroke} />
-                  ) : (
-                    <Video className={icon} strokeWidth={lucideStroke} />
-                  )}
-                </button>
-                {showAdvancedCallControls ? (
+          {useSymmetricalDockToolbar ? (
+            <>
+              <div
+                className={cn(
+                  'flex min-w-0 items-center justify-end',
+                  dockToolbarGroupGap,
+                )}
+              >
+                {!leaveOnly ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={onToggleMic}
+                      disabled={controlsDisabled}
+                      className={cn(
+                        isMicrophoneMuted ? micMutedBtn : neutralBtn,
+                        'inline-flex items-center justify-center',
+                        'disabled:cursor-not-allowed',
+                        controlsDisabled && 'opacity-50',
+                      )}
+                      title={t('callControlsMicrophone')}
+                      aria-label={
+                        isMicrophoneMuted
+                          ? t('callControlsMicrophoneMutedAria')
+                          : t('callControlsMicrophoneUnmutedAria')
+                      }
+                    >
+                      {isMicrophoneMuted ? (
+                        <MicOff className={icon} strokeWidth={lucideStroke} />
+                      ) : (
+                        <Mic className={icon} strokeWidth={lucideStroke} />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onToggleCamera}
+                      disabled={controlsDisabled}
+                      className={cn(
+                        isLocalVideoMuted ? camOffBtn : neutralBtn,
+                        'inline-flex items-center justify-center',
+                        'disabled:cursor-not-allowed',
+                        controlsDisabled && 'opacity-50',
+                      )}
+                      title={t('callControlsCamera')}
+                      aria-label={
+                        isLocalVideoMuted
+                          ? t('callControlsCameraOffAria')
+                          : t('callControlsCameraOnAria')
+                      }
+                    >
+                      {isLocalVideoMuted ? (
+                        <VideoOff className={icon} strokeWidth={lucideStroke} />
+                      ) : (
+                        <Video className={icon} strokeWidth={lucideStroke} />
+                      )}
+                    </button>
+                  </>
+                ) : null}
+              </div>
+              <div
+                className={cn(
+                  'flex shrink-0 items-center justify-center',
+                  dockToolbarGroupGap,
+                )}
+              >
+                {!leaveOnly && showAdvancedCallControls ? (
                   <HumanChatPanelCallScreenshareMenu
                     isScreensharing={isScreensharing}
                     disabled={controlsDisabled}
@@ -892,16 +890,16 @@ export function HumanChatPanelInCallControls({
                       isScreensharing ? shareActiveBtn : shareIdleBtn,
                       'inline-flex items-center justify-center',
                       'disabled:cursor-not-allowed',
-                      !isFull && controlsDisabled && 'opacity-50',
+                      controlsDisabled && 'opacity-50',
                     )}
                     activeTriggerClassName="inline-flex items-center justify-center"
                     iconClassName={icon}
                     iconStrokeWidth={lucideStroke}
                   />
                 ) : null}
-                {showCallReactions ? (
+                {leaveOnly && showCallReactions ? (
                   <HumanChatPanelCallReactPopover
-                    disabled={controlsDisabled}
+                    disabled={controlsDisabled || !callReactionsReady}
                     localHandRaised={localHandRaised}
                     onSendReaction={(emoji, style) => {
                       void onSendReaction?.(emoji, style);
@@ -914,67 +912,198 @@ export function HumanChatPanelInCallControls({
                     iconStrokeWidth={lucideStroke}
                   />
                 ) : null}
-                {!leaveOnly &&
-                showAdvancedCallControls &&
-                !useSideAudioSettings &&
-                !isPipDensity
-                  ? renderCaptureMenu
-                  : null}
-                {!leaveOnly &&
-                showAdvancedCallControls &&
-                !useSideAudioSettings &&
-                !isPipDensity
-                  ? renderAudioSettingsMenu
-                  : null}
-              </>
-            ) : null}
-            {leaveOnly && showCallReactions ? (
-              <HumanChatPanelCallReactPopover
-                disabled={controlsDisabled}
-                localHandRaised={localHandRaised}
-                onSendReaction={(emoji, style) => {
-                  void onSendReaction?.(emoji, style);
-                }}
-                onToggleRaiseHand={() => {
-                  void onToggleRaiseHand?.();
-                }}
-                variant={variant}
-                density={density}
-                iconStrokeWidth={lucideStroke}
-              />
-            ) : null}
-            <button
-              type="button"
-              onClick={onLeave}
-              disabled={callState === 'disconnecting'}
-              className={cn(
-                leaveBtn,
-                'disabled:cursor-not-allowed',
-                callState === 'disconnecting' && 'opacity-50',
-              )}
-              title={t('callLeave')}
-              aria-label={t('callLeave')}
-            >
-              <CallHangUpIcon
-                className={leaveIcon}
-                strokeWidth={lucideStroke}
-              />
-            </button>
-          </div>
-          {useSideAudioSettings &&
-          !leaveOnly &&
-          showAdvancedCallControls &&
-          !isPipDensity ? (
+                <button
+                  type="button"
+                  onClick={onLeave}
+                  disabled={callState === 'disconnecting'}
+                  className={cn(
+                    leaveBtn,
+                    'disabled:cursor-not-allowed',
+                    callState === 'disconnecting' && 'opacity-50',
+                  )}
+                  title={t('callLeave')}
+                  aria-label={t('callLeave')}
+                >
+                  <CallHangUpIcon
+                    className={leaveIcon}
+                    strokeWidth={lucideStroke}
+                  />
+                </button>
+                {!leaveOnly && showCallReactions ? (
+                  <HumanChatPanelCallReactPopover
+                    disabled={controlsDisabled || !callReactionsReady}
+                    localHandRaised={localHandRaised}
+                    onSendReaction={(emoji, style) => {
+                      void onSendReaction?.(emoji, style);
+                    }}
+                    onToggleRaiseHand={() => {
+                      void onToggleRaiseHand?.();
+                    }}
+                    variant={variant}
+                    density={density}
+                    iconStrokeWidth={lucideStroke}
+                  />
+                ) : null}
+              </div>
+              <div
+                className={cn(
+                  'flex min-w-0 items-center justify-start',
+                  dockToolbarGroupGap,
+                )}
+              >
+                {!leaveOnly && showAdvancedCallControls ? (
+                  <>
+                    {renderCaptureMenu}
+                    {renderAudioSettingsMenu}
+                  </>
+                ) : null}
+              </div>
+            </>
+          ) : (
             <div
               className={cn(
-                'flex shrink-0 items-center gap-2',
-                useSideAudioSettings && 'justify-self-end',
+                'flex items-center',
+                toolbarButtonGap,
+                (isFull || useMobileCenteredToolbar) && 'justify-center',
               )}
             >
-              {renderCaptureMenu}
-              {renderAudioSettingsMenu}
+              {!leaveOnly ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={onToggleMic}
+                    disabled={controlsDisabled}
+                    className={cn(
+                      isFull
+                        ? isMicrophoneMuted
+                          ? micMutedBtn
+                          : baseBtn
+                        : isMicrophoneMuted
+                        ? micMutedBtn
+                        : neutralBtn,
+                      (isFull || isMicrophoneMuted) &&
+                        'inline-flex items-center justify-center',
+                      'disabled:cursor-not-allowed',
+                      !isFull && controlsDisabled && 'opacity-50',
+                    )}
+                    title={t('callControlsMicrophone')}
+                    aria-label={
+                      isMicrophoneMuted
+                        ? t('callControlsMicrophoneMutedAria')
+                        : t('callControlsMicrophoneUnmutedAria')
+                    }
+                  >
+                    {isMicrophoneMuted ? (
+                      <MicOff className={icon} strokeWidth={lucideStroke} />
+                    ) : (
+                      <Mic className={icon} strokeWidth={lucideStroke} />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onToggleCamera}
+                    disabled={controlsDisabled}
+                    className={cn(
+                      isFull
+                        ? isLocalVideoMuted
+                          ? camOffBtn
+                          : baseBtn
+                        : isLocalVideoMuted
+                        ? camOffBtn
+                        : neutralBtn,
+                      (isFull || isLocalVideoMuted) &&
+                        'inline-flex items-center justify-center',
+                      'disabled:cursor-not-allowed',
+                      !isFull && controlsDisabled && 'opacity-50',
+                    )}
+                    title={t('callControlsCamera')}
+                    aria-label={
+                      isLocalVideoMuted
+                        ? t('callControlsCameraOffAria')
+                        : t('callControlsCameraOnAria')
+                    }
+                  >
+                    {isLocalVideoMuted ? (
+                      <VideoOff className={icon} strokeWidth={lucideStroke} />
+                    ) : (
+                      <Video className={icon} strokeWidth={lucideStroke} />
+                    )}
+                  </button>
+                  {showAdvancedCallControls ? (
+                    <HumanChatPanelCallScreenshareMenu
+                      isScreensharing={isScreensharing}
+                      disabled={controlsDisabled}
+                      remoteScreenshareActive={remoteScreenshareActive}
+                      onStartScreenshare={onStartScreenshare}
+                      onStopScreenshare={onStopScreenshare}
+                      triggerClassName={cn(
+                        isScreensharing ? shareActiveBtn : shareIdleBtn,
+                        'inline-flex items-center justify-center',
+                        'disabled:cursor-not-allowed',
+                        !isFull && controlsDisabled && 'opacity-50',
+                      )}
+                      activeTriggerClassName="inline-flex items-center justify-center"
+                      iconClassName={icon}
+                      iconStrokeWidth={lucideStroke}
+                    />
+                  ) : null}
+                  {showCallReactions ? (
+                    <HumanChatPanelCallReactPopover
+                      disabled={controlsDisabled || !callReactionsReady}
+                      localHandRaised={localHandRaised}
+                      onSendReaction={(emoji, style) => {
+                        void onSendReaction?.(emoji, style);
+                      }}
+                      onToggleRaiseHand={() => {
+                        void onToggleRaiseHand?.();
+                      }}
+                      variant={variant}
+                      density={density}
+                      iconStrokeWidth={lucideStroke}
+                    />
+                  ) : null}
+                  {showAdvancedCallControls && !isPipDensity
+                    ? renderCaptureMenu
+                    : null}
+                  {showAdvancedCallControls && !isPipDensity
+                    ? renderAudioSettingsMenu
+                    : null}
+                </>
+              ) : null}
+              {leaveOnly && showCallReactions ? (
+                <HumanChatPanelCallReactPopover
+                  disabled={controlsDisabled || !callReactionsReady}
+                  localHandRaised={localHandRaised}
+                  onSendReaction={(emoji, style) => {
+                    void onSendReaction?.(emoji, style);
+                  }}
+                  onToggleRaiseHand={() => {
+                    void onToggleRaiseHand?.();
+                  }}
+                  variant={variant}
+                  density={density}
+                  iconStrokeWidth={lucideStroke}
+                />
+              ) : null}
+              <button
+                type="button"
+                onClick={onLeave}
+                disabled={callState === 'disconnecting'}
+                className={cn(
+                  leaveBtn,
+                  'disabled:cursor-not-allowed',
+                  callState === 'disconnecting' && 'opacity-50',
+                )}
+                title={t('callLeave')}
+                aria-label={t('callLeave')}
+              >
+                <CallHangUpIcon
+                  className={leaveIcon}
+                  strokeWidth={lucideStroke}
+                />
+              </button>
             </div>
-          ) : null}
+          )}
         </div>
         {!isPipDensity &&
         !isCompact &&

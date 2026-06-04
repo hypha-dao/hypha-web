@@ -1327,6 +1327,7 @@ export function GlobalCallDockOverlay({
               resolveMemberLabel={resolveMemberLabel}
               layout={dockStageLayout}
               viewportTier={dockViewportTier}
+              panelMobileLayout={isMobile}
               panelFlush={dockStageLayout === 'panel'}
               fullViewOpen={dockStageLayout === 'fullView'}
               fullViewLayoutMode={layoutMode}
@@ -1349,7 +1350,10 @@ export function GlobalCallDockOverlay({
             'pointer-events-auto relative isolate shrink-0 touch-manipulation border-t border-border/50',
             inDocumentPip
               ? 'z-40 h-8 overflow-hidden bg-background/95 px-1 py-0 backdrop-blur-sm'
-              : 'z-30 overflow-visible bg-muted/35 px-2 py-2',
+              : cn(
+                  'z-30 overflow-visible bg-muted/35 py-2',
+                  dockCompact ? 'px-2' : 'px-3 sm:px-4',
+                ),
           )}
         >
           {captureUploadFinalizing ? (

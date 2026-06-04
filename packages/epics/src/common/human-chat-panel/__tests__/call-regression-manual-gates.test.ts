@@ -395,16 +395,27 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
       'human-chat-panel/human-chat-panel-call-stage.tsx',
     );
     expect(source).toContain('getCallPanelMobileGridLayout');
+    expect(source).toContain('participantGridTileCount');
     expect(source).toContain('useMobileBalancedParticipantGrid');
+    expect(source).toContain('useMobilePaginatedParticipantGallery');
     expect(source).toContain('!useMobileBalancedParticipantGrid');
-    expect(source).toMatch(/layout === 'panel' && !isFull && isMobileViewport/);
+    expect(source).toContain('panelMobileLayout');
+    expect(source).toMatch(
+      /layout === 'panel' && !isFull && isPhonePanelLayout/,
+    );
   });
 
-  it('centers dock footer controls like production', () => {
+  it('uses symmetrical dock toolbar groups (mic/cam | share/hangup/react | record/sound)', () => {
     const source = readCommonSource(
       'human-chat-panel/human-chat-panel-in-call-controls.tsx',
     );
-    expect(source).toContain('flex w-full items-center justify-center');
+    expect(source).toContain('useSymmetricalDockToolbar');
+    expect(source).toContain('grid-cols-[1fr_auto_1fr]');
+    expect(source).toContain('justify-end');
+    expect(source).toContain('justify-start');
+    expect(source).toContain(
+      'flex w-full items-center justify-center gap-2.5 px-2',
+    );
     expect(source).not.toContain('useDockSpreadToolbar');
     expect(source).not.toContain('justify-evenly');
   });
