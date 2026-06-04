@@ -3,6 +3,9 @@
  * Tablet/desktop keep container-query grid in {@link HumanChatPanelCallStage}.
  */
 
+/** At this count, phone panel uses paginated gallery instead of a fixed-row grid. */
+export const CALL_PANEL_MOBILE_PAGINATED_MIN = 7;
+
 export type CallPanelMobileGridLayout = {
   /** Grid wrapper classes (must include flex-1 + h-full to fill the stage). */
   gridClass: string;
@@ -13,7 +16,7 @@ export type CallPanelMobileGridLayout = {
 /** Phone panel: balanced grids that fill vertical space (no top-hugging void). */
 export function getCallPanelMobileGridLayout(
   tileCount: number,
-): CallPanelMobileGridLayout {
+): CallPanelMobileGridLayout | null {
   const cellClass =
     'flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden';
 
@@ -52,9 +55,5 @@ export function getCallPanelMobileGridLayout(
       cellClass,
     };
   }
-  return {
-    gridClass:
-      'grid h-full min-h-0 w-full min-w-0 flex-1 grid-cols-2 gap-1.5 auto-rows-[minmax(0,1fr)]',
-    cellClass,
-  };
+  return null;
 }

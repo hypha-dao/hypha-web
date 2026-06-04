@@ -71,7 +71,10 @@ import {
   resolveCallStageShareLayout,
   shareFeedLayoutKey,
 } from './call-stage-share-layout';
-import { getCallPanelMobileGridLayout } from './call-panel-mobile-grid';
+import {
+  CALL_PANEL_MOBILE_PAGINATED_MIN,
+  getCallPanelMobileGridLayout,
+} from './call-panel-mobile-grid';
 import {
   feedReportsAudioMutedForTile,
   formatCallShareTileLabel,
@@ -159,6 +162,11 @@ type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
   isDocumentPipOpen?: boolean;
   /** Dock viewport tier (WCUX-LAYOUT-0); inferred from layout when omitted. */
   viewportTier?: CallViewportTier;
+  /**
+   * Parent-known phone layout (e.g. global dock). Avoids waiting on
+   * {@link useIsMobile} hydration before applying the balanced mobile grid.
+   */
+  panelMobileLayout?: boolean;
 };
 
 function feedKeyForActive(feed: CallFeed): string {
@@ -752,6 +760,7 @@ function HumanChatPanelCallStageMain({
   fullViewSplitContainerRef,
   isDocumentPipOpen = false,
   viewportTier: viewportTierProp,
+  panelMobileLayout: panelMobileLayoutProp,
   getFloatingReactions,
   isHandRaised,
   floatingReactionsVersion = 0,
@@ -784,8 +793,10 @@ function HumanChatPanelCallStageMain({
 
   const isFull = layout === 'fullView';
   const isMobileViewport = useIsMobile() ?? false;
+  const isPhonePanelLayout = panelMobileLayoutProp ?? isMobileViewport;
   /** Phone-width in-panel call (floating dock or sidebar) — not tablet/desktop full view. */
-  const isMobilePanelStage = layout === 'panel' && !isFull && isMobileViewport;
+  const isMobilePanelStage =
+    layout === 'panel' && !isFull && isPhonePanelLayout;
   const resolvedViewportTier: CallViewportTier =
     viewportTierProp ?? (isFull ? 'V-L' : isDocumentPipOpen ? 'V-PiP' : 'V-M');
   const {
@@ -886,9 +897,14 @@ function HumanChatPanelCallStageMain({
       : userGridTileCount === 2
       ? 'grid-cols-1 @min-[22rem]:grid-cols-2'
       : 'grid-cols-1 @min-[22rem]:grid-cols-2 @min-[32rem]:grid-cols-3';
-  const mobilePanelGrid = isMobilePanelStage
-    ? getCallPanelMobileGridLayout(userGridTileCount)
-    : null;
+  /** Same tile list as speaker strip / gallery (includes local when in-call). */
+  const participantGridTileCount = layoutParticipantTiles.length;
+  const mobilePanelGrid =
+    isMobilePanelStage &&
+    participantGridTileCount > 0 &&
+    participantGridTileCount < CALL_PANEL_MOBILE_PAGINATED_MIN
+      ? getCallPanelMobileGridLayout(participantGridTileCount)
+      : null;
 
   const room: Room | null =
     roomId && client ? client.getRoom(roomId) ?? null : null;
@@ -954,13 +970,18 @@ function HumanChatPanelCallStageMain({
    * Phone panel: equal-height grid (see call-panel-mobile-grid) instead of
    * speaker-primary strip — strip leaves unused vertical space on narrow docks.
    */
+  const useMobilePaginatedParticipantGallery =
+    isMobilePanelStage &&
+    !useShareWithParticipantsLayout &&
+    participantGridTileCount >= CALL_PANEL_MOBILE_PAGINATED_MIN;
   const useMobileBalancedParticipantGrid =
     mobilePanelGrid != null &&
     !useShareWithParticipantsLayout &&
-    userGridTileCount >= 2;
+    !useMobilePaginatedParticipantGallery;
   const useSpeakerStripLayout =
     !useShareWithParticipantsLayout &&
     !useMobileBalancedParticipantGrid &&
+    !useMobilePaginatedParticipantGallery &&
     !isScreensharing &&
     layoutPlan.renderer === 'speakerPrimaryStrip';
 
@@ -1727,6 +1748,31 @@ function HumanChatPanelCallStageMain({
               nextPageLabel={t('callGalleryNextPage')}
             />
           </div>
+        ) : useMobilePaginatedParticipantGallery ? (
+          <div
+            className={cn(
+              'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden',
+              panelFlush && !isFull ? 'p-0' : 'px-2 pb-2 pt-0',
+            )}
+            data-feed-tick={_feedVersion}
+          >
+            <CallParticipantGalleryGrid
+              tiles={layoutParticipantTiles}
+              isFull={false}
+              maxCols={2}
+              galleryPage={galleryPage}
+              onGalleryPageChange={setGalleryPage}
+              showPagination
+              keyPrefix={0}
+              cellClassName={userGridCellClass}
+              renderTile={renderRemoteUserTile}
+              pageLabel={(current, total) =>
+                t('callGalleryPage', { current, total })
+              }
+              previousPageLabel={t('callGalleryPreviousPage')}
+              nextPageLabel={t('callGalleryNextPage')}
+            />
+          </div>
         ) : useMainGalleryLayout ? (
           <div
             className={cn(
@@ -1878,7 +1924,17 @@ function HumanChatPanelCallStageMain({
             )}
             data-feed-tick={_feedVersion}
           >
-            {remoteUserTiles.map((item, i) => (
+            {(useMobileBalancedParticipantGrid
+              ? layoutParticipantTiles
+              : [
+                  ...remoteUserTiles,
+                  ...(showLocalInMainGrid
+                    ? localUserMedia.map(
+                        (feed): RemoteTileItem => ({ kind: 'feed', feed }),
+                      )
+                    : []),
+                ]
+            ).map((item, i) => (
               <div
                 key={
                   item.kind === 'feed'
@@ -1890,32 +1946,6 @@ function HumanChatPanelCallStageMain({
                 {renderRemoteUserTile(item, i)}
               </div>
             ))}
-            {showLocalInMainGrid &&
-              localUserMedia.map((feed, i) => (
-                <div key={feedKey(feed, i)} className={userGridCellClass}>
-                  <CallFeedTile
-                    client={client}
-                    roomId={roomId}
-                    currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
-                    feed={feed}
-                    isFullView={isFull}
-                    panelVideoFit={effectivePanelVideoFit}
-                    panelFlush={panelFlush}
-                    isActiveSpeaker={
-                      activeSpeakerKey != null &&
-                      activeSpeakerKey === feedKeyForActive(feed)
-                    }
-                    room={room}
-                    currentUserId={currentUserId}
-                    resolveMemberLabel={resolveMemberLabel}
-                    isMicrophoneMuted={isMicrophoneMuted}
-                    isLocalVideoMuted={isLocalVideoMuted}
-                    isDocumentPipOpen={isDocumentPipOpen}
-                    {...reactionPropsForFeed(feed)}
-                    t={t}
-                  />
-                </div>
-              ))}
           </div>
         ))}
       {isVideoCall &&

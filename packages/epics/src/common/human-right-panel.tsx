@@ -4225,6 +4225,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       currentUserProfileAvatarUrl={currentUserAvatarUrl}
                       resolveMemberLabel={resolveMemberLabel}
                       layout="panel"
+                      panelMobileLayout={isMobile}
                       getFloatingReactions={getFloatingReactions}
                       isHandRaised={isHandRaised}
                       floatingReactionsVersion={floatingReactionsVersion}
