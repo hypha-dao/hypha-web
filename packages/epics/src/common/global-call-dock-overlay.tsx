@@ -686,7 +686,11 @@ export function GlobalCallDockOverlay({
 
   React.useEffect(() => {
     if (!dockStorageHydrated) return;
-    const clamped = clampDockGeometry(geometry);
+    const geometryToPersist = isScreensharing
+      ? preScreenshareDockRef.current?.geometry
+      : geometry;
+    if (isScreensharing && !geometryToPersist) return;
+    const clamped = clampDockGeometry(geometryToPersist ?? geometry);
     latestGeometryRef.current = clamped;
     if (persistTimeoutRef.current != null) {
       window.clearTimeout(persistTimeoutRef.current);
@@ -701,7 +705,7 @@ export function GlobalCallDockOverlay({
         persistTimeoutRef.current = null;
       }
     };
-  }, [dockStorageHydrated, geometry]);
+  }, [dockStorageHydrated, geometry, isScreensharing]);
 
   React.useEffect(() => {
     return () => {
@@ -733,8 +737,15 @@ export function GlobalCallDockOverlay({
 
   React.useEffect(() => {
     if (dockMode === 'fullscreen') return;
+    if (isScreensharing) {
+      const preGeometry = preScreenshareDockRef.current?.geometry;
+      if (preGeometry) {
+        modeGeometryRef.current[dockMode] = clampDockGeometry(preGeometry);
+      }
+      return;
+    }
     modeGeometryRef.current[dockMode] = clampDockGeometry(geometry);
-  }, [dockMode, geometry]);
+  }, [dockMode, geometry, isScreensharing]);
 
   React.useEffect(() => {
     if (!showFloatingDock || isMobile) return;
