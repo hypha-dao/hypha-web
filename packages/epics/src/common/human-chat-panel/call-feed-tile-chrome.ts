@@ -120,15 +120,16 @@ export function resolveCallFeedVideoParticipantLabelLayout(input: {
   isFullView: boolean;
   compactTileLayout: boolean;
 }): CallFeedVideoParticipantLabelLayout {
-  const compactChrome = input.compactTileLayout || !input.isFullView;
+  /** PiP / document PiP only — small floating chip. Dock and full view use full-width row. */
+  const compactChrome = input.compactTileLayout;
 
   return {
     barClass: cn(
-      'absolute z-10 flex items-center gap-1 rounded-md bg-black/75 shadow-sm backdrop-blur-[2px]',
+      'absolute z-10 flex w-full items-center gap-1 bg-black/75 shadow-sm backdrop-blur-[2px]',
       CALL_FEED_VIDEO_LABEL_MIN_HEIGHT_CLASS,
       compactChrome
-        ? 'inset-x-1 bottom-1 max-w-[calc(100%-0.5rem)] px-1.5 py-0.5 text-[10px] leading-4'
-        : 'inset-x-2 bottom-2 max-w-[calc(100%-1rem)] px-2 py-1 text-xs leading-normal',
+        ? 'inset-x-1 bottom-1 max-w-[calc(100%-0.5rem)] rounded-md px-1.5 py-0.5 text-[10px] leading-4'
+        : 'inset-x-0 bottom-0 rounded-none px-2 py-1 text-xs leading-normal',
     ),
     muteTextSrOnly: compactChrome,
   };

@@ -2786,7 +2786,7 @@ const FeedContent = ({
               className="inline-flex shrink-0 items-center gap-0.5 text-destructive"
               title={t('callParticipantMuted')}
             >
-              <MicOff className="h-3 w-3" strokeWidth={2.25} aria-hidden />
+              <MicOff className="h-3 w-3" strokeWidth={1.75} aria-hidden />
               <span
                 className={cn(
                   'font-medium leading-[inherit]',
