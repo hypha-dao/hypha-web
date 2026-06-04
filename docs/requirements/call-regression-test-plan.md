@@ -203,4 +203,4 @@ Reviewers **SHALL** verify diff does not reintroduce:
 
 - [call-consolidated-implementation-plan.md §5](./call-consolidated-implementation-plan.md) — canonical 15-row list
 - [call-stability-hardening-spec.md §9.2](./call-stability-hardening-spec.md) — CSH manual QA
-- [.agents/skills/e2e-testing/SKILL.md](../.agents/skills/e2e-testing/SKILL.md) — Playwright dev server workflow
+- [.agents/skills/e2e-testing/SKILL.md](../../.agents/skills/e2e-testing/SKILL.md) — Playwright dev server workflow

@@ -433,7 +433,7 @@ export function HumanChatPanelCallBanner({
                 {t('callShareTabAudioRetry')}
               </button>
             ) : null}
-            {onDismissScreenshareTabAudioHint ? (
+            {!isScreensharing && onDismissScreenshareTabAudioHint ? (
               <button
                 type="button"
                 onClick={onDismissScreenshareTabAudioHint}

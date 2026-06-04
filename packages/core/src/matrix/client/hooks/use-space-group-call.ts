@@ -2570,7 +2570,12 @@ export function useSpaceGroupCall(
   const leave = useCallback(async () => {
     if (callState === 'idle' || callState === 'disconnecting') return;
     setCallState('disconnecting');
-    setPresenterVoiceBoostActive(false);
+    const gcBeforeLeave = groupCallRef.current;
+    if (gcBeforeLeave) {
+      await restorePresenterVoiceAfterScreenshare(gcBeforeLeave);
+    } else {
+      setPresenterVoiceBoostActive(false);
+    }
     if (lastRoomIdForTelemetryRef.current) {
       emitCallSessionEnd('user');
       logSpaceGroupCallEvent({
@@ -2593,7 +2598,12 @@ export function useSpaceGroupCall(
     setThreadContext(null);
     setParticipantCount(0);
     setTabBackgroundWhileInCall(false);
-  }, [callState, emitCallSessionEnd, runCleanup]);
+  }, [
+    callState,
+    emitCallSessionEnd,
+    restorePresenterVoiceAfterScreenshare,
+    runCleanup,
+  ]);
 
   /**
    * Drop local WebRTC/UI when Matrix sync moves to another tab without leaving
@@ -2605,7 +2615,10 @@ export function useSpaceGroupCall(
     abortInFlightJoin(joinEpochRef, isJoiningRef);
     const gc = groupCallRef.current;
     if (gc) {
+      await restorePresenterVoiceAfterScreenshare(gc);
       await stopGroupCallLocalPublishing(gc);
+    } else {
+      setPresenterVoiceBoostActive(false);
     }
     runCleanup({ skipGroupCallLeave: true });
     setCallState('idle');
@@ -2619,7 +2632,7 @@ export function useSpaceGroupCall(
     setThreadContext(null);
     setParticipantCount(0);
     setTabBackgroundWhileInCall(false);
-  }, [callState, runCleanup]);
+  }, [callState, restorePresenterVoiceAfterScreenshare, runCleanup]);
 
   const setMicrophoneMuted = useCallback(
     async (muted: boolean) => {
@@ -2799,6 +2812,7 @@ export function useSpaceGroupCall(
         // continue — still notify requester
       }
       syncLocalScreenshareState(gc);
+      await restorePresenterVoiceAfterScreenshare(gc);
       await sendScreenshareTakeoverEvent(
         'approve',
         request.requestId.trim(),
@@ -2810,6 +2824,7 @@ export function useSpaceGroupCall(
     },
     [
       client,
+      restorePresenterVoiceAfterScreenshare,
       scheduleFeedBatched,
       sendScreenshareTakeoverEvent,
       syncLocalScreenshareState,
