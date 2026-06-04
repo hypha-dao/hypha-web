@@ -1563,7 +1563,8 @@ export function useSpaceGroupCall(
           setScreenshareErrorCode('WEBRTC_FAILED');
         } else {
           setScreenshareTabAudioMissing(
-            !screenshareStreamHasTabAudio(gc.localScreenshareFeed?.stream),
+            screenshareSurfaceModeRef.current === 'tab' &&
+              !screenshareStreamHasTabAudio(gc.localScreenshareFeed?.stream),
           );
           await applyPresenterVoiceBoostForScreenshare(gc);
           void applyScreenShareCaptureRootRestrictionWithRetry(

@@ -387,12 +387,20 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).not.toContain('justify-evenly');
   });
 
-  it('uses green share trigger for the 3-option share menu', () => {
-    const source = readCommonSource(
+  it('uses green share trigger that opens the browser picker', () => {
+    const controls = readCommonSource(
       'human-chat-panel/human-chat-panel-in-call-controls.tsx',
     );
-    expect(source).toContain('shareIdleBtn');
-    expect(source).toContain('isScreensharing ? shareActiveBtn : shareIdleBtn');
+    const menu = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-screenshare-menu.tsx',
+    );
+    expect(controls).toContain('shareIdleBtn');
+    expect(controls).toContain(
+      'isScreensharing ? shareActiveBtn : shareIdleBtn',
+    );
+    expect(menu).not.toContain('ChevronDown');
+    expect(menu).not.toContain('callShareModeMenuLabel');
+    expect(menu).toContain('DEFAULT_SHARE_SURFACE_MODE');
   });
 
   it('hides Document PiP while share UX is stabilized', () => {
@@ -433,10 +441,29 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('data-testid="call-react-trigger"');
     expect(source).toContain('data-testid="call-react-popover-content"');
     expect(source).toContain('data-testid="call-raise-hand-button"');
+    expect(source).toContain('data-testid="call-be-right-back-button"');
+  });
+
+  it('react popover follows Zoom-style sections', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-react-popover.tsx',
+    );
+    expect(source).toContain('callReactSendWithEffect');
+    expect(source).toContain('callReactReactionsSection');
+    expect(source).toContain('CALL_SEND_WITH_EFFECT_EMOJIS');
+    expect(source).toContain('CALL_FEEDBACK_REACTIONS');
+    expect(source).not.toContain('callReactQuickReactions');
+    expect(source).not.toContain('callRaiseHandDescription');
   });
 
   it('reaction i18n keys exist in all locales', () => {
-    const keys = ['callReactButton', 'callRaiseHand', 'callRaisedHandsTitle'];
+    const keys = [
+      'callReactButton',
+      'callReactSendWithEffect',
+      'callReactBeRightBack',
+      'callRaiseHand',
+      'callRaisedHandsTitle',
+    ];
     for (const locale of ['en', 'de', 'es', 'fr', 'pt']) {
       const raw = readFileSync(
         resolve(__dirname, `../../../../../i18n/src/messages/${locale}.json`),

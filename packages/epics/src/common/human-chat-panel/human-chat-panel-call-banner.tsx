@@ -13,6 +13,7 @@ import {
   type CallScreenshareSurfaceMode,
 } from '@hypha-platform/core/client';
 import { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
+import type { CallFloatingReactionStyle } from './call-zoom-reaction-catalog';
 import { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
 import {
   callAccentAlertActionButtonClassName,
@@ -103,7 +104,10 @@ type HumanChatPanelCallBannerProps = {
   alertDensity?: 'default' | 'pip';
   canSendCallReactions?: boolean;
   localHandRaised?: boolean;
-  onSendReaction?: (emoji: string) => void | Promise<void>;
+  onSendReaction?: (
+    emoji: string,
+    style?: CallFloatingReactionStyle,
+  ) => void | Promise<void>;
   onToggleRaiseHand?: () => void | Promise<void>;
   includeReactionsWhenLeaveOnly?: boolean;
 };

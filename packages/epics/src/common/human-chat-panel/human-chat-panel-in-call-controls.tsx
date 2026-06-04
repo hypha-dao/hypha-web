@@ -42,6 +42,7 @@ import {
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
 import { HumanChatPanelCallReactPopover } from './human-chat-panel-call-react-popover';
+import type { CallFloatingReactionStyle } from './call-zoom-reaction-catalog';
 import { HumanChatPanelCallScreenshareMenu } from './human-chat-panel-call-screenshare-menu';
 import {
   callAccentAlertActionButtonClassName,
@@ -91,7 +92,10 @@ type HumanChatPanelInCallControlsProps = {
   controlsMode?: 'full' | 'leave_only';
   canSendCallReactions?: boolean;
   localHandRaised?: boolean;
-  onSendReaction?: (emoji: string) => void | Promise<void>;
+  onSendReaction?: (
+    emoji: string,
+    style?: CallFloatingReactionStyle,
+  ) => void | Promise<void>;
   onToggleRaiseHand?: () => void | Promise<void>;
   /** Sidebar leave-only chrome on mobile still exposes reactions (WCUX-REACT-4). */
   includeReactionsWhenLeaveOnly?: boolean;
@@ -251,7 +255,7 @@ export function HumanChatPanelInCallControls({
         'inline-flex shrink-0 items-center justify-center rounded-full border border-emerald-500/55 bg-emerald-600/90 text-white shadow-sm ring-2 ring-emerald-500/25 transition-colors hover:bg-emerald-500/90',
         bannerCircleSize,
       );
-  /** Production share affordance — green even before share starts (opens 3-option menu). */
+  /** Production share affordance — green even before share starts (opens browser picker). */
   const shareIdleBtn = shareActiveBtn;
   const camOffBtn = isFull
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
@@ -874,14 +878,6 @@ export function HumanChatPanelInCallControls({
                     )}
                     activeTriggerClassName="inline-flex items-center justify-center"
                     iconClassName={icon}
-                    chevronClassName={cn(
-                      isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5',
-                    )}
-                    menuClassName={
-                      isFull
-                        ? 'border-zinc-700 bg-zinc-900 text-white'
-                        : undefined
-                    }
                   />
                 ) : null}
               </>
@@ -904,8 +900,8 @@ export function HumanChatPanelInCallControls({
               <HumanChatPanelCallReactPopover
                 disabled={controlsDisabled}
                 localHandRaised={localHandRaised}
-                onSendReaction={(emoji) => {
-                  void onSendReaction?.(emoji);
+                onSendReaction={(emoji, style) => {
+                  void onSendReaction?.(emoji, style);
                 }}
                 onToggleRaiseHand={() => {
                   void onToggleRaiseHand?.();

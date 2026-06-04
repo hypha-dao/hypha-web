@@ -5,6 +5,7 @@ import {
 } from '../assets/constant';
 import { z } from 'zod';
 import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
+import { spaceLocationFieldsSchema } from '../geo/validation';
 
 /** Shared Hypha space slug rule (forms, APIs, MCP tools). */
 export const spaceSlugSchema = z
@@ -101,6 +102,10 @@ const createSpaceWeb2Props = {
     .default([]),
   address: z.string().optional(),
   flags: z.array(z.enum(SPACE_FLAGS)).default([]),
+  latitude: spaceLocationFieldsSchema.shape.latitude,
+  longitude: spaceLocationFieldsSchema.shape.longitude,
+  locationLabel: spaceLocationFieldsSchema.shape.locationLabel,
+  locationSource: spaceLocationFieldsSchema.shape.locationSource,
 };
 
 export const schemaCreateSpaceWeb2 = z.object(createSpaceWeb2Props);
@@ -213,7 +218,26 @@ export const updateSpaceProps = {
   chatRoomId: matrixRoomIdSchema.nullable().optional(),
 };
 
-export const schemaUpdateSpace = z.object(updateSpaceProps);
+export const schemaUpdateSpace = z
+  .object(updateSpaceProps)
+  .superRefine((value, ctx) => {
+    const hasLat = value.latitude != null;
+    const hasLng = value.longitude != null;
+    if (hasLat !== hasLng) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Latitude and longitude must both be set or both be cleared',
+        path: hasLat ? ['longitude'] : ['latitude'],
+      });
+    }
+    if (hasLat && hasLng && value.latitude === 0 && value.longitude === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Coordinates at 0,0 are not allowed',
+        path: ['latitude'],
+      });
+    }
+  });
 
 export const schemaCreateSpace = z.object({
   ...createSpaceWeb2Props,

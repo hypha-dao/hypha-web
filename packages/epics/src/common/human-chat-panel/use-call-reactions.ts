@@ -14,11 +14,13 @@ import {
   type CallRaisedHandEntry,
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
+import type { CallFloatingReactionStyle } from './call-zoom-reaction-catalog';
 
 export type CallFloatingReaction = {
   id: string;
   emoji: string;
   userId: string;
+  style?: CallFloatingReactionStyle;
 };
 
 export type UseCallReactionsOptions = {
@@ -47,7 +49,7 @@ export function useCallReactions({
     0,
   );
   const pushFloatingReactionRef = useRef<
-    (userId: string, emoji: string) => void
+    (userId: string, emoji: string, style?: CallFloatingReactionStyle) => void
   >(() => {});
 
   const canSendCallReactions =
@@ -86,11 +88,15 @@ export function useCallReactions({
     const stableRoomId = roomId.trim();
     const stableAnchorId = anchorEventId.trim();
 
-    const pushFloatingReaction = (userId: string, emoji: string) => {
+    const pushFloatingReaction = (
+      userId: string,
+      emoji: string,
+      style: CallFloatingReactionStyle = 'default',
+    ) => {
       const id = `${userId}:${Date.now()}:${Math.random()
         .toString(36)
         .slice(2, 8)}`;
-      const nextEntry: CallFloatingReaction = { id, emoji, userId };
+      const nextEntry: CallFloatingReaction = { id, emoji, userId, style };
       const prev = floatingByUserRef.current.get(userId) ?? [];
       const next = [...prev, nextEntry].slice(
         -CALL_FLOATING_REACTION_MAX_PER_TILE,
@@ -159,7 +165,7 @@ export function useCallReactions({
   }, [anchorEventId, client, currentUserId, roomId]);
 
   const sendReaction = useCallback(
-    async (emoji: string) => {
+    async (emoji: string, style: CallFloatingReactionStyle = 'default') => {
       if (
         !canSendCallReactions ||
         !client ||
@@ -169,7 +175,7 @@ export function useCallReactions({
         return;
       }
       if (currentUserId) {
-        pushFloatingReactionRef.current(currentUserId, emoji);
+        pushFloatingReactionRef.current(currentUserId, emoji, style);
       }
       await sendCallReactionAnnotation({
         client,

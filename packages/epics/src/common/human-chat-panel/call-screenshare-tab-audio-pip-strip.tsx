@@ -11,7 +11,7 @@ type CallScreenshareTabAudioPipStripProps = {
   onRetry: () => void;
 };
 
-/** Document PiP — one full-width action; no header chrome or long warning copy. */
+/** Compact dock strip when tab audio was not captured (Document PiP only). */
 export function CallScreenshareTabAudioPipStrip({
   onRetry,
 }: CallScreenshareTabAudioPipStripProps) {

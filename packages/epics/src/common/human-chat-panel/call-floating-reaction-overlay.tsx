@@ -44,7 +44,8 @@ export function CallFloatingReactionOverlay({
           <span
             key={reaction.id}
             className={cn(
-              'absolute text-2xl drop-shadow-md motion-reduce:opacity-100',
+              'absolute drop-shadow-md motion-reduce:opacity-100',
+              reaction.style === 'effect' ? 'text-4xl' : 'text-2xl',
             )}
             style={{
               left: `${18 + index * 22}%`,
