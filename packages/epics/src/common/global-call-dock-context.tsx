@@ -471,6 +471,9 @@ function useGlobalCallDockValue() {
     if (restoreInProgressRef.current) {
       return;
     }
+    if (call.callState === 'disconnecting') {
+      return;
+    }
     const callKind = pendingJoin?.kind ?? call.callKind;
     if (!activeRoomId || !callKind) {
       if (isMatrixSyncLeader && call.callState === 'idle' && !pendingJoin) {

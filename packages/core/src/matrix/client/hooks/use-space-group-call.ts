@@ -2567,24 +2567,7 @@ export function useSpaceGroupCall(
     [enterWithKind],
   );
 
-  const leave = useCallback(async () => {
-    if (callState === 'idle' || callState === 'disconnecting') return;
-    setCallState('disconnecting');
-    const gcBeforeLeave = groupCallRef.current;
-    if (gcBeforeLeave) {
-      await restorePresenterVoiceAfterScreenshare(gcBeforeLeave);
-    } else {
-      setPresenterVoiceBoostActive(false);
-    }
-    if (lastRoomIdForTelemetryRef.current) {
-      emitCallSessionEnd('user');
-      logSpaceGroupCallEvent({
-        name: 'hypha.group_call.left',
-        roomId: lastRoomIdForTelemetryRef.current,
-        kind: lastJoinKindRef.current ?? undefined,
-        reason: 'user',
-      });
-    }
+  const resetAfterLeave = useCallback(() => {
     abortInFlightJoin(joinEpochRef, isJoiningRef);
     runCleanup();
     setCallState('idle');
@@ -2598,11 +2581,66 @@ export function useSpaceGroupCall(
     setThreadContext(null);
     setParticipantCount(0);
     setTabBackgroundWhileInCall(false);
+    setPresenterVoiceBoostActive(false);
+    voicePresetRestoreAfterScreenshareRef.current = null;
+  }, [runCleanup]);
+
+  const restoreVoiceBeforeLeaveIfNeeded = useCallback(
+    async (gc: MatrixSdk.GroupCall) => {
+      if (
+        voicePresetRestoreAfterScreenshareRef.current == null &&
+        !isScreensharingRef.current
+      ) {
+        setPresenterVoiceBoostActive(false);
+        return;
+      }
+      try {
+        await Promise.race([
+          restorePresenterVoiceAfterScreenshare(gc),
+          new Promise<void>((resolve) => {
+            window.setTimeout(resolve, 2_000);
+          }),
+        ]);
+      } catch {
+        // Never block leave on voice preset restore.
+      }
+    },
+    [restorePresenterVoiceAfterScreenshare],
+  );
+
+  const leave = useCallback(async () => {
+    if (callState === 'idle') return;
+    if (callState === 'disconnecting') {
+      const gc = groupCallRef.current;
+      if (gc) {
+        void restoreVoiceBeforeLeaveIfNeeded(gc);
+      }
+      resetAfterLeave();
+      return;
+    }
+    setCallState('disconnecting');
+    const gcBeforeLeave = groupCallRef.current;
+    if (gcBeforeLeave) {
+      await restoreVoiceBeforeLeaveIfNeeded(gcBeforeLeave);
+    } else {
+      setPresenterVoiceBoostActive(false);
+      voicePresetRestoreAfterScreenshareRef.current = null;
+    }
+    if (lastRoomIdForTelemetryRef.current) {
+      emitCallSessionEnd('user');
+      logSpaceGroupCallEvent({
+        name: 'hypha.group_call.left',
+        roomId: lastRoomIdForTelemetryRef.current,
+        kind: lastJoinKindRef.current ?? undefined,
+        reason: 'user',
+      });
+    }
+    resetAfterLeave();
   }, [
     callState,
     emitCallSessionEnd,
-    restorePresenterVoiceAfterScreenshare,
-    runCleanup,
+    resetAfterLeave,
+    restoreVoiceBeforeLeaveIfNeeded,
   ]);
 
   /**
@@ -2610,15 +2648,16 @@ export function useSpaceGroupCall(
    * the room GroupCall — the new leader tab re-enters via resume snapshot.
    */
   const releaseLocalCallForTabTransfer = useCallback(async () => {
-    if (callState === 'idle' || callState === 'disconnecting') return;
+    if (callState === 'idle') return;
     setCallState('disconnecting');
     abortInFlightJoin(joinEpochRef, isJoiningRef);
     const gc = groupCallRef.current;
     if (gc) {
-      await restorePresenterVoiceAfterScreenshare(gc);
+      await restoreVoiceBeforeLeaveIfNeeded(gc);
       await stopGroupCallLocalPublishing(gc);
     } else {
       setPresenterVoiceBoostActive(false);
+      voicePresetRestoreAfterScreenshareRef.current = null;
     }
     runCleanup({ skipGroupCallLeave: true });
     setCallState('idle');
@@ -2632,7 +2671,7 @@ export function useSpaceGroupCall(
     setThreadContext(null);
     setParticipantCount(0);
     setTabBackgroundWhileInCall(false);
-  }, [callState, restorePresenterVoiceAfterScreenshare, runCleanup]);
+  }, [callState, restoreVoiceBeforeLeaveIfNeeded, runCleanup]);
 
   const setMicrophoneMuted = useCallback(
     async (muted: boolean) => {
