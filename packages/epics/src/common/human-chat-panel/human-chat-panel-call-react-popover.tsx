@@ -241,7 +241,7 @@ export function HumanChatPanelCallReactPopover({
   const emojiRowClass = 'flex min-h-0 flex-wrap items-center gap-1';
 
   const actionRowBtn = cn(
-    'flex min-w-0 flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs font-medium leading-tight transition-colors disabled:opacity-50',
+    'flex flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-2 py-1.5 text-xs font-medium leading-tight transition-colors disabled:opacity-50',
     isFull
       ? 'border-zinc-600/50 bg-zinc-800/90 text-zinc-100 hover:bg-zinc-700/90'
       : 'border-border/80 bg-muted text-foreground hover:bg-neutral-3',
@@ -310,7 +310,7 @@ export function HumanChatPanelCallReactPopover({
         collisionPadding={16}
         data-testid="call-react-popover-content"
         className={cn(
-          'z-[140] w-[min(100vw-2rem,13rem)] min-w-52 overflow-hidden rounded-xl px-2 py-2 shadow-xl',
+          'z-[140] w-[min(100vw-2rem,15.5rem)] min-w-56 overflow-hidden rounded-xl px-2 py-2 shadow-xl',
           popoverSurface,
         )}
       >
@@ -389,11 +389,6 @@ export function HumanChatPanelCallReactPopover({
                     disabled={emojiActionsDisabled}
                     label={t('callReactSendEmoji', { emoji })}
                     onPick={() => handleSend(emoji, 'default')}
-                    className={
-                      isFull
-                        ? 'border-transparent bg-transparent hover:bg-zinc-800/60'
-                        : 'border-transparent bg-transparent hover:bg-muted'
-                    }
                   />
                 ))}
                 <MoreEmojiButton
@@ -440,7 +435,7 @@ export function HumanChatPanelCallReactPopover({
                 <span className="text-sm leading-none" aria-hidden>
                   ✋
                 </span>
-                <span className="truncate">
+                <span>
                   {localHandRaised ? t('callLowerHand') : t('callRaiseHand')}
                 </span>
               </button>
@@ -454,7 +449,7 @@ export function HumanChatPanelCallReactPopover({
                 <span className="text-sm leading-none" aria-hidden>
                   {CALL_BE_RIGHT_BACK_EMOJI}
                 </span>
-                <span className="truncate">{t('callReactBeRightBack')}</span>
+                <span>{t('callReactBeRightBack')}</span>
               </button>
             </div>
           </div>

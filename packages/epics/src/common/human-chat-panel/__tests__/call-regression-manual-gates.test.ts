@@ -605,7 +605,7 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('callReactSendWithEffect');
     expect(source).toContain('callReactReactionsSection');
     expect(source).toContain('CALL_SEND_WITH_EFFECT_EMOJIS');
-    expect(source).toContain('min-w-52');
+    expect(source).toContain('min-w-56');
     expect(source).toContain('px-2 py-1.5 text-sm font-semibold');
     expect(source).toContain('CALL_FEEDBACK_REACTIONS');
     expect(source).not.toContain('callReactQuickReactions');

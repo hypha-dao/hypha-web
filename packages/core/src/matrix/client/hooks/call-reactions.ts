@@ -26,6 +26,9 @@ type AnchorContent = {
 type RaiseHandContent = {
   [CALL_RAISE_HAND_NOTICE_TYPE]?: boolean;
   [CALL_RAISE_HAND_FIELD]?: boolean;
+  /** Matrix `GroupCall.groupCallId` — scopes raise-hand to one in-room call session. */
+  group_call_id?: string;
+  call_session_id?: string;
 };
 
 export function isCallSessionAnchorEvent(event: MatrixEvent): boolean {
@@ -99,10 +102,20 @@ export function parseCallReactionAnnotation(
   return { userId, key };
 }
 
+export function readCallRaiseHandGroupCallId(
+  event: MatrixEvent,
+): string | null {
+  if (!isCallRaiseHandNoticeEvent(event)) return null;
+  const content = event.getContent() as RaiseHandContent;
+  const id = (content.group_call_id ?? content.call_session_id)?.trim();
+  return id || null;
+}
+
 export function parseCallRaiseHandNotice(event: MatrixEvent): {
   userId: string;
   raised: boolean;
   raisedAt: number;
+  groupCallId: string | null;
 } | null {
   if (event.getType() !== EventType.RoomMessage || event.isRedacted()) {
     return null;
@@ -115,17 +128,33 @@ export function parseCallRaiseHandNotice(event: MatrixEvent): {
     userId,
     raised: content[CALL_RAISE_HAND_FIELD] === true,
     raisedAt: event.getTs(),
+    groupCallId: readCallRaiseHandGroupCallId(event),
   };
 }
 
-/** Last raise-hand notice per user wins (WCUX-REACT-2). */
+/** True when call reactions UI should follow the space the user is viewing (not another pinned call). */
+export function callReactionsApplyToPinnedSpace(
+  pinnedCallSpaceSlug: string | null | undefined,
+  boundSpaceSlug: string | null | undefined,
+): boolean {
+  const pinned = pinnedCallSpaceSlug?.trim();
+  if (!pinned) return true;
+  const bound = boundSpaceSlug?.trim();
+  if (!bound) return true;
+  return pinned === bound;
+}
+
+/** Last raise-hand notice per user wins (WCUX-REACT-2), scoped to one group call. */
 export function aggregateCallRaisedHands(
   eventsOldestFirst: MatrixEvent[],
+  groupCallId?: string | null,
 ): CallRaisedHandEntry[] {
+  const target = groupCallId?.trim();
+  if (!target) return [];
   const latestByUser = new Map<string, CallRaisedHandEntry>();
   for (const event of eventsOldestFirst) {
     const parsed = parseCallRaiseHandNotice(event);
-    if (!parsed) continue;
+    if (!parsed || parsed.groupCallId !== target) continue;
     if (!parsed.raised) {
       latestByUser.delete(parsed.userId);
       continue;
@@ -136,4 +165,14 @@ export function aggregateCallRaisedHands(
     });
   }
   return [...latestByUser.values()].sort((a, b) => a.raisedAt - b.raisedAt);
+}
+
+/** Drop raise-hand entries for users no longer in the group call (stale timeline notices). */
+export function filterCallRaisedHandsToInCallParticipants(
+  entries: CallRaisedHandEntry[],
+  inCallUserIds: string[] | null | undefined,
+): CallRaisedHandEntry[] {
+  if (!inCallUserIds?.length) return entries;
+  const inCall = new Set(inCallUserIds);
+  return entries.filter((entry) => inCall.has(entry.userId));
 }

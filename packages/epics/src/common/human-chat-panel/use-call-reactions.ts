@@ -5,8 +5,10 @@ import { RoomEvent } from 'matrix-js-sdk';
 import type { MatrixClient, MatrixEvent, Room } from 'matrix-js-sdk';
 import {
   aggregateCallRaisedHands,
+  callReactionsApplyToPinnedSpace,
   CALL_FLOATING_REACTION_MAX_PER_TILE,
   CALL_FLOATING_REACTION_MS,
+  filterCallRaisedHandsToInCallParticipants,
   parseCallRaiseHandNotice,
   parseCallReactionAnnotation,
   sendCallRaiseHandNotice,
@@ -27,16 +29,27 @@ export type UseCallReactionsOptions = {
   client: MatrixClient | null;
   roomId: string | null;
   anchorEventId: string | null;
+  groupCallId: string | null;
   callState: SpaceGroupCallState;
   currentUserId: string | null;
+  /** Matrix user ids with a device in the active group call — filters stale raise-hand timeline entries. */
+  inCallUserIds?: string[] | null;
+  /** Space slug for the active call session (pinned while in call). */
+  pinnedCallSpaceSlug?: string | null;
+  /** Space slug for the UI the user is currently viewing. */
+  boundSpaceSlug?: string | null;
 };
 
 export function useCallReactions({
   client,
   roomId,
   anchorEventId,
+  groupCallId,
   callState,
   currentUserId,
+  inCallUserIds = null,
+  pinnedCallSpaceSlug = null,
+  boundSpaceSlug = null,
 }: UseCallReactionsOptions) {
   const [raisedHands, setRaisedHands] = useState<CallRaisedHandEntry[]>([]);
   const [localHandRaised, setLocalHandRaised] = useState(false);
@@ -52,14 +65,29 @@ export function useCallReactions({
     (userId: string, emoji: string, style?: CallFloatingReactionStyle) => void
   >(() => {});
 
+  const stableGroupCallId = groupCallId?.trim() || null;
+  const reactionsApplyToPinnedSpace = callReactionsApplyToPinnedSpace(
+    pinnedCallSpaceSlug,
+    boundSpaceSlug,
+  );
+
   const callReactionsSessionActive =
-    callState === 'connected' && Boolean(client && roomId?.trim());
+    callState === 'connected' &&
+    Boolean(client && roomId?.trim() && stableGroupCallId);
 
   const canSendCallReactions =
-    callReactionsSessionActive && Boolean(anchorEventId?.trim());
+    callReactionsSessionActive &&
+    reactionsApplyToPinnedSpace &&
+    Boolean(anchorEventId?.trim());
+
+  const applyInCallFilter = useCallback(
+    (entries: CallRaisedHandEntry[]) =>
+      filterCallRaisedHandsToInCallParticipants(entries, inCallUserIds),
+    [inCallUserIds],
+  );
 
   const seedRaisedHands = useCallback(() => {
-    if (!client || !roomId?.trim()) {
+    if (!client || !roomId?.trim() || !stableGroupCallId) {
       setRaisedHands([]);
       setLocalHandRaised(false);
       return;
@@ -71,7 +99,9 @@ export function useCallReactions({
       return;
     }
     const events = room.getLiveTimeline()?.getEvents() ?? [];
-    const aggregated = aggregateCallRaisedHands(events);
+    const aggregated = applyInCallFilter(
+      aggregateCallRaisedHands(events, stableGroupCallId),
+    );
     setRaisedHands(aggregated);
     setLocalHandRaised(
       Boolean(
@@ -79,11 +109,55 @@ export function useCallReactions({
           aggregated.some((entry) => entry.userId === currentUserId),
       ),
     );
-  }, [client, currentUserId, roomId]);
+  }, [applyInCallFilter, client, currentUserId, roomId, stableGroupCallId]);
 
   useEffect(() => {
     seedRaisedHands();
   }, [seedRaisedHands, anchorEventId]);
+
+  useEffect(() => {
+    setRaisedHands((prev) => applyInCallFilter(prev));
+  }, [applyInCallFilter]);
+
+  useEffect(() => {
+    if (callState === 'idle') {
+      setRaisedHands([]);
+      setLocalHandRaised(false);
+    }
+  }, [callState]);
+
+  useEffect(() => {
+    if (
+      reactionsApplyToPinnedSpace ||
+      !localHandRaised ||
+      !callReactionsSessionActive ||
+      !client ||
+      !roomId?.trim() ||
+      !stableGroupCallId
+    ) {
+      return;
+    }
+    setLocalHandRaised(false);
+    setRaisedHands((prev) =>
+      currentUserId
+        ? prev.filter((entry) => entry.userId !== currentUserId)
+        : prev,
+    );
+    void sendCallRaiseHandNotice({
+      client,
+      roomId: roomId.trim(),
+      groupCallId: stableGroupCallId,
+      raised: false,
+    }).catch(() => {});
+  }, [
+    callReactionsSessionActive,
+    client,
+    currentUserId,
+    localHandRaised,
+    reactionsApplyToPinnedSpace,
+    roomId,
+    stableGroupCallId,
+  ]);
 
   useEffect(() => {
     if (!client || !roomId?.trim() || !anchorEventId?.trim()) return;
@@ -130,27 +204,29 @@ export function useCallReactions({
         return;
       }
       const raiseHand = parseCallRaiseHandNotice(event);
-      if (raiseHand) {
-        setRaisedHands((prev) => {
-          const withoutUser = prev.filter(
-            (entry) => entry.userId !== raiseHand.userId,
-          );
-          if (!raiseHand.raised) {
-            if (raiseHand.userId === currentUserId) {
-              setLocalHandRaised(false);
-            }
-            return withoutUser;
+      if (!raiseHand || !stableGroupCallId) return;
+      if (raiseHand.groupCallId !== stableGroupCallId) return;
+      setRaisedHands((prev) => {
+        const withoutUser = prev.filter(
+          (entry) => entry.userId !== raiseHand.userId,
+        );
+        if (!raiseHand.raised) {
+          if (raiseHand.userId === currentUserId) {
+            setLocalHandRaised(false);
           }
-          const next = [
+          return applyInCallFilter(withoutUser);
+        }
+        const next = applyInCallFilter(
+          [
             ...withoutUser,
             { userId: raiseHand.userId, raisedAt: raiseHand.raisedAt },
-          ].sort((a, b) => a.raisedAt - b.raisedAt);
-          if (raiseHand.userId === currentUserId) {
-            setLocalHandRaised(true);
-          }
-          return next;
-        });
-      }
+          ].sort((a, b) => a.raisedAt - b.raisedAt),
+        );
+        if (raiseHand.userId === currentUserId) {
+          setLocalHandRaised(true);
+        }
+        return next;
+      });
     };
 
     client.on(RoomEvent.Timeline, onTimeline);
@@ -164,7 +240,14 @@ export function useCallReactions({
       pushFloatingReactionRef.current = () => {};
       bumpFloatingReactions();
     };
-  }, [anchorEventId, client, currentUserId, roomId]);
+  }, [
+    anchorEventId,
+    applyInCallFilter,
+    client,
+    currentUserId,
+    roomId,
+    stableGroupCallId,
+  ]);
 
   const sendReaction = useCallback(
     async (emoji: string, style: CallFloatingReactionStyle = 'default') => {
@@ -190,19 +273,38 @@ export function useCallReactions({
   );
 
   const toggleRaiseHand = useCallback(async () => {
-    if (!callReactionsSessionActive || !client || !roomId?.trim()) return;
+    if (
+      !callReactionsSessionActive ||
+      !reactionsApplyToPinnedSpace ||
+      !client ||
+      !roomId?.trim() ||
+      !stableGroupCallId
+    ) {
+      return;
+    }
     const nextRaised = !localHandRaised;
     setLocalHandRaised(nextRaised);
     try {
       await sendCallRaiseHandNotice({
         client,
         roomId: roomId.trim(),
+        groupCallId: stableGroupCallId,
         raised: nextRaised,
       });
     } catch {
       setLocalHandRaised(!nextRaised);
     }
-  }, [callReactionsSessionActive, client, localHandRaised, roomId]);
+  }, [
+    callReactionsSessionActive,
+    client,
+    localHandRaised,
+    reactionsApplyToPinnedSpace,
+    roomId,
+    stableGroupCallId,
+  ]);
+
+  const visibleRaisedHands = reactionsApplyToPinnedSpace ? raisedHands : [];
+  const visibleLocalHandRaised = reactionsApplyToPinnedSpace && localHandRaised;
 
   const getFloatingReactions = useCallback(
     (userId: string | null | undefined) => {
@@ -215,24 +317,26 @@ export function useCallReactions({
   const isHandRaised = useCallback(
     (userId: string | null | undefined) => {
       if (!userId) return false;
-      return raisedHands.some((entry) => entry.userId === userId);
+      return visibleRaisedHands.some((entry) => entry.userId === userId);
     },
-    [raisedHands],
+    [visibleRaisedHands],
   );
 
   const getRaiseHandOrder = useCallback(
     (userId: string | null | undefined) => {
       if (!userId) return null;
-      const index = raisedHands.findIndex((entry) => entry.userId === userId);
+      const index = visibleRaisedHands.findIndex(
+        (entry) => entry.userId === userId,
+      );
       return index >= 0 ? index + 1 : null;
     },
-    [raisedHands],
+    [visibleRaisedHands],
   );
 
   return {
     canSendCallReactions,
-    raisedHands,
-    localHandRaised,
+    raisedHands: visibleRaisedHands,
+    localHandRaised: visibleLocalHandRaised,
     sendReaction,
     toggleRaiseHand,
     getFloatingReactions,

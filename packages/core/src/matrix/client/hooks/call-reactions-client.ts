@@ -80,13 +80,20 @@ export async function sendCallReactionAnnotation(options: {
 export async function sendCallRaiseHandNotice(options: {
   client: MatrixClient;
   roomId: string;
+  groupCallId: string;
   raised: boolean;
 }): Promise<void> {
+  const stableGroupCallId = options.groupCallId.trim();
+  if (!stableGroupCallId) {
+    throw new Error('groupCallId is required for raise-hand notices');
+  }
   const content = {
     msgtype: MsgType.Notice,
     body: ' ',
     [CALL_RAISE_HAND_NOTICE_TYPE]: true,
     [CALL_RAISE_HAND_FIELD]: options.raised,
+    group_call_id: stableGroupCallId,
+    call_session_id: stableGroupCallId,
   } as unknown as RoomMessageEventContent;
   await options.client.sendEvent(
     options.roomId,

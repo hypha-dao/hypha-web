@@ -42,6 +42,9 @@ export {
 export { isCallMobileViewport } from './call-mobile-screenshare-policy';
 export {
   aggregateCallRaisedHands,
+  callReactionsApplyToPinnedSpace,
+  filterCallRaisedHandsToInCallParticipants,
+  readCallRaiseHandGroupCallId,
   CALL_FLOATING_REACTION_MAX_PER_TILE,
   CALL_FLOATING_REACTION_MS,
   CALL_RAISE_HAND_FIELD,

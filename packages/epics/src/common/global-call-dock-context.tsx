@@ -231,8 +231,12 @@ function useGlobalCallDockValue() {
     client,
     roomId: activeRoomId,
     anchorEventId: call.callSessionAnchorEventId,
+    groupCallId: call.groupCall?.groupCallId ?? null,
     callState: call.callState,
     currentUserId,
+    inCallUserIds: call.inCallUserIdsForRoster,
+    pinnedCallSpaceSlug,
+    boundSpaceSlug,
   });
 
   const inSession =
@@ -641,6 +645,7 @@ function useGlobalCallDockValue() {
   return {
     bindRoomContext,
     boundRoomId,
+    boundSpaceSlug,
     activeRoomId,
     activeSpaceSlug,
     pinnedCallSpaceSlug,

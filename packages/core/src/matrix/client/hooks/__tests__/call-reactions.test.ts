@@ -3,9 +3,11 @@ import type { MatrixEvent } from 'matrix-js-sdk';
 import { describe, expect, it } from 'vitest';
 import {
   aggregateCallRaisedHands,
+  callReactionsApplyToPinnedSpace,
   CALL_RAISE_HAND_FIELD,
   CALL_RAISE_HAND_NOTICE_TYPE,
   CALL_SESSION_ANCHOR_TYPE,
+  filterCallRaisedHandsToInCallParticipants,
   findCallReactionAnchorEventId,
   isCallEphemeralRoomMessageEvent,
   isCallRaiseHandNoticeEvent,
@@ -54,6 +56,7 @@ describe('call-reactions (WCUX-REACT)', () => {
   });
 
   it('aggregates raise-hand notices with last event per user winning', () => {
+    const groupCallId = 'gc-shared';
     const raised = mockEvent({
       type: EventType.RoomMessage,
       sender: '@alice:example.org',
@@ -61,6 +64,7 @@ describe('call-reactions (WCUX-REACT)', () => {
       content: {
         [CALL_RAISE_HAND_NOTICE_TYPE]: true,
         [CALL_RAISE_HAND_FIELD]: true,
+        group_call_id: groupCallId,
       },
     });
     const lowered = mockEvent({
@@ -70,6 +74,7 @@ describe('call-reactions (WCUX-REACT)', () => {
       content: {
         [CALL_RAISE_HAND_NOTICE_TYPE]: true,
         [CALL_RAISE_HAND_FIELD]: false,
+        group_call_id: groupCallId,
       },
     });
     const bobRaised = mockEvent({
@@ -79,13 +84,48 @@ describe('call-reactions (WCUX-REACT)', () => {
       content: {
         [CALL_RAISE_HAND_NOTICE_TYPE]: true,
         [CALL_RAISE_HAND_FIELD]: true,
+        group_call_id: groupCallId,
+      },
+    });
+    const otherCallRaised = mockEvent({
+      type: EventType.RoomMessage,
+      sender: '@carol:example.org',
+      ts: 160,
+      content: {
+        [CALL_RAISE_HAND_NOTICE_TYPE]: true,
+        [CALL_RAISE_HAND_FIELD]: true,
+        group_call_id: 'gc-other',
       },
     });
 
     expect(parseCallRaiseHandNotice(raised)?.raised).toBe(true);
-    expect(aggregateCallRaisedHands([raised, bobRaised, lowered])).toEqual([
+    expect(
+      aggregateCallRaisedHands(
+        [raised, bobRaised, lowered, otherCallRaised],
+        groupCallId,
+      ),
+    ).toEqual([{ userId: '@bob:example.org', raisedAt: 150 }]);
+    expect(aggregateCallRaisedHands([raised, bobRaised], groupCallId)).toEqual([
+      { userId: '@alice:example.org', raisedAt: 100 },
       { userId: '@bob:example.org', raisedAt: 150 },
     ]);
+    const legacyRaised = mockEvent({
+      type: EventType.RoomMessage,
+      sender: '@alice:example.org',
+      ts: 99,
+      content: {
+        [CALL_RAISE_HAND_NOTICE_TYPE]: true,
+        [CALL_RAISE_HAND_FIELD]: true,
+      },
+    });
+    expect(aggregateCallRaisedHands([legacyRaised], groupCallId)).toEqual([]);
+    expect(aggregateCallRaisedHands([raised], null)).toEqual([]);
+  });
+
+  it('scopes call reactions UI to the pinned call space slug', () => {
+    expect(callReactionsApplyToPinnedSpace('space-a', 'space-a')).toBe(true);
+    expect(callReactionsApplyToPinnedSpace('space-a', 'space-b')).toBe(false);
+    expect(callReactionsApplyToPinnedSpace(null, 'space-b')).toBe(true);
   });
 
   it('marks session anchor events', () => {
@@ -131,6 +171,24 @@ describe('call-reactions (WCUX-REACT)', () => {
       findCallReactionAnchorEventId([first, otherCall, second], 'gc-shared'),
     ).toBe('$anchor-first');
     expect(findCallReactionAnchorEventId([otherCall], 'gc-shared')).toBeNull();
+  });
+
+  it('filters raised hands to users still in the group call roster', () => {
+    const entries = [
+      { userId: '@alice:example.org', raisedAt: 100 },
+      { userId: '@bob:example.org', raisedAt: 200 },
+    ];
+    expect(
+      filterCallRaisedHandsToInCallParticipants(entries, [
+        '@alice:example.org',
+      ]),
+    ).toEqual([{ userId: '@alice:example.org', raisedAt: 100 }]);
+    expect(filterCallRaisedHandsToInCallParticipants(entries, [])).toEqual(
+      entries,
+    );
+    expect(filterCallRaisedHandsToInCallParticipants(entries, null)).toEqual(
+      entries,
+    );
   });
 
   it('marks raise-hand notices as ephemeral room messages', () => {
