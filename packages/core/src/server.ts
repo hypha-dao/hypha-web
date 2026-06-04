@@ -22,4 +22,3 @@ export * from './coherence/types';
 export * from './matrix/server';
 export * from './matrix/types';
 export * from './banking/server';
-export * from './geo/server';

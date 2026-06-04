@@ -49,11 +49,6 @@ export const findAllSpaces = async (
       updatedAt: spaces.updatedAt,
       address: spaces.address,
       flags: spaces.flags,
-      latitude: spaces.latitude,
-      longitude: spaces.longitude,
-      locationLabel: spaces.locationLabel,
-      locationSource: spaces.locationSource,
-      locatedAt: spaces.locatedAt,
     })
     .from(spaces)
     .where(

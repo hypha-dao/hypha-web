@@ -218,10 +218,6 @@ export default function SpaceConfiguration() {
             parentId: space?.parentId || null,
             address: space?.address || '',
             flags: space?.flags || [],
-            latitude: space?.latitude ?? null,
-            longitude: space?.longitude ?? null,
-            locationLabel: space?.locationLabel ?? null,
-            locationSource: space?.locationSource ?? null,
           }}
           label="configure"
           initialParentSpaceId={space?.parentId ?? null}

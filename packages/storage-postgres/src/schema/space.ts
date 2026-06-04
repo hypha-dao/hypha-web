@@ -6,14 +6,12 @@ import {
 } from 'drizzle-orm';
 import {
   boolean,
-  doublePrecision,
   index,
   integer,
   jsonb,
   pgTable,
   serial,
   text,
-  timestamp,
 } from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
 import { categories } from './categories';
@@ -46,11 +44,6 @@ export const spaces = pgTable(
       .default([]),
     /** Canonical Matrix room id for space-level chat (!id:server). */
     chatRoomId: text('chat_room_id'),
-    latitude: doublePrecision('latitude'),
-    longitude: doublePrecision('longitude'),
-    locationLabel: text('location_label'),
-    locationSource: text('location_source'),
-    locatedAt: timestamp('located_at'),
     ...commonDateFields,
   },
   (table) => [

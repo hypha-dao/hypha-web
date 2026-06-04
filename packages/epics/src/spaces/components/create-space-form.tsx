@@ -42,7 +42,6 @@ import {
   useSpacesByWeb3Ids,
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
-import { getEnableNetworkMap } from '@hypha-platform/feature-flags';
 import {
   ParentSpaceSelector,
   useMemberWeb3SpaceIds,
@@ -51,7 +50,6 @@ import {
   ButtonBack,
   ButtonClose,
 } from '@hypha-platform/epics';
-import { SpaceLocationPicker } from './space-location-picker';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -100,10 +98,6 @@ const DEFAULT_VALUES = {
   parentSpaceSlug: '',
   address: '',
   flags: ['sandbox'] as SpaceFlags[],
-  latitude: null,
-  longitude: null,
-  locationLabel: null,
-  locationSource: null,
 };
 
 export const SpaceForm = ({
@@ -332,13 +326,6 @@ export const SpaceForm = ({
     () => !isDemo && !isSandbox && !isArchived,
     [isDemo, isSandbox, isArchived],
   );
-  const showLocationPicker = label === 'configure' && getEnableNetworkMap();
-  const locationValue = {
-    latitude: form.watch('latitude') ?? null,
-    longitude: form.watch('longitude') ?? null,
-    locationLabel: form.watch('locationLabel') ?? null,
-    locationSource: form.watch('locationSource') ?? null,
-  };
 
   React.useEffect(() => {
     if (!isArchived) {
@@ -626,27 +613,6 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
-        {showLocationPicker ? (
-          <>
-            <Separator />
-            <SpaceLocationPicker
-              disabled={isLoading}
-              value={locationValue}
-              onChange={(next) => {
-                form.setValue('latitude', next.latitude, { shouldDirty: true });
-                form.setValue('longitude', next.longitude, {
-                  shouldDirty: true,
-                });
-                form.setValue('locationLabel', next.locationLabel, {
-                  shouldDirty: true,
-                });
-                form.setValue('locationSource', next.locationSource, {
-                  shouldDirty: true,
-                });
-              }}
-            />
-          </>
-        ) : null}
         {label === 'configure' && (
           <FormField
             control={form.control}
