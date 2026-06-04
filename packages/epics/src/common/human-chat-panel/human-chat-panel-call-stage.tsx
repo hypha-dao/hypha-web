@@ -36,7 +36,6 @@ import {
 } from './matrix-room-member-display';
 import {
   CALL_FEED_VIDEO_LABEL_CHIP_TONE_CLASS,
-  CALL_FEED_VIDEO_LABEL_CHIP_TONE_CLASS,
   CALL_FEED_VIDEO_LABEL_NAME_CLASS,
   resolveCallFeedAudioScrimLayout,
   resolveCallFeedVideoParticipantLabelLayout,
