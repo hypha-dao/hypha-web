@@ -567,7 +567,12 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(popover).toContain('reactTriggerActive');
     expect(popover).toContain('reactionsSendReady');
     expect(popover).toContain('emojiActionsDisabled');
-    expect(popover).toContain('heartAccentClass');
+    expect(popover).toContain('callAccentToolbarHeartActive');
+    const accentStyles = readCommonSource(
+      'human-chat-panel/call-accent-alert-styles.ts',
+    );
+    expect(accentStyles).toContain('callAccentToolbarHeartActive');
+    expect(accentStyles).toContain('var(--space-accent,var(--color-accent-9');
     expect(popover).toContain('border-border/60 bg-background');
     expect(popover).not.toContain('callAccentToolbarTriggerActive');
     expect(popover).not.toContain('callAccentToolbarTriggerIdle');

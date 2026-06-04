@@ -19,7 +19,10 @@ import {
   type CallFeedbackReactionId,
   type CallFloatingReactionStyle,
 } from './call-zoom-reaction-catalog';
-import { callAccentToolbarMenuRowActive } from './call-accent-alert-styles';
+import {
+  callAccentToolbarHeartActive,
+  callAccentToolbarMenuRowActive,
+} from './call-accent-alert-styles';
 
 type HumanChatPanelCallReactPopoverProps = {
   disabled?: boolean;
@@ -259,9 +262,6 @@ export function HumanChatPanelCallReactPopover({
         ),
   );
 
-  const heartAccentClass =
-    'text-[color:var(--color-accent-9,var(--space-accent,#4a65d8))] fill-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_22%,transparent)]';
-
   return (
     <Popover
       open={open}
@@ -283,7 +283,7 @@ export function HumanChatPanelCallReactPopover({
           <Heart
             className={cn(
               isFull ? 'h-4 w-4' : isPip ? 'h-2.5 w-2.5' : 'h-4 w-4',
-              reactTriggerActive ? heartAccentClass : 'fill-none',
+              reactTriggerActive ? callAccentToolbarHeartActive : 'fill-none',
               isFull && !reactTriggerActive && 'text-white',
             )}
             strokeWidth={strokeWidth}
