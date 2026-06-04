@@ -1338,7 +1338,7 @@ export function GlobalCallDockOverlay({
               resolveMemberLabel={resolveMemberLabel}
               layout={dockStageLayout}
               viewportTier={dockViewportTier}
-              panelMobileLayout={isMobile}
+              panelMobileLayout={isTouchDock}
               panelFlush={dockStageLayout === 'panel'}
               fullViewOpen={dockStageLayout === 'fullView'}
               fullViewLayoutMode={layoutMode}

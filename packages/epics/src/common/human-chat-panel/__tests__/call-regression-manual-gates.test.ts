@@ -380,7 +380,8 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     );
     expect(source).toContain('HumanChatPanelCallReactPopover');
     expect(source).toContain('HumanChatPanelCallScreenshareMenu');
-    expect(source).toContain('showCallReactions');
+    expect(source).toContain('callReactionsToolbarVisible');
+    expect(source).toContain('reactionsSendReady');
     const toolbarStart = source.indexOf('<HumanChatPanelCallScreenshareMenu');
     const leaveIdx = source.indexOf('onClick={onLeave}', toolbarStart);
     const reactIdx = source.indexOf(
@@ -405,6 +406,11 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toMatch(
       /layout === 'panel' && !isFull && isPhonePanelLayout/,
     );
+    expect(source).toContain('layoutViewportTier');
+    expect(source).toContain(
+      "isMobilePanelStage && !isDocumentPipOpen ? 'V-S'",
+    );
+    expect(source).toContain('shareMobilePanelGrid');
   });
 
   it('uses symmetrical dock toolbar groups (mic/cam | share/hangup/react | record/sound)', () => {
@@ -550,6 +556,8 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
       'human-chat-panel/human-chat-panel-call-react-popover.tsx',
     );
     expect(popover).toContain('reactTriggerActive');
+    expect(popover).toContain('reactionsSendReady');
+    expect(popover).toContain('emojiActionsDisabled');
     expect(popover).toContain('heartAccentClass');
     expect(popover).toContain('border-border/60 bg-background');
     expect(popover).not.toContain('callAccentToolbarTriggerActive');

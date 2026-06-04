@@ -2091,6 +2091,23 @@ export function useSpaceGroupCall(
       }
       const newSessionId = newCallSessionId();
       setCallSessionId(newSessionId);
+      if (client && roomId?.trim()) {
+        void (async () => {
+          try {
+            const anchorEventId = await publishCallSessionAnchor({
+              client,
+              roomId: roomId.trim(),
+              callSessionId: newSessionId,
+            });
+            if (joinEpoch !== joinEpochRef.current) return;
+            if (anchorEventId) {
+              setCallSessionAnchorEventId(anchorEventId);
+            }
+          } catch {
+            /* reactions unavailable if anchor publish fails */
+          }
+        })();
+      }
       lastJoinKindRef.current = kind;
       lastThreadRootEventIdRef.current = threadRootEventId;
       lastRoomIdForTelemetryRef.current = roomId;
@@ -2317,29 +2334,6 @@ export function useSpaceGroupCall(
       attachGroupCallListeners(gc);
       updateParticipantCount();
       setCallState('connecting');
-
-      /** Publish reaction anchor in parallel with `enter()` so toolbar React is ready at connect. */
-      void (async () => {
-        if (!client || !roomId?.trim()) return;
-        try {
-          const anchorEventId = await publishCallSessionAnchor({
-            client,
-            roomId: roomId.trim(),
-            callSessionId: newSessionId,
-          });
-          if (
-            joinEpoch !== joinEpochRef.current ||
-            groupCallRef.current !== gc
-          ) {
-            return;
-          }
-          if (anchorEventId) {
-            setCallSessionAnchorEventId(anchorEventId);
-          }
-        } catch {
-          /* reactions unavailable if anchor publish fails */
-        }
-      })();
 
       /**
        * Probe TURN before `enter()`: missing homeserver TURN config often makes

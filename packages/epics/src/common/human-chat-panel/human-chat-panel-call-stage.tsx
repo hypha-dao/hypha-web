@@ -799,6 +799,12 @@ function HumanChatPanelCallStageMain({
     layout === 'panel' && !isFull && isPhonePanelLayout;
   const resolvedViewportTier: CallViewportTier =
     viewportTierProp ?? (isFull ? 'V-L' : isDocumentPipOpen ? 'V-PiP' : 'V-M');
+  /**
+   * Mobile panel keeps dock-tier layout rules even when the dock is fullscreen
+   * (Chrome reports V-L otherwise → threshold gallery + black void on 2-up).
+   */
+  const layoutViewportTier: CallViewportTier =
+    isMobilePanelStage && !isDocumentPipOpen ? 'V-S' : resolvedViewportTier;
   const {
     shareFeeds,
     localShareActive,
@@ -852,14 +858,14 @@ function HumanChatPanelCallStageMain({
   const layoutPlan = useMemo(
     () =>
       resolveCallStageLayout({
-        viewportTier: resolvedViewportTier,
+        viewportTier: layoutViewportTier,
         participantDeviceCount: layoutParticipantTiles.length,
         hasActiveShare: hasRenderableShare || isScreensharing,
         activeSpeakerIndex,
         galleryPage,
       }),
     [
-      resolvedViewportTier,
+      layoutViewportTier,
       layoutParticipantTiles.length,
       hasRenderableShare,
       isScreensharing,
@@ -961,11 +967,6 @@ function HumanChatPanelCallStageMain({
     ? fullViewLayoutMode
     : 'sideBySide';
 
-  const useMainGalleryLayout =
-    !useShareWithParticipantsLayout &&
-    (layoutPlan.renderer === 'thresholdGallery' ||
-      layoutPlan.renderer === 'paginatedGallery');
-
   /**
    * Phone panel: equal-height grid (see call-panel-mobile-grid) instead of
    * speaker-primary strip — strip leaves unused vertical space on narrow docks.
@@ -984,6 +985,20 @@ function HumanChatPanelCallStageMain({
     !useMobilePaginatedParticipantGallery &&
     !isScreensharing &&
     layoutPlan.renderer === 'speakerPrimaryStrip';
+
+  const useMainGalleryLayout =
+    !useShareWithParticipantsLayout &&
+    !useMobileBalancedParticipantGrid &&
+    !useMobilePaginatedParticipantGallery &&
+    (layoutPlan.renderer === 'thresholdGallery' ||
+      layoutPlan.renderer === 'paginatedGallery');
+
+  const shareMobilePanelGrid =
+    isMobilePanelStage &&
+    shareParticipantTiles.length > 0 &&
+    shareParticipantTiles.length < CALL_PANEL_MOBILE_PAGINATED_MIN
+      ? getCallPanelMobileGridLayout(shareParticipantTiles.length)
+      : null;
 
   const useShareParticipantGallery =
     useShareWithParticipantsLayout && shareBandLayout === 'gallery';
@@ -1294,6 +1309,28 @@ function HumanChatPanelCallStageMain({
                     )}
                   >
                     {renderRemoteUserTile(shareParticipantTiles[0]!, 1000)}
+                  </div>
+                </div>
+              ) : !isFull && shareMobilePanelGrid ? (
+                <div
+                  className={cn(
+                    'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-black',
+                    panelFlush ? 'p-0' : 'p-1',
+                  )}
+                >
+                  <div className={shareMobilePanelGrid.gridClass}>
+                    {shareParticipantTiles.map((item, i) => (
+                      <div
+                        key={
+                          item.kind === 'feed'
+                            ? feedKey(item.feed, 1000 + i)
+                            : `ph-share-mobile-${item.userId}-${i}`
+                        }
+                        className={shareMobilePanelGrid.cellClass}
+                      >
+                        {renderRemoteUserTile(item, 1000 + i)}
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : !isFull ? (

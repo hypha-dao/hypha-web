@@ -359,12 +359,15 @@ export function HumanChatPanelInCallControls({
   const capturePaused = recordingStatus === 'paused';
   const captureMenuActive = captureActive;
   const capturePulsing = recordingStatus === 'recording';
-  /** Visible as soon as the call is connected; stays disabled until Matrix anchor is ready. */
-  const showCallReactions =
-    callState === 'connected' &&
+  /** Show during join so the toolbar does not reflow when the Matrix anchor arrives. */
+  const callReactionsToolbarVisible =
+    (callState === 'connecting' ||
+      callState === 'connected' ||
+      callState === 'awaiting_media' ||
+      callState === 'initializing') &&
     Boolean(onSendReaction && onToggleRaiseHand) &&
     (!leaveOnly || includeReactionsWhenLeaveOnly);
-  const callReactionsReady = canSendCallReactions;
+  const reactionsSendReady = canSendCallReactions;
   const captureSettingsBtn = cn(
     audioSettingsBtn,
     captureLive &&
@@ -436,6 +439,7 @@ export function HumanChatPanelInCallControls({
     onOpenChange: handleReactMenuOpenChange,
     menuContentRef: reactMenuContentRef,
     triggerRef: reactMenuTriggerRef,
+    reactionsSendReady,
     localHandRaised,
     onSendReaction: (emoji: string, style?: CallFloatingReactionStyle) => {
       void onSendReaction?.(emoji, style);
@@ -1016,10 +1020,10 @@ export function HumanChatPanelInCallControls({
                     iconStrokeWidth={lucideStroke}
                   />
                 ) : null}
-                {leaveOnly && showCallReactions ? (
+                {leaveOnly && callReactionsToolbarVisible ? (
                   <HumanChatPanelCallReactPopover
                     {...callReactPopoverProps}
-                    disabled={controlsDisabled || !callReactionsReady}
+                    disabled={controlsDisabled}
                   />
                 ) : null}
                 <button
@@ -1039,10 +1043,10 @@ export function HumanChatPanelInCallControls({
                     strokeWidth={lucideStroke}
                   />
                 </button>
-                {!leaveOnly && showCallReactions ? (
+                {!leaveOnly && callReactionsToolbarVisible ? (
                   <HumanChatPanelCallReactPopover
                     {...callReactPopoverProps}
-                    disabled={controlsDisabled || !callReactionsReady}
+                    disabled={controlsDisabled}
                   />
                 ) : null}
               </div>
@@ -1148,10 +1152,10 @@ export function HumanChatPanelInCallControls({
                       iconStrokeWidth={lucideStroke}
                     />
                   ) : null}
-                  {showCallReactions ? (
+                  {callReactionsToolbarVisible ? (
                     <HumanChatPanelCallReactPopover
                       {...callReactPopoverProps}
-                      disabled={controlsDisabled || !callReactionsReady}
+                      disabled={controlsDisabled}
                     />
                   ) : null}
                   {showAdvancedCallControls && !isPipDensity
@@ -1162,10 +1166,10 @@ export function HumanChatPanelInCallControls({
                     : null}
                 </>
               ) : null}
-              {leaveOnly && showCallReactions ? (
+              {leaveOnly && callReactionsToolbarVisible ? (
                 <HumanChatPanelCallReactPopover
                   {...callReactPopoverProps}
-                  disabled={controlsDisabled || !callReactionsReady}
+                  disabled={controlsDisabled}
                 />
               ) : null}
               <button

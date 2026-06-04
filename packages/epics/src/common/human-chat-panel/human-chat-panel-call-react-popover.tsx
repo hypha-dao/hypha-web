@@ -23,6 +23,8 @@ import { callAccentToolbarMenuRowActive } from './call-accent-alert-styles';
 
 type HumanChatPanelCallReactPopoverProps = {
   disabled?: boolean;
+  /** Emoji reactions need the Matrix session anchor; raise hand does not. */
+  reactionsSendReady?: boolean;
   localHandRaised: boolean;
   onSendReaction: (emoji: string, style?: CallFloatingReactionStyle) => void;
   onToggleRaiseHand: () => void;
@@ -163,6 +165,7 @@ function CallReactMenuSection({
 /** Zoom-style React menu — effects, reactions, feedback, raise hand, be right back. */
 export function HumanChatPanelCallReactPopover({
   disabled = false,
+  reactionsSendReady = true,
   localHandRaised,
   onSendReaction,
   onToggleRaiseHand,
@@ -219,6 +222,7 @@ export function HumanChatPanelCallReactPopover({
   );
 
   const reactTriggerActive = open || localHandRaised;
+  const emojiActionsDisabled = disabled || !reactionsSendReady;
 
   const triggerClassName = cn(
     'inline-flex shrink-0 items-center justify-center gap-0.5 rounded-full border shadow-sm transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
@@ -333,13 +337,13 @@ export function HumanChatPanelCallReactPopover({
                   <ReactionEmojiButton
                     key={`effect-${emoji}`}
                     emoji={emoji}
-                    disabled={disabled}
+                    disabled={emojiActionsDisabled}
                     label={t('callReactSendEmoji', { emoji })}
                     onPick={() => handleSend(emoji, 'effect')}
                   />
                 ))}
                 <MoreEmojiButton
-                  disabled={disabled}
+                  disabled={emojiActionsDisabled}
                   label={t('callReactMore')}
                   onClick={() => setEmojiPicker('effects')}
                 />
@@ -356,7 +360,7 @@ export function HumanChatPanelCallReactPopover({
                   <ReactionEmojiButton
                     key={`reaction-${emoji}`}
                     emoji={emoji}
-                    disabled={disabled}
+                    disabled={emojiActionsDisabled}
                     label={t('callReactSendEmoji', { emoji })}
                     onPick={() => handleSend(emoji, 'default')}
                     className={
@@ -367,7 +371,7 @@ export function HumanChatPanelCallReactPopover({
                   />
                 ))}
                 <MoreEmojiButton
-                  disabled={disabled}
+                  disabled={emojiActionsDisabled}
                   label={t('callReactMore')}
                   onClick={() => setEmojiPicker('reactions')}
                 />
@@ -381,7 +385,7 @@ export function HumanChatPanelCallReactPopover({
                   <FeedbackReactionButton
                     key={item.id}
                     id={item.id}
-                    disabled={disabled}
+                    disabled={emojiActionsDisabled}
                     label={t(`callReactFeedback_${item.id}`)}
                     onPick={() => handleSend(item.emoji, 'default')}
                   />
