@@ -46,6 +46,9 @@ export function useCallReactions({
     (value: number) => value + 1,
     0,
   );
+  const pushFloatingReactionRef = useRef<
+    (userId: string, emoji: string) => void
+  >(() => {});
 
   const canSendCallReactions =
     callState === 'connected' &&
@@ -107,11 +110,15 @@ export function useCallReactions({
       floatingTimersRef.current.set(timerKey, timer);
     };
 
+    pushFloatingReactionRef.current = pushFloatingReaction;
+
     const onTimeline = (event: MatrixEvent, room: Room | undefined) => {
       if (room?.roomId !== stableRoomId) return;
       const reaction = parseCallReactionAnnotation(event, stableAnchorId);
       if (reaction) {
-        pushFloatingReaction(reaction.userId, reaction.key);
+        if (reaction.userId !== currentUserId) {
+          pushFloatingReaction(reaction.userId, reaction.key);
+        }
         return;
       }
       const raiseHand = parseCallRaiseHandNotice(event);
@@ -146,6 +153,7 @@ export function useCallReactions({
       }
       floatingTimersRef.current.clear();
       floatingByUserRef.current.clear();
+      pushFloatingReactionRef.current = () => {};
       bumpFloatingReactions();
     };
   }, [anchorEventId, client, currentUserId, roomId]);
@@ -160,6 +168,9 @@ export function useCallReactions({
       ) {
         return;
       }
+      if (currentUserId) {
+        pushFloatingReactionRef.current(currentUserId, emoji);
+      }
       await sendCallReactionAnnotation({
         client,
         roomId: roomId.trim(),
@@ -167,7 +178,7 @@ export function useCallReactions({
         key: emoji,
       });
     },
-    [anchorEventId, canSendCallReactions, client, roomId],
+    [anchorEventId, canSendCallReactions, client, currentUserId, roomId],
   );
 
   const toggleRaiseHand = useCallback(async () => {

@@ -55,7 +55,7 @@ export async function sendCallRaiseHandNotice(options: {
 }): Promise<void> {
   const content = {
     msgtype: MsgType.Notice,
-    body: options.raised ? '✋' : ' ',
+    body: ' ',
     [CALL_RAISE_HAND_NOTICE_TYPE]: true,
     [CALL_RAISE_HAND_FIELD]: options.raised,
   } as unknown as RoomMessageEventContent;

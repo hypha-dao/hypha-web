@@ -1193,16 +1193,8 @@ export function GlobalCallDockOverlay() {
   /** Dark video-style chrome on dock footer — desktop and mobile (matches full-view). */
   const dockControlsVariant = 'fullView';
   /** PiP: compact centered toolbar; dock/fullscreen keep production layout. */
-  const dockControlsLayout = isMobile
-    ? 'centered'
-    : inDocumentPip
-    ? 'centered'
-    : dockCompact
-    ? 'inline'
-    : modeIsFullscreen
-    ? 'inline'
-    : 'centered';
-  const dockControlsDensity = inDocumentPip ? 'pip' : 'default';
+  const dockControlsLayout = isMobile ? 'centered' : 'centered';
+  const dockControlsDensity = 'default';
   const lockStagePointerEvents =
     !isScreensharing && !inDocumentPip && !isTouchDock;
 
@@ -1210,6 +1202,7 @@ export function GlobalCallDockOverlay() {
     <div
       ref={dockRef}
       data-testid="global-call-dock"
+      data-hypha-call-dock
       className={cn(
         inDocumentPip
           ? 'relative flex h-full w-full min-h-0 min-w-0 select-none flex-col overflow-hidden rounded-lg border border-border/60 bg-background/95 shadow-lg'

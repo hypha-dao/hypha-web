@@ -43,6 +43,23 @@ const DEFAULT_SCREENSHARE_SURFACE_MODE: CallScreenshareSurfaceMode = 'tab';
 
 type ScreenshareConstraintOpts = Pick<IScreensharingOpts, 'audio'>;
 
+/** Chrome pre-checks "Also share system audio" when `systemAudio: 'include'` is set. */
+function resolveDisplayMediaAudioConstraint(
+  opts: ScreenshareConstraintOpts,
+  surfaceMode: CallScreenshareSurfaceMode,
+): boolean | MediaTrackConstraints {
+  if (opts.audio === undefined || opts.audio === false) {
+    return false;
+  }
+  if (opts.audio === true) {
+    return true;
+  }
+  if (surfaceMode === 'window' || surfaceMode === 'monitor') {
+    return true;
+  }
+  return opts.audio;
+}
+
 /**
  * Full `getDisplayMedia` constraints — Matrix SDK only forwards `audio`/`video`,
  * so Hypha patches `MediaHandler.getScreenshareContraints` via
@@ -56,12 +73,7 @@ export function buildDisplayMediaConstraints(
     return { video: true, audio: false };
   }
 
-  const audio =
-    opts.audio === undefined || opts.audio === false
-      ? false
-      : opts.audio === true
-      ? true
-      : opts.audio;
+  const audio = resolveDisplayMediaAudioConstraint(opts, surfaceMode);
 
   const base = {
     video: true,
@@ -114,18 +126,38 @@ export async function withEnhancedScreenshareCapture<T>(
   const handler = client?.getMediaHandler?.() as
     | MediaHandlerWithConstraints
     | undefined;
-  if (!handler?.getScreenshareContraints) {
+
+  const patchConstraints = (opts: IScreensharingOpts) =>
+    buildDisplayMediaConstraints(opts, surfaceMode);
+
+  if (handler?.getScreenshareContraints) {
+    const original = handler.getScreenshareContraints.bind(handler);
+    handler.getScreenshareContraints = patchConstraints;
+    try {
+      return await run();
+    } finally {
+      handler.getScreenshareContraints = original;
+    }
+  }
+
+  const mediaDevices = globalThis.navigator?.mediaDevices;
+  const originalGetDisplayMedia =
+    mediaDevices?.getDisplayMedia?.bind(mediaDevices);
+  if (!mediaDevices || !originalGetDisplayMedia) {
     return run();
   }
 
-  const original = handler.getScreenshareContraints.bind(handler);
-  handler.getScreenshareContraints = (opts) =>
-    buildDisplayMediaConstraints(opts, surfaceMode);
+  mediaDevices.getDisplayMedia = (() =>
+    originalGetDisplayMedia(
+      patchConstraints(
+        MATRIX_SCREENSHARE_CAPTURE_OPTS,
+      ) as MediaStreamConstraints,
+    )) as typeof mediaDevices.getDisplayMedia;
 
   try {
     return await run();
   } finally {
-    handler.getScreenshareContraints = original;
+    mediaDevices.getDisplayMedia = originalGetDisplayMedia;
   }
 }
 

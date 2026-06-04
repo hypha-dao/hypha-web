@@ -336,7 +336,7 @@ describe('CSH-QA-3–5 stability hardening (W7)', () => {
 });
 
 describe('WCUX-LAYOUT local self-view (corner PiP)', () => {
-  it('keeps corner PiP when gallery or speaker strip excludes local from the grid', () => {
+  it('disables corner PiP so local video stays in the main grid', () => {
     const source = readCommonSource(
       'human-chat-panel/human-chat-panel-call-stage.tsx',
     );
@@ -344,9 +344,7 @@ describe('WCUX-LAYOUT local self-view (corner PiP)', () => {
       source.indexOf('const showFloatingLocalPip ='),
       source.indexOf('const speakerFeedForTopMode'),
     );
-    expect(block).toContain('!showLocalInMainGrid');
-    expect(block).not.toContain('!useMainGalleryLayout');
-    expect(block).not.toContain('!useSpeakerStripLayout');
+    expect(block).toContain('const showFloatingLocalPip = false');
   });
 });
 
@@ -363,18 +361,38 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('callSessionAnchorEventId');
   });
 
-  it('react popover sits between screen share and leave in in-call controls', () => {
+  it('react popover sits after leave in in-call controls', () => {
     const source = readCommonSource(
       'human-chat-panel/human-chat-panel-in-call-controls.tsx',
     );
     expect(source).toContain('HumanChatPanelCallReactPopover');
     expect(source).toContain('HumanChatPanelCallScreenshareMenu');
     expect(source).toContain('showCallReactions');
-    const toolbarBlock = source.slice(
-      source.indexOf('HumanChatPanelCallScreenshareMenu'),
-      source.indexOf('onClick={onLeave}'),
+    const toolbarStart = source.indexOf('<HumanChatPanelCallScreenshareMenu');
+    const leaveIdx = source.indexOf('onClick={onLeave}', toolbarStart);
+    const reactIdx = source.indexOf(
+      '<HumanChatPanelCallReactPopover',
+      toolbarStart,
     );
-    expect(toolbarBlock).toContain('HumanChatPanelCallReactPopover');
+    expect(leaveIdx).toBeGreaterThan(toolbarStart);
+    expect(reactIdx).toBeGreaterThan(leaveIdx);
+  });
+
+  it('centers dock footer controls like production', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(source).toContain('flex w-full items-center justify-center');
+    expect(source).not.toContain('useDockSpreadToolbar');
+    expect(source).not.toContain('justify-evenly');
+  });
+
+  it('uses green share trigger for the 3-option share menu', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(source).toContain('shareIdleBtn');
+    expect(source).toContain('isScreensharing ? shareActiveBtn : shareIdleBtn');
   });
 
   it('hides Document PiP while share UX is stabilized', () => {
@@ -383,12 +401,15 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('!CALL_DOCUMENT_PIP_ENABLED');
   });
 
-  it('spreads dock footer controls evenly across the bar', () => {
-    const source = readCommonSource(
-      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+  it('keeps the floating dock outside the screen-share capture root', () => {
+    const layout = readFileSync(
+      resolve(__dirname, '../../../../../../apps/web/src/app/layout.tsx'),
+      'utf8',
     );
-    expect(source).toContain('useDockSpreadToolbar');
-    expect(source).toContain('justify-evenly');
+    const panelEnd = layout.indexOf('</PanelWrapLayout>');
+    const dockMount = layout.indexOf('<ConnectedGlobalCallDock');
+    expect(panelEnd).toBeGreaterThan(-1);
+    expect(dockMount).toBeGreaterThan(panelEnd);
   });
 
   it('floating reactions and raised-hand badge render on call tiles', () => {

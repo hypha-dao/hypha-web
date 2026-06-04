@@ -5,7 +5,6 @@ import {
   Columns2,
   GalleryHorizontal,
   LayoutDashboard,
-  PictureInPicture2,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -31,24 +30,21 @@ const MODES: CallFullViewLayoutMode[] = [
   'filmstrip',
   'sideBySide',
   'speakerTop',
-  'pip',
 ];
 
 const LABEL_BY_MODE: Record<
   CallFullViewLayoutMode,
-  `callLayout${'Filmstrip' | 'SideBySide' | 'SpeakerOnTop' | 'Pip'}`
+  `callLayout${'Filmstrip' | 'SideBySide' | 'SpeakerOnTop'}`
 > = {
   filmstrip: 'callLayoutFilmstrip',
   sideBySide: 'callLayoutSideBySide',
   speakerTop: 'callLayoutSpeakerOnTop',
-  pip: 'callLayoutPip',
 };
 
 const ICON_BY_MODE: Record<CallFullViewLayoutMode, LucideIcon> = {
   filmstrip: GalleryHorizontal,
   sideBySide: Columns2,
   speakerTop: LayoutDashboard,
-  pip: PictureInPicture2,
 };
 
 export function HumanChatPanelCallFullViewLayoutMenu({

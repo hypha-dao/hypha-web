@@ -51,6 +51,11 @@ import { isTransientMatrixNetworkError } from '../matrix-network-errors';
 import { useMatrixTabLeader } from '../hooks/use-matrix-tab-leader';
 
 import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
+import { isCallEphemeralRoomMessageEvent } from '../hooks/call-reactions';
+import {
+  parseSignalTeamNoticeFromWireContent,
+  shouldIncludeSignalTeamNoticeInChatTimeline,
+} from '../../signal-team-events';
 
 const CALL_CAPTURE_NOTICE_TYPE = 'io.hypha.call_capture_notice.v1';
 /** Sentinel refresh token so matrix-js-sdk v40 invokes Hypha token rotation. */
@@ -83,6 +88,22 @@ function isCallCaptureNoticeEvent(event: MatrixSdk.MatrixEvent): boolean {
     [CALL_CAPTURE_NOTICE_TYPE]?: boolean;
   };
   return content[CALL_CAPTURE_NOTICE_TYPE] === true;
+}
+
+function isHiddenHumanChatRoomMessage(event: MatrixSdk.MatrixEvent): boolean {
+  if (event.getType() !== MatrixSdk.EventType.RoomMessage) return false;
+  if (isCallCaptureNoticeEvent(event)) return true;
+  if (isCallEphemeralRoomMessageEvent(event)) return true;
+  const content = event.getContent() as Record<string, unknown>;
+  const body = typeof content.body === 'string' ? content.body : '';
+  const signalTeamNotice = parseSignalTeamNoticeFromWireContent(content, body);
+  if (
+    signalTeamNotice &&
+    !shouldIncludeSignalTeamNoticeInChatTimeline(signalTeamNotice)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 export interface SendAttachmentInput {
@@ -1713,7 +1734,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             .getLiveTimeline()
             .getEvents()
             .filter((event) => event.getType() === EventType.RoomMessage)
-            .filter((event) => !isCallCaptureNoticeEvent(event))
+            .filter((event) => !isHiddenHumanChatRoomMessage(event))
             .filter((event) => !isScreenshareTakeoverEvent(event))
             .filter((event) => !isRedactedRoomMessageEvent(event))
             .filter((event) => event.getId() && event.getSender())
@@ -1992,7 +2013,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const room = client.getRoom(roomId);
 
         if (type === EventType.RoomMessage) {
-          if (isCallCaptureNoticeEvent(event)) {
+          if (isHiddenHumanChatRoomMessage(event)) {
             return;
           }
           if (isScreenshareTakeoverEvent(event)) {
@@ -2071,6 +2092,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           if (!targetEv || targetEv.getType() !== EventType.RoomMessage) {
             return;
           }
+          if (isHiddenHumanChatRoomMessage(targetEv)) {
+            return;
+          }
           const pinnedIds = getPinnedMessageIds(roomId);
           const eventId = targetEv.getId();
           const targetSender = targetEv.getSender();
@@ -2097,6 +2121,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             if (!targetId) return;
             const targetEv = room.findEventById(targetId);
             if (!targetEv || targetEv.getType() !== EventType.RoomMessage) {
+              return;
+            }
+            if (isHiddenHumanChatRoomMessage(targetEv)) {
               return;
             }
             const pinnedIds = getPinnedMessageIds(roomId);

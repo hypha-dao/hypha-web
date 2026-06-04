@@ -629,7 +629,7 @@ export function getHumanChatPanelCallStageModel(
     missingRemoteUserIds.length > 0;
   /** Solo in room: show local tile whenever we have a local user-media feed — video, camera-off, or audio-only (avatar + waves). */
   const showLocalInMainGrid = !hasRemotesOrShare && localUserMedia.length > 0;
-  const showLocalPip = hasRemotesOrShare;
+  const showLocalPip = false;
   return {
     kind: 'main',
     isVideoCall,
@@ -802,14 +802,20 @@ function HumanChatPanelCallStageMain({
   const showLocalInMainGrid =
     rawShowLocalInMainGrid || (!hasRemotesOrShare && localUserMedia.length > 0);
   const showLocalPip = rawShowLocalPip && hasRemotesOrShare;
-  /** Tiles visible in the main participant grid (excludes local when shown as corner PiP only). */
+  /** Tiles visible in the main participant grid (local always included — corner PiP disabled). */
   const layoutParticipantTiles = useMemo(() => {
     const tiles: RemoteTileItem[] = [...remoteUserTiles];
-    if (showLocalInMainGrid && localUserMedia[0]) {
-      tiles.push({ kind: 'feed', feed: localUserMedia[0] });
+    const localFeed = localUserMedia[0];
+    if (localFeed) {
+      const hasLocal = tiles.some(
+        (item) => item.kind === 'feed' && item.feed.isLocal(),
+      );
+      if (!hasLocal) {
+        tiles.push({ kind: 'feed', feed: localFeed });
+      }
     }
     return tiles;
-  }, [localUserMedia, remoteUserTiles, showLocalInMainGrid]);
+  }, [localUserMedia, remoteUserTiles]);
   const activeShareLayoutKey = shareFeedLayoutKey(rawShareFeeds);
   const shareLayoutResetKey = [
     activeShareLayoutKey,
@@ -958,14 +964,8 @@ function HumanChatPanelCallStageMain({
     useFullViewSingleMainTile &&
     (isDocumentPipOpen || (!isFull && userGridTileCount <= 1));
 
-  /** Corner PiP when local is excluded from the main participant grid (multi-party calls). */
-  const showFloatingLocalPip =
-    isVideoCall &&
-    localUserMedia.length > 0 &&
-    hasLocalWebcam &&
-    showLocalPip &&
-    !useShareWithParticipantsLayout &&
-    !showLocalInMainGrid;
+  /** Corner self-view PiP disabled — local tile stays in the main grid. */
+  const showFloatingLocalPip = false;
 
   const speakerFeedForTopMode = (() => {
     if (remoteUserMedia.length > 0) {
@@ -1620,75 +1620,6 @@ function HumanChatPanelCallStageMain({
                     </div>
                   );
                 })()}
-              {isFull && fullViewLayoutMode === 'pip' && (
-                <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-                  <div className="absolute inset-0 flex min-h-0 min-w-0">
-                    {renderSharePane(300)}
-                  </div>
-                  <div
-                    className={cn(
-                      'pointer-events-none absolute end-4 bottom-4 z-10 flex flex-col',
-                      useShareParticipantGridBand
-                        ? 'max-h-[min(50dvh,22rem)] w-[min(44%,18rem)] min-w-[8rem]'
-                        : 'w-[min(38%,12rem)] min-w-[6rem] gap-2',
-                    )}
-                    role="group"
-                    aria-label={t('callLayoutPip')}
-                  >
-                    {useShareParticipantGridBand ? (
-                      <CallParticipantGalleryGrid
-                        tiles={shareParticipantTiles}
-                        isFull={isFull}
-                        maxCols={2}
-                        galleryLayout={
-                          useShareParticipantDuo
-                            ? shareDuoGalleryLayout
-                            : undefined
-                        }
-                        galleryPage={galleryPage}
-                        onGalleryPageChange={setGalleryPage}
-                        showPagination={useShareParticipantGallery}
-                        keyPrefix={3000}
-                        cellClassName="pointer-events-auto min-h-0 w-full min-w-0"
-                        className="pointer-events-auto min-h-0 flex-1 overflow-hidden rounded-md border border-border/40 bg-black/80 shadow-lg backdrop-blur-sm"
-                        renderTile={renderRemoteUserTile}
-                        pageLabel={(current, total) =>
-                          t('callGalleryPage', { current, total })
-                        }
-                        previousPageLabel={t('callGalleryPreviousPage')}
-                        nextPageLabel={t('callGalleryNextPage')}
-                      />
-                    ) : useShareParticipantSpeakerStrip ? (
-                      <CallSpeakerPrimaryStrip
-                        tiles={shareParticipantTiles}
-                        activeSpeakerIndex={shareActiveSpeakerIndex}
-                        speakerPrimaryRatio={0.7}
-                        stripMaxVisible={Math.min(
-                          5,
-                          shareParticipantTiles.length - 1,
-                        )}
-                        cellClassName="pointer-events-auto min-h-0 w-full min-w-0"
-                        className="pointer-events-auto min-h-0 flex-1 overflow-hidden rounded-md border border-border/40 bg-black/80 shadow-lg backdrop-blur-sm"
-                        renderTile={renderRemoteUserTile}
-                        overflowLabel={(count) => `+${count}`}
-                      />
-                    ) : (
-                      shareParticipantTiles.map((item, i) => (
-                        <div
-                          key={
-                            item.kind === 'feed'
-                              ? feedKey(item.feed, 3000 + i)
-                              : `ph-pip-${item.userId}-${i}`
-                          }
-                          className="pointer-events-auto"
-                        >
-                          {renderRemoteUserTile(item, 3000 + i)}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
             </>
           )}
         </div>

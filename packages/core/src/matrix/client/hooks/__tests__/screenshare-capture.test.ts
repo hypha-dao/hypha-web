@@ -50,9 +50,7 @@ describe('buildDisplayMediaConstraints', () => {
       buildDisplayMediaConstraints(MATRIX_SCREENSHARE_CAPTURE_OPTS, 'window'),
     ).toEqual({
       video: true,
-      audio: {
-        suppressLocalAudioPlayback: false,
-      },
+      audio: true,
       preferCurrentTab: false,
       selfBrowserSurface: 'exclude',
       monitorTypeSurfaces: 'exclude',
@@ -65,9 +63,7 @@ describe('buildDisplayMediaConstraints', () => {
       buildDisplayMediaConstraints(MATRIX_SCREENSHARE_CAPTURE_OPTS, 'monitor'),
     ).toEqual({
       video: true,
-      audio: {
-        suppressLocalAudioPlayback: false,
-      },
+      audio: true,
       preferCurrentTab: false,
       selfBrowserSurface: 'exclude',
       monitorTypeSurfaces: 'include',
@@ -118,6 +114,26 @@ describe('withEnhancedScreenshareCapture', () => {
       video: true,
       audio: false,
     });
+  });
+
+  it('falls back to patching getDisplayMedia when the media handler is missing', async () => {
+    const getDisplayMedia = vi.fn(async () => ({} as MediaStream));
+    vi.stubGlobal('navigator', {
+      mediaDevices: { getDisplayMedia },
+    });
+
+    await withEnhancedScreenshareCapture(
+      null,
+      async () => {
+        await navigator.mediaDevices.getDisplayMedia();
+      },
+      'monitor',
+    );
+
+    expect(getDisplayMedia).toHaveBeenCalledWith(
+      buildDisplayMediaConstraints(MATRIX_SCREENSHARE_CAPTURE_OPTS, 'monitor'),
+    );
+    vi.unstubAllGlobals();
   });
 });
 

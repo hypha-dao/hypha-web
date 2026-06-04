@@ -707,6 +707,7 @@ function toUIMessage(
   roomIdForAvatars?: string | null,
   clientForAvatars?: MatrixClient | null,
   formatSignalTeamNotice?: SignalTeamNoticeFormatter,
+  systemSenderLabel?: string,
 ): UIMessage {
   const resolveAvatarForUser = (userId: string | undefined) => {
     if (!userId) return undefined;
@@ -806,6 +807,20 @@ function toUIMessage(
 
   const memberAvatar =
     !isCurrentUser && msg.sender ? resolveAvatarForUser(msg.sender) : undefined;
+
+  if (msg.signalTeamNotice) {
+    const noticeText =
+      formatSignalTeamNotice?.(msg.signalTeamNotice) ??
+      toUserFriendlySignalSystemBody(msg.content);
+    return {
+      id: msg.id,
+      role: 'member',
+      isSynthetic: true,
+      parts: [{ type: 'text', text: noticeText }],
+      senderName: systemSenderLabel,
+      timestamp: msg.timestamp,
+    };
+  }
 
   return {
     id: msg.id,
@@ -1968,6 +1983,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           targetRoomId,
           matrixRef.current.client ?? null,
           formatSignalTeamNoticeRef.current,
+          systemSenderLabelRef.current,
         ),
       ),
     );
@@ -2291,6 +2307,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
   const formatSignalTeamNoticeRef = useRef(formatSignalTeamNotice);
   formatSignalTeamNoticeRef.current = formatSignalTeamNotice;
+  const systemSenderLabel = t('systemSender');
+  const systemSenderLabelRef = useRef(systemSenderLabel);
+  systemSenderLabelRef.current = systemSenderLabel;
 
   useEffect(() => {
     if (!roomId || !client) return;
@@ -2567,6 +2586,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 targetRoomId,
                 matrixRef.current.client ?? null,
                 formatSignalTeamNoticeRef.current,
+                systemSenderLabelRef.current,
               ),
             ),
           );
@@ -2756,6 +2776,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 targetRoomId,
                 matrixRef.current.client ?? null,
                 formatSignalTeamNoticeRef.current,
+                systemSenderLabelRef.current,
               ),
             ),
           );
@@ -2820,6 +2841,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               roomId,
               matrixRef.current.client ?? null,
               formatSignalTeamNoticeRef.current,
+              systemSenderLabelRef.current,
             );
             const idx = next.findIndex((m) => m.id === ui.id);
             if (idx === -1) {

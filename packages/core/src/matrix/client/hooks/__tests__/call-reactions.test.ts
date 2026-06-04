@@ -6,6 +6,9 @@ import {
   CALL_RAISE_HAND_FIELD,
   CALL_RAISE_HAND_NOTICE_TYPE,
   CALL_SESSION_ANCHOR_TYPE,
+  isCallEphemeralRoomMessageEvent,
+  isCallRaiseHandNoticeEvent,
+  isCallSessionAnchorEvent,
   parseCallRaiseHandNotice,
   parseCallReactionAnnotation,
 } from '../call-reactions';
@@ -90,6 +93,21 @@ describe('call-reactions (WCUX-REACT)', () => {
         call_session_id: 'session-1',
       },
     });
+    expect(isCallSessionAnchorEvent(anchor)).toBe(true);
+    expect(isCallRaiseHandNoticeEvent(anchor)).toBe(false);
+    expect(isCallEphemeralRoomMessageEvent(anchor)).toBe(true);
     expect(parseCallRaiseHandNotice(anchor)).toBeNull();
+  });
+
+  it('marks raise-hand notices as ephemeral room messages', () => {
+    const raiseHand = mockEvent({
+      type: EventType.RoomMessage,
+      content: {
+        [CALL_RAISE_HAND_NOTICE_TYPE]: true,
+        [CALL_RAISE_HAND_FIELD]: true,
+      },
+    });
+    expect(isCallRaiseHandNoticeEvent(raiseHand)).toBe(true);
+    expect(isCallEphemeralRoomMessageEvent(raiseHand)).toBe(true);
   });
 });

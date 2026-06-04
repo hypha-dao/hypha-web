@@ -32,6 +32,17 @@ export function isCallSessionAnchorEvent(event: MatrixEvent): boolean {
   return content[CALL_SESSION_ANCHOR_TYPE] === true;
 }
 
+export function isCallRaiseHandNoticeEvent(event: MatrixEvent): boolean {
+  if (event.getType() !== EventType.RoomMessage) return false;
+  const content = event.getContent() as RaiseHandContent;
+  return content[CALL_RAISE_HAND_NOTICE_TYPE] === true;
+}
+
+/** Ephemeral in-call notices that must never appear in the human chat timeline. */
+export function isCallEphemeralRoomMessageEvent(event: MatrixEvent): boolean {
+  return isCallSessionAnchorEvent(event) || isCallRaiseHandNoticeEvent(event);
+}
+
 export function readCallSessionAnchorId(event: MatrixEvent): string | null {
   if (!isCallSessionAnchorEvent(event)) return null;
   const content = event.getContent() as AnchorContent;

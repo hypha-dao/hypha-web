@@ -251,6 +251,8 @@ export function HumanChatPanelInCallControls({
         'inline-flex shrink-0 items-center justify-center rounded-full border border-emerald-500/55 bg-emerald-600/90 text-white shadow-sm ring-2 ring-emerald-500/25 transition-colors hover:bg-emerald-500/90',
         bannerCircleSize,
       );
+  /** Production share affordance — green even before share starts (opens 3-option menu). */
+  const shareIdleBtn = shareActiveBtn;
   const camOffBtn = isFull
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : isCompact
@@ -289,12 +291,10 @@ export function HumanChatPanelInCallControls({
   const useSideAudioSettings =
     showAdvancedCallControls &&
     !isCompact &&
-    (isFull || inBannerLayout === 'balanced' || inBannerLayout === 'centered');
+    !isFull &&
+    (inBannerLayout === 'balanced' || inBannerLayout === 'centered');
   const leaveOnly = controlsMode === 'leave_only';
-  /** Floating dock / full-view footer — spread primary controls across the bar. */
-  const useDockSpreadToolbar = isFull && !isPipDensity && !leaveOnly;
-  const useWideToolbar =
-    useDockSpreadToolbar || useMobileCenteredToolbar || useSideAudioSettings;
+  const useWideToolbar = useMobileCenteredToolbar || useSideAudioSettings;
   const toolbarButtonGap = isPipDensity
     ? 'gap-1'
     : isCenteredInBanner
@@ -773,8 +773,8 @@ export function HumanChatPanelInCallControls({
       >
         <div
           className={cn(
-            useDockSpreadToolbar
-              ? 'flex w-full items-center gap-2'
+            isFull
+              ? 'flex w-full items-center justify-center'
               : useMobileCenteredToolbar
               ? 'flex w-full items-center justify-center gap-2.5'
               : isPipDensity
@@ -784,8 +784,7 @@ export function HumanChatPanelInCallControls({
               : 'flex w-auto items-center',
           )}
         >
-          {!useDockSpreadToolbar &&
-          !useMobileCenteredToolbar &&
+          {!useMobileCenteredToolbar &&
           useSideAudioSettings &&
           !isPipDensity ? (
             <div />
@@ -794,12 +793,8 @@ export function HumanChatPanelInCallControls({
             className={cn(
               'flex items-center',
               toolbarButtonGap,
-              useDockSpreadToolbar
-                ? 'min-w-0 flex-1 justify-evenly'
-                : !isPipDensity &&
-                    (useMobileCenteredToolbar || useSideAudioSettings
-                      ? 'justify-center'
-                      : 'justify-start'),
+              (isFull || useMobileCenteredToolbar || useSideAudioSettings) &&
+                'justify-center',
             )}
           >
             {!leaveOnly ? (
@@ -872,23 +867,12 @@ export function HumanChatPanelInCallControls({
                     onStartScreenshare={onStartScreenshare}
                     onStopScreenshare={onStopScreenshare}
                     triggerClassName={cn(
-                      isFull
-                        ? isScreensharing
-                          ? shareActiveBtn
-                          : baseBtn
-                        : isScreensharing
-                        ? shareActiveBtn
-                        : neutralBtn,
-                      (isFull || isScreensharing) &&
-                        'inline-flex items-center justify-center',
+                      isScreensharing ? shareActiveBtn : shareIdleBtn,
+                      'inline-flex items-center justify-center',
                       'disabled:cursor-not-allowed',
                       !isFull && controlsDisabled && 'opacity-50',
                     )}
-                    activeTriggerClassName={
-                      isFull || isScreensharing
-                        ? 'inline-flex items-center justify-center'
-                        : undefined
-                    }
+                    activeTriggerClassName="inline-flex items-center justify-center"
                     iconClassName={icon}
                     chevronClassName={cn(
                       isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5',
@@ -901,20 +885,6 @@ export function HumanChatPanelInCallControls({
                   />
                 ) : null}
               </>
-            ) : null}
-            {showCallReactions ? (
-              <HumanChatPanelCallReactPopover
-                disabled={controlsDisabled}
-                localHandRaised={localHandRaised}
-                onSendReaction={(emoji) => {
-                  void onSendReaction?.(emoji);
-                }}
-                onToggleRaiseHand={() => {
-                  void onToggleRaiseHand?.();
-                }}
-                variant={variant}
-                density={density}
-              />
             ) : null}
             <button
               type="button"
@@ -930,6 +900,20 @@ export function HumanChatPanelInCallControls({
             >
               <CallHangUpIcon className={leaveIcon} />
             </button>
+            {showCallReactions ? (
+              <HumanChatPanelCallReactPopover
+                disabled={controlsDisabled}
+                localHandRaised={localHandRaised}
+                onSendReaction={(emoji) => {
+                  void onSendReaction?.(emoji);
+                }}
+                onToggleRaiseHand={() => {
+                  void onToggleRaiseHand?.();
+                }}
+                variant={variant}
+                density={density}
+              />
+            ) : null}
             {!leaveOnly &&
             showAdvancedCallControls &&
             !useSideAudioSettings &&
@@ -950,7 +934,7 @@ export function HumanChatPanelInCallControls({
             <div
               className={cn(
                 'flex shrink-0 items-center gap-2',
-                !useDockSpreadToolbar && 'justify-self-end',
+                useSideAudioSettings && 'justify-self-end',
               )}
             >
               {renderCaptureMenu}

@@ -1,12 +1,7 @@
 'use client';
 
-import { useCallback, useRef, useState, type ReactElement } from 'react';
+import { useCallback, type ReactElement } from 'react';
 import type { CallScreenshareSurfaceMode } from '@hypha-platform/core/client';
-import { CallScreenshareTabAudioPromptDialog } from './call-screenshare-tab-audio-prompt-dialog';
-import {
-  markScreenshareTabAudioPromptSeen,
-  shouldShowScreenshareTabAudioPrompt,
-} from './call-screenshare-tab-audio-prompt';
 
 type SetScreensharingEnabled = (
   enabled: boolean,
@@ -20,6 +15,10 @@ type UseScreenshareTabAudioPromptOptions = {
   toggleScreensharing: () => void;
 };
 
+/**
+ * Opens the browser `getDisplayMedia` picker immediately for every share mode.
+ * Audio defaults (`systemAudio: 'include'`) are applied in {@link withEnhancedScreenshareCapture}.
+ */
 export function useScreenshareTabAudioPrompt({
   isScreensharing,
   remoteScreenshareActive = false,
@@ -28,27 +27,11 @@ export function useScreenshareTabAudioPrompt({
 }: UseScreenshareTabAudioPromptOptions): {
   onStartScreenshare: (mode: CallScreenshareSurfaceMode) => void;
   onStopScreenshare: () => void;
-  screenshareTabAudioPromptDialog: ReactElement;
+  screenshareTabAudioPromptDialog: ReactElement | null;
 } {
-  const [open, setOpen] = useState(false);
-  const pendingSurfaceModeRef = useRef<CallScreenshareSurfaceMode>('tab');
-
-  const proceedToShare = useCallback(() => {
-    markScreenshareTabAudioPromptSeen();
-    setOpen(false);
-    void setScreensharingEnabled(true, {
-      surfaceMode: pendingSurfaceModeRef.current,
-    });
-  }, [setScreensharingEnabled]);
-
   const onStartScreenshare = useCallback(
     (mode: CallScreenshareSurfaceMode) => {
       if (isScreensharing || remoteScreenshareActive) return;
-      pendingSurfaceModeRef.current = mode;
-      if (shouldShowScreenshareTabAudioPrompt()) {
-        setOpen(true);
-        return;
-      }
       void setScreensharingEnabled(true, { surfaceMode: mode });
     },
     [isScreensharing, remoteScreenshareActive, setScreensharingEnabled],
@@ -61,12 +44,6 @@ export function useScreenshareTabAudioPrompt({
   return {
     onStartScreenshare,
     onStopScreenshare,
-    screenshareTabAudioPromptDialog: (
-      <CallScreenshareTabAudioPromptDialog
-        open={open}
-        onOpenChange={setOpen}
-        onContinue={proceedToShare}
-      />
-    ),
+    screenshareTabAudioPromptDialog: null,
   };
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { SmilePlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -31,8 +32,14 @@ export function HumanChatPanelCallReactPopover({
   density = 'default',
 }: HumanChatPanelCallReactPopoverProps) {
   const t = useTranslations('HumanChatPanel');
+  const [open, setOpen] = useState(false);
   const isFull = variant === 'fullView';
   const isPip = density === 'pip';
+
+  const handleSendReaction = (emoji: string) => {
+    void onSendReaction(emoji);
+    setOpen(false);
+  };
 
   const triggerClassName = cn(
     'inline-flex shrink-0 items-center justify-center rounded-full border shadow-sm transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
@@ -47,7 +54,7 @@ export function HumanChatPanelCallReactPopover({
   );
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -86,7 +93,7 @@ export function HumanChatPanelCallReactPopover({
                 className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/70 bg-background text-xl hover:bg-muted disabled:opacity-50"
                 aria-label={t('callReactSendEmoji', { emoji })}
                 onClick={() => {
-                  void onSendReaction(emoji);
+                  handleSendReaction(emoji);
                 }}
               >
                 {emoji}
@@ -98,7 +105,7 @@ export function HumanChatPanelCallReactPopover({
           ariaLabel={t('callReactMoreEmoji')}
           className="max-h-[min(320px,50vh)]"
           onEmojiSelect={(emoji) => {
-            void onSendReaction(emoji);
+            handleSendReaction(emoji);
           }}
         />
         <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-2">
