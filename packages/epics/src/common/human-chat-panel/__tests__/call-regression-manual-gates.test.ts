@@ -524,12 +524,36 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(controls).toMatch(/capturePaused\s*\?[\s\S]*<Pause/);
   });
 
-  it('react trigger uses space accent tokens instead of amber', () => {
+  it('screenshare dock toolbar exposes only mic camera and share', () => {
+    const controls = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    const dock = readCommonSource('global-call-dock-overlay.tsx');
+    expect(controls).toContain('screenshare_essential');
+    expect(controls).toContain('screenshareEssentialToolbar');
+    expect(dock).toContain(
+      "isScreensharing ? 'screenshare_essential' : 'full'",
+    );
+  });
+
+  it('capture and audio menu triggers use circular toolbar footprint', () => {
+    const controls = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(controls).toContain('toolbarMenuTriggerBtn');
+    expect(controls).toContain('h-8 w-8 px-0');
+    expect(controls).toContain('h-10 w-10 min-h-10 min-w-10');
+  });
+
+  it('react trigger accents only the heart icon when active', () => {
     const popover = readCommonSource(
       'human-chat-panel/human-chat-panel-call-react-popover.tsx',
     );
-    expect(popover).toContain('callAccentToolbarTriggerIdle');
-    expect(popover).toContain('callAccentToolbarTriggerActive');
+    expect(popover).toContain('reactTriggerActive');
+    expect(popover).toContain('heartAccentClass');
+    expect(popover).toContain('border-border/60 bg-background');
+    expect(popover).not.toContain('callAccentToolbarTriggerActive');
+    expect(popover).not.toContain('callAccentToolbarTriggerIdle');
     expect(popover).not.toContain('amber-500');
     expect(popover).not.toContain('border-primary/40');
   });

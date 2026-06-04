@@ -88,7 +88,7 @@ type HumanChatPanelInCallControlsProps = {
   /** Tighter controls for Document Picture-in-Picture floating window. */
   density?: 'default' | 'compact' | 'pip';
   /** Leave-only mode for in-chat convenience controls. */
-  controlsMode?: 'full' | 'leave_only';
+  controlsMode?: 'full' | 'leave_only' | 'screenshare_essential';
   canSendCallReactions?: boolean;
   localHandRaised?: boolean;
   onSendReaction?: (
@@ -285,20 +285,23 @@ export function HumanChatPanelInCallControls({
       'shrink-0 opacity-70 transition-transform duration-200',
       menuOpen && 'rotate-180',
     );
-  const audioSettingsBtn = isFull
+  /** Icon + chevron menus — same circular footprint as the reactions trigger. */
+  const toolbarMenuTriggerBtn = isFull
     ? cn(
-        fullViewControlSize,
-        'inline-flex items-center justify-center gap-1 rounded-full border border-zinc-600/80 bg-zinc-900/90 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
-        isPipDensity ? 'px-1.5' : 'px-2.5',
+        'inline-flex shrink-0 items-center justify-center gap-0.5 rounded-full border border-zinc-600/80 bg-zinc-900/90 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
+        isPipDensity
+          ? pipToolbarBtn
+          : 'box-border h-10 w-10 min-h-10 min-w-10 max-h-10 max-w-10 px-0',
       )
     : isCompact
     ? isPipDensity
-      ? 'inline-flex h-5 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-1 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
-      : 'inline-flex h-7 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-1.5 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
+      ? 'inline-flex h-5 w-5 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background/95 px-0 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
+      : 'inline-flex h-7 w-7 shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background px-0 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
     : cn(
-        'inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-border/60 bg-background px-2 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
-        bannerBarHeight,
+        'inline-flex shrink-0 items-center justify-center gap-0.5 rounded-full border border-border/60 bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
+        isTouchToolbar ? 'h-11 w-11 px-0' : 'h-8 w-8 px-0',
       );
+  const audioSettingsBtn = toolbarMenuTriggerBtn;
   const menuCheckIcon = isFull
     ? 'h-4 w-4 text-white'
     : 'h-4 w-4 text-foreground';
@@ -308,9 +311,14 @@ export function HumanChatPanelInCallControls({
     !isFull &&
     (inBannerLayout === 'balanced' || inBannerLayout === 'centered');
   /** Dock / fullscreen in-banner: mic+cam | share+hang up+react | record+sound. */
-  const useSymmetricalDockToolbar = useSideAudioSettings;
+  const screenshareEssentialToolbar = controlsMode === 'screenshare_essential';
+  const useSymmetricalDockToolbar =
+    useSideAudioSettings && !screenshareEssentialToolbar;
   const leaveOnly = controlsMode === 'leave_only';
-  const useWideToolbar = useMobileCenteredToolbar || useSymmetricalDockToolbar;
+  const useWideToolbar =
+    useMobileCenteredToolbar ||
+    useSymmetricalDockToolbar ||
+    screenshareEssentialToolbar;
   const dockToolbarGroupGap = isCenteredInBanner ? 'gap-2.5' : 'gap-2';
   const toolbarButtonGap = isPipDensity
     ? 'gap-1'
@@ -860,7 +868,72 @@ export function HumanChatPanelInCallControls({
               : 'flex w-auto items-center',
           )}
         >
-          {useSymmetricalDockToolbar ? (
+          {screenshareEssentialToolbar ? (
+            <div className="flex w-full items-center justify-center gap-2 px-2">
+              <button
+                type="button"
+                onClick={onToggleMic}
+                disabled={controlsDisabled}
+                className={cn(
+                  isMicrophoneMuted ? micMutedBtn : neutralBtn,
+                  'inline-flex items-center justify-center',
+                  'disabled:cursor-not-allowed',
+                  controlsDisabled && 'opacity-50',
+                )}
+                title={t('callControlsMicrophone')}
+                aria-label={
+                  isMicrophoneMuted
+                    ? t('callControlsMicrophoneMutedAria')
+                    : t('callControlsMicrophoneUnmutedAria')
+                }
+              >
+                {isMicrophoneMuted ? (
+                  <MicOff className={icon} strokeWidth={lucideStroke} />
+                ) : (
+                  <Mic className={icon} strokeWidth={lucideStroke} />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={onToggleCamera}
+                disabled={controlsDisabled}
+                className={cn(
+                  isLocalVideoMuted ? camOffBtn : neutralBtn,
+                  'inline-flex items-center justify-center',
+                  'disabled:cursor-not-allowed',
+                  controlsDisabled && 'opacity-50',
+                )}
+                title={t('callControlsCamera')}
+                aria-label={
+                  isLocalVideoMuted
+                    ? t('callControlsCameraOffAria')
+                    : t('callControlsCameraOnAria')
+                }
+              >
+                {isLocalVideoMuted ? (
+                  <VideoOff className={icon} strokeWidth={lucideStroke} />
+                ) : (
+                  <Video className={icon} strokeWidth={lucideStroke} />
+                )}
+              </button>
+              <HumanChatPanelCallScreenshareMenu
+                isScreensharing={isScreensharing}
+                disabled={controlsDisabled}
+                remoteScreenshareActive={remoteScreenshareActive}
+                onStartScreenshare={onStartScreenshare}
+                onStopScreenshare={onStopScreenshare}
+                triggerClassName={cn(
+                  isScreensharing ? shareActiveBtn : shareIdleBtn,
+                  'inline-flex items-center justify-center',
+                  'disabled:cursor-not-allowed',
+                  controlsDisabled && 'opacity-50',
+                )}
+                activeTriggerClassName="inline-flex items-center justify-center"
+                iconClassName={icon}
+                iconStrokeWidth={lucideStroke}
+              />
+            </div>
+          ) : useSymmetricalDockToolbar ? (
             <>
               <div
                 className={cn(

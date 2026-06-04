@@ -19,11 +19,7 @@ import {
   type CallFeedbackReactionId,
   type CallFloatingReactionStyle,
 } from './call-zoom-reaction-catalog';
-import {
-  callAccentToolbarMenuRowActive,
-  callAccentToolbarTriggerActive,
-  callAccentToolbarTriggerIdle,
-} from './call-accent-alert-styles';
+import { callAccentToolbarMenuRowActive } from './call-accent-alert-styles';
 
 type HumanChatPanelCallReactPopoverProps = {
   disabled?: boolean;
@@ -61,7 +57,7 @@ function ReactionEmojiButton({
       disabled={disabled}
       aria-label={label}
       className={cn(
-        'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800/90 text-lg leading-none transition-colors hover:bg-zinc-700 disabled:opacity-50',
+        'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-800/90 text-base leading-none transition-colors hover:bg-zinc-700 disabled:opacity-50',
         className,
       )}
       onClick={onPick}
@@ -85,10 +81,10 @@ function MoreEmojiButton({
       type="button"
       disabled={disabled}
       aria-label={label}
-      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800/90 text-zinc-300 transition-colors hover:bg-zinc-700 disabled:opacity-50"
+      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-800/90 text-zinc-300 transition-colors hover:bg-zinc-700 disabled:opacity-50"
       onClick={onClick}
     >
-      <Ellipsis className="h-4 w-4" aria-hidden />
+      <Ellipsis className="h-3.5 w-3.5" aria-hidden />
     </button>
   );
 }
@@ -105,7 +101,7 @@ function FeedbackReactionButton({
   onPick: () => void;
 }) {
   const base =
-    'inline-flex h-9 min-w-0 flex-1 items-center justify-center rounded-md border text-base transition-colors disabled:opacity-50';
+    'inline-flex h-7 min-w-0 flex-1 items-center justify-center rounded border text-sm transition-colors disabled:opacity-50';
   const styles: Record<CallFeedbackReactionId, string> = {
     yes: 'border-emerald-600/40 bg-emerald-950/80 text-emerald-400 hover:bg-emerald-900/80',
     no: 'border-rose-600/40 bg-rose-950/80 text-rose-400 hover:bg-rose-900/80',
@@ -149,17 +145,17 @@ function CallReactMenuSection({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-1.5">
+    <section className="space-y-1">
       <div
         className={cn(
-          'flex min-h-0 items-center gap-1 border-b pb-1',
+          'flex min-h-0 items-center gap-0.5 border-b pb-0.5',
           dividerClass,
         )}
       >
         <h3 className={sectionTitleClass}>{title}</h3>
         {titleHint}
       </div>
-      <div className="min-h-0 pt-0.5">{children}</div>
+      <div className="min-h-0">{children}</div>
     </section>
   );
 }
@@ -208,32 +204,36 @@ export function HumanChatPanelCallReactPopover({
     : 'border-border bg-popover text-popover-foreground';
 
   const sectionTitle = isFull
-    ? 'text-sm font-semibold leading-tight text-zinc-100'
-    : 'text-xs font-semibold leading-tight text-foreground';
+    ? 'text-[11px] font-semibold leading-none text-zinc-100'
+    : 'text-[11px] font-semibold leading-none text-foreground';
 
   const sectionDivider = isFull ? 'border-zinc-700/60' : 'border-border/70';
 
-  const emojiRowClass = 'flex min-h-0 flex-wrap items-center gap-1.5';
+  const emojiRowClass = 'flex min-h-0 flex-wrap items-center gap-1';
 
   const actionRowBtn = cn(
-    'flex w-full items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-sm font-medium leading-tight transition-colors disabled:opacity-50',
+    'flex min-w-0 flex-1 items-center justify-center gap-1 rounded px-2 py-1.5 text-xs font-medium leading-tight transition-colors disabled:opacity-50',
     isFull
       ? 'bg-zinc-800/90 text-zinc-100 hover:bg-zinc-700/90'
       : 'bg-muted/80 text-foreground hover:bg-muted',
   );
 
+  const reactTriggerActive = open || localHandRaised;
+
   const triggerClassName = cn(
     'inline-flex shrink-0 items-center justify-center gap-0.5 rounded-full border shadow-sm transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
     isFull
-      ? 'h-10 min-h-10 border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white hover:bg-zinc-800/95'
+      ? 'box-border h-10 w-10 min-h-10 min-w-10 max-h-10 max-w-10 border-zinc-600/80 bg-zinc-900/90 px-0 text-white hover:bg-zinc-800/95'
       : isPip
-      ? 'h-5 w-5 border-border/60 bg-background/95 px-0 text-foreground'
+      ? 'h-5 w-5 border-border/60 bg-background/95 px-0 text-foreground hover:bg-muted'
       : cn(
-          callAccentToolbarTriggerIdle,
-          isTouchToolbar ? 'h-11 w-11' : 'h-8 w-8',
+          'border-border/60 bg-background text-foreground hover:bg-muted',
+          isTouchToolbar ? 'h-11 w-11 px-0' : 'h-8 w-8 px-0',
         ),
-    (open || localHandRaised) && !isFull && callAccentToolbarTriggerActive,
   );
+
+  const heartAccentClass =
+    'text-[color:var(--color-accent-9,var(--space-accent,#4a65d8))] fill-[color:color-mix(in_srgb,var(--color-accent-9,var(--space-accent,#4a65d8))_22%,transparent)]';
 
   return (
     <Popover
@@ -256,7 +256,8 @@ export function HumanChatPanelCallReactPopover({
           <Heart
             className={cn(
               isFull ? 'h-4 w-4' : isPip ? 'h-2.5 w-2.5' : 'h-4 w-4',
-              'fill-none',
+              reactTriggerActive ? heartAccentClass : 'fill-none',
+              isFull && !reactTriggerActive && 'text-white',
             )}
             strokeWidth={strokeWidth}
             aria-hidden
@@ -278,16 +279,16 @@ export function HumanChatPanelCallReactPopover({
         ref={menuContentRef}
         align="end"
         side="top"
-        sideOffset={8}
+        sideOffset={6}
         collisionPadding={16}
         data-testid="call-react-popover-content"
         className={cn(
-          'z-[140] w-[min(100vw-2rem,340px)] overflow-hidden rounded-xl p-2 shadow-xl',
+          'z-[140] w-[min(100vw-2rem,272px)] overflow-hidden rounded-xl p-1.5 shadow-xl',
           popoverSurface,
         )}
       >
         {emojiPicker ? (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <button
               type="button"
               className={cn(
@@ -310,7 +311,7 @@ export function HumanChatPanelCallReactPopover({
             />
           </div>
         ) : (
-          <div className="flex min-h-0 flex-col gap-2">
+          <div className="flex min-h-0 flex-col gap-1">
             <CallReactMenuSection
               title={t('callReactSendWithEffect')}
               dividerClass={sectionDivider}
@@ -320,7 +321,7 @@ export function HumanChatPanelCallReactPopover({
                   className="inline-flex text-zinc-500"
                   title={t('callReactSendWithEffectHint')}
                 >
-                  <CircleHelp className="h-3.5 w-3.5" aria-hidden />
+                  <CircleHelp className="h-3 w-3" aria-hidden />
                   <span className="sr-only">
                     {t('callReactSendWithEffectHint')}
                   </span>
@@ -373,9 +374,9 @@ export function HumanChatPanelCallReactPopover({
               </div>
             </CallReactMenuSection>
 
-            <section className="min-h-0 space-y-1">
+            <section className="min-h-0">
               <h3 className="sr-only">{t('callReactFeedbackSection')}</h3>
-              <div className="flex min-h-0 gap-1.5">
+              <div className="flex min-h-0 gap-1">
                 {CALL_FEEDBACK_REACTIONS.map((item) => (
                   <FeedbackReactionButton
                     key={item.id}
@@ -389,10 +390,7 @@ export function HumanChatPanelCallReactPopover({
             </section>
 
             <div
-              className={cn(
-                'flex min-h-0 flex-col gap-1.5 border-t pt-1.5',
-                sectionDivider,
-              )}
+              className={cn('flex min-h-0 gap-1 border-t pt-1', sectionDivider)}
             >
               <button
                 type="button"
@@ -407,10 +405,12 @@ export function HumanChatPanelCallReactPopover({
                   setOpen(false);
                 }}
               >
-                <span className="text-base leading-none" aria-hidden>
+                <span className="text-sm leading-none" aria-hidden>
                   ✋
                 </span>
-                {localHandRaised ? t('callLowerHand') : t('callRaiseHand')}
+                <span className="truncate">
+                  {localHandRaised ? t('callLowerHand') : t('callRaiseHand')}
+                </span>
               </button>
               <button
                 type="button"
@@ -419,10 +419,10 @@ export function HumanChatPanelCallReactPopover({
                 className={actionRowBtn}
                 onClick={() => handleSend(CALL_BE_RIGHT_BACK_EMOJI, 'default')}
               >
-                <span className="text-base leading-none" aria-hidden>
+                <span className="text-sm leading-none" aria-hidden>
                   {CALL_BE_RIGHT_BACK_EMOJI}
                 </span>
-                {t('callReactBeRightBack')}
+                <span className="truncate">{t('callReactBeRightBack')}</span>
               </button>
             </div>
           </div>

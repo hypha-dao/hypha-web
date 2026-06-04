@@ -1579,6 +1579,9 @@ export function GlobalCallDockOverlay({
                 density={dockControlsDensity}
                 variant={dockControlsVariant}
                 inBannerLayout={dockControlsLayout}
+                controlsMode={
+                  isScreensharing ? 'screenshare_essential' : 'full'
+                }
               />
             </>
           )}
