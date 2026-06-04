@@ -27,8 +27,16 @@ export function resolveMatrixScreenshareCaptureOpts(): IScreensharingOpts {
   return MATRIX_SCREENSHARE_CAPTURE_OPTS;
 }
 
-/** Hypha share picker — maps to Chrome Tab / Window / Entire screen tabs. */
-export type CallScreenshareSurfaceMode = 'tab' | 'window' | 'monitor';
+/**
+ * Display-media constraint profile.
+ * `browser` — native picker (Chrome tab / window / entire screen); default for the share button.
+ * `tab` | `window` | `monitor` — programmatic hints when a specific surface is required.
+ */
+export type CallScreenshareSurfaceMode =
+  | 'browser'
+  | 'tab'
+  | 'window'
+  | 'monitor';
 
 type DisplayMediaConstraints = {
   video: boolean | MediaTrackConstraints;
@@ -39,7 +47,7 @@ type DisplayMediaConstraints = {
   monitorTypeSurfaces?: 'include' | 'exclude';
 };
 
-const DEFAULT_SCREENSHARE_SURFACE_MODE: CallScreenshareSurfaceMode = 'tab';
+const DEFAULT_SCREENSHARE_SURFACE_MODE: CallScreenshareSurfaceMode = 'browser';
 
 type ScreenshareConstraintOpts = Pick<IScreensharingOpts, 'audio'>;
 
@@ -82,6 +90,8 @@ export function buildDisplayMediaConstraints(
   };
 
   switch (surfaceMode) {
+    case 'browser':
+      return base;
     case 'window':
       return {
         ...base,
@@ -97,13 +107,26 @@ export function buildDisplayMediaConstraints(
         monitorTypeSurfaces: 'include',
       };
     case 'tab':
-    default:
       return {
         ...base,
         preferCurrentTab: true,
         selfBrowserSurface: 'include',
       };
+    default:
+      return base;
   }
+}
+
+/** True when the captured surface is a browser tab (for tab-audio missing hints). */
+export function screenshareStreamIsBrowserTab(
+  stream: MediaStream | null | undefined,
+): boolean {
+  const track = stream?.getVideoTracks()[0];
+  if (!track) return false;
+  const settings = track.getSettings?.() as
+    | { displaySurface?: string }
+    | undefined;
+  return settings?.displaySurface === 'browser';
 }
 
 type MediaHandlerWithConstraints = {

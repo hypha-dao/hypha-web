@@ -76,6 +76,7 @@ import {
   isIOSTouchDevice,
   resolveMatrixScreenshareCaptureOpts,
   screenshareStreamHasTabAudio,
+  screenshareStreamIsBrowserTab,
   withEnhancedScreenshareCapture,
   type CallScreenshareSurfaceMode,
 } from './screenshare-capture';
@@ -528,7 +529,8 @@ export function useSpaceGroupCall(
   isScreensharingRef.current = isScreensharing;
   const screenshareMutationRef = useRef<Promise<void>>(Promise.resolve());
   const screenshareStopHandlersCleanupRef = useRef<(() => void) | null>(null);
-  const screenshareSurfaceModeRef = useRef<CallScreenshareSurfaceMode>('tab');
+  const screenshareSurfaceModeRef =
+    useRef<CallScreenshareSurfaceMode>('browser');
   const setScreensharingEnabledRef = useRef<
     (enabled: boolean) => Promise<void>
   >(async () => undefined);
@@ -1563,7 +1565,7 @@ export function useSpaceGroupCall(
           setScreenshareErrorCode('WEBRTC_FAILED');
         } else {
           setScreenshareTabAudioMissing(
-            screenshareSurfaceModeRef.current === 'tab' &&
+            screenshareStreamIsBrowserTab(gc.localScreenshareFeed?.stream) &&
               !screenshareStreamHasTabAudio(gc.localScreenshareFeed?.stream),
           );
           await applyPresenterVoiceBoostForScreenshare(gc);
@@ -3576,7 +3578,7 @@ export function useSpaceGroupCall(
     }
 
     const run = async () => {
-      screenshareSurfaceModeRef.current = 'tab';
+      screenshareSurfaceModeRef.current = 'browser';
       setScreenshareTabAudioMissing(false);
       await reconcileLocalScreenshareStop(gc);
       await enableLocalScreenshareDirect(gc);

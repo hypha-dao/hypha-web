@@ -142,9 +142,8 @@ describe('WCUX-SHARE-AUDIO tab share + muted badge (row 3)', () => {
     );
     expect(source).toContain('suppressLocalAudioPlayback: false');
     expect(source).toContain('systemAudio:');
-    expect(source).toContain("case 'tab':");
-    expect(source).toContain("case 'window':");
-    expect(source).toContain("case 'monitor':");
+    expect(source).toContain("case 'browser':");
+    expect(source).toContain('systemAudio:');
   });
 
   it('mounts remote share audio sinks and suppresses false muted badges', async () => {
@@ -405,21 +404,35 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).not.toContain("? 'inBanner' : 'fullView'");
   });
 
-  it('uses green share trigger with tab, window, and screen modes', () => {
+  it('uses a single green share button that opens the native picker', () => {
     const controls = readCommonSource(
       'human-chat-panel/human-chat-panel-in-call-controls.tsx',
     );
     const menu = readCommonSource(
       'human-chat-panel/human-chat-panel-call-screenshare-menu.tsx',
     );
+    const prompt = readCommonSource(
+      'human-chat-panel/use-screenshare-tab-audio-prompt.tsx',
+    );
+    const capture = readFileSync(
+      resolve(
+        commonDir,
+        '../../../core/src/matrix/client/hooks/screenshare-capture.ts',
+      ),
+      'utf8',
+    );
     expect(controls).toContain('shareIdleBtn');
     expect(controls).toContain(
       'isScreensharing ? shareActiveBtn : shareIdleBtn',
     );
-    expect(menu).toContain('SHARE_MODES');
-    expect(menu).toContain('callShareModeMenuLabel');
-    expect(menu).toContain('ChevronDown');
-    expect(menu).not.toContain('DEFAULT_SHARE_SURFACE_MODE');
+    expect(menu).not.toContain('SHARE_MODES');
+    expect(menu).not.toContain('ChevronDown');
+    expect(menu).not.toContain('callShareModeMenuLabel');
+    expect(prompt).toContain("surfaceMode: 'browser'");
+    expect(capture).toContain("case 'browser':");
+    expect(capture).toContain(
+      "DEFAULT_SCREENSHARE_SURFACE_MODE: CallScreenshareSurfaceMode = 'browser'",
+    );
   });
 
   it('hides Document PiP while share UX is stabilized', () => {

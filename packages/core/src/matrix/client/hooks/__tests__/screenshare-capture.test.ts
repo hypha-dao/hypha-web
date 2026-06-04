@@ -7,6 +7,7 @@ import {
   isIOSTouchDevice,
   resolveMatrixScreenshareCaptureOpts,
   screenshareStreamHasTabAudio,
+  screenshareStreamIsBrowserTab,
   withEnhancedScreenshareCapture,
 } from '../screenshare-capture';
 
@@ -33,8 +34,20 @@ describe('screenshare capture opts', () => {
 });
 
 describe('buildDisplayMediaConstraints', () => {
-  it('requests tab capture hints by default', () => {
+  it('opens the native picker with tab audio hints by default', () => {
     expect(buildDisplayMediaConstraints()).toEqual({
+      video: true,
+      audio: {
+        suppressLocalAudioPlayback: false,
+      },
+      systemAudio: 'include',
+    });
+  });
+
+  it('biases the picker to the current tab when mode is tab', () => {
+    expect(
+      buildDisplayMediaConstraints(MATRIX_SCREENSHARE_CAPTURE_OPTS, 'tab'),
+    ).toEqual({
       video: true,
       audio: {
         suppressLocalAudioPlayback: false,
@@ -134,6 +147,19 @@ describe('withEnhancedScreenshareCapture', () => {
       buildDisplayMediaConstraints(MATRIX_SCREENSHARE_CAPTURE_OPTS, 'monitor'),
     );
     vi.unstubAllGlobals();
+  });
+});
+
+describe('screenshareStreamIsBrowserTab', () => {
+  it('returns true when the video track displaySurface is browser', () => {
+    const stream = {
+      getVideoTracks: () => [
+        {
+          getSettings: () => ({ displaySurface: 'browser' }),
+        },
+      ],
+    } as MediaStream;
+    expect(screenshareStreamIsBrowserTab(stream)).toBe(true);
   });
 });
 

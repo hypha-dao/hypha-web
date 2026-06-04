@@ -48,7 +48,6 @@ import {
   callAccentAlertActionButtonClassName,
   callAccentAlertText,
 } from './call-accent-alert-styles';
-import type { CallScreenshareSurfaceMode } from '@hypha-platform/core/client';
 
 type HumanChatPanelInCallControlsProps = {
   callState: SpaceGroupCallState;
@@ -58,7 +57,7 @@ type HumanChatPanelInCallControlsProps = {
   remoteScreenshareActive?: boolean;
   onToggleMic: () => void;
   onToggleCamera: () => void;
-  onStartScreenshare: (mode: CallScreenshareSurfaceMode) => void;
+  onStartScreenshare: () => void;
   onStopScreenshare: () => void;
   voiceProcessingPreset: 'standard' | 'voice_isolation' | 'music';
   onVoiceProcessingPresetChange: (
@@ -886,14 +885,6 @@ export function HumanChatPanelInCallControls({
                     activeTriggerClassName="inline-flex items-center justify-center"
                     iconClassName={icon}
                     iconStrokeWidth={lucideStroke}
-                    chevronClassName={cn(
-                      isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5',
-                    )}
-                    menuClassName={
-                      isFull
-                        ? 'border-zinc-700 bg-zinc-900 text-white'
-                        : undefined
-                    }
                   />
                 ) : null}
                 {showCallReactions ? (

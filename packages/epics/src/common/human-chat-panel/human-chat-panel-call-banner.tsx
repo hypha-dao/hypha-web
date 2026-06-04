@@ -10,7 +10,6 @@ import {
   type SpaceGroupCallErrorCode,
   type SpaceGroupCallRecordingStatus,
   type SpaceGroupCallState,
-  type CallScreenshareSurfaceMode,
 } from '@hypha-platform/core/client';
 import { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
 import type { CallFloatingReactionStyle } from './call-zoom-reaction-catalog';
@@ -65,7 +64,7 @@ type HumanChatPanelCallBannerProps = {
   onLeave: () => void;
   onToggleMic: () => void;
   onToggleCamera: () => void;
-  onStartScreenshare: (mode: CallScreenshareSurfaceMode) => void;
+  onStartScreenshare: () => void;
   onStopScreenshare: () => void;
   voiceProcessingPreset: 'standard' | 'voice_isolation' | 'music';
   onVoiceProcessingPresetChange: (
