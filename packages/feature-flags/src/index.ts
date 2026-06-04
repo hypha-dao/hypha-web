@@ -105,6 +105,15 @@ export const flagDefinitionsForDiscovery = {
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
+  enableNetworkMap: {
+    key: 'enable-network-map',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_NETWORK_MAP) ?? false,
+    description:
+      'Space location picker and network globe map. Opt in: NEXT_PUBLIC_ENABLE_NETWORK_MAP=true',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
 };
 
 export async function getShowLanguageSelect(): Promise<boolean> {
@@ -192,6 +201,19 @@ export async function getEnableEcosystemAutomation(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-ecosystem-automation',
     process.env.NEXT_PUBLIC_ENABLE_ECOSYSTEM_AUTOMATION,
+    false,
+  );
+}
+
+/** Client-safe build-time gate for network map + space location UI. */
+export function getEnableNetworkMap(): boolean {
+  return process.env.NEXT_PUBLIC_ENABLE_NETWORK_MAP === 'true';
+}
+
+export async function getEnableNetworkMapAsync(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-network-map',
+    process.env.NEXT_PUBLIC_ENABLE_NETWORK_MAP,
     false,
   );
 }
