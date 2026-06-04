@@ -2824,7 +2824,7 @@ const FeedContent = ({
       ) : null}
       {showVideoSurface && !isPip ? (
         <div className={videoLabelLayout.barClass}>
-          <span className="min-w-0 flex-1 truncate leading-[inherit]">
+          <span className="min-w-0 max-w-[min(12rem,42vw)] truncate leading-[inherit]">
             {showSkeleton ? (
               <Skeleton loading width={88} height={14} />
             ) : (

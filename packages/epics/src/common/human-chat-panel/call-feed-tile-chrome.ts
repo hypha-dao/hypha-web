@@ -115,22 +115,26 @@ export type CallFeedVideoParticipantLabelLayout = {
   muteTextSrOnly: boolean;
 };
 
-/** Bottom label bar on live video tiles — name truncates horizontally; mute never clips. */
+/**
+ * Zoom-style floating label on live video tiles (bottom-start chip, not full-width bar).
+ */
 export function resolveCallFeedVideoParticipantLabelLayout(input: {
   isFullView: boolean;
   compactTileLayout: boolean;
 }): CallFeedVideoParticipantLabelLayout {
-  /** PiP / document PiP only — small floating chip. Dock and full view use full-width row. */
   const compactChrome = input.compactTileLayout;
 
   return {
     barClass: cn(
-      'absolute z-10 flex w-full items-center gap-1 bg-black/75 shadow-sm backdrop-blur-[2px]',
+      'absolute z-10 flex w-max max-w-[calc(100%-0.75rem)] items-center gap-1 bg-black/75 shadow-sm backdrop-blur-[2px]',
       CALL_FEED_VIDEO_LABEL_MIN_HEIGHT_CLASS,
       compactChrome
-        ? 'inset-x-1 bottom-1 max-w-[calc(100%-0.5rem)] rounded-md px-1.5 py-0.5 text-[10px] leading-4'
-        : 'inset-x-0 bottom-0 rounded-none px-2 py-1 text-xs leading-normal',
+        ? 'start-1 bottom-1 rounded-md px-1.5 py-0.5 text-[10px] leading-4'
+        : input.isFullView
+        ? 'start-2 bottom-2 rounded-md px-2 py-0.5 text-xs leading-snug'
+        : 'start-1.5 bottom-1.5 rounded-md px-1.5 py-0.5 text-[10px] leading-4 sm:text-xs sm:leading-snug',
     ),
-    muteTextSrOnly: compactChrome,
+    /** Icon-only mute on dock/PiP chips; full-view shows the word when space allows. */
+    muteTextSrOnly: !input.isFullView,
   };
 }

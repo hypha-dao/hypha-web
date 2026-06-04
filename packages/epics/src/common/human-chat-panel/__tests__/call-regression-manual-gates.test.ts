@@ -204,11 +204,13 @@ describe('WCUX-QUALITY debug overlay and capture (row 9)', () => {
     expect(source).not.toContain('items-start justify-start');
   });
 
-  it('enforces minimum video participant label bar height (WCUX-LAYOUT-5)', () => {
+  it('enforces minimum video participant label chip height (WCUX-LAYOUT-5)', () => {
     const source = readCommonSource(
       'human-chat-panel/call-feed-tile-chrome.ts',
     );
     expect(source).toContain('min-h-[1.75rem]');
+    expect(source).toContain('w-max');
+    expect(source).not.toMatch(/inset-x-0 bottom-0/);
   });
 
   it('dock resize corners use a single grip path (no double L)', () => {
