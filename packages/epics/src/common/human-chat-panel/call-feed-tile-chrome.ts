@@ -3,6 +3,17 @@ import { cn } from '@hypha-platform/ui-utils';
 /** WCUX-LAYOUT-5 — participant label bar minimum height on video tiles. */
 export const CALL_FEED_VIDEO_LABEL_MIN_HEIGHT_CLASS = 'min-h-[1.75rem]';
 
+/**
+ * Video tile name chips sit on dark translucent glass — always light glyphs so
+ * light-mode `text-foreground` on ancestors cannot turn labels black-on-dark.
+ */
+export const CALL_FEED_VIDEO_LABEL_CHIP_TONE_CLASS =
+  'bg-black/85 text-zinc-50 shadow-sm backdrop-blur-[2px]';
+
+/** Name line inside the chip — beats light-theme `text-foreground` inheritance. */
+export const CALL_FEED_VIDEO_LABEL_NAME_CLASS =
+  'font-medium leading-snug !text-zinc-50';
+
 export type CallFeedAudioScrimLayout = {
   panelDockTile: boolean;
   scrimClass: string;
@@ -23,9 +34,11 @@ export function resolveCallFeedAudioScrimLayout(input: {
   isPip: boolean;
   isFullView: boolean;
   isDocumentPipOpen: boolean;
+  panelMobileLayout?: boolean;
 }): CallFeedAudioScrimLayout {
   const panelDockTile =
     !input.isFullView && !input.isPip && !input.isDocumentPipOpen;
+  const panelMobileTile = panelDockTile && Boolean(input.panelMobileLayout);
 
   const scrimClass = cn(
     'relative z-[2] flex h-full min-h-0 w-full flex-col items-center justify-center overflow-hidden text-center',
@@ -46,6 +59,8 @@ export function resolveCallFeedAudioScrimLayout(input: {
       ? 'h-8 w-8'
       : input.isFullView
       ? 'h-20 w-20 sm:h-24 sm:w-24'
+      : panelMobileTile
+      ? 'h-8 w-8'
       : panelDockTile
       ? 'h-10 w-10'
       : 'h-14 w-14',
@@ -56,6 +71,8 @@ export function resolveCallFeedAudioScrimLayout(input: {
       ? 'h-4 w-4'
       : input.isFullView
       ? 'h-10 w-10 sm:h-12 sm:w-12'
+      : panelMobileTile
+      ? 'h-4 w-4'
       : panelDockTile
       ? 'h-5 w-5'
       : 'h-7 w-7',
@@ -67,6 +84,8 @@ export function resolveCallFeedAudioScrimLayout(input: {
       ? 'line-clamp-2 text-[10px] leading-tight'
       : input.isFullView
       ? 'line-clamp-2 text-base sm:text-lg'
+      : panelMobileTile
+      ? 'line-clamp-1 text-[10px] leading-tight'
       : panelDockTile
       ? 'line-clamp-1 text-xs leading-snug'
       : 'line-clamp-2 text-sm',
@@ -121,18 +140,26 @@ export type CallFeedVideoParticipantLabelLayout = {
 export function resolveCallFeedVideoParticipantLabelLayout(input: {
   isFullView: boolean;
   compactTileLayout: boolean;
+  panelMobileLayout?: boolean;
 }): CallFeedVideoParticipantLabelLayout {
   const compactChrome = input.compactTileLayout;
+  const panelMobileChrome =
+    Boolean(input.panelMobileLayout) && !input.isFullView && !compactChrome;
 
   return {
     barClass: cn(
-      'absolute z-10 flex w-max max-w-[calc(100%-0.75rem)] items-center gap-1 bg-black/75 shadow-sm backdrop-blur-[2px]',
-      CALL_FEED_VIDEO_LABEL_MIN_HEIGHT_CLASS,
-      compactChrome
-        ? 'start-1 bottom-1 rounded-md px-1.5 py-0.5 text-[10px] leading-4'
-        : input.isFullView
-        ? 'start-2 bottom-2 rounded-md px-2 py-0.5 text-xs leading-snug'
-        : 'start-1.5 bottom-1.5 rounded-md px-1.5 py-0.5 text-[10px] leading-4 sm:text-xs sm:leading-snug',
+      'absolute z-10 flex w-max max-w-[calc(100%-0.5rem)] items-center gap-0.5',
+      CALL_FEED_VIDEO_LABEL_CHIP_TONE_CLASS,
+      panelMobileChrome
+        ? 'start-1 bottom-1 min-h-0 rounded px-1 py-px text-[9px] font-medium leading-3'
+        : cn(
+            CALL_FEED_VIDEO_LABEL_MIN_HEIGHT_CLASS,
+            compactChrome
+              ? 'start-1 bottom-1 rounded-md px-1.5 py-0.5 text-[10px] leading-4'
+              : input.isFullView
+              ? 'start-2 bottom-2 rounded-md px-2 py-0.5 text-xs leading-snug'
+              : 'start-1.5 bottom-1.5 rounded-md px-1.5 py-0.5 text-[10px] leading-4 sm:text-xs sm:leading-snug',
+          ),
     ),
     /** Icon-only mute on dock/PiP chips; full-view shows the word when space allows. */
     muteTextSrOnly: !input.isFullView,

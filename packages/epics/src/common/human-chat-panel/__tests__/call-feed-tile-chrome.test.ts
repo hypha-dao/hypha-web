@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CALL_FEED_VIDEO_LABEL_CHIP_TONE_CLASS,
   CALL_FEED_VIDEO_LABEL_MIN_HEIGHT_CLASS,
   resolveCallFeedAudioScrimLayout,
   resolveCallFeedVideoParticipantLabelLayout,
@@ -50,6 +51,7 @@ describe('resolveCallFeedVideoParticipantLabelLayout', () => {
       isFullView: false,
       compactTileLayout: false,
     });
+    expect(dock.barClass).toContain(CALL_FEED_VIDEO_LABEL_CHIP_TONE_CLASS);
     expect(dock.barClass).toContain(CALL_FEED_VIDEO_LABEL_MIN_HEIGHT_CLASS);
     expect(dock.barClass).toContain('w-max');
     expect(dock.barClass).toContain('start-1.5');
@@ -77,5 +79,19 @@ describe('resolveCallFeedVideoParticipantLabelLayout', () => {
     expect(full.barClass).toContain('rounded-md');
     expect(full.barClass).not.toContain('inset-x-0');
     expect(full.muteTextSrOnly).toBe(false);
+  });
+
+  it('uses a compact bottom chip on mobile panel video tiles', () => {
+    const mobile = resolveCallFeedVideoParticipantLabelLayout({
+      isFullView: false,
+      compactTileLayout: false,
+      panelMobileLayout: true,
+    });
+    expect(mobile.barClass).toContain('text-[9px]');
+    expect(mobile.barClass).toContain('bottom-1');
+    expect(mobile.barClass).toContain('text-zinc-50');
+    expect(mobile.barClass).not.toContain(
+      CALL_FEED_VIDEO_LABEL_MIN_HEIGHT_CLASS,
+    );
   });
 });

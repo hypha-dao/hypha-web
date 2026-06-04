@@ -6,6 +6,7 @@ import {
   CALL_RAISE_HAND_FIELD,
   CALL_RAISE_HAND_NOTICE_TYPE,
   CALL_SESSION_ANCHOR_TYPE,
+  findCallReactionAnchorEventId,
   isCallEphemeralRoomMessageEvent,
   isCallRaiseHandNoticeEvent,
   isCallSessionAnchorEvent,
@@ -17,6 +18,7 @@ function mockEvent(input: {
   type: string;
   sender?: string;
   ts?: number;
+  eventId?: string;
   content: Record<string, unknown>;
   redacted?: boolean;
 }): MatrixEvent {
@@ -24,6 +26,7 @@ function mockEvent(input: {
     getType: () => input.type,
     getSender: () => input.sender ?? '@alice:example.org',
     getTs: () => input.ts ?? 1000,
+    getId: () => input.eventId ?? '$event',
     isRedacted: () => input.redacted ?? false,
     getContent: () => input.content,
     getWireContent: () => input.content,
@@ -97,6 +100,37 @@ describe('call-reactions (WCUX-REACT)', () => {
     expect(isCallRaiseHandNoticeEvent(anchor)).toBe(false);
     expect(isCallEphemeralRoomMessageEvent(anchor)).toBe(true);
     expect(parseCallRaiseHandNotice(anchor)).toBeNull();
+  });
+
+  it('finds the first anchor event id for a group call', () => {
+    const first = mockEvent({
+      type: EventType.RoomMessage,
+      eventId: '$anchor-first',
+      content: {
+        [CALL_SESSION_ANCHOR_TYPE]: true,
+        group_call_id: 'gc-shared',
+      },
+    });
+    const second = mockEvent({
+      type: EventType.RoomMessage,
+      eventId: '$anchor-second',
+      content: {
+        [CALL_SESSION_ANCHOR_TYPE]: true,
+        group_call_id: 'gc-shared',
+      },
+    });
+    const otherCall = mockEvent({
+      type: EventType.RoomMessage,
+      eventId: '$anchor-other',
+      content: {
+        [CALL_SESSION_ANCHOR_TYPE]: true,
+        group_call_id: 'gc-other',
+      },
+    });
+    expect(
+      findCallReactionAnchorEventId([first, otherCall, second], 'gc-shared'),
+    ).toBe('$anchor-first');
+    expect(findCallReactionAnchorEventId([otherCall], 'gc-shared')).toBeNull();
   });
 
   it('marks raise-hand notices as ephemeral room messages', () => {

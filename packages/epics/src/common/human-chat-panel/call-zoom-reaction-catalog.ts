@@ -7,7 +7,6 @@ export const CALL_SEND_WITH_EFFECT_EMOJIS = [
   '👍',
   '😂',
   '🎉',
-  '❤️',
 ] as const;
 
 /** Standard reaction row (same set as legacy quick reactions). */
@@ -17,7 +16,6 @@ export const CALL_STANDARD_REACTION_EMOJIS = [
   '❤️',
   '😂',
   '😮',
-  '🎉',
 ] as const;
 
 export type CallFeedbackReactionId =

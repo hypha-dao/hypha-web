@@ -39,7 +39,7 @@ import {
 } from './call-thumbnail-receiver-downscale';
 import { installMatrixCameraCaptureConstraints } from './call-video-capture-constraints';
 import { logGroupCallSimulcastCapabilityAudit } from './call-video-simulcast-audit';
-import { publishCallSessionAnchor } from './call-reactions-client';
+import { ensureCallReactionAnchor } from './call-reactions-client';
 import {
   createCallRecording,
   startBrowserCallTranscription,
@@ -2091,23 +2091,6 @@ export function useSpaceGroupCall(
       }
       const newSessionId = newCallSessionId();
       setCallSessionId(newSessionId);
-      if (client && roomId?.trim()) {
-        void (async () => {
-          try {
-            const anchorEventId = await publishCallSessionAnchor({
-              client,
-              roomId: roomId.trim(),
-              callSessionId: newSessionId,
-            });
-            if (joinEpoch !== joinEpochRef.current) return;
-            if (anchorEventId) {
-              setCallSessionAnchorEventId(anchorEventId);
-            }
-          } catch {
-            /* reactions unavailable if anchor publish fails */
-          }
-        })();
-      }
       lastJoinKindRef.current = kind;
       lastThreadRootEventIdRef.current = threadRootEventId;
       lastRoomIdForTelemetryRef.current = roomId;
@@ -2334,6 +2317,24 @@ export function useSpaceGroupCall(
       attachGroupCallListeners(gc);
       updateParticipantCount();
       setCallState('connecting');
+
+      if (client && roomId?.trim() && gc.groupCallId) {
+        void (async () => {
+          try {
+            const anchorEventId = await ensureCallReactionAnchor({
+              client,
+              roomId: roomId.trim(),
+              groupCallId: gc.groupCallId,
+            });
+            if (joinEpoch !== joinEpochRef.current) return;
+            if (anchorEventId) {
+              setCallSessionAnchorEventId(anchorEventId);
+            }
+          } catch {
+            /* reactions unavailable if anchor publish fails */
+          }
+        })();
+      }
 
       /**
        * Probe TURN before `enter()`: missing homeserver TURN config often makes

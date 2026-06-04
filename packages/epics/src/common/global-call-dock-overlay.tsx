@@ -523,6 +523,7 @@ export function GlobalCallDockOverlay({
     raisedHands,
     getFloatingReactions,
     isHandRaised,
+    getRaiseHandOrder,
     floatingReactionsVersion,
   } = useGlobalCallDock();
 
@@ -559,7 +560,6 @@ export function GlobalCallDockOverlay({
     dockMode: 'thumbnail' | 'expanded' | 'fullscreen';
   } | null>(null);
   const pipDismissedDuringShareRef = React.useRef(false);
-  const splitContainerRef = React.useRef<HTMLDivElement | null>(null);
   const dockRef = React.useRef<HTMLDivElement | null>(null);
   const lastNonFullscreenModeRef = React.useRef<'thumbnail' | 'expanded'>(
     dockMode === 'fullscreen' ? 'thumbnail' : dockMode,
@@ -1304,7 +1304,6 @@ export function GlobalCallDockOverlay({
         )}
 
         <div
-          ref={splitContainerRef}
           className={cn(
             'min-h-0 min-w-0 overflow-hidden flex min-h-0 flex-1 flex-col',
             lockStagePointerEvents
@@ -1344,10 +1343,10 @@ export function GlobalCallDockOverlay({
               fullViewLayoutMode={layoutMode}
               fullViewPaneSplit={paneSplit}
               onFullViewPaneSplitChange={onPaneSplitChange}
-              fullViewSplitContainerRef={splitContainerRef}
               isDocumentPipOpen={isDocumentPipOpen}
               getFloatingReactions={getFloatingReactions}
               isHandRaised={isHandRaised}
+              getRaiseHandOrder={getRaiseHandOrder}
               floatingReactionsVersion={floatingReactionsVersion}
             />
           )}

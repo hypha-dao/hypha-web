@@ -50,11 +50,14 @@ export {
   isCallEphemeralRoomMessageEvent,
   isCallRaiseHandNoticeEvent,
   isCallSessionAnchorEvent,
+  findCallReactionAnchorEventId,
   parseCallRaiseHandNotice,
   parseCallReactionAnnotation,
+  readCallSessionAnchorGroupCallId,
   type CallRaisedHandEntry,
 } from './call-reactions';
 export {
+  ensureCallReactionAnchor,
   publishCallSessionAnchor,
   sendCallRaiseHandNotice,
   sendCallReactionAnnotation,

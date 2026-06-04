@@ -45,12 +45,14 @@ function ReactionEmojiButton({
   disabled,
   label,
   onPick,
+  isFull,
   className,
 }: {
   emoji: string;
   disabled: boolean;
   label: string;
   onPick: () => void;
+  isFull: boolean;
   className?: string;
 }) {
   return (
@@ -59,7 +61,10 @@ function ReactionEmojiButton({
       disabled={disabled}
       aria-label={label}
       className={cn(
-        'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-800/90 text-base leading-none transition-colors hover:bg-zinc-700 disabled:opacity-50',
+        'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base leading-none transition-colors disabled:opacity-50',
+        isFull
+          ? 'bg-zinc-800/90 hover:bg-zinc-700'
+          : 'border border-border/80 bg-muted/90 hover:bg-muted',
         className,
       )}
       onClick={onPick}
@@ -73,17 +78,24 @@ function MoreEmojiButton({
   disabled,
   label,
   onClick,
+  isFull,
 }: {
   disabled: boolean;
   label: string;
   onClick: () => void;
+  isFull: boolean;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
       aria-label={label}
-      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-800/90 text-zinc-300 transition-colors hover:bg-zinc-700 disabled:opacity-50"
+      className={cn(
+        'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-50',
+        isFull
+          ? 'bg-zinc-800/90 text-zinc-300 hover:bg-zinc-700'
+          : 'border border-border/80 bg-muted/90 text-muted-foreground hover:bg-muted',
+      )}
       onClick={onClick}
     >
       <Ellipsis className="h-3.5 w-3.5" aria-hidden />
@@ -96,22 +108,33 @@ function FeedbackReactionButton({
   disabled,
   label,
   onPick,
+  isFull,
 }: {
   id: CallFeedbackReactionId;
   disabled: boolean;
   label: string;
   onPick: () => void;
+  isFull: boolean;
 }) {
   const base =
     'inline-flex h-7 min-w-0 flex-1 items-center justify-center rounded border text-sm transition-colors disabled:opacity-50';
-  const styles: Record<CallFeedbackReactionId, string> = {
-    yes: 'border-emerald-600/40 bg-emerald-950/80 text-emerald-400 hover:bg-emerald-900/80',
-    no: 'border-rose-600/40 bg-rose-950/80 text-rose-400 hover:bg-rose-900/80',
-    slower:
-      'border-zinc-600/50 bg-zinc-800/90 text-zinc-200 hover:bg-zinc-700/90',
-    faster: 'border-sky-600/40 bg-sky-950/80 text-sky-300 hover:bg-sky-900/80',
-    away: 'border-zinc-600/50 bg-zinc-800/90 text-zinc-200 hover:bg-zinc-700/90',
-  };
+  const styles: Record<CallFeedbackReactionId, string> = isFull
+    ? {
+        yes: 'border-emerald-600/40 bg-emerald-950/80 text-emerald-400 hover:bg-emerald-900/80',
+        no: 'border-rose-600/40 bg-rose-950/80 text-rose-400 hover:bg-rose-900/80',
+        slower:
+          'border-zinc-600/50 bg-zinc-800/90 text-zinc-200 hover:bg-zinc-700/90',
+        faster:
+          'border-sky-600/40 bg-sky-950/80 text-sky-300 hover:bg-sky-900/80',
+        away: 'border-zinc-600/50 bg-zinc-800/90 text-zinc-200 hover:bg-zinc-700/90',
+      }
+    : {
+        yes: 'border-emerald-600/35 bg-emerald-50 text-emerald-700 hover:bg-emerald-100',
+        no: 'border-rose-600/35 bg-rose-50 text-rose-700 hover:bg-rose-100',
+        slower: 'border-border/80 bg-muted/80 text-foreground hover:bg-muted',
+        faster: 'border-sky-600/35 bg-sky-50 text-sky-700 hover:bg-sky-100',
+        away: 'border-border/80 bg-muted/80 text-foreground hover:bg-muted',
+      };
   const icons: Record<CallFeedbackReactionId, string> = {
     yes: '✓',
     no: '✕',
@@ -147,16 +170,14 @@ function CallReactMenuSection({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-1">
+    <section className="min-h-0">
       <div
-        className={cn(
-          'flex min-h-0 items-center gap-0.5 border-b pb-0.5',
-          dividerClass,
-        )}
+        className={cn('flex min-h-0 items-center gap-0.5', sectionTitleClass)}
       >
-        <h3 className={sectionTitleClass}>{title}</h3>
+        <h3 className="min-w-0 flex-1 truncate">{title}</h3>
         {titleHint}
       </div>
+      <div className={cn('-mx-0 my-1 h-px', dividerClass)} />
       <div className="min-h-0">{children}</div>
     </section>
   );
@@ -206,19 +227,21 @@ export function HumanChatPanelCallReactPopover({
     ? 'border-zinc-700 bg-zinc-950 text-zinc-100'
     : 'border-border bg-popover text-popover-foreground';
 
-  const sectionTitle = isFull
-    ? 'text-[11px] font-semibold leading-none text-zinc-100'
-    : 'text-[11px] font-semibold leading-none text-foreground';
+  /** Match capture/recording menu title spacing (`px-2 py-1.5 text-sm font-semibold`). */
+  const sectionTitle = cn(
+    'px-2 py-1.5 text-sm font-semibold',
+    isFull ? 'text-zinc-100' : 'text-foreground',
+  );
 
-  const sectionDivider = isFull ? 'border-zinc-700/60' : 'border-border/70';
+  const sectionDivider = isFull ? 'bg-zinc-700/60' : 'bg-neutral-6';
 
   const emojiRowClass = 'flex min-h-0 flex-wrap items-center gap-1';
 
   const actionRowBtn = cn(
-    'flex min-w-0 flex-1 items-center justify-center gap-1 rounded px-2 py-1.5 text-xs font-medium leading-tight transition-colors disabled:opacity-50',
+    'flex min-w-0 flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs font-medium leading-tight transition-colors disabled:opacity-50',
     isFull
-      ? 'bg-zinc-800/90 text-zinc-100 hover:bg-zinc-700/90'
-      : 'bg-muted/80 text-foreground hover:bg-muted',
+      ? 'border-zinc-600/50 bg-zinc-800/90 text-zinc-100 hover:bg-zinc-700/90'
+      : 'border-border/80 bg-muted text-foreground hover:bg-neutral-3',
   );
 
   const reactTriggerActive = open || localHandRaised;
@@ -287,7 +310,7 @@ export function HumanChatPanelCallReactPopover({
         collisionPadding={16}
         data-testid="call-react-popover-content"
         className={cn(
-          'z-[140] w-[min(100vw-2rem,272px)] overflow-hidden rounded-xl p-1.5 shadow-xl',
+          'z-[140] w-[min(100vw-2rem,13rem)] min-w-52 overflow-hidden rounded-xl px-2 py-2 shadow-xl',
           popoverSurface,
         )}
       >
@@ -337,12 +360,14 @@ export function HumanChatPanelCallReactPopover({
                   <ReactionEmojiButton
                     key={`effect-${emoji}`}
                     emoji={emoji}
+                    isFull={isFull}
                     disabled={emojiActionsDisabled}
                     label={t('callReactSendEmoji', { emoji })}
                     onPick={() => handleSend(emoji, 'effect')}
                   />
                 ))}
                 <MoreEmojiButton
+                  isFull={isFull}
                   disabled={emojiActionsDisabled}
                   label={t('callReactMore')}
                   onClick={() => setEmojiPicker('effects')}
@@ -360,17 +385,19 @@ export function HumanChatPanelCallReactPopover({
                   <ReactionEmojiButton
                     key={`reaction-${emoji}`}
                     emoji={emoji}
+                    isFull={isFull}
                     disabled={emojiActionsDisabled}
                     label={t('callReactSendEmoji', { emoji })}
                     onPick={() => handleSend(emoji, 'default')}
                     className={
                       isFull
-                        ? 'bg-transparent hover:bg-zinc-800/60'
-                        : 'bg-transparent hover:bg-muted/80'
+                        ? 'border-transparent bg-transparent hover:bg-zinc-800/60'
+                        : 'border-transparent bg-transparent hover:bg-muted'
                     }
                   />
                 ))}
                 <MoreEmojiButton
+                  isFull={isFull}
                   disabled={emojiActionsDisabled}
                   label={t('callReactMore')}
                   onClick={() => setEmojiPicker('reactions')}
@@ -385,6 +412,7 @@ export function HumanChatPanelCallReactPopover({
                   <FeedbackReactionButton
                     key={item.id}
                     id={item.id}
+                    isFull={isFull}
                     disabled={emojiActionsDisabled}
                     label={t(`callReactFeedback_${item.id}`)}
                     onPick={() => handleSend(item.emoji, 'default')}

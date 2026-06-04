@@ -2728,6 +2728,7 @@
     "callLowerHand": "Hand senken",
     "callReactBeRightBack": "Gleich zurück",
     "callRaiseHandBadge": "Hand erhoben",
+    "callRaiseHandBadgeOrder": "Hand erhoben (#{order})",
     "callRaisedHandsTitle": "Erhobene Hände",
     "callParticipantMuted": "Stumm",
     "callParticipantMicOff": "Mikrofon aus",

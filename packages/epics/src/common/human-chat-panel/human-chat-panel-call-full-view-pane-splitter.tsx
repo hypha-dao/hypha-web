@@ -23,10 +23,11 @@ type CallFullViewPaneSplitterProps = {
   'aria-label': string;
 };
 
-const HIT_PX = 10;
+const HIT_PX = 12;
 
 /**
- * Draggable “green line” between screen share and participant panes in full view.
+ * Draggable emerald divider between screen share and participant panes.
+ * Hit target is centered on `ratio`; the visible line shares that center (no double translate).
  */
 export function CallFullViewPaneSplitter({
   orientation,
@@ -39,6 +40,8 @@ export function CallFullViewPaneSplitter({
 }: CallFullViewPaneSplitterProps) {
   const id = useId();
   const dragRef = useRef(false);
+  const clamped = Math.min(0.99, Math.max(0.01, ratio));
+
   const applyFromClient = useCallback(
     (clientX: number, clientY: number) => {
       const el = containerRef.current;
@@ -73,6 +76,8 @@ export function CallFullViewPaneSplitter({
     dragRef.current = false;
   };
 
+  const hitOffset = HIT_PX / 2;
+
   return (
     <div
       role="separator"
@@ -80,6 +85,7 @@ export function CallFullViewPaneSplitter({
       id={id}
       aria-label={ariaLabel}
       aria-orientation={orientation === 'vertical' ? 'vertical' : 'horizontal'}
+      aria-valuenow={Math.round(clamped * 100)}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={end}
@@ -101,39 +107,39 @@ export function CallFullViewPaneSplitter({
         }
       }}
       className={cn(
-        'pointer-events-auto z-20 touch-none select-none',
-        orientation === 'vertical'
-          ? 'absolute top-0 bottom-0 w-0 -translate-x-1/2 cursor-ew-resize'
-          : 'absolute left-0 right-0 h-0 -translate-y-1/2 cursor-ns-resize',
+        'pointer-events-auto absolute z-20 touch-none select-none',
+        orientation === 'vertical' ? 'cursor-ew-resize' : 'cursor-ns-resize',
         'focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
         className,
       )}
       style={
         orientation === 'vertical'
-          ? { left: `${Math.min(0.99, Math.max(0.01, ratio)) * 100}%` }
-          : { top: `${Math.min(0.99, Math.max(0.01, ratio)) * 100}%` }
+          ? {
+              left: `${clamped * 100}%`,
+              top: 0,
+              bottom: 0,
+              width: HIT_PX,
+              marginLeft: -hitOffset,
+            }
+          : {
+              top: `${clamped * 100}%`,
+              left: 0,
+              right: 0,
+              height: HIT_PX,
+              marginTop: -hitOffset,
+            }
       }
     >
       <span
-        className={cn(
-          'absolute flex items-center justify-center',
-          orientation === 'vertical'
-            ? 'inset-y-0 w-[var(--split-hit)] -translate-x-1/2'
-            : 'inset-x-0 h-[var(--split-hit)] -translate-y-1/2',
-        )}
-        style={{ ['--split-hit' as string]: `${HIT_PX}px` }}
         aria-hidden
-      >
-        <span
-          className={cn(
-            'shrink-0 rounded-sm bg-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]',
-            orientation === 'vertical'
-              ? 'h-[min(4rem,45%)] w-1 self-center'
-              : 'h-1 w-[min(3rem,45%)]',
-            lineClassName,
-          )}
-        />
-      </span>
+        className={cn(
+          'pointer-events-none absolute bg-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.45)]',
+          orientation === 'vertical'
+            ? 'bottom-0 left-1/2 top-0 w-0.5 -translate-x-1/2'
+            : 'left-0 right-0 top-1/2 h-0.5 -translate-y-1/2',
+          lineClassName,
+        )}
+      />
     </div>
   );
 }

@@ -209,6 +209,9 @@ describe('WCUX-QUALITY debug overlay and capture (row 9)', () => {
       'human-chat-panel/call-feed-tile-chrome.ts',
     );
     expect(source).toContain('min-h-[1.75rem]');
+    expect(source).toContain('CALL_FEED_VIDEO_LABEL_CHIP_TONE_CLASS');
+    expect(source).toContain('CALL_FEED_VIDEO_LABEL_NAME_CLASS');
+    expect(source).toContain('!text-zinc-50');
     expect(source).toContain('w-max');
     expect(source).not.toMatch(/inset-x-0 bottom-0/);
   });
@@ -364,7 +367,7 @@ describe('WCUX-LAYOUT local self-view (corner PiP)', () => {
 });
 
 describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
-  it('publishes call-session anchor on connect', () => {
+  it('reuses a shared group-call reaction anchor', () => {
     const source = readFileSync(
       resolve(
         __dirname,
@@ -372,7 +375,8 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
       ),
       'utf8',
     );
-    expect(source).toContain('publishCallSessionAnchor');
+    expect(source).toContain('ensureCallReactionAnchor');
+    expect(source).toContain('groupCallId: gc.groupCallId');
     expect(source).toContain('callSessionAnchorEventId');
   });
 
@@ -504,6 +508,9 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     );
     expect(source).toContain('CallFloatingReactionOverlay');
     expect(source).toContain('callRaiseHandBadge');
+    expect(source).toContain('CallRaiseHandBadge');
+    expect(source).toContain('callRaiseHandBadgeOrder');
+    expect(source).toContain('getRaiseHandOrder');
   });
 
   it('raised-hands strip is wired above dock controls', () => {
@@ -593,6 +600,8 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('callReactSendWithEffect');
     expect(source).toContain('callReactReactionsSection');
     expect(source).toContain('CALL_SEND_WITH_EFFECT_EMOJIS');
+    expect(source).toContain('min-w-52');
+    expect(source).toContain('px-2 py-1.5 text-sm font-semibold');
     expect(source).toContain('CALL_FEEDBACK_REACTIONS');
     expect(source).not.toContain('callReactQuickReactions');
     expect(source).not.toContain('callRaiseHandDescription');

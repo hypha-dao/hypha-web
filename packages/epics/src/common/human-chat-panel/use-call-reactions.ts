@@ -220,6 +220,15 @@ export function useCallReactions({
     [raisedHands],
   );
 
+  const getRaiseHandOrder = useCallback(
+    (userId: string | null | undefined) => {
+      if (!userId) return null;
+      const index = raisedHands.findIndex((entry) => entry.userId === userId);
+      return index >= 0 ? index + 1 : null;
+    },
+    [raisedHands],
+  );
+
   return {
     canSendCallReactions,
     raisedHands,
@@ -228,6 +237,7 @@ export function useCallReactions({
     toggleRaiseHand,
     getFloatingReactions,
     isHandRaised,
+    getRaiseHandOrder,
     floatingReactionsVersion,
   };
 }

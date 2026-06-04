@@ -35,6 +35,9 @@ import {
   looksLikeTechnicalMatrixDisplayName,
 } from './matrix-room-member-display';
 import {
+  CALL_FEED_VIDEO_LABEL_CHIP_TONE_CLASS,
+  CALL_FEED_VIDEO_LABEL_CHIP_TONE_CLASS,
+  CALL_FEED_VIDEO_LABEL_NAME_CLASS,
   resolveCallFeedAudioScrimLayout,
   resolveCallFeedVideoParticipantLabelLayout,
 } from './call-feed-tile-chrome';
@@ -91,6 +94,7 @@ import {
 import { registerCallPlaybackElement } from './call-playback-registry';
 import { callAccentAlertOnDarkText } from './call-accent-alert-styles';
 import { CallFloatingReactionOverlay } from './call-floating-reaction-overlay';
+import { CallRaiseHandBadge } from './call-raise-hand-badge';
 import type { CallFloatingReaction } from './use-call-reactions';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
@@ -123,6 +127,7 @@ type HumanChatPanelCallStageBaseProps = {
     userId: string | null | undefined,
   ) => CallFloatingReaction[];
   isHandRaised?: (userId: string | null | undefined) => boolean;
+  getRaiseHandOrder?: (userId: string | null | undefined) => number | null;
   /** Bumps when floating reaction overlays change. */
   floatingReactionsVersion?: number;
 };
@@ -157,7 +162,6 @@ type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
     which: CallFullViewPaneSplit,
     value: number,
   ) => void;
-  fullViewSplitContainerRef?: RefObject<HTMLDivElement | null>;
   /** Document PiP open — remote audio sinks mount on the main page (WCUX-PIP-1). */
   isDocumentPipOpen?: boolean;
   /** Dock viewport tier (WCUX-LAYOUT-0); inferred from layout when omitted. */
@@ -757,19 +761,20 @@ function HumanChatPanelCallStageMain({
     speakerOnTop: 0.28,
   },
   onFullViewPaneSplitChange,
-  fullViewSplitContainerRef,
   isDocumentPipOpen = false,
   viewportTier: viewportTierProp,
   panelMobileLayout: panelMobileLayoutProp,
   getFloatingReactions,
   isHandRaised,
+  getRaiseHandOrder,
   floatingReactionsVersion = 0,
 }: HumanChatPanelCallStageMainProps) {
   const t = useTranslations('HumanChatPanel');
   const labelId = useId();
   const [galleryPage, setGalleryPage] = useState(0);
   const localSplitRef = useRef<HTMLDivElement | null>(null);
-  const splitRef = fullViewSplitContainerRef ?? localSplitRef;
+  /** Pane split math must use the share/participant flex wrapper, not the outer dock shell. */
+  const splitRef = localSplitRef;
   const onSplit = onFullViewPaneSplitChange;
   const handleExpand = useCallback(() => {
     onRequestFullView?.();
@@ -1039,6 +1044,7 @@ function HumanChatPanelCallStageMain({
   const reactionPropsForFeed = (feed: CallFeed) => ({
     floatingReactions: getFloatingReactions?.(feed.userId) ?? [],
     handRaised: isHandRaised?.(feed.userId) ?? false,
+    raiseHandOrder: getRaiseHandOrder?.(feed.userId) ?? null,
   });
 
   const renderUserTile = (feed: CallFeed, keyIdx: number) => (
@@ -1048,6 +1054,7 @@ function HumanChatPanelCallStageMain({
       roomId={roomId}
       currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
       feed={feed}
+      panelMobileLayout={isPhonePanelLayout}
       isFullView={isFull}
       isActiveSpeaker={
         activeSpeakerKey != null && activeSpeakerKey === feedKeyForActive(feed)
@@ -1081,6 +1088,8 @@ function HumanChatPanelCallStageMain({
         resolveMemberLabel={resolveMemberLabel}
         remoteMediaStall={remoteMediaStall}
         handRaised={isHandRaised?.(item.userId) ?? false}
+        raiseHandOrder={getRaiseHandOrder?.(item.userId) ?? null}
+        panelMobileLayout={isPhonePanelLayout}
         t={t}
       />
     );
@@ -1669,6 +1678,12 @@ function HumanChatPanelCallStageMain({
                                     isHandRaised?.(speakerTopPlaceholderId) ??
                                     false
                                   }
+                                  raiseHandOrder={
+                                    getRaiseHandOrder?.(
+                                      speakerTopPlaceholderId,
+                                    ) ?? null
+                                  }
+                                  panelMobileLayout={isPhonePanelLayout}
                                   t={t}
                                 />
                               ) : null}
@@ -1893,6 +1908,10 @@ function HumanChatPanelCallStageMain({
                   resolveMemberLabel={resolveMemberLabel}
                   remoteMediaStall={remoteMediaStall}
                   handRaised={isHandRaised?.(missingRemoteUserIds[0]) ?? false}
+                  raiseHandOrder={
+                    getRaiseHandOrder?.(missingRemoteUserIds[0]) ?? null
+                  }
+                  panelMobileLayout={isPhonePanelLayout}
                   t={t}
                 />
               </div>
@@ -2090,6 +2109,8 @@ function CallParticipantPlaceholderTile({
   resolveMemberLabel,
   remoteMediaStall = false,
   handRaised = false,
+  raiseHandOrder = null,
+  panelMobileLayout = false,
   t,
 }: {
   client: MatrixClient | null;
@@ -2102,7 +2123,9 @@ function CallParticipantPlaceholderTile({
   resolveMemberLabel: (userId: string | undefined) => string;
   remoteMediaStall?: boolean;
   handRaised?: boolean;
-  t: (key: string) => string;
+  raiseHandOrder?: number | null;
+  panelMobileLayout?: boolean;
+  t: (key: string, values?: Record<string, string | number>) => string;
 }) {
   const room: Room | null =
     roomId && client ? client.getRoom(roomId) ?? null : null;
@@ -2122,33 +2145,49 @@ function CallParticipantPlaceholderTile({
   const statusLine = remoteMediaStall
     ? t('callRemoteParticipantMediaStalled')
     : t('callConnecting');
+  const useMobilePlaceholderChrome = panelMobileLayout && !isFullView && !isPip;
 
   return (
     <div
       className={cn(
-        'relative flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-md bg-black p-4 text-center text-zinc-50',
-        isPip && 'gap-1.5 p-2',
+        'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-md bg-black text-zinc-50',
+        useMobilePlaceholderChrome
+          ? 'items-stretch justify-end p-0'
+          : cn(
+              'items-center justify-center gap-3 p-4 text-center',
+              isPip && 'gap-1.5 p-2',
+            ),
       )}
       role="status"
       aria-busy={!remoteMediaStall}
       aria-label={`${label} — ${statusLine}`}
     >
-      {handRaised ? (
-        <span
-          className="absolute end-2 top-2 z-[2] rounded-full bg-black/70 px-1.5 py-0.5 text-sm leading-none"
-          aria-label={t('callRaiseHandBadge')}
-          title={t('callRaiseHandBadge')}
-        >
-          ✋
-        </span>
-      ) : null}
+      <CallRaiseHandBadge
+        handRaised={handRaised}
+        order={raiseHandOrder}
+        positionClass="absolute end-2 top-2 z-[2]"
+        ariaLabel={
+          raiseHandOrder != null
+            ? t('callRaiseHandBadgeOrder', { order: raiseHandOrder })
+            : t('callRaiseHandBadge')
+        }
+        title={
+          raiseHandOrder != null
+            ? t('callRaiseHandBadgeOrder', { order: raiseHandOrder })
+            : t('callRaiseHandBadge')
+        }
+      />
       <div
         className={cn(
           'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-zinc-200 ring-1 ring-white/20',
+          useMobilePlaceholderChrome &&
+            'absolute start-1/2 top-[38%] h-8 w-8 -translate-x-1/2',
           isPip
             ? 'h-8 w-8'
             : isFullView && !isPip
             ? 'h-20 w-20 sm:h-24 sm:w-24'
+            : useMobilePlaceholderChrome
+            ? undefined
             : 'h-14 w-14',
         )}
       >
@@ -2186,21 +2225,34 @@ function CallParticipantPlaceholderTile({
           </div>
         ) : null}
       </div>
+      {useMobilePlaceholderChrome ? (
+        <div
+          className={cn(
+            'absolute start-1 bottom-1 z-10 max-w-[calc(100%-0.5rem)] truncate rounded px-1 py-px text-[9px] leading-3',
+            CALL_FEED_VIDEO_LABEL_CHIP_TONE_CLASS,
+            CALL_FEED_VIDEO_LABEL_NAME_CLASS,
+          )}
+        >
+          {showSkeleton ? <Skeleton loading width={56} height={10} /> : label}
+        </div>
+      ) : (
+        <p
+          className={cn(
+            'line-clamp-2 max-w-full font-medium',
+            isFullView && !isPip ? 'text-base sm:text-lg' : 'text-sm',
+            isPip && 'text-[10px] leading-tight',
+          )}
+        >
+          {showSkeleton ? (
+            <Skeleton loading width={100} height={14} className="mx-auto" />
+          ) : (
+            label
+          )}
+        </p>
+      )}
       <p
         className={cn(
-          'line-clamp-2 max-w-full font-medium',
-          isFullView && !isPip ? 'text-base sm:text-lg' : 'text-sm',
-          isPip && 'text-[10px] leading-tight',
-        )}
-      >
-        {showSkeleton ? (
-          <Skeleton loading width={100} height={14} className="mx-auto" />
-        ) : (
-          label
-        )}
-      </p>
-      <p
-        className={cn(
+          useMobilePlaceholderChrome && 'sr-only',
           'max-w-[min(100%,18rem)]',
           remoteMediaStall
             ? cn('font-medium', callAccentAlertOnDarkText)
@@ -2362,12 +2414,15 @@ const CallFeedTile = ({
   centerContent: _centerContent = false,
   floatingReactions = [],
   handRaised = false,
+  raiseHandOrder = null,
+  panelMobileLayout = false,
   t,
 }: {
   client: MatrixClient | null;
   roomId: string | null;
   currentUserProfileAvatarUrl?: string | null;
   feed: CallFeed;
+  panelMobileLayout?: boolean;
   isShare?: boolean;
   isPip?: boolean;
   isActiveSpeaker?: boolean;
@@ -2383,7 +2438,8 @@ const CallFeedTile = ({
   centerContent?: boolean;
   floatingReactions?: CallFloatingReaction[];
   handRaised?: boolean;
-  t: (key: string) => string;
+  raiseHandOrder?: number | null;
+  t: (key: string, values?: Record<string, string | number>) => string;
 }) => {
   const nameFallback = isShare
     ? t('callScreenShare')
@@ -2410,6 +2466,8 @@ const CallFeedTile = ({
       centerContent={_centerContent}
       floatingReactions={floatingReactions}
       handRaised={handRaised}
+      raiseHandOrder={raiseHandOrder}
+      panelMobileLayout={panelMobileLayout}
       t={t}
     />
   );
@@ -2436,6 +2494,8 @@ const FeedContent = ({
   centerContent: _centerContent = false,
   floatingReactions = [],
   handRaised = false,
+  raiseHandOrder = null,
+  panelMobileLayout = false,
   t,
 }: {
   client: MatrixClient | null;
@@ -2444,6 +2504,7 @@ const FeedContent = ({
   currentUserId: string | null;
   currentUserProfileAvatarUrl?: string | null;
   feed: CallFeed;
+  panelMobileLayout?: boolean;
   isShare: boolean;
   isPip: boolean;
   isFullView: boolean;
@@ -2458,17 +2519,20 @@ const FeedContent = ({
   centerContent?: boolean;
   floatingReactions?: CallFloatingReaction[];
   handRaised?: boolean;
-  t: (key: string) => string;
+  raiseHandOrder?: number | null;
+  t: (key: string, values?: Record<string, string | number>) => string;
 }) => {
   const compactTileLayout = isPip || isDocumentPipOpen;
   const audioScrimLayout = resolveCallFeedAudioScrimLayout({
     isPip,
     isFullView,
     isDocumentPipOpen,
+    panelMobileLayout,
   });
   const videoLabelLayout = resolveCallFeedVideoParticipantLabelLayout({
     isFullView,
     compactTileLayout,
+    panelMobileLayout,
   });
   const audioMuted = feedReportsAudioMutedForTile(
     feed,
@@ -2607,7 +2671,10 @@ const FeedContent = ({
     };
   }, [liveVideoTrack?.id, streamBindVersion]);
 
-  const showVideoSurface = hasVideo && videoSurfaceReady && !warmingVideoTrack;
+  const showVideoElement = hasVideo && !warmingVideoTrack;
+  /** Audio scrim only for true audio-only tiles — not while camera video is warming up. */
+  const showAudioScrim = !showVideoElement;
+  const showParticipantVideoLabel = showVideoElement && !isPip;
 
   useEffect(() => {
     const el = audioRef.current;
@@ -2713,7 +2780,7 @@ const FeedContent = ({
 
   /** Analyse mic/remote line whenever the tile has a live audio track (not just Matrix `isSpeaking`, which lags and hid real levels). */
   const canVoiceWave =
-    !showVideoSurface &&
+    showAudioScrim &&
     !isShare &&
     !audioMuted &&
     (feed.isLocal() ||
@@ -2779,29 +2846,37 @@ const FeedContent = ({
           tileCornerClass,
         )}
       >
-        {handRaised ? (
-          <span
-            className="absolute end-1 top-1 z-[5] rounded-full bg-black/70 px-1.5 py-0.5 text-sm leading-none"
-            aria-label={t('callRaiseHandBadge')}
-            title={t('callRaiseHandBadge')}
-          >
-            ✋
-          </span>
-        ) : null}
+        <CallRaiseHandBadge
+          handRaised={handRaised}
+          order={raiseHandOrder}
+          ariaLabel={
+            raiseHandOrder != null
+              ? t('callRaiseHandBadgeOrder', { order: raiseHandOrder })
+              : t('callRaiseHandBadge')
+          }
+          title={
+            raiseHandOrder != null
+              ? t('callRaiseHandBadgeOrder', { order: raiseHandOrder })
+              : t('callRaiseHandBadge')
+          }
+        />
         <CallFloatingReactionOverlay reactions={floatingReactions} />
-        {hasVideo ? (
+        {showVideoElement ? (
           <video
             ref={ref}
             data-hypha-call-feed-video=""
-            className={resolveCallFeedVideoSurfaceClassName({
-              mirrorLocalPreview,
-              showVideoSurface,
-              isFullView,
-              isPip,
-              isShare,
-              panelFlush,
-              panelVideoFit,
-            })}
+            className={cn(
+              resolveCallFeedVideoSurfaceClassName({
+                mirrorLocalPreview,
+                showVideoSurface: videoSurfaceReady,
+                isFullView,
+                isPip,
+                isShare,
+                panelFlush,
+                panelVideoFit,
+              }),
+              !videoSurfaceReady && 'opacity-0',
+            )}
             autoPlay
             playsInline
             disablePictureInPicture
@@ -2811,7 +2886,7 @@ const FeedContent = ({
             aria-label={ariaLabel}
           />
         ) : null}
-        {!showVideoSurface ? (
+        {showAudioScrim ? (
           <div className={audioScrimLayout.scrimClass} aria-label={ariaLabel}>
             <div className={audioScrimLayout.contentClass}>
               <div className={audioScrimLayout.avatarClass}>
@@ -2874,9 +2949,14 @@ const FeedContent = ({
           />
         ) : null}
       </div>
-      {showVideoSurface && !isPip ? (
+      {showParticipantVideoLabel ? (
         <div className={videoLabelLayout.barClass}>
-          <span className="min-w-0 max-w-[min(12rem,42vw)] truncate leading-[inherit]">
+          <span
+            className={cn(
+              'min-w-0 max-w-[min(12rem,42vw)] truncate',
+              CALL_FEED_VIDEO_LABEL_NAME_CLASS,
+            )}
+          >
             {showSkeleton ? (
               <Skeleton loading width={88} height={14} />
             ) : (
@@ -2885,7 +2965,7 @@ const FeedContent = ({
           </span>
           {audioMuted ? (
             <span
-              className="inline-flex shrink-0 items-center gap-0.5 text-destructive"
+              className="inline-flex shrink-0 items-center gap-0.5 text-rose-400"
               title={t('callParticipantMuted')}
             >
               <MicOff className="h-3 w-3" strokeWidth={1.75} aria-hidden />

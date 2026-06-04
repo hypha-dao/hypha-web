@@ -20,7 +20,10 @@ export function HumanChatPanelCallRaisedHandsStrip({
   if (raisedHands.length === 0) return null;
 
   const labels = raisedHands
-    .map((entry) => resolveMemberLabel(entry.userId))
+    .map((entry, index) => {
+      const name = resolveMemberLabel(entry.userId);
+      return name ? `${index + 1}. ${name}` : null;
+    })
     .filter(Boolean);
 
   return (

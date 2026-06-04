@@ -19,6 +19,8 @@ export type CallRaisedHandEntry = {
 type AnchorContent = {
   [CALL_SESSION_ANCHOR_TYPE]?: boolean;
   call_session_id?: string;
+  /** Matrix `GroupCall.groupCallId` — shared by everyone in the same room call. */
+  group_call_id?: string;
 };
 
 type RaiseHandContent = {
@@ -48,6 +50,33 @@ export function readCallSessionAnchorId(event: MatrixEvent): string | null {
   const content = event.getContent() as AnchorContent;
   const id = content.call_session_id?.trim();
   return id || null;
+}
+
+/** Group call id stored on the anchor (preferred for reaction correlation). */
+export function readCallSessionAnchorGroupCallId(
+  event: MatrixEvent,
+): string | null {
+  if (!isCallSessionAnchorEvent(event)) return null;
+  const content = event.getContent() as AnchorContent;
+  const id = (content.group_call_id ?? content.call_session_id)?.trim();
+  return id || null;
+}
+
+/**
+ * First anchor for `groupCallId` wins so every participant annotates the same event.
+ */
+export function findCallReactionAnchorEventId(
+  eventsOldestFirst: MatrixEvent[],
+  groupCallId: string,
+): string | null {
+  const target = groupCallId.trim();
+  if (!target) return null;
+  for (const event of eventsOldestFirst) {
+    if (readCallSessionAnchorGroupCallId(event) !== target) continue;
+    const eventId = event.getId?.()?.trim();
+    if (eventId) return eventId;
+  }
+  return null;
 }
 
 export function parseCallReactionAnnotation(

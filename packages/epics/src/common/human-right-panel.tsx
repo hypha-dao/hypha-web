@@ -1236,6 +1236,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     raisedHands,
     getFloatingReactions,
     isHandRaised,
+    getRaiseHandOrder,
     floatingReactionsVersion,
   } = useGlobalCallDock();
   useEffect(() => {
@@ -4228,6 +4229,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                       panelMobileLayout={isMobile || prefersCoarsePointer}
                       getFloatingReactions={getFloatingReactions}
                       isHandRaised={isHandRaised}
+                      getRaiseHandOrder={getRaiseHandOrder}
                       floatingReactionsVersion={floatingReactionsVersion}
                     />
                   </div>

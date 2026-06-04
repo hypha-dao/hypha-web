@@ -2331,6 +2331,7 @@
     "callLowerHand": "Baisser la main",
     "callReactBeRightBack": "Je reviens",
     "callRaiseHandBadge": "Main levée",
+    "callRaiseHandBadgeOrder": "Main levée (#{order})",
     "callRaisedHandsTitle": "Mains levées",
     "callParticipantMuted": "Muet",
     "callParticipantMicOff": "Micro coupé",

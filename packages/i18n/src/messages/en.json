@@ -2732,6 +2732,7 @@
     "callLowerHand": "Lower hand",
     "callReactBeRightBack": "Be right back",
     "callRaiseHandBadge": "Hand raised",
+    "callRaiseHandBadgeOrder": "Hand raised (#{order})",
     "callRaisedHandsTitle": "Raised hands",
     "callParticipantMuted": "Muted",
     "callParticipantMicOff": "Microphone off",

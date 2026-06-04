@@ -8,19 +8,22 @@ import {
   CALL_RAISE_HAND_FIELD,
   CALL_RAISE_HAND_NOTICE_TYPE,
   CALL_SESSION_ANCHOR_TYPE,
+  findCallReactionAnchorEventId,
 } from './call-reactions';
 
 export async function publishCallSessionAnchor(options: {
   client: MatrixClient;
   roomId: string;
-  callSessionId: string;
+  groupCallId: string;
 }): Promise<string | null> {
-  const { client, roomId, callSessionId } = options;
+  const { client, roomId, groupCallId } = options;
+  const stableGroupCallId = groupCallId.trim();
   const content = {
     msgtype: MsgType.Notice,
     body: ' ',
     [CALL_SESSION_ANCHOR_TYPE]: true,
-    call_session_id: callSessionId,
+    group_call_id: stableGroupCallId,
+    call_session_id: stableGroupCallId,
   } as unknown as RoomMessageEventContent;
   const response = await client.sendEvent(
     roomId,
@@ -28,6 +31,32 @@ export async function publishCallSessionAnchor(options: {
     content,
   );
   return response.event_id ?? null;
+}
+
+/** Reuse the room-wide anchor for this Matrix group call when one already exists. */
+export async function ensureCallReactionAnchor(options: {
+  client: MatrixClient;
+  roomId: string;
+  groupCallId: string;
+}): Promise<string | null> {
+  const roomId = options.roomId.trim();
+  const groupCallId = options.groupCallId.trim();
+  if (!roomId || !groupCallId) return null;
+
+  const room = options.client.getRoom(roomId);
+  const existing = room
+    ? findCallReactionAnchorEventId(
+        room.getLiveTimeline()?.getEvents() ?? [],
+        groupCallId,
+      )
+    : null;
+  if (existing) return existing;
+
+  return publishCallSessionAnchor({
+    client: options.client,
+    roomId,
+    groupCallId,
+  });
 }
 
 export async function sendCallReactionAnnotation(options: {
