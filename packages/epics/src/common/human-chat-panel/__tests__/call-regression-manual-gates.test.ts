@@ -212,15 +212,16 @@ describe('WCUX-QUALITY debug overlay and capture (row 9)', () => {
     expect(source).toContain('min-h-[1.75rem]');
   });
 
-  it('paints active speaker highlight above video, not under it', () => {
+  it('uses a single inset ring for active speaker (no duplicate corner borders)', () => {
     const source = readCommonSource(
       'human-chat-panel/human-chat-panel-call-stage.tsx',
     );
     const feedStart = source.indexOf('const FeedContent =');
     expect(feedStart).toBeGreaterThan(-1);
     const feedBlock = source.slice(feedStart);
-    expect(feedBlock).toContain('absolute inset-0 z-[6] border-2');
-    expect(feedBlock).toContain('{isActiveSpeaker ? (');
+    expect(feedBlock).toContain('isActiveSpeaker && activeSpeakerRingClass');
+    expect(feedBlock).toContain('ring-2 ring-inset');
+    expect(feedBlock).not.toContain('absolute inset-0 z-[6] border-2');
   });
 
   it('requests 720p ideal camera capture on join', () => {
@@ -361,7 +362,7 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('callSessionAnchorEventId');
   });
 
-  it('react popover sits after leave in in-call controls', () => {
+  it('react popover sits before leave in in-call controls', () => {
     const source = readCommonSource(
       'human-chat-panel/human-chat-panel-in-call-controls.tsx',
     );
@@ -375,7 +376,18 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
       toolbarStart,
     );
     expect(leaveIdx).toBeGreaterThan(toolbarStart);
-    expect(reactIdx).toBeGreaterThan(leaveIdx);
+    expect(reactIdx).toBeGreaterThan(toolbarStart);
+    expect(reactIdx).toBeLessThan(leaveIdx);
+  });
+
+  it('uses balanced phone grid instead of speaker strip on mobile panel', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-stage.tsx',
+    );
+    expect(source).toContain('getCallPanelMobileGridLayout');
+    expect(source).toContain('useMobileBalancedParticipantGrid');
+    expect(source).toContain('!useMobileBalancedParticipantGrid');
+    expect(source).toMatch(/layout === 'panel' && !isFull && isMobileViewport/);
   });
 
   it('centers dock footer controls like production', () => {
@@ -387,7 +399,13 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).not.toContain('justify-evenly');
   });
 
-  it('uses green share trigger that opens the browser picker', () => {
+  it('uses in-banner toolbar chrome on desktop fullscreen dock', () => {
+    const source = readCommonSource('global-call-dock-overlay.tsx');
+    expect(source).toContain("const dockControlsVariant = 'inBanner'");
+    expect(source).not.toContain("? 'inBanner' : 'fullView'");
+  });
+
+  it('uses green share trigger with tab, window, and screen modes', () => {
     const controls = readCommonSource(
       'human-chat-panel/human-chat-panel-in-call-controls.tsx',
     );
@@ -398,9 +416,10 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(controls).toContain(
       'isScreensharing ? shareActiveBtn : shareIdleBtn',
     );
-    expect(menu).not.toContain('ChevronDown');
-    expect(menu).not.toContain('callShareModeMenuLabel');
-    expect(menu).toContain('DEFAULT_SHARE_SURFACE_MODE');
+    expect(menu).toContain('SHARE_MODES');
+    expect(menu).toContain('callShareModeMenuLabel');
+    expect(menu).toContain('ChevronDown');
+    expect(menu).not.toContain('DEFAULT_SHARE_SURFACE_MODE');
   });
 
   it('hides Document PiP while share UX is stabilized', () => {
@@ -444,6 +463,21 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('data-testid="call-be-right-back-button"');
   });
 
+  it('react trigger is icon-only with animated chevron', () => {
+    const popover = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-react-popover.tsx',
+    );
+    const controls = readCommonSource(
+      'human-chat-panel/human-chat-panel-in-call-controls.tsx',
+    );
+    expect(popover).not.toContain("font-medium\">{t('callReactButton')}");
+    expect(popover).toContain('transition-transform duration-200');
+    expect(popover).toContain("open && 'rotate-180'");
+    expect(controls).toContain('menuChevronClass');
+    expect(controls).toContain('menuChevronClass(isCaptureMenuOpen)');
+    expect(controls).toContain('menuChevronClass(isAudioMenuOpen)');
+  });
+
   it('react popover follows Zoom-style sections', () => {
     const source = readCommonSource(
       'human-chat-panel/human-chat-panel-call-react-popover.tsx',
@@ -454,6 +488,45 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('CALL_FEEDBACK_REACTIONS');
     expect(source).not.toContain('callReactQuickReactions');
     expect(source).not.toContain('callRaiseHandDescription');
+  });
+
+  it('call banner alert i18n keys exist in all locales', () => {
+    const keys = [
+      'callRemoteMediaWarmingHint',
+      'callRemoteMediaStallRetry',
+      'callScaleWarningMessage',
+      'callSessionRefreshFailedDescription',
+      'callSessionRefreshFailedReconnect',
+      'callShareTabAudioNotShared',
+      'callShareTabAudioPickerHint',
+      'callShareTabAudioRetry',
+      'callShareTabAudioPromptTitle',
+      'callShareTabAudioPromptDescription',
+      'callShareTabAudioPromptContinue',
+      'callShareTabAudioPromptCancel',
+      'callVoiceBoostWhilePresenting',
+    ];
+    for (const locale of ['en', 'de', 'es', 'fr', 'pt']) {
+      const raw = readFileSync(
+        resolve(__dirname, `../../../../../i18n/src/messages/${locale}.json`),
+        'utf8',
+      );
+      for (const key of keys) {
+        expect(raw).toContain(`"${key}"`);
+      }
+    }
+  });
+
+  it('call toolbar uses fixed 28px buttons so icons do not overlap on mobile', () => {
+    const toolbar = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-toolbar.tsx',
+    );
+    expect(toolbar).toContain('h-[28px] w-[28px]');
+    expect(toolbar).toContain('flex-none');
+    expect(toolbar).not.toMatch(/className=\{cn\([^)]*stroke-2/);
+    const tabs = readCommonSource('human-chat-panel/human-chat-panel-tabs.tsx');
+    expect(tabs).toContain('min-w-max');
+    expect(tabs).toContain('z-10');
   });
 
   it('reaction i18n keys exist in all locales', () => {

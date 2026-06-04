@@ -49,7 +49,8 @@ import {
   type CallDocumentPipWindowMode,
 } from './human-chat-panel/call-document-pip-window-geometry';
 import { resolveCallDockPortalTarget } from './human-chat-panel/call-feed-tile-audio';
-import { matrixMemberDisplayLabelFromRoom } from './human-chat-panel/matrix-room-member-display';
+import { useCallMemberLabelResolver } from './human-chat-panel/use-call-member-label-resolver';
+import type { UseMembers } from '../people/hooks/types';
 import { resolveSignalThreadByMatrixRoom } from './human-chat-panel/resolve-signal-thread-by-matrix-room';
 import { useGlobalCallDock } from './global-call-dock-context';
 import { useHumanChatPanel } from './human-chat-panel-context';
@@ -497,7 +498,13 @@ function persistDockGeometry(next: DockGeometry): void {
   }
 }
 
-export function GlobalCallDockOverlay() {
+type GlobalCallDockOverlayProps = {
+  useMembers?: UseMembers;
+};
+
+export function GlobalCallDockOverlay({
+  useMembers,
+}: GlobalCallDockOverlayProps = {}) {
   const t = useTranslations('GlobalCallDock');
   const tCapture = useTranslations('HumanChatPanel');
   const isMobile = useIsMobile() ?? false;
@@ -696,19 +703,6 @@ export function GlobalCallDockOverlay() {
     callState === 'initializing';
   useCallDocumentKeepalive(callMediaActive, isDocumentPipOpen);
   const currentUserId = client?.getUserId?.() ?? null;
-  const currentUserDisplayName = React.useMemo(() => {
-    const profile = (me ?? null) as {
-      name?: string | null;
-      surname?: string | null;
-      nickname?: string | null;
-    } | null;
-    const full = [profile?.name, profile?.surname]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-    if (full) return full;
-    return profile?.nickname?.trim() || '';
-  }, [me]);
 
   React.useEffect(() => {
     setLayoutMode(readCallFullViewLayoutFromStorage());
@@ -1025,26 +1019,17 @@ export function GlobalCallDockOverlay() {
     }
   }, [closePip, showFloatingDock]);
 
-  const resolveMemberLabel = React.useCallback(
-    (userId: string | undefined) => {
-      if (
-        userId?.trim() &&
-        currentUserId &&
-        userId === currentUserId &&
-        currentUserDisplayName
-      ) {
-        return currentUserDisplayName;
-      }
-      if (!userId?.trim()) return t('unknownMember');
-      return matrixMemberDisplayLabelFromRoom(client, activeRoomId, userId);
-    },
-    [activeRoomId, client, currentUserDisplayName, currentUserId, t],
-  );
   const locale = React.useMemo(() => getLocaleFromPath(pathname), [pathname]);
   const callSpaceSlug = React.useMemo(
     () => readCallSpaceSlug(pinnedCallSpaceSlug, activeSpaceSlug, activeRoomId),
     [activeRoomId, activeSpaceSlug, pinnedCallSpaceSlug],
   );
+  const resolveMemberLabel = useCallMemberLabelResolver({
+    roomId: activeRoomId,
+    spaceSlug: callSpaceSlug,
+    unknownMemberLabel: t('unknownMember'),
+    useMembers,
+  });
   const callSpaceHref = callSpaceSlug
     ? `/${locale}/dho/${callSpaceSlug}/coherence`
     : null;
@@ -1190,16 +1175,14 @@ export function GlobalCallDockOverlay() {
     isDocumentPip: isDocumentPipOpen,
     stageLayout: dockStageLayout,
   });
-  /** Production: light in-banner circles on dock/panel; dark chrome only in fullscreen. */
-  const dockControlsVariant =
-    isMobile || !modeIsFullscreen ? 'inBanner' : 'fullView';
-  const dockControlsLayout = isMobile
-    ? 'centered'
-    : dockCompact
-    ? 'inline'
-    : modeIsFullscreen
-    ? 'inline'
-    : 'centered';
+  /** Production: same light circular toolbar in dock, sidebar, and desktop fullscreen. */
+  const dockControlsVariant = 'inBanner';
+  const dockControlsLayout =
+    isMobile || modeIsFullscreen
+      ? 'centered'
+      : dockCompact
+      ? 'inline'
+      : 'centered';
   const dockControlsDensity = 'default';
   const lockStagePointerEvents =
     !isScreensharing && !inDocumentPip && !isTouchDock;

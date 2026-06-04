@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  looksLikeTechnicalMatrixDisplayName,
   matrixUserIdToCanonicalPrivySub,
+  needsHyphaProfileResolutionForMatrixLabel,
   pickUserVisibleMemberLabel,
   speakerLabelToCanonicalPrivySub,
   splitSpeakerLabeledTranscriptLine,
@@ -27,6 +29,25 @@ describe('pickUserVisibleMemberLabel', () => {
         '@prod_privy_did_privy_cmabc123:srv1294735.hstgr.cloud',
       ),
     ).toBeNull();
+  });
+});
+
+describe('looksLikeTechnicalMatrixDisplayName', () => {
+  it('treats did:privy subs as technical display names', () => {
+    expect(
+      looksLikeTechnicalMatrixDisplayName(
+        'did:privy:cmabc123',
+        '@alice:matrix.org',
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('needsHyphaProfileResolutionForMatrixLabel', () => {
+  it('requires Hypha lookup for did:privy display names', () => {
+    expect(
+      needsHyphaProfileResolutionForMatrixLabel('did:privy:cmabc123'),
+    ).toBe(true);
   });
 });
 

@@ -53,9 +53,13 @@ export function HumanChatPanelCallToolbar({
   const phoneDim = (disabled || busy) && !audioIsActive;
   const videoDim = (disabled || busy) && !videoIsActive;
 
+  const iconBtn =
+    'box-border flex h-[28px] w-[28px] min-h-[28px] min-w-[28px] max-h-[28px] max-w-[28px] flex-none items-center justify-center rounded-lg p-0 transition-colors';
+  const iconSize = 'h-4 w-4 shrink-0';
+
   return (
     <div
-      className="flex h-7 shrink-0 items-center gap-0.5"
+      className="relative z-10 flex shrink-0 items-center gap-1"
       role="toolbar"
       aria-label={t('callToolbarLabel')}
     >
@@ -64,7 +68,7 @@ export function HumanChatPanelCallToolbar({
         onClick={onAudio}
         disabled={disabled || busy}
         className={cn(
-          'flex h-7 w-7 items-center justify-center rounded-lg transition-colors',
+          iconBtn,
           phoneDim && 'cursor-not-allowed opacity-50',
           !disabled && !busy && 'hover:bg-muted hover:text-foreground',
           !audioIsActive && 'text-muted-foreground',
@@ -80,7 +84,8 @@ export function HumanChatPanelCallToolbar({
         aria-busy={busy}
       >
         <Phone
-          className={cn('h-3.5 w-3.5', audioIsActive && 'stroke-2')}
+          className={iconSize}
+          strokeWidth={audioIsActive ? 2.25 : 2}
           aria-hidden
         />
       </button>
@@ -89,7 +94,7 @@ export function HumanChatPanelCallToolbar({
         onClick={onVideo}
         disabled={disabled || busy}
         className={cn(
-          'flex h-7 w-7 items-center justify-center rounded-lg transition-colors',
+          iconBtn,
           videoDim && 'cursor-not-allowed opacity-50',
           !disabled && !busy && 'hover:bg-muted hover:text-foreground',
           !videoIsActive && 'text-muted-foreground',
@@ -105,7 +110,8 @@ export function HumanChatPanelCallToolbar({
         aria-busy={busy}
       >
         <Video
-          className={cn('h-3.5 w-3.5', videoIsActive && 'stroke-2')}
+          className={iconSize}
+          strokeWidth={videoIsActive ? 2.25 : 2}
           aria-hidden
         />
       </button>

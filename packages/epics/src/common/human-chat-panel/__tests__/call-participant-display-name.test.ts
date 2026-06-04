@@ -43,6 +43,21 @@ describe('resolveCallParticipantDisplayText (WCUX-AUDIO-TILE-1)', () => {
     ).toBe('carol');
   });
 
+  it('skips did:privy subs until profile resolves', () => {
+    expect(
+      resolveCallParticipantDisplayText({
+        isPip: false,
+        isLocalFeed: false,
+        currentUserId: null,
+        syncLabel: 'did:privy:cmabc123',
+        personName: '',
+        matrixUserId: '@prod_privy_did_privy_cmabc123:srv1294735.hstgr.cloud',
+        matrixMemberLabel: 'did:privy:cmabc123',
+        fallback: 'Participant',
+      }),
+    ).toBe('Participant');
+  });
+
   it('prefers Hypha person name when available', () => {
     expect(
       resolveCallParticipantDisplayText({

@@ -784,8 +784,8 @@ function HumanChatPanelCallStageMain({
 
   const isFull = layout === 'fullView';
   const isMobileViewport = useIsMobile() ?? false;
-  /** Phone dock/panel call stage — not tablet (`md`) or desktop. */
-  const isMobilePanelStage = panelFlush && !isFull && isMobileViewport;
+  /** Phone-width in-panel call (floating dock or sidebar) — not tablet/desktop full view. */
+  const isMobilePanelStage = layout === 'panel' && !isFull && isMobileViewport;
   const resolvedViewportTier: CallViewportTier =
     viewportTierProp ?? (isFull ? 'V-L' : isDocumentPipOpen ? 'V-PiP' : 'V-M');
   const {
@@ -950,8 +950,17 @@ function HumanChatPanelCallStageMain({
     (layoutPlan.renderer === 'thresholdGallery' ||
       layoutPlan.renderer === 'paginatedGallery');
 
+  /**
+   * Phone panel: equal-height grid (see call-panel-mobile-grid) instead of
+   * speaker-primary strip — strip leaves unused vertical space on narrow docks.
+   */
+  const useMobileBalancedParticipantGrid =
+    mobilePanelGrid != null &&
+    !useShareWithParticipantsLayout &&
+    userGridTileCount >= 2;
   const useSpeakerStripLayout =
     !useShareWithParticipantsLayout &&
+    !useMobileBalancedParticipantGrid &&
     !isScreensharing &&
     layoutPlan.renderer === 'speakerPrimaryStrip';
 
@@ -1858,10 +1867,14 @@ function HumanChatPanelCallStageMain({
                     panelUserGridColumnClass,
                   ),
               !isFull &&
+                !mobilePanelGrid &&
                 !hasRenderableShare &&
                 remoteUserMedia.length > 0 &&
                 'min-h-[min(32vh,220px)]',
-              !isFull && showLocalInMainGrid && 'min-h-[min(32vh,240px)]',
+              !isFull &&
+                !mobilePanelGrid &&
+                showLocalInMainGrid &&
+                'min-h-[min(32vh,240px)]',
             )}
             data-feed-tick={_feedVersion}
           >
@@ -1956,19 +1969,23 @@ function usePlaceholderParticipantName(
 ): { text: string; showSkeleton: boolean } {
   const syncLabel = useMemo(() => {
     const roster = resolveMemberLabel(userId)?.trim();
-    if (roster) return roster;
+    if (roster && !looksLikeTechnicalMatrixDisplayName(roster, userId)) {
+      return roster;
+    }
     const m = room?.getMember(userId) ?? null;
     if (m) return matrixMemberDisplayLabel(m, userId);
-    return resolveMemberLabel(userId)?.trim() || fallback;
+    return fallback;
   }, [room, userId, resolveMemberLabel, fallback]);
 
   const needsProfile = needsHyphaResolutionForCallLabel(syncLabel, userId);
-  const { privyUserId: linkedSub, isLoading: loadingLink } =
-    useUserPrivyIdByMatrixId({
-      matrixUserId: needsProfile ? userId : undefined,
-    });
-  const { person, isLoading: loadingPerson } = usePersonBySub({
-    sub: linkedSub,
+  const canonicalSub = matrixUserIdToCanonicalPrivySub(userId);
+  const needsMatrixLinkLookup = needsProfile && !canonicalSub;
+  const { privyUserId: linkedSub } = useUserPrivyIdByMatrixId({
+    matrixUserId: needsMatrixLinkLookup ? userId : undefined,
+  });
+  const resolvedSub = canonicalSub ?? linkedSub;
+  const { person } = usePersonBySub({
+    sub: resolvedSub,
   });
 
   const text = useMemo(() => {
@@ -2672,6 +2689,8 @@ const FeedContent = ({
 
   const tileCornerClass =
     panelFlush && !isPip && !isFullView ? 'rounded-none' : 'rounded-md';
+  const activeSpeakerRingClass =
+    'ring-2 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_70%,transparent)]';
 
   return (
     <div
@@ -2679,6 +2698,7 @@ const FeedContent = ({
         /* `rounded-md` = button-like corners; solid black so letterboxing (if any) is never a light “white” gap in light mode */
         'relative min-w-0 overflow-hidden bg-black',
         tileCornerClass,
+        isActiveSpeaker && activeSpeakerRingClass,
         isFullView && !isPip
           ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col'
           : compactTileLayout
@@ -2826,15 +2846,6 @@ const FeedContent = ({
             return audioSink;
           })()
         : null}
-      {isActiveSpeaker ? (
-        <div
-          className={cn(
-            'pointer-events-none absolute inset-0 z-[6] border-2 border-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_70%,transparent)]',
-            tileCornerClass,
-          )}
-          aria-hidden
-        />
-      ) : null}
     </div>
   );
 };

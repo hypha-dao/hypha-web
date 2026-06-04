@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   AudioLines,
   Check,
-  ChevronDown,
+  ChevronUp,
   Circle,
   Disc,
   FileText,
@@ -277,6 +277,12 @@ export function HumanChatPanelInCallControls({
     : 'h-4 w-4';
   /** Production in-banner toolbar uses lighter Lucide strokes than full-view chrome. */
   const lucideStroke = isFull ? 2 : 1.75;
+  const menuChevronClass = (menuOpen: boolean) =>
+    cn(
+      isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5',
+      'shrink-0 opacity-70 transition-transform duration-200',
+      menuOpen && 'rotate-180',
+    );
   const audioSettingsBtn = isFull
     ? cn(
         fullViewControlSize,
@@ -495,9 +501,7 @@ export function HumanChatPanelInCallControls({
         }}
       >
         <SlidersHorizontal className={icon} strokeWidth={lucideStroke} />
-        <ChevronDown
-          className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
-        />
+        <ChevronUp className={menuChevronClass(isAudioMenuOpen)} aria-hidden />
       </button>
       {isAudioMenuOpen ? (
         <div
@@ -592,8 +596,9 @@ export function HumanChatPanelInCallControls({
         ) : (
           <Disc className={captureIdleIconClass} />
         )}
-        <ChevronDown
-          className={cn(isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5')}
+        <ChevronUp
+          className={menuChevronClass(isCaptureMenuOpen)}
+          aria-hidden
         />
       </button>
       {isCaptureMenuOpen ? (
@@ -881,9 +886,59 @@ export function HumanChatPanelInCallControls({
                     activeTriggerClassName="inline-flex items-center justify-center"
                     iconClassName={icon}
                     iconStrokeWidth={lucideStroke}
+                    chevronClassName={cn(
+                      isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5',
+                    )}
+                    menuClassName={
+                      isFull
+                        ? 'border-zinc-700 bg-zinc-900 text-white'
+                        : undefined
+                    }
                   />
                 ) : null}
+                {showCallReactions ? (
+                  <HumanChatPanelCallReactPopover
+                    disabled={controlsDisabled}
+                    localHandRaised={localHandRaised}
+                    onSendReaction={(emoji, style) => {
+                      void onSendReaction?.(emoji, style);
+                    }}
+                    onToggleRaiseHand={() => {
+                      void onToggleRaiseHand?.();
+                    }}
+                    variant={variant}
+                    density={density}
+                    iconStrokeWidth={lucideStroke}
+                  />
+                ) : null}
+                {!leaveOnly &&
+                showAdvancedCallControls &&
+                !useSideAudioSettings &&
+                !isPipDensity
+                  ? renderCaptureMenu
+                  : null}
+                {!leaveOnly &&
+                showAdvancedCallControls &&
+                !useSideAudioSettings &&
+                !isPipDensity
+                  ? renderAudioSettingsMenu
+                  : null}
               </>
+            ) : null}
+            {leaveOnly && showCallReactions ? (
+              <HumanChatPanelCallReactPopover
+                disabled={controlsDisabled}
+                localHandRaised={localHandRaised}
+                onSendReaction={(emoji, style) => {
+                  void onSendReaction?.(emoji, style);
+                }}
+                onToggleRaiseHand={() => {
+                  void onToggleRaiseHand?.();
+                }}
+                variant={variant}
+                density={density}
+                iconStrokeWidth={lucideStroke}
+              />
             ) : null}
             <button
               type="button"
@@ -902,32 +957,6 @@ export function HumanChatPanelInCallControls({
                 strokeWidth={lucideStroke}
               />
             </button>
-            {showCallReactions ? (
-              <HumanChatPanelCallReactPopover
-                disabled={controlsDisabled}
-                localHandRaised={localHandRaised}
-                onSendReaction={(emoji, style) => {
-                  void onSendReaction?.(emoji, style);
-                }}
-                onToggleRaiseHand={() => {
-                  void onToggleRaiseHand?.();
-                }}
-                variant={variant}
-                density={density}
-              />
-            ) : null}
-            {!leaveOnly &&
-            showAdvancedCallControls &&
-            !useSideAudioSettings &&
-            !isPipDensity
-              ? renderCaptureMenu
-              : null}
-            {!leaveOnly &&
-            showAdvancedCallControls &&
-            !useSideAudioSettings &&
-            !isPipDensity
-              ? renderAudioSettingsMenu
-              : null}
           </div>
           {useSideAudioSettings &&
           !leaveOnly &&

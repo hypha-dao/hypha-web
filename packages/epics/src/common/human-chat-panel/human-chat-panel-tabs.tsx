@@ -199,7 +199,7 @@ export function HumanChatPanelTabs({
         </div>
       </div>
       {hasEndCluster ? (
-        <div className="flex min-h-0 min-w-0 flex-none items-center justify-end gap-1.5 self-stretch border-s border-border/50 bg-background ps-1.5">
+        <div className="relative z-10 flex shrink-0 items-center justify-end gap-1.5 self-stretch border-s border-border/50 bg-background ps-1.5 min-w-max">
           {tabRowEnd}
         </div>
       ) : null}

@@ -3,7 +3,12 @@
 import { useState } from 'react';
 import { ChevronUp, CircleHelp, Ellipsis, Heart } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  useIsMobile,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { HumanChatPanelEmojiMartSurface } from './human-chat-panel-emoji-mart-surface';
 import {
@@ -22,6 +27,7 @@ type HumanChatPanelCallReactPopoverProps = {
   onToggleRaiseHand: () => void;
   variant?: 'inBanner' | 'fullView';
   density?: 'default' | 'compact' | 'pip';
+  iconStrokeWidth?: number;
 };
 
 type EmojiPickerPanel = null | 'effects' | 'reactions';
@@ -127,13 +133,15 @@ export function HumanChatPanelCallReactPopover({
   onToggleRaiseHand,
   variant = 'inBanner',
   density = 'default',
+  iconStrokeWidth,
 }: HumanChatPanelCallReactPopoverProps) {
   const t = useTranslations('HumanChatPanel');
   const [open, setOpen] = useState(false);
   const [emojiPicker, setEmojiPicker] = useState<EmojiPickerPanel>(null);
   const isFull = variant === 'fullView';
   const isPip = density === 'pip';
-  const showReactLabel = !isPip;
+  const isTouchToolbar = useIsMobile() ?? false;
+  const strokeWidth = iconStrokeWidth ?? (isFull ? 2 : 1.75);
 
   const handleSend = (
     emoji: string,
@@ -160,12 +168,15 @@ export function HumanChatPanelCallReactPopover({
   );
 
   const triggerClassName = cn(
-    'inline-flex shrink-0 items-center justify-center gap-1 rounded-full border shadow-sm transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+    'inline-flex shrink-0 items-center justify-center gap-0.5 rounded-full border shadow-sm transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
     isFull
-      ? 'h-10 min-h-10 border-zinc-600/80 bg-zinc-900/90 px-3 text-white hover:bg-zinc-800/95'
+      ? 'h-10 min-h-10 border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white hover:bg-zinc-800/95'
       : isPip
       ? 'h-5 w-5 border-border/60 bg-background/95 px-0 text-foreground'
-      : 'h-8 border-border/60 bg-background px-2.5 text-foreground hover:bg-muted',
+      : cn(
+          'border-border/60 bg-background text-foreground hover:bg-muted',
+          isTouchToolbar ? 'h-11 w-11' : 'h-8 w-8',
+        ),
     open && !isFull && 'border-primary/40 bg-muted',
     localHandRaised &&
       !isFull &&
@@ -195,18 +206,17 @@ export function HumanChatPanelCallReactPopover({
               isFull ? 'h-4 w-4' : isPip ? 'h-2.5 w-2.5' : 'h-4 w-4',
               open && 'fill-current',
             )}
-            strokeWidth={isFull ? 2 : 1.75}
+            strokeWidth={strokeWidth}
             aria-hidden
           />
-          {showReactLabel ? (
-            <span className="text-sm font-medium">{t('callReactButton')}</span>
-          ) : null}
-          {showReactLabel ? (
+          {!isPip ? (
             <ChevronUp
               className={cn(
-                'h-3.5 w-3.5 opacity-70 transition-transform',
+                isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5',
+                'shrink-0 opacity-70 transition-transform duration-200',
                 open && 'rotate-180',
               )}
+              strokeWidth={strokeWidth}
               aria-hidden
             />
           ) : null}

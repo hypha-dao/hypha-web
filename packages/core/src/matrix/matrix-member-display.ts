@@ -43,6 +43,7 @@ export function looksLikeTechnicalMatrixDisplayName(
   const l = label?.trim() ?? '';
   if (!l || l === matrixUserId) return true;
   const stem = displayNameStem(l);
+  if (/^did:privy:/i.test(stem) || /^did:privy:/i.test(l)) return true;
   if (stemLooksLikeBridgedPrivyLocalpart(stem)) return true;
   if (/privy_did_privy/i.test(l)) return true;
   return false;
@@ -58,6 +59,7 @@ export function needsHyphaProfileResolutionForMatrixLabel(
   const l = label?.trim() ?? '';
   if (!l) return true;
   const stem = displayNameStem(l);
+  if (/^did:privy:/i.test(stem) || /^did:privy:/i.test(l)) return true;
   if (stemLooksLikeBridgedPrivyLocalpart(stem)) return true;
   if (/privy_did_privy/i.test(l)) return true;
   return false;
