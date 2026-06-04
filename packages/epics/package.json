@@ -20,6 +20,7 @@
     "@emoji-mart/react": "^1.1.1",
     "@hypha-platform/authentication": "workspace:*",
     "@hypha-platform/core": "workspace:*",
+    "@hypha-platform/feature-flags": "workspace:*",
     "@hypha-platform/i18n": "workspace:*",
     "@hypha-platform/notifications": "workspace:*",
     "@hypha-platform/ui": "workspace:*",

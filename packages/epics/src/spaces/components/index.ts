@@ -33,6 +33,7 @@ export * from './space-escrow-deposit-banner';
 export * from './space-escrow-deposit-banners';
 export * from './subscription-badge';
 export * from './transparency-level';
+export * from './space-location-picker';
 export * from './space-discoverability-field';
 export * from './space-activity-access-field';
 export * from './space-access-denied';
