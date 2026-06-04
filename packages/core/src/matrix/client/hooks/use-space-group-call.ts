@@ -2318,6 +2318,29 @@ export function useSpaceGroupCall(
       updateParticipantCount();
       setCallState('connecting');
 
+      /** Publish reaction anchor in parallel with `enter()` so toolbar React is ready at connect. */
+      void (async () => {
+        if (!client || !roomId?.trim()) return;
+        try {
+          const anchorEventId = await publishCallSessionAnchor({
+            client,
+            roomId: roomId.trim(),
+            callSessionId: newSessionId,
+          });
+          if (
+            joinEpoch !== joinEpochRef.current ||
+            groupCallRef.current !== gc
+          ) {
+            return;
+          }
+          if (anchorEventId) {
+            setCallSessionAnchorEventId(anchorEventId);
+          }
+        } catch {
+          /* reactions unavailable if anchor publish fails */
+        }
+      })();
+
       /**
        * Probe TURN before `enter()`: missing homeserver TURN config often makes
        * `gc.enter()` stall, so post-enter diagnostics would never be emitted.
@@ -2462,25 +2485,6 @@ export function useSpaceGroupCall(
       }
 
       setCallState('connected');
-      void (async () => {
-        if (!client || !roomId?.trim()) return;
-        try {
-          const anchorEventId = await publishCallSessionAnchor({
-            client,
-            roomId: roomId.trim(),
-            callSessionId: newSessionId,
-          });
-          if (
-            joinEpoch !== joinEpochRef.current ||
-            groupCallRef.current !== gc
-          ) {
-            return;
-          }
-          setCallSessionAnchorEventId(anchorEventId);
-        } catch {
-          /* reactions unavailable if anchor publish fails */
-        }
-      })();
       resetMatrixCallSessionMetrics();
       callSessionStartedAtRef.current = Date.now();
       refreshLocalPreview();

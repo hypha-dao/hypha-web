@@ -52,9 +52,11 @@ export function useCallReactions({
     (userId: string, emoji: string, style?: CallFloatingReactionStyle) => void
   >(() => {});
 
+  const callReactionsSessionActive =
+    callState === 'connected' && Boolean(client && roomId?.trim());
+
   const canSendCallReactions =
-    callState === 'connected' &&
-    Boolean(client && roomId?.trim() && anchorEventId?.trim());
+    callReactionsSessionActive && Boolean(anchorEventId?.trim());
 
   const seedRaisedHands = useCallback(() => {
     if (!client || !roomId?.trim()) {
@@ -188,7 +190,7 @@ export function useCallReactions({
   );
 
   const toggleRaiseHand = useCallback(async () => {
-    if (!canSendCallReactions || !client || !roomId?.trim()) return;
+    if (!callReactionsSessionActive || !client || !roomId?.trim()) return;
     const nextRaised = !localHandRaised;
     setLocalHandRaised(nextRaised);
     try {
@@ -200,7 +202,7 @@ export function useCallReactions({
     } catch {
       setLocalHandRaised(!nextRaised);
     }
-  }, [canSendCallReactions, client, localHandRaised, roomId]);
+  }, [callReactionsSessionActive, client, localHandRaised, roomId]);
 
   const getFloatingReactions = useCallback(
     (userId: string | null | undefined) => {
