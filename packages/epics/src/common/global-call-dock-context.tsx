@@ -8,6 +8,16 @@ import {
 } from '@hypha-platform/core/client';
 import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
 import { useCallReactions } from './human-chat-panel/use-call-reactions';
+import {
+  clearCallDismissedByUser,
+  clearCallResumeSnapshot,
+  markCallDismissedByUser,
+  persistCallResumeSnapshot,
+  readCallResumeSnapshot,
+  shouldPersistCallResumeSnapshot,
+  type CallResumeSnapshot,
+  type GlobalCallDockMode,
+} from './global-call-resume-storage';
 
 type PendingJoin = {
   kind: 'audio' | 'video';
@@ -15,23 +25,7 @@ type PendingJoin = {
   threadRootEventId?: string;
 };
 
-type GlobalCallDockMode = 'thumbnail' | 'expanded' | 'fullscreen';
 const DOCK_MODE_KEY = 'hypha-global-call-dock-mode-v1';
-const CALL_RESUME_KEY = 'hypha-global-call-resume-v1';
-const CALL_RESUME_MAX_AGE_MS = 30 * 60 * 1000;
-
-type CallResumeSnapshot = {
-  version: 1;
-  roomId: string;
-  spaceSlug: string | null;
-  callKind: PendingJoin['kind'];
-  threadRootEventId?: string;
-  dockMode: GlobalCallDockMode;
-  updatedAt: number;
-  signalTitle?: string;
-  signalSlug?: string;
-  roomTitle?: string;
-};
 
 function readDockModeFromStorage(): GlobalCallDockMode {
   if (typeof window === 'undefined') return 'thumbnail';
@@ -52,65 +46,6 @@ function persistDockMode(mode: GlobalCallDockMode): void {
     window.localStorage.setItem(DOCK_MODE_KEY, mode);
   } catch {
     // ignore storage write failure
-  }
-}
-
-function clearCallResumeSnapshot(): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.removeItem(CALL_RESUME_KEY);
-  } catch {
-    // ignore persistence write failure
-  }
-}
-
-function persistCallResumeSnapshot(snapshot: CallResumeSnapshot): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(CALL_RESUME_KEY, JSON.stringify(snapshot));
-  } catch {
-    // ignore persistence write failure
-  }
-}
-
-function readCallResumeSnapshot(): CallResumeSnapshot | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(CALL_RESUME_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<CallResumeSnapshot>;
-    if (
-      parsed.version !== 1 ||
-      typeof parsed.roomId !== 'string' ||
-      !parsed.roomId.trim() ||
-      (parsed.callKind !== 'audio' && parsed.callKind !== 'video') ||
-      (parsed.dockMode !== 'thumbnail' &&
-        parsed.dockMode !== 'expanded' &&
-        parsed.dockMode !== 'fullscreen') ||
-      typeof parsed.updatedAt !== 'number'
-    ) {
-      clearCallResumeSnapshot();
-      return null;
-    }
-    if (Date.now() - parsed.updatedAt > CALL_RESUME_MAX_AGE_MS) {
-      clearCallResumeSnapshot();
-      return null;
-    }
-    return {
-      version: 1,
-      roomId: parsed.roomId.trim(),
-      spaceSlug: parsed.spaceSlug?.trim() || null,
-      callKind: parsed.callKind,
-      threadRootEventId: parsed.threadRootEventId?.trim() || undefined,
-      dockMode: parsed.dockMode,
-      updatedAt: parsed.updatedAt,
-      signalTitle: parsed.signalTitle?.trim() || undefined,
-      signalSlug: parsed.signalSlug?.trim() || undefined,
-      roomTitle: parsed.roomTitle?.trim() || undefined,
-    };
-  } catch {
-    clearCallResumeSnapshot();
-    return null;
   }
 }
 
@@ -206,6 +141,8 @@ function useGlobalCallDockValue() {
   const resumeAttemptKeyRef = React.useRef<string | null>(null);
   const releasingForTransferRef = React.useRef(false);
   const lastPersistedResumeSignatureRef = React.useRef<string | null>(null);
+  /** Blocks resume/pending-join after an explicit hang-up (same tab, same render). */
+  const userDismissedCallRef = React.useRef(false);
   const wasMatrixSyncLeaderRef = React.useRef(isMatrixSyncLeader);
   const callLaunchContextRef = React.useRef<CallLaunchContext | null>(null);
   /** Room pinned for the active call — survives chat panel room/null transitions. */
@@ -368,6 +305,7 @@ function useGlobalCallDockValue() {
   React.useEffect(() => {
     if (!isMatrixSyncLeader) return;
     if (inSession || pendingJoin) return;
+    if (userDismissedCallRef.current) return;
     const snapshot = readCallResumeSnapshot();
     if (!snapshot) return;
     const attemptKey = `${snapshot.roomId}:${snapshot.callKind}:${snapshot.updatedAt}`;
@@ -434,6 +372,10 @@ function useGlobalCallDockValue() {
 
   React.useEffect(() => {
     if (!pendingJoin) return;
+    if (userDismissedCallRef.current) {
+      setPendingJoin(null);
+      return;
+    }
     if (!isMatrixSyncLeader || !client) return;
     if (activeRoomId !== pendingJoin.roomId) return;
     if (!activeAuthToken) return;
@@ -472,6 +414,10 @@ function useGlobalCallDockValue() {
       return;
     }
     if (call.callState === 'disconnecting') {
+      return;
+    }
+    if (activeRoomId && !shouldPersistCallResumeSnapshot(activeRoomId)) {
+      clearCallResumeSnapshot();
       return;
     }
     const callKind = pendingJoin?.kind ?? call.callKind;
@@ -536,6 +482,8 @@ function useGlobalCallDockValue() {
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
+      userDismissedCallRef.current = false;
+      clearCallDismissedByUser();
       callLaunchContextRef.current =
         launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
           ? launchContext
@@ -579,6 +527,8 @@ function useGlobalCallDockValue() {
     ) => {
       const targetRoomId = roomId?.trim();
       if (!targetRoomId) return;
+      userDismissedCallRef.current = false;
+      clearCallDismissedByUser();
       callLaunchContextRef.current =
         launchContext?.signalTitle?.trim() || launchContext?.roomTitle?.trim()
           ? launchContext
@@ -613,6 +563,13 @@ function useGlobalCallDockValue() {
   );
 
   const leaveCall = React.useCallback(async () => {
+    const dismissedRoomId =
+      activeRoomId?.trim() ||
+      callSessionRoomIdRef.current?.trim() ||
+      boundRoomId?.trim() ||
+      null;
+    userDismissedCallRef.current = true;
+    markCallDismissedByUser(dismissedRoomId);
     clearCallResumeSnapshot();
     resumeAttemptAtRef.current = null;
     resumeAttemptKeyRef.current = null;
@@ -620,7 +577,7 @@ function useGlobalCallDockValue() {
     restoreInProgressRef.current = false;
     setPendingJoin(null);
     await call.leave();
-  }, [call]);
+  }, [activeRoomId, boundRoomId, call]);
 
   const [isReleasingForTransfer, setIsReleasingForTransfer] =
     React.useState(false);
