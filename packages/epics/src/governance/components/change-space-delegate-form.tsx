@@ -91,11 +91,16 @@ export const ChangeSpaceDelegateForm = ({
   const {
     changeSpaceDelegateAction,
     reset,
-    currentAction,
+    currentTask,
     isError,
     isPending,
     progress,
   } = useChangeSpaceDelegateOrchestrator({ authToken: jwt, config, spaces });
+
+  const progressMessage =
+    currentTask != null
+      ? tAgreementFlow(`changeSpaceDelegateProgress.${currentTask}`)
+      : null;
 
   useClearResubmitOnSuccess(progress === 100 && !isError);
 
@@ -146,7 +151,7 @@ export const ChangeSpaceDelegateForm = ({
             <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
-          <div>{currentAction}</div>
+          <div>{progressMessage}</div>
         )
       }
     >

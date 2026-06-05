@@ -449,9 +449,13 @@ export const useResubmitProposalData = <
             },
           );
         } else if (parsed.changeDelegateTargetAddress !== undefined) {
+          const spacePath = 'space' as Path<T>;
           form.setValue(
-            'space' as any,
-            parsed.changeDelegateTargetAddress as any,
+            spacePath,
+            parsed.changeDelegateTargetAddress as PathValue<
+              T,
+              typeof spacePath
+            >,
             {
               shouldDirty: true,
               shouldValidate: true,
@@ -474,9 +478,13 @@ export const useResubmitProposalData = <
             },
           );
         } else if (parsed.changeDelegateMemberAddress !== undefined) {
+          const memberPath = 'member' as Path<T>;
           form.setValue(
-            'member' as any,
-            parsed.changeDelegateMemberAddress as any,
+            memberPath,
+            parsed.changeDelegateMemberAddress as PathValue<
+              T,
+              typeof memberPath
+            >,
             {
               shouldDirty: true,
               shouldValidate: true,

@@ -939,11 +939,11 @@ export const schemaChangeSpaceDelegate = z.object({
   label: z.literal('Change Delegate'),
   space: z
     .string({ message: 'Please select a governance space' })
-    .min(1)
+    .min(1, { message: 'Please select a governance space' })
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
   member: z
     .string({ message: 'Please select a delegated voting member' })
-    .min(1)
+    .min(1, { message: 'Please select a delegated voting member' })
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
 

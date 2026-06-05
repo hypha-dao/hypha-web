@@ -2,7 +2,14 @@
 
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
-import { useCallback, useMemo, useReducer, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from 'react';
 import { z } from 'zod';
 import { produce } from 'immer';
 
@@ -36,13 +43,6 @@ enum TaskStatus {
   IS_DONE = 'isDone',
   ERROR = 'error',
 }
-
-const taskActionDescriptions: Record<TaskName, string> = {
-  CREATE_WEB2_AGREEMENT: 'Creating Web2 agreement...',
-  CREATE_WEB3_AGREEMENT: 'Creating Web3 agreement...',
-  UPLOAD_FILES: 'Uploading Files...',
-  LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements',
-};
 
 const initialTaskState: TaskState = {
   CREATE_WEB2_AGREEMENT: { status: TaskStatus.IDLE },
@@ -80,8 +80,11 @@ const progressStateReducer = (
     }
   });
 
-const computeProgress = (tasks: TaskState): number => {
-  const all = Object.values(tasks);
+const computeProgress = (tasks: TaskState, includeWeb3: boolean): number => {
+  const all = Object.entries(tasks)
+    .filter(([task]) => includeWeb3 || task !== 'CREATE_WEB3_AGREEMENT')
+    .map(([, value]) => value);
+  if (all.length === 0) return 0;
   const done = all.filter((t) => t.status === TaskStatus.IS_DONE).length;
   const pending = all.filter((t) => t.status === TaskStatus.IS_PENDING).length;
   return Math.round(((done + pending * 0.5) / all.length) * 100);
@@ -121,34 +124,33 @@ export const useChangeSpaceDelegateOrchestrator = ({
     progressStateReducer,
     initialTaskState,
   );
-  const [currentAction, setCurrentAction] = useState<string>();
+  const taskStateRef = useRef(taskState);
+  useEffect(() => {
+    taskStateRef.current = taskState;
+  }, [taskState]);
+  const [currentTask, setCurrentTask] = useState<TaskName | null>(null);
 
-  const progress = computeProgress(taskState);
+  const progress = computeProgress(taskState, Boolean(config));
 
   const startTask = useCallback((taskName: TaskName) => {
-    const message = taskActionDescriptions[taskName];
-    setCurrentAction(message);
-    dispatch({ type: 'START_TASK', taskName, message });
+    setCurrentTask(taskName);
+    dispatch({ type: 'START_TASK', taskName });
   }, []);
 
   const completeTask = useCallback(
     (taskName: TaskName) => {
-      if (currentAction === taskActionDescriptions[taskName]) {
-        setCurrentAction(undefined);
-      }
+      if (currentTask === taskName) setCurrentTask(null);
       dispatch({ type: 'COMPLETE_TASK', taskName });
     },
-    [currentAction],
+    [currentTask],
   );
 
   const errorTask = useCallback(
     (taskName: TaskName, error: string) => {
-      if (currentAction === taskActionDescriptions[taskName]) {
-        setCurrentAction(undefined);
-      }
+      if (currentTask === taskName) setCurrentTask(null);
       dispatch({ type: 'SET_ERROR', taskName, message: error });
     },
-    [currentAction],
+    [currentTask],
   );
 
   const resetTasks = useCallback(() => {
@@ -158,21 +160,22 @@ export const useChangeSpaceDelegateOrchestrator = ({
   const { trigger: changeSpaceDelegateAction } = useSWRMutation(
     'changeSpaceDelegateOrchestration',
     async (_: string, { arg }: { arg: ChangeSpaceDelegateArg }) => {
-      startTask('CREATE_WEB2_AGREEMENT');
-      const inputWeb2 = schemaCreateAgreementWeb2.parse({
-        ...arg,
-        spaceId: arg.spaceId,
-      });
-      const createdAgreement = await web2.createAgreement(inputWeb2);
-      completeTask('CREATE_WEB2_AGREEMENT');
-
-      const web2Slug = createdAgreement?.slug;
-
-      const space = spaces?.find(
-        (s) => s.address?.toLowerCase() === arg.space.toLowerCase(),
-      );
-
+      let web2Slug: string | undefined;
       try {
+        startTask('CREATE_WEB2_AGREEMENT');
+        const inputWeb2 = schemaCreateAgreementWeb2.parse({
+          ...arg,
+          spaceId: arg.spaceId,
+        });
+        const createdAgreement = await web2.createAgreement(inputWeb2);
+        completeTask('CREATE_WEB2_AGREEMENT');
+
+        web2Slug = createdAgreement?.slug;
+
+        const space = spaces?.find(
+          (s) => s.address?.toLowerCase() === arg.space.toLowerCase(),
+        );
+
         if (config) {
           if (space?.web3SpaceId == null) {
             throw new Error(
@@ -189,15 +192,22 @@ export const useChangeSpaceDelegateOrchestrator = ({
         }
 
         const files = schemaCreateAgreementFiles.parse(arg);
+        startTask('UPLOAD_FILES');
         if (files.attachments?.length || files.leadImage) {
-          startTask('UPLOAD_FILES');
           await agreementFiles.upload(files, web2Slug);
-          completeTask('UPLOAD_FILES');
-        } else {
-          startTask('UPLOAD_FILES');
-          completeTask('UPLOAD_FILES');
         }
+        completeTask('UPLOAD_FILES');
       } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Something went wrong';
+        for (const taskName of Object.keys(
+          taskStateRef.current,
+        ) as TaskName[]) {
+          if (taskStateRef.current[taskName].status === TaskStatus.IS_PENDING) {
+            errorTask(taskName, message);
+          }
+        }
+        setCurrentTask(null);
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
@@ -209,7 +219,7 @@ export const useChangeSpaceDelegateOrchestrator = ({
   const { data: updatedWeb2Agreement } = useSWR(
     web2.createdAgreement?.slug &&
       taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
-      (!config || taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE)
+      (!config || web3.changeDelegateData?.proposalId != null)
       ? [
           web2.createdAgreement.slug,
           web3.changeDelegateData?.proposalId,
@@ -238,14 +248,44 @@ export const useChangeSpaceDelegateOrchestrator = ({
     },
   );
 
+  const taskErrorMessages = useMemo(
+    () =>
+      (
+        Object.values(taskState) as Array<{
+          status: TaskStatus;
+          message?: string;
+        }>
+      )
+        .filter((t) => t.status === TaskStatus.ERROR && t.message)
+        .map((t) => t.message as string),
+    [taskState],
+  );
+
+  const hasTaskFailure = useMemo(
+    () =>
+      (Object.values(taskState) as Array<{ status: TaskStatus }>).some(
+        (t) => t.status === TaskStatus.ERROR,
+      ),
+    [taskState],
+  );
+
+  const hasTaskPending = useMemo(
+    () =>
+      (Object.values(taskState) as Array<{ status: TaskStatus }>).some(
+        (t) => t.status === TaskStatus.IS_PENDING,
+      ),
+    [taskState],
+  );
+
   const errors = useMemo(
     () =>
       [
         web2.errorCreateAgreementMutation,
         web3.changeDelegateError,
         web3.errorWaitChangeDelegateFromTx,
+        ...taskErrorMessages,
       ].filter(Boolean),
-    [web2, web3],
+    [web2, web3, taskErrorMessages],
   );
 
   const reset = useCallback(() => {
@@ -263,10 +303,12 @@ export const useChangeSpaceDelegateOrchestrator = ({
       ...updatedWeb2Agreement,
     },
     taskState,
-    currentAction,
+    /** i18n: map with AgreementFlow.changeSpaceDelegateProgress */
+    currentTask,
     progress,
-    isPending: progress > 0 && progress < 100,
-    isError: errors.length > 0,
+    isPending:
+      !hasTaskFailure && (hasTaskPending || (progress > 0 && progress < 100)),
+    isError: errors.length > 0 || hasTaskFailure,
     errors,
   };
 };

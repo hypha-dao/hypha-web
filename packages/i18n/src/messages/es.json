@@ -765,6 +765,12 @@
       "UPLOAD_FILES": "Subiendo archivos...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Vinculando acuerdos Web2 y Web3"
     },
+    "changeSpaceDelegateProgress": {
+      "CREATE_WEB2_AGREEMENT": "Creando acuerdo...",
+      "CREATE_WEB3_AGREEMENT": "Creando acuerdo Web3...",
+      "UPLOAD_FILES": "Subiendo archivos...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Vinculando acuerdos Web2 y Web3"
+    },
     "proposalLoader": {
       "processingVote": "Procesando voto...",
       "savingVote": "Guardando voto...",

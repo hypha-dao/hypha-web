@@ -45,7 +45,7 @@ export default async function ChangeSpaceDelegatePage({ params }: PageProps) {
   try {
     spaces = await getAllSpaces({
       parentOnly: false,
-      omitSandbox: false,
+      omitSandbox: true,
     });
   } catch (err) {
     console.error('Failed to fetch spaces:', err);

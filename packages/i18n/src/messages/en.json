@@ -1644,6 +1644,12 @@
       "UPLOAD_FILES": "Uploading files...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Linking Web2 and Web3 agreements"
     },
+    "changeSpaceDelegateProgress": {
+      "CREATE_WEB2_AGREEMENT": "Creating agreement...",
+      "CREATE_WEB3_AGREEMENT": "Creating Web3 agreement...",
+      "UPLOAD_FILES": "Uploading files...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Linking Web2 and Web3 agreements"
+    },
     "proposalLoader": {
       "processingVote": "Processing vote...",
       "savingVote": "Saving vote...",
