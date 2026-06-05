@@ -39,13 +39,18 @@ export default async function ChangeSpaceDelegatePage({ params }: PageProps) {
   if (!spaceFromDb) notFound();
   const { id: spaceId, web3SpaceId } = spaceFromDb;
 
+  // Sandbox spaces shouldn't be selectable as governance authorities for
+  // production spaces, but a sandbox space must still be able to delegate to
+  // other sandbox spaces (e.g. for testing on preview environments).
+  const currentSpaceIsSandbox = spaceFromDb.flags?.includes('sandbox') === true;
+
   let spaces = [] as Space[];
   let error = null;
 
   try {
     spaces = await getAllSpaces({
       parentOnly: false,
-      omitSandbox: true,
+      omitSandbox: !currentSpaceIsSandbox,
     });
   } catch (err) {
     console.error('Failed to fetch spaces:', err);
