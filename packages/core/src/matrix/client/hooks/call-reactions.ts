@@ -172,7 +172,7 @@ export function filterCallRaisedHandsToInCallParticipants(
   entries: CallRaisedHandEntry[],
   inCallUserIds: string[] | null | undefined,
 ): CallRaisedHandEntry[] {
-  if (!inCallUserIds?.length) return entries;
+  if (!inCallUserIds?.length) return [];
   const inCall = new Set(inCallUserIds);
   return entries.filter((entry) => inCall.has(entry.userId));
 }

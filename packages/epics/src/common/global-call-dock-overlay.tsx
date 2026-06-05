@@ -1151,8 +1151,10 @@ export function GlobalCallDockOverlay({
         inDocumentPip
           ? 'relative flex h-full w-full min-h-0 min-w-0 select-none flex-col overflow-hidden rounded-lg border border-border/60 bg-background/95 shadow-lg'
           : cn(
-              'fixed z-[130] flex select-none flex-col rounded-xl border border-border/60 bg-background/95 shadow-2xl',
-              isMobile ? '' : 'backdrop-blur-sm',
+              'fixed z-[130] flex select-none flex-col rounded-xl border border-border/60 shadow-2xl',
+              isTouchDock
+                ? 'bg-background'
+                : 'bg-background/95 backdrop-blur-sm',
               'min-h-0 min-w-0 overflow-hidden',
               !isMobile && !modeIsFullscreen && !isScreensharing
                 ? 'min-h-[320px] min-w-[480px]'
@@ -1192,7 +1194,8 @@ export function GlobalCallDockOverlay({
         ) : (
           <div
             className={cn(
-              'pointer-events-auto flex shrink-0 items-center gap-1 border-b border-border/50 bg-muted/45 touch-manipulation',
+              'pointer-events-auto flex shrink-0 items-center gap-1 border-b border-border/50 touch-manipulation',
+              isTouchDock ? 'bg-background' : 'bg-muted/45',
               dockCompact ? 'px-1.5 py-1' : 'px-2.5 py-2',
               modeIsFullscreen || isTouchDock
                 ? 'cursor-default'
@@ -1361,7 +1364,8 @@ export function GlobalCallDockOverlay({
             inDocumentPip
               ? 'z-40 h-8 overflow-hidden bg-background/95 px-1 py-0 backdrop-blur-sm'
               : cn(
-                  'z-30 overflow-visible bg-muted/35 py-2',
+                  'z-30 overflow-visible py-2',
+                  isTouchDock ? 'bg-background' : 'bg-muted/35',
                   dockCompact ? 'px-2' : 'px-3 sm:px-4',
                 ),
           )}
@@ -1539,7 +1543,10 @@ export function GlobalCallDockOverlay({
                 <HumanChatPanelCallRaisedHandsStrip
                   raisedHands={raisedHands}
                   resolveMemberLabel={resolveMemberLabel}
-                  className={cn(dockCompact && '-mx-2 -mt-2 mb-1 border-x-0')}
+                  className={cn(
+                    isTouchDock && 'border-border bg-muted',
+                    dockCompact && '-mx-2 -mt-2 mb-1 border-x-0',
+                  )}
                 />
               ) : null}
               <HumanChatPanelInCallControls

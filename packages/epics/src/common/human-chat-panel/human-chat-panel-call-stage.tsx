@@ -970,6 +970,15 @@ function HumanChatPanelCallStageMain({
   const effectiveShareLayoutMode: CallFullViewLayoutMode = isFull
     ? fullViewLayoutMode
     : 'sideBySide';
+  /**
+   * Phone panel + screen share: stack share above participants. Side-by-side +
+   * pane splitter leaves a narrow column, emerald divider, and black voids.
+   */
+  const useMobileShareStackLayout =
+    isMobilePanelStage && useShareWithParticipantsLayout && !presenterShareOnly;
+  const sharePanelVideoFit: 'cover' | 'contain' = isMobilePanelStage
+    ? 'contain'
+    : effectivePanelVideoFit;
 
   /**
    * Phone panel: equal-height grid (see call-panel-mobile-grid) instead of
@@ -1119,7 +1128,7 @@ function HumanChatPanelCallStageMain({
           feed={feed}
           isShare
           isFullView={isFull}
-          panelVideoFit={effectivePanelVideoFit}
+          panelVideoFit={sharePanelVideoFit}
           panelFlush={panelFlush}
           isActiveSpeaker={
             activeSpeakerKey != null &&
@@ -1135,6 +1144,63 @@ function HumanChatPanelCallStageMain({
         />
       </div>
     ));
+  };
+
+  const renderMobileShareParticipantBand = () => {
+    if (shareMobilePanelGrid && shareParticipantTiles.length > 1) {
+      return (
+        <div
+          className={cn(
+            'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+            panelFlush ? 'p-0' : 'p-1',
+          )}
+        >
+          <div className={shareMobilePanelGrid.gridClass}>
+            {shareParticipantTiles.map((item, i) => (
+              <div
+                key={
+                  item.kind === 'feed'
+                    ? feedKey(item.feed, 1000 + i)
+                    : `ph-share-mobile-${item.userId}-${i}`
+                }
+                className={shareMobilePanelGrid.cellClass}
+              >
+                {renderRemoteUserTile(item, 1000 + i)}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className={cn(
+          'flex min-h-0 min-w-0 flex-1 flex-row gap-1.5 overflow-x-auto',
+          panelFlush ? 'px-0 py-1' : 'p-1.5',
+        )}
+        role="group"
+        aria-label={t('callLayoutFilmstrip')}
+      >
+        {shareParticipantTiles.map((item, i) => (
+          <div
+            key={
+              item.kind === 'feed'
+                ? feedKey(item.feed, 1000 + i)
+                : `ph-share-mobile-${item.userId}-${i}`
+            }
+            className={cn(
+              'flex min-h-0 min-w-0 shrink-0 flex-col',
+              shareParticipantTiles.length <= 1
+                ? 'h-full w-full flex-1'
+                : 'aspect-video h-full min-w-[42%] max-w-[50%]',
+            )}
+          >
+            {renderRemoteUserTile(item, 1000 + i)}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   const renderParticipantShareSidebar = (
@@ -1371,6 +1437,18 @@ function HumanChatPanelCallStageMain({
             <>
               {effectiveShareLayoutMode === 'sideBySide' &&
                 (() => {
+                  if (useMobileShareStackLayout) {
+                    return (
+                      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-black">
+                        <div className="flex min-h-0 min-w-0 flex-[3] flex-col overflow-hidden border-b border-border/20">
+                          {renderSharePane(0)}
+                        </div>
+                        <div className="flex min-h-0 min-w-0 flex-[2] flex-col overflow-hidden">
+                          {renderMobileShareParticipantBand()}
+                        </div>
+                      </div>
+                    );
+                  }
                   const r = fullViewPaneSplit.sideBySide;
                   const a = Math.max(0, Math.min(1, r));
                   return (
@@ -1401,13 +1479,13 @@ function HumanChatPanelCallStageMain({
                           aria-label={t('callPaneResizeSharePeople')}
                         />
                       )}
-                      {onSplit && (
+                      {onSplit && isFull && (
                         <CallFullViewPaneSplitter
-                          orientation={isFull ? 'vertical' : 'vertical'}
+                          orientation="vertical"
                           containerRef={splitRef}
                           ratio={r}
                           onRatioChange={(v) => onSplit('sideBySide', v)}
-                          className={isFull ? 'hidden lg:block' : undefined}
+                          className="hidden lg:block"
                           aria-label={t('callPaneResizeSharePeople')}
                         />
                       )}

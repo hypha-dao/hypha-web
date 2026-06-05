@@ -183,11 +183,9 @@ describe('call-reactions (WCUX-REACT)', () => {
         '@alice:example.org',
       ]),
     ).toEqual([{ userId: '@alice:example.org', raisedAt: 100 }]);
-    expect(filterCallRaisedHandsToInCallParticipants(entries, [])).toEqual(
-      entries,
-    );
+    expect(filterCallRaisedHandsToInCallParticipants(entries, [])).toEqual([]);
     expect(filterCallRaisedHandsToInCallParticipants(entries, null)).toEqual(
-      entries,
+      [],
     );
   });
 
