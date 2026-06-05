@@ -170,7 +170,7 @@ export const useChangeSpaceDelegateOrchestrator = ({
         const createdAgreement = await web2.createAgreement(inputWeb2);
         completeTask('CREATE_WEB2_AGREEMENT');
 
-        web2Slug = createdAgreement?.slug;
+        web2Slug = createdAgreement?.slug ?? undefined;
 
         const space = spaces?.find(
           (s) => s.address?.toLowerCase() === arg.space.toLowerCase(),
