@@ -40,7 +40,7 @@ export function SpaceCardList({
   return (
     <>
       {pagination?.totalPages > 0 ? (
-        <div className="flex flex-col justify-around items-center gap-4">
+        <div className="flex flex-col justify-around items-center gap-4 w-full">
           <div className="w-full">
             <SpaceCardContainer
               key={`spaces-${spaces.length}`}
