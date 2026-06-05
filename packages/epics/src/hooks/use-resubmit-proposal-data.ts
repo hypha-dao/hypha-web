@@ -53,6 +53,8 @@ export type ResubmitProposalSessionPayload = {
   member?: string;
   spaceToSpaceTargetAddress?: string;
   spaceToSpaceMemberAddress?: string;
+  changeDelegateTargetAddress?: string;
+  changeDelegateMemberAddress?: string;
   issueNewTokenForm?: Record<string, unknown>;
   tokenBackingVault?: Record<string, unknown>;
   spaceTokenPurchaseForm?: Record<string, unknown>;
@@ -446,6 +448,19 @@ export const useResubmitProposalData = <
               shouldValidate: true,
             },
           );
+        } else if (parsed.changeDelegateTargetAddress !== undefined) {
+          const spacePath = 'space' as Path<T>;
+          form.setValue(
+            spacePath,
+            parsed.changeDelegateTargetAddress as PathValue<
+              T,
+              typeof spacePath
+            >,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
         } else if (typeof parsed.space === 'number') {
           form.setValue('space' as any, parsed.space as any, {
             shouldDirty: true,
@@ -457,6 +472,19 @@ export const useResubmitProposalData = <
           form.setValue(
             'member' as any,
             parsed.spaceToSpaceMemberAddress as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+        } else if (parsed.changeDelegateMemberAddress !== undefined) {
+          const memberPath = 'member' as Path<T>;
+          form.setValue(
+            memberPath,
+            parsed.changeDelegateMemberAddress as PathValue<
+              T,
+              typeof memberPath
+            >,
             {
               shouldDirty: true,
               shouldValidate: true,
@@ -715,6 +743,8 @@ export const useResubmitProposalData = <
           fieldsToTrigger.push('tokenBase');
         }
         if (parsed.spaceToSpaceTargetAddress !== undefined) {
+          fieldsToTrigger.push('space', 'member');
+        } else if (parsed.changeDelegateTargetAddress !== undefined) {
           fieldsToTrigger.push('space', 'member');
         } else {
           if (typeof parsed.space === 'number') {

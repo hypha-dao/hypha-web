@@ -93,6 +93,7 @@
       "selectSpaceToActivate": "Selecciona un espacio para activar.",
       "monthsToActivateRequired": "Ingresa la cantidad de meses para activar.",
       "selectSpaceToJoin": "Selecciona un espacio para unirte",
+      "selectGovernanceSpace": "Selecciona un espacio de gobernanza",
       "selectDelegatedVotingMember": "Selecciona un miembro delegado para votar",
       "selectSpaceToExit": "Selecciona un espacio para salir.",
       "selectMemberToRemove": "Selecciona un miembro para eliminar",
@@ -428,6 +429,14 @@
         "delegationRules": "Reglas de delegación",
         "delegatedVotingMemberDescription": "El miembro votante delegado es la persona de su espacio que está formalmente autorizada para emitir votos en nombre de su espacio dentro del espacio para unirse."
       },
+      "changeSpaceDelegate": {
+        "governanceSpace": "Espacio de gobernanza",
+        "delegationRules": "Reglas de delegación",
+        "delegatedVotingMemberDescription": "Selecciona el miembro de tu espacio que debe recibir el poder de voto delegado de tu espacio en el espacio de gobernanza elegido."
+      },
+      "changeSpaceDelegateSelector": {
+        "governanceSpace": "Espacio de gobernanza"
+      },
       "spaceTransparencySettings": {
         "title": "Transparencia espacial",
         "description": "Defina el nivel de transparencia que colectivamente desea aplicar a su espacio. Tenga en cuenta que, independientemente de la elección que haga a continuación, solo el miembro directo puede realizar acciones en el espacio.",
@@ -610,6 +619,7 @@
       "membershipExit": "Salida de membresía",
       "spaceMemory": "Space Memory",
       "spaceToSpace": "Espacio al espacio",
+      "changeDelegate": "Cambiar delegado",
       "issueNewToken": "Emitir nuevo token",
       "treasuryMinting": "Acuñación del Tesoro",
       "tokenBurning": "Quema de tokens",
@@ -752,6 +762,12 @@
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Creando acuerdo...",
       "CREATE_WEB3_PROPOSAL": "Creando propuesta Web3...",
+      "UPLOAD_FILES": "Subiendo archivos...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Vinculando acuerdos Web2 y Web3"
+    },
+    "changeSpaceDelegateProgress": {
+      "CREATE_WEB2_AGREEMENT": "Creando acuerdo...",
+      "CREATE_WEB3_AGREEMENT": "Creando acuerdo Web3...",
       "UPLOAD_FILES": "Subiendo archivos...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Vinculando acuerdos Web2 y Web3"
     },
@@ -1057,6 +1073,10 @@
       "spaceToSpaceMembership": {
         "title": "Membresía espacio-espacio",
         "description": "Permite que tu espacio se una a otro espacio como miembro, obteniendo la capacidad de participar en la gobernanza y votar propuestas."
+      },
+      "changeSpaceDelegate": {
+        "title": "Cambiar delegado",
+        "description": "Actualiza el miembro que vota en nombre de tu espacio en un espacio al que ya te has unido."
       },
       "issueNewToken": {
         "title": "Emitir nuevo token",
@@ -1786,6 +1806,7 @@
       "usdcAmount": "USDC Monto",
       "hyphaAmount": "HYPHA Monto",
       "joiningSpace": "Unirse al espacio",
+      "governanceSpace": "Espacio de gobernanza",
       "delegatedVotingMember": "Miembro delegado con derecho a voto",
       "exitingMember": "Miembro saliente",
       "exitFrom": "Salir de",
