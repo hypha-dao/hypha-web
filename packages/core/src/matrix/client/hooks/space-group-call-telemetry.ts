@@ -12,15 +12,21 @@ export type SpaceGroupCallTelemetryEvent = {
     | 'hypha.group_call.join_ms'
     | 'hypha.group_call.left'
     | 'hypha.group_call.error'
+    | 'hypha.group_call.error_ignored'
     | 'hypha.group_call.connected'
     | 'hypha.group_call.media_snapshot'
     | 'hypha.group_call.remote_media_stall'
+    | 'hypha.group_call.remote_media_recover'
     | 'hypha.group_call.turn_probe'
     | 'hypha.group_call.ice_gather_probe'
     | 'hypha.group_call.webrtc_summary'
-    | 'hypha.group_call.room_type_sync';
+    | 'hypha.group_call.room_type_sync'
+    | 'hypha.group_call.capture_started';
   roomId: string;
   kind?: 'audio' | 'video';
+  captureMode?: string;
+  hasRecorder?: boolean;
+  hasGroupCall?: boolean;
   /** Matrix group call state event `m.type` before sync (voice→video upgrade). */
   previousRoomGroupCallType?: string;
   /** Matrix group call state event `m.type` after sync. */
@@ -73,7 +79,13 @@ export function logSpaceGroupCallEvent(
     return;
   }
   try {
-    if (process.env.NODE_ENV === 'development' || matrixWebRtcDebugFromEnv()) {
+    const debugOverrideEnabled =
+      typeof window !== 'undefined' &&
+      window.localStorage.getItem('hypha.group_call.debug') === '1';
+    if (
+      process.env.NODE_ENV === 'development' ||
+      (matrixWebRtcDebugFromEnv() && debugOverrideEnabled)
+    ) {
       console.info('[hypha.group_call]', event);
     }
   } catch {

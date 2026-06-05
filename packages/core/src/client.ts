@@ -10,3 +10,9 @@ export * from './notifications';
 export * from './matrix';
 export * from './coherence';
 export * from './org-memory';
+export {
+  getDefaultDestinationCurrency,
+  getDestinationCurrenciesForSourceRail,
+} from './banking/bridge-destination-currencies';
+export { DEFAULT_BANK_PROVIDER } from './banking/constants';
+export type { BankProvider } from './banking/types';

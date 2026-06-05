@@ -357,7 +357,12 @@ export function ExploreSpaces({
         </Link>
       </div>
       <div className="space-y-6 flex mt-4 mb-7">
-        <SpaceCardList lang={lang} spaces={sortedSpaces} pageSize={15} />
+        <SpaceCardList
+          lang={lang}
+          spaces={sortedSpaces}
+          pageSize={12}
+          cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+        />
       </div>
       <Separator className="mt-1 mb-1" />
       <div className="flex justify-around flex-row columns-3 space-x-3 mt-6 -mb-15">

@@ -1,0 +1,283 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Repository Overview
+
+`hypha-web` is a pnpm + Turborepo monorepo (`pnpm@9.15.0`, Turbo v2) for Hypha v3 — a DAO toolkit platform. The primary deployable is a Next.js 15 app; all other packages are internal workspace libraries.
+
+**Package scope:** `@hypha-platform/*`
+
+---
+
+## Commands
+
+### Setup
+
+```bash
+pnpm install
+pnpm env:copy          # copies .env files from another git worktree (interactive)
+```
+
+Each app has a `.env.template` — `postinstall` auto-copies it to `.env` if missing.
+
+### Development
+
+```bash
+pnpm dev               # starts all apps (Next.js web on :3000, API on :3001) via Turbo
+pnpm build             # full monorepo build (cross-package type check via turbo)
+pnpm start             # production start (requires build first)
+```
+
+### Testing
+
+```bash
+# Unit tests (Vitest) — run from packages/core:
+pnpm --filter @hypha-platform/core test
+
+# Single test file:
+pnpm --filter @hypha-platform/core exec vitest run src/common/__tests__/percentage.test.ts
+
+# E2E tests (Playwright, requires web running on :3000):
+pnpm e2e
+pnpm e2e:ui            # interactive UI mode
+pnpm e2e:debug
+```
+
+### Linting & Formatting
+
+```bash
+pnpm lint              # ESLint across all packages (includes matrix-sdk version check)
+pnpm lint:fix
+pnpm format:check      # Prettier
+pnpm format:fix
+pnpm verify:messages   # i18n modal/aside message parity check
+```
+
+### Database (Drizzle / Neon)
+
+```bash
+pnpm --filter @hypha-platform/storage-postgres run generate   # generate migration files
+pnpm --filter @hypha-platform/storage-postgres run migrate    # apply migrations
+pnpm --filter @hypha-platform/storage-postgres run studio     # Drizzle Studio UI
+pnpm --filter @hypha-platform/storage-postgres run seed       # seed the database
+```
+
+### Smart Contracts (Hardhat)
+
+```bash
+cd packages/storage-evm
+npx hardhat compile
+npx hardhat test
+pnpm wagmi:generate    # re-generate typed ABI bindings into packages/core/src/generated.ts
+```
+
+### UI Components
+
+```bash
+pnpm add-component     # shadcn CLI — adds to packages/ui
+```
+
+---
+
+## Architecture
+
+### Monorepo Structure
+
+```
+apps/
+  web/              — Next.js 15 frontend (primary deliverable, port 3000)
+  api/              — Fastify backend service (port 3001)
+  web-e2e/          — Playwright E2E test suite
+packages/
+  core/             — Business logic, server queries/mutations/actions, Web3 client hooks
+  epics/            — Feature-level React components and hooks
+  ui/               — shadcn/ui design system primitives
+  ui-utils/         — Tailwind cn() helper + shared CSS
+  storage-postgres/ — Drizzle ORM schema, migrations, DB connection (Neon PostgreSQL)
+  storage-evm/      — Solidity contracts (Hardhat), compiled ABIs
+  authentication/   — Privy auth provider + useAuthentication hook
+  evm/              — wagmi/viem config (Base chain + Hardhat local)
+  i18n/             — next-intl routing, message dictionaries (en/pt/es/fr/de)
+  feature-flags/    — Vercel Flags SDK wrappers
+  notifications/    — OneSignal push + email notification helpers
+  chat-server/      — AI chat server logic (OpenRouter via Vercel AI SDK)
+  mcp-server/       — Model Context Protocol server
+  cookie/           — Cookie utilities
+```
+
+### Package Dependency Direction
+
+```
+apps/web  →  epics  →  core  →  storage-postgres
+         →  ui               →  storage-evm (ABIs only)
+         →  authentication  →  evm
+         →  i18n
+         →  feature-flags
+         →  notifications  →  core
+         →  chat-server    →  core
+```
+
+Never reverse this direction. Circular deps are a build failure.
+
+### Next.js App Router Layout (`apps/web`)
+
+- All routes live under `app/[lang]/` — `[lang]` is the i18n locale prefix (en/pt/es/fr/de, always-on).
+- Space detail page uses **parallel routes**: `@aside/` (slide-in panel for proposals, member profiles, notifications) and `@tab/` (main content tabs: overview, agreements, members, treasury, coherence).
+- REST API handlers at `app/api/v1/` (spaces, people, tokens, transfers, documents, events).
+- Webhook handlers at `app/api/webhooks/` (Alchemy blockchain events for space/proposal lifecycle).
+- Root provider nesting order: `AuthProvider (Privy) → ThemeProvider → EvmProvider (wagmi) → NotificationSubscriber`.
+
+### Server / Client Boundary
+
+- Server code: `'use server'` directive, or in packages with `./server` export path (e.g. `@hypha-platform/core/server`).
+- Client code: `'use client'` directive or `@hypha-platform/core/client` import path.
+- **Never** import `./server` paths from a client component.
+
+### Data Layer
+
+- **PostgreSQL (Neon):** All relational data — spaces, people, memberships, documents, tokens, events. Accessed via Drizzle ORM. `db` instance is passed as `{ db }` config parameter to queries — never imported directly inside query functions.
+- **EVM (Base chain):** Governance state, on-chain voting, token contracts, space factory. Accessed via viem + wagmi. The link between layers is `web3SpaceId` (on Space) and `web3ProposalId` (on Document).
+
+### Core Domain Entities
+
+| Entity | Description |
+|---|---|
+| Space | DAO org with slug, `web3SpaceId`, parent/child hierarchy, flags (sandbox/demo/archived) |
+| Document | Governance artifact: `discussion` → `proposal` → `agreement` |
+| Person | User profile linked to Privy `sub` and optional wallet address |
+| Membership | Join between Person and Space |
+| Token | Space-scoped token (utility, credits, ownership, voice, impact, community_currency) |
+
+### Governance Flow
+
+1. Member creates a **discussion** document.
+2. Discussion promoted to **proposal** — on-chain vote via `DAOProposalsImplementation` contract.
+3. Approved proposal becomes an **agreement** executed through a per-space `Executor` contract.
+4. Agreement plugins handle specific actions (deploy funds, pay expenses, change entry/exit methods, activate spaces, space-to-space membership, etc.).
+
+### Key Conventions
+
+- **File naming for hooks:** Suffix signals runtime boundary — `.web3.rpc.ts` = wagmi/viem client hook, `.web2.rsc.ts` = SWR server-cache hook.
+- **`DatabaseInstance` injection:** Always `{ db }` as a config argument to queries/mutations; no global `db` import.
+- **Pagination:** Use `PaginatedResponse<T>` and `PaginationParams` from `core/common` for all list endpoints.
+- **Feature flags:** `NEXT_PUBLIC_ENABLE_*` env vars (build-time) or `HYPHA_ENABLE_*` cookies (runtime). AI chat, Human chat, Coherence, and Space Memory are gated flags — off by default.
+- **i18n:** All user-facing strings via `next-intl`. Locales: `en`, `pt`, `es`, `fr`, `de`. Run `pnpm verify:messages` to check modal/aside key parity.
+- **CSP:** Enforced in middleware in production. Set `ENABLE_LOCALHOST_CSP=true` to test locally.
+
+### AI / Coherence Features
+
+- `packages/chat-server` — AI chat using Vercel AI SDK with OpenRouter provider.
+- `packages/mcp-server` — MCP server exposing Hypha platform data as AI context tools.
+- Coherence (under `packages/epics/src/coherence/`) — Matrix-based human chat rooms per space. Uses `matrix-js-sdk` pinned version (checked by `scripts/check-matrix-js-sdk-version.mjs`).
+
+### Authentication Pattern (Server-Side)
+
+Most `v1/` API routes extract `Authorization: Bearer <token>` but have a `TODO: implement authorization` — auth is not enforced there yet.
+
+**When you need to identify the caller** (e.g. financial/write routes):
+1. Extract the Bearer token from the `Authorization` header
+2. Verify via `PrivyClient` from `@privy-io/node`:
+   ```typescript
+   const privy = new PrivyClient({ appId: PRIVY_APP_ID, appSecret: PRIVY_APP_SECRET });
+   const { user_id: privyUserId } = await privy.utils().auth().verifyAuthToken(token);
+   ```
+3. Look up the person in DB by `people.sub = privyUserId`
+
+Full working example: `apps/web/src/app/api/matrix/token/route.ts:32-51`.
+
+### Notification / Email Pattern
+
+Notifications go through OneSignal via `@hypha-platform/notifications`. User is identified by their `slug` as `external_id`.
+
+```typescript
+import { sendEmailByAlias } from '@hypha-platform/notifications/server';
+
+await sendEmailByAlias({
+  app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '',
+  alias: {
+    include_aliases: { external_id: [person.slug] },
+    email_to: [person.email],   // direct address — works even without OneSignal subscription
+  },
+  content: {
+    email_subject: '...',
+    email_body: '...',          // HTML
+  },
+});
+```
+
+For templated emails (when an OneSignal template exists): use `sendEmailNotificationsTemplate` with `template_id` from env vars.
+
+### Webhook Signature Verification Pattern
+
+All webhooks use HMAC-SHA256, implemented as a middleware factory:
+
+```typescript
+// packages/core/src/common/server/webhooks/alchemy/middleware.ts
+createHmac('sha256', signingKey).update(body, 'utf8').digest('hex')
+// compared timing-safe against the signature header
+```
+
+For new webhook providers (Bridge, etc.): follow the same pattern — new middleware file under `packages/core/src/common/server/webhooks/<provider>/middleware.ts`, then `newHandlerWithMiddleware([middleware], handler)`.
+
+### External API Client Pattern
+
+No shared HTTP client library — use plain `fetch` with a thin server-only wrapper:
+
+```typescript
+import 'server-only';
+// Read API key from env
+// Helper for common headers
+// One exported function per API call, throws on non-2xx
+```
+
+See `packages/core/src/common/server/bridge-client.ts` (Bridge) and `packages/core/src/common/server/alchemy-client.ts` (Alchemy) as examples.
+
+### Adding a New Domain Table (DB)
+
+1. Create schema file `packages/storage-postgres/src/schema/<name>.ts` — Drizzle `pgTable` with `commonDateFields`
+2. Export from `packages/storage-postgres/src/schema/index.ts`
+3. Add queries to `packages/core/src/[domain]/server/queries.ts`, mutations to `mutations.ts`
+4. Export new functions from the domain's `server/index.ts` and from `packages/core/src/server.ts`
+5. Run `pnpm --filter @hypha-platform/storage-postgres run generate` + `migrate`
+
+### Smart Contracts (`packages/storage-evm/contracts/`)
+
+Key contracts on Base chain: `DAOSpaceFactoryImplementation`, `DAOProposalsImplementation`, `AgreementsImplementation`, `Executor`, `EscrowImplementation`, `DecayingTokenFactory`, `EnergyDistributionImplementation`. Deployed addresses in `contracts/addresses.txt`.
+
+---
+
+## Agent Skills (Cursor / Claude Code)
+
+Hypha-specific workflows live in `.agents/skills/`:
+
+| Skill | When to use |
+|---|---|
+| `code-review` | Final check before opening a PR |
+| `security-review` | Any route that handles auth, redirects, or webhooks |
+| `e2e-testing` | Adding or modifying user-facing flows |
+| `i18n-translate` | Any new user-facing string |
+| `conventional-commits` | Commit message format reference |
+
+Cursor rules for conventions (monorepo boundaries, API auth, DB migrations) live in `.cursor/rules/`.
+
+## Ticket Plans (Context Repo)
+
+For active implementation work, the plan lives in the companion context repo at:
+
+```
+C:\Users\rozag\projects\hypha\context\technical\tickets\<issue-slug>\
+```
+
+Read the ticket `overview.md` and `implementation-plan.md` before starting a new stage. This prevents scope bleed and keeps Cursor's context bounded to one stage at a time.
+
+## Debugging (VS Code / Cursor)
+
+A debug configuration for attaching to the Next.js process is in `.vscode/launch.json`. Start the dev server with the `--inspect` flag, then attach:
+
+```bash
+NODE_OPTIONS='--inspect=9230' pnpm dev
+# then: Run > Start Debugging in VS Code or Cursor (F5)
+```
+
+Cursor is VS Code-based and uses the same debug infrastructure — `launch.json` works identically in both.

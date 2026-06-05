@@ -4,10 +4,14 @@ import { Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   getCallControlsPhase,
+  type SpaceGroupCallCaptureConsent,
+  type SpaceGroupCallCaptureMode,
   type SpaceGroupCallErrorCode,
+  type SpaceGroupCallRecordingStatus,
   type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
 import { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
+import { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
 
 type HumanChatPanelCallBannerProps = {
   callState: SpaceGroupCallState;
@@ -32,10 +36,34 @@ type HumanChatPanelCallBannerProps = {
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleScreenshare: () => void;
+  voiceProcessingPreset: 'standard' | 'voice_isolation' | 'music';
+  onVoiceProcessingPresetChange: (
+    preset: 'standard' | 'voice_isolation' | 'music',
+  ) => void;
+  captureMode: SpaceGroupCallCaptureMode;
+  capturePreference: Exclude<SpaceGroupCallCaptureMode, 'none'>;
+  capturePreferenceSelected: boolean;
+  onCapturePreferenceChange: (
+    mode: Exclude<SpaceGroupCallCaptureMode, 'none'>,
+  ) => void;
+  onStartCapture: (mode?: Exclude<SpaceGroupCallCaptureMode, 'none'>) => void;
+  onPauseCapture: () => void;
+  onResumeCapture: () => void;
+  onStopCapture: () => void;
+  recordingStatus: SpaceGroupCallRecordingStatus;
+  recordingError: string | null;
+  recordingWarning?:
+    | import('@hypha-platform/core/client').CallRecordingCaptureWarning
+    | null;
+  canRetryRecordingUpload?: boolean;
+  onRetryRecordingUpload?: () => void;
+  captureConsent: SpaceGroupCallCaptureConsent | null;
+  roomId?: string | null;
   onDismissScreenshareError: () => void;
   /** Reconnect after a recoverable call error. */
   onRetryCall: () => void;
   onDismissCallError: () => void;
+  controlsMode?: 'full' | 'leave_only';
 };
 
 function errorKey(code: SpaceGroupCallErrorCode): string {
@@ -80,10 +108,28 @@ export function HumanChatPanelCallBanner({
   onToggleMic,
   onToggleCamera,
   onToggleScreenshare,
+  voiceProcessingPreset,
+  onVoiceProcessingPresetChange,
+  captureMode,
+  capturePreference,
+  capturePreferenceSelected,
+  onCapturePreferenceChange,
+  onStartCapture,
+  onPauseCapture,
+  onResumeCapture,
+  onStopCapture,
+  recordingStatus,
+  recordingError,
+  recordingWarning = null,
+  canRetryRecordingUpload = false,
+  onRetryRecordingUpload,
+  captureConsent,
+  roomId = null,
   onDismissScreenshareError,
   tabBackgroundWhileInCall,
   onRetryCall,
   onDismissCallError,
+  controlsMode = 'full',
 }: HumanChatPanelCallBannerProps) {
   const t = useTranslations('HumanChatPanel');
   const showRetryOnError =
@@ -202,6 +248,13 @@ export function HumanChatPanelCallBanner({
           </button>
         </div>
       )}
+      {callState === 'connected' && captureConsent ? (
+        <HumanChatPanelCaptureConsentBanner
+          consent={captureConsent}
+          roomId={roomId}
+          variant="inCall"
+        />
+      ) : null}
       <div className="flex min-h-[44px] flex-wrap items-center gap-2 px-4 py-2">
         <div className="min-w-0 flex-1 basis-0 pr-1 sm:pr-2">
           {callState === 'connected' ? (
@@ -259,8 +312,24 @@ export function HumanChatPanelCallBanner({
             onToggleMic={onToggleMic}
             onToggleCamera={onToggleCamera}
             onToggleScreenshare={onToggleScreenshare}
+            voiceProcessingPreset={voiceProcessingPreset}
+            onVoiceProcessingPresetChange={onVoiceProcessingPresetChange}
+            captureMode={captureMode}
+            capturePreference={capturePreference}
+            capturePreferenceSelected={capturePreferenceSelected}
+            onCapturePreferenceChange={onCapturePreferenceChange}
+            onStartCapture={onStartCapture}
+            onPauseCapture={onPauseCapture}
+            onResumeCapture={onResumeCapture}
+            onStopCapture={onStopCapture}
+            recordingStatus={recordingStatus}
+            recordingError={recordingError}
+            recordingWarning={recordingWarning}
+            canRetryRecordingUpload={canRetryRecordingUpload}
+            onRetryRecordingUpload={onRetryRecordingUpload}
             onLeave={onLeave}
             variant="inBanner"
+            controlsMode={controlsMode}
           />
         </div>
       </div>

@@ -16,6 +16,11 @@ export function createGetPeopleBySpaceSlugTool(authToken: string) {
       .string()
       .trim()
       .min(1)
+      .max(128)
+      .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        'space_slug must use lowercase letters, numbers, and hyphens',
+      )
       .describe('Hypha space slug of the active space'),
     page: z.number().int().min(1).optional().default(1),
     page_size: z.number().int().min(1).max(100).optional().default(20),

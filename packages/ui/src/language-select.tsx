@@ -30,7 +30,7 @@ const languageTriggerClassName = cn(
   'isolate overflow-hidden rounded-md bg-neutral-1 text-neutral-12 outline-none',
   'text-xs font-semibold shadow-sm transition-colors duration-150',
   'hover:text-foreground',
-  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+  'focus-visible:ring-1 focus-visible:ring-ring/40',
   'data-[state=open]:shadow-md',
 );
 
@@ -43,7 +43,7 @@ export function LanguageSelect({
   const currentMeta = locales.find((l) => l.code === currentLocale);
 
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu modal={true}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -65,6 +65,7 @@ export function LanguageSelect({
         sideOffset={6}
         collisionPadding={12}
         className={cn(
+          'z-[120]',
           'w-[var(--radix-dropdown-menu-trigger-width)] min-w-[10.5rem] border border-border/90',
           'bg-popover px-1 py-1 text-popover-foreground shadow-xl',
         )}

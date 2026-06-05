@@ -1,4 +1,5 @@
 import { Environment } from '../coherence/types';
+import type { SignalTeamNotice } from './signal-team-events';
 
 export type MatrixUserLink = {
   id: number;
@@ -107,4 +108,6 @@ export interface Message {
    * Matrix MSC3952 intentional mentions (`content.m.mentions.user_ids`).
    */
   mentionedUserIds?: string[];
+  /** Hypha signal-team system notice parsed from structured Matrix content. */
+  signalTeamNotice?: SignalTeamNotice;
 }

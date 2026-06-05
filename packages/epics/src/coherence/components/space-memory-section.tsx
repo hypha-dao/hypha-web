@@ -8,20 +8,15 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 import {
   DocumentState,
-  EventType,
-  RoomEvent,
+  SpaceMemoryItem,
   filterSpaceMemoryItems,
-  useMatrix,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
-import type { MatrixEvent, Room } from 'matrix-js-sdk';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
 import { MemoryFilterValue, MemoryFilters } from './memory-filters';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
-
-const MATRIX_SPACE_MEMORY_REFRESH_DEBOUNCE_MS = 1_800;
 
 type SpaceMemorySectionProps = {
   spaceSlug: string;
@@ -31,8 +26,6 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   spaceSlug,
 }) => {
   const t = useTranslations('CoherenceTab');
-  const { space } = useSpaceBySlug(spaceSlug);
-  const { client, isMatrixAvailable } = useMatrix();
   const {
     items,
     totalCount,
@@ -46,6 +39,8 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     hasMore,
     loadMore,
   } = useSpaceMemoryOrg(spaceSlug);
+  const { space } = useSpaceBySlug(spaceSlug);
+  const matrixChatRoomId = space?.chatRoomId?.trim() || null;
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
   const [activeFilter, setActiveFilter] =
     React.useState<MemoryFilterValue>('general');
@@ -57,55 +52,65 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     [],
   );
 
-  const refreshTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null,
+  const isConversationItem = React.useCallback(
+    (row: SpaceMemoryItem) =>
+      row.source === 'matrix_chat' || row.source === 'discussion_summary',
+    [],
   );
 
-  React.useEffect(() => {
-    const chatRoomId = space?.chatRoomId?.trim();
-    if (!chatRoomId || !client || !isMatrixAvailable) return;
+  const isCallItem = React.useCallback(
+    (row: SpaceMemoryItem) =>
+      row.source === 'call_recording' || row.source === 'call_transcript',
+    [],
+  );
 
-    const scheduleRefresh = () => {
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
+  const stateLabel = React.useCallback(
+    (state: DocumentState) =>
+      t(
+        `documentStates.${state}` as
+          | 'documentStates.discussion'
+          | 'documentStates.proposal'
+          | 'documentStates.agreement'
+          | 'documentStates.memory',
+      ),
+    [t],
+  );
+
+  const contextLineForItem = React.useCallback(
+    (row: SpaceMemoryItem) => {
+      if (row.source === 'memory') {
+        return t('spaceMemoryContextMemory', {
+          title: row.context.documentTitle || t('untitledDocument'),
+        });
       }
-      refreshTimeoutRef.current = setTimeout(() => {
-        refreshTimeoutRef.current = null;
-        void refresh();
-      }, MATRIX_SPACE_MEMORY_REFRESH_DEBOUNCE_MS);
-    };
-
-    const onTimeline = (
-      event: MatrixEvent,
-      room: Room | undefined,
-      _toStart: boolean | undefined,
-      removed: boolean,
-      data: { liveEvent?: boolean },
-    ) => {
-      if (room?.roomId !== chatRoomId) return;
-      if (removed) return;
-      if (data?.liveEvent === false) return;
-      if (event.getType() !== EventType.RoomMessage) return;
-      scheduleRefresh();
-    };
-
-    client.on(RoomEvent.Timeline, onTimeline);
-    return () => {
-      client.removeListener(RoomEvent.Timeline, onTimeline);
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-        refreshTimeoutRef.current = null;
+      if (row.source === 'matrix_chat') {
+        return t('spaceMemoryContextMatrix');
       }
-    };
-  }, [space?.chatRoomId, client, isMatrixAvailable, refresh]);
-
-  const stateLabel = (state: DocumentState) =>
-    t(
-      `documentStates.${state}` as
-        | 'documentStates.discussion'
-        | 'documentStates.proposal'
-        | 'documentStates.agreement',
-    );
+      if (row.source === 'discussion_summary') {
+        return t('spaceMemoryContextDiscussionSummary');
+      }
+      if (row.source === 'call_transcript') {
+        const signalTitle = row.context.signalTitle?.trim();
+        return signalTitle
+          ? t('spaceMemoryContextCallFromSignal', { title: signalTitle })
+          : t('spaceMemoryContextCallTranscript');
+      }
+      if (row.source === 'call_recording') {
+        const signalTitle = row.context.signalTitle?.trim();
+        if (signalTitle) {
+          return t('spaceMemoryContextCallRecordingFromSignal', {
+            title: signalTitle,
+          });
+        }
+        return t('spaceMemoryContextCallRecording');
+      }
+      return t('spaceMemoryContext', {
+        title: row.context.documentTitle || t('untitledDocument'),
+        state: stateLabel(row.context.documentState),
+      });
+    },
+    [stateLabel, t],
+  );
 
   const counts = React.useMemo(
     () =>
@@ -116,11 +121,11 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
             row.source === 'proposal_upload' &&
             row.context.documentState === DocumentState.PROPOSAL,
         ).length,
-        conversations: items.filter((row) => row.source === 'matrix_chat')
-          .length,
+        conversations: items.filter((row) => isConversationItem(row)).length,
+        calls: items.filter((row) => isCallItem(row)).length,
         'ai-chat': items.filter((row) => isAiChatItem(row)).length,
       } satisfies Record<MemoryFilterValue, number>),
-    [isAiChatItem, items],
+    [isAiChatItem, isCallItem, isConversationItem, items],
   );
 
   const filteredItems = React.useMemo(() => {
@@ -135,7 +140,10 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         );
       }
       if (activeFilter === 'conversations') {
-        return row.source === 'matrix_chat';
+        return isConversationItem(row);
+      }
+      if (activeFilter === 'calls') {
+        return isCallItem(row);
       }
       if (activeFilter === 'ai-chat') {
         return isAiChatItem(row);
@@ -144,15 +152,14 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     });
 
     return filterSpaceMemoryItems(byFilter, searchTerm);
-  }, [activeFilter, isAiChatItem, items, searchTerm]);
-
-  const showAiChatTab = counts['ai-chat'] > 0;
-
-  React.useEffect(() => {
-    if (!showAiChatTab && activeFilter === 'ai-chat') {
-      setActiveFilter('general');
-    }
-  }, [activeFilter, showAiChatTab]);
+  }, [
+    activeFilter,
+    isAiChatItem,
+    isCallItem,
+    isConversationItem,
+    items,
+    searchTerm,
+  ]);
 
   const newMemoryHref = `/${lang}/dho/${id}/memory/new-memory`;
 
@@ -161,14 +168,16 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       className="flex w-full flex-col gap-4 py-2"
       aria-label={t('spaceMemory')}
     >
-      <h1 className="text-7 font-semibold tracking-tight text-foreground">
-        {t('spaceMemory')}
-        {typeof totalCount === 'number' ? (
-          <span className="ml-2 text-5 font-medium text-muted-foreground">
-            | {Intl.NumberFormat().format(totalCount)}
-          </span>
-        ) : null}
-      </h1>
+      <header className="flex flex-wrap items-end justify-between gap-2">
+        <h1 className="text-7 font-semibold tracking-tight text-foreground">
+          {t('spaceMemory')}
+          {typeof totalCount === 'number' ? (
+            <span className="ml-2 text-5 font-medium text-muted-foreground">
+              | {Intl.NumberFormat(lang).format(totalCount)}
+            </span>
+          ) : null}
+        </h1>
+      </header>
       <MemoryFilters
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
@@ -176,7 +185,6 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         onSearchChange={setSearchTerm}
         newMemoryHref={newMemoryHref}
         counts={counts}
-        showAiChatTab={showAiChatTab}
       />
 
       {error ? (
@@ -202,6 +210,8 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
               ? t('spaceMemoryEmptySearch')
               : activeFilter === 'ai-chat'
               ? t('spaceMemoryAiChatEmpty')
+              : activeFilter === 'calls'
+              ? t('spaceMemoryCallsEmpty')
               : activeFilter === 'general'
               ? t('spaceMemoryEmpty')
               : t('spaceMemoryEmptyTab')}
@@ -210,23 +220,18 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       ) : (
         <>
           <ul
-            className="m-0 flex w-full list-none flex-wrap justify-start gap-x-6 gap-y-10 p-0"
-            aria-label={t('spaceMemoryTimelineLabel')}
+            className="m-0 grid w-full list-none grid-cols-1 gap-4 p-0 md:grid-cols-2 xl:grid-cols-3"
+            aria-label={t('spaceMemory')}
           >
             {filteredItems.map((row) => (
               <SpaceMemoryTimelineItem
                 key={row.id}
                 item={row}
-                contextLine={
-                  row.source === 'matrix_chat'
-                    ? t('spaceMemoryContextMatrix')
-                    : t('spaceMemoryContext', {
-                        title:
-                          row.context.documentTitle || t('untitledDocument'),
-                        state: stateLabel(row.context.documentState),
-                      })
-                }
-                openLabel={t('spaceMemoryOpenAsset', { name: row.name })}
+                contextLine={contextLineForItem(row)}
+                matrixChatRoomId={matrixChatRoomId}
+                openLabel={t('spaceMemoryOpenAsset', {
+                  name: row.name,
+                })}
               />
             ))}
           </ul>

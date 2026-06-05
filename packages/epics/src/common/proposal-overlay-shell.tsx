@@ -125,7 +125,7 @@ export function ProposalOverlayShell({
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
             className={cn(
-              'fixed z-[41] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-[var(--sidebar-left-width,0px)] max-md:top-[var(--menu-top-height,70px)] max-md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
+              'fixed z-[41] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-0 max-md:top-[var(--menu-top-height,70px)] max-md:right-0 max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
               /* Host is click-through on desktop so MenuTop (z-30) stays usable; modal surface re-enables hits */
               'pointer-events-auto md:pointer-events-none',
               'md:left-[var(--sidebar-left-width,0px)] md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] md:bottom-0 md:top-[var(--menu-top-height,70px)] md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-5',

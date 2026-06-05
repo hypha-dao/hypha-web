@@ -6,6 +6,7 @@ import {
   isLikelyMatrixUserId,
   mentionsContentFromUserIds,
   parseMentionUserIdsFromWireContent,
+  replacePlainTextMatrixMxidsWithLabels,
 } from '../mentions';
 
 describe('extractMentionUserIdsFromPlainBody', () => {
@@ -125,5 +126,25 @@ describe('mentionsContentFromUserIds', () => {
         user_ids: ['@ok:matrix.org'],
       },
     });
+  });
+});
+
+describe('replacePlainTextMatrixMxidsWithLabels', () => {
+  it('replaces @mxid tokens with resolved labels', () => {
+    const plain = 'Hi @prod_privy_did_privy_foo:bar:matrix.org please review';
+    const out = replacePlainTextMatrixMxidsWithLabels(plain, (id) =>
+      id.includes('prod_privy') ? 'Alex Prate' : id,
+    );
+    expect(out).toBe('Hi Alex Prate please review');
+  });
+});
+
+describe('replacePlainTextMatrixMxidsWithLabels', () => {
+  it('replaces @mxid tokens with resolved labels', () => {
+    const plain = 'Hi @prod_privy_did_privy_foo:bar:matrix.org please review';
+    const out = replacePlainTextMatrixMxidsWithLabels(plain, (id) =>
+      id.includes('prod_privy') ? 'Alex Prate' : id,
+    );
+    expect(out).toBe('Hi Alex Prate please review');
   });
 });

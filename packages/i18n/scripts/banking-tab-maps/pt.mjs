@@ -1,0 +1,356 @@
+/** @type {Record<string, string>} */
+export default {
+  title: 'Transferências bancárias',
+  subtitle:
+    'Receba transferências bancárias na sua tesouraria e gerencie contas de depósito do space.',
+  loading: 'Carregando status da conta bancária…',
+  returnBanner:
+    'Bem-vindo de volta — estamos verificando seu status de verificação.',
+  returnBannerDismiss: 'Dispensar',
+  returnBannerApprovedHint:
+    'A verificação está concluída. Abra uma conta do space para adicionar as moedas restantes.',
+  errorLoad: 'Não foi possível carregar o status da conta bancária.',
+  'sections.transfers.title': 'Transferências bancárias únicas',
+  'sections.transfers.description': 'Transferências recebidas pontuais.',
+  'sections.transfers.emptyTitle': 'Ainda não há transferências únicas',
+  'sections.transfers.emptyDescription':
+    'Crie uma transferência única quando precisar de um único pagamento recebido sem configurar uma conta de depósito completa.',
+  'sections.transfers.newTransferCta': 'Nova transferência única',
+  'sections.transfers.loading': 'Carregando transferências…',
+  'sections.accounts.title': 'Contas bancárias',
+  'sections.accounts.description': 'Dados de depósito permanentes por moeda.',
+  'sections.accounts.openAccountCta': 'Abrir uma conta do space',
+  'sections.accounts.addCurrencyCta': 'Adicionar conta bancária',
+  'sections.accounts.emptyTitle': 'Ainda não há contas bancárias',
+  'sections.accounts.emptyDescription':
+    'Abra uma conta do space e escolha as moedas necessárias. Configuraremos os dados de depósito para cada uma.',
+  'sections.accounts.pendingTitle': 'Verificação em andamento',
+  'sections.accounts.pendingDescription':
+    'Conclua a verificação no Bridge para ativar as moedas selecionadas. Suas contas serão criadas automaticamente após a aprovação.',
+  'sections.accounts.continueVerificationCta': 'Continuar verificação',
+  'sections.accounts.loadingAccounts': 'Carregando contas bancárias…',
+  'sections.accounts.signInHint': 'Entre para gerenciar contas bancárias.',
+  'openAccount.title': 'Abrir uma conta do space',
+  'openAccount.titleAddCurrency': 'Adicionar uma conta bancária',
+  'openAccount.description':
+    'Conte-nos sobre sua organização e quais moedas você precisa. Verificaremos seu space uma vez e criaremos contas para cada moeda.',
+  'openAccount.descriptionAddCurrency':
+    'Escolha moedas adicionais para adicionar contas de depósito ao seu space.',
+  'openAccount.descriptionAddCurrencySingle':
+    'Escolha a moeda de depósito para esta conta bancária. Verificação adicional do provedor pode ser necessária.',
+  'openAccount.bankAccountDepositLabel': 'Moeda de depósito',
+  'openAccount.bankAccountDepositHint':
+    'Moeda que esta conta bancária receberá.',
+  'openAccount.legalName': 'Nome legal da entidade',
+  'openAccount.contactEmail': 'E-mail de contato',
+  'openAccount.currenciesLabel': 'Moedas',
+  'openAccount.currenciesHint':
+    'Selecione todas as moedas nas quais deseja receber transferências bancárias.',
+  'openAccount.currenciesHintSingle':
+    'Selecione uma moeda na qual deseja receber transferências bancárias.',
+  'openAccount.submit': 'Abrir conta',
+  'openAccount.submitAddCurrency': 'Adicionar conta bancária',
+  'openAccount.submitting': 'Processando…',
+  'openAccount.noCurrenciesAvailable':
+    'Todas as contas bancárias compatíveis já estão abertas para este space.',
+  'openAccount.railLabel': 'Via de pagamento',
+  'openAccount.railPlaceholder': 'Selecionar via',
+  'openAccount.requestRail': 'Solicitar',
+  'openAccount.loadingOptions': 'Carregando…',
+  'openAccount.railsNeedVerificationHint':
+    'Essas vias exigem verificação do provedor antes de poderem ser usadas.',
+  'openAccount.provisioningProgress': 'Criando conta em {currency}…',
+  'openAccount.redirectPendingTitle': 'Continuar no Bridge',
+  'openAccount.redirectPendingDescription':
+    'Aceite os termos e conclua a verificação para ativar as moedas selecionadas.',
+  'toolbar.add': 'Adicionar',
+  'toolbar.addCurrency': 'Adicionar conta bancária',
+  'toolbar.openSpaceAccount': 'Abrir uma conta do space',
+  'toolbar.finishVerificationFirst':
+    'Conclua primeiro a verificação em andamento',
+  'toolbar.allCurrenciesCovered':
+    'Todas as moedas compatíveis já possuem contas',
+  'toolbar.loadingAccounts': 'Carregando contas bancárias…',
+  'toolbar.loadingTransfers': 'Carregando transferências…',
+  'operationStatus.pendingKyb': 'Verificação pendente',
+  'operationStatus.pendingActivation': 'Pronta para ativar',
+  'operationStatus.pendingKybHint':
+    'Conclua a verificação empresarial no Bridge para ativar esta solicitação.',
+  'operationStatus.pendingActivationHint':
+    'A verificação está concluída. Ative para gerar instruções de depósito.',
+  'operationStatus.continueVerification': 'Continuar verificação',
+  'operationStatus.completeSetup': 'Ativar',
+  'operationStatus.activating': 'Ativando…',
+  'operationStatus.activateFailed':
+    'Não foi possível concluir a configuração. Tente novamente mais tarde. Se o problema persistir, entre em contato conosco.',
+  'operationStatus.openGearForVerification':
+    'Clique para abrir detalhes da verificação e links do Bridge.',
+  'advanced.gearLabel': 'Configurações bancárias',
+  'advanced.dialogTitle': 'Configurações bancárias',
+  'advanced.dialogDescription':
+    'Informações detalhadas e configurações técnicas.',
+  'advanced.dataMinimizationNotice':
+    'Detalhes de depósito e verificação são carregados do nosso parceiro bancário e não são salvos nos servidores da Hypha.',
+  'advanced.noCustomer':
+    'Ainda não há registro de cliente bancário para este space.',
+  'advanced.approvedSummary':
+    'A verificação foi aprovada. Gerencie contas na seção Contas bancárias abaixo.',
+  'advanced.providerValidationsTitle': 'Validações do provedor',
+  'advanced.legalNameLabel': 'Nome legal da entidade',
+  'advanced.contactEmailLabel': 'E-mail de contato',
+  'advanced.stepCompleted': 'Concluído',
+  'advanced.tosProcedure': 'Termos de serviço',
+  'advanced.kybProcedure': 'Verificação empresarial (KYB)',
+  'advanced.approvedOnBridgePendingRecord':
+    'O Bridge mostra a verificação como aprovada. Ative uma solicitação pendente abaixo para registrar a aprovação e concluir a configuração.',
+  'advanced.currencyValidationsTitle': 'Validações de moeda',
+  'advanced.currencyStatusesTitle': 'Corredores de moeda',
+  'advanced.currencyStatusesDescription':
+    'Status de endosso por moeda do Bridge e progresso da configuração da conta.',
+  'advanced.currencyStatusesDescriptionAdd':
+    'Adicione suporte a um corredor de moeda. O Bridge pode exigir verificação adicional para algumas regiões.',
+  'advanced.addCurrencySupport': 'Abrir conta em {currency}',
+  'advanced.currencyStatus.active': 'Ativa',
+  'advanced.currencyStatus.approved': 'Aprovada',
+  'advanced.currencyStatus.pending': 'Verificação pendente',
+  'advanced.currencyStatus.not_approved': 'Não aprovada',
+  'advanced.currencyStatus.not_requested': 'Não solicitada',
+  'advanced.currencyStatus.not_opened': 'Não aberta',
+  'advanced.syncStatus': 'Sincronizar status',
+  'advanced.syncingStatus': 'Sincronizando…',
+  'advanced.procedureHints.fallback':
+    'Nenhuma ação adicional é necessária para esta etapa no Bridge no momento.',
+  'advanced.procedureHints.tos.complete':
+    'Os termos de serviço foram aceitos. Nenhuma ação adicional é necessária aqui.',
+  'advanced.procedureHints.tos.pending':
+    'Os termos ainda estão pendentes no Bridge.',
+  'advanced.procedureHints.kyb.complete':
+    'A verificação empresarial está concluída. Nenhuma ação adicional é necessária aqui.',
+  'advanced.procedureHints.kyb.not_started':
+    'Abra o link de verificação para iniciar a verificação da sua organização.',
+  'advanced.procedureHints.kyb.incomplete':
+    'Preencha e envie o formulário de verificação no Bridge para continuar.',
+  'advanced.procedureHints.kyb.awaiting_questionnaire':
+    'O Bridge requer informações adicionais. Verifique seu e-mail ou o portal de verificação para o questionário.',
+  'advanced.procedureHints.kyb.awaiting_ubo':
+    'Aguardando que os beneficiários finais (UBO) indicados no formulário KYB concluam a verificação enviada por e-mail.',
+  'advanced.procedureHints.kyb.under_review':
+    'Seu envio está em análise no Bridge. Isso pode levar de algumas horas a vários dias.',
+  'advanced.procedureHints.kyb.approved':
+    'A verificação empresarial está concluída. Nenhuma ação adicional é necessária aqui.',
+  'advanced.procedureHints.kyb.rejected':
+    'A verificação foi recusada. Entre em contato com o suporte se acreditar que isso é um erro.',
+  'advanced.procedureHints.kyb.paused':
+    'A verificação está pausada. Entre em contato com o suporte.',
+  'advanced.procedureHints.kyb.offboarded':
+    'A verificação bancária não está mais disponível para este cliente. Entre em contato com o suporte.',
+  'tosStatus.pending.title': 'Termos não aceitos',
+  'tosStatus.pending.description':
+    'Aceite os termos de serviço para continuar.',
+  'tosStatus.approved.title': 'Termos aceitos',
+  'tosStatus.approved.description':
+    'Os termos de serviço foram aceitos.',
+  'currencies.eur.code': 'EUR',
+  'currencies.eur.name': 'Euro',
+  'currencies.eur.payoutMethod': 'IBAN e SWIFT/BIC',
+  'currencies.usd.code': 'USD',
+  'currencies.usd.name': 'Dólar americano',
+  'currencies.usd.payoutMethod': 'Número de roteamento ACH e de conta',
+  'currencies.gbp.code': 'GBP',
+  'currencies.gbp.name': 'Libra esterlina',
+  'currencies.gbp.payoutMethod': 'Sort code e número da conta',
+  'currencies.mxn.code': 'MXN',
+  'currencies.mxn.name': 'Peso mexicano',
+  'currencies.mxn.payoutMethod': 'Transferência bancária CLABE',
+  'currencies.brl.code': 'BRL',
+  'currencies.brl.name': 'Real brasileiro',
+  'currencies.brl.payoutMethod': 'PIX',
+  'currencies.cop.code': 'COP',
+  'currencies.cop.name': 'Peso colombiano',
+  'currencies.cop.payoutMethod': 'Bre-B',
+  'initialSetup.organizationLegend': 'Dados da organização',
+  'initialSetup.organizationHint':
+    'Os dados da organização são enviados ao nosso parceiro bancário para verificação e não são armazenados na Hypha.',
+  'initialSetup.currenciesTitle': 'Moedas que deseja utilizar',
+  'initialSetup.currenciesDescription':
+    'Selecione as moedas que este space aceitará por transferência bancária. Verificamos sua organização uma vez com nosso parceiro bancário.',
+  'initialSetup.currenciesHint':
+    'Você pode adicionar mais moedas depois nas configurações bancárias.',
+  'initialSetup.submit': 'Continuar',
+  'notStarted.description':
+    'Os serviços bancários ainda não estão configurados para este space.',
+  'notStarted.enableCta': 'Continuar',
+  'blockers.notOnChain':
+    'Este space deve estar implantado on-chain antes que uma conta bancária vinculada possa ser configurada.',
+  'blockers.noTreasury':
+    'Este space deve ter um endereço de tesouraria on-chain antes que uma conta bancária vinculada possa ser configurada.',
+  verificationInProgress:
+    'A verificação está em andamento. Isso geralmente leva de algumas horas a alguns dias. Se precisar agir, use o link abaixo.',
+  'actions.openVerificationForm': 'Abrir formulário de verificação',
+  'actions.viewTerms': 'Ver termos de serviço',
+  'actions.refreshStatus': 'Atualizar status',
+  'actions.refreshingStatus': 'Verificando status…',
+  'corridors.provisioning': 'Configurando…',
+  'corridors.allActive': 'Todas as moedas compatíveis estão ativas.',
+  'corridors.addDisabledNotManager':
+    'Apenas membros do space com acesso à tesouraria podem gerenciar contas bancárias.',
+  'accountCard.viewDetails': 'Ver detalhes',
+  'transferCard.viewDetails': 'Ver detalhes',
+  'transferCard.flexibleAmount': 'Qualquer valor',
+  'transferCard.feeHint':
+    'Taxa de desenvolvedor: 0 % · Taxas do provedor podem ser aplicadas',
+  'transferDetails.title': 'Transferência única',
+  'transferDetails.description':
+    'O pagador deve incluir a mensagem de referência na transferência bancária para que o Bridge possa identificar o depósito.',
+  'transferDetails.referenceWarning':
+    'O remetente deve incluir a referência de pagamento abaixo no memo do wire, na descrição ACH ou na referência SEPA. Sem ela, o provedor não consegue identificar o depósito.',
+  'transferDetails.amountLabel': 'Valor',
+  'transferDetails.flexibleAmount': 'Qualquer valor',
+  'transferDetails.receiptHeading': 'Recibo de pagamento',
+  'transferDetails.finalAmount': 'Recebido na tesouraria',
+  'transferDetails.gasFee': 'Taxa de rede (gas)',
+  'transferDetails.exchangeFee': 'Taxa de câmbio',
+  'transferDetails.destinationTx': 'Transação da tesouraria',
+  'transferDetails.viewProviderReceipt': 'Ver recibo do provedor',
+  'transferDetails.receiptFields.transferId': 'ID da transferência',
+  'transferDetails.receiptFields.state': 'Status',
+  'transferDetails.receiptFields.amount': 'Valor',
+  'transferDetails.receiptFields.developerFee': 'Taxa de desenvolvedor',
+  'transferDetails.receiptFields.source': 'Origem',
+  'transferDetails.receiptFields.createdAt': 'Criado',
+  'transferDetails.receiptFields.updatedAt': 'Atualizado',
+  'transferDetails.receiptFields.destinationRail': 'Destino',
+  'transferDetails.receiptFields.destinationAddress': 'Endereço da tesouraria',
+  'transferDetails.receiptFields.initialAmount': 'Valor inicial',
+  'transferDetails.receiptFields.subtotalAmount': 'Subtotal',
+  'transferDetails.receiptFields.finalAmount': 'Valor final',
+  'transferDetails.receiptFields.exchangeFee': 'Taxa de câmbio',
+  'transferDetails.receiptFields.gasFee': 'Taxa de rede (gas)',
+  'transferDetails.receiptFields.receiptDeveloperFee':
+    'Taxa de desenvolvedor do recibo',
+  'transferDetails.receiptFields.destinationTx': 'Transação da tesouraria',
+  'transferDetails.receiptFields.receiptUrl': 'URL do recibo do provedor',
+  'transferCorridors.usd-ach.label': 'USD — local (ACH)',
+  'transferCorridors.usd-ach.hint':
+    'Transferências bancárias domésticas nos EUA via ACH',
+  'transferCorridors.usd-wire.label': 'USD — internacional (wire)',
+  'transferCorridors.usd-wire.hint':
+    'Transferências wire internacionais em dólares americanos',
+  'transferCorridors.eur.label': 'EUR',
+  'transferCorridors.eur.hint': 'Transferências bancárias SEPA em euros',
+  'transferCorridors.gbp.label': 'GBP',
+  'transferCorridors.gbp.hint': 'Faster Payments em libras esterlinas',
+  'transferCorridors.mxn.label': 'MXN',
+  'transferCorridors.mxn.hint': 'Transferências SPEI em pesos mexicanos',
+  'transferCorridors.brl.label': 'BRL',
+  'transferCorridors.brl.hint': 'Transferências PIX em reais brasileiros',
+  'transferCorridors.cop.label': 'COP (beta)',
+  'transferCorridors.cop.hint': 'Transferências Bre-B em pesos colombianos',
+  'createTransfer.title': 'Nova transferência única',
+  'createTransfer.description':
+    'Crie instruções de depósito para uma única transferência recebida. Os fundos serão convertidos em USDC na sua tesouraria.',
+  'createTransfer.corridorLabel': 'Corredor',
+  'createTransfer.corridorHint':
+    'Selecione como o pagador enviará os fundos. Isso determina as instruções de depósito.',
+  'createTransfer.fixedAmountLabel': 'Exigir valor fixo',
+  'createTransfer.amountPlaceholder': 'ex.: 1000,00',
+  'createTransfer.flexibleAmountHint': 'O pagador pode enviar qualquer valor.',
+  'createTransfer.cancel': 'Cancelar',
+  'createTransfer.submit': 'Criar transferência',
+  'createTransfer.submitting': 'Criando…',
+  'createTransfer.loadingOptions': 'Carregando corredores…',
+  'createTransfer.noCorridorsAvailable':
+    'Nenhum corredor de transferência disponível para este space.',
+  'transferStatus.awaiting_funds': 'Aguardando pagamento',
+  'transferStatus.funds_received': 'Recebido',
+  'transferStatus.payment_processed': 'Concluído',
+  'transferStatus.canceled': 'Cancelado',
+  'transferStatus.cancelled': 'Cancelado',
+  'transferStatus.failed': 'Falhou',
+  'transferStatus.returned': 'Devolvido',
+  'transferStatus.in_review': 'Em análise',
+  'transferStatus.undeliverable': 'Não entregável',
+  'depositInstructions.iban': 'IBAN',
+  'depositInstructions.bic': 'BIC / SWIFT',
+  'depositInstructions.bicInternational':
+    'BIC / SWIFT (para transferências internacionais)',
+  'depositInstructions.routingNumber': 'Número de roteamento',
+  'depositInstructions.accountNumber': 'Número da conta',
+  'depositInstructions.sortCode': 'Sort code',
+  'depositInstructions.bankName': 'Nome do banco',
+  'depositInstructions.accountHolder': 'Titular da conta',
+  'depositInstructions.bankNameAndAddress': 'Nome e endereço do banco',
+  'depositInstructions.beneficiaryNameAndAddress':
+    'Nome e endereço do beneficiário',
+  'depositInstructions.activeBadge': 'Ativa',
+  'depositInstructions.depositMessage': 'Mensagem de referência (obrigatória)',
+  'depositInstructions.bankInstructionsSection':
+    'Instruções de transferência bancária',
+  'depositInstructions.treasurySection': 'Destino da tesouraria',
+  'depositInstructions.destinationCurrency': 'Moeda de destino',
+  'depositInstructions.destinationRail': 'Via de pagamento',
+  'depositInstructions.destinationAddress': 'Endereço da tesouraria',
+  'depositInstructions.hyphaFees': 'Taxas Hypha',
+  'depositInstructions.feesUnavailable': 'Não especificado pelo provedor',
+  'depositInstructions.providerFeesNote':
+    '*O provedor pode cobrar taxas adicionais nas operações.',
+  'depositInstructions.copyInstructions': 'Copiar instruções',
+  'depositInstructions.copyInstructionsCopied': 'Copiado',
+  'depositInstructions.copy': 'Copiar',
+  'depositInstructions.copied': 'Copiado',
+  'sandboxDemo.title': 'Sandbox / Dev — Simulação KYB',
+  'sandboxDemo.description':
+    'KYB é uma etapa manual, portanto deve ser simulada no sandbox. Isso também pode ignorar completamente o preenchimento do formulário.',
+  'sandboxDemo.infoTooltipAria': 'Sobre simulação KYB no sandbox',
+  'sandboxDemo.simulateFillingKybRequiredData':
+    'Simular preenchimento de dados KYB obrigatórios',
+  'sandboxDemo.cta': 'Simular aprovação KYB',
+  'sandboxDemo.simulating': 'Simulando…',
+  'sandboxDemo.refreshing': 'Atualizando status…',
+  'endorsements.base': 'USD (ACH / transferência wire)',
+  'endorsements.cop': 'COP (Bre-B, Colômbia)',
+  'endorsements.faster_payments': 'GBP (Faster Payments, Reino Unido)',
+  'endorsements.pix': 'BRL (PIX, Brasil)',
+  'endorsements.sepa': 'EUR (transferência bancária SEPA)',
+  'endorsements.spei': 'MXN (SPEI, México)',
+  'onboardingDialog.title': 'Ativar depósitos bancários',
+  'onboardingDialog.description':
+    'Usamos estas informações para verificar sua organização. Após a aprovação, seu space será configurado para receber transferências bancárias.',
+  'onboardingDialog.legalName': 'Nome legal da entidade',
+  'onboardingDialog.contactEmail': 'E-mail de contato',
+  'onboardingDialog.endorsementsLabel': 'Corredores de pagamento',
+  'onboardingDialog.endorsementsHint':
+    'Estes são endossos KYB do Bridge (ex.: base para USD, sepa para EUR). Cada corredor selecionado é incluído no link de verificação.',
+  'onboardingDialog.submit': 'Iniciar verificação',
+  'onboardingDialog.submitting': 'Iniciando…',
+  'status.not_started.title': 'Verificação não iniciada',
+  'status.not_started.description':
+    'Abra o link de verificação para fornecer os dados da sua organização.',
+  'status.incomplete.title': 'Verificação incompleta',
+  'status.incomplete.description':
+    'Seu formulário de verificação ainda não foi enviado.',
+  'status.awaiting_questionnaire.title': 'Informações adicionais necessárias',
+  'status.awaiting_questionnaire.description':
+    'Preencha o questionário adicional para continuar a verificação.',
+  'status.awaiting_ubo.title': 'Verificação UBO pendente',
+  'status.awaiting_ubo.description':
+    'Aguardando que os beneficiários finais (UBO) indicados no formulário KYB concluam a verificação enviada por e-mail.',
+  'status.under_review.title': 'Em análise',
+  'status.under_review.description':
+    'Sua verificação foi enviada e está em análise. Isso pode levar de algumas horas a vários dias.',
+  'status.approved.title': 'Verificação aprovada',
+  'status.approved.description':
+    'Sua organização foi verificada. Adicione moedas abaixo para abrir contas de depósito.',
+  'status.rejected.title': 'Verificação recusada',
+  'status.rejected.description':
+    'Sua organização não pôde ser verificada. Entre em contato com o suporte se acreditar que isso é um erro.',
+  'status.paused.title': 'Verificação pausada',
+  'status.paused.description':
+    'A verificação está temporariamente pausada. Entre em contato com o suporte.',
+  'status.offboarded.title': 'Conta bancária vinculada indisponível',
+  'status.offboarded.description':
+    'Contas bancárias vinculadas não estão mais disponíveis para este space. Entre em contato com o suporte.',
+  'status.unknown.title': 'Status indisponível',
+  'status.unknown.description':
+    'Não foi possível determinar o status de verificação atual. Tente atualizar.',
+};

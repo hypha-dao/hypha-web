@@ -34,11 +34,22 @@ pnpm --filter @hypha-platform/mcp-server start
 
 Add the server to your MCP host (e.g. Cursor **Settings → MCP** or `.cursor/mcp.json`) with `command`/`args` pointing at the script above and the required `env`.
 
-## Tools
+## Tools (complete MCP server list)
 
-| Tool                       | Description                                                                                                             |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `get_people_by_space_slug` | Members of a space by slug (people + space-as-members), aligned with `getSpaceMembersRoster` in `@hypha-platform/core`. |
-| `get_documents_by_space_slug` | Documents in a space by slug (DB `documents` + creator), paginated search/filter; uses `getDocumentsBySpaceSlug` in `@hypha-platform/core`. |
-| `get_org_memory_by_space_slug` | Org memory: roster + `org_memory_assets` (each row includes `asset_key` when fetchable). Proposal attachments from documents; Matrix chat files when Matrix env + room are set. Optional `assets_page`, `assets_page_size`, `assets_search`. |
-| `fetch_org_memory_asset` | Fetch one asset by `space_slug` + `asset_key`: text/PDF extraction or base64 images (see spec §2.3). Same access token rules; optional `return_mode`, `max_bytes`. |
+| Tool | Description |
+| --- | --- |
+| `summarize_space_discussion_by_slug` | Create and persist a summary of recent Matrix chat discussion for a space slug. |
+| `ingest_space_call_artifacts` | Persist call recording/transcript artifacts for a space call session. |
+| `create_space_signal_by_slug` | Create a signal in a space (write-capable; limited to active paid spaces). |
+| `relay_ecosystem_signal` | Relay a summarized signal from one ecosystem space to another (write-capable). |
+| `get_ecosystem_by_space_slug` | Return interconnected ecosystem context (spaces graph and parent-child links). |
+| `get_people_by_space_slug` | Members by space slug (people + space-as-members), with membership/join metadata. |
+| `get_org_memory_by_space_slug` | Organization memory (member roster + org memory assets with asset keys). |
+| `fetch_org_memory_asset` | Fetch one memory asset by `space_slug` + `asset_key` (text/PDF/image/video modes). |
+| `get_token_holdings_by_space_slug` | Token holdings/treasury distribution for a space by slug. |
+| `get_documents_by_space_slug` | Paginated documents/proposals/agreements list with optional filters. |
+
+### Notes
+
+- The list above is the MCP server inventory registered in `packages/mcp-server/src/main.ts`.
+- AI chat also uses a tool layer in `packages/chat-server/src/tools/index.ts`; that layer includes `get_space_by_slug` and `web_search` for chat orchestration, which are not currently exposed by the MCP server binary.

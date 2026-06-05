@@ -13,6 +13,18 @@ export type SpaceGroupCallState =
   | 'disconnecting'
   | 'error';
 
+export type SpaceGroupCallRecordingStatus =
+  | 'idle'
+  | 'recording'
+  | 'paused'
+  | 'uploading'
+  | 'error';
+
+export type SpaceGroupCallCaptureMode =
+  | 'none'
+  | 'transcript_only'
+  | 'recording_with_transcript';
+
 export function getCallControlsPhase(state: SpaceGroupCallState): {
   isConnectingPhase: boolean;
   isDisconnecting: boolean;

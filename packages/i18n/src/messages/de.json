@@ -22,6 +22,8 @@
     "by": "von",
     "copyWalletAddress": "Wallet-Adresse kopieren",
     "walletAddressCopied": "Kopiert!",
+    "receiveFundsTitle": "Geld empfangen",
+    "receiveFundsSubtitle": "Teile diesen QR-Code oder die Wallet-Adresse, um Geld in diese Wallet zu empfangen.",
     "otherMembers": "+ {count} weitere Mitglieder",
     "exploreSpaces": "Spaces erkunden",
     "findCategory": "Kategorie suchen",
@@ -33,12 +35,16 @@
     "notFoundDescription": "Die Seite, die Sie suchen, wurde möglicherweise entfernt, umbenannt oder ist vorübergehend nicht verfügbar.",
     "errorTryAgain": "Erneut versuchen",
     "errorRefreshPage": "Seite aktualisieren",
+    "errorConnectionLostTitle": "Verbindung unterbrochen",
+    "errorConnectionLostDescription": "Ihre Netzwerkverbindung wurde unterbrochen. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "errorConnectionLostRetry": "Erneut versuchen",
     "errorMaintenanceTitle": "Wir sind gleich zurück!",
     "errorMaintenanceDescription": "Hypha macht eine kurze Pause, während wir Updates ausrollen. Wir sind bald mit spannenden Verbesserungen zurück!",
     "errorLoadOverviewTab": "Ups, etwas ist schiefgelaufen. Der Überblick-Tab konnte nicht geladen werden.",
     "errorLoadMembersTab": "Ups, etwas ist schiefgelaufen. Der Mitglieder-Tab konnte nicht geladen werden.",
     "errorLoadAgreementsTab": "Ups, etwas ist schiefgelaufen. Der Vereinbarungen-Tab konnte nicht geladen werden.",
     "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden.",
+    "errorLoadBankingTab": "Ups, etwas ist schiefgelaufen. Die Banküberweisungen konnten nicht geladen werden.",
     "publish": "Veröffentlichen",
     "invalidTransactions": "Ungültige Transaktionen",
     "Coherence": "Signale",
@@ -98,7 +104,43 @@
   },
   "OnboardingAdventure": {
     "title": "Dein Abenteuer beginnt hier.",
-    "subtitle": "Wähle deinen nächsten Schritt.",
+    "continueAdventure": "Dein Abenteuer geht hier weiter",
+    "subtitle": "Du hast eine kraftvolle Vision für die Welt, wir geben dir die Werkzeuge, sie umzusetzen.",
+    "aiHero": {
+      "title": "Build Anything, Together",
+      "description": "Sag Hypha AI, was du aufbauen willst, und sie führt dich Schritt für Schritt durch das Setup.",
+      "placeholder": "Space erstellen, bestehendem Space beitreten, Netzwerk erkunden oder Treasury finanzieren - beschreibe dein Ziel, und AI führt dich.",
+      "rotating": {
+        "createSpace": "Frag Hypha AI, einen Space für deine Mission zu erstellen...",
+        "governance": "Frag Hypha AI, Governance für deine Community zu entwerfen...",
+        "joinSpace": "Frag Hypha AI, dir beim Beitritt zum passenden Space zu helfen...",
+        "treasury": "Frag Hypha AI, einen treasury-fähigen Space einzurichten...",
+        "explore": "Frag Hypha AI, Chancen im Netzwerk zu finden..."
+      },
+      "cta": "Mit AI starten",
+      "starting": "Wird gestartet...",
+      "openingAi": "AI-Panel wird geöffnet...",
+      "sending": "Dein Prompt wird an die AI gesendet...",
+      "handoffFailed": "AI-Konversation konnte nicht gestartet werden. Bitte erneut versuchen.",
+      "handoffTimeout": "Die AI-Übergabe dauert länger als erwartet. Bitte erneut versuchen.",
+      "sendFailed": "Prompt konnte nicht an die AI gesendet werden. Bitte erneut versuchen.",
+      "helper": "Die AI schlägt jede Aktion vor und fragt vor Erstellung oder Änderung immer nach Bestätigung.",
+      "unavailable": "AI-Onboarding ist in dieser Bereitstellung derzeit nicht verfügbar.",
+      "ariaLabel": "AI-Onboarding-Prompt",
+      "flow": {
+        "badge": "Simple. Powerful. By design.",
+        "reviewingTitle": "Deine Anfrage wird analysiert",
+        "reviewingDescription": "Die AI plant gerade den besten Weg für dein Ziel.",
+        "reviewingDescriptionPersonalized": "{firstName}, die AI plant gerade den besten Weg für dein Ziel.",
+        "confirmingTitle": "Eine klare Bestätigung wird vorbereitet",
+        "confirmingDescription": "Vor jeder Schreibaktion bekommst du eine fokussierte Auswahl.",
+        "executingTitle": "Die gewählte Aktion wird ausgeführt",
+        "executingDescription": "Die AI erstellt, verbindet oder navigiert jetzt basierend auf deiner Wahl.",
+        "routingTitle": "Du wirst zum richtigen Ziel geführt",
+        "routingDescription": "Navigation zu deinem Space oder der gewählten Ansicht wird abgeschlossen.",
+        "confirmationHint": "Du behältst die Kontrolle: Vor jedem Erstellen oder Aktualisieren fragt die AI nach Bestätigung."
+      }
+    },
     "spacePlaceholder": "Space auswählen",
     "spaceSearchPlaceholder": "Spaces suchen...",
     "searchToSeeSpaces": "Beginne zu tippen, um passende Spaces zu sehen.",
@@ -163,7 +205,8 @@
       "browserNotifications": "Browser-Benachrichtigungen (früher „Desktop-Pop-up-Benachrichtigungen“)",
       "yes": "Ja",
       "no": "Nein",
-      "emailNotificationsWithEmail": "E-Mail-Benachrichtigungen ({email})"
+      "emailNotificationsWithEmail": "E-Mail-Benachrichtigungen ({email})",
+      "mentionConsent": "Einwilligung für Erwähnungsbenachrichtigungen"
     },
     "subscriptions": {
       "title": "Benachrichtigen, wenn...",
@@ -176,7 +219,11 @@
         "title": "Ein Vorschlag wird angenommen oder abgelehnt",
         "description": "In allen Spaces, in denen Sie Mitglied sind."
       },
-      "labelWithComingSoon": "{title} ({comingSoon})"
+      "labelWithComingSoon": "{title} ({comingSoon})",
+      "mentionOnChatMessage": {
+        "title": "Sie werden in einer Chat-Nachricht erwähnt",
+        "description": "In jedem Thread oder Chat, in dem Erwähnungen für Sie aktiviert sind."
+      }
     },
     "actions": {
       "retry": "Erneut versuchen",
@@ -319,6 +366,10 @@
       "spaceToSpaceMembership": {
         "title": "Space-zu-Space-Mitgliedschaft",
         "description": "Erlauben Sie Ihrem Space, einem anderen Space als Mitglied beizutreten, um an der Governance teilzunehmen und über Vorschläge abzustimmen."
+      },
+      "changeSpaceDelegate": {
+        "title": "Delegierten ändern",
+        "description": "Aktualisieren Sie das Mitglied, das im Namen Ihres Spaces in einem Space abstimmt, dem Sie bereits beigetreten sind."
       },
       "issueNewToken": {
         "title": "Neuen Token ausgeben",
@@ -491,9 +542,410 @@
         "selectMember": "Bitte wählen Sie ein Mitglied aus",
         "selectSpace": "Bitte wählen Sie einen Space aus"
       }
+    },
+    "aiAgents": "KI-Agenten",
+    "aiAgentsEmptyState": "Noch keine KI-Agenten mobilisiert. Stelle strategische Fragen, um sie zu aktivieren.",
+    "aiAgentsMobilizedCount": "{count, plural, one {# Mal mobilisiert} other {# Mal mobilisiert}}"
+  },
+  "BankingTab": {
+    "title": "Banküberweisungen",
+    "subtitle": "Empfangen Sie Banküberweisungen in Ihrer Treasury und verwalten Sie Einzahlungskonten des Space.",
+    "loading": "Bankkontostatus wird geladen…",
+    "returnBanner": "Willkommen zurück — wir prüfen Ihren Verifizierungsstatus.",
+    "errorLoad": "Bankkontostatus konnte nicht geladen werden.",
+    "notStarted": {
+      "description": "Banking ist für diesen Space noch nicht eingerichtet.",
+      "enableCta": "Weiter"
+    },
+    "blockers": {
+      "notOnChain": "Dieser Space muss on-chain bereitgestellt sein, bevor ein verknüpftes Bankkonto eingerichtet werden kann.",
+      "noTreasury": "Dieser Space benötigt eine on-chain Treasury-Adresse, bevor ein verknüpftes Bankkonto eingerichtet werden kann."
+    },
+    "verificationInProgress": "Die Verifizierung läuft. Dies dauert in der Regel von wenigen Stunden bis zu einigen Tagen. Wenn Sie handeln müssen, nutzen Sie den Link unten.",
+    "actions": {
+      "openVerificationForm": "Verifizierungsformular öffnen",
+      "viewTerms": "Nutzungsbedingungen anzeigen",
+      "refreshStatus": "Status aktualisieren",
+      "refreshingStatus": "Status wird geprüft…"
+    },
+    "endorsements": {
+      "base": "USD (ACH / Wire Transfer)",
+      "cop": "COP (Bre-B, Kolumbien)",
+      "faster_payments": "GBP (Faster Payments, UK)",
+      "pix": "BRL (PIX, Brasilien)",
+      "sepa": "EUR (SEPA-Überweisung)",
+      "spei": "MXN (SPEI, Mexiko)"
+    },
+    "onboardingDialog": {
+      "title": "Bankeinzahlungen aktivieren",
+      "description": "Diese Angaben dienen der Verifizierung Ihrer Organisation. Nach der Freigabe wird Ihr Space für den Empfang von Banküberweisungen eingerichtet.",
+      "legalName": "Rechtlicher Name der Organisation",
+      "contactEmail": "Kontakt-E-Mail",
+      "endorsementsLabel": "Zahlungskorridore",
+      "endorsementsHint": "Dies sind Bridge-KYB-Endorsements (z. B. base für USD, sepa für EUR). Jeder ausgewählte Korridor ist im Verifizierungslink enthalten.",
+      "submit": "Verifizierung starten",
+      "submitting": "Wird gestartet…"
+    },
+    "status": {
+      "not_started": {
+        "title": "Verifizierung nicht gestartet",
+        "description": "Öffnen Sie den Verifizierungslink, um die Angaben Ihrer Organisation zu übermitteln."
+      },
+      "incomplete": {
+        "title": "Verifizierung unvollständig",
+        "description": "Ihr Verifizierungsformular wurde noch nicht eingereicht."
+      },
+      "awaiting_questionnaire": {
+        "title": "Zusätzliche Angaben erforderlich",
+        "description": "Bitte füllen Sie den zusätzlichen Fragebogen aus, um die Verifizierung fortzusetzen."
+      },
+      "awaiting_ubo": {
+        "title": "UBO-Verifizierung ausstehend",
+        "description": "Es wird auf die in der KYB-Formular angegebenen wirtschaftlich Berechtigten (UBOs) gewartet, die die per E-Mail gesendete Verifizierung abschließen müssen."
+      },
+      "under_review": {
+        "title": "In Prüfung",
+        "description": "Ihre Verifizierung wurde eingereicht und wird geprüft. Dies kann von wenigen Stunden bis zu mehreren Tagen dauern."
+      },
+      "approved": {
+        "title": "Verifizierung genehmigt",
+        "description": "Ihre Organisation wurde verifiziert. Fügen Sie unten Währungen hinzu, um Einzahlungskonten zu eröffnen."
+      },
+      "rejected": {
+        "title": "Verifizierung abgelehnt",
+        "description": "Ihre Organisation konnte nicht verifiziert werden. Kontaktieren Sie den Support, wenn Sie glauben, dass dies ein Fehler ist."
+      },
+      "paused": {
+        "title": "Verifizierung pausiert",
+        "description": "Die Verifizierung ist vorübergehend pausiert. Kontaktieren Sie den Support."
+      },
+      "offboarded": {
+        "title": "Verknüpftes Bankkonto nicht verfügbar",
+        "description": "Verknüpfte Bankkonten sind für diesen Space nicht mehr verfügbar. Kontaktieren Sie den Support."
+      },
+      "unknown": {
+        "title": "Status nicht verfügbar",
+        "description": "Der aktuelle Verifizierungsstatus konnte nicht ermittelt werden. Versuchen Sie zu aktualisieren."
+      }
+    },
+    "returnBannerDismiss": "Schließen",
+    "returnBannerApprovedHint": "Die Verifizierung ist abgeschlossen. Eröffnen Sie ein Space-Konto, um fehlende Währungen hinzuzufügen.",
+    "sections": {
+      "transfers": {
+        "title": "Einmalige Banküberweisungen",
+        "description": "Einmalige eingehende Überweisungen.",
+        "emptyTitle": "Noch keine einmaligen Überweisungen",
+        "emptyDescription": "Erstellen Sie eine einmalige Überweisung, wenn Sie eine einzelne eingehende Zahlung benötigen, ohne ein vollständiges Einzahlungskonto einzurichten.",
+        "newTransferCta": "Neue einmalige Überweisung",
+        "loading": "Überweisungen werden geladen…"
+      },
+      "accounts": {
+        "title": "Bankkonten",
+        "description": "Permanente Einzahlungsdetails pro Währung.",
+        "openAccountCta": "Space-Konto eröffnen",
+        "addCurrencyCta": "Bankkonto hinzufügen",
+        "emptyTitle": "Noch keine Bankkonten",
+        "emptyDescription": "Eröffnen Sie ein Space-Konto und wählen Sie die benötigten Währungen. Wir richten für jede Währung Einzahlungsdetails ein.",
+        "pendingTitle": "Verifizierung läuft",
+        "pendingDescription": "Schließen Sie die Verifizierung in Bridge ab, um die ausgewählten Währungen zu aktivieren. Ihre Konten werden nach der Freigabe automatisch erstellt.",
+        "continueVerificationCta": "Verifizierung fortsetzen",
+        "loadingAccounts": "Bankkonten werden geladen…",
+        "signInHint": "Melden Sie sich an, um Bankkonten zu verwalten."
+      }
+    },
+    "openAccount": {
+      "title": "Space-Konto eröffnen",
+      "titleAddCurrency": "Bankkonto hinzufügen",
+      "description": "Teilen Sie uns mit, welche Organisation Sie vertreten und welche Währungen Sie benötigen. Wir verifizieren Ihren Space einmalig und erstellen anschließend Konten für jede Währung.",
+      "descriptionAddCurrency": "Wählen Sie zusätzliche Währungen, für die Sie Einzahlungskonten für Ihren Space hinzufügen möchten.",
+      "descriptionAddCurrencySingle": "Wählen Sie die Einzahlungswährung für dieses Bankkonto. Möglicherweise ist eine zusätzliche Verifizierung beim Anbieter erforderlich.",
+      "bankAccountDepositLabel": "Einzahlungswährung",
+      "bankAccountDepositHint": "Währung, die dieses Bankkonto empfängt.",
+      "legalName": "Rechtlicher Name der Organisation",
+      "contactEmail": "Kontakt-E-Mail",
+      "currenciesLabel": "Währungen",
+      "currenciesHint": "Wählen Sie alle Währungen, in denen Sie Banküberweisungen empfangen möchten.",
+      "currenciesHintSingle": "Wählen Sie eine Währung, in der Sie Banküberweisungen empfangen möchten.",
+      "submit": "Konto eröffnen",
+      "submitAddCurrency": "Bankkonto hinzufügen",
+      "submitting": "Wird bearbeitet…",
+      "noCurrenciesAvailable": "Alle unterstützten Bankkonten sind für diesen Space bereits eröffnet.",
+      "railLabel": "Zahlungsweg",
+      "railPlaceholder": "Zahlungsweg auswählen",
+      "requestRail": "Anfordern",
+      "loadingOptions": "Wird geladen…",
+      "railsNeedVerificationHint": "Für diese Zahlungswege ist eine Anbieterverifizierung erforderlich, bevor Sie sie nutzen können.",
+      "provisioningProgress": "{currency}-Konto wird erstellt…",
+      "redirectPendingTitle": "In Bridge fortfahren",
+      "redirectPendingDescription": "Akzeptieren Sie die Bedingungen und schließen Sie die Verifizierung ab, um die ausgewählten Währungen zu aktivieren."
+    },
+    "toolbar": {
+      "add": "Hinzufügen",
+      "addCurrency": "Bankkonto hinzufügen",
+      "openSpaceAccount": "Space-Konto eröffnen",
+      "finishVerificationFirst": "Schließen Sie zuerst die laufende Verifizierung ab",
+      "allCurrenciesCovered": "Für alle unterstützten Währungen existieren bereits Konten",
+      "loadingAccounts": "Bankkonten werden geladen…",
+      "loadingTransfers": "Überweisungen werden geladen…"
+    },
+    "operationStatus": {
+      "pendingKyb": "Verifizierung ausstehend",
+      "pendingActivation": "Bereit zur Aktivierung",
+      "pendingKybHint": "Schließen Sie die Unternehmensverifizierung in Bridge ab, um diese Anfrage zu aktivieren.",
+      "pendingActivationHint": "Die Verifizierung ist abgeschlossen. Aktivieren Sie, um Einzahlungsanweisungen zu generieren.",
+      "continueVerification": "Verifizierung fortsetzen",
+      "completeSetup": "Aktivieren",
+      "activating": "Wird aktiviert…",
+      "activateFailed": "Die Einrichtung konnte nicht abgeschlossen werden. Bitte versuchen Sie es später erneut. Wenn das Problem bestehen bleibt, kontaktieren Sie uns.",
+      "openGearForVerification": "Klicken Sie, um Verifizierungsdetails und Bridge-Links zu öffnen."
+    },
+    "advanced": {
+      "gearLabel": "Banking-Einstellungen",
+      "dialogTitle": "Banking-Einstellungen",
+      "dialogDescription": "Detaillierte Informationen und technische Konfigurationen.",
+      "dataMinimizationNotice": "Einzahlungs- und Verifizierungsdetails werden von unserem Banking-Partner geladen und nicht auf Hypha-Servern gespeichert.",
+      "noCustomer": "Für diesen Space existiert noch kein Bankkunden-Datensatz.",
+      "approvedSummary": "Die Verifizierung ist genehmigt. Verwalten Sie Ihre unterstützten Währungen im Abschnitt unten.",
+      "providerValidationsTitle": "Anbieterprüfungen",
+      "legalNameLabel": "Rechtlicher Name der Organisation",
+      "contactEmailLabel": "Kontakt-E-Mail",
+      "stepCompleted": "Abgeschlossen",
+      "tosProcedure": "Nutzungsbedingungen",
+      "kybProcedure": "Unternehmensverifizierung (KYB)",
+      "approvedOnBridgePendingRecord": "Bridge zeigt die Verifizierung als genehmigt an. Aktivieren Sie unten eine ausstehende Anfrage, um die Freigabe zu erfassen und die Einrichtung abzuschließen.",
+      "currencyValidationsTitle": "Währungsprüfungen",
+      "currencyStatusesTitle": "Währungskorridore",
+      "currencyStatusesDescription": "Endorsement-Status pro Währung von Bridge und Fortschritt der Kontoeinrichtung.",
+      "currencyStatusesDescriptionAdd": "Unterstützung für einen Währungskorridor hinzufügen. Bridge kann für einige Regionen eine zusätzliche Verifizierung verlangen.",
+      "addCurrencySupport": "{currency}-Konto eröffnen",
+      "currencyStatus": {
+        "active": "Aktiv",
+        "approved": "Genehmigt",
+        "pending": "Verifizierung ausstehend",
+        "not_approved": "Nicht genehmigt",
+        "not_requested": "Nicht angefordert",
+        "not_opened": "Nicht eröffnet"
+      },
+      "syncStatus": "Status synchronisieren",
+      "syncingStatus": "Wird synchronisiert…",
+      "procedureHints": {
+        "fallback": "Für diesen Schritt in Bridge ist derzeit keine weitere Aktion erforderlich.",
+        "tos": {
+          "complete": "Die Nutzungsbedingungen wurden akzeptiert. Hier ist keine weitere Aktion erforderlich.",
+          "pending": "Die Nutzungsbedingungen sind in Bridge noch ausstehend."
+        },
+        "kyb": {
+          "complete": "Die Unternehmensverifizierung ist abgeschlossen. Hier ist keine weitere Aktion erforderlich.",
+          "not_started": "Öffnen Sie den Verifizierungslink, um die Verifizierung Ihrer Organisation zu starten.",
+          "incomplete": "Füllen Sie das Verifizierungsformular in Bridge aus und reichen Sie es ein, um fortzufahren.",
+          "awaiting_questionnaire": "Bridge benötigt zusätzliche Informationen. Prüfen Sie Ihre E-Mail oder das Verifizierungsportal auf den Fragebogen.",
+          "awaiting_ubo": "Es wird auf die in der KYB-Formular angegebenen wirtschaftlich Berechtigten (UBOs) gewartet, die die per E-Mail gesendete Verifizierung abschließen müssen.",
+          "under_review": "Ihre Einreichung wird von Bridge geprüft. Dies kann von wenigen Stunden bis zu mehreren Tagen dauern.",
+          "approved": "Die Unternehmensverifizierung ist abgeschlossen. Hier ist keine weitere Aktion erforderlich.",
+          "rejected": "Die Verifizierung wurde abgelehnt. Kontaktieren Sie den Support, wenn Sie glauben, dass dies ein Fehler ist.",
+          "paused": "Die Verifizierung ist pausiert. Kontaktieren Sie den Support.",
+          "offboarded": "Die Banking-Verifizierung ist für diesen Kunden nicht mehr verfügbar. Kontaktieren Sie den Support."
+        }
+      },
+      "requestRailDisabledInitialSetup": "Schließen Sie Ihre aktuelle Verifizierung ab, bevor Sie weitere Währungskorridore anfordern",
+      "sofProcedure": "Fragebogen zur Mittelherkunft",
+      "sofProcedureLink": "Fragebogen ausfüllen",
+      "sofProcedureHint": "Dieser Schritt erfordert einen Fragebogen zur Mittelherkunft. Klicken Sie auf den Link, um ihn im Bridge-Verifizierungsportal auszufüllen.",
+      "uboPendingTitle": "UBO-Verifizierung ausstehend",
+      "uboPendingDescription": "{count, plural, one {# assoziierte Person muss noch} other {# assoziierte Personen müssen noch}} zusätzliche Informationen bereitstellen.",
+      "uboPendingTooltip": "Bridge sendet Verifizierungs-E-Mails direkt an die assoziierten Personen. Bitten Sie sie, ihren Posteingang (und Spam-Ordner) auf eine E-Mail von Bridge oder Persona zu überprüfen.",
+      "uboPendingEmailsLabel": "Ausstehend:"
+    },
+    "tosStatus": {
+      "pending": {
+        "title": "Bedingungen nicht akzeptiert",
+        "description": "Akzeptieren Sie die Nutzungsbedingungen, um fortzufahren."
+      },
+      "approved": {
+        "title": "Bedingungen akzeptiert",
+        "description": "Die Nutzungsbedingungen wurden akzeptiert."
+      }
+    },
+    "currencies": {
+      "eur": {
+        "code": "EUR",
+        "name": "Euro",
+        "payoutMethod": "IBAN und SWIFT/BIC"
+      },
+      "usd": {
+        "code": "USD",
+        "name": "US-Dollar",
+        "payoutMethod": "ACH-Routing- und Kontonummer"
+      },
+      "gbp": {
+        "code": "GBP",
+        "name": "Britisches Pfund",
+        "payoutMethod": "Sort Code und Kontonummer"
+      },
+      "mxn": {
+        "code": "MXN",
+        "name": "Mexikanischer Peso",
+        "payoutMethod": "CLABE-Überweisung"
+      },
+      "brl": {
+        "code": "BRL",
+        "name": "Brasilianischer Real",
+        "payoutMethod": "PIX"
+      },
+      "cop": {
+        "code": "COP",
+        "name": "Kolumbianischer Peso",
+        "payoutMethod": "Bre-B"
+      }
+    },
+    "initialSetup": {
+      "organizationLegend": "Organisationsdetails",
+      "organizationHint": "Organisationsdetails werden zur Verifizierung an unseren Banking-Partner übermittelt und nicht auf Hypha gespeichert.",
+      "currenciesTitle": "Gewünschte Währungen",
+      "currenciesDescription": "Wählen Sie die Währungen, die dieser Space per Banküberweisung akzeptieren soll. Wir verifizieren Ihre Organisation einmalig bei unserem Banking-Partner.",
+      "currenciesHint": "Weitere Währungen können Sie später in den Banking-Einstellungen hinzufügen.",
+      "submit": "Weiter"
+    },
+    "corridors": {
+      "provisioning": "Wird eingerichtet…",
+      "allActive": "Alle unterstützten Währungen sind aktiv.",
+      "addDisabledNotManager": "Nur Space-Mitglieder mit Treasury-Zugriff können Bankkonten verwalten."
+    },
+    "accountCard": {
+      "viewDetails": "Details anzeigen"
+    },
+    "transferCard": {
+      "viewDetails": "Details anzeigen",
+      "flexibleAmount": "Beliebiger Betrag",
+      "feeHint": "Entwicklergebühr: 0 % · Anbietergebühren können anfallen"
+    },
+    "transferDetails": {
+      "title": "Einmalige Überweisung",
+      "description": "Der Zahler muss die Referenznachricht bei seiner Banküberweisung angeben, damit Bridge die Einzahlung zuordnen kann.",
+      "referenceWarning": "Der Absender muss die untenstehende Zahlungsreferenz im Wire-Memo, in der ACH-Beschreibung oder in der SEPA-Referenz angeben. Ohne diese kann der Anbieter die Einzahlung nicht zuordnen.",
+      "amountLabel": "Betrag",
+      "flexibleAmount": "Beliebiger Betrag",
+      "receiptHeading": "Zahlungsbeleg",
+      "finalAmount": "In Treasury erhalten",
+      "gasFee": "Netzwerkgebühr (Gas)",
+      "exchangeFee": "Wechselgebühr",
+      "destinationTx": "Treasury-Transaktion",
+      "viewProviderReceipt": "Anbieterbeleg anzeigen",
+      "receiptFields": {
+        "transferId": "Transfer-ID",
+        "state": "Status",
+        "amount": "Betrag",
+        "developerFee": "Entwicklergebühr",
+        "source": "Quelle",
+        "createdAt": "Erstellt",
+        "updatedAt": "Aktualisiert",
+        "destinationRail": "Ziel",
+        "destinationAddress": "Treasury-Adresse",
+        "initialAmount": "Anfangsbetrag",
+        "subtotalAmount": "Zwischensumme",
+        "finalAmount": "Endbetrag",
+        "exchangeFee": "Wechselgebühr",
+        "gasFee": "Netzwerkgebühr (Gas)",
+        "receiptDeveloperFee": "Entwicklergebühr laut Beleg",
+        "destinationTx": "Treasury-Transaktion",
+        "receiptUrl": "URL des Anbieterbelegs"
+      }
+    },
+    "transferCorridors": {
+      "usd-ach": {
+        "label": "USD — lokal (ACH)",
+        "hint": "Inlandsüberweisungen in den USA via ACH"
+      },
+      "usd-wire": {
+        "label": "USD — international (Wire)",
+        "hint": "Internationale Wire-Überweisungen in US-Dollar"
+      },
+      "eur": {
+        "label": "EUR",
+        "hint": "SEPA-Überweisungen in Euro"
+      },
+      "gbp": {
+        "label": "GBP",
+        "hint": "Faster Payments in Britischen Pfund"
+      },
+      "mxn": {
+        "label": "MXN",
+        "hint": "SPEI-Überweisungen in Mexikanischen Pesos"
+      },
+      "brl": {
+        "label": "BRL",
+        "hint": "PIX-Überweisungen in Brasilianischen Real"
+      },
+      "cop": {
+        "label": "COP (Beta)",
+        "hint": "Bre-B-Überweisungen in Kolumbianischen Pesos"
+      }
+    },
+    "createTransfer": {
+      "title": "Neue einmalige Überweisung",
+      "description": "Erstellen Sie Einzahlungsanweisungen für eine einzelne eingehende Überweisung. Die Mittel werden in einen Stablecoin (USDC oder EURC) in Ihrer Treasury umgewandelt.",
+      "corridorLabel": "Korridor",
+      "corridorHint": "Wählen Sie, wie der Zahler Mittel sendet. Dies bestimmt die Einzahlungsanweisungen.",
+      "fixedAmountLabel": "Festen Betrag verlangen",
+      "amountPlaceholder": "z. B. 1000,00",
+      "flexibleAmountHint": "Der Zahler kann einen beliebigen Betrag senden.",
+      "cancel": "Abbrechen",
+      "submit": "Überweisung erstellen",
+      "submitting": "Wird erstellt…",
+      "loadingOptions": "Korridore werden geladen…",
+      "noCorridorsAvailable": "Für diesen Space sind keine Transferkorridore verfügbar."
+    },
+    "transferStatus": {
+      "awaiting_funds": "Zahlung ausstehend",
+      "funds_received": "Erhalten",
+      "payment_processed": "Abgeschlossen",
+      "canceled": "Storniert",
+      "cancelled": "Storniert",
+      "failed": "Fehlgeschlagen",
+      "returned": "Zurückgegeben",
+      "in_review": "In Prüfung",
+      "undeliverable": "Nicht zustellbar"
+    },
+    "accountDetails": {},
+    "depositInstructions": {
+      "iban": "IBAN",
+      "bic": "BIC / SWIFT",
+      "bicInternational": "BIC / SWIFT (für internationale Überweisungen)",
+      "routingNumber": "Routing-Nummer",
+      "accountNumber": "Kontonummer",
+      "sortCode": "Sort Code",
+      "bankName": "Bankname",
+      "accountHolder": "Kontoinhaber",
+      "bankNameAndAddress": "Bankname und -adresse",
+      "beneficiaryNameAndAddress": "Name und Adresse des Begünstigten",
+      "activeBadge": "Aktiv",
+      "depositMessage": "Referenznachricht (erforderlich)",
+      "bankInstructionsSection": "Anweisungen zur Banküberweisung",
+      "treasurySection": "Treasury-Ziel",
+      "destinationCurrency": "Zielwährung",
+      "destinationRail": "Zahlungsweg",
+      "destinationAddress": "Treasury-Adresse",
+      "hyphaFees": "Hypha-Gebühren",
+      "feesUnavailable": "Vom Anbieter nicht angegeben",
+      "providerFeesNote": "*Der Anbieter kann bei Transaktionen zusätzliche Gebühren erheben.",
+      "copyInstructions": "Anweisungen kopieren",
+      "copyInstructionsCopied": "Kopiert",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "beneficiaryName": "Name des Begünstigten"
+    },
+    "sandboxDemo": {
+      "title": "Sandbox / Dev — KYB-Simulation",
+      "description": "KYB ist ein manueller Schritt und muss in der Sandbox simuliert werden. Dies kann auch das vollständige Ausfüllen des Formulars umgehen.",
+      "infoTooltipAria": "Über KYB-Simulation in der Sandbox",
+      "simulateFillingKybRequiredData": "Ausfüllen der erforderlichen KYB-Daten simulieren",
+      "cta": "KYB-Freigabe simulieren",
+      "simulating": "Wird simuliert…",
+      "refreshing": "Status wird aktualisiert…"
     }
   },
   "TreasuryTab": {
+    "bankAccounts": "Bankkonten",
     "balance": "Kontostand",
     "wallet": "Wallet",
     "searchTokens": "Tokens suchen",
@@ -966,6 +1418,8 @@
     "rootSpaceDescription": "Wenn Sie diesen Space als Root-Space markieren, wird er unabhängig. Er ist dann nicht mehr mit der aktuellen Organisation verknüpft, und alle mit ihm verknüpften Spaces werden mitverschoben.",
     "uploadEcosystemLogoLight": "Ökosystem-Logo hochladen (hell)",
     "uploadEcosystemLogoDark": "Ökosystem-Logo hochladen (dunkel)",
+    "ecosystemLogoPlaceholder": "{spaceName}-Ökosystemlogo hochladen",
+    "ecosystemLogoPlaceholderFallback": "diesen Space",
     "ecosystemLogoLightDescription": "Laden Sie ein helles Logo für Ihr Ökosystem hoch (PNG, JPG, GIF oder WEBP).",
     "ecosystemLogoDarkDescription": "Laden Sie ein dunkles Logo für Ihr Ökosystem hoch (PNG, JPG, GIF oder WEBP).",
     "search": "Suchen...",
@@ -978,7 +1432,21 @@
     "exchangeDepositProposalConfirming": "Bestätigung läuft...",
     "exchangeDepositProposalTitle": "{amount} {symbol} einzahlen – Escrow abschließen (#{escrowId})",
     "exchangeDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um den Tausch mit {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um die Investition in {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um die Investition in {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}.",
+    "confirmInvestmentCta": "Investition bestätigen",
+    "acceptInvestmentTitle": "Investition annehmen",
+    "acceptInvestmentBody": "{sellerLabel} hat die Investition deines Spaces über {buyerAmountLabel} angenommen und bietet im Gegenzug {sellerAmountLabel} an.",
+    "acceptInvestmentBodyPersonal": "{sellerLabel} hat deine Investition über {buyerAmountLabel} angenommen und bietet im Gegenzug {sellerAmountLabel} an.",
+    "exchangeStakesAndTokensTitle": "Anteile & Tokens tauschen",
+    "exchangeStakesAndTokensBody": "{sellerLabel} hat vorgeschlagen, {sellerAmountLabel} gegen {buyerAmountLabel} aus deinem Space zu tauschen.",
+    "exchangeStakesAndTokensBodyPersonal": "{sellerLabel} hat vorgeschlagen, {sellerAmountLabel} gegen {buyerAmountLabel} von dir zu tauschen.",
+    "exchangeCounterpartyFallback": "die andere Partei",
+    "escrowDepositRefuse": "Ablehnen",
+    "escrowDepositRefusing": "Wird abgelehnt...",
+    "escrowConfirmExchange": "Tausch bestätigen",
+    "escrowDepositDepositing": "Einzahlung läuft...",
+    "escrowDepositApproving": "Genehmigung läuft...",
+    "escrowDepositInsufficientWallet": "Dein Wallet-Guthaben liegt unter dem erforderlichen Betrag."
   },
   "AgreementFlow": {
     "labels": {
@@ -986,7 +1454,9 @@
       "votingMethod": "Abstimmungsmethode",
       "entryMethod": "Beitrittsmethode",
       "membershipExit": "Mitgliedschaft beenden",
+      "spaceMemory": "Space Memory",
       "spaceToSpace": "Space-zu-Space",
+      "changeDelegate": "Delegierten ändern",
       "issueNewToken": "Neuen Token ausgeben",
       "treasuryMinting": "Treasury Minting",
       "tokenBurning": "Token-Verbrennung",
@@ -1054,6 +1524,7 @@
       "selectSpaceToActivate": "Bitte wählen Sie einen Space zur Aktivierung aus.",
       "monthsToActivateRequired": "Bitte geben Sie die Anzahl der Monate für die Aktivierung ein.",
       "selectSpaceToJoin": "Bitte wählen Sie einen Space zum Beitreten aus",
+      "selectGovernanceSpace": "Bitte wählen Sie einen Governance-Space aus",
       "selectDelegatedVotingMember": "Bitte wählen Sie ein delegiertes Abstimmungsmitglied aus",
       "selectSpaceToExit": "Bitte wählen Sie einen Space zum Verlassen aus.",
       "selectMemberToRemove": "Bitte wählen Sie ein zu entfernendes Mitglied aus",
@@ -1168,6 +1639,12 @@
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Vereinbarung wird erstellt...",
       "CREATE_WEB3_PROPOSAL": "Web3-Vorschlag wird erstellt...",
+      "UPLOAD_FILES": "Dateien werden hochgeladen...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Web2- und Web3-Vereinbarungen werden verknüpft"
+    },
+    "changeSpaceDelegateProgress": {
+      "CREATE_WEB2_AGREEMENT": "Vereinbarung wird erstellt...",
+      "CREATE_WEB3_AGREEMENT": "Web3-Vereinbarung wird erstellt...",
       "UPLOAD_FILES": "Dateien werden hochgeladen...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Web2- und Web3-Vereinbarungen werden verknüpft"
     },
@@ -1474,6 +1951,14 @@
         "delegationRules": "Delegationsregeln",
         "delegatedVotingMemberDescription": "Das delegierte Abstimmungsmitglied ist die Person aus Ihrem Space, die formal berechtigt ist, im beitretenden Space im Namen Ihres Spaces abzustimmen."
       },
+      "changeSpaceDelegate": {
+        "governanceSpace": "Governance-Space",
+        "delegationRules": "Delegationsregeln",
+        "delegatedVotingMemberDescription": "Wählen Sie das Mitglied aus Ihrem Space, das die delegierte Stimmkraft Ihres Spaces im gewählten Governance-Space erhalten soll."
+      },
+      "changeSpaceDelegateSelector": {
+        "governanceSpace": "Governance-Space"
+      },
       "spaceTransparencySettings": {
         "title": "Space-Transparenz",
         "description": "Definieren Sie den Grad der Transparenz, den Sie gemeinsam auf Ihren Space anwenden möchten. Bitte beachten Sie: Unabhängig von Ihrer Auswahl können nur direkte Mitglieder im Space handeln.",
@@ -1718,6 +2203,7 @@
       "usdcAmount": "USDC Betrag",
       "hyphaAmount": "HYPHA Betrag",
       "joiningSpace": "Dem Space beitreten",
+      "governanceSpace": "Governance-Space",
       "delegatedVotingMember": "Delegiertes stimmberechtigtes Mitglied",
       "exitingMember": "Austretendes Mitglied",
       "exitFrom": "Ausstieg aus",
@@ -1899,13 +2385,25 @@
   "AiPanel": {
     "title": "Hypha AI",
     "suggestions": {
-      "aboutSpace": "Erzähl mir etwas über diesen Space",
-      "memberCount": "Wie viele Mitglieder hat dieser Space?",
-      "agreements": "Welche Vereinbarungen gibt es in diesem Space?",
-      "structure": "Beschreibe die Struktur dieses Spaces"
+      "spaceHealth": "Wie steht unser Space insgesamt da?",
+      "nextSignal": "Welches Signal sollen wir als Nächstes erstellen oder teilen?",
+      "blindSpot": "Was ist unser größter blinder Fleck?",
+      "summarizeDiscussion": "Fasse die letzte Teamdiskussion zusammen",
+      "spaceMemory": "Was erinnert sich unser Space?",
+      "valueFlows": "Wie fließen Werte durch unsere Tokens?"
     },
-    "welcome": "Hallo! Ich bin dein AI-Assistent für {spaceName}. Ich kann Space-Details wie Mitgliederzahlen, Vereinbarungen und Strukturen nachschlagen. Frag mich alles über den Space, den du gerade ansiehst.",
-    "placeholder": "Frag Hypha AI etwas...",
+    "suggestionTags": {
+      "spaceHealth": "Space-Gesundheit",
+      "nextSignal": "Nächstes Signal",
+      "blindSpot": "Blinder Fleck",
+      "summarizeDiscussion": "Diskussion zusammenfassen",
+      "spaceMemory": "Space-Memory",
+      "valueFlows": "Werteströme"
+    },
+    "welcome": "Ich bin deine Space-KI für Kohärenz in der Strategie, Bewegung in den Operations und Sinn im Impact—Spezialist:innen gleiten herein, sobald du sie rufst.",
+    "specialistsResponding": "Beitragende Spezialisten",
+    "specialistsRespondingStreaming": "Beitragende Spezialisten…",
+    "placeholder": "Einfach fragen...",
     "sendButton": "Senden",
     "stopButton": "Stoppen",
     "newlineHint": "Shift+Enter für neue Zeile",
@@ -1913,9 +2411,11 @@
     "signInButton": "Anmelden",
     "loading": "Laden...",
     "openPanel": "Hypha AI öffnen",
+    "openAiPanel": "AI-Panel öffnen",
     "hidePanel": "AI-Panel ausblenden",
     "resetChat": "Chat zurücksetzen",
     "closePanel": "Panel schließen",
+    "closeAiPanel": "AI-Panel schließen",
     "copyButton": "Kopieren",
     "copiedButton": "Kopiert!",
     "toolLookingUp": "Space wird gesucht…",
@@ -1926,7 +2426,15 @@
     "toolTokens": "{count} Token(s) für Space \"{slug}\" abgerufen.",
     "toolError": "Fehler: {message}",
     "streamError": "Beim Generieren der Antwort ist ein Fehler aufgetreten.",
-    "attachment": "Anhang"
+    "assistantExpiredSubtitle": "Ihr Hypha-Netzwerk-Beitrag ist vor {expiredElapsed} abgelaufen. Bitte reaktivieren Sie Ihren Space, bevor Sie Hypha AI nutzen.",
+    "attachment": "Anhang",
+    "pendingAction": "Ausstehende Aktion",
+    "confirmWith": "Bestätigen mit:",
+    "confirm": "Bestätigen",
+    "cancel": "Abbrechen",
+    "showMore": "Mehr anzeigen",
+    "showLess": "Weniger anzeigen",
+    "welcomeSpecialistsHint": "Aktive Spezialist:innen findest du auch unter Mitglieder > KI-Agenten."
   },
   "HumanChatPanel": {
     "title": "Chat",
@@ -1936,6 +2444,16 @@
     "sendButton": "Senden",
     "newlineHint": "Enter zum Senden · Shift+Enter für neue Zeile · :emoji:",
     "loading": "Laden...",
+    "loadOlderMessages": "Ältere Nachrichten laden",
+    "loadingOlderMessages": "Ältere Nachrichten werden geladen…",
+    "historyStartReached": "Anfang des Chats",
+    "connectionLostTitle": "Verbindung unterbrochen",
+    "connectionLostDescription": "Die Chat-Synchronisation wurde wegen eines Netzwerkfehlers pausiert. Versuchen Sie es erneut, sobald Sie wieder online sind.",
+    "connectionReconnectingDescription": "Chat wird wieder verbunden…",
+    "connectionLostRetry": "Erneut versuchen",
+    "connectionFollowerTitle": "Chat ist in einem anderen Tab geöffnet",
+    "connectionFollowerDescription": "Human Chat synchronisiert jeweils nur in einem Browser-Tab, damit Anrufe stabil bleiben.",
+    "connectionFollowerUseTab": "Diesen Tab verwenden",
     "openPanel": "Chat-Panel öffnen",
     "hidePanel": "Chat-Panel ausblenden",
     "closePanel": "Panel schließen",
@@ -1982,6 +2500,7 @@
     "mentionNotAvailable": "Erwähnungen (demnächst)",
     "mentionNoMembers": "Noch keine Mitglieder geladen — kurz später erneut versuchen",
     "mentionListLabel": "Jemanden erwähnen",
+    "mentionListHintIncludesParentSpaceMembers": "Wähle ein Mitglied aus, das du erwähnen möchtest. Diese Liste kann auch Mitglieder aus dem übergeordneten Space enthalten.",
     "mentionInboxTitle": "Erwähnungen",
     "mentionInboxBellCallRingHint": "Klicke die Glocke, um Anruf-Töne stumm oder laut zu schalten. Den Menüpunkt „Erwähnungen“ öffnen, um @-Erwähnungen zu sehen.",
     "callJoinCallAlertsMutedShort": "Stumm",
@@ -2073,6 +2592,9 @@
     "callJoinCallAlertsAria": "Anruf-Hinweise: Signalton und optionaler Hinweis bei laufendem Anruf",
     "callJoinCallAlertsMuteAction": "Anruf-Hinweise stummschalten (kein Signalton bei neuen Anrufen)",
     "callJoinCallAlertsUnmuteAction": "Anruf-Hinweise wieder einschalten",
+    "callGalleryPage": "Seite {current} von {total}",
+    "callGalleryPreviousPage": "Vorherige Seite",
+    "callGalleryNextPage": "Nächste Seite",
     "callJoinWithAudio": "Am Space-Sprachanruf teilnehmen (Mikrofon)",
     "callJoinWithVideo": "Am Space-Videoanruf teilnehmen (Kamera und Mikrofon)",
     "callJoinWithAudioShort": "Audio beitreten",
@@ -2114,6 +2636,10 @@
     "callControlsScreenshare": "Bildschirmfreigabe",
     "callControlsScreenshareActiveAria": "Bildschirmfreigabe, aktiv",
     "callControlsScreenshareInactiveAria": "Bildschirmfreigabe, inaktiv",
+    "callVoiceProcessingLabel": "Sprachverarbeitung",
+    "callVoiceProcessingStandard": "Sprache",
+    "callVoiceProcessingIsolation": "Isolierung",
+    "callVoiceProcessingMusic": "Musik",
     "callCameraOn": "Kamera einschalten",
     "callCameraOff": "Kamera ausschalten",
     "callErrorPermission": "Kamera- oder Mikrofonzugriff verweigert. Bitte Browsereinstellungen prüfen.",
@@ -2136,6 +2662,8 @@
     "callRemoteParticipant": "Teilnehmende/r",
     "callScreenShare": "Bildschirmfreigabe",
     "callScreenShareActive": "Bildschirmfreigabe ist aktiv",
+    "callYouAreSharingScreen": "Sie teilen Ihren Bildschirm",
+    "callYouAreSharingScreenHint": "Andere sehen Ihren Bildschirm. Ihre eigene Freigabe sehen Sie hier nicht.",
     "callFullView": "Vollansicht",
     "callFullViewDescription": "Größere Anzeige des Anrufs. Der Space-Anruf bleibt aktiv, wenn Sie dieses Fenster schließen.",
     "callFullViewClose": "Schließen",
@@ -2153,7 +2681,68 @@
     "callLeftBannerDismiss": "Schließen",
     "callPaneResizeSharePeople": "Bildschirmfreigabe und Personen skalieren",
     "callPaneResizeShareStrip": "Bildschirmfreigabe und Filmstreifen skalieren",
-    "callPaneResizeSpeakerShare": "Sprecher*in und Bildschirmfreigabe skalieren"
+    "callPaneResizeSpeakerShare": "Sprecher*in und Bildschirmfreigabe skalieren",
+    "callDockTitleWithMembers": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",
+    "callDockOpenCallSpace": "Anrufraum öffnen",
+    "callDockSpaceLabel": "Space",
+    "callDockMinimize": "Anruf minimieren",
+    "callDockExpand": "Anruf erweitern",
+    "callDockFullscreen": "Vollbild",
+    "callDockExitFullscreen": "Vollbild beenden",
+    "callCaptureLabel": "Anrufaufzeichnung",
+    "callCaptureModeNone": "Aus",
+    "callCaptureModeTranscriptOnly": "Nur Transkript",
+    "callCaptureModeRecordingWithTranscript": "Aufzeichnung + Transkript",
+    "callCaptureStatusIdle": "Inaktiv",
+    "callCaptureStatusCapturing": "Aufnahme läuft",
+    "callCaptureStatusStarting": "Wird gestartet…",
+    "callCaptureStatusPaused": "Pausiert",
+    "callCaptureStatusSaving": "Wird gespeichert",
+    "callCaptureStop": "Aufzeichnung stoppen",
+    "callCapturePause": "Aufzeichnung pausieren",
+    "callCaptureResume": "Aufzeichnung fortsetzen",
+    "callCaptureConfirmStopRecordingTitle": "Aufzeichnung beenden?",
+    "callCaptureConfirmStopRecording": "Die Aufzeichnung wird beendet und in Space Memory gespeichert.",
+    "callCaptureConfirmStopRecordingAction": "Aufzeichnung stoppen",
+    "callCaptureConfirmStopTranscriptTitle": "Transkripterfassung beenden?",
+    "callCaptureConfirmStopTranscript": "Die Transkripterfassung ist noch aktiv. Jetzt beenden und speichern?",
+    "callCaptureConfirmStopTranscriptAction": "Transkript stoppen",
+    "callCaptureConfirmCancel": "Abbrechen",
+    "callCaptureStatusError": "Aufzeichnungsfehler",
+    "messageReadMore": "Mehr lesen",
+    "messageShowLess": "Weniger anzeigen",
+    "callCaptureOffHint": "Aufzeichnung ist aus. Für diesen Anruf werden weder Aufnahme noch Transkript gespeichert.",
+    "callCaptureLeaveWarning": "Aufzeichnung ist aus. Zum Bestätigen erneut auf Verlassen klicken.",
+    "callCaptureConsentLocal": "Du zeichnest diesen Anruf auf ({mode}). Andere werden benachrichtigt.",
+    "callCaptureConsentRemote": "{actor} zeichnet diesen Anruf auf ({mode}).",
+    "callCaptureConsentJoin": "Dieser Anruf wird aufgezeichnet ({mode}) von {actor}. Beitritt gilt als Zustimmung.",
+    "callCaptureConsentLegalNote": "Aufzeichnung und Transkript können im Space-Gedächtnis gespeichert werden.",
+    "callCaptureConsentActorFallback": "Ein Teilnehmer",
+    "callCaptureConsentPausedSuffix": " Aufzeichnung ist pausiert.",
+    "callCaptureVoiceStartedRecordingTranscript": "Dieser Anruf wird jetzt aufgezeichnet und transkribiert.",
+    "callCaptureVoiceStoppedRecordingTranscript": "Aufzeichnung und Transkription wurden beendet.",
+    "callCaptureVoiceStartedTranscript": "Dieser Anruf wird jetzt transkribiert.",
+    "callCaptureVoiceStoppedTranscript": "Die Transkription wurde beendet.",
+    "composerLockedPlaceholder": "Nur ausgewählte Teammitglieder können in diesem Thread interagieren.",
+    "signalTeamInteractionRestricted": "Nur ausgewählte Teammitglieder können in diesem Thread Nachrichten senden und Erwähnungen nutzen.",
+    "signalTeamBannerReadOnly": "Dieser Thread ist teambezogen. Du kannst Updates lesen, aber nur ausgewählte Teammitglieder können interagieren.",
+    "signalTeamRequestAccess": "Anfrage zur Aufnahme",
+    "signalTeamRequestPending": "Anfrage ausstehend",
+    "signalTeamManageTitle": "Signal-Team",
+    "signalTeamManageOpen": "Verwalten",
+    "signalTeamManageClose": "Fertig",
+    "signalTeamMemberListHint": "Wähle Mitglieder aus, die Nachrichten senden, erwähnen und an Thread-Anrufen teilnehmen können.",
+    "signalTeamAddMember": "Hinzufügen",
+    "signalTeamRemoveMember": "Entfernen",
+    "signalTeamPendingRequests": "Ausstehende Anfragen",
+    "signalTeamApproveRequester": "Zum Team hinzufügen",
+    "signalTeamUpdated": "Signal-Team aktualisiert",
+    "signalTeamAddedMembers": "hinzugefügt {members}",
+    "signalTeamRemovedMembers": "entfernt {members}",
+    "signalTeamAccessRequested": "Signal-Team-Zugang angefragt",
+    "signalTeamAccessApproved": "Signal-Team-Zugang genehmigt",
+    "mentionOpenFallbackRoom": "Dieser Raum konnte im lokalen Kontext nicht aufgelöst werden. Öffnen Sie den zugehörigen Space und versuchen Sie es erneut.",
+    "mentionOpenFallbackMissingMessage": "Diese Erwähnung ist in der geladenen Timeline noch nicht verfügbar. Bitte versuchen Sie es gleich noch einmal."
   },
   "CoherenceTab": {
     "signals": "Signale",
@@ -2181,6 +2770,7 @@
     "openConversation": "Gespräch öffnen",
     "saySomething": "Schreiben Sie etwas...",
     "proposeAgreement": "Vereinbarung vorschlagen",
+    "comingSoon": "Demnächst verfügbar",
     "errorOhSnap": "Hoppla! Ein Fehler ist aufgetreten",
     "reset": "Zurücksetzen",
     "creatingNewSignal": "Neues Signal wird erstellt",
@@ -2209,25 +2799,44 @@
     "spaceMemoryLoadMoreError": "Weitere Einträge konnten nicht geladen werden. Bitte erneut versuchen.",
     "spaceMemoryRetry": "Erneut versuchen",
     "spaceMemoryRefresh": "Aktualisieren",
-    "spaceMemoryTimelineLabel": "Space-Memory-Verlauf",
+    "openDocument": "Dokument öffnen",
     "spaceMemoryContext": "Aus «{title}» · {state}",
+    "spaceMemoryContextMemory": "Erinnerung · «{title}»",
     "spaceMemoryContextMatrix": "Aus Matrix-Chat",
+    "spaceMemoryContextCallTranscript": "Gruppenanruf-Transkript",
+    "spaceMemoryContextCallRecording": "Gruppenanruf-Aufzeichnung",
+    "spaceMemoryContextCallFromSignal": "Anruf · «{title}»",
+    "spaceMemoryContextCallRecordingFromSignal": "Aufzeichnung · «{title}»",
+    "spaceMemoryContextDiscussionSummary": "Gesprächszusammenfassung",
+    "spaceMemoryCallTranscriptExcerpt": "Transkript",
+    "spaceMemoryCallRecordingNoUrl": "Die Aufzeichnung ist verfügbar, sobald eine Medien-URL für diese Sitzung eingelesen wurde.",
+    "spaceMemoryCallArtifactNote": "Anruf-Erinnerungen erscheinen, wenn Aufzeichnung oder Spracherkennung für diesen Space abgeschlossen ist (siehe Team-Pipeline).",
     "spaceMemoryMatrixPreviewNeedsChat": "Vorschau braucht Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Öffnen Sie Human Chat, um Matrix zu verbinden, aktualisieren Sie dann den Space Memory, um diese Datei zu öffnen.",
     "spaceMemoryMatrixVideoPlayHint": "Tippen für Vorschau",
+    "spaceMemoryPlayCallRecording": "Aufzeichnung abspielen",
+    "spaceMemoryOpenCallRecordingFullscreen": "Aufzeichnungsplayer öffnen",
+    "spaceMemoryOpenCallRecordingNewTab": "In neuem Tab öffnen",
+    "spaceMemoryPdfPreviewUnavailable": "PDF-Vorschau nicht verfügbar",
     "spaceMemoryOpenAsset": "{name} öffnen",
     "untitledDocument": "Unbenanntes Dokument",
     "spaceMemoryGeneral": "Allgemein",
     "spaceMemoryProposals": "Vorschläge",
     "spaceMemoryConversations": "Gespräche",
+    "spaceMemoryCalls": "Anrufe",
     "spaceMemoryAiChat": "AI-Chat",
+    "newMemoryUploadDocumentsTitle": "Dokumente hochladen",
+    "newMemoryUploadingFiles": "Space-Memories werden hochgeladen...",
+    "newMemoryAttachmentsRequired": "Bitte laden Sie mindestens ein Dokument für diese Erinnerung hoch.",
     "newMemory": "Neue Erinnerung",
     "spaceMemoryEmptyTab": "In dieser Ansicht wurden keine Einträge gefunden.",
     "spaceMemoryAiChatEmpty": "AI-Chat-Erinnerungen sind noch nicht verfügbar.",
+    "spaceMemoryCallsEmpty": "Noch keine Anrufaufzeichnungen oder Transkripte. Sie erscheinen hier, nachdem ein aufgezeichneter Gruppenanruf beendet wurde.",
     "documentStates": {
       "discussion": "Diskussion",
       "proposal": "Vorschlag",
-      "agreement": "Vereinbarung"
+      "agreement": "Vereinbarung",
+      "memory": "Erinnerung"
     },
     "types": {
       "Opportunity": "Chance",
@@ -2336,11 +2945,140 @@
       "valueModel": "Wert & Modell",
       "evidenceImpact": "Evidenz & Wirkung"
     },
-    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
-    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
-    "spaceMemoryCallTranscriptExcerpt": "Transcript",
-    "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
-    "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)"
+    "tagGroup": {
+      "purpose": "Zweck & Strategie",
+      "governance": "Governance",
+      "operations": "Operations",
+      "community": "Community",
+      "finance": "Treasury & Tokens",
+      "product": "Produkt",
+      "risk": "Verantwortung & Resilienz",
+      "ecosystem": "Ökosystem & Partnerschaften",
+      "learning": "Lernen & Wissen",
+      "reputation": "Reputation & Vertrauen"
+    },
+    "aiAgentsCatalog": {
+      "purpose": {
+        "role": "Senior-Strateg:in",
+        "focus": "Mission, strategische Ausrichtung und langfristige Richtung",
+        "roleDefinition": [
+          "Verknüpft tägliche Arbeit mit Mission und messbaren Prioritäten.",
+          "Macht blinde Flecken und Zielkonflikte sichtbar, bevor ihr euch festlegt.",
+          "Übersetzt Vision in klare Entscheidungskriterien und Ergebnisse."
+        ]
+      },
+      "governance": {
+        "role": "Governance-Architekt:in",
+        "focus": "Entscheidungsrechte, Vorschlagsqualität und Koordination",
+        "roleDefinition": [
+          "Hält Vorschläge klar, verantwortlich und umsetzbar.",
+          "Verbessert Abstimmungsreife mit Annahmen und Stakeholder-Wirkung.",
+          "Setzt leichte Leitplanken, die Reibung reduzieren ohne Autonomie zu bremsen."
+        ]
+      },
+      "operations": {
+        "role": "Operations Lead",
+        "focus": "Umsetzungspläne, Rhythmus und Abhängigkeiten",
+        "roleDefinition": [
+          "Macht aus Strategie Verantwortliche, Meilensteine und Zeitpläne.",
+          "Markiert Engpässe früh mit praktischen Sequenzierungsoptionen.",
+          "Stabilisiert Lieferung mit Arbeitsrhythmen und Feedback-Schleifen."
+        ]
+      },
+      "community": {
+        "role": "Community Builder",
+        "focus": "Engagement, Onboarding und Gesundheit der Mitwirkenden",
+        "roleDefinition": [
+          "Verbessert Onboarding und Klarheit für stärkere Beteiligung.",
+          "Erkennt Rückgänge und schlägt Bindungs- und Aktivierungsmaßnahmen vor.",
+          "Balanciert Offenheit mit Vertrauen und nachhaltiger Beteiligung."
+        ]
+      },
+      "finance": {
+        "role": "Treasury- und Token-Analyst:in",
+        "focus": "Treasury, Tokens und Kapitalallokation",
+        "roleDefinition": [
+          "Prüft Token- und Treasury-Entscheidungen auf Runway und Konzentrationsrisiko.",
+          "Verknüpft Ausgaben mit strategischen Prioritäten und erwarteten Ergebnissen.",
+          "Rahmt Allokationsoptionen mit klarer Upside und Downside."
+        ]
+      },
+      "product": {
+        "role": "Produktstrateg:in",
+        "focus": "Nutzerwirkung, Priorisierung und Adoption",
+        "roleDefinition": [
+          "Priorisiert nach Nutzerwert, strategischem Fit und Umsetzungshebel.",
+          "Entwirft Experimente mit messbaren Lernergebnissen.",
+          "Richtet Roadmap an Adoptions- und Retention-Signalen aus."
+        ]
+      },
+      "risk": {
+        "role": "Berater:in für Verantwortung & Resilienz",
+        "focus": "Frühe Signale, Schutzmechanismen und langfristige Resilienz",
+        "roleDefinition": [
+          "Erkennt Belastung und schwache Signale früh, damit der Space sich anpassen kann, bevor Schaden entsteht.",
+          "Schlägt wertschätzende Schutzmechanismen mit klaren Verantwortlichen vor—resilient ohne Bürokratie.",
+          "Hält Zusagen an Werte und Verantwortung ausgerichtet, während der Space wächst."
+        ]
+      },
+      "ecosystem": {
+        "role": "Ökosystem- und Partnerschaftsstrateg:in",
+        "focus": "Space-übergreifende Partnerschaften und Koordinationshebel",
+        "roleDefinition": [
+          "Kartiert Abhängigkeiten und Partnerschaften mit hohem Hebel.",
+          "Plant space-übergreifende Arbeit mit klaren Verantwortlichen und gemeinsamen Ergebnissen.",
+          "Leitet externe Signale schnell an die richtigen Spaces weiter."
+        ]
+      },
+      "learning": {
+        "role": "Learning- und Wissensarchitekt:in",
+        "focus": "Wissenssicherung, Evidenz und Verbesserungsschleifen",
+        "roleDefinition": [
+          "Macht aus Diskussionen und Experimenten wiederverwendbares Wissen.",
+          "Baut Feedback-Schleifen, die Entscheidungen über Zeit schärfen.",
+          "Klärt Annahmen, Metriken und Learnings."
+        ]
+      },
+      "reputation": {
+        "role": "Reputation- und Trust-Steward",
+        "focus": "Vertrauen, Narrativ und Kommunikationsrisiko",
+        "roleDefinition": [
+          "Richtet öffentliches Narrativ an tatsächlichem operativem Verhalten aus.",
+          "Markiert Reputationsrisiken früh mit praktischen Gegenmaßnahmen.",
+          "Stärkt Stakeholder-Kommunikation bei Wandel und Konflikt."
+        ]
+      }
+    },
+    "createBoard": "Board erstellen",
+    "createBoardDescription": "Speichere einen Board-Filter nach Tag-Kategorie oder einzelnem Tag.",
+    "boardName": "Board-Name",
+    "boardNamePlaceholder": "z. B. Impact-Board",
+    "boardFilterBy": "Filtern nach",
+    "boardFilterCategory": "Tag-Kategorie",
+    "boardFilterTag": "Einzelner Tag",
+    "boardSelectCategory": "Kategorie",
+    "boardSelectTag": "Tag",
+    "boardCreateAction": "Board erstellen",
+    "boardCancelAction": "Abbrechen",
+    "boardAll": "Alle Signale",
+    "boardDelete": "Board {boardName} löschen",
+    "spaceMemoryTimelineLabel": "Space-Memory-Verlauf"
+  },
+  "GlobalCallDock": {
+    "callTitle": "Anruf - {count, plural, one {# Mitglied} other {# Mitglieder}}",
+    "openSpaceLabel": "Anruf-Space öffnen",
+    "spaceButton": "Space",
+    "minimizeLabel": "Anruf minimieren",
+    "expandLabel": "Anruf erweitern",
+    "fullscreenLabel": "Vollbild",
+    "exitFullscreenLabel": "Vollbild beenden",
+    "unknownMember": "Unbekannt",
+    "resizeTopLeftLabel": "Anruffenster über die obere linke Ecke skalieren",
+    "resizeTopRightLabel": "Anruffenster über die obere rechte Ecke skalieren",
+    "resizeBottomLeftLabel": "Anruffenster über die untere linke Ecke skalieren",
+    "resizeBottomRightLabel": "Anruffenster über die untere rechte Ecke skalieren",
+    "openFloatingWindowLabel": "Schwebendes Anruffenster öffnen",
+    "closeFloatingWindowLabel": "Schwebendes Anruffenster schließen"
   },
   "SignalCard": {
     "noConversationRoom": "Noch kein Gesprächsraum",

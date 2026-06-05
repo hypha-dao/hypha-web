@@ -7,6 +7,7 @@ const VALID_DHO_TABS = new Set([
   'agreements',
   'members',
   'treasury',
+  'banking',
   'rewards',
   'memory',
 ]);

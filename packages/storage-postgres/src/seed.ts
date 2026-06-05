@@ -72,7 +72,7 @@ async function main() {
           title: f.loremIpsum(),
           description: f.loremIpsum({ sentencesCount: 10 }),
           state: f.valuesFromArray({
-            values: ['discussion', 'proposal', 'agreement'],
+            values: ['discussion', 'proposal', 'agreement', 'memory'],
           }),
         },
       },

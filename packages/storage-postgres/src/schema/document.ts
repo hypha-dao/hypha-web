@@ -15,6 +15,7 @@ export const documentStateEnum = pgEnum('document_state', [
   'discussion',
   'proposal',
   'agreement',
+  'memory',
 ]);
 
 export interface Attachment {

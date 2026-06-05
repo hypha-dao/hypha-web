@@ -138,6 +138,32 @@ function withAlpha(color: string, alpha: number): string {
   return parsed.formatRgb();
 }
 
+/** SVG rejects negative `r` / `width` / `height`; clamp during zoom transitions. */
+function clampSvgLength(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+
+function finiteOr(value: number | undefined, fallback: number): number {
+  return Number.isFinite(value) ? (value as number) : fallback;
+}
+
+function sanitizeZoomView(
+  view: [number, number, number],
+  fallbackDiameter = VISUALIZATION_CONFIG.BASE_RADIUS * 2,
+): [number, number, number] {
+  const diameter = finiteOr(view[2], fallbackDiameter);
+  return [finiteOr(view[0], 0), finiteOr(view[1], 0), Math.max(diameter, 1)];
+}
+
+function sanitizeHierarchyLayout(root: SpaceHierarchyNode): void {
+  root.each((node) => {
+    const d = node as SpaceHierarchyNode;
+    d.x = finiteOr(d.x, 0);
+    d.y = finiteOr(d.y, 0);
+    d.r = Math.max(finiteOr(d.r, VISUALIZATION_CONFIG.BASE_RADIUS), 1);
+  });
+}
+
 export function SpaceVisualization({
   data,
   currentSpaceId,
@@ -382,7 +408,9 @@ export function SpaceVisualization({
         const maxOrbit = node.r! - childNode.r!;
 
         if (minOrbitRadius > maxOrbit) {
-          childNode.r = (node.r! - parentLogoRadiusWithStroke) / 2;
+          childNode.r = clampSvgLength(
+            (node.r! - parentLogoRadiusWithStroke) / 2,
+          );
         }
       });
 
@@ -414,7 +442,7 @@ export function SpaceVisualization({
         }
 
         children.forEach((childNode) => {
-          childNode.r = bestChildRadius;
+          childNode.r = clampSvgLength(bestChildRadius);
         });
 
         const adjustedRadii = children.map((c) => c.r!);
@@ -454,12 +482,19 @@ export function SpaceVisualization({
       }
 
       const step = (2 * Math.PI) / n;
+      const safeOrbitRadius = Number.isFinite(orbitRadius)
+        ? Math.max(minOrbitRadius, orbitRadius)
+        : minOrbitRadius;
       children.forEach((childNode, i) => {
         const angle = i * step;
-        childNode.x = d.x! + Math.cos(angle) * orbitRadius;
-        childNode.y = d.y! + Math.sin(angle) * orbitRadius;
+        const parentX = finiteOr(d.x, 0);
+        const parentY = finiteOr(d.y, 0);
+        childNode.x = parentX + Math.cos(angle) * safeOrbitRadius;
+        childNode.y = parentY + Math.sin(angle) * safeOrbitRadius;
       });
     });
+
+    sanitizeHierarchyLayout(root);
 
     const findNodeById = (
       node: SpaceHierarchyNode,
@@ -497,7 +532,11 @@ export function SpaceVisualization({
 
     focusRef.current = focus;
     savedFocusIdRef.current = focus.data.id;
-    let view: [number, number, number] = [focus.x!, focus.y!, focus.r! * 2];
+    let view = sanitizeZoomView([
+      finiteOr(focus.x, 0),
+      finiteOr(focus.y, 0),
+      finiteOr(focus.r, VISUALIZATION_CONFIG.BASE_RADIUS) * 2,
+    ]);
 
     const svg = d3
       .select(svgRef.current)
@@ -778,12 +817,17 @@ export function SpaceVisualization({
         .transition()
         .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
         .tween('zoom', () => {
-          const i = d3.interpolateZoom(view, [
-            focus.x!,
-            focus.y!,
-            focus.r! * 2,
+          const targetView = sanitizeZoomView([
+            finiteOr(focus.x, 0),
+            finiteOr(focus.y, 0),
+            finiteOr(focus.r, VISUALIZATION_CONFIG.BASE_RADIUS) * 2,
           ]);
-          return (t) => zoomTo(i(t));
+          const startView = sanitizeZoomView(view);
+          const interpolator = d3.interpolateZoom(startView, targetView);
+          return (t) => {
+            const next = sanitizeZoomView(interpolator(t), targetView[2]);
+            zoomTo(next);
+          };
         });
 
       transition
@@ -816,16 +860,21 @@ export function SpaceVisualization({
     }
 
     function zoomTo(v: [number, number, number]) {
-      const k = width / v[2];
-      view = v;
+      const safeView = sanitizeZoomView(v, view[2]);
+      const k = width / safeView[2];
+      view = safeView;
+
+      const nodeTransform = (d: SpaceHierarchyNode) => {
+        const tx = (finiteOr(d.x, 0) - safeView[0]) * k;
+        const ty = (finiteOr(d.y, 0) - safeView[1]) * k;
+        return `translate(${tx}, ${ty})`;
+      };
 
       orbits
-        .attr(
-          'transform',
-          (d: SpaceHierarchyNode) =>
-            `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
+        .attr('transform', nodeTransform)
+        .attr('r', (d: SpaceHierarchyNode) =>
+          clampSvgLength(finiteOr(d.r, 0) * k),
         )
-        .attr('r', (d: SpaceHierarchyNode) => d.r! * k)
         .style('fill', 'none')
         .attr('stroke', (d: SpaceHierarchyNode) => {
           const accent = d.depth === 0 ? resolvedRootAccent : getNodeAccent(d);
@@ -838,14 +887,13 @@ export function SpaceVisualization({
         .attr('stroke-dasharray', ORBIT_DASH_PATTERN);
 
       logos
-        .attr(
-          'transform',
-          (d: SpaceHierarchyNode) =>
-            `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
-        )
+        .attr('transform', nodeTransform)
         .each(function (d: SpaceHierarchyNode) {
-          const r = d.r! * k * VISUALIZATION_CONFIG.LOGO_RATIO;
+          const r = clampSvgLength(
+            finiteOr(d.r, 0) * k * VISUALIZATION_CONFIG.LOGO_RATIO,
+          );
           const clipId = `clip-${d.data.id}`;
+          const diameter = clampSvgLength(r * 2);
 
           d3.select(this)
             .select('circle')
@@ -859,8 +907,8 @@ export function SpaceVisualization({
             .select('image')
             .attr('x', -r)
             .attr('y', -r)
-            .attr('width', r * 2)
-            .attr('height', r * 2);
+            .attr('width', diameter)
+            .attr('height', diameter);
         });
     }
     let isCancelled = false;
@@ -892,6 +940,7 @@ export function SpaceVisualization({
     });
     return () => {
       isCancelled = true;
+      svg.interrupt();
       cancelIntroSequence();
     };
   }, [data, currentSpaceId, resolvedTheme, enableHoverActions, rootAccentHex]);

@@ -6,6 +6,7 @@ import {
 } from '../assets/constant';
 import { isBefore } from 'date-fns';
 import {
+  DocumentState,
   EntryMethodType,
   REFERENCE_CURRENCIES,
   TOKEN_PRICE_REFERENCE_CURRENCIES,
@@ -135,6 +136,7 @@ const createAgreementWeb2Props = {
   spaceId: z.number().min(1),
   web3ProposalId: z.number().optional(),
   label: z.string().optional(),
+  state: z.nativeEnum(DocumentState).optional(),
 };
 
 export const schemaCreateAgreementWeb2 = z.object(createAgreementWeb2Props);
@@ -928,6 +930,20 @@ export const schemaSpaceToSpaceMembership = z.object({
   member: z
     .string({ message: 'Please select a delegated voting member' })
     .min(1)
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+});
+
+export const schemaChangeSpaceDelegate = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Change Delegate'),
+  space: z
+    .string({ message: 'Please select a governance space' })
+    .min(1, { message: 'Please select a governance space' })
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+  member: z
+    .string({ message: 'Please select a delegated voting member' })
+    .min(1, { message: 'Please select a delegated voting member' })
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
 

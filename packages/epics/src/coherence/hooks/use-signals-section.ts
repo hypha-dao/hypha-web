@@ -3,21 +3,22 @@
 import { Coherence } from '@hypha-platform/core/client';
 import React from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { alignSignalVisibleCount } from '../signal-grid-layout';
 
 export const useSignalsSection = ({
   signals,
-  firstPageSize = 3,
-  pageSize = 3,
+  rowBatchSize,
 }: {
   signals: Coherence[];
-  firstPageSize?: number;
-  pageSize?: number;
+  rowBatchSize: number;
 }) => {
   const [activeFilter, setActiveFilter] = React.useState('most-recent');
-  const [pages, setPages] = React.useState(1);
+  const [visibleCount, setVisibleCount] = React.useState(rowBatchSize);
   const [searchTerm, setSearchTerm] = React.useState<string | undefined>(
     undefined,
   );
+  const rowBatchSizeRef = React.useRef(rowBatchSize);
+  rowBatchSizeRef.current = rowBatchSize;
 
   const onUpdateSearch = useDebouncedCallback((term: string) => {
     setSearchTerm(term);
@@ -38,40 +39,38 @@ export const useSignalsSection = ({
     return result;
   }, [signals, searchTerm]);
 
-  const pagination = React.useMemo(() => {
-    const total = filteredSignals.length;
-    const totalPages =
-      total === 0
-        ? 0
-        : total <= firstPageSize
-        ? 1
-        : 1 + Math.ceil((total - firstPageSize) / pageSize);
-    const hasNextPage = pages < totalPages;
-
-    return {
-      page: pages,
-      pageSize,
-      total,
-      totalPages,
-      hasNextPage,
-    };
-  }, [filteredSignals, pages, firstPageSize, pageSize]);
+  React.useEffect(() => {
+    const batch = rowBatchSizeRef.current > 0 ? rowBatchSizeRef.current : 3;
+    setVisibleCount(batch);
+  }, [searchTerm, activeFilter, signals]);
 
   React.useEffect(() => {
-    setPages(1);
-  }, [activeFilter, searchTerm]);
+    if (rowBatchSize <= 0) return;
+    setVisibleCount((prev) => alignSignalVisibleCount(prev, rowBatchSize));
+  }, [rowBatchSize]);
+
+  const visibleSignals = React.useMemo(
+    () => filteredSignals.slice(0, visibleCount),
+    [filteredSignals, visibleCount],
+  );
+
+  const hasMore = visibleCount < filteredSignals.length;
 
   const loadMore = React.useCallback(() => {
-    if (!pagination?.hasNextPage) return;
-    setPages((prev) => prev + 1);
-  }, [pagination?.hasNextPage]);
+    if (!hasMore || rowBatchSize <= 0) return;
+    setVisibleCount((prev) =>
+      Math.min(prev + rowBatchSize, filteredSignals.length),
+    );
+  }, [filteredSignals.length, hasMore, rowBatchSize]);
 
   return {
     isLoading: false,
     loadMore,
-    pagination,
-    pages,
-    setPages,
+    hasMore,
+    visibleSignals,
+    visibleCount,
+    rowBatchSize,
+    setVisibleCount,
     activeFilter,
     setActiveFilter,
     onUpdateSearch,
