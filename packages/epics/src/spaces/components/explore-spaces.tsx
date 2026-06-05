@@ -360,7 +360,7 @@ export function ExploreSpaces({
         <SpaceCardList
           lang={lang}
           spaces={sortedSpaces}
-          pageSize={15}
+          pageSize={12}
           cardGridClassName="sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
         />
       </div>
