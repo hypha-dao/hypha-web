@@ -41,31 +41,14 @@ export function SpaceCardList({
     <>
       {pagination?.totalPages > 0 ? (
         <div className="flex flex-col justify-around items-center gap-4">
-          <div className="w-full space-y-2">
-            {showLoadMore ? (
-              Array.from({ length: pages }).map((_, index) => {
-                const startIndex = index * pageSize;
-                const endIndex = startIndex + pageSize;
-                const pageSpaces = spaces.slice(startIndex, endIndex);
-                return (
-                  <SpaceCardContainer
-                    key={index}
-                    spaces={pageSpaces}
-                    lang={lang}
-                    showExitButton={showExitButton}
-                    gridClassName={cardGridClassName}
-                  />
-                );
-              })
-            ) : (
-              <SpaceCardContainer
-                key={`spaces-${spaces.length}`}
-                spaces={spaces}
-                lang={lang}
-                showExitButton={showExitButton}
-                gridClassName={cardGridClassName}
-              />
-            )}
+          <div className="w-full">
+            <SpaceCardContainer
+              key={`spaces-${spaces.length}`}
+              spaces={showLoadMore ? spaces.slice(0, pages * pageSize) : spaces}
+              lang={lang}
+              showExitButton={showExitButton}
+              gridClassName={cardGridClassName}
+            />
           </div>
           {showLoadMore && (
             <SectionLoadMore
