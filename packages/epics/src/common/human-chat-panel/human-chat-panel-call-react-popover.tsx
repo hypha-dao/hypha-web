@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode, type RefObject } from 'react';
-import { ChevronUp, CircleHelp, Ellipsis, Heart } from 'lucide-react';
+import { ChevronUp, Ellipsis, Heart } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   Popover,
@@ -67,7 +67,7 @@ function ReactionEmojiButton({
         'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base leading-none transition-colors disabled:opacity-50',
         isFull
           ? 'bg-zinc-800/90 hover:bg-zinc-700'
-          : 'border border-border/80 bg-muted/90 hover:bg-muted',
+          : 'border border-border/80 bg-muted/90 hover:bg-muted dark:border-zinc-600/50 dark:bg-zinc-800/90 dark:hover:bg-zinc-700',
         className,
       )}
       onClick={onPick}
@@ -97,7 +97,7 @@ function MoreEmojiButton({
         'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-50',
         isFull
           ? 'bg-zinc-800/90 text-zinc-300 hover:bg-zinc-700'
-          : 'border border-border/80 bg-muted/90 text-muted-foreground hover:bg-muted',
+          : 'border border-border/80 bg-muted/90 text-muted-foreground hover:bg-muted dark:border-zinc-600/50 dark:bg-zinc-800/90 dark:text-zinc-200 dark:hover:bg-zinc-700',
       )}
       onClick={onClick}
     >
@@ -121,23 +121,10 @@ function FeedbackReactionButton({
 }) {
   const base =
     'inline-flex h-7 min-w-0 flex-1 items-center justify-center rounded border text-sm transition-colors disabled:opacity-50';
-  const styles: Record<CallFeedbackReactionId, string> = isFull
-    ? {
-        yes: 'border-emerald-600/40 bg-emerald-950/80 text-emerald-400 hover:bg-emerald-900/80',
-        no: 'border-rose-600/40 bg-rose-950/80 text-rose-400 hover:bg-rose-900/80',
-        slower:
-          'border-zinc-600/50 bg-zinc-800/90 text-zinc-200 hover:bg-zinc-700/90',
-        faster:
-          'border-sky-600/40 bg-sky-950/80 text-sky-300 hover:bg-sky-900/80',
-        away: 'border-zinc-600/50 bg-zinc-800/90 text-zinc-200 hover:bg-zinc-700/90',
-      }
-    : {
-        yes: 'border-emerald-600/35 bg-emerald-50 text-emerald-700 hover:bg-emerald-100',
-        no: 'border-rose-600/35 bg-rose-50 text-rose-700 hover:bg-rose-100',
-        slower: 'border-border/80 bg-muted/80 text-foreground hover:bg-muted',
-        faster: 'border-sky-600/35 bg-sky-50 text-sky-700 hover:bg-sky-100',
-        away: 'border-border/80 bg-muted/80 text-foreground hover:bg-muted',
-      };
+  /** Neutral chip — grey in light mode, dark zinc in dark mode (matches rewind / coffee). */
+  const unifiedStyle = isFull
+    ? 'border-zinc-600/50 bg-zinc-800/90 text-zinc-200 hover:bg-zinc-700/90'
+    : 'border-border/80 bg-muted/80 text-foreground hover:bg-muted dark:border-zinc-600/50 dark:bg-zinc-800/90 dark:text-zinc-200 dark:hover:bg-zinc-700/90';
   const icons: Record<CallFeedbackReactionId, string> = {
     yes: '✓',
     no: '✕',
@@ -151,7 +138,7 @@ function FeedbackReactionButton({
       type="button"
       disabled={disabled}
       aria-label={label}
-      className={cn(base, styles[id])}
+      className={cn(base, unifiedStyle)}
       onClick={onPick}
     >
       <span aria-hidden>{icons[id]}</span>
@@ -244,7 +231,7 @@ export function HumanChatPanelCallReactPopover({
     'flex flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-2 py-1.5 text-xs font-medium leading-tight transition-colors disabled:opacity-50',
     isFull
       ? 'border-zinc-600/50 bg-zinc-800/90 text-zinc-100 hover:bg-zinc-700/90'
-      : 'border-border/80 bg-muted text-foreground hover:bg-neutral-3',
+      : 'border-border/80 bg-muted text-foreground hover:bg-neutral-3 dark:border-zinc-600/50 dark:bg-zinc-800/90 dark:text-zinc-100 dark:hover:bg-zinc-700/90',
   );
 
   const reactTriggerActive = open || localHandRaised;
@@ -343,17 +330,6 @@ export function HumanChatPanelCallReactPopover({
               title={t('callReactSendWithEffect')}
               dividerClass={sectionDivider}
               sectionTitleClass={sectionTitle}
-              titleHint={
-                <span
-                  className="inline-flex text-zinc-500"
-                  title={t('callReactSendWithEffectHint')}
-                >
-                  <CircleHelp className="h-3 w-3" aria-hidden />
-                  <span className="sr-only">
-                    {t('callReactSendWithEffectHint')}
-                  </span>
-                </span>
-              }
             >
               <div className={emojiRowClass}>
                 {CALL_SEND_WITH_EFFECT_EMOJIS.map((emoji) => (

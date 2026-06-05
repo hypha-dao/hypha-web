@@ -44,9 +44,9 @@ export function callAccentAlertCompactRowClassName(extra?: string) {
 export const callAccentAlertOnDarkText =
   'text-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9,#4a65d8))_72%,white)]';
 
-/** Active reactions trigger — heart stroke/fill use per-space accent, not global accent-9. */
+/** Active reactions trigger — accent stroke only (no fill). */
 export const callAccentToolbarHeartActive =
-  'text-[color:var(--space-accent,var(--color-accent-9,#4a65d8))] fill-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9,#4a65d8))_22%,transparent)]';
+  'text-[color:var(--space-accent,var(--color-accent-9,#4a65d8))] fill-none';
 
 /** Circular in-banner / dock toolbar triggers (reactions, etc.). */
 export const callAccentToolbarTriggerIdle =
