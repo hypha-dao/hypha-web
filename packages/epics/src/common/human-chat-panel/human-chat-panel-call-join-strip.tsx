@@ -47,11 +47,6 @@ export function HumanChatPanelCallJoinStrip({
   const isJoinOpportunity = deviceCount > 0;
   const hasDurable = Boolean(durableMessage);
   const statusLine = t('callJoinStripLine', { count: deviceCount });
-  const title = hasDurable
-    ? durableMessage ?? t('callJoinStripTitle')
-    : isJoinOpportunity
-    ? t('callJoinStripTitle')
-    : statusLine;
   const audioLabel =
     deviceCount > 0
       ? t('callJoinWithAudioShort')
@@ -73,23 +68,16 @@ export function HumanChatPanelCallJoinStrip({
   }
 
   const actionButtons = (
-    <div
-      className={cn(
-        'flex shrink-0 flex-wrap items-center gap-2',
-        isHero
-          ? 'w-full justify-end lg:w-auto'
-          : 'w-full min-w-0 sm:justify-end',
-      )}
-    >
+    <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
       {hasDurable && onDismissDurable ? (
         <button
           type="button"
           onClick={onDismissDurable}
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/80 transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-foreground/80 transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
           title={t('callLeftBannerDismiss')}
           aria-label={t('callLeftBannerDismiss')}
         >
-          <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+          <X className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
         </button>
       ) : null}
 
@@ -100,10 +88,7 @@ export function HumanChatPanelCallJoinStrip({
           size="sm"
           onClick={onJoinAudio}
           disabled={disabled || busy || !onJoinAudio}
-          className={cn(
-            'gap-1.5',
-            isHero ? 'flex-1 lg:flex-none' : 'h-8 min-w-0 flex-1 px-2 text-xs',
-          )}
+          className="shrink-0 gap-1"
           title={audioTitle}
           aria-label={audioTitle}
         >
@@ -117,10 +102,7 @@ export function HumanChatPanelCallJoinStrip({
         size="sm"
         onClick={onJoinVideo}
         disabled={disabled || busy}
-        className={cn(
-          'gap-1.5',
-          isHero ? 'flex-1 lg:flex-none' : 'h-8 min-w-0 flex-1 px-2 text-xs',
-        )}
+        className="shrink-0 gap-1"
         title={videoTitle}
         aria-label={videoTitle}
       >
@@ -151,76 +133,43 @@ export function HumanChatPanelCallJoinStrip({
         />
       ) : null}
       <div role="status" aria-live="polite">
-        {useProminentJoinBanner ? (
-          <div
-            className={cn(
-              'flex flex-col gap-3',
-              isHero
-                ? 'gap-4 p-5 lg:flex-row lg:items-center lg:justify-between'
-                : 'px-4 py-3',
-            )}
-          >
-            <div
-              className={cn(
-                'flex min-w-0 items-start gap-3',
-                isHero && 'lg:gap-5',
-              )}
-            >
+        <div
+          className={cn(
+            'flex min-h-9 flex-wrap items-center gap-x-2 gap-y-1.5',
+            isHero ? 'p-3 lg:gap-3 lg:p-4' : 'px-3 py-1.5',
+          )}
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            {useProminentJoinBanner ? (
               <div
-                className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-9 text-accent-contrast shadow-sm ring-2 ring-accent-9/25"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-9 text-accent-contrast shadow-sm ring-1 ring-accent-9/25"
                 aria-hidden
               >
-                <Phone className="h-4 w-4" strokeWidth={2.25} />
+                <Phone className="h-3.5 w-3.5" strokeWidth={2.25} />
               </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span
-                  className={cn(
-                    'font-bold leading-snug text-foreground',
-                    isHero ? 'text-2' : 'text-sm',
-                  )}
-                >
-                  {title}
-                </span>
-                <span
-                  className={cn(
-                    'leading-snug text-foreground/70',
-                    isHero ? 'text-1' : 'text-xs',
-                  )}
-                >
-                  {t('callJoinStripMemberCount', { count: deviceCount })}
-                </span>
-              </div>
-            </div>
-            {actionButtons}
-          </div>
-        ) : (
-          <div
-            className={cn(
-              'flex min-w-0 flex-col gap-2',
-              isHero
-                ? 'min-h-10 px-3 py-1.5 sm:px-4'
-                : 'min-h-11 px-3 py-1.5 sm:px-4',
-            )}
-          >
+            ) : null}
             <p
               className={cn(
-                'min-w-0 text-xs font-medium leading-snug',
-                isHero
-                  ? 'text-[color:var(--color-accent-12,var(--foreground))]'
-                  : 'text-foreground',
-                hasDurable && 'text-foreground',
+                'min-w-0 truncate font-semibold leading-tight text-foreground',
+                isHero ? 'text-sm' : 'text-xs',
               )}
-              title={hasDurable ? durableMessage ?? undefined : statusLine}
+              title={
+                useProminentJoinBanner
+                  ? statusLine
+                  : hasDurable
+                  ? durableMessage ?? undefined
+                  : statusLine
+              }
             >
-              {hasDurable && durableMessage ? (
-                <span className="text-foreground">{durableMessage}</span>
-              ) : (
-                statusLine
-              )}
+              {useProminentJoinBanner
+                ? statusLine
+                : hasDurable && durableMessage
+                ? durableMessage
+                : statusLine}
             </p>
-            {actionButtons}
           </div>
-        )}
+          {actionButtons}
+        </div>
       </div>
     </div>
   );

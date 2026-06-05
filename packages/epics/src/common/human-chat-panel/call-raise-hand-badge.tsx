@@ -16,7 +16,7 @@ export function CallRaiseHandBadge({
   handRaised,
   order,
   className,
-  positionClass = 'absolute end-1 top-1 z-[5]',
+  positionClass = 'absolute end-2 top-2 z-[5]',
   ariaLabel,
   title,
 }: CallRaiseHandBadgeProps) {

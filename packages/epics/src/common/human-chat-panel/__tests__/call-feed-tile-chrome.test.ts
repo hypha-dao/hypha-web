@@ -43,6 +43,16 @@ describe('resolveCallFeedAudioScrimLayout', () => {
     expect(layout.scrimClass).toContain('justify-center');
     expect(layout.waveSize).toBe('sm');
   });
+
+  it('adds vertical gap between avatar and name on mobile panel tiles', () => {
+    const layout = resolveCallFeedAudioScrimLayout({
+      isPip: false,
+      isFullView: false,
+      isDocumentPipOpen: false,
+      panelMobileLayout: true,
+    });
+    expect(layout.contentClass).toContain('gap-1.5');
+  });
 });
 
 describe('resolveCallFeedVideoParticipantLabelLayout', () => {

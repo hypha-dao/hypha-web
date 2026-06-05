@@ -50,8 +50,10 @@ export function resolveCallFeedAudioScrimLayout(input: {
       : 'gap-1.5 p-2',
   );
 
-  const contentClass =
-    'flex min-h-0 w-full max-w-full flex-col items-center justify-center';
+  const contentClass = cn(
+    'flex min-h-0 w-full max-w-full flex-col items-center justify-center',
+    panelMobileTile && 'gap-1.5',
+  );
 
   const avatarClass = cn(
     'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-zinc-200 ring-1 ring-white/20',

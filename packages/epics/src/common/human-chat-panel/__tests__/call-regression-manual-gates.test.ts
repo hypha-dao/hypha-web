@@ -20,6 +20,17 @@ describe('CSH-QA-1 sidebar banner with floating dock (row 1)', () => {
     expect(match?.[1]).not.toContain('showFloatingDock');
   });
 
+  it('call join strip uses compact single-line warning-style layout', () => {
+    const source = readCommonSource(
+      'human-chat-panel/human-chat-panel-call-join-strip.tsx',
+    );
+    expect(source).toContain('callJoinStripLine');
+    expect(source).toContain('min-h-9 flex-wrap items-center');
+    expect(source).not.toContain('flex-col gap-3');
+    expect(source).toContain('size="sm"');
+    expect(source).toContain('shrink-0 gap-1');
+  });
+
   it('hides start-call toolbar while in session or when join strip is shown', () => {
     const source = readCommonSource('human-right-panel.tsx');
     expect(source).toContain('!inSpaceCall');
@@ -511,6 +522,7 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('CallRaiseHandBadge');
     expect(source).toContain('callRaiseHandBadgeOrder');
     expect(source).toContain('getRaiseHandOrder');
+    expect(source).toContain('hyphaAvatarUrl');
   });
 
   it('raised-hands strip is wired above dock controls', () => {
@@ -527,6 +539,8 @@ describe('WCUX-REACT in-call reactions and raise hand (W8)', () => {
     expect(source).toContain('data-testid="call-react-popover-content"');
     expect(source).toContain('data-testid="call-raise-hand-button"');
     expect(source).toContain('data-testid="call-be-right-back-button"');
+    expect(source).toContain('absolute bottom-full right-0');
+    expect(source).not.toContain('PopoverTrigger');
   });
 
   it('shows pause icon on capture toolbar button when recording is paused', () => {

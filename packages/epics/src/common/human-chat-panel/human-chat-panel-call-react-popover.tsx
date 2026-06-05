@@ -3,12 +3,7 @@
 import { useState, type ReactNode, type RefObject } from 'react';
 import { ChevronUp, Ellipsis, Heart } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  useIsMobile,
-} from '@hypha-platform/ui';
+import { useIsMobile } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { HumanChatPanelEmojiMartSurface } from './human-chat-panel-emoji-mart-surface';
 import {
@@ -249,188 +244,195 @@ export function HumanChatPanelCallReactPopover({
         ),
   );
 
+  const menuPanelClass = cn(
+    'absolute bottom-full right-0 z-[140] mb-2 w-[min(100vw-2rem,15.5rem)] min-w-56 max-h-[min(70vh,calc(100dvh-8rem))] overflow-y-auto overflow-x-hidden rounded-xl px-2 py-2 shadow-xl',
+    popoverSurface,
+  );
+
   return (
-    <Popover
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) setEmojiPicker(null);
-      }}
-    >
-      <PopoverTrigger asChild>
-        <button
-          ref={triggerRef}
-          type="button"
-          disabled={disabled}
-          data-testid="call-react-trigger"
-          className={triggerClassName}
-          title={t('callReactButton')}
-          aria-label={t('callReactButtonAria')}
-        >
-          <Heart
+    <div className="relative" data-call-interactive>
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={disabled}
+        data-testid="call-react-trigger"
+        data-call-interactive
+        className={triggerClassName}
+        title={t('callReactButton')}
+        aria-label={t('callReactButtonAria')}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => {
+          const next = !open;
+          setOpen(next);
+          if (!next) setEmojiPicker(null);
+        }}
+      >
+        <Heart
+          className={cn(
+            isFull ? 'h-4 w-4' : isPip ? 'h-2.5 w-2.5' : 'h-4 w-4',
+            reactTriggerActive ? callAccentToolbarHeartActive : 'fill-none',
+            isFull && !reactTriggerActive && 'text-white',
+          )}
+          strokeWidth={strokeWidth}
+          aria-hidden
+        />
+        {!isPip ? (
+          <ChevronUp
             className={cn(
-              isFull ? 'h-4 w-4' : isPip ? 'h-2.5 w-2.5' : 'h-4 w-4',
-              reactTriggerActive ? callAccentToolbarHeartActive : 'fill-none',
-              isFull && !reactTriggerActive && 'text-white',
+              isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5',
+              'shrink-0 opacity-70 transition-transform duration-200',
+              open && 'rotate-180',
             )}
             strokeWidth={strokeWidth}
             aria-hidden
           />
-          {!isPip ? (
-            <ChevronUp
-              className={cn(
-                isFull ? 'h-4 w-4 text-white' : 'h-3.5 w-3.5',
-                'shrink-0 opacity-70 transition-transform duration-200',
-                open && 'rotate-180',
-              )}
-              strokeWidth={strokeWidth}
-              aria-hidden
-            />
-          ) : null}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        ref={menuContentRef}
-        align="end"
-        side="top"
-        sideOffset={6}
-        collisionPadding={16}
-        data-testid="call-react-popover-content"
-        className={cn(
-          'z-[140] w-[min(100vw-2rem,15.5rem)] min-w-56 overflow-hidden rounded-xl px-2 py-2 shadow-xl',
-          popoverSurface,
-        )}
-      >
-        {emojiPicker ? (
-          <div className="space-y-1.5">
-            <button
-              type="button"
-              className={cn(
-                'text-xs font-medium underline-offset-2 hover:underline',
-                isFull ? 'text-zinc-400' : 'text-muted-foreground',
-              )}
-              onClick={() => setEmojiPicker(null)}
-            >
-              {t('callReactBackToMenu')}
-            </button>
-            <HumanChatPanelEmojiMartSurface
-              ariaLabel={t('callReactMoreEmoji')}
-              className="max-h-[min(320px,50vh)]"
-              onEmojiSelect={(emoji) => {
-                handleSend(
-                  emoji,
-                  emojiPicker === 'effects' ? 'effect' : 'default',
-                );
-              }}
-            />
-          </div>
-        ) : (
-          <div className="flex min-h-0 flex-col gap-1">
-            <CallReactMenuSection
-              title={t('callReactSendWithEffect')}
-              dividerClass={sectionDivider}
-              sectionTitleClass={sectionTitle}
-            >
-              <div className={emojiRowClass}>
-                {CALL_SEND_WITH_EFFECT_EMOJIS.map((emoji) => (
-                  <ReactionEmojiButton
-                    key={`effect-${emoji}`}
-                    emoji={emoji}
-                    isFull={isFull}
-                    disabled={emojiActionsDisabled}
-                    label={t('callReactSendEmoji', { emoji })}
-                    onPick={() => handleSend(emoji, 'effect')}
-                  />
-                ))}
-                <MoreEmojiButton
-                  isFull={isFull}
-                  disabled={emojiActionsDisabled}
-                  label={t('callReactMore')}
-                  onClick={() => setEmojiPicker('effects')}
-                />
-              </div>
-            </CallReactMenuSection>
-
-            <CallReactMenuSection
-              title={t('callReactReactionsSection')}
-              dividerClass={sectionDivider}
-              sectionTitleClass={sectionTitle}
-            >
-              <div className={emojiRowClass}>
-                {CALL_STANDARD_REACTION_EMOJIS.map((emoji) => (
-                  <ReactionEmojiButton
-                    key={`reaction-${emoji}`}
-                    emoji={emoji}
-                    isFull={isFull}
-                    disabled={emojiActionsDisabled}
-                    label={t('callReactSendEmoji', { emoji })}
-                    onPick={() => handleSend(emoji, 'default')}
-                  />
-                ))}
-                <MoreEmojiButton
-                  isFull={isFull}
-                  disabled={emojiActionsDisabled}
-                  label={t('callReactMore')}
-                  onClick={() => setEmojiPicker('reactions')}
-                />
-              </div>
-            </CallReactMenuSection>
-
-            <section className="min-h-0">
-              <h3 className="sr-only">{t('callReactFeedbackSection')}</h3>
-              <div className="flex min-h-0 gap-1">
-                {CALL_FEEDBACK_REACTIONS.map((item) => (
-                  <FeedbackReactionButton
-                    key={item.id}
-                    id={item.id}
-                    isFull={isFull}
-                    disabled={emojiActionsDisabled}
-                    label={t(`callReactFeedback_${item.id}`)}
-                    onPick={() => handleSend(item.emoji, 'default')}
-                  />
-                ))}
-              </div>
-            </section>
-
-            <div
-              className={cn('flex min-h-0 gap-1 border-t pt-1', sectionDivider)}
-            >
+        ) : null}
+      </button>
+      {open ? (
+        <div
+          ref={menuContentRef}
+          role="menu"
+          data-testid="call-react-popover-content"
+          data-call-interactive
+          className={menuPanelClass}
+        >
+          {emojiPicker ? (
+            <div className="space-y-1.5">
               <button
                 type="button"
-                disabled={disabled}
-                data-testid="call-raise-hand-button"
                 className={cn(
-                  actionRowBtn,
-                  localHandRaised && callAccentToolbarMenuRowActive,
+                  'text-xs font-medium underline-offset-2 hover:underline',
+                  isFull ? 'text-zinc-400' : 'text-muted-foreground',
                 )}
-                onClick={() => {
-                  onToggleRaiseHand();
-                  setOpen(false);
+                onClick={() => setEmojiPicker(null)}
+              >
+                {t('callReactBackToMenu')}
+              </button>
+              <HumanChatPanelEmojiMartSurface
+                ariaLabel={t('callReactMoreEmoji')}
+                className="max-h-[min(320px,50vh)]"
+                onEmojiSelect={(emoji) => {
+                  handleSend(
+                    emoji,
+                    emojiPicker === 'effects' ? 'effect' : 'default',
+                  );
                 }}
-              >
-                <span className="text-sm leading-none" aria-hidden>
-                  ✋
-                </span>
-                <span>
-                  {localHandRaised ? t('callLowerHand') : t('callRaiseHand')}
-                </span>
-              </button>
-              <button
-                type="button"
-                disabled={disabled}
-                data-testid="call-be-right-back-button"
-                className={actionRowBtn}
-                onClick={() => handleSend(CALL_BE_RIGHT_BACK_EMOJI, 'default')}
-              >
-                <span className="text-sm leading-none" aria-hidden>
-                  {CALL_BE_RIGHT_BACK_EMOJI}
-                </span>
-                <span>{t('callReactBeRightBack')}</span>
-              </button>
+              />
             </div>
-          </div>
-        )}
-      </PopoverContent>
-    </Popover>
+          ) : (
+            <div className="flex min-h-0 flex-col gap-1">
+              <CallReactMenuSection
+                title={t('callReactSendWithEffect')}
+                dividerClass={sectionDivider}
+                sectionTitleClass={sectionTitle}
+              >
+                <div className={emojiRowClass}>
+                  {CALL_SEND_WITH_EFFECT_EMOJIS.map((emoji) => (
+                    <ReactionEmojiButton
+                      key={`effect-${emoji}`}
+                      emoji={emoji}
+                      isFull={isFull}
+                      disabled={emojiActionsDisabled}
+                      label={t('callReactSendEmoji', { emoji })}
+                      onPick={() => handleSend(emoji, 'effect')}
+                    />
+                  ))}
+                  <MoreEmojiButton
+                    isFull={isFull}
+                    disabled={emojiActionsDisabled}
+                    label={t('callReactMore')}
+                    onClick={() => setEmojiPicker('effects')}
+                  />
+                </div>
+              </CallReactMenuSection>
+
+              <CallReactMenuSection
+                title={t('callReactReactionsSection')}
+                dividerClass={sectionDivider}
+                sectionTitleClass={sectionTitle}
+              >
+                <div className={emojiRowClass}>
+                  {CALL_STANDARD_REACTION_EMOJIS.map((emoji) => (
+                    <ReactionEmojiButton
+                      key={`reaction-${emoji}`}
+                      emoji={emoji}
+                      isFull={isFull}
+                      disabled={emojiActionsDisabled}
+                      label={t('callReactSendEmoji', { emoji })}
+                      onPick={() => handleSend(emoji, 'default')}
+                    />
+                  ))}
+                  <MoreEmojiButton
+                    isFull={isFull}
+                    disabled={emojiActionsDisabled}
+                    label={t('callReactMore')}
+                    onClick={() => setEmojiPicker('reactions')}
+                  />
+                </div>
+              </CallReactMenuSection>
+
+              <section className="min-h-0">
+                <h3 className="sr-only">{t('callReactFeedbackSection')}</h3>
+                <div className="flex min-h-0 gap-1">
+                  {CALL_FEEDBACK_REACTIONS.map((item) => (
+                    <FeedbackReactionButton
+                      key={item.id}
+                      id={item.id}
+                      isFull={isFull}
+                      disabled={emojiActionsDisabled}
+                      label={t(`callReactFeedback_${item.id}`)}
+                      onPick={() => handleSend(item.emoji, 'default')}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              <div
+                className={cn(
+                  'flex min-h-0 gap-1 border-t pt-1',
+                  sectionDivider,
+                )}
+              >
+                <button
+                  type="button"
+                  disabled={disabled}
+                  data-testid="call-raise-hand-button"
+                  className={cn(
+                    actionRowBtn,
+                    localHandRaised && callAccentToolbarMenuRowActive,
+                  )}
+                  onClick={() => {
+                    onToggleRaiseHand();
+                    setOpen(false);
+                  }}
+                >
+                  <span className="text-sm leading-none" aria-hidden>
+                    ✋
+                  </span>
+                  <span>
+                    {localHandRaised ? t('callLowerHand') : t('callRaiseHand')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  data-testid="call-be-right-back-button"
+                  className={actionRowBtn}
+                  onClick={() =>
+                    handleSend(CALL_BE_RIGHT_BACK_EMOJI, 'default')
+                  }
+                >
+                  <span className="text-sm leading-none" aria-hidden>
+                    {CALL_BE_RIGHT_BACK_EMOJI}
+                  </span>
+                  <span>{t('callReactBeRightBack')}</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }

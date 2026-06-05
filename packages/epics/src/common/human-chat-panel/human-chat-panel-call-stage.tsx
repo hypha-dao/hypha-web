@@ -2171,8 +2171,9 @@ function usePlaceholderParticipantName(
   }, [room, userId, person, syncLabel, fallback]);
 
   const showSkeleton = false;
+  const hyphaAvatarUrl = person?.avatarUrl?.trim() || undefined;
 
-  return { text, showSkeleton };
+  return { text, showSkeleton, hyphaAvatarUrl };
 }
 
 function CallParticipantPlaceholderTile({
@@ -2206,7 +2207,11 @@ function CallParticipantPlaceholderTile({
 }) {
   const room: Room | null =
     roomId && client ? client.getRoom(roomId) ?? null : null;
-  const { text: label, showSkeleton } = usePlaceholderParticipantName(
+  const {
+    text: label,
+    showSkeleton,
+    hyphaAvatarUrl,
+  } = usePlaceholderParticipantName(
     room,
     userId,
     resolveMemberLabel,
@@ -2215,6 +2220,7 @@ function CallParticipantPlaceholderTile({
   const px = isPip ? 48 : isFullView && !isPip ? 128 : 80;
   const avatarUrl =
     matrixMemberAvatarSquareForCall(client, roomId, userId, px) ??
+    hyphaAvatarUrl ??
     (userId === currentUserId
       ? currentUserProfileAvatarUrl?.trim() || undefined
       : undefined);
@@ -2468,7 +2474,9 @@ function useCallParticipantDisplayName(
     profileTimedOut,
   });
 
-  return { text, showSkeleton };
+  const hyphaAvatarUrl = person?.avatarUrl?.trim() || undefined;
+
+  return { text, showSkeleton, hyphaAvatarUrl };
 }
 
 const CallFeedTile = ({
@@ -2625,7 +2633,11 @@ const FeedContent = ({
   const liveVideoTrack = resolveCallFeedLiveVideoTrack(feed, feedVideoOptions);
   const hasVideo = liveVideoTrack !== null;
   const isAudioOnlyTile = !isShare && !hasVideo;
-  const { text: resolvedName, showSkeleton } = useCallParticipantDisplayName(
+  const {
+    text: resolvedName,
+    showSkeleton,
+    hyphaAvatarUrl,
+  } = useCallParticipantDisplayName(
     room,
     feed,
     currentUserId,
@@ -2880,19 +2892,22 @@ const FeedContent = ({
         tileAvatarSizePx,
       );
       if (mxc) return mxc;
-      return currentUserProfileAvatarUrl?.trim() || undefined;
+      return currentUserProfileAvatarUrl?.trim() || hyphaAvatarUrl || undefined;
     }
-    return matrixMemberAvatarSquareForCall(
-      client,
-      roomId,
-      feed.userId,
-      tileAvatarSizePx,
+    return (
+      matrixMemberAvatarSquareForCall(
+        client,
+        roomId,
+        feed.userId,
+        tileAvatarSizePx,
+      ) ?? hyphaAvatarUrl
     );
   }, [
     client,
     currentUserId,
     currentUserProfileAvatarUrl,
     feed,
+    hyphaAvatarUrl,
     isShare,
     roomId,
     tileAvatarSizePx,
