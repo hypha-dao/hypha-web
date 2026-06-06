@@ -84,6 +84,22 @@ contract RegularSpaceToken is
   // Address-level mutual credit eligibility (upgrade-safe: appended at end)
   mapping(address => bool) public isCreditWhitelistedAddress;
 
+  // Authorized minter keys (upgrade-safe: appended at end of storage).
+  // Addresses set to true are granted mint, burnFrom and
+  // batchSetCreditWhitelistAddresses rights, in addition to the executor/owner.
+  // Kept as a mapping only (no enumeration array) to minimise deployed bytecode;
+  // the current set can be reconstructed off-chain from AuthorizedMinterUpdated logs.
+  mapping(address => bool) public isAuthorizedMinter;
+
+  // Reserved storage slots for upgrade-safe additions to this base contract.
+  // RegularSpaceToken is inherited by DecayingSpaceToken / OwnershipSpaceToken,
+  // which declare their own state variables immediately after this contract's
+  // storage. Without this gap, appending any new variable here would shift every
+  // derived variable down one slot and corrupt existing proxies on in-place
+  // upgrade. When adding a new state variable above, decrement the gap size by
+  // the number of slots it consumes so the derived layout stays fixed.
+  uint256[50] private __gap;
+
   // Events
   event MaxSupplyUpdated(uint256 oldMaxSupply, uint256 newMaxSupply);
   event TransferableUpdated(bool transferable);
@@ -134,6 +150,7 @@ contract RegularSpaceToken is
   event PurchaseEligibilityModeUpdated(uint8 mode);
   event PurchaseWhitelistSpaceAdded(uint256 indexed spaceId);
   event PurchaseWhitelistSpaceRemoved(uint256 indexed spaceId);
+  event AuthorizedMinterUpdated(address indexed account, bool allowed);
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -163,7 +180,8 @@ contract RegularSpaceToken is
     uint256 _paymentTokenPricePerToken,
     uint256 _tokensForSale,
     uint8 _purchaseEligibilityMode,
-    uint256[] memory _initialPurchaseWhitelistSpaceIds
+    uint256[] memory _initialPurchaseWhitelistSpaceIds,
+    address[] memory _initialAuthorizedMinters
   ) public initializer {
     __ERC20_init(name, symbol);
     __ERC20Burnable_init();
@@ -231,6 +249,13 @@ contract RegularSpaceToken is
     for (uint256 i = 0; i < _initialPurchaseWhitelistSpaceIds.length; i++) {
       _addSpaceToList(_purchaseWhitelistedSpaceIds, isPurchaseWhitelistedSpace, _initialPurchaseWhitelistSpaceIds[i]);
     }
+
+    // Initial authorized minter keys (mint/burn/credit-whitelist rights).
+    // No per-key event here to save bytecode; the creation transaction's
+    // calldata carries the initial set, and modifications emit events.
+    for (uint256 i = 0; i < _initialAuthorizedMinters.length; i++) {
+      isAuthorizedMinter[_initialAuthorizedMinters[i]] = true;
+    }
   }
 
   function _authorizeUpgrade(
@@ -238,7 +263,10 @@ contract RegularSpaceToken is
   ) internal override onlyOwner {}
 
   function mint(address to, uint256 amount) public virtual {
-    require(msg.sender == executor, '!executor');
+    require(
+      msg.sender == executor || isAuthorizedMinter[msg.sender],
+      '!executor'
+    );
     _mintWithSupplyChecks(to, amount);
   }
 
@@ -654,8 +682,8 @@ contract RegularSpaceToken is
    * @param amount The amount to burn
    */
   function burnFrom(address from, uint256 amount) public virtual override {
-    if (msg.sender == executor) {
-      // Executor can burn without approval
+    if (msg.sender == executor || isAuthorizedMinter[msg.sender]) {
+      // Executor and authorized minters can burn without approval
       _burn(from, amount);
       emit TokensBurned(msg.sender, from, amount);
     } else {
@@ -928,13 +956,50 @@ contract RegularSpaceToken is
     bool[] calldata allowed
   ) external {
     require(
+      msg.sender == executor ||
+        msg.sender == owner() ||
+        isAuthorizedMinter[msg.sender],
+      '!executor/owner'
+    );
+    _batchSetAddressFlags(accounts, allowed, false);
+  }
+
+  /**
+   * @dev Batch grant/revoke authorized minter keys (executor or Ownable owner).
+   * Authorized minters may mint, burnFrom and batchSetCreditWhitelistAddresses,
+   * in addition to the executor/owner.
+   * @param accounts Addresses to update
+   * @param allowed Corresponding grant (true) / revoke (false) flags
+   */
+  function batchSetAuthorizedMinters(
+    address[] calldata accounts,
+    bool[] calldata allowed
+  ) external {
+    require(
       msg.sender == executor || msg.sender == owner(),
       '!executor/owner'
     );
+    _batchSetAddressFlags(accounts, allowed, true);
+  }
+
+  /**
+   * @dev Shared loop for the two address->bool whitelists. `minter` selects the
+   * authorized-minter mapping/event; otherwise the mutual-credit one.
+   */
+  function _batchSetAddressFlags(
+    address[] calldata accounts,
+    bool[] calldata allowed,
+    bool minter
+  ) private {
     require(accounts.length == allowed.length, 'length mismatch');
     for (uint256 i = 0; i < accounts.length; i++) {
-      isCreditWhitelistedAddress[accounts[i]] = allowed[i];
-      emit CreditWhitelistAddressUpdated(accounts[i], allowed[i]);
+      if (minter) {
+        isAuthorizedMinter[accounts[i]] = allowed[i];
+        emit AuthorizedMinterUpdated(accounts[i], allowed[i]);
+      } else {
+        isCreditWhitelistedAddress[accounts[i]] = allowed[i];
+        emit CreditWhitelistAddressUpdated(accounts[i], allowed[i]);
+      }
     }
   }
 

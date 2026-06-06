@@ -112,6 +112,65 @@ contract OwnershipTokenFactory is
     uint8 purchaseEligibilityMode,
     uint256[] memory initialPurchaseWhitelistSpaceIds
   ) public returns (address) {
+    DeployParams memory p;
+    p.spaceId = spaceId;
+    p.name = name;
+    p.symbol = symbol;
+    p.maxSupply = maxSupply;
+    p.fixedMaxSupply = fixedMaxSupply;
+    p.autoMinting = autoMinting;
+    p.tokenPrice = tokenPrice;
+    p.priceCurrencyFeed = priceCurrencyFeed;
+    p.useTransferWhitelist = useTransferWhitelist;
+    p.useReceiveWhitelist = useReceiveWhitelist;
+    p.initialTransferWhitelist = initialTransferWhitelist;
+    p.initialReceiveWhitelist = initialReceiveWhitelist;
+    p.initialTransferWhitelistSpaceIds = initialTransferWhitelistSpaceIds;
+    p.initialReceiveWhitelistSpaceIds = initialReceiveWhitelistSpaceIds;
+    p.paymentToken = paymentToken;
+    p.paymentTokenPricePerToken = paymentTokenPricePerToken;
+    p.tokensForSale = tokensForSale;
+    p.purchaseEligibilityMode = purchaseEligibilityMode;
+    p.initialPurchaseWhitelistSpaceIds = initialPurchaseWhitelistSpaceIds;
+    // initialAuthorizedMinters intentionally left empty
+    return deployOwnershipTokenWithMinters(p);
+  }
+
+  /**
+   * @dev All inputs for {deployOwnershipTokenWithMinters}. The space executor is
+   * derived from the spaces contract and never taken from the caller.
+   */
+  struct DeployParams {
+    uint256 spaceId;
+    string name;
+    string symbol;
+    uint256 maxSupply;
+    bool fixedMaxSupply;
+    bool autoMinting;
+    uint256 tokenPrice;
+    address priceCurrencyFeed;
+    bool useTransferWhitelist;
+    bool useReceiveWhitelist;
+    address[] initialTransferWhitelist;
+    address[] initialReceiveWhitelist;
+    uint256[] initialTransferWhitelistSpaceIds;
+    uint256[] initialReceiveWhitelistSpaceIds;
+    address paymentToken;
+    uint256 paymentTokenPricePerToken;
+    uint256 tokensForSale;
+    uint8 purchaseEligibilityMode;
+    uint256[] initialPurchaseWhitelistSpaceIds;
+    address[] initialAuthorizedMinters;
+  }
+
+  /**
+   * @dev Deploy an ownership token, optionally granting the supplied addresses
+   * authorized-minter rights on the new token, in addition to the space
+   * executor/owner. Accepts a struct to keep the argument list off the stack.
+   */
+  function deployOwnershipTokenWithMinters(
+    DeployParams memory p
+  ) public returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
       ownershipTokenImplementation != address(0),
@@ -120,50 +179,60 @@ contract OwnershipTokenFactory is
 
     // Strict authorization: only allow the space's executor to call this function
     address spaceExecutor = IDAOSpaceFactory(spacesContract).getSpaceExecutor(
-      spaceId
+      p.spaceId
     );
     require(
       msg.sender == spaceExecutor,
       'Only space executor can deploy tokens'
     );
 
-    bytes memory callData = abi.encodeWithSelector(
-      OwnershipSpaceToken.initialize.selector,
-      name,
-      symbol,
-      spaceExecutor,
-      spaceId,
-      maxSupply,
-      spacesContract,
-      fixedMaxSupply,
-      autoMinting,
-      tokenPrice,
-      priceCurrencyFeed,
-      useTransferWhitelist,
-      useReceiveWhitelist,
-      initialTransferWhitelist,
-      initialReceiveWhitelist,
-      initialTransferWhitelistSpaceIds,
-      initialReceiveWhitelistSpaceIds,
-      paymentToken,
-      paymentTokenPricePerToken,
-      tokensForSale,
-      purchaseEligibilityMode,
-      initialPurchaseWhitelistSpaceIds
-    );
-
     address tokenAddress = address(
-      new ERC1967Proxy(ownershipTokenImplementation, callData)
+      new ERC1967Proxy(
+        ownershipTokenImplementation,
+        _encodeInit(p, spaceExecutor)
+      )
     );
 
     isTokenDeployedByFactory[tokenAddress] = true;
+    allSpaceTokens[p.spaceId].push(tokenAddress);
 
-    // Store the token in the array of all tokens for this space
-    allSpaceTokens[spaceId].push(tokenAddress);
-
-    emit TokenDeployed(spaceId, tokenAddress, name, symbol);
+    emit TokenDeployed(p.spaceId, tokenAddress, p.name, p.symbol);
 
     return tokenAddress;
+  }
+
+  /// @dev Encodes the token initialize() call from a memory struct, keeping the
+  /// large argument list off the stack to avoid stack-too-deep.
+  function _encodeInit(
+    DeployParams memory p,
+    address executor
+  ) private view returns (bytes memory) {
+    return
+      abi.encodeWithSelector(
+        OwnershipSpaceToken.initialize.selector,
+        p.name,
+        p.symbol,
+        executor,
+        p.spaceId,
+        p.maxSupply,
+        spacesContract,
+        p.fixedMaxSupply,
+        p.autoMinting,
+        p.tokenPrice,
+        p.priceCurrencyFeed,
+        p.useTransferWhitelist,
+        p.useReceiveWhitelist,
+        p.initialTransferWhitelist,
+        p.initialReceiveWhitelist,
+        p.initialTransferWhitelistSpaceIds,
+        p.initialReceiveWhitelistSpaceIds,
+        p.paymentToken,
+        p.paymentTokenPricePerToken,
+        p.tokensForSale,
+        p.purchaseEligibilityMode,
+        p.initialPurchaseWhitelistSpaceIds,
+        p.initialAuthorizedMinters
+      );
   }
 
   /**

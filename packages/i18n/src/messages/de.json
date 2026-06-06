@@ -1858,6 +1858,20 @@
           "currentSpaceTag": "ausgebender Space",
           "addSpacePlaceholder": "Space hinzufügen…",
           "removeSpace": "Space entfernen"
+        },
+        "authorizedMinters": {
+          "title": "Autorisierte Minter",
+          "description": "Erteilen Sie bestimmten Wallet-Adressen zusätzlich zum Space-Executor das Recht, dieses Token zu prägen, zu verbrennen und die Kredit-Whitelist zu verwalten.",
+          "listLabel": "Minter-Adressen",
+          "listDescription": "Diese Wallets können dieses Token prägen, verbrennen und die Kredit-Whitelist verwalten.",
+          "grantLabel": "Minter-Rechte erteilen",
+          "revokeLabel": "Minter-Rechte entziehen",
+          "revokeDescription": "Diesen Wallets werden die Minter-Rechte entzogen.",
+          "placeholder": "0x… Blockchain-Adresse",
+          "add": "Adresse hinzufügen",
+          "remove": "Adresse entfernen",
+          "invalid": "Bitte geben Sie eine gültige Blockchain-Adresse ein",
+          "duplicate": "Diese Adresse wurde bereits hinzugefügt"
         }
       },
       "quorumAndUnity": {

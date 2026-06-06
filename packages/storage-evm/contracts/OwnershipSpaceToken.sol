@@ -24,6 +24,11 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
   // Configurable spaces contract address (shadows parent's constant for membership checks)
   address public ownershipSpacesContract;
 
+  // Reserved storage slots for upgrade-safe additions to this contract. Decrement
+  // when appending a new state variable above so any contract inheriting
+  // OwnershipSpaceToken keeps a fixed storage layout.
+  uint256[50] private __gap;
+
   // Hardcoded escrow contract address
   address public constant escrowContract =
     0x447A317cA5516933264Cdd6aeee0633Fa954B576; // TODO: Replace with actual escrow contract address
@@ -63,7 +68,8 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     uint256 _paymentTokenPricePerToken,
     uint256 _tokensForSale,
     uint8 _purchaseEligibilityMode,
-    uint256[] memory _initialPurchaseWhitelistSpaceIds
+    uint256[] memory _initialPurchaseWhitelistSpaceIds,
+    address[] memory _initialAuthorizedMinters
   ) public initializer {
     require(
       _spacesContract != address(0),
@@ -92,7 +98,8 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
       _paymentTokenPricePerToken,
       _tokensForSale,
       _purchaseEligibilityMode,
-      _initialPurchaseWhitelistSpaceIds
+      _initialPurchaseWhitelistSpaceIds,
+      _initialAuthorizedMinters
     );
     ownershipSpacesContract = _spacesContract;
   }
@@ -202,11 +209,17 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
   }
 
   function mint(address to, uint256 amount) public virtual override {
-    require(msg.sender == executor, '!executor');
     require(
-      _isSpaceMember(to) || to == executor,
-      '!member/executor'
+      msg.sender == executor || isAuthorizedMinter[msg.sender],
+      '!executor'
     );
+    // Executor mints are restricted to space members; authorized minters are not.
+    if (msg.sender == executor) {
+      require(
+        _isSpaceMember(to) || to == executor,
+        '!member/executor'
+      );
+    }
     _mintWithSupplyChecks(to, amount);
   }
 }

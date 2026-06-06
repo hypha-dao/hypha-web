@@ -30,6 +30,7 @@ import {
 import { diffWhitelistSpaceIds } from './whitelist-space-diff';
 import { TokenUpdateData } from '../../types';
 import type { Space } from '../../../space/types';
+import { getAddress, isAddress } from 'viem';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -167,6 +168,10 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   /** On-chain snapshot at form load — used to compute add/remove space deltas */
   creditBaselineDefaultLimit?: number;
   creditBaselineWhitelistedSpaceIds?: number[];
+  /** Wallet addresses to grant minter rights on the token (all token types). */
+  authorizedMinters?: string[];
+  /** Wallet addresses to revoke minter rights from the token. */
+  authorizedMintersToRevoke?: string[];
 };
 
 /**
@@ -425,6 +430,39 @@ function buildPartialUpdateIssuedTokenWeb3Input(
           );
         }
       }
+    }
+  }
+
+  /**
+   * Authorized minters (all token types). The on-chain set is a non-enumerable
+   * mapping, so the update form is action-based: `authorizedMinters` grants and
+   * `authorizedMintersToRevoke` revokes. Both are merged into a single
+   * `batchSetAuthorizedMinters(accounts, allowed)` call. Grant wins on conflicts.
+   */
+  const mintersTouched =
+    changed.has('authorizedMinters') ||
+    changed.has('authorizedMintersToRevoke');
+  if (mintersTouched) {
+    const accounts: `0x${string}`[] = [];
+    const allowed: boolean[] = [];
+    const seen = new Set<string>();
+    const collect = (list: string[] | undefined, flag: boolean) => {
+      for (const raw of list ?? []) {
+        const trimmed = raw.trim();
+        if (!isAddress(trimmed)) continue;
+        const checksummed = getAddress(trimmed);
+        const key = checksummed.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        accounts.push(checksummed);
+        allowed.push(flag);
+      }
+    };
+    collect(arg.authorizedMinters, true);
+    collect(arg.authorizedMintersToRevoke, false);
+    if (accounts.length > 0) {
+      base.batchSetAuthorizedMintersAccounts = accounts;
+      base.batchSetAuthorizedMintersAllowed = allowed;
     }
   }
 

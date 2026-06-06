@@ -373,6 +373,7 @@ export const IssueNewTokenForm = ({
       enableMutualCredit: false,
       defaultCreditLimit: undefined,
       creditWhitelistedSpaceIds: [],
+      authorizedMinters: [],
       spacesForWhitelistResolution: undefined,
       label: tAgreementFlow('labels.issueNewToken'),
     },

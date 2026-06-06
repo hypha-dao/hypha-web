@@ -109,7 +109,8 @@ export const IssueNewTokenPlugin = ({
     const lim = getValues('enableLimitedSupply');
     const adv = getValues('enableAdvancedTransferControls');
     const price = getValues('enableTokenPrice');
-    if (lim || adv || price) {
+    const minters = getValues('authorizedMinters');
+    if (lim || adv || price || (minters?.length ?? 0) > 0) {
       setShowAdvancedSettings(true);
     }
     if (currentTokenType === 'voice') {
@@ -176,6 +177,13 @@ export const IssueNewTokenPlugin = ({
     });
   }, [setValue]);
 
+  const clearAuthorizedMintersFields = useCallback(() => {
+    setValue('authorizedMinters', [], {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+  }, [setValue]);
+
   const clearAdvancedSettingsFields = useCallback(() => {
     clearLimitedSupplyFields();
     setValue('enableProposalAutoMinting', true, {
@@ -193,6 +201,7 @@ export const IssueNewTokenPlugin = ({
     });
     clearTokenPriceFields();
     clearMutualCreditFields();
+    clearAuthorizedMintersFields();
     setEnableLimitedSupply(false);
   }, [
     setValue,
@@ -200,6 +209,7 @@ export const IssueNewTokenPlugin = ({
     clearTransferFields,
     clearTokenPriceFields,
     clearMutualCreditFields,
+    clearAuthorizedMintersFields,
     currentTokenType,
   ]);
 

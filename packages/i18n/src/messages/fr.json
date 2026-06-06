@@ -1461,6 +1461,20 @@
           "currentSpaceTag": "espace émetteur",
           "addSpacePlaceholder": "Ajouter un espace…",
           "removeSpace": "Retirer l’espace"
+        },
+        "authorizedMinters": {
+          "title": "Émetteurs autorisés",
+          "description": "Accordez à des adresses de portefeuille spécifiques le droit d’émettre, de brûler et de gérer la liste de crédit de ce jeton, en plus de l’exécuteur de l’espace.",
+          "listLabel": "Adresses des émetteurs",
+          "listDescription": "Ces portefeuilles peuvent émettre, brûler et gérer la liste de crédit de ce jeton.",
+          "grantLabel": "Accorder les droits d’émission",
+          "revokeLabel": "Révoquer les droits d’émission",
+          "revokeDescription": "Les droits d’émission de ces portefeuilles seront retirés.",
+          "placeholder": "0x… adresse blockchain",
+          "add": "Ajouter une adresse",
+          "remove": "Retirer l’adresse",
+          "invalid": "Veuillez saisir une adresse blockchain valide",
+          "duplicate": "Cette adresse a déjà été ajoutée"
         }
       },
       "quorumAndUnity": {
