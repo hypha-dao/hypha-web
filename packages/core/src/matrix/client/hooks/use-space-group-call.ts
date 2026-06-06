@@ -693,10 +693,19 @@ export function useSpaceGroupCall(
     setTurnServerUnavailable(false);
   }, []);
 
-  const applyTurnReadinessState = useCallback((unavailable: boolean) => {
-    if (turnServerBannerDismissedRef.current) return;
-    setTurnServerUnavailable(unavailable);
-  }, []);
+  const applyTurnReadinessState = useCallback(
+    (unavailable: boolean, expectedJoinEpoch?: number) => {
+      if (
+        expectedJoinEpoch !== undefined &&
+        expectedJoinEpoch !== joinEpochRef.current
+      ) {
+        return;
+      }
+      if (turnServerBannerDismissedRef.current) return;
+      setTurnServerUnavailable(unavailable);
+    },
+    [],
+  );
   const [tabBackgroundWhileInCall, setTabBackgroundWhileInCall] =
     useState(false);
   /**
@@ -1316,6 +1325,7 @@ export function useSpaceGroupCall(
 
   const runCleanup = useCallback(
     (options?: { skipGroupCallLeave?: boolean }) => {
+      joinEpochRef.current += 1;
       const shouldBootstrapCapture =
         captureModeRef.current !== 'none' &&
         !recordingRuntimeRef.current &&
@@ -1803,8 +1813,9 @@ export function useSpaceGroupCall(
        */
       nudgeGroupCallPlaceOutgoing(gc);
       if (client) {
+        const turnEpoch = joinEpochRef.current;
         void evaluateMatrixTurnReadiness(client).then((readiness) => {
-          applyTurnReadinessState(readiness.turnServerUnavailable);
+          applyTurnReadinessState(readiness.turnServerUnavailable, turnEpoch);
         });
       }
       if (remoteMediaGapSinceRef.current == null) {
@@ -2377,7 +2388,7 @@ export function useSpaceGroupCall(
        */
       void (async () => {
         const readiness = await evaluateMatrixTurnReadiness(client);
-        applyTurnReadinessState(readiness.turnServerUnavailable);
+        applyTurnReadinessState(readiness.turnServerUnavailable, joinEpoch);
         void probeMatrixTurnServerReadiness({ client, roomId, kind });
       })();
 
@@ -2512,10 +2523,14 @@ export function useSpaceGroupCall(
         });
       }
       turnRefreshCleanupRef.current?.();
+      const turnRefreshEpoch = joinEpochRef.current;
       turnRefreshCleanupRef.current = scheduleMatrixTurnRefresh({
         client,
         onReadiness: (readiness) => {
-          applyTurnReadinessState(readiness.turnServerUnavailable);
+          applyTurnReadinessState(
+            readiness.turnServerUnavailable,
+            turnRefreshEpoch,
+          );
         },
       });
       if (roomId) {
