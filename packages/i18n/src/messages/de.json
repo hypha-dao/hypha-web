@@ -1867,7 +1867,7 @@
           "grantLabel": "Minter-Rechte erteilen",
           "revokeLabel": "Minter-Rechte entziehen",
           "revokeDescription": "Diesen Wallets werden die Minter-Rechte entzogen.",
-          "placeholder": "0x… Wallet-Adresse",
+          "placeholder": "0x… Blockchain-Adresse",
           "add": "Adresse hinzufügen",
           "remove": "Adresse entfernen",
           "invalid": "Bitte geben Sie eine gültige Blockchain-Adresse ein",

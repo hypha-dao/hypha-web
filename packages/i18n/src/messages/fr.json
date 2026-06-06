@@ -1470,7 +1470,7 @@
           "grantLabel": "Accorder les droits d’émission",
           "revokeLabel": "Révoquer les droits d’émission",
           "revokeDescription": "Les droits d’émission de ces portefeuilles seront retirés.",
-          "placeholder": "0x… adresse du portefeuille",
+          "placeholder": "0x… adresse blockchain",
           "add": "Ajouter une adresse",
           "remove": "Retirer l’adresse",
           "invalid": "Veuillez saisir une adresse blockchain valide",

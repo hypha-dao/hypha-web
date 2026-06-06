@@ -2,7 +2,12 @@ import { ethers, upgrades } from 'hardhat';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
-import { Contract } from 'ethers';
+import {
+  Contract,
+  ContractTransactionResponse,
+  Log,
+  LogDescription,
+} from 'ethers';
 
 /**
  * Tests for the "authorized minter" feature shared by RegularSpaceToken and its
@@ -186,22 +191,31 @@ describe('Authorized Minters', function () {
     spaceId = f.spaceId;
   });
 
-  async function tokenFromTx(tx: any, factory: Contract, abi: string) {
+  async function tokenFromTx(
+    tx: ContractTransactionResponse,
+    factory: Contract,
+    abi: string,
+  ): Promise<Contract> {
     const receipt = await tx.wait();
     const ev = receipt?.logs
-      .map((log: any) => {
+      .map((log: Log) => {
         try {
           return factory.interface.parseLog(log);
         } catch {
           return null;
         }
       })
-      .find((e: any) => e && e.name === 'TokenDeployed');
+      .find(
+        (e): e is LogDescription => e !== null && e.name === 'TokenDeployed',
+      );
+    if (!ev) throw new Error('TokenDeployed event not found');
     return ethers.getContractAt(abi, ev.args.tokenAddress);
   }
 
+  type RegularParamsOverrides = Partial<ReturnType<typeof regularParams>>;
+
   // Regular DeployParams struct, field order must match the contract.
-  function regularParams(overrides: Record<string, any> = {}) {
+  function regularParams(overrides: RegularParamsOverrides = {}) {
     return {
       spaceId,
       name: 'Authorized Token',
@@ -395,7 +409,8 @@ describe('Authorized Minters', function () {
   });
 
   describe('DecayingSpaceToken', function () {
-    function decayingParams(overrides: Record<string, any> = {}) {
+    type DecayingParamsOverrides = Partial<ReturnType<typeof decayingParams>>;
+    function decayingParams(overrides: DecayingParamsOverrides = {}) {
       return {
         spaceId,
         name: 'Decaying Auth',
@@ -451,7 +466,8 @@ describe('Authorized Minters', function () {
   });
 
   describe('OwnershipSpaceToken', function () {
-    function ownershipParams(overrides: Record<string, any> = {}) {
+    type OwnershipParamsOverrides = Partial<ReturnType<typeof ownershipParams>>;
+    function ownershipParams(overrides: OwnershipParamsOverrides = {}) {
       return {
         spaceId,
         name: 'Ownership Auth',

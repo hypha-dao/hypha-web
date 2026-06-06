@@ -109,7 +109,8 @@ export const IssueNewTokenPlugin = ({
     const lim = getValues('enableLimitedSupply');
     const adv = getValues('enableAdvancedTransferControls');
     const price = getValues('enableTokenPrice');
-    if (lim || adv || price) {
+    const minters = getValues('authorizedMinters');
+    if (lim || adv || price || (minters?.length ?? 0) > 0) {
       setShowAdvancedSettings(true);
     }
     if (currentTokenType === 'voice') {

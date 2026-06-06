@@ -345,7 +345,7 @@
           "grantLabel": "Otorgar Derechos de Emisión",
           "revokeLabel": "Revocar Derechos de Emisión",
           "revokeDescription": "A estas billeteras se les retirarán los derechos de emisión.",
-          "placeholder": "0x… dirección de billetera",
+          "placeholder": "0x… dirección de blockchain",
           "add": "Agregar dirección",
           "remove": "Eliminar dirección",
           "invalid": "Introduce una dirección de blockchain válida",

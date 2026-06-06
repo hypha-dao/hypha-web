@@ -638,6 +638,8 @@ export const UpdateIssuedTokenPlugin = ({
           creditWhitelistedSpaceIds: [],
           creditBaselineDefaultLimit: undefined,
           creditBaselineWhitelistedSpaceIds: undefined,
+          authorizedMinters: [],
+          authorizedMintersToRevoke: [],
         },
         { keepDirty: false, keepTouched: false },
       );

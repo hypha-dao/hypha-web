@@ -345,7 +345,7 @@
           "grantLabel": "Conceder Direitos de Emissão",
           "revokeLabel": "Revogar Direitos de Emissão",
           "revokeDescription": "Estas carteiras terão os direitos de emissão removidos.",
-          "placeholder": "0x… endereço da carteira",
+          "placeholder": "0x… endereço de blockchain",
           "add": "Adicionar endereço",
           "remove": "Remover endereço",
           "invalid": "Insira um endereço de blockchain válido",
