@@ -1577,9 +1577,11 @@ export function useSpaceGroupCall(
   const enableLocalScreenshareDirect = useCallback(
     async (gc: MatrixSdk.GroupCall) => {
       try {
+        const turnEpoch = joinEpochRef.current;
         if (client) {
-          const readiness = await evaluateMatrixTurnReadiness(client);
-          applyTurnReadinessState(readiness.turnServerUnavailable);
+          void evaluateMatrixTurnReadiness(client).then((readiness) => {
+            applyTurnReadinessState(readiness.turnServerUnavailable, turnEpoch);
+          });
         }
         clearOrphanedMatrixScreenshareStreams(client);
         const ok = await withEnhancedScreenshareCapture(
