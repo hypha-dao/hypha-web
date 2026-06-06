@@ -336,6 +336,20 @@
           "currentSpaceTag": "espaço emissor",
           "addSpacePlaceholder": "Adicionar um espaço…",
           "removeSpace": "Remover espaço"
+        },
+        "authorizedMinters": {
+          "title": "Emissores Autorizados",
+          "description": "Conceda a endereços de carteira específicos o direito de emitir, queimar e gerir a lista de crédito deste token, além do executor do espaço.",
+          "listLabel": "Endereços dos Emissores",
+          "listDescription": "Estas carteiras podem emitir, queimar e gerir a lista de crédito deste token.",
+          "grantLabel": "Conceder Direitos de Emissão",
+          "revokeLabel": "Revogar Direitos de Emissão",
+          "revokeDescription": "Estas carteiras terão os direitos de emissão removidos.",
+          "placeholder": "0x… endereço da carteira",
+          "add": "Adicionar endereço",
+          "remove": "Remover endereço",
+          "invalid": "Insira um endereço de blockchain válido",
+          "duplicate": "Este endereço já foi adicionado"
         }
       },
       "quorumAndUnity": {

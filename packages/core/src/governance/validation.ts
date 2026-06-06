@@ -675,6 +675,30 @@ export const baseSchemaIssueNewToken = z.object({
   /** Web3 space ids whose members are eligible for the credit line */
   creditWhitelistedSpaceIds: z.array(z.number().int().nonnegative()).optional(),
   /**
+   * Extra wallet addresses granted minter rights (mint, burnFrom,
+   * batchSetCreditWhitelistAddresses) on the new token, in addition to the
+   * space executor/owner. On creation these become the token's initial
+   * authorized minters; on update they are granted via `batchSetAuthorizedMinters`.
+   */
+  authorizedMinters: z
+    .array(
+      z.string().refine((v) => isAddress(v), {
+        message: 'Please enter a valid blockchain address',
+      }),
+    )
+    .optional(),
+  /**
+   * Update flow only: wallet addresses whose minter rights should be revoked
+   * via `batchSetAuthorizedMinters(accounts, [false, ...])`.
+   */
+  authorizedMintersToRevoke: z
+    .array(
+      z.string().refine((v) => isAddress(v), {
+        message: 'Please enter a valid blockchain address',
+      }),
+    )
+    .optional(),
+  /**
    * Plugin-populated list of selectable spaces, used to resolve `transferWhitelist`
    * space rows → web3 space ids in the orchestrator. Validates the minimal shape
    * the orchestrator actually reads (`address`, `web3SpaceId`) so primitives/null

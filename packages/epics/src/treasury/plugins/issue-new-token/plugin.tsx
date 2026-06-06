@@ -176,6 +176,13 @@ export const IssueNewTokenPlugin = ({
     });
   }, [setValue]);
 
+  const clearAuthorizedMintersFields = useCallback(() => {
+    setValue('authorizedMinters', [], {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+  }, [setValue]);
+
   const clearAdvancedSettingsFields = useCallback(() => {
     clearLimitedSupplyFields();
     setValue('enableProposalAutoMinting', true, {
@@ -193,6 +200,7 @@ export const IssueNewTokenPlugin = ({
     });
     clearTokenPriceFields();
     clearMutualCreditFields();
+    clearAuthorizedMintersFields();
     setEnableLimitedSupply(false);
   }, [
     setValue,
@@ -200,6 +208,7 @@ export const IssueNewTokenPlugin = ({
     clearTransferFields,
     clearTokenPriceFields,
     clearMutualCreditFields,
+    clearAuthorizedMintersFields,
     currentTokenType,
   ]);
 

@@ -61,7 +61,8 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     uint256 _paymentTokenPricePerToken,
     uint256 _tokensForSale,
     uint8 _purchaseEligibilityMode,
-    uint256[] memory _initialPurchaseWhitelistSpaceIds
+    uint256[] memory _initialPurchaseWhitelistSpaceIds,
+    address[] memory _initialAuthorizedMinters
   ) public initializer {
     RegularSpaceToken.initialize(
       name,
@@ -86,7 +87,8 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
       _paymentTokenPricePerToken,
       _tokensForSale,
       _purchaseEligibilityMode,
-      _initialPurchaseWhitelistSpaceIds
+      _initialPurchaseWhitelistSpaceIds,
+      _initialAuthorizedMinters
     );
     require(
       _decayPercentage <= 10000,
@@ -230,7 +232,10 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
   }
 
   function mint(address to, uint256 amount) public override {
-    require(msg.sender == executor, '!executor');
+    require(
+      msg.sender == executor || isAuthorizedMinter[msg.sender],
+      '!executor'
+    );
     _applyDecayOrInit(to);
     _addTokenHolder(to);
     _mintWithSupplyChecks(to, amount);

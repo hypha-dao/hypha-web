@@ -7,6 +7,7 @@ import { AutoMintSection } from './auto-mint-section';
 import { TransferSection } from './transfer-section';
 import { TokenValueSection } from './token-value-section';
 import { MutualCreditSection } from './mutual-credit-section';
+import { AuthorizedMintersSection } from './authorized-minters-section';
 
 const REGULAR_TOKEN_TYPES = new Set([
   'utility',
@@ -32,6 +33,7 @@ export const AdvancedTokenSettings = ({
   spaceSlug,
   currentSpaceWeb3Id,
   maxSupplyTypeReadOnly = false,
+  authorizedMintersMode = 'create',
 }: {
   enableLimitedSupply: boolean;
   setEnableLimitedSupply: (value: boolean) => void;
@@ -52,6 +54,8 @@ export const AdvancedTokenSettings = ({
   /** Web3 id of the issuing space; used as the auto-included credit-whitelist entry. */
   currentSpaceWeb3Id?: number | null;
   maxSupplyTypeReadOnly?: boolean;
+  /** `create` → initial minters list; `update` → grant + revoke lists. */
+  authorizedMintersMode?: 'create' | 'update';
 }) => {
   const showMutualCredit =
     typeof tokenType === 'string' &&
@@ -91,6 +95,8 @@ export const AdvancedTokenSettings = ({
           />
         </>
       ) : null}
+      <Separator />
+      <AuthorizedMintersSection mode={authorizedMintersMode} />
     </>
   );
 };

@@ -1860,6 +1860,20 @@
           "currentSpaceTag": "issuing space",
           "addSpacePlaceholder": "Add a space…",
           "removeSpace": "Remove space"
+        },
+        "authorizedMinters": {
+          "title": "Authorized Minters",
+          "description": "Grant specific wallet addresses the right to mint, burn and manage the credit whitelist on this token, in addition to the space executor.",
+          "listLabel": "Minter Addresses",
+          "listDescription": "These wallets can mint, burn and manage the credit whitelist for this token.",
+          "grantLabel": "Grant Minter Rights",
+          "revokeLabel": "Revoke Minter Rights",
+          "revokeDescription": "These wallets will have their minter rights removed.",
+          "placeholder": "0x… wallet address",
+          "add": "Add address",
+          "remove": "Remove address",
+          "invalid": "Please enter a valid blockchain address",
+          "duplicate": "This address has already been added"
         }
       },
       "quorumAndUnity": {

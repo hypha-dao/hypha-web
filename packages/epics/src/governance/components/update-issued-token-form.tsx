@@ -408,6 +408,8 @@ export const UpdateIssuedTokenForm = ({
       creditWhitelistedSpaceIds: [],
       creditBaselineDefaultLimit: undefined,
       creditBaselineWhitelistedSpaceIds: undefined,
+      authorizedMinters: [],
+      authorizedMintersToRevoke: [],
       whitelistBaselineFrom: undefined,
       whitelistBaselineTo: undefined,
       whitelistBaselineFromMembers: undefined,

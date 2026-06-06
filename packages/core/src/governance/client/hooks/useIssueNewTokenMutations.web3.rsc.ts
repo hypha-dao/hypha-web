@@ -2,7 +2,7 @@
 
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, getAddress, isAddress } from 'viem';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 
 import {
@@ -60,10 +60,34 @@ interface CreateTokenArgs {
   tokensForSale?: number;
   purchaseEligibilityMode?: 0 | 1 | 2;
   initialPurchaseWhitelistSpaceIds?: number[];
+  /**
+   * Extra wallet addresses granted minter rights (mint, burnFrom,
+   * batchSetCreditWhitelistAddresses) on the new token, in addition to the space
+   * executor. When non-empty, the factory's `deploy*WithMinters` entrypoint is used.
+   */
+  authorizedMinters?: string[];
 }
 
 const chainId = getGovernanceChainId();
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+
+/** Validate, checksum and de-duplicate the authorized-minter list. */
+const normalizeAuthorizedMinters = (
+  addresses: string[] | undefined,
+): `0x${string}`[] => {
+  const seen = new Set<string>();
+  const out: `0x${string}`[] = [];
+  for (const raw of addresses ?? []) {
+    const trimmed = raw.trim();
+    if (!isAddress(trimmed)) continue;
+    const checksummed = getAddress(trimmed);
+    const key = checksummed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(checksummed);
+  }
+  return out;
+};
 
 export const useIssueTokenMutationsWeb3Rpc = ({
   proposalSlug,
@@ -122,6 +146,11 @@ export const useIssueTokenMutationsWeb3Rpc = ({
       const initialPurchaseWhitelistSpaceIds = (
         arg.initialPurchaseWhitelistSpaceIds ?? []
       ).map((id) => BigInt(id));
+      const initialAuthorizedMinters = normalizeAuthorizedMinters(
+        arg.authorizedMinters,
+      );
+      const useMinters = initialAuthorizedMinters.length > 0;
+      const maxSupplyWei = BigInt(arg.maxSupply) * 10n ** 18n;
 
       if (
         ['utility', 'credits', 'impact', 'community_currency'].includes(
@@ -132,34 +161,66 @@ export const useIssueTokenMutationsWeb3Rpc = ({
           {
             target: regularTokenFactoryAddress[chainId],
             value: 0,
-            data: encodeFunctionData({
-              abi: regularTokenFactoryAbi,
-              functionName: 'deployToken',
-              args: [
-                BigInt(arg.spaceId),
-                arg.name,
-                arg.symbol,
-                BigInt(arg.maxSupply) * 10n ** 18n,
-                arg.transferable,
-                fixedMaxSupply,
-                autoMinting,
-                tokenPrice,
-                priceCurrencyFeed,
-                useTransferWhitelist,
-                useReceiveWhitelist,
-                initialTransferWhitelist,
-                initialReceiveWhitelist,
-                initialTransferWhitelistSpaceIds,
-                initialReceiveWhitelistSpaceIds,
-                defaultCreditLimit,
-                initialCreditWhitelistSpaceIds,
-                salePaymentToken,
-                salePaymentTokenPricePerToken,
-                tokensForSale,
-                purchaseEligibilityMode,
-                initialPurchaseWhitelistSpaceIds,
-              ],
-            }),
+            data: useMinters
+              ? encodeFunctionData({
+                  abi: regularTokenFactoryAbi,
+                  functionName: 'deployTokenWithMinters',
+                  args: [
+                    {
+                      spaceId: BigInt(arg.spaceId),
+                      name: arg.name,
+                      symbol: arg.symbol,
+                      maxSupply: maxSupplyWei,
+                      transferable: arg.transferable,
+                      fixedMaxSupply,
+                      autoMinting,
+                      tokenPrice,
+                      priceCurrencyFeed,
+                      useTransferWhitelist,
+                      useReceiveWhitelist,
+                      initialTransferWhitelist,
+                      initialReceiveWhitelist,
+                      initialTransferWhitelistSpaceIds,
+                      initialReceiveWhitelistSpaceIds,
+                      defaultCreditLimit,
+                      initialCreditWhitelistSpaceIds,
+                      paymentToken: salePaymentToken,
+                      paymentTokenPricePerToken: salePaymentTokenPricePerToken,
+                      tokensForSale,
+                      purchaseEligibilityMode,
+                      initialPurchaseWhitelistSpaceIds,
+                      initialAuthorizedMinters,
+                    },
+                  ],
+                })
+              : encodeFunctionData({
+                  abi: regularTokenFactoryAbi,
+                  functionName: 'deployToken',
+                  args: [
+                    BigInt(arg.spaceId),
+                    arg.name,
+                    arg.symbol,
+                    maxSupplyWei,
+                    arg.transferable,
+                    fixedMaxSupply,
+                    autoMinting,
+                    tokenPrice,
+                    priceCurrencyFeed,
+                    useTransferWhitelist,
+                    useReceiveWhitelist,
+                    initialTransferWhitelist,
+                    initialReceiveWhitelist,
+                    initialTransferWhitelistSpaceIds,
+                    initialReceiveWhitelistSpaceIds,
+                    defaultCreditLimit,
+                    initialCreditWhitelistSpaceIds,
+                    salePaymentToken,
+                    salePaymentTokenPricePerToken,
+                    tokensForSale,
+                    purchaseEligibilityMode,
+                    initialPurchaseWhitelistSpaceIds,
+                  ],
+                }),
           },
         ];
       } else if (arg.type === 'ownership') {
@@ -167,31 +228,60 @@ export const useIssueTokenMutationsWeb3Rpc = ({
           {
             target: ownershipTokenFactoryAddress[chainId],
             value: 0,
-            data: encodeFunctionData({
-              abi: ownershipTokenFactoryAbi,
-              functionName: 'deployOwnershipToken',
-              args: [
-                BigInt(arg.spaceId),
-                arg.name,
-                arg.symbol,
-                BigInt(arg.maxSupply) * 10n ** 18n,
-                fixedMaxSupply,
-                autoMinting,
-                tokenPrice,
-                priceCurrencyFeed,
-                useTransferWhitelist,
-                useReceiveWhitelist,
-                initialTransferWhitelist,
-                initialReceiveWhitelist,
-                initialTransferWhitelistSpaceIds,
-                initialReceiveWhitelistSpaceIds,
-                salePaymentToken,
-                salePaymentTokenPricePerToken,
-                tokensForSale,
-                purchaseEligibilityMode,
-                initialPurchaseWhitelistSpaceIds,
-              ],
-            }),
+            data: useMinters
+              ? encodeFunctionData({
+                  abi: ownershipTokenFactoryAbi,
+                  functionName: 'deployOwnershipTokenWithMinters',
+                  args: [
+                    {
+                      spaceId: BigInt(arg.spaceId),
+                      name: arg.name,
+                      symbol: arg.symbol,
+                      maxSupply: maxSupplyWei,
+                      fixedMaxSupply,
+                      autoMinting,
+                      tokenPrice,
+                      priceCurrencyFeed,
+                      useTransferWhitelist,
+                      useReceiveWhitelist,
+                      initialTransferWhitelist,
+                      initialReceiveWhitelist,
+                      initialTransferWhitelistSpaceIds,
+                      initialReceiveWhitelistSpaceIds,
+                      paymentToken: salePaymentToken,
+                      paymentTokenPricePerToken: salePaymentTokenPricePerToken,
+                      tokensForSale,
+                      purchaseEligibilityMode,
+                      initialPurchaseWhitelistSpaceIds,
+                      initialAuthorizedMinters,
+                    },
+                  ],
+                })
+              : encodeFunctionData({
+                  abi: ownershipTokenFactoryAbi,
+                  functionName: 'deployOwnershipToken',
+                  args: [
+                    BigInt(arg.spaceId),
+                    arg.name,
+                    arg.symbol,
+                    maxSupplyWei,
+                    fixedMaxSupply,
+                    autoMinting,
+                    tokenPrice,
+                    priceCurrencyFeed,
+                    useTransferWhitelist,
+                    useReceiveWhitelist,
+                    initialTransferWhitelist,
+                    initialReceiveWhitelist,
+                    initialTransferWhitelistSpaceIds,
+                    initialReceiveWhitelistSpaceIds,
+                    salePaymentToken,
+                    salePaymentTokenPricePerToken,
+                    tokensForSale,
+                    purchaseEligibilityMode,
+                    initialPurchaseWhitelistSpaceIds,
+                  ],
+                }),
           },
         ];
       } else if (arg.type === 'voice') {
@@ -204,38 +294,74 @@ export const useIssueTokenMutationsWeb3Rpc = ({
           );
         }
 
+        const decayPercentageBp = BigInt(
+          decayPercentToBasisPoints(arg.decayPercentage),
+        );
+        const decayIntervalBig = BigInt(arg.decayInterval);
         txData = [
           {
             target: decayingTokenFactoryAddress[chainId],
             value: 0,
-            data: encodeFunctionData({
-              abi: decayingTokenFactoryAbi,
-              functionName: 'deployDecayingToken',
-              args: [
-                BigInt(arg.spaceId),
-                arg.name,
-                arg.symbol,
-                BigInt(arg.maxSupply) * 10n ** 18n,
-                arg.transferable,
-                fixedMaxSupply,
-                autoMinting,
-                tokenPrice,
-                priceCurrencyFeed,
-                useTransferWhitelist,
-                useReceiveWhitelist,
-                initialTransferWhitelist,
-                initialReceiveWhitelist,
-                initialTransferWhitelistSpaceIds,
-                initialReceiveWhitelistSpaceIds,
-                BigInt(decayPercentToBasisPoints(arg.decayPercentage)),
-                BigInt(arg.decayInterval),
-                salePaymentToken,
-                salePaymentTokenPricePerToken,
-                tokensForSale,
-                purchaseEligibilityMode,
-                initialPurchaseWhitelistSpaceIds,
-              ],
-            }),
+            data: useMinters
+              ? encodeFunctionData({
+                  abi: decayingTokenFactoryAbi,
+                  functionName: 'deployDecayingTokenWithMinters',
+                  args: [
+                    {
+                      spaceId: BigInt(arg.spaceId),
+                      name: arg.name,
+                      symbol: arg.symbol,
+                      maxSupply: maxSupplyWei,
+                      transferable: arg.transferable,
+                      fixedMaxSupply,
+                      autoMinting,
+                      tokenPrice,
+                      priceCurrencyFeed,
+                      useTransferWhitelist,
+                      useReceiveWhitelist,
+                      initialTransferWhitelist,
+                      initialReceiveWhitelist,
+                      initialTransferWhitelistSpaceIds,
+                      initialReceiveWhitelistSpaceIds,
+                      decayPercentage: decayPercentageBp,
+                      decayInterval: decayIntervalBig,
+                      paymentToken: salePaymentToken,
+                      paymentTokenPricePerToken: salePaymentTokenPricePerToken,
+                      tokensForSale,
+                      purchaseEligibilityMode,
+                      initialPurchaseWhitelistSpaceIds,
+                      initialAuthorizedMinters,
+                    },
+                  ],
+                })
+              : encodeFunctionData({
+                  abi: decayingTokenFactoryAbi,
+                  functionName: 'deployDecayingToken',
+                  args: [
+                    BigInt(arg.spaceId),
+                    arg.name,
+                    arg.symbol,
+                    maxSupplyWei,
+                    arg.transferable,
+                    fixedMaxSupply,
+                    autoMinting,
+                    tokenPrice,
+                    priceCurrencyFeed,
+                    useTransferWhitelist,
+                    useReceiveWhitelist,
+                    initialTransferWhitelist,
+                    initialReceiveWhitelist,
+                    initialTransferWhitelistSpaceIds,
+                    initialReceiveWhitelistSpaceIds,
+                    decayPercentageBp,
+                    decayIntervalBig,
+                    salePaymentToken,
+                    salePaymentTokenPricePerToken,
+                    tokensForSale,
+                    purchaseEligibilityMode,
+                    initialPurchaseWhitelistSpaceIds,
+                  ],
+                }),
           },
         ];
       }
