@@ -2129,7 +2129,7 @@ function usePlaceholderParticipantName(
   userId: string,
   resolveMemberLabel: (userId: string | undefined) => string,
   fallback: string,
-): { text: string; showSkeleton: boolean } {
+): { text: string; showSkeleton: boolean; hyphaAvatarUrl?: string } {
   const syncLabel = useMemo(() => {
     const roster = resolveMemberLabel(userId)?.trim();
     if (roster && !looksLikeTechnicalMatrixDisplayName(roster, userId)) {
@@ -2381,7 +2381,7 @@ function useCallParticipantDisplayName(
   isPip: boolean,
   isShare: boolean,
   isAudioOnlyTile: boolean,
-): { text: string; showSkeleton: boolean } {
+): { text: string; showSkeleton: boolean; hyphaAvatarUrl?: string } {
   const uid = feed.userId;
   const isLocalFeed = feed.isLocal();
   const [profileTimedOut, setProfileTimedOut] = useState(false);
