@@ -37,6 +37,7 @@ export function scheduleMatrixTurnRefresh(options: {
     if (disposed) return;
     try {
       const readiness = await evaluateMatrixTurnReadiness(client);
+      if (disposed) return;
       onReadiness?.(readiness);
       const expiry = client.getTurnServersExpiry();
       const delayMs =
