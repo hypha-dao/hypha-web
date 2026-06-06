@@ -2637,6 +2637,7 @@
     "callConnecting": "Connecting…",
     "callRemoteParticipantMediaStalled": "Waiting for audio/video — check network or try leaving and rejoining.",
     "callRemoteMediaStallHint": "Others are listed in this call but their audio/video is not arriving — often a network or browser issue. Try leaving and rejoining, or switch networks.",
+    "callTurnServerUnavailableHint": "Voice, video, and screen share may be unreliable — the Matrix server is not providing TURN relay servers. Ask your administrator to verify coturn and Dendrite turn configuration.",
     "callRemoteMediaWarmingHint": "Waiting for others' audio and video to connect…",
     "callRemoteMediaStallRetry": "Retry connection",
     "callScaleWarningMessage": "This call has many participants. Quality may be reduced.",

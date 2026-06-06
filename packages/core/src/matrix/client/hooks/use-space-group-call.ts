@@ -32,6 +32,8 @@ import {
   attachGroupCallWebRtcDiagnostics,
   probeMatrixTurnServerReadiness,
 } from './group-call-webrtc-diagnostics';
+import { evaluateMatrixTurnReadiness } from './matrix-turn-readiness';
+import { scheduleMatrixTurnRefresh } from './matrix-turn-refresh';
 import {
   applyCallThumbnailReceiverDownscale,
   enumerateGroupCallPeerConnections,
@@ -607,6 +609,7 @@ export function useSpaceGroupCall(
   const activeGroupCallRoomIdRef = useRef<string | null>(null);
   const loggedStatsForGroupCallIdRef = useRef<string | null>(null);
   const webRtcDiagCleanupRef = useRef<(() => void) | null>(null);
+  const turnRefreshCleanupRef = useRef<(() => void) | null>(null);
   const cameraCaptureConstraintsCleanupRef = useRef<(() => void) | null>(null);
   const groupCallListenerCleanupRef = useRef<(() => void) | null>(null);
   /** Cleared in runCleanup — delayed second `placeOutgoingCalls` nudge after enter(). */
@@ -665,6 +668,8 @@ export function useSpaceGroupCall(
   const [isCallRecovering, setIsCallRecovering] = useState(false);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
   const [remoteMediaWarming, setRemoteMediaWarming] = useState(false);
+  const [turnServerUnavailable, setTurnServerUnavailable] = useState(false);
+  const turnServerBannerDismissedRef = useRef(false);
 
   const retryRemoteMediaConnection = useCallback(() => {
     if (callState !== 'connected' && callState !== 'awaiting_media') return;
@@ -682,6 +687,25 @@ export function useSpaceGroupCall(
     setRemoteMediaStall(false);
     setRemoteMediaWarming(false);
   }, []);
+
+  const dismissTurnServerUnavailableBanner = useCallback(() => {
+    turnServerBannerDismissedRef.current = true;
+    setTurnServerUnavailable(false);
+  }, []);
+
+  const applyTurnReadinessState = useCallback(
+    (unavailable: boolean, expectedJoinEpoch?: number) => {
+      if (
+        expectedJoinEpoch !== undefined &&
+        expectedJoinEpoch !== joinEpochRef.current
+      ) {
+        return;
+      }
+      if (turnServerBannerDismissedRef.current) return;
+      setTurnServerUnavailable(unavailable);
+    },
+    [],
+  );
   const [tabBackgroundWhileInCall, setTabBackgroundWhileInCall] =
     useState(false);
   /**
@@ -1301,6 +1325,7 @@ export function useSpaceGroupCall(
 
   const runCleanup = useCallback(
     (options?: { skipGroupCallLeave?: boolean }) => {
+      joinEpochRef.current += 1;
       const shouldBootstrapCapture =
         captureModeRef.current !== 'none' &&
         !recordingRuntimeRef.current &&
@@ -1330,6 +1355,10 @@ export function useSpaceGroupCall(
       clearLocalMediaBootstrapTimers();
       webRtcDiagCleanupRef.current?.();
       webRtcDiagCleanupRef.current = null;
+      turnRefreshCleanupRef.current?.();
+      turnRefreshCleanupRef.current = null;
+      turnServerBannerDismissedRef.current = false;
+      setTurnServerUnavailable(false);
       cameraCaptureConstraintsCleanupRef.current?.();
       cameraCaptureConstraintsCleanupRef.current = null;
       groupCallListenerCleanupRef.current?.();
@@ -1548,6 +1577,12 @@ export function useSpaceGroupCall(
   const enableLocalScreenshareDirect = useCallback(
     async (gc: MatrixSdk.GroupCall) => {
       try {
+        const turnEpoch = joinEpochRef.current;
+        if (client) {
+          void evaluateMatrixTurnReadiness(client).then((readiness) => {
+            applyTurnReadinessState(readiness.turnServerUnavailable, turnEpoch);
+          });
+        }
         clearOrphanedMatrixScreenshareStreams(client);
         const ok = await withEnhancedScreenshareCapture(
           client,
@@ -1594,6 +1629,7 @@ export function useSpaceGroupCall(
       scheduleFeedBatched();
     },
     [
+      applyTurnReadinessState,
       client,
       scheduleFeedBatched,
       syncLocalScreenshareState,
@@ -1778,6 +1814,12 @@ export function useSpaceGroupCall(
        * the stalled side as well as from ParticipantsChanged/room-state bumps.
        */
       nudgeGroupCallPlaceOutgoing(gc);
+      if (client) {
+        const turnEpoch = joinEpochRef.current;
+        void evaluateMatrixTurnReadiness(client).then((readiness) => {
+          applyTurnReadinessState(readiness.turnServerUnavailable, turnEpoch);
+        });
+      }
       if (remoteMediaGapSinceRef.current == null) {
         remoteMediaGapSinceRef.current = now;
       }
@@ -1830,7 +1872,13 @@ export function useSpaceGroupCall(
       setRemoteMediaStall(false);
       setRemoteMediaWarming(false);
     }
-  }, [client, roomId, inCallUserIdsFromGroupCall, scheduleLocalMediaBootstrap]);
+  }, [
+    applyTurnReadinessState,
+    client,
+    roomId,
+    inCallUserIdsFromGroupCall,
+    scheduleLocalMediaBootstrap,
+  ]);
 
   const logDevMediaSnapshot = useCallback(() => {
     const gc = groupCallRef.current;
@@ -2340,7 +2388,11 @@ export function useSpaceGroupCall(
        * Probe TURN before `enter()`: missing homeserver TURN config often makes
        * `gc.enter()` stall, so post-enter diagnostics would never be emitted.
        */
-      void probeMatrixTurnServerReadiness({ client, roomId, kind });
+      void (async () => {
+        const readiness = await evaluateMatrixTurnReadiness(client);
+        applyTurnReadinessState(readiness.turnServerUnavailable, joinEpoch);
+        void probeMatrixTurnServerReadiness({ client, roomId, kind });
+      })();
 
       clearConnectingStallTimer();
       connectingStallTimerRef.current = setTimeout(() => {
@@ -2472,6 +2524,17 @@ export function useSpaceGroupCall(
           enumeratePeerConnections: enumerateGroupCallPeerConnections,
         });
       }
+      turnRefreshCleanupRef.current?.();
+      const turnRefreshEpoch = joinEpochRef.current;
+      turnRefreshCleanupRef.current = scheduleMatrixTurnRefresh({
+        client,
+        onReadiness: (readiness) => {
+          applyTurnReadinessState(
+            readiness.turnServerUnavailable,
+            turnRefreshEpoch,
+          );
+        },
+      });
       if (roomId) {
         logGroupCallSimulcastCapabilityAudit({
           roomId,
@@ -3773,6 +3836,9 @@ export function useSpaceGroupCall(
     remoteMediaStall,
     /** Feeds still warming — first ~45s after others appear in the call map. */
     remoteMediaWarming,
+    /** Homeserver returned no usable TURN relay ICE servers for this session. */
+    turnServerUnavailable,
+    dismissTurnServerUnavailableBanner,
     dismissRemoteMediaStallBanner,
     retryRemoteMediaConnection,
     tabBackgroundWhileInCall,

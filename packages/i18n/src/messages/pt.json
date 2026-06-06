@@ -2236,6 +2236,7 @@
     "callConnecting": "A conectar…",
     "callRemoteParticipantMediaStalled": "À espera de áudio/vídeo — verifique a rede ou saia e volte a entrar.",
     "callRemoteMediaStallHint": "Outras pessoas aparecem na chamada mas o áudio/vídeo não chega — muitas vezes rede ou navegador. Sai e volta a entrar, ou muda de rede.",
+    "callTurnServerUnavailableHint": "Voz, vídeo e partilha de ecrã podem ser instáveis — o servidor Matrix não fornece servidores TURN relay. Peça ao administrador para verificar o coturn e a configuração TURN do Dendrite.",
     "callRemoteMediaWarmingHint": "A aguardar a ligação do áudio e vídeo dos outros…",
     "callRemoteMediaStallRetry": "Tentar ligação novamente",
     "callScaleWarningMessage": "Esta chamada tem muitos participantes. A qualidade pode ser reduzida.",

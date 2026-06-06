@@ -57,6 +57,9 @@ type HumanChatPanelCallBannerProps = {
   remoteMediaStall?: boolean;
   /** Remote feeds still warming (CSH-MESH-3). */
   remoteMediaWarming?: boolean;
+  /** Homeserver returned no usable TURN relay ICE servers for this session. */
+  turnServerUnavailable?: boolean;
+  onDismissTurnServerUnavailable?: () => void;
   onDismissRemoteMediaStall?: () => void;
   onRetryRemoteMedia?: () => void;
   /** CSH-SCALE-2 — many participants may reduce mesh quality. */
@@ -157,6 +160,8 @@ export function HumanChatPanelCallBanner({
   othersInRoomCallCount,
   remoteMediaStall = false,
   remoteMediaWarming = false,
+  turnServerUnavailable = false,
+  onDismissTurnServerUnavailable,
   onDismissRemoteMediaStall,
   onRetryRemoteMedia,
   showScaleWarning = false,
@@ -278,6 +283,8 @@ export function HumanChatPanelCallBanner({
     remoteMediaWarming && !remoteMediaStall && callState === 'connected';
   const showRemoteMediaStallAlert =
     remoteMediaStall && callState === 'connected';
+  const showTurnServerUnavailableAlert =
+    turnServerUnavailable && callState === 'connected';
   const showSessionRefreshAlert =
     sessionRefreshFailedDuringCall && callState === 'connected';
   const showScreenshareErrorAlert =
@@ -297,6 +304,7 @@ export function HumanChatPanelCallBanner({
       showScaleWarning ||
       showRemoteMediaWarmingAlert ||
       showRemoteMediaStallAlert ||
+      showTurnServerUnavailableAlert ||
       showSessionRefreshAlert ||
       showScreenshareErrorAlert ||
       showScreenshareTabAudioAlert ||
@@ -342,6 +350,22 @@ export function HumanChatPanelCallBanner({
             <button
               type="button"
               onClick={onDismissRemoteMediaStall}
+              className={callAccentAlertDismissClassName}
+            >
+              {t('callLeftBannerDismiss')}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {showTurnServerUnavailableAlert ? (
+        <div role="alert" className={alertRowClassName()}>
+          <p className={cn('min-w-0 flex-1', alertTextClassName)}>
+            {t('callTurnServerUnavailableHint')}
+          </p>
+          {onDismissTurnServerUnavailable ? (
+            <button
+              type="button"
+              onClick={onDismissTurnServerUnavailable}
               className={callAccentAlertDismissClassName}
             >
               {t('callLeftBannerDismiss')}

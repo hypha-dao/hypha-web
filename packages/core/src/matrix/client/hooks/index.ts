@@ -78,3 +78,12 @@ export {
   isMatrixCallSupportDebugEnabled,
   MATRIX_CALL_DEBUG_LOCAL_STORAGE_KEYS,
 } from '../matrix-webrtc-env';
+export {
+  evaluateMatrixTurnReadiness,
+  type MatrixTurnReadiness,
+} from './matrix-turn-readiness';
+export {
+  scheduleMatrixTurnRefresh,
+  MATRIX_TURN_REFRESH_BEFORE_EXPIRY_MS,
+  MATRIX_TURN_REFRESH_FALLBACK_MS,
+} from './matrix-turn-refresh';
