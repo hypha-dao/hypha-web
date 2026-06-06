@@ -6,6 +6,10 @@ import {
   type MatrixClient,
 } from 'matrix-js-sdk';
 import { logSpaceGroupCallEvent } from './space-group-call-telemetry';
+import { evaluateMatrixTurnReadiness } from './matrix-turn-readiness';
+import { summarizeMatrixIceServers } from './matrix-ice-summary';
+
+export { summarizeMatrixIceServers } from './matrix-ice-summary';
 
 /** Fields we log from Matrix SDK summary stats (avoid deep imports Next cannot bundle). */
 type GroupCallSummaryStatsReport = {
@@ -22,78 +26,6 @@ type GroupCallSummaryStatsReport = {
 };
 
 const TURN_PROBE_LOG_THROTTLE_MS = 60_000;
-
-type IceUrlKind = 'stun' | 'turn' | 'turns' | 'unknown';
-
-function iceUrlKind(url: string): IceUrlKind {
-  const u = url.trim().toLowerCase();
-  if (u.startsWith('stun:') || u.startsWith('stuns:')) return 'stun';
-  if (u.startsWith('turns:')) return 'turns';
-  if (u.startsWith('turn:')) return 'turn';
-  return 'unknown';
-}
-
-/** One object per RTCPeerConnection `iceServers` entry — no secrets. */
-export function summarizeMatrixIceServers(raw: RTCIceServer[] | undefined): {
-  /** Count of `iceServers` objects. */
-  entryCount: number;
-  /** Total URL strings across all entries. */
-  urlCount: number;
-  hasStun: boolean;
-  hasTurn: boolean;
-  hasTurns: boolean;
-  /** Sample of hostname-like segments (first label of host), not full URLs. */
-  hostHints: string[];
-} {
-  if (!raw?.length) {
-    return {
-      entryCount: 0,
-      urlCount: 0,
-      hasStun: false,
-      hasTurn: false,
-      hasTurns: false,
-      hostHints: [],
-    };
-  }
-  let urlCount = 0;
-  let hasStun = false;
-  let hasTurn = false;
-  let hasTurns = false;
-  const hostHints: string[] = [];
-
-  for (const e of raw) {
-    const urls = Array.isArray(e.urls) ? e.urls : e.urls ? [e.urls] : [];
-    urlCount += urls.length;
-    for (const url of urls) {
-      const k = iceUrlKind(String(url));
-      if (k === 'stun') hasStun = true;
-      if (k === 'turn') hasTurn = true;
-      if (k === 'turns') hasTurns = true;
-      try {
-        const u = new URL(
-          String(url)
-            .replace(/^stun[s]?:/i, 'https:')
-            .replace(/^turn[s]?:/i, 'https:'),
-        );
-        const h = u.hostname.split('.')[0];
-        if (h && !hostHints.includes(h) && hostHints.length < 6) {
-          hostHints.push(h);
-        }
-      } catch {
-        // ignore parse errors
-      }
-    }
-  }
-
-  return {
-    entryCount: raw.length,
-    urlCount,
-    hasStun,
-    hasTurn,
-    hasTurns,
-    hostHints,
-  };
-}
 
 let lastTurnProbeAt = 0;
 
@@ -112,22 +44,8 @@ export async function probeMatrixTurnServerReadiness(options: {
   if (now - lastTurnProbeAt < TURN_PROBE_LOG_THROTTLE_MS) return;
   lastTurnProbeAt = now;
 
-  let turnCredsOk = false;
-  try {
-    const r = await client.checkTurnServers();
-    turnCredsOk = r === true;
-  } catch {
-    turnCredsOk = false;
-  }
-
-  const expiry = client.getTurnServersExpiry();
-  const ttlSecApprox =
-    Number.isFinite(expiry) && expiry > 0
-      ? Math.max(0, Math.round((expiry - now) / 1000))
-      : 0;
-
+  const readiness = await evaluateMatrixTurnReadiness(client);
   const raw = client.getTurnServers() as RTCIceServer[];
-  const iceSummary = summarizeMatrixIceServers(raw);
   const forceTurn = Boolean(
     (client as { forceTURN?: boolean }).forceTURN ?? false,
   );
@@ -139,21 +57,21 @@ export async function probeMatrixTurnServerReadiness(options: {
     name: 'hypha.group_call.turn_probe',
     roomId,
     kind,
-    turnCredsOk,
-    turnTtlSecApprox: ttlSecApprox,
-    iceEntryCount: iceSummary.entryCount,
-    iceUrlCount: iceSummary.urlCount,
-    iceHasStun: iceSummary.hasStun,
-    iceHasTurn: iceSummary.hasTurn,
-    iceHasTurns: iceSummary.hasTurns,
-    iceHostHints: iceSummary.hostHints.length
-      ? iceSummary.hostHints
+    turnCredsOk: readiness.turnCredsOk,
+    turnTtlSecApprox: readiness.turnTtlSecApprox,
+    iceEntryCount: readiness.iceEntryCount,
+    iceUrlCount: readiness.iceUrlCount,
+    iceHasStun: readiness.iceHasStun,
+    iceHasTurn: readiness.iceHasTurn,
+    iceHasTurns: readiness.iceHasTurns,
+    iceHostHints: readiness.iceHostHints.length
+      ? readiness.iceHostHints
       : undefined,
     forceTurn,
     fallbackIceAllowed: fallbackAllowed,
   });
 
-  if (!iceSummary.hasTurn && !iceSummary.hasTurns && !fallbackAllowed) {
+  if (!readiness.iceHasTurn && !readiness.iceHasTurns && !fallbackAllowed) {
     /** Quick gather sanity check — confirms browser can reach at least STUN if configured. */
     let gatherState: RTCIceGatheringState | 'unsupported' | 'timeout' =
       'unsupported';

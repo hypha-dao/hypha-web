@@ -43,6 +43,7 @@ import {
   matrixWebRtcForceTurnFromEnv,
   matrixWebRtcIceCandidatePoolSizeFromEnv,
 } from '../matrix-webrtc-env';
+import { evaluateMatrixTurnReadiness } from '../hooks/matrix-turn-readiness';
 import {
   createHyphaMatrixClientLogger,
   configureMatrixGlobalLogger,
@@ -683,6 +684,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         });
 
         await matrixClient.startClient();
+
+        /** Warm TURN credentials before the first call join (reduces ICE stall). */
+        void evaluateMatrixTurnReadiness(matrixClient).catch(() => undefined);
 
         await matrixClient.setPresence({ presence: 'online' });
 

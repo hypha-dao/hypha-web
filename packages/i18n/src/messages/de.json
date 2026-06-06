@@ -2633,6 +2633,7 @@
     "callConnecting": "Verbinden…",
     "callRemoteParticipantMediaStalled": "Warte auf Audio/Video — Netzwerk prüfen oder Anruf verlassen und erneut beitreten.",
     "callRemoteMediaStallHint": "Andere sind im Anruf gelistet, aber Audio/Video kommt nicht an — oft Netzwerk oder Browser. Verlassen und erneut beitreten oder das Netzwerk wechseln.",
+    "callTurnServerUnavailableHint": "Sprache, Video und Bildschirmfreigabe können unzuverlässig sein — der Matrix-Server stellt keine TURN-Relay-Server bereit. Bitte den Administrator, coturn und die Dendrite-TURN-Konfiguration zu prüfen.",
     "callRemoteMediaWarmingHint": "Audio und Video der anderen Teilnehmenden werden verbunden …",
     "callRemoteMediaStallRetry": "Verbindung erneut versuchen",
     "callScaleWarningMessage": "Dieser Anruf hat viele Teilnehmende. Die Qualität kann sinken.",

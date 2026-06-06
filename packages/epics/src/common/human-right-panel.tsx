@@ -1226,6 +1226,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     dismissCallError: dismissSpaceCallError,
     remoteMediaStall: spaceCallRemoteMediaStall,
     remoteMediaWarming: spaceCallRemoteMediaWarming,
+    turnServerUnavailable: spaceCallTurnServerUnavailable,
+    dismissTurnServerUnavailableBanner: dismissSpaceCallTurnServerUnavailable,
     dismissRemoteMediaStallBanner: dismissSpaceCallRemoteMediaStall,
     retryRemoteMediaConnection: retrySpaceCallRemoteMedia,
     showFloatingDock,
@@ -4122,6 +4124,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               othersInRoomCallCount={spaceCallOthersInRoom}
               remoteMediaStall={spaceCallRemoteMediaStall}
               remoteMediaWarming={spaceCallRemoteMediaWarming}
+              turnServerUnavailable={spaceCallTurnServerUnavailable}
+              onDismissTurnServerUnavailable={
+                dismissSpaceCallTurnServerUnavailable
+              }
               onDismissRemoteMediaStall={dismissSpaceCallRemoteMediaStall}
               onRetryRemoteMedia={retrySpaceCallRemoteMedia}
               showScaleWarning={showCallScaleWarning}

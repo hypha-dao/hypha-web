@@ -486,6 +486,8 @@ export function GlobalCallDockOverlay({
     othersInRoomCallCount,
     remoteMediaStall,
     remoteMediaWarming,
+    turnServerUnavailable,
+    dismissTurnServerUnavailableBanner,
     dismissRemoteMediaStallBanner,
     retryRemoteMediaConnection,
     feedVersion,
@@ -1107,6 +1109,7 @@ export function GlobalCallDockOverlay({
     screenshareErrorCode != null ||
     remoteMediaStall ||
     remoteMediaWarming ||
+    turnServerUnavailable ||
     showCallScaleWarning ||
     (!inDocumentPip && screenshareTabAudioMissing && isScreensharing) ||
     cameraAccessBlocked ||
@@ -1433,6 +1436,10 @@ export function GlobalCallDockOverlay({
                   othersInRoomCallCount={othersInRoomCallCount}
                   remoteMediaStall={remoteMediaStall}
                   remoteMediaWarming={remoteMediaWarming}
+                  turnServerUnavailable={turnServerUnavailable}
+                  onDismissTurnServerUnavailable={
+                    dismissTurnServerUnavailableBanner
+                  }
                   onDismissRemoteMediaStall={dismissRemoteMediaStallBanner}
                   onRetryRemoteMedia={retryRemoteMediaConnection}
                   showScaleWarning={showCallScaleWarning}

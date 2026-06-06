@@ -98,7 +98,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   response.headers.set('Content-Security-Policy', cspHeaderValue);
   response.headers.set(
     'Permissions-Policy',
-    'camera=(self), microphone=(self)',
+    'camera=(self), microphone=(self), display-capture=(self)',
   );
 
   return response;

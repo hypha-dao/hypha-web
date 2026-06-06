@@ -48,14 +48,15 @@ export function matrixWebRtcFallbackIceAllowedFromEnv(): boolean {
 }
 
 /**
- * ICE candidate pre-gather pool for faster first connect; 0 keeps SDK default.
+ * ICE candidate pre-gather pool for faster first connect.
+ * Default 4 when unset — improves time-to-first-media on NAT-heavy networks.
  */
 export function matrixWebRtcIceCandidatePoolSizeFromEnv(): number {
-  if (typeof process === 'undefined') return 0;
+  if (typeof process === 'undefined') return 4;
   return Math.min(
     parseNonNegativeInt(
       process.env['NEXT_PUBLIC_MATRIX_WEBRTC_ICE_POOL_SIZE'],
-      0,
+      4,
     ),
     255,
   );
