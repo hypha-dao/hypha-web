@@ -91,6 +91,15 @@ contract RegularSpaceToken is
   // the current set can be reconstructed off-chain from AuthorizedMinterUpdated logs.
   mapping(address => bool) public isAuthorizedMinter;
 
+  // Reserved storage slots for upgrade-safe additions to this base contract.
+  // RegularSpaceToken is inherited by DecayingSpaceToken / OwnershipSpaceToken,
+  // which declare their own state variables immediately after this contract's
+  // storage. Without this gap, appending any new variable here would shift every
+  // derived variable down one slot and corrupt existing proxies on in-place
+  // upgrade. When adding a new state variable above, decrement the gap size by
+  // the number of slots it consumes so the derived layout stays fixed.
+  uint256[50] private __gap;
+
   // Events
   event MaxSupplyUpdated(uint256 oldMaxSupply, uint256 newMaxSupply);
   event TransferableUpdated(bool transferable);

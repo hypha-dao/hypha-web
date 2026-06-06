@@ -21,6 +21,11 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
   // Track total burned tokens from decay (keep this for informational purposes)
   uint256 public totalBurnedFromDecay;
 
+  // Reserved storage slots for upgrade-safe additions to this contract. Decrement
+  // when appending a new state variable above so any contract inheriting
+  // DecayingSpaceToken keeps a fixed storage layout.
+  uint256[50] private __gap;
+
   event DecayApplied(
     address indexed user,
     uint256 oldBalance,

@@ -24,6 +24,11 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
   // Configurable spaces contract address (shadows parent's constant for membership checks)
   address public ownershipSpacesContract;
 
+  // Reserved storage slots for upgrade-safe additions to this contract. Decrement
+  // when appending a new state variable above so any contract inheriting
+  // OwnershipSpaceToken keeps a fixed storage layout.
+  uint256[50] private __gap;
+
   // Hardcoded escrow contract address
   address public constant escrowContract =
     0x447A317cA5516933264Cdd6aeee0633Fa954B576; // TODO: Replace with actual escrow contract address
