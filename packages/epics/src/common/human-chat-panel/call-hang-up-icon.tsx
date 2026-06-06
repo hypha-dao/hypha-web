@@ -7,16 +7,18 @@ import { cn } from '@hypha-platform/ui-utils';
  */
 export function CallHangUpIcon({
   className,
+  strokeWidth = 1.75,
   'aria-hidden': ariaHidden = true,
 }: {
   className?: string;
+  strokeWidth?: number;
   'aria-hidden'?: boolean;
 }) {
   return (
     <Phone
       className={cn('rotate-90', className)}
       aria-hidden={ariaHidden}
-      strokeWidth={2.25}
+      strokeWidth={strokeWidth}
     />
   );
 }

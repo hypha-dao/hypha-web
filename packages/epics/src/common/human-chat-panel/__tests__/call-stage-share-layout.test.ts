@@ -10,6 +10,7 @@ import {
 type MockTrack = {
   readyState: MediaStreamTrackState | 'new';
   muted: boolean;
+  enabled?: boolean;
 };
 
 function mockFeed(args: {
@@ -30,6 +31,7 @@ function mockFeed(args: {
                 ({
                   readyState: track.readyState,
                   muted: track.muted,
+                  enabled: track.enabled ?? true,
                 } as MediaStreamTrack),
             ),
         } as MediaStream)
@@ -65,7 +67,7 @@ describe('resolveCallStageShareLayout', () => {
     expect(layout.hasRenderableShare).toBe(true);
   });
 
-  it('keeps share layout while a remote feed is warming up during handoff', () => {
+  it('renders remote share tiles while tracks are still warming during handoff', () => {
     const rawShareFeeds = [
       mockFeed({
         userId: '@presenter:hs',
@@ -79,10 +81,26 @@ describe('resolveCallStageShareLayout', () => {
       isVideoCall: true,
     });
 
-    expect(layout.shareFeeds).toHaveLength(0);
-    expect(layout.hasPendingRemoteShare).toBe(true);
+    expect(layout.shareFeeds).toHaveLength(1);
+    expect(layout.hasPendingRemoteShare).toBe(false);
     expect(layout.hasRenderableShare).toBe(true);
     expect(layout.localShareActive).toBe(false);
+  });
+
+  it('renders live muted remote share tracks before the first frame arrives', () => {
+    const layout = resolveCallStageShareLayout({
+      rawShareFeeds: [
+        mockFeed({
+          userId: '@presenter:hs',
+          tracks: [{ readyState: 'live', muted: true }],
+        }),
+      ],
+      isScreensharing: false,
+      isVideoCall: true,
+    });
+
+    expect(layout.shareFeeds).toHaveLength(1);
+    expect(layout.hasPendingRemoteShare).toBe(false);
   });
 
   it('renders remote live share for viewers and hides local mirror', () => {
@@ -104,6 +122,22 @@ describe('resolveCallStageShareLayout', () => {
     expect(layout.shareFeeds).toHaveLength(1);
     expect(layout.localShareActive).toBe(false);
     expect(layout.hasRenderableShare).toBe(true);
+  });
+
+  it('shows pane spinner only when the remote feed has no video track yet', () => {
+    const layout = resolveCallStageShareLayout({
+      rawShareFeeds: [
+        mockFeed({
+          userId: '@presenter:hs',
+          tracks: [],
+        }),
+      ],
+      isScreensharing: false,
+      isVideoCall: true,
+    });
+
+    expect(layout.shareFeeds).toHaveLength(0);
+    expect(layout.hasPendingRemoteShare).toBe(true);
   });
 
   it('drops ended ghost feeds so layout does not reserve empty share space', () => {

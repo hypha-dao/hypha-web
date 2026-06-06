@@ -10,6 +10,11 @@ import {
   isGroupCallSessionActive,
   subscribeGroupCallSessionActive,
 } from '../hooks/active-group-call-registry';
+import {
+  recordMatrixCallTokenRefreshFailure,
+  recordMatrixCallTokenRefreshSuccess,
+  resolveMatrixCallProactiveRefreshIntervalMs,
+} from '../hooks/matrix-call-session-metrics';
 import { isMatrixRateLimitedError } from '../hooks/space-group-call-utils';
 import type { Message, MessageMediaInfo } from '../../types';
 import { attachReactionsToMessage, isValidReactionKey } from '../../reactions';
@@ -46,6 +51,11 @@ import { isTransientMatrixNetworkError } from '../matrix-network-errors';
 import { useMatrixTabLeader } from '../hooks/use-matrix-tab-leader';
 
 import { isScreenshareTakeoverEvent } from '../hooks/screenshare-takeover';
+import { isCallEphemeralRoomMessageEvent } from '../hooks/call-reactions';
+import {
+  parseSignalTeamNoticeFromWireContent,
+  shouldIncludeSignalTeamNoticeInChatTimeline,
+} from '../../signal-team-events';
 
 const CALL_CAPTURE_NOTICE_TYPE = 'io.hypha.call_capture_notice.v1';
 /** Sentinel refresh token so matrix-js-sdk v40 invokes Hypha token rotation. */
@@ -78,6 +88,22 @@ function isCallCaptureNoticeEvent(event: MatrixSdk.MatrixEvent): boolean {
     [CALL_CAPTURE_NOTICE_TYPE]?: boolean;
   };
   return content[CALL_CAPTURE_NOTICE_TYPE] === true;
+}
+
+function isHiddenHumanChatRoomMessage(event: MatrixSdk.MatrixEvent): boolean {
+  if (event.getType() !== MatrixSdk.EventType.RoomMessage) return false;
+  if (isCallCaptureNoticeEvent(event)) return true;
+  if (isCallEphemeralRoomMessageEvent(event)) return true;
+  const content = event.getContent() as Record<string, unknown>;
+  const body = typeof content.body === 'string' ? content.body : '';
+  const signalTeamNotice = parseSignalTeamNoticeFromWireContent(content, body);
+  if (
+    signalTeamNotice &&
+    !shouldIncludeSignalTeamNoticeInChatTimeline(signalTeamNotice)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 export interface SendAttachmentInput {
@@ -516,8 +542,10 @@ interface MatrixContextType {
   connectionStatus: MatrixConnectionStatus;
   /** Take over Matrix sync in this tab (single-tab leader election). */
   claimMatrixSyncLeadership: () => void;
-  /** Soft-restart Matrix sync after transient network failures. */
+  /** Soft-restart Matrix sync; falls back to session refresh when no client exists. */
   retryMatrixConnection: () => Promise<void>;
+  /** True after an explicit Retry click failed (cleared on success or next retry). */
+  connectionRetryFailed: boolean;
   createRoom: (title: string) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<SendMessageResult>;
   editRoomMessage: (params: EditRoomMessageInput) => Promise<void>;
@@ -547,6 +575,8 @@ interface MatrixContextType {
   markRoomRead: (roomId: string, eventId: string) => Promise<void>;
   /** Force refresh Matrix auth/session after UNKNOWN_TOKEN or soft logout. */
   refreshSession: () => Promise<boolean>;
+  /** In-call proactive Matrix token refresh failed — show reconnect banner (WCUX-SESSION-3). */
+  sessionRefreshFailedDuringCall: boolean;
 }
 
 const MatrixContext = React.createContext<MatrixContextType | null>(null);
@@ -571,12 +601,17 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     React.useState<MatrixConnectionStatus>(() =>
       isSyncLeader ? 'disconnected' : 'follower',
     );
+  const [sessionRefreshFailedDuringCall, setSessionRefreshFailedDuringCall] =
+    React.useState(false);
   const [activeMatrixUserId, setActiveMatrixUserId] = React.useState<
     string | null
   >(null);
   const clientRef = React.useRef<MatrixSdk.MatrixClient | null>(null);
   const sessionRecoveryPromiseRef = React.useRef<Promise<boolean> | null>(null);
-  const syncRecoveryPromiseRef = React.useRef<Promise<void> | null>(null);
+  const syncRecoveryPromiseRef = React.useRef<Promise<boolean> | null>(null);
+  const connectionRetryPromiseRef = React.useRef<Promise<void> | null>(null);
+  const [connectionRetryFailed, setConnectionRetryFailed] =
+    React.useState(false);
   const pendingClientRecycleRef = React.useRef(false);
   const registeredRoomListenersRef = React.useRef<RoomMessageListenerRecord[]>(
     [],
@@ -585,6 +620,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     Map<string, Promise<LoadRoomHistoryResult>>
   >(new Map());
   const roomHistoryExhaustedRef = React.useRef<Set<string>>(new Set());
+  const proactiveRefreshTimerRef = React.useRef<number | null>(null);
+  const matrixTokenExpiresInSecRef = React.useRef<number | undefined>(
+    undefined,
+  );
   const [registeredRoomListeners, setRegisteredRoomListeners] = React.useState<
     RoomMessageListenerRecord[]
   >([]);
@@ -598,6 +637,13 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   React.useEffect(() => {
     refreshMatrixTokenRef.current = refreshMatrixToken;
   }, [refreshMatrixToken]);
+
+  React.useEffect(() => {
+    matrixTokenExpiresInSecRef.current =
+      typeof matrixToken?.expiresInSec === 'number'
+        ? matrixToken.expiresInSec
+        : undefined;
+  }, [matrixToken?.expiresInSec]);
 
   const initializeMatrixClient = React.useCallback(
     async (matrixToken: MatrixTokenData) => {
@@ -646,6 +692,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         setIsMatrixAvailable(matrixClient !== null);
         setIsAuthenticated(true);
         setConnectionStatus('connected');
+        setConnectionRetryFailed(false);
       } catch (error) {
         console.error('Failed to initialize Matrix client:', error);
         clientRef.current = null;
@@ -660,15 +707,15 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [],
   );
 
-  const recoverMatrixSync = React.useCallback(async (): Promise<void> => {
-    if (!isSyncLeader) return;
+  const recoverMatrixSync = React.useCallback(async (): Promise<boolean> => {
+    if (!isSyncLeader) return false;
     const existingClient = clientRef.current;
-    if (!existingClient) return;
+    if (!existingClient) return false;
     if (syncRecoveryPromiseRef.current) {
       return syncRecoveryPromiseRef.current;
     }
 
-    const recovery = (async () => {
+    const recovery = (async (): Promise<boolean> => {
       setConnectionStatus('reconnecting');
       try {
         const syncState = existingClient.getSyncState();
@@ -679,22 +726,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           existingClient.stopClient();
           await existingClient.startClient();
         } else {
-          const clientWithRetry = existingClient as MatrixSdk.MatrixClient & {
-            retryImmediately?: () => void;
-          };
-          if (typeof clientWithRetry.retryImmediately === 'function') {
-            clientWithRetry.retryImmediately();
-          }
+          retryMatrixClientSync(existingClient);
         }
         await existingClient.setPresence({ presence: 'online' });
         setConnectionStatus('connected');
+        setConnectionRetryFailed(false);
+        return true;
       } catch (error) {
         console.warn('[MatrixProvider] Matrix sync recovery failed:', error);
-        setConnectionStatus(
-          isTransientMatrixNetworkError(error)
-            ? 'disconnected'
-            : 'disconnected',
-        );
+        setConnectionStatus('disconnected');
+        return false;
       } finally {
         syncRecoveryPromiseRef.current = null;
       }
@@ -738,6 +779,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         if (!freshToken) {
           return false;
         }
+        matrixTokenExpiresInSecRef.current =
+          typeof freshToken.expiresInSec === 'number'
+            ? freshToken.expiresInSec
+            : undefined;
         const existingClient = clientRef.current;
         if (existingClient) {
           if (isGroupCallSessionActive()) {
@@ -745,9 +790,14 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               existingClient.setAccessToken(freshToken.accessToken);
               retryMatrixClientSync(existingClient);
               await existingClient.setPresence({ presence: 'online' });
+              recordMatrixCallTokenRefreshSuccess();
+              setSessionRefreshFailedDuringCall(false);
               setConnectionStatus('connected');
+              setConnectionRetryFailed(false);
               return true;
             } catch (error) {
+              recordMatrixCallTokenRefreshFailure(error);
+              setSessionRefreshFailedDuringCall(true);
               console.warn(
                 '[MatrixProvider] In-call Matrix token refresh failed:',
                 error,
@@ -767,7 +817,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         setIsMatrixAvailable(false);
         setActiveMatrixUserId(null);
         await initializeMatrixClient(freshToken);
-        return true;
+        return clientRef.current !== null;
       } catch (error) {
         console.error(
           '[MatrixProvider] Failed to recover Matrix session:',
@@ -781,6 +831,78 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     sessionRecoveryPromiseRef.current = recovery;
     return recovery;
   }, [initializeMatrixClient, refreshMatrixToken]);
+
+  const retryMatrixConnection = React.useCallback(async (): Promise<void> => {
+    if (!isSyncLeader) return;
+    if (connectionRetryPromiseRef.current) {
+      return connectionRetryPromiseRef.current;
+    }
+
+    const attempt = async () => {
+      setConnectionRetryFailed(false);
+      setConnectionStatus('reconnecting');
+      let recovered = false;
+      if (!clientRef.current) {
+        recovered = await recoverMatrixSession();
+      } else {
+        recovered = await recoverMatrixSync();
+      }
+      if (!recovered) {
+        if (matrixTokenError) {
+          console.warn(
+            '[MatrixProvider] Connection retry failed:',
+            matrixTokenError,
+          );
+        } else {
+          console.warn('[MatrixProvider] Connection retry failed');
+        }
+        setConnectionRetryFailed(true);
+        setConnectionStatus('disconnected');
+      }
+    };
+
+    connectionRetryPromiseRef.current = attempt().finally(() => {
+      connectionRetryPromiseRef.current = null;
+    });
+    return connectionRetryPromiseRef.current;
+  }, [isSyncLeader, matrixTokenError, recoverMatrixSession, recoverMatrixSync]);
+
+  const clearProactiveRefreshTimer = React.useCallback(() => {
+    if (proactiveRefreshTimerRef.current == null) return;
+    window.clearTimeout(proactiveRefreshTimerRef.current);
+    proactiveRefreshTimerRef.current = null;
+  }, []);
+
+  const scheduleProactiveMatrixTokenRefresh = React.useCallback(() => {
+    if (typeof window === 'undefined') return;
+    clearProactiveRefreshTimer();
+    if (!isGroupCallSessionActive()) return;
+    const intervalMs = resolveMatrixCallProactiveRefreshIntervalMs(
+      matrixTokenExpiresInSecRef.current,
+    );
+    proactiveRefreshTimerRef.current = window.setTimeout(() => {
+      proactiveRefreshTimerRef.current = null;
+      void recoverMatrixSession().finally(() => {
+        if (isGroupCallSessionActive()) {
+          scheduleProactiveMatrixTokenRefresh();
+        }
+      });
+    }, intervalMs);
+  }, [clearProactiveRefreshTimer, recoverMatrixSession]);
+
+  React.useEffect(() => {
+    const syncProactiveRefresh = () => {
+      if (isGroupCallSessionActive()) {
+        setSessionRefreshFailedDuringCall(false);
+        scheduleProactiveMatrixTokenRefresh();
+        return;
+      }
+      clearProactiveRefreshTimer();
+      setSessionRefreshFailedDuringCall(false);
+    };
+    syncProactiveRefresh();
+    return subscribeGroupCallSessionActive(syncProactiveRefresh);
+  }, [clearProactiveRefreshTimer, scheduleProactiveMatrixTokenRefresh]);
 
   React.useEffect(() => {
     if (!client) {
@@ -883,6 +1005,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         state === MatrixSdk.SyncState.Catchup
       ) {
         setConnectionStatus('connected');
+        setConnectionRetryFailed(false);
       }
       if (state !== MatrixSdk.SyncState.Error) return;
       if (isMatrixUnknownTokenError(data?.error)) {
@@ -1611,7 +1734,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             .getLiveTimeline()
             .getEvents()
             .filter((event) => event.getType() === EventType.RoomMessage)
-            .filter((event) => !isCallCaptureNoticeEvent(event))
+            .filter((event) => !isHiddenHumanChatRoomMessage(event))
             .filter((event) => !isScreenshareTakeoverEvent(event))
             .filter((event) => !isRedactedRoomMessageEvent(event))
             .filter((event) => event.getId() && event.getSender())
@@ -1890,7 +2013,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const room = client.getRoom(roomId);
 
         if (type === EventType.RoomMessage) {
-          if (isCallCaptureNoticeEvent(event)) {
+          if (isHiddenHumanChatRoomMessage(event)) {
             return;
           }
           if (isScreenshareTakeoverEvent(event)) {
@@ -1969,6 +2092,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           if (!targetEv || targetEv.getType() !== EventType.RoomMessage) {
             return;
           }
+          if (isHiddenHumanChatRoomMessage(targetEv)) {
+            return;
+          }
           const pinnedIds = getPinnedMessageIds(roomId);
           const eventId = targetEv.getId();
           const targetSender = targetEv.getSender();
@@ -1995,6 +2121,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             if (!targetId) return;
             const targetEv = room.findEventById(targetId);
             if (!targetEv || targetEv.getType() !== EventType.RoomMessage) {
+              return;
+            }
+            if (isHiddenHumanChatRoomMessage(targetEv)) {
               return;
             }
             const pinnedIds = getPinnedMessageIds(roomId);
@@ -2082,7 +2211,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     isMatrixSyncLeader: isSyncLeader,
     connectionStatus,
     claimMatrixSyncLeadership: claimSyncLeadership,
-    retryMatrixConnection: recoverMatrixSync,
+    retryMatrixConnection,
+    connectionRetryFailed,
     createRoom,
     sendMessage,
     editRoomMessage,
@@ -2099,6 +2229,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     registeredRoomListeners,
     markRoomRead,
     refreshSession: recoverMatrixSession,
+    sessionRefreshFailedDuringCall,
   };
   return (
     <MatrixContext.Provider value={value}>{children}</MatrixContext.Provider>
@@ -2113,6 +2244,7 @@ const noopMatrixContext: MatrixContextType = {
   connectionStatus: 'connected',
   claimMatrixSyncLeadership: () => {},
   retryMatrixConnection: async () => {},
+  connectionRetryFailed: false,
   createRoom: async () => {
     throw new Error('Matrix unavailable');
   },
@@ -2143,6 +2275,7 @@ const noopMatrixContext: MatrixContextType = {
     throw new Error('Matrix unavailable');
   },
   refreshSession: async () => false,
+  sessionRefreshFailedDuringCall: false,
 };
 
 export const useMatrix = () => {

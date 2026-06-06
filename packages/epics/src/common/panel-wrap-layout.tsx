@@ -1,5 +1,6 @@
 'use client';
 
+import { HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID } from '@hypha-platform/core/client';
 import React, {
   useCallback,
   useEffect,
@@ -576,7 +577,8 @@ export function PanelWrapLayout({
 
   return (
     <div
-      className="min-w-0 overflow-x-clip"
+      id={HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID}
+      className="isolate min-w-0 overflow-x-clip"
       ref={wrapperRef}
       style={
         {

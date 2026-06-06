@@ -54,6 +54,7 @@ import {
   matrixMemberDisplayLabelFromRoom,
   matrixUserIdToCanonicalPrivySub,
   needsHyphaProfileResolutionForMatrixLabel,
+  pickUserVisibleMemberLabel,
 } from './matrix-room-member-display';
 import {
   type ChatPanelAttachmentMedia,
@@ -1301,14 +1302,16 @@ function MxidMentionPill({
 
   const displayLabel = useMemo(() => {
     const fromPerson = person ? formatPersonDisplayName(person) : '';
-    const resolved = fromPerson.trim() || syncLabel.trim();
-    if (!resolved) return fullMxid;
-    return resolved.startsWith('@') ? resolved : `@${resolved}`;
+    const visible = pickUserVisibleMemberLabel(fullMxid, fromPerson, syncLabel);
+    if (!visible) return '';
+    return visible.startsWith('@') ? visible : `@${visible}`;
   }, [person, syncLabel, fullMxid]);
 
   const loading =
     needsProfile &&
-    (loadingLink || (Boolean(linkedSub ?? canonicalSub) && loadingPerson));
+    (loadingLink ||
+      (Boolean(linkedSub ?? canonicalSub) && loadingPerson) ||
+      !displayLabel.trim());
 
   if (loading) {
     return (
@@ -1587,30 +1590,89 @@ export function HumanChatPanelMessageBubble({
     const fromPerson = senderPerson
       ? formatPersonDisplayName(senderPerson)
       : '';
-    if (fromPerson) return fromPerson;
-    if (rosterSenderLabel?.trim()) return rosterSenderLabel.trim();
-    return message.senderName ?? t('unknownMember');
-  }, [message.role, message.senderName, rosterSenderLabel, senderPerson, t]);
+    const visible =
+      message.senderMatrixId != null
+        ? pickUserVisibleMemberLabel(
+            message.senderMatrixId,
+            fromPerson,
+            rosterSenderLabel,
+            message.senderName,
+          )
+        : fromPerson || rosterSenderLabel?.trim() || message.senderName?.trim();
+    return visible ?? t('unknownMember');
+  }, [
+    message.role,
+    message.senderMatrixId,
+    message.senderName,
+    rosterSenderLabel,
+    senderPerson,
+    t,
+  ]);
 
   const resolvedReplyAuthorLabel = useMemo(() => {
     if (!replyTo) return '';
     const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
-    if (fromPerson) return fromPerson;
-    if (rosterReplyLabel?.trim()) return rosterReplyLabel.trim();
-    return replyTo.authorLabel;
-  }, [replyPerson, replyTo, rosterReplyLabel]);
+    const visible =
+      replyTo.sourceUserId != null
+        ? pickUserVisibleMemberLabel(
+            replyTo.sourceUserId,
+            fromPerson,
+            rosterReplyLabel,
+            replyTo.authorLabel,
+          )
+        : fromPerson || rosterReplyLabel?.trim() || replyTo.authorLabel?.trim();
+    return visible ?? t('unknownMember');
+  }, [replyPerson, replyTo, rosterReplyLabel, t]);
+
+  const senderHasVisibleLabel = useMemo(() => {
+    if (message.role !== 'member' || !message.senderMatrixId) return true;
+    return Boolean(
+      pickUserVisibleMemberLabel(
+        message.senderMatrixId,
+        senderPerson ? formatPersonDisplayName(senderPerson) : '',
+        rosterSenderLabel,
+        message.senderName,
+      ),
+    );
+  }, [
+    message.role,
+    message.senderMatrixId,
+    message.senderName,
+    rosterSenderLabel,
+    senderPerson,
+  ]);
 
   /**
-   * Show header skeleton only while SWR is in flight. If the person record is missing after load
-   * (deleted profile, fetch error), fall back to Matrix `senderName` — never keep the grey bar stuck.
+   * Show header skeleton while SWR is in flight or labels are still technical after idle.
+   * Never surface bridged Privy locals — fall back to "Unknown member" once resolution finishes.
    */
   const senderProfileLoading =
-    resolveSenderProfile &&
-    (isLoadingSenderLink || (Boolean(senderPrivySub) && isLoadingSenderPerson));
+    message.role === 'member' &&
+    Boolean(message.senderMatrixId) &&
+    !senderHasVisibleLabel &&
+    (resolveSenderProfile
+      ? isLoadingSenderLink ||
+        (Boolean(senderPrivySub ?? senderCanonicalSub) && isLoadingSenderPerson)
+      : needsHyphaProfileForMatrixLabel(
+          rosterSenderLabel ?? message.senderName,
+          message.senderMatrixId,
+        ));
 
   const replyProfileLoading =
-    resolveReplyProfile &&
-    (isLoadingReplyLink || (Boolean(replyPrivySub) && isLoadingReplyPerson));
+    replyTo?.sourceUserId != null &&
+    !pickUserVisibleMemberLabel(
+      replyTo.sourceUserId,
+      replyPerson ? formatPersonDisplayName(replyPerson) : '',
+      rosterReplyLabel,
+      replyTo.authorLabel,
+    ) &&
+    (resolveReplyProfile
+      ? isLoadingReplyLink ||
+        (Boolean(replyPrivySub ?? replyCanonicalSub) && isLoadingReplyPerson)
+      : needsHyphaProfileForMatrixLabel(
+          rosterReplyLabel ?? replyTo.authorLabel,
+          replyTo.sourceUserId,
+        ));
 
   const senderName = resolvedSenderName;
   const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { ExternalLink, Maximize2, Play, X } from 'lucide-react';
 import {
@@ -9,10 +10,12 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+
+const VIEWER_MAIN_COLUMN_INSET =
+  'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,0px))]';
 
 function CallRecordingMediaPreview({
   src,
@@ -20,14 +23,12 @@ function CallRecordingMediaPreview({
   variant,
   playLabel,
   onOpen,
-  openFullscreenLabel,
 }: {
   src: string;
   poster?: string | null;
   variant: 'video' | 'audio';
   playLabel: string;
   onOpen: () => void;
-  openFullscreenLabel: string;
 }) {
   return (
     <button
@@ -81,6 +82,53 @@ function CallRecordingMediaPreview({
   );
 }
 
+function CallRecordingViewerMenuBanner({
+  open,
+  title,
+  contextLine,
+  closeLabel,
+  onClose,
+}: {
+  open: boolean;
+  title: string;
+  contextLine: string;
+  closeLabel: string;
+  onClose: () => void;
+}) {
+  if (!open || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className={cn(
+        'pointer-events-none fixed z-[60] flex items-center justify-center px-16',
+        VIEWER_MAIN_COLUMN_INSET,
+      )}
+      style={{ top: 0, height: 'var(--menu-top-height, 70px)' }}
+    >
+      <div className="pointer-events-auto flex min-w-0 max-w-[min(42rem,calc(100%-4rem))] flex-col items-center rounded-md bg-background/90 px-4 py-1.5 text-center shadow-sm ring-1 ring-border/60 backdrop-blur-sm">
+        <p className="w-full truncate text-sm font-semibold leading-tight text-foreground">
+          {title}
+        </p>
+        {contextLine ? (
+          <p className="mt-0.5 line-clamp-1 w-full text-xs leading-tight text-muted-foreground">
+            {contextLine}
+          </p>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        className="pointer-events-auto absolute end-4 inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+        onClick={onClose}
+        aria-label={closeLabel}
+        title={closeLabel}
+      >
+        <X className="h-4 w-4" aria-hidden />
+      </button>
+    </div>,
+    document.body,
+  );
+}
+
 function CallRecordingViewerDialog({
   open,
   onOpenChange,
@@ -107,6 +155,23 @@ function CallRecordingViewerDialog({
   const mediaRef = React.useRef<HTMLVideoElement | HTMLAudioElement | null>(
     null,
   );
+  const bannerTitle = title.trim() || playLabel;
+
+  const requestPlay = React.useCallback(() => {
+    const el = mediaRef.current;
+    if (!el || !open) return;
+    void el.play().catch(() => undefined);
+  }, [open]);
+
+  const bindMediaRef = React.useCallback(
+    (el: HTMLVideoElement | HTMLAudioElement | null) => {
+      mediaRef.current = el;
+      if (el && open) {
+        requestPlay();
+      }
+    },
+    [open, requestPlay],
+  );
 
   React.useEffect(() => {
     if (!open) {
@@ -117,98 +182,118 @@ function CallRecordingViewerDialog({
       }
       return;
     }
-    const el = mediaRef.current;
-    if (!el) return;
-    void el.play().catch(() => undefined);
-  }, [open, src, variant]);
+    const frame = window.requestAnimationFrame(() => {
+      requestPlay();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, requestPlay, src, variant]);
+
+  const handleClose = React.useCallback(() => {
+    onOpenChange(false);
+  }, [onOpenChange]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        hideCloseButton
-        overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
-        className={cn(
-          'fixed left-4 right-4 top-[4.5rem] bottom-4 z-50 flex max-h-none w-auto max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden border border-border/60 bg-black p-0 shadow-2xl sm:rounded-xl',
-          'data-[state=open]:slide-in-from-bottom-2 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-bottom-2 data-[state=closed]:zoom-out-95',
-        )}
-      >
-        <DialogHeader className="shrink-0 space-y-1 border-b border-border/50 bg-black/80 px-4 py-3 text-left sm:px-5">
-          <DialogTitle className="pr-10 text-base font-semibold text-white">
-            {title}
-          </DialogTitle>
-          <DialogDescription className="line-clamp-2 text-xs text-white/70">
-            {contextLine}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <CallRecordingViewerMenuBanner
+        open={open}
+        title={bannerTitle}
+        contextLine={contextLine.trim()}
+        closeLabel={closeLabel}
+        onClose={handleClose}
+      />
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          hideCloseButton
+          overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
+          className={cn(
+            'fixed bottom-4 z-50 !flex max-h-none w-auto max-w-none !translate-x-0 !translate-y-0 flex-col gap-0 overflow-hidden border border-border/60 bg-black p-0 shadow-2xl sm:rounded-xl',
+            'top-[var(--menu-top-height,70px)]',
+            VIEWER_MAIN_COLUMN_INSET,
+            'data-[state=open]:slide-in-from-bottom-2 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-bottom-2 data-[state=closed]:zoom-out-95',
+          )}
+        >
+          <DialogTitle className="sr-only">{bannerTitle}</DialogTitle>
+          {contextLine.trim() ? (
+            <DialogDescription className="sr-only">
+              {contextLine}
+            </DialogDescription>
+          ) : null}
 
-        <div className="relative flex min-h-0 flex-1 items-center justify-center bg-black">
-          {variant === 'video' ? (
-            <video
-              ref={mediaRef as React.RefObject<HTMLVideoElement>}
-              key={src}
-              src={src}
-              controls
-              playsInline
-              className="max-h-full max-w-full object-contain"
-            >
-              <track kind="captions" />
-            </video>
-          ) : (
-            <div className="flex w-full max-w-md flex-col items-center gap-4 px-6 py-8">
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-white/15">
-                <Play className="h-8 w-8 fill-current" aria-hidden />
-              </span>
-              <audio
-                ref={mediaRef as React.RefObject<HTMLAudioElement>}
+          <div className="relative flex min-h-0 flex-1 items-center justify-center bg-black">
+            {variant === 'video' ? (
+              <video
+                ref={bindMediaRef}
                 key={src}
                 src={src}
                 controls
-                className="w-full"
+                autoPlay
+                playsInline
+                onLoadedData={requestPlay}
+                onCanPlay={requestPlay}
+                className="max-h-full max-w-full object-contain"
               >
                 <track kind="captions" />
-              </audio>
-            </div>
-          )}
-        </div>
+              </video>
+            ) : (
+              <div className="flex w-full max-w-md flex-col items-center gap-4 px-6 py-8">
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-white/15">
+                  <Play className="h-8 w-8 fill-current" aria-hidden />
+                </span>
+                <audio
+                  ref={bindMediaRef}
+                  key={src}
+                  src={src}
+                  controls
+                  autoPlay
+                  onLoadedData={requestPlay}
+                  onCanPlay={requestPlay}
+                  className="w-full"
+                >
+                  <track kind="captions" />
+                </audio>
+              </div>
+            )}
+          </div>
 
-        <DialogFooter className="shrink-0 gap-2 border-t border-border/50 bg-black/80 px-4 py-3 sm:justify-between sm:px-5">
-          <Button
-            type="button"
-            variant="outline"
-            className="border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="h-4 w-4" aria-hidden />
-            {closeLabel}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
-            asChild
-          >
-            <a href={openHref} target="_blank" rel="noopener noreferrer">
-              {openNewTabLabel}
-              <ExternalLink className="h-4 w-4" aria-hidden />
-            </a>
-          </Button>
-          <Button
-            type="button"
-            className="bg-accent-9 text-accent-contrast hover:bg-accent-10"
-            onClick={() => {
-              const el = mediaRef.current;
-              if (el?.paused) {
-                void el.play().catch(() => undefined);
-              } else {
-                el?.pause();
-              }
-            }}
-          >
-            {playLabel}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="shrink-0 gap-2 border-t border-border/50 bg-black/80 px-4 py-3 sm:justify-between sm:px-5">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              onClick={handleClose}
+            >
+              <X className="h-4 w-4" aria-hidden />
+              {closeLabel}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              asChild
+            >
+              <a href={openHref} target="_blank" rel="noopener noreferrer">
+                {openNewTabLabel}
+                <ExternalLink className="h-4 w-4" aria-hidden />
+              </a>
+            </Button>
+            <Button
+              type="button"
+              className="bg-accent-9 text-accent-contrast hover:bg-accent-10"
+              onClick={() => {
+                const el = mediaRef.current;
+                if (el?.paused) {
+                  void el.play().catch(() => undefined);
+                } else {
+                  el?.pause();
+                }
+              }}
+            >
+              {playLabel}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -233,7 +318,6 @@ export function SpaceMemoryCallRecordingPlayer({
   const tCommon = useTranslations('Common');
   const [viewerOpen, setViewerOpen] = React.useState(false);
   const playLabel = t('spaceMemoryPlayCallRecording');
-  const openFullscreenLabel = t('spaceMemoryOpenCallRecordingFullscreen');
   const openNewTabLabel = t('spaceMemoryOpenCallRecordingNewTab');
 
   return (
@@ -246,7 +330,6 @@ export function SpaceMemoryCallRecordingPlayer({
             variant={variant}
             playLabel={playLabel}
             onOpen={() => setViewerOpen(true)}
-            openFullscreenLabel={openFullscreenLabel}
           />
         </div>
         <div className="flex items-center justify-between gap-2">

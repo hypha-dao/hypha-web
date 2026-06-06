@@ -1,0 +1,12 @@
+# Fragment for dendrite.yaml — align turn_shared_secret with coturn static-auth-secret.
+# See docs/requirements/matrix-voip-turn-server-setup.md and docs/operations/coturn.example.conf.
+
+client_api:
+  turn:
+    turn_user_lifetime: "24h"
+    turn_uris:
+      - "turn:turn.example.org:3478?transport=udp"
+      - "turn:turn.example.org:3478?transport=tcp"
+    turn_shared_secret: "REPLACE_WITH_SAME_VALUE_AS_coturn_static-auth-secret"
+    turn_username: ""
+    turn_password: ""

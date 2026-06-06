@@ -5,7 +5,8 @@
 | Field                       | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Status**                  | Ready to execute (phased)                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| **Specs**                   | [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md), [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md)                                                                                                                                                                                                                                                                                                       |
+| **Specs**                   | [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md), [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md), [call-stability-hardening-spec.md](./call-stability-hardening-spec.md)                                                                                                                                                                                                                                                                                              |
+| **Stability hardening**     | [call-stability-hardening-plan.md](./call-stability-hardening-plan.md) — post-v1 reliability, scale bounds, SFU path (May 2026)                                                                                                                                                                                                                                                                                                                                            |
 | **Phase 0 (env)**           | [voice-video-call-phase-0-runbook.md](./voice-video-call-phase-0-runbook.md) — HS/TURN checklist, CSP notes, `pnpm run check:matrix-sdk`                                                                                                                                                                                                                                                                                                                                   |
 | **Media storage alignment** | Implementations of **recording** and **artifact URLs** SHALL follow [**ADR 0001** — recording pipeline and space media storage](../adr/0001-voice-video-recording-pipeline.md) (normative: object storage, signed URLs, `spaces` FK, and metadata rows). The older [Cursor design thread](https://cursor.com/agents/bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06?branch=cursor%2F-bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06-b1a4) remains **informational** only. |
 
@@ -103,6 +104,17 @@
 **Status (implemented in codebase):** **6.1** — [ADR 0001](../adr/0001-voice-video-recording-pipeline.md) (external SFU / egress as primary; client capture noted as non-default). **6.2–6.3** — `space_call_transcripts` and `space_call_recordings` tables (migration `0047`), `ingestSpaceCallArtifacts` (server) + `POST /api/v1/spaces/{slug}/call-artifacts` (secret `HYPHA_CALL_ARTIFACT_INGEST_SECRET`). **6.4** — Coherence **Space memory** merges `call_artifacts` from org-memory (page 1) with the same access gate as other memory; transcript tiles show excerpt; recording uses `media_uri` when https. **Consent** — i18n note in Coherence; full legal flow is product follow-up. **6.1 correlation** — `useSpaceGroupCall` exposes `callSessionId` (UUID per join) for workers.
 
 **Phases 1–3** deliver **in-app calling**; **Phase 6** may run **in parallel** after 6.1 once ADR is fixed.
+
+### Phase 7 — Stability hardening (post-v1 reliability)
+
+**Status:** **Specified** — see [call-stability-hardening-plan.md](./call-stability-hardening-plan.md) and [call-stability-hardening-spec.md](./call-stability-hardening-spec.md).
+
+| Step | Action | Done when |
+| ---- | ------ | --------- |
+| 7.0  | Merge PR #2284 (banner + share handoff hotfix) | ✅ Merged — verify on consolidated branch |
+| 7.1  | Chrome guardrails, join modal, scale warnings (P1) | CSH-CHROME / CSH-DISCOVER / CSH-SCALE acceptance |
+| 7.2  | Mesh reliability + recording stability (P2–P4) | Manual QA script (spec §9.2) passes on staging |
+| 7.3  | SFU epic for community calls (P5) | LiveKit or vendor; 50+ participant load test |
 
 ---
 
@@ -209,6 +221,7 @@ Implementers SHALL define a **dedicated** persistence layer (example shape — a
 | Architecture                   | [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md)       |
 | UI + SDK mapping               | [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md) |
 | Phasing + quality bar + memory | This document                                                                        |
+| Stability hardening (P7)       | [call-stability-hardening-spec.md](./call-stability-hardening-spec.md), [call-stability-hardening-plan.md](./call-stability-hardening-plan.md) |
 | Phase 0 runbook                | [voice-video-call-phase-0-runbook.md](./voice-video-call-phase-0-runbook.md)         |
 
 ---

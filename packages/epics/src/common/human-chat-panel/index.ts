@@ -4,6 +4,8 @@ export { HumanChatPanelCallBanner } from './human-chat-panel-call-banner';
 export { HumanChatPanelCaptureConsentBanner } from './human-chat-panel-capture-consent-banner';
 export { HumanChatPanelCallJoinStrip } from './human-chat-panel-call-join-strip';
 export { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
+export { HumanChatPanelCallReactPopover } from './human-chat-panel-call-react-popover';
+export { HumanChatPanelCallRaisedHandsStrip } from './human-chat-panel-call-raised-hands-strip';
 export { HumanChatPanelScreenshareTakeoverDialog } from './human-chat-panel-screenshare-takeover-dialog';
 export {
   CALL_GALLERY_MAX_TILES_PER_PAGE,
@@ -14,6 +16,12 @@ export {
   callGalleryGridStyle,
   sliceCallGalleryPage,
 } from './call-gallery-grid';
+export {
+  resolveCallStageLayout,
+  resolveCallStageParticipantVideoFit,
+  resolveCallViewportTier,
+  type CallViewportTier,
+} from './call-stage-layout-engine';
 export { HumanChatPanelCallFullViewLayoutMenu } from './human-chat-panel-call-full-view-layout-menu';
 export {
   type CallFullViewLayoutMode,

@@ -1,14 +1,18 @@
 'use client';
 
 import { useEffect } from 'react';
+import { resumeCallPlayback } from './human-chat-panel/call-playback-registry';
 
 type WakeLockSentinelLike = {
   release: () => Promise<void>;
+  addEventListener?: (type: 'release', listener: () => void) => void;
+  removeEventListener?: (type: 'release', listener: () => void) => void;
 };
 
 /**
  * Keep mic/WebRTC alive when the Hypha tab is backgrounded — especially with
  * Document Picture-in-Picture, where the main document is still `hidden`.
+ * CSH-MESH-7/8: wake lock only while hidden or PiP is open.
  */
 export function useCallDocumentKeepalive(
   active: boolean,
@@ -50,7 +54,15 @@ export function useCallDocumentKeepalive(
       audioContext = null;
     };
 
+    const onWakeLockReleased = () => {
+      wakeLock = null;
+      if (active && (document.hidden || documentPipOpen)) {
+        void requestWakeLock();
+      }
+    };
+
     const requestWakeLock = async () => {
+      if (!document.hidden && !documentPipOpen) return;
       try {
         const nav = navigator as Navigator & {
           wakeLock?: {
@@ -59,6 +71,7 @@ export function useCallDocumentKeepalive(
         };
         if (nav.wakeLock?.request) {
           wakeLock = await nav.wakeLock.request('screen');
+          wakeLock.addEventListener?.('release', onWakeLockReleased);
         }
       } catch {
         // unsupported or denied
@@ -66,31 +79,37 @@ export function useCallDocumentKeepalive(
     };
 
     const releaseWakeLock = () => {
+      wakeLock?.removeEventListener?.('release', onWakeLockReleased);
       void wakeLock?.release().catch(() => undefined);
       wakeLock = null;
     };
 
-    const onVisibility = () => {
-      if (document.hidden || documentPipOpen) {
+    const syncBackgroundKeepalive = () => {
+      const backgrounded = document.hidden || documentPipOpen;
+      if (backgrounded) {
         startSilentKeepalive();
         void audioContext?.resume();
+        void requestWakeLock();
+        void resumeCallPlayback();
         return;
       }
-      void requestWakeLock();
-      void audioContext?.resume();
+      stopSilentKeepalive();
+      releaseWakeLock();
+      void resumeCallPlayback();
     };
 
-    void requestWakeLock();
-    if (document.hidden || documentPipOpen) {
-      startSilentKeepalive();
-    }
-
-    document.addEventListener('visibilitychange', onVisibility);
+    syncBackgroundKeepalive();
+    document.addEventListener('visibilitychange', syncBackgroundKeepalive);
 
     return () => {
-      document.removeEventListener('visibilitychange', onVisibility);
+      document.removeEventListener('visibilitychange', syncBackgroundKeepalive);
       stopSilentKeepalive();
       releaseWakeLock();
     };
+  }, [active, documentPipOpen]);
+
+  useEffect(() => {
+    if (!active) return;
+    void resumeCallPlayback();
   }, [active, documentPipOpen]);
 }

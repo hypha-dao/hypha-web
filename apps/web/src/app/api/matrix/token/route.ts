@@ -6,6 +6,7 @@ import {
   getDecoratedPrivyId,
   getLinkByPrivyUserId,
   getAdminUserNameAction,
+  MATRIX_ACCESS_TOKEN_TTL_SEC,
   MatrixSharedSecret,
   updateEncryptedAccessTokenAction,
 } from '@hypha-platform/core/server';
@@ -19,6 +20,26 @@ const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
 const MATRIX_HOMESERVER_URL = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL;
 const ADMIN_BASE_NAME = 'hypha_admin';
 const LEGACY_SHARED_SECRET_DEVICE_ID = 'shared_secret_registration';
+
+function buildMatrixTokenResponse(fields: {
+  accessToken: string;
+  userId: string;
+  deviceId?: string | null;
+  expiresInSec?: number;
+}) {
+  return NextResponse.json({
+    accessToken: fields.accessToken,
+    userId: fields.userId,
+    homeserverUrl: MATRIX_HOMESERVER_URL,
+    deviceId: fields.deviceId ?? undefined,
+    ...(typeof fields.expiresInSec === 'number'
+      ? { expiresInSec: fields.expiresInSec }
+      : {}),
+    elementConfig: {
+      theme: 'dark',
+    },
+  });
+}
 
 function validateEnvVars() {
   if (!PRIVY_APP_ID || !PRIVY_APP_SECRET || !MATRIX_HOMESERVER_URL) {
@@ -206,14 +227,10 @@ export async function GET(request: NextRequest) {
         hasValidToken &&
         existing.deviceId !== LEGACY_SHARED_SECRET_DEVICE_ID
       ) {
-        return NextResponse.json({
+        return buildMatrixTokenResponse({
           accessToken,
           userId: existing.matrixUserId,
-          homeserverUrl: MATRIX_HOMESERVER_URL,
           deviceId: existing.deviceId,
-          elementConfig: {
-            theme: 'dark',
-          },
         });
       } else {
         const adminMatrixUsername = await getAdminMatrixUserName(environment);
@@ -250,14 +267,11 @@ export async function GET(request: NextRequest) {
               { authToken },
             );
 
-            return NextResponse.json({
+            return buildMatrixTokenResponse({
               accessToken: decryptMatrixToken(encryptedAccessToken),
               userId: matrixUserId,
-              homeserverUrl: MATRIX_HOMESERVER_URL,
               deviceId,
-              elementConfig: {
-                theme: 'dark',
-              },
+              expiresInSec: MATRIX_ACCESS_TOKEN_TTL_SEC,
             });
           }
 
@@ -317,14 +331,11 @@ export async function GET(request: NextRequest) {
           { authToken },
         );
 
-        return NextResponse.json({
+        return buildMatrixTokenResponse({
           accessToken: decryptMatrixToken(encryptedAccessToken),
           userId,
-          homeserverUrl: MATRIX_HOMESERVER_URL,
           deviceId,
-          elementConfig: {
-            theme: 'dark',
-          },
+          expiresInSec: MATRIX_ACCESS_TOKEN_TTL_SEC,
         });
       }
 
@@ -342,14 +353,11 @@ export async function GET(request: NextRequest) {
       { authToken },
     );
 
-    return NextResponse.json({
+    return buildMatrixTokenResponse({
       accessToken: decryptMatrixToken(encryptedAccessToken),
       userId: matrixUserId,
-      homeserverUrl: MATRIX_HOMESERVER_URL,
       deviceId,
-      elementConfig: {
-        theme: 'dark',
-      },
+      expiresInSec: MATRIX_ACCESS_TOKEN_TTL_SEC,
     });
   } catch (error) {
     const correlationId =

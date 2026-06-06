@@ -14,6 +14,9 @@ export type MatrixUserLink = {
   tokenExpiresAt: Date | null;
 };
 
+/** Default Matrix access token lifetime (seconds) when homeserver omits expires_in. */
+export const MATRIX_ACCESS_TOKEN_TTL_SEC = 3600;
+
 export interface CreateMatrixUserLinkInput {
   environment: Environment;
   privyUserId: string;

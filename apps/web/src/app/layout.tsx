@@ -376,6 +376,7 @@ export default async function RootLayout({
                           privacyPolicyLabel={footerPrivacyPolicyLabel}
                         />
                       </PanelWrapLayout>
+                      {/* Outside capture root so tab screen share excludes the floating dock. */}
                       {humanChatEnabled && <ConnectedGlobalCallDock />}
                     </GlobalCallDockProvider>
                   </PanelProviders>

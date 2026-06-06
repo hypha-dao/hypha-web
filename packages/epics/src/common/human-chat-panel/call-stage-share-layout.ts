@@ -39,6 +39,18 @@ export function hasWarmingRemoteShareFeed(feed: CallFeed): boolean {
   });
 }
 
+/** Remote share feed with a video track that can be bound (includes WebRTC-warming tracks). */
+export function isRenderableRemoteShareFeed(feed: CallFeed): boolean {
+  if (feed.isLocal() || feed.isVideoMuted()) return false;
+  const stream = feed.stream;
+  if (!stream) return false;
+  return stream.getVideoTracks().some((track: MediaStreamTrack) => {
+    if (!track.enabled) return false;
+    const state = track.readyState as string;
+    return state === 'live' || state === 'new';
+  });
+}
+
 export function resolveCallStageShareLayout(args: {
   rawShareFeeds: CallFeed[];
   isScreensharing: boolean;
@@ -46,8 +58,7 @@ export function resolveCallStageShareLayout(args: {
 }): CallStageShareLayoutState {
   const { rawShareFeeds, isScreensharing, isVideoCall } = args;
 
-  const liveShareFeeds = rawShareFeeds.filter(isLiveUnmutedShareFeed);
-  const shareFeeds = liveShareFeeds.filter((feed) => !feed.isLocal());
+  const shareFeeds = rawShareFeeds.filter(isRenderableRemoteShareFeed);
 
   /**
    * Trust hook/SDK screenshare flag when no remote live share is visible — covers
@@ -55,12 +66,15 @@ export function resolveCallStageShareLayout(args: {
    */
   const localShareActive = isScreensharing && shareFeeds.length === 0;
 
+  /** Remote feed object exists but Matrix has not attached a video track yet. */
   const hasPendingRemoteShare =
     isVideoCall &&
     shareFeeds.length === 0 &&
     rawShareFeeds.some(
       (feed) =>
-        hasWarmingRemoteShareFeed(feed) && !isLiveUnmutedShareFeed(feed),
+        !feed.isLocal() &&
+        !feed.isVideoMuted() &&
+        (!feed.stream || feed.stream.getVideoTracks().length === 0),
     );
 
   const presenterShareOnly = localShareActive && shareFeeds.length === 0;
