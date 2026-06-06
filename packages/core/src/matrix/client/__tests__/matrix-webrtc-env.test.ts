@@ -9,7 +9,15 @@ import {
 
 describe('matrixWebRtcIceCandidatePoolSizeFromEnv', () => {
   it('defaults to 4 when env is unset', () => {
-    expect(matrixWebRtcIceCandidatePoolSizeFromEnv()).toBe(4);
+    const key = 'NEXT_PUBLIC_MATRIX_WEBRTC_ICE_POOL_SIZE';
+    const prev = process.env[key];
+    delete process.env[key];
+    try {
+      expect(matrixWebRtcIceCandidatePoolSizeFromEnv()).toBe(4);
+    } finally {
+      if (prev === undefined) delete process.env[key];
+      else process.env[key] = prev;
+    }
   });
 });
 
