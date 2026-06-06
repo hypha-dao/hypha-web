@@ -43,7 +43,10 @@ export async function GET(request: NextRequest) {
     }
 
     const environment = determineEnvironment(request.url);
-    const callerAccess = await resolveMatrixAccessToken(environment, privyUserId);
+    const callerAccess = await resolveMatrixAccessToken(
+      environment,
+      privyUserId,
+    );
     if (!callerAccess) {
       return NextResponse.json(
         { error: 'Matrix session unavailable for caller' },
