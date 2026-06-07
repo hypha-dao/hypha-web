@@ -308,6 +308,7 @@ Browser console (filter `hypha.group_call`): look for `turn_probe` with `turnCre
 | `uris` present but calls still fail | Firewall blocking UDP 49152–65535; wrong `external-ip` |
 | coturn runs but only on 127.0.0.1 | Set `listening-ip=0.0.0.0`, restart coturn |
 | 401 on turnServer with valid token | Token from wrong homeserver; clock skew; Dendrite auth issue |
+| **429 / M_LIMIT_EXCEEDED** on `turnServer` | Dendrite `client_api.rate_limiting` too strict — raise threshold/cooloff or exempt VoIP; hard-refresh client after fix |
 | STUN works, TURN auth fails | `turn_shared_secret` ≠ coturn `static-auth-secret` |
 | Banner still shows after server fix | Hard-refresh app; leave and rejoin call; check Hypha `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` points to this host |
 
@@ -322,6 +323,20 @@ journalctl -u coturn -n 100 --no-pager
 ```bash
 journalctl -u dendrite -n 100 --no-pager
 ```
+
+### Rate limiting (HTTP 429 on `/voip/turnServer`)
+
+If Safari/Chrome console shows `M_LIMIT_EXCEEDED` on `turnServer`, Dendrite is throttling TURN credential fetches. In `dendrite.yaml` under `client_api.rate_limiting`, consider raising limits for production VoIP (example — tune to your traffic):
+
+```yaml
+client_api:
+  rate_limiting:
+    enabled: true
+    threshold: 60
+    cooloff_ms: 500
+```
+
+Restart Dendrite after changes. Users should hard-refresh Hypha and rejoin the call once rate limits are relaxed.
 
 ### Rollback
 

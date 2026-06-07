@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MatrixClient } from 'matrix-js-sdk';
 import {
   TURN_READINESS_CHECK_TIMEOUT_MS,
+  TURN_READINESS_RATE_LIMIT_BACKOFF_MS,
   TURN_READINESS_RETRY_MS,
   evaluateMatrixTurnReadiness,
+  resetMatrixTurnReadinessThrottleForTests,
 } from '../matrix-turn-readiness';
 
 function mockClient(overrides: Partial<MatrixClient> = {}): MatrixClient {
@@ -25,10 +27,12 @@ function mockClient(overrides: Partial<MatrixClient> = {}): MatrixClient {
 describe('evaluateMatrixTurnReadiness', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    resetMatrixTurnReadinessThrottleForTests();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    resetMatrixTurnReadinessThrottleForTests();
   });
 
   it('marks TURN available when creds and relay URIs exist on first attempt', async () => {
@@ -100,6 +104,44 @@ describe('evaluateMatrixTurnReadiness', () => {
     expect(checkTurnServers).toHaveBeenCalledTimes(2);
     expect(readiness.turnCredsOk).toBe(false);
     expect(readiness.turnServerUnavailable).toBe(true);
+  });
+
+  it('does not retry when checkTurnServers is rate limited', async () => {
+    const rateLimitErr = Object.assign(new Error('[429] M_LIMIT_EXCEEDED'), {
+      httpStatus: 429,
+      errcode: 'M_LIMIT_EXCEEDED',
+    });
+    const checkTurnServers = vi.fn(async () => {
+      throw rateLimitErr;
+    });
+    const readinessPromise = evaluateMatrixTurnReadiness(
+      mockClient({
+        checkTurnServers,
+        getTurnServers: vi.fn(() => []),
+      }),
+    );
+    await vi.runAllTimersAsync();
+    const readiness = await readinessPromise;
+    expect(checkTurnServers).toHaveBeenCalledTimes(1);
+    expect(readiness.turnCredsOk).toBe(false);
+    expect(readiness.turnServerUnavailable).toBe(true);
+
+    checkTurnServers.mockClear();
+    const secondPromise = evaluateMatrixTurnReadiness(
+      mockClient({ checkTurnServers }),
+    );
+    await vi.runAllTimersAsync();
+    await secondPromise;
+    expect(checkTurnServers).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(TURN_READINESS_RATE_LIMIT_BACKOFF_MS);
+    checkTurnServers.mockResolvedValue(true);
+    const thirdPromise = evaluateMatrixTurnReadiness(
+      mockClient({ checkTurnServers }),
+    );
+    await vi.runAllTimersAsync();
+    await thirdPromise;
+    expect(checkTurnServers).toHaveBeenCalledTimes(1);
   });
 
   it('retries when checkTurnServers hangs past the per-call timeout', async () => {
