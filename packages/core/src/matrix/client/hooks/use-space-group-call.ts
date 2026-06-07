@@ -32,7 +32,10 @@ import {
   attachGroupCallWebRtcDiagnostics,
   probeMatrixTurnServerReadiness,
 } from './group-call-webrtc-diagnostics';
-import { evaluateMatrixTurnReadiness } from './matrix-turn-readiness';
+import {
+  TURN_READINESS_MIN_FETCH_INTERVAL_MS,
+  evaluateMatrixTurnReadiness,
+} from './matrix-turn-readiness';
 import { scheduleMatrixTurnRefresh } from './matrix-turn-refresh';
 import {
   applyCallThumbnailReceiverDownscale,
@@ -642,6 +645,8 @@ export function useSpaceGroupCall(
   const remoteMediaRecoverRequestedRef = useRef(false);
   const remoteMediaRecoverAttemptedRef = useRef(false);
   const remoteMediaRecoverInFlightRef = useRef(false);
+  /** Throttle TURN probes during remote-media stall (avoids Dendrite 429 on /voip/turnServer). */
+  const lastStallTurnProbeAtRef = useRef(0);
   const outboundVideoOrientationProcessedRef = useRef<Set<string>>(new Set());
   const outboundVideoOrientationDisposersRef = useRef<Array<() => void>>([]);
   const recordingGenerationRef = useRef(0);
@@ -1373,6 +1378,7 @@ export function useSpaceGroupCall(
       remoteMediaRecoverRequestedRef.current = false;
       remoteMediaRecoverAttemptedRef.current = false;
       remoteMediaRecoverInFlightRef.current = false;
+      lastStallTurnProbeAtRef.current = 0;
       setIsCallRecovering(false);
       setRemoteMediaStall(false);
       setRemoteMediaWarming(false);
@@ -1814,7 +1820,12 @@ export function useSpaceGroupCall(
        * the stalled side as well as from ParticipantsChanged/room-state bumps.
        */
       nudgeGroupCallPlaceOutgoing(gc);
-      if (client) {
+      if (
+        client &&
+        now - lastStallTurnProbeAtRef.current >=
+          TURN_READINESS_MIN_FETCH_INTERVAL_MS
+      ) {
+        lastStallTurnProbeAtRef.current = now;
         const turnEpoch = joinEpochRef.current;
         void evaluateMatrixTurnReadiness(client).then((readiness) => {
           applyTurnReadinessState(readiness.turnServerUnavailable, turnEpoch);

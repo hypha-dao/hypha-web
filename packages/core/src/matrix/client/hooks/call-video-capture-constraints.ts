@@ -3,7 +3,7 @@
  * Hypha patches it for the call session to request 720p capture (WCUX-QUALITY-1).
  */
 
-import { isIOSTouchDevice } from './screenshare-capture';
+import { isIOSTouchDevice, isWebKitBrowser } from './screenshare-capture';
 
 export const MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
   width: { ideal: 1280, max: 1920 },
@@ -12,15 +12,18 @@ export const MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
   facingMode: 'user',
 };
 
-/** iPad/iPhone front cameras reject aggressive width/height caps — keep facingMode only. */
-export const IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS: MediaTrackConstraints =
-  {
-    facingMode: 'user',
-  };
+/** WebKit front cameras reject aggressive width/height caps — keep facingMode only. */
+export const WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
+  facingMode: 'user',
+};
+
+/** @deprecated Use {@link WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS}. */
+export const IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS =
+  WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS;
 
 export function resolveMatrixCameraVideoConstraints(): MediaTrackConstraints {
-  return isIOSTouchDevice()
-    ? IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS
+  return isIOSTouchDevice() || isWebKitBrowser()
+    ? WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS
     : MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS;
 }
 
