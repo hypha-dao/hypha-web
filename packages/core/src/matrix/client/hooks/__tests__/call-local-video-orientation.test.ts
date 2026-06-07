@@ -44,7 +44,7 @@ describe('call-local-video-orientation', () => {
     ).toBe(false);
   });
 
-  it('skips canvas outbound correction on macOS Safari', () => {
+  it('skips canvas outbound correction (disabled globally)', () => {
     vi.stubGlobal('navigator', {
       userAgent:
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
