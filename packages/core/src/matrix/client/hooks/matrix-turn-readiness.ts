@@ -20,7 +20,28 @@ export type MatrixTurnReadiness = {
  * Fetches/refreshes TURN credentials and summarizes ICE servers for WebRTC.
  * Does not log — callers emit telemetry or update UI state.
  */
-const TURN_READINESS_RETRY_MS = 400;
+export const TURN_READINESS_RETRY_MS = 400;
+export const TURN_READINESS_CHECK_TIMEOUT_MS = 10_000;
+
+async function checkTurnServersWithTimeout(
+  client: MatrixClient,
+): Promise<boolean> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const result = await Promise.race([
+      client.checkTurnServers(),
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error('checkTurnServers timed out')),
+          TURN_READINESS_CHECK_TIMEOUT_MS,
+        );
+      }),
+    ]);
+    return result === true;
+  } finally {
+    if (timeoutId != null) clearTimeout(timeoutId);
+  }
+}
 
 export async function evaluateMatrixTurnReadiness(
   client: MatrixClient,
@@ -29,7 +50,7 @@ export async function evaluateMatrixTurnReadiness(
   let turnCredsOk = false;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      turnCredsOk = (await client.checkTurnServers()) === true;
+      turnCredsOk = await checkTurnServersWithTimeout(client);
       if (turnCredsOk) break;
     } catch {
       turnCredsOk = false;
