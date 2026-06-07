@@ -13,14 +13,17 @@ export const MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 };
 
 /** WebKit front cameras reject aggressive width/height caps — keep facingMode only. */
-export const IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS: MediaTrackConstraints =
-  {
-    facingMode: 'user',
-  };
+export const WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
+  facingMode: 'user',
+};
+
+/** @deprecated Use {@link WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS}. */
+export const IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS =
+  WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS;
 
 export function resolveMatrixCameraVideoConstraints(): MediaTrackConstraints {
   return isIOSTouchDevice() || isWebKitBrowser()
-    ? IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS
+    ? WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS
     : MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS;
 }
 

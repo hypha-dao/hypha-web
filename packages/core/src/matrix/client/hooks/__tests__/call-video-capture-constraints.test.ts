@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
+  WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
   MATRIX_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
   installMatrixCameraCaptureConstraints,
   mergeMatrixCameraVideoConstraints,
@@ -27,7 +27,7 @@ describe('resolveMatrixCameraVideoConstraints', () => {
       maxTouchPoints: 5,
     });
     expect(resolveMatrixCameraVideoConstraints()).toEqual(
-      IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
+      WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
     );
     vi.unstubAllGlobals();
   });
@@ -38,7 +38,7 @@ describe('resolveMatrixCameraVideoConstraints', () => {
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
     });
     expect(resolveMatrixCameraVideoConstraints()).toEqual(
-      IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
+      WEBKIT_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
     );
     vi.unstubAllGlobals();
   });
