@@ -2761,8 +2761,8 @@ const FeedContent = ({
   }, [liveVideoTrack?.id, streamBindVersion]);
 
   const showVideoElement = hasVideo && !warmingVideoTrack;
-  /** Audio scrim only for true audio-only tiles — not while camera video is warming up. */
-  const showAudioScrim = !showVideoElement;
+  /** Avatar until video paints — avoids black tiles while remote/local tracks warm up. */
+  const showAudioScrim = !showVideoElement || !videoSurfaceReady;
   const showParticipantVideoLabel = showVideoElement && !isPip;
 
   useEffect(() => {

@@ -45,12 +45,21 @@ export function resolveCallFeedLiveVideoTrack(
       null
     );
   }
-  return (
-    tracks.find((track) => track.readyState === 'live' && !track.muted) ??
-    tracks.find((track) => track.readyState === 'live') ??
-    tracks.find((track) => (track.readyState as string) === 'new') ??
-    null
+  const isLocal = isLocalCallFeedForTile(feed, options?.currentUserId);
+  const liveUnmuted = tracks.find(
+    (track) => track.readyState === 'live' && !track.muted,
   );
+  if (liveUnmuted) return liveUnmuted;
+  /**
+   * Local camera (Safari/iOS) may stay `muted: true` until the first frame — bind
+   * early so `<video>` can paint. Remote tracks in that state show avatar via
+   * `hasWarmingCallFeedVideoTrack` instead of a black tile.
+   */
+  if (isLocal) {
+    const liveMuted = tracks.find((track) => track.readyState === 'live');
+    if (liveMuted) return liveMuted;
+  }
+  return tracks.find((track) => (track.readyState as string) === 'new') ?? null;
 }
 
 /**

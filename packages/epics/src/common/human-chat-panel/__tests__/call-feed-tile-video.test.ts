@@ -60,10 +60,23 @@ describe('resolveCallFeedLiveVideoTrack', () => {
     );
   });
 
-  it('binds live muted camera tracks before the first frame (iOS warming)', () => {
+  it('binds live muted local camera tracks before the first frame (iOS warming)', () => {
     const track = mockTrack({ muted: true });
-    expect(resolveCallFeedLiveVideoTrack(mockFeed({ tracks: [track] }))).toBe(
-      track,
+    expect(
+      resolveCallFeedLiveVideoTrack(
+        mockFeed({ tracks: [track], local: true, userId: '@me:hs' }),
+        { currentUserId: '@me:hs' },
+      ),
+    ).toBe(track);
+  });
+
+  it('does not bind live muted remote camera tracks before the first frame', () => {
+    const track = mockTrack({ muted: true });
+    expect(
+      resolveCallFeedLiveVideoTrack(mockFeed({ tracks: [track] })),
+    ).toBeNull();
+    expect(hasWarmingCallFeedVideoTrack(mockFeed({ tracks: [track] }))).toBe(
+      true,
     );
   });
 
