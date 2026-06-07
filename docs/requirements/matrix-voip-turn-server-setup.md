@@ -124,3 +124,4 @@ After login in Hypha (devtools console, filter **`hypha.group_call`** if telemet
 - [Matrix Client-Server API — `/voip/turnServer`](https://spec.matrix.org/latest/client-server-api/#get_matrixclientv3voipturnserver)
 - [voice-video-call-phase-0-runbook.md](./voice-video-call-phase-0-runbook.md) — checklist table
 - [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md) — SDK options overview
+- [matrix-turn-hostinger-runbook.md](../operations/matrix-turn-hostinger-runbook.md) — production Hostinger VPS (Dendrite + coturn)
