@@ -5,6 +5,7 @@ import {
   buildDisplayMediaConstraints,
   clearOrphanedMatrixScreenshareStreams,
   isIOSTouchDevice,
+  isWebKitBrowser,
   resolveMatrixScreenshareCaptureOpts,
   screenshareStreamHasTabAudio,
   screenshareStreamIsBrowserTab,
@@ -29,6 +30,24 @@ describe('screenshare capture opts', () => {
     });
     expect(resolveMatrixScreenshareCaptureOpts()).toEqual({ audio: false });
     expect(isIOSTouchDevice()).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
+  it('detects macOS Safari as WebKit', () => {
+    vi.stubGlobal('navigator', {
+      userAgent:
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+    });
+    expect(isWebKitBrowser()).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
+  it('does not treat Chrome as WebKit', () => {
+    vi.stubGlobal('navigator', {
+      userAgent:
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    });
+    expect(isWebKitBrowser()).toBe(false);
     vi.unstubAllGlobals();
   });
 });

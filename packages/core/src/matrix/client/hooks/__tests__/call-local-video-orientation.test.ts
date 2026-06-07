@@ -44,7 +44,7 @@ describe('call-local-video-orientation', () => {
     ).toBe(false);
   });
 
-  it('corrects outbound video on WebKit user-facing tracks', () => {
+  it('skips canvas outbound correction on macOS Safari', () => {
     vi.stubGlobal('navigator', {
       userAgent:
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
@@ -54,7 +54,7 @@ describe('call-local-video-orientation', () => {
       readyState: 'live',
       getSettings: () => ({ facingMode: 'user' }),
     } as MediaStreamTrack;
-    expect(shouldCorrectOutboundUserFacingVideoTrack(track)).toBe(true);
+    expect(shouldCorrectOutboundUserFacingVideoTrack(track)).toBe(false);
     vi.unstubAllGlobals();
   });
 

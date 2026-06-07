@@ -20,15 +20,25 @@ export type MatrixTurnReadiness = {
  * Fetches/refreshes TURN credentials and summarizes ICE servers for WebRTC.
  * Does not log — callers emit telemetry or update UI state.
  */
+const TURN_READINESS_RETRY_MS = 400;
+
 export async function evaluateMatrixTurnReadiness(
   client: MatrixClient,
 ): Promise<MatrixTurnReadiness> {
   const now = Date.now();
   let turnCredsOk = false;
-  try {
-    turnCredsOk = (await client.checkTurnServers()) === true;
-  } catch {
-    turnCredsOk = false;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      turnCredsOk = (await client.checkTurnServers()) === true;
+      if (turnCredsOk) break;
+    } catch {
+      turnCredsOk = false;
+    }
+    if (attempt === 0 && !turnCredsOk) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, TURN_READINESS_RETRY_MS),
+      );
+    }
   }
 
   const expiry = client.getTurnServersExpiry();

@@ -31,6 +31,17 @@ describe('resolveMatrixCameraVideoConstraints', () => {
     );
     vi.unstubAllGlobals();
   });
+
+  it('uses minimal facingMode constraints on macOS Safari', () => {
+    vi.stubGlobal('navigator', {
+      userAgent:
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+    });
+    expect(resolveMatrixCameraVideoConstraints()).toEqual(
+      IOS_TOUCH_CAMERA_CAPTURE_VIDEO_CONSTRAINTS,
+    );
+    vi.unstubAllGlobals();
+  });
 });
 
 describe('mergeMatrixCameraVideoConstraints', () => {

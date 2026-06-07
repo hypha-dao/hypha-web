@@ -19,6 +19,16 @@ export function isIOSTouchDevice(): boolean {
   return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
 }
 
+/** Safari / WebKit (macOS, iOS) — excludes Chromium-based browsers on Apple platforms. */
+export function isWebKitBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  return (
+    /AppleWebKit/i.test(ua) &&
+    !/CriOS|FxiOS|EdgiOS|Chrome|Chromium|Edg\//i.test(ua)
+  );
+}
+
 /** Matrix `setScreensharingEnabled` opts — iOS has no tab/system display audio. */
 export function resolveMatrixScreenshareCaptureOpts(): IScreensharingOpts {
   if (isIOSTouchDevice()) {
