@@ -16,19 +16,16 @@ export function isUserFacingCallVideoTrack(
   return true;
 }
 
-import { isIOSTouchDevice, isWebKitBrowser } from './screenshare-capture';
-
 /**
  * Whether to publish a canvas-flipped clone so remote peers see non-mirrored video.
- * Disabled on all WebKit/Safari — `canvas.captureStream` breaks local preview and
- * outbound publish; local preview stays mirrored via CSS instead.
+ * Globally disabled — `canvas.captureStream` breaks WebKit preview/publish (macOS
+ * Safari black tile). All browsers publish the native camera track; local preview
+ * stays mirrored via CSS.
  */
 export function shouldCorrectOutboundUserFacingVideoTrack(
   track: MediaStreamTrack,
 ): boolean {
   if (!isUserFacingCallVideoTrack(track)) return false;
-  if (typeof navigator === 'undefined') return false;
-  if (isIOSTouchDevice() || isWebKitBrowser()) return false;
   return false;
 }
 
