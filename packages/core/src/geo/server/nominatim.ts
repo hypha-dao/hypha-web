@@ -9,7 +9,9 @@ import type { GeocodeResult } from '../validation';
 
 const NOMINATIM_SEARCH_URL = 'https://nominatim.openstreetmap.org/search';
 const DEFAULT_LIMIT = 5;
+const MAX_LIMIT = 10;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const MAX_CACHE_ENTRIES = 1_000;
 
 type CacheEntry = {
   expiresAt: number;
@@ -17,6 +19,19 @@ type CacheEntry = {
 };
 
 const geocodeCache = new Map<string, CacheEntry>();
+
+function pruneGeocodeCache(now: number): void {
+  for (const [key, entry] of geocodeCache) {
+    if (entry.expiresAt <= now) {
+      geocodeCache.delete(key);
+    }
+  }
+  while (geocodeCache.size > MAX_CACHE_ENTRIES) {
+    const oldestKey = geocodeCache.keys().next().value;
+    if (!oldestKey) break;
+    geocodeCache.delete(oldestKey);
+  }
+}
 
 function getNominatimUserAgent(): string {
   const fromEnv = process.env.NOMINATIM_USER_AGENT?.trim();
@@ -28,6 +43,8 @@ export async function searchNominatim(
   query: string,
   limit = DEFAULT_LIMIT,
 ): Promise<GeocodeResult[]> {
+  const now = Date.now();
+  pruneGeocodeCache(now);
   const normalizedQuery = normalizeGeocodeQuery(query);
   if (normalizedQuery.length < 2) {
     return [];
@@ -35,7 +52,7 @@ export async function searchNominatim(
 
   const cacheKey = `${normalizedQuery}:${limit}`;
   const cached = geocodeCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
+  if (cached && cached.expiresAt > now) {
     return cached.results;
   }
 
@@ -61,7 +78,7 @@ export async function searchNominatim(
 
   geocodeCache.set(cacheKey, {
     results,
-    expiresAt: Date.now() + CACHE_TTL_MS,
+    expiresAt: now + CACHE_TTL_MS,
   });
 
   return results;
