@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
-import type { GeocodeResult } from '../validation';
+import { geocodeResponseSchema, type GeocodeResult } from '../validation';
+
+export type GeocodeSearchError = 'request_failed' | 'network_failed' | null;
 
 type UseGeocodeSearchOptions = {
   debounceMs?: number;
@@ -13,7 +15,7 @@ export function useGeocodeSearch({
   const [query, setQuery] = React.useState('');
   const [results, setResults] = React.useState<GeocodeResult[]>([]);
   const [isSearching, setIsSearching] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<GeocodeSearchError>(null);
 
   React.useEffect(() => {
     const trimmed = query.trim();
@@ -36,7 +38,9 @@ export function useGeocodeSearch({
           signal: controller.signal,
         });
         if (!response.ok) {
-          throw new Error('Geocode request failed');
+          setResults([]);
+          setError('request_failed');
+          return;
         }
         const payload = (await response.json()) as {
           results?: GeocodeResult[];
@@ -45,9 +49,7 @@ export function useGeocodeSearch({
       } catch (fetchError) {
         if (controller.signal.aborted) return;
         setResults([]);
-        setError(
-          fetchError instanceof Error ? fetchError.message : 'Geocode failed',
-        );
+        setError('network_failed');
       } finally {
         if (!controller.signal.aborted) {
           setIsSearching(false);
