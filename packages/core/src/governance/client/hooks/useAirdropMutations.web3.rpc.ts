@@ -59,39 +59,49 @@ export const useAirdropMutationsWeb3Rpc = ({
         getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
       );
 
+      // Decimals only depend on the token, so resolve each unique token once
+      // (airdrops share a single token across all recipients).
+      const decimalsByToken = new Map<string, number>();
+      await Promise.all(
+        [...new Set(arg.airdrop.map((a) => a.token.toLowerCase()))].map(
+          async (token) => {
+            decimalsByToken.set(token, await getTokenDecimals(token));
+          },
+        ),
+      );
+
       // Each allocation becomes one mint or transfer action executed by the
       // space Executor when the proposal passes. The Executor runs them all in a
       // single, atomic batch (any failure reverts everything).
-      const transactions = await Promise.all(
-        arg.airdrop.map(async (allocation) => {
-          const decimals = await getTokenDecimals(allocation.token);
-          const amount = parseUnits(allocation.amount, decimals);
-          const target = allocation.token as `0x${string}`;
-          const recipient = allocation.recipient as `0x${string}`;
+      const transactions = arg.airdrop.map((allocation) => {
+        const decimals =
+          decimalsByToken.get(allocation.token.toLowerCase()) ?? 18;
+        const amount = parseUnits(allocation.amount, decimals);
+        const target = allocation.token as `0x${string}`;
+        const recipient = allocation.recipient as `0x${string}`;
 
-          if (allocation.method === 'mint') {
-            return {
-              target,
-              value: BigInt(0),
-              data: encodeFunctionData({
-                abi: decayingSpaceTokenAbi,
-                functionName: 'mint',
-                args: [recipient, amount],
-              }),
-            } as const;
-          }
-
+        if (allocation.method === 'mint') {
           return {
             target,
             value: BigInt(0),
             data: encodeFunctionData({
-              abi: erc20Abi,
-              functionName: 'transfer',
+              abi: decayingSpaceTokenAbi,
+              functionName: 'mint',
               args: [recipient, amount],
             }),
           } as const;
-        }),
-      );
+        }
+
+        return {
+          target,
+          value: BigInt(0),
+          data: encodeFunctionData({
+            abi: erc20Abi,
+            functionName: 'transfer',
+            args: [recipient, amount],
+          }),
+        } as const;
+      });
 
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),

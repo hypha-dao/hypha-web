@@ -7,28 +7,32 @@ import { ETH_ADDRESS_REGEX } from '../components/common/recipient-field.validati
  * The on-chain contracts impose NO hard limit: `DAOProposalsImplementation`
  * only requires at least one transaction, and the per-space `Executor` runs the
  * whole batch in an unbounded loop inside a single transaction
- * (`Executor.executeTransactions`). The only real constraint is block gas — every
- * action is stored on `createProposal` and re-executed sequentially on approval,
- * and a single failing sub-call reverts the entire batch.
+ * (`Executor.executeTransactions`). The real constraints are gas-based:
  *
- * We therefore cap the airdrop at a conservative, gas-safe number of recipients
- * so both proposal creation and execution comfortably fit within a Base block.
+ *  - `createProposal` stores every `(target, value, data)` action on-chain.
+ *    A transfer/mint action stores ~68 bytes of calldata plus struct fields,
+ *    costing roughly ~80–100k gas each.
+ *  - On approval, the Executor re-runs all actions in ONE atomic transaction:
+ *    an ERC-20 `transfer` is ~50–65k gas and a space-token `mint` is ~80–120k
+ *    gas, plus a small per-iteration loop overhead.
+ *  - A single failing sub-call reverts the entire batch.
+ *
+ * On Base (block gas limit well above ~100M), even 50 mint actions is roughly
+ * ~6M gas to execute and ~5M gas to create — comfortably within a single block
+ * and a single transaction, with large headroom. We cap at 50 to keep the form
+ * responsive and the all-or-nothing batch easy to reason about, while leaving a
+ * wide safety margin below any chain limit.
  */
-export const MAX_AIRDROP_RECIPIENTS = 20;
+export const MAX_AIRDROP_RECIPIENTS = 50;
 
 export type AirdropMethod = 'transfer' | 'mint';
 
-/** Single airdrop allocation → one mint or transfer action on execution. */
-export const airdropEntrySchema = z.object({
-  method: z.enum(['transfer', 'mint']),
+/** A single recipient row: who receives tokens and how much. */
+export const airdropRecipientSchema = z.object({
   recipient: z
     .string()
     .min(1, { message: 'Recipient is required' })
     .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
-  token: z.preprocess(
-    (val) => (val === undefined || val === null ? '' : val),
-    z.string().min(1, { message: 'Please select a token' }),
-  ),
   amount: z.preprocess(
     (val) => (val === undefined || val === null ? '' : String(val)),
     z
@@ -44,13 +48,26 @@ export const airdropEntrySchema = z.object({
   ),
 });
 
-export type AirdropEntry = z.infer<typeof airdropEntrySchema>;
+export type AirdropRecipient = z.infer<typeof airdropRecipientSchema>;
 
-export const airdropField = z
-  .array(airdropEntrySchema)
-  .min(1, { message: 'At least one airdrop recipient is required' })
-  .max(MAX_AIRDROP_RECIPIENTS, {
-    message: 'Too many recipients for one airdrop proposal.',
-  });
+/**
+ * The token and method (mint/transfer) are chosen once and apply to every
+ * recipient; only the amount can differ per recipient.
+ */
+export const airdropSchema = z.object({
+  method: z.enum(['transfer', 'mint']),
+  token: z.preprocess(
+    (val) => (val === undefined || val === null ? '' : val),
+    z.string().min(1, { message: 'Please select a token' }),
+  ),
+  recipients: z
+    .array(airdropRecipientSchema)
+    .min(1, { message: 'At least one airdrop recipient is required' })
+    .max(MAX_AIRDROP_RECIPIENTS, {
+      message: 'Too many recipients for one airdrop proposal.',
+    }),
+});
 
-export const schemaAirdrop = z.object({ airdrop: airdropField });
+export type AirdropFormValue = z.infer<typeof airdropSchema>;
+
+export const schemaAirdrop = z.object({ airdrop: airdropSchema });

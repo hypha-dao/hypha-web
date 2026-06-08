@@ -128,6 +128,8 @@
         "description": "Distribuye tokens a uno o varios destinatarios. Elige transferir tokens que ya están en la tesorería de tu espacio o acuñar nuevos tokens creados por tu espacio.",
         "recipientsLabel": "Destinatarios",
         "methodLabel": "Método",
+        "tokenLabel": "Token",
+        "amountLabel": "Cantidad",
         "transfer": "Transferir",
         "mint": "Acuñar",
         "noMintableTokens": "Tu espacio aún no ha creado tokens acuñables. Emite un token primero o usa el método Transferir.",

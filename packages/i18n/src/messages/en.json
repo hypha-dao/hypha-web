@@ -1674,6 +1674,8 @@
         "description": "Distribute tokens to one or more recipients. Choose to transfer tokens already held in your space treasury, or mint new tokens that your space has created.",
         "recipientsLabel": "Recipients",
         "methodLabel": "Method",
+        "tokenLabel": "Token",
+        "amountLabel": "Amount",
         "transfer": "Transfer",
         "mint": "Mint",
         "noMintableTokens": "Your space has not created any mintable tokens yet. Issue a token first, or use the Transfer method.",

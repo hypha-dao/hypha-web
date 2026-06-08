@@ -1672,6 +1672,8 @@
         "description": "Verteilen Sie Tokens an einen oder mehrere Empfänger. Wählen Sie, ob Sie Tokens aus der Schatzkammer Ihres Spaces übertragen oder neue, von Ihrem Space erstellte Tokens prägen möchten.",
         "recipientsLabel": "Empfänger",
         "methodLabel": "Methode",
+        "tokenLabel": "Token",
+        "amountLabel": "Betrag",
         "transfer": "Übertragen",
         "mint": "Prägen",
         "noMintableTokens": "Ihr Space hat noch keine prägbaren Tokens erstellt. Geben Sie zuerst einen Token aus oder verwenden Sie die Methode Übertragen.",

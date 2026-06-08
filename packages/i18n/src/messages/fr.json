@@ -1275,6 +1275,8 @@
         "description": "Distribuez des tokens à un ou plusieurs destinataires. Choisissez de transférer des tokens déjà détenus dans la trésorerie de votre espace ou de frapper de nouveaux tokens créés par votre espace.",
         "recipientsLabel": "Destinataires",
         "methodLabel": "Méthode",
+        "tokenLabel": "Token",
+        "amountLabel": "Montant",
         "transfer": "Transférer",
         "mint": "Frapper",
         "noMintableTokens": "Votre espace n'a pas encore créé de tokens frappables. Émettez d'abord un token ou utilisez la méthode Transférer.",

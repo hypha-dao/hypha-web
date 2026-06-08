@@ -19,7 +19,7 @@ import {
   useScrollToErrors,
 } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
-import { airdropField } from '../../agreements/plugins/airdrop/airdrop.validation';
+import { airdropSchema } from '../../agreements/plugins/airdrop/airdrop.validation';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
@@ -27,7 +27,7 @@ const AIRDROP_RESUBMIT_SEGMENT = 'airdrop';
 
 const fullSchemaCreateAirdropForm = schemaCreateAgreementWeb2
   .extend(createAgreementFiles)
-  .extend({ airdrop: airdropField });
+  .extend({ airdrop: airdropSchema });
 
 type FormValues = z.infer<typeof fullSchemaCreateAirdropForm>;
 
@@ -68,14 +68,16 @@ export const CreateAirdropForm = ({
       attachments: undefined,
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
-      airdrop: [
-        {
-          method: 'transfer',
-          recipient: '',
-          token: '',
-          amount: '',
-        },
-      ],
+      airdrop: {
+        method: 'transfer',
+        token: '',
+        recipients: [
+          {
+            recipient: '',
+            amount: '',
+          },
+        ],
+      },
     },
   });
 
@@ -90,16 +92,19 @@ export const CreateAirdropForm = ({
   useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const handleCreate = async (data: FormValues) => {
-    if (!data.airdrop || data.airdrop.length === 0) {
+    const { method, token, recipients } = data.airdrop ?? {};
+    if (!recipients || recipients.length === 0) {
       console.error('Airdrop recipients are missing');
       return;
     }
 
+    // The token and method are chosen once; expand into one allocation per
+    // recipient so each becomes a single mint/transfer action on execution.
     await createAirdrop({
       ...data,
       spaceId: spaceId as number,
       web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
-      airdrop: data.airdrop.map(({ method, recipient, token, amount }) => ({
+      airdrop: recipients.map(({ recipient, amount }) => ({
         method,
         recipient,
         token: token ?? '',
