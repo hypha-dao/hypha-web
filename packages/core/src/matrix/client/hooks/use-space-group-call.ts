@@ -421,6 +421,47 @@ async function recoverLocalCameraFeed(gc: MatrixSdk.GroupCall): Promise<void> {
   await waitForPublishableLocalVideoTrack(gc, 400);
 }
 
+/**
+ * Video joins can finish with an audio-only local feed when room state was
+ * `m.voice`, `getUserMedia` raced voice-preset refresh, or camera permission
+ * was not warmed before Matrix `initLocalCallFeed`.
+ */
+async function ensureLocalVideoCaptureActive(
+  gc: MatrixSdk.GroupCall,
+  options?: { onCameraAccessBlocked?: (blocked: boolean) => void },
+): Promise<void> {
+  if (!gc.isLocalVideoMuted() && getLocalVideoTrackPresence(gc)) {
+    return;
+  }
+
+  const access = await requestLocalCameraAccess();
+  if (!access.ok) {
+    options?.onCameraAccessBlocked?.(access.reason === 'permission_denied');
+    return;
+  }
+  options?.onCameraAccessBlocked?.(false);
+
+  if (gc.type !== GroupCallType.Video) {
+    const gcSync = gc as unknown as {
+      type: MatrixSdk.GroupCall['type'];
+      sendCallStateEvent(): Promise<void>;
+    };
+    gcSync.type = GroupCallType.Video;
+    try {
+      await gcSync.sendCallStateEvent();
+    } catch {
+      return;
+    }
+  }
+
+  try {
+    await gc.setLocalVideoMuted(false);
+  } catch {
+    return;
+  }
+  await recoverLocalCameraFeed(gc);
+}
+
 async function ensureOutboundLocalVideoOrientationForGroupCall(
   gc: MatrixSdk.GroupCall,
   processedSourceTrackIds: Set<string>,
@@ -2049,6 +2090,10 @@ export function useSpaceGroupCall(
       screenshareFeedCount: gc.screenshareFeeds.length,
       participantDeviceCount: readParticipantsFromGroupCall(gc).count,
       missingRemoteFeedCount,
+      localVideoMuted: gc.isLocalVideoMuted(),
+      localVideoTrackCount:
+        gc.localCallFeed?.stream?.getVideoTracks().length ?? 0,
+      roomGroupCallType: String(gc.type),
     });
   }, [
     client,
@@ -2493,6 +2538,17 @@ export function useSpaceGroupCall(
       const gci = gc as unknown as GroupCallPreEnterMute;
       gci.initWithVideoMuted = kind === 'audio';
       gci.initWithAudioMuted = false;
+      let videoJoinWithCamera = kind === 'video';
+      if (kind === 'video') {
+        const access = await requestLocalCameraAccess();
+        if (!access.ok) {
+          setCameraAccessBlocked(access.reason === 'permission_denied');
+          gci.initWithVideoMuted = true;
+          videoJoinWithCamera = false;
+        } else {
+          setCameraAccessBlocked(false);
+        }
+      }
       /**
        * Refresh stale local member state after hard reloads. If the prior tab died
        * mid-call, old device entries can survive briefly and cause asymmetric media.
@@ -2617,7 +2673,7 @@ export function useSpaceGroupCall(
         return;
       }
 
-      if (kind === 'video' && !gc.isLocalVideoMuted()) {
+      if (videoJoinWithCamera) {
         await waitForLocalVideoTrackPresence(gc, 2500);
       }
       try {
@@ -2630,6 +2686,11 @@ export function useSpaceGroupCall(
        * are live and retry pairwise call placement so remote peers receive A/V.
        */
       try {
+        if (videoJoinWithCamera) {
+          await ensureLocalVideoCaptureActive(gc, {
+            onCameraAccessBlocked: setCameraAccessBlocked,
+          });
+        }
         await ensurePublishedLocalMediaWithOrientation(gc, kind);
         if (kind === 'video' && !gc.isLocalVideoMuted()) {
           await republishLocalMediaToPairwiseCalls(gc, { force: true });

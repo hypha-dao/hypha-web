@@ -58,6 +58,10 @@ export type SpaceGroupCallTelemetryEvent = {
   participantDeviceCount?: number;
   /** Room state lists them in-call but no userMedia CallFeed yet (WebRTC lag / failure). */
   missingRemoteFeedCount?: number;
+  /** Local camera mute at snapshot time (SDK `localCallFeed`). */
+  localVideoMuted?: boolean;
+  localVideoTrackCount?: number;
+  roomGroupCallType?: string;
   waitedMs?: number;
   /** Pairwise `MatrixCall.hangup()` invocations before re-placing outgoing calls. */
   hungUp?: number;
