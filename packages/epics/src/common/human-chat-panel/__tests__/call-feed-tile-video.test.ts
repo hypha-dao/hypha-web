@@ -7,6 +7,8 @@ import {
   isCallFeedVideoSurfaceReady,
   resolveCallFeedLiveVideoTrack,
   resolveCallFeedVideoSurfaceClassName,
+  shouldMarkCallFeedVideoSurfaceReady,
+  shouldPaintCallFeedVideoSurface,
 } from '../call-feed-tile-video';
 
 function mockTrack(args: {
@@ -146,6 +148,37 @@ describe('isCallFeedVideoSurfaceReady', () => {
         readyState: 2,
       }),
     ).toBe(true);
+  });
+});
+
+describe('shouldMarkCallFeedVideoSurfaceReady', () => {
+  it('rejects muted tracks with zero intrinsic dimensions', () => {
+    expect(
+      shouldMarkCallFeedVideoSurfaceReady(
+        {
+          videoWidth: 0,
+          videoHeight: 0,
+          clientWidth: 240,
+          clientHeight: 135,
+          readyState: 2,
+        },
+        { muted: true },
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('shouldPaintCallFeedVideoSurface', () => {
+  it('does not paint remote muted tracks (show avatar instead)', () => {
+    expect(
+      shouldPaintCallFeedVideoSurface({
+        hasVideo: true,
+        warmingVideoTrack: false,
+        videoSurfaceReady: true,
+        liveVideoTrack: mockTrack({ muted: true }),
+        isLocalFeed: false,
+      }),
+    ).toBe(false);
   });
 });
 

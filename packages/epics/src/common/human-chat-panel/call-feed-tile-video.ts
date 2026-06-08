@@ -107,6 +107,43 @@ export function isCallFeedVideoSurfaceReady(
   );
 }
 
+/** Avoid marking a black `<video>` ready when WebRTC track is muted with no frames yet. */
+export function shouldMarkCallFeedVideoSurfaceReady(
+  video: Pick<
+    HTMLVideoElement,
+    'videoWidth' | 'videoHeight' | 'clientWidth' | 'clientHeight' | 'readyState'
+  >,
+  track: Pick<MediaStreamTrack, 'muted'> | null | undefined,
+): boolean {
+  if (!isCallFeedVideoSurfaceReady(video)) return false;
+  if (track?.muted && video.videoWidth <= 0 && video.videoHeight <= 0) {
+    return false;
+  }
+  return true;
+}
+
+/** Hide the `<video>` layer when the track is muted without pixels (show avatar instead). */
+export function shouldPaintCallFeedVideoSurface(options: {
+  hasVideo: boolean;
+  warmingVideoTrack: boolean;
+  videoSurfaceReady: boolean;
+  liveVideoTrack: Pick<MediaStreamTrack, 'muted' | 'readyState'> | null;
+  isLocalFeed: boolean;
+}): boolean {
+  const {
+    hasVideo,
+    warmingVideoTrack,
+    videoSurfaceReady,
+    liveVideoTrack,
+    isLocalFeed,
+  } = options;
+  if (!hasVideo || warmingVideoTrack || !videoSurfaceReady || !liveVideoTrack) {
+    return false;
+  }
+  if (!liveVideoTrack.muted) return true;
+  return isLocalFeed && liveVideoTrack.readyState === 'live';
+}
+
 /** WCUX-QUALITY-3: letterbox instead of upscaling beyond intrinsic frame size. */
 export function resolveCallFeedVideoSurfaceClassName(options: {
   mirrorLocalPreview: boolean;

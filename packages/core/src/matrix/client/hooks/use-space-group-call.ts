@@ -315,10 +315,9 @@ async function restartPairwiseCallsForRemoteUsers(
   gc: MatrixSdk.GroupCall,
   remoteUserIds: readonly string[],
 ): Promise<number> {
-  await republishLocalMediaToPairwiseCalls(gc);
   const hungUp = hangupPairwiseCallsForRemoteUsers(gc, remoteUserIds);
   nudgeGroupCallPlaceOutgoing(gc);
-  await republishLocalMediaToPairwiseCalls(gc);
+  await republishLocalMediaToPairwiseCalls(gc, { force: true });
   return hungUp;
 }
 
@@ -503,7 +502,6 @@ async function ensureLocalCallMediaPublished(
   } catch {
     /* keep call connected if device recovery fails */
   }
-  await republishLocalMediaToPairwiseCalls(gc);
   nudgeGroupCallPlaceOutgoing(gc);
 }
 
@@ -658,6 +656,8 @@ export function useSpaceGroupCall(
   const placeOutgoingPeriodicIntervalRef = useRef<number | null>(null);
   const localMediaBootstrapDebounceRef = useRef<number | null>(null);
   const localMediaBootstrapTimerRefs = useRef<number[]>([]);
+  /** Debounced pairwise republish after `CallsChanged` (avoid stream churn). */
+  const pairwiseRepublishTimerRef = useRef<number | null>(null);
   /**
    * Bumped when starting a join and when the stall watchdog fires — stale
    * `await gc.enter()` must not run success paths after forced cleanup.
@@ -847,6 +847,10 @@ export function useSpaceGroupCall(
     if (localMediaBootstrapDebounceRef.current != null) {
       clearTimeout(localMediaBootstrapDebounceRef.current);
       localMediaBootstrapDebounceRef.current = null;
+    }
+    if (pairwiseRepublishTimerRef.current != null) {
+      clearTimeout(pairwiseRepublishTimerRef.current);
+      pairwiseRepublishTimerRef.current = null;
     }
     if (localMediaBootstrapTimerRefs.current.length > 0) {
       for (const id of localMediaBootstrapTimerRefs.current) {
@@ -2160,8 +2164,16 @@ export function useSpaceGroupCall(
       };
       gc.on(GroupCallEvent.ParticipantsChanged, onParticipantsChanged);
       const onCallsChanged = () => {
-        /** New pairwise session — push warmed local A/V into the peer connection. */
-        scheduleLocalMediaBootstrap(gc);
+        /** New pairwise session — one debounced republish once local A/V has settled. */
+        if (typeof window === 'undefined') return;
+        if (pairwiseRepublishTimerRef.current != null) {
+          clearTimeout(pairwiseRepublishTimerRef.current);
+        }
+        pairwiseRepublishTimerRef.current = window.setTimeout(() => {
+          pairwiseRepublishTimerRef.current = null;
+          if (groupCallRef.current !== gc) return;
+          void republishLocalMediaToPairwiseCalls(gc);
+        }, 1500);
         nudgeGroupCallPlaceOutgoing(gc);
       };
       gc.on(GroupCallEvent.CallsChanged, onCallsChanged);

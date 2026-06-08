@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   hangupPairwiseCallsForRemoteUsers,
   republishLocalMediaToPairwiseCalls,
+  resetPairwiseRepublishFingerprintForTests,
 } from '../call-pairwise-restart';
 
 describe('hangupPairwiseCallsForRemoteUsers', () => {
@@ -46,8 +47,16 @@ describe('hangupPairwiseCallsForRemoteUsers', () => {
 });
 
 describe('republishLocalMediaToPairwiseCalls', () => {
+  beforeEach(() => {
+    resetPairwiseRepublishFingerprintForTests();
+  });
+
   it('pushes the local feed stream into each active MatrixCall', async () => {
-    const track = { kind: 'video' } as MediaStreamTrack;
+    const track = {
+      kind: 'video',
+      id: 'v1',
+      readyState: 'live',
+    } as MediaStreamTrack;
     const stream = {
       id: 'local-stream',
       getTracks: () => [track],
@@ -65,5 +74,31 @@ describe('republishLocalMediaToPairwiseCalls', () => {
 
     await expect(republishLocalMediaToPairwiseCalls(gc)).resolves.toBe(1);
     expect(update).toHaveBeenCalledWith(stream);
+  });
+
+  it('skips duplicate republish for the same stream fingerprint', async () => {
+    const track = {
+      kind: 'video',
+      id: 'v1',
+      readyState: 'live',
+    } as MediaStreamTrack;
+    const stream = {
+      id: 'local-stream',
+      getTracks: () => [track],
+    } as MediaStream;
+    const update = vi.fn().mockResolvedValue(undefined);
+    const gc = {
+      localCallFeed: { stream },
+      forEachCall: (callback: (call: unknown) => void) => {
+        callback({
+          callHasEnded: () => false,
+          updateLocalUsermediaStream: update,
+        });
+      },
+    };
+
+    await republishLocalMediaToPairwiseCalls(gc);
+    await expect(republishLocalMediaToPairwiseCalls(gc)).resolves.toBe(0);
+    expect(update).toHaveBeenCalledTimes(1);
   });
 });

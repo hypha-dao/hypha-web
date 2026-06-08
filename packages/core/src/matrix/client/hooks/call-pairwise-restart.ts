@@ -27,6 +27,21 @@ function forEachGroupCallMatrixCall(
   }
 }
 
+function streamRepublishFingerprint(stream: MediaStream): string {
+  return [
+    stream.id,
+    ...stream
+      .getTracks()
+      .map((track) => `${track.kind}:${track.id}:${track.readyState}`),
+  ].join('|');
+}
+
+let lastPairwiseRepublishFingerprint: string | null = null;
+
+export function resetPairwiseRepublishFingerprintForTests(): void {
+  lastPairwiseRepublishFingerprint = null;
+}
+
 /**
  * Hang up stuck pairwise `MatrixCall` sessions for specific remote users, then
  * let `placeOutgoingCalls()` rebuild WebRTC without leaving the room GroupCall.
@@ -64,10 +79,16 @@ export function hangupPairwiseCallsForRemoteUsers(
  */
 export async function republishLocalMediaToPairwiseCalls(
   gc: unknown,
+  options?: { force?: boolean },
 ): Promise<number> {
   const groupCall = gc as GroupCallCallsLike;
   const stream = groupCall.localCallFeed?.stream ?? null;
   if (!stream || stream.getTracks().length === 0) return 0;
+
+  const fingerprint = streamRepublishFingerprint(stream);
+  if (!options?.force && fingerprint === lastPairwiseRepublishFingerprint) {
+    return 0;
+  }
 
   const tasks: Promise<void>[] = [];
   let updated = 0;
@@ -78,5 +99,8 @@ export async function republishLocalMediaToPairwiseCalls(
     tasks.push(call.updateLocalUsermediaStream(stream).catch(() => undefined));
   });
   await Promise.all(tasks);
+  if (updated > 0) {
+    lastPairwiseRepublishFingerprint = fingerprint;
+  }
   return updated;
 }
