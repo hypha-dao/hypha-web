@@ -166,6 +166,21 @@ describe('shouldMarkCallFeedVideoSurfaceReady', () => {
       ),
     ).toBe(false);
   });
+
+  it('accepts muted tracks once intrinsic dimensions are present', () => {
+    expect(
+      shouldMarkCallFeedVideoSurfaceReady(
+        {
+          videoWidth: 640,
+          videoHeight: 360,
+          clientWidth: 240,
+          clientHeight: 135,
+          readyState: 2,
+        },
+        { muted: true },
+      ),
+    ).toBe(true);
+  });
 });
 
 describe('shouldPaintCallFeedVideoSurface', () => {
@@ -179,6 +194,30 @@ describe('shouldPaintCallFeedVideoSurface', () => {
         isLocalFeed: false,
       }),
     ).toBe(false);
+  });
+
+  it('paints unmuted tracks when the surface is ready', () => {
+    expect(
+      shouldPaintCallFeedVideoSurface({
+        hasVideo: true,
+        warmingVideoTrack: false,
+        videoSurfaceReady: true,
+        liveVideoTrack: mockTrack({ muted: false }),
+        isLocalFeed: false,
+      }),
+    ).toBe(true);
+  });
+
+  it('paints local muted camera tracks while warming (readyState live)', () => {
+    expect(
+      shouldPaintCallFeedVideoSurface({
+        hasVideo: true,
+        warmingVideoTrack: false,
+        videoSurfaceReady: true,
+        liveVideoTrack: mockTrack({ muted: true, readyState: 'live' }),
+        isLocalFeed: true,
+      }),
+    ).toBe(true);
   });
 });
 
