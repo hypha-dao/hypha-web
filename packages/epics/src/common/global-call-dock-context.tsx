@@ -603,10 +603,11 @@ function useGlobalCallDockValue() {
     };
   }, []);
 
+  const spaceCallRetryRemoteMedia = call.retryRemoteMediaConnection;
   const retryRemoteMediaConnection = React.useCallback(() => {
-    call.retryRemoteMediaConnection();
+    spaceCallRetryRemoteMedia();
     void resumeCallPlayback();
-  }, [call.retryRemoteMediaConnection]);
+  }, [spaceCallRetryRemoteMedia]);
 
   return {
     bindRoomContext,
