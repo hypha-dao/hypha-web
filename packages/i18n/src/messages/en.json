@@ -448,6 +448,10 @@
         "title": "Deploy Funds",
         "description": "Allocate treasury funds for investments in other spaces in the network or for distributing resources across spaces within your organisation."
       },
+      "airdrop": {
+        "title": "Airdrop Tokens",
+        "description": "Distribute tokens to one or more recipients by transferring them from your space treasury or minting tokens created by your space."
+      },
       "depositFunds": {
         "title": "Deposit Funds",
         "description": "Deposit funds into your treasury by copying the treasury address or scanning the QR code."
@@ -1468,6 +1472,7 @@
       "contribution": "Contribution",
       "expenses": "Expenses",
       "funding": "Funding",
+      "airdrop": "Airdrop",
       "investment": "Investment",
       "exchange": "Exchange"
     },
@@ -1517,6 +1522,8 @@
       "enterAmountPrompt": "Please enter an amount.",
       "tokenRequired": "Please select a token",
       "atLeastOnePayoutRequired": "At least one payout is required",
+      "atLeastOneAirdropRecipient": "At least one airdrop recipient is required",
+      "tooManyAirdropRecipients": "Too many recipients for one airdrop proposal.",
       "purchaseAmountRequired": "Please enter a purchase amount.",
       "selectSpaceToActivate": "Please select a space to activate.",
       "monthsToActivateRequired": "Please enter the number of months to activate.",
@@ -1663,6 +1670,16 @@
       "unknownErrorOccurred": "An unknown error occurred."
     },
     "plugins": {
+      "airdrop": {
+        "description": "Distribute tokens to one or more recipients. Choose to transfer tokens already held in your space treasury, or mint new tokens that your space has created.",
+        "recipientsLabel": "Recipients",
+        "methodLabel": "Method",
+        "transfer": "Transfer",
+        "mint": "Mint",
+        "noMintableTokens": "Your space has not created any mintable tokens yet. Issue a token first, or use the Transfer method.",
+        "add": "Add recipient",
+        "remove": "Remove"
+      },
       "activateSpaces": {
         "checkOut": "Check out",
         "totalContribution": "Total Contribution:",

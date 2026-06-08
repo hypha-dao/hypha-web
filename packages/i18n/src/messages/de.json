@@ -449,6 +449,10 @@
         "title": "Mittel einsetzen",
         "description": "Weisen Sie Schatzkammermittel für Investitionen in andere Spaces im Netzwerk oder für die Verteilung von Ressourcen über Spaces innerhalb Ihrer Organisation zu."
       },
+      "airdrop": {
+        "title": "Tokens verteilen (Airdrop)",
+        "description": "Verteilen Sie Tokens an einen oder mehrere Empfänger, indem Sie sie aus der Schatzkammer Ihres Spaces übertragen oder von Ihrem Space erstellte Tokens prägen."
+      },
       "depositFunds": {
         "title": "Mittel einzahlen",
         "description": "Zahlen Sie Mittel in Ihre Schatzkammer ein, indem Sie die Schatzkammer-Adresse kopieren oder den QR-Code scannen."
@@ -1469,6 +1473,7 @@
       "contribution": "Beitrag",
       "expenses": "Ausgaben",
       "funding": "Finanzierung",
+      "airdrop": "Airdrop",
       "investment": "Investition",
       "exchange": "Exchange"
     },
@@ -1520,6 +1525,8 @@
       "chooseTokenToBurn": "Bitte wählen Sie einen Token zum Verbrennen aus",
       "atLeastOneBurnTargetRequired": "Mindestens ein Verbrennungsziel ist erforderlich",
       "atLeastOnePayoutRequired": "Mindestens eine Auszahlung ist erforderlich",
+      "atLeastOneAirdropRecipient": "Mindestens ein Airdrop-Empfänger ist erforderlich",
+      "tooManyAirdropRecipients": "Zu viele Empfänger für einen einzigen Airdrop-Vorschlag.",
       "purchaseAmountRequired": "Bitte geben Sie einen Kaufbetrag ein.",
       "selectSpaceToActivate": "Bitte wählen Sie einen Space zur Aktivierung aus.",
       "monthsToActivateRequired": "Bitte geben Sie die Anzahl der Monate für die Aktivierung ein.",
@@ -1661,6 +1668,16 @@
       "unknownErrorOccurred": "Ein unbekannter Fehler ist aufgetreten."
     },
     "plugins": {
+      "airdrop": {
+        "description": "Verteilen Sie Tokens an einen oder mehrere Empfänger. Wählen Sie, ob Sie Tokens aus der Schatzkammer Ihres Spaces übertragen oder neue, von Ihrem Space erstellte Tokens prägen möchten.",
+        "recipientsLabel": "Empfänger",
+        "methodLabel": "Methode",
+        "transfer": "Übertragen",
+        "mint": "Prägen",
+        "noMintableTokens": "Ihr Space hat noch keine prägbaren Tokens erstellt. Geben Sie zuerst einen Token aus oder verwenden Sie die Methode Übertragen.",
+        "add": "Empfänger hinzufügen",
+        "remove": "Entfernen"
+      },
       "activateSpaces": {
         "checkOut": "Übersicht",
         "totalContribution": "Gesamtbeitrag:",

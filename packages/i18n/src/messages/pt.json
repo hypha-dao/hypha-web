@@ -91,6 +91,8 @@
       "chooseTokenToBurn": "Escolha um token para queimar",
       "atLeastOneBurnTargetRequired": "É necessário pelo menos um destino de queima",
       "atLeastOnePayoutRequired": "Pelo menos um pagamento é obrigatório",
+      "atLeastOneAirdropRecipient": "É necessário pelo menos um destinatário do airdrop",
+      "tooManyAirdropRecipients": "Muitos destinatários para uma proposta de airdrop.",
       "purchaseAmountRequired": "Digite um valor de compra.",
       "selectSpaceToActivate": "Selecione um espaço para ativar.",
       "monthsToActivateRequired": "Digite o número de meses para ativar.",
@@ -122,6 +124,16 @@
       "acceptInvestmentExactReceiveRows": "É necessária exatamente uma linha de token em « O membro investidor receberá »."
     },
     "plugins": {
+      "airdrop": {
+        "description": "Distribua tokens para um ou mais destinatários. Escolha transferir tokens já mantidos no tesouro do seu espaço ou cunhar novos tokens criados pelo seu espaço.",
+        "recipientsLabel": "Destinatários",
+        "methodLabel": "Método",
+        "transfer": "Transferir",
+        "mint": "Cunhar",
+        "noMintableTokens": "Seu espaço ainda não criou tokens cunháveis. Emita um token primeiro ou use o método Transferir.",
+        "add": "Adicionar destinatário",
+        "remove": "Remover"
+      },
       "paymentSchedule": {
         "errors": {
           "milestonesEmpty": "Os marcos não podem estar vazios",
@@ -646,6 +658,7 @@
       "contribution": "Contribuição",
       "expenses": "Despesas",
       "funding": "Financiamento",
+      "airdrop": "Airdrop",
       "investment": "Investimento",
       "exchange": "Exchange"
     },
@@ -1169,6 +1182,10 @@
       "deployFunds": {
         "title": "Distribuir fundos",
         "description": "Aloque fundos de tesouraria para investimentos em outros espaços da rede ou para distribuição de recursos entre espaços da sua organização."
+      },
+      "airdrop": {
+        "title": "Distribuir Tokens (Airdrop)",
+        "description": "Distribua tokens para um ou mais destinatários, transferindo-os do tesouro do seu espaço ou cunhando tokens criados pelo seu espaço."
       },
       "depositFunds": {
         "title": "Depositar fundos",

@@ -38,6 +38,10 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
   'Please select a token': 'proposalErrors.tokenRequired',
   'Token is required': 'proposalErrors.tokenRequired',
   'At least one payout is required': 'proposalErrors.atLeastOnePayoutRequired',
+  'At least one airdrop recipient is required':
+    'proposalErrors.atLeastOneAirdropRecipient',
+  'Too many recipients for one airdrop proposal.':
+    'proposalErrors.tooManyAirdropRecipients',
   'Please enter a purchase amount.': 'proposalErrors.purchaseAmountRequired',
   'Please select a space to activate.': 'proposalErrors.selectSpaceToActivate',
   'Please enter the number of months to activate.':

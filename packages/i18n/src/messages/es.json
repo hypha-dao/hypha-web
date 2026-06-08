@@ -89,6 +89,8 @@
       "enterAmountPrompt": "Por favor, introduce una cantidad.",
       "tokenRequired": "Selecciona un token",
       "atLeastOnePayoutRequired": "Se requiere al menos un pago",
+      "atLeastOneAirdropRecipient": "Se requiere al menos un destinatario del airdrop",
+      "tooManyAirdropRecipients": "Demasiados destinatarios para una propuesta de airdrop.",
       "purchaseAmountRequired": "Ingresa un monto de compra.",
       "selectSpaceToActivate": "Selecciona un espacio para activar.",
       "monthsToActivateRequired": "Ingresa la cantidad de meses para activar.",
@@ -122,6 +124,16 @@
       "acceptInvestmentExactReceiveRows": "Se requiere exactamente una fila de token en « El miembro inversor recibirá »."
     },
     "plugins": {
+      "airdrop": {
+        "description": "Distribuye tokens a uno o varios destinatarios. Elige transferir tokens que ya están en la tesorería de tu espacio o acuñar nuevos tokens creados por tu espacio.",
+        "recipientsLabel": "Destinatarios",
+        "methodLabel": "Método",
+        "transfer": "Transferir",
+        "mint": "Acuñar",
+        "noMintableTokens": "Tu espacio aún no ha creado tokens acuñables. Emite un token primero o usa el método Transferir.",
+        "add": "Añadir destinatario",
+        "remove": "Eliminar"
+      },
       "paymentSchedule": {
         "errors": {
           "milestonesEmpty": "Los hitos no pueden estar vacíos",
@@ -646,6 +658,7 @@
       "contribution": "Contribución",
       "expenses": "Gastos",
       "funding": "Fondos",
+      "airdrop": "Airdrop",
       "investment": "Inversión",
       "exchange": "Intercambio"
     },
@@ -1169,6 +1182,10 @@
       "deployFunds": {
         "title": "Implementar fondos",
         "description": "Asigne fondos de tesorería para inversiones en otros espacios de la red o para distribuir recursos entre espacios dentro de su organización."
+      },
+      "airdrop": {
+        "title": "Distribuir Tokens (Airdrop)",
+        "description": "Distribuye tokens a uno o varios destinatarios transfiriéndolos desde la tesorería de tu espacio o acuñando tokens creados por tu espacio."
       },
       "depositFunds": {
         "title": "Depositar fondos",
