@@ -42,7 +42,6 @@ import {
   useSpacesByWeb3Ids,
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
-import { getEnableNetworkMap } from '@hypha-platform/feature-flags/client';
 import {
   ParentSpaceSelector,
   useMemberWeb3SpaceIds,
@@ -79,6 +78,7 @@ export type CreateSpaceFormProps = {
   submitLoadingLabel?: string;
   label?: SpaceFormLabel;
   spaceId?: number;
+  enableNetworkMap?: boolean;
   slugIncorrectMessage?: string;
   onSubmit: (
     values: SchemaCreateSpaceForm,
@@ -124,6 +124,7 @@ export const SpaceForm = ({
   submitLoadingLabel,
   label = 'create',
   spaceId = -1,
+  enableNetworkMap = false,
   slugIncorrectMessage,
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
@@ -332,7 +333,7 @@ export const SpaceForm = ({
     () => !isDemo && !isSandbox && !isArchived,
     [isDemo, isSandbox, isArchived],
   );
-  const showLocationPicker = label === 'configure' && getEnableNetworkMap();
+  const showLocationPicker = label === 'configure' && enableNetworkMap;
   const locationValue = {
     latitude: form.watch('latitude') ?? null,
     longitude: form.watch('longitude') ?? null,
