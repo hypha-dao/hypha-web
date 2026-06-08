@@ -2880,12 +2880,15 @@ const FeedContent = ({
   }, [liveVideoTrack?.id, mountRemoteAudio, stream]);
 
   /** Analyse mic/remote line whenever the tile has a live audio track (not just Matrix `isSpeaking`, which lags and hid real levels). */
+  const hasLiveAudioTrack =
+    stream?.getAudioTracks().some((track) => track.readyState === 'live') ??
+    false;
   const canVoiceWave =
     showAudioScrim &&
     !isShare &&
     !audioMuted &&
-    (feed.isLocal() ||
-      (!feed.isAudioMuted() && (stream?.getAudioTracks().length ?? 0) > 0));
+    hasLiveAudioTrack &&
+    (isLocalCallFeedForTile(feed, currentUserId) || !feed.isAudioMuted());
 
   const tileAvatarSizePx = compactTileLayout
     ? 48

@@ -1513,7 +1513,10 @@ export function useSpaceGroupCall(
       const previousAudioTrack = existingStream?.getAudioTracks()[0] ?? null;
       const videoTracks =
         existingStream?.getVideoTracks().filter((track) => {
-          return track.readyState === 'live';
+          if (!track.enabled) return false;
+          const state = track.readyState as string;
+          /** Camera tracks can still be `new` right after `enter()` — do not drop them. */
+          return state === 'live' || state === 'new';
         }) ?? [];
       const audioConstraints = constraintsForVoicePreset(preset, {
         isScreensharing,
@@ -1541,6 +1544,7 @@ export function useSpaceGroupCall(
       }
       try {
         await gc.updateLocalUsermediaStream(nextStream);
+        await republishLocalMediaToPairwiseCalls(gc);
       } catch (error) {
         for (const track of refreshedAudioStream.getTracks()) {
           track.stop();
@@ -2604,6 +2608,9 @@ export function useSpaceGroupCall(
         return;
       }
 
+      if (kind === 'video' && !gc.isLocalVideoMuted()) {
+        await waitForPublishableLocalVideoTrack(gc, 2500);
+      }
       try {
         await applyVoiceProcessingPresetToGroupCall(gc, voiceProcessingPreset);
       } catch {
@@ -2615,6 +2622,7 @@ export function useSpaceGroupCall(
        */
       try {
         await ensurePublishedLocalMediaWithOrientation(gc, kind);
+        await republishLocalMediaToPairwiseCalls(gc, { force: true });
       } catch {
         /* best-effort local media bootstrap */
       }
