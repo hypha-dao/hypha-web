@@ -8,6 +8,7 @@ import {
   fetchSpaceProposalsIds,
 } from '@hypha-platform/core/client';
 import { formMap, readWithWarmupRetry } from './internal';
+import { mapDbSpaceToSpace } from '../map-db-space';
 
 interface GetAllSpacesProps {
   search?: string;
@@ -63,16 +64,18 @@ export async function getAllSpaces(
     const proposalsIds = formMap(web3proposalsIds);
 
     const enrichedSpaces = spaces.map((space) => {
+      const mappedSpace = mapDbSpaceToSpace(space);
+
       if (space.web3SpaceId === null) {
         // No web3 data = no on-chain members, treat as archived when filtering
-        return { ...space, memberCount: 0 };
+        return { ...mappedSpace, memberCount: 0 };
       }
 
       const spaceDetails = details.get(BigInt(space.web3SpaceId));
       const spaceProposals = proposalsIds.get(BigInt(space.web3SpaceId));
 
       return {
-        ...space,
+        ...mappedSpace,
         memberCount: spaceDetails?.members?.length ?? 0,
         memberAddresses: Array.isArray(spaceDetails?.members)
           ? (spaceDetails!.members

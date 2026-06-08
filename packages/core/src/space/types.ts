@@ -51,6 +51,10 @@ export interface CreateSpaceInput {
   links?: string[];
   categories?: Category[];
   flags?: SpaceFlags[];
+  latitude?: number | null;
+  longitude?: number | null;
+  locationLabel?: string | null;
+  locationSource?: SpaceLocationSource | null;
 }
 
 export interface UpdateSpaceInput {

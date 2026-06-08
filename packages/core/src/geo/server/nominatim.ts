@@ -50,7 +50,6 @@ export async function searchNominatim(
       Accept: 'application/json',
       'User-Agent': getNominatimUserAgent(),
     },
-    next: { revalidate: 86400 },
   });
 
   if (!response.ok) {

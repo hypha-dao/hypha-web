@@ -330,8 +330,8 @@ export function SpaceLocationPicker({
           <p className="text-2 text-foreground">
             {value.locationLabel ??
               t('mapClickLabel', {
-                latitude: value.latitude,
-                longitude: value.longitude,
+                latitude: value.latitude!,
+                longitude: value.longitude!,
               })}
           </p>
           <Button
