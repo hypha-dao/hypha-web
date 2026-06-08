@@ -48,7 +48,7 @@ export function scheduleRepublishLocalMediaToPairwiseCalls(
   }
   republishDebounceTimer = setTimeout(() => {
     republishDebounceTimer = null;
-    void flushScheduledPairwiseRepublish();
+    void flushScheduledPairwiseRepublish().catch(() => undefined);
   }, republishPendingDelayMs);
 }
 
