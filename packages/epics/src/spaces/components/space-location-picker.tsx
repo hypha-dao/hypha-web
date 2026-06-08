@@ -115,6 +115,13 @@ export function SpaceLocationPicker({
     [applySelection, setQuery],
   );
 
+  const [latInput, setLatInput] = React.useState(
+    value.latitude != null ? String(value.latitude) : '',
+  );
+  const [lngInput, setLngInput] = React.useState(
+    value.longitude != null ? String(value.longitude) : '',
+  );
+
   const handleManualCoordinates = React.useCallback(() => {
     const lat = Number.parseFloat(latInput);
     const lng = Number.parseFloat(lngInput);
@@ -127,14 +134,7 @@ export function SpaceLocationPicker({
         t('manualLabel', { latitude: lat, longitude: lng }),
       'manual',
     );
-  }, [applySelection, t, value.locationLabel]);
-
-  const [latInput, setLatInput] = React.useState(
-    value.latitude != null ? String(value.latitude) : '',
-  );
-  const [lngInput, setLngInput] = React.useState(
-    value.longitude != null ? String(value.longitude) : '',
-  );
+  }, [applySelection, latInput, lngInput, t, value.locationLabel]);
 
   React.useEffect(() => {
     setLatInput(value.latitude != null ? String(value.latitude) : '');
