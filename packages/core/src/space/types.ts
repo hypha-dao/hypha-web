@@ -72,7 +72,6 @@ export interface UpdateSpaceInput {
   longitude?: number | null;
   locationLabel?: string | null;
   locationSource?: SpaceLocationSource | null;
-  locatedAt?: Date | null;
   chatRoomId?: string | null;
   flags?: SpaceFlags[];
 }
