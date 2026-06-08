@@ -3425,7 +3425,7 @@
     "searchError": "Could not search for that location. Try again.",
     "resultsLabel": "Location search results",
     "mapLabel": "Pin on map",
-    "mapAriaLabel": "World map. Click to place a pin.",
+    "mapAriaLabel": "Select a point to place a pin.",
     "mapHint": "Click the map to set coordinates, or use search above.",
     "mapClickLabel": "{latitude}, {longitude}",
     "manualLabel": "{latitude}, {longitude}",
