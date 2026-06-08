@@ -8,12 +8,18 @@ import {
   not,
   getTableColumns,
 } from 'drizzle-orm';
-import { memberships, Space, spaces } from '@hypha-platform/storage-postgres';
+import {
+  memberships,
+  Space as DbSpace,
+  spaces,
+} from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
 import {
   PaginationParams,
   PaginatedResponse,
 } from '@hypha-platform/core/client';
+import type { Space } from '../types';
+import { mapDbSpaceToSpace } from './map-db-space';
 
 type FindAllSpacesProps = {
   search?: string;
@@ -108,12 +114,12 @@ export const findSpaceByAddress = async (
 export const findSpaceByWeb3Id = async (
   { id }: { id: number },
   { db }: DbConfig,
-) => {
+): Promise<Space | null> => {
   const [space] = await db
     .select()
     .from(spaces)
     .where(eq(spaces.web3SpaceId, id));
-  return space ? space : null;
+  return space ? mapDbSpaceToSpace(space) : null;
 };
 
 export const findParentSpaceById = async (
@@ -160,10 +166,14 @@ export const findSpaceBySlug = async (
 
   if (!response) return null;
 
+  const { subspaces, members, documents, ...spaceRow } = response;
+
   return {
-    ...response,
-    subspaces: response.subspaces ?? [],
-  };
+    ...mapDbSpaceToSpace(spaceRow),
+    subspaces: (subspaces ?? []).map(mapDbSpaceToSpace),
+    members,
+    documents,
+  } as Space & { subspaces: Space[] };
 };
 
 type CheckSpaceSlugExistsInput = { slug: string };

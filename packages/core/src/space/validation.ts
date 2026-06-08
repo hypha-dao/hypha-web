@@ -5,7 +5,12 @@ import {
 } from '../assets/constant';
 import { z } from 'zod';
 import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
-import { spaceLocationFieldsSchema } from '../geo/validation';
+import {
+  spaceLatitudeSchema,
+  spaceLocationLabelSchema,
+  spaceLocationSourceSchema,
+  spaceLongitudeSchema,
+} from '../geo/validation';
 
 /** Shared Hypha space slug rule (forms, APIs, MCP tools). */
 export const spaceSlugSchema = z
@@ -102,10 +107,10 @@ const createSpaceWeb2Props = {
     .default([]),
   address: z.string().optional(),
   flags: z.array(z.enum(SPACE_FLAGS)).default([]),
-  latitude: spaceLocationFieldsSchema.shape.latitude,
-  longitude: spaceLocationFieldsSchema.shape.longitude,
-  locationLabel: spaceLocationFieldsSchema.shape.locationLabel,
-  locationSource: spaceLocationFieldsSchema.shape.locationSource,
+  latitude: spaceLatitudeSchema.nullable().optional(),
+  longitude: spaceLongitudeSchema.nullable().optional(),
+  locationLabel: spaceLocationLabelSchema.nullable().optional(),
+  locationSource: spaceLocationSourceSchema.nullable().optional(),
 };
 
 export const schemaCreateSpaceWeb2 = z.object(createSpaceWeb2Props);
