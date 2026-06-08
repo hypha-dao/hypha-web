@@ -86,22 +86,29 @@ export function countMissingRemoteCallFeeds(
  * Participants in the map who lack inbound media: no CallFeed yet, or a zombie
  * userMedia feed with no live tracks while mic/camera are supposed to be on.
  */
-export function countUnhealthyRemoteCallMedia(
+export function listUnhealthyRemoteCallUserIds(
   gc: GroupCallRemoteMediaLike,
   othersInCall: string[],
-): number {
+): string[] {
   const remoteIdsWithFeed = collectRemoteCallFeedUserIds(gc);
-  let unhealthy = 0;
+  const unhealthy: string[] = [];
   for (const id of othersInCall) {
     if (!id) continue;
     if (!remoteIdsWithFeed.has(id)) {
-      unhealthy += 1;
+      unhealthy.push(id);
       continue;
     }
     const userMediaFeed = findRemoteUserMediaFeed(gc, id);
     if (userMediaFeed && !isRemoteCallFeedMediaHealthy(userMediaFeed)) {
-      unhealthy += 1;
+      unhealthy.push(id);
     }
   }
   return unhealthy;
+}
+
+export function countUnhealthyRemoteCallMedia(
+  gc: GroupCallRemoteMediaLike,
+  othersInCall: string[],
+): number {
+  return listUnhealthyRemoteCallUserIds(gc, othersInCall).length;
 }
