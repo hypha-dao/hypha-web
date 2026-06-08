@@ -92,6 +92,10 @@ import {
   clearScreenShareCaptureRootRestriction,
 } from './screenshare-capture-exclusion';
 import {
+  collectRemoteCallFeedUserIds,
+  countMissingRemoteCallFeeds,
+} from './remote-call-media-stall';
+import {
   applyScreenshareTrackContentHints,
   resolveScreenshareVoicePresetPlan,
 } from './screenshare-voice-boost';
@@ -176,7 +180,6 @@ const CONNECT_STALL_ABORT_MS = 90_000;
 /** Room shows others in-call but no remote userMedia CallFeed yet (signaling/WebRTC issue). */
 const REMOTE_MEDIA_STALL_MS = 45_000;
 const REMOTE_MEDIA_REPAIR_NUDGE_MS = 1500;
-const REMOTE_MEDIA_AUTO_RECOVER_MS = 70_000;
 
 /** Dev console: periodic sample of feeds vs participant map (not every Matrix event). */
 const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
@@ -642,9 +645,6 @@ export function useSpaceGroupCall(
   const remoteMediaRepairNudgeIntervalRef = useRef<ReturnType<
     typeof setInterval
   > | null>(null);
-  const remoteMediaRecoverRequestedRef = useRef(false);
-  const remoteMediaRecoverAttemptedRef = useRef(false);
-  const remoteMediaRecoverInFlightRef = useRef(false);
   /** Throttle TURN probes during remote-media stall (avoids Dendrite 429 on /voip/turnServer). */
   const lastStallTurnProbeAtRef = useRef(0);
   const outboundVideoOrientationProcessedRef = useRef<Set<string>>(new Set());
@@ -669,23 +669,10 @@ export function useSpaceGroupCall(
   } | null>(null);
   const pendingRecordingUploadRef = useRef<PendingRecordingUpload | null>(null);
   const captureModeRef = useRef<SpaceGroupCallCaptureMode>('none');
-  const [remoteMediaRecoverNonce, setRemoteMediaRecoverNonce] = useState(0);
-  const [isCallRecovering, setIsCallRecovering] = useState(false);
   const [remoteMediaStall, setRemoteMediaStall] = useState(false);
   const [remoteMediaWarming, setRemoteMediaWarming] = useState(false);
   const [turnServerUnavailable, setTurnServerUnavailable] = useState(false);
   const turnServerBannerDismissedRef = useRef(false);
-
-  const retryRemoteMediaConnection = useCallback(() => {
-    if (callState !== 'connected' && callState !== 'awaiting_media') return;
-    remoteMediaStallBannerDismissedRef.current = false;
-    remoteMediaStallLoggedRef.current = false;
-    remoteMediaRecoverAttemptedRef.current = false;
-    remoteMediaRecoverRequestedRef.current = true;
-    setRemoteMediaStall(false);
-    setRemoteMediaWarming(false);
-    setRemoteMediaRecoverNonce((value) => value + 1);
-  }, [callState]);
 
   const dismissRemoteMediaStallBanner = useCallback(() => {
     remoteMediaStallBannerDismissedRef.current = true;
@@ -1375,11 +1362,7 @@ export function useSpaceGroupCall(
         clearInterval(remoteMediaRepairNudgeIntervalRef.current);
         remoteMediaRepairNudgeIntervalRef.current = null;
       }
-      remoteMediaRecoverRequestedRef.current = false;
-      remoteMediaRecoverAttemptedRef.current = false;
-      remoteMediaRecoverInFlightRef.current = false;
       lastStallTurnProbeAtRef.current = 0;
-      setIsCallRecovering(false);
       setRemoteMediaStall(false);
       setRemoteMediaWarming(false);
       if (feedUpdateRafRef.current != null) {
@@ -1789,21 +1772,19 @@ export function useSpaceGroupCall(
     [clearLocalMediaBootstrapTimers, ensurePublishedLocalMediaWithOrientation],
   );
 
-  /** Stall detection: others in participant map but no remote userMedia CallFeed (WebRTC lag). */
+  /** Stall detection: others in participant map but no remote media/share CallFeed (WebRTC lag). */
   const evalRemoteMediaStall = useCallback(() => {
     const gc = groupCallRef.current;
     if (!gc || !roomId?.trim() || !client) return;
     const myId = client.getUserId() ?? null;
-    const remoteFeeds = gc.userMediaFeeds.filter((f) => !f.isLocal());
-    const remoteIdsWithFeed = new Set(
-      remoteFeeds.map((f) => f.userId).filter(Boolean) as string[],
-    );
+    const remoteIdsWithFeed = collectRemoteCallFeedUserIds(gc);
     const othersInCall = inCallUserIdsFromGroupCall(gc).filter(
       (id) => id && id !== myId,
     );
-    const missingRemoteFeedCount = othersInCall.filter(
-      (id) => !remoteIdsWithFeed.has(id),
-    ).length;
+    const missingRemoteFeedCount = countMissingRemoteCallFeeds(
+      othersInCall,
+      remoteIdsWithFeed,
+    );
 
     const now = Date.now();
     if (missingRemoteFeedCount > 0 && othersInCall.length > 0) {
@@ -1861,17 +1842,6 @@ export function useSpaceGroupCall(
           setRemoteMediaStall(true);
         }
       }
-      if (
-        waitedMs >= REMOTE_MEDIA_AUTO_RECOVER_MS &&
-        !remoteMediaRecoverAttemptedRef.current &&
-        !remoteMediaRecoverInFlightRef.current &&
-        typeof document !== 'undefined' &&
-        !document.hidden
-      ) {
-        remoteMediaRecoverAttemptedRef.current = true;
-        remoteMediaRecoverRequestedRef.current = true;
-        setRemoteMediaRecoverNonce((value) => value + 1);
-      }
     } else {
       remoteMediaGapSinceRef.current = null;
       remoteMediaStallLoggedRef.current = false;
@@ -1891,27 +1861,79 @@ export function useSpaceGroupCall(
     scheduleLocalMediaBootstrap,
   ]);
 
+  /**
+   * Soft repair only — nudge pairwise WebRTC and republish local tracks without
+   * leaving the room GroupCall (avoids disconnect cascades and screenshare loss).
+   */
+  const retryRemoteMediaConnection = useCallback(() => {
+    if (callState !== 'connected' && callState !== 'awaiting_media') return;
+    const gc = groupCallRef.current;
+    if (!gc || !roomId?.trim()) return;
+
+    remoteMediaStallBannerDismissedRef.current = false;
+    remoteMediaStallLoggedRef.current = false;
+    remoteMediaGapSinceRef.current = null;
+    setRemoteMediaStall(false);
+    setRemoteMediaWarming(true);
+
+    logSpaceGroupCallEvent({
+      name: 'hypha.group_call.remote_media_recover',
+      roomId: roomId.trim(),
+      kind: lastJoinKindRef.current ?? undefined,
+    });
+
+    nudgeGroupCallPlaceOutgoing(gc);
+    scheduleLocalMediaBootstrap(gc);
+    scheduleFeedBatched();
+    refreshLocalPreview();
+
+    const kind = lastJoinKindRef.current ?? 'audio';
+    void ensurePublishedLocalMediaWithOrientation(gc, kind).then(() => {
+      scheduleFeedBatched();
+      refreshLocalPreview();
+      evalRemoteMediaStall();
+    });
+
+    if (client) {
+      const turnEpoch = joinEpochRef.current;
+      void evaluateMatrixTurnReadiness(client).then((readiness) => {
+        applyTurnReadinessState(readiness.turnServerUnavailable, turnEpoch);
+      });
+    }
+
+    evalRemoteMediaStall();
+  }, [
+    applyTurnReadinessState,
+    callState,
+    client,
+    ensurePublishedLocalMediaWithOrientation,
+    evalRemoteMediaStall,
+    refreshLocalPreview,
+    roomId,
+    scheduleFeedBatched,
+    scheduleLocalMediaBootstrap,
+  ]);
+
   const logDevMediaSnapshot = useCallback(() => {
     const gc = groupCallRef.current;
     if (!gc || !roomId?.trim() || !client) return;
     const myId = client.getUserId() ?? null;
-    const remoteFeeds = gc.userMediaFeeds.filter((f) => !f.isLocal());
-    const remoteIdsWithFeed = new Set(
-      remoteFeeds.map((f) => f.userId).filter(Boolean) as string[],
-    );
+    const remoteIdsWithFeed = collectRemoteCallFeedUserIds(gc);
     const othersInCall = inCallUserIdsFromGroupCall(gc).filter(
       (id) => id && id !== myId,
     );
-    const missingRemoteFeedCount = othersInCall.filter(
-      (id) => !remoteIdsWithFeed.has(id),
-    ).length;
+    const missingRemoteFeedCount = countMissingRemoteCallFeeds(
+      othersInCall,
+      remoteIdsWithFeed,
+    );
     logSpaceGroupCallEvent({
       name: 'hypha.group_call.media_snapshot',
       roomId,
       kind: lastJoinKindRef.current ?? undefined,
       groupCallId: gc.groupCallId,
       userMediaFeedCount: gc.userMediaFeeds.length,
-      remoteUserMediaFeedCount: remoteFeeds.length,
+      remoteUserMediaFeedCount: gc.userMediaFeeds.filter((f) => !f.isLocal())
+        .length,
       screenshareFeedCount: gc.screenshareFeeds.length,
       participantDeviceCount: readParticipantsFromGroupCall(gc).count,
       missingRemoteFeedCount,
@@ -2115,11 +2137,7 @@ export function useSpaceGroupCall(
   );
 
   const enterWithKind = useCallback(
-    async (
-      kind: 'audio' | 'video',
-      threadRootEventId?: string,
-      options?: { preserveRemoteMediaRecoverInFlight?: boolean },
-    ) => {
+    async (kind: 'audio' | 'video', threadRootEventId?: string) => {
       if (!client || !roomId?.trim()) {
         setErrorCode(!client ? 'NO_CLIENT' : 'NO_ROOM');
         setCallState('error');
@@ -2143,11 +2161,6 @@ export function useSpaceGroupCall(
       const joinEpoch = joinEpochRef.current;
 
       isJoiningRef.current = true;
-      remoteMediaRecoverRequestedRef.current = false;
-      remoteMediaRecoverAttemptedRef.current = false;
-      if (!options?.preserveRemoteMediaRecoverInFlight) {
-        remoteMediaRecoverInFlightRef.current = false;
-      }
       const newSessionId = newCallSessionId();
       setCallSessionId(newSessionId);
       lastJoinKindRef.current = kind;
@@ -3432,7 +3445,6 @@ export function useSpaceGroupCall(
       if (!gc) return;
       remoteMediaGapSinceRef.current = null;
       remoteMediaStallLoggedRef.current = false;
-      remoteMediaRecoverAttemptedRef.current = false;
       nudgeGroupCallPlaceOutgoing(gc);
       scheduleLocalMediaBootstrap(gc);
       scheduleFeedBatched();
@@ -3527,48 +3539,6 @@ export function useSpaceGroupCall(
       runCleanupRef.current();
     };
   }, [emitCallSessionEnd]);
-
-  useEffect(() => {
-    if (!remoteMediaRecoverRequestedRef.current) return;
-    if (callState !== 'connected' && callState !== 'awaiting_media') return;
-    if (isJoiningRef.current || remoteMediaRecoverInFlightRef.current) return;
-    const retryKind = lastJoinKindRef.current;
-    if (!retryKind) return;
-    const retryThreadRootEventId = lastThreadRootEventIdRef.current;
-    remoteMediaRecoverRequestedRef.current = false;
-    if (roomId) {
-      logSpaceGroupCallEvent({
-        name: 'hypha.group_call.remote_media_recover',
-        roomId,
-        kind: retryKind,
-      });
-    }
-    abortInFlightJoin(joinEpochRef, isJoiningRef);
-    runCleanup();
-    remoteMediaRecoverInFlightRef.current = true;
-    setIsCallRecovering(true);
-    setCallState('idle');
-    setErrorCode(null);
-    setCallKind(null);
-    setIsScreensharing(false);
-    setScreenshareTakeoverIncoming(null);
-    setScreenshareTakeoverPendingId(null);
-    setScreenshareTakeoverDenied(false);
-    screenshareTakeoverPendingIdRef.current = null;
-    setThreadContext(null);
-    setParticipantCount(0);
-    setScreenshareErrorCode(null);
-    setTabBackgroundWhileInCall(false);
-    void enterWithKind(retryKind, retryThreadRootEventId, {
-      preserveRemoteMediaRecoverInFlight: true,
-    }).finally(() => {
-      setIsCallRecovering(false);
-      if (!groupCallRef.current) {
-        remoteMediaRecoverAttemptedRef.current = false;
-      }
-      remoteMediaRecoverInFlightRef.current = false;
-    });
-  }, [callState, enterWithKind, remoteMediaRecoverNonce, roomId, runCleanup]);
 
   const idleGroupCallUnsubRef = useRef<(() => void) | null>(null);
 
@@ -3853,7 +3823,8 @@ export function useSpaceGroupCall(
     dismissRemoteMediaStallBanner,
     retryRemoteMediaConnection,
     tabBackgroundWhileInCall,
-    isCallRecovering,
+    /** @deprecated Auto leave/re-enter recovery removed — always false. */
+    isCallRecovering: false,
     activeSpeakerKey,
     threadContext,
     callKind,
