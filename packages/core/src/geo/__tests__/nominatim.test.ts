@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
@@ -8,6 +16,7 @@ import {
 } from '../server/nominatim';
 
 const fetchMock = vi.fn();
+const prevNominatimUserAgent = process.env.NOMINATIM_USER_AGENT;
 
 vi.stubGlobal('fetch', fetchMock);
 
@@ -21,6 +30,15 @@ describe('searchNominatim', () => {
 
   afterEach(() => {
     clearGeocodeCacheForTests();
+  });
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
+    if (prevNominatimUserAgent === undefined) {
+      delete process.env.NOMINATIM_USER_AGENT;
+    } else {
+      process.env.NOMINATIM_USER_AGENT = prevNominatimUserAgent;
+    }
   });
 
   it('returns mapped results from Nominatim', async () => {
