@@ -23,6 +23,7 @@ export type SpaceGroupCallTelemetryEvent = {
     | 'hypha.group_call.media_snapshot'
     | 'hypha.group_call.remote_media_stall'
     | 'hypha.group_call.remote_media_recover'
+    | 'hypha.group_call.pairwise_restart'
     | 'hypha.group_call.turn_probe'
     | 'hypha.group_call.ice_gather_probe'
     | 'hypha.group_call.webrtc_summary'
@@ -58,6 +59,14 @@ export type SpaceGroupCallTelemetryEvent = {
   /** Room state lists them in-call but no userMedia CallFeed yet (WebRTC lag / failure). */
   missingRemoteFeedCount?: number;
   waitedMs?: number;
+  /** Pairwise `MatrixCall.hangup()` invocations before re-placing outgoing calls. */
+  hungUp?: number;
+  /** Stall recovery targeted local publish (mic/camera) rather than inbound feeds only. */
+  localOutboundUnhealthy?: boolean;
+  /** Remote user ids whose pairwise calls were restarted. */
+  targetCount?: number;
+  /** User clicked Retry connection (vs automatic 25s watchdog). */
+  manual?: boolean;
   /** Result of `client.checkTurnServers()` — homeserver returned usable TURN URIs. */
   turnCredsOk?: boolean;
   /** Approximate seconds until TURN credential expiry (from client clock). */
