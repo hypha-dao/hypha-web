@@ -113,7 +113,34 @@ const createSpaceWeb2Props = {
   locationSource: spaceLocationSourceSchema.nullable().optional(),
 };
 
-export const schemaCreateSpaceWeb2 = z.object(createSpaceWeb2Props);
+function refineSpaceLocationCoords(
+  value: {
+    latitude?: number | null;
+    longitude?: number | null;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  const hasLat = value.latitude != null;
+  const hasLng = value.longitude != null;
+  if (hasLat !== hasLng) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Latitude and longitude must both be set or both be cleared',
+      path: hasLat ? ['longitude'] : ['latitude'],
+    });
+  }
+  if (hasLat && hasLng && value.latitude === 0 && value.longitude === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Coordinates at 0,0 are not allowed',
+      path: ['latitude'],
+    });
+  }
+}
+
+export const schemaCreateSpaceWeb2 = z
+  .object(createSpaceWeb2Props)
+  .superRefine(refineSpaceLocationCoords);
 
 export const createSpaceWeb2FileUrls = {
   logoUrl: z.string().url('A space icon is required'),
@@ -225,26 +252,11 @@ export const updateSpaceProps = {
 
 export const schemaUpdateSpace = z
   .object(updateSpaceProps)
-  .superRefine((value, ctx) => {
-    const hasLat = value.latitude != null;
-    const hasLng = value.longitude != null;
-    if (hasLat !== hasLng) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Latitude and longitude must both be set or both be cleared',
-        path: hasLat ? ['longitude'] : ['latitude'],
-      });
-    }
-    if (hasLat && hasLng && value.latitude === 0 && value.longitude === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Coordinates at 0,0 are not allowed',
-        path: ['latitude'],
-      });
-    }
-  });
+  .superRefine(refineSpaceLocationCoords);
 
-export const schemaCreateSpace = z.object({
-  ...createSpaceWeb2Props,
-  ...createSpaceWeb3Props,
-});
+export const schemaCreateSpace = z
+  .object({
+    ...createSpaceWeb2Props,
+    ...createSpaceWeb3Props,
+  })
+  .superRefine(refineSpaceLocationCoords);
