@@ -42,7 +42,7 @@ import {
   useSpacesByWeb3Ids,
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
-import { getEnableNetworkMap } from '@hypha-platform/feature-flags';
+import { getEnableNetworkMap } from '@hypha-platform/feature-flags/client';
 import {
   ParentSpaceSelector,
   useMemberWeb3SpaceIds,
