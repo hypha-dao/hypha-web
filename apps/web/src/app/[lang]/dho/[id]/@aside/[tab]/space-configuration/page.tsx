@@ -20,6 +20,7 @@ import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
+import { getEnableNetworkMap } from '@hypha-platform/feature-flags/client';
 import { useTranslations } from 'next-intl';
 import { mutate } from 'swr';
 
@@ -224,6 +225,7 @@ export default function SpaceConfiguration() {
             locationSource: space?.locationSource ?? null,
           }}
           label="configure"
+          enableNetworkMap={getEnableNetworkMap()}
           initialParentSpaceId={space?.parentId ?? null}
           spaceId={space?.id}
         />
