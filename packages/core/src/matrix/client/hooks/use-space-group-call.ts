@@ -100,6 +100,10 @@ import {
   republishLocalMediaToPairwiseCalls,
 } from './call-pairwise-restart';
 import {
+  clearPairwiseRepublishSchedule,
+  scheduleRepublishLocalMediaToPairwiseCalls,
+} from './call-pairwise-republish-schedule';
+import {
   applyScreenshareTrackContentHints,
   resolveScreenshareVoicePresetPlan,
 } from './screenshare-voice-boost';
@@ -184,7 +188,7 @@ const CONNECT_STALL_ABORT_MS = 90_000;
 /** Room shows others in-call but no remote userMedia CallFeed yet (signaling/WebRTC issue). */
 const REMOTE_MEDIA_STALL_MS = 45_000;
 /** One-shot pairwise hangup + re-place when nudges fail (no GroupCall.leave). */
-const REMOTE_MEDIA_PAIRWISE_RESTART_MS = 10_000;
+const REMOTE_MEDIA_PAIRWISE_RESTART_MS = 45_000;
 const REMOTE_MEDIA_REPAIR_NUDGE_MS = 1500;
 
 /** Dev console: periodic sample of feeds vs participant map (not every Matrix event). */
@@ -304,7 +308,7 @@ function isLocalOutboundMediaUnhealthy(
   if (
     kind === 'video' &&
     !gc.isLocalVideoMuted() &&
-    !getPublishableLocalVideoTrack(gc)
+    !getLocalVideoTrackPresence(gc)
   ) {
     return true;
   }
@@ -356,7 +360,24 @@ function getLocalVideoTrackPresence(
   gc: MatrixSdk.GroupCall,
 ): MediaStreamTrack | null {
   const track = gc.localCallFeed?.stream.getVideoTracks()[0];
-  return track && track.readyState === 'live' ? track : null;
+  if (!track?.enabled) return null;
+  const state = track.readyState as string;
+  return state === 'live' || state === 'new' ? track : null;
+}
+
+async function waitForLocalVideoTrackPresence(
+  gc: MatrixSdk.GroupCall,
+  timeoutMs = 400,
+): Promise<boolean> {
+  if (getLocalVideoTrackPresence(gc)) return true;
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    if (getLocalVideoTrackPresence(gc)) return true;
+  }
+  return false;
 }
 
 function getPublishableLocalVideoTrack(
@@ -656,8 +677,6 @@ export function useSpaceGroupCall(
   const placeOutgoingPeriodicIntervalRef = useRef<number | null>(null);
   const localMediaBootstrapDebounceRef = useRef<number | null>(null);
   const localMediaBootstrapTimerRefs = useRef<number[]>([]);
-  /** Debounced pairwise republish after `CallsChanged` (avoid stream churn). */
-  const pairwiseRepublishTimerRef = useRef<number | null>(null);
   /**
    * Bumped when starting a join and when the stall watchdog fires — stale
    * `await gc.enter()` must not run success paths after forced cleanup.
@@ -848,10 +867,7 @@ export function useSpaceGroupCall(
       clearTimeout(localMediaBootstrapDebounceRef.current);
       localMediaBootstrapDebounceRef.current = null;
     }
-    if (pairwiseRepublishTimerRef.current != null) {
-      clearTimeout(pairwiseRepublishTimerRef.current);
-      pairwiseRepublishTimerRef.current = null;
-    }
+    clearPairwiseRepublishSchedule();
     if (localMediaBootstrapTimerRefs.current.length > 0) {
       for (const id of localMediaBootstrapTimerRefs.current) {
         clearTimeout(id);
@@ -870,7 +886,6 @@ export function useSpaceGroupCall(
           outboundVideoOrientationDisposersRef.current,
         );
       }
-      await republishLocalMediaToPairwiseCalls(gc);
     },
     [],
   );
@@ -1544,7 +1559,7 @@ export function useSpaceGroupCall(
       }
       try {
         await gc.updateLocalUsermediaStream(nextStream);
-        await republishLocalMediaToPairwiseCalls(gc);
+        scheduleRepublishLocalMediaToPairwiseCalls(gc);
       } catch (error) {
         for (const track of refreshedAudioStream.getTracks()) {
           track.stop();
@@ -2169,16 +2184,9 @@ export function useSpaceGroupCall(
       };
       gc.on(GroupCallEvent.ParticipantsChanged, onParticipantsChanged);
       const onCallsChanged = () => {
-        /** New pairwise session — one debounced republish once local A/V has settled. */
-        if (typeof window === 'undefined') return;
-        if (pairwiseRepublishTimerRef.current != null) {
-          clearTimeout(pairwiseRepublishTimerRef.current);
-        }
-        pairwiseRepublishTimerRef.current = window.setTimeout(() => {
-          pairwiseRepublishTimerRef.current = null;
-          if (groupCallRef.current !== gc) return;
-          void republishLocalMediaToPairwiseCalls(gc);
-        }, 1500);
+        /** New pairwise session — debounced republish after ICE has time to connect. */
+        if (groupCallRef.current !== gc) return;
+        scheduleRepublishLocalMediaToPairwiseCalls(gc, { delayMs: 4_000 });
         nudgeGroupCallPlaceOutgoing(gc);
       };
       gc.on(GroupCallEvent.CallsChanged, onCallsChanged);
@@ -2609,7 +2617,7 @@ export function useSpaceGroupCall(
       }
 
       if (kind === 'video' && !gc.isLocalVideoMuted()) {
-        await waitForPublishableLocalVideoTrack(gc, 2500);
+        await waitForLocalVideoTrackPresence(gc, 2500);
       }
       try {
         await applyVoiceProcessingPresetToGroupCall(gc, voiceProcessingPreset);
@@ -2622,7 +2630,7 @@ export function useSpaceGroupCall(
        */
       try {
         await ensurePublishedLocalMediaWithOrientation(gc, kind);
-        await republishLocalMediaToPairwiseCalls(gc, { force: true });
+        scheduleRepublishLocalMediaToPairwiseCalls(gc, { delayMs: 4_000 });
       } catch {
         /* best-effort local media bootstrap */
       }
@@ -2975,7 +2983,7 @@ export function useSpaceGroupCall(
             outboundVideoOrientationProcessedRef.current,
             outboundVideoOrientationDisposersRef.current,
           );
-          await republishLocalMediaToPairwiseCalls(gc, { force: true });
+          scheduleRepublishLocalMediaToPairwiseCalls(gc, { delayMs: 2_000 });
         }
       }
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
@@ -2984,7 +2992,7 @@ export function useSpaceGroupCall(
       window.setTimeout(() => {
         if (groupCallRef.current === gc && !gc.isLocalVideoMuted()) {
           nudgeGroupCallPlaceOutgoing(gc);
-          void republishLocalMediaToPairwiseCalls(gc);
+          scheduleRepublishLocalMediaToPairwiseCalls(gc);
         }
         refreshLocalPreview();
         scheduleFeedBatched();
@@ -3593,11 +3601,10 @@ export function useSpaceGroupCall(
 
     const republishIfCameraReady = () => {
       if (gc.isLocalVideoMuted()) return;
-      if (!getPublishableLocalVideoTrack(gc)) return;
-      void republishLocalMediaToPairwiseCalls(gc).then(() => {
-        scheduleFeedBatched();
-        refreshLocalPreview();
-      });
+      if (!getLocalVideoTrackPresence(gc)) return;
+      scheduleRepublishLocalMediaToPairwiseCalls(gc);
+      scheduleFeedBatched();
+      refreshLocalPreview();
     };
 
     const recoverIfNeeded = () => {

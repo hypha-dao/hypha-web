@@ -4,6 +4,7 @@ import {
   countMissingRemoteCallFeeds,
   countUnhealthyRemoteCallMedia,
   isRemoteCallFeedMediaHealthy,
+  isRemoteCallFeedMediaWarming,
 } from '../remote-call-media-stall';
 
 function mockFeed(
@@ -97,6 +98,27 @@ describe('isRemoteCallFeedMediaHealthy', () => {
   });
 });
 
+describe('isRemoteCallFeedMediaWarming', () => {
+  it('treats muted live video tracks as warming, not zombie', () => {
+    expect(
+      isRemoteCallFeedMediaWarming(
+        mockFeed('@a:hs', false, {
+          stream: mockStreamWithTracks([
+            {
+              kind: 'video',
+              readyState: 'live',
+              enabled: true,
+              muted: true,
+            } as MediaStreamTrack,
+          ]),
+          audioMuted: true,
+          videoMuted: false,
+        }),
+      ),
+    ).toBe(true);
+  });
+});
+
 describe('countUnhealthyRemoteCallMedia', () => {
   it('treats screenshare-only remote as connected for stall detection', () => {
     expect(
@@ -128,6 +150,31 @@ describe('countUnhealthyRemoteCallMedia', () => {
     ).toBe(1);
   });
 
+  it('ignores warming video feeds during ICE connect', () => {
+    expect(
+      countUnhealthyRemoteCallMedia(
+        {
+          userMediaFeeds: [
+            mockFeed('@a:hs', false, {
+              stream: mockStreamWithTracks([
+                {
+                  kind: 'video',
+                  readyState: 'live',
+                  enabled: true,
+                  muted: true,
+                } as MediaStreamTrack,
+              ]),
+              audioMuted: true,
+              videoMuted: false,
+            }),
+          ],
+          screenshareFeeds: [],
+        },
+        ['@a:hs'],
+      ),
+    ).toBe(0);
+  });
+
   it('is clear when remote has live audio', () => {
     expect(
       countUnhealthyRemoteCallMedia(
@@ -135,7 +182,11 @@ describe('countUnhealthyRemoteCallMedia', () => {
           userMediaFeeds: [
             mockFeed('@a:hs', false, {
               stream: mockStreamWithTracks([
-                { kind: 'audio', readyState: 'live' },
+                {
+                  kind: 'audio',
+                  readyState: 'live',
+                  muted: false,
+                } as MediaStreamTrack,
               ]),
               audioMuted: false,
               videoMuted: true,

@@ -28,6 +28,19 @@ function hasLiveMediaStreamTrack(
   return tracks.some((track) => track.readyState === 'live');
 }
 
+function hasWarmingMediaStreamTrack(
+  stream: MediaStream,
+  kind: 'audio' | 'video',
+): boolean {
+  const tracks =
+    kind === 'audio' ? stream.getAudioTracks() : stream.getVideoTracks();
+  return tracks.some((track) => {
+    if (!track.enabled) return false;
+    const state = track.readyState as string;
+    return state === 'live' || state === 'new';
+  });
+}
+
 /**
  * CallFeed exists in the SDK list but WebRTC never delivered live tracks (or they
  * ended). Intentionally muted participants still count as healthy presence.
@@ -43,10 +56,31 @@ export function isRemoteCallFeedMediaHealthy(
   const stream = feed.stream ?? null;
   if (!stream) return false;
 
-  const liveAudio = hasLiveMediaStreamTrack(stream, 'audio');
-  const liveVideo = hasLiveMediaStreamTrack(stream, 'video');
+  const liveAudio = stream
+    .getAudioTracks()
+    .some((track) => track.readyState === 'live' && !track.muted);
+  const liveVideo = stream
+    .getVideoTracks()
+    .some((track) => track.readyState === 'live' && !track.muted);
   if (wantsAudio && liveAudio) return true;
   if (wantsVideo && liveVideo) return true;
+  return false;
+}
+
+/** Feed exists with tracks warming up — do not hang up pairwise calls yet. */
+export function isRemoteCallFeedMediaWarming(
+  feed: RemoteCallFeedLike,
+): boolean {
+  const wantsAudio = !feed.isAudioMuted();
+  const wantsVideo = !feed.isVideoMuted();
+  if (!wantsAudio && !wantsVideo) return false;
+
+  const stream = feed.stream ?? null;
+  if (!stream) return false;
+  if (isRemoteCallFeedMediaHealthy(feed)) return false;
+
+  if (wantsAudio && hasWarmingMediaStreamTrack(stream, 'audio')) return true;
+  if (wantsVideo && hasWarmingMediaStreamTrack(stream, 'video')) return true;
   return false;
 }
 
@@ -99,6 +133,9 @@ export function listUnhealthyRemoteCallUserIds(
       continue;
     }
     const userMediaFeed = findRemoteUserMediaFeed(gc, id);
+    if (userMediaFeed && isRemoteCallFeedMediaWarming(userMediaFeed)) {
+      continue;
+    }
     if (userMediaFeed && !isRemoteCallFeedMediaHealthy(userMediaFeed)) {
       unhealthy.push(id);
     }
