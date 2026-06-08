@@ -317,7 +317,7 @@ Browser console (filter `hypha.group_call`): look for `turn_probe` with `turnCre
 
 **Symptom in `journalctl -u coturn` during a live call:**
 
-```
+```text
 incoming packet ALLOCATE processed, success
 incoming packet CREATE_PERMISSION processed, error 403: Forbidden IP
 peer usage: ... rp=0, rb=0, sp=0, sb=0
