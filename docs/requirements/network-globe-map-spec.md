@@ -112,7 +112,7 @@ Today:
 
 **Layout (desktop):**
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  Many Spaces, One Network          [List] [Map]  Create...   │
 ├─────────────────────────────────────────────────────────────┤
@@ -248,7 +248,7 @@ located_at timestamptz NULL        -- last pin update
 
 ### 6.1 Package placement (monorepo boundaries)
 
-```
+```text
 packages/epics/src/network-map/     # NetworkMap, LayerControls, PinLayer
 packages/epics/src/spaces/          # SpaceLocationPicker (used by SpaceForm)
 packages/core/src/geo/              # types, geocode client, layer metadata
