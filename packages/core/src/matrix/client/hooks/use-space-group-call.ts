@@ -95,7 +95,10 @@ import {
   countUnhealthyRemoteCallMedia,
   listUnhealthyRemoteCallUserIds,
 } from './remote-call-media-stall';
-import { hangupPairwiseCallsForRemoteUsers } from './call-pairwise-restart';
+import {
+  hangupPairwiseCallsForRemoteUsers,
+  republishLocalMediaToPairwiseCalls,
+} from './call-pairwise-restart';
 import {
   applyScreenshareTrackContentHints,
   resolveScreenshareVoicePresetPlan,
@@ -181,7 +184,7 @@ const CONNECT_STALL_ABORT_MS = 90_000;
 /** Room shows others in-call but no remote userMedia CallFeed yet (signaling/WebRTC issue). */
 const REMOTE_MEDIA_STALL_MS = 45_000;
 /** One-shot pairwise hangup + re-place when nudges fail (no GroupCall.leave). */
-const REMOTE_MEDIA_PAIRWISE_RESTART_MS = 25_000;
+const REMOTE_MEDIA_PAIRWISE_RESTART_MS = 10_000;
 const REMOTE_MEDIA_REPAIR_NUDGE_MS = 1500;
 
 /** Dev console: periodic sample of feeds vs participant map (not every Matrix event). */
@@ -308,12 +311,14 @@ function isLocalOutboundMediaUnhealthy(
   return false;
 }
 
-function restartPairwiseCallsForRemoteUsers(
+async function restartPairwiseCallsForRemoteUsers(
   gc: MatrixSdk.GroupCall,
   remoteUserIds: readonly string[],
-): number {
+): Promise<number> {
+  await republishLocalMediaToPairwiseCalls(gc);
   const hungUp = hangupPairwiseCallsForRemoteUsers(gc, remoteUserIds);
   nudgeGroupCallPlaceOutgoing(gc);
+  await republishLocalMediaToPairwiseCalls(gc);
   return hungUp;
 }
 
@@ -498,6 +503,7 @@ async function ensureLocalCallMediaPublished(
   } catch {
     /* keep call connected if device recovery fails */
   }
+  await republishLocalMediaToPairwiseCalls(gc);
   nudgeGroupCallPlaceOutgoing(gc);
 }
 
@@ -1856,23 +1862,28 @@ export function useSpaceGroupCall(
         const restartTargets = localOutboundUnhealthy
           ? othersInCall
           : unhealthyRemoteIds;
-        void ensurePublishedLocalMediaWithOrientation(gc, kind).then(() => {
-          if (groupCallRef.current !== gc) return;
-          const hungUp = restartPairwiseCallsForRemoteUsers(gc, restartTargets);
-          scheduleFeedBatched();
-          refreshLocalPreview();
-          if (roomId) {
-            logSpaceGroupCallEvent({
-              name: 'hypha.group_call.pairwise_restart',
-              roomId,
-              kind,
-              groupCallId: gc.groupCallId,
-              hungUp,
-              localOutboundUnhealthy,
-              targetCount: restartTargets.length,
-            });
-          }
-        });
+        void ensurePublishedLocalMediaWithOrientation(gc, kind).then(
+          async () => {
+            if (groupCallRef.current !== gc) return;
+            const hungUp = await restartPairwiseCallsForRemoteUsers(
+              gc,
+              restartTargets,
+            );
+            scheduleFeedBatched();
+            refreshLocalPreview();
+            if (roomId) {
+              logSpaceGroupCallEvent({
+                name: 'hypha.group_call.pairwise_restart',
+                roomId,
+                kind,
+                groupCallId: gc.groupCallId,
+                hungUp,
+                localOutboundUnhealthy,
+                targetCount: restartTargets.length,
+              });
+            }
+          },
+        );
       }
       if (
         !remoteMediaStallBannerDismissedRef.current &&
@@ -1954,9 +1965,9 @@ export function useSpaceGroupCall(
     scheduleFeedBatched();
     refreshLocalPreview();
 
-    void ensurePublishedLocalMediaWithOrientation(gc, kind).then(() => {
+    void ensurePublishedLocalMediaWithOrientation(gc, kind).then(async () => {
       if (groupCallRef.current !== gc) return;
-      const hungUp = restartPairwiseCallsForRemoteUsers(gc, othersInCall);
+      const hungUp = await restartPairwiseCallsForRemoteUsers(gc, othersInCall);
       scheduleFeedBatched();
       refreshLocalPreview();
       evalRemoteMediaStall();
@@ -2148,6 +2159,12 @@ export function useSpaceGroupCall(
         scheduleLocalMediaBootstrap(gc);
       };
       gc.on(GroupCallEvent.ParticipantsChanged, onParticipantsChanged);
+      const onCallsChanged = () => {
+        /** New pairwise session — push warmed local A/V into the peer connection. */
+        scheduleLocalMediaBootstrap(gc);
+        nudgeGroupCallPlaceOutgoing(gc);
+      };
+      gc.on(GroupCallEvent.CallsChanged, onCallsChanged);
       const onFeedsMaybeParticipants = () => {
         scheduleFeedBatched();
         updateParticipantCount();
@@ -2188,6 +2205,7 @@ export function useSpaceGroupCall(
           GroupCallEvent.ParticipantsChanged,
           onParticipantsChanged,
         );
+        gc.removeListener(GroupCallEvent.CallsChanged, onCallsChanged);
         gc.removeListener(
           GroupCallEvent.UserMediaFeedsChanged,
           onFeedsMaybeParticipants,

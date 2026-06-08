@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { hangupPairwiseCallsForRemoteUsers } from '../call-pairwise-restart';
+import {
+  hangupPairwiseCallsForRemoteUsers,
+  republishLocalMediaToPairwiseCalls,
+} from '../call-pairwise-restart';
 
 describe('hangupPairwiseCallsForRemoteUsers', () => {
   it('hangs up calls whose opponent matches a target user id', () => {
@@ -39,5 +42,28 @@ describe('hangupPairwiseCallsForRemoteUsers', () => {
 
     expect(hangupPairwiseCallsForRemoteUsers(gc, ['@a:hs'])).toBe(0);
     expect(hangup).not.toHaveBeenCalled();
+  });
+});
+
+describe('republishLocalMediaToPairwiseCalls', () => {
+  it('pushes the local feed stream into each active MatrixCall', async () => {
+    const track = { kind: 'video' } as MediaStreamTrack;
+    const stream = {
+      id: 'local-stream',
+      getTracks: () => [track],
+    } as MediaStream;
+    const update = vi.fn().mockResolvedValue(undefined);
+    const gc = {
+      localCallFeed: { stream },
+      forEachCall: (callback: (call: unknown) => void) => {
+        callback({
+          callHasEnded: () => false,
+          updateLocalUsermediaStream: update,
+        });
+      },
+    };
+
+    await expect(republishLocalMediaToPairwiseCalls(gc)).resolves.toBe(1);
+    expect(update).toHaveBeenCalledWith(stream);
   });
 });
