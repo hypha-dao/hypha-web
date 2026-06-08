@@ -32,14 +32,18 @@ function streamRepublishFingerprint(stream: MediaStream): string {
     stream.id,
     ...stream
       .getTracks()
-      .map((track) => `${track.kind}:${track.id}:${track.readyState}`),
+      .map(
+        (track) =>
+          `${track.kind}:${track.id}:${track.readyState}:${track.muted}:${track.enabled}`,
+      ),
   ].join('|');
 }
 
-let lastPairwiseRepublishFingerprint: string | null = null;
+/** Per pairwise call — new MatrixCall sessions must receive local A/V even when the stream fingerprint is unchanged. */
+const lastPublishedFingerprintByCall = new Map<MatrixCallRestartLike, string>();
 
 export function resetPairwiseRepublishFingerprintForTests(): void {
-  lastPairwiseRepublishFingerprint = null;
+  lastPublishedFingerprintByCall.clear();
 }
 
 /**
@@ -63,6 +67,7 @@ export function hangupPairwiseCallsForRemoteUsers(
     if (typeof call.hangup !== 'function') return;
     try {
       call.hangup();
+      lastPublishedFingerprintByCall.delete(call);
       hungUp += 1;
     } catch {
       /* best-effort */
@@ -86,21 +91,27 @@ export async function republishLocalMediaToPairwiseCalls(
   if (!stream || stream.getTracks().length === 0) return 0;
 
   const fingerprint = streamRepublishFingerprint(stream);
-  if (!options?.force && fingerprint === lastPairwiseRepublishFingerprint) {
-    return 0;
-  }
 
   const tasks: Promise<void>[] = [];
   let updated = 0;
   forEachGroupCallMatrixCall(groupCall, (call) => {
-    if (call.callHasEnded?.()) return;
+    if (call.callHasEnded?.()) {
+      lastPublishedFingerprintByCall.delete(call);
+      return;
+    }
     if (typeof call.updateLocalUsermediaStream !== 'function') return;
+    const last = lastPublishedFingerprintByCall.get(call);
+    if (!options?.force && last === fingerprint) return;
     updated += 1;
-    tasks.push(call.updateLocalUsermediaStream(stream).catch(() => undefined));
+    tasks.push(
+      call
+        .updateLocalUsermediaStream(stream)
+        .then(() => {
+          lastPublishedFingerprintByCall.set(call, fingerprint);
+        })
+        .catch(() => undefined),
+    );
   });
   await Promise.all(tasks);
-  if (updated > 0) {
-    lastPairwiseRepublishFingerprint = fingerprint;
-  }
   return updated;
 }

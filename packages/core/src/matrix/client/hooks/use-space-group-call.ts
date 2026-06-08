@@ -870,6 +870,7 @@ export function useSpaceGroupCall(
           outboundVideoOrientationDisposersRef.current,
         );
       }
+      await republishLocalMediaToPairwiseCalls(gc);
     },
     [],
   );
@@ -2966,6 +2967,7 @@ export function useSpaceGroupCall(
             outboundVideoOrientationProcessedRef.current,
             outboundVideoOrientationDisposersRef.current,
           );
+          await republishLocalMediaToPairwiseCalls(gc, { force: true });
         }
       }
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
@@ -2974,6 +2976,7 @@ export function useSpaceGroupCall(
       window.setTimeout(() => {
         if (groupCallRef.current === gc && !gc.isLocalVideoMuted()) {
           nudgeGroupCallPlaceOutgoing(gc);
+          void republishLocalMediaToPairwiseCalls(gc);
         }
         refreshLocalPreview();
         scheduleFeedBatched();
@@ -3580,9 +3583,22 @@ export function useSpaceGroupCall(
     const gc = groupCallRef.current;
     if (!gc || gc.isLocalVideoMuted()) return;
 
+    const republishIfCameraReady = () => {
+      if (gc.isLocalVideoMuted()) return;
+      if (!getPublishableLocalVideoTrack(gc)) return;
+      void republishLocalMediaToPairwiseCalls(gc).then(() => {
+        scheduleFeedBatched();
+        refreshLocalPreview();
+      });
+    };
+
     const recoverIfNeeded = () => {
       if (typeof document !== 'undefined' && document.hidden) return;
-      if (gc.isLocalVideoMuted() || getPublishableLocalVideoTrack(gc)) return;
+      if (gc.isLocalVideoMuted()) return;
+      if (getPublishableLocalVideoTrack(gc)) {
+        republishIfCameraReady();
+        return;
+      }
       const kind = lastJoinKindRef.current ?? 'video';
       void ensurePublishedLocalMediaWithOrientation(gc, kind).then(() => {
         scheduleFeedBatched();
