@@ -42,10 +42,13 @@ export function useGeocodeSearch({
           setError('request_failed');
           return;
         }
-        const payload = (await response.json()) as {
-          results?: GeocodeResult[];
-        };
-        setResults(payload.results ?? []);
+        const payload = geocodeResponseSchema.safeParse(await response.json());
+        if (!payload.success) {
+          setResults([]);
+          setError('request_failed');
+          return;
+        }
+        setResults(payload.data.results);
       } catch (fetchError) {
         if (controller.signal.aborted) return;
         setResults([]);
