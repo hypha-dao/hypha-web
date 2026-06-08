@@ -15,6 +15,14 @@ type RateLimitBucket = {
 
 const rateLimitByIp = new Map<string, RateLimitBucket>();
 
+function pruneRateLimitBuckets(now: number): void {
+  for (const [ip, bucket] of rateLimitByIp) {
+    if (now - bucket.windowStartedAt > RATE_LIMIT_WINDOW_MS) {
+      rateLimitByIp.delete(ip);
+    }
+  }
+}
+
 function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
@@ -25,6 +33,7 @@ function getClientIp(request: Request): string {
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
+  pruneRateLimitBuckets(now);
   const bucket = rateLimitByIp.get(ip);
   if (!bucket || now - bucket.windowStartedAt > RATE_LIMIT_WINDOW_MS) {
     rateLimitByIp.set(ip, { count: 1, windowStartedAt: now });
