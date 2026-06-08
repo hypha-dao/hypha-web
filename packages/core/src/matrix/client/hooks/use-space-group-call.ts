@@ -2183,7 +2183,11 @@ export function useSpaceGroupCall(
       const onCallsChanged = () => {
         /** New pairwise session — debounced republish after ICE has time to connect. */
         if (groupCallRef.current !== gc) return;
-        scheduleRepublishLocalMediaToPairwiseCalls(gc, { delayMs: 4_000 });
+        const kind = lastJoinKindRef.current ?? 'audio';
+        scheduleRepublishLocalMediaToPairwiseCalls(gc, {
+          force: kind === 'video' && !gc.isLocalVideoMuted(),
+          delayMs: kind === 'video' ? 2_000 : 4_000,
+        });
         nudgeGroupCallPlaceOutgoing(gc);
       };
       gc.on(GroupCallEvent.CallsChanged, onCallsChanged);

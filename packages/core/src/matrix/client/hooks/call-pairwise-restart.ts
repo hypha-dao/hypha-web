@@ -1,12 +1,32 @@
+type LocalCallFeedLike = {
+  stream?: MediaStream | null;
+  isVideoMuted?: () => boolean;
+  isAudioMuted?: () => boolean;
+};
+
 type MatrixCallRestartLike = {
   hangup?: () => void;
   callHasEnded?: () => boolean;
   getOpponentMember?: () => { userId?: string } | null;
-  updateLocalUsermediaStream?: (stream: MediaStream) => Promise<void>;
+  updateLocalUsermediaStream?: (
+    stream: MediaStream,
+    forceAudio?: boolean,
+    forceVideo?: boolean,
+  ) => Promise<void>;
+  setLocalVideoMuted?: (muted: boolean) => Promise<unknown>;
+  isLocalVideoMuted?: () => boolean;
+  hasUserMediaVideoSender?: boolean;
+  localUsermediaFeed?: {
+    setAudioVideoMuted?: (
+      audioMuted: boolean | null,
+      videoMuted: boolean | null,
+    ) => void;
+  };
+  sendMetadataUpdate?: () => Promise<void>;
 };
 
 type GroupCallCallsLike = {
-  localCallFeed?: { stream?: MediaStream | null };
+  localCallFeed?: LocalCallFeedLike;
   forEachCall?: (callback: (call: MatrixCallRestartLike) => void) => void;
   calls?: Map<string, Map<string, MatrixCallRestartLike>>;
 };
@@ -37,6 +57,53 @@ function streamRepublishFingerprint(stream: MediaStream): string {
           `${track.kind}:${track.id}:${track.readyState}:${track.muted}:${track.enabled}`,
       ),
   ].join('|');
+}
+
+function resolvePairwisePublishFlags(feed: LocalCallFeedLike | undefined): {
+  wantAudio: boolean;
+  wantVideo: boolean;
+} {
+  return {
+    wantAudio: !(feed?.isAudioMuted?.() ?? false),
+    wantVideo: !(feed?.isVideoMuted?.() ?? true),
+  };
+}
+
+/**
+ * matrix-js-sdk `MatrixCall.updateLocalUsermediaStream(stream)` without
+ * `forceVideo` leaves outbound video tracks disabled when the per-call feed was
+ * cloned from an audio-first session (`callFeed.isVideoMuted() === true`).
+ */
+async function pushStreamToMatrixCall(
+  call: MatrixCallRestartLike,
+  stream: MediaStream,
+  flags: { wantAudio: boolean; wantVideo: boolean },
+): Promise<void> {
+  if (call.callHasEnded?.()) return;
+
+  const needsVideoUpgrade =
+    flags.wantVideo &&
+    (call.isLocalVideoMuted?.() === true ||
+      call.hasUserMediaVideoSender === false);
+
+  if (needsVideoUpgrade && typeof call.setLocalVideoMuted === 'function') {
+    await call.setLocalVideoMuted(false).catch(() => undefined);
+  }
+
+  call.localUsermediaFeed?.setAudioVideoMuted?.(
+    flags.wantAudio ? false : null,
+    flags.wantVideo ? false : null,
+  );
+
+  if (typeof call.updateLocalUsermediaStream === 'function') {
+    await call
+      .updateLocalUsermediaStream(stream, flags.wantAudio, flags.wantVideo)
+      .catch(() => undefined);
+  }
+
+  if (flags.wantAudio || flags.wantVideo) {
+    await call.sendMetadataUpdate?.().catch(() => undefined);
+  }
 }
 
 /** Per pairwise call — new MatrixCall sessions must receive local A/V even when the stream fingerprint is unchanged. */
@@ -90,7 +157,12 @@ export async function republishLocalMediaToPairwiseCalls(
   const stream = groupCall.localCallFeed?.stream ?? null;
   if (!stream || stream.getTracks().length === 0) return 0;
 
-  const fingerprint = streamRepublishFingerprint(stream);
+  const publishFlags = resolvePairwisePublishFlags(groupCall.localCallFeed);
+  const fingerprint = [
+    streamRepublishFingerprint(stream),
+    publishFlags.wantAudio ? 'a1' : 'a0',
+    publishFlags.wantVideo ? 'v1' : 'v0',
+  ].join('|');
 
   const tasks: Promise<void>[] = [];
   let updated = 0;
@@ -104,12 +176,9 @@ export async function republishLocalMediaToPairwiseCalls(
     if (!options?.force && last === fingerprint) return;
     updated += 1;
     tasks.push(
-      call
-        .updateLocalUsermediaStream(stream)
-        .then(() => {
-          lastPublishedFingerprintByCall.set(call, fingerprint);
-        })
-        .catch(() => undefined),
+      pushStreamToMatrixCall(call, stream, publishFlags).then(() => {
+        lastPublishedFingerprintByCall.set(call, fingerprint);
+      }),
     );
   });
   await Promise.all(tasks);
