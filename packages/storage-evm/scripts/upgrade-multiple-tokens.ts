@@ -19,9 +19,9 @@ import path from 'path';
 const TOKEN_TYPE: 'Regular' | 'Ownership' | 'Decaying' = 'Regular';
 
 // Token addresses to upgrade (edit this array or load from file)
-// Space ID 803 (executor 0x9C64A299D9C9fC902cc30284Bc5dc3d80E8C9F5a) — DAFCREDITS
 const TOKEN_ADDRESSES: string[] = [
-  '0xc82721CEB329f10284c54Aa61C7341988713683D',
+  '0x4DD04a43dfdfc7D0134Da363C53729A9e6F13B37', // Bassin
+  '0xdD9fB14802E716BD9dF8d9420365cc76e2e5C58E', // Marseille
 ];
 
 // Set to true to load addresses from a file instead of using TOKEN_ADDRESSES array
