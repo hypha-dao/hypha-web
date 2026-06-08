@@ -91,10 +91,7 @@ import {
   applyScreenShareCaptureRootRestrictionWithRetry,
   clearScreenShareCaptureRootRestriction,
 } from './screenshare-capture-exclusion';
-import {
-  collectRemoteCallFeedUserIds,
-  countMissingRemoteCallFeeds,
-} from './remote-call-media-stall';
+import { countUnhealthyRemoteCallMedia } from './remote-call-media-stall';
 import {
   applyScreenshareTrackContentHints,
   resolveScreenshareVoicePresetPlan,
@@ -1777,13 +1774,12 @@ export function useSpaceGroupCall(
     const gc = groupCallRef.current;
     if (!gc || !roomId?.trim() || !client) return;
     const myId = client.getUserId() ?? null;
-    const remoteIdsWithFeed = collectRemoteCallFeedUserIds(gc);
     const othersInCall = inCallUserIdsFromGroupCall(gc).filter(
       (id) => id && id !== myId,
     );
-    const missingRemoteFeedCount = countMissingRemoteCallFeeds(
+    const missingRemoteFeedCount = countUnhealthyRemoteCallMedia(
+      gc,
       othersInCall,
-      remoteIdsWithFeed,
     );
 
     const now = Date.now();
@@ -1918,13 +1914,12 @@ export function useSpaceGroupCall(
     const gc = groupCallRef.current;
     if (!gc || !roomId?.trim() || !client) return;
     const myId = client.getUserId() ?? null;
-    const remoteIdsWithFeed = collectRemoteCallFeedUserIds(gc);
     const othersInCall = inCallUserIdsFromGroupCall(gc).filter(
       (id) => id && id !== myId,
     );
-    const missingRemoteFeedCount = countMissingRemoteCallFeeds(
+    const missingRemoteFeedCount = countUnhealthyRemoteCallMedia(
+      gc,
       othersInCall,
-      remoteIdsWithFeed,
     );
     logSpaceGroupCallEvent({
       name: 'hypha.group_call.media_snapshot',

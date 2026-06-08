@@ -17,20 +17,21 @@ describe('call-pairwise-retry-env (CSH-MESH-1)', () => {
     }
   });
 
-  it('returns base retry schedule by default', () => {
+  it('includes 20s retry by default', () => {
     delete process.env.NEXT_PUBLIC_CALL_PAIRWISE_RETRY_20S;
-    expect(isCallPairwiseRetry20sEnabled()).toBe(false);
+    expect(isCallPairwiseRetry20sEnabled()).toBe(true);
     expect(resolvePlaceOutgoingRetryDelaysMs()).toEqual(
       PLACE_OUTGOING_RETRY_BASE_MS,
     );
   });
 
-  it('appends 20s retry when env flag is enabled', () => {
-    process.env.NEXT_PUBLIC_CALL_PAIRWISE_RETRY_20S = 'true';
-    expect(isCallPairwiseRetry20sEnabled()).toBe(true);
-    expect(resolvePlaceOutgoingRetryDelaysMs()).toEqual([
-      ...PLACE_OUTGOING_RETRY_BASE_MS,
-      PLACE_OUTGOING_RETRY_EXTENDED_MS,
-    ]);
+  it('omits 20s retry when env flag is false', () => {
+    process.env.NEXT_PUBLIC_CALL_PAIRWISE_RETRY_20S = 'false';
+    expect(isCallPairwiseRetry20sEnabled()).toBe(false);
+    expect(resolvePlaceOutgoingRetryDelaysMs()).toEqual(
+      PLACE_OUTGOING_RETRY_BASE_MS.filter(
+        (ms) => ms !== PLACE_OUTGOING_RETRY_EXTENDED_MS,
+      ),
+    );
   });
 });
