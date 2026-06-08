@@ -12,6 +12,7 @@ const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 10;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 1_000;
+const FETCH_TIMEOUT_MS = 5_000;
 
 type CacheEntry = {
   expiresAt: number;
@@ -45,12 +46,13 @@ export async function searchNominatim(
 ): Promise<GeocodeResult[]> {
   const now = Date.now();
   pruneGeocodeCache(now);
+  const safeLimit = Math.max(1, Math.min(limit, MAX_LIMIT));
   const normalizedQuery = normalizeGeocodeQuery(query);
   if (normalizedQuery.length < 2) {
     return [];
   }
 
-  const cacheKey = `${normalizedQuery}:${limit}`;
+  const cacheKey = `${normalizedQuery}:${safeLimit}`;
   const cached = geocodeCache.get(cacheKey);
   if (cached && cached.expiresAt > now) {
     return cached.results;
@@ -59,7 +61,7 @@ export async function searchNominatim(
   const url = new URL(NOMINATIM_SEARCH_URL);
   url.searchParams.set('q', query.trim());
   url.searchParams.set('format', 'json');
-  url.searchParams.set('limit', String(limit));
+  url.searchParams.set('limit', String(safeLimit));
   url.searchParams.set('addressdetails', '0');
 
   const response = await fetch(url, {
