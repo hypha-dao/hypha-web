@@ -189,7 +189,8 @@ const CONNECT_STALL_ABORT_MS = 90_000;
 const REMOTE_MEDIA_STALL_MS = 45_000;
 /** One-shot pairwise hangup + re-place when nudges fail (no GroupCall.leave). */
 const REMOTE_MEDIA_PAIRWISE_RESTART_MS = 45_000;
-const REMOTE_MEDIA_REPAIR_NUDGE_MS = 1500;
+/** Avoid hammering `placeOutgoingCalls()` while ICE is still checking (negotiation glare). */
+const REMOTE_MEDIA_REPAIR_NUDGE_MS = 8_000;
 
 /** Dev console: periodic sample of feeds vs participant map (not every Matrix event). */
 const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
@@ -1559,7 +1560,7 @@ export function useSpaceGroupCall(
       }
       try {
         await gc.updateLocalUsermediaStream(nextStream);
-        scheduleRepublishLocalMediaToPairwiseCalls(gc);
+        scheduleRepublishLocalMediaToPairwiseCalls(gc, { force: true });
       } catch (error) {
         for (const track of refreshedAudioStream.getTracks()) {
           track.stop();
@@ -1855,13 +1856,6 @@ export function useSpaceGroupCall(
           nudgeGroupCallPlaceOutgoing(gc);
         }, REMOTE_MEDIA_REPAIR_NUDGE_MS);
       }
-      /**
-       * The SDK can know the remote participant from group-call member state
-       * while the pairwise `MatrixCall` never finishes selecting an opponent
-       * (candidates get buffered, no CallFeed arrives). Retry placement from
-       * the stalled side as well as from ParticipantsChanged/room-state bumps.
-       */
-      nudgeGroupCallPlaceOutgoing(gc);
       if (
         client &&
         now - lastStallTurnProbeAtRef.current >=
@@ -1876,8 +1870,11 @@ export function useSpaceGroupCall(
       if (remoteMediaGapSinceRef.current == null) {
         remoteMediaGapSinceRef.current = now;
       }
-      scheduleLocalMediaBootstrap(gc);
       const waitedMs = now - (remoteMediaGapSinceRef.current ?? now);
+      /** Let the first pairwise ICE check finish before re-publishing local tracks. */
+      if (waitedMs >= 12_000) {
+        scheduleLocalMediaBootstrap(gc);
+      }
       if (
         waitedMs >= REMOTE_MEDIA_PAIRWISE_RESTART_MS &&
         !remoteMediaPairwiseRestartAttemptedRef.current
@@ -2630,7 +2627,13 @@ export function useSpaceGroupCall(
        */
       try {
         await ensurePublishedLocalMediaWithOrientation(gc, kind);
-        scheduleRepublishLocalMediaToPairwiseCalls(gc, { delayMs: 4_000 });
+        if (kind === 'video' && !gc.isLocalVideoMuted()) {
+          await republishLocalMediaToPairwiseCalls(gc, { force: true });
+        }
+        scheduleRepublishLocalMediaToPairwiseCalls(gc, {
+          force: kind === 'video',
+          delayMs: kind === 'video' ? 2_000 : 4_000,
+        });
       } catch {
         /* best-effort local media bootstrap */
       }
@@ -2983,7 +2986,15 @@ export function useSpaceGroupCall(
             outboundVideoOrientationProcessedRef.current,
             outboundVideoOrientationDisposersRef.current,
           );
-          scheduleRepublishLocalMediaToPairwiseCalls(gc, { delayMs: 2_000 });
+          /**
+           * Audio-first pairwise sessions negotiate without a video m-line; force
+           * push the camera track into each active MatrixCall after unmute.
+           */
+          await republishLocalMediaToPairwiseCalls(gc, { force: true });
+          scheduleRepublishLocalMediaToPairwiseCalls(gc, {
+            force: true,
+            delayMs: 2_000,
+          });
         }
       }
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
@@ -2992,7 +3003,7 @@ export function useSpaceGroupCall(
       window.setTimeout(() => {
         if (groupCallRef.current === gc && !gc.isLocalVideoMuted()) {
           nudgeGroupCallPlaceOutgoing(gc);
-          scheduleRepublishLocalMediaToPairwiseCalls(gc);
+          void republishLocalMediaToPairwiseCalls(gc, { force: true });
         }
         refreshLocalPreview();
         scheduleFeedBatched();
@@ -3136,6 +3147,9 @@ export function useSpaceGroupCall(
             } catch {
               /* keep call connected if camera recovery fails */
             }
+          }
+          if (!gc.isLocalVideoMuted()) {
+            scheduleRepublishLocalMediaToPairwiseCalls(gc, { force: true });
           }
           scheduleFeedBatched();
           refreshLocalPreview();

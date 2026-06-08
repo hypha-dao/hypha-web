@@ -311,6 +311,38 @@ Browser console (filter `hypha.group_call`): look for `turn_probe` with `turnCre
 | **429 / M_LIMIT_EXCEEDED** on `turnServer` | Dendrite `client_api.rate_limiting` too strict — raise threshold/cooloff or exempt VoIP; hard-refresh client after fix |
 | STUN works, TURN auth fails | `turn_shared_secret` ≠ coturn `static-auth-secret` |
 | Banner still shows after server fix | Hard-refresh app; leave and rejoin call; check Hypha `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` points to this host |
+| **`CREATE_PERMISSION` → `error 403: Forbidden IP`** in coturn logs (ALLOCATE succeeds) | coturn is blocking peer relay permissions — see §8.1 |
+
+### 8.1 `CREATE_PERMISSION` / `403 Forbidden IP` (calls connect but no media)
+
+**Symptom in `journalctl -u coturn` during a live call:**
+
+```
+incoming packet ALLOCATE processed, success
+incoming packet CREATE_PERMISSION processed, error 403: Forbidden IP
+peer usage: ... rp=0, rb=0, sp=0, sb=0
+```
+
+TURN credentials and relay allocation work; **media cannot flow** because coturn refuses to relay between peers.
+
+**On the VPS:**
+
+```bash
+grep -E '^(denied-peer-ip|allowed-peer-ip|external-ip|relay-ip|no-loopback-peers)' \
+  /etc/turnserver.conf /etc/coturn/turnserver.conf 2>/dev/null
+```
+
+**Fix:** edit `/etc/turnserver.conf` — ensure `external-ip` is the VPS public IPv4, remove overly broad `denied-peer-ip` lines, and allow peer permissions:
+
+```ini
+external-ip=YOUR_PUBLIC_IP
+relay-ip=YOUR_PUBLIC_IP
+allowed-peer-ip=0.0.0.0-255.255.255.255
+```
+
+Do **not** add `denied-peer-ip=YOUR_PUBLIC_IP`. Restart: `systemctl restart coturn`.
+
+**Verify:** during a call, logs should show `CREATE_PERMISSION processed, success` and non-zero `peer usage`.
 
 ### coturn logs
 
