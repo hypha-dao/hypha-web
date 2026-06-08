@@ -2991,6 +2991,17 @@ export function useSpaceGroupCall(
            * push the camera track into each active MatrixCall after unmute.
            */
           await republishLocalMediaToPairwiseCalls(gc, { force: true });
+          const myId = client?.getUserId()?.trim() ?? null;
+          const remoteIds = inCallUserIdsFromGroupCall(gc).filter(
+            (id) => id && id !== myId,
+          );
+          if (remoteIds.length > 0) {
+            /**
+             * Republish alone may not add a video m-line to audio-first pairwise
+             * sessions — hang up and re-place so both sides renegotiate with video.
+             */
+            await restartPairwiseCallsForRemoteUsers(gc, remoteIds);
+          }
           scheduleRepublishLocalMediaToPairwiseCalls(gc, {
             force: true,
             delayMs: 2_000,
@@ -3009,7 +3020,13 @@ export function useSpaceGroupCall(
         scheduleFeedBatched();
       }, 350);
     },
-    [refreshLocalPreview, roomId, scheduleFeedBatched],
+    [
+      client,
+      inCallUserIdsFromGroupCall,
+      refreshLocalPreview,
+      roomId,
+      scheduleFeedBatched,
+    ],
   );
 
   const setScreensharingEnabled = useCallback(

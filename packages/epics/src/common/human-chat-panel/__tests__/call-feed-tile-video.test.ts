@@ -72,13 +72,13 @@ describe('resolveCallFeedLiveVideoTrack', () => {
     ).toBe(track);
   });
 
-  it('does not bind live muted remote camera tracks before the first frame', () => {
+  it('binds live muted remote camera tracks before the first frame', () => {
     const track = mockTrack({ muted: true });
-    expect(
-      resolveCallFeedLiveVideoTrack(mockFeed({ tracks: [track] })),
-    ).toBeNull();
+    expect(resolveCallFeedLiveVideoTrack(mockFeed({ tracks: [track] }))).toBe(
+      track,
+    );
     expect(hasWarmingCallFeedVideoTrack(mockFeed({ tracks: [track] }))).toBe(
-      true,
+      false,
     );
   });
 
@@ -184,16 +184,16 @@ describe('shouldMarkCallFeedVideoSurfaceReady', () => {
 });
 
 describe('shouldPaintCallFeedVideoSurface', () => {
-  it('does not paint remote muted tracks (show avatar instead)', () => {
+  it('paints remote muted live tracks while frames warm up', () => {
     expect(
       shouldPaintCallFeedVideoSurface({
         hasVideo: true,
         warmingVideoTrack: false,
         videoSurfaceReady: true,
-        liveVideoTrack: mockTrack({ muted: true }),
+        liveVideoTrack: mockTrack({ muted: true, readyState: 'live' }),
         isLocalFeed: false,
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('paints unmuted tracks when the surface is ready', () => {

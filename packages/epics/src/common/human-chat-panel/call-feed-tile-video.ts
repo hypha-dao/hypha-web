@@ -45,20 +45,16 @@ export function resolveCallFeedLiveVideoTrack(
       null
     );
   }
-  const isLocal = isLocalCallFeedForTile(feed, options?.currentUserId);
   const liveUnmuted = tracks.find(
     (track) => track.readyState === 'live' && !track.muted,
   );
   if (liveUnmuted) return liveUnmuted;
   /**
-   * Local camera (Safari/iOS) may stay `muted: true` until the first frame — bind
-   * early so `<video>` can paint. Remote tracks in that state show avatar via
-   * `hasWarmingCallFeedVideoTrack` instead of a black tile.
+   * Camera tracks (local or remote) may stay `muted: true` until the first frame
+   * — bind early so `<video>` can paint once WebRTC delivers pixels.
    */
-  if (isLocal) {
-    const liveMuted = tracks.find((track) => track.readyState === 'live');
-    if (liveMuted) return liveMuted;
-  }
+  const liveMuted = tracks.find((track) => track.readyState === 'live');
+  if (liveMuted) return liveMuted;
   return tracks.find((track) => (track.readyState as string) === 'new') ?? null;
 }
 
@@ -141,7 +137,7 @@ export function shouldPaintCallFeedVideoSurface(options: {
     return false;
   }
   if (!liveVideoTrack.muted) return true;
-  return isLocalFeed && liveVideoTrack.readyState === 'live';
+  return liveVideoTrack.readyState === 'live';
 }
 
 /** WCUX-QUALITY-3: letterbox instead of upscaling beyond intrinsic frame size. */
