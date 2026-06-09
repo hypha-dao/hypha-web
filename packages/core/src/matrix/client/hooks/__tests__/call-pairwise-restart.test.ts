@@ -116,6 +116,7 @@ describe('pairwise video resync', () => {
       enabled: true,
     } as MediaStreamTrack;
     const gc = {
+      groupCallId: 'gc-test-1',
       localCallFeed: {
         stream: { id: 's1', getTracks: () => [track] } as MediaStream,
         isVideoMuted: () => false,
@@ -138,6 +139,28 @@ describe('pairwise video resync', () => {
     expect(hangup).toHaveBeenCalledTimes(1);
     expect(nudge).toHaveBeenCalledTimes(1);
     expect(update).toHaveBeenCalledWith(gc.localCallFeed.stream, true, true);
+  });
+
+  it('caps full video resync to two attempts per group call', async () => {
+    vi.useFakeTimers();
+    const hangup = vi.fn();
+    const nudge = vi.fn();
+    const gc = {
+      groupCallId: 'gc-cap-test',
+      localCallFeed: { stream: null },
+      forEachCall: (callback: (call: unknown) => void) => {
+        callback({ callHasEnded: () => false, hangup });
+      },
+    };
+
+    schedulePairwiseVideoResync(gc, nudge, 50);
+    await vi.advanceTimersByTimeAsync(50);
+    schedulePairwiseVideoResync(gc, nudge, 50);
+    await vi.advanceTimersByTimeAsync(50);
+    schedulePairwiseVideoResync(gc, nudge, 50);
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect(hangup).toHaveBeenCalledTimes(2);
   });
 
   it('restartAllPairwiseCallsForVideo hangs up, nudges, and republishes', async () => {

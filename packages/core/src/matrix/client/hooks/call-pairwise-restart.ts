@@ -184,11 +184,18 @@ export async function restartAllPairwiseCallsForVideo(
 }
 
 const PAIRWISE_VIDEO_RESYNC_DEBOUNCE_MS = 5_000;
+/** Cap full hangup+re-place cycles — each one retriggers CallsChanged and SDP churn. */
+const MAX_PAIRWISE_VIDEO_RESYNC_PER_GROUP_CALL = 2;
 let pairwiseVideoResyncTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingPairwiseVideoResync: {
   gc: unknown;
   nudgePlaceOutgoing: () => void;
 } | null = null;
+const pairwiseVideoResyncCountByGroupCallId = new Map<string, number>();
+
+function readGroupCallId(gc: unknown): string {
+  return String((gc as { groupCallId?: string })?.groupCallId ?? '');
+}
 
 export function clearPairwiseVideoResyncSchedule(): void {
   if (pairwiseVideoResyncTimer != null) {
@@ -198,8 +205,19 @@ export function clearPairwiseVideoResyncSchedule(): void {
   pendingPairwiseVideoResync = null;
 }
 
+export function clearPairwiseVideoResyncAttemptCounts(
+  groupCallId?: string,
+): void {
+  if (groupCallId) {
+    pairwiseVideoResyncCountByGroupCallId.delete(groupCallId);
+    return;
+  }
+  pairwiseVideoResyncCountByGroupCallId.clear();
+}
+
 export function resetPairwiseVideoResyncScheduleForTests(): void {
   clearPairwiseVideoResyncSchedule();
+  clearPairwiseVideoResyncAttemptCounts();
 }
 
 /**
@@ -212,6 +230,11 @@ export function schedulePairwiseVideoResync(
   delayMs = PAIRWISE_VIDEO_RESYNC_DEBOUNCE_MS,
 ): void {
   if (typeof setTimeout === 'undefined') return;
+  const groupCallId = readGroupCallId(gc);
+  const priorAttempts =
+    pairwiseVideoResyncCountByGroupCallId.get(groupCallId) ?? 0;
+  if (priorAttempts >= MAX_PAIRWISE_VIDEO_RESYNC_PER_GROUP_CALL) return;
+
   pendingPairwiseVideoResync = { gc, nudgePlaceOutgoing };
   if (pairwiseVideoResyncTimer != null) {
     clearTimeout(pairwiseVideoResyncTimer);
@@ -221,6 +244,11 @@ export function schedulePairwiseVideoResync(
     const pending = pendingPairwiseVideoResync;
     pendingPairwiseVideoResync = null;
     if (!pending) return;
+    const pendingGroupCallId = readGroupCallId(pending.gc);
+    const attempts =
+      pairwiseVideoResyncCountByGroupCallId.get(pendingGroupCallId) ?? 0;
+    if (attempts >= MAX_PAIRWISE_VIDEO_RESYNC_PER_GROUP_CALL) return;
+    pairwiseVideoResyncCountByGroupCallId.set(pendingGroupCallId, attempts + 1);
     void restartAllPairwiseCallsForVideo(
       pending.gc,
       pending.nudgePlaceOutgoing,

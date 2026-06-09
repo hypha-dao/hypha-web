@@ -96,6 +96,7 @@ import {
   listUnhealthyRemoteCallUserIds,
 } from './remote-call-media-stall';
 import {
+  clearPairwiseVideoResyncAttemptCounts,
   clearPairwiseVideoResyncSchedule,
   hangupPairwiseCallsForRemoteUsers,
   hasActivePairwiseCalls,
@@ -1457,6 +1458,7 @@ export function useSpaceGroupCall(
       stopPlaceOutgoingPeriodicNudge(placeOutgoingPeriodicIntervalRef);
       clearLocalMediaBootstrapTimers();
       clearPairwiseVideoResyncSchedule();
+      clearPairwiseVideoResyncAttemptCounts();
       webRtcDiagCleanupRef.current?.();
       webRtcDiagCleanupRef.current = null;
       turnRefreshCleanupRef.current?.();
@@ -2011,7 +2013,6 @@ export function useSpaceGroupCall(
       remoteMediaStallLoggedRef.current = false;
       remoteMediaPairwiseRestartAttemptedRef.current = false;
       localVideoRecoveryAttemptedRef.current = false;
-      remoteMediaStallBannerDismissedRef.current = false;
       if (remoteMediaRepairNudgeIntervalRef.current != null) {
         clearInterval(remoteMediaRepairNudgeIntervalRef.current);
         remoteMediaRepairNudgeIntervalRef.current = null;
@@ -2259,6 +2260,18 @@ export function useSpaceGroupCall(
         /** Pairwise VoIP: roster changes can arrive after the internal nudge — retry outbound setup. */
         nudgeGroupCallPlaceOutgoing(gc);
         scheduleLocalMediaBootstrap(gc);
+        const kind = lastJoinKindRef.current ?? 'audio';
+        if (kind === 'video' && !gc.isLocalVideoMuted()) {
+          const myId = client?.getUserId() ?? null;
+          const othersInCall = inCallUserIdsFromGroupCall(gc).filter(
+            (id) => id && id !== myId,
+          );
+          if (othersInCall.length > 0) {
+            schedulePairwiseVideoResync(gc, () =>
+              nudgeGroupCallPlaceOutgoing(gc),
+            );
+          }
+        }
       };
       gc.on(GroupCallEvent.ParticipantsChanged, onParticipantsChanged);
       const onCallsChanged = () => {
@@ -2266,15 +2279,9 @@ export function useSpaceGroupCall(
         if (groupCallRef.current !== gc) return;
         const kind = lastJoinKindRef.current ?? 'audio';
         scheduleRepublishLocalMediaToPairwiseCalls(gc, {
-          force: kind === 'video' && !gc.isLocalVideoMuted(),
           delayMs: kind === 'video' ? 2_000 : 4_000,
         });
         nudgeGroupCallPlaceOutgoing(gc);
-        if (kind === 'video' && !gc.isLocalVideoMuted()) {
-          schedulePairwiseVideoResync(gc, () =>
-            nudgeGroupCallPlaceOutgoing(gc),
-          );
-        }
       };
       gc.on(GroupCallEvent.CallsChanged, onCallsChanged);
       const onFeedsMaybeParticipants = () => {
@@ -2334,6 +2341,8 @@ export function useSpaceGroupCall(
       };
     },
     [
+      client,
+      inCallUserIdsFromGroupCall,
       roomId,
       refreshLocalPreview,
       runCleanup,
