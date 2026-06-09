@@ -1687,7 +1687,7 @@ export function HomeTokenHoldingsDashboard({
                                   <span className="text-muted-foreground">
                                     {tTokenHoldings('tooltip.address')}
                                   </span>
-                                  <span className="max-w-[160px] truncate">
+                                  <span className="break-all font-mono">
                                     {token.token_address}
                                   </span>
                                 </div>
