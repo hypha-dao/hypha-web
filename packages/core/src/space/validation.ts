@@ -113,7 +113,7 @@ const createSpaceWeb2Props = {
   locationSource: spaceLocationSourceSchema.nullable().optional(),
 };
 
-function refineSpaceLocationCoords(
+export function refineSpaceLocationCoords(
   value: {
     latitude?: number | null;
     longitude?: number | null;
@@ -254,9 +254,11 @@ export const schemaUpdateSpace = z
   .object(updateSpaceProps)
   .superRefine(refineSpaceLocationCoords);
 
-export const schemaCreateSpace = z
-  .object({
-    ...createSpaceWeb2Props,
-    ...createSpaceWeb3Props,
-  })
-  .superRefine(refineSpaceLocationCoords);
+export const schemaCreateSpaceFields = z.object({
+  ...createSpaceWeb2Props,
+  ...createSpaceWeb3Props,
+});
+
+export const schemaCreateSpace = schemaCreateSpaceFields.superRefine(
+  refineSpaceLocationCoords,
+);
