@@ -1,6 +1,35 @@
 import { describe, expect, it, vi } from 'vitest';
 import { resolveMatrixCameraVideoConstraints } from '../call-video-capture-constraints';
-import { requestLocalCameraAccess } from '../call-camera-access';
+import {
+  isLocalCameraPermissionDenied,
+  requestLocalCameraAccess,
+} from '../call-camera-access';
+
+describe('isLocalCameraPermissionDenied', () => {
+  it('returns true when the Permissions API reports denied', async () => {
+    Object.defineProperty(navigator, 'permissions', {
+      configurable: true,
+      value: {
+        query: vi.fn().mockResolvedValue({ state: 'denied' }),
+      },
+    });
+    await expect(isLocalCameraPermissionDenied()).resolves.toBe(true);
+  });
+
+  it('returns false when permission is granted or prompt', async () => {
+    Object.defineProperty(navigator, 'permissions', {
+      configurable: true,
+      value: {
+        query: vi
+          .fn()
+          .mockResolvedValueOnce({ state: 'granted' })
+          .mockResolvedValueOnce({ state: 'prompt' }),
+      },
+    });
+    await expect(isLocalCameraPermissionDenied()).resolves.toBe(false);
+    await expect(isLocalCameraPermissionDenied()).resolves.toBe(false);
+  });
+});
 
 describe('requestLocalCameraAccess', () => {
   it('returns unavailable when getUserMedia is missing', async () => {

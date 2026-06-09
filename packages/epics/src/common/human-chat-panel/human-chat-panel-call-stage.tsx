@@ -80,15 +80,17 @@ import {
 import {
   feedReportsAudioMutedForTile,
   formatCallShareTileLabel,
+  isLocalCallFeedForTile,
   resolveCallAudioPortalTarget,
   shouldMountRemoteCallAudioSink,
 } from './call-feed-tile-audio';
 import {
   createCallFeedVideoStream,
   hasWarmingCallFeedVideoTrack,
-  isCallFeedVideoSurfaceReady,
   resolveCallFeedLiveVideoTrack,
   resolveCallFeedVideoSurfaceClassName,
+  shouldMarkCallFeedVideoSurfaceReady,
+  shouldPaintCallFeedVideoSurface,
 } from './call-feed-tile-video';
 import { registerCallPlaybackElement } from './call-playback-registry';
 import { callAccentAlertOnDarkText } from './call-accent-alert-styles';
@@ -2693,8 +2695,10 @@ const FeedContent = ({
     el.disablePictureInPicture = true;
 
     const markReady = () => {
-      if (isCallFeedVideoSurfaceReady(el)) {
+      if (shouldMarkCallFeedVideoSurfaceReady(el, liveVideoTrack)) {
         setVideoSurfaceReady(true);
+      } else if (liveVideoTrack?.muted) {
+        setVideoSurfaceReady(false);
       }
     };
 
@@ -2723,14 +2727,14 @@ const FeedContent = ({
 
     playVideo();
     const retryTimer = window.setInterval(() => {
-      if (isCallFeedVideoSurfaceReady(el)) {
+      if (shouldMarkCallFeedVideoSurfaceReady(el, liveVideoTrack)) {
         setVideoSurfaceReady(true);
         return;
       }
       playVideo();
     }, 750);
     const giveUpTimer = window.setTimeout(() => {
-      if (!isCallFeedVideoSurfaceReady(el)) {
+      if (!shouldMarkCallFeedVideoSurfaceReady(el, liveVideoTrack)) {
         rebindStream();
       }
     }, 4000);
@@ -2760,10 +2764,18 @@ const FeedContent = ({
     };
   }, [liveVideoTrack?.id, streamBindVersion]);
 
-  const showVideoElement = hasVideo && !warmingVideoTrack;
-  /** Avatar until video paints — avoids black tiles while remote/local tracks warm up. */
-  const showAudioScrim = !showVideoElement || !videoSurfaceReady;
-  const showParticipantVideoLabel = showVideoElement && !isPip;
+  const isLocalFeedTile = isLocalCallFeedForTile(feed, currentUserId);
+  const showPaintedVideo = shouldPaintCallFeedVideoSurface({
+    hasVideo,
+    warmingVideoTrack,
+    videoSurfaceReady,
+    liveVideoTrack,
+    isLocalFeed: isLocalFeedTile,
+  });
+  const showVideoElement = showPaintedVideo;
+  /** Avatar until real frames paint — avoids black tiles after stream churn. */
+  const showAudioScrim = !showPaintedVideo;
+  const showParticipantVideoLabel = showPaintedVideo && !isPip;
 
   useEffect(() => {
     const el = audioRef.current;
@@ -2868,12 +2880,15 @@ const FeedContent = ({
   }, [liveVideoTrack?.id, mountRemoteAudio, stream]);
 
   /** Analyse mic/remote line whenever the tile has a live audio track (not just Matrix `isSpeaking`, which lags and hid real levels). */
+  const hasLiveAudioTrack =
+    stream?.getAudioTracks().some((track) => track.readyState === 'live') ??
+    false;
   const canVoiceWave =
     showAudioScrim &&
     !isShare &&
     !audioMuted &&
-    (feed.isLocal() ||
-      (!feed.isAudioMuted() && (stream?.getAudioTracks().length ?? 0) > 0));
+    hasLiveAudioTrack &&
+    (isLocalCallFeedForTile(feed, currentUserId) || !feed.isAudioMuted());
 
   const tileAvatarSizePx = compactTileLayout
     ? 48

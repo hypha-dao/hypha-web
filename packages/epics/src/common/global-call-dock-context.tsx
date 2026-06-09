@@ -8,6 +8,7 @@ import {
 } from '@hypha-platform/core/client';
 import { revalidateSpaceMemoryOrg } from '../coherence/hooks/use-space-memory-org';
 import { useCallReactions } from './human-chat-panel/use-call-reactions';
+import { resumeCallPlayback } from './human-chat-panel/call-playback-registry';
 import {
   clearCallDismissedByUser,
   clearCallResumeSnapshot,
@@ -602,6 +603,12 @@ function useGlobalCallDockValue() {
     };
   }, []);
 
+  const spaceCallRetryRemoteMedia = call.retryRemoteMediaConnection;
+  const retryRemoteMediaConnection = React.useCallback(() => {
+    spaceCallRetryRemoteMedia();
+    void resumeCallPlayback();
+  }, [spaceCallRetryRemoteMedia]);
+
   return {
     bindRoomContext,
     boundRoomId,
@@ -615,6 +622,7 @@ function useGlobalCallDockValue() {
     startAudioForRoom,
     startVideoForRoom,
     ...call,
+    retryRemoteMediaConnection,
     ...callReactions,
     leave: leaveCall,
   };

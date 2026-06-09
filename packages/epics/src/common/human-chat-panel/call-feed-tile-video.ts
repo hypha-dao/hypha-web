@@ -45,20 +45,16 @@ export function resolveCallFeedLiveVideoTrack(
       null
     );
   }
-  const isLocal = isLocalCallFeedForTile(feed, options?.currentUserId);
   const liveUnmuted = tracks.find(
     (track) => track.readyState === 'live' && !track.muted,
   );
   if (liveUnmuted) return liveUnmuted;
   /**
-   * Local camera (Safari/iOS) may stay `muted: true` until the first frame — bind
-   * early so `<video>` can paint. Remote tracks in that state show avatar via
-   * `hasWarmingCallFeedVideoTrack` instead of a black tile.
+   * Camera tracks (local or remote) may stay `muted: true` until the first frame
+   * — bind early so `<video>` can paint once WebRTC delivers pixels.
    */
-  if (isLocal) {
-    const liveMuted = tracks.find((track) => track.readyState === 'live');
-    if (liveMuted) return liveMuted;
-  }
+  const liveMuted = tracks.find((track) => track.readyState === 'live');
+  if (liveMuted) return liveMuted;
   return tracks.find((track) => (track.readyState as string) === 'new') ?? null;
 }
 
@@ -105,6 +101,43 @@ export function isCallFeedVideoSurfaceReady(
   return (
     video.clientWidth >= 2 && video.clientHeight >= 2 && video.readyState >= 2
   );
+}
+
+/** Avoid marking a black `<video>` ready when WebRTC track is muted with no frames yet. */
+export function shouldMarkCallFeedVideoSurfaceReady(
+  video: Pick<
+    HTMLVideoElement,
+    'videoWidth' | 'videoHeight' | 'clientWidth' | 'clientHeight' | 'readyState'
+  >,
+  track: Pick<MediaStreamTrack, 'muted'> | null | undefined,
+): boolean {
+  if (!isCallFeedVideoSurfaceReady(video)) return false;
+  if (track?.muted && video.videoWidth <= 0 && video.videoHeight <= 0) {
+    return false;
+  }
+  return true;
+}
+
+/** Hide the `<video>` layer when the track is muted without pixels (show avatar instead). */
+export function shouldPaintCallFeedVideoSurface(options: {
+  hasVideo: boolean;
+  warmingVideoTrack: boolean;
+  videoSurfaceReady: boolean;
+  liveVideoTrack: Pick<MediaStreamTrack, 'muted' | 'readyState'> | null;
+  isLocalFeed: boolean;
+}): boolean {
+  const {
+    hasVideo,
+    warmingVideoTrack,
+    videoSurfaceReady,
+    liveVideoTrack,
+    isLocalFeed,
+  } = options;
+  if (!hasVideo || warmingVideoTrack || !videoSurfaceReady || !liveVideoTrack) {
+    return false;
+  }
+  if (!liveVideoTrack.muted) return true;
+  return liveVideoTrack.readyState === 'live';
 }
 
 /** WCUX-QUALITY-3: letterbox instead of upscaling beyond intrinsic frame size. */

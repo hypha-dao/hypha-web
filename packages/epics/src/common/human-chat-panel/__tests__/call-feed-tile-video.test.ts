@@ -7,6 +7,8 @@ import {
   isCallFeedVideoSurfaceReady,
   resolveCallFeedLiveVideoTrack,
   resolveCallFeedVideoSurfaceClassName,
+  shouldMarkCallFeedVideoSurfaceReady,
+  shouldPaintCallFeedVideoSurface,
 } from '../call-feed-tile-video';
 
 function mockTrack(args: {
@@ -70,13 +72,13 @@ describe('resolveCallFeedLiveVideoTrack', () => {
     ).toBe(track);
   });
 
-  it('does not bind live muted remote camera tracks before the first frame', () => {
+  it('binds live muted remote camera tracks before the first frame', () => {
     const track = mockTrack({ muted: true });
-    expect(
-      resolveCallFeedLiveVideoTrack(mockFeed({ tracks: [track] })),
-    ).toBeNull();
+    expect(resolveCallFeedLiveVideoTrack(mockFeed({ tracks: [track] }))).toBe(
+      track,
+    );
     expect(hasWarmingCallFeedVideoTrack(mockFeed({ tracks: [track] }))).toBe(
-      true,
+      false,
     );
   });
 
@@ -144,6 +146,76 @@ describe('isCallFeedVideoSurfaceReady', () => {
         clientWidth: 240,
         clientHeight: 135,
         readyState: 2,
+      }),
+    ).toBe(true);
+  });
+});
+
+describe('shouldMarkCallFeedVideoSurfaceReady', () => {
+  it('rejects muted tracks with zero intrinsic dimensions', () => {
+    expect(
+      shouldMarkCallFeedVideoSurfaceReady(
+        {
+          videoWidth: 0,
+          videoHeight: 0,
+          clientWidth: 240,
+          clientHeight: 135,
+          readyState: 2,
+        },
+        { muted: true },
+      ),
+    ).toBe(false);
+  });
+
+  it('accepts muted tracks once intrinsic dimensions are present', () => {
+    expect(
+      shouldMarkCallFeedVideoSurfaceReady(
+        {
+          videoWidth: 640,
+          videoHeight: 360,
+          clientWidth: 240,
+          clientHeight: 135,
+          readyState: 2,
+        },
+        { muted: true },
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('shouldPaintCallFeedVideoSurface', () => {
+  it('paints remote muted live tracks while frames warm up', () => {
+    expect(
+      shouldPaintCallFeedVideoSurface({
+        hasVideo: true,
+        warmingVideoTrack: false,
+        videoSurfaceReady: true,
+        liveVideoTrack: mockTrack({ muted: true, readyState: 'live' }),
+        isLocalFeed: false,
+      }),
+    ).toBe(true);
+  });
+
+  it('paints unmuted tracks when the surface is ready', () => {
+    expect(
+      shouldPaintCallFeedVideoSurface({
+        hasVideo: true,
+        warmingVideoTrack: false,
+        videoSurfaceReady: true,
+        liveVideoTrack: mockTrack({ muted: false }),
+        isLocalFeed: false,
+      }),
+    ).toBe(true);
+  });
+
+  it('paints local muted camera tracks while warming (readyState live)', () => {
+    expect(
+      shouldPaintCallFeedVideoSurface({
+        hasVideo: true,
+        warmingVideoTrack: false,
+        videoSurfaceReady: true,
+        liveVideoTrack: mockTrack({ muted: true, readyState: 'live' }),
+        isLocalFeed: true,
       }),
     ).toBe(true);
   });

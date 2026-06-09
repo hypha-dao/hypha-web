@@ -23,8 +23,10 @@ export type SpaceGroupCallTelemetryEvent = {
     | 'hypha.group_call.media_snapshot'
     | 'hypha.group_call.remote_media_stall'
     | 'hypha.group_call.remote_media_recover'
+    | 'hypha.group_call.pairwise_restart'
     | 'hypha.group_call.turn_probe'
     | 'hypha.group_call.ice_gather_probe'
+    | 'hypha.group_call.ice_transport'
     | 'hypha.group_call.webrtc_summary'
     | 'hypha.group_call.inbound_rtp_frame_size'
     | 'hypha.group_call.simulcast_audit'
@@ -57,7 +59,18 @@ export type SpaceGroupCallTelemetryEvent = {
   participantDeviceCount?: number;
   /** Room state lists them in-call but no userMedia CallFeed yet (WebRTC lag / failure). */
   missingRemoteFeedCount?: number;
+  /** Local camera mute at snapshot time (SDK `localCallFeed`). */
+  localVideoMuted?: boolean;
+  localVideoTrackCount?: number;
   waitedMs?: number;
+  /** Pairwise `MatrixCall.hangup()` invocations before re-placing outgoing calls. */
+  hungUp?: number;
+  /** Stall recovery targeted local publish (mic/camera) rather than inbound feeds only. */
+  localOutboundUnhealthy?: boolean;
+  /** Remote user ids whose pairwise calls were restarted. */
+  targetCount?: number;
+  /** User clicked Retry connection (vs automatic 25s watchdog). */
+  manual?: boolean;
   /** Result of `client.checkTurnServers()` — homeserver returned usable TURN URIs. */
   turnCredsOk?: boolean;
   /** Approximate seconds until TURN credential expiry (from client clock). */
@@ -73,6 +86,13 @@ export type SpaceGroupCallTelemetryEvent = {
   forceTurn?: boolean;
   fallbackIceAllowed?: boolean;
   iceGatherState?: RTCIceGatheringState | 'unsupported' | 'timeout';
+  iceConnectionState?: RTCIceConnectionState;
+  connectionState?: RTCPeerConnectionState;
+  localCandidateType?: string;
+  remoteCandidateType?: string;
+  pairState?: string;
+  inboundAudioBytes?: number;
+  inboundVideoBytes?: number;
   /** Matrix SDK summary stats (subset); see `SummaryStatsReport`. */
   percentageReceivedMedia?: number;
   percentageReceivedAudioMedia?: number;
