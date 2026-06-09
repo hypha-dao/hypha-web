@@ -438,10 +438,18 @@ function buildPartialUpdateIssuedTokenWeb3Input(
    * mapping, so the update form is action-based: `authorizedMinters` grants and
    * `authorizedMintersToRevoke` revokes. Both are merged into a single
    * `batchSetAuthorizedMinters(accounts, allowed)` call. Grant wins on conflicts.
+   *
+   * Gate on the actual submitted values rather than React Hook Form's dirty-key
+   * set: the minter editor writes via bare `setValue` on an unregistered field,
+   * so `dirtyFields.authorizedMinters` is unreliable (especially across the
+   * form's repeated DB/on-chain hydration + `reset`). Relying on `changed` here
+   * silently dropped the minter call, leaving the proposal with an empty tx list
+   * that got padded to a no-op `setTokenName`. Grants are idempotent, so encoding
+   * whenever addresses are present is safe.
    */
   const mintersTouched =
-    changed.has('authorizedMinters') ||
-    changed.has('authorizedMintersToRevoke');
+    (arg.authorizedMinters?.length ?? 0) > 0 ||
+    (arg.authorizedMintersToRevoke?.length ?? 0) > 0;
   if (mintersTouched) {
     const accounts: `0x${string}`[] = [];
     const allowed: boolean[] = [];
