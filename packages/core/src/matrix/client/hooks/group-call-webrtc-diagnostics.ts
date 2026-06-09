@@ -236,22 +236,26 @@ async function logIceTransportForPeerConnection(options: {
   peerConnection: RTCPeerConnection;
 }): Promise<void> {
   const { roomId, groupCallId, userId, peerConnection } = options;
-  const stats = await peerConnection.getStats();
-  const transport = readIceTransportSummary(peerConnection, stats);
-  logSpaceGroupCallEvent({
-    name: 'hypha.group_call.ice_transport',
-    roomId,
-    groupCallId,
-    remoteUserId: userId ?? undefined,
-    iceConnectionState: transport.iceConnectionState,
-    iceGatherState: transport.iceGatheringState,
-    connectionState: transport.connectionState,
-    localCandidateType: transport.localCandidateType,
-    remoteCandidateType: transport.remoteCandidateType,
-    pairState: transport.pairState,
-    inboundAudioBytes: transport.inboundAudioBytes,
-    inboundVideoBytes: transport.inboundVideoBytes,
-  });
+  try {
+    const stats = await peerConnection.getStats();
+    const transport = readIceTransportSummary(peerConnection, stats);
+    logSpaceGroupCallEvent({
+      name: 'hypha.group_call.ice_transport',
+      roomId,
+      groupCallId,
+      remoteUserId: userId ?? undefined,
+      iceConnectionState: transport.iceConnectionState,
+      iceGatherState: transport.iceGatheringState,
+      connectionState: transport.connectionState,
+      localCandidateType: transport.localCandidateType,
+      remoteCandidateType: transport.remoteCandidateType,
+      pairState: transport.pairState,
+      inboundAudioBytes: transport.inboundAudioBytes,
+      inboundVideoBytes: transport.inboundVideoBytes,
+    });
+  } catch {
+    // Peer connection may close between interval ticks; ignore transient diagnostics failure.
+  }
 }
 
 export function readInboundRtpVideoFrameSizes(
