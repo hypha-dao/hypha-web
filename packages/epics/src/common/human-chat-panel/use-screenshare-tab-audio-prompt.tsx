@@ -21,7 +21,6 @@ type UseScreenshareTabAudioPromptOptions = {
  */
 export function useScreenshareTabAudioPrompt({
   isScreensharing,
-  remoteScreenshareActive = false,
   setScreensharingEnabled,
   toggleScreensharing,
 }: UseScreenshareTabAudioPromptOptions): {
@@ -30,9 +29,9 @@ export function useScreenshareTabAudioPrompt({
   screenshareTabAudioPromptDialog: ReactElement | null;
 } {
   const onStartScreenshare = useCallback(() => {
-    if (isScreensharing || remoteScreenshareActive) return;
+    if (isScreensharing) return;
     void setScreensharingEnabled(true, { surfaceMode: 'browser' });
-  }, [isScreensharing, remoteScreenshareActive, setScreensharingEnabled]);
+  }, [isScreensharing, setScreensharingEnabled]);
 
   const onStopScreenshare = useCallback(() => {
     toggleScreensharing();

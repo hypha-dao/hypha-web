@@ -73,6 +73,8 @@ import {
   buildScreenshareTakeoverContent,
   getRemoteScreenshareOwner,
   isRemoteScreenshareActive,
+  resolveIncomingScreenshareTakeover,
+  resolveScreenshareTakeoverOutcome,
   type ScreenshareTakeoverIncoming,
 } from './screenshare-takeover';
 import {
@@ -2904,7 +2906,23 @@ export function useSpaceGroupCall(
             setIsScreensharing(true);
             return;
           }
-          if (isRemoteScreenshareActive(gc)) {
+          const localUserId = client?.getUserId()?.trim() ?? null;
+          const remoteOwner = getRemoteScreenshareOwner(gc);
+          if (
+            remoteOwner &&
+            localUserId &&
+            remoteOwner.userId !== localUserId
+          ) {
+            const requestId = crypto.randomUUID();
+            screenshareTakeoverPendingIdRef.current = requestId;
+            setScreenshareTakeoverPendingId(requestId);
+            setScreenshareTakeoverDenied(false);
+            await sendScreenshareTakeoverEvent(
+              'request',
+              requestId,
+              localUserId,
+              remoteOwner.userId,
+            );
             return;
           }
           await enableLocalScreenshareDirect(gc);
@@ -2924,7 +2942,12 @@ export function useSpaceGroupCall(
       screenshareMutationRef.current = next;
       return next;
     },
-    [enableLocalScreenshareDirect, reconcileLocalScreenshareStop],
+    [
+      client,
+      enableLocalScreenshareDirect,
+      reconcileLocalScreenshareStop,
+      sendScreenshareTakeoverEvent,
+    ],
   );
 
   setScreensharingEnabledRef.current = setScreensharingEnabled;
@@ -2960,6 +2983,7 @@ export function useSpaceGroupCall(
       );
       scheduleFeedBatched();
       window.setTimeout(scheduleFeedBatched, 350);
+      window.setTimeout(scheduleFeedBatched, 900);
     },
     [
       client,
@@ -3316,6 +3340,70 @@ export function useSpaceGroupCall(
   useEffect(() => {
     screenshareTakeoverPendingIdRef.current = screenshareTakeoverPendingId;
   }, [screenshareTakeoverPendingId]);
+
+  useEffect(() => {
+    if (!client || !roomId?.trim() || callState !== 'connected') {
+      setScreenshareTakeoverIncoming(null);
+      return;
+    }
+    const activeRoomId = roomId.trim();
+    const room = client.getRoom(activeRoomId);
+    const gc = groupCallRef.current;
+    if (!room || !gc) return;
+
+    const localUserId = client.getUserId() ?? null;
+    const syncTakeoverFromTimeline = () => {
+      const recent = room.getLiveTimeline()?.getEvents()?.slice().reverse();
+      if (!recent?.length) return;
+
+      const incoming = resolveIncomingScreenshareTakeover(
+        recent,
+        localUserId,
+        gc.isScreensharing(),
+        (senderId) => room.getMember(senderId)?.name || senderId,
+      );
+      setScreenshareTakeoverIncoming(incoming);
+
+      const pendingId = screenshareTakeoverPendingIdRef.current;
+      if (pendingId) {
+        const outcome = resolveScreenshareTakeoverOutcome(
+          recent,
+          localUserId,
+          pendingId,
+        );
+        if (outcome === 'approved') {
+          screenshareTakeoverPendingIdRef.current = null;
+          setScreenshareTakeoverPendingId(null);
+          setScreenshareTakeoverDenied(false);
+          void enableLocalScreenshareDirect(gc);
+          scheduleFeedBatched();
+          window.setTimeout(scheduleFeedBatched, 350);
+          window.setTimeout(scheduleFeedBatched, 900);
+        } else if (outcome === 'denied') {
+          screenshareTakeoverPendingIdRef.current = null;
+          setScreenshareTakeoverPendingId(null);
+          setScreenshareTakeoverDenied(true);
+        }
+      }
+    };
+
+    syncTakeoverFromTimeline();
+    const onTimeline = () => {
+      syncTakeoverFromTimeline();
+    };
+    room.on(RoomEvent.Timeline, onTimeline);
+    return () => {
+      room.off(RoomEvent.Timeline, onTimeline);
+    };
+  }, [
+    callState,
+    client,
+    enableLocalScreenshareDirect,
+    feedVersion,
+    isScreensharing,
+    roomId,
+    scheduleFeedBatched,
+  ]);
 
   const remoteScreenshareActive = useMemo(() => {
     if (!groupCall || groupCall.isScreensharing()) return false;

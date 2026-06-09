@@ -2699,6 +2699,7 @@
     "callShareModeWindow": "Fenster",
     "callShareModeScreen": "Gesamter Bildschirm",
     "callScreenshareBlockedRemoteActive": "Jemand anderes teilt gerade — bitte warten, bis die Person stoppt.",
+    "callScreenshareRequestTakeover": "Jemand anderes teilt gerade — klicken, um Bildschirmfreigabe anzufragen.",
     "callScreenshareTakeoverIncomingTitle": "Bildschirmfreigabe übergeben?",
     "callScreenshareTakeoverIncomingBody": "{name} möchte den Bildschirm teilen. Wenn du zustimmst, endet deine Freigabe und die andere beginnt.",
     "callScreenshareTakeoverApprove": "Erlauben",

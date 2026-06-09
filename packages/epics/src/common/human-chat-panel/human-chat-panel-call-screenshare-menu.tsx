@@ -41,8 +41,7 @@ export function HumanChatPanelCallScreenshareMenu({
 }: HumanChatPanelCallScreenshareMenuProps) {
   const t = useTranslations('HumanChatPanel');
 
-  const shareStartDisabled =
-    disabled || (remoteScreenshareActive && !isScreensharing);
+  const shareStartDisabled = disabled;
 
   if (isScreensharing) {
     return (
@@ -70,7 +69,7 @@ export function HumanChatPanelCallScreenshareMenu({
       )}
       title={
         remoteScreenshareActive && !isScreensharing
-          ? t('callScreenshareBlockedRemoteActive')
+          ? t('callScreenshareRequestTakeover')
           : title ?? t('callControlsScreenshare')
       }
       aria-label={inactiveAriaLabel ?? t('callControlsScreenshareInactiveAria')}

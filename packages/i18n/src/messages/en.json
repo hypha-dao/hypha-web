@@ -2703,6 +2703,7 @@
     "callShareModeWindow": "Window",
     "callShareModeScreen": "Entire screen",
     "callScreenshareBlockedRemoteActive": "Someone else is sharing — ask them to stop before you share.",
+    "callScreenshareRequestTakeover": "Someone else is sharing — click to request screen share.",
     "callScreenshareTakeoverIncomingTitle": "Allow screen share handoff?",
     "callScreenshareTakeoverIncomingBody": "{name} wants to share their screen. If you approve, your share will stop and theirs will begin.",
     "callScreenshareTakeoverApprove": "Allow",

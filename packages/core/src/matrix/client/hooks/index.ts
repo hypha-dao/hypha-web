@@ -67,6 +67,7 @@ export {
 } from './call-reactions-client';
 export {
   HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID,
+  HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID,
   applyScreenShareCaptureRootRestriction,
   applyScreenShareCaptureRootRestrictionWithRetry,
   clearScreenShareCaptureRootRestriction,
