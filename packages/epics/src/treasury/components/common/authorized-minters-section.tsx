@@ -52,7 +52,13 @@ const MinterList = ({
   const [error, setError] = useState<string | null>(null);
 
   const handleAdd = useCallback(() => {
-    const normalized = normalize(draft);
+    const trimmed = draft.trim();
+    // Nothing pending — used by the onBlur flush so clicking away (e.g. "Publish")
+    // with an empty input is a no-op rather than an "invalid address" error.
+    if (trimmed === '') {
+      return;
+    }
+    const normalized = normalize(trimmed);
     if (!normalized) {
       setError(
         tAgreementFlow('plugins.issueNewToken.authorizedMinters.invalid'),
@@ -136,6 +142,7 @@ const MinterList = ({
                 handleAdd();
               }
             }}
+            onBlur={handleAdd}
           />
           {error ? <span className="text-1 text-error-11">{error}</span> : null}
         </div>
@@ -143,6 +150,9 @@ const MinterList = ({
           type="button"
           variant="outline"
           size="icon"
+          // Keep input focus so blur doesn't fire before this click — otherwise
+          // the onBlur flush and the click would both try to add the address.
+          onMouseDown={(e) => e.preventDefault()}
           onClick={handleAdd}
           aria-label={tAgreementFlow(
             'plugins.issueNewToken.authorizedMinters.add',
