@@ -167,6 +167,9 @@ contract DecayExtension is
   // =========================================================================
 
   function _materializeDecay(address account) internal {
+    if (decayRate == 0) {
+      return;
+    }
     ISpaceTokenBase _token = ISpaceTokenBase(token);
     uint256 raw = _token.rawBalanceOf(account);
     if (raw == 0 || lastApplied[account] == 0) {
@@ -175,13 +178,26 @@ contract DecayExtension is
       }
       return;
     }
+
+    uint256 periodsPassed = (block.timestamp - lastApplied[account]) / decayRate;
+
+    // Less than a full period elapsed: keep accumulating and do NOT reset the
+    // clock, otherwise frequent transfers/mints would let decay be avoided
+    // indefinitely by repeatedly bumping lastApplied to `now`.
+    if (periodsPassed == 0) {
+      return;
+    }
+
     uint256 decayed = DecayLib.computeDecayedBalance(
       raw,
       lastApplied[account],
       decayPercentage,
       decayRate
     );
-    lastApplied[account] = block.timestamp;
+
+    // Advance only by the whole periods materialized, preserving the remainder.
+    lastApplied[account] += periodsPassed * decayRate;
+
     if (decayed < raw) {
       uint256 burnAmount = raw - decayed;
       _token.extensionBurn(account, burnAmount);
