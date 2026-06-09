@@ -2302,6 +2302,7 @@
     "callShareModeWindow": "Ventana",
     "callShareModeScreen": "Pantalla completa",
     "callScreenshareBlockedRemoteActive": "Otra persona está compartiendo — pídele que pare antes de compartir tú.",
+    "callScreenshareRequestTakeover": "Otra persona está compartiendo — haz clic para solicitar compartir pantalla.",
     "callScreenshareTakeoverIncomingTitle": "¿Permitir el traspaso de pantalla compartida?",
     "callScreenshareTakeoverIncomingBody": "{name} quiere compartir su pantalla. Si apruebas, tu compartición se detendrá y comenzará la suya.",
     "callScreenshareTakeoverApprove": "Permitir",

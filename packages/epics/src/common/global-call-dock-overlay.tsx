@@ -30,6 +30,7 @@ import {
   HumanChatPanelCallStage,
   HumanChatPanelCallFullViewLayoutMenu,
   HumanChatPanelInCallControls,
+  HumanChatPanelScreenshareTakeoverDialog,
   HumanChatPanelCallRaisedHandsStrip,
   readCallFullViewLayoutFromStorage,
   persistCallFullViewLayout,
@@ -500,6 +501,13 @@ export function GlobalCallDockOverlay({
     setCameraMuted,
     toggleScreensharing,
     setScreensharingEnabled,
+    screenshareTakeoverIncoming,
+    screenshareTakeoverPendingId,
+    screenshareTakeoverDenied,
+    approveScreenshareTakeover,
+    denyScreenshareTakeover,
+    cancelScreenshareTakeoverRequest,
+    dismissScreenshareTakeoverPrompt,
     voiceProcessingPreset,
     setVoiceProcessingPreset,
     presenterVoiceBoostActive,
@@ -1646,10 +1654,29 @@ export function GlobalCallDockOverlay({
     </div>
   );
 
+  const screenshareTakeoverDialog = (
+    <HumanChatPanelScreenshareTakeoverDialog
+      incoming={screenshareTakeoverIncoming}
+      pending={Boolean(screenshareTakeoverPendingId)}
+      denied={screenshareTakeoverDenied}
+      onApprove={(request) => {
+        void approveScreenshareTakeover(request);
+      }}
+      onDeny={(request) => {
+        void denyScreenshareTakeover(request);
+      }}
+      onCancelPending={() => {
+        void cancelScreenshareTakeoverRequest();
+      }}
+      onDismissDenied={dismissScreenshareTakeoverPrompt}
+    />
+  );
+
   if (typeof document === 'undefined') {
     return (
       <>
         {screenshareTabAudioPromptDialog}
+        {screenshareTakeoverDialog}
         {dockContent}
       </>
     );
@@ -1659,6 +1686,7 @@ export function GlobalCallDockOverlay({
   return (
     <>
       {screenshareTabAudioPromptDialog}
+      {screenshareTakeoverDialog}
       {createPortal(dockContent, portalTarget)}
     </>
   );

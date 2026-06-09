@@ -8,6 +8,7 @@ import {
   SidebarResizeHandle,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID } from '@hypha-platform/core/client';
 import { setMainColumnScrollRoot } from './main-column-scroll';
 
 type Props = {
@@ -101,6 +102,7 @@ export function PanelDualSidebarScrollBridge({
             scrollport cannot reveal a dead gap beside the fixed rails.
           */}
           <div
+            id={HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID}
             ref={setMainColumnRef}
             className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto narrow-scrollbar"
           >

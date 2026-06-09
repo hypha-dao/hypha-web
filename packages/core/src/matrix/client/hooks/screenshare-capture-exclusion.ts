@@ -1,6 +1,13 @@
-/** Main app shell root — screen share is restricted to this element when supported. */
+/** Legacy app shell wrapper (includes side panels). */
 export const HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID =
   'hypha-screen-share-capture-root';
+
+/**
+ * Main content column — tab capture is cropped here so Human Chat / call UI in the
+ * right sidebar is not transmitted to remote participants.
+ */
+export const HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID =
+  'hypha-screen-share-main-content';
 
 /** Opaque handle from Element Capture `RestrictionTarget.fromElement` (not in all TS DOM libs). */
 type ScreenShareRestrictionTarget = object;
@@ -11,7 +18,10 @@ type RestrictableMediaStreamTrack = MediaStreamTrack & {
 
 function getCaptureRootElement(): HTMLElement | null {
   if (typeof document === 'undefined') return null;
-  return document.getElementById(HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID);
+  return (
+    document.getElementById(HYPHA_SCREEN_SHARE_MAIN_CONTENT_ID) ??
+    document.getElementById(HYPHA_SCREEN_SHARE_CAPTURE_ROOT_ID)
+  );
 }
 
 function isTabCaptureTrack(track: MediaStreamTrack): boolean {
@@ -22,8 +32,8 @@ function isTabCaptureTrack(track: MediaStreamTrack): boolean {
 }
 
 /**
- * Crop tab self-capture to the main Hypha shell so the floating call dock (a
- * sibling outside this root) is not transmitted to remote participants.
+ * Crop tab self-capture to the main content column so side panels, call chrome,
+ * and the floating call dock are not transmitted to remote participants.
  */
 export async function applyScreenShareCaptureRootRestriction(
   stream: MediaStream | null | undefined,

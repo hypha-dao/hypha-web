@@ -101,7 +101,11 @@ export function buildDisplayMediaConstraints(
 
   switch (surfaceMode) {
     case 'browser':
-      return base;
+      return {
+        ...base,
+        preferCurrentTab: false,
+        selfBrowserSurface: 'exclude',
+      };
     case 'window':
       return {
         ...base,

@@ -116,7 +116,7 @@ describe('CSH-QA-2 share handoff through warming (row 2)', () => {
 });
 
 describe('CSH-SHARE-3 single presenter (one share at a time)', () => {
-  it('blocks local share start when another participant is presenting', () => {
+  it('requests presenter approval before starting a second share', () => {
     const source = readFileSync(
       resolve(
         commonDir,
@@ -124,21 +124,28 @@ describe('CSH-SHARE-3 single presenter (one share at a time)', () => {
       ),
       'utf8',
     );
-    expect(source).toContain('isRemoteScreenshareActive(gc)');
-    expect(source).not.toContain(
+    expect(source).toContain('getRemoteScreenshareOwner(gc)');
+    expect(source).toContain(
       "sendScreenshareTakeoverEvent(\n              'request'",
     );
+    expect(source).toContain('resolveIncomingScreenshareTakeover');
+    expect(source).toContain('resolveScreenshareTakeoverOutcome');
   });
 
-  it('disables share menu while remote share is active', () => {
+  it('keeps share clickable while remote share is active and surfaces takeover copy', () => {
     const controls = readCommonSource(
       'human-chat-panel/human-chat-panel-in-call-controls.tsx',
     );
     const menu = readCommonSource(
       'human-chat-panel/human-chat-panel-call-screenshare-menu.tsx',
     );
+    const dock = readCommonSource('global-call-dock-overlay.tsx');
+    const sidebar = readCommonSource('human-right-panel.tsx');
     expect(controls).toContain('remoteScreenshareActive');
-    expect(menu).toContain('callScreenshareBlockedRemoteActive');
+    expect(menu).toContain('callScreenshareRequestTakeover');
+    expect(menu).toContain('const shareStartDisabled = disabled;');
+    expect(dock).toContain('HumanChatPanelScreenshareTakeoverDialog');
+    expect(sidebar).toContain('HumanChatPanelScreenshareTakeoverDialog');
   });
 });
 

@@ -2302,6 +2302,7 @@
     "callShareModeWindow": "Janela",
     "callShareModeScreen": "Ecrã inteiro",
     "callScreenshareBlockedRemoteActive": "Outra pessoa está a partilhar — peça-lhe para parar antes de partilhar.",
+    "callScreenshareRequestTakeover": "Outra pessoa está a partilhar — clique para pedir partilha de ecrã.",
     "callScreenshareTakeoverIncomingTitle": "Permitir transferência de partilha de ecrã?",
     "callScreenshareTakeoverIncomingBody": "{name} quer partilhar o ecrã. Se aprovar, a sua partilha para e a dele começa.",
     "callScreenshareTakeoverApprove": "Permitir",

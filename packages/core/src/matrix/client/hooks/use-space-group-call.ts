@@ -73,6 +73,8 @@ import {
   buildScreenshareTakeoverContent,
   getRemoteScreenshareOwner,
   isRemoteScreenshareActive,
+  resolveIncomingScreenshareTakeover,
+  resolveScreenshareTakeoverOutcome,
   type ScreenshareTakeoverIncoming,
 } from './screenshare-takeover';
 import {
@@ -85,7 +87,10 @@ import {
   withEnhancedScreenshareCapture,
   type CallScreenshareSurfaceMode,
 } from './screenshare-capture';
-import { requestLocalCameraAccess } from './call-camera-access';
+import {
+  isLocalCameraPermissionDenied,
+  requestLocalCameraAccess,
+} from './call-camera-access';
 import { applyOutboundLocalVideoOrientation } from './call-local-video-orientation';
 import {
   applyScreenShareCaptureRootRestrictionWithRetry,
@@ -1490,27 +1495,42 @@ export function useSpaceGroupCall(
       const previousAudioTrack = existingStream?.getAudioTracks()[0] ?? null;
       const videoTracks =
         existingStream?.getVideoTracks().filter((track) => {
-          return track.readyState === 'live';
+          if (!track.enabled) return false;
+          const state = track.readyState as string;
+          /** Camera tracks can still be `new` right after `enter()` — do not drop them. */
+          return state === 'live' || state === 'new';
         }) ?? [];
       const audioConstraints = constraintsForVoicePreset(preset, {
         isScreensharing,
       });
+      const constraintPayload = {
+        autoGainControl: { ideal: audioConstraints.autoGainControl },
+        echoCancellation: { ideal: audioConstraints.echoCancellation },
+        noiseSuppression: { ideal: audioConstraints.noiseSuppression },
+      };
+      if (
+        previousAudioTrack &&
+        ((previousAudioTrack.readyState as string) === 'live' ||
+          (previousAudioTrack.readyState as string) === 'new')
+      ) {
+        try {
+          await previousAudioTrack.applyConstraints(constraintPayload);
+          previousAudioTrack.enabled = !gc.isMicrophoneMuted();
+          return true;
+        } catch {
+          /* open a new mic stream only when constraints cannot be applied */
+        }
+      }
       const refreshedAudioStream = await navigator.mediaDevices.getUserMedia({
         video: false,
-        audio: {
-          autoGainControl: { ideal: audioConstraints.autoGainControl },
-          echoCancellation: { ideal: audioConstraints.echoCancellation },
-          noiseSuppression: { ideal: audioConstraints.noiseSuppression },
-        },
+        audio: constraintPayload,
       });
       const nextAudioTrack = refreshedAudioStream.getAudioTracks()[0];
       if (!nextAudioTrack) {
         refreshedAudioStream.getTracks().forEach((track) => track.stop());
         return false;
       }
-      if (previousAudioTrack) {
-        nextAudioTrack.enabled = previousAudioTrack.enabled;
-      }
+      nextAudioTrack.enabled = !gc.isMicrophoneMuted();
       const nextStream = new MediaStream();
       nextStream.addTrack(nextAudioTrack);
       for (const videoTrack of videoTracks) {
@@ -2356,6 +2376,14 @@ export function useSpaceGroupCall(
       const gci = gc as unknown as GroupCallPreEnterMute;
       gci.initWithVideoMuted = kind === 'audio';
       gci.initWithAudioMuted = false;
+      if (kind === 'video') {
+        if (await isLocalCameraPermissionDenied()) {
+          setCameraAccessBlocked(true);
+          gci.initWithVideoMuted = true;
+        } else {
+          setCameraAccessBlocked(false);
+        }
+      }
       /**
        * Refresh stale local member state after hard reloads. If the prior tab died
        * mid-call, old device entries can survive briefly and cause asymmetric media.
@@ -2878,7 +2906,23 @@ export function useSpaceGroupCall(
             setIsScreensharing(true);
             return;
           }
-          if (isRemoteScreenshareActive(gc)) {
+          const localUserId = client?.getUserId()?.trim() ?? null;
+          const remoteOwner = getRemoteScreenshareOwner(gc);
+          if (
+            remoteOwner &&
+            localUserId &&
+            remoteOwner.userId !== localUserId
+          ) {
+            const requestId = crypto.randomUUID();
+            screenshareTakeoverPendingIdRef.current = requestId;
+            setScreenshareTakeoverPendingId(requestId);
+            setScreenshareTakeoverDenied(false);
+            await sendScreenshareTakeoverEvent(
+              'request',
+              requestId,
+              localUserId,
+              remoteOwner.userId,
+            );
             return;
           }
           await enableLocalScreenshareDirect(gc);
@@ -2898,7 +2942,12 @@ export function useSpaceGroupCall(
       screenshareMutationRef.current = next;
       return next;
     },
-    [enableLocalScreenshareDirect, reconcileLocalScreenshareStop],
+    [
+      client,
+      enableLocalScreenshareDirect,
+      reconcileLocalScreenshareStop,
+      sendScreenshareTakeoverEvent,
+    ],
   );
 
   setScreensharingEnabledRef.current = setScreensharingEnabled;
@@ -2934,6 +2983,7 @@ export function useSpaceGroupCall(
       );
       scheduleFeedBatched();
       window.setTimeout(scheduleFeedBatched, 350);
+      window.setTimeout(scheduleFeedBatched, 900);
     },
     [
       client,
@@ -3290,6 +3340,70 @@ export function useSpaceGroupCall(
   useEffect(() => {
     screenshareTakeoverPendingIdRef.current = screenshareTakeoverPendingId;
   }, [screenshareTakeoverPendingId]);
+
+  useEffect(() => {
+    if (!client || !roomId?.trim() || callState !== 'connected') {
+      setScreenshareTakeoverIncoming(null);
+      return;
+    }
+    const activeRoomId = roomId.trim();
+    const room = client.getRoom(activeRoomId);
+    const gc = groupCallRef.current;
+    if (!room || !gc) return;
+
+    const localUserId = client.getUserId() ?? null;
+    const syncTakeoverFromTimeline = () => {
+      const recent = room.getLiveTimeline()?.getEvents()?.slice().reverse();
+      if (!recent?.length) return;
+
+      const incoming = resolveIncomingScreenshareTakeover(
+        recent,
+        localUserId,
+        gc.isScreensharing(),
+        (senderId) => room.getMember(senderId)?.name || senderId,
+      );
+      setScreenshareTakeoverIncoming(incoming);
+
+      const pendingId = screenshareTakeoverPendingIdRef.current;
+      if (pendingId) {
+        const outcome = resolveScreenshareTakeoverOutcome(
+          recent,
+          localUserId,
+          pendingId,
+        );
+        if (outcome === 'approved') {
+          screenshareTakeoverPendingIdRef.current = null;
+          setScreenshareTakeoverPendingId(null);
+          setScreenshareTakeoverDenied(false);
+          void enableLocalScreenshareDirect(gc);
+          scheduleFeedBatched();
+          window.setTimeout(scheduleFeedBatched, 350);
+          window.setTimeout(scheduleFeedBatched, 900);
+        } else if (outcome === 'denied') {
+          screenshareTakeoverPendingIdRef.current = null;
+          setScreenshareTakeoverPendingId(null);
+          setScreenshareTakeoverDenied(true);
+        }
+      }
+    };
+
+    syncTakeoverFromTimeline();
+    const onTimeline = () => {
+      syncTakeoverFromTimeline();
+    };
+    room.on(RoomEvent.Timeline, onTimeline);
+    return () => {
+      room.off(RoomEvent.Timeline, onTimeline);
+    };
+  }, [
+    callState,
+    client,
+    enableLocalScreenshareDirect,
+    feedVersion,
+    isScreensharing,
+    roomId,
+    scheduleFeedBatched,
+  ]);
 
   const remoteScreenshareActive = useMemo(() => {
     if (!groupCall || groupCall.isScreensharing()) return false;

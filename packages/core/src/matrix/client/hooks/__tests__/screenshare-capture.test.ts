@@ -59,6 +59,8 @@ describe('buildDisplayMediaConstraints', () => {
       audio: {
         suppressLocalAudioPlayback: false,
       },
+      preferCurrentTab: false,
+      selfBrowserSurface: 'exclude',
       systemAudio: 'include',
     });
   });

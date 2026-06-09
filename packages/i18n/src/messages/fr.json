@@ -2302,6 +2302,7 @@
     "callShareModeWindow": "Fenêtre",
     "callShareModeScreen": "Écran entier",
     "callScreenshareBlockedRemoteActive": "Quelqu’un d’autre partage son écran — demandez-lui d’arrêter avant de partager.",
+    "callScreenshareRequestTakeover": "Quelqu’un d’autre partage son écran — cliquez pour demander le partage d’écran.",
     "callScreenshareTakeoverIncomingTitle": "Autoriser le transfert de partage d’écran ?",
     "callScreenshareTakeoverIncomingBody": "{name} souhaite partager son écran. Si vous acceptez, votre partage s’arrête et le sien commence.",
     "callScreenshareTakeoverApprove": "Autoriser",
