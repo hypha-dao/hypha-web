@@ -132,6 +132,134 @@ type InboundRtpVideoStats = {
   ssrc?: number;
 };
 
+type IceTransportSummary = {
+  iceConnectionState: RTCIceConnectionState;
+  iceGatheringState: RTCIceGatheringState;
+  connectionState: RTCPeerConnectionState;
+  localCandidateType?: string;
+  remoteCandidateType?: string;
+  pairState?: string;
+  inboundAudioBytes?: number;
+  inboundVideoBytes?: number;
+};
+
+function readIceTransportSummary(
+  peerConnection: RTCPeerConnection,
+  stats: RTCStatsReport,
+): IceTransportSummary {
+  const candidates = new Map<string, string>();
+  let selectedPairId: string | undefined;
+  let nominatedPair: {
+    id: string;
+    localCandidateId?: string;
+    remoteCandidateId?: string;
+    state?: string;
+  } | null = null;
+
+  stats.forEach((report) => {
+    if (
+      report.type === 'local-candidate' ||
+      report.type === 'remote-candidate'
+    ) {
+      const candidateType = report.candidateType;
+      if (typeof candidateType === 'string') {
+        candidates.set(report.id, candidateType);
+      }
+      return;
+    }
+    if (report.type === 'transport' && 'selectedCandidatePairId' in report) {
+      const id = report.selectedCandidatePairId;
+      if (typeof id === 'string' && id.length > 0) {
+        selectedPairId = id;
+      }
+      return;
+    }
+    if (report.type !== 'candidate-pair') return;
+    if (report.nominated === true && report.state === 'succeeded') {
+      nominatedPair = {
+        id: report.id,
+        localCandidateId:
+          typeof report.localCandidateId === 'string'
+            ? report.localCandidateId
+            : undefined,
+        remoteCandidateId:
+          typeof report.remoteCandidateId === 'string'
+            ? report.remoteCandidateId
+            : undefined,
+        state: typeof report.state === 'string' ? report.state : undefined,
+      };
+    }
+  });
+
+  const pairId = selectedPairId ?? nominatedPair?.id;
+  let localCandidateType: string | undefined;
+  let remoteCandidateType: string | undefined;
+  let pairState: string | undefined;
+
+  if (pairId) {
+    const pair = stats.get(pairId);
+    if (pair?.type === 'candidate-pair') {
+      pairState = typeof pair.state === 'string' ? pair.state : undefined;
+      const localId =
+        typeof pair.localCandidateId === 'string'
+          ? pair.localCandidateId
+          : nominatedPair?.localCandidateId;
+      const remoteId =
+        typeof pair.remoteCandidateId === 'string'
+          ? pair.remoteCandidateId
+          : nominatedPair?.remoteCandidateId;
+      if (localId) localCandidateType = candidates.get(localId);
+      if (remoteId) remoteCandidateType = candidates.get(remoteId);
+    }
+  }
+
+  let inboundAudioBytes = 0;
+  let inboundVideoBytes = 0;
+  stats.forEach((report) => {
+    if (report.type !== 'inbound-rtp') return;
+    const bytes = report.bytesReceived;
+    if (typeof bytes !== 'number' || bytes <= 0) return;
+    if (report.kind === 'audio') inboundAudioBytes += bytes;
+    if (report.kind === 'video') inboundVideoBytes += bytes;
+  });
+
+  return {
+    iceConnectionState: peerConnection.iceConnectionState,
+    iceGatheringState: peerConnection.iceGatheringState,
+    connectionState: peerConnection.connectionState,
+    localCandidateType,
+    remoteCandidateType,
+    pairState,
+    inboundAudioBytes: inboundAudioBytes || undefined,
+    inboundVideoBytes: inboundVideoBytes || undefined,
+  };
+}
+
+async function logIceTransportForPeerConnection(options: {
+  roomId: string;
+  groupCallId: string;
+  userId: string | null;
+  peerConnection: RTCPeerConnection;
+}): Promise<void> {
+  const { roomId, groupCallId, userId, peerConnection } = options;
+  const stats = await peerConnection.getStats();
+  const transport = readIceTransportSummary(peerConnection, stats);
+  logSpaceGroupCallEvent({
+    name: 'hypha.group_call.ice_transport',
+    roomId,
+    groupCallId,
+    remoteUserId: userId ?? undefined,
+    iceConnectionState: transport.iceConnectionState,
+    iceGatheringState: transport.iceGatheringState,
+    connectionState: transport.connectionState,
+    localCandidateType: transport.localCandidateType,
+    remoteCandidateType: transport.remoteCandidateType,
+    pairState: transport.pairState,
+    inboundAudioBytes: transport.inboundAudioBytes,
+    inboundVideoBytes: transport.inboundVideoBytes,
+  });
+}
+
 export function readInboundRtpVideoFrameSizes(
   stats: RTCStatsReport,
 ): InboundRtpVideoStats[] {
@@ -247,9 +375,28 @@ export function attachGroupCallWebRtcDiagnostics(options: {
     }
   };
 
+  const logIceTransport = () => {
+    if (!enumeratePeerConnections) return;
+    for (const { userId, peerConnection } of enumeratePeerConnections(gc)) {
+      void logIceTransportForPeerConnection({
+        roomId,
+        groupCallId: gc.groupCallId,
+        userId,
+        peerConnection,
+      });
+    }
+  };
+
   if (inboundRtpFrameLogIntervalMs > 0 && enumeratePeerConnections) {
     logFrameSizes();
-    frameLogInterval = setInterval(logFrameSizes, inboundRtpFrameLogIntervalMs);
+    logIceTransport();
+    frameLogInterval = setInterval(() => {
+      logFrameSizes();
+      logIceTransport();
+    }, inboundRtpFrameLogIntervalMs);
+  } else if (summaryStatsIntervalMs > 0 && enumeratePeerConnections) {
+    logIceTransport();
+    frameLogInterval = setInterval(logIceTransport, summaryStatsIntervalMs);
   }
 
   return () => {

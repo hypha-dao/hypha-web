@@ -26,6 +26,7 @@ export type SpaceGroupCallTelemetryEvent = {
     | 'hypha.group_call.pairwise_restart'
     | 'hypha.group_call.turn_probe'
     | 'hypha.group_call.ice_gather_probe'
+    | 'hypha.group_call.ice_transport'
     | 'hypha.group_call.webrtc_summary'
     | 'hypha.group_call.inbound_rtp_frame_size'
     | 'hypha.group_call.simulcast_audit'
@@ -85,6 +86,13 @@ export type SpaceGroupCallTelemetryEvent = {
   forceTurn?: boolean;
   fallbackIceAllowed?: boolean;
   iceGatherState?: RTCIceGatheringState | 'unsupported' | 'timeout';
+  iceConnectionState?: RTCIceConnectionState;
+  connectionState?: RTCPeerConnectionState;
+  localCandidateType?: string;
+  remoteCandidateType?: string;
+  pairState?: string;
+  inboundAudioBytes?: number;
+  inboundVideoBytes?: number;
   /** Matrix SDK summary stats (subset); see `SummaryStatsReport`. */
   percentageReceivedMedia?: number;
   percentageReceivedAudioMedia?: number;
