@@ -1,9 +1,18 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveMatrixCameraVideoConstraints } from '../call-video-capture-constraints';
 import {
   isLocalCameraPermissionDenied,
   requestLocalCameraAccess,
 } from '../call-camera-access';
+
+const originalPermissions = navigator.permissions;
+
+afterEach(() => {
+  Object.defineProperty(navigator, 'permissions', {
+    configurable: true,
+    value: originalPermissions,
+  });
+});
 
 describe('isLocalCameraPermissionDenied', () => {
   it('returns true when the Permissions API reports denied', async () => {
