@@ -61,7 +61,6 @@ export type SpaceGroupCallTelemetryEvent = {
   /** Local camera mute at snapshot time (SDK `localCallFeed`). */
   localVideoMuted?: boolean;
   localVideoTrackCount?: number;
-  roomGroupCallType?: string;
   waitedMs?: number;
   /** Pairwise `MatrixCall.hangup()` invocations before re-placing outgoing calls. */
   hungUp?: number;
