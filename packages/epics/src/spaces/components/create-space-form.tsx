@@ -33,7 +33,8 @@ import {
   categories,
   Category,
   createSpaceFiles,
-  schemaCreateSpace,
+  refineSpaceLocationCoords,
+  schemaCreateSpaceFields,
   Space,
   SpaceFlags,
   useMe,
@@ -54,8 +55,9 @@ import { SpaceLocationPicker } from './space-location-picker';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
 
-const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
-export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
+const schemaCreateSpaceFormBase =
+  schemaCreateSpaceFields.extend(createSpaceFiles);
+export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceFormBase>;
 
 export type SpaceFormLabel = 'create' | 'add' | 'configure';
 
@@ -147,15 +149,17 @@ export const SpaceForm = ({
     [slugDuplicated],
   );
 
-  const schema = schemaCreateSpaceForm.extend({
-    slug: z
-      .string()
-      .min(1, '')
-      .max(50)
-      .regex(/^[a-z0-9'-]+$/, tSpaces('slugFieldRegex'))
-      .optional()
-      .refine(resolveSlug, { message: resolvedSlugIncorrectMessage }),
-  });
+  const schema = schemaCreateSpaceFormBase
+    .extend({
+      slug: z
+        .string()
+        .min(1, '')
+        .max(50)
+        .regex(/^[a-z0-9'-]+$/, tSpaces('slugFieldRegex'))
+        .optional()
+        .refine(resolveSlug, { message: resolvedSlugIncorrectMessage }),
+    })
+    .superRefine(refineSpaceLocationCoords);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<SchemaCreateSpaceForm>({
