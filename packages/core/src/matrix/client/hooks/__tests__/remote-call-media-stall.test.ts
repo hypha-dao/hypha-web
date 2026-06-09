@@ -89,7 +89,28 @@ describe('isRemoteCallFeedMediaHealthy', () => {
     expect(
       isRemoteCallFeedMediaHealthy(
         mockFeed('@a:hs', false, {
-          stream: mockStreamWithTracks([{ kind: 'audio', readyState: 'live' }]),
+          stream: mockStreamWithTracks([
+            { kind: 'audio', readyState: 'live', enabled: true },
+          ]),
+          audioMuted: false,
+          videoMuted: true,
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it('is healthy when inbound audio is live but track.muted is still true', () => {
+    expect(
+      isRemoteCallFeedMediaHealthy(
+        mockFeed('@a:hs', false, {
+          stream: mockStreamWithTracks([
+            {
+              kind: 'audio',
+              readyState: 'live',
+              enabled: true,
+              muted: true,
+            } as MediaStreamTrack,
+          ]),
           audioMuted: false,
           videoMuted: true,
         }),
@@ -99,23 +120,21 @@ describe('isRemoteCallFeedMediaHealthy', () => {
 });
 
 describe('isRemoteCallFeedMediaWarming', () => {
-  it('treats muted live video tracks as warming, not zombie', () => {
-    expect(
-      isRemoteCallFeedMediaWarming(
-        mockFeed('@a:hs', false, {
-          stream: mockStreamWithTracks([
-            {
-              kind: 'video',
-              readyState: 'live',
-              enabled: true,
-              muted: true,
-            } as MediaStreamTrack,
-          ]),
-          audioMuted: true,
-          videoMuted: false,
-        }),
-      ),
-    ).toBe(true);
+  it('treats muted live enabled video as healthy (not warming or zombie)', () => {
+    const feed = mockFeed('@a:hs', false, {
+      stream: mockStreamWithTracks([
+        {
+          kind: 'video',
+          readyState: 'live',
+          enabled: true,
+          muted: true,
+        } as MediaStreamTrack,
+      ]),
+      audioMuted: true,
+      videoMuted: false,
+    });
+    expect(isRemoteCallFeedMediaHealthy(feed)).toBe(true);
+    expect(isRemoteCallFeedMediaWarming(feed)).toBe(false);
   });
 });
 
@@ -150,7 +169,7 @@ describe('countUnhealthyRemoteCallMedia', () => {
     ).toBe(1);
   });
 
-  it('ignores warming video feeds during ICE connect', () => {
+  it('ignores live enabled video feeds during ICE connect', () => {
     expect(
       countUnhealthyRemoteCallMedia(
         {
@@ -185,7 +204,8 @@ describe('countUnhealthyRemoteCallMedia', () => {
                 {
                   kind: 'audio',
                   readyState: 'live',
-                  muted: false,
+                  enabled: true,
+                  muted: true,
                 } as MediaStreamTrack,
               ]),
               audioMuted: false,

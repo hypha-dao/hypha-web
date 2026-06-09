@@ -197,7 +197,7 @@ const CONNECT_STALL_ABORT_MS = 90_000;
 /** Room shows others in-call but no remote userMedia CallFeed yet (signaling/WebRTC issue). */
 const REMOTE_MEDIA_STALL_MS = 45_000;
 /** One-shot pairwise hangup + re-place when nudges fail (no GroupCall.leave). */
-const REMOTE_MEDIA_PAIRWISE_RESTART_MS = 15_000;
+const REMOTE_MEDIA_PAIRWISE_RESTART_MS = 45_000;
 /** Avoid hammering `placeOutgoingCalls()` while ICE is still checking (negotiation glare). */
 const REMOTE_MEDIA_REPAIR_NUDGE_MS = 8_000;
 
@@ -590,21 +590,32 @@ async function ensureLocalCallMediaPublished(
   gc: MatrixSdk.GroupCall,
   kind: 'audio' | 'video',
 ): Promise<void> {
+  let republishNeeded = false;
   try {
     if (!gc.isMicrophoneMuted()) {
+      const hadAudio = Boolean(getLiveLocalAudioTrack(gc));
       await recoverLocalMicrophoneFeed(gc);
+      if (!hadAudio && getLiveLocalAudioTrack(gc)) {
+        republishNeeded = true;
+      }
     }
     if (kind === 'video' && !gc.isLocalVideoMuted()) {
+      const hadVideo = Boolean(getLocalVideoTrackPresence(gc));
       await recoverLocalCameraFeed(gc);
+      if (!hadVideo && getLocalVideoTrackPresence(gc)) {
+        republishNeeded = true;
+      }
     }
   } catch {
     /* keep call connected if device recovery fails */
   }
   nudgeGroupCallPlaceOutgoing(gc);
-  try {
-    await republishLocalMediaToPairwiseCalls(gc, { force: true });
-  } catch {
-    /* best-effort pairwise push after local track recovery */
+  if (republishNeeded) {
+    try {
+      await republishLocalMediaToPairwiseCalls(gc, { force: true });
+    } catch {
+      /* best-effort pairwise push after local track recovery */
+    }
   }
 }
 
@@ -2324,9 +2335,7 @@ export function useSpaceGroupCall(
         /** New pairwise session — debounced republish after ICE has time to connect. */
         if (groupCallRef.current !== gc) return;
         const kind = lastJoinKindRef.current ?? 'audio';
-        const intent = pairwisePublishIntentRef.current;
         scheduleRepublishLocalMediaToPairwiseCalls(gc, {
-          force: intent.wantAudio || intent.wantVideo,
           delayMs: kind === 'video' ? 2_000 : 4_000,
         });
         nudgeGroupCallPlaceOutgoing(gc);

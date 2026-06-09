@@ -19,6 +19,15 @@ type GroupCallRemoteMediaLike = {
   screenshareFeeds: CallFeedLike[];
 };
 
+function hasLiveEnabledMediaStreamTrack(
+  stream: MediaStream,
+  kind: 'audio' | 'video',
+): boolean {
+  const tracks =
+    kind === 'audio' ? stream.getAudioTracks() : stream.getVideoTracks();
+  return tracks.some((track) => track.enabled && track.readyState === 'live');
+}
+
 function hasLiveMediaStreamTrack(
   stream: MediaStream,
   kind: 'audio' | 'video',
@@ -56,14 +65,16 @@ export function isRemoteCallFeedMediaHealthy(
   const stream = feed.stream ?? null;
   if (!stream) return false;
 
-  const liveAudio = stream
-    .getAudioTracks()
-    .some((track) => track.readyState === 'live' && !track.muted);
-  const liveVideo = stream
-    .getVideoTracks()
-    .some((track) => track.readyState === 'live' && !track.muted);
-  if (wantsAudio && liveAudio) return true;
-  if (wantsVideo && liveVideo) return true;
+  /**
+   * Inbound WebRTC tracks often stay `muted: true` until the first RTP packet
+   * while audio/video already flows — do not require `!track.muted` here.
+   */
+  if (wantsAudio && hasLiveEnabledMediaStreamTrack(stream, 'audio')) {
+    return true;
+  }
+  if (wantsVideo && hasLiveEnabledMediaStreamTrack(stream, 'video')) {
+    return true;
+  }
   return false;
 }
 
