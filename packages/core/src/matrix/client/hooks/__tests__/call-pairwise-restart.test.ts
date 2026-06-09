@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  countActivePairwiseCalls,
   hangupAllActivePairwiseCalls,
   hangupPairwiseCallsForRemoteUsers,
   hasActivePairwiseCalls,
@@ -8,6 +9,7 @@ import {
   resetPairwiseVideoResyncScheduleForTests,
   restartAllPairwiseCallsForVideo,
   schedulePairwiseVideoResync,
+  waitForActivePairwiseCalls,
 } from '../call-pairwise-restart';
 
 describe('hangupPairwiseCallsForRemoteUsers', () => {
@@ -65,6 +67,29 @@ describe('pairwise video resync', () => {
       },
     };
     expect(hasActivePairwiseCalls(gc)).toBe(true);
+    expect(countActivePairwiseCalls(gc)).toBe(1);
+  });
+
+  it('waits until new pairwise calls appear after hangup', async () => {
+    vi.useFakeTimers();
+    let active = false;
+    const gc = {
+      forEachCall: (callback: (call: unknown) => void) => {
+        if (active) {
+          callback({ callHasEnded: () => false });
+        }
+      },
+    };
+    const pending = waitForActivePairwiseCalls(gc, {
+      timeoutMs: 2_000,
+      pollMs: 200,
+    });
+    await vi.advanceTimersByTimeAsync(199);
+    expect(countActivePairwiseCalls(gc)).toBe(0);
+    active = true;
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(pending).resolves.toBe(true);
+    vi.useRealTimers();
   });
 
   it('hangs up all active pairwise calls', () => {
@@ -385,7 +410,7 @@ describe('republishLocalMediaToPairwiseCalls', () => {
     };
 
     await republishLocalMediaToPairwiseCalls(gc);
-    track.muted = false;
+    Object.defineProperty(track, 'muted', { value: false, writable: true });
     await expect(republishLocalMediaToPairwiseCalls(gc)).resolves.toBe(1);
     expect(update).toHaveBeenCalledTimes(2);
   });

@@ -102,6 +102,7 @@ import {
   republishLocalMediaToPairwiseCalls,
   restartAllPairwiseCallsForVideo,
   schedulePairwiseVideoResync,
+  waitForActivePairwiseCalls,
 } from './call-pairwise-restart';
 import {
   clearPairwiseRepublishSchedule,
@@ -326,7 +327,16 @@ async function restartPairwiseCallsForRemoteUsers(
 ): Promise<number> {
   const hungUp = hangupPairwiseCallsForRemoteUsers(gc, remoteUserIds);
   nudgeGroupCallPlaceOutgoing(gc);
-  await republishLocalMediaToPairwiseCalls(gc, { force: true });
+  if (hungUp > 0) {
+    await waitForActivePairwiseCalls(gc);
+  }
+  if (hasActivePairwiseCalls(gc)) {
+    await republishLocalMediaToPairwiseCalls(gc, { force: true });
+  }
+  scheduleRepublishLocalMediaToPairwiseCalls(gc, {
+    force: true,
+    delayMs: 3_000,
+  });
   return hungUp;
 }
 
@@ -740,6 +750,7 @@ export function useSpaceGroupCall(
   const remoteMediaGapSinceRef = useRef<number | null>(null);
   const remoteMediaStallLoggedRef = useRef(false);
   const remoteMediaPairwiseRestartAttemptedRef = useRef(false);
+  const localVideoRecoveryAttemptedRef = useRef(false);
   const remoteMediaStallBannerDismissedRef = useRef(false);
   const remoteMediaRepairNudgeIntervalRef = useRef<ReturnType<
     typeof setInterval
@@ -1896,6 +1907,24 @@ export function useSpaceGroupCall(
 
     const now = Date.now();
     if (mediaUnhealthy) {
+      if (
+        localOutboundUnhealthy &&
+        kind === 'video' &&
+        !gc.isLocalVideoMuted() &&
+        !localVideoRecoveryAttemptedRef.current
+      ) {
+        localVideoRecoveryAttemptedRef.current = true;
+        void ensureLocalVideoCaptureActive(gc, {
+          onCameraAccessBlocked: setCameraAccessBlocked,
+        })
+          .then(async () => {
+            if (groupCallRef.current !== gc) return;
+            await republishLocalMediaToPairwiseCalls(gc, { force: true });
+            refreshLocalPreview();
+            scheduleFeedBatched();
+          })
+          .catch(() => undefined);
+      }
       if (remoteMediaRepairNudgeIntervalRef.current == null) {
         remoteMediaRepairNudgeIntervalRef.current = setInterval(() => {
           if (groupCallRef.current !== gc) return;
@@ -1981,6 +2010,7 @@ export function useSpaceGroupCall(
       remoteMediaGapSinceRef.current = null;
       remoteMediaStallLoggedRef.current = false;
       remoteMediaPairwiseRestartAttemptedRef.current = false;
+      localVideoRecoveryAttemptedRef.current = false;
       remoteMediaStallBannerDismissedRef.current = false;
       if (remoteMediaRepairNudgeIntervalRef.current != null) {
         clearInterval(remoteMediaRepairNudgeIntervalRef.current);
@@ -2012,6 +2042,7 @@ export function useSpaceGroupCall(
     remoteMediaStallBannerDismissedRef.current = false;
     remoteMediaStallLoggedRef.current = false;
     remoteMediaPairwiseRestartAttemptedRef.current = false;
+    localVideoRecoveryAttemptedRef.current = false;
     remoteMediaGapSinceRef.current = null;
     setRemoteMediaStall(false);
     setRemoteMediaWarming(true);

@@ -118,12 +118,34 @@ export function resetPairwiseRepublishFingerprintForTests(): void {
   lastPublishedFingerprintByCall.clear();
 }
 
-export function hasActivePairwiseCalls(gc: unknown): boolean {
-  let active = false;
+export function countActivePairwiseCalls(gc: unknown): number {
+  let active = 0;
   forEachGroupCallMatrixCall(gc, (call) => {
-    if (!call.callHasEnded?.()) active = true;
+    if (!call.callHasEnded?.()) active += 1;
   });
   return active;
+}
+
+export function hasActivePairwiseCalls(gc: unknown): boolean {
+  return countActivePairwiseCalls(gc) > 0;
+}
+
+/** `placeOutgoingCalls()` is async — wait before republishing into new MatrixCall sessions. */
+export async function waitForActivePairwiseCalls(
+  gc: unknown,
+  options?: { timeoutMs?: number; pollMs?: number; minCalls?: number },
+): Promise<boolean> {
+  const timeoutMs = options?.timeoutMs ?? 8_000;
+  const pollMs = options?.pollMs ?? 100;
+  const minCalls = options?.minCalls ?? 1;
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    if (countActivePairwiseCalls(gc) >= minCalls) return true;
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, pollMs);
+    });
+  }
+  return countActivePairwiseCalls(gc) >= minCalls;
 }
 
 /** Hang up every live pairwise session so `placeOutgoingCalls()` can rebuild with video. */
@@ -152,7 +174,12 @@ export async function restartAllPairwiseCallsForVideo(
 ): Promise<number> {
   const hungUp = hangupAllActivePairwiseCalls(gc);
   nudgePlaceOutgoing();
-  await republishLocalMediaToPairwiseCalls(gc, { force: true });
+  if (hungUp > 0) {
+    await waitForActivePairwiseCalls(gc);
+  }
+  if (hasActivePairwiseCalls(gc)) {
+    await republishLocalMediaToPairwiseCalls(gc, { force: true });
+  }
   return hungUp;
 }
 
