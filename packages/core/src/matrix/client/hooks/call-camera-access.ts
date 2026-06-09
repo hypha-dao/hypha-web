@@ -6,8 +6,27 @@ export type LocalCameraAccessResult =
   | { ok: false; reason: 'unavailable' | 'permission_denied' | 'failed' };
 
 /**
- * Prompt for camera access so the browser registers the site permission and
- * Matrix can acquire a fresh video track afterward.
+ * Read camera permission without opening a second getUserMedia stream.
+ * When state is `prompt` or `granted`, Matrix `enter()` should be the only
+ * capture prompt during join.
+ */
+export async function isLocalCameraPermissionDenied(): Promise<boolean> {
+  if (typeof navigator === 'undefined') return false;
+  try {
+    const permissions = navigator.permissions;
+    if (!permissions?.query) return false;
+    const status = await permissions.query({
+      name: 'camera' as PermissionName,
+    });
+    return status.state === 'denied';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Prompt for camera access when the user turns the camera on mid-call.
+ * Avoid calling this before `GroupCall.enter()` — it causes a duplicate prompt.
  */
 export async function requestLocalCameraAccess(): Promise<LocalCameraAccessResult> {
   if (

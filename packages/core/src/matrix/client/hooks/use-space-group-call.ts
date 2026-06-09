@@ -85,7 +85,10 @@ import {
   withEnhancedScreenshareCapture,
   type CallScreenshareSurfaceMode,
 } from './screenshare-capture';
-import { requestLocalCameraAccess } from './call-camera-access';
+import {
+  isLocalCameraPermissionDenied,
+  requestLocalCameraAccess,
+} from './call-camera-access';
 import { applyOutboundLocalVideoOrientation } from './call-local-video-orientation';
 import {
   applyScreenShareCaptureRootRestrictionWithRetry,
@@ -452,9 +455,8 @@ async function ensureLocalVideoCaptureActive(
     return;
   }
 
-  const access = await requestLocalCameraAccess();
-  if (!access.ok) {
-    options?.onCameraAccessBlocked?.(access.reason === 'permission_denied');
+  if (await isLocalCameraPermissionDenied()) {
+    options?.onCameraAccessBlocked?.(true);
     return;
   }
   options?.onCameraAccessBlocked?.(false);
@@ -1648,13 +1650,27 @@ export function useSpaceGroupCall(
       const audioConstraints = constraintsForVoicePreset(preset, {
         isScreensharing,
       });
+      const constraintPayload = {
+        autoGainControl: { ideal: audioConstraints.autoGainControl },
+        echoCancellation: { ideal: audioConstraints.echoCancellation },
+        noiseSuppression: { ideal: audioConstraints.noiseSuppression },
+      };
+      if (
+        previousAudioTrack &&
+        ((previousAudioTrack.readyState as string) === 'live' ||
+          (previousAudioTrack.readyState as string) === 'new')
+      ) {
+        try {
+          await previousAudioTrack.applyConstraints(constraintPayload);
+          previousAudioTrack.enabled = !gc.isMicrophoneMuted();
+          return true;
+        } catch {
+          /* open a new mic stream only when constraints cannot be applied */
+        }
+      }
       const refreshedAudioStream = await navigator.mediaDevices.getUserMedia({
         video: false,
-        audio: {
-          autoGainControl: { ideal: audioConstraints.autoGainControl },
-          echoCancellation: { ideal: audioConstraints.echoCancellation },
-          noiseSuppression: { ideal: audioConstraints.noiseSuppression },
-        },
+        audio: constraintPayload,
       });
       const nextAudioTrack = refreshedAudioStream.getAudioTracks()[0];
       if (!nextAudioTrack) {
@@ -2647,9 +2663,8 @@ export function useSpaceGroupCall(
       gci.initWithAudioMuted = false;
       let videoJoinWithCamera = kind === 'video';
       if (kind === 'video') {
-        const access = await requestLocalCameraAccess();
-        if (!access.ok) {
-          setCameraAccessBlocked(access.reason === 'permission_denied');
+        if (await isLocalCameraPermissionDenied()) {
+          setCameraAccessBlocked(true);
           gci.initWithVideoMuted = true;
           videoJoinWithCamera = false;
         } else {
