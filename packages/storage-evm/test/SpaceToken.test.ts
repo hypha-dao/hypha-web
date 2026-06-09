@@ -442,6 +442,71 @@ describe('SpaceToken + Extensions Tests', function () {
         ethers.parseEther('0.001'),
       );
     });
+
+    it('Should compound decay correctly over multiple periods', async function () {
+      // 10% per 3600s from the describe-level beforeEach.
+      await token
+        .connect(executorSigner)
+        .mint(alice.address, ethers.parseEther('1000'));
+
+      await ethers.provider.send('evm_increaseTime', [3600 * 4]);
+      await ethers.provider.send('evm_mine', []);
+
+      // 1000 * 0.9^4 = 656.1
+      expect(await token.balanceOf(alice.address)).to.be.closeTo(
+        ethers.parseEther('656.1'),
+        ethers.parseEther('0.001'),
+      );
+    });
+
+    it('Should decay monotonically over successive periods', async function () {
+      await token
+        .connect(executorSigner)
+        .mint(alice.address, ethers.parseEther('1000'));
+
+      let previous = await token.balanceOf(alice.address);
+      for (let i = 0; i < 4; i++) {
+        await ethers.provider.send('evm_increaseTime', [3600]);
+        await ethers.provider.send('evm_mine', []);
+        const current = await token.balanceOf(alice.address);
+        expect(current).to.be.lessThan(previous);
+        previous = current;
+      }
+    });
+
+    it('Should be idempotent within the same period', async function () {
+      await token
+        .connect(executorSigner)
+        .mint(alice.address, ethers.parseEther('1000'));
+
+      await ethers.provider.send('evm_increaseTime', [3600]);
+      await decay.applyDecay(alice.address);
+      const balanceAfterFirst = await token.balanceOf(alice.address);
+      const burnedAfterFirst = await decay.totalBurnedFromDecay();
+
+      // No time advance: a second materialization must not decay further.
+      await decay.applyDecay(alice.address);
+      expect(await token.balanceOf(alice.address)).to.equal(balanceAfterFirst);
+      expect(await decay.totalBurnedFromDecay()).to.equal(burnedAfterFirst);
+    });
+
+    it('Should track decay per holder in getDecayedTotalSupply', async function () {
+      await token
+        .connect(executorSigner)
+        .mint(alice.address, ethers.parseEther('1000'));
+      await token
+        .connect(executorSigner)
+        .mint(bob.address, ethers.parseEther('1000'));
+
+      await ethers.provider.send('evm_increaseTime', [3600]);
+      await ethers.provider.send('evm_mine', []);
+
+      // Both holders pending one period of 10% decay: 900 + 900.
+      expect(await decay.getDecayedTotalSupply()).to.be.closeTo(
+        ethers.parseEther('1800'),
+        ethers.parseEther('0.001'),
+      );
+    });
   });
 
   // ==========================================================================
