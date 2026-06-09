@@ -18,17 +18,10 @@ export function decayPercentToBasisPoints(percent: number): number {
   return bp;
 }
 
-/**
- * On-chain basis points → form percent for display / RHF.
- * Legacy: values ≤100 were often sent as “UI percent” by mistake (17 → 17 bp);
- * treat as percent directly. Values >100 are true bp (1700 → 17%).
- */
+/** On-chain basis points → form percent for display / RHF (100 bp = 1%). */
 export function decayBasisPointsToFormPercent(basisPoints: number): number {
   if (!Number.isFinite(basisPoints) || basisPoints <= 0) {
     return 1;
-  }
-  if (basisPoints <= 100) {
-    return Math.min(100, Math.max(1, Math.round(basisPoints)));
   }
   return Math.min(100, Math.max(1, Math.round(basisPoints / 100)));
 }
