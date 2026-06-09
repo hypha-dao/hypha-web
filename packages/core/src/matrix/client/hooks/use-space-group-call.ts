@@ -96,8 +96,12 @@ import {
   listUnhealthyRemoteCallUserIds,
 } from './remote-call-media-stall';
 import {
+  clearPairwiseVideoResyncSchedule,
   hangupPairwiseCallsForRemoteUsers,
+  hasActivePairwiseCalls,
   republishLocalMediaToPairwiseCalls,
+  restartAllPairwiseCallsForVideo,
+  schedulePairwiseVideoResync,
 } from './call-pairwise-restart';
 import {
   clearPairwiseRepublishSchedule,
@@ -188,7 +192,7 @@ const CONNECT_STALL_ABORT_MS = 90_000;
 /** Room shows others in-call but no remote userMedia CallFeed yet (signaling/WebRTC issue). */
 const REMOTE_MEDIA_STALL_MS = 45_000;
 /** One-shot pairwise hangup + re-place when nudges fail (no GroupCall.leave). */
-const REMOTE_MEDIA_PAIRWISE_RESTART_MS = 45_000;
+const REMOTE_MEDIA_PAIRWISE_RESTART_MS = 15_000;
 /** Avoid hammering `placeOutgoingCalls()` while ICE is still checking (negotiation glare). */
 const REMOTE_MEDIA_REPAIR_NUDGE_MS = 8_000;
 
@@ -1441,6 +1445,7 @@ export function useSpaceGroupCall(
       }
       stopPlaceOutgoingPeriodicNudge(placeOutgoingPeriodicIntervalRef);
       clearLocalMediaBootstrapTimers();
+      clearPairwiseVideoResyncSchedule();
       webRtcDiagCleanupRef.current?.();
       webRtcDiagCleanupRef.current = null;
       turnRefreshCleanupRef.current?.();
@@ -2234,6 +2239,11 @@ export function useSpaceGroupCall(
           delayMs: kind === 'video' ? 2_000 : 4_000,
         });
         nudgeGroupCallPlaceOutgoing(gc);
+        if (kind === 'video' && !gc.isLocalVideoMuted()) {
+          schedulePairwiseVideoResync(gc, () =>
+            nudgeGroupCallPlaceOutgoing(gc),
+          );
+        }
       };
       gc.on(GroupCallEvent.CallsChanged, onCallsChanged);
       const onFeedsMaybeParticipants = () => {
@@ -2694,6 +2704,14 @@ export function useSpaceGroupCall(
         await ensurePublishedLocalMediaWithOrientation(gc, kind);
         if (kind === 'video' && !gc.isLocalVideoMuted()) {
           await republishLocalMediaToPairwiseCalls(gc, { force: true });
+          if (hasActivePairwiseCalls(gc)) {
+            await restartAllPairwiseCallsForVideo(gc, () =>
+              nudgeGroupCallPlaceOutgoing(gc),
+            );
+          }
+          schedulePairwiseVideoResync(gc, () =>
+            nudgeGroupCallPlaceOutgoing(gc),
+          );
         }
         scheduleRepublishLocalMediaToPairwiseCalls(gc, {
           force: kind === 'video',

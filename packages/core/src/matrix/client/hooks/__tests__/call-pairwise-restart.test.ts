@@ -1,8 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  hangupAllActivePairwiseCalls,
   hangupPairwiseCallsForRemoteUsers,
+  hasActivePairwiseCalls,
   republishLocalMediaToPairwiseCalls,
   resetPairwiseRepublishFingerprintForTests,
+  resetPairwiseVideoResyncScheduleForTests,
+  restartAllPairwiseCallsForVideo,
+  schedulePairwiseVideoResync,
 } from '../call-pairwise-restart';
 
 describe('hangupPairwiseCallsForRemoteUsers', () => {
@@ -43,6 +48,105 @@ describe('hangupPairwiseCallsForRemoteUsers', () => {
 
     expect(hangupPairwiseCallsForRemoteUsers(gc, ['@a:hs'])).toBe(0);
     expect(hangup).not.toHaveBeenCalled();
+  });
+});
+
+describe('pairwise video resync', () => {
+  afterEach(() => {
+    resetPairwiseVideoResyncScheduleForTests();
+    vi.useRealTimers();
+  });
+
+  it('detects active pairwise calls', () => {
+    const gc = {
+      forEachCall: (callback: (call: unknown) => void) => {
+        callback({ callHasEnded: () => true });
+        callback({ callHasEnded: () => false });
+      },
+    };
+    expect(hasActivePairwiseCalls(gc)).toBe(true);
+  });
+
+  it('hangs up all active pairwise calls', () => {
+    const hangup = vi.fn();
+    const gc = {
+      forEachCall: (callback: (call: unknown) => void) => {
+        callback({ callHasEnded: () => false, hangup });
+      },
+    };
+    expect(hangupAllActivePairwiseCalls(gc)).toBe(1);
+    expect(hangup).toHaveBeenCalledTimes(1);
+  });
+
+  it('schedules a debounced full video resync', async () => {
+    vi.useFakeTimers();
+    const hangup = vi.fn();
+    const update = vi.fn().mockResolvedValue(undefined);
+    const nudge = vi.fn();
+    const track = {
+      kind: 'video',
+      id: 'v1',
+      readyState: 'live',
+      muted: false,
+      enabled: true,
+    } as MediaStreamTrack;
+    const gc = {
+      localCallFeed: {
+        stream: { id: 's1', getTracks: () => [track] } as MediaStream,
+        isVideoMuted: () => false,
+        isAudioMuted: () => false,
+      },
+      forEachCall: (callback: (call: unknown) => void) => {
+        callback({
+          callHasEnded: () => false,
+          hangup,
+          isLocalVideoMuted: () => false,
+          hasUserMediaVideoSender: true,
+          updateLocalUsermediaStream: update,
+        });
+      },
+    };
+
+    schedulePairwiseVideoResync(gc, nudge, 100);
+    await vi.advanceTimersByTimeAsync(100);
+
+    expect(hangup).toHaveBeenCalledTimes(1);
+    expect(nudge).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith(gc.localCallFeed.stream, true, true);
+  });
+
+  it('restartAllPairwiseCallsForVideo hangs up, nudges, and republishes', async () => {
+    const hangup = vi.fn();
+    const update = vi.fn().mockResolvedValue(undefined);
+    const nudge = vi.fn();
+    const track = {
+      kind: 'video',
+      id: 'v1',
+      readyState: 'live',
+      muted: false,
+      enabled: true,
+    } as MediaStreamTrack;
+    const gc = {
+      localCallFeed: {
+        stream: { id: 's1', getTracks: () => [track] } as MediaStream,
+        isVideoMuted: () => false,
+        isAudioMuted: () => false,
+      },
+      forEachCall: (callback: (call: unknown) => void) => {
+        callback({
+          callHasEnded: () => false,
+          hangup,
+          isLocalVideoMuted: () => false,
+          hasUserMediaVideoSender: true,
+          updateLocalUsermediaStream: update,
+        });
+      },
+    };
+
+    await expect(restartAllPairwiseCallsForVideo(gc, nudge)).resolves.toBe(1);
+    expect(hangup).toHaveBeenCalledTimes(1);
+    expect(nudge).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledTimes(1);
   });
 });
 

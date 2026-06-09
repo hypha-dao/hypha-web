@@ -13,6 +13,7 @@ type MatrixCallRestartLike = {
     forceAudio?: boolean,
     forceVideo?: boolean,
   ) => Promise<void>;
+  upgradeCall?: (audio: boolean, video: boolean) => Promise<void>;
   setLocalVideoMuted?: (muted: boolean) => Promise<unknown>;
   isLocalVideoMuted?: () => boolean;
   hasUserMediaVideoSender?: boolean;
@@ -86,8 +87,12 @@ async function pushStreamToMatrixCall(
     (call.isLocalVideoMuted?.() === true ||
       call.hasUserMediaVideoSender === false);
 
-  if (needsVideoUpgrade && typeof call.setLocalVideoMuted === 'function') {
-    await call.setLocalVideoMuted(false).catch(() => undefined);
+  if (needsVideoUpgrade) {
+    if (typeof call.upgradeCall === 'function') {
+      await call.upgradeCall(false, true).catch(() => undefined);
+    } else if (typeof call.setLocalVideoMuted === 'function') {
+      await call.setLocalVideoMuted(false).catch(() => undefined);
+    }
   }
 
   call.localUsermediaFeed?.setAudioVideoMuted?.(
@@ -111,6 +116,89 @@ const lastPublishedFingerprintByCall = new Map<MatrixCallRestartLike, string>();
 
 export function resetPairwiseRepublishFingerprintForTests(): void {
   lastPublishedFingerprintByCall.clear();
+}
+
+export function hasActivePairwiseCalls(gc: unknown): boolean {
+  let active = false;
+  forEachGroupCallMatrixCall(gc, (call) => {
+    if (!call.callHasEnded?.()) active = true;
+  });
+  return active;
+}
+
+/** Hang up every live pairwise session so `placeOutgoingCalls()` can rebuild with video. */
+export function hangupAllActivePairwiseCalls(gc: unknown): number {
+  let hungUp = 0;
+  forEachGroupCallMatrixCall(gc, (call) => {
+    if (call.callHasEnded?.()) {
+      lastPublishedFingerprintByCall.delete(call);
+      return;
+    }
+    if (typeof call.hangup !== 'function') return;
+    try {
+      call.hangup();
+      lastPublishedFingerprintByCall.delete(call);
+      hungUp += 1;
+    } catch {
+      /* best-effort */
+    }
+  });
+  return hungUp;
+}
+
+export async function restartAllPairwiseCallsForVideo(
+  gc: unknown,
+  nudgePlaceOutgoing: () => void,
+): Promise<number> {
+  const hungUp = hangupAllActivePairwiseCalls(gc);
+  nudgePlaceOutgoing();
+  await republishLocalMediaToPairwiseCalls(gc, { force: true });
+  return hungUp;
+}
+
+const PAIRWISE_VIDEO_RESYNC_DEBOUNCE_MS = 5_000;
+let pairwiseVideoResyncTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingPairwiseVideoResync: {
+  gc: unknown;
+  nudgePlaceOutgoing: () => void;
+} | null = null;
+
+export function clearPairwiseVideoResyncSchedule(): void {
+  if (pairwiseVideoResyncTimer != null) {
+    clearTimeout(pairwiseVideoResyncTimer);
+    pairwiseVideoResyncTimer = null;
+  }
+  pendingPairwiseVideoResync = null;
+}
+
+export function resetPairwiseVideoResyncScheduleForTests(): void {
+  clearPairwiseVideoResyncSchedule();
+}
+
+/**
+ * Debounced full pairwise restart — initial `placeOutgoingCalls()` often runs
+ * before the local camera track exists, leaving audio-only SDP on both sides.
+ */
+export function schedulePairwiseVideoResync(
+  gc: unknown,
+  nudgePlaceOutgoing: () => void,
+  delayMs = PAIRWISE_VIDEO_RESYNC_DEBOUNCE_MS,
+): void {
+  if (typeof setTimeout === 'undefined') return;
+  pendingPairwiseVideoResync = { gc, nudgePlaceOutgoing };
+  if (pairwiseVideoResyncTimer != null) {
+    clearTimeout(pairwiseVideoResyncTimer);
+  }
+  pairwiseVideoResyncTimer = setTimeout(() => {
+    pairwiseVideoResyncTimer = null;
+    const pending = pendingPairwiseVideoResync;
+    pendingPairwiseVideoResync = null;
+    if (!pending) return;
+    void restartAllPairwiseCallsForVideo(
+      pending.gc,
+      pending.nudgePlaceOutgoing,
+    ).catch(() => undefined);
+  }, delayMs);
 }
 
 /**
