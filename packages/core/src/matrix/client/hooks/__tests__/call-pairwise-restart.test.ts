@@ -9,6 +9,7 @@ import {
   resetPairwiseVideoResyncScheduleForTests,
   restartAllPairwiseCallsForVideo,
   schedulePairwiseVideoResync,
+  syncPairwisePublishIntent,
   waitForActivePairwiseCalls,
 } from '../call-pairwise-restart';
 
@@ -236,7 +237,7 @@ describe('republishLocalMediaToPairwiseCalls', () => {
     expect(update).toHaveBeenCalledWith(stream, true, true);
   });
 
-  it('uses GroupCall mute intent when CallFeed mute state lags during recovery', async () => {
+  it('uses synced publish intent when GroupCall mute state flips during recovery', async () => {
     const audioTrack = {
       kind: 'audio',
       id: 'a1',
@@ -250,7 +251,7 @@ describe('republishLocalMediaToPairwiseCalls', () => {
     } as MediaStream;
     const update = vi.fn().mockResolvedValue(undefined);
     const gc = {
-      isMicrophoneMuted: () => false,
+      isMicrophoneMuted: () => true,
       isLocalVideoMuted: () => true,
       localCallFeed: {
         stream,
@@ -264,6 +265,7 @@ describe('republishLocalMediaToPairwiseCalls', () => {
         });
       },
     };
+    syncPairwisePublishIntent(gc, { wantAudio: true, wantVideo: false });
 
     await expect(republishLocalMediaToPairwiseCalls(gc)).resolves.toBe(1);
     expect(update).toHaveBeenCalledWith(stream, true, false);

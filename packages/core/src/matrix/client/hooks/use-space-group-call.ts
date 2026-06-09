@@ -96,6 +96,7 @@ import {
   listUnhealthyRemoteCallUserIds,
 } from './remote-call-media-stall';
 import {
+  clearPairwisePublishIntent,
   clearPairwiseVideoResyncAttemptCounts,
   clearPairwiseVideoResyncSchedule,
   hangupPairwiseCallsForRemoteUsers,
@@ -103,7 +104,9 @@ import {
   republishLocalMediaToPairwiseCalls,
   restartAllPairwiseCallsForVideo,
   schedulePairwiseVideoResync,
+  syncPairwisePublishIntent,
   waitForActivePairwiseCalls,
+  type PairwisePublishIntent,
 } from './call-pairwise-restart';
 import {
   clearPairwiseRepublishSchedule,
@@ -560,18 +563,21 @@ async function recoverLocalMicrophoneFeed(
   if (getLiveLocalAudioTrack(gc)) return;
 
   try {
+    await gc.setMicrophoneMuted(false);
+    if (await waitForLiveLocalAudioTrack(gc, 600)) return;
+  } catch {
+    /* best-effort device recovery */
+  }
+
+  try {
     await gc.setMicrophoneMuted(true);
     await gc.setMicrophoneMuted(false);
     await waitForLiveLocalAudioTrack(gc, 400);
   } catch {
     /* best-effort device recovery */
   } finally {
-    if (!gc.isMicrophoneMuted()) return;
-    try {
-      await gc.setMicrophoneMuted(false);
-      await waitForLiveLocalAudioTrack(gc, 400);
-    } catch {
-      /* keep call connected if unmute fails */
+    if (gc.isMicrophoneMuted()) {
+      await gc.setMicrophoneMuted(false).catch(() => undefined);
     }
   }
 }
@@ -595,6 +601,11 @@ async function ensureLocalCallMediaPublished(
     /* keep call connected if device recovery fails */
   }
   nudgeGroupCallPlaceOutgoing(gc);
+  try {
+    await republishLocalMediaToPairwiseCalls(gc, { force: true });
+  } catch {
+    /* best-effort pairwise push after local track recovery */
+  }
 }
 
 /** Matrix SDK group-call summary stats interval (`NEXT_PUBLIC_MATRIX_WEBRTC_GROUP_STATS_MS`). */
@@ -766,6 +777,10 @@ export function useSpaceGroupCall(
   const remoteMediaStallLoggedRef = useRef(false);
   const remoteMediaPairwiseRestartAttemptedRef = useRef(false);
   const localVideoRecoveryAttemptedRef = useRef(false);
+  const pairwisePublishIntentRef = useRef<PairwisePublishIntent>({
+    wantAudio: true,
+    wantVideo: false,
+  });
   const remoteMediaStallBannerDismissedRef = useRef(false);
   const remoteMediaRepairNudgeIntervalRef = useRef<ReturnType<
     typeof setInterval
@@ -1473,6 +1488,10 @@ export function useSpaceGroupCall(
       clearLocalMediaBootstrapTimers();
       clearPairwiseVideoResyncSchedule();
       clearPairwiseVideoResyncAttemptCounts();
+      if (groupCallRef.current) {
+        clearPairwisePublishIntent(groupCallRef.current);
+      }
+      pairwisePublishIntentRef.current = { wantAudio: true, wantVideo: false };
       webRtcDiagCleanupRef.current?.();
       webRtcDiagCleanupRef.current = null;
       turnRefreshCleanupRef.current?.();
@@ -1585,6 +1604,14 @@ export function useSpaceGroupCall(
     const feed = gc.localCallFeed;
     setLocalPreviewStream(feed?.stream ?? null);
   }, []);
+
+  const applyPairwisePublishIntent = useCallback(
+    (gc: MatrixSdk.GroupCall | null | undefined) => {
+      if (!gc) return;
+      syncPairwisePublishIntent(gc, pairwisePublishIntentRef.current);
+    },
+    [],
+  );
 
   const applyVoiceProcessingPresetToGroupCall = useCallback(
     async (
@@ -2273,15 +2300,22 @@ export function useSpaceGroupCall(
         nudgeGroupCallPlaceOutgoing(gc);
         scheduleLocalMediaBootstrap(gc);
         const kind = lastJoinKindRef.current ?? 'audio';
-        if (kind === 'video' && !gc.isLocalVideoMuted()) {
+        if (kind === 'video') {
           const myId = client?.getUserId() ?? null;
           const othersInCall = inCallUserIdsFromGroupCall(gc).filter(
             (id) => id && id !== myId,
           );
           if (othersInCall.length > 0) {
-            schedulePairwiseVideoResync(gc, () =>
-              nudgeGroupCallPlaceOutgoing(gc),
-            );
+            const intent = pairwisePublishIntentRef.current;
+            scheduleRepublishLocalMediaToPairwiseCalls(gc, {
+              force: intent.wantAudio || intent.wantVideo,
+              delayMs: 2_000,
+            });
+            if (!gc.isLocalVideoMuted()) {
+              schedulePairwiseVideoResync(gc, () =>
+                nudgeGroupCallPlaceOutgoing(gc),
+              );
+            }
           }
         }
       };
@@ -2290,7 +2324,9 @@ export function useSpaceGroupCall(
         /** New pairwise session — debounced republish after ICE has time to connect. */
         if (groupCallRef.current !== gc) return;
         const kind = lastJoinKindRef.current ?? 'audio';
+        const intent = pairwisePublishIntentRef.current;
         scheduleRepublishLocalMediaToPairwiseCalls(gc, {
+          force: intent.wantAudio || intent.wantVideo,
           delayMs: kind === 'video' ? 2_000 : 4_000,
         });
         nudgeGroupCallPlaceOutgoing(gc);
@@ -2611,6 +2647,10 @@ export function useSpaceGroupCall(
           setCameraAccessBlocked(false);
         }
       }
+      pairwisePublishIntentRef.current = {
+        wantAudio: true,
+        wantVideo: kind === 'video' && videoJoinWithCamera,
+      };
       /**
        * Refresh stale local member state after hard reloads. If the prior tab died
        * mid-call, old device entries can survive briefly and cause asymmetric media.
@@ -2628,6 +2668,7 @@ export function useSpaceGroupCall(
       groupCallRef.current = gc;
       activeGroupCallRoomIdRef.current = roomId;
       setGroupCall(gc);
+      applyPairwisePublishIntent(gc);
       attachGroupCallListeners(gc);
       updateParticipantCount();
       setCallState('connecting');
@@ -2754,9 +2795,10 @@ export function useSpaceGroupCall(
           });
         }
         await ensurePublishedLocalMediaWithOrientation(gc, kind);
-        if (kind === 'video' && !gc.isLocalVideoMuted()) {
+        if (kind === 'video') {
+          applyPairwisePublishIntent(gc);
           await republishLocalMediaToPairwiseCalls(gc, { force: true });
-          if (hasActivePairwiseCalls(gc)) {
+          if (!gc.isLocalVideoMuted() && hasActivePairwiseCalls(gc)) {
             await restartAllPairwiseCallsForVideo(gc, () =>
               nudgeGroupCallPlaceOutgoing(gc),
             );
@@ -2887,6 +2929,7 @@ export function useSpaceGroupCall(
       }
     },
     [
+      applyPairwisePublishIntent,
       attachGroupCallListeners,
       authToken,
       client,
@@ -3029,6 +3072,8 @@ export function useSpaceGroupCall(
     async (muted: boolean) => {
       const gc = groupCallRef.current;
       if (!gc) return;
+      pairwisePublishIntentRef.current.wantAudio = !muted;
+      applyPairwisePublishIntent(gc);
       await gc.setMicrophoneMuted(muted);
       if (!muted) {
         nudgeGroupCallPlaceOutgoing(gc);
@@ -3045,7 +3090,7 @@ export function useSpaceGroupCall(
       scheduleFeedBatched();
       window.setTimeout(scheduleFeedBatched, 350);
     },
-    [scheduleFeedBatched],
+    [applyPairwisePublishIntent, scheduleFeedBatched],
   );
 
   const setCameraMuted = useCallback(
@@ -3063,6 +3108,8 @@ export function useSpaceGroupCall(
             /* keep UI aligned with SDK */
           }
           setIsLocalVideoMuted(true);
+          pairwisePublishIntentRef.current.wantVideo = false;
+          applyPairwisePublishIntent(gc);
           if (access.reason === 'permission_denied') {
             setCameraAccessBlocked(true);
           }
@@ -3100,10 +3147,14 @@ export function useSpaceGroupCall(
             /* keep call connected */
           }
           setIsLocalVideoMuted(true);
+          pairwisePublishIntentRef.current.wantVideo = false;
+          applyPairwisePublishIntent(gc);
           return;
         }
       }
       await gc.setLocalVideoMuted(muted);
+      pairwisePublishIntentRef.current.wantVideo = !gc.isLocalVideoMuted();
+      applyPairwisePublishIntent(gc);
       if (!muted) {
         setCallKind('video');
         lastJoinKindRef.current = 'video';
@@ -3156,6 +3207,7 @@ export function useSpaceGroupCall(
       }, 350);
     },
     [
+      applyPairwisePublishIntent,
       client,
       inCallUserIdsFromGroupCall,
       refreshLocalPreview,

@@ -26,6 +26,11 @@ type MatrixCallRestartLike = {
   sendMetadataUpdate?: () => Promise<void>;
 };
 
+export type PairwisePublishIntent = {
+  wantAudio: boolean;
+  wantVideo: boolean;
+};
+
 type GroupCallCallsLike = {
   localCallFeed?: LocalCallFeedLike;
   isMicrophoneMuted?: () => boolean;
@@ -33,6 +38,24 @@ type GroupCallCallsLike = {
   forEachCall?: (callback: (call: MatrixCallRestartLike) => void) => void;
   calls?: Map<string, Map<string, MatrixCallRestartLike>>;
 };
+
+/** Stable user intent — `gc.isMicrophoneMuted()` flips during device recovery. */
+const publishIntentByGroupCall = new WeakMap<object, PairwisePublishIntent>();
+
+export function syncPairwisePublishIntent(
+  gc: unknown,
+  intent: PairwisePublishIntent,
+): void {
+  if (gc && typeof gc === 'object') {
+    publishIntentByGroupCall.set(gc, intent);
+  }
+}
+
+export function clearPairwisePublishIntent(gc: unknown): void {
+  if (gc && typeof gc === 'object') {
+    publishIntentByGroupCall.delete(gc);
+  }
+}
 
 function forEachGroupCallMatrixCall(
   gc: unknown,
@@ -62,24 +85,29 @@ function streamRepublishFingerprint(stream: MediaStream): string {
   ].join('|');
 }
 
-/**
- * Use GroupCall mute intent — `localCallFeed.isAudioMuted()` can lag during
- * `recoverLocalMicrophoneFeed()` and wrongly disable outbound audio on republish.
- */
+/** Prefer synced user intent; fall back to GroupCall / CallFeed when unset. */
 function resolvePairwisePublishFlags(gc: GroupCallCallsLike): {
   wantAudio: boolean;
   wantVideo: boolean;
 } {
+  const intent = publishIntentByGroupCall.get(gc as object);
+  if (intent) {
+    return {
+      wantAudio: intent.wantAudio,
+      wantVideo: intent.wantVideo,
+    };
+  }
   const feed = gc.localCallFeed;
-  const wantAudio =
-    typeof gc.isMicrophoneMuted === 'function'
-      ? !gc.isMicrophoneMuted()
-      : !(feed?.isAudioMuted?.() ?? false);
-  const wantVideo =
-    typeof gc.isLocalVideoMuted === 'function'
-      ? !gc.isLocalVideoMuted()
-      : !(feed?.isVideoMuted?.() ?? true);
-  return { wantAudio, wantVideo };
+  return {
+    wantAudio:
+      typeof gc.isMicrophoneMuted === 'function'
+        ? !gc.isMicrophoneMuted()
+        : !(feed?.isAudioMuted?.() ?? false),
+    wantVideo:
+      typeof gc.isLocalVideoMuted === 'function'
+        ? !gc.isLocalVideoMuted()
+        : !(feed?.isVideoMuted?.() ?? true),
+  };
 }
 
 /**
