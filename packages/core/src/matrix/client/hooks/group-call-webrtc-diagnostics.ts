@@ -149,14 +149,11 @@ function readIceTransportSummary(
 ): IceTransportSummary {
   const candidates = new Map<string, string>();
   let selectedPairId: string | undefined;
-  let nominatedPair: {
-    id: string;
-    localCandidateId?: string;
-    remoteCandidateId?: string;
-    state?: string;
-  } | null = null;
+  let nominatedPairId: string | undefined;
+  let nominatedLocalCandidateId: string | undefined;
+  let nominatedRemoteCandidateId: string | undefined;
 
-  stats.forEach((report) => {
+  for (const report of stats.values()) {
     if (
       report.type === 'local-candidate' ||
       report.type === 'remote-candidate'
@@ -165,33 +162,30 @@ function readIceTransportSummary(
       if (typeof candidateType === 'string') {
         candidates.set(report.id, candidateType);
       }
-      return;
+      continue;
     }
     if (report.type === 'transport' && 'selectedCandidatePairId' in report) {
       const id = report.selectedCandidatePairId;
       if (typeof id === 'string' && id.length > 0) {
         selectedPairId = id;
       }
-      return;
+      continue;
     }
-    if (report.type !== 'candidate-pair') return;
+    if (report.type !== 'candidate-pair') continue;
     if (report.nominated === true && report.state === 'succeeded') {
-      nominatedPair = {
-        id: report.id,
-        localCandidateId:
-          typeof report.localCandidateId === 'string'
-            ? report.localCandidateId
-            : undefined,
-        remoteCandidateId:
-          typeof report.remoteCandidateId === 'string'
-            ? report.remoteCandidateId
-            : undefined,
-        state: typeof report.state === 'string' ? report.state : undefined,
-      };
+      nominatedPairId = report.id;
+      nominatedLocalCandidateId =
+        typeof report.localCandidateId === 'string'
+          ? report.localCandidateId
+          : undefined;
+      nominatedRemoteCandidateId =
+        typeof report.remoteCandidateId === 'string'
+          ? report.remoteCandidateId
+          : undefined;
     }
-  });
+  }
 
-  const pairId = selectedPairId ?? nominatedPair?.id;
+  const pairId = selectedPairId ?? nominatedPairId;
   let localCandidateType: string | undefined;
   let remoteCandidateType: string | undefined;
   let pairState: string | undefined;
@@ -203,11 +197,11 @@ function readIceTransportSummary(
       const localId =
         typeof pair.localCandidateId === 'string'
           ? pair.localCandidateId
-          : nominatedPair?.localCandidateId;
+          : nominatedLocalCandidateId;
       const remoteId =
         typeof pair.remoteCandidateId === 'string'
           ? pair.remoteCandidateId
-          : nominatedPair?.remoteCandidateId;
+          : nominatedRemoteCandidateId;
       if (localId) localCandidateType = candidates.get(localId);
       if (remoteId) remoteCandidateType = candidates.get(remoteId);
     }
@@ -250,7 +244,7 @@ async function logIceTransportForPeerConnection(options: {
     groupCallId,
     remoteUserId: userId ?? undefined,
     iceConnectionState: transport.iceConnectionState,
-    iceGatheringState: transport.iceGatheringState,
+    iceGatherState: transport.iceGatheringState,
     connectionState: transport.connectionState,
     localCandidateType: transport.localCandidateType,
     remoteCandidateType: transport.remoteCandidateType,
