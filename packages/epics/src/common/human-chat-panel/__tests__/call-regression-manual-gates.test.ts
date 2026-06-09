@@ -125,9 +125,7 @@ describe('CSH-SHARE-3 single presenter (one share at a time)', () => {
       'utf8',
     );
     expect(source).toContain('getRemoteScreenshareOwner(gc)');
-    expect(source).toContain(
-      "sendScreenshareTakeoverEvent(\n              'request'",
-    );
+    expect(source).toMatch(/sendScreenshareTakeoverEvent\(\s*'request'/);
     expect(source).toContain('resolveIncomingScreenshareTakeover');
     expect(source).toContain('resolveScreenshareTakeoverOutcome');
   });
@@ -143,7 +141,7 @@ describe('CSH-SHARE-3 single presenter (one share at a time)', () => {
     const sidebar = readCommonSource('human-right-panel.tsx');
     expect(controls).toContain('remoteScreenshareActive');
     expect(menu).toContain('callScreenshareRequestTakeover');
-    expect(menu).toContain('const shareStartDisabled = disabled;');
+    expect(menu).toMatch(/\bshareStartDisabled\s*=\s*disabled\b/);
     expect(dock).toContain('HumanChatPanelScreenshareTakeoverDialog');
     expect(sidebar).toContain('HumanChatPanelScreenshareTakeoverDialog');
   });

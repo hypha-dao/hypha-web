@@ -229,14 +229,14 @@ function readIceTransportSummary(
   };
 }
 
-async function logIceTransportForPeerConnection(options: {
+function logIceTransportFromStats(options: {
   roomId: string;
   groupCallId: string;
   userId: string | null;
   peerConnection: RTCPeerConnection;
-}): Promise<void> {
-  const { roomId, groupCallId, userId, peerConnection } = options;
-  const stats = await peerConnection.getStats();
+  stats: RTCStatsReport;
+}): void {
+  const { roomId, groupCallId, userId, peerConnection, stats } = options;
   const transport = readIceTransportSummary(peerConnection, stats);
   logSpaceGroupCallEvent({
     name: 'hypha.group_call.ice_transport',
@@ -279,16 +279,14 @@ export function readInboundRtpVideoFrameSizes(
   return rows;
 }
 
-async function logInboundRtpFrameSizesForPeerConnection(options: {
+function logInboundRtpFrameSizesFromStats(options: {
   roomId: string;
   groupCallId: string;
   userId: string | null;
-  peerConnection: RTCPeerConnection;
   activeSpeakerUserId: string | null;
-}): Promise<void> {
-  const { roomId, groupCallId, userId, peerConnection, activeSpeakerUserId } =
-    options;
-  const stats = await peerConnection.getStats();
+  stats: RTCStatsReport;
+}): void {
+  const { roomId, groupCallId, userId, activeSpeakerUserId, stats } = options;
   const frames = readInboundRtpVideoFrameSizes(stats);
   for (const frame of frames) {
     logSpaceGroupCallEvent({
@@ -304,6 +302,45 @@ async function logInboundRtpFrameSizesForPeerConnection(options: {
       frameHeight: frame.frameHeight,
       ssrc: frame.ssrc,
     });
+  }
+}
+
+async function logPeerConnectionDiagnostics(options: {
+  roomId: string;
+  groupCallId: string;
+  userId: string | null;
+  peerConnection: RTCPeerConnection;
+  activeSpeakerUserId: string | null;
+  includeFrameSizes: boolean;
+}): Promise<void> {
+  const {
+    roomId,
+    groupCallId,
+    userId,
+    peerConnection,
+    activeSpeakerUserId,
+    includeFrameSizes,
+  } = options;
+  try {
+    const stats = await peerConnection.getStats();
+    if (includeFrameSizes) {
+      logInboundRtpFrameSizesFromStats({
+        roomId,
+        groupCallId,
+        userId,
+        activeSpeakerUserId,
+        stats,
+      });
+    }
+    logIceTransportFromStats({
+      roomId,
+      groupCallId,
+      userId,
+      peerConnection,
+      stats,
+    });
+  } catch {
+    // Peer connection may close between interval ticks; ignore transient diagnostics failure.
   }
 }
 
@@ -355,42 +392,33 @@ export function attachGroupCallWebRtcDiagnostics(options: {
   gc.on(GroupCallStatsReportEvent.SummaryStats, onSummary);
 
   let frameLogInterval: ReturnType<typeof setInterval> | null = null;
-  const logFrameSizes = () => {
+  const logPeerDiagnostics = (includeFrameSizes: boolean) => {
     if (!enumeratePeerConnections) return;
     const activeSpeakerUserId = resolveActiveSpeakerUserId?.() ?? null;
     for (const { userId, peerConnection } of enumeratePeerConnections(gc)) {
-      void logInboundRtpFrameSizesForPeerConnection({
+      void logPeerConnectionDiagnostics({
         roomId,
         groupCallId: gc.groupCallId,
         userId,
         peerConnection,
         activeSpeakerUserId,
-      });
-    }
-  };
-
-  const logIceTransport = () => {
-    if (!enumeratePeerConnections) return;
-    for (const { userId, peerConnection } of enumeratePeerConnections(gc)) {
-      void logIceTransportForPeerConnection({
-        roomId,
-        groupCallId: gc.groupCallId,
-        userId,
-        peerConnection,
+        includeFrameSizes,
       });
     }
   };
 
   if (inboundRtpFrameLogIntervalMs > 0 && enumeratePeerConnections) {
-    logFrameSizes();
-    logIceTransport();
-    frameLogInterval = setInterval(() => {
-      logFrameSizes();
-      logIceTransport();
-    }, inboundRtpFrameLogIntervalMs);
+    logPeerDiagnostics(true);
+    frameLogInterval = setInterval(
+      () => logPeerDiagnostics(true),
+      inboundRtpFrameLogIntervalMs,
+    );
   } else if (summaryStatsIntervalMs > 0 && enumeratePeerConnections) {
-    logIceTransport();
-    frameLogInterval = setInterval(logIceTransport, summaryStatsIntervalMs);
+    logPeerDiagnostics(false);
+    frameLogInterval = setInterval(
+      () => logPeerDiagnostics(false),
+      summaryStatsIntervalMs,
+    );
   }
 
   return () => {
