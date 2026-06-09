@@ -532,7 +532,9 @@ function getLiveLocalAudioTrack(
   gc: MatrixSdk.GroupCall,
 ): MediaStreamTrack | null {
   const track = gc.localCallFeed?.stream.getAudioTracks()[0];
-  return track && track.readyState === 'live' ? track : null;
+  if (!track?.enabled) return null;
+  const state = track.readyState as string;
+  return state === 'live' || state === 'new' ? track : null;
 }
 
 async function waitForLiveLocalAudioTrack(
@@ -557,9 +559,21 @@ async function recoverLocalMicrophoneFeed(
   if (gc.isMicrophoneMuted()) return;
   if (getLiveLocalAudioTrack(gc)) return;
 
-  await gc.setMicrophoneMuted(true);
-  await gc.setMicrophoneMuted(false);
-  await waitForLiveLocalAudioTrack(gc, 400);
+  try {
+    await gc.setMicrophoneMuted(true);
+    await gc.setMicrophoneMuted(false);
+    await waitForLiveLocalAudioTrack(gc, 400);
+  } catch {
+    /* best-effort device recovery */
+  } finally {
+    if (!gc.isMicrophoneMuted()) return;
+    try {
+      await gc.setMicrophoneMuted(false);
+      await waitForLiveLocalAudioTrack(gc, 400);
+    } catch {
+      /* keep call connected if unmute fails */
+    }
+  }
 }
 
 /**
@@ -1609,9 +1623,7 @@ export function useSpaceGroupCall(
         refreshedAudioStream.getTracks().forEach((track) => track.stop());
         return false;
       }
-      if (previousAudioTrack) {
-        nextAudioTrack.enabled = previousAudioTrack.enabled;
-      }
+      nextAudioTrack.enabled = !gc.isMicrophoneMuted();
       const nextStream = new MediaStream();
       nextStream.addTrack(nextAudioTrack);
       for (const videoTrack of videoTracks) {

@@ -236,6 +236,39 @@ describe('republishLocalMediaToPairwiseCalls', () => {
     expect(update).toHaveBeenCalledWith(stream, true, true);
   });
 
+  it('uses GroupCall mute intent when CallFeed mute state lags during recovery', async () => {
+    const audioTrack = {
+      kind: 'audio',
+      id: 'a1',
+      readyState: 'live',
+      muted: false,
+      enabled: true,
+    } as MediaStreamTrack;
+    const stream = {
+      id: 'local-stream',
+      getTracks: () => [audioTrack],
+    } as MediaStream;
+    const update = vi.fn().mockResolvedValue(undefined);
+    const gc = {
+      isMicrophoneMuted: () => false,
+      isLocalVideoMuted: () => true,
+      localCallFeed: {
+        stream,
+        isVideoMuted: () => true,
+        isAudioMuted: () => true,
+      },
+      forEachCall: (callback: (call: unknown) => void) => {
+        callback({
+          callHasEnded: () => false,
+          updateLocalUsermediaStream: update,
+        });
+      },
+    };
+
+    await expect(republishLocalMediaToPairwiseCalls(gc)).resolves.toBe(1);
+    expect(update).toHaveBeenCalledWith(stream, true, false);
+  });
+
   it('forces video publish when the pairwise call feed still reports video muted', async () => {
     const audioTrack = {
       kind: 'audio',

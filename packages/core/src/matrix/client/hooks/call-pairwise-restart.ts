@@ -28,6 +28,8 @@ type MatrixCallRestartLike = {
 
 type GroupCallCallsLike = {
   localCallFeed?: LocalCallFeedLike;
+  isMicrophoneMuted?: () => boolean;
+  isLocalVideoMuted?: () => boolean;
   forEachCall?: (callback: (call: MatrixCallRestartLike) => void) => void;
   calls?: Map<string, Map<string, MatrixCallRestartLike>>;
 };
@@ -60,14 +62,24 @@ function streamRepublishFingerprint(stream: MediaStream): string {
   ].join('|');
 }
 
-function resolvePairwisePublishFlags(feed: LocalCallFeedLike | undefined): {
+/**
+ * Use GroupCall mute intent — `localCallFeed.isAudioMuted()` can lag during
+ * `recoverLocalMicrophoneFeed()` and wrongly disable outbound audio on republish.
+ */
+function resolvePairwisePublishFlags(gc: GroupCallCallsLike): {
   wantAudio: boolean;
   wantVideo: boolean;
 } {
-  return {
-    wantAudio: !(feed?.isAudioMuted?.() ?? false),
-    wantVideo: !(feed?.isVideoMuted?.() ?? true),
-  };
+  const feed = gc.localCallFeed;
+  const wantAudio =
+    typeof gc.isMicrophoneMuted === 'function'
+      ? !gc.isMicrophoneMuted()
+      : !(feed?.isAudioMuted?.() ?? false);
+  const wantVideo =
+    typeof gc.isLocalVideoMuted === 'function'
+      ? !gc.isLocalVideoMuted()
+      : !(feed?.isVideoMuted?.() ?? true);
+  return { wantAudio, wantVideo };
 }
 
 /**
@@ -300,7 +312,7 @@ export async function republishLocalMediaToPairwiseCalls(
   const stream = groupCall.localCallFeed?.stream ?? null;
   if (!stream || stream.getTracks().length === 0) return 0;
 
-  const publishFlags = resolvePairwisePublishFlags(groupCall.localCallFeed);
+  const publishFlags = resolvePairwisePublishFlags(groupCall);
   const fingerprint = [
     streamRepublishFingerprint(stream),
     publishFlags.wantAudio ? 'a1' : 'a0',
