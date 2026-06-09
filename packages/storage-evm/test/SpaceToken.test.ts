@@ -392,6 +392,56 @@ describe('SpaceToken + Extensions Tests', function () {
         ),
       ).to.be.revertedWith('Invalid decay percentage');
     });
+
+    it('Should NOT let frequent sub-interval applyDecay calls avoid decay', async function () {
+      // decay = 10% per 3600s (from the describe-level beforeEach)
+      await token
+        .connect(executorSigner)
+        .mint(alice.address, ethers.parseEther('1000'));
+
+      // Materialize decay every half interval. Each call individually sees less
+      // than one full period, but the elapsed time must keep accumulating.
+      // Previously lastApplied was reset to `now` on every call, which let an
+      // active holder avoid decay indefinitely.
+      for (let i = 0; i < 6; i++) {
+        await ethers.provider.send('evm_increaseTime', [1800]);
+        await decay.applyDecay(alice.address);
+      }
+
+      // ~3 full periods over the 6 half-interval steps -> 1000 * 0.9^3 = 729.
+      const balance = await token.balanceOf(alice.address);
+      expect(balance).to.be.lessThan(ethers.parseEther('1000'));
+      expect(balance).to.be.closeTo(
+        ethers.parseEther('729'),
+        ethers.parseEther('0.001'),
+      );
+    });
+
+    it('Should preserve leftover sub-interval time between applyDecay calls', async function () {
+      await token
+        .connect(executorSigner)
+        .mint(alice.address, ethers.parseEther('1000'));
+
+      // 1.5 periods -> one period materializes, half a period banked.
+      await ethers.provider.send('evm_increaseTime', [5400]);
+      await decay.applyDecay(alice.address);
+      const afterFirst = await token.balanceOf(alice.address);
+      expect(afterFirst).to.be.closeTo(
+        ethers.parseEther('900'),
+        ethers.parseEther('0.001'),
+      );
+
+      // Half a period more completes a second period thanks to the banked
+      // remainder. If the remainder were discarded, nothing would decay here.
+      await ethers.provider.send('evm_increaseTime', [1800]);
+      await decay.applyDecay(alice.address);
+      const afterSecond = await token.balanceOf(alice.address);
+      expect(afterSecond).to.be.lessThan(afterFirst);
+      expect(afterSecond).to.be.closeTo(
+        ethers.parseEther('810'),
+        ethers.parseEther('0.001'),
+      );
+    });
   });
 
   // ==========================================================================
