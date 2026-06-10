@@ -101,6 +101,14 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
     'proposalErrors.acceptInvestmentExactReceiveRows',
 };
 
+/**
+ * Maps a raw (English) proposal validation error to a translatable
+ * {@link ProposalErrorTranslation}. Handles parameterized messages (file name,
+ * milestone order) via regex first, then falls back to the static key map.
+ *
+ * @param message - The raw error message to resolve.
+ * @returns A `{ key, values? }` translation descriptor, or `null` when unknown.
+ */
 export const resolveProposalErrorTranslation = (
   message: string,
 ): ProposalErrorTranslation | null => {

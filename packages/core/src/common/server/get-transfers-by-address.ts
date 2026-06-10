@@ -31,6 +31,14 @@ export type Transfer = {
   transaction_hash: string;
 };
 
+/**
+ * Normalizes raw Alchemy asset transfers into {@link Transfer} objects,
+ * enriching each with token symbol/decimals and sorting newest-block first.
+ *
+ * @param alchemy - Alchemy SDK instance used to resolve token metadata.
+ * @param rawTransfers - Raw ERC-20 transfers returned by `getAssetTransfers`.
+ * @returns The transfers with resolved metadata, sorted by descending block number.
+ */
 async function toTransfersWithMetadata(
   alchemy: Alchemy,
   rawTransfers: AssetTransfersWithMetadataResult[],
@@ -91,6 +99,13 @@ async function toTransfersWithMetadata(
   return transfersWithData;
 }
 
+/**
+ * Fetches ERC-20 transfers where the given address is either sender or
+ * recipient, merging both directions into a single metadata-enriched list.
+ *
+ * @param params - Address plus optional contract/date/block filters.
+ * @returns The combined inbound and outbound transfers, newest block first.
+ */
 export async function getTransfersByAddress(
   params: GetTransfersByAddressParams,
 ): Promise<Transfer[]> {

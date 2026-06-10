@@ -58,6 +58,10 @@ const initialTaskState: TaskState = {
   LINK_WEB2_AND_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
 };
 
+/**
+ * Reducer that tracks per-task status (and optional message) for the airdrop
+ * creation flow, producing the next immutable {@link TaskState}.
+ */
 const progressStateReducer = (
   state: TaskState,
   action: ProgressAction,
@@ -86,6 +90,10 @@ const progressStateReducer = (
   });
 };
 
+/**
+ * Computes overall completion as a 0–100 percentage, counting done tasks fully
+ * and in-progress tasks as half, clamped to the valid range.
+ */
 const computeProgress = (tasks: TaskState): number => {
   const taskList = Object.values(tasks);
   const totalTasks = taskList.length;
@@ -99,6 +107,15 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.min(100, Math.max(0, Math.round(progress)));
 };
 
+/**
+ * Orchestrates creating an airdrop proposal end-to-end: the Web2 agreement, the
+ * optional on-chain Web3 proposal, file uploads, and linking the two. Exposes
+ * granular task state plus a `currentTask` identifier the UI localizes itself.
+ *
+ * @param params - Privy auth token and optional wagmi config (config presence
+ *   enables the on-chain proposal step).
+ * @returns Trigger, reset, aggregated agreement data, task/progress state, and flags.
+ */
 export const useCreateAirdropOrchestrator = ({
   authToken,
   config,

@@ -39,6 +39,12 @@ interface CreateAirdropFormProps {
   plugin: React.ReactNode;
 }
 
+/**
+ * Form for creating an airdrop proposal. Collects the base agreement fields plus
+ * the airdrop plugin (token, method, recipients), then drives
+ * {@link useCreateAirdropOrchestrator}, showing localized progress while the
+ * Web2/Web3 proposal is created.
+ */
 export const CreateAirdropForm = ({
   successfulUrl,
   backUrl,

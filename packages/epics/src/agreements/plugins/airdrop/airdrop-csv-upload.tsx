@@ -27,6 +27,11 @@ interface AirdropCsvUploadProps {
   currentCount: number;
 }
 
+/**
+ * CSV upload control for airdrop recipients. Parses the chosen file, surfaces
+ * per-line and file-level validation errors, and only emits recipients when the
+ * file is fully valid (partial files are rejected rather than silently dropped).
+ */
 export const AirdropCsvUpload = ({
   onRecipientsParsed,
   currentCount,

@@ -7,6 +7,10 @@ import { useTranslations } from 'next-intl';
 import { useTokens } from '../../../treasury';
 import { AirdropRecipientsFieldArray } from './airdrop-recipients-field-array';
 
+/**
+ * Airdrop agreement plugin entry point. Loads the space's tokens and renders the
+ * recipients field array, showing a skeleton while tokens are loading.
+ */
 export const AirdropPlugin = ({
   spaceSlug,
   members,

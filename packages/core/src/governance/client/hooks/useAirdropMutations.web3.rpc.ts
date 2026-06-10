@@ -35,6 +35,15 @@ interface CreateAirdropInput {
 
 const chainId = getGovernanceChainId();
 
+/**
+ * Web3 mutation hook for airdrop proposals. Builds one mint/transfer action per
+ * allocation (resolving token decimals once per unique token) and submits them
+ * as a single atomic proposal via the DAO proposals contract, then resolves the
+ * created proposal from the transaction logs.
+ *
+ * @param params - Optional proposal slug used to scope the SWR mutation cache key.
+ * @returns Create trigger, reset, loading/error flags, the tx hash, and created proposal.
+ */
 export const useAirdropMutationsWeb3Rpc = ({
   proposalSlug,
 }: {

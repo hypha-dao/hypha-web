@@ -41,6 +41,10 @@ interface AirdropRecipientsFieldArrayProps {
   name?: string;
 }
 
+/**
+ * Dropdown for picking the single airdrop token, rendering each token's icon,
+ * symbol, and owning space (or an empty state when no tokens are available).
+ */
 function TokenSelect({
   tokens,
   value,
@@ -123,6 +127,11 @@ function TokenSelect({
   );
 }
 
+/**
+ * Recipients editor for an airdrop proposal. The method (mint/transfer) and
+ * token are chosen once for all recipients; recipients are entered either
+ * manually (row by row) or via CSV upload, capped at {@link MAX_AIRDROP_RECIPIENTS}.
+ */
 export const AirdropRecipientsFieldArray = ({
   tokens,
   members,
