@@ -1655,6 +1655,12 @@
       "UPLOAD_FILES": "Dateien werden hochgeladen...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Web2- und Web3-Vereinbarungen werden verknüpft"
     },
+    "createAirdropProgress": {
+      "CREATE_WEB2_AGREEMENT": "Vereinbarung wird erstellt...",
+      "CREATE_WEB3_AGREEMENT": "Web3-Vereinbarung wird erstellt...",
+      "UPLOAD_FILES": "Dateien werden hochgeladen...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Web2- und Web3-Vereinbarungen werden verknüpft"
+    },
     "proposalLoader": {
       "processingVote": "Abstimmung wird verarbeitet...",
       "savingVote": "Abstimmung wird gespeichert...",

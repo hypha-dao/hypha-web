@@ -816,6 +816,12 @@
       "UPLOAD_FILES": "A carregar ficheiros...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "A ligar acordos Web2 e Web3"
     },
+    "createAirdropProgress": {
+      "CREATE_WEB2_AGREEMENT": "A criar acordo...",
+      "CREATE_WEB3_AGREEMENT": "A criar acordo Web3...",
+      "UPLOAD_FILES": "A carregar ficheiros...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "A ligar acordos Web2 e Web3"
+    },
     "proposalLoader": {
       "processingVote": "Processando voto...",
       "savingVote": "Salvando voto...",

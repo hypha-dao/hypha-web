@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@hypha-platform/ui';
 import { UploadIcon, DownloadIcon, Cross2Icon } from '@radix-ui/react-icons';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 import { AirdropRecipient, MAX_AIRDROP_RECIPIENTS } from './airdrop.validation';
 import { AirdropCsvLineError, parseAirdropCsv } from './parse-airdrop-csv';
@@ -32,6 +32,7 @@ export const AirdropCsvUpload = ({
   currentCount,
 }: AirdropCsvUploadProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const locale = useLocale();
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const [loaded, setLoaded] = React.useState<{
@@ -79,7 +80,7 @@ export const AirdropCsvUpload = ({
     setLoaded({
       fileName: file.name,
       count: recipients.length,
-      total: total.toLocaleString(),
+      total: total.toLocaleString(locale),
     });
     onRecipientsParsed(recipients);
   };

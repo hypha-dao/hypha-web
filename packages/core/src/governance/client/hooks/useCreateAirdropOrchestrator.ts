@@ -45,13 +45,6 @@ enum TaskStatus {
   ERROR = 'error',
 }
 
-const taskActionDescriptions: Record<TaskName, string> = {
-  CREATE_WEB2_AGREEMENT: 'Creating Web2 agreement...',
-  CREATE_WEB3_AGREEMENT: 'Creating Web3 agreement...',
-  UPLOAD_FILES: 'Uploading Agreement Files...',
-  LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements',
-};
-
 type ProgressAction =
   | { type: 'START_TASK'; taskName: TaskName; message?: string }
   | { type: 'COMPLETE_TASK'; taskName: TaskName; message?: string }
@@ -133,39 +126,30 @@ export const useCreateAirdropOrchestrator = ({
     initialTaskState,
   );
   const progress = computeProgress(taskState);
-  const [currentAction, setCurrentAction] = React.useState<string>();
+  const [currentTask, setCurrentTask] = React.useState<TaskName | null>(null);
   const activeTaskRef = React.useRef<TaskName | null>(null);
 
   const startTask = useCallback((taskName: TaskName) => {
-    const action = taskActionDescriptions[taskName];
     activeTaskRef.current = taskName;
-    setCurrentAction(action);
-    dispatch({ type: 'START_TASK', taskName, message: action });
+    setCurrentTask(taskName);
+    dispatch({ type: 'START_TASK', taskName });
   }, []);
 
-  const completeTask = useCallback(
-    (taskName: TaskName) => {
-      if (activeTaskRef.current === taskName) activeTaskRef.current = null;
-      if (currentAction === taskActionDescriptions[taskName])
-        setCurrentAction(undefined);
-      dispatch({ type: 'COMPLETE_TASK', taskName });
-    },
-    [currentAction],
-  );
+  const completeTask = useCallback((taskName: TaskName) => {
+    if (activeTaskRef.current === taskName) activeTaskRef.current = null;
+    setCurrentTask((current) => (current === taskName ? null : current));
+    dispatch({ type: 'COMPLETE_TASK', taskName });
+  }, []);
 
-  const errorTask = useCallback(
-    (taskName: TaskName, error: string) => {
-      if (activeTaskRef.current === taskName) activeTaskRef.current = null;
-      if (currentAction === taskActionDescriptions[taskName])
-        setCurrentAction(undefined);
-      dispatch({ type: 'SET_ERROR', taskName, message: error });
-    },
-    [currentAction],
-  );
+  const errorTask = useCallback((taskName: TaskName, error: string) => {
+    if (activeTaskRef.current === taskName) activeTaskRef.current = null;
+    setCurrentTask((current) => (current === taskName ? null : current));
+    dispatch({ type: 'SET_ERROR', taskName, message: error });
+  }, []);
 
   const resetTasks = useCallback(() => {
     activeTaskRef.current = null;
-    setCurrentAction(undefined);
+    setCurrentTask(null);
     dispatch({ type: 'RESET' });
   }, []);
 
@@ -282,7 +266,8 @@ export const useCreateAirdropOrchestrator = ({
       ...updatedWeb2Agreement,
     },
     taskState,
-    currentAction,
+    /** i18n: map with AgreementFlow.createAirdropProgress */
+    currentTask,
     progress,
     isPending: progress > 0 && progress < 100,
     isError: errors.length > 0,

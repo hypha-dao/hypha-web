@@ -51,8 +51,13 @@ export const CreateAirdropForm = ({
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
-  const { createAirdrop, reset, currentAction, isError, isPending, progress } =
+  const { createAirdrop, reset, currentTask, isError, isPending, progress } =
     useCreateAirdropOrchestrator({ authToken: jwt, config });
+
+  const progressMessage =
+    currentTask != null
+      ? tAgreementFlow(`createAirdropProgress.${currentTask}`)
+      : null;
   const resolver = useLocalizedProposalResolver(
     fullSchemaCreateAirdropForm,
     tAgreementFlow,
@@ -133,7 +138,7 @@ export const CreateAirdropForm = ({
             <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
-          <div>{currentAction}</div>
+          <div>{progressMessage}</div>
         )
       }
     >

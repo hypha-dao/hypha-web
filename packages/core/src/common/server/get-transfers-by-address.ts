@@ -35,14 +35,39 @@ async function toTransfersWithMetadata(
   alchemy: Alchemy,
   rawTransfers: AssetTransfersWithMetadataResult[],
 ): Promise<Transfer[]> {
+  // Cache metadata per unique token contract so multiple transfers sharing the
+  // same token trigger at most one external `getTokenMetadata` call.
+  const metadataCache = new Map<
+    string,
+    { decimals: number | null; symbol: string | null }
+  >();
+
+  const getMetadata = async (
+    address: string | null,
+    fallbackAsset: string | null,
+  ) => {
+    if (!address) {
+      return { decimals: 18, symbol: fallbackAsset || 'UNKNOWN' };
+    }
+    const key = address.toLowerCase();
+    const cached = metadataCache.get(key);
+    if (cached) {
+      return cached;
+    }
+    const metadata = await alchemy.core.getTokenMetadata(address);
+    metadataCache.set(key, metadata);
+    return metadata;
+  };
+
   const transfersWithData = await Promise.all(
     rawTransfers.map(async (transfer) => {
       const blockNumber = parseInt(transfer.blockNum, 16);
       const timestamp = Date.parse(transfer.metadata.blockTimestamp) || 0;
 
-      const tokenMetadata = transfer.rawContract.address
-        ? await alchemy.core.getTokenMetadata(transfer.rawContract.address)
-        : { decimals: 18, symbol: transfer.asset || 'UNKNOWN' };
+      const tokenMetadata = await getMetadata(
+        transfer.rawContract.address,
+        transfer.asset,
+      );
 
       return {
         from: transfer.from,

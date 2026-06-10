@@ -1258,6 +1258,12 @@
       "UPLOAD_FILES": "Téléversement des fichiers...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Liaison des accords Web2 et Web3"
     },
+    "createAirdropProgress": {
+      "CREATE_WEB2_AGREEMENT": "Création de l'accord...",
+      "CREATE_WEB3_AGREEMENT": "Création de l'accord Web3...",
+      "UPLOAD_FILES": "Téléversement des fichiers...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Liaison des accords Web2 et Web3"
+    },
     "proposalLoader": {
       "processingVote": "Traitement du vote...",
       "savingVote": "Enregistrement du vote...",
