@@ -129,9 +129,20 @@ export async function GET(
       (mint) => mint.to.toLowerCase() !== spaceAddress.toLowerCase(),
     );
 
+    // Apply the date window to the merged set before slicing: the mint branch
+    // only filters by block range, so date-only requests would otherwise leak
+    // out-of-range mints into the response.
+    const fromTime = fromDate?.getTime();
+    const toTime = toDate?.getTime();
+
     // Enforce the requested limit on the merged set; otherwise the response
     // could contain up to `limit` address-based transfers plus all mints.
     const allTransfers = [...transfers, ...mintTransfers]
+      .filter(
+        (transfer) =>
+          (fromTime === undefined || transfer.timestamp >= fromTime) &&
+          (toTime === undefined || transfer.timestamp <= toTime),
+      )
       .sort((a, b) => b.block_number - a.block_number)
       .slice(0, limit);
 
