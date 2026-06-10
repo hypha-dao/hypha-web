@@ -8,6 +8,7 @@ import {
 import {
   findSpaceBySlug,
   getTransfersByAddress,
+  getMintTransfersByTokens,
   findSpaceByAddress,
   getTokenMeta,
   findPersonByWeb3Address,
@@ -16,7 +17,6 @@ import {
   web3Client,
   getDb,
 } from '@hypha-platform/core/server';
-import { zeroAddress } from 'viem';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
@@ -97,6 +97,39 @@ export async function GET(
     );
 
     const rawDbTokens = await findAllTokens({ db }, { search: undefined });
+
+    // Mints emit Transfer(0x0 -> recipient) and never reference the space
+    // address, so the address-based query above misses tokens the space
+    // minted to other accounts (e.g. airdrops to members). Query mints of
+    // the space's own token contracts and merge them in.
+    const requestedTokens =
+      token && token.length > 0
+        ? token.map((address) => address.toLowerCase())
+        : undefined;
+    const spaceTokenAddresses = rawDbTokens
+      .filter(
+        (dbToken) =>
+          dbToken.spaceId === space.id &&
+          dbToken.address &&
+          (!requestedTokens ||
+            requestedTokens.includes(dbToken.address.toLowerCase())),
+      )
+      .map((dbToken) => dbToken.address as string);
+
+    const mintTransfers = (
+      await getMintTransfersByTokens({
+        contractAddresses: spaceTokenAddresses,
+      })
+    ).filter(
+      // Mints to the space itself are already returned by the address-based
+      // query; keep only mints to other accounts to avoid duplicates.
+      (mint) => mint.to.toLowerCase() !== spaceAddress.toLowerCase(),
+    );
+
+    const allTransfers = [...transfers, ...mintTransfers].sort(
+      (a, b) => b.block_number - a.block_number,
+    );
+
     const dbTokens = rawDbTokens.map((token) => ({
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
@@ -113,7 +146,7 @@ export async function GET(
     }));
 
     const transfersWithEntityInfo = await Promise.all(
-      transfers.map(async (transfer) => {
+      allTransfers.map(async (transfer) => {
         const isIncoming =
           transfer.to.toUpperCase() === spaceAddress.toUpperCase();
         const direction = isIncoming ? 'incoming' : 'outgoing';

@@ -1,6 +1,12 @@
 import 'server-only';
 import { getAlchemy } from './alchemy-client';
-import { AssetTransfersCategory } from 'alchemy-sdk';
+import {
+  type Alchemy,
+  type AssetTransfersWithMetadataResult,
+  AssetTransfersCategory,
+} from 'alchemy-sdk';
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export type GetTransfersByAddressParams = {
   address: string;
@@ -25,10 +31,45 @@ export type Transfer = {
   transaction_hash: string;
 };
 
+async function toTransfersWithMetadata(
+  alchemy: Alchemy,
+  rawTransfers: AssetTransfersWithMetadataResult[],
+): Promise<Transfer[]> {
+  const transfersWithData = await Promise.all(
+    rawTransfers.map(async (transfer) => {
+      const blockNumber = parseInt(transfer.blockNum, 16);
+      const timestamp = Date.parse(transfer.metadata.blockTimestamp) || 0;
+
+      const tokenMetadata = transfer.rawContract.address
+        ? await alchemy.core.getTokenMetadata(transfer.rawContract.address)
+        : { decimals: 18, symbol: transfer.asset || 'UNKNOWN' };
+
+      return {
+        from: transfer.from,
+        to: transfer.to ?? '',
+        value: transfer.value ? transfer.value.toString() : '0',
+        symbol: tokenMetadata.symbol ?? transfer.asset ?? 'UNKNOWN',
+        decimals: tokenMetadata.decimals ?? 18,
+        token: transfer.rawContract.address ?? '',
+        timestamp,
+        block_number: blockNumber,
+        transaction_index: 0,
+        transaction_hash: transfer.hash,
+      };
+    }),
+  );
+
+  transfersWithData.sort((a, b) => {
+    return b.block_number - a.block_number;
+  });
+
+  return transfersWithData;
+}
+
 export async function getTransfersByAddress(
   params: GetTransfersByAddressParams,
 ): Promise<Transfer[]> {
-  const { address, contractAddresses, limit = 50 } = params;
+  const { address, contractAddresses } = params;
   const alchemy = getAlchemy();
 
   const fromTransfers = await alchemy.core.getAssetTransfers({
@@ -45,49 +86,37 @@ export async function getTransfersByAddress(
     withMetadata: true,
   });
 
-  const allTransfers = [
+  return toTransfersWithMetadata(alchemy, [
     ...fromTransfers.transfers,
     ...toTransfers.transfers,
-  ].map((transfer) => {
-    const blockNumber = parseInt(transfer.blockNum, 16);
-    const timestamp = Date.parse(transfer.metadata.blockTimestamp) || 0;
+  ]);
+}
 
-    const getMetadata = async () => {
-      const tokenMetadata = transfer.rawContract.address
-        ? await alchemy.core.getTokenMetadata(transfer.rawContract.address)
-        : { decimals: 18, symbol: transfer.asset || 'UNKNOWN' };
-      return {
-        decimals: tokenMetadata.decimals ?? 18,
-        symbol: tokenMetadata.symbol ?? transfer.asset ?? 'UNKNOWN',
-      };
-    };
+/**
+ * Returns mint events (ERC-20 `Transfer` from the zero address) for the given
+ * token contracts, regardless of recipient.
+ *
+ * Mints don't reference the minting space anywhere in the Transfer event, so
+ * address-based queries can't find them; querying by the space's own token
+ * contracts is the way to surface tokens a space minted to other accounts
+ * (e.g. airdrops to members).
+ */
+export async function getMintTransfersByTokens({
+  contractAddresses,
+}: {
+  contractAddresses: string[];
+}): Promise<Transfer[]> {
+  if (contractAddresses.length === 0) {
+    return [];
+  }
+  const alchemy = getAlchemy();
 
-    return {
-      from: transfer.from,
-      to: transfer.to ?? '',
-      value: transfer.value ? transfer.value.toString() : '0',
-      symbol: transfer.asset ?? 'UNKNOWN',
-      decimals: 18,
-      token: transfer.rawContract.address ?? '',
-      timestamp,
-      block_number: blockNumber,
-      transaction_index: 0,
-      transaction_hash: transfer.hash,
-      _getMetadata: getMetadata,
-    };
+  const mints = await alchemy.core.getAssetTransfers({
+    fromAddress: ZERO_ADDRESS,
+    category: [AssetTransfersCategory.ERC20],
+    contractAddresses,
+    withMetadata: true,
   });
 
-  const transfersWithData = await Promise.all(
-    allTransfers.map(async (transfer) => {
-      const { decimals, symbol } = await transfer._getMetadata();
-      const { _getMetadata, ...rest } = transfer;
-      return { ...rest, decimals, symbol };
-    }),
-  );
-
-  transfersWithData.sort((a, b) => {
-    return b.block_number - a.block_number;
-  });
-
-  return transfersWithData;
+  return toTransfersWithMetadata(alchemy, mints.transfers);
 }
