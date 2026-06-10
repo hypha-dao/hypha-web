@@ -92,6 +92,11 @@ export const CreateAirdropForm = ({
   useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const handleCreate = async (data: FormValues) => {
+    if (typeof spaceId !== 'number') {
+      console.error('Airdrop spaceId is missing');
+      return;
+    }
+
     const { method, token, recipients } = data.airdrop ?? {};
     if (!recipients || recipients.length === 0) {
       console.error('Airdrop recipients are missing');
@@ -102,7 +107,7 @@ export const CreateAirdropForm = ({
     // recipient so each becomes a single mint/transfer action on execution.
     await createAirdrop({
       ...data,
-      spaceId: spaceId as number,
+      spaceId,
       web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
       airdrop: recipients.map(({ recipient, amount }) => ({
         method,

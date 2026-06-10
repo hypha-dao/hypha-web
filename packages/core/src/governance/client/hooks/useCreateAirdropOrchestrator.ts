@@ -134,15 +134,18 @@ export const useCreateAirdropOrchestrator = ({
   );
   const progress = computeProgress(taskState);
   const [currentAction, setCurrentAction] = React.useState<string>();
+  const activeTaskRef = React.useRef<TaskName | null>(null);
 
   const startTask = useCallback((taskName: TaskName) => {
     const action = taskActionDescriptions[taskName];
+    activeTaskRef.current = taskName;
     setCurrentAction(action);
     dispatch({ type: 'START_TASK', taskName, message: action });
   }, []);
 
   const completeTask = useCallback(
     (taskName: TaskName) => {
+      if (activeTaskRef.current === taskName) activeTaskRef.current = null;
       if (currentAction === taskActionDescriptions[taskName])
         setCurrentAction(undefined);
       dispatch({ type: 'COMPLETE_TASK', taskName });
@@ -152,6 +155,7 @@ export const useCreateAirdropOrchestrator = ({
 
   const errorTask = useCallback(
     (taskName: TaskName, error: string) => {
+      if (activeTaskRef.current === taskName) activeTaskRef.current = null;
       if (currentAction === taskActionDescriptions[taskName])
         setCurrentAction(undefined);
       dispatch({ type: 'SET_ERROR', taskName, message: error });
@@ -160,6 +164,8 @@ export const useCreateAirdropOrchestrator = ({
   );
 
   const resetTasks = useCallback(() => {
+    activeTaskRef.current = null;
+    setCurrentAction(undefined);
     dispatch({ type: 'RESET' });
   }, []);
 
@@ -182,6 +188,10 @@ export const useCreateAirdropOrchestrator = ({
             airdrop: arg.airdrop,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
+        } else {
+          // Web3 is intentionally skipped (Web2-only flow); mark the task as
+          // done so progress can still reach 100% and linking can proceed.
+          completeTask('CREATE_WEB3_AGREEMENT');
         }
         const files = schemaCreateAgreementFiles.parse(arg);
         if (files.attachments?.length || files.leadImage) {
@@ -193,8 +203,22 @@ export const useCreateAirdropOrchestrator = ({
           completeTask('UPLOAD_FILES');
         }
       } catch (err) {
+        // Mark the in-flight task as errored so progress/status reflects it.
+        const activeTask = activeTaskRef.current;
+        if (activeTask) {
+          errorTask(
+            activeTask,
+            err instanceof Error ? err.message : String(err),
+          );
+        }
+        // Best-effort cleanup of the Web2 agreement; never let a cleanup
+        // failure overwrite the original error.
         if (web2Slug) {
-          await web2.deleteAgreementBySlug({ slug: web2Slug });
+          try {
+            await web2.deleteAgreementBySlug({ slug: web2Slug });
+          } catch {
+            // ignore cleanup failure; preserve the original error below
+          }
         }
         throw err;
       }

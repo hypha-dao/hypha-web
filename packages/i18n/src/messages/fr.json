@@ -450,7 +450,7 @@
         "description": "Allouez des fonds de trésorerie à des investissements dans d'autres espaces du réseau ou à la distribution de ressources entre les espaces de votre organisation."
       },
       "airdrop": {
-        "title": "Distribuer des Tokens (Airdrop)",
+        "title": "Distribuer des tokens (Airdrop)",
         "description": "Distribuez des tokens à un ou plusieurs destinataires en les transférant depuis la trésorerie de votre espace ou en frappant des tokens créés par votre espace."
       },
       "depositFunds": {

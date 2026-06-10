@@ -55,9 +55,19 @@ export const useAirdropMutationsWeb3Rpc = ({
         throw new Error('Smart wallet client not available');
       }
 
-      const duration = await publicClient.readContract(
-        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
-      );
+      // readContract can throw (RPC/contract errors); fall back to a safe
+      // 7-day default so airdrop proposal creation is never aborted by it.
+      let duration = getDuration(7);
+      try {
+        const minDuration = await publicClient.readContract(
+          getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+        );
+        if (minDuration && minDuration > 0) {
+          duration = minDuration;
+        }
+      } catch {
+        // keep safe fallback duration
+      }
 
       // Decimals only depend on the token, so resolve each unique token once
       // (airdrops share a single token across all recipients).
@@ -105,7 +115,7 @@ export const useAirdropMutationsWeb3Rpc = ({
 
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),
-        duration: duration && duration > 0 ? duration : getDuration(7),
+        duration,
         transactions,
       };
 
