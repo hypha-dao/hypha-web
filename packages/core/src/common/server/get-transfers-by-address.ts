@@ -143,8 +143,14 @@ export async function getTransfersByAddress(
  */
 export async function getMintTransfersByTokens({
   contractAddresses,
+  fromBlock,
+  toBlock,
+  limit,
 }: {
   contractAddresses: string[];
+  fromBlock?: number;
+  toBlock?: number;
+  limit?: number;
 }): Promise<Transfer[]> {
   if (contractAddresses.length === 0) {
     return [];
@@ -156,6 +162,13 @@ export async function getMintTransfersByTokens({
     category: [AssetTransfersCategory.ERC20],
     contractAddresses,
     withMetadata: true,
+    // Alchemy expects block bounds as 0x-prefixed hex strings.
+    fromBlock:
+      fromBlock !== undefined ? `0x${fromBlock.toString(16)}` : undefined,
+    toBlock: toBlock !== undefined ? `0x${toBlock.toString(16)}` : undefined,
+    // Bound the result set so a token with many mint events can't trigger an
+    // unbounded fetch; callers pass their requested limit here.
+    maxCount: limit,
   });
 
   return toTransfersWithMetadata(alchemy, mints.transfers);

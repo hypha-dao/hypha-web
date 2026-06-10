@@ -15,6 +15,11 @@ type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
 };
 
+// Upper bound on space members fetched to prioritize them in the recipient
+// dropdown. Spaces with more members than this will have the overflow sorted
+// after the first batch rather than prioritized.
+const SPACE_MEMBER_FETCH_LIMIT = 1000;
+
 export default async function CreateAirdropPage({ params }: PageProps) {
   const { lang, id } = await params;
 
@@ -35,7 +40,7 @@ export default async function CreateAirdropPage({ params }: PageProps) {
   // space should surface at the top of the list.
   const spaceMembers = await findPeopleBySpaceSlug(
     { spaceSlug },
-    { db, pagination: { page: 1, pageSize: 1000 } },
+    { db, pagination: { page: 1, pageSize: SPACE_MEMBER_FETCH_LIMIT } },
   );
   const spaceMemberAddresses = new Set(
     spaceMembers.data

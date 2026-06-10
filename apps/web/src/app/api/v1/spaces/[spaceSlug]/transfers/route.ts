@@ -119,6 +119,9 @@ export async function GET(
     const mintTransfers = (
       await getMintTransfersByTokens({
         contractAddresses: spaceTokenAddresses,
+        fromBlock,
+        toBlock,
+        limit,
       })
     ).filter(
       // Mints to the space itself are already returned by the address-based
@@ -126,9 +129,11 @@ export async function GET(
       (mint) => mint.to.toLowerCase() !== spaceAddress.toLowerCase(),
     );
 
-    const allTransfers = [...transfers, ...mintTransfers].sort(
-      (a, b) => b.block_number - a.block_number,
-    );
+    // Enforce the requested limit on the merged set; otherwise the response
+    // could contain up to `limit` address-based transfers plus all mints.
+    const allTransfers = [...transfers, ...mintTransfers]
+      .sort((a, b) => b.block_number - a.block_number)
+      .slice(0, limit);
 
     const dbTokens = rawDbTokens.map((token) => ({
       agreementId: token.agreementId ?? undefined,
