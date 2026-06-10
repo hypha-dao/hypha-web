@@ -18,6 +18,7 @@ import {
   Token,
   ALLOWED_SPACES,
   getTokenDecimals,
+  isHiddenToken,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
@@ -199,7 +200,9 @@ export async function GET(
       }
     });
 
-    const allTokens: Token[] = Array.from(addressMap.values());
+    const allTokens: Token[] = Array.from(addressMap.values()).filter(
+      (token) => !isHiddenToken(token.address),
+    );
 
     let prices: Record<string, number | undefined> = {};
     try {
