@@ -449,6 +449,10 @@
         "title": "Déployer des fonds",
         "description": "Allouez des fonds de trésorerie à des investissements dans d'autres espaces du réseau ou à la distribution de ressources entre les espaces de votre organisation."
       },
+      "airdrop": {
+        "title": "Distribuer des tokens (Airdrop)",
+        "description": "Distribuez des tokens à un ou plusieurs destinataires en les transférant depuis la trésorerie de votre espace ou en frappant des tokens créés par votre espace."
+      },
       "depositFunds": {
         "title": "Déposer des fonds",
         "description": "Déposez des fonds dans votre trésorerie en copiant l'adresse de la trésorerie ou en scannant le QR code."
@@ -1072,6 +1076,7 @@
       "contribution": "Contribution",
       "expenses": "Dépenses",
       "funding": "Financement",
+      "airdrop": "Airdrop",
       "investment": "Investissement",
       "exchange": "Échange"
     },
@@ -1123,6 +1128,8 @@
       "chooseTokenToBurn": "Choisissez un token à brûler",
       "atLeastOneBurnTargetRequired": "Au moins une cible de brûlage est requise",
       "atLeastOnePayoutRequired": "Au moins un paiement est requis",
+      "atLeastOneAirdropRecipient": "Au moins un destinataire de l'airdrop est requis",
+      "tooManyAirdropRecipients": "Trop de destinataires pour une seule proposition d'airdrop.",
       "purchaseAmountRequired": "Veuillez saisir un montant d'achat.",
       "selectSpaceToActivate": "Veuillez sélectionner un espace à activer.",
       "monthsToActivateRequired": "Veuillez saisir le nombre de mois à activer.",
@@ -1251,6 +1258,12 @@
       "UPLOAD_FILES": "Téléversement des fichiers...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Liaison des accords Web2 et Web3"
     },
+    "createAirdropProgress": {
+      "CREATE_WEB2_AGREEMENT": "Création de l'accord...",
+      "CREATE_WEB3_AGREEMENT": "Création de l'accord Web3...",
+      "UPLOAD_FILES": "Téléversement des fichiers...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Liaison des accords Web2 et Web3"
+    },
     "proposalLoader": {
       "processingVote": "Traitement du vote...",
       "savingVote": "Enregistrement du vote...",
@@ -1264,6 +1277,34 @@
       "unknownErrorOccurred": "Une erreur inconnue s’est produite."
     },
     "plugins": {
+      "airdrop": {
+        "description": "Distribuez des tokens à un ou plusieurs destinataires. Choisissez de transférer des tokens déjà détenus dans la trésorerie de votre espace ou de frapper de nouveaux tokens créés par votre espace.",
+        "recipientsLabel": "Destinataires",
+        "methodLabel": "Méthode",
+        "tokenLabel": "Token",
+        "amountLabel": "Montant",
+        "transfer": "Transférer",
+        "mint": "Frapper",
+        "noMintableTokens": "Votre espace n'a pas encore créé de tokens frappables. Émettez d'abord un token ou utilisez la méthode Transférer.",
+        "add": "Ajouter un destinataire",
+        "remove": "Supprimer",
+        "entryManual": "Manuel",
+        "entryCsv": "Import CSV",
+        "csvFormatDescription": "Téléversez un fichier CSV avec un destinataire par ligne : une adresse de portefeuille et un montant, séparés par une virgule (point-virgule ou tabulation acceptés). La ligne d'en-tête est facultative, les décimales utilisent un point et le fichier peut contenir jusqu'à {max} destinataires.",
+        "csvChooseFile": "Choisir un fichier CSV",
+        "csvDownloadTemplate": "Télécharger le modèle",
+        "csvLoadedSummary": "{count} destinataires chargés depuis {fileName} — montant total : {total}",
+        "csvCurrentRecipients": "{count} destinataires actuellement dans la liste.",
+        "csvClear": "Effacer",
+        "csvErrorRead": "Impossible de lire le fichier. Vérifiez-le et réessayez.",
+        "csvErrorEmpty": "Aucun destinataire trouvé dans le fichier.",
+        "csvErrorTooMany": "Le fichier contient {count} destinataires ; le maximum est de {max}.",
+        "csvErrorColumns": "Ligne {line} : une adresse de portefeuille et un montant étaient attendus.",
+        "csvErrorInvalidAddress": "Ligne {line} : adresse de portefeuille invalide.",
+        "csvErrorInvalidAmount": "Ligne {line} : montant invalide.",
+        "csvErrorMore": "…et {count} autres problèmes.",
+        "csvInvalidRecipients": "Certains destinataires de la liste sont invalides. Téléversez un fichier corrigé ou passez à la saisie manuelle."
+      },
       "activateSpaces": {
         "checkOut": "Récapitulatif",
         "totalContribution": "Contribution totale :",

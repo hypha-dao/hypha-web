@@ -89,6 +89,8 @@
       "enterAmountPrompt": "Por favor, introduce una cantidad.",
       "tokenRequired": "Selecciona un token",
       "atLeastOnePayoutRequired": "Se requiere al menos un pago",
+      "atLeastOneAirdropRecipient": "Se requiere al menos un destinatario del airdrop",
+      "tooManyAirdropRecipients": "Demasiados destinatarios para una propuesta de airdrop.",
       "purchaseAmountRequired": "Ingresa un monto de compra.",
       "selectSpaceToActivate": "Selecciona un espacio para activar.",
       "monthsToActivateRequired": "Ingresa la cantidad de meses para activar.",
@@ -122,6 +124,34 @@
       "acceptInvestmentExactReceiveRows": "Se requiere exactamente una fila de token en « El miembro inversor recibirá »."
     },
     "plugins": {
+      "airdrop": {
+        "description": "Distribuye tokens a uno o varios destinatarios. Elige transferir tokens que ya están en la tesorería de tu espacio o acuñar nuevos tokens creados por tu espacio.",
+        "recipientsLabel": "Destinatarios",
+        "methodLabel": "Método",
+        "tokenLabel": "Token",
+        "amountLabel": "Cantidad",
+        "transfer": "Transferir",
+        "mint": "Acuñar",
+        "noMintableTokens": "Tu espacio aún no ha creado tokens acuñables. Emite un token primero o usa el método Transferir.",
+        "add": "Añadir destinatario",
+        "remove": "Eliminar",
+        "entryManual": "Manual",
+        "entryCsv": "Subir CSV",
+        "csvFormatDescription": "Sube un archivo CSV con un destinatario por línea: una dirección de cartera y una cantidad, separadas por coma (también funcionan punto y coma o tabulación). La línea de encabezado es opcional, los decimales usan punto y el archivo puede contener hasta {max} destinatarios.",
+        "csvChooseFile": "Elegir archivo CSV",
+        "csvDownloadTemplate": "Descargar plantilla",
+        "csvLoadedSummary": "{count} destinatarios cargados desde {fileName} — cantidad total: {total}",
+        "csvCurrentRecipients": "{count} destinatarios actualmente en la lista.",
+        "csvClear": "Borrar",
+        "csvErrorRead": "No se pudo leer el archivo. Compruébalo e inténtalo de nuevo.",
+        "csvErrorEmpty": "No se encontraron destinatarios en el archivo.",
+        "csvErrorTooMany": "El archivo contiene {count} destinatarios; el máximo es {max}.",
+        "csvErrorColumns": "Línea {line}: se esperaba una dirección de cartera y una cantidad.",
+        "csvErrorInvalidAddress": "Línea {line}: dirección de cartera no válida.",
+        "csvErrorInvalidAmount": "Línea {line}: cantidad no válida.",
+        "csvErrorMore": "…y {count} problemas más.",
+        "csvInvalidRecipients": "Algunos destinatarios de la lista no son válidos. Sube un archivo corregido o cambia a la entrada manual."
+      },
       "paymentSchedule": {
         "errors": {
           "milestonesEmpty": "Los hitos no pueden estar vacíos",
@@ -646,6 +676,7 @@
       "contribution": "Contribución",
       "expenses": "Gastos",
       "funding": "Fondos",
+      "airdrop": "Airdrop",
       "investment": "Inversión",
       "exchange": "Intercambio"
     },
@@ -780,6 +811,12 @@
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Vinculando acuerdos Web2 y Web3"
     },
     "changeSpaceDelegateProgress": {
+      "CREATE_WEB2_AGREEMENT": "Creando acuerdo...",
+      "CREATE_WEB3_AGREEMENT": "Creando acuerdo Web3...",
+      "UPLOAD_FILES": "Subiendo archivos...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Vinculando acuerdos Web2 y Web3"
+    },
+    "createAirdropProgress": {
       "CREATE_WEB2_AGREEMENT": "Creando acuerdo...",
       "CREATE_WEB3_AGREEMENT": "Creando acuerdo Web3...",
       "UPLOAD_FILES": "Subiendo archivos...",
@@ -1169,6 +1206,10 @@
       "deployFunds": {
         "title": "Implementar fondos",
         "description": "Asigne fondos de tesorería para inversiones en otros espacios de la red o para distribuir recursos entre espacios dentro de su organización."
+      },
+      "airdrop": {
+        "title": "Distribuir Tokens (Airdrop)",
+        "description": "Distribuye tokens a uno o varios destinatarios transfiriéndolos desde la tesorería de tu espacio o acuñando tokens creados por tu espacio."
       },
       "depositFunds": {
         "title": "Depositar fondos",

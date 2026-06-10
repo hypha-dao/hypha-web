@@ -448,6 +448,10 @@
         "title": "Deploy Funds",
         "description": "Allocate treasury funds for investments in other spaces in the network or for distributing resources across spaces within your organisation."
       },
+      "airdrop": {
+        "title": "Airdrop Tokens",
+        "description": "Distribute tokens to one or more recipients by transferring them from your space treasury or minting tokens created by your space."
+      },
       "depositFunds": {
         "title": "Deposit Funds",
         "description": "Deposit funds into your treasury by copying the treasury address or scanning the QR code."
@@ -1468,6 +1472,7 @@
       "contribution": "Contribution",
       "expenses": "Expenses",
       "funding": "Funding",
+      "airdrop": "Airdrop",
       "investment": "Investment",
       "exchange": "Exchange"
     },
@@ -1517,6 +1522,8 @@
       "enterAmountPrompt": "Please enter an amount.",
       "tokenRequired": "Please select a token",
       "atLeastOnePayoutRequired": "At least one payout is required",
+      "atLeastOneAirdropRecipient": "At least one airdrop recipient is required",
+      "tooManyAirdropRecipients": "Too many recipients for one airdrop proposal.",
       "purchaseAmountRequired": "Please enter a purchase amount.",
       "selectSpaceToActivate": "Please select a space to activate.",
       "monthsToActivateRequired": "Please enter the number of months to activate.",
@@ -1650,6 +1657,12 @@
       "UPLOAD_FILES": "Uploading files...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Linking Web2 and Web3 agreements"
     },
+    "createAirdropProgress": {
+      "CREATE_WEB2_AGREEMENT": "Creating agreement...",
+      "CREATE_WEB3_AGREEMENT": "Creating Web3 agreement...",
+      "UPLOAD_FILES": "Uploading files...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Linking Web2 and Web3 agreements"
+    },
     "proposalLoader": {
       "processingVote": "Processing vote...",
       "savingVote": "Saving vote...",
@@ -1663,6 +1676,34 @@
       "unknownErrorOccurred": "An unknown error occurred."
     },
     "plugins": {
+      "airdrop": {
+        "description": "Distribute tokens to one or more recipients. Choose to transfer tokens already held in your space treasury, or mint new tokens that your space has created.",
+        "recipientsLabel": "Recipients",
+        "methodLabel": "Method",
+        "tokenLabel": "Token",
+        "amountLabel": "Amount",
+        "transfer": "Transfer",
+        "mint": "Mint",
+        "noMintableTokens": "Your space has not created any mintable tokens yet. Issue a token first, or use the Transfer method.",
+        "add": "Add recipient",
+        "remove": "Remove",
+        "entryManual": "Manual",
+        "entryCsv": "CSV upload",
+        "csvFormatDescription": "Upload a CSV file with one recipient per line: a wallet address and an amount, separated by a comma (semicolon or tab also work). A header line is optional, decimals use a dot, and the file can contain up to {max} recipients.",
+        "csvChooseFile": "Choose CSV file",
+        "csvDownloadTemplate": "Download template",
+        "csvLoadedSummary": "Loaded {count} recipients from {fileName} — total amount: {total}",
+        "csvCurrentRecipients": "{count} recipients currently in the list.",
+        "csvClear": "Clear",
+        "csvErrorRead": "Could not read the file. Please check it and try again.",
+        "csvErrorEmpty": "No recipients found in the file.",
+        "csvErrorTooMany": "The file contains {count} recipients; the maximum is {max}.",
+        "csvErrorColumns": "Line {line}: expected a wallet address and an amount.",
+        "csvErrorInvalidAddress": "Line {line}: invalid wallet address.",
+        "csvErrorInvalidAmount": "Line {line}: invalid amount.",
+        "csvErrorMore": "…and {count} more issues.",
+        "csvInvalidRecipients": "Some recipients in the list are invalid. Upload a corrected file or switch to manual entry."
+      },
       "activateSpaces": {
         "checkOut": "Check out",
         "totalContribution": "Total Contribution:",

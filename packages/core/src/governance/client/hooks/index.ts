@@ -23,6 +23,8 @@ export * from './useSpaceExchangeDepositProposalMutation';
 export * from './useSpaceExchangeDepositAgreements';
 export * from './useCreateRedeemTokensOrchestrator';
 export * from './useCreatePayForExpensesOrchestrator';
+export * from './useAirdropMutations.web3.rpc';
+export * from './useCreateAirdropOrchestrator';
 export * from './useCreateProposeAContributionOrchestrator';
 export * from './useDeployFundsMutations.web3.rpc';
 export * from './useRedeemTokensMutations.web3.rpc';

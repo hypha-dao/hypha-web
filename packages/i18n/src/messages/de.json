@@ -449,6 +449,10 @@
         "title": "Mittel einsetzen",
         "description": "Weisen Sie Schatzkammermittel für Investitionen in andere Spaces im Netzwerk oder für die Verteilung von Ressourcen über Spaces innerhalb Ihrer Organisation zu."
       },
+      "airdrop": {
+        "title": "Tokens verteilen (Airdrop)",
+        "description": "Verteilen Sie Tokens an einen oder mehrere Empfänger, indem Sie sie aus der Schatzkammer Ihres Spaces übertragen oder von Ihrem Space erstellte Tokens prägen."
+      },
       "depositFunds": {
         "title": "Mittel einzahlen",
         "description": "Zahlen Sie Mittel in Ihre Schatzkammer ein, indem Sie die Schatzkammer-Adresse kopieren oder den QR-Code scannen."
@@ -1469,6 +1473,7 @@
       "contribution": "Beitrag",
       "expenses": "Ausgaben",
       "funding": "Finanzierung",
+      "airdrop": "Airdrop",
       "investment": "Investition",
       "exchange": "Exchange"
     },
@@ -1520,6 +1525,8 @@
       "chooseTokenToBurn": "Bitte wählen Sie einen Token zum Verbrennen aus",
       "atLeastOneBurnTargetRequired": "Mindestens ein Verbrennungsziel ist erforderlich",
       "atLeastOnePayoutRequired": "Mindestens eine Auszahlung ist erforderlich",
+      "atLeastOneAirdropRecipient": "Mindestens ein Airdrop-Empfänger ist erforderlich",
+      "tooManyAirdropRecipients": "Zu viele Empfänger für einen einzigen Airdrop-Vorschlag.",
       "purchaseAmountRequired": "Bitte geben Sie einen Kaufbetrag ein.",
       "selectSpaceToActivate": "Bitte wählen Sie einen Space zur Aktivierung aus.",
       "monthsToActivateRequired": "Bitte geben Sie die Anzahl der Monate für die Aktivierung ein.",
@@ -1648,6 +1655,12 @@
       "UPLOAD_FILES": "Dateien werden hochgeladen...",
       "LINK_WEB2_AND_WEB3_AGREEMENT": "Web2- und Web3-Vereinbarungen werden verknüpft"
     },
+    "createAirdropProgress": {
+      "CREATE_WEB2_AGREEMENT": "Vereinbarung wird erstellt...",
+      "CREATE_WEB3_AGREEMENT": "Web3-Vereinbarung wird erstellt...",
+      "UPLOAD_FILES": "Dateien werden hochgeladen...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Web2- und Web3-Vereinbarungen werden verknüpft"
+    },
     "proposalLoader": {
       "processingVote": "Abstimmung wird verarbeitet...",
       "savingVote": "Abstimmung wird gespeichert...",
@@ -1661,6 +1674,34 @@
       "unknownErrorOccurred": "Ein unbekannter Fehler ist aufgetreten."
     },
     "plugins": {
+      "airdrop": {
+        "description": "Verteilen Sie Tokens an einen oder mehrere Empfänger. Wählen Sie, ob Sie Tokens aus der Schatzkammer Ihres Spaces übertragen oder neue, von Ihrem Space erstellte Tokens prägen möchten.",
+        "recipientsLabel": "Empfänger",
+        "methodLabel": "Methode",
+        "tokenLabel": "Token",
+        "amountLabel": "Betrag",
+        "transfer": "Übertragen",
+        "mint": "Prägen",
+        "noMintableTokens": "Ihr Space hat noch keine prägbaren Tokens erstellt. Geben Sie zuerst einen Token aus oder verwenden Sie die Methode Übertragen.",
+        "add": "Empfänger hinzufügen",
+        "remove": "Entfernen",
+        "entryManual": "Manuell",
+        "entryCsv": "CSV-Upload",
+        "csvFormatDescription": "Laden Sie eine CSV-Datei mit einem Empfänger pro Zeile hoch: eine Wallet-Adresse und ein Betrag, getrennt durch ein Komma (Semikolon oder Tabulator funktionieren ebenfalls). Die Kopfzeile ist optional, Dezimalstellen verwenden einen Punkt und die Datei darf bis zu {max} Empfänger enthalten.",
+        "csvChooseFile": "CSV-Datei auswählen",
+        "csvDownloadTemplate": "Vorlage herunterladen",
+        "csvLoadedSummary": "{count} Empfänger aus {fileName} geladen — Gesamtbetrag: {total}",
+        "csvCurrentRecipients": "{count} Empfänger derzeit in der Liste.",
+        "csvClear": "Leeren",
+        "csvErrorRead": "Die Datei konnte nicht gelesen werden. Bitte prüfen Sie sie und versuchen Sie es erneut.",
+        "csvErrorEmpty": "Keine Empfänger in der Datei gefunden.",
+        "csvErrorTooMany": "Die Datei enthält {count} Empfänger; das Maximum ist {max}.",
+        "csvErrorColumns": "Zeile {line}: erwartet wurden eine Wallet-Adresse und ein Betrag.",
+        "csvErrorInvalidAddress": "Zeile {line}: ungültige Wallet-Adresse.",
+        "csvErrorInvalidAmount": "Zeile {line}: ungültiger Betrag.",
+        "csvErrorMore": "…und {count} weitere Probleme.",
+        "csvInvalidRecipients": "Einige Empfänger in der Liste sind ungültig. Laden Sie eine korrigierte Datei hoch oder wechseln Sie zur manuellen Eingabe."
+      },
       "activateSpaces": {
         "checkOut": "Übersicht",
         "totalContribution": "Gesamtbeitrag:",

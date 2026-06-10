@@ -23,6 +23,7 @@ export function getCreateRouteSegmentForProposalLabel(
     'Collective Agreement': '',
     Expenses: 'pay-for-expenses',
     Funding: 'deploy-funds',
+    Airdrop: 'airdrop',
     'Voting Method': 'change-voting-method',
     'Entry Method': 'change-entry-method',
     'Issue New Token': 'issue-new-token',
