@@ -73,6 +73,10 @@ export const HIDDEN_TOKEN_ADDRESSES: ReadonlySet<string> = new Set<string>([
   // (Hypha Platform). Superseded by a new HCREDITS token issued through the current
   // RegularTokenFactory. The old contract cannot be upgraded or burned via proposal.
   '0xb8591ade4ceda2dd14b1924dc81d23b765c2820d',
+  // Hypha Voice (HVOICE) — legacy non-upgradeable deployment for space 241 (Hypha
+  // Platform), same older contract generation as HCREDITS. Not a proxy, so it cannot
+  // be upgraded or burned via proposal.
+  '0x24e0b2bfee025d57a19f9dae4c3849a4a6bf9626',
 ]);
 
 /** True when `address` is on the {@link HIDDEN_TOKEN_ADDRESSES} denylist. */
