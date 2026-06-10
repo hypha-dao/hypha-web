@@ -134,7 +134,23 @@
         "mint": "Cunhar",
         "noMintableTokens": "Seu espaço ainda não criou tokens cunháveis. Emita um token primeiro ou use o método Transferir.",
         "add": "Adicionar destinatário",
-        "remove": "Remover"
+        "remove": "Remover",
+        "entryManual": "Manual",
+        "entryCsv": "Carregar CSV",
+        "csvFormatDescription": "Carregue um arquivo CSV com um destinatário por linha: um endereço de carteira e um valor, separados por vírgula (ponto e vírgula ou tabulação também funcionam). A linha de cabeçalho é opcional, os decimais usam ponto e o arquivo pode conter até {max} destinatários.",
+        "csvChooseFile": "Escolher arquivo CSV",
+        "csvDownloadTemplate": "Baixar modelo",
+        "csvLoadedSummary": "{count} destinatários carregados de {fileName} — valor total: {total}",
+        "csvCurrentRecipients": "{count} destinatários atualmente na lista.",
+        "csvClear": "Limpar",
+        "csvErrorRead": "Não foi possível ler o arquivo. Verifique-o e tente novamente.",
+        "csvErrorEmpty": "Nenhum destinatário encontrado no arquivo.",
+        "csvErrorTooMany": "O arquivo contém {count} destinatários; o máximo é {max}.",
+        "csvErrorColumns": "Linha {line}: esperava-se um endereço de carteira e um valor.",
+        "csvErrorInvalidAddress": "Linha {line}: endereço de carteira inválido.",
+        "csvErrorInvalidAmount": "Linha {line}: valor inválido.",
+        "csvErrorMore": "…e mais {count} problemas.",
+        "csvInvalidRecipients": "Alguns destinatários da lista são inválidos. Carregue um arquivo corrigido ou mude para a entrada manual."
       },
       "paymentSchedule": {
         "errors": {

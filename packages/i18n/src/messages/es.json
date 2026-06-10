@@ -134,7 +134,23 @@
         "mint": "Acuñar",
         "noMintableTokens": "Tu espacio aún no ha creado tokens acuñables. Emite un token primero o usa el método Transferir.",
         "add": "Añadir destinatario",
-        "remove": "Eliminar"
+        "remove": "Eliminar",
+        "entryManual": "Manual",
+        "entryCsv": "Subir CSV",
+        "csvFormatDescription": "Sube un archivo CSV con un destinatario por línea: una dirección de cartera y una cantidad, separadas por coma (también funcionan punto y coma o tabulación). La línea de encabezado es opcional, los decimales usan punto y el archivo puede contener hasta {max} destinatarios.",
+        "csvChooseFile": "Elegir archivo CSV",
+        "csvDownloadTemplate": "Descargar plantilla",
+        "csvLoadedSummary": "{count} destinatarios cargados desde {fileName} — cantidad total: {total}",
+        "csvCurrentRecipients": "{count} destinatarios actualmente en la lista.",
+        "csvClear": "Borrar",
+        "csvErrorRead": "No se pudo leer el archivo. Compruébalo e inténtalo de nuevo.",
+        "csvErrorEmpty": "No se encontraron destinatarios en el archivo.",
+        "csvErrorTooMany": "El archivo contiene {count} destinatarios; el máximo es {max}.",
+        "csvErrorColumns": "Línea {line}: se esperaba una dirección de cartera y una cantidad.",
+        "csvErrorInvalidAddress": "Línea {line}: dirección de cartera no válida.",
+        "csvErrorInvalidAmount": "Línea {line}: cantidad no válida.",
+        "csvErrorMore": "…y {count} problemas más.",
+        "csvInvalidRecipients": "Algunos destinatarios de la lista no son válidos. Sube un archivo corregido o cambia a la entrada manual."
       },
       "paymentSchedule": {
         "errors": {
