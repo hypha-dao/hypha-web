@@ -4,6 +4,7 @@ import {
   type Alchemy,
   type AssetTransfersWithMetadataResult,
   AssetTransfersCategory,
+  SortingOrder,
 } from 'alchemy-sdk';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -166,6 +167,10 @@ export async function getMintTransfersByTokens({
     fromBlock:
       fromBlock !== undefined ? `0x${fromBlock.toString(16)}` : undefined,
     toBlock: toBlock !== undefined ? `0x${toBlock.toString(16)}` : undefined,
+    // Alchemy defaults to ascending (oldest first), so a bounded page would
+    // contain only the oldest mints and newly minted transfers would never
+    // appear. Request newest-first so the page holds the most recent mints.
+    order: SortingOrder.DESCENDING,
     // Bound the result set so a token with many mint events can't trigger an
     // unbounded fetch; callers pass their requested limit here.
     maxCount: limit,
