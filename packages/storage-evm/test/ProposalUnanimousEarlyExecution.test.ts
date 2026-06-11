@@ -9,6 +9,7 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 describe('Proposal Unanimous Early Execution', function () {
   let daoSpaceFactory: any;
   let daoProposals: any;
+  let votingPowerDelegation: any;
   let owner: SignerWithAddress;
   let members: SignerWithAddress[];
 
@@ -116,13 +117,20 @@ describe('Proposal Unanimous Early Execution', function () {
       await daoSpaceFactory.getAddress(),
     );
 
-    return { daoSpaceFactory, daoProposals, owner, members };
+    return {
+      daoSpaceFactory,
+      daoProposals,
+      votingPowerDelegation,
+      owner,
+      members,
+    };
   }
 
   beforeEach(async function () {
     const fixture = await loadFixture(deployFixture);
     daoSpaceFactory = fixture.daoSpaceFactory;
     daoProposals = fixture.daoProposals;
+    votingPowerDelegation = fixture.votingPowerDelegation;
     owner = fixture.owner;
     members = fixture.members;
   });
@@ -321,6 +329,42 @@ describe('Proposal Unanimous Early Execution', function () {
     ).to.emit(daoProposals, 'ProposalExecuted');
 
     const state = await getProposalState(proposalId);
+    expect(state.executed).to.equal(true);
+  });
+
+  it('does not fast-track when unanimous yes votes overshoot the snapshot', async function () {
+    // Snapshot is taken at proposal creation with 2 members
+    const spaceId = await createSpace({
+      unity: 51,
+      quorum: 10,
+      memberCount: 2,
+    });
+    const proposalId = await createTestProposal(owner, spaceId);
+
+    // Voting power grows after creation: two new members join and delegate
+    // to members[0], whose single yes vote (power 3) overshoots the snapshot (2)
+    await daoSpaceFactory.connect(members[1]).joinSpace(spaceId);
+    await daoSpaceFactory.connect(members[2]).joinSpace(spaceId);
+    await votingPowerDelegation
+      .connect(members[1])
+      .delegate(members[0].address, spaceId);
+    await votingPowerDelegation
+      .connect(members[2])
+      .delegate(members[0].address, spaceId);
+
+    await daoProposals.connect(members[0]).vote(proposalId, true);
+
+    // Overshoot (3 > 2) is unanimous yes but does not prove full
+    // participation, so the minimum duration must still be respected
+    let state = await getProposalState(proposalId);
+    expect(state.executed).to.equal(false);
+    expect(state.expired).to.equal(false);
+
+    // After the minimum duration the proposal resolves normally
+    await time.increase(SEVENTY_TWO_HOURS + 1);
+    await daoProposals.connect(owner).triggerExecutionCheck(proposalId);
+
+    state = await getProposalState(proposalId);
     expect(state.executed).to.equal(true);
   });
 });
