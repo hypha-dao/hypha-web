@@ -2829,11 +2829,21 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         true, // transferable
         false, // fixedMaxSupply
         true, // autoMinting
-        0, // priceInUSD
+        0, // tokenPrice
+        ethers.ZeroAddress, // priceCurrencyFeed (USD)
         false, // useTransferWhitelist
         false, // useReceiveWhitelist
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
+        0, // defaultCreditLimit
+        [], // initialCreditWhitelistSpaceIds
+        ethers.ZeroAddress, // paymentToken
+        0, // paymentTokenPricePerToken
+        0, // tokensForSale
+        0, // purchaseEligibilityMode
+        [], // initialPurchaseWhitelistSpaceIds
       );
       const receipt = await tx.wait();
 
@@ -2979,15 +2989,18 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       await daoProposals.connect(owner).createProposal(proposalParams);
       const proposalId = await daoProposals.proposalCounter();
 
-      // Voting should succeed even without an active subscription
+      // Voting should succeed even without an active subscription.
+      // The second vote is "no" so quorum+unity don't trigger execution of the
+      // mock HyphaToken calldata (which would revert inside the Executor).
       await expect(daoProposals.connect(members[0]).vote(proposalId, true)).to
         .not.be.reverted;
 
-      await expect(daoProposals.connect(members[1]).vote(proposalId, true)).to
+      await expect(daoProposals.connect(members[1]).vote(proposalId, false)).to
         .not.be.reverted;
 
       const proposalState = await daoProposals.getProposalCore(proposalId);
-      expect(proposalState.yesVotes).to.equal(2);
+      expect(proposalState.yesVotes).to.equal(1);
+      expect(proposalState.noVotes).to.equal(1);
 
       console.log(
         `✅ Successfully voted on proposal targeting HyphaToken without subscription`,
@@ -3107,11 +3120,19 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             0, // maxSupply (0 = unlimited)
             false, // fixedMaxSupply
             true, // autoMinting
-            0, // priceInUSD
+            0, // tokenPrice
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false, // useTransferWhitelist
             false, // useReceiveWhitelist
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -3177,7 +3198,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         // Try to transfer as the member
         await expect(
           ownershipToken.connect(member).transfer(recipient.address, amount),
-        ).to.be.revertedWith('Only executor can transfer tokens');
+        ).to.be.revertedWith('!executor');
       });
 
       it('should prevent executor from transferring to a non-member', async function () {
@@ -3187,7 +3208,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           ownershipToken
             .connect(executorSigner)
             .transfer(nonMember.address, amount),
-        ).to.be.revertedWith('Can only transfer to space members');
+        ).to.be.revertedWith('!member');
       });
 
       it('should allow executor to use transferFrom for their own tokens, minting if needed', async function () {
@@ -3264,7 +3285,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           ownershipToken
             .connect(executorSigner)
             .transferFrom(sender.address, nonMember.address, amount),
-        ).to.be.revertedWith('Can only transfer to space members');
+        ).to.be.revertedWith('!member');
       });
 
       it('should prevent a non-executor from calling transferFrom', async function () {
@@ -3283,7 +3304,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           ownershipToken
             .connect(sender)
             .transferFrom(sender.address, recipient.address, amount),
-        ).to.be.revertedWith('Only executor can transfer tokens');
+        ).to.be.revertedWith('!executor');
       });
     });
 
@@ -3332,13 +3353,21 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             transferable,
             false, // fixedMaxSupply
             true, // autoMinting
-            0, // priceInUSD
+            0, // tokenPrice
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false, // useTransferWhitelist
             false, // useReceiveWhitelist
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             100, // 1% decay (100 basis points)
             60 * 60, // per hour
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -3380,7 +3409,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
         await expect(
           decayingToken.connect(sender).transfer(recipient.address, amount),
-        ).to.be.revertedWith('Token transfers are disabled');
+        ).to.be.revertedWith('!transferable');
       });
 
       it('should allow non-executor to transfer when enabled', async function () {
@@ -4226,10 +4255,20 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
+            0, // defaultCreditLimit
+            [], // initialCreditWhitelistSpaceIds
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -4353,10 +4392,20 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
+            0, // defaultCreditLimit
+            [], // initialCreditWhitelistSpaceIds
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -4495,12 +4544,20 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             100, // 1% decay
             3600, // per hour
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -4618,12 +4675,20 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             1000, // 10% decay per interval
             3600,
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -4742,10 +4807,20 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
-            [],
-            [],
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
+            0, // defaultCreditLimit
+            [], // initialCreditWhitelistSpaceIds
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -4906,10 +4981,20 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
-            [],
-            [],
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
+            0, // defaultCreditLimit
+            [], // initialCreditWhitelistSpaceIds
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -5043,10 +5128,20 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
-            [],
-            [],
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
+            0, // defaultCreditLimit
+            [], // initialCreditWhitelistSpaceIds
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -5173,10 +5268,20 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
-            [],
-            [],
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
+            0, // defaultCreditLimit
+            [], // initialCreditWhitelistSpaceIds
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -5328,10 +5433,20 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
-            [],
-            [],
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
+            0, // defaultCreditLimit
+            [], // initialCreditWhitelistSpaceIds
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -5395,9 +5510,11 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           .connect(executorSigner)
           .mint(members[0].address, ethers.parseEther('200'));
 
-        // Vote to exceed snapshot
+        // Vote to exceed snapshot. The vote must be contested (one NO, cast
+        // first): a unanimous-yes full participation now executes immediately,
+        // bypassing the minimum duration by design.
+        await daoProposals.connect(members[1]).vote(proposalId, false); // 100 NO
         await daoProposals.connect(owner).vote(proposalId, true); // 300 YES
-        await daoProposals.connect(members[0]).vote(proposalId, true); // 300 YES
 
         let proposalState = await daoProposals.getProposalCore(proposalId);
         console.log(
@@ -5633,10 +5750,20 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
-            [],
-            [],
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
+            0, // defaultCreditLimit
+            [], // initialCreditWhitelistSpaceIds
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
@@ -5761,10 +5888,20 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
             false,
             true,
             0,
+            ethers.ZeroAddress, // priceCurrencyFeed (USD)
             false,
             false,
-            [],
-            [],
+            [], // initialTransferWhitelist
+            [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
+            0, // defaultCreditLimit
+            [], // initialCreditWhitelistSpaceIds
+            ethers.ZeroAddress, // paymentToken
+            0, // paymentTokenPricePerToken
+            0, // tokensForSale
+            0, // purchaseEligibilityMode
+            [], // initialPurchaseWhitelistSpaceIds
           );
         const receipt = await tx.wait();
         const tokenDeployedEvent = receipt?.logs
