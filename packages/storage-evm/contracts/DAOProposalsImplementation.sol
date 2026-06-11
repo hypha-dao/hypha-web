@@ -316,9 +316,17 @@ contract DAOProposalsImplementation is
     // Handle case where votes exceed snapshot (e.g., members acquired tokens after proposal creation)
     // This prevents underflow errors and treats it as "full participation"
     if (totalVotesCast >= proposal.totalVotingPowerAtSnapshot) {
-      uint256 minDuration = spaceMinProposalDuration[proposal.spaceId];
-      if (block.timestamp < proposal.startTime + minDuration) {
-        return;
+      // Unanimous approval with full participation: no remaining or dissenting
+      // voting power could change the outcome, so resolve immediately without
+      // waiting out the space's minimum proposal duration. Contested outcomes
+      // still wait, preserving the window for voters to change their vote.
+      bool unanimousApproval = proposal.yesVotes > 0 && proposal.noVotes == 0;
+
+      if (!unanimousApproval) {
+        uint256 minDuration = spaceMinProposalDuration[proposal.spaceId];
+        if (block.timestamp < proposal.startTime + minDuration) {
+          return;
+        }
       }
 
       // All possible votes have been cast (or exceeded) - resolve based on current votes
