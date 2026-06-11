@@ -1,4 +1,5 @@
 import { Category, SpaceFlags } from '@hypha-platform/core/client';
+import type { SpaceLocationSource } from '../geo/validation';
 import { Document } from '@hypha-platform/core/client';
 import { Person } from '@hypha-platform/core/client';
 
@@ -24,6 +25,11 @@ export interface Space {
   documentCount?: number;
   documents?: Document[];
   address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationLabel?: string | null;
+  locationSource?: SpaceLocationSource | null;
+  locatedAt?: Date | null;
   /** Matrix room id for space chat when provisioned. */
   chatRoomId?: string | null;
   flags: SpaceFlags[];
@@ -45,6 +51,10 @@ export interface CreateSpaceInput {
   links?: string[];
   categories?: Category[];
   flags?: SpaceFlags[];
+  latitude?: number | null;
+  longitude?: number | null;
+  locationLabel?: string | null;
+  locationSource?: SpaceLocationSource | null;
 }
 
 export interface UpdateSpaceInput {
@@ -58,6 +68,10 @@ export interface UpdateSpaceInput {
   parentId?: number | null;
   web3SpaceId?: number;
   address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationLabel?: string | null;
+  locationSource?: SpaceLocationSource | null;
   chatRoomId?: string | null;
   flags?: SpaceFlags[];
 }

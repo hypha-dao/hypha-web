@@ -33,7 +33,8 @@ import {
   categories,
   Category,
   createSpaceFiles,
-  schemaCreateSpace,
+  refineSpaceLocationCoords,
+  schemaCreateSpaceFields,
   Space,
   SpaceFlags,
   useMe,
@@ -50,11 +51,13 @@ import {
   ButtonBack,
   ButtonClose,
 } from '@hypha-platform/epics';
+import { SpaceLocationPicker } from './space-location-picker';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
 
-const schemaCreateSpaceForm = schemaCreateSpace.extend(createSpaceFiles);
-export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceForm>;
+const schemaCreateSpaceFormBase =
+  schemaCreateSpaceFields.extend(createSpaceFiles);
+export type SchemaCreateSpaceForm = z.infer<typeof schemaCreateSpaceFormBase>;
 
 export type SpaceFormLabel = 'create' | 'add' | 'configure';
 
@@ -77,6 +80,7 @@ export type CreateSpaceFormProps = {
   submitLoadingLabel?: string;
   label?: SpaceFormLabel;
   spaceId?: number;
+  enableNetworkMap?: boolean;
   slugIncorrectMessage?: string;
   onSubmit: (
     values: SchemaCreateSpaceForm,
@@ -98,6 +102,10 @@ const DEFAULT_VALUES = {
   parentSpaceSlug: '',
   address: '',
   flags: ['sandbox'] as SpaceFlags[],
+  latitude: null,
+  longitude: null,
+  locationLabel: null,
+  locationSource: null,
 };
 
 export const SpaceForm = ({
@@ -118,6 +126,7 @@ export const SpaceForm = ({
   submitLoadingLabel,
   label = 'create',
   spaceId = -1,
+  enableNetworkMap = false,
   slugIncorrectMessage,
 }: CreateSpaceFormProps) => {
   if (process.env.NODE_ENV !== 'production') {
@@ -140,15 +149,17 @@ export const SpaceForm = ({
     [slugDuplicated],
   );
 
-  const schema = schemaCreateSpaceForm.extend({
-    slug: z
-      .string()
-      .min(1, '')
-      .max(50)
-      .regex(/^[a-z0-9'-]+$/, tSpaces('slugFieldRegex'))
-      .optional()
-      .refine(resolveSlug, { message: resolvedSlugIncorrectMessage }),
-  });
+  const schema = schemaCreateSpaceFormBase
+    .extend({
+      slug: z
+        .string()
+        .min(1, '')
+        .max(50)
+        .regex(/^[a-z0-9'-]+$/, tSpaces('slugFieldRegex'))
+        .optional()
+        .refine(resolveSlug, { message: resolvedSlugIncorrectMessage }),
+    })
+    .superRefine(refineSpaceLocationCoords);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<SchemaCreateSpaceForm>({
@@ -326,6 +337,13 @@ export const SpaceForm = ({
     () => !isDemo && !isSandbox && !isArchived,
     [isDemo, isSandbox, isArchived],
   );
+  const showLocationPicker = label === 'configure' && enableNetworkMap;
+  const locationValue = {
+    latitude: form.watch('latitude') ?? null,
+    longitude: form.watch('longitude') ?? null,
+    locationLabel: form.watch('locationLabel') ?? null,
+    locationSource: form.watch('locationSource') ?? null,
+  };
 
   React.useEffect(() => {
     if (!isArchived) {
@@ -613,6 +631,27 @@ export const SpaceForm = ({
             </FormItem>
           )}
         />
+        {showLocationPicker ? (
+          <>
+            <Separator />
+            <SpaceLocationPicker
+              disabled={isLoading}
+              value={locationValue}
+              onChange={(next) => {
+                form.setValue('latitude', next.latitude, { shouldDirty: true });
+                form.setValue('longitude', next.longitude, {
+                  shouldDirty: true,
+                });
+                form.setValue('locationLabel', next.locationLabel, {
+                  shouldDirty: true,
+                });
+                form.setValue('locationSource', next.locationSource, {
+                  shouldDirty: true,
+                });
+              }}
+            />
+          </>
+        ) : null}
         {label === 'configure' && (
           <FormField
             control={form.control}

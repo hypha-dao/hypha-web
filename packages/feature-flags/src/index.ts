@@ -2,14 +2,7 @@ import {
   getVercelToolbarFlagOverrides,
   readBooleanOverride,
 } from './vercel-toolbar-overrides';
-
-const parseBoolean = (value: string | undefined): boolean | undefined => {
-  if (!value) return undefined;
-  const normalized = value.trim().toLowerCase();
-  if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true;
-  if (['false', '0', 'no', 'n', 'off'].includes(normalized)) return false;
-  return undefined;
-};
+import { parseBoolean } from './parse-boolean';
 
 /**
  * Default feature exposure:
@@ -105,6 +98,15 @@ export const flagDefinitionsForDiscovery = {
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
+  enableNetworkMap: {
+    key: 'enable-network-map',
+    defaultValue:
+      parseBoolean(process.env.NEXT_PUBLIC_ENABLE_NETWORK_MAP) ?? false,
+    description:
+      'Space location picker and network globe map. Opt in: NEXT_PUBLIC_ENABLE_NETWORK_MAP=true',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
 };
 
 export async function getShowLanguageSelect(): Promise<boolean> {
@@ -192,6 +194,14 @@ export async function getEnableEcosystemAutomation(): Promise<boolean> {
   return getBooleanFlagFromToolbarOrEnv(
     'enable-ecosystem-automation',
     process.env.NEXT_PUBLIC_ENABLE_ECOSYSTEM_AUTOMATION,
+    false,
+  );
+}
+
+export async function getEnableNetworkMapAsync(): Promise<boolean> {
+  return getBooleanFlagFromToolbarOrEnv(
+    'enable-network-map',
+    process.env.NEXT_PUBLIC_ENABLE_NETWORK_MAP,
     false,
   );
 }

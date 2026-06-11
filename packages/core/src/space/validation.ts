@@ -5,6 +5,12 @@ import {
 } from '../assets/constant';
 import { z } from 'zod';
 import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
+import {
+  spaceLatitudeSchema,
+  spaceLocationLabelSchema,
+  spaceLocationSourceSchema,
+  spaceLongitudeSchema,
+} from '../geo/validation';
 
 /** Shared Hypha space slug rule (forms, APIs, MCP tools). */
 export const spaceSlugSchema = z
@@ -101,9 +107,40 @@ const createSpaceWeb2Props = {
     .default([]),
   address: z.string().optional(),
   flags: z.array(z.enum(SPACE_FLAGS)).default([]),
+  latitude: spaceLatitudeSchema.nullable().optional(),
+  longitude: spaceLongitudeSchema.nullable().optional(),
+  locationLabel: spaceLocationLabelSchema.nullable().optional(),
+  locationSource: spaceLocationSourceSchema.nullable().optional(),
 };
 
-export const schemaCreateSpaceWeb2 = z.object(createSpaceWeb2Props);
+export function refineSpaceLocationCoords(
+  value: {
+    latitude?: number | null;
+    longitude?: number | null;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  const hasLat = value.latitude != null;
+  const hasLng = value.longitude != null;
+  if (hasLat !== hasLng) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Latitude and longitude must both be set or both be cleared',
+      path: hasLat ? ['longitude'] : ['latitude'],
+    });
+  }
+  if (hasLat && hasLng && value.latitude === 0 && value.longitude === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Coordinates at 0,0 are not allowed',
+      path: ['latitude'],
+    });
+  }
+}
+
+export const schemaCreateSpaceWeb2 = z
+  .object(createSpaceWeb2Props)
+  .superRefine(refineSpaceLocationCoords);
 
 export const createSpaceWeb2FileUrls = {
   logoUrl: z.string().url('A space icon is required'),
@@ -213,9 +250,15 @@ export const updateSpaceProps = {
   chatRoomId: matrixRoomIdSchema.nullable().optional(),
 };
 
-export const schemaUpdateSpace = z.object(updateSpaceProps);
+export const schemaUpdateSpace = z
+  .object(updateSpaceProps)
+  .superRefine(refineSpaceLocationCoords);
 
-export const schemaCreateSpace = z.object({
+export const schemaCreateSpaceFields = z.object({
   ...createSpaceWeb2Props,
   ...createSpaceWeb3Props,
 });
+
+export const schemaCreateSpace = schemaCreateSpaceFields.superRefine(
+  refineSpaceLocationCoords,
+);
