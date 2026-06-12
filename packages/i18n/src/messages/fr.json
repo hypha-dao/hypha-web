@@ -2843,6 +2843,67 @@
         "signInHint": "Connectez-vous pour gérer les comptes bancaires."
       }
     },
+    "payouts": {
+      "tabs": {
+        "deposits": "Dépôts",
+        "payouts": "Paiements"
+      },
+      "section": {
+        "title": "Comptes bancaires externes",
+        "description": "Enregistrez des comptes bancaires de destination pour les paiements du trésor. Chaque compte reçoit une adresse de liquidation pour les propositions Financement ou Dépenses."
+      },
+      "addCta": "Ajouter un compte externe",
+      "loading": "Chargement des comptes de paiement…",
+      "emptyTitle": "Aucun compte de paiement pour l'instant",
+      "emptyDescription": "Ajoutez un compte bancaire externe pour recevoir les paiements du trésor. Nous créerons une adresse de liquidation à utiliser dans les propositions Financement ou Dépenses.",
+      "cardTitle": "→ {destination}  {identifier}",
+      "cardSubtitle": "{source} via {rail}",
+      "liquidationAddressLabel": "Adresse de liquidation",
+      "status": {
+        "active": "Actif",
+        "inactive": "Inactif",
+        "pending": "En attente"
+      },
+      "addDialog": {
+        "title": "Ajouter un compte externe",
+        "step1Description": "Choisissez la devise de destination de ce compte de paiement.",
+        "step2Description": "Saisissez les coordonnées bancaires du compte de destination.",
+        "currencyLabel": "Devise de destination",
+        "currencyHint": "Devise que ce compte externe recevra.",
+        "continue": "Continuer",
+        "back": "Retour",
+        "cancel": "Annuler",
+        "sourceCurrencyLabel": "Jeton du trésor à envoyer",
+        "bankName": "Nom de la banque",
+        "accountName": "Surnom du compte",
+        "accountOwnerName": "Nom du titulaire",
+        "businessName": "Raison sociale",
+        "routingNumber": "Numéro de routing",
+        "accountNumber": "Numéro de compte",
+        "sortCode": "Sort code",
+        "iban": "IBAN",
+        "bic": "BIC / code SWIFT",
+        "street": "Adresse",
+        "city": "Ville",
+        "subdivision": "État / région",
+        "postalCode": "Code postal",
+        "country": "Code pays",
+        "swiftFeeCaveat": "Les virements SWIFT peuvent entraîner des frais plus élevés (~50 USD+) et la couverture varie selon les pays.",
+        "submit": "Ajouter un compte externe",
+        "submitting": "Création…",
+        "swift": {
+          "code": "SWIFT",
+          "hint": "Virement international via BIC/SWIFT"
+        },
+        "rails": {
+          "usd_ach": "USD — ACH",
+          "usd_wire": "USD — Wire",
+          "eur_sepa": "EUR — SEPA",
+          "gbp": "GBP — Faster Payments",
+          "swift": "SWIFT international"
+        }
+      }
+    },
     "openAccount": {
       "title": "Ouvrir un compte space",
       "titleAddCurrency": "Ajouter un compte bancaire",

@@ -1,20 +1,32 @@
 import {
+  bridgeCreateExternalAccount,
   bridgeCreateKycLink,
+  bridgeCreateLiquidationAddress,
   bridgeCreateTransfer,
   bridgeCreateVirtualAccount,
+  type BridgeCreateExternalAccountRequest,
   type BridgeCreateKycLinkRequest,
+  type BridgeCreateLiquidationAddressRequest,
   type BridgeCreateTransferRequest,
 } from '../../../../common/server/bridge-client';
+import {
+  BRIDGE_LIQUIDATION_SOURCE_CHAIN,
+  getPaymentRailForCurrency,
+  resolveBankPayoutRail,
+} from '../../../constants';
 import { BRIDGE_DEFAULT_DESTINATION_CURRENCY } from '../../../bridge-destination-currencies';
-import { getPaymentRailForCurrency } from '../../../constants';
 import type {
   BankKycProvider,
   CreateKycLinkInput,
   CreateKycLinkResult,
+  CreateLiquidationAddressInput,
+  CreateLiquidationAddressResult,
   CreateTransferInput,
   CreateTransferResult,
   ProvisionVirtualAccountInput,
   ProvisionVirtualAccountResult,
+  RegisterExternalAccountInput,
+  RegisterExternalAccountResult,
 } from '../types';
 import { resolveBridgeKycEndorsements } from './endorsements';
 import { mapBridgeKycLinkUrls } from './kyc-link-urls';
@@ -32,6 +44,68 @@ function toBridgeCreateKycLinkBody(
 
   if (input.redirectUri) {
     body.redirect_uri = input.redirectUri;
+  }
+
+  return body;
+}
+
+function readExternalAccountLast4(
+  response: Awaited<ReturnType<typeof bridgeCreateExternalAccount>>,
+): string | null {
+  if (typeof response.last_4 === 'string') {
+    return response.last_4;
+  }
+  const nested = response.account?.last_4;
+  return typeof nested === 'string' ? nested : null;
+}
+
+function toBridgeExternalAccountBody(
+  input: RegisterExternalAccountInput,
+): BridgeCreateExternalAccountRequest {
+  const rail = resolveBankPayoutRail(input.railKey);
+  if (!rail) {
+    throw new Error(`Unsupported payout rail: ${input.railKey}`);
+  }
+
+  const destinationCurrency =
+    input.destinationCurrency?.toLowerCase() ?? rail.destinationCurrency;
+
+  const body: BridgeCreateExternalAccountRequest = {
+    currency: destinationCurrency,
+    account_type: rail.externalAccountType,
+    bank_name: input.bankName,
+    account_name: input.accountName,
+    account_owner_name: input.accountOwnerName,
+    account_owner_type: input.accountOwnerType,
+    address: input.address,
+  };
+
+  if (input.accountOwnerType === 'business' && input.businessName) {
+    body.business_name = input.businessName;
+  }
+
+  if (rail.externalAccountType === 'us') {
+    body.account = {
+      routing_number: input.routingNumber,
+      account_number: input.accountNumber,
+      checking_or_savings: input.checkingOrSavings ?? 'checking',
+    };
+  } else if (rail.externalAccountType === 'iban') {
+    body.iban = input.iban;
+    if (input.bic) {
+      body.bic = input.bic;
+    }
+  } else if (rail.externalAccountType === 'gb') {
+    body.account = {
+      sort_code: input.sortCode,
+      account_number: input.accountNumber,
+    };
+  } else if (rail.externalAccountType === 'swift') {
+    body.iban = input.iban;
+    body.bic = input.bic;
+    if (input.accountNumber) {
+      body.account = { account_number: input.accountNumber };
+    }
   }
 
   return body;
@@ -195,6 +269,68 @@ export function createBridgeKycProvider(): BankKycProvider {
           paymentRail: response.destination?.payment_rail ?? 'base',
           address: destinationAddress,
         },
+      };
+    },
+    async registerExternalAccount(
+      input: RegisterExternalAccountInput,
+    ): Promise<RegisterExternalAccountResult> {
+      const rail = resolveBankPayoutRail(input.railKey);
+      if (!rail) {
+        throw new Error(`Unsupported payout rail: ${input.railKey}`);
+      }
+
+      const body = toBridgeExternalAccountBody(input);
+      const response = await bridgeCreateExternalAccount(
+        input.customerId,
+        body,
+        input.idempotencyKey,
+      );
+
+      const destinationCurrency =
+        input.destinationCurrency?.toLowerCase() ?? rail.destinationCurrency;
+
+      return {
+        providerExternalAccountId: response.id,
+        currency: response.currency?.toLowerCase() ?? destinationCurrency,
+        paymentRail: rail.destinationPaymentRail,
+        active: response.active ?? true,
+        accountLast4: readExternalAccountLast4(response),
+        bankName: response.bank_name ?? input.bankName,
+        accountOwnerName: response.account_owner_name ?? input.accountOwnerName,
+      };
+    },
+    async createLiquidationAddress(
+      input: CreateLiquidationAddressInput,
+    ): Promise<CreateLiquidationAddressResult> {
+      const body: BridgeCreateLiquidationAddressRequest = {
+        chain: BRIDGE_LIQUIDATION_SOURCE_CHAIN,
+        currency: input.sourceCurrency.toLowerCase(),
+        external_account_id: input.externalAccountId,
+        destination_payment_rail: input.destinationPaymentRail,
+        destination_currency: input.destinationCurrency.toLowerCase(),
+      };
+
+      if (input.wireMessage) {
+        body.destination_wire_message = input.wireMessage;
+      }
+
+      const response = await bridgeCreateLiquidationAddress(
+        input.customerId,
+        body,
+        input.idempotencyKey,
+      );
+
+      return {
+        providerLiquidationAddressId: response.id,
+        evmAddress: response.address,
+        sourceCurrency: response.currency.toLowerCase(),
+        sourceChain: response.chain,
+        destinationPaymentRail:
+          response.destination_payment_rail ?? input.destinationPaymentRail,
+        destinationCurrency:
+          response.destination_currency?.toLowerCase() ??
+          input.destinationCurrency.toLowerCase(),
+        state: response.state ?? 'active',
       };
     },
   };

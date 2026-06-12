@@ -11,6 +11,8 @@ export * from './get-space-bank-virtual-accounts';
 export * from './get-space-bank-transfers';
 export * from './create-space-bank-transfer';
 export * from './create-space-bank-virtual-account';
+export * from './get-space-bank-payout-accounts';
+export * from './create-space-bank-payout-account';
 export * from './get-add-account-rail-options';
 export * from './get-transfer-rail-options';
 export * from './get-banking-rails-config';
@@ -28,5 +30,9 @@ export type {
   CreateTransferResult,
   ProvisionVirtualAccountInput,
   ProvisionVirtualAccountResult,
+  RegisterExternalAccountInput,
+  RegisterExternalAccountResult,
+  CreateLiquidationAddressInput,
+  CreateLiquidationAddressResult,
 } from './providers/types';
 export { getBankKycProvider } from './providers';

@@ -2845,6 +2845,67 @@
         "signInHint": "Entre para gerenciar contas bancárias."
       }
     },
+    "payouts": {
+      "tabs": {
+        "deposits": "Depósitos",
+        "payouts": "Pagamentos"
+      },
+      "section": {
+        "title": "Contas bancárias externas",
+        "description": "Registre contas bancárias de destino para pagamentos do tesouro. Cada conta recebe um endereço de liquidação para propostas de Financiamento ou Despesas."
+      },
+      "addCta": "Adicionar conta externa",
+      "loading": "Carregando contas de pagamento…",
+      "emptyTitle": "Ainda não há contas de pagamento",
+      "emptyDescription": "Adicione uma conta bancária externa para receber pagamentos do tesouro. Criaremos um endereço de liquidação para usar em propostas de Financiamento ou Despesas.",
+      "cardTitle": "→ {destination}  {identifier}",
+      "cardSubtitle": "{source} via {rail}",
+      "liquidationAddressLabel": "Endereço de liquidação",
+      "status": {
+        "active": "Ativo",
+        "inactive": "Inativo",
+        "pending": "Pendente"
+      },
+      "addDialog": {
+        "title": "Adicionar conta externa",
+        "step1Description": "Escolha a moeda de destino desta conta de pagamento.",
+        "step2Description": "Informe os dados bancários da conta de destino.",
+        "currencyLabel": "Moeda de destino",
+        "currencyHint": "Moeda que esta conta externa receberá.",
+        "continue": "Continuar",
+        "back": "Voltar",
+        "cancel": "Cancelar",
+        "sourceCurrencyLabel": "Token do tesouro a enviar",
+        "bankName": "Nome do banco",
+        "accountName": "Apelido da conta",
+        "accountOwnerName": "Nome do titular",
+        "businessName": "Razão social",
+        "routingNumber": "Routing number",
+        "accountNumber": "Número da conta",
+        "sortCode": "Sort code",
+        "iban": "IBAN",
+        "bic": "BIC / código SWIFT",
+        "street": "Endereço",
+        "city": "Cidade",
+        "subdivision": "Estado / região",
+        "postalCode": "CEP",
+        "country": "Código do país",
+        "swiftFeeCaveat": "Transferências SWIFT podem ter taxas mais altas (~US$ 50+) e a cobertura varia por país.",
+        "submit": "Adicionar conta externa",
+        "submitting": "Criando…",
+        "swift": {
+          "code": "SWIFT",
+          "hint": "Transferência internacional via BIC/SWIFT"
+        },
+        "rails": {
+          "usd_ach": "USD — ACH",
+          "usd_wire": "USD — Wire",
+          "eur_sepa": "EUR — SEPA",
+          "gbp": "GBP — Faster Payments",
+          "swift": "SWIFT internacional"
+        }
+      }
+    },
     "openAccount": {
       "title": "Abrir uma conta do space",
       "titleAddCurrency": "Adicionar uma conta bancária",

@@ -3,6 +3,7 @@ import 'server-only';
 import {
   bridgeGetCustomer,
   bridgeGetKycLink,
+  bridgeListLiquidationAddresses,
   bridgeListVirtualAccounts,
   type BridgeCreateKycLinkResponse,
   type BridgeGetCustomerResponse,
@@ -12,6 +13,7 @@ import {
   BANK_CURRENCY_TO_ENDORSEMENT,
   BANK_TRANSFER_CORRIDORS,
   BANK_VIRTUAL_ACCOUNT_CURRENCIES,
+  BRIDGE_LIQUIDATION_SOURCE_CHAIN,
   getPaymentRailForCurrency,
   type BankTransferCorridorKey,
   type BankVirtualAccountCurrency,
@@ -48,6 +50,8 @@ export type BankingProviderState = {
   virtualAccountKeys: Set<string>;
   /** Provisioned `${currency}:${destinationCurrency}` pairs — dedup key for account creation. */
   virtualAccountPairs: Set<string>;
+  /** Provisioned `${chain}:${sourceCurrency}:${externalAccountId}` liquidation address pairs. */
+  liquidationAddressPairs: Set<string>;
 };
 
 function vaKey(currency: string, paymentRail: string): string {
@@ -59,6 +63,14 @@ export function vaPairKey(
   destinationCurrency: string,
 ): string {
   return `${currency.toLowerCase()}:${destinationCurrency.toLowerCase()}`;
+}
+
+export function laPairKey(
+  chain: string,
+  sourceCurrency: string,
+  externalAccountId: string,
+): string {
+  return `${chain.toLowerCase()}:${sourceCurrency.toLowerCase()}:${externalAccountId}`;
 }
 
 export async function loadBankingProviderState(
@@ -75,6 +87,7 @@ export async function loadBankingProviderState(
 
   const virtualAccountKeys = new Set<string>();
   const virtualAccountPairs = new Set<string>();
+  const liquidationAddressPairs = new Set<string>();
   if (customerId) {
     const listed = await bridgeListVirtualAccounts(customerId, { limit: 100 });
     for (const account of listed.data) {
@@ -98,6 +111,21 @@ export async function loadBankingProviderState(
         virtualAccountPairs.add(vaPairKey(currency, destinationCurrency));
       }
     }
+
+    const liquidationListed = await bridgeListLiquidationAddresses(customerId, {
+      limit: 100,
+    });
+    for (const liquidation of liquidationListed.data) {
+      if (liquidation.external_account_id) {
+        liquidationAddressPairs.add(
+          laPairKey(
+            liquidation.chain ?? BRIDGE_LIQUIDATION_SOURCE_CHAIN,
+            liquidation.currency,
+            liquidation.external_account_id,
+          ),
+        );
+      }
+    }
   }
 
   return {
@@ -105,6 +133,7 @@ export async function loadBankingProviderState(
     customer: bridgeCustomer,
     virtualAccountKeys,
     virtualAccountPairs,
+    liquidationAddressPairs,
   };
 }
 

@@ -657,6 +657,67 @@
         "signInHint": "Melden Sie sich an, um Bankkonten zu verwalten."
       }
     },
+    "payouts": {
+      "tabs": {
+        "deposits": "Einzahlungen",
+        "payouts": "Auszahlungen"
+      },
+      "section": {
+        "title": "Externe Bankkonten",
+        "description": "Registrieren Sie Ziel-Bankkonten für Auszahlungen aus der Treasury. Jedes Konto erhält eine Liquidationsadresse für Finanzierungs- oder Ausgabenvorschläge."
+      },
+      "addCta": "Externes Konto hinzufügen",
+      "loading": "Auszahlungskonten werden geladen…",
+      "emptyTitle": "Noch keine Auszahlungskonten",
+      "emptyDescription": "Fügen Sie ein externes Bankkonto hinzu, um Auszahlungen aus der Treasury zu empfangen. Wir erstellen eine Liquidationsadresse für Finanzierungs- oder Ausgabenvorschläge.",
+      "cardTitle": "→ {destination}  {identifier}",
+      "cardSubtitle": "{source} über {rail}",
+      "liquidationAddressLabel": "Liquidationsadresse",
+      "status": {
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "pending": "Ausstehend"
+      },
+      "addDialog": {
+        "title": "Externes Konto hinzufügen",
+        "step1Description": "Wählen Sie die Zielwährung für dieses Auszahlungskonto.",
+        "step2Description": "Geben Sie die Bankdaten des Zielkontos ein.",
+        "currencyLabel": "Zielwährung",
+        "currencyHint": "Währung, die dieses externe Konto erhält.",
+        "continue": "Weiter",
+        "back": "Zurück",
+        "cancel": "Abbrechen",
+        "sourceCurrencyLabel": "Zu sendender Treasury-Token",
+        "bankName": "Bankname",
+        "accountName": "Kontobezeichnung",
+        "accountOwnerName": "Kontoinhaber",
+        "businessName": "Rechtlicher Firmenname",
+        "routingNumber": "Routing-Nummer",
+        "accountNumber": "Kontonummer",
+        "sortCode": "Sort code",
+        "iban": "IBAN",
+        "bic": "BIC / SWIFT-Code",
+        "street": "Straße",
+        "city": "Stadt",
+        "subdivision": "Bundesland / Region",
+        "postalCode": "Postleitzahl",
+        "country": "Ländercode",
+        "swiftFeeCaveat": "SWIFT-Überweisungen können höhere Gebühren (~50 USD+) verursachen; die Abdeckung variiert je nach Land.",
+        "submit": "Externes Konto hinzufügen",
+        "submitting": "Wird erstellt…",
+        "swift": {
+          "code": "SWIFT",
+          "hint": "Internationale Überweisung via BIC/SWIFT"
+        },
+        "rails": {
+          "usd_ach": "USD — ACH",
+          "usd_wire": "USD — Wire",
+          "eur_sepa": "EUR — SEPA",
+          "gbp": "GBP — Faster Payments",
+          "swift": "SWIFT international"
+        }
+      }
+    },
     "openAccount": {
       "title": "Space-Konto eröffnen",
       "titleAddCurrency": "Bankkonto hinzufügen",

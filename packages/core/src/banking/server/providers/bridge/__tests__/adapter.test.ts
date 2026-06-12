@@ -5,12 +5,18 @@ import { createBridgeKycProvider } from '../adapter';
 const bridgeCreateKycLink = vi.fn();
 const bridgeCreateVirtualAccount = vi.fn();
 const bridgeCreateTransfer = vi.fn();
+const bridgeCreateExternalAccount = vi.fn();
+const bridgeCreateLiquidationAddress = vi.fn();
 
 vi.mock('../../../../../common/server/bridge-client', () => ({
   bridgeCreateKycLink: (...args: unknown[]) => bridgeCreateKycLink(...args),
   bridgeCreateVirtualAccount: (...args: unknown[]) =>
     bridgeCreateVirtualAccount(...args),
   bridgeCreateTransfer: (...args: unknown[]) => bridgeCreateTransfer(...args),
+  bridgeCreateExternalAccount: (...args: unknown[]) =>
+    bridgeCreateExternalAccount(...args),
+  bridgeCreateLiquidationAddress: (...args: unknown[]) =>
+    bridgeCreateLiquidationAddress(...args),
 }));
 
 describe('createBridgeKycProvider', () => {
@@ -482,6 +488,100 @@ describe('createBridgeKycProvider', () => {
         developerFeePercent: null,
         status: 'awaiting_funds',
       });
+    });
+  });
+
+  describe('registerExternalAccount', () => {
+    beforeEach(() => {
+      bridgeCreateExternalAccount.mockResolvedValue({
+        id: 'ext_1',
+        currency: 'usd',
+        active: true,
+        bank_name: 'Lead Bank',
+        account_owner_name: 'Acme DAO',
+        last_4: '9123',
+      });
+    });
+
+    it('maps USD ACH external account request', async () => {
+      const provider = createBridgeKycProvider();
+      const result = await provider.registerExternalAccount({
+        customerId: 'cust_1',
+        railKey: 'usd_ach',
+        bankName: 'Lead Bank',
+        accountName: 'Operating',
+        accountOwnerName: 'Acme DAO',
+        accountOwnerType: 'business',
+        businessName: 'Acme DAO',
+        routingNumber: '101019644',
+        accountNumber: '215268129123',
+        checkingOrSavings: 'checking',
+        address: {
+          street_line_1: '923 Folsom Street',
+          city: 'San Francisco',
+          subdivision: 'CA',
+          postal_code: '94107',
+          country: 'USA',
+        },
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440020',
+      });
+
+      expect(bridgeCreateExternalAccount).toHaveBeenCalledWith(
+        'cust_1',
+        expect.objectContaining({
+          currency: 'usd',
+          account_type: 'us',
+          account: {
+            routing_number: '101019644',
+            account_number: '215268129123',
+            checking_or_savings: 'checking',
+          },
+        }),
+        '550e8400-e29b-41d4-a716-446655440020',
+      );
+      expect(result.providerExternalAccountId).toBe('ext_1');
+      expect(result.accountLast4).toBe('9123');
+    });
+  });
+
+  describe('createLiquidationAddress', () => {
+    beforeEach(() => {
+      bridgeCreateLiquidationAddress.mockResolvedValue({
+        id: 'la_1',
+        chain: 'base',
+        currency: 'usdc',
+        address: '0xliquidation',
+        external_account_id: 'ext_1',
+        destination_payment_rail: 'ach',
+        destination_currency: 'usd',
+        state: 'active',
+      });
+    });
+
+    it('creates liquidation address linked to external account', async () => {
+      const provider = createBridgeKycProvider();
+      const result = await provider.createLiquidationAddress({
+        customerId: 'cust_1',
+        externalAccountId: 'ext_1',
+        sourceCurrency: 'usdc',
+        destinationPaymentRail: 'ach',
+        destinationCurrency: 'usd',
+        idempotencyKey: '550e8400-e29b-41d4-a716-446655440021',
+      });
+
+      expect(bridgeCreateLiquidationAddress).toHaveBeenCalledWith(
+        'cust_1',
+        {
+          chain: 'base',
+          currency: 'usdc',
+          external_account_id: 'ext_1',
+          destination_payment_rail: 'ach',
+          destination_currency: 'usd',
+        },
+        '550e8400-e29b-41d4-a716-446655440021',
+      );
+      expect(result.evmAddress).toBe('0xliquidation');
+      expect(result.state).toBe('active');
     });
   });
 });
