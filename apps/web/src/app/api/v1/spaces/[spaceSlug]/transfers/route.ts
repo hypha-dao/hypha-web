@@ -9,9 +9,9 @@ import {
   findSpaceBySlug,
   getTransfersByAddress,
   getMintTransfersByTokens,
-  findSpaceByAddress,
+  findSpaceByAddresses,
   getTokenMeta,
-  findPersonByWeb3Address,
+  findPeopleByWeb3Addresses,
   findAllTokens,
   findAllTransfers,
   web3Client,
@@ -34,8 +34,8 @@ import { checkSpaceAccess } from '@web/utils/check-space-access';
  * @param fromBlock The minimum block number from which to get transfers.
  *        Optional
  * @param toBlock The maximum block number from which to get transfers. Optional
- * @param limit The desired number of the result. Not greater than 50. Defaults
- *        to 10
+ * @param limit The desired number of the result. Not greater than 50. When
+ *        omitted, all available transfers are returned
  */
 export async function GET(
   request: NextRequest,
@@ -135,8 +135,8 @@ export async function GET(
     const fromTime = fromDate?.getTime();
     const toTime = toDate?.getTime();
 
-    // Enforce the requested limit on the merged set; otherwise the response
-    // could contain up to `limit` address-based transfers plus all mints.
+    // Enforce the limit on the merged set only when the caller requested one;
+    // `slice(0, undefined)` keeps the full history.
     const allTransfers = [...transfers, ...mintTransfers]
       .filter(
         (transfer) =>
@@ -161,57 +161,114 @@ export async function GET(
       address: token.address ?? undefined,
     }));
 
-    const transfersWithEntityInfo = await Promise.all(
-      allTransfers.map(async (transfer) => {
-        const isIncoming =
-          transfer.to.toUpperCase() === spaceAddress.toUpperCase();
-        const direction = isIncoming ? 'incoming' : 'outgoing';
-        const counterparty = isIncoming ? 'from' : 'to';
-
-        const meta = await getTokenMeta(
-          transfer.token as `0x${string}`,
-          dbTokens,
-        );
-        const name = meta.name || 'Unnamed';
-        const symbol = meta.symbol || 'UNKNOWN';
-        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
-          return null;
+    // Resolve token metadata once per unique token. Resolving it per transfer
+    // fires one on-chain multicall per transfer, which fails with rate-limit
+    // errors on spaces with long transfer histories. Tokens whose metadata
+    // can't be resolved (e.g. spam tokens without symbol/name) are skipped
+    // instead of failing the whole response.
+    const uniqueTokenAddresses = Array.from(
+      new Set(allTransfers.map((transfer) => transfer.token.toLowerCase())),
+    );
+    const tokenMetaByAddress = new Map<
+      string,
+      Awaited<ReturnType<typeof getTokenMeta>>
+    >();
+    await Promise.all(
+      uniqueTokenAddresses.map(async (tokenAddress) => {
+        try {
+          const meta = await getTokenMeta(
+            tokenAddress as `0x${string}`,
+            dbTokens,
+          );
+          tokenMetaByAddress.set(tokenAddress, meta);
+        } catch (error) {
+          console.warn(
+            `Skipping token with unresolvable metadata: ${tokenAddress}`,
+            error,
+          );
         }
-
-        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        const person =
-          (await findPersonByWeb3Address(
-            { address: counterpartyAddress },
-            { db },
-          )) || undefined;
-        const space = person
-          ? undefined
-          : (await findSpaceByAddress(
-              { address: counterpartyAddress },
-              { db },
-            )) || undefined;
-
-        const memo =
-          memoMap.get(transfer.transaction_hash.toLowerCase()) || null;
-
-        return {
-          ...transfer,
-          memo,
-          tokenIcon: meta.icon,
-          person: person && {
-            name: person.name,
-            surname: person.surname,
-            avatarUrl: person.avatarUrl,
-          },
-          space: space && {
-            title: space.title,
-            avatarUrl: space.logoUrl,
-          },
-          direction,
-          counterparty,
-        };
       }),
     );
+
+    // Batch-resolve counterparties: one DB query for people and one for
+    // spaces, instead of up to two queries per transfer.
+    const uniqueCounterparties = Array.from(
+      new Set(
+        allTransfers.map((transfer) => {
+          const isIncoming =
+            transfer.to.toUpperCase() === spaceAddress.toUpperCase();
+          return (isIncoming ? transfer.from : transfer.to).toUpperCase();
+        }),
+      ),
+    );
+    const counterpartyPeople = await findPeopleByWeb3Addresses(
+      { addresses: uniqueCounterparties },
+      { db },
+    );
+    const personByAddress = new Map(
+      counterpartyPeople
+        .filter((person) => person.address)
+        .map((person) => [(person.address as string).toUpperCase(), person]),
+    );
+    const unmatchedAddresses = uniqueCounterparties.filter(
+      (counterparty) => !personByAddress.has(counterparty),
+    );
+    const counterpartySpaces =
+      unmatchedAddresses.length > 0
+        ? (await findSpaceByAddresses(unmatchedAddresses, {}, { db })).data
+        : [];
+    const spaceByAddress = new Map(
+      counterpartySpaces
+        .filter((counterpartySpace) => counterpartySpace.address)
+        .map((counterpartySpace) => [
+          (counterpartySpace.address as string).toUpperCase(),
+          counterpartySpace,
+        ]),
+    );
+
+    const transfersWithEntityInfo = allTransfers.map((transfer) => {
+      const isIncoming =
+        transfer.to.toUpperCase() === spaceAddress.toUpperCase();
+      const direction = isIncoming ? 'incoming' : 'outgoing';
+      const counterparty = isIncoming ? 'from' : 'to';
+
+      const meta = tokenMetaByAddress.get(transfer.token.toLowerCase());
+      if (!meta) {
+        return null;
+      }
+      const name = meta.name || 'Unnamed';
+      const symbol = meta.symbol || 'UNKNOWN';
+      if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
+        return null;
+      }
+
+      const counterpartyAddress = (
+        isIncoming ? transfer.from : transfer.to
+      ).toUpperCase();
+      const person = personByAddress.get(counterpartyAddress);
+      const counterpartySpace = person
+        ? undefined
+        : spaceByAddress.get(counterpartyAddress);
+
+      const memo = memoMap.get(transfer.transaction_hash.toLowerCase()) || null;
+
+      return {
+        ...transfer,
+        memo,
+        tokenIcon: meta.icon,
+        person: person && {
+          name: person.name,
+          surname: person.surname,
+          avatarUrl: person.avatarUrl,
+        },
+        space: counterpartySpace && {
+          title: counterpartySpace.title,
+          avatarUrl: counterpartySpace.logoUrl,
+        },
+        direction,
+        counterparty,
+      };
+    });
 
     const validTransfers = transfersWithEntityInfo.filter((t) => t !== null);
 

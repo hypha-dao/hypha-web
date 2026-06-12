@@ -10,11 +10,10 @@ import {
   TokenType,
 } from '@hypha-platform/core/client';
 import {
-  findPersonByWeb3Address,
-  findSpaceByAddress,
+  findPeopleByWeb3Addresses,
+  findSpaceByAddresses,
 } from '@hypha-platform/core/server';
 import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
-import { zeroAddress } from 'viem';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { ProfileRouteParams } from '@hypha-platform/epics';
 import { findAllTransfers } from '@hypha-platform/core/server';
@@ -28,7 +27,7 @@ import { findAllTransfers } from '@hypha-platform/core/server';
  * - toDate: timestamp of the end date from which to get the transfers. Optional
  * - fromBlock: the minimum block number from which to get the transfers. Optional
  * - toBlock: the maximum block number from which to get the transfers. Optional
- * - limit: the desired number of the result. Not greater than 50. Defaults to 10
+ * - limit: the desired number of the result. Not greater than 50. When omitted, all available transfers are returned
  */
 
 export async function GET(
@@ -105,60 +104,118 @@ export async function GET(
       address: token.address ?? undefined,
     }));
 
-    const transfersWithEntityInfo = await Promise.all(
-      transfers.map(async (transfer) => {
-        const tokenMeta = await getTokenMeta(
-          transfer.token as `0x${string}`,
-          dbTokens,
-        );
-        const name = tokenMeta.name || 'Unnamed';
-        const symbol = tokenMeta.symbol || 'UNKNOWN';
-        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
-          return null;
-        }
-
-        const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
-        const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
-        let person = null;
-        let space = null;
-        const tokenIcon = tokenMeta.icon;
-
-        person = await findPersonByWeb3Address(
-          { address: counterpartyAddress },
-          { db: getDb({ authToken }) },
-        );
-        if (!person) {
-          space = await findSpaceByAddress(
-            { address: counterpartyAddress },
-            { db: getDb({ authToken }) },
+    // Resolve token metadata once per unique token. Resolving it per transfer
+    // fires one on-chain multicall per transfer, which fails with rate-limit
+    // errors on profiles with long transfer histories. Tokens whose metadata
+    // can't be resolved (e.g. spam tokens without symbol/name) are skipped
+    // instead of failing the whole response.
+    const uniqueTokenAddresses = Array.from(
+      new Set(transfers.map((transfer) => transfer.token.toLowerCase())),
+    );
+    const tokenMetaByAddress = new Map<
+      string,
+      Awaited<ReturnType<typeof getTokenMeta>>
+    >();
+    await Promise.all(
+      uniqueTokenAddresses.map(async (tokenAddress) => {
+        try {
+          const meta = await getTokenMeta(
+            tokenAddress as `0x${string}`,
+            dbTokens,
+          );
+          tokenMetaByAddress.set(tokenAddress, meta);
+        } catch (error) {
+          console.warn(
+            `Skipping token with unresolvable metadata: ${tokenAddress}`,
+            error,
           );
         }
-
-        const memo =
-          memoMap.get(transfer.transaction_hash.toLowerCase()) || null;
-
-        return {
-          ...transfer,
-          memo,
-          person: person
-            ? {
-                name: person.name,
-                surname: person.surname,
-                avatarUrl: person.avatarUrl,
-              }
-            : undefined,
-          space: space
-            ? {
-                title: space.title,
-                avatarUrl: space.logoUrl,
-              }
-            : undefined,
-          tokenIcon,
-          direction: isIncoming ? 'incoming' : 'outgoing',
-          counterparty: isIncoming ? 'from' : 'to',
-        };
       }),
     );
+
+    // Batch-resolve counterparties: one DB query for people and one for
+    // spaces, instead of up to two queries per transfer.
+    const uniqueCounterparties = Array.from(
+      new Set(
+        transfers.map((transfer) => {
+          const isIncoming =
+            transfer.to.toUpperCase() === address.toUpperCase();
+          return (isIncoming ? transfer.from : transfer.to).toUpperCase();
+        }),
+      ),
+    );
+    const counterpartyPeople = await findPeopleByWeb3Addresses(
+      { addresses: uniqueCounterparties },
+      { db: getDb({ authToken }) },
+    );
+    const personByAddress = new Map(
+      counterpartyPeople
+        .filter((person) => person.address)
+        .map((person) => [(person.address as string).toUpperCase(), person]),
+    );
+    const unmatchedAddresses = uniqueCounterparties.filter(
+      (counterparty) => !personByAddress.has(counterparty),
+    );
+    const counterpartySpaces =
+      unmatchedAddresses.length > 0
+        ? (
+            await findSpaceByAddresses(
+              unmatchedAddresses,
+              {},
+              { db: getDb({ authToken }) },
+            )
+          ).data
+        : [];
+    const spaceByAddress = new Map(
+      counterpartySpaces
+        .filter((space) => space.address)
+        .map((space) => [(space.address as string).toUpperCase(), space]),
+    );
+
+    const transfersWithEntityInfo = transfers.map((transfer) => {
+      const tokenMeta = tokenMetaByAddress.get(transfer.token.toLowerCase());
+      if (!tokenMeta) {
+        return null;
+      }
+      const name = tokenMeta.name || 'Unnamed';
+      const symbol = tokenMeta.symbol || 'UNKNOWN';
+      if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
+        return null;
+      }
+
+      const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
+      const counterpartyAddress = (
+        isIncoming ? transfer.from : transfer.to
+      ).toUpperCase();
+      const person = personByAddress.get(counterpartyAddress) ?? null;
+      const space = person
+        ? null
+        : spaceByAddress.get(counterpartyAddress) ?? null;
+      const tokenIcon = tokenMeta.icon;
+
+      const memo = memoMap.get(transfer.transaction_hash.toLowerCase()) || null;
+
+      return {
+        ...transfer,
+        memo,
+        person: person
+          ? {
+              name: person.name,
+              surname: person.surname,
+              avatarUrl: person.avatarUrl,
+            }
+          : undefined,
+        space: space
+          ? {
+              title: space.title,
+              avatarUrl: space.logoUrl,
+            }
+          : undefined,
+        tokenIcon,
+        direction: isIncoming ? 'incoming' : 'outgoing',
+        counterparty: isIncoming ? 'from' : 'to',
+      };
+    });
 
     const validTransfers = transfersWithEntityInfo.filter((t) => t !== null);
 

@@ -171,7 +171,6 @@ export const findPeopleByWeb3Addresses = async (
   if (addresses.length === 0) return [];
 
   const upperAddresses = addresses.map((addr) => addr.toUpperCase());
-  console.debug('upperAddresses', upperAddresses);
   const dbPeople = await db
     .select()
     .from(people)
