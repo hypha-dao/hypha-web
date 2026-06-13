@@ -46,13 +46,8 @@ export function TreasuryTabs({
   const walletCount = assets.filter((asset) => asset.value > 0).length;
   const transactionCount = transfers.length;
   const vaultCount = vaults.length;
-  // Count currencies usable for banking (approved/active) — derived from the
-  // already-loaded status; counting actual virtual accounts would need an
-  // extra Bridge list call just to render this badge.
-  const supportedCurrencyCount =
-    bankCustomerStatus?.currencyStatuses?.filter(
-      (currency) => currency.isApproved,
-    ).length ?? 0;
+  // Count bank customers (0 or 1 today; one row per space per provider).
+  const bankCustomerCount = bankCustomerStatus != null ? 1 : 0;
 
   return (
     <div className="flex w-full flex-col gap-4 py-4">
@@ -92,7 +87,7 @@ export function TreasuryTabs({
               <span className="inline-flex items-center gap-1">
                 <span>{tTreasury('bankAccounts')}</span>
                 <span className="text-xs text-muted-foreground">
-                  ({format.number(supportedCurrencyCount)})
+                  ({format.number(bankCustomerCount)})
                 </span>
               </span>
             </TabsTrigger>

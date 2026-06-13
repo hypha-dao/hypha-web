@@ -62,7 +62,10 @@ export const BANKING_READONLY_INPUT_CLASS =
 export function isBankVerificationInProgress(
   status: BankCustomerPublicStatus | null | undefined,
 ): boolean {
-  if (!status || status.isApproved || status.approvalRegistered) {
+  if (!status || status.pendingEmailConfirmation) {
+    return false;
+  }
+  if (status.isApproved || status.approvalRegistered) {
     return false;
   }
   const { procedures } = status;

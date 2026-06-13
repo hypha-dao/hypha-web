@@ -194,13 +194,28 @@ export const BankingSection: FC<BankingSectionProps> = ({
       currencies: BankCurrencyCode[];
     }) => {
       clearOnboardingError();
-      await requestOnboarding({
+      const result = await requestOnboarding({
         legalName: input.legalName,
         contactEmail: input.contactEmail,
         requestedRails: input.currencies,
       });
       const updated = await refresh();
-      openBankVerificationFlowLink(updated ?? undefined);
+      if (!result.pendingEmailConfirmation) {
+        openBankVerificationFlowLink(updated ?? undefined);
+      }
+    },
+    [clearOnboardingError, refresh, requestOnboarding],
+  );
+
+  const handlePendingResendSubmit = useCallback(
+    async (input: {
+      legalName: string;
+      contactEmail: string;
+      requestedRails: BankCurrencyCode[];
+    }) => {
+      clearOnboardingError();
+      await requestOnboarding(input);
+      await refresh();
     },
     [clearOnboardingError, refresh, requestOnboarding],
   );
@@ -248,6 +263,17 @@ export const BankingSection: FC<BankingSectionProps> = ({
         blockerMessage={blockerMessage}
         onRefreshStatus={refreshBankingState}
         showPageHeader
+        emailConfirmation={
+          status?.pendingEmailConfirmation && canManage
+            ? {
+                pending: status.pendingEmailConfirmation,
+                initialLegalName: fallbackLegalName,
+                isSubmitting: isOnboarding,
+                error: onboardingError,
+                onSubmit: handlePendingResendSubmit,
+              }
+            : undefined
+        }
       />
     );
   }

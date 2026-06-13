@@ -99,6 +99,11 @@ export type BridgeGetCustomerResponse = {
   associated_persons?: BridgeAssociatedPerson[];
 };
 
+export type BridgeCustomersByEmailResponse = {
+  count: number;
+  data: BridgeGetCustomerResponse[];
+};
+
 export type BridgeUpdateCustomerRequest = {
   type: 'individual' | 'business';
   residential_address?: BridgeCustomerAddress;
@@ -253,25 +258,6 @@ export function normalizeBridgeCustomerKycLinkResponse(
   throw new Error(
     'Bridge API returned an unexpected customer KYC link response shape',
   );
-}
-
-/**
- * Bridge returns 400 with `existing_kyc_link` when the email already has an active KYC link.
- * Treat it as success — same shape as a normal 200 response.
- */
-function extractExistingKycLinkFromErrorBody(
-  parsed: unknown,
-): BridgeCreateKycLinkResponse | null {
-  if (typeof parsed !== 'object' || parsed === null) {
-    return null;
-  }
-
-  const existing = (parsed as Record<string, unknown>).existing_kyc_link;
-  if (!isBridgeKycLinkRecord(existing)) {
-    return null;
-  }
-
-  return existing;
 }
 
 function getBridgeConfig() {
@@ -451,13 +437,6 @@ export async function bridgeCreateKycLink(
   }
 
   if (!response.ok) {
-    if (response.status === 400) {
-      const existing = extractExistingKycLinkFromErrorBody(parsed);
-      if (existing) {
-        return existing;
-      }
-    }
-
     const detail =
       typeof parsed === 'object' && parsed !== null
         ? JSON.stringify(parsed)
@@ -509,6 +488,34 @@ export async function bridgeGetCustomer(
   }
 
   return parsed;
+}
+
+function parseBridgeCustomersByEmailResponse(
+  parsed: unknown,
+): BridgeCustomersByEmailResponse {
+  if (typeof parsed !== 'object' || parsed === null) {
+    return { count: 0, data: [] };
+  }
+
+  const record = parsed as Record<string, unknown>;
+  const rawData = record.data;
+  const data = Array.isArray(rawData)
+    ? rawData.filter(isBridgeCustomerRecord)
+    : [];
+  const count = typeof record.count === 'number' ? record.count : data.length;
+
+  return { count, data };
+}
+
+export async function bridgeGetCustomersByEmail(
+  email: string,
+): Promise<BridgeCustomersByEmailResponse> {
+  const parsed = await bridgeRequest(
+    `/v0/customers?email=${encodeURIComponent(email)}`,
+    { method: 'GET' },
+  );
+
+  return parseBridgeCustomersByEmailResponse(parsed);
 }
 
 export async function bridgeUpdateCustomer(

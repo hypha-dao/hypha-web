@@ -588,7 +588,9 @@
       "endorsementsLabel": "Zahlungskorridore",
       "endorsementsHint": "Dies sind Bridge-KYB-Endorsements (z. B. base für USD, sepa für EUR). Jeder ausgewählte Korridor ist im Verifizierungslink enthalten.",
       "submit": "Verifizierung starten",
-      "submitting": "Wird gestartet…"
+      "submitting": "Wird gestartet…",
+      "contactEmailHelper": "Diese E-Mail-Adresse wird bei unserem Anbieter (Bridge) registriert.",
+      "authorizeOwnEmail": "Ich bestätige, dass ich berechtigt bin, diese E-Mail-Adresse im Namen dieses Bereichs für die Bridge-Bankintegration zu registrieren."
     },
     "status": {
       "not_started": {
@@ -946,6 +948,26 @@
       "cta": "KYB-Freigabe simulieren",
       "simulating": "Wird simuliert…",
       "refreshing": "Status wird aktualisiert…"
+    },
+    "pendingEmailConfirmation": {
+      "title": "Kontakt-E-Mail bestätigen",
+      "statusPending": "Bestätigung ausstehend",
+      "contactEmailLabel": "E-Mail-Adresse des Bereichs oder Administrators",
+      "railsLabel": "Zahlungsschienen",
+      "resendCheckbox": "Neue Bestätigungs-E-Mail senden",
+      "resendHelper": "Das Senden einer neuen E-Mail macht den vorherigen Bestätigungslink ungültig.",
+      "submit": "Senden",
+      "submitting": "Wird gesendet…"
+    },
+    "emailConfirmation": {
+      "verifyPage": {
+        "loading": "E-Mail wird bestätigt…",
+        "missingToken": "Dieser Bestätigungslink ist ungültig.",
+        "successTitle": "E-Mail bestätigt",
+        "successBody": "Danke. Die Bankverifizierung kann für den Bereich fortgesetzt werden.",
+        "failureTitle": "Bestätigung fehlgeschlagen",
+        "failureBody": "Dieser Link ist ungültig oder abgelaufen. Bitten Sie den Bereichsadministrator, eine neue Bestätigungs-E-Mail zu senden."
+      }
     }
   },
   "TreasuryTab": {

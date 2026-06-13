@@ -87,6 +87,9 @@ export type BankCustomerPublicStatus = {
   endorsementStatuses: BankEndorsementPublicStatus[];
   railStatuses: BankRailPublicStatus[];
   requestedRails: string[];
+  pendingEmailConfirmation?: {
+    requestedRails: string[];
+  };
   pendingRequirements?: BankPendingRequirements;
 };
 
@@ -101,8 +104,9 @@ export type BankOnboardingRequestInput = ProviderFormData;
 export type BankOnboardingRequestResult = {
   kycLink: string | null;
   tosLink: string | null;
-  created: boolean;
-  procedures: BankCustomerPublicStatus['procedures'];
+  created?: boolean;
+  pendingEmailConfirmation?: boolean;
+  procedures?: BankCustomerPublicStatus['procedures'];
 };
 
 export const BANK_VIRTUAL_ACCOUNT_CORRIDORS = [

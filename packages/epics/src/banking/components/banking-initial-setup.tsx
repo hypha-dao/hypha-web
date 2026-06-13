@@ -34,13 +34,13 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
 }) => {
   const t = useTranslations('BankingTab.initialSetup');
   const tOpen = useTranslations('BankingTab.openAccount');
+  const tDialog = useTranslations('BankingTab.onboardingDialog');
 
   const [legalName, setLegalName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [selected, setSelected] = useState<BankCurrencyCode[]>(() => [
     ...getDefaultBankCurrencyCodes(),
   ]);
-
   useEffect(() => {
     setLegalName(initialLegalName.trim());
     setContactEmail(initialContactEmail.trim());
@@ -53,9 +53,19 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
     );
   };
 
+  const canSubmit =
+    selected.length > 0 &&
+    Boolean(legalName.trim()) &&
+    Boolean(contactEmail.trim());
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (selected.length === 0 || !legalName.trim() || !contactEmail.trim()) {
+    if (
+      selected.length === 0 ||
+      !legalName.trim() ||
+      !contactEmail.trim() ||
+      !canSubmit
+    ) {
       return;
     }
 
@@ -65,11 +75,6 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
       currencies: selected,
     });
   };
-
-  const canSubmit =
-    selected.length > 0 &&
-    Boolean(legalName.trim()) &&
-    Boolean(contactEmail.trim());
 
   return (
     <form
@@ -114,7 +119,7 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="banking-setup-email" className="text-foreground">
-              {tOpen('contactEmail')}
+              {tDialog('contactEmail')}
             </Label>
             <Input
               id="banking-setup-email"
@@ -125,6 +130,9 @@ export const BankingInitialSetup: FC<BankingInitialSetupProps> = ({
               required
               disabled={isSubmitting}
             />
+            <p className="text-1 text-muted-foreground">
+              {tDialog('contactEmailHelper')}
+            </p>
           </div>
         </div>
       </section>

@@ -12,6 +12,7 @@ export * from './bridge-client';
 export * from './bridge-sandbox';
 export * from './get-app-url';
 export * from './verify-privy-auth-token';
+export * from './sign-bank-confirmation-jwt';
 export * from './web3-rpc';
 
 export * from './webhooks';

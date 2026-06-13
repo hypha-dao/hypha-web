@@ -3164,7 +3164,9 @@
       "endorsementsLabel": "Corridors de paiement",
       "endorsementsHint": "Il s'agit d'approbations KYB Bridge (p. ex. base pour USD, sepa pour EUR). Chaque corridor sélectionné est inclus dans le lien de vérification.",
       "submit": "Démarrer la vérification",
-      "submitting": "Démarrage…"
+      "submitting": "Démarrage…",
+      "contactEmailHelper": "Cet e-mail sera enregistré auprès de notre prestataire (Bridge).",
+      "authorizeOwnEmail": "Je confirme être autorisé à enregistrer cet e-mail pour l'intégration bancaire Bridge au nom de cet espace."
     },
     "status": {
       "not_started": {
@@ -3206,6 +3208,26 @@
       "unknown": {
         "title": "Statut indisponible",
         "description": "Impossible de déterminer le statut de vérification actuel. Essayez d'actualiser."
+      }
+    },
+    "pendingEmailConfirmation": {
+      "title": "Confirmer l'e-mail de contact",
+      "statusPending": "Confirmation en attente",
+      "contactEmailLabel": "E-mail de contact de l'espace ou de l'administrateur",
+      "railsLabel": "Rails de paiement",
+      "resendCheckbox": "Envoyer un nouvel e-mail de confirmation",
+      "resendHelper": "L'envoi d'un nouvel e-mail invalidera le lien de confirmation précédent.",
+      "submit": "Envoyer",
+      "submitting": "Envoi en cours…"
+    },
+    "emailConfirmation": {
+      "verifyPage": {
+        "loading": "Confirmation de votre e-mail…",
+        "missingToken": "Ce lien de confirmation n'est pas valide.",
+        "successTitle": "E-mail confirmé",
+        "successBody": "Merci. La vérification bancaire peut continuer pour l'espace.",
+        "failureTitle": "Échec de la confirmation",
+        "failureBody": "Ce lien n'est pas valide ou a expiré. Demandez à l'administrateur de l'espace d'envoyer un nouvel e-mail de confirmation."
       }
     }
   }

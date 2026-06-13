@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useEffect, useMemo } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -44,6 +44,7 @@ export const BankOnboardingDialog: FC<BankOnboardingDialogProps> = ({
   const { person } = useMe();
   const { requestOnboarding, isSubmitting, error, clearError } =
     useRequestBankOnboarding({ spaceSlug });
+  const [submitDisabled, setSubmitDisabled] = useState(true);
 
   const ProviderForm = providerFormRegistry[DEFAULT_BANK_PROVIDER];
 
@@ -70,10 +71,12 @@ export const BankOnboardingDialog: FC<BankOnboardingDialogProps> = ({
     try {
       const result = await requestOnboarding(data);
       onOpenChange(false);
-      onSuccess?.({
-        kycLink: result.kycLink,
-        tosLink: result.tosLink,
-      });
+      if (!result.pendingEmailConfirmation) {
+        onSuccess?.({
+          kycLink: result.kycLink,
+          tosLink: result.tosLink,
+        });
+      }
     } catch {
       // Error surfaced via hook state
     }
@@ -94,6 +97,8 @@ export const BankOnboardingDialog: FC<BankOnboardingDialogProps> = ({
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
             initialValues={initialValues}
+            submitterEmail={person?.email}
+            onSubmitDisabledChange={setSubmitDisabled}
           />
         ) : null}
 
@@ -116,7 +121,7 @@ export const BankOnboardingDialog: FC<BankOnboardingDialogProps> = ({
             type="submit"
             form={formId}
             colorVariant="accent"
-            disabled={isSubmitting}
+            disabled={isSubmitting || submitDisabled}
           >
             {isSubmitting ? (
               <>

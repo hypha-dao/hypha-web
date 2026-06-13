@@ -3166,7 +3166,9 @@
       "endorsementsLabel": "Corredores de pagamento",
       "endorsementsHint": "Estes são endossos KYB do Bridge (ex.: base para USD, sepa para EUR). Cada corredor selecionado é incluído no link de verificação.",
       "submit": "Iniciar verificação",
-      "submitting": "Iniciando…"
+      "submitting": "Iniciando…",
+      "contactEmailHelper": "Este e-mail será registrado em nosso provedor (Bridge).",
+      "authorizeOwnEmail": "Confirmo que estou autorizado a registrar este e-mail para a integração bancária da Bridge em nome deste espaço."
     },
     "status": {
       "not_started": {
@@ -3208,6 +3210,26 @@
       "unknown": {
         "title": "Status indisponível",
         "description": "Não foi possível determinar o status de verificação atual. Tente atualizar."
+      }
+    },
+    "pendingEmailConfirmation": {
+      "title": "Confirmar e-mail de contato",
+      "statusPending": "Confirmação pendente",
+      "contactEmailLabel": "E-mail de contato do espaço ou administrador",
+      "railsLabel": "Trilhos de pagamento",
+      "resendCheckbox": "Enviar um novo e-mail de confirmação",
+      "resendHelper": "Enviar um novo e-mail invalidará o link de confirmação anterior.",
+      "submit": "Enviar",
+      "submitting": "Enviando…"
+    },
+    "emailConfirmation": {
+      "verifyPage": {
+        "loading": "Confirmando seu e-mail…",
+        "missingToken": "Este link de confirmação é inválido.",
+        "successTitle": "E-mail confirmado",
+        "successBody": "Obrigado. A verificação bancária pode continuar para o espaço.",
+        "failureTitle": "Confirmação falhou",
+        "failureBody": "Este link é inválido ou expirou. Peça ao administrador do espaço para enviar um novo e-mail de confirmação."
       }
     }
   }

@@ -20,8 +20,25 @@ import {
   type BankPendingUbo,
   type BankVerificationProcedurePublic,
 } from '../hooks/types';
+import {
+  BANK_CURRENCY_METAS,
+  type BankCurrencyCode,
+} from '../bank-currency-display';
 import { openBankVerificationFlowLink } from '../open-bank-verification-tos';
 import { BankingSandboxDemoBar } from './banking-sandbox-demo-bar';
+import { PendingEmailConfirmationCard } from './pending-email-confirmation-card';
+
+type EmailConfirmationPanelProps = {
+  pending: NonNullable<BankCustomerPublicStatus['pendingEmailConfirmation']>;
+  initialLegalName: string;
+  isSubmitting: boolean;
+  error: string | null;
+  onSubmit: (input: {
+    legalName: string;
+    contactEmail: string;
+    requestedRails: BankCurrencyCode[];
+  }) => Promise<void>;
+};
 
 export type BankingProviderStatusPanelProps = {
   spaceSlug: string;
@@ -34,6 +51,7 @@ export type BankingProviderStatusPanelProps = {
   /** Full-page verification view (banking tab before any rail is approved). */
   showPageHeader?: boolean;
   onOpenGear?: () => void;
+  emailConfirmation?: EmailConfirmationPanelProps;
 };
 
 function getInProgressStatusLabel(
@@ -365,6 +383,7 @@ function ProviderValidationsSection({
   showProcedures,
   onOpenGear,
   onRefreshStatus,
+  emailConfirmation,
 }: {
   spaceSlug: string;
   status: NonNullable<BankCustomerPublicStatus>;
@@ -376,6 +395,7 @@ function ProviderValidationsSection({
   showProcedures: boolean;
   onOpenGear?: () => void;
   onRefreshStatus: () => Promise<BankCustomerPublicStatus | null | undefined>;
+  emailConfirmation?: EmailConfirmationPanelProps;
 }) {
   const sofQuestionnaire = showProcedures
     ? status.pendingRequirements?.sofQuestionnaire
@@ -406,6 +426,16 @@ function ProviderValidationsSection({
       </p>
 
       <div className="mt-3 flex flex-col gap-3">
+        {emailConfirmation ? (
+          <PendingEmailConfirmationCard
+            pending={emailConfirmation.pending}
+            initialLegalName={emailConfirmation.initialLegalName}
+            isSubmitting={emailConfirmation.isSubmitting}
+            error={emailConfirmation.error}
+            onSubmit={emailConfirmation.onSubmit}
+          />
+        ) : null}
+
         {showProcedures && status.procedures ? (
           <>
             <ProcedureRow
@@ -442,14 +472,38 @@ function ProviderValidationsSection({
 
         <EndorsementValidationsList
           spaceSlug={spaceSlug}
-          endorsements={getBankEndorsementStatusesForPanel(status)}
+          endorsements={
+            emailConfirmation
+              ? BANK_CURRENCY_METAS.map((meta) => {
+                  const isRequested = (
+                    (emailConfirmation.pending.requestedRails ??
+                      []) as BankCurrencyCode[]
+                  ).includes(meta.currency);
+                  return {
+                    endorsement: meta.endorsement,
+                    endorsementStatus: isRequested ? 'pending' : null,
+                    operationalStatus: (isRequested
+                      ? 'pending'
+                      : 'not_requested') as BankEndorsementPublicStatus['operationalStatus'],
+                    validation: {
+                      key: meta.endorsement,
+                      status: isRequested ? 'pending' : null,
+                      isComplete: false,
+                      linkDisabled: true,
+                    },
+                  };
+                })
+              : getBankEndorsementStatusesForPanel(status)
+          }
           t={t}
           tAdvanced={tAdvanced}
           tOpenAccount={tOpenAccount}
           tEndorsements={tEndorsements}
           onOpenGear={onOpenGear}
           onRefreshStatus={onRefreshStatus}
-          disableNewEndorsementRequests={showProcedures}
+          disableNewEndorsementRequests={
+            showProcedures || Boolean(emailConfirmation)
+          }
         />
 
         {pendingUbos ? (
@@ -472,6 +526,7 @@ export const BankingProviderStatusPanel: FC<
   onRefreshStatus,
   showPageHeader = false,
   onOpenGear,
+  emailConfirmation,
 }) => {
   const t = useTranslations('BankingTab');
   const tTos = useTranslations('BankingTab.tosStatus');
@@ -512,9 +567,10 @@ export const BankingProviderStatusPanel: FC<
           tAdvanced={tAdvanced}
           tOpenAccount={tOpenAccount}
           tEndorsements={tEndorsements}
-          showProcedures={!status.approvalRegistered}
+          showProcedures={!status.approvalRegistered && !emailConfirmation}
           onOpenGear={onOpenGear}
           onRefreshStatus={onRefreshStatus}
+          emailConfirmation={emailConfirmation}
         />
       </div>
     );
@@ -547,7 +603,8 @@ export const BankingProviderStatusPanel: FC<
       {!isLoading &&
       status != null &&
       !status.approvalRegistered &&
-      !status.isApproved ? (
+      !status.isApproved &&
+      !emailConfirmation ? (
         <BankingSandboxDemoBar
           spaceSlug={spaceSlug}
           canManage={canManage}

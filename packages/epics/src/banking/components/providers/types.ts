@@ -8,6 +8,8 @@ export type ProviderOnboardingFormProps = {
   onSubmit: (data: ProviderFormData) => Promise<void>;
   isSubmitting: boolean;
   initialValues?: Partial<ProviderFormData>;
+  submitterEmail?: string | null;
+  onSubmitDisabledChange?: (disabled: boolean) => void;
 };
 
 export type ProviderOnboardingFormComponent = FC<ProviderOnboardingFormProps>;

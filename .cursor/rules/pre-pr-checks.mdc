@@ -1,0 +1,25 @@
+---
+description: Mandatory CI checks to run locally before opening or updating a PR
+alwaysApply: false
+---
+
+## Before opening or updating a pull request
+
+Run all four commands from the `hypha-web` root. All must pass. Fix any failures before pushing.
+
+```bash
+pnpm turbo run check-types --filter=web
+pnpm run format:check
+pnpm run verify:messages
+pnpm run check:matrix-sdk
+```
+
+If `format:check` fails, run `pnpm run format` to auto-fix, then re-run `format:check` to confirm.
+
+If the branch includes new or changed migration files under `packages/storage-postgres/migrations/`, also run:
+
+```bash
+pnpm run migrate
+```
+
+Do not open the PR until all commands exit with code 0.
