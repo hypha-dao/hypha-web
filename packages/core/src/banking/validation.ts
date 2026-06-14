@@ -1,5 +1,19 @@
 import { z } from 'zod';
 
+function isValidIban(raw: string): boolean {
+  const iban = raw.replace(/\s/g, '').toUpperCase();
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/.test(iban)) return false;
+  const rearranged = iban.slice(4) + iban.slice(0, 4);
+  const numeric = rearranged.replace(/[A-Z]/g, (c) =>
+    String(c.charCodeAt(0) - 55),
+  );
+  let remainder = 0;
+  for (const ch of numeric) {
+    remainder = (remainder * 10 + parseInt(ch, 10)) % 97;
+  }
+  return remainder === 1;
+}
+
 import {
   BRIDGE_DESTINATION_CURRENCIES,
   isAllowedBridgeDestinationCurrency,
@@ -151,7 +165,13 @@ export const schemaCreatePayoutAccount = z
     routingNumber: z.string().trim().optional(),
     accountNumber: z.string().trim().optional(),
     checkingOrSavings: z.enum(['checking', 'savings']).optional(),
-    iban: z.string().trim().optional(),
+    iban: z
+      .string()
+      .trim()
+      .optional()
+      .refine((v) => !v || isValidIban(v), {
+        message: 'Invalid IBAN — check the number and try again',
+      }),
     bic: z.string().trim().optional(),
     sortCode: z.string().trim().optional(),
     destinationCurrency: z.string().trim().optional(),

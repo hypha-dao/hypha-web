@@ -404,13 +404,9 @@ export const BankingSection: FC<BankingSectionProps> = ({
         defaultBusinessName={fallbackLegalName}
         onSubmit={async (input) => {
           clearCreatePayoutAccountError();
-          try {
-            await createPayoutAccount(input);
-            setAddPayoutDialogOpen(false);
-            void refreshPayoutAccounts();
-          } catch {
-            // hook sets error
-          }
+          const result = await createPayoutAccount(input);
+          void refreshPayoutAccounts();
+          return { evmAddress: result.account.evmAddress };
         }}
       />
     </div>

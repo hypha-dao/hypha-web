@@ -748,7 +748,14 @@ export function assertTransferOwnedByCustomer(
   }
 }
 
-export type BridgeExternalAccountAddress = BridgeCustomerAddress;
+export type BridgeExternalAccountAddress = {
+  street_line_1: string;
+  street_line_2?: string;
+  city: string;
+  state?: string;
+  postal_code?: string;
+  country: string;
+};
 
 export type BridgeCreateExternalAccountRequest = {
   currency: string;
@@ -760,7 +767,7 @@ export type BridgeCreateExternalAccountRequest = {
   business_name?: string;
   first_name?: string;
   last_name?: string;
-  iban?: string;
+  iban?: { account_number: string; bic?: string; country: string };
   bic?: string;
   account?: {
     routing_number?: string;

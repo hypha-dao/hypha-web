@@ -1,3 +1,13 @@
+const IBAN_ALPHA2_TO_ALPHA3: Record<string, string> = {
+  AD: 'AND', AT: 'AUT', BE: 'BEL', BG: 'BGR', CH: 'CHE', CY: 'CYP',
+  CZ: 'CZE', DE: 'DEU', DK: 'DNK', EE: 'EST', ES: 'ESP', FI: 'FIN',
+  FR: 'FRA', GB: 'GBR', GI: 'GIB', GR: 'GRC', HR: 'HRV', HU: 'HUN',
+  IE: 'IRL', IS: 'ISL', IT: 'ITA', LI: 'LIE', LT: 'LTU', LU: 'LUX',
+  LV: 'LVA', MC: 'MCO', MT: 'MLT', NL: 'NLD', NO: 'NOR', PL: 'POL',
+  PT: 'PRT', RO: 'ROU', SE: 'SWE', SI: 'SVN', SK: 'SVK', SM: 'SMR',
+  VA: 'VAT',
+};
+
 import {
   bridgeCreateExternalAccount,
   bridgeCreateKycLink,
@@ -70,6 +80,7 @@ function toBridgeExternalAccountBody(
   const destinationCurrency =
     input.destinationCurrency?.toLowerCase() ?? rail.destinationCurrency;
 
+  const { subdivision, ...restAddress } = input.address;
   const body: BridgeCreateExternalAccountRequest = {
     currency: destinationCurrency,
     account_type: rail.externalAccountType,
@@ -77,7 +88,10 @@ function toBridgeExternalAccountBody(
     account_name: input.accountName,
     account_owner_name: input.accountOwnerName,
     account_owner_type: input.accountOwnerType,
-    address: input.address,
+    address: {
+      ...restAddress,
+      ...(subdivision ? { state: subdivision } : {}),
+    },
   };
 
   if (input.accountOwnerType === 'business' && input.businessName) {
@@ -91,17 +105,24 @@ function toBridgeExternalAccountBody(
       checking_or_savings: input.checkingOrSavings ?? 'checking',
     };
   } else if (rail.externalAccountType === 'iban') {
-    body.iban = input.iban;
-    if (input.bic) {
-      body.bic = input.bic;
+    const ibanAlpha2 = input.iban!.replace(/\s/g, '').toUpperCase().slice(0, 2);
+    const ibanAlpha3 = IBAN_ALPHA2_TO_ALPHA3[ibanAlpha2];
+    if (!ibanAlpha3) {
+      throw new Error(`Unsupported IBAN country prefix: ${ibanAlpha2}`);
     }
+    body.iban = {
+      account_number: input.iban!,
+      ...(input.bic ? { bic: input.bic } : {}),
+      country: ibanAlpha3,
+    };
   } else if (rail.externalAccountType === 'gb') {
     body.account = {
       sort_code: input.sortCode,
       account_number: input.accountNumber,
     };
   } else if (rail.externalAccountType === 'swift') {
-    body.iban = input.iban;
+    // SWIFT requires a nested `swift: { account, address, category, purpose_of_funds, short_business_description }`
+    // body — not yet fully implemented. bic passed top-level as a best-effort placeholder.
     body.bic = input.bic;
     if (input.accountNumber) {
       body.account = { account_number: input.accountNumber };
