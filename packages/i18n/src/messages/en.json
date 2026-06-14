@@ -596,6 +596,12 @@
       "emptyDescription": "Register a bank account to receive treasury payouts. Treasury USDC → liquidation address → vote → fiat in your bank.",
       "cardBankFallback": "Bank account",
       "liquidationAddressLabel": "Liquidation address",
+      "detail": {
+        "title": "Payout account",
+        "sourceToken": "Treasury token",
+        "close": "Close",
+        "openAriaLabel": "Open account details"
+      },
       "status": {
         "active": "Active",
         "inactive": "Inactive",
@@ -606,6 +612,9 @@
         "stepOf": "Step {current} of {total}",
         "step1Description": "Choose the destination currency for this payout account.",
         "step2Description": "Enter the bank account details for the payout destination.",
+        "step3Description": "Review and confirm your payout account details.",
+        "reviewHint": "Check the details below. Go back to make any changes before submitting.",
+        "confirm": "Confirm & Submit",
         "currencyLabel": "Destination currency",
         "currencyHint": "Currency this external account will receive.",
         "continue": "Continue",

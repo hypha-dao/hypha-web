@@ -28,6 +28,7 @@ type BankAccountsSectionProps = {
   payoutAccountsLoading: boolean;
   onOpenSpaceAccount: () => void;
   onOpenPayoutAccount: () => void;
+  onPayoutAccountClick?: (account: BankPayoutAccountPublic) => void;
   openSpaceAccountDisabled?: boolean;
   openSpaceAccountDisabledReason?: OpenSpaceAccountDisabledReason;
   openPayoutAccountDisabled?: boolean;
@@ -108,6 +109,7 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
   payoutAccountsLoading,
   onOpenSpaceAccount,
   onOpenPayoutAccount,
+  onPayoutAccountClick,
   openSpaceAccountDisabled = false,
   openSpaceAccountDisabledReason = null,
   openPayoutAccountDisabled = false,
@@ -212,6 +214,7 @@ export const BankAccountsSection: FC<BankAccountsSectionProps> = ({
               payoutAccounts={payoutAccounts}
               payoutAccountsLoading={payoutAccountsLoading}
               hideLoadingState={hideListLoadingState}
+              onCardClick={onPayoutAccountClick}
             />
           </section>
         )}

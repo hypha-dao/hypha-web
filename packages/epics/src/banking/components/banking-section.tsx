@@ -28,10 +28,12 @@ import {
   isBankVerificationInProgress,
 } from '../banking-ui';
 import type { BankCurrencyCode } from '../bank-currency-display';
+import type { BankPayoutAccountPublic } from '../hooks/types';
 import { BankAccountsSection } from './bank-accounts-section';
 import { BankingAdvancedDialog } from './banking-advanced-dialog';
 import { AddBankCurrencyDialog } from './add-bank-currency-dialog';
 import { AddPayoutAccountDialog } from './add-payout-account-dialog';
+import { PayoutAccountDetailDialog } from './payout-account-detail-dialog';
 import { CreateTransferDialog } from './create-transfer-dialog';
 import { BankingInitialSetup } from './banking-initial-setup';
 import { BankingPageSkeleton } from './banking-page-skeleton';
@@ -120,6 +122,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const [createTransferOpen, setCreateTransferOpen] = useState(false);
   const [addCurrencyDialogOpen, setAddCurrencyDialogOpen] = useState(false);
   const [addPayoutDialogOpen, setAddPayoutDialogOpen] = useState(false);
+  const [detailAccount, setDetailAccount] = useState<BankPayoutAccountPublic | null>(null);
 
   const needsProviderStatusRefresh =
     hasCustomer && status != null && !status.approvalRegistered;
@@ -320,6 +323,7 @@ export const BankingSection: FC<BankingSectionProps> = ({
           clearCreatePayoutAccountError();
           setAddPayoutDialogOpen(true);
         }}
+        onPayoutAccountClick={(account) => setDetailAccount(account)}
         openPayoutAccountDisabled={openPayoutAccountDisabled}
         openPayoutAccountDisabledReason={openPayoutAccountDisabledReason}
         payoutAccounts={payoutAccounts}
@@ -406,7 +410,19 @@ export const BankingSection: FC<BankingSectionProps> = ({
           clearCreatePayoutAccountError();
           const result = await createPayoutAccount(input);
           void refreshPayoutAccounts();
-          return { evmAddress: result.account.evmAddress };
+          return result.account;
+        }}
+        onSuccess={(account) => {
+          setAddPayoutDialogOpen(false);
+          setDetailAccount(account);
+        }}
+      />
+
+      <PayoutAccountDetailDialog
+        open={detailAccount != null}
+        account={detailAccount}
+        onOpenChange={(open) => {
+          if (!open) setDetailAccount(null);
         }}
       />
     </div>

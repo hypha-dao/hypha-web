@@ -16,12 +16,14 @@ type ApprovedBankingPayoutsProps = {
   payoutAccounts: BankPayoutAccountPublic[];
   payoutAccountsLoading: boolean;
   hideLoadingState?: boolean;
+  onCardClick?: (account: BankPayoutAccountPublic) => void;
 };
 
 export const ApprovedBankingPayouts: FC<ApprovedBankingPayoutsProps> = ({
   payoutAccounts,
   payoutAccountsLoading,
   hideLoadingState = false,
+  onCardClick,
 }) => {
   const t = useTranslations('BankingTab.payouts');
 
@@ -47,7 +49,11 @@ export const ApprovedBankingPayouts: FC<ApprovedBankingPayoutsProps> = ({
     <div className="w-full">
       <div className={TREASURY_CARD_GRID_CLASS}>
         {payoutAccounts.map((account) => (
-          <PayoutAccountCard key={account.id} account={account} />
+          <PayoutAccountCard
+            key={account.id}
+            account={account}
+            onClick={onCardClick ? () => onCardClick(account) : undefined}
+          />
         ))}
       </div>
     </div>

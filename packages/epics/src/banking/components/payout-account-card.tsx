@@ -4,6 +4,7 @@ import { FC } from 'react';
 import { Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Card } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 import {
   getBankCurrencyMeta,
@@ -15,6 +16,7 @@ import { InlineCopyRow } from './inline-copy-row';
 
 type PayoutAccountCardProps = {
   account: BankPayoutAccountPublic;
+  onClick?: () => void;
 };
 
 const RAIL_HUMAN_LABELS: Record<string, string> = {
@@ -54,7 +56,7 @@ function PayoutCurrencyIcon({ destinationCurrency }: { destinationCurrency: stri
   return <CurrencyFlagBadge currency={currency} />;
 }
 
-export const PayoutAccountCard: FC<PayoutAccountCardProps> = ({ account }) => {
+export const PayoutAccountCard: FC<PayoutAccountCardProps> = ({ account, onClick }) => {
   const t = useTranslations('BankingTab.payouts');
 
   const primaryLabel = account.bankName ?? t('cardBankFallback');
@@ -64,7 +66,26 @@ export const PayoutAccountCard: FC<PayoutAccountCardProps> = ({ account }) => {
   const maskedAccount = account.accountLast4 ? `••••${account.accountLast4}` : null;
 
   return (
-    <Card className="flex h-full flex-col gap-3 p-5">
+    <Card
+      className={cn(
+        'flex h-full flex-col gap-3 p-5',
+        onClick &&
+          'cursor-pointer transition-colors hover:border-accent-9/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      )}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+    >
       <div className="flex items-start gap-3">
         <PayoutCurrencyIcon destinationCurrency={account.destinationCurrency} />
         <div className="min-w-0 flex-1">

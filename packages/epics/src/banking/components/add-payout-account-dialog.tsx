@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, FormEvent, ReactNode, useEffect, useId, useRef, useState } from 'react';
-import { ArrowLeft, CheckCircle2, Globe, Loader2 } from 'lucide-react';
+import { ArrowLeft, Globe, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   Button,
@@ -21,7 +21,7 @@ import {
   getBankCurrencyMeta,
   type BankCurrencyCode,
 } from '../bank-currency-display';
-import type { CreatePayoutAccountInput } from '../hooks/types';
+import type { BankPayoutAccountPublic, CreatePayoutAccountInput } from '../hooks/types';
 import {
   BANKING_DIALOG_FOOTER_CLASS,
   BANKING_DIALOG_FORM_CONTENT_CLASS,
@@ -29,7 +29,6 @@ import {
   BankingDialogBody,
 } from './banking-dialog-layout';
 import { CurrencyFlagBadge } from './currency-flag-badge';
-import { InlineCopyRow } from './inline-copy-row';
 import {
   PAYOUT_CURRENCY_KEYS,
   PayoutCurrencyOptionRow,
@@ -61,7 +60,8 @@ type AddPayoutAccountDialogProps = {
   error: string | null;
   defaultAccountOwnerName?: string;
   defaultBusinessName?: string;
-  onSubmit: (input: CreatePayoutAccountInput) => Promise<{ evmAddress: string }>;
+  onSubmit: (input: CreatePayoutAccountInput) => Promise<BankPayoutAccountPublic>;
+  onSuccess: (account: BankPayoutAccountPublic) => void;
 };
 
 function defaultSourceCurrency(currency: PayoutCurrencyKey): 'usdc' | 'eurc' {
@@ -132,6 +132,17 @@ function FormSection({
   );
 }
 
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <span className="shrink-0 text-2 text-muted-foreground">{label}</span>
+      <span className="min-w-0 text-right text-2 font-medium text-foreground break-all">
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   open,
   onOpenChange,
@@ -140,12 +151,12 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   defaultAccountOwnerName = '',
   defaultBusinessName = '',
   onSubmit,
+  onSuccess,
 }) => {
   const t = useTranslations('BankingTab.payouts.addDialog');
   const radioName = useId();
 
-  const [step, setStep] = useState<'currency' | 'form' | 'success'>('currency');
-  const [createdEvmAddress, setCreatedEvmAddress] = useState('');
+  const [step, setStep] = useState<'currency' | 'form' | 'review'>('currency');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [selectedCurrency, setSelectedCurrency] =
     useState<PayoutCurrencyKey>('usd');
@@ -187,7 +198,6 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     }
 
     setStep('currency');
-    setCreatedEvmAddress('');
     setSelectedCurrency('usd');
     setSourceCurrency('usdc');
     setBankName('');
@@ -231,12 +241,13 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   };
 
   const handleBack = () => {
-    setStep('currency');
+    if (step === 'form') setStep('currency');
+    if (step === 'review') setStep('form');
   };
 
-  const handleSubmit = async (event: FormEvent) => {
+  // form onSubmit: validates IBAN and advances to review step
+  const handleFormContinue = (event: FormEvent) => {
     event.preventDefault();
-
     const nextFieldErrors: Record<string, string> = {};
     const ibanValue = iban.trim().replace(/\s/g, '');
     if (showIbanFields && ibanValue && !isValidIban(ibanValue)) {
@@ -246,9 +257,13 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
       setFieldErrors(nextFieldErrors);
       return;
     }
+    setStep('review');
+  };
 
+  // review step: fires the actual POST
+  const handleConfirmSubmit = async () => {
     try {
-      const result = await onSubmit({
+      const account = await onSubmit({
         railKey,
         sourceCurrency,
         bankName: bankName.trim(),
@@ -270,12 +285,14 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
           country: country.trim(),
         },
       });
-      setCreatedEvmAddress(result.evmAddress);
-      setStep('success');
+      onSuccess(account);
     } catch {
-      // parent sets error prop; dialog stays on form step
+      // parent sets error prop; stay on review step
     }
   };
+
+  const countryName =
+    COUNTRIES.find((c) => c.alpha3 === country)?.name ?? country;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -289,7 +306,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
               ? t('step1Description')
               : step === 'form'
               ? t('step2Description')
-              : t('success.subtitle')}
+              : t('step3Description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -297,7 +314,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
           {step === 'currency' ? (
             <div className="flex flex-col gap-4">
               <p className="text-right text-1 text-muted-foreground">
-                {t('stepOf', { current: '1', total: '2' })}
+                {t('stepOf', { current: '1', total: '3' })}
               </p>
               <div className="flex flex-col gap-2">
                 <Label>{t('currencyLabel')}</Label>
@@ -327,7 +344,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
           ) : step === 'form' ? (
             <form
               id={ADD_PAYOUT_FORM_ID}
-              onSubmit={handleSubmit}
+              onSubmit={handleFormContinue}
               className="flex flex-col gap-4"
             >
               <div className="flex items-center justify-between">
@@ -343,7 +360,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   {t('back')}
                 </Button>
                 <span className="text-1 text-muted-foreground">
-                  {t('stepOf', { current: '2', total: '2' })}
+                  {t('stepOf', { current: '2', total: '3' })}
                 </span>
               </div>
 
@@ -490,18 +507,31 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         onChange={(event) => {
                           setIban(event.target.value.toUpperCase());
                           if (fieldErrors.iban) {
-                            setFieldErrors((prev) => { const next = { ...prev }; delete next.iban; return next; });
+                            setFieldErrors((prev) => {
+                              const next = { ...prev };
+                              delete next.iban;
+                              return next;
+                            });
                           }
                         }}
                         placeholder={t('ibanPlaceholder')}
                         required={selectedCurrency === 'eur'}
                         disabled={isSubmitting}
                         aria-invalid={!!fieldErrors.iban}
-                        aria-describedby={fieldErrors.iban ? 'payout-iban-error' : undefined}
-                        className={cn(fieldErrors.iban && 'border-destructive ring-1 ring-destructive focus-visible:ring-destructive')}
+                        aria-describedby={
+                          fieldErrors.iban ? 'payout-iban-error' : undefined
+                        }
+                        className={cn(
+                          fieldErrors.iban &&
+                            'border-destructive ring-1 ring-destructive focus-visible:ring-destructive',
+                        )}
                       />
                       {fieldErrors.iban ? (
-                        <p id="payout-iban-error" className="text-1 text-destructive" role="alert">
+                        <p
+                          id="payout-iban-error"
+                          className="text-1 text-destructive"
+                          role="alert"
+                        >
                           {fieldErrors.iban}
                         </p>
                       ) : null}
@@ -636,91 +666,131 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   </div>
                 </div>
               </FormSection>
+            </form>
+          ) : (
+            // Review step
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto w-fit gap-1.5 px-0 py-1 text-2 text-muted-foreground hover:text-foreground"
+                  disabled={isSubmitting}
+                  onClick={handleBack}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  {t('back')}
+                </Button>
+                <span className="text-1 text-muted-foreground">
+                  {t('stepOf', { current: '3', total: '3' })}
+                </span>
+              </div>
+
+              <p className="text-2 text-muted-foreground">{t('reviewHint')}</p>
+
+              <PayoutSelectedCurrencyBadge currency={selectedCurrency} />
+
+              <FormSection title={t('sourceCurrencySection')}>
+                <span className="w-fit rounded-md border border-border bg-card px-3 py-1.5 text-2 font-medium text-foreground">
+                  {sourceCurrency.toUpperCase()}
+                </span>
+              </FormSection>
+
+              <FormSection title={t('bankAccountSection')}>
+                <ReviewRow label={t('bankName')} value={bankName} />
+                {showUsFields && routingNumber ? (
+                  <ReviewRow label={t('routingNumber')} value={routingNumber} />
+                ) : null}
+                {(showUsFields || showGbpFields) && accountNumber ? (
+                  <ReviewRow label={t('accountNumber')} value={accountNumber} />
+                ) : null}
+                {showGbpFields && sortCode ? (
+                  <ReviewRow label={t('sortCode')} value={sortCode} />
+                ) : null}
+                {showIbanFields && iban ? (
+                  <ReviewRow label={t('iban')} value={iban} />
+                ) : null}
+                {bic ? (
+                  <ReviewRow label={t('bic')} value={bic} />
+                ) : null}
+              </FormSection>
+
+              <FormSection title={t('accountHolderSection')}>
+                {accountOwnerName ? (
+                  <ReviewRow label={t('accountOwnerName')} value={accountOwnerName} />
+                ) : null}
+                {businessName ? (
+                  <ReviewRow label={t('businessName')} value={businessName} />
+                ) : null}
+              </FormSection>
+
+              <FormSection title={t('addressSection')}>
+                <p className="text-2 text-foreground">
+                  {streetLine1}
+                  {streetLine2 ? `, ${streetLine2}` : ''}
+                </p>
+                <p className="text-2 text-foreground">
+                  {[city, subdivision, postalCode].filter(Boolean).join(', ')}
+                </p>
+                <p className="text-2 text-foreground">{countryName}</p>
+              </FormSection>
 
               {error ? (
                 <p className="text-2 text-destructive" role="alert">
                   {error}
                 </p>
               ) : null}
-            </form>
-          ) : (
-            // Success step
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col items-center gap-3 py-2 text-center">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-success-9/10 text-success-9">
-                  <CheckCircle2 className="h-6 w-6" />
-                </span>
-                <p className="text-3 font-semibold text-foreground">
-                  {t('success.title')}
-                </p>
-              </div>
-
-              <div className="rounded-lg border border-border/60 bg-background-2/30 p-4">
-                <InlineCopyRow
-                  label={t('success.liquidationAddressLabel')}
-                  value={createdEvmAddress}
-                />
-              </div>
-
-              <div className="rounded-lg border border-border/60 bg-background-2/30 p-4 flex flex-col gap-1.5">
-                <p className="text-2 font-semibold text-foreground">
-                  {t('success.howToTitle')}
-                </p>
-                <p className="text-2 text-muted-foreground">
-                  {t('success.howToText')}
-                </p>
-              </div>
             </div>
           )}
         </BankingDialogBody>
 
         <DialogFooter className={BANKING_DIALOG_FOOTER_CLASS}>
-          {step === 'success' ? (
+          <>
             <Button
               type="button"
-              colorVariant="accent"
+              variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
             >
-              {t('success.done')}
+              {t('cancel')}
             </Button>
-          ) : (
-            <>
+            {step === 'currency' ? (
               <Button
                 type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
+                colorVariant="accent"
+                disabled={isSubmitting}
+                onClick={handleContinue}
+              >
+                {t('continue')}
+              </Button>
+            ) : step === 'form' ? (
+              <Button
+                type="submit"
+                form={ADD_PAYOUT_FORM_ID}
+                colorVariant="accent"
                 disabled={isSubmitting}
               >
-                {t('cancel')}
+                {t('continue')}
               </Button>
-              {step === 'currency' ? (
-                <Button
-                  type="button"
-                  colorVariant="accent"
-                  disabled={isSubmitting}
-                  onClick={handleContinue}
-                >
-                  {t('continue')}
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  form={ADD_PAYOUT_FORM_ID}
-                  colorVariant="accent"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('submitting')}
-                    </>
-                  ) : (
-                    t('submit')
-                  )}
-                </Button>
-              )}
-            </>
-          )}
+            ) : (
+              <Button
+                type="button"
+                colorVariant="accent"
+                disabled={isSubmitting}
+                onClick={handleConfirmSubmit}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('submitting')}
+                  </>
+                ) : (
+                  t('confirm')
+                )}
+              </Button>
+            )}
+          </>
         </DialogFooter>
       </DialogContent>
     </Dialog>

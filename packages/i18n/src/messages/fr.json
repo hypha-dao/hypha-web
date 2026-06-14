@@ -2858,6 +2858,12 @@
       "emptyDescription": "Enregistrez un compte bancaire pour recevoir les paiements du trésor. USDC du trésor → adresse de liquidation → vote → fiat dans votre banque.",
       "cardBankFallback": "Compte bancaire",
       "liquidationAddressLabel": "Adresse de liquidation",
+      "detail": {
+        "title": "Compte de paiement",
+        "sourceToken": "Jeton de trésorerie",
+        "close": "Fermer",
+        "openAriaLabel": "Ouvrir les détails du compte"
+      },
       "status": {
         "active": "Actif",
         "inactive": "Inactif",
@@ -2868,6 +2874,9 @@
         "stepOf": "Étape {current} sur {total}",
         "step1Description": "Choisissez la devise de destination de ce compte de paiement.",
         "step2Description": "Saisissez les coordonnées bancaires du compte de destination.",
+        "step3Description": "Vérifiez et confirmez les détails de votre compte de paiement.",
+        "reviewHint": "Vérifiez les détails ci-dessous. Revenez en arrière pour apporter des modifications.",
+        "confirm": "Confirmer et soumettre",
         "currencyLabel": "Devise de destination",
         "currencyHint": "Devise que ce compte externe recevra.",
         "continue": "Continuer",

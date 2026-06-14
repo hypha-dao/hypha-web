@@ -672,6 +672,12 @@
       "emptyDescription": "Registrieren Sie ein Bankkonto für Auszahlungen aus der Treasury. Treasury-USDC → Liquidationsadresse → Abstimmung → Fiat auf Ihrem Konto.",
       "cardBankFallback": "Bankkonto",
       "liquidationAddressLabel": "Liquidationsadresse",
+      "detail": {
+        "title": "Auszahlungskonto",
+        "sourceToken": "Treasury-Token",
+        "close": "Schließen",
+        "openAriaLabel": "Kontodetails öffnen"
+      },
       "status": {
         "active": "Aktiv",
         "inactive": "Inaktiv",
@@ -682,6 +688,9 @@
         "stepOf": "Schritt {current} von {total}",
         "step1Description": "Wählen Sie die Zielwährung für dieses Auszahlungskonto.",
         "step2Description": "Geben Sie die Bankdaten des Zielkontos ein.",
+        "step3Description": "Überprüfen und bestätigen Sie Ihre Auszahlungskontodaten.",
+        "reviewHint": "Überprüfen Sie die Angaben unten. Gehen Sie zurück, um Änderungen vorzunehmen.",
+        "confirm": "Bestätigen & Einreichen",
         "currencyLabel": "Zielwährung",
         "currencyHint": "Währung, die dieses externe Konto erhält.",
         "continue": "Weiter",
