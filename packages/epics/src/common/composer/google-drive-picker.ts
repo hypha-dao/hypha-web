@@ -92,17 +92,24 @@ function loadScript(src: string, id: string): Promise<void> {
   if (typeof document === 'undefined') {
     return Promise.reject(new Error('document_unavailable'));
   }
-  const existing = document.getElementById(id);
-  if (existing) {
+  const existing = document.getElementById(id) as HTMLScriptElement | null;
+  if (existing?.dataset.loaded === 'true') {
     return Promise.resolve();
   }
+  existing?.remove();
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.id = id;
     script.src = src;
     script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`script_load_failed:${src}`));
+    script.onload = () => {
+      script.dataset.loaded = 'true';
+      resolve();
+    };
+    script.onerror = () => {
+      script.remove();
+      reject(new Error(`script_load_failed:${src}`));
+    };
     document.head.appendChild(script);
   });
 }
@@ -112,7 +119,10 @@ function loadGoogleIdentityServices(): Promise<void> {
     gisScriptPromise = loadScript(
       'https://accounts.google.com/gsi/client',
       'hypha-google-identity-services',
-    );
+    ).catch((error) => {
+      gisScriptPromise = null;
+      throw error;
+    });
   }
   return gisScriptPromise;
 }
@@ -145,7 +155,8 @@ function loadGooglePickerApi(): Promise<void> {
 export function isGoogleDrivePickerConfigured(): boolean {
   return Boolean(
     process.env.NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID?.trim() &&
-      process.env.NEXT_PUBLIC_GOOGLE_DRIVE_API_KEY?.trim(),
+      process.env.NEXT_PUBLIC_GOOGLE_DRIVE_API_KEY?.trim() &&
+      process.env.NEXT_PUBLIC_GOOGLE_DRIVE_APP_ID?.trim(),
   );
 }
 
@@ -243,7 +254,7 @@ async function requestDriveAccessToken(clientId: string): Promise<string> {
 async function openDrivePicker(
   accessToken: string,
   apiKey: string,
-  appId?: string,
+  appId: string,
 ): Promise<GooglePickerDoc[]> {
   await loadGooglePickerApi();
   const pickerApi = window.google?.picker;
@@ -269,9 +280,7 @@ async function openDrivePicker(
           resolve([]);
         }
       });
-    if (appId?.trim()) {
-      builder.setAppId(appId.trim());
-    }
+    builder.setAppId(appId.trim());
     builder.build().setVisible(true);
     window.setTimeout(() => {
       if (!settled) {
@@ -286,7 +295,7 @@ export async function pickGoogleDriveFiles(): Promise<File[]> {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID?.trim();
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_API_KEY?.trim();
   const appId = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_APP_ID?.trim();
-  if (!clientId || !apiKey) {
+  if (!clientId || !apiKey || !appId) {
     throw new Error('google_drive_not_configured');
   }
   const accessToken = await requestDriveAccessToken(clientId);
