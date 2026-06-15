@@ -103,14 +103,18 @@
     "continueAdventure": "Continue your adventure"
   },
   "OnboardingAdventure": {
-    "title": "Your Adventure starts here.",
-    "continueAdventure": "Your adventure continues here",
-    "subtitle": "You have a powerful vision for the world - we give you the tools to put it into action.",
+    "heroEyebrow": "THE INTELLIGENT ORGANISATION",
+    "title": "You have a powerful vision for the world.",
+    "continueAdventure": "Welcome back",
+    "subtitle": "We give you the intelligent organisation to act on it.",
+    "returnSubtitle": "Continue your journey — or ask Hypha AI what to do next.",
     "aiHero": {
       "title": "Build Anything, Together",
       "description": "Tell Hypha AI what you want to build, and it will guide setup step by step.",
       "placeholder": "Create a space, join an existing one, explore the network, or fund a treasury - describe your goal and AI will guide you.",
       "rotating": {
+        "launchCooperative": "Ask Hypha AI to launch a cooperative with shared ownership...",
+        "tokenEconomy": "Ask Hypha AI to design a token economy for your network...",
         "createSpace": "Ask Hypha AI to create a space for your mission...",
         "governance": "Ask Hypha AI to draft governance for your community...",
         "joinSpace": "Ask Hypha AI to help you join the right space...",

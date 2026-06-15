@@ -38,10 +38,14 @@ export function useAuthentication() {
     }
   }, [smartWallet?.address, wallets, setActiveWallet]);
 
-  const login = React.useCallback(async (): Promise<void> => {
+  const openLoginModal = React.useCallback((): void => {
     privyLogin();
-    setLoggingIn(true);
   }, [privyLogin]);
+
+  const login = React.useCallback(async (): Promise<void> => {
+    openLoginModal();
+    setLoggingIn(true);
+  }, [openLoginModal]);
 
   const logout = React.useCallback(
     async (redirect: boolean = true): Promise<void> => {
@@ -83,6 +87,7 @@ export function useAuthentication() {
     isEmbeddedWallet,
     user,
     login,
+    openLoginModal,
     logout,
     isLoggingIn,
     setLoggingIn,

@@ -103,14 +103,18 @@
     "continueAdventure": "Abenteuer fortsetzen"
   },
   "OnboardingAdventure": {
-    "title": "Dein Abenteuer beginnt hier.",
-    "continueAdventure": "Dein Abenteuer geht hier weiter",
-    "subtitle": "Du hast eine kraftvolle Vision für die Welt, wir geben dir die Werkzeuge, sie umzusetzen.",
+    "heroEyebrow": "DIE INTELLIGENTE ORGANISATION",
+    "title": "Du hast eine kraftvolle Vision für die Welt.",
+    "continueAdventure": "Willkommen zurück",
+    "subtitle": "Wir geben dir die intelligente Organisation, um sie umzusetzen.",
+    "returnSubtitle": "Setz deine Reise fort — oder frag Hypha AI, was als Nächstes zu tun ist.",
     "aiHero": {
       "title": "Build Anything, Together",
       "description": "Sag Hypha AI, was du aufbauen willst, und sie führt dich Schritt für Schritt durch das Setup.",
       "placeholder": "Space erstellen, bestehendem Space beitreten, Netzwerk erkunden oder Treasury finanzieren - beschreibe dein Ziel, und AI führt dich.",
       "rotating": {
+        "launchCooperative": "Frag Hypha AI, eine Genossenschaft mit gemeinsamer Eigentümerschaft zu starten...",
+        "tokenEconomy": "Frag Hypha AI, eine Token-Ökonomie für dein Netzwerk zu entwerfen...",
         "createSpace": "Frag Hypha AI, einen Space für deine Mission zu erstellen...",
         "governance": "Frag Hypha AI, Governance für deine Community zu entwerfen...",
         "joinSpace": "Frag Hypha AI, dir beim Beitritt zum passenden Space zu helfen...",

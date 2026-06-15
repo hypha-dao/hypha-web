@@ -80,7 +80,7 @@ export const ConnectedButtonProfile = ({
           }
         } else if (
           (person?.id && pathname === newUserRedirectPath) ||
-          isLoggingIn
+          (isLoggingIn && !pathname.includes('/onboarding'))
         ) {
           router.push(baseRedirectPath);
           setLoggingIn(false);

@@ -35,6 +35,7 @@ import {
   Wallet,
   X,
 } from 'lucide-react';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space, useMe } from '@hypha-platform/core/client';
 import {
@@ -261,6 +262,12 @@ export function OnboardingAdventurePage({
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const {
+    isAuthenticated,
+    isLoading: isAuthLoading,
+    isModalOpen,
+    openLoginModal,
+  } = useAuthentication();
   const { person } = useMe();
   const { spaces, isLoading, error: spacesError } = useAllSpaces();
   const [aiPrompt, setAiPrompt] = useState('');
@@ -300,6 +307,7 @@ export function OnboardingAdventurePage({
   const [heroPlaceholderIndex, setHeroPlaceholderIndex] = useState(0);
   const [heroTitleWordIndex, setHeroTitleWordIndex] = useState(0);
   const seededPromptFromUrlRef = useRef(false);
+  const hasPromptedLoginRef = useRef(false);
 
   const firstName = useMemo(() => {
     const rawName = person?.name?.trim();
@@ -345,6 +353,8 @@ export function OnboardingAdventurePage({
   const hasDepositChoices = depositOptions.length > 0;
   const rotatingHeroPrompts = useMemo(
     () => [
+      t('aiHero.rotating.launchCooperative'),
+      t('aiHero.rotating.tokenEconomy'),
       t('aiHero.rotating.createSpace'),
       t('aiHero.rotating.governance'),
       t('aiHero.rotating.joinSpace'),
@@ -394,6 +404,13 @@ export function OnboardingAdventurePage({
     aiPromptRef.current = promptFromUrl;
     setAiPrompt(promptFromUrl);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (isAuthLoading || isAuthenticated || isModalOpen) return;
+    if (hasPromptedLoginRef.current) return;
+    hasPromptedLoginRef.current = true;
+    openLoginModal();
+  }, [isAuthLoading, isAuthenticated, isModalOpen, openLoginModal]);
 
   useEffect(() => {
     aiPromptRef.current = aiPrompt;
@@ -574,6 +591,9 @@ export function OnboardingAdventurePage({
   const adventureTitle = hasVisitedAdventure
     ? t('continueAdventure')
     : t('title');
+  const adventureSubtitle = hasVisitedAdventure
+    ? t('returnSubtitle')
+    : t('subtitle');
   if (onboardingAiConversation) {
     return (
       <OnboardingAiFullPage
@@ -586,7 +606,7 @@ export function OnboardingAdventurePage({
   }
   return (
     <Container className="flex flex-col gap-14 py-10 md:py-12">
-      <header className="space-y-3 pt-3 text-center md:pt-4">
+      <header className="space-y-3 pt-3 text-center md:space-y-4 md:pt-4">
         <p className="mx-auto inline-flex items-center rounded-full border border-accent-8/45 bg-accent-3/35 px-4 py-1 text-2 font-medium text-foreground shadow-[0_8px_20px_-18px_oklch(0.62_0.19_278)]">
           Build
           <span
@@ -596,6 +616,9 @@ export function OnboardingAdventurePage({
             {HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
           </span>
           , Together.
+        </p>
+        <p className="text-2 font-semibold uppercase tracking-[0.18em] text-accent-10">
+          {t('heroEyebrow')}
         </p>
         <Heading
           size="9"
@@ -608,8 +631,8 @@ export function OnboardingAdventurePage({
             {adventureTitle}
           </span>
         </Heading>
-        <p className="text-4 font-medium tracking-tight text-muted-foreground">
-          {t('subtitle')}
+        <p className="mx-auto max-w-3xl text-4 font-medium tracking-tight text-muted-foreground">
+          {adventureSubtitle}
         </p>
       </header>
 
