@@ -33,6 +33,7 @@ type GoogleAccountsOAuth2 = {
     client_id: string;
     scope: string;
     callback: (response: { access_token?: string; error?: string }) => void;
+    error_callback?: (error: { type?: string; message?: string }) => void;
   }) => { requestAccessToken: (opts?: { prompt?: string }) => void };
 };
 
@@ -59,7 +60,7 @@ declare global {
   }
 }
 
-const DRIVE_READONLY_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
+const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 const GOOGLE_APPS_EXPORT: Record<
   string,
@@ -133,7 +134,10 @@ function loadGooglePickerApi(): Promise<void> {
           ontimeout: () => reject(new Error('gapi_load_timeout')),
         });
       });
-    })();
+    })().catch((error) => {
+      gapiScriptPromise = null;
+      throw error;
+    });
   }
   return gapiScriptPromise;
 }
@@ -206,19 +210,30 @@ async function requestDriveAccessToken(clientId: string): Promise<string> {
     throw new Error('google_oauth_unavailable');
   }
   return new Promise((resolve, reject) => {
+    let settled = false;
+    const rejectOnce = (message: string) => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(message));
+    };
     const tokenClient = oauth2.initTokenClient({
       client_id: clientId,
-      scope: DRIVE_READONLY_SCOPE,
+      scope: DRIVE_FILE_SCOPE,
       callback: (response) => {
+        if (settled) return;
         if (response.error) {
-          reject(new Error(response.error));
+          rejectOnce(response.error);
           return;
         }
         if (!response.access_token) {
-          reject(new Error('missing_access_token'));
+          rejectOnce('missing_access_token');
           return;
         }
+        settled = true;
         resolve(response.access_token);
+      },
+      error_callback: (error) => {
+        rejectOnce(error.type ?? error.message ?? 'google_oauth_failed');
       },
     });
     tokenClient.requestAccessToken({ prompt: '' });
