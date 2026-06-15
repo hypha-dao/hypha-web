@@ -303,7 +303,6 @@ export function OnboardingAdventurePage({
   const [depositDetailsSpaceSlug, setDepositDetailsSpaceSlug] = useState('');
   const [copiedAddress, setCopiedAddress] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
-  const [hasVisitedAdventure, setHasVisitedAdventure] = useState(false);
   const [heroPlaceholderIndex, setHeroPlaceholderIndex] = useState(0);
   const [heroTitleWordIndex, setHeroTitleWordIndex] = useState(0);
   const seededPromptFromUrlRef = useRef(false);
@@ -371,30 +370,6 @@ export function OnboardingAdventurePage({
     },
     [],
   );
-
-  useEffect(() => {
-    const storageKey = 'hypha:onboarding-adventure:visited:v1';
-    const justSignedUpKey = 'hypha:onboarding-adventure:just-signed-up:v1';
-    try {
-      const justSignedUp =
-        window.sessionStorage.getItem(justSignedUpKey) === 'true';
-      if (justSignedUp) {
-        setHasVisitedAdventure(false);
-        window.sessionStorage.removeItem(justSignedUpKey);
-        window.localStorage.setItem(storageKey, 'true');
-        return;
-      }
-
-      const alreadyVisited = window.localStorage.getItem(storageKey) === 'true';
-      if (alreadyVisited) {
-        setHasVisitedAdventure(true);
-      } else {
-        window.localStorage.setItem(storageKey, 'true');
-      }
-    } catch {
-      // localStorage unavailable; keep first-visit title fallback
-    }
-  }, []);
 
   useEffect(() => {
     if (seededPromptFromUrlRef.current) return;
@@ -588,12 +563,6 @@ export function OnboardingAdventurePage({
     if (!files || files.length === 0) return;
     setHeroAttachments((prev) => [...prev, ...Array.from(files)]);
   };
-  const adventureTitle = hasVisitedAdventure
-    ? t('continueAdventure')
-    : t('title');
-  const adventureSubtitle = hasVisitedAdventure
-    ? t('returnSubtitle')
-    : t('subtitle');
   if (onboardingAiConversation) {
     return (
       <OnboardingAiFullPage
@@ -628,11 +597,11 @@ export function OnboardingAdventurePage({
           className="mx-auto max-w-4xl"
         >
           <span className="bg-gradient-to-r from-foreground via-accent-11 to-foreground bg-clip-text text-transparent">
-            {adventureTitle}
+            {t('title')}
           </span>
         </Heading>
         <p className="mx-auto max-w-3xl text-4 font-medium tracking-tight text-muted-foreground">
-          {adventureSubtitle}
+          {t('subtitle')}
         </p>
       </header>
 
