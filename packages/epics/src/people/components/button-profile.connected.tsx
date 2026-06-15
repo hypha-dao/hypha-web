@@ -21,8 +21,13 @@ type ErrorUser = {
   error: string;
 };
 
-const isErrorUser = (obj: any): obj is ErrorUser => {
-  return obj && typeof obj === 'object' && 'error' in obj;
+const isErrorUser = (obj: unknown): obj is ErrorUser => {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'error' in obj &&
+    typeof (obj as { error?: unknown }).error === 'string'
+  );
 };
 
 export const ConnectedButtonProfile = ({
@@ -78,11 +83,13 @@ export const ConnectedButtonProfile = ({
           if (person.error !== 'Internal Server Error') {
             router.push(newUserRedirectPath);
           }
-        } else if (
-          (person?.id && pathname === newUserRedirectPath) ||
-          (isLoggingIn && !pathname.includes('/onboarding'))
-        ) {
+        } else if (person?.id && pathname === newUserRedirectPath) {
           router.push(baseRedirectPath);
+          setLoggingIn(false);
+        } else if (isLoggingIn) {
+          if (!pathname.includes('/onboarding')) {
+            router.push(baseRedirectPath);
+          }
           setLoggingIn(false);
         }
       } else {
@@ -100,6 +107,7 @@ export const ConnectedButtonProfile = ({
     newUserRedirectPath,
     isLoggingIn,
     setLoggingIn,
+    pathname,
   ]);
 
   const handleThemeChange = () => {
