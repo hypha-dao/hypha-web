@@ -41,8 +41,15 @@ type GoogleGlobal = {
   accounts?: { oauth2?: GoogleAccountsOAuth2 };
 };
 
+type GapiLoadConfig = {
+  callback: () => void;
+  onerror?: () => void;
+  timeout?: number;
+  ontimeout?: () => void;
+};
+
 type GapiGlobal = {
-  load: (api: string, callback: () => void) => void;
+  load: (api: string, config: (() => void) | GapiLoadConfig) => void;
 };
 
 declare global {
@@ -119,7 +126,12 @@ function loadGooglePickerApi(): Promise<void> {
           reject(new Error('gapi_unavailable'));
           return;
         }
-        gapi.load('picker', () => resolve());
+        gapi.load('picker', {
+          callback: () => resolve(),
+          onerror: () => reject(new Error('gapi_load_failed')),
+          timeout: 15000,
+          ontimeout: () => reject(new Error('gapi_load_timeout')),
+        });
       });
     })();
   }
