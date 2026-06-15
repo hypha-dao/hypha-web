@@ -747,3 +747,179 @@ export function assertTransferOwnedByCustomer(
     throw new Error('Transfer does not belong to this customer');
   }
 }
+
+export type BridgeExternalAccountAddress = {
+  street_line_1: string;
+  street_line_2?: string;
+  city: string;
+  state?: string;
+  postal_code?: string;
+  country: string;
+};
+
+export type BridgeCreateExternalAccountRequest = {
+  currency: string;
+  account_type: string;
+  bank_name?: string;
+  account_name?: string;
+  account_owner_name?: string;
+  account_owner_type?: 'individual' | 'business';
+  business_name?: string;
+  first_name?: string;
+  last_name?: string;
+  iban?: { account_number: string; bic?: string; country: string };
+  bic?: string;
+  account?: {
+    routing_number?: string;
+    account_number?: string;
+    checking_or_savings?: 'checking' | 'savings';
+    sort_code?: string;
+  };
+  address?: BridgeExternalAccountAddress;
+};
+
+export type BridgeExternalAccountResponse = {
+  id: string;
+  customer_id?: string;
+  active?: boolean;
+  currency?: string;
+  account_type?: string;
+  bank_name?: string;
+  account_name?: string;
+  account_owner_name?: string;
+  last_4?: string;
+  account?: {
+    last_4?: string;
+    routing_number?: string;
+    iban?: string;
+    sort_code?: string;
+  };
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type BridgeCreateLiquidationAddressRequest = {
+  chain: string;
+  currency: string;
+  external_account_id: string;
+  destination_payment_rail?: string;
+  destination_currency?: string;
+  destination_wire_message?: string;
+  destination_sepa_reference?: string;
+  destination_ach_reference?: string;
+};
+
+export type BridgeLiquidationAddressResponse = {
+  id: string;
+  customer_id?: string;
+  chain: string;
+  currency: string;
+  address: string;
+  external_account_id?: string;
+  destination_payment_rail?: string;
+  destination_currency?: string;
+  state?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+function isBridgeExternalAccountRecord(
+  value: unknown,
+): value is BridgeExternalAccountResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return typeof record.id === 'string';
+}
+
+function isBridgeLiquidationAddressRecord(
+  value: unknown,
+): value is BridgeLiquidationAddressResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.id === 'string' &&
+    typeof record.chain === 'string' &&
+    typeof record.currency === 'string' &&
+    typeof record.address === 'string'
+  );
+}
+
+export async function bridgeCreateExternalAccount(
+  customerId: string,
+  body: BridgeCreateExternalAccountRequest,
+  idempotencyKey: string,
+): Promise<BridgeExternalAccountResponse> {
+  const parsed = await bridgeRequest(
+    `/v0/customers/${encodeURIComponent(customerId)}/external_accounts`,
+    {
+      method: 'POST',
+      body,
+      idempotencyKey,
+    },
+  );
+
+  if (!isBridgeExternalAccountRecord(parsed)) {
+    throw new Error(
+      'Bridge API returned an unexpected external account response shape',
+    );
+  }
+
+  return parsed;
+}
+
+export async function bridgeListExternalAccounts(
+  customerId: string,
+  params?: BridgeListPaginationParams,
+): Promise<BridgeListResponse<BridgeExternalAccountResponse>> {
+  const parsed = await bridgeRequest(
+    `/v0/customers/${encodeURIComponent(
+      customerId,
+    )}/external_accounts${buildListQuery(params)}`,
+    { method: 'GET' },
+  );
+
+  return parseBridgeListResponse(parsed, isBridgeExternalAccountRecord);
+}
+
+export async function bridgeCreateLiquidationAddress(
+  customerId: string,
+  body: BridgeCreateLiquidationAddressRequest,
+  idempotencyKey: string,
+): Promise<BridgeLiquidationAddressResponse> {
+  const parsed = await bridgeRequest(
+    `/v0/customers/${encodeURIComponent(customerId)}/liquidation_addresses`,
+    {
+      method: 'POST',
+      body,
+      idempotencyKey,
+    },
+  );
+
+  if (!isBridgeLiquidationAddressRecord(parsed)) {
+    throw new Error(
+      'Bridge API returned an unexpected liquidation address response shape',
+    );
+  }
+
+  return parsed;
+}
+
+export async function bridgeListLiquidationAddresses(
+  customerId: string,
+  params?: BridgeListPaginationParams,
+): Promise<BridgeListResponse<BridgeLiquidationAddressResponse>> {
+  const parsed = await bridgeRequest(
+    `/v0/customers/${encodeURIComponent(
+      customerId,
+    )}/liquidation_addresses${buildListQuery(params)}`,
+    { method: 'GET' },
+  );
+
+  return parseBridgeListResponse(parsed, isBridgeLiquidationAddressRecord);
+}

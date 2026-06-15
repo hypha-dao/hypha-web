@@ -252,3 +252,69 @@ export const BANK_TRANSFER_TERMINAL_STATES = [
   'failed',
   'returned',
 ] as const;
+
+/** Off-ramp payout destination rails (v1). */
+export const BANK_PAYOUT_RAIL_KEYS = [
+  'usd_ach',
+  'usd_wire',
+  'eur_sepa',
+  'gbp',
+  'swift',
+] as const;
+
+export type BankPayoutRailKey = (typeof BANK_PAYOUT_RAIL_KEYS)[number];
+
+/** Bridge liquidation address source chain for Hypha (Base). */
+export const BRIDGE_LIQUIDATION_SOURCE_CHAIN = 'base' as const;
+
+export type BankPayoutRailConfig = {
+  railKey: BankPayoutRailKey;
+  destinationCurrency: string;
+  destinationPaymentRail: string;
+  externalAccountType: string;
+};
+
+export const BANK_PAYOUT_RAILS: Record<
+  BankPayoutRailKey,
+  BankPayoutRailConfig
+> = {
+  usd_ach: {
+    railKey: 'usd_ach',
+    destinationCurrency: 'usd',
+    destinationPaymentRail: 'ach',
+    externalAccountType: 'us',
+  },
+  usd_wire: {
+    railKey: 'usd_wire',
+    destinationCurrency: 'usd',
+    destinationPaymentRail: 'wire',
+    externalAccountType: 'us',
+  },
+  eur_sepa: {
+    railKey: 'eur_sepa',
+    destinationCurrency: 'eur',
+    destinationPaymentRail: 'sepa',
+    externalAccountType: 'iban',
+  },
+  gbp: {
+    railKey: 'gbp',
+    destinationCurrency: 'gbp',
+    destinationPaymentRail: 'faster_payments',
+    externalAccountType: 'gb',
+  },
+  swift: {
+    railKey: 'swift',
+    destinationCurrency: 'usd',
+    destinationPaymentRail: 'swift',
+    externalAccountType: 'swift',
+  },
+};
+
+export function resolveBankPayoutRail(
+  railKey: string,
+): BankPayoutRailConfig | null {
+  if (!(BANK_PAYOUT_RAIL_KEYS as readonly string[]).includes(railKey)) {
+    return null;
+  }
+  return BANK_PAYOUT_RAILS[railKey as BankPayoutRailKey];
+}

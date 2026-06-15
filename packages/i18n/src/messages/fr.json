@@ -2843,6 +2843,103 @@
         "signInHint": "Connectez-vous pour gérer les comptes bancaires."
       }
     },
+    "payouts": {
+      "tabs": {
+        "deposits": "Dépôts",
+        "payouts": "Paiements"
+      },
+      "section": {
+        "title": "Comptes de paiement",
+        "description": "Enregistrez où le trésor envoie les fonds après une proposition approuvée. Chaque compte reçoit une adresse de liquidation pour les propositions Financement ou Dépenses."
+      },
+      "addCta": "Ajouter un compte de paiement",
+      "loading": "Chargement des comptes de paiement…",
+      "emptyTitle": "Aucun compte de paiement pour l'instant",
+      "emptyDescription": "Enregistrez un compte bancaire pour recevoir les paiements du trésor. USDC du trésor → adresse de liquidation → vote → fiat dans votre banque.",
+      "cardBankFallback": "Compte bancaire",
+      "liquidationAddressLabel": "Adresse de liquidation",
+      "payoutAddressLabel": "Adresse de paiement",
+      "detail": {
+        "title": "Compte de paiement",
+        "titleFallback": "Compte de paiement",
+        "sourceToken": "Jeton de trésorerie",
+        "close": "Fermer",
+        "openAriaLabel": "Ouvrir les détails du compte"
+      },
+      "status": {
+        "active": "Actif",
+        "inactive": "Inactif",
+        "pending": "En attente"
+      },
+      "addDialog": {
+        "title": "Ajouter un compte de paiement",
+        "stepOf": "Étape {current} sur {total}",
+        "step1Description": "Choisissez la devise de destination de ce compte de paiement.",
+        "step2Description": "Saisissez les coordonnées bancaires du compte de destination.",
+        "step3Description": "Vérifiez et confirmez les détails de votre compte de paiement.",
+        "reviewHint": "Vérifiez les détails ci-dessous. Revenez en arrière pour apporter des modifications.",
+        "confirm": "Confirmer et soumettre",
+        "currencyLabel": "Devise de destination",
+        "currencyHint": "Devise que ce compte externe recevra.",
+        "continue": "Continuer",
+        "back": "Retour",
+        "cancel": "Annuler",
+        "sourceCurrencyLabel": "Jeton du trésor",
+        "sourceCurrencySection": "Jeton du trésor",
+        "sourceCurrencyHint": "Sélectionnez le jeton que le trésor enverra à ce compte.",
+        "bankAccountSection": "Compte bancaire",
+        "accountHolderSection": "Titulaire du compte",
+        "addressSection": "Adresse bancaire",
+        "bankName": "Nom de la banque",
+        "bankNamePlaceholder": "ex. BNP Paribas, Barclays",
+        "accountName": "Surnom",
+        "accountNamePlaceholder": "ex. Opérations USD",
+        "accountNameHint": "Étiquette interne pour votre équipe — non transmise à la banque.",
+        "accountOwnerName": "Nom du titulaire",
+        "businessName": "Raison sociale",
+        "routingNumber": "Numéro de routing",
+        "routingNumberPlaceholder": "021000021 (9 chiffres)",
+        "accountNumber": "Numéro de compte",
+        "accountNumberPlaceholder": "1234567890",
+        "sortCode": "Sort code",
+        "sortCodePlaceholder": "20-00-00",
+        "iban": "IBAN",
+        "ibanPlaceholder": "FR76 3000 6000 0112 3456 7890 189",
+        "bic": "BIC / code SWIFT",
+        "bicPlaceholder": "AAAADEBBXXX",
+        "street": "Adresse",
+        "streetPlaceholder": "1 rue de la Paix",
+        "street2": "Adresse ligne 2",
+        "street2Placeholder": "Appartement, étage (optionnel)",
+        "city": "Ville",
+        "subdivision": "État / Province",
+        "subdivisionUs": "État",
+        "postalCode": "Code postal",
+        "country": "Pays",
+        "countryPlaceholder": "Sélectionner un pays…",
+        "submit": "Ajouter un compte de paiement",
+        "submitting": "Création…",
+        "success": {
+          "title": "Compte de paiement enregistré",
+          "subtitle": "Le compte est actif. Copiez l'adresse de liquidation pour l'utiliser dans des propositions.",
+          "liquidationAddressLabel": "Adresse de liquidation",
+          "howToTitle": "Comment effectuer un paiement",
+          "howToText": "Créez une proposition Financement ou Dépenses → collez cette adresse comme destinataire → sélectionnez USDC ou EURC comme jeton → votez et exécutez. Bridge convertit et vire les fonds en fiat vers la banque enregistrée.",
+          "done": "Terminé"
+        },
+        "swift": {
+          "code": "SWIFT",
+          "hint": "Virement international via BIC/SWIFT"
+        },
+        "rails": {
+          "usd_ach": "USD — ACH",
+          "usd_wire": "USD — Wire",
+          "eur_sepa": "EUR — SEPA",
+          "gbp": "GBP — Faster Payments",
+          "swift": "SWIFT international"
+        }
+      }
+    },
     "openAccount": {
       "title": "Ouvrir un compte space",
       "titleAddCurrency": "Ajouter un compte bancaire",

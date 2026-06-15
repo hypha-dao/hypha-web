@@ -65,9 +65,7 @@ export const BankTransfersSection: FC<BankTransfersSectionProps> = ({
       type="button"
       colorVariant="accent"
       variant="outline"
-      // Right margin matches the gear (w-9 + gap-2) sitting beside the Bank
-      // Accounts button, so both section CTAs are vertically aligned.
-      className="mr-11 shrink-0"
+      className="shrink-0"
       disabled={newTransferDisabled}
       onClick={newTransferDisabled ? undefined : onNewTransfer}
     >

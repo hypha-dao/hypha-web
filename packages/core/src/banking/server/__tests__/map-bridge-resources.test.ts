@@ -5,6 +5,7 @@ vi.mock('server-only', () => ({}));
 import {
   bridgeTransferTargetsSpace,
   bridgeVirtualAccountTargetsSpace,
+  mapBridgePayoutAccountToPublic,
   mapBridgeTransferToPublic,
   mapBridgeVirtualAccountToPublic,
 } from '../map-bridge-resources';
@@ -109,5 +110,36 @@ describe('mapBridgeTransferToPublic', () => {
     expect(result.id).toBe('tr_1');
     expect(result.status).toBe('awaiting_funds');
     expect(result.depositMessage).toBe('ref-1');
+  });
+});
+
+describe('mapBridgePayoutAccountToPublic', () => {
+  it('joins liquidation address with external account display fields', () => {
+    const result = mapBridgePayoutAccountToPublic({
+      liquidationAddress: {
+        id: 'la_1',
+        chain: 'base',
+        currency: 'usdc',
+        address: '0xliquidation',
+        external_account_id: 'ext_1',
+        destination_payment_rail: 'sepa',
+        destination_currency: 'eur',
+        state: 'active',
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      externalAccount: {
+        id: 'ext_1',
+        active: true,
+        currency: 'eur',
+        bank_name: 'Deutsche Bank',
+        account_owner_name: 'Acme DAO',
+        last_4: '1234',
+      },
+    });
+
+    expect(result.evmAddress).toBe('0xliquidation');
+    expect(result.destinationCurrency).toBe('eur');
+    expect(result.accountLast4).toBe('1234');
+    expect(result.status).toBe('active');
   });
 });

@@ -183,3 +183,63 @@ export type SyncBankingResult = {
   procedures: BankCustomerPublicStatus['procedures'];
   railStatuses: BankRailPublicStatus[];
 };
+
+export type BankPayoutRailKey =
+  | 'usd_ach'
+  | 'usd_wire'
+  | 'eur_sepa'
+  | 'gbp'
+  | 'swift';
+
+export type BankPayoutAccountPublic = {
+  id: string;
+  externalAccountId: string;
+  liquidationAddressId: string;
+  evmAddress: string;
+  sourceCurrency: string;
+  sourceChain: string;
+  destinationCurrency: string;
+  paymentRail: string;
+  accountLast4: string | null;
+  accountName: string | null;
+  bankName: string | null;
+  accountOwnerName: string | null;
+  status: string;
+  createdAt: string | null;
+};
+
+export type PaginatedBankPayoutAccounts = {
+  accounts: BankPayoutAccountPublic[];
+  hasMore: boolean;
+  nextCursor: string | null;
+};
+
+export type CreatePayoutAccountInput = {
+  railKey: BankPayoutRailKey;
+  sourceCurrency: 'usdc' | 'eurc';
+  bankName: string;
+  accountName: string;
+  accountOwnerName: string;
+  accountOwnerType: 'business' | 'individual';
+  businessName?: string;
+  routingNumber?: string;
+  accountNumber?: string;
+  checkingOrSavings?: 'checking' | 'savings';
+  iban?: string;
+  bic?: string;
+  sortCode?: string;
+  destinationCurrency?: string;
+  wireMessage?: string;
+  address: {
+    street_line_1: string;
+    street_line_2?: string;
+    city: string;
+    subdivision?: string;
+    postal_code: string;
+    country: string;
+  };
+};
+
+export type CreatePayoutAccountResult = {
+  account: BankPayoutAccountPublic;
+};

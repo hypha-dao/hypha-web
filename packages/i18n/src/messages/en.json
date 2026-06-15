@@ -581,6 +581,103 @@
         "signInHint": "Sign in to manage bank accounts."
       }
     },
+    "payouts": {
+      "tabs": {
+        "deposits": "Deposits",
+        "payouts": "Payouts"
+      },
+      "section": {
+        "title": "Payout Accounts",
+        "description": "Register where the treasury sends fiat after an approved proposal. Each account gets a liquidation address for Funding or Expenses proposals."
+      },
+      "addCta": "Add payout account",
+      "loading": "Loading payout accounts…",
+      "emptyTitle": "No payout accounts yet",
+      "emptyDescription": "Register a bank account to receive treasury payouts. Treasury USDC → liquidation address → vote → fiat in your bank.",
+      "cardBankFallback": "Bank account",
+      "liquidationAddressLabel": "Liquidation address",
+      "payoutAddressLabel": "Payout address",
+      "detail": {
+        "title": "Payout account",
+        "titleFallback": "Payout account",
+        "sourceToken": "Treasury token",
+        "close": "Close",
+        "openAriaLabel": "Open account details"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "pending": "Pending"
+      },
+      "addDialog": {
+        "title": "Add payout account",
+        "stepOf": "Step {current} of {total}",
+        "step1Description": "Choose the destination currency for this payout account.",
+        "step2Description": "Enter the bank account details for the payout destination.",
+        "step3Description": "Review and confirm your payout account details.",
+        "reviewHint": "Check the details below. Go back to make any changes before submitting.",
+        "confirm": "Confirm & Submit",
+        "currencyLabel": "Destination currency",
+        "currencyHint": "Currency this external account will receive.",
+        "continue": "Continue",
+        "back": "Back",
+        "cancel": "Cancel",
+        "sourceCurrencyLabel": "Treasury token",
+        "sourceCurrencySection": "Treasury token",
+        "sourceCurrencyHint": "Select which token the treasury will send to this account.",
+        "bankAccountSection": "Bank account",
+        "accountHolderSection": "Account holder",
+        "addressSection": "Bank address",
+        "bankName": "Bank name",
+        "bankNamePlaceholder": "e.g. Chase, Barclays",
+        "accountName": "Nickname",
+        "accountNamePlaceholder": "e.g. Operations USD",
+        "accountNameHint": "Internal label for your team — not sent to the bank.",
+        "accountOwnerName": "Account owner name",
+        "businessName": "Business legal name",
+        "routingNumber": "Routing number",
+        "routingNumberPlaceholder": "021000021 (9 digits)",
+        "accountNumber": "Account number",
+        "accountNumberPlaceholder": "1234567890",
+        "sortCode": "Sort code",
+        "sortCodePlaceholder": "20-00-00",
+        "iban": "IBAN",
+        "ibanPlaceholder": "DE89 3704 0044 0532 0130 00",
+        "bic": "BIC / SWIFT code",
+        "bicPlaceholder": "AAAADEBBXXX",
+        "street": "Street address",
+        "streetPlaceholder": "123 Main St",
+        "street2": "Address line 2",
+        "street2Placeholder": "Apt, suite, floor (optional)",
+        "city": "City",
+        "subdivision": "State / Province",
+        "subdivisionUs": "State",
+        "postalCode": "Postal code",
+        "country": "Country",
+        "countryPlaceholder": "Select a country…",
+        "submit": "Add payout account",
+        "submitting": "Creating…",
+        "success": {
+          "title": "Payout account registered",
+          "subtitle": "The account is active. Copy the liquidation address to use in proposals.",
+          "liquidationAddressLabel": "Liquidation address",
+          "howToTitle": "How to pay out",
+          "howToText": "Create a Funding or Expenses proposal pointing to this address as the payout destination. Bridge will convert and wire fiat to your registered bank.",
+          "done": "Done"
+        },
+        "swift": {
+          "code": "SWIFT",
+          "hint": "International wire via BIC/SWIFT"
+        },
+        "rails": {
+          "usd_ach": "USD — ACH",
+          "usd_wire": "USD — Wire",
+          "eur_sepa": "EUR — SEPA",
+          "gbp": "GBP — Faster Payments",
+          "swift": "SWIFT international"
+        }
+      }
+    },
     "openAccount": {
       "title": "Open a space account",
       "titleAddCurrency": "Add a bank account",

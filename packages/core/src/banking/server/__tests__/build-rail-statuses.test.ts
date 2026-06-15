@@ -25,6 +25,7 @@ function makeState(
     customer: { endorsements } as never,
     virtualAccountKeys: new Set(),
     virtualAccountPairs: new Set(pairs),
+    liquidationAddressPairs: new Set(),
   };
 }
 

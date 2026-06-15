@@ -2847,6 +2847,103 @@
         "signInHint": "Inicie sesión para gestionar cuentas bancarias."
       }
     },
+    "payouts": {
+      "tabs": {
+        "deposits": "Depósitos",
+        "payouts": "Pagos"
+      },
+      "section": {
+        "title": "Cuentas de pago",
+        "description": "Registre dónde envía el fiat el tesoro tras una propuesta aprobada. Cada cuenta obtiene una dirección de liquidación para propuestas de Financiación o Gastos."
+      },
+      "addCta": "Añadir cuenta de pago",
+      "loading": "Cargando cuentas de pago…",
+      "emptyTitle": "Aún no hay cuentas de pago",
+      "emptyDescription": "Registre una cuenta bancaria para recibir pagos del tesoro. USDC del tesoro → dirección de liquidación → votación → fiat en su banco.",
+      "cardBankFallback": "Cuenta bancaria",
+      "liquidationAddressLabel": "Dirección de liquidación",
+      "payoutAddressLabel": "Dirección de pago",
+      "detail": {
+        "title": "Cuenta de pago",
+        "titleFallback": "Cuenta de pago",
+        "sourceToken": "Token de tesorería",
+        "close": "Cerrar",
+        "openAriaLabel": "Abrir detalles de cuenta"
+      },
+      "status": {
+        "active": "Activo",
+        "inactive": "Inactivo",
+        "pending": "Pendiente"
+      },
+      "addDialog": {
+        "title": "Añadir cuenta de pago",
+        "stepOf": "Paso {current} de {total}",
+        "step1Description": "Elija la moneda de destino de esta cuenta de pago.",
+        "step2Description": "Introduzca los datos bancarios de la cuenta de destino.",
+        "step3Description": "Revise y confirme los detalles de su cuenta de pago.",
+        "reviewHint": "Revise los detalles a continuación. Regrese para realizar cambios antes de enviar.",
+        "confirm": "Confirmar y enviar",
+        "currencyLabel": "Moneda de destino",
+        "currencyHint": "Moneda que recibirá esta cuenta externa.",
+        "continue": "Continuar",
+        "back": "Volver",
+        "cancel": "Cancelar",
+        "sourceCurrencyLabel": "Token del tesoro",
+        "sourceCurrencySection": "Token del tesoro",
+        "sourceCurrencyHint": "Seleccione qué token enviará el tesoro a esta cuenta.",
+        "bankAccountSection": "Cuenta bancaria",
+        "accountHolderSection": "Titular de la cuenta",
+        "addressSection": "Dirección bancaria",
+        "bankName": "Nombre del banco",
+        "bankNamePlaceholder": "Ej. Chase, Barclays",
+        "accountName": "Alias",
+        "accountNamePlaceholder": "Ej. Operaciones USD",
+        "accountNameHint": "Etiqueta interna para su equipo — no se envía al banco.",
+        "accountOwnerName": "Nombre del titular",
+        "businessName": "Razón social",
+        "routingNumber": "Número de routing",
+        "routingNumberPlaceholder": "021000021 (9 dígitos)",
+        "accountNumber": "Número de cuenta",
+        "accountNumberPlaceholder": "1234567890",
+        "sortCode": "Sort code",
+        "sortCodePlaceholder": "20-00-00",
+        "iban": "IBAN",
+        "ibanPlaceholder": "DE89 3704 0044 0532 0130 00",
+        "bic": "BIC / código SWIFT",
+        "bicPlaceholder": "AAAADEBBXXX",
+        "street": "Dirección",
+        "streetPlaceholder": "Calle Mayor 123",
+        "street2": "Dirección línea 2",
+        "street2Placeholder": "Apto, piso (opcional)",
+        "city": "Ciudad",
+        "subdivision": "Estado / Provincia",
+        "subdivisionUs": "Estado",
+        "postalCode": "Código postal",
+        "country": "País",
+        "countryPlaceholder": "Seleccione un país…",
+        "submit": "Añadir cuenta de pago",
+        "submitting": "Creando…",
+        "success": {
+          "title": "Cuenta de pago registrada",
+          "subtitle": "La cuenta está activa. Copie la dirección de liquidación para usarla en propuestas.",
+          "liquidationAddressLabel": "Dirección de liquidación",
+          "howToTitle": "Cómo realizar pagos",
+          "howToText": "Cree una propuesta de Financiación o Gastos → pegue esta dirección como destinatario → seleccione USDC o EURC como token → vote y ejecute. Bridge convierte y transfiere el fiat al banco registrado.",
+          "done": "Listo"
+        },
+        "swift": {
+          "code": "SWIFT",
+          "hint": "Transferencia internacional vía BIC/SWIFT"
+        },
+        "rails": {
+          "usd_ach": "USD — ACH",
+          "usd_wire": "USD — Wire",
+          "eur_sepa": "EUR — SEPA",
+          "gbp": "GBP — Faster Payments",
+          "swift": "SWIFT internacional"
+        }
+      }
+    },
     "openAccount": {
       "title": "Abrir una cuenta del space",
       "titleAddCurrency": "Añadir una cuenta bancaria",
