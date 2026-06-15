@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import {
   isGoogleDrivePickerConfigured,
@@ -19,11 +19,13 @@ export function useGoogleDrivePicker({
   disabled = false,
 }: UseGoogleDrivePickerOptions) {
   const [isOpening, setIsOpening] = useState(false);
+  const openingRef = useRef(false);
   const configured = isGoogleDrivePickerConfigured();
   const available = configured && !disabled;
 
   const openPicker = useCallback(async () => {
-    if (!available || isOpening) return;
+    if (!available || openingRef.current) return;
+    openingRef.current = true;
     setIsOpening(true);
     try {
       const files = await pickGoogleDriveFiles();
@@ -37,9 +39,10 @@ export function useGoogleDrivePicker({
         onError?.(code);
       }
     } finally {
+      openingRef.current = false;
       setIsOpening(false);
     }
-  }, [available, isOpening, onError, onFilesPicked]);
+  }, [available, onError, onFilesPicked]);
 
   return { openPicker, configured, available, isOpening };
 }
