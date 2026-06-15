@@ -157,6 +157,7 @@ export async function createSpaceBankPayoutAccount(
       id: externalAccount.providerExternalAccountId,
       active: externalAccount.active,
       currency: externalAccount.currency,
+      account_name: externalAccount.accountName ?? undefined,
       bank_name: externalAccount.bankName ?? undefined,
       account_owner_name: externalAccount.accountOwnerName ?? undefined,
       last_4: externalAccount.accountLast4 ?? undefined,

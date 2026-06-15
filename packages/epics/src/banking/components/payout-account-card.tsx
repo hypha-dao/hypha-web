@@ -59,10 +59,9 @@ function PayoutCurrencyIcon({ destinationCurrency }: { destinationCurrency: stri
 export const PayoutAccountCard: FC<PayoutAccountCardProps> = ({ account, onClick }) => {
   const t = useTranslations('BankingTab.payouts');
 
-  const primaryLabel = account.bankName ?? t('cardBankFallback');
+  const primaryLabel = account.accountName ?? account.bankName ?? t('cardBankFallback');
   const destination = account.destinationCurrency.toUpperCase();
   const source = account.sourceCurrency.toUpperCase();
-  const rail = humanRailLabel(account.paymentRail);
   const maskedAccount = account.accountLast4 ? `••••${account.accountLast4}` : null;
 
   return (
@@ -91,9 +90,7 @@ export const PayoutAccountCard: FC<PayoutAccountCardProps> = ({ account, onClick
         <div className="min-w-0 flex-1">
           <p className="text-3 font-semibold text-foreground">{primaryLabel}</p>
           <p className="mt-0.5 text-2 text-muted-foreground">
-            {maskedAccount
-              ? `${destination} ${maskedAccount} · ${source} → ${rail}`
-              : `${destination} · ${source} → ${rail}`}
+            {`${source} → ${destination}`}{maskedAccount ? ` · ${maskedAccount}` : ''}
           </p>
         </div>
         <span
@@ -109,7 +106,7 @@ export const PayoutAccountCard: FC<PayoutAccountCardProps> = ({ account, onClick
 
       <InlineCopyRow
         className="flex-1"
-        label={t('liquidationAddressLabel')}
+        label={t('payoutAddressLabel')}
         value={account.evmAddress}
       />
     </Card>

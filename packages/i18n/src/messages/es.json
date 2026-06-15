@@ -2862,8 +2862,10 @@
       "emptyDescription": "Registre una cuenta bancaria para recibir pagos del tesoro. USDC del tesoro → dirección de liquidación → votación → fiat en su banco.",
       "cardBankFallback": "Cuenta bancaria",
       "liquidationAddressLabel": "Dirección de liquidación",
+      "payoutAddressLabel": "Dirección de pago",
       "detail": {
         "title": "Cuenta de pago",
+        "titleFallback": "Cuenta de pago",
         "sourceToken": "Token de tesorería",
         "close": "Cerrar",
         "openAriaLabel": "Abrir detalles de cuenta"

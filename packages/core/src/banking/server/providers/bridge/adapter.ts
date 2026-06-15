@@ -316,6 +316,7 @@ export function createBridgeKycProvider(): BankKycProvider {
         paymentRail: rail.destinationPaymentRail,
         active: response.active ?? true,
         accountLast4: readExternalAccountLast4(response),
+        accountName: response.account_name ?? input.accountName,
         bankName: response.bank_name ?? input.bankName,
         accountOwnerName: response.account_owner_name ?? input.accountOwnerName,
       };

@@ -2860,8 +2860,10 @@
       "emptyDescription": "Registre uma conta bancária para receber pagamentos do tesouro. USDC do tesouro → endereço de liquidação → votação → fiat no seu banco.",
       "cardBankFallback": "Conta bancária",
       "liquidationAddressLabel": "Endereço de liquidação",
+      "payoutAddressLabel": "Endereço de pagamento",
       "detail": {
         "title": "Conta de pagamento",
+        "titleFallback": "Conta de pagamento",
         "sourceToken": "Token de tesouro",
         "close": "Fechar",
         "openAriaLabel": "Abrir detalhes da conta"

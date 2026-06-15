@@ -217,6 +217,7 @@ export function mapBridgePayoutAccountToPublic(input: {
     accountLast4: externalAccount
       ? readExternalAccountLast4(externalAccount)
       : null,
+    accountName: externalAccount?.account_name ?? null,
     bankName: externalAccount?.bank_name ?? null,
     accountOwnerName: externalAccount?.account_owner_name ?? null,
     status: resolvePayoutAccountStatus({

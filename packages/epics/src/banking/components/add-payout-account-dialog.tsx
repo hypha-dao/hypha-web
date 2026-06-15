@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { FC, FormEvent, ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { FC, FormEvent, ReactNode, useEffect, useId, useState } from 'react';
 import { ArrowLeft, Globe, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -38,6 +38,7 @@ import {
 
 const ADD_PAYOUT_FORM_ID = 'add-payout-account-form';
 const STREET_MAX_LENGTH = 35;
+const REQUIRED_MSG = 'This field is required';
 
 function isValidIban(raw: string): boolean {
   const iban = raw.replace(/\s/g, '').toUpperCase();
@@ -143,6 +144,15 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function FieldError({ id, message }: { id: string; message: string | undefined }) {
+  if (!message) return null;
+  return (
+    <p id={id} className="text-1 text-destructive" role="alert">
+      {message}
+    </p>
+  );
+}
+
 export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   open,
   onOpenChange,
@@ -179,8 +189,6 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   const [postalCode, setPostalCode] = useState('');
   const [country, setCountry] = useState('');
 
-  const wasOpenRef = useRef(false);
-
   const clearRailSpecificFields = () => {
     setRoutingNumber('');
     setAccountNumber('');
@@ -190,12 +198,8 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   };
 
   useEffect(() => {
-    const justOpened = open && !wasOpenRef.current;
-    wasOpenRef.current = open;
-
-    if (!justOpened) {
-      return;
-    }
+    // Reset on close so the next open's first render is already clean (no flash of stale errors).
+    if (open) return;
 
     setStep('currency');
     setSelectedCurrency('usd');
@@ -227,6 +231,16 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     : selectedCurrency === 'usd' ? COUNTRIES.filter((c) => c.alpha3 === 'USA')
     : COUNTRIES;
 
+  const clearFieldError = (key: string) => {
+    if (fieldErrors[key]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+
   const handleCurrencySelect = (currency: PayoutCurrencyKey) => {
     if (currency !== selectedCurrency) {
       clearRailSpecificFields();
@@ -241,26 +255,63 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   };
 
   const handleBack = () => {
-    if (step === 'form') setStep('currency');
+    if (step === 'form') {
+      setFieldErrors({});
+      setStep('currency');
+    }
     if (step === 'review') setStep('form');
   };
 
-  // form onSubmit: validates IBAN and advances to review step
+  // Validates all required fields and the IBAN checksum; advances to review on pass.
   const handleFormContinue = (event: FormEvent) => {
     event.preventDefault();
-    const nextFieldErrors: Record<string, string> = {};
-    const ibanValue = iban.trim().replace(/\s/g, '');
-    if (showIbanFields && ibanValue && !isValidIban(ibanValue)) {
-      nextFieldErrors.iban = 'Invalid IBAN — check the number and try again';
+    const errs: Record<string, string> = {};
+
+    if (!accountName.trim()) errs.accountName = REQUIRED_MSG;
+    if (!bankName.trim()) errs.bankName = REQUIRED_MSG;
+    if (!accountOwnerName.trim()) errs.accountOwnerName = REQUIRED_MSG;
+    if (!businessName.trim()) errs.businessName = REQUIRED_MSG;
+    if (!streetLine1.trim()) errs.street = REQUIRED_MSG;
+    if (!city.trim()) errs.city = REQUIRED_MSG;
+    if (!postalCode.trim()) errs.postal = REQUIRED_MSG;
+    if (!country) errs.country = REQUIRED_MSG;
+    if (isUsAddress && !subdivision.trim()) errs.subdivision = REQUIRED_MSG;
+
+    if (showUsFields) {
+      if (!routingNumber.trim()) errs.routingNumber = REQUIRED_MSG;
+      if (!accountNumber.trim()) errs.accountNumber = REQUIRED_MSG;
     }
-    if (Object.keys(nextFieldErrors).length > 0) {
-      setFieldErrors(nextFieldErrors);
+    if (showGbpFields) {
+      if (!sortCode.trim()) errs.sortCode = REQUIRED_MSG;
+      if (!accountNumber.trim()) errs.accountNumber = REQUIRED_MSG;
+    }
+    if (selectedCurrency === 'eur') {
+      if (!iban.trim()) {
+        errs.iban = REQUIRED_MSG;
+      } else {
+        const ibanValue = iban.trim().replace(/\s/g, '');
+        if (!isValidIban(ibanValue)) {
+          errs.iban = 'Invalid IBAN â€” check the number and try again';
+        }
+      }
+    } else if (selectedCurrency === 'swift') {
+      const ibanValue = iban.trim().replace(/\s/g, '');
+      if (ibanValue && !isValidIban(ibanValue)) {
+        errs.iban = 'Invalid IBAN â€” check the number and try again';
+      }
+      if (!bic.trim()) errs.bic = REQUIRED_MSG;
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
       return;
     }
+
+    setFieldErrors({});
     setStep('review');
   };
 
-  // review step: fires the actual POST
+  // Fires the actual POST from the review step.
   const handleConfirmSubmit = async () => {
     try {
       const account = await onSubmit({
@@ -293,6 +344,11 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
 
   const countryName =
     COUNTRIES.find((c) => c.alpha3 === country)?.name ?? country;
+
+  const inputErrorClass = (key: string) =>
+    fieldErrors[key]
+      ? 'border-destructive ring-1 ring-destructive focus-visible:ring-destructive'
+      : undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -342,9 +398,12 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
               ) : null}
             </div>
           ) : step === 'form' ? (
+            // noValidate disables all browser-native required/invalid validation;
+            // we run manual checks in handleFormContinue instead.
             <form
               id={ADD_PAYOUT_FORM_ID}
               onSubmit={handleFormContinue}
+              noValidate
               className="flex flex-col gap-4"
             >
               <div className="flex items-center justify-between">
@@ -369,11 +428,17 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                 <Input
                   id="payout-account-name"
                   value={accountName}
-                  onChange={(event) => setAccountName(event.target.value)}
+                  onChange={(event) => {
+                    setAccountName(event.target.value);
+                    clearFieldError('accountName');
+                  }}
                   placeholder={t('accountNamePlaceholder')}
-                  required
                   disabled={isSubmitting}
+                  aria-invalid={fieldErrors.accountName ? true : undefined}
+                  aria-describedby={fieldErrors.accountName ? 'err-accountName' : undefined}
+                  className={cn(inputErrorClass('accountName'))}
                 />
+                <FieldError id="err-accountName" message={fieldErrors.accountName} />
                 <p className="text-1 text-muted-foreground">
                   {t('accountNameHint')}
                 </p>
@@ -418,49 +483,59 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   <Input
                     id="payout-bank-name"
                     value={bankName}
-                    onChange={(event) => setBankName(event.target.value)}
+                    onChange={(event) => {
+                      setBankName(event.target.value);
+                      clearFieldError('bankName');
+                    }}
                     placeholder={t('bankNamePlaceholder')}
-                    required
                     disabled={isSubmitting}
+                    aria-invalid={fieldErrors.bankName ? true : undefined}
+                    aria-describedby={fieldErrors.bankName ? 'err-bankName' : undefined}
+                    className={cn(inputErrorClass('bankName'))}
                   />
+                  <FieldError id="err-bankName" message={fieldErrors.bankName} />
                 </div>
 
                 {showUsFields ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-routing">
-                        {t('routingNumber')}
-                      </Label>
+                      <Label htmlFor="payout-routing">{t('routingNumber')}</Label>
                       <Input
                         id="payout-routing"
                         value={routingNumber}
-                        onChange={(event) =>
+                        onChange={(event) => {
                           setRoutingNumber(
                             event.target.value.replace(/\D/g, '').slice(0, 9),
-                          )
-                        }
+                          );
+                          clearFieldError('routingNumber');
+                        }}
                         placeholder={t('routingNumberPlaceholder')}
                         inputMode="numeric"
                         maxLength={9}
-                        required
                         disabled={isSubmitting}
+                        aria-invalid={fieldErrors.routingNumber ? true : undefined}
+                        aria-describedby={fieldErrors.routingNumber ? 'err-routingNumber' : undefined}
+                        className={cn(inputErrorClass('routingNumber'))}
                       />
+                      <FieldError id="err-routingNumber" message={fieldErrors.routingNumber} />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-account-number">
-                        {t('accountNumber')}
-                      </Label>
+                      <Label htmlFor="payout-account-number">{t('accountNumber')}</Label>
                       <Input
                         id="payout-account-number"
                         value={accountNumber}
-                        onChange={(event) =>
-                          setAccountNumber(event.target.value)
-                        }
+                        onChange={(event) => {
+                          setAccountNumber(event.target.value);
+                          clearFieldError('accountNumber');
+                        }}
                         placeholder={t('accountNumberPlaceholder')}
                         inputMode="numeric"
-                        required
                         disabled={isSubmitting}
+                        aria-invalid={fieldErrors.accountNumber ? true : undefined}
+                        aria-describedby={fieldErrors.accountNumber ? 'err-accountNumber' : undefined}
+                        className={cn(inputErrorClass('accountNumber'))}
                       />
+                      <FieldError id="err-accountNumber" message={fieldErrors.accountNumber} />
                     </div>
                   </div>
                 ) : null}
@@ -472,27 +547,35 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                       <Input
                         id="payout-sort-code"
                         value={sortCode}
-                        onChange={(event) => setSortCode(event.target.value)}
+                        onChange={(event) => {
+                          setSortCode(event.target.value);
+                          clearFieldError('sortCode');
+                        }}
                         placeholder={t('sortCodePlaceholder')}
-                        required
                         disabled={isSubmitting}
+                        aria-invalid={fieldErrors.sortCode ? true : undefined}
+                        aria-describedby={fieldErrors.sortCode ? 'err-sortCode' : undefined}
+                        className={cn(inputErrorClass('sortCode'))}
                       />
+                      <FieldError id="err-sortCode" message={fieldErrors.sortCode} />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-gbp-account">
-                        {t('accountNumber')}
-                      </Label>
+                      <Label htmlFor="payout-gbp-account">{t('accountNumber')}</Label>
                       <Input
                         id="payout-gbp-account"
                         value={accountNumber}
-                        onChange={(event) =>
-                          setAccountNumber(event.target.value)
-                        }
+                        onChange={(event) => {
+                          setAccountNumber(event.target.value);
+                          clearFieldError('accountNumber');
+                        }}
                         placeholder={t('accountNumberPlaceholder')}
                         inputMode="numeric"
-                        required
                         disabled={isSubmitting}
+                        aria-invalid={fieldErrors.accountNumber ? true : undefined}
+                        aria-describedby={fieldErrors.accountNumber ? 'err-accountNumber' : undefined}
+                        className={cn(inputErrorClass('accountNumber'))}
                       />
+                      <FieldError id="err-accountNumber" message={fieldErrors.accountNumber} />
                     </div>
                   </div>
                 ) : null}
@@ -506,35 +589,15 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         value={iban}
                         onChange={(event) => {
                           setIban(event.target.value.toUpperCase());
-                          if (fieldErrors.iban) {
-                            setFieldErrors((prev) => {
-                              const next = { ...prev };
-                              delete next.iban;
-                              return next;
-                            });
-                          }
+                          clearFieldError('iban');
                         }}
                         placeholder={t('ibanPlaceholder')}
-                        required={selectedCurrency === 'eur'}
                         disabled={isSubmitting}
-                        aria-invalid={!!fieldErrors.iban}
-                        aria-describedby={
-                          fieldErrors.iban ? 'payout-iban-error' : undefined
-                        }
-                        className={cn(
-                          fieldErrors.iban &&
-                            'border-destructive ring-1 ring-destructive focus-visible:ring-destructive',
-                        )}
+                        aria-invalid={fieldErrors.iban ? true : undefined}
+                        aria-describedby={fieldErrors.iban ? 'err-iban' : undefined}
+                        className={cn(inputErrorClass('iban'))}
                       />
-                      {fieldErrors.iban ? (
-                        <p
-                          id="payout-iban-error"
-                          className="text-1 text-destructive"
-                          role="alert"
-                        >
-                          {fieldErrors.iban}
-                        </p>
-                      ) : null}
+                      <FieldError id="err-iban" message={fieldErrors.iban} />
                     </div>
                     {selectedCurrency === 'swift' ? (
                       <div className="flex flex-col gap-2">
@@ -542,14 +605,18 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         <Input
                           id="payout-bic"
                           value={bic}
-                          onChange={(event) =>
-                            setBic(event.target.value.toUpperCase())
-                          }
+                          onChange={(event) => {
+                            setBic(event.target.value.toUpperCase());
+                            clearFieldError('bic');
+                          }}
                           placeholder={t('bicPlaceholder')}
                           maxLength={11}
-                          required
                           disabled={isSubmitting}
+                          aria-invalid={fieldErrors.bic ? true : undefined}
+                          aria-describedby={fieldErrors.bic ? 'err-bic' : undefined}
+                          className={cn(inputErrorClass('bic'))}
                         />
+                        <FieldError id="err-bic" message={fieldErrors.bic} />
                       </div>
                     ) : null}
                   </div>
@@ -559,30 +626,36 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
               {/* Account holder */}
               <FormSection title={t('accountHolderSection')}>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="payout-owner-name">
-                    {t('accountOwnerName')}
-                  </Label>
+                  <Label htmlFor="payout-owner-name">{t('accountOwnerName')}</Label>
                   <Input
                     id="payout-owner-name"
                     value={accountOwnerName}
-                    onChange={(event) =>
-                      setAccountOwnerName(event.target.value)
-                    }
-                    required
+                    onChange={(event) => {
+                      setAccountOwnerName(event.target.value);
+                      clearFieldError('accountOwnerName');
+                    }}
                     disabled={isSubmitting}
+                    aria-invalid={fieldErrors.accountOwnerName ? true : undefined}
+                    aria-describedby={fieldErrors.accountOwnerName ? 'err-accountOwnerName' : undefined}
+                    className={cn(inputErrorClass('accountOwnerName'))}
                   />
+                  <FieldError id="err-accountOwnerName" message={fieldErrors.accountOwnerName} />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="payout-business-name">
-                    {t('businessName')}
-                  </Label>
+                  <Label htmlFor="payout-business-name">{t('businessName')}</Label>
                   <Input
                     id="payout-business-name"
                     value={businessName}
-                    onChange={(event) => setBusinessName(event.target.value)}
-                    required
+                    onChange={(event) => {
+                      setBusinessName(event.target.value);
+                      clearFieldError('businessName');
+                    }}
                     disabled={isSubmitting}
+                    aria-invalid={fieldErrors.businessName ? true : undefined}
+                    aria-describedby={fieldErrors.businessName ? 'err-businessName' : undefined}
+                    className={cn(inputErrorClass('businessName'))}
                   />
+                  <FieldError id="err-businessName" message={fieldErrors.businessName} />
                 </div>
               </FormSection>
 
@@ -593,12 +666,18 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   <Input
                     id="payout-street"
                     value={streetLine1}
-                    onChange={(event) => setStreetLine1(event.target.value)}
+                    onChange={(event) => {
+                      setStreetLine1(event.target.value);
+                      clearFieldError('street');
+                    }}
                     placeholder={t('streetPlaceholder')}
                     maxLength={STREET_MAX_LENGTH}
-                    required
                     disabled={isSubmitting}
+                    aria-invalid={fieldErrors.street ? true : undefined}
+                    aria-describedby={fieldErrors.street ? 'err-street' : undefined}
+                    className={cn(inputErrorClass('street'))}
                   />
+                  <FieldError id="err-street" message={fieldErrors.street} />
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="payout-street2">{t('street2')}</Label>
@@ -617,10 +696,16 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     <Input
                       id="payout-city"
                       value={city}
-                      onChange={(event) => setCity(event.target.value)}
-                      required
+                      onChange={(event) => {
+                        setCity(event.target.value);
+                        clearFieldError('city');
+                      }}
                       disabled={isSubmitting}
+                      aria-invalid={fieldErrors.city ? true : undefined}
+                      aria-describedby={fieldErrors.city ? 'err-city' : undefined}
+                      className={cn(inputErrorClass('city'))}
                     />
+                    <FieldError id="err-city" message={fieldErrors.city} />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="payout-subdivision">
@@ -629,32 +714,52 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     <Input
                       id="payout-subdivision"
                       value={subdivision}
-                      onChange={(event) => setSubdivision(event.target.value)}
+                      onChange={(event) => {
+                        setSubdivision(event.target.value);
+                        clearFieldError('subdivision');
+                      }}
                       placeholder={isUsAddress ? 'CA' : undefined}
                       maxLength={isUsAddress ? 2 : undefined}
-                      required={isUsAddress}
                       disabled={isSubmitting}
+                      aria-invalid={fieldErrors.subdivision ? true : undefined}
+                      aria-describedby={fieldErrors.subdivision ? 'err-subdivision' : undefined}
+                      className={cn(inputErrorClass('subdivision'))}
                     />
+                    <FieldError id="err-subdivision" message={fieldErrors.subdivision} />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="payout-postal">{t('postalCode')}</Label>
                     <Input
                       id="payout-postal"
                       value={postalCode}
-                      onChange={(event) => setPostalCode(event.target.value)}
-                      required
+                      onChange={(event) => {
+                        setPostalCode(event.target.value);
+                        clearFieldError('postal');
+                      }}
                       disabled={isSubmitting}
+                      aria-invalid={fieldErrors.postal ? true : undefined}
+                      aria-describedby={fieldErrors.postal ? 'err-postal' : undefined}
+                      className={cn(inputErrorClass('postal'))}
                     />
+                    <FieldError id="err-postal" message={fieldErrors.postal} />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="payout-country">{t('country')}</Label>
                     <select
                       id="payout-country"
-                      className="h-9 w-full appearance-none rounded-md border border-input bg-background px-3 text-2 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      className={cn(
+                        'h-9 w-full appearance-none rounded-md border border-input bg-background px-3 text-2 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+                        fieldErrors.country &&
+                          'border-destructive ring-1 ring-destructive',
+                      )}
                       value={country}
-                      onChange={(event) => setCountry(event.target.value)}
-                      required
+                      onChange={(event) => {
+                        setCountry(event.target.value);
+                        clearFieldError('country');
+                      }}
                       disabled={isSubmitting}
+                      aria-invalid={fieldErrors.country ? true : undefined}
+                      aria-describedby={fieldErrors.country ? 'err-country' : undefined}
                     >
                       <option value="">{t('countryPlaceholder')}</option>
                       {countryOptions.map((c) => (
@@ -663,6 +768,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         </option>
                       ))}
                     </select>
+                    <FieldError id="err-country" message={fieldErrors.country} />
                   </div>
                 </div>
               </FormSection>
@@ -711,9 +817,7 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                 {showIbanFields && iban ? (
                   <ReviewRow label={t('iban')} value={iban} />
                 ) : null}
-                {bic ? (
-                  <ReviewRow label={t('bic')} value={bic} />
-                ) : null}
+                {bic ? <ReviewRow label={t('bic')} value={bic} /> : null}
               </FormSection>
 
               <FormSection title={t('accountHolderSection')}>
@@ -796,3 +900,4 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     </Dialog>
   );
 };
+

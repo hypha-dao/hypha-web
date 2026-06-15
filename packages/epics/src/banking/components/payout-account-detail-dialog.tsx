@@ -28,22 +28,21 @@ import {
 import { CurrencyFlagBadge } from './currency-flag-badge';
 import { InlineCopyRow } from './inline-copy-row';
 
-const RAIL_HUMAN_LABELS: Record<string, string> = {
-  ach: 'ACH',
-  sepa: 'SEPA',
-  wire: 'Wire',
-  faster_payments: 'Faster Payments',
-  swift: 'SWIFT',
-};
-
-function humanRailLabel(paymentRail: string): string {
-  return RAIL_HUMAN_LABELS[paymentRail.toLowerCase()] ?? paymentRail.toUpperCase();
-}
-
 function statusBadgeClass(status: string): string {
   if (status === 'active') return 'bg-success-9 text-white';
   if (status === 'inactive' || status === 'deactivated') return 'bg-neutral-9 text-white';
   return 'bg-warning-9 text-neutral-12';
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <span className="shrink-0 text-2 text-muted-foreground">{label}</span>
+      <span className="min-w-0 text-right text-2 font-medium text-foreground break-all">
+        {value}
+      </span>
+    </div>
+  );
 }
 
 type PayoutAccountDetailDialogProps = {
@@ -63,23 +62,23 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
   if (!account) return null;
 
   const destination = account.destinationCurrency.toLowerCase() as BankCurrencyCode;
+  const source = account.sourceCurrency.toUpperCase();
+  const dest = account.destinationCurrency.toUpperCase();
   const meta = getBankCurrencyMeta(destination);
   const maskedAccount = account.accountLast4 ? `••••${account.accountLast4}` : null;
-  const rail = humanRailLabel(account.paymentRail);
+  const displayTitle = account.accountName ?? account.bankName ?? t('detail.titleFallback');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(BANKING_DIALOG_FORM_CONTENT_CLASS, 'max-w-md')}>
         <DialogHeader className={BANKING_DIALOG_HEADER_CLASS}>
-          <DialogTitle>{t('detail.title')}</DialogTitle>
-          <DialogDescription>
-            {account.bankName ?? t('cardBankFallback')}
-          </DialogDescription>
+          <DialogTitle>{displayTitle}</DialogTitle>
+          <DialogDescription>{`${source} → ${dest}`}</DialogDescription>
         </DialogHeader>
 
         <BankingDialogBody>
           <div className="flex flex-col gap-4">
-            {/* Header row: currency icon + destination + status */}
+            {/* Currency flow + status badge */}
             <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5">
               {meta ? (
                 <CurrencyFlagBadge currency={destination} />
@@ -90,7 +89,7 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
               )}
               <div className="min-w-0 flex-1">
                 <p className="text-2 font-semibold text-foreground">
-                  {account.destinationCurrency.toUpperCase()} · {rail}
+                  {`${source} → ${dest}`}
                 </p>
                 {maskedAccount ? (
                   <p className="text-1 text-muted-foreground">{maskedAccount}</p>
@@ -106,18 +105,26 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
               </span>
             </div>
 
-            {/* Source token */}
-            <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background-2/30 px-3 py-2.5">
-              <span className="text-2 text-muted-foreground">{t('detail.sourceToken')}</span>
-              <span className="text-2 font-medium text-foreground">
-                {account.sourceCurrency.toUpperCase()}
-              </span>
+            {/* Bank destination info */}
+            <div className="flex flex-col gap-2.5 rounded-lg border border-border/60 bg-background-2/30 p-4">
+              <p className="text-1 font-semibold uppercase tracking-wide text-muted-foreground">
+                {tDialog('bankAccountSection')}
+              </p>
+              {account.bankName ? (
+                <DetailRow label={tDialog('bankName')} value={account.bankName} />
+              ) : null}
+              {maskedAccount ? (
+                <DetailRow label={tDialog('accountNumber')} value={maskedAccount} />
+              ) : null}
+              {account.accountOwnerName ? (
+                <DetailRow label={tDialog('accountOwnerName')} value={account.accountOwnerName} />
+              ) : null}
             </div>
 
-            {/* Liquidation address */}
+            {/* Payout address */}
             <div className="flex flex-col gap-1.5">
               <p className="text-1 font-semibold uppercase tracking-wide text-muted-foreground">
-                {t('liquidationAddressLabel')}
+                {t('payoutAddressLabel')}
               </p>
               <InlineCopyRow value={account.evmAddress} />
             </div>

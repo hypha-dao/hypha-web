@@ -596,8 +596,10 @@
       "emptyDescription": "Register a bank account to receive treasury payouts. Treasury USDC → liquidation address → vote → fiat in your bank.",
       "cardBankFallback": "Bank account",
       "liquidationAddressLabel": "Liquidation address",
+      "payoutAddressLabel": "Payout address",
       "detail": {
         "title": "Payout account",
+        "titleFallback": "Payout account",
         "sourceToken": "Treasury token",
         "close": "Close",
         "openAriaLabel": "Open account details"
@@ -660,7 +662,7 @@
           "subtitle": "The account is active. Copy the liquidation address to use in proposals.",
           "liquidationAddressLabel": "Liquidation address",
           "howToTitle": "How to pay out",
-          "howToText": "Create a Funding or Expenses proposal → paste this address as the recipient → select USDC or EURC as the token → vote and execute. Bridge auto-converts and wires fiat to the registered bank.",
+          "howToText": "Create a Funding or Expenses proposal pointing to this address as the payout destination. Bridge will convert and wire fiat to your registered bank.",
           "done": "Done"
         },
         "swift": {
