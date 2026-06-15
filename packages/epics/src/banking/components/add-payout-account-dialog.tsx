@@ -21,7 +21,10 @@ import {
   getBankCurrencyMeta,
   type BankCurrencyCode,
 } from '../bank-currency-display';
-import type { BankPayoutAccountPublic, CreatePayoutAccountInput } from '../hooks/types';
+import type {
+  BankPayoutAccountPublic,
+  CreatePayoutAccountInput,
+} from '../hooks/types';
 import {
   BANKING_DIALOG_FOOTER_CLASS,
   BANKING_DIALOG_FORM_CONTENT_CLASS,
@@ -61,7 +64,9 @@ type AddPayoutAccountDialogProps = {
   error: string | null;
   defaultAccountOwnerName?: string;
   defaultBusinessName?: string;
-  onSubmit: (input: CreatePayoutAccountInput) => Promise<BankPayoutAccountPublic>;
+  onSubmit: (
+    input: CreatePayoutAccountInput,
+  ) => Promise<BankPayoutAccountPublic>;
   onSuccess: (account: BankPayoutAccountPublic) => void;
 };
 
@@ -144,7 +149,13 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function FieldError({ id, message }: { id: string; message: string | undefined }) {
+function FieldError({
+  id,
+  message,
+}: {
+  id: string;
+  message: string | undefined;
+}) {
   if (!message) return null;
   return (
     <p id={id} className="text-1 text-destructive" role="alert">
@@ -226,10 +237,13 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
   const isUsAddress = country === 'USA';
 
   const countryOptions =
-    selectedCurrency === 'eur' ? SEPA_COUNTRIES
-    : selectedCurrency === 'gbp' ? COUNTRIES.filter((c) => c.alpha3 === 'GBR')
-    : selectedCurrency === 'usd' ? COUNTRIES.filter((c) => c.alpha3 === 'USA')
-    : COUNTRIES;
+    selectedCurrency === 'eur'
+      ? SEPA_COUNTRIES
+      : selectedCurrency === 'gbp'
+      ? COUNTRIES.filter((c) => c.alpha3 === 'GBR')
+      : selectedCurrency === 'usd'
+      ? COUNTRIES.filter((c) => c.alpha3 === 'USA')
+      : COUNTRIES;
 
   const clearFieldError = (key: string) => {
     if (fieldErrors[key]) {
@@ -435,10 +449,15 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                   placeholder={t('accountNamePlaceholder')}
                   disabled={isSubmitting}
                   aria-invalid={fieldErrors.accountName ? true : undefined}
-                  aria-describedby={fieldErrors.accountName ? 'err-accountName' : undefined}
+                  aria-describedby={
+                    fieldErrors.accountName ? 'err-accountName' : undefined
+                  }
                   className={cn(inputErrorClass('accountName'))}
                 />
-                <FieldError id="err-accountName" message={fieldErrors.accountName} />
+                <FieldError
+                  id="err-accountName"
+                  message={fieldErrors.accountName}
+                />
                 <p className="text-1 text-muted-foreground">
                   {t('accountNameHint')}
                 </p>
@@ -490,16 +509,23 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     placeholder={t('bankNamePlaceholder')}
                     disabled={isSubmitting}
                     aria-invalid={fieldErrors.bankName ? true : undefined}
-                    aria-describedby={fieldErrors.bankName ? 'err-bankName' : undefined}
+                    aria-describedby={
+                      fieldErrors.bankName ? 'err-bankName' : undefined
+                    }
                     className={cn(inputErrorClass('bankName'))}
                   />
-                  <FieldError id="err-bankName" message={fieldErrors.bankName} />
+                  <FieldError
+                    id="err-bankName"
+                    message={fieldErrors.bankName}
+                  />
                 </div>
 
                 {showUsFields ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-routing">{t('routingNumber')}</Label>
+                      <Label htmlFor="payout-routing">
+                        {t('routingNumber')}
+                      </Label>
                       <Input
                         id="payout-routing"
                         value={routingNumber}
@@ -513,14 +539,25 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         inputMode="numeric"
                         maxLength={9}
                         disabled={isSubmitting}
-                        aria-invalid={fieldErrors.routingNumber ? true : undefined}
-                        aria-describedby={fieldErrors.routingNumber ? 'err-routingNumber' : undefined}
+                        aria-invalid={
+                          fieldErrors.routingNumber ? true : undefined
+                        }
+                        aria-describedby={
+                          fieldErrors.routingNumber
+                            ? 'err-routingNumber'
+                            : undefined
+                        }
                         className={cn(inputErrorClass('routingNumber'))}
                       />
-                      <FieldError id="err-routingNumber" message={fieldErrors.routingNumber} />
+                      <FieldError
+                        id="err-routingNumber"
+                        message={fieldErrors.routingNumber}
+                      />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-account-number">{t('accountNumber')}</Label>
+                      <Label htmlFor="payout-account-number">
+                        {t('accountNumber')}
+                      </Label>
                       <Input
                         id="payout-account-number"
                         value={accountNumber}
@@ -531,11 +568,20 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         placeholder={t('accountNumberPlaceholder')}
                         inputMode="numeric"
                         disabled={isSubmitting}
-                        aria-invalid={fieldErrors.accountNumber ? true : undefined}
-                        aria-describedby={fieldErrors.accountNumber ? 'err-accountNumber' : undefined}
+                        aria-invalid={
+                          fieldErrors.accountNumber ? true : undefined
+                        }
+                        aria-describedby={
+                          fieldErrors.accountNumber
+                            ? 'err-accountNumber'
+                            : undefined
+                        }
                         className={cn(inputErrorClass('accountNumber'))}
                       />
-                      <FieldError id="err-accountNumber" message={fieldErrors.accountNumber} />
+                      <FieldError
+                        id="err-accountNumber"
+                        message={fieldErrors.accountNumber}
+                      />
                     </div>
                   </div>
                 ) : null}
@@ -554,13 +600,20 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         placeholder={t('sortCodePlaceholder')}
                         disabled={isSubmitting}
                         aria-invalid={fieldErrors.sortCode ? true : undefined}
-                        aria-describedby={fieldErrors.sortCode ? 'err-sortCode' : undefined}
+                        aria-describedby={
+                          fieldErrors.sortCode ? 'err-sortCode' : undefined
+                        }
                         className={cn(inputErrorClass('sortCode'))}
                       />
-                      <FieldError id="err-sortCode" message={fieldErrors.sortCode} />
+                      <FieldError
+                        id="err-sortCode"
+                        message={fieldErrors.sortCode}
+                      />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="payout-gbp-account">{t('accountNumber')}</Label>
+                      <Label htmlFor="payout-gbp-account">
+                        {t('accountNumber')}
+                      </Label>
                       <Input
                         id="payout-gbp-account"
                         value={accountNumber}
@@ -571,11 +624,20 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         placeholder={t('accountNumberPlaceholder')}
                         inputMode="numeric"
                         disabled={isSubmitting}
-                        aria-invalid={fieldErrors.accountNumber ? true : undefined}
-                        aria-describedby={fieldErrors.accountNumber ? 'err-accountNumber' : undefined}
+                        aria-invalid={
+                          fieldErrors.accountNumber ? true : undefined
+                        }
+                        aria-describedby={
+                          fieldErrors.accountNumber
+                            ? 'err-accountNumber'
+                            : undefined
+                        }
                         className={cn(inputErrorClass('accountNumber'))}
                       />
-                      <FieldError id="err-accountNumber" message={fieldErrors.accountNumber} />
+                      <FieldError
+                        id="err-accountNumber"
+                        message={fieldErrors.accountNumber}
+                      />
                     </div>
                   </div>
                 ) : null}
@@ -594,7 +656,9 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         placeholder={t('ibanPlaceholder')}
                         disabled={isSubmitting}
                         aria-invalid={fieldErrors.iban ? true : undefined}
-                        aria-describedby={fieldErrors.iban ? 'err-iban' : undefined}
+                        aria-describedby={
+                          fieldErrors.iban ? 'err-iban' : undefined
+                        }
                         className={cn(inputErrorClass('iban'))}
                       />
                       <FieldError id="err-iban" message={fieldErrors.iban} />
@@ -613,7 +677,9 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                           maxLength={11}
                           disabled={isSubmitting}
                           aria-invalid={fieldErrors.bic ? true : undefined}
-                          aria-describedby={fieldErrors.bic ? 'err-bic' : undefined}
+                          aria-describedby={
+                            fieldErrors.bic ? 'err-bic' : undefined
+                          }
                           className={cn(inputErrorClass('bic'))}
                         />
                         <FieldError id="err-bic" message={fieldErrors.bic} />
@@ -626,7 +692,9 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
               {/* Account holder */}
               <FormSection title={t('accountHolderSection')}>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="payout-owner-name">{t('accountOwnerName')}</Label>
+                  <Label htmlFor="payout-owner-name">
+                    {t('accountOwnerName')}
+                  </Label>
                   <Input
                     id="payout-owner-name"
                     value={accountOwnerName}
@@ -635,14 +703,25 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                       clearFieldError('accountOwnerName');
                     }}
                     disabled={isSubmitting}
-                    aria-invalid={fieldErrors.accountOwnerName ? true : undefined}
-                    aria-describedby={fieldErrors.accountOwnerName ? 'err-accountOwnerName' : undefined}
+                    aria-invalid={
+                      fieldErrors.accountOwnerName ? true : undefined
+                    }
+                    aria-describedby={
+                      fieldErrors.accountOwnerName
+                        ? 'err-accountOwnerName'
+                        : undefined
+                    }
                     className={cn(inputErrorClass('accountOwnerName'))}
                   />
-                  <FieldError id="err-accountOwnerName" message={fieldErrors.accountOwnerName} />
+                  <FieldError
+                    id="err-accountOwnerName"
+                    message={fieldErrors.accountOwnerName}
+                  />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="payout-business-name">{t('businessName')}</Label>
+                  <Label htmlFor="payout-business-name">
+                    {t('businessName')}
+                  </Label>
                   <Input
                     id="payout-business-name"
                     value={businessName}
@@ -652,10 +731,15 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     }}
                     disabled={isSubmitting}
                     aria-invalid={fieldErrors.businessName ? true : undefined}
-                    aria-describedby={fieldErrors.businessName ? 'err-businessName' : undefined}
+                    aria-describedby={
+                      fieldErrors.businessName ? 'err-businessName' : undefined
+                    }
                     className={cn(inputErrorClass('businessName'))}
                   />
-                  <FieldError id="err-businessName" message={fieldErrors.businessName} />
+                  <FieldError
+                    id="err-businessName"
+                    message={fieldErrors.businessName}
+                  />
                 </div>
               </FormSection>
 
@@ -674,7 +758,9 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                     maxLength={STREET_MAX_LENGTH}
                     disabled={isSubmitting}
                     aria-invalid={fieldErrors.street ? true : undefined}
-                    aria-describedby={fieldErrors.street ? 'err-street' : undefined}
+                    aria-describedby={
+                      fieldErrors.street ? 'err-street' : undefined
+                    }
                     className={cn(inputErrorClass('street'))}
                   />
                   <FieldError id="err-street" message={fieldErrors.street} />
@@ -702,7 +788,9 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                       }}
                       disabled={isSubmitting}
                       aria-invalid={fieldErrors.city ? true : undefined}
-                      aria-describedby={fieldErrors.city ? 'err-city' : undefined}
+                      aria-describedby={
+                        fieldErrors.city ? 'err-city' : undefined
+                      }
                       className={cn(inputErrorClass('city'))}
                     />
                     <FieldError id="err-city" message={fieldErrors.city} />
@@ -722,10 +810,15 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                       maxLength={isUsAddress ? 2 : undefined}
                       disabled={isSubmitting}
                       aria-invalid={fieldErrors.subdivision ? true : undefined}
-                      aria-describedby={fieldErrors.subdivision ? 'err-subdivision' : undefined}
+                      aria-describedby={
+                        fieldErrors.subdivision ? 'err-subdivision' : undefined
+                      }
                       className={cn(inputErrorClass('subdivision'))}
                     />
-                    <FieldError id="err-subdivision" message={fieldErrors.subdivision} />
+                    <FieldError
+                      id="err-subdivision"
+                      message={fieldErrors.subdivision}
+                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="payout-postal">{t('postalCode')}</Label>
@@ -738,7 +831,9 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                       }}
                       disabled={isSubmitting}
                       aria-invalid={fieldErrors.postal ? true : undefined}
-                      aria-describedby={fieldErrors.postal ? 'err-postal' : undefined}
+                      aria-describedby={
+                        fieldErrors.postal ? 'err-postal' : undefined
+                      }
                       className={cn(inputErrorClass('postal'))}
                     />
                     <FieldError id="err-postal" message={fieldErrors.postal} />
@@ -759,7 +854,9 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                       }}
                       disabled={isSubmitting}
                       aria-invalid={fieldErrors.country ? true : undefined}
-                      aria-describedby={fieldErrors.country ? 'err-country' : undefined}
+                      aria-describedby={
+                        fieldErrors.country ? 'err-country' : undefined
+                      }
                     >
                       <option value="">{t('countryPlaceholder')}</option>
                       {countryOptions.map((c) => (
@@ -768,7 +865,10 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
                         </option>
                       ))}
                     </select>
-                    <FieldError id="err-country" message={fieldErrors.country} />
+                    <FieldError
+                      id="err-country"
+                      message={fieldErrors.country}
+                    />
                   </div>
                 </div>
               </FormSection>
@@ -822,7 +922,10 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
 
               <FormSection title={t('accountHolderSection')}>
                 {accountOwnerName ? (
-                  <ReviewRow label={t('accountOwnerName')} value={accountOwnerName} />
+                  <ReviewRow
+                    label={t('accountOwnerName')}
+                    value={accountOwnerName}
+                  />
                 ) : null}
                 {businessName ? (
                   <ReviewRow label={t('businessName')} value={businessName} />
@@ -900,4 +1003,3 @@ export const AddPayoutAccountDialog: FC<AddPayoutAccountDialogProps> = ({
     </Dialog>
   );
 };
-

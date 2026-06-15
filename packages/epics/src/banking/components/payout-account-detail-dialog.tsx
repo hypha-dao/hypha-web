@@ -30,7 +30,8 @@ import { InlineCopyRow } from './inline-copy-row';
 
 function statusBadgeClass(status: string): string {
   if (status === 'active') return 'bg-success-9 text-white';
-  if (status === 'inactive' || status === 'deactivated') return 'bg-neutral-9 text-white';
+  if (status === 'inactive' || status === 'deactivated')
+    return 'bg-neutral-9 text-white';
   return 'bg-warning-9 text-neutral-12';
 }
 
@@ -61,16 +62,22 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
 
   if (!account) return null;
 
-  const destination = account.destinationCurrency.toLowerCase() as BankCurrencyCode;
+  const destination =
+    account.destinationCurrency.toLowerCase() as BankCurrencyCode;
   const source = account.sourceCurrency.toUpperCase();
   const dest = account.destinationCurrency.toUpperCase();
   const meta = getBankCurrencyMeta(destination);
-  const maskedAccount = account.accountLast4 ? `••••${account.accountLast4}` : null;
-  const displayTitle = account.accountName ?? account.bankName ?? t('detail.titleFallback');
+  const maskedAccount = account.accountLast4
+    ? `••••${account.accountLast4}`
+    : null;
+  const displayTitle =
+    account.accountName ?? account.bankName ?? t('detail.titleFallback');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(BANKING_DIALOG_FORM_CONTENT_CLASS, 'max-w-md')}>
+      <DialogContent
+        className={cn(BANKING_DIALOG_FORM_CONTENT_CLASS, 'max-w-md')}
+      >
         <DialogHeader className={BANKING_DIALOG_HEADER_CLASS}>
           <DialogTitle>{displayTitle}</DialogTitle>
           <DialogDescription>{`${source} → ${dest}`}</DialogDescription>
@@ -92,7 +99,9 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
                   {`${source} → ${dest}`}
                 </p>
                 {maskedAccount ? (
-                  <p className="text-1 text-muted-foreground">{maskedAccount}</p>
+                  <p className="text-1 text-muted-foreground">
+                    {maskedAccount}
+                  </p>
                 ) : null}
               </div>
               <span
@@ -101,7 +110,9 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
                   statusBadgeClass(account.status),
                 )}
               >
-                {t(`status.${account.status}`, { defaultValue: account.status })}
+                {t(`status.${account.status}`, {
+                  defaultValue: account.status,
+                })}
               </span>
             </div>
 
@@ -111,13 +122,22 @@ export const PayoutAccountDetailDialog: FC<PayoutAccountDetailDialogProps> = ({
                 {tDialog('bankAccountSection')}
               </p>
               {account.bankName ? (
-                <DetailRow label={tDialog('bankName')} value={account.bankName} />
+                <DetailRow
+                  label={tDialog('bankName')}
+                  value={account.bankName}
+                />
               ) : null}
               {maskedAccount ? (
-                <DetailRow label={tDialog('accountNumber')} value={maskedAccount} />
+                <DetailRow
+                  label={tDialog('accountNumber')}
+                  value={maskedAccount}
+                />
               ) : null}
               {account.accountOwnerName ? (
-                <DetailRow label={tDialog('accountOwnerName')} value={account.accountOwnerName} />
+                <DetailRow
+                  label={tDialog('accountOwnerName')}
+                  value={account.accountOwnerName}
+                />
               ) : null}
             </div>
 

@@ -28,7 +28,9 @@ const RAIL_HUMAN_LABELS: Record<string, string> = {
 };
 
 function humanRailLabel(paymentRail: string): string {
-  return RAIL_HUMAN_LABELS[paymentRail.toLowerCase()] ?? paymentRail.toUpperCase();
+  return (
+    RAIL_HUMAN_LABELS[paymentRail.toLowerCase()] ?? paymentRail.toUpperCase()
+  );
 }
 
 function statusBadgeClass(status: string): string {
@@ -41,7 +43,11 @@ function statusBadgeClass(status: string): string {
   return 'bg-warning-9 text-neutral-12';
 }
 
-function PayoutCurrencyIcon({ destinationCurrency }: { destinationCurrency: string }) {
+function PayoutCurrencyIcon({
+  destinationCurrency,
+}: {
+  destinationCurrency: string;
+}) {
   const currency = destinationCurrency.toLowerCase() as BankCurrencyCode;
   const meta = getBankCurrencyMeta(currency);
 
@@ -56,13 +62,19 @@ function PayoutCurrencyIcon({ destinationCurrency }: { destinationCurrency: stri
   return <CurrencyFlagBadge currency={currency} />;
 }
 
-export const PayoutAccountCard: FC<PayoutAccountCardProps> = ({ account, onClick }) => {
+export const PayoutAccountCard: FC<PayoutAccountCardProps> = ({
+  account,
+  onClick,
+}) => {
   const t = useTranslations('BankingTab.payouts');
 
-  const primaryLabel = account.accountName ?? account.bankName ?? t('cardBankFallback');
+  const primaryLabel =
+    account.accountName ?? account.bankName ?? t('cardBankFallback');
   const destination = account.destinationCurrency.toUpperCase();
   const source = account.sourceCurrency.toUpperCase();
-  const maskedAccount = account.accountLast4 ? `••••${account.accountLast4}` : null;
+  const maskedAccount = account.accountLast4
+    ? `••••${account.accountLast4}`
+    : null;
 
   return (
     <Card
@@ -90,7 +102,8 @@ export const PayoutAccountCard: FC<PayoutAccountCardProps> = ({ account, onClick
         <div className="min-w-0 flex-1">
           <p className="text-3 font-semibold text-foreground">{primaryLabel}</p>
           <p className="mt-0.5 text-2 text-muted-foreground">
-            {`${source} → ${destination}`}{maskedAccount ? ` · ${maskedAccount}` : ''}
+            {`${source} → ${destination}`}
+            {maskedAccount ? ` · ${maskedAccount}` : ''}
           </p>
         </div>
         <span

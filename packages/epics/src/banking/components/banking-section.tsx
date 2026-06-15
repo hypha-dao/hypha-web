@@ -122,7 +122,8 @@ export const BankingSection: FC<BankingSectionProps> = ({
   const [createTransferOpen, setCreateTransferOpen] = useState(false);
   const [addCurrencyDialogOpen, setAddCurrencyDialogOpen] = useState(false);
   const [addPayoutDialogOpen, setAddPayoutDialogOpen] = useState(false);
-  const [detailAccount, setDetailAccount] = useState<BankPayoutAccountPublic | null>(null);
+  const [detailAccount, setDetailAccount] =
+    useState<BankPayoutAccountPublic | null>(null);
 
   const needsProviderStatusRefresh =
     hasCustomer && status != null && !status.approvalRegistered;
