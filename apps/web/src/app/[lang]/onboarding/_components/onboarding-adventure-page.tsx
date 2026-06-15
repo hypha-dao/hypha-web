@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import QRCode from 'react-qr-code';
 import {
@@ -260,6 +260,7 @@ export function OnboardingAdventurePage({
   const tHuman = useTranslations('HumanChatPanel');
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { person } = useMe();
   const { spaces, isLoading, error: spacesError } = useAllSpaces();
   const [aiPrompt, setAiPrompt] = useState('');
@@ -298,6 +299,7 @@ export function OnboardingAdventurePage({
   const [hasVisitedAdventure, setHasVisitedAdventure] = useState(false);
   const [heroPlaceholderIndex, setHeroPlaceholderIndex] = useState(0);
   const [heroTitleWordIndex, setHeroTitleWordIndex] = useState(0);
+  const seededPromptFromUrlRef = useRef(false);
 
   const firstName = useMemo(() => {
     const rawName = person?.name?.trim();
@@ -383,6 +385,15 @@ export function OnboardingAdventurePage({
       // localStorage unavailable; keep first-visit title fallback
     }
   }, []);
+
+  useEffect(() => {
+    if (seededPromptFromUrlRef.current) return;
+    const promptFromUrl = searchParams.get('prompt')?.trim();
+    if (!promptFromUrl) return;
+    seededPromptFromUrlRef.current = true;
+    aiPromptRef.current = promptFromUrl;
+    setAiPrompt(promptFromUrl);
+  }, [searchParams]);
 
   useEffect(() => {
     aiPromptRef.current = aiPrompt;
