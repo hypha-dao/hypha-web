@@ -20,10 +20,12 @@ export function ComposerAttachGoogleDriveMenuItem({
   onPickerOpen,
 }: ComposerAttachGoogleDriveMenuItemProps) {
   const t = useTranslations('HumanChatPanel');
-  const { openPicker, configured, available, isOpening } = useGoogleDrivePicker({
-    onFilesPicked,
-    disabled,
-  });
+  const { openPicker, configured, available, isOpening } = useGoogleDrivePicker(
+    {
+      onFilesPicked,
+      disabled,
+    },
+  );
 
   return (
     <DropdownMenuItem
