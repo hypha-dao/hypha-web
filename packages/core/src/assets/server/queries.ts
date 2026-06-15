@@ -75,3 +75,19 @@ export const findAllTokens = async (
 
   return results;
 };
+
+export const findTokenByAddress = async (address: string, { db }: DbConfig) => {
+  const [token] = await db
+    .select({
+      id: tokens.id,
+      name: tokens.name,
+      symbol: tokens.symbol,
+      address: tokens.address,
+      iconUrl: tokens.iconUrl,
+    })
+    .from(tokens)
+    .where(sql`lower(${tokens.address}) = lower(${address})`)
+    .limit(1);
+
+  return token ?? null;
+};
