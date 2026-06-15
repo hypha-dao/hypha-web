@@ -41,6 +41,8 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     'blob:',
     UPLOADTHING_UFS_HOST,
     ...(matrixImg ? [matrixImg] : []),
+    'https://*.googleusercontent.com',
+    'https://*.ggpht.com',
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
   /** `<video>` / `<audio>` use `media-src`; if unset, `default-src` blocks cross-origin Matrix clips. */
@@ -65,6 +67,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   const connectSrc = [
     ...CONNECT_SOURCES,
     ...matrixTurnConnectSourcesFromEnv(),
+    'https://www.googleapis.com',
     UPLOADTHING_UFS_HOST,
     process.env.NEXT_PUBLIC_RPC_URL ?? '',
     process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL ?? '',
@@ -77,7 +80,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   const cspHeaderValue =
     [
       "default-src 'self'",
-      `script-src 'self' ${enableUnsafeScripts} https://challenges.cloudflare.com https://cdn.onesignal.com https://api.onesignal.com https://vercel.live`,
+      `script-src 'self' ${enableUnsafeScripts} https://challenges.cloudflare.com https://cdn.onesignal.com https://api.onesignal.com https://vercel.live https://apis.google.com https://accounts.google.com`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://onesignal.com",
       `img-src 'self' ${imageSrc}`,
       `media-src ${mediaSrc}`,
@@ -88,7 +91,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       "form-action 'self' https://auth.privy.io https://privy.hypha.earth https://accounts.google.com",
       "frame-ancestors 'none'",
       `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${UPLOADTHING_UFS_HOST}`,
-      `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live ${UPLOADTHING_UFS_HOST}`,
+      `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live https://docs.google.com https://drive.google.com ${UPLOADTHING_UFS_HOST}`,
       `connect-src 'self' ${connectSrc}`,
       // pdf.js may spawn workers from blob URLs in some builds
       "worker-src 'self' blob:",

@@ -35,6 +35,10 @@ import {
   ChatVoiceAudioRow,
   useDraftVoiceDuration,
 } from '../human-chat-panel/human-chat-panel-voice-audio-row';
+import {
+  ComposerAttachGoogleDriveMenuItem,
+  filesToFileList,
+} from '../composer';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -883,6 +887,14 @@ export function AiPanelChatBar({
                       <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
                       <span>{tHuman('composerAttachFile')}</span>
                     </DropdownMenuItem>
+                    <ComposerAttachGoogleDriveMenuItem
+                      disabled={!canAttachDrafts}
+                      onPickerOpen={() => setAttachMenuOpen(false)}
+                      onFilesPicked={(files) => {
+                        if (!canAttachDrafts) return;
+                        pushDrafts(filesToFileList(files));
+                      }}
+                    />
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (

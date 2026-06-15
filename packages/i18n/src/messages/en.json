@@ -2554,6 +2554,7 @@
     "composerAttachImage": "Photo or image",
     "composerAttachVideo": "Video",
     "composerAttachFile": "File",
+    "composerAttachGoogleDrive": "Google Drive",
     "composerDropPrompt": "Drop files to attach",
     "mentionNotAvailable": "Mentions (coming soon)",
     "mentionNoMembers": "No members loaded yet — try again in a moment",

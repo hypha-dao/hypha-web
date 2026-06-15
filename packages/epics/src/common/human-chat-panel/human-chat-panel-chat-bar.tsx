@@ -76,6 +76,7 @@ import {
 import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
 import { formatComposerMentionToken } from './human-chat-display-mention';
 import { useResolvedMentionCandidateLabel } from './use-resolved-mention-candidate-label';
+import { ComposerAttachGoogleDriveMenuItem } from '../composer';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -2173,6 +2174,11 @@ export function HumanChatPanelChatBar({
                     <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
                     <span>{t('composerAttachFile')}</span>
                   </DropdownMenuItem>
+                  <ComposerAttachGoogleDriveMenuItem
+                    disabled={composerLocked}
+                    onPickerOpen={() => setAttachMenuOpen(false)}
+                    onFilesPicked={(files) => pushDrafts(files, 'file')}
+                  />
                 </DropdownMenuContent>
               </DropdownMenu>
               <HumanChatPanelEmojiPicker

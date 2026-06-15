@@ -2551,6 +2551,7 @@
     "composerAttachImage": "Foto oder Bild",
     "composerAttachVideo": "Video",
     "composerAttachFile": "Datei",
+    "composerAttachGoogleDrive": "Google Drive",
     "composerDropPrompt": "Dateien hier ablegen zum Anhängen",
     "mentionNotAvailable": "Erwähnungen (demnächst)",
     "mentionNoMembers": "Noch keine Mitglieder geladen — kurz später erneut versuchen",

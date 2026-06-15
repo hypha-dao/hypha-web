@@ -38,6 +38,8 @@ import {
 import { useAllSpaces } from '@web/hooks/use-all-spaces';
 import { Space, useMe } from '@hypha-platform/core/client';
 import {
+  ComposerAttachGoogleDriveMenuItem,
+  filesToFileList,
   ONBOARDING_SETUP_MODE,
   saveOnboardingConversationContext,
 } from '@hypha-platform/epics';
@@ -742,6 +744,13 @@ export function OnboardingAdventurePage({
                         <Paperclip className="size-4" aria-hidden />
                         <span>{tHuman('composerAttachFile')}</span>
                       </DropdownMenuItem>
+                      <ComposerAttachGoogleDriveMenuItem
+                        disabled={!aiChatEnabled}
+                        onPickerOpen={() => setAttachMenuOpen(false)}
+                        onFilesPicked={(files) => {
+                          pushHeroAttachments(filesToFileList(files));
+                        }}
+                      />
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <button
