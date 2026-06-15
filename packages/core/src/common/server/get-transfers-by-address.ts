@@ -171,8 +171,9 @@ export async function getMintTransfersByTokens({
     // contain only the oldest mints and newly minted transfers would never
     // appear. Request newest-first so the page holds the most recent mints.
     order: SortingOrder.DESCENDING,
-    // Bound the result set so a token with many mint events can't trigger an
-    // unbounded fetch; callers pass their requested limit here.
+    // Bound the result set when the caller requested a limit. When undefined,
+    // Alchemy falls back to its page maximum (1000), matching the behavior of
+    // the address-based queries above.
     maxCount: limit,
   });
 
