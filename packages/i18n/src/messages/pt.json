@@ -2159,7 +2159,7 @@
     "composerAttachVideo": "Vídeo",
     "composerAttachFile": "Arquivo",
     "composerAttachGoogleDrive": "Google Drive",
-    "composerAttachGoogleDriveUnavailable": "O Google Drive não está configurado para este ambiente",
+    "composerAttachGoogleDriveUnavailable": "O Google Drive não está disponível",
     "composerDropPrompt": "Solte arquivos para anexar",
     "mentionNotAvailable": "Menções (em breve)",
     "mentionNoMembers": "Membros ainda não carregados — tente novamente em instantes",
