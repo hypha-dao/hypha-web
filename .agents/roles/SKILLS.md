@@ -22,5 +22,7 @@ Project skills live under [`.agents/skills/`](../skills/). Each skill has a `SKI
 | Hypha task init | [../skills/hypha-task-init/SKILL.md](../skills/hypha-task-init/SKILL.md) |
 | Hypha task resume | [../skills/hypha-task-resume/SKILL.md](../skills/hypha-task-resume/SKILL.md) |
 | Hypha checkpoint | [../skills/hypha-checkpoint/SKILL.md](../skills/hypha-checkpoint/SKILL.md) |
+| Hypha feedback | [../skills/hypha-feedback/SKILL.md](../skills/hypha-feedback/SKILL.md) |
+| Hypha brief | [../skills/hypha-brief/SKILL.md](../skills/hypha-brief/SKILL.md) |
 
 To register a new skill: add `skill-name/SKILL.md` under `.agents/skills/`, then add a row to this table.
