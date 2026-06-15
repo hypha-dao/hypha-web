@@ -20,21 +20,24 @@ export function ComposerAttachGoogleDriveMenuItem({
   onPickerOpen,
 }: ComposerAttachGoogleDriveMenuItemProps) {
   const t = useTranslations('HumanChatPanel');
-  const { openPicker, enabled, isOpening } = useGoogleDrivePicker({
+  const { openPicker, configured, available, isOpening } = useGoogleDrivePicker({
     onFilesPicked,
     disabled,
   });
 
-  if (!enabled) {
-    return null;
-  }
-
   return (
     <DropdownMenuItem
-      className={cn('cursor-pointer gap-2', isOpening && 'opacity-70')}
-      disabled={disabled || isOpening}
+      className={cn(
+        'cursor-pointer gap-2',
+        (isOpening || !available) && 'opacity-70',
+      )}
+      disabled={disabled || isOpening || !configured}
+      title={
+        !configured ? t('composerAttachGoogleDriveUnavailable') : undefined
+      }
       onSelect={(event) => {
         event.preventDefault();
+        if (!available) return;
         onPickerOpen?.();
         requestAnimationFrame(() => {
           void openPicker();

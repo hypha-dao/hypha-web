@@ -19,10 +19,11 @@ export function useGoogleDrivePicker({
   disabled = false,
 }: UseGoogleDrivePickerOptions) {
   const [isOpening, setIsOpening] = useState(false);
-  const enabled = isGoogleDrivePickerConfigured() && !disabled;
+  const configured = isGoogleDrivePickerConfigured();
+  const available = configured && !disabled;
 
   const openPicker = useCallback(async () => {
-    if (!enabled || isOpening) return;
+    if (!available || isOpening) return;
     setIsOpening(true);
     try {
       const files = await pickGoogleDriveFiles();
@@ -38,7 +39,7 @@ export function useGoogleDrivePicker({
     } finally {
       setIsOpening(false);
     }
-  }, [enabled, isOpening, onError, onFilesPicked]);
+  }, [available, isOpening, onError, onFilesPicked]);
 
-  return { openPicker, enabled, isOpening };
+  return { openPicker, configured, available, isOpening };
 }
