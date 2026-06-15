@@ -36,4 +36,30 @@ describe('google-drive-picker helpers', () => {
       'Quarterly plan.PDF',
     );
   });
+
+  it('defaults to "document" for empty filename', () => {
+    expect(ensureFileExtension('', '.pdf')).toBe('document.pdf');
+  });
+
+  it('builds export URL for Google Sheets', () => {
+    expect(
+      buildDriveDownloadRequest(
+        'sheet-1',
+        'application/vnd.google-apps.spreadsheet',
+      ),
+    ).toEqual({
+      url: 'https://www.googleapis.com/drive/v3/files/sheet-1/export?mimeType=application%2Fvnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      exportMimeType:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+  });
+
+  it('encodes URL-unsafe characters in file IDs', () => {
+    expect(
+      buildDriveDownloadRequest('file/id+special', 'application/pdf'),
+    ).toEqual({
+      url: 'https://www.googleapis.com/drive/v3/files/file%2Fid%2Bspecial?alt=media',
+      exportMimeType: null,
+    });
+  });
 });
