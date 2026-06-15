@@ -19,4 +19,8 @@ Project skills live under [`.agents/skills/`](../skills/). Each skill has a `SKI
 | Monorepo performance | [../skills/optimizing-monorepo-performance/SKILL.md](../skills/optimizing-monorepo-performance/SKILL.md) |
 | Security review | [../skills/security-review/SKILL.md](../skills/security-review/SKILL.md) |
 
+| Hypha task init | [../skills/hypha-task-init/SKILL.md](../skills/hypha-task-init/SKILL.md) |
+| Hypha task resume | [../skills/hypha-task-resume/SKILL.md](../skills/hypha-task-resume/SKILL.md) |
+| Hypha checkpoint | [../skills/hypha-checkpoint/SKILL.md](../skills/hypha-checkpoint/SKILL.md) |
+
 To register a new skill: add `skill-name/SKILL.md` under `.agents/skills/`, then add a row to this table.
