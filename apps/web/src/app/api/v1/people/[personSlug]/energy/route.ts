@@ -42,9 +42,17 @@ export async function GET(
       });
     }
 
+    const web3SpaceIds = memberWeb3SpaceIds.map((id) => {
+      const value = Number(id);
+      if (!Number.isSafeInteger(value)) {
+        throw new Error(`Invalid web3 space id: ${id.toString()}`);
+      }
+      return value;
+    });
+
     const spaces = await findAllSpacesByWeb3SpaceIds(
       {
-        web3SpaceIds: memberWeb3SpaceIds.map(Number),
+        web3SpaceIds,
         parentOnly: false,
       },
       { db: appDb },

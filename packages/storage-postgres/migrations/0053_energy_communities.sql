@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS "energy_communities" (
 	"community_proxy_address" text NOT NULL,
 	"energy_token_address" text NOT NULL,
 	"admin_address" text NOT NULL,
-	"factory_community_id" integer,
+	"factory_community_id" bigint,
 	"activated_at" timestamp NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL

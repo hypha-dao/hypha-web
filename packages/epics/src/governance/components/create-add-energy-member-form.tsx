@@ -17,17 +17,29 @@ const schemaCreateAddEnergyMemberForm = schemaCreateAgreementForm
         .trim()
         .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid member address'),
       metadataHash: z.string().trim().min(1, 'Metadata hash is required'),
-      deviceIdsCsv: z.string().trim().min(1, 'Device IDs are required'),
+      deviceIdsCsv: z
+        .string()
+        .trim()
+        .min(1, 'Device IDs are required')
+        .refine(
+          (csv) =>
+            csv
+              .split(',')
+              .every((value) => Number.isFinite(Number(value.trim()))),
+          'Device IDs must be comma-separated numbers',
+        ),
     }),
   });
 
 type FormValues = z.infer<typeof schemaCreateAddEnergyMemberForm>;
 
-const parseDeviceIds = (csv: string) =>
-  csv
-    .split(',')
-    .map((value) => Number(value.trim()))
-    .filter((value) => Number.isFinite(value));
+const parseDeviceIds = (csv: string) => {
+  const parsed = csv.split(',').map((value) => Number(value.trim()));
+  if (parsed.some((value) => !Number.isFinite(value))) {
+    throw new Error('Device IDs must be comma-separated numbers');
+  }
+  return parsed;
+};
 
 export const CreateAddEnergyMemberForm = ({
   spaceId,

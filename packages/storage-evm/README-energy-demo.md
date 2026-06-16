@@ -76,7 +76,7 @@ All scripts live in `scripts/base-mainnet-contracts-scripts/` and run via Hardha
 
 ### Demo community layout
 
-```
+```text
 Members:
   5 households (HH 1–5)   — each has a smart meter (device 1–5)
   2 investors  (Inv 1–2)  — no meters, pure revenue recipients
@@ -112,7 +112,7 @@ After `consumeEnergy` runs, every member has a credit balance — positive (earn
 
 ### The money flow
 
-```
+```text
 Households consume energy   →  their balance goes negative (they owe money)
 Investors own sources       →  their balance goes positive (they earned money)
 Community/Aggregator fees   →  their balances go positive
@@ -159,7 +159,7 @@ The grid operator is set during deployment and can be changed by the admin. It c
 
 The contract itself holds stablecoins. The flow is:
 
-```
+```text
 Debtors pay in (settleDebt)  →  stablecoins land in contract
                               →  creditors withdraw (claimCredit)
 ```
@@ -170,7 +170,7 @@ You can only claim if the contract has enough stablecoins. So debts must be sett
 
 `settledBalance` is a bookkeeping counter. It tracks the net difference between all debt settlements and credit claims. In the zero-sum formula:
 
-```
+```text
 sum(all member credits) + community + aggregator − gridBalance + settledBalance = 0
 ```
 

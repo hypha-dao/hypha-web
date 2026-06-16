@@ -1,4 +1,5 @@
 import {
+  bigint,
   integer,
   pgTable,
   serial,
@@ -21,7 +22,7 @@ export const energyCommunities = pgTable(
     communityProxyAddress: text('community_proxy_address').notNull(),
     energyTokenAddress: text('energy_token_address').notNull(),
     adminAddress: text('admin_address').notNull(),
-    factoryCommunityId: integer('factory_community_id'),
+    factoryCommunityId: bigint('factory_community_id', { mode: 'number' }),
     activatedAt: timestamp('activated_at').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),

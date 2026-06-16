@@ -680,10 +680,10 @@
       "airdrop": "Airdrop",
       "investment": "Inversión",
       "exchange": "Intercambio",
-      "enableEnergyCommunity": "Enable Energy Community",
-      "energySharing": "Energy Sharing",
-      "registerEnergySource": "Register Energy Source",
-      "addEnergyMember": "Add Energy Member"
+      "enableEnergyCommunity": "Activar comunidad energética",
+      "energySharing": "Compartir energía",
+      "registerEnergySource": "Registrar fuente de energía",
+      "addEnergyMember": "Agregar miembro de energía"
     },
     "documentBadges": {
       "invite": "Invitación",

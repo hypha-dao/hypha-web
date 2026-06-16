@@ -22,7 +22,11 @@ export const ProposalEnergyProposalData = ({
           <div key={key} className="flex flex-col gap-1 text-2">
             <span className="text-neutral-11">{key}</span>
             <span className="font-medium break-all">
-              {Array.isArray(value) ? value.join(', ') : String(value)}
+              {Array.isArray(value)
+                ? value.join(', ')
+                : value !== null && typeof value === 'object'
+                ? JSON.stringify(value, null, 2)
+                : String(value)}
             </span>
           </div>
         ))}

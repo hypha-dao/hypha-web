@@ -84,6 +84,7 @@ export const UserEnergySection = ({
 }) => {
   const { data, isLoading, refresh } = useUserEnergy(personSlug);
   const { client } = useSmartWallets();
+  const walletReady = Boolean(client);
   const [isClaimingByProxy, setIsClaimingByProxy] = React.useState<
     Record<string, boolean>
   >({});
@@ -100,9 +101,7 @@ export const UserEnergySection = ({
     communityProxyAddress: `0x${string}`,
     amount: string,
   ) => {
-    if (!client) {
-      throw new Error('Smart wallet is not connected.');
-    }
+    if (!client) return;
     const internalAmount = BigInt(amount);
     if (internalAmount <= 0n) return;
 
@@ -131,9 +130,7 @@ export const UserEnergySection = ({
     communityProxyAddress: `0x${string}`,
     stablecoinAmount: string,
   ) => {
-    if (!client) {
-      throw new Error('Smart wallet is not connected.');
-    }
+    if (!client) return;
     const amount = BigInt(stablecoinAmount);
     if (amount <= 0n) return;
 
@@ -266,6 +263,7 @@ export const UserEnergySection = ({
                     <Button
                       variant="outline"
                       disabled={
+                        !walletReady ||
                         !isMyProfile ||
                         !hasDebt ||
                         Boolean(
@@ -283,6 +281,7 @@ export const UserEnergySection = ({
                     </Button>
                     <Button
                       disabled={
+                        !walletReady ||
                         !isMyProfile ||
                         !hasCredit ||
                         Boolean(

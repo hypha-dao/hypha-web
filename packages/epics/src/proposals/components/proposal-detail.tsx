@@ -1148,7 +1148,8 @@ export const ProposalDetail = ({
     if (
       !parsed ||
       typeof parsed.payload !== 'object' ||
-      parsed.payload === null
+      parsed.payload === null ||
+      Array.isArray(parsed.payload)
     ) {
       return null;
     }

@@ -25,8 +25,8 @@ export const parseEnergyProposalMarker = (
   description: string | null | undefined,
 ): { proposalType: string; payload: JsonValue } | null => {
   if (!description) return null;
-  const start = description.indexOf(MARKER_START);
-  const end = description.indexOf(MARKER_END);
+  const end = description.lastIndexOf(MARKER_END);
+  const start = description.lastIndexOf(MARKER_START, end);
   if (start === -1 || end === -1 || end <= start) return null;
   const json = description.slice(start + MARKER_START.length, end).trim();
   try {
@@ -53,8 +53,8 @@ export const stripEnergyProposalMarker = (
   description: string | null | undefined,
 ) => {
   if (!description) return '';
-  const start = description.indexOf(MARKER_START);
-  const end = description.indexOf(MARKER_END);
+  const end = description.lastIndexOf(MARKER_END);
+  const start = description.lastIndexOf(MARKER_START, end);
   if (start === -1 || end === -1 || end <= start) return description;
   const before = description.slice(0, start).trimEnd();
   const after = description.slice(end + MARKER_END.length).trimStart();

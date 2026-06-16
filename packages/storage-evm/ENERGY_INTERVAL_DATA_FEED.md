@@ -155,10 +155,11 @@ readings for one 15-minute interval.
 
 ## Validation Rules
 
-- Send exactly one interval bucket per `interval_start`; aggregate raw readings
-  before sending if the source system has finer-grained data.
+- Send exactly one aggregated row per (`interval_start`, `meter_id`, `direction`);
+  if the source system is finer-grained, aggregate to the 15-minute bucket first.
 - Consumption rows must use meter IDs `1`, `2`, `3`, `4`, or `5`.
-- Production rows must map to one of the configured source IDs.
+- Production rows must use a production `meter_id` that is configured in the
+  backend `productionDeviceToSource` map to one of the source IDs above.
 - `energy_wh` must be a non-negative integer.
 - Missing consumption for a household is treated as zero only if the backend
   explicitly allows missing meters. Prefer sending `energy_wh: 0` when a meter

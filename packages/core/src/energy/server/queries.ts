@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { energyCommunities, spaces } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
 
@@ -66,9 +66,7 @@ export const findEnergyCommunityByProxyAddress = async (
   const [row] = await db
     .select()
     .from(energyCommunities)
-    .where(
-      sql`lower(${energyCommunities.communityProxyAddress}) = ${normalized}`,
-    )
+    .where(eq(energyCommunities.communityProxyAddress, normalized))
     .limit(1);
   return row ?? null;
 };
@@ -85,7 +83,7 @@ export const findEnergyCommunityByAdminAndSpaceId = async (
     .where(
       and(
         eq(energyCommunities.spaceId, spaceId),
-        sql`lower(${energyCommunities.adminAddress}) = ${normalized}`,
+        eq(energyCommunities.adminAddress, normalized),
       ),
     )
     .limit(1);
@@ -100,18 +98,18 @@ export const upsertEnergyCommunityActivation = async (
     .insert(energyCommunities)
     .values({
       ...input,
-      communityProxyAddress: input.communityProxyAddress.toLowerCase(),
-      energyTokenAddress: input.energyTokenAddress.toLowerCase(),
-      adminAddress: input.adminAddress.toLowerCase(),
+      communityProxyAddress: input.communityProxyAddress.trim().toLowerCase(),
+      energyTokenAddress: input.energyTokenAddress.trim().toLowerCase(),
+      adminAddress: input.adminAddress.trim().toLowerCase(),
       factoryCommunityId: input.factoryCommunityId ?? null,
     })
     .onConflictDoUpdate({
       target: energyCommunities.spaceId,
       set: {
         chainId: input.chainId,
-        communityProxyAddress: input.communityProxyAddress.toLowerCase(),
-        energyTokenAddress: input.energyTokenAddress.toLowerCase(),
-        adminAddress: input.adminAddress.toLowerCase(),
+        communityProxyAddress: input.communityProxyAddress.trim().toLowerCase(),
+        energyTokenAddress: input.energyTokenAddress.trim().toLowerCase(),
+        adminAddress: input.adminAddress.trim().toLowerCase(),
         factoryCommunityId: input.factoryCommunityId ?? null,
         activatedAt: input.activatedAt,
         updatedAt: new Date(),

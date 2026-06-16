@@ -1516,10 +1516,10 @@
       "airdrop": "Airdrop",
       "investment": "Investition",
       "exchange": "Exchange",
-      "enableEnergyCommunity": "Enable Energy Community",
-      "energySharing": "Energy Sharing",
-      "registerEnergySource": "Register Energy Source",
-      "addEnergyMember": "Add Energy Member"
+      "enableEnergyCommunity": "Energiegemeinschaft aktivieren",
+      "energySharing": "Energie teilen",
+      "registerEnergySource": "Energiequelle registrieren",
+      "addEnergyMember": "Energiemitglied hinzufügen"
     },
     "documentBadges": {
       "invite": "Einladung",

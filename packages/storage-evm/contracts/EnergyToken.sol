@@ -7,7 +7,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 /**
  * @title EnergyToken
  * @dev ERC20 token representing positive energy credit balances in the energy distribution system
- * Only the EnergyDistribution contract can mint and burn tokens
+ * Only authorized settlement contracts can mint and burn tokens
  */
 contract EnergyToken is ERC20, Ownable {
   // Mapping to track which addresses can mint/burn (only the EnergyDistribution contract)
@@ -65,8 +65,8 @@ contract EnergyToken is ERC20, Ownable {
   }
 
   /**
-   * @dev Override decimals to match USDC (6 decimals)
-   * Since this token represents USDC balances, it should use the same decimals
+   * @dev Override decimals to match the configured stablecoin precision.
+   * Energy credits are converted to 6-decimal stablecoin base units by EnergyPPAv2.
    */
   function decimals() public pure override returns (uint8) {
     return 6;
