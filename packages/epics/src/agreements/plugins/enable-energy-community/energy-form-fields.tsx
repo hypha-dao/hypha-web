@@ -82,6 +82,19 @@ export const SOCIAL_MODE_OPTIONS: ReadonlyArray<{
 export const basePurposeLabel = (value: string): string =>
   BASE_PURPOSE_OPTIONS.find((option) => option.value === value)?.label ?? value;
 
+/**
+ * The contract stores a full 3-objective ranking, but the UI only asks for the
+ * single primary objective. Fill priorities 2 and 3 with the remaining
+ * objectives (in their canonical order) so the on-chain ranking stays a valid
+ * distinct permutation.
+ */
+export const completeRanking = (
+  primary: EnergyBasePurpose,
+): EnergyPurposeRanking => {
+  const rest = ENERGY_BASE_PURPOSES.filter((purpose) => purpose !== primary);
+  return [primary, rest[0], rest[1]];
+};
+
 // ─────────────────────────────────────────────────────────────────────────
 //  Validation
 // ─────────────────────────────────────────────────────────────────────────
@@ -352,23 +365,31 @@ export const PercentageSplitFieldArray = ({
 //  Optimization section (Level 1 + Level 2) — shared by both energy forms
 // ─────────────────────────────────────────────────────────────────────────
 
-const PriorityField = ({
-  name,
-  position,
-}: {
-  name: string;
-  position: number;
-}) => {
-  const { control } = useFormContext();
+const PrimaryObjectiveField = () => {
+  const { control, setValue } = useFormContext();
   return (
     <FormField
       control={control}
-      name={name}
+      name="energyOptimization.purpose1"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Priority {position}</FormLabel>
+          <FormLabel>Primary objective</FormLabel>
           <FormControl>
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              value={field.value}
+              onValueChange={(value) => {
+                field.onChange(value);
+                const [, second, third] = completeRanking(
+                  value as EnergyBasePurpose,
+                );
+                setValue('energyOptimization.purpose2', second, {
+                  shouldValidate: true,
+                });
+                setValue('energyOptimization.purpose3', third, {
+                  shouldValidate: true,
+                });
+              }}
+            >
               <SelectTrigger className="h-auto">
                 <SelectValue placeholder="Select an objective" />
               </SelectTrigger>
@@ -416,16 +437,12 @@ export const EnergyOptimizationFields = ({
         <div className="flex flex-col gap-1">
           <div className="text-1 font-medium">Optimize community for</div>
           <p className="text-2 text-secondary-foreground">
-            Rank the community&rsquo;s objectives. The energy management system
-            fully optimises for the first priority, then the second within what
-            remains, then the third.
+            Choose the community&rsquo;s main objective. The energy management
+            system optimises for it first, then balances the remaining
+            objectives automatically.
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <PriorityField name="energyOptimization.purpose1" position={1} />
-          <PriorityField name="energyOptimization.purpose2" position={2} />
-          <PriorityField name="energyOptimization.purpose3" position={3} />
-        </div>
+        <PrimaryObjectiveField />
       </div>
 
       <div className="flex flex-col gap-3 rounded-lg border border-border p-4">

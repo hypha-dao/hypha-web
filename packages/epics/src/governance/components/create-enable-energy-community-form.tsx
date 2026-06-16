@@ -110,20 +110,46 @@ const schemaCreateEnableEnergyCommunityForm = schemaCreateAgreementForm
   .extend(createAgreementFiles)
   .extend({
     energyOptimization: energyOptimizationSchema,
-    energyCommunityActivation: z.object({
-      admin: z.string().trim().regex(ADDRESS_RE, 'Invalid admin address'),
-      stablecoin: optionalAddressField,
-      gridOperator: optionalAddressField,
-      communityAddress: optionalAddressField,
-      aggregatorAddress: optionalAddressField,
-      communityFeePercent: optionalPercentField,
-      aggregatorFeePercent: optionalPercentField,
-      exportDeviceId: optionalUintField,
-      energyTokenName: z.string().trim().optional(),
-      energyTokenSymbol: z.string().trim().optional(),
-      members: z.array(memberRowSchema).optional(),
-      sources: z.array(sourceSchema).min(1, 'At least one source is required'),
-    }),
+    energyCommunityActivation: z
+      .object({
+        admin: z.string().trim().regex(ADDRESS_RE, 'Invalid admin address'),
+        stablecoin: optionalAddressField,
+        gridOperator: optionalAddressField,
+        communityAddress: optionalAddressField,
+        aggregatorAddress: optionalAddressField,
+        communityFeePercent: optionalPercentField,
+        aggregatorFeePercent: optionalPercentField,
+        exportDeviceId: optionalUintField,
+        energyTokenName: z.string().trim().optional(),
+        energyTokenSymbol: z.string().trim().optional(),
+        members: z.array(memberRowSchema).optional(),
+        sources: z
+          .array(sourceSchema)
+          .min(1, 'At least one source is required'),
+      })
+      .superRefine((value, ctx) => {
+        // Revenue is only distributed to registered members (the contract loops
+        // over `memberAddresses`). A source owner who is not also a member would
+        // silently lose their share, so require every owner to be a member.
+        const memberAddresses = new Set(
+          (value.members ?? []).map((member) =>
+            member.recipient.trim().toLowerCase(),
+          ),
+        );
+
+        value.sources.forEach((source, sourceIndex) => {
+          source.owners.forEach((owner, ownerIndex) => {
+            const address = owner.recipient.trim().toLowerCase();
+            if (!address || memberAddresses.has(address)) return;
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['sources', sourceIndex, 'owners', ownerIndex, 'recipient'],
+              message:
+                'This owner must also be added as a member (meter count 0 is fine) or they will not receive revenue.',
+            });
+          });
+        });
+      });
   });
 
 type FormValues = z.infer<typeof schemaCreateEnableEnergyCommunityForm>;
