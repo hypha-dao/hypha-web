@@ -92,6 +92,27 @@ const confirmationPreviewLabels: Record<string, string> = {
   flags: 'Labels',
 };
 
+const confirmationPreviewLabelsByTool: Record<
+  string,
+  Record<string, string>
+> = {
+  'tool-create_space_setup_proposal': {
+    title: 'Title',
+    label: 'Type',
+    description: 'Description',
+  },
+};
+
+function getConfirmationPreviewLabel(
+  toolType: string | undefined,
+  key: string,
+): string {
+  if (toolType && confirmationPreviewLabelsByTool[toolType]?.[key]) {
+    return confirmationPreviewLabelsByTool[toolType][key]!;
+  }
+  return confirmationPreviewLabels[key] ?? key.replaceAll('_', ' ');
+}
+
 function formatConfirmationPreviewValue(raw: unknown): string | null {
   if (raw == null) return null;
   if (typeof raw === 'string') {
@@ -521,7 +542,7 @@ export function AiPanelMessageBubble({
   }, [textContent]);
 
   const renderConfirmationCard = useCallback(
-    (output: unknown) => {
+    (output: unknown, toolType?: string) => {
       if (!output || typeof output !== 'object') return null;
       const value = output as ConfirmationActionResult;
       if (!value.dry_run && !value.requires_confirmation) return null;
@@ -533,8 +554,7 @@ export function AiPanelMessageBubble({
               if (!displayValue) return null;
               return {
                 key,
-                label:
-                  confirmationPreviewLabels[key] ?? key.replaceAll('_', ' '),
+                label: getConfirmationPreviewLabel(toolType, key),
                 value: displayValue,
               };
             })
@@ -758,7 +778,7 @@ export function AiPanelMessageBubble({
               {renderedToolParts.map((part) => {
                 const confirmationCard =
                   part.state === 'output-available'
-                    ? renderConfirmationCard(part.output)
+                    ? renderConfirmationCard(part.output, part.type)
                     : null;
                 if (confirmationCard) {
                   return <div key={part.toolCallId}>{confirmationCard}</div>;
