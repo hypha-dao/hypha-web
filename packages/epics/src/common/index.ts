@@ -59,3 +59,4 @@ export {
   useGlobalCallDock,
 } from './global-call-dock-context';
 export { GlobalCallDockOverlay } from './global-call-dock-overlay';
+export * from './composer';

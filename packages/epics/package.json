@@ -6,7 +6,7 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run src/common/human-chat-panel/__tests__/ src/common/__tests__/"
+    "test": "vitest run src/common/human-chat-panel/__tests__/ src/common/__tests__/ src/common/composer/__tests__/"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
