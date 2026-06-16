@@ -1,4 +1,6 @@
-import type { SpaceLocationSource } from './validation';
+import { SPACE_LOCATION_SOURCES, type SpaceLocationSource } from './validation';
+
+const SPACE_LOCATION_SOURCE_SET = new Set<string>(SPACE_LOCATION_SOURCES);
 
 /** Reject the Gulf of Guinea null island unless explicitly allowed. */
 export function isNullIsland(
@@ -73,5 +75,5 @@ export function buildLocatedAtPatch(input: {
 export function isSpaceLocationSource(
   value: string | null | undefined,
 ): value is SpaceLocationSource {
-  return value === 'geocode' || value === 'manual' || value === 'map_click';
+  return typeof value === 'string' && SPACE_LOCATION_SOURCE_SET.has(value);
 }
