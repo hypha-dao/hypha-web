@@ -159,7 +159,7 @@ Today:
 | Coordinate inputs | Optional advanced: lat (−90…90), lng (−180…180) with validation |
 | Mini-map | Equirectangular D3 (simpler than full globe); click to set pin; drag pin |
 | Clear | Sets location fields to `null` |
-| Privacy note | Short copy: approximate location shown on public network map |
+| Privacy note | Short copy: approximate location (rounded to ~1 km) shown on public network map |
 
 **Permissions:** Same as today for space configuration (authenticated member with configure rights).
 
@@ -180,10 +180,16 @@ latitude   double precision NULL,
 longitude  double precision NULL,
 location_label text NULL,          -- geocoded display name
 location_source text NULL,         -- 'geocode' | 'manual' | 'map_click'
-located_at timestamptz NULL        -- last pin update
+located_at timestamptz NULL,       -- last pin update
+CONSTRAINT spaces_geo_coords_paired CHECK (
+  (latitude IS NULL AND longitude IS NULL)
+  OR (latitude IS NOT NULL AND longitude IS NOT NULL)
+)
 ```
 
-- Add composite check: `(latitude IS NULL) = (longitude IS NULL)`.
+Public map responses round stored coordinates to **2 decimal places** (~1.1 km) before exposure; exact values remain in the database for space configuration.
+
+- Additional bounds and enum checks: see migration `0053_space_geo_location.sql`.
 - Index for map queries: `CREATE INDEX spaces_geo_idx ON spaces (latitude, longitude) WHERE latitude IS NOT NULL;`
 
 ### 5.2 API contract extensions
@@ -212,10 +218,29 @@ located_at timestamptz NULL        -- last pin update
     placeId?: string;
   }>;
 }
+
+// Error responses
+{
+  error: {
+    code:
+      | 'VALIDATION_ERROR'
+      | 'RATE_LIMIT_EXCEEDED'
+      | 'GEOCODE_FAILED'
+      | 'INTERNAL_ERROR';
+    message: string;
+    details?: unknown;
+  };
+}
+
+// HTTP status codes:
+// 400 - Invalid query parameter or malformed JSON body
+// 429 - Rate limit exceeded
+// 502 - Nominatim unavailable
+// 500 - Internal server error
 ```
 
 - Rate limit per IP/user.
-- Cache results in DB or Redis keyed by normalized query (24h TTL).
+- Cache results in Postgres (`geocode_cache` table: `query_hash`, `results` JSONB, `expires_at`) keyed by normalized query (24h TTL). Redis is deferred unless profiling shows cache latency issues.
 - `User-Agent` and attribution per [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/).
 
 **Optional `GET /api/v1/geo/layers/:layerId`:**
@@ -401,4 +426,3 @@ type MapProjectionMode = 'globe' | 'flat' | 'equalEarth';
 1. Should map view **replace** list as default or remain secondary tab?
 2. Is displaying spaces without coordinates as a **“Set location”** CTA in space settings acceptable for onboarding?
 3. Is **One Earth commercial license** in budget for bioregions authenticity?
-4. Should pins expose **exact** coordinates publicly or only approximate (geohash rounding)?
