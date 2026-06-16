@@ -98,7 +98,7 @@ const confirmationPreviewLabelsByTool: Record<
 > = {
   'tool-create_space_setup_proposal': {
     title: 'Title',
-    label: 'Type',
+    proposal_type: 'Type',
     description: 'Description',
   },
 };
