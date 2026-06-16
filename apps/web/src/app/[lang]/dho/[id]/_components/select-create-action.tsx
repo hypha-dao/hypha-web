@@ -80,6 +80,15 @@ export const SelectCreateAction = ({
             icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
             disabled: isPaymentExpired,
           },
+          {
+            defaultDurationDays: 5,
+            title: 'Change Energy Optimization',
+            description:
+              'Re-rank the community optimisation objectives and update social allocation on-chain.',
+            href: 'agreements/create/change-energy-optimization',
+            icon: <Bolt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+            disabled: isPaymentExpired,
+          },
         ]
       : []),
     {

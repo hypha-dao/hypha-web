@@ -1518,7 +1518,8 @@
       "enableEnergyCommunity": "Enable Energy Community",
       "energySharing": "Energy Sharing",
       "registerEnergySource": "Register Energy Source",
-      "addEnergyMember": "Add Energy Member"
+      "addEnergyMember": "Add Energy Member",
+      "changeEnergyOptimization": "Change Energy Optimization"
     },
     "documentBadges": {
       "invite": "Invite",

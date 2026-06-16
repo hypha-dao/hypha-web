@@ -26,6 +26,9 @@ const SOURCE_TYPES: Record<number, string> = {
   1: 'BATTERY',
 };
 
+const BASE_PURPOSES = ['SELF_CONSUMPTION', 'MIN_CO2', 'LOWEST_PRICE'];
+const SOCIAL_MODES = ['NONE', 'FIXED', 'VARIABLE'];
+
 const toLowerHex = (address: string) => address.toLowerCase() as `0x${string}`;
 
 type EnergyCommunityActivation = {
@@ -328,6 +331,32 @@ export async function GET(
 
     const memberAddressList = memberAddresses ?? [];
 
+    const [optimizationConfig, socialWalletsRaw] = await Promise.all([
+      safeRead<readonly [readonly number[], number, bigint, number, boolean]>(
+        'getOptimizationConfig',
+      ),
+      safeRead<readonly { wallet: `0x${string}`; shareBps: number }[]>(
+        'getSocialWallets',
+      ),
+    ]);
+
+    const optimization = optimizationConfig
+      ? {
+          configured: optimizationConfig[4],
+          purposeRanking: optimizationConfig[0].map(
+            (purpose) =>
+              BASE_PURPOSES[Number(purpose)] ?? `UNKNOWN(${purpose})`,
+          ),
+          socialMode: SOCIAL_MODES[Number(optimizationConfig[1])] ?? 'NONE',
+          socialFixedKwh: optimizationConfig[2].toString(),
+          socialVariableBps: Number(optimizationConfig[3]),
+          socialWallets: (socialWalletsRaw ?? []).map((wallet) => ({
+            wallet: wallet.wallet.toLowerCase() as `0x${string}`,
+            shareBps: Number(wallet.shareBps),
+          })),
+        }
+      : null;
+
     return NextResponse.json({
       enabled: true,
       activation: {
@@ -371,6 +400,7 @@ export async function GET(
       },
       members: memberAddressList.map((a) => a.toLowerCase() as `0x${string}`),
       sources,
+      optimization,
     });
   } catch (error) {
     console.error('Failed to fetch space energy data:', error);

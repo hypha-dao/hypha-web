@@ -48,6 +48,14 @@ export type SpaceEnergyResponse = {
     exportDeviceId: string | null;
   };
   members?: `0x${string}`[];
+  optimization?: {
+    configured: boolean;
+    purposeRanking: string[];
+    socialMode: string;
+    socialFixedKwh: string;
+    socialVariableBps: number;
+    socialWallets: { wallet: `0x${string}`; shareBps: number }[];
+  } | null;
 };
 
 export const useSpaceEnergy = () => {

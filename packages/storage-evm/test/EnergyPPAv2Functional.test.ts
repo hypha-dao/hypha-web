@@ -43,6 +43,7 @@ async function deployRegularSpaceToken(
     0,
     0,
     [],
+    [],
   ]);
   const Proxy = await ethers.getContractFactory('ERC1967Proxy');
   const proxy = await Proxy.deploy(await impl.getAddress(), init);
@@ -93,6 +94,7 @@ describe('EnergyPPAv2 — Functional Correctness', function () {
         owner.address,
         energyToken.target,
         stablecoin.target,
+        ethers.ZeroAddress,
         ethers.ZeroAddress,
       ],
       { initializer: 'initialize', kind: 'uups' },
@@ -1152,6 +1154,7 @@ describe('EnergyPPAv2 — Functional Correctness', function () {
         stablecoin: stablecoin.target,
         communityAddress: community.address,
         aggregatorAddress: aggregator.address,
+        gridOperator: owner.address,
         communityFeeBps: 500,
         aggregatorFeeBps: 300,
         exportDeviceId: 9999,
@@ -1199,6 +1202,14 @@ describe('EnergyPPAv2 — Functional Correctness', function () {
             metadataHash: ethers.ZeroHash,
           },
         ],
+        // Optimization strategy: rank Lowest Price > Self-Consumption > Min CO2,
+        // with a 10% variable social allocation split across two goal wallets.
+        purposeRanking: [2, 0, 1],
+        socialMode: 2,
+        socialFixedKwh: 0,
+        socialVariableBps: 1000,
+        socialWallets: [community.address, aggregator.address],
+        socialWalletShares: [6000, 4000],
       });
 
       const receipt = await tx.wait();
@@ -1217,6 +1228,17 @@ describe('EnergyPPAv2 — Functional Correctness', function () {
 
       // Verify ownership transferred to admin
       expect(await ppa.owner()).to.equal(owner.address);
+
+      // Verify the optimization strategy was configured during deploy
+      const [optRanking, optMode, , optVariableBps, optConfigured] =
+        await ppa.getOptimizationConfig();
+      expect(optRanking.map((r: bigint) => Number(r))).to.deep.equal([2, 0, 1]);
+      expect(Number(optMode)).to.equal(2);
+      expect(Number(optVariableBps)).to.equal(1000);
+      expect(optConfigured).to.equal(true);
+      const optWallets = await ppa.getSocialWallets();
+      expect(optWallets.length).to.equal(2);
+      expect(Number(optWallets[0].shareBps)).to.equal(6000);
 
       // Verify source token ownership
       const RSTFactory = await ethers.getContractFactory(
@@ -2013,6 +2035,103 @@ describe('EnergyPPAv2 — Functional Correctness', function () {
       expect(ok).to.be.true;
       expect(drift).to.equal(0n);
       console.log(`\n    Zero-sum verified ✓  (drift: ${drift})`);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  Optimization strategy (REC Level 1 base purposes + Level 2 social)
+  // ═══════════════════════════════════════════════════════════════════════
+  describe('Optimization strategy', function () {
+    // BasePurpose: SELF_CONSUMPTION=0, MIN_CO2=1, LOWEST_PRICE=2
+    // SocialMode:  NONE=0, FIXED=1, VARIABLE=2
+
+    it('owner can set the optimization config and read it back', async function () {
+      const { ppa } = await loadFixture(communityFixture);
+
+      await ppa.setOptimizationConfig([2, 0, 1], 2, 0, 1500);
+
+      const [ranking, mode, fixedKwh, variableBps, configured] =
+        await ppa.getOptimizationConfig();
+      expect(ranking.map((r: bigint) => Number(r))).to.deep.equal([2, 0, 1]);
+      expect(Number(mode)).to.equal(2);
+      expect(fixedKwh).to.equal(0n);
+      expect(Number(variableBps)).to.equal(1500);
+      expect(configured).to.equal(true);
+    });
+
+    it('stores fixed-mode kWh allocation', async function () {
+      const { ppa } = await loadFixture(communityFixture);
+      await ppa.setOptimizationConfig([0, 1, 2], 1, 1000n, 0);
+      const [, mode, fixedKwh] = await ppa.getOptimizationConfig();
+      expect(Number(mode)).to.equal(1);
+      expect(fixedKwh).to.equal(1000n);
+    });
+
+    it('reverts for a non-owner', async function () {
+      const { ppa, alice } = await loadFixture(communityFixture);
+      await expect(ppa.connect(alice).setOptimizationConfig([0, 1, 2], 0, 0, 0))
+        .to.be.reverted;
+    });
+
+    it('reverts when the ranking is not distinct', async function () {
+      const { ppa } = await loadFixture(communityFixture);
+      await expect(
+        ppa.setOptimizationConfig([0, 0, 1], 0, 0, 0),
+      ).to.be.revertedWith('Ranking must be distinct');
+    });
+
+    it('reverts when variableBps exceeds 100%', async function () {
+      const { ppa } = await loadFixture(communityFixture);
+      await expect(
+        ppa.setOptimizationConfig([0, 1, 2], 2, 0, 10001),
+      ).to.be.revertedWith('variableBps > 100%');
+    });
+
+    it('sets social wallets whose shares sum to 100%', async function () {
+      const { ppa, community, aggregator } = await loadFixture(
+        communityFixture,
+      );
+      await ppa.setSocialWallets(
+        [community.address, aggregator.address],
+        [6000, 4000],
+      );
+      const wallets = await ppa.getSocialWallets();
+      expect(wallets.length).to.equal(2);
+      expect(wallets[0].wallet).to.equal(community.address);
+      expect(Number(wallets[0].shareBps)).to.equal(6000);
+      expect(Number(wallets[1].shareBps)).to.equal(4000);
+    });
+
+    it('reverts when social wallet shares do not sum to 100%', async function () {
+      const { ppa, community, aggregator } = await loadFixture(
+        communityFixture,
+      );
+      await expect(
+        ppa.setSocialWallets(
+          [community.address, aggregator.address],
+          [6000, 3000],
+        ),
+      ).to.be.revertedWith('Shares must sum to 100%');
+    });
+
+    it('clears social wallets when given empty arrays', async function () {
+      const { ppa, community, aggregator } = await loadFixture(
+        communityFixture,
+      );
+      await ppa.setSocialWallets(
+        [community.address, aggregator.address],
+        [5000, 5000],
+      );
+      await ppa.setSocialWallets([], []);
+      const wallets = await ppa.getSocialWallets();
+      expect(wallets.length).to.equal(0);
+    });
+
+    it('reverts setSocialWallets for a non-owner', async function () {
+      const { ppa, alice, community } = await loadFixture(communityFixture);
+      await expect(
+        ppa.connect(alice).setSocialWallets([community.address], [10000]),
+      ).to.be.reverted;
     });
   });
 });

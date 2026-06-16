@@ -73,7 +73,8 @@ function isEnergyProposalLabel(label: string | undefined): boolean {
     label === 'Enable Energy Community' ||
     label === 'Energy Sharing' ||
     label === 'Register Energy Source' ||
-    label === 'Add Energy Member'
+    label === 'Add Energy Member' ||
+    label === 'Change Energy Optimization'
   );
 }
 

@@ -29,5 +29,6 @@ export const DOCUMENT_LABEL_BADGE_KEYS: Partial<Record<string, string>> = {
   'Energy Sharing': 'labels.energySharing',
   'Register Energy Source': 'labels.registerEnergySource',
   'Add Energy Member': 'labels.addEnergyMember',
+  'Change Energy Optimization': 'labels.changeEnergyOptimization',
   'Space Memory': 'labels.spaceMemory',
 };

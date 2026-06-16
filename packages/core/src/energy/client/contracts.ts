@@ -69,6 +69,13 @@ export const energyPpaV2FactoryAbi = [
               { name: 'metadataHash', type: 'bytes32' },
             ],
           },
+          // Optimization strategy (REC Level 1 base purposes + Level 2 social)
+          { name: 'purposeRanking', type: 'uint8[3]' },
+          { name: 'socialMode', type: 'uint8' },
+          { name: 'socialFixedKwh', type: 'uint256' },
+          { name: 'socialVariableBps', type: 'uint16' },
+          { name: 'socialWallets', type: 'address[]' },
+          { name: 'socialWalletShares', type: 'uint16[]' },
         ],
       },
     ],
@@ -78,6 +85,60 @@ export const energyPpaV2FactoryAbi = [
     ],
   },
 ] as const satisfies Abi;
+
+/**
+ * REC Level 1 base purposes (primary optimisation objectives). The index of
+ * each value matches the on-chain `EnergyPPAv2.BasePurpose` enum.
+ */
+export const ENERGY_BASE_PURPOSES = [
+  'SELF_CONSUMPTION',
+  'MIN_CO2',
+  'LOWEST_PRICE',
+] as const;
+export type EnergyBasePurpose = (typeof ENERGY_BASE_PURPOSES)[number];
+
+/**
+ * REC Level 2 social allocation modes. The index of each value matches the
+ * on-chain `EnergyPPAv2.SocialMode` enum.
+ */
+export const ENERGY_SOCIAL_MODES = ['NONE', 'FIXED', 'VARIABLE'] as const;
+export type EnergySocialMode = (typeof ENERGY_SOCIAL_MODES)[number];
+
+export type EnergyPurposeRanking = readonly [
+  EnergyBasePurpose,
+  EnergyBasePurpose,
+  EnergyBasePurpose,
+];
+
+const toBasePurposeEnum = (value: EnergyBasePurpose | string): number => {
+  const index = ENERGY_BASE_PURPOSES.indexOf(value as EnergyBasePurpose);
+  if (index === -1) {
+    throw new Error(`Unsupported base purpose: ${value}`);
+  }
+  return index;
+};
+
+const toSocialModeEnum = (value: EnergySocialMode | string): number => {
+  const index = ENERGY_SOCIAL_MODES.indexOf(value as EnergySocialMode);
+  if (index === -1) {
+    throw new Error(`Unsupported social mode: ${value}`);
+  }
+  return index;
+};
+
+const toPurposeRankingEnum = (
+  ranking: EnergyPurposeRanking,
+): [number, number, number] => {
+  const mapped = ranking.map(toBasePurposeEnum) as [number, number, number];
+  if (
+    mapped[0] === mapped[1] ||
+    mapped[1] === mapped[2] ||
+    mapped[0] === mapped[2]
+  ) {
+    throw new Error('Purpose ranking must be a permutation of all three');
+  }
+  return mapped;
+};
 
 /**
  * Shape of CommunityParams passed to `EnergyPPAv2Factory.deployCommunity`.
@@ -112,6 +173,13 @@ export type EnergyDeployCommunityInput = {
   energyTokenSymbol: string;
   sources: ReadonlyArray<EnergyDeployCommunitySourceInput>;
   members?: ReadonlyArray<EnergyDeployCommunityMemberInput>;
+  // Optimization strategy (REC Level 1 base purposes + Level 2 social)
+  purposeRanking: EnergyPurposeRanking;
+  socialMode?: EnergySocialMode;
+  socialFixedKwh?: string | bigint | number;
+  socialVariableBps?: string | number;
+  socialWallets?: ReadonlyArray<string>;
+  socialWalletShares?: ReadonlyArray<string | number>;
 };
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
@@ -235,7 +303,17 @@ export const buildDeployCommunityTransaction = (
       deviceIds: member.deviceIds.map((id) => toBigInt(id)),
       metadataHash: toBytes32(member.metadataHash),
     })),
+    purposeRanking: toPurposeRankingEnum(input.purposeRanking),
+    socialMode: toSocialModeEnum(input.socialMode ?? 'NONE'),
+    socialFixedKwh: toBigInt(input.socialFixedKwh),
+    socialVariableBps: toFee(input.socialVariableBps),
+    socialWallets: (input.socialWallets ?? []).map((w) => toAddress(w)),
+    socialWalletShares: (input.socialWalletShares ?? []).map((s) => toFee(s)),
   };
+
+  if (params.socialWallets.length !== params.socialWalletShares.length) {
+    throw new Error('Social wallets and shares length mismatch');
+  }
 
   if (params.admin === ZERO_ADDRESS) {
     throw new Error('Admin address is required');
@@ -405,7 +483,118 @@ export const energyPpaV2Abi = [
     inputs: [{ name: 'internalAmount', type: 'uint256' }],
     outputs: [],
   },
+  {
+    type: 'function',
+    name: 'setOptimizationConfig',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'ranking', type: 'uint8[3]' },
+      { name: 'mode', type: 'uint8' },
+      { name: 'fixedKwh', type: 'uint256' },
+      { name: 'variableBps', type: 'uint16' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'setSocialWallets',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'wallets', type: 'address[]' },
+      { name: 'shareBps', type: 'uint16[]' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'getOptimizationConfig',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [
+      { name: 'ranking', type: 'uint8[3]' },
+      { name: 'mode', type: 'uint8' },
+      { name: 'fixedKwh', type: 'uint256' },
+      { name: 'variableBps', type: 'uint16' },
+      { name: 'configured', type: 'bool' },
+    ],
+  },
+  {
+    type: 'function',
+    name: 'getSocialWallets',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple[]',
+        components: [
+          { name: 'wallet', type: 'address' },
+          { name: 'shareBps', type: 'uint16' },
+        ],
+      },
+    ],
+  },
 ] as const satisfies Abi;
+
+/**
+ * Input for the "Change Optimization Strategy" proposal. Targets an existing
+ * community proxy (not the factory) and sets the REC base-purpose ranking +
+ * social allocation. Executed by the space executor (the proxy owner) when the
+ * proposal passes.
+ */
+export type EnergyOptimizationInput = {
+  proxy: string;
+  purposeRanking: EnergyPurposeRanking;
+  socialMode?: EnergySocialMode;
+  socialFixedKwh?: string | bigint | number;
+  socialVariableBps?: string | number;
+  socialWallets?: ReadonlyArray<string>;
+  socialWalletShares?: ReadonlyArray<string | number>;
+};
+
+/**
+ * Build the calldata for `setOptimizationConfig` (and `setSocialWallets`) on a
+ * community proxy. Returns one or two `{ target, value, data }` transactions
+ * suitable for a DAO proposal `transactions[]` (executed by the space
+ * executor, which owns the proxy after deploy).
+ */
+export const buildSetOptimizationTransactions = (
+  input: EnergyOptimizationInput,
+): Array<{ target: `0x${string}`; value: bigint; data: `0x${string}` }> => {
+  const proxy = toAddress(input.proxy);
+  if (proxy === ZERO_ADDRESS) {
+    throw new Error('Community proxy address is required');
+  }
+
+  const ranking = toPurposeRankingEnum(input.purposeRanking);
+  const wallets = (input.socialWallets ?? []).map((w) => toAddress(w));
+  const shares = (input.socialWalletShares ?? []).map((s) => toFee(s));
+  if (wallets.length !== shares.length) {
+    throw new Error('Social wallets and shares length mismatch');
+  }
+
+  const configData = encodeFunctionData({
+    abi: energyPpaV2Abi,
+    functionName: 'setOptimizationConfig',
+    args: [
+      ranking,
+      toSocialModeEnum(input.socialMode ?? 'NONE'),
+      toBigInt(input.socialFixedKwh),
+      toFee(input.socialVariableBps),
+    ],
+  });
+
+  const walletData = encodeFunctionData({
+    abi: energyPpaV2Abi,
+    functionName: 'setSocialWallets',
+    args: [wallets, shares],
+  });
+
+  return [
+    { target: proxy, value: 0n, data: configData },
+    { target: proxy, value: 0n, data: walletData },
+  ];
+};
 
 /**
  * Base mainnet — Energy PPA v2 reads and sync use this chain only.
@@ -417,6 +606,11 @@ export const ENERGY_PPA_CHAIN_ID = 8453 as const satisfies GovernanceChainId;
 /**
  * EnergyPPAv2Factory on {@link ENERGY_PPA_CHAIN_ID}.
  * Keep in sync with deployed infra (see `packages/storage-evm` demo state).
+ *
+ * NOTE: `CommunityParams` now includes the optimization-strategy fields
+ * (`purposeRanking`, social allocation). The factory below must be redeployed
+ * from the updated `EnergyPPAv2Factory.sol` and this address bumped before the
+ * redesigned Enable Energy Community proposal can deploy successfully.
  */
 export const energyPpaV2FactoryAddress: Record<
   GovernanceChainId,

@@ -41,6 +41,13 @@ contract EnergyPPAv2Factory is Ownable {
     string energyTokenSymbol;
     SourceConfig[] sources;
     MemberConfig[] members;
+    // ── Optimization strategy (REC Level 1 + Level 2) ──
+    EnergyPPAv2.BasePurpose[3] purposeRanking;
+    EnergyPPAv2.SocialMode socialMode;
+    uint256 socialFixedKwh;
+    uint16 socialVariableBps;
+    address[] socialWallets;
+    uint16[] socialWalletShares;
   }
 
   address public implementation;
@@ -141,7 +148,8 @@ contract EnergyPPAv2Factory is Ownable {
           s.tokenName, s.tokenSymbol, address(this), spaceId, totalSupply,
           true, true, false, 0, address(0), false, false,
           new address[](0), new address[](0), new uint256[](0), new uint256[](0),
-          0, new uint256[](0), address(0), 0, 0, uint8(0), new uint256[](0)
+          0, new uint256[](0), address(0), 0, 0, uint8(0), new uint256[](0),
+          new address[](0)
         )
       );
 
@@ -171,6 +179,17 @@ contract EnergyPPAv2Factory is Ownable {
     if (p.communityFeeBps > 0) ppa.setCommunityFeeBps(p.communityFeeBps);
     if (p.aggregatorFeeBps > 0) ppa.setAggregatorFeeBps(p.aggregatorFeeBps);
     if (p.exportDeviceId > 0) ppa.setExportDeviceId(p.exportDeviceId);
+
+    // Optimization strategy (factory is still owner here)
+    ppa.setOptimizationConfig(
+      p.purposeRanking,
+      p.socialMode,
+      p.socialFixedKwh,
+      p.socialVariableBps
+    );
+    if (p.socialWallets.length > 0) {
+      ppa.setSocialWallets(p.socialWallets, p.socialWalletShares);
+    }
 
     ppa.updateWhitelist(p.admin, true);
     ppa.updateWhitelist(address(this), false);

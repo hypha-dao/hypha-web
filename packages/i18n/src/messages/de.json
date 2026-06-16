@@ -1519,7 +1519,8 @@
       "enableEnergyCommunity": "Energiegemeinschaft aktivieren",
       "energySharing": "Energie teilen",
       "registerEnergySource": "Energiequelle registrieren",
-      "addEnergyMember": "Energiemitglied hinzufügen"
+      "addEnergyMember": "Energiemitglied hinzufügen",
+      "changeEnergyOptimization": "Energieoptimierung ändern"
     },
     "documentBadges": {
       "invite": "Einladung",

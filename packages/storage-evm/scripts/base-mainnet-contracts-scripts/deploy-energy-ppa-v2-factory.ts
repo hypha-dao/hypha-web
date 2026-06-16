@@ -293,6 +293,15 @@ async function deployCommunity(
       { memberAddress: inv1, deviceIds: [], metadataHash: ethers.ZeroHash },
       { memberAddress: inv2, deviceIds: [], metadataHash: ethers.ZeroHash },
     ],
+    // Optimization strategy (REC Level 1 + Level 2):
+    //   Ranking 1A>1B>1C (Self-Consumption > Min CO2 > Lowest Price)
+    //   Social allocation disabled (NONE)
+    purposeRanking: [0, 1, 2],
+    socialMode: 0,
+    socialFixedKwh: 0,
+    socialVariableBps: 0,
+    socialWallets: [],
+    socialWalletShares: [],
   });
 
   console.log(`\n  deployCommunity tx sent: ${tx.hash}`);

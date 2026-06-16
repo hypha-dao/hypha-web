@@ -58,6 +58,28 @@ contract EnergyPPAv2 is
     BATTERY
   }
 
+  /// @notice REC Level 1 base purposes (primary optimisation objectives).
+  ///         1A = SELF_CONSUMPTION, 1B = MIN_CO2, 1C = LOWEST_PRICE.
+  ///         Stored as an ordinal ranking — consumed by the off-chain EMS/VPP.
+  enum BasePurpose {
+    SELF_CONSUMPTION,
+    MIN_CO2,
+    LOWEST_PRICE
+  }
+
+  /// @notice REC Level 2 social allocation mode.
+  ///         NONE = disabled, FIXED = fixed kWh/interval, VARIABLE = % of solar.
+  enum SocialMode {
+    NONE,
+    FIXED,
+    VARIABLE
+  }
+
+  struct SocialWallet {
+    address wallet;
+    uint16 shareBps; // share of the social allocation (sums to 10000 across wallets)
+  }
+
   struct EnergySource {
     SourceType sourceType;
     address ownershipToken; // ERC-20 ownership token (e.g. RegularSpaceToken)
@@ -122,7 +144,19 @@ contract EnergyPPAv2 is
   // ── Grid settlement ────────────────────────────────────────────
   address internal gridOperatorAddress;
 
-  uint256[30] private __gap;
+  // ── Optimization strategy (REC Level 1 + Level 2) ──────────────
+  // Pure configuration consumed by the off-chain EMS/VPP. Does NOT affect
+  // on-chain settlement math in `consumeEnergy`. Settable by the owner (the
+  // space executor after deploy), so a community can change strategy via a
+  // governance proposal.
+  BasePurpose[3] internal purposeRanking;
+  SocialMode internal socialMode;
+  uint16 internal socialVariableBps; // for VARIABLE mode: % of solar (0-10000)
+  bool internal optimizationConfigured;
+  uint256 internal socialFixedKwh; // for FIXED mode: kWh per 15-min interval
+  SocialWallet[] internal socialWallets;
+
+  uint256[26] private __gap;
 
   // ════════════════════════════════════════════════════════════════════════
   //  Events
@@ -174,6 +208,13 @@ contract EnergyPPAv2 is
   event GridOperatorSet(address indexed operator);
   event GridDebtSettled(address indexed payer, uint256 stablecoinAmount, int256 previousGrid, int256 newGrid);
   event GridCreditClaimed(address indexed beneficiary, uint256 stablecoinAmount, int256 previousGrid, int256 newGrid);
+  event OptimizationConfigSet(
+    BasePurpose[3] purposeRanking,
+    SocialMode socialMode,
+    uint256 socialFixedKwh,
+    uint16 socialVariableBps
+  );
+  event SocialWalletsSet(address[] wallets, uint16[] shareBps);
 
   // ════════════════════════════════════════════════════════════════════════
   //  Init
@@ -671,6 +712,62 @@ contract EnergyPPAv2 is
     emit GridOperatorSet(operator);
   }
 
+  // ════════════════════════════════════════════════════════════════════════
+  //  Optimization strategy (REC Level 1 base purposes + Level 2 social)
+  // ════════════════════════════════════════════════════════════════════════
+
+  /// @notice Set the community's base-purpose ranking and social allocation.
+  ///         Owner-only so it can be (re)set via a governance proposal executed
+  ///         by the space executor. `ranking` must be a permutation of all
+  ///         three base purposes.
+  function setOptimizationConfig(
+    BasePurpose[3] calldata ranking,
+    SocialMode mode,
+    uint256 fixedKwh,
+    uint16 variableBps
+  ) external onlyOwner {
+    require(
+      ranking[0] != ranking[1] &&
+        ranking[1] != ranking[2] &&
+        ranking[0] != ranking[2],
+      'Ranking must be distinct'
+    );
+    require(variableBps <= 10000, 'variableBps > 100%');
+
+    purposeRanking = ranking;
+    socialMode = mode;
+    socialFixedKwh = fixedKwh;
+    socialVariableBps = variableBps;
+    optimizationConfigured = true;
+
+    emit OptimizationConfigSet(ranking, mode, fixedKwh, variableBps);
+  }
+
+  /// @notice Set the social goal wallets and their share split. Pass empty
+  ///         arrays to clear. When non-empty, shares must sum to 10000 (100%).
+  function setSocialWallets(
+    address[] calldata wallets,
+    uint16[] calldata shareBps
+  ) external onlyOwner {
+    require(wallets.length == shareBps.length, 'Length mismatch');
+
+    delete socialWallets;
+
+    if (wallets.length > 0) {
+      uint256 total = 0;
+      for (uint256 i = 0; i < wallets.length; i++) {
+        require(wallets[i] != address(0), 'Invalid wallet');
+        total += shareBps[i];
+        socialWallets.push(
+          SocialWallet({ wallet: wallets[i], shareBps: shareBps[i] })
+        );
+      }
+      require(total == 10000, 'Shares must sum to 100%');
+    }
+
+    emit SocialWalletsSet(wallets, shareBps);
+  }
+
   function emergencyReset() external onlyWhitelist {
     for (uint256 i = 0; i < memberAddresses.length; i++) {
       _setEnergyCreditBalance(memberAddresses[i], 0);
@@ -880,5 +977,29 @@ contract EnergyPPAv2 is
 
   function getGridOperator() external view returns (address) {
     return gridOperatorAddress;
+  }
+
+  function getOptimizationConfig()
+    external
+    view
+    returns (
+      BasePurpose[3] memory ranking,
+      SocialMode mode,
+      uint256 fixedKwh,
+      uint16 variableBps,
+      bool configured
+    )
+  {
+    return (
+      purposeRanking,
+      socialMode,
+      socialFixedKwh,
+      socialVariableBps,
+      optimizationConfigured
+    );
+  }
+
+  function getSocialWallets() external view returns (SocialWallet[] memory) {
+    return socialWallets;
   }
 }

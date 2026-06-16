@@ -683,7 +683,8 @@
       "enableEnergyCommunity": "Activar comunidad energética",
       "energySharing": "Compartir energía",
       "registerEnergySource": "Registrar fuente de energía",
-      "addEnergyMember": "Agregar miembro de energía"
+      "addEnergyMember": "Agregar miembro de energía",
+      "changeEnergyOptimization": "Cambiar optimización de energía"
     },
     "documentBadges": {
       "invite": "Invitación",
