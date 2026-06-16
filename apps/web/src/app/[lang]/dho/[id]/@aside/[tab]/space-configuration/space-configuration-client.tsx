@@ -15,7 +15,7 @@ import {
 } from '@hypha-platform/epics';
 import { useParams, usePathname } from 'next/navigation';
 import React from 'react';
-import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { LoadingBackdrop } from '@hypha-platform/ui';
 import { Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
