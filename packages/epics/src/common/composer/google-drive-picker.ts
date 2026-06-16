@@ -25,7 +25,7 @@ type GooglePickerBuilder = {
 type GooglePickerApi = {
   PickerBuilder: new () => GooglePickerBuilder;
   ViewId: { DOCS: unknown };
-  Action: { PICKED: string };
+  Action: { PICKED: string; CANCEL: string; ERROR: string };
 };
 
 type GoogleAccountsOAuth2 = {
@@ -275,6 +275,11 @@ async function openDrivePicker(
           }
           return;
         }
+        if (data.action === pickerApi.Action.ERROR && !settled) {
+          settled = true;
+          reject(new Error('google_picker_error'));
+          return;
+        }
         if (!settled) {
           settled = true;
           resolve([]);
@@ -303,10 +308,21 @@ export async function pickGoogleDriveFiles(): Promise<File[]> {
   if (docs.length === 0) {
     return [];
   }
-  const files = await Promise.all(
+  const results = await Promise.allSettled(
     docs.map((doc) => downloadDriveDoc(accessToken, doc)),
   );
-  return files;
+  const files = results.flatMap((result) =>
+    result.status === 'fulfilled' ? [result.value] : [],
+  );
+  if (files.length > 0) {
+    return files;
+  }
+  const firstError = results.find(
+    (result): result is PromiseRejectedResult => result.status === 'rejected',
+  );
+  throw firstError?.reason instanceof Error
+    ? firstError.reason
+    : new Error('drive_download_failed');
 }
 
 export function filesToFileList(files: File[]): FileList {
