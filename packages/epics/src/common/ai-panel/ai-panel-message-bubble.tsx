@@ -475,6 +475,17 @@ export function AiPanelMessageBubble({
         return true;
       }
     }
+    if (
+      part.type === 'tool-create_space_setup_proposal' &&
+      part.state === 'output-available'
+    ) {
+      const output = part.output as
+        | { ok?: boolean; requires_wallet_signature?: boolean }
+        | undefined;
+      if (output?.ok === true && output?.requires_wallet_signature === true) {
+        return true;
+      }
+    }
     return false;
   };
   const renderedToolParts = visibleToolParts.filter(
