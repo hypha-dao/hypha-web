@@ -612,7 +612,7 @@ export function OnboardingAdventurePage({
               </span>
               {t('heroPill.together')}
             </p>
-            <p className="text-2 font-semibold uppercase tracking-[0.24em] text-accent-9 md:text-3 [.dark_&]:text-accent-10">
+            <p className="text-2 font-semibold uppercase tracking-[0.24em] text-accent-11 md:text-3 [.dark_&]:text-info-11">
               {t('heroEyebrow')}
             </p>
             <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-heading)] text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.06] tracking-tight">
