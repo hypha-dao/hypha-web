@@ -76,34 +76,34 @@ const exchangeBrandStyles = {
     'border border-transparent bg-[#6C3BFF] text-white hover:bg-[#5a30d6]',
 } as const;
 const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
-const HERO_TITLE_ROTATING_WORDS = [
-  'Anything',
-  'Projects',
-  'Start-ups',
-  'Ventures',
-  'Companies',
-  'Studios',
-  'Games',
-  'Clubs',
-  'Guilds',
-  'Associations',
-  'Schools',
-  'Cooperatives',
-  'Collectives',
-  'Communities',
-  'Networks',
-  'Hubs',
-  'Coalitions',
-  'Movements',
-  'Ecosystems',
-  'DAOs',
-  'NGOs',
-  'Funds',
-  'Villages',
-  'Farms',
-  'Festivals',
-  'Solidarity',
-  'Livelihoods',
+const HERO_TITLE_ROTATING_WORD_KEYS = [
+  'anything',
+  'projects',
+  'startUps',
+  'ventures',
+  'companies',
+  'studios',
+  'games',
+  'clubs',
+  'guilds',
+  'associations',
+  'schools',
+  'cooperatives',
+  'collectives',
+  'communities',
+  'networks',
+  'hubs',
+  'coalitions',
+  'movements',
+  'ecosystems',
+  'daos',
+  'ngos',
+  'funds',
+  'villages',
+  'farms',
+  'festivals',
+  'solidarity',
+  'livelihoods',
 ] as const;
 
 const normalizeEvmAddress = (value: string | null | undefined) =>
@@ -361,6 +361,11 @@ export function OnboardingAdventurePage({
     ],
     [t],
   );
+  const rotatingHeroTitleWords = useMemo(
+    () =>
+      HERO_TITLE_ROTATING_WORD_KEYS.map((key) => t(`heroPill.rotating.${key}`)),
+    [t],
+  );
   useEffect(
     () => () => {
       if (copyTimeoutRef.current !== null) {
@@ -401,14 +406,14 @@ export function OnboardingAdventurePage({
   }, [rotatingHeroPrompts]);
 
   useEffect(() => {
-    if (HERO_TITLE_ROTATING_WORDS.length < 2) return;
+    if (rotatingHeroTitleWords.length < 2) return;
     const intervalId = window.setInterval(() => {
       setHeroTitleWordIndex((current) =>
-        current + 1 >= HERO_TITLE_ROTATING_WORDS.length ? 0 : current + 1,
+        current + 1 >= rotatingHeroTitleWords.length ? 0 : current + 1,
       );
     }, 2500);
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [rotatingHeroTitleWords]);
 
   const stopDictation = () => {
     const recognition = speechRecognitionRef.current;
@@ -574,244 +579,239 @@ export function OnboardingAdventurePage({
   }
   return (
     <div className="flex flex-col">
-      <section className="relative -mx-5 overflow-hidden px-5 pb-12 pt-6 md:pb-16 md:pt-8">
+      <section className="relative -mx-5 overflow-hidden px-5 pb-14 pt-8 md:pb-20 md:pt-10">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_0%,var(--accent-2),transparent_68%)]"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-accent-2/50 via-background to-background dark:hidden"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_50%_35%,oklch(0.2_0.05_265),oklch(0.09_0.025_258))]"
+          className="pointer-events-none absolute inset-0 opacity-35 [background-image:radial-gradient(circle,oklch(0.55_0.12_278_/_0.1)_1px,transparent_1px)] [background-size:36px_36px] dark:hidden"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.22] [background-image:linear-gradient(to_right,oklch(1_0_0_/_0.04)_1px,transparent_1px),linear-gradient(to_bottom,oklch(1_0_0_/_0.04)_1px,transparent_1px)] [background-size:72px_72px]"
+          className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(ellipse_85%_65%_at_50%_22%,oklch(0.24_0.08_280),oklch(0.08_0.03_265)_72%)] dark:block"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-30 [background-image:radial-gradient(circle,oklch(1_0_0_/_0.55)_0.6px,transparent_0.6px)] [background-size:28px_28px]"
+          className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(ellipse_55%_40%_at_50%_58%,oklch(0.2_0.07_292_/_0.55),transparent_68%)] dark:block"
         />
-        <Container className="relative z-10 flex flex-col gap-10 md:gap-12">
-          <header className="flex flex-col items-center gap-5 text-center md:gap-6">
-            <p className="inline-flex items-center rounded-full border border-info-8/30 bg-background/15 px-5 py-1.5 text-2 font-medium text-white shadow-[0_0_28px_-10px_var(--color-info-9)] backdrop-blur-sm">
-              <span>Build </span>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 hidden opacity-40 [background-image:radial-gradient(circle,oklch(1_0_0_/_0.42)_0.5px,transparent_0.5px)] [background-size:32px_32px] dark:block"
+        />
+        <Container className="relative z-10 flex flex-col gap-12 md:gap-14">
+          <header className="flex flex-col items-center gap-6 text-center md:gap-8">
+            <p className="inline-flex items-center rounded-full border border-info-7/40 bg-white/85 px-5 py-1.5 text-2 font-medium text-foreground shadow-[0_4px_28px_-10px_var(--color-info-8)] backdrop-blur-sm dark:border-info-8/30 dark:bg-background/20 dark:text-white dark:shadow-[0_0_32px_-10px_var(--color-info-9)]">
+              <span>{t('heroPill.build')}</span>
               <span
-                key={HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
-                className="inline-block font-semibold text-info-10 transition-opacity duration-300"
+                key={rotatingHeroTitleWords[heroTitleWordIndex]}
+                className="ml-1 inline-block font-semibold text-info-10 transition-opacity duration-300"
               >
-                {HERO_TITLE_ROTATING_WORDS[heroTitleWordIndex]}
+                {rotatingHeroTitleWords[heroTitleWordIndex]}
               </span>
-              <span>, Together.</span>
+              <span>{t('heroPill.together')}</span>
             </p>
-            <p className="text-1 font-medium uppercase tracking-[0.22em] text-info-11">
+            <p className="text-1 font-medium uppercase tracking-[0.22em] text-accent-11 dark:text-info-11">
               {t('heroEyebrow')}
             </p>
-            <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-heading)] text-[clamp(2.25rem,5.5vw,4.25rem)] font-bold leading-[1.08] tracking-tight">
-              <span className="bg-gradient-to-b from-white via-white to-info-10 bg-clip-text text-transparent">
-                {t('title')}
+            <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-heading)] text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.06] tracking-tight">
+              <span className="block text-foreground dark:text-white">
+                {t('titleLine1')}
+              </span>
+              <span className="mt-1 block bg-gradient-to-r from-foreground via-accent-10 to-info-10 bg-clip-text text-transparent dark:from-white dark:via-info-9 dark:to-accent-10">
+                {t('titleLine2')}
               </span>
             </h1>
-            <p className="mx-auto max-w-2xl text-3 font-normal text-white/55">
+            <p className="mx-auto max-w-2xl text-3 font-normal text-foreground/75 dark:text-white/90">
               {t('subtitle')}
             </p>
           </header>
 
           {onboardingHeroEnabled ? (
             <section className="relative mx-auto w-full max-w-5xl">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-x-8 -top-8 h-48 rounded-full bg-[radial-gradient(ellipse_at_center,oklch(0.62_0.14_290_/_0.14),transparent_72%)] blur-2xl"
-              />
-              <div className="relative p-1 md:p-2">
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,oklch(0.72_0.12_278_/_0.12),transparent_42%),radial-gradient(circle_at_85%_18%,oklch(0.64_0.11_292_/_0.09),transparent_38%)]"
-                />
-                <div className="relative mt-1 rounded-[1.5rem] border border-border/70 bg-background/75 shadow-inner">
-                  {heroAttachments.length > 0 ? (
-                    <div className="narrow-scrollbar max-h-24 overflow-x-auto overflow-y-hidden border-b border-border/65 px-3 py-2">
-                      <div className="flex w-max gap-2">
-                        {heroAttachments.map((file, index) => (
-                          <div
-                            key={`${file.name}-${file.lastModified}-${index}`}
-                            className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-1 text-foreground"
-                          >
-                            {file.type.startsWith('image/') ? (
-                              <ImageIcon className="size-3.5 text-muted-foreground" />
-                            ) : file.type.startsWith('video/') ? (
-                              <Video className="size-3.5 text-muted-foreground" />
-                            ) : (
-                              <FileIcon className="size-3.5 text-muted-foreground" />
-                            )}
-                            <span className="max-w-44 truncate">
-                              {file.name}
-                            </span>
-                            <button
-                              type="button"
-                              className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                              aria-label={tHuman('attachmentRemove')}
-                              onClick={() =>
-                                setHeroAttachments((prev) =>
-                                  prev.filter((_, i) => i !== index),
-                                )
-                              }
-                            >
-                              <X className="size-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                  <textarea
-                    value={aiPrompt}
-                    onChange={(event) => setAiPrompt(event.target.value)}
-                    placeholder={
-                      rotatingHeroPrompts[heroPlaceholderIndex] ??
-                      t('aiHero.placeholder')
-                    }
-                    aria-label={t('aiHero.ariaLabel')}
-                    rows={3}
-                    className="relative min-h-[120px] w-full resize-none overflow-y-auto bg-transparent px-4 py-3 text-3 text-foreground outline-none placeholder:text-muted-foreground"
-                  />
-                  <input
-                    ref={heroFileInputRef}
-                    type="file"
-                    className="sr-only"
-                    multiple
-                    onChange={(e) => {
-                      pushHeroAttachments(e.target.files);
-                      e.target.value = '';
-                    }}
-                  />
-                  <input
-                    ref={heroImageInputRef}
-                    type="file"
-                    className="sr-only"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => {
-                      pushHeroAttachments(e.target.files);
-                      e.target.value = '';
-                    }}
-                  />
-                  <input
-                    ref={heroVideoInputRef}
-                    type="file"
-                    className="sr-only"
-                    accept="video/*"
-                    multiple
-                    onChange={(e) => {
-                      pushHeroAttachments(e.target.files);
-                      e.target.value = '';
-                    }}
-                  />
-                  <div className="flex items-center justify-between gap-2 px-3 pb-2.5">
-                    <div className="flex items-center gap-1">
-                      <DropdownMenu
-                        modal={false}
-                        open={attachMenuOpen}
-                        onOpenChange={setAttachMenuOpen}
-                      >
-                        <DropdownMenuTrigger asChild>
+              <div className="relative overflow-hidden rounded-[1.5rem] border border-border/55 bg-neutral-2 shadow-[0_10px_40px_-24px_oklch(0.45_0.08_278)] dark:border-white/10 dark:bg-white/[0.04] dark:shadow-[0_18px_56px_-30px_oklch(0.35_0.14_278)] dark:backdrop-blur-md">
+                {heroAttachments.length > 0 ? (
+                  <div className="narrow-scrollbar max-h-24 overflow-x-auto overflow-y-hidden border-b border-border/65 px-3 py-2">
+                    <div className="flex w-max gap-2">
+                      {heroAttachments.map((file, index) => (
+                        <div
+                          key={`${file.name}-${file.lastModified}-${index}`}
+                          className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-1 text-foreground"
+                        >
+                          {file.type.startsWith('image/') ? (
+                            <ImageIcon className="size-3.5 text-muted-foreground" />
+                          ) : file.type.startsWith('video/') ? (
+                            <Video className="size-3.5 text-muted-foreground" />
+                          ) : (
+                            <FileIcon className="size-3.5 text-muted-foreground" />
+                          )}
+                          <span className="max-w-44 truncate">{file.name}</span>
                           <button
                             type="button"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
-                            aria-label={tHuman('composerAttachMenu')}
-                            title={tHuman('composerAttachMenu')}
+                            className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            aria-label={tHuman('attachmentRemove')}
+                            onClick={() =>
+                              setHeroAttachments((prev) =>
+                                prev.filter((_, i) => i !== index),
+                              )
+                            }
                           >
-                            <Plus className="size-4" />
+                            <X className="size-3.5" />
                           </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="start"
-                          className="min-w-[200px]"
-                        >
-                          <DropdownMenuItem
-                            className="cursor-pointer gap-2"
-                            onSelect={() =>
-                              requestAnimationFrame(() =>
-                                heroImageInputRef.current?.click(),
-                              )
-                            }
-                          >
-                            <ImageIcon className="size-4" aria-hidden />
-                            <span>{tHuman('composerAttachImage')}</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="cursor-pointer gap-2"
-                            onSelect={() =>
-                              requestAnimationFrame(() =>
-                                heroVideoInputRef.current?.click(),
-                              )
-                            }
-                          >
-                            <Video className="size-4" aria-hidden />
-                            <span>{tHuman('composerAttachVideo')}</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="cursor-pointer gap-2"
-                            onSelect={() =>
-                              requestAnimationFrame(() =>
-                                heroFileInputRef.current?.click(),
-                              )
-                            }
-                          >
-                            <Paperclip className="size-4" aria-hidden />
-                            <span>{tHuman('composerAttachFile')}</span>
-                          </DropdownMenuItem>
-                          <ComposerAttachGoogleDriveMenuItem
-                            disabled={!aiChatEnabled}
-                            onPickerOpen={() => setAttachMenuOpen(false)}
-                            onFilesPicked={(files) => {
-                              pushHeroAttachments(filesToFileList(files));
-                            }}
-                          />
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <button
-                        type="button"
-                        onClick={toggleDictation}
-                        disabled={!aiChatEnabled}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-50"
-                        aria-label={
-                          isDictating
-                            ? tHuman('composerStopDictation')
-                            : tHuman('composerDictateMessage')
-                        }
-                        title={
-                          isDictating
-                            ? tHuman('composerStopDictation')
-                            : tHuman('composerDictateMessage')
-                        }
-                      >
-                        {isDictating ? (
-                          <Square className="size-3.5" aria-hidden />
-                        ) : (
-                          <Mic className="size-4" aria-hidden />
-                        )}
-                      </button>
+                        </div>
+                      ))}
                     </div>
-                    <Button
+                  </div>
+                ) : null}
+                <textarea
+                  value={aiPrompt}
+                  onChange={(event) => setAiPrompt(event.target.value)}
+                  placeholder={
+                    rotatingHeroPrompts[heroPlaceholderIndex] ??
+                    t('aiHero.placeholder')
+                  }
+                  aria-label={t('aiHero.ariaLabel')}
+                  rows={3}
+                  className="relative min-h-[120px] w-full resize-none overflow-y-auto bg-transparent px-4 py-3 text-3 text-foreground outline-none placeholder:text-muted-foreground"
+                />
+                <input
+                  ref={heroFileInputRef}
+                  type="file"
+                  className="sr-only"
+                  multiple
+                  onChange={(e) => {
+                    pushHeroAttachments(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+                <input
+                  ref={heroImageInputRef}
+                  type="file"
+                  className="sr-only"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    pushHeroAttachments(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+                <input
+                  ref={heroVideoInputRef}
+                  type="file"
+                  className="sr-only"
+                  accept="video/*"
+                  multiple
+                  onChange={(e) => {
+                    pushHeroAttachments(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+                <div className="flex items-center justify-between gap-2 px-3 pb-2.5">
+                  <div className="flex items-center gap-1">
+                    <DropdownMenu
+                      modal={false}
+                      open={attachMenuOpen}
+                      onOpenChange={setAttachMenuOpen}
+                    >
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
+                          aria-label={tHuman('composerAttachMenu')}
+                          title={tHuman('composerAttachMenu')}
+                        >
+                          <Plus className="size-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="start"
+                        className="min-w-[200px]"
+                      >
+                        <DropdownMenuItem
+                          className="cursor-pointer gap-2"
+                          onSelect={() =>
+                            requestAnimationFrame(() =>
+                              heroImageInputRef.current?.click(),
+                            )
+                          }
+                        >
+                          <ImageIcon className="size-4" aria-hidden />
+                          <span>{tHuman('composerAttachImage')}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="cursor-pointer gap-2"
+                          onSelect={() =>
+                            requestAnimationFrame(() =>
+                              heroVideoInputRef.current?.click(),
+                            )
+                          }
+                        >
+                          <Video className="size-4" aria-hidden />
+                          <span>{tHuman('composerAttachVideo')}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="cursor-pointer gap-2"
+                          onSelect={() =>
+                            requestAnimationFrame(() =>
+                              heroFileInputRef.current?.click(),
+                            )
+                          }
+                        >
+                          <Paperclip className="size-4" aria-hidden />
+                          <span>{tHuman('composerAttachFile')}</span>
+                        </DropdownMenuItem>
+                        <ComposerAttachGoogleDriveMenuItem
+                          disabled={!aiChatEnabled}
+                          onPickerOpen={() => setAttachMenuOpen(false)}
+                          onFilesPicked={(files) => {
+                            pushHeroAttachments(filesToFileList(files));
+                          }}
+                        />
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <button
                       type="button"
-                      onClick={handleStartAiOnboarding}
-                      disabled={
-                        (!aiPrompt.trim() && heroAttachments.length === 0) ||
-                        !aiChatEnabled ||
-                        isStartingAi
-                      }
-                      className="h-10 w-10 rounded-full border border-accent-8/45 bg-gradient-to-r from-accent-9/95 to-accent-10/95 p-0 text-accent-contrast shadow-[0_10px_24px_-14px_oklch(0.62_0.19_278)] ring-1 ring-accent-11/12 transition-all hover:brightness-105 hover:ring-accent-11/22"
+                      onClick={toggleDictation}
+                      disabled={!aiChatEnabled}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/12 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label={
-                        isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
+                        isDictating
+                          ? tHuman('composerStopDictation')
+                          : tHuman('composerDictateMessage')
+                      }
+                      title={
+                        isDictating
+                          ? tHuman('composerStopDictation')
+                          : tHuman('composerDictateMessage')
                       }
                     >
-                      {isStartingAi ? (
-                        <Loader2 className="size-4 animate-spin" aria-hidden />
+                      {isDictating ? (
+                        <Square className="size-3.5" aria-hidden />
                       ) : (
-                        <Send className="size-4" aria-hidden />
+                        <Mic className="size-4" aria-hidden />
                       )}
-                    </Button>
+                    </button>
                   </div>
+                  <Button
+                    type="button"
+                    onClick={handleStartAiOnboarding}
+                    disabled={
+                      (!aiPrompt.trim() && heroAttachments.length === 0) ||
+                      !aiChatEnabled ||
+                      isStartingAi
+                    }
+                    className="h-10 w-10 rounded-full border-0 bg-accent-9 p-0 text-white shadow-[0_8px_20px_-8px_var(--color-accent-9)] transition-all hover:bg-accent-10 hover:brightness-105 dark:bg-info-9 dark:shadow-[0_8px_20px_-8px_var(--color-info-9)] dark:hover:bg-info-10"
+                    aria-label={
+                      isStartingAi ? t('aiHero.starting') : t('aiHero.cta')
+                    }
+                  >
+                    {isStartingAi ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                    ) : (
+                      <Send className="size-4" aria-hidden />
+                    )}
+                  </Button>
                 </div>
               </div>
               {aiStartError ? (
