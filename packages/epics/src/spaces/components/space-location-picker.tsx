@@ -95,11 +95,11 @@ export function SpaceLocationPicker({
       applySelection(
         latitude,
         longitude,
-        value.locationLabel ?? t('mapClickLabel', { latitude, longitude }),
+        t('mapClickLabel', { latitude, longitude }),
         'map_click',
       );
     },
-    [applySelection, disabled, t, value.locationLabel],
+    [applySelection, disabled, t],
   );
 
   const handleSelectResult = React.useCallback(
@@ -130,11 +130,10 @@ export function SpaceLocationPicker({
     applySelection(
       lat,
       lng,
-      value.locationLabel ??
-        t('manualLabel', { latitude: lat, longitude: lng }),
+      t('manualLabel', { latitude: lat, longitude: lng }),
       'manual',
     );
-  }, [applySelection, latInput, lngInput, t, value.locationLabel]);
+  }, [applySelection, latInput, lngInput, t]);
 
   React.useEffect(() => {
     setLatInput(value.latitude != null ? String(value.latitude) : '');
@@ -142,9 +141,7 @@ export function SpaceLocationPicker({
   }, [value.latitude, value.longitude]);
 
   React.useEffect(() => {
-    if (value.locationLabel) {
-      setQuery(value.locationLabel);
-    }
+    setQuery(value.locationLabel ?? '');
   }, [setQuery, value.locationLabel]);
 
   const clearLocation = React.useCallback(() => {
