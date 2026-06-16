@@ -46,7 +46,10 @@ export async function searchNominatim(
 ): Promise<GeocodeResult[]> {
   const now = Date.now();
   pruneGeocodeCache(now);
-  const safeLimit = Math.max(1, Math.min(limit, MAX_LIMIT));
+  const normalizedLimit = Number.isFinite(limit)
+    ? Math.floor(limit)
+    : DEFAULT_LIMIT;
+  const safeLimit = Math.max(1, Math.min(normalizedLimit, MAX_LIMIT));
   const normalizedQuery = normalizeGeocodeQuery(query);
   if (normalizedQuery.length < 2) {
     return [];
