@@ -7,6 +7,7 @@ import {
   deleteSpaceBySlug,
   updateSpaceById,
   updateSpaceBySlug,
+  updateSpaceConfigurationById,
 } from './mutations';
 import {
   CreateSpaceInput,
@@ -51,6 +52,27 @@ export async function updateSpaceByIdAction(
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   const { originalSpace, updatedSpace } = await updateSpaceById(data, { db });
+
+  const { slug: originalSlug } = originalSpace;
+  revalidatePath(`/[lang]/dho/${originalSlug}`, 'layout');
+  const { slug: updatedSlug } = updatedSpace;
+  if (originalSlug !== updatedSlug) {
+    revalidatePath(`/[lang]/dho/${updatedSlug}`, 'layout');
+  }
+
+  return updatedSpace;
+}
+
+export async function updateSpaceConfigurationByIdAction(
+  data: UpdateSpaceByIdInput,
+  { authToken }: { authToken?: string },
+) {
+  // TODO: #602 Define RLS Policies for Spaces Table
+  // const db = getDb({ authToken });
+  const { originalSpace, updatedSpace } = await updateSpaceConfigurationById(
+    data,
+    { db },
+  );
 
   const { slug: originalSlug } = originalSpace;
   revalidatePath(`/[lang]/dho/${originalSlug}`, 'layout');

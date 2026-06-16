@@ -13,6 +13,7 @@ import {
   deleteSpaceBySlugAction,
   updateSpaceByIdAction,
   updateSpaceBySlugAction,
+  updateSpaceConfigurationByIdAction,
 } from '@hypha-platform/core/space/server/actions';
 
 export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
@@ -53,6 +54,18 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
   );
 
   const {
+    trigger: updateConfigurationByIdMutation,
+    reset: resetUpdateSpaceConfigurationByIdMutation,
+    isMutating: isUpdatingSpaceConfigurationById,
+    error: errorUpdateSpaceConfigurationByIdMutation,
+    data: updatedSpaceConfigurationById,
+  } = useSWRMutation(
+    authToken ? [authToken, 'updateSpaceConfigurationById'] : null,
+    async ([authToken], { arg }: { arg: UpdateSpaceByIdInput }) =>
+      await updateSpaceConfigurationByIdAction(arg, { authToken }),
+  );
+
+  const {
     trigger: deleteSpaceBySlugMutation,
     reset: resetDeleteSpaceBySlugMutation,
     isMutating: isDeletingSpace,
@@ -82,6 +95,12 @@ export const useSpaceMutationsWeb2Rsc = (authToken?: string | null) => {
     isUpdatingSpaceById,
     errorUpdateSpaceByIdMutation,
     updatedSpaceById,
+
+    updateSpaceConfigurationById: updateConfigurationByIdMutation,
+    resetUpdateSpaceConfigurationByIdMutation,
+    isUpdatingSpaceConfigurationById,
+    errorUpdateSpaceConfigurationByIdMutation,
+    updatedSpaceConfigurationById,
 
     deleteSpaceBySlug: deleteSpaceBySlugMutation,
     resetDeleteSpaceBySlugMutation,

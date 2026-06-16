@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Space,
   useJwt,
   useMe,
   useSpaceBySlug,
@@ -23,10 +22,6 @@ import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { useTranslations } from 'next-intl';
 import { mutate } from 'swr';
 
-const normalizeNullableUrl = (
-  value: string | null | undefined,
-): string | undefined => value ?? undefined;
-
 type SpaceConfigurationClientProps = {
   enableNetworkMap: boolean;
 };
@@ -41,8 +36,14 @@ export function SpaceConfigurationClient({
   const { space, isLoading: isLoadingSpace } = useSpaceBySlug(spaceSlug);
   const { jwt, isLoadingJwt } = useJwt();
   const router = useRouter();
-  const { updateSpace, currentAction, isError, isPending, progress, reset } =
-    useUpdateSpaceOrchestrator({ authToken: jwt });
+  const {
+    updateSpaceConfiguration,
+    currentAction,
+    isError,
+    isPending,
+    progress,
+    reset,
+  } = useUpdateSpaceOrchestrator({ authToken: jwt });
   const [newSpaceSlug, setNewSpaceSlug] = React.useState(spaceSlug);
 
   React.useEffect(() => {
@@ -69,112 +70,38 @@ export function SpaceConfigurationClient({
   }, [pathname]);
 
   const submitForm = React.useCallback(
-    async (
-      updatedSpace: SchemaCreateSpaceForm,
-      organisationSpaces?: Space[],
-    ) => {
+    async (updatedSpace: SchemaCreateSpaceForm) => {
+      if (!space) {
+        return;
+      }
+
       try {
-        if (space) {
-          const wasArchived = space.flags?.includes('archived') ?? false;
-          const willBeArchived =
-            updatedSpace.flags?.includes('archived') ?? false;
-          const normalizedUpdatedSpace = willBeArchived
-            ? { ...updatedSpace, parentId: null }
-            : updatedSpace;
+        const willBeArchived =
+          updatedSpace.flags?.includes('archived') ?? false;
+        const normalizedUpdatedSpace = willBeArchived
+          ? { ...updatedSpace, parentId: null }
+          : updatedSpace;
 
-          if (!wasArchived && willBeArchived) {
-            const archivedSpaceParentId = space.parentId ?? null;
-            const childSpaces =
-              organisationSpaces?.filter(
-                (orgSpace) => orgSpace.parentId === space.id,
-              ) ?? [];
+        setNewSpaceSlug(normalizedUpdatedSpace.slug || '');
+        await updateSpaceConfiguration({
+          id: space.id,
+          data: normalizedUpdatedSpace,
+        });
 
-            for (const childSpace of childSpaces) {
-              const {
-                id,
-                description,
-                address,
-                web3SpaceId,
-                slug,
-                ...updates
-              } = childSpace;
-
-              await updateSpace({
-                id,
-                data: {
-                  ...updates,
-                  slug,
-                  parentId: archivedSpaceParentId,
-                  description: description as string | undefined,
-                  address: address as string | undefined,
-                  web3SpaceId: web3SpaceId as number | undefined,
-                  logoUrl: normalizeNullableUrl(updates.logoUrl),
-                  leadImage: normalizeNullableUrl(updates.leadImage),
-                  ecosystemLogoUrlLight: normalizeNullableUrl(
-                    updates.ecosystemLogoUrlLight,
-                  ),
-                  ecosystemLogoUrlDark: normalizeNullableUrl(
-                    updates.ecosystemLogoUrlDark,
-                  ),
-                },
-              });
-            }
-          }
-
-          if (!space.parentId && normalizedUpdatedSpace.parentId) {
-            const foundInnerSpace = organisationSpaces?.find(
-              (inner) => inner.id === normalizedUpdatedSpace.parentId,
-            );
-            if (foundInnerSpace) {
-              const {
-                id,
-                description,
-                address,
-                web3SpaceId,
-                slug,
-                ...updates
-              } = foundInnerSpace;
-              await updateSpace({
-                id,
-                data: {
-                  ...updates,
-                  slug,
-                  parentId: null,
-                  description: description as string | undefined,
-                  address: address as string | undefined,
-                  web3SpaceId: web3SpaceId as number | undefined,
-                  logoUrl: normalizeNullableUrl(updates.logoUrl),
-                  leadImage: normalizeNullableUrl(updates.leadImage),
-                  ecosystemLogoUrlLight: normalizeNullableUrl(
-                    updates.ecosystemLogoUrlLight,
-                  ),
-                  ecosystemLogoUrlDark: normalizeNullableUrl(
-                    updates.ecosystemLogoUrlDark,
-                  ),
-                },
-              });
-            }
-          }
-          setNewSpaceSlug(normalizedUpdatedSpace.slug || '');
-          await updateSpace({
-            id: space.id,
-            data: normalizedUpdatedSpace,
-          });
-          const mutateRequests = [mutate('/api/v1/spaces?parentOnly=false')];
-          if (normalizedUpdatedSpace.slug) {
-            mutateRequests.push(
-              mutate(
-                `/api/v1/spaces?slugs=${normalizedUpdatedSpace.slug}&parentOnly=false`,
-              ),
-            );
-          }
-          await Promise.all(mutateRequests);
+        const mutateRequests = [mutate('/api/v1/spaces?parentOnly=false')];
+        if (normalizedUpdatedSpace.slug) {
+          mutateRequests.push(
+            mutate(
+              `/api/v1/spaces?slugs=${normalizedUpdatedSpace.slug}&parentOnly=false`,
+            ),
+          );
         }
+        await Promise.all(mutateRequests);
       } catch (e) {
         console.warn(e);
       }
     },
-    [space, updateSpace],
+    [space, updateSpaceConfiguration],
   );
 
   return (

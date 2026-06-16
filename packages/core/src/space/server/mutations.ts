@@ -86,6 +86,69 @@ export const updateSpaceById = async (
   });
 };
 
+function hasArchivedSpaceFlag(flags: unknown): boolean {
+  return Array.isArray(flags) && flags.includes('archived');
+}
+
+/** Atomically archive/reparent children and update space configuration. */
+export const updateSpaceConfigurationById = async (
+  { id, ...rest }: { id: number } & UpdateSpaceInput,
+  { db }: { db: DatabaseInstance },
+) => {
+  return db.transaction(async (tx) => {
+    const [originalSpace] = await tx
+      .select()
+      .from(spaces)
+      .where(eq(spaces.id, id))
+      .limit(1);
+
+    if (!originalSpace) {
+      throw new Error('Failed to update space: not found');
+    }
+
+    const nextFlags = rest.flags ?? originalSpace.flags;
+    const wasArchived = hasArchivedSpaceFlag(originalSpace.flags);
+    const willBeArchived = hasArchivedSpaceFlag(nextFlags);
+    const normalizedRest = willBeArchived ? { ...rest, parentId: null } : rest;
+
+    if (!wasArchived && willBeArchived) {
+      const reparentTo = originalSpace.parentId ?? null;
+      await tx
+        .update(spaces)
+        .set({ parentId: reparentTo })
+        .where(eq(spaces.parentId, id));
+    }
+
+    const nextParentId =
+      normalizedRest.parentId !== undefined
+        ? normalizedRest.parentId
+        : originalSpace.parentId;
+
+    if (
+      originalSpace.parentId == null &&
+      nextParentId != null &&
+      nextParentId !== originalSpace.parentId
+    ) {
+      await tx
+        .update(spaces)
+        .set({ parentId: null })
+        .where(eq(spaces.id, nextParentId));
+    }
+
+    const [updatedSpace] = await tx
+      .update(spaces)
+      .set(withLocationTimestamp(normalizedRest))
+      .where(eq(spaces.id, id))
+      .returning();
+
+    if (!updatedSpace) {
+      throw new Error('Failed to update space');
+    }
+
+    return { originalSpace, updatedSpace };
+  });
+};
+
 /**
  * Delete a space by slug
  *
