@@ -363,6 +363,10 @@ async function main(): Promise<void> {
   const network = await ethers.provider.getNetwork();
   const balance = await ethers.provider.getBalance(deployerAddress);
   const dryRun = getEnv('DRY_RUN')?.toLowerCase() === 'true';
+  // FACTORY_ONLY deploys just the EnergyPPAv2 implementation + factory and
+  // skips the demo `deployCommunity` (no actor addresses required). The real
+  // community is created later via the app's Enable Energy Community proposal.
+  const factoryOnly = getEnv('FACTORY_ONLY')?.toLowerCase() === 'true';
 
   console.log('='.repeat(72));
   console.log('DEPLOY EnergyPPAv2 Community — Base Mainnet');
@@ -371,11 +375,16 @@ async function main(): Promise<void> {
   console.log(`Deployer  : ${deployerAddress}`);
   console.log(`Balance   : ${ethers.formatEther(balance)} ETH`);
   console.log(`Dry run   : ${dryRun ? 'YES' : 'NO'}`);
+  console.log(`Factory only: ${factoryOnly ? 'YES' : 'NO'}`);
 
-  const actors = deriveActors();
-  console.log('\nActors:');
-  actors.households.forEach((a, i) => console.log(`  HH${i + 1}  : ${a}`));
-  actors.investors.forEach((a, i) => console.log(`  INV${i + 1} : ${a}`));
+  const actors = factoryOnly
+    ? { households: [], investors: [] }
+    : deriveActors();
+  if (!factoryOnly) {
+    console.log('\nActors:');
+    actors.households.forEach((a, i) => console.log(`  HH${i + 1}  : ${a}`));
+    actors.investors.forEach((a, i) => console.log(`  INV${i + 1} : ${a}`));
+  }
 
   if (dryRun) {
     console.log('\nDRY_RUN=true — validated config. No transactions sent.');
@@ -411,6 +420,29 @@ async function main(): Promise<void> {
   // Step 3: Factory
   console.log('\n[3/4] EnergyPPAv2Factory');
   const factoryAddress = await deployFactory(energyPPAv2Impl, rstImpl);
+
+  if (factoryOnly) {
+    console.log('\n' + '='.repeat(72));
+    console.log('FACTORY DEPLOYMENT COMPLETE (community skipped)');
+    console.log('='.repeat(72));
+    console.log(`  EnergyPPAv2 impl  : ${energyPPAv2Impl}`);
+    console.log(`  RegularSpaceToken : ${rstImpl}`);
+    console.log(`  EnergyPPAv2Factory: ${factoryAddress}`);
+    console.log(
+      `\n  Next: bump energyPpaV2FactoryAddress[8453] to ${factoryAddress} in packages/core/src/energy/client/contracts.ts`,
+    );
+
+    const addressesPath = path.join(__dirname, '..', '..', 'addresses.json');
+    let addresses: Record<string, string> = {};
+    if (fs.existsSync(addressesPath)) {
+      addresses = JSON.parse(fs.readFileSync(addressesPath, 'utf-8'));
+    }
+    addresses['energyPPAv2Implementation'] = energyPPAv2Impl;
+    addresses['energyPPAv2Factory'] = factoryAddress;
+    fs.writeFileSync(addressesPath, JSON.stringify(addresses, null, 2));
+    console.log(`Updated: ${addressesPath}`);
+    return;
+  }
 
   // Step 4: Community
   console.log('\n[4/4] deployCommunity()');

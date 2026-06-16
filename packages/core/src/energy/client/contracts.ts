@@ -605,18 +605,17 @@ export const ENERGY_PPA_CHAIN_ID = 8453 as const satisfies GovernanceChainId;
 
 /**
  * EnergyPPAv2Factory on {@link ENERGY_PPA_CHAIN_ID}.
- * Keep in sync with deployed infra (see `packages/storage-evm` demo state).
+ * Keep in sync with deployed infra (see `packages/storage-evm/addresses.json`).
  *
- * NOTE: `CommunityParams` now includes the optimization-strategy fields
- * (`purposeRanking`, social allocation). The factory below must be redeployed
- * from the updated `EnergyPPAv2Factory.sol` and this address bumped before the
- * redesigned Enable Energy Community proposal can deploy successfully.
+ * This factory includes the optimization-strategy fields in `CommunityParams`
+ * (`purposeRanking`, social allocation). Deployed 2026-06-16 alongside
+ * EnergyPPAv2 implementation `0x70729e412f192AFaD21e2acDCA16D126Eb62b8eF`.
  */
 export const energyPpaV2FactoryAddress: Record<
   GovernanceChainId,
   `0x${string}`
 > = {
-  8453: '0xB8e042Bc361d1D44Cfe408667B63fAe7E10B90ef',
+  8453: '0x5F07320B3C95C6fB0A0D77d707F14aC95A897E90',
 } as const;
 
 export function getEnergyPpaFactoryAddress(): `0x${string}` {
