@@ -24,11 +24,19 @@ function pruneRateLimitBuckets(now: number): void {
 }
 
 function getClientIp(request: Request): string {
+  const realIp = request.headers.get('x-real-ip')?.trim();
+  if (realIp) return realIp;
+
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
-    return forwarded.split(',')[0]?.trim() || 'unknown';
+    const chain = forwarded
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+    return chain.at(-1) ?? 'unknown';
   }
-  return request.headers.get('x-real-ip')?.trim() || 'unknown';
+
+  return 'unknown';
 }
 
 function isRateLimited(ip: string): boolean {
@@ -53,7 +61,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Malformed JSON body' },
+        { status: 400 },
+      );
+    }
+
     const parsed = geocodeRequestSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
